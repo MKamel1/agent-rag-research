@@ -63,7 +63,8 @@ memory" requirement, and it is the hardest and most valuable part of the system.
 | v3 — Radar | Proactive value | A weekly digest correctly identifies the genuinely notable new papers and flags contradictions with prior knowledge, judged useful by you. |
 
 Concrete v1 acceptance measures (to be finalized in Phase 0):
-- **Retrieval quality:** Recall@10 and MRR on a ~50-question hand-labeled eval set.
+- **Retrieval quality:** Recall@10 and MRR on a ~200-question, agent-generated eval set (no human
+  labeling — §11 Q6, RESOLVED; TEST-STRATEGY.md).
 - **Ingestion throughput:** papers/hour end-to-end on the 3090 (target set after spike).
 - **Answer groundedness:** % of answers whose citations actually support the claim
   (spot-checked).
@@ -462,7 +463,7 @@ end-to-end on one paper.*
 | Spike | Assumption at risk | Method | Gate (pass/fail) | Unblocks |
 |---|---|---|---|---|
 | **1 — Parse + provenance fidelity** | Parser recovers eqns/code/tables **and** the snippet+block-bbox anchors back to the source (grounding, §6A). *Validated: char offsets don't survive PDF→markdown → contract is block-bbox+snippet.* | Run MinerU (math/layout) + Marker (throughput) on the set; rubric-score extraction; test **snippet→block-bbox round-trip** (highlight the evidencing block); trial the arXiv-LaTeX ingest path | Pick MinerU/Marker (+ Docling if tables load-bearing); **block-anchor round-trip ≥ ~95%**; GROBID refs sane | ADR-06; §8.5 grounding |
-| **2 — Retrieval quality** | Qwen3-4B ≥ BGE-M3 on our corpus; hybrid+RRF+rerank > dense | ~50-question labeled set (known-relevant chunks); sweep embedders × {dense, hybrid, hybrid+rerank}; serve via TEI/Infinity | Lock embedder+reranker+config; **Recall@10 ≥ ~0.85**; hybrid must earn its complexity | ADR-02/-03/-10/-11 |
+| **2 — Retrieval quality** | Qwen3-4B ≥ BGE-M3 on our corpus; hybrid+RRF+rerank > dense | ~200-question agent-generated set (gold = source `chunk_id`, no human labeling — §11 Q6); sweep embedders × {dense, hybrid, hybrid+rerank}; serve via TEI/Infinity | Lock embedder+reranker+config; **Recall@10 ≥ ~0.85**; hybrid must earn its complexity | ADR-02/-03/-10/-11 |
 | **3 — Claim extraction + reconciliation** *(long pole, make-or-break)* | Claims extractable *with conditions*; condition-gated judge separates dup/contradict/supersede reliably | (a) hand-label gold claims+conditions on ~20 papers → extraction P/R + condition capture; (b) labeled **claim-pair** set → judge precision per relation, esp. **false-contradiction rate** on condition-mismatch pairs | **Sets the precision bar that gates any auto-supersession** (e.g. ≥0.95 same-benchmark); likely outcome **v1 = flag-only** | §8 feasibility; ADR-12; the auto-mutation guardrail |
 | **4 — Throughput + sizing** | Sequential-GPU staging gives acceptable papers/hour; §6A sizing holds | Full pipeline on ~100 papers; measure per-stage GPU mem+time, papers/hour, MB/paper, Qdrant RAM under quantization | Real papers/hour → realistic backfill plan; validate/correct §6A estimates | §11 ingestion-breadth decision |
 | **5 — LLM-consumption behavior** | Result contract + orchestration scaffolding actually change model behavior | Scenario suite (cite grounded / label inferred / report gaps / use `compare_on_benchmark` / catch supersession); Claude + local model, with vs without contract+hints | Scaffolding measurably improves citation, tier-respect, false-completeness, tool-composition | ADR-16/-17; whether prompts/hints earn their cost |
@@ -478,9 +479,10 @@ ingestion breadth decided; LLM-consumption behavior validated; **reusable eval s
 reconciliation, consumption) exist as regression gates.**
 
 > **Scope note (revised).** V0 (below) needs only a **lighter Phase 0** — Spike 1 (parse) + Spike 2
-> (retrieval). Spike 3 (reconciliation) + Spike 5 (consumption) gate **V1+**, not V0. Labeling the
-> eval sets still needs *your* domain judgment (§11 Q6) — the real effort — but V0's set is just the
-> ~50-question retrieval set, not the claim-pair set.
+> (retrieval). Spike 3 (reconciliation) + Spike 5 (consumption) gate **V1+**, not V0. V0's retrieval
+> eval set no longer needs your domain judgment (§11 Q6, RESOLVED — agent-generated, ~200 questions,
+> TEST-STRATEGY.md); the V1+ claim-pair/reconciliation set is a separate, still-open question, out of
+> scope for V0.
 
 ### Configuration Levers (explicit, not buried — ADR-18)
 
