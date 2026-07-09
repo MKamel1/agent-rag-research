@@ -630,6 +630,12 @@ that choice, not a separate ADR. Previously mis-cited as ADR-07, which is the un
 contextual-header decision). `authors_json`/`categories_json`/`bbox_json`/`anchor_json` are JSON
 because they are read whole, never queried by inner field in V0.
 
+**V0 does not enforce foreign keys.** `PRAGMA foreign_keys` is off by default in SQLite, is
+per-connection and non-persistent, and the migration script does not set it — so the `REFERENCES
+papers(paper_id)` clauses above are documentation of intent, not enforced constraints, until whoever
+owns the long-lived connection (`DocumentStore`, Owner D/M5) deliberately turns the pragma on for that
+connection. This is the V0 decision, not an oversight to silently fix in the migration script.
+
 ---
 
 ## What is NOT in V0 (so nobody builds it)

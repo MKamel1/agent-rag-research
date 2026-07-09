@@ -11,6 +11,9 @@ Postcondition: the database at `path` has WAL journal mode active and contains e
 This script is intentionally a thin, literal executor of 0001_init.sql — it does not contain any
 DDL of its own. If the schema needs to change, edit 0001_init.sql (and DATA-CONTRACTS.md first,
 since that doc is the source of truth), not this file.
+
+Note on the `0001_` filename: despite the naming, there is no tracked-migration framework here (no
+`schema_version` table, no file-discovery/ordering) — just this one hardcoded `SCHEMA_FILE`.
 """
 
 import sqlite3

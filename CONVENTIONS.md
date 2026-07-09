@@ -83,7 +83,7 @@ Concretely, for this build:
 | the embedding client (TEI/vLLM HTTP) | the `Embedder` adapter (M4) |
 | MinerU / Marker / Docling / GROBID | `Parser` adapters (M2) |
 | the arXiv API client | the `Source` adapter (M1) |
-| `sqlite3` | the `DocumentStore` (M5) |
+| `sqlite3` | the `DocumentStore` (M5) and `migrations/` — separate seams (applying the schema vs. querying it) that both legitimately touch SQLite directly |
 | the cross-encoder client (BGE-reranker-v2-m3 or the Spike-2 choice, ADR-10) | the `Reranker` adapter (used by M7) |
 | the local generation-LLM client (Qwen tier, ADR-08; Ollama/vLLM per ADR-09) | the `Summarizer` adapter (M3B) |
 
