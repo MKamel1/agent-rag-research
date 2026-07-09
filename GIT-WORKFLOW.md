@@ -49,15 +49,24 @@ regular module tickets (that's foundation-path PRs, see below).
 
 ## Foundation freeze — the concrete GitHub mechanism for T-F7
 
-> **Current status (2026-07-08): CODEOWNERS and the `foundation-change` label are live; branch
-> protection on `main` is NOT yet active.** GitHub gates branch protection rules on private repos
-> behind GitHub Pro (or making the repo public) for personal accounts — attempting to enable it via
-> `gh api` returned a 403 "Upgrade to GitHub Pro or make this repository public." Until one of those
-> happens, the sign-off rule below is **advisory, not enforced** — nothing technically stops a direct
-> push to `main` bypassing review. Follow the procedure anyway; revisit enabling real enforcement once
-> a decision is made on Pro vs. public vs. staying advisory. `.github/workflows/ci.yml` is also not yet
-> pushed — the `gh` auth token lacks the `workflow` OAuth scope; run `gh auth refresh -h github.com -s
-> workflow` (interactive) to grant it, then push the held-back file from the bootstrap worktree.
+> **Current status (2026-07-08): repo is public, branch protection on `main` IS active** (required PR +
+> 1 CODEOWNER approval, no force-push/deletion). Two things to know:
+>
+> - **`gh` cannot self-approve.** GitHub blocks a PR author from approving their own PR
+>   (`Review Can not approve your own pull request`), which matters a lot for a solo-operator repo where
+>   the CODEOWNER and every author are the same GitHub identity. The practical merge path for this repo
+>   is **`gh pr merge --admin`** — the repo admin (the human) reviews the diff themselves, then uses
+>   admin privilege to merge past the unsatisfiable self-approval requirement. This *is* the human
+>   sign-off (a deliberate admin action, not a rubber stamp) — it just doesn't produce a formal GitHub
+>   "Approved" review artifact. Don't try to get a normal approval on a solo PR; use `--admin` once
+>   you've actually looked at the diff.
+> - **`.github/workflows/ci.yml` needed a separate fix.** The `gh` auth token initially lacked the
+>   `workflow` OAuth scope, which blocks pushing *any* commit whose branch history includes a change to
+>   a `.github/workflows/*.yml` file — even unrelated later commits on top of it. If you hit "refusing to
+>   allow an OAuth App to create or update workflow ... without workflow scope" on a push, either (a) run
+>   `gh auth refresh -h github.com -s workflow` (interactive) once, or (b) if that's not available,
+>   cherry-pick your commit onto a branch based on a point in history *before* the workflow-file commit,
+>   push that instead, and reconcile later once the scope is granted.
 
 CONVENTIONS.md §0.2 / WORK-BREAKDOWN.md T-F7 require the human operator's explicit sign-off on any change
 to `contracts/`, `Config`, the SQLite schema, or the fakes. This is mechanized, not left to memory:
