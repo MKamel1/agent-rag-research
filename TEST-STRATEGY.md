@@ -120,9 +120,10 @@ For each real seam, **the same assertion suite runs against the fake and the rea
      document dominates both the dense and sparse signal. Both adapters must call the same `rrf_fuse`
      (from `contracts/fusion.py`) — never a local reimplementation — so if they disagree even on top-1,
      that's a real bug in one adapter's rank-list construction, not fusion-formula drift.
-- `Reranker` contract: `FakeReranker` (identity) is the only V0 adapter check — there is no second
-  reranker adapter to prove agreement against in V0 (ARCHITECTURE principle 4), so this is a unit test of
-  the real adapter's shape, not a fake/real agreement test.
+- `Reranker` contract: the real adapter is checked in isolation — there is no second reranker adapter to
+  prove agreement against in V0 (ARCHITECTURE principle 4), so this is a unit test of the real adapter's
+  shape, not a fake/real agreement test. (`FakeReranker` itself is still **non-identity** — see "Fakes"
+  above; this bullet is about the real adapter's own contract test, not `FakeReranker`'s behavior.)
 - `Summarizer` contract: `FakeSummarizer` powers every downstream test; the real adapter is checked only
   for non-empty output on the golden-fixture set (summarization quality isn't machine-gradable in V0 the
   way retrieval is — no numeric gate, unlike Embedder/VectorStore).
