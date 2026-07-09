@@ -14,6 +14,11 @@ Config choices, and why:
   the str `"1"`, or a `list` into a `tuple`). That coercion is exactly the silent pass-through
   T-F1 is asking us to close off. Strict mode makes a wrong-typed field raise
   `pydantic.ValidationError` at construction instead.
+  Caveat: this only holds for scalar/container fields. A field typed as another `FrozenModel`
+  (e.g. `GroundedResult.anchor: Anchor`) still silently coerces a plain `dict` into that
+  submodel even under `strict=True` — pydantic's strict mode restricts scalar/container
+  coercion, not dict-into-submodel construction. Don't assume `strict=True` alone rejects a
+  bare dict passed where a nested contract type is expected.
 - `extra="forbid"` — an unexpected field is far more likely a caller's typo/drift than an
   intentional new field (new fields go through the T-F7 foundation-change protocol, not a silent
   kwarg) — so it should fail loudly too, same rationale as strict typing.
