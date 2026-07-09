@@ -49,6 +49,16 @@ regular module tickets (that's foundation-path PRs, see below).
 
 ## Foundation freeze — the concrete GitHub mechanism for T-F7
 
+> **Current status (2026-07-08): CODEOWNERS and the `foundation-change` label are live; branch
+> protection on `main` is NOT yet active.** GitHub gates branch protection rules on private repos
+> behind GitHub Pro (or making the repo public) for personal accounts — attempting to enable it via
+> `gh api` returned a 403 "Upgrade to GitHub Pro or make this repository public." Until one of those
+> happens, the sign-off rule below is **advisory, not enforced** — nothing technically stops a direct
+> push to `main` bypassing review. Follow the procedure anyway; revisit enabling real enforcement once
+> a decision is made on Pro vs. public vs. staying advisory. `.github/workflows/ci.yml` is also not yet
+> pushed — the `gh` auth token lacks the `workflow` OAuth scope; run `gh auth refresh -h github.com -s
+> workflow` (interactive) to grant it, then push the held-back file from the bootstrap worktree.
+
 CONVENTIONS.md §0.2 / WORK-BREAKDOWN.md T-F7 require the human operator's explicit sign-off on any change
 to `contracts/`, `Config`, the SQLite schema, or the fakes. This is mechanized, not left to memory:
 
