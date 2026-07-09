@@ -1,0 +1,73 @@
+# config.yaml — the ONE injected Config object (DATA-CONTRACTS.md §Config). No module reads this file
+# or `os.getenv` directly except the loader Owner F builds in T-F2 (CONVENTIONS.md §3) — that loader is
+# still to be built; the VALUES below are already decided so Owner F doesn't have to invent them.
+#
+# `focus_area_queries` are real arXiv search-query strings (CONTEXT.md: "a set of arXiv search queries,
+# not just categories"), organized under CONTEXT.md's 6 V0 sub-topics for causal methods, across
+# categories cs.LG, cs.AI, stat.ML, stat.ME, cs.CL, econ.EM. This is a lever (ADR-18) — refining the
+# list later is a config edit + re-run, not a design change.
+
+focus_area_queries:
+  # causal inference (general)
+  - "causal inference"
+  - "counterfactual inference"
+  - "structural causal model"
+  - "potential outcomes framework"
+  - "do-calculus causal"
+
+  # causal machine learning
+  - "causal machine learning"
+  - "causal deep learning"
+
+  # causal discovery
+  - "causal discovery"
+  - "causal structure learning"
+  - "causal graph learning"
+  - "score-based causal discovery"
+
+  # treatment-effect estimation (incl. econometrics — explicitly requested coverage)
+  - "treatment effect estimation"
+  - "heterogeneous treatment effects"
+  - "average treatment effect estimation"
+  - "double machine learning"
+  - "causal forest"
+  - "propensity score matching"
+  - "instrumental variable estimation"
+  - "difference-in-differences"
+  - "regression discontinuity design"
+  - "synthetic control method"
+  - "doubly robust estimation"
+  - "econometric causal inference"
+  - "panel data causal effect"
+
+  # causal representation learning
+  - "causal representation learning"
+  - "disentangled causal representation"
+
+  # causal LLM / agent setups
+  - "large language model causal reasoning"
+  - "LLM causal inference"
+  - "causal reasoning language model"
+  - "causal agent reinforcement learning"
+
+  # tooling/library-anchored (explicitly requested: dowhy, causalml, and adjacent frameworks)
+  - "DoWhy causal inference"
+  - "CausalML uplift modeling"
+  - "EconML heterogeneous treatment"
+
+# scope levers (CONTEXT.md registry) — V0 defaults, DATA-CONTRACTS.md §Config
+corpus_cap: 15000
+ordering: "freshest_first"
+ingestion_mode: "one_shot_seed"
+sources:
+  - "arxiv"
+relevance_filter: "off"
+
+# retrieval knobs (tuned in Spike 2 — these are the V0 defaults until then)
+child_parent_expansion: true
+top_k: 10
+rerank_depth: 50
+hybrid_dense_weight: 0.5
+
+# both composition roots (IngestionOrchestrator, McpServer) build their real GpuLock from this path
+gpu_lock_path: ".gpu.lock"

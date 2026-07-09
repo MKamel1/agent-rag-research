@@ -1,0 +1,28 @@
+[project]
+name = "agent-rag-research"
+version = "0.0.0"
+description = "Personal AI Research Knowledge System — V0 grounded RAG cache over causal-methods arXiv papers"
+requires-python = "==3.12.*"
+readme = "README.md"
+
+# Dependencies are managed via environment.yml (conda), not here — see that file's header for why
+# (GPU-linked binaries + a documented core-vs-Phase-0-deferred split). This file exists for package
+# metadata and tool config only.
+
+[tool.pytest.ini_options]
+testpaths = ["rag", "contracts"]
+python_files = ["test_*.py"]
+# T-F6(i) (WORK-BREAKDOWN.md / CONVENTIONS.md §12): non-adapter suites run with sockets disabled.
+# Real-adapter contract tests opt out of --disable-socket explicitly at the point they're invoked
+# (nightly/on-demand CI job, not this default config) — see .github/workflows/ci.yml.
+addopts = "--disable-socket -q"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+# Owner F (T-F6) extends this with the project's own mechanical checks (vendor-import isolation,
+# bare-except, os.getenv, contract-shadowing) — this is the baseline linter config, not the full
+# enforcement job.
+select = ["E", "F", "I"]
