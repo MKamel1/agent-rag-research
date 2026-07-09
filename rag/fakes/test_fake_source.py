@@ -65,3 +65,24 @@ def test_error_injection_yields_earlier_refs_before_raising():
         for ref in it:
             yielded.append(ref.paper_id)
     assert yielded == ["2506.01234", "2506.01234"]
+
+
+def test_error_injection_fail_n_then_succeed_recovers_after_fail_count_reaches():
+    # A (error, fail_count) tuple entry is the fixture state that exercises "retried and then
+    # succeeded" (WORK-BREAKDOWN.md T-A1: "transient->retry, permanent->quarantine") — the bare
+    # always-fails form can't, since it never stops raising.
+    source = FakeSource(errors={"2507.05678": (TransientError, 2)})
+
+    # First two fetch() calls both reach "2507.05678" and both raise.
+    for _ in range(2):
+        with pytest.raises(TransientError):
+            list(source.fetch(focus_area=["x"], cap=100, ordering="freshest_first"))
+
+    # Third call reaches it again but the fail count is exhausted, so it now yields normally.
+    refs = list(source.fetch(focus_area=["x"], cap=100, ordering="freshest_first"))
+    assert [r.paper_id for r in refs] == [
+        "2506.01234",
+        "2506.01234",
+        "2507.05678",
+        "2504.09999",
+    ]
