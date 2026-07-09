@@ -125,7 +125,7 @@ rebuild, ADR-04).
 - [ ] **Parser locked with numbers**; anchor round-trip ≥ ~95%; golden fixtures committed.
 - [ ] **Embedder + reranker + retrieval config locked with numbers**; Recall@10 ≥ ~0.85; hybrid/rerank each
       justified their complexity.
-- [ ] The ~50-question retrieval eval set exists and is committed as a regression gate.
+- [ ] The ~200-question, agent-generated retrieval eval set exists and is committed as a regression gate.
 - [ ] Real papers/hour measured → a realistic 15k backfill plan (smoke-test 200 papers, then run overnight).
 - [ ] `phase0-results.md` records every number, so no decision is "asserted, not proven" (PRD §9 ethos).
 
