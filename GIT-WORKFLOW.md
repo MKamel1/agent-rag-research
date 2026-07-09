@@ -16,11 +16,17 @@ Example: `T-C1-tests` → merges → `T-C1-chunker` opens.
 
 Owner F's tickets (T-F1…T-F7) don't need the split — see `owners/OWNER-F.md`.
 
-## Commit messages
+## Commit messages and authorship
 
 Subject: `T-<id>: <imperative what>` (e.g. `T-C1: add Chunker unit tests against frozen interface`).
-Body: the *why*, not a restatement of the diff. Trailers: this harness's standard
-`Co-Authored-By`/`Claude-Session` trailers, same as any other commit made through Claude Code.
+Body: the *why*, not a restatement of the diff.
+
+**Single author, no trailers.** Every commit in this repo is authored as
+`MKamel1 <47995864+MKamel1@users.noreply.github.com>` (repo-local `git config user.name`/`user.email` —
+set this before your first commit, regardless of which tool or model is actually doing the typing). Do
+**not** add `Co-authored-by:`, session-ID trailers, or any other tool-attribution line to the commit
+message — this repo's history shows one identity. If your tool normally appends its own attribution
+trailers by default, override or strip that behavior for commits in this repo.
 
 ## PR flow
 
@@ -42,10 +48,15 @@ requires this check to pass before merge, no exceptions.
 
 ## Review-agent gate (non-foundation PRs)
 
-Before marking a PR ready for merge, dispatch a review pass — the `design-review` skill or a
-code-reviewer agent — against the diff. Resolve any blocking findings it reports, then merge. The human
-operator spot-checks a sample of merged PRs periodically; this is **not** a per-PR requirement for
-regular module tickets (that's foundation-path PRs, see below).
+Before marking a PR ready for merge, run a review pass against the diff covering: module depth and
+information hiding (is the interface small relative to what it hides), coupling (did this leak a vendor
+or a `contracts/` shape it shouldn't own), naming/consistency, and whether the diff matches its ticket's
+acceptance criteria (WORK-BREAKDOWN.md) — the same checklist this project's design skills use. *In Claude
+Code* this is the `design-review` skill or a code-reviewer agent; *under another tool* (e.g. OpenCode),
+use whatever equivalent review subagent/prompt it provides, covering the same checklist — the mechanism
+differs by tool, the checklist doesn't. Resolve any blocking findings, then merge. The human operator
+spot-checks a sample of merged PRs periodically; this is **not** a per-PR requirement for regular module
+tickets (that's foundation-path PRs, see below).
 
 ## Foundation freeze — the concrete GitHub mechanism for T-F7
 
@@ -55,11 +66,14 @@ regular module tickets (that's foundation-path PRs, see below).
 > - **`gh` cannot self-approve.** GitHub blocks a PR author from approving their own PR
 >   (`Review Can not approve your own pull request`), which matters a lot for a solo-operator repo where
 >   the CODEOWNER and every author are the same GitHub identity. The practical merge path for this repo
->   is **`gh pr merge --admin`** — the repo admin (the human) reviews the diff themselves, then uses
->   admin privilege to merge past the unsatisfiable self-approval requirement. This *is* the human
+>   is **`gh pr merge --rebase --admin`** — the repo admin (the human) reviews the diff themselves, then
+>   uses admin privilege to merge past the unsatisfiable self-approval requirement. This *is* the human
 >   sign-off (a deliberate admin action, not a rubber stamp) — it just doesn't produce a formal GitHub
 >   "Approved" review artifact. Don't try to get a normal approval on a solo PR; use `--admin` once
->   you've actually looked at the diff.
+>   you've actually looked at the diff. **Use `--rebase`, not `--squash`**: squash-merge lets GitHub
+>   generate a brand-new commit authored as the merging account's GitHub display name, overriding whatever
+>   the branch's real commits were authored as — rebase-merge replays the branch's existing commits onto
+>   `main` unchanged, so the `MKamel1 <...noreply...>` authorship set above actually survives the merge.
 > - **`.github/workflows/ci.yml` needed a separate fix.** The `gh` auth token initially lacked the
 >   `workflow` OAuth scope, which blocks pushing *any* commit whose branch history includes a change to
 >   a `.github/workflows/*.yml` file — even unrelated later commits on top of it. If you hit "refusing to
@@ -87,8 +101,8 @@ one (Spike 1 for Parser, Spike 2 for Embedder/VectorIndex/Retriever/McpServer).
 
 ## One-time bootstrap (already done for the initial scaffold; documented here for reference)
 
-The very first commit (this scaffold: docs + `CLAUDE.md` + `owners/` + `environment.yml` + `config.yaml`
-+ CI skeleton) went directly to `main` before branch protection was enabled, since protection would have
-blocked the initial push. Protection, `CODEOWNERS`, and the `foundation-change` label were enabled
-immediately after. Every commit from here on follows the branch/PR flow above, no exceptions — including
-Owner F's own T-F1–T-F7 work.
+The very first commit (this scaffold: docs + `AGENTS.md`/`CLAUDE.md` + `owners/` + `environment.yml` +
+`config.yaml` + CI skeleton) went directly to `main` before branch protection was enabled, since
+protection would have blocked the initial push. Protection, `CODEOWNERS`, and the `foundation-change`
+label were enabled immediately after. Every commit from here on follows the branch/PR flow above, no
+exceptions — including Owner F's own T-F1–T-F7 work.

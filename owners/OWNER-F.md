@@ -1,6 +1,6 @@
 # Owner F — Shared Foundation
 
-Read `CLAUDE.md` first if you haven't. This file is self-contained for your role — you shouldn't need to
+Read `AGENTS.md` (or `CLAUDE.md`, same content) first if you haven't. This file is self-contained for your role — you shouldn't need to
 read any other doc cover-to-cover before starting, only the sections pointed at below.
 
 ## Role
@@ -68,5 +68,5 @@ freeze; that's expected, not a gap in your ticket).
 
 ## After you're done
 
-Tag `foundation-v0-frozen` on `main`. Update the Owner→session table in `CLAUDE.md` to mark yourself
+Tag `foundation-v0-frozen` on `main`. Update the Owner→session table in `AGENTS.md` to mark yourself
 done. A–E can now start (subject to their own Phase-0 prerequisites, in their owner briefs).
