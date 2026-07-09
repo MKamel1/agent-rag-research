@@ -1,0 +1,50 @@
+[
+  {
+    "paper_id": "2506.01234",
+    "version": "v1",
+    "title": "A Causal Method for Treatment-Effect Estimation",
+    "abstract": "We propose a causal method for estimating treatment effects under confounding.",
+    "authors": ["A. Author", "B. Author"],
+    "categories": ["cs.LG", "stat.ME"],
+    "published": "2026-06-01",
+    "updated": "2026-06-01",
+    "pdf_url": "https://arxiv.org/pdf/2506.01234v1",
+    "latex_url": "https://arxiv.org/e-print/2506.01234v1"
+  },
+  {
+    "paper_id": "2506.01234",
+    "version": "v2",
+    "title": "A Causal Method for Treatment-Effect Estimation",
+    "abstract": "We propose a causal method for estimating treatment effects under confounding (revised).",
+    "authors": ["A. Author", "B. Author"],
+    "categories": ["cs.LG", "stat.ME"],
+    "published": "2026-06-01",
+    "updated": "2026-06-15",
+    "pdf_url": "https://arxiv.org/pdf/2506.01234v2",
+    "latex_url": "https://arxiv.org/e-print/2506.01234v2"
+  },
+  {
+    "paper_id": "2507.05678",
+    "version": "v1",
+    "title": "Causal Discovery via Score-Based Structure Learning",
+    "abstract": "We present a score-based algorithm for causal discovery from observational data.",
+    "authors": ["C. Author"],
+    "categories": ["cs.LG"],
+    "published": "2026-07-02",
+    "updated": "2026-07-02",
+    "pdf_url": "https://arxiv.org/pdf/2507.05678v1",
+    "latex_url": null
+  },
+  {
+    "paper_id": "2504.09999",
+    "version": "v1",
+    "title": "Representation Learning for Causal Inference in LLM Agents",
+    "abstract": "We study causal representation learning applied to LLM-based agent setups.",
+    "authors": ["D. Author", "E. Author"],
+    "categories": ["cs.CL", "cs.LG"],
+    "published": "2026-04-15",
+    "updated": "2026-04-20",
+    "pdf_url": "https://arxiv.org/pdf/2504.09999v1",
+    "latex_url": "https://arxiv.org/e-print/2504.09999v1"
+  }
+]
