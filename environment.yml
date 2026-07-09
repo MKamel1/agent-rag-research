@@ -1,0 +1,60 @@
+# environment.yml — dedicated conda env for this project.
+#
+# Deliberately NOT a reuse of the existing `pytorch-env` conda env on this machine
+# (research-kb-system-scope.md "Environment (confirmed)") — this project gets its own env so its
+# dependency set is reproducible and doesn't drift with whatever else `pytorch-env` accumulates.
+#
+# Layering rationale (read before adding anything):
+#   - "Core" below is pinned NOW because it's either locked by an ADR (PRD.md §12) or required by the
+#     test harness itself (TEST-STRATEGY.md), independent of which Phase-0 adapter wins.
+#   - "Deferred" is NOT pinned here because ADR-06 (parser) and ADR-02/ADR-10 (embedder/reranker) are
+#     explicitly undecided until PHASE0-RUNBOOK.md Spikes 1 & 2 run. Pinning them now would misrepresent
+#     the design docs' own "not decided yet" status. Install the deferred set temporarily for Spike 1/2,
+#     then edit this file to keep ONLY the winners — that edit is a foundation-adjacent change tied to
+#     the Phase-0 lock (see GIT-WORKFLOW.md), not a free one.
+#   - Qdrant / TEI-vLLM / Ollama / GROBID are NOT conda deps — they run as Docker services
+#     (PHASE0-RUNBOOK.md S0 stands them up). Only their *client libraries* live here.
+
+name: agent-rag-research
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python=3.12
+  # GPU stack — ADR-independent, GPU work is certain regardless of which model wins Phase 0
+  - pytorch=2.6.0
+  - pytorch-cuda=12.4
+  # test harness (TEST-STRATEGY.md golden rule + CONVENTIONS §12/T-F6(i))
+  - pytest
+  - pytest-cov
+  - pip
+  - pip:
+      - pytest-socket        # needed for T-F6(i)'s `--disable-socket` zero-network CI check
+      - pydantic>=2          # contracts/ (T-F1) prefers runtime-validating models over plain dataclasses
+      - qdrant-client         # ADR-01 — Qdrant is locked, not a Phase-0 open question
+      - pyyaml                # T-F2's Config loader (config.yaml)
+      - httpx                 # generic HTTP client — arXiv (M1) + TEI/vLLM embedder (M4) adapters
+      - mcp                   # M8 McpServer — MCP protocol is decided, not a Phase-0 open question
+      - filelock               # GpuLock's real adapter (DATA-CONTRACTS.md "GpuLock" — FileGpuLock)
+      - ruff                  # drives several T-F6 static/grep-adjacent checks
+
+# --- Deferred: Phase-0 candidates (NOT installed by `conda env create`; add temporarily during S1/S2) ---
+#
+# Parser candidates (ADR-06, PHASE0-RUNBOOK.md Spike 1 picks one):
+#   pip install mineru          # AGPL-3.0 — see PRD.md §11B license note before using outside personal/local use
+#   pip install marker-pdf      # Apache-2.0
+#   pip install docling         # Apache-2.0
+#   # + a GROBID client (GROBID itself runs as a Docker service, kept regardless of the winner — it's
+#   #   the reference/metadata parser, ARCHITECTURE.md §M2)
+#
+# Embedder/reranker eval helpers (ADR-02/ADR-10, PHASE0-RUNBOOK.md Spike 2 picks the winners; the
+# models themselves are served over TEI/vLLM as Docker services, not conda deps — these are only the
+# local helper libs needed to run the Spike-2 sweep):
+#   pip install sentence-transformers
+#   pip install FlagEmbedding    # BGE-M3 / BGE-reranker-v2-m3 baseline comparison
+#
+# After Spike 1/2 lock the winners: move only the winning package(s) up into "Core" above, delete this
+# comment block's losers, and treat that edit as a foundation-adjacent change (GIT-WORKFLOW.md).

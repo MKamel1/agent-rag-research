@@ -1,0 +1,12 @@
+# CODEOWNERS — mechanizes CONVENTIONS.md §0.2 / WORK-BREAKDOWN.md T-F7's foundation-freeze sign-off.
+#
+# Any PR touching a path below requires approval from the listed owner before merge (enforced via branch
+# protection on `main`, set up alongside this file — see GIT-WORKFLOW.md "Foundation freeze"). This is
+# the human-in-the-loop point in the BUILD PROCESS only — distinct from the product's own agent-as-reasoner
+# design, which has no human-in-the-loop (CONTEXT.md "Rejected/non-goals").
+
+/contracts/          @MKamel1
+/rag/config.py        @MKamel1
+/config.yaml          @MKamel1
+/migrations/          @MKamel1
+/rag/fakes/            @MKamel1
