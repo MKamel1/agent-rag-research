@@ -1,0 +1,59 @@
+name: CI
+
+# T-F5 (WORK-BREAKDOWN.md): unit+fake+golden tests run on every push, no GPU/network, must be fast and
+# green. This is the SKELETON only — Owner F's T-F6 ticket adds the mechanical enforcement checks
+# (a)-(i) listed in CONVENTIONS.md §12; the placeholder block below marks exactly where they go. Do not
+# treat this file as done until T-F6 fills it in.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up conda env
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          environment-file: environment.yml
+          activate-environment: agent-rag-research
+
+      - name: Run unit tests (zero-GPU, zero-network)
+        shell: bash -l {0}
+        run: |
+          export CUDA_VISIBLE_DEVICES=""
+          pytest; status=$?
+          # exit code 5 = "no tests collected" — expected on this bootstrap commit (WORK-BREAKDOWN.md
+          # M0 Done criterion: "green pipeline on an empty skeleton"). Any other non-zero code is a
+          # real failure. Once Owner F/A-E start committing test files, this tolerance stops mattering
+          # because real tests will exist and exit 0/1 instead of 5.
+          if [ "$status" -ne 0 ] && [ "$status" -ne 5 ]; then exit "$status"; fi
+        # `--disable-socket` is already the pytest default via pyproject.toml's addopts (T-F6(i)) — a
+        # test that bypasses its fake and reaches for a live Qdrant/HF download/GPU fails loudly here
+        # instead of silently passing.
+
+      # --- T-F6 enforcement job (Owner F ticket — NOT implemented in this scaffold) -----------------
+      # Add a job here (or steps in this job) that mechanically enforces CONVENTIONS.md §12:
+      #   (a) grep for vendor names (qdrant, mineru, embedding client, etc.) outside their adapter file
+      #   (b) fail if a diff defines a type shadowing a contracts/ name
+      #   (c) fail on `except Exception:` / bare `except`
+      #   (d) fail on os.getenv/os.environ outside the Config loader
+      #   (e) fail if a diff touches contracts/, Config, schema, or fakes without the
+      #       "foundation-change" label (this is also enforced by branch protection + CODEOWNERS, but
+      #       T-F6(e) is the mechanical proxy that fails the check itself, not just blocks the merge
+      #       button)
+      #   (f) fail if a real Embedder/Summarizer/Reranker adapter's __init__ doesn't declare gpu_lock
+      #   (g) fail if a module source file has no sibling test file
+      #   (h) grep for manual chunk_id/block_id/summary_id string-slicing outside DocumentStore
+      #   (i) zero-GPU/zero-net — already wired above via pytest-socket + CUDA_VISIBLE_DEVICES
+      # Done criterion (WORK-BREAKDOWN T-F6): a deliberately-broken sample diff for each of (a)-(i) is
+      # committed as a fixture and confirmed to fail this job.
+      # -------------------------------------------------------------------------------------------
+
+  # Real-adapter contract tests + the retrieval eval run nightly/on-demand, not on every push
+  # (TEST-STRATEGY.md "CI expectations") — add a separate scheduled workflow once those adapters exist.
