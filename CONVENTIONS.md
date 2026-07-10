@@ -257,6 +257,11 @@ A module isn't done when it runs once. It's done when:
 
 - [ ] Its test suite was committed in M1a, against the frozen interface + fakes, **before** this module's
       implementation code existed (WORK-BREAKDOWN M1a/M1b) — not just "tests exist and pass now."
+- [ ] That M1a suite is now ACTIVE and GREEN — its `pytest.importorskip("rag.<module>")` guard resolves and
+      the tests actually run (not still reporting SKIPPED). M1a used skip-until-implemented to keep CI green
+      while the module was absent (marked `# M1A-DORMANT`); a suite still skipping once this module exists
+      means the import path is wrong or the suite never ran — turn it back on and make it green as part of
+      this ticket.
 - [ ] Its interface matches ARCHITECTURE.md and uses only shapes from DATA-CONTRACTS.md (no invented types).
 - [ ] It accepts its dependencies as arguments; no vendor import outside its own adapter; no `os.getenv`.
 - [ ] Preconditions/postconditions are in the docstring and cheaply-checkable ones are enforced.

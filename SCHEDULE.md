@@ -107,6 +107,16 @@ Critical path: foundation -> Phase 0 -> DocumentStore(D1) + VectorIndex(D2) + Em
 - **Foundation change** — any edit to `contracts/` / Config / schema / fakes needs the `foundation-change`
   label + `@MKamel1` sign-off before merge (T-F7).
 
+## M1a test convention & the re-enable task
+
+- M1a suites use **skip-until-implemented** (`pytest.importorskip("rag.<module>")`) so CI stays green while
+  modules don't exist yet; each dormant file is tagged `# M1A-DORMANT (re-enable in M1b)`.
+- **Standing task:** M1b's Definition of Done (CONVENTIONS §11) requires each suite to be un-skipped
+  (`importorskip` resolves) and green before its module ticket is done — grep `M1A-DORMANT` to find every
+  suite still awaiting re-enable.
+- This was a deliberate choice to keep `main`'s CI a meaningful signal during the M1a→M1b window, vs.
+  committing red-on-collection tests that would poison shared CI.
+
 ## Immediate next actions
 
 1. **Merge PR #15** — unblocks Owner E's M1a.
