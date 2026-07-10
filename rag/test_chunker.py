@@ -142,7 +142,8 @@ def test_multi_block_chunk_anchors_to_the_first_block_in_the_group():
     grouped = [c for c in chunks if EQUATION_LATEX in c.text and PROSE_TEXT in c.text]
     assert grouped, "prose+equation must be grouped into one chunk under child_parent_expansion=on"
     for c in grouped:
-        assert c.anchor.block_id == first.block_id, "anchor must pin the FIRST block, not the equation"
+        # anchor must pin the FIRST block in the group (reading order), not the equation block.
+        assert c.anchor.block_id == first.block_id
         assert c.parent_id == first.block_id
         # anchor bbox/page are the first block's — never an average or the later block's.
         assert c.anchor.bbox == first.bbox
