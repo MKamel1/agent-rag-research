@@ -81,12 +81,21 @@ tickets (that's foundation-path PRs, see below).
 >   `gh auth refresh -h github.com -s workflow` (interactive) once, or (b) if that's not available,
 >   cherry-pick your commit onto a branch based on a point in history *before* the workflow-file commit,
 >   push that instead, and reconcile later once the scope is granted.
+> - **Invariant: only the human merges foundation-path PRs.** Agents may *open* PRs that touch
+>   protected paths, but must never run `gh pr merge` on them. Only the human operator merges — and
+>   only after reviewing the diff and confirming the `foundation-change` label is present. Because
+>   `--admin` bypasses both the required CODEOWNER review and the required `enforcement` status check
+>   (where check (e)'s label gate lives), that deliberate diff review immediately before typing
+>   `--admin` **is** the actual sign-off mechanism for this repo — not a formality, since nothing else
+>   blocks the merge at that point.
 
 CONVENTIONS.md §0.2 / WORK-BREAKDOWN.md T-F7 require the human operator's explicit sign-off on any change
 to `contracts/`, `Config`, the SQLite schema, or the fakes. This is mechanized, not left to memory:
 
 - `.github/CODEOWNERS` names the human (`@MKamel1`) as required reviewer for `contracts/**`,
-  `rag/config.py`, `config.yaml`, `migrations/**`, `rag/fakes/**`.
+  `rag/config.py`, `config.yaml`, `migrations/**`, `rag/fakes/**`, `fixtures/**`, `ci/**`, and
+  `.github/**` — the last two so the enforcement mechanism and CI config can't be weakened by an
+  ordinary unprotected PR.
 - The `foundation-change` label (registered at repo bootstrap) must be applied to any PR touching those
   paths.
 - Branch protection on `main` requires: CI green **+** the `foundation-change` label present **+**
