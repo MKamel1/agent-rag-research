@@ -13,6 +13,8 @@ import re
 
 from ci.checks.model import DiffFile, Violation, in_pipeline_scope
 
+# Curated, not derived -- extend/update this if the one module allowed to read the environment
+# ever moves or gains a sibling.
 EXEMPT_PATH = "rag/config.py"
 
 _ENV_READ = re.compile(r"\bos\.(getenv|environ)\b")

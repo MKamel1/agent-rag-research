@@ -13,10 +13,11 @@ Two proofs, from concrete to closer-to-real-usage:
 
 1. `test_raw_socket_connect_is_blocked` -- the mechanism itself: a bare `socket.socket().connect()`
    raises `SocketBlockedError` under `--disable-socket`.
-2. `test_constructing_a_real_qdrant_client_is_blocked` -- the actual failure mode T-F6's Done
-   criterion names: constructing a real `qdrant_client.QdrantClient` (pointed at a real host, as
-   Owner D's future `VectorIndex` adapter (T-D2) will do) and calling it reaches for the network on
-   the first real request, and that reach is what --disable-socket blocks -- proving the "someone
+2. `test_calling_get_collections_on_a_real_qdrant_client_is_blocked` -- the actual failure mode
+   T-F6's Done criterion names: constructing a real `qdrant_client.QdrantClient` (pointed at a real
+   host, as Owner D's future `VectorIndex` adapter (T-D2) will do) is lazy and doesn't itself touch
+   the network -- it's the first real request (here, `get_collections()`) that reaches for the
+   network, and that reach is what --disable-socket blocks -- proving the "someone
    swaps `FakeVectorStore` for a real client in a test by mistake" leak is actually caught, not
    just "the option is passed on the command line". `qdrant_client`'s HTTP layer catches the raw
    `SocketBlockedError` and re-wraps it as its own `ResponseHandlingException(source=...)` rather
@@ -38,7 +39,7 @@ def test_raw_socket_connect_is_blocked():
         socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect(("example.com", 80))
 
 
-def test_constructing_a_real_qdrant_client_is_blocked():
+def test_calling_get_collections_on_a_real_qdrant_client_is_blocked():
     client = QdrantClient(host="example.com", port=6333)
     with pytest.raises(ResponseHandlingException) as exc_info:
         client.get_collections()

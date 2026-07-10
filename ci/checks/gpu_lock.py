@@ -16,6 +16,7 @@ import ast
 
 from ci.checks.model import DiffFile, Violation
 
+# Curated, not derived -- extend this when a new GPU-bound adapter class name pattern lands.
 _ADAPTER_SUFFIXES = ("Embedder", "Summarizer", "Reranker")
 _EXEMPT_PREFIXES = ("contracts/", "rag/fakes/")
 
