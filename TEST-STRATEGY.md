@@ -60,8 +60,9 @@ and the Orchestrator end-to-end.
 model, no GPU. Default `Summarizer` dependency for every test of `IngestionOrchestrator` and any module that
 needs a `PaperRecord.summary_text`.
 
-**`FakeReranker`** — deterministic but **non-identity**: reverses the input candidate order (score
-descending by reversed index), no model, no GPU. Also records every call into `.calls` (`(query, [c.id for
+**`FakeReranker`** — deterministic but **non-identity**: reverses the input candidate order (a pure
+reorder — `RerankCandidate` carries no score, so nothing is actually scored), no model, no GPU. Also
+records every call into `.calls` (`(query, [c.id for
 c in candidates])`). This is what makes the "zero GPU" claim for Retriever tests actually meaningful, since
 `retrieve()`'s pipeline includes a real cross-encoder rerank step in production — an **identity** fake was
 tried first and rejected: it made every Retriever test pass identically whether or not `rerank()` was even

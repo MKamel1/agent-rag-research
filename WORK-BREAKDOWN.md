@@ -180,7 +180,12 @@ M1a, before this implementation existed") **plus** the specifics below.
   both methods; **rerank is verifiably wired in for both methods**: `reranker.calls` non-empty with expected
   candidate ids, and final order matches the fake's reversal and differs from pre-rerank RRF order (a test
   that doesn't check this would pass identically whether or not `rerank()` is ever called); `Reranker`
-  accepted as a constructor argument (never hardcoded). `retrieve()` runs the Spike-2 eval set.
+  accepted as a constructor argument (never hardcoded). Where `GroundedResult.score` comes from — the
+  pre-rerank RRF score carried through unchanged, vs. a cross-encoder score the reranker would have to
+  start returning — is Owner E's decision to make here; the frozen docs deliberately don't presuppose it
+  (if a cross-encoder score is later surfaced, adding a nullable `score` field to `RerankCandidate` would
+  follow this repo's existing forward-compat-nullable convention, e.g. `Chunk.contextual_header`).
+  `retrieve()` runs the Spike-2 eval set.
 - **T-E2 McpServer (M8)** — `search_papers`/`semantic_search`/`get_paper`/`get_span`. *Accept:* every tool
   returns records (never bare text); `search_papers` calls `Retriever.retrieve_papers()` and returns the
   typed `PaperSearchResponse` (`results` + `Coverage`); `semantic_search` calls `Retriever.retrieve()` and
