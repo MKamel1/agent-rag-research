@@ -11,3 +11,8 @@
 /migrations/          @MKamel1
 /rag/fakes/            @MKamel1
 /fixtures/             @MKamel1
+
+# The enforcement mechanism and CI config guard themselves — changing check (e) or ci.yml needs the
+# same sign-off as any other foundation path.
+/ci/                  @MKamel1
+/.github/             @MKamel1
