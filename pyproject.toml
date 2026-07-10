@@ -10,7 +10,11 @@ readme = "README.md"
 # metadata and tool config only.
 
 [tool.pytest.ini_options]
-testpaths = ["rag", "contracts"]
+# "ci/checks" (T-F6) is this ticket's own self-test suite (ci/checks/test_checks.py), collected
+# like any other suite. Deliberately excludes "ci/proof_socket_block" — that suite proves a real
+# network call gets blocked, so it must never run inside this default, already-socket-disabled
+# collection (see that file's own docstring); the enforcement job invokes it explicitly instead.
+testpaths = ["rag", "contracts", "ci/checks"]
 python_files = ["test_*.py"]
 # T-F6(i) (WORK-BREAKDOWN.md / CONVENTIONS.md §12): non-adapter suites run with sockets disabled.
 # Real-adapter contract tests opt out of --disable-socket explicitly at the point they're invoked
@@ -20,9 +24,15 @@ addopts = "--disable-socket -q"
 [tool.ruff]
 target-version = "py312"
 line-length = 100
+# ci/checks/negative_examples/ is deliberately-broken reference material (T-F6's Done criterion —
+# each of CONVENTIONS §12(a)-(h) needs a committed fixture proven to fail its check) — not a
+# lint target. Excluding it here keeps `ruff check .` clean without watering down what it means
+# for the rest of the tree to be clean.
+extend-exclude = ["ci/checks/negative_examples"]
 
 [tool.ruff.lint]
-# Owner F (T-F6) extends this with the project's own mechanical checks (vendor-import isolation,
-# bare-except, os.getenv, contract-shadowing) — this is the baseline linter config, not the full
-# enforcement job.
-select = ["E", "F", "I"]
+# T-F6 extends this with the project's own mechanical checks. "BLE" (flake8-blind-except, bundled
+# with ruff) is check (c)'s primary mechanism (CONVENTIONS §4/§12) alongside "E"'s E722
+# (bare-except) — see ci/checks/blind_except.py's docstring for why both are needed (E722 alone
+# misses `except Exception:`, and BLE001 alone misses bare `except:`).
+select = ["E", "F", "I", "BLE"]

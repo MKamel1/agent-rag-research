@@ -1,9 +1,9 @@
 name: CI
 
 # T-F5 (WORK-BREAKDOWN.md): unit+fake+golden tests run on every push, no GPU/network, must be fast and
-# green. This is the SKELETON only — Owner F's T-F6 ticket adds the mechanical enforcement checks
-# (a)-(i) listed in CONVENTIONS.md §12; the placeholder block below marks exactly where they go. Do not
-# treat this file as done until T-F6 fills it in.
+# green. T-F6 (WORK-BREAKDOWN.md) adds the `enforcement` job below, mechanizing CONVENTIONS.md §12's
+# checks (a)-(i) via `ci/run_enforcement.py` + `ci/checks/*` — see that package for the checks
+# themselves and `ci/checks/test_checks.py` for the fixture-backed proof each one fires.
 
 on:
   push:
@@ -37,23 +37,53 @@ jobs:
         # test that bypasses its fake and reaches for a live Qdrant/HF download/GPU fails loudly here
         # instead of silently passing.
 
-      # --- T-F6 enforcement job (Owner F ticket — NOT implemented in this scaffold) -----------------
-      # Add a job here (or steps in this job) that mechanically enforces CONVENTIONS.md §12:
-      #   (a) grep for vendor names (qdrant, mineru, embedding client, etc.) outside their adapter file
-      #   (b) fail if a diff defines a type shadowing a contracts/ name
-      #   (c) fail on `except Exception:` / bare `except`
-      #   (d) fail on os.getenv/os.environ outside the Config loader
-      #   (e) fail if a diff touches contracts/, Config, schema, or fakes without the
-      #       "foundation-change" label (this is also enforced by branch protection + CODEOWNERS, but
-      #       T-F6(e) is the mechanical proxy that fails the check itself, not just blocks the merge
-      #       button)
-      #   (f) fail if a real Embedder/Summarizer/Reranker adapter's __init__ doesn't declare gpu_lock
-      #   (g) fail if a module source file has no sibling test file
-      #   (h) grep for manual chunk_id/block_id/summary_id string-slicing outside DocumentStore
-      #   (i) zero-GPU/zero-net — already wired above via pytest-socket + CUDA_VISIBLE_DEVICES
-      # Done criterion (WORK-BREAKDOWN T-F6): a deliberately-broken sample diff for each of (a)-(i) is
-      # committed as a fixture and confirmed to fail this job.
-      # -------------------------------------------------------------------------------------------
+  # T-F6: mechanizes CONVENTIONS.md §12's checklist. Runs against the changed-file list only (never
+  # a full-repo scan — see ci/run_enforcement.py's module docstring for why a full-repo scan would
+  # make this job fail on every future unrelated push once real vendor adapters land).
+  enforcement:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Full history, not the default shallow clone: checks (a)-(d)/(f)-(h) diff against the
+          # push's previous commit or the PR's merge-base, both of which need real ancestor commits
+          # to exist locally. fetch-depth: 0 also brings in origin/main's remote-tracking ref,
+          # needed below for a branch's first push (no "before" commit of its own yet).
+          fetch-depth: 0
+
+      # Belt-and-suspenders for the "first push of a new branch" case (ci/checks/changed_files.py):
+      # explicit, not relying solely on checkout's fetch-depth: 0 behavior, since that push has no
+      # prior commit on its own branch to diff against and needs origin/main's tip to compute a
+      # merge-base with.
+      - name: Ensure origin/main is available for diff-base computation
+        run: git fetch origin main
+
+      - name: Set up conda env
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          environment-file: environment.yml
+          activate-environment: agent-rag-research
+
+      # (a)-(d), (f)-(h): lexical/structural checks against the changed-file list. (e) (the
+      # foundation-change label) only runs inside this same step when the event is `pull_request` —
+      # ci/run_enforcement.py prints an explicit "skipped" line on `push` instead of silently
+      # omitting it, since a push event carries no PR label context to check at all.
+      - name: Run CONVENTIONS.md §12 checks (a)-(d), (f)-(h), and (e) on pull_request
+        shell: bash -l {0}
+        run: python -m ci.run_enforcement
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
+
+      # (i) is proven, not enforced here — the actual zero-socket wiring lives in `unit-tests`
+      # (pytest-socket's `--disable-socket`, pyproject.toml's default addopts) and
+      # `CUDA_VISIBLE_DEVICES=""` (set in that job's own step). This step is the Done-criterion
+      # proof that the wiring really blocks a real network call, not just "would have been slow" —
+      # see ci/proof_socket_block/test_real_network_blocked.py's module docstring for why it's run
+      # explicitly here instead of inside the normal `unit-tests` suite.
+      - name: Prove check (i)'s socket-block wiring actually blocks a real connection
+        shell: bash -l {0}
+        run: pytest ci/proof_socket_block/ -v --disable-socket
 
   # Real-adapter contract tests + the retrieval eval run nightly/on-demand, not on every push
   # (TEST-STRATEGY.md "CI expectations") — add a separate scheduled workflow once those adapters exist.
