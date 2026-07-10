@@ -398,8 +398,8 @@ class RerankCandidate:
     id: str                # chunk_id or summary_id — same id space as Hit
     text: str               # the text to score against the query (chunk/summary text)
 
-# Reranker.rerank(query: str, candidates: list[RerankCandidate]) -> list[Hit]
-#   Returns the same ids, reordered/rescored by the cross-encoder; length <= len(candidates).
+# Reranker.rerank(query: str, candidates: list[RerankCandidate]) -> list[RerankCandidate]
+#   Returns the same candidates, reordered by the cross-encoder; length <= len(candidates).
 ```
 
 - **Vendor:** the cross-encoder client (BGE-reranker-v2-m3 or the Spike-2 choice, ADR-10) is imported
@@ -412,7 +412,7 @@ class RerankCandidate:
   every Retriever test pass identically whether or not `rerank()` is even called, which leaves the
   ship-critical rerank stage with zero unit-test coverage (a `retrieve()` that drops the rerank call, reranks
   the wrong slice, or mismatches ids would still pass). Use a **deterministic non-identity reorder** instead
-  (e.g. reverse the input order, scores descending by reversed index) and give it a call-recording `.calls`
+  (reverse the input candidate order) and give it a call-recording `.calls`
   list (`(query, [c.id for c in candidates])` per invocation). Every Retriever test that exercises the
   reranked path must assert **both**: (a) `reranker.calls` is non-empty with the expected candidate ids, and
   (b) the final result order matches the fake's (reversed) order and **differs from** the pre-rerank RRF
