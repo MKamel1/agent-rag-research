@@ -293,6 +293,15 @@ judgment and stay as review items.
       passing on a CI box (or local dev machine) that happens to have network or a GPU attached. The
       "downstream tests are zero-GPU/zero-network" rule (TEST-STRATEGY.md golden rule) is otherwise only
       prose — see §0.1: a rule an agent can bypass by reaching for a live dependency isn't a real guardrail.
+
+**These two checks are curated allowlists, not derived.** The vendor-isolation check
+(`ci/checks/vendor_isolation.py`, `VENDOR_RULES`) and the GPU-adapter check (`ci/checks/gpu_lock.py`,
+`_ADAPTER_SUFFIXES`) only guard the vendor tokens and adapter class-name suffixes actually listed in them — a
+green CI run does **not** prove isolation or lock-coverage for a vendor or adapter class that isn't listed yet.
+So whenever a PR introduces a new real vendor import (§1 table) or a new GPU-bound adapter class (§6), it
+**must** add the matching entry to the corresponding list in `ci/checks/` in the *same* PR; otherwise the check
+passes green while guarding nothing — the exact "green but not enforcing" failure §0.1 exists to prevent.
+
 - [ ] *(review)* Any dependency constructed inside a module instead of injected? → reject.
 - [ ] *(review)* Does a "simple change" here force edits in several files? (change amplification) → discuss
       the design.
