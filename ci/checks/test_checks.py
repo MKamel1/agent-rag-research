@@ -7,6 +7,7 @@ shouldn't flag — not just that it "looks right". Collected by the default `pyt
 (they aren't named `test_*.py`) and never executed (checks only read their source text/AST).
 """
 
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -26,6 +27,9 @@ from ci.checks import (
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+# "negative_examples" also appears in pyproject.toml's `extend-exclude` (keeps ruff off it) and
+# ci/run_enforcement.py's _EXCLUDED_PREFIXES (keeps it out of the real enforcement scan) -- if this
+# path ever moves, update all three.
 FIXTURES = Path(__file__).resolve().parent / "negative_examples"
 
 
@@ -103,6 +107,26 @@ def test_check_c_passes_specific_except():
     assert check_c([f]) == []
 
 
+def test_check_c_fails_closed_when_ruff_itself_errors(monkeypatch):
+    # ruff can error on a given file independently of whether that file has a blind/bare except
+    # (a crash, an unreadable file, an internal error) -- a nonzero exit with empty stdout. This
+    # check is the *only* place ruff runs in the enforcement job (no repo-wide `ruff check .`
+    # backstop), so silently reading that as "no violation" is a fail-open with no safety net
+    # (PR #12 design review, finding 2). Simulate the failure directly at the subprocess boundary
+    # so the test doesn't depend on finding an input that happens to make the real ruff binary
+    # misbehave the same way in every environment/version.
+    def fake_run(*args, **kwargs):
+        return subprocess.CompletedProcess(
+            args=args[0], returncode=2, stdout="", stderr="ruff: panicked"
+        )
+
+    monkeypatch.setattr("ci.checks.blind_except.subprocess.run", fake_run)
+    f = _fixture("blind_except_good.py", logical_path="rag/harvester.py")
+    violations = check_c([f])
+    assert len(violations) == 1
+    assert violations[0].check == "c"
+
+
 # --- (d) os.getenv/os.environ -------------------------------------------------------------------
 
 
@@ -167,6 +191,33 @@ def test_check_g_passes_module_with_real_sibling_test():
 def test_check_g_ignores_files_outside_rag_and_contracts():
     f = _fixture("sibling_tests_bad/lonely_module.py", logical_path="ci/checks/lonely_module.py")
     assert check_g([f], REPO_ROOT) == []
+
+
+def test_check_g_flags_deleted_test_file_whose_module_still_exists(tmp_path):
+    # rag/config.py is still on disk (untouched by this diff); rag/test_config.py was deleted by
+    # this diff and so never becomes a DiffFile (build_diff_files drops deletions, and _in_scope
+    # excludes test_-prefixed files anyway) -- check_g must still catch the module silently losing
+    # its only test coverage. This is finding 1 from the PR #12 design review.
+    (tmp_path / "rag").mkdir()
+    (tmp_path / "rag" / "config.py").write_text("VALUE = 1\n")
+    violations = check_g([], tmp_path, deleted_paths=["rag/test_config.py"])
+    assert len(violations) == 1
+    assert violations[0].check == "g"
+    assert violations[0].path == "rag/test_config.py"
+
+
+def test_check_g_ignores_deleted_test_file_whose_module_is_also_deleted(tmp_path):
+    # Both rag/config.py and rag/test_config.py are gone -- nothing left to lose test coverage.
+    (tmp_path / "rag").mkdir()
+    violations = check_g([], tmp_path, deleted_paths=["rag/test_config.py"])
+    assert violations == []
+
+
+def test_check_g_ignores_deleted_test_file_outside_pipeline_scope(tmp_path):
+    (tmp_path / "ci" / "checks").mkdir(parents=True)
+    (tmp_path / "ci" / "checks" / "foo.py").write_text("VALUE = 1\n")
+    violations = check_g([], tmp_path, deleted_paths=["ci/checks/test_foo.py"])
+    assert violations == []
 
 
 # --- (h) manual chunk_id/block_id/summary_id slicing ----------------------------------------

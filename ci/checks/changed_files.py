@@ -62,6 +62,23 @@ def list_changed_paths(diff_base: str, repo_root: Path) -> list[str]:
     return [p for p in result.stdout.splitlines() if p]
 
 
+def list_deleted_paths(diff_base: str, repo_root: Path) -> list[str]:
+    """Repo-relative paths the diff between `diff_base` and `HEAD` *deleted* -- the subset of
+    `list_changed_paths` that no longer exists on disk at `HEAD`. `ci.checks.diff.build_diff_files`
+    drops these (nothing to lint in a file that's gone), so this is the one place that information
+    survives long enough to reach `ci.checks.sibling_tests.check_g`, which needs it to notice a
+    deleted test file whose module wasn't otherwise touched (PR #12 design review, finding 1).
+    """
+    result = subprocess.run(
+        ["git", "diff", "--name-only", "--diff-filter=D", diff_base, "HEAD"],
+        cwd=repo_root,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return [p for p in result.stdout.splitlines() if p]
+
+
 def compute_changed_files(event_name: str, event: dict, repo_root: Path) -> list[str]:
     """Convenience wrapper: `list_changed_paths(compute_diff_base(...), repo_root)`."""
     return list_changed_paths(compute_diff_base(event_name, event, repo_root), repo_root)

@@ -11,6 +11,13 @@ Ruff lints a whole file (it has to — a diff hunk alone isn't valid Python to p
 reports a violation only when the flagged line is also one of the diff's added lines; that keeps
 the check diff-scoped like every other lexical check here, even though the underlying tool sees
 the whole file.
+
+This is the *only* place ruff runs in the `enforcement` job — there is no repo-wide `ruff check .`
+step backstopping it — so if ruff itself errors on a file (crashes, can't read it, an internal
+panic: nonzero exit, empty stdout) that must surface as a check failure, not be read as "ran clean,
+no violations" (PR #12 design review, finding 2: this used to fail open on exactly that shape,
+since `subprocess.run(..., check=False)` never inspected `returncode` and empty stdout alone was
+treated as "clean").
 """
 
 from __future__ import annotations
@@ -43,6 +50,24 @@ def check_c(files: list[DiffFile]) -> list[Violation]:
             text=True,
             check=False,
         )
+        # ruff's own exit-code convention: 0 = ran clean, no violations; 1 = ran fine, found
+        # violations (reported via stdout JSON below, same as always); anything else means ruff
+        # itself failed to run (crash, unreadable file, internal panic) rather than having an
+        # opinion about this file's content -- that must surface as a check failure, not silently
+        # read as "no violation" just because stdout also happened to be empty.
+        if result.returncode not in (0, 1):
+            violations.append(
+                Violation(
+                    check="c",
+                    path=f.path,
+                    message=(
+                        f"ruff exited {result.returncode} while checking this file, instead of "
+                        f"running cleanly -- treating as a check failure, not a pass: "
+                        f"{result.stderr.strip() or '(no stderr)'}"
+                    ),
+                )
+            )
+            continue
         if not result.stdout.strip():
             continue
         for diagnostic in json.loads(result.stdout):

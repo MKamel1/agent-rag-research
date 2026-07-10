@@ -18,6 +18,10 @@ see `_is_scannable`), and (a)/(d)/(g)/(h) further scope themselves to `rag/`/`co
 (`ci.checks.model.in_pipeline_scope`) since their CONVENTIONS.md rules are about the pipeline's own
 modules, not this repo's CI tooling — each check's own module docstring explains its scope.
 
+`check_g` additionally gets `list_deleted_paths(diff_base, REPO_ROOT)` — the raw deleted-path list
+`build_diff_files` otherwise throws away — so it can catch a deleted `test_<name>.py` whose sibling
+module survives untouched (PR #12 design review, finding 1); see `ci/checks/sibling_tests.py`.
+
 `ci/checks/negative_examples/` and `ci/proof_socket_block/` are excluded from this scan: they are
 intentionally-bad (or intentionally-real-network) reference material committed so
 `ci/checks/test_checks.py` and the check (i) proof test can point at them directly — not "the
@@ -53,7 +57,7 @@ from ci.checks import (
     discover_contract_names,
     read_codeowners_paths,
 )
-from ci.checks.changed_files import compute_diff_base, list_changed_paths
+from ci.checks.changed_files import compute_diff_base, list_changed_paths, list_deleted_paths
 from ci.checks.diff import build_diff_files
 from ci.checks.model import Violation
 
@@ -61,6 +65,10 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 
 # Paths that exist only to be pointed at by ci/checks/test_checks.py (or, for the socket-block
 # fixture, run explicitly as their own workflow step) -- never "the diff" this job lints.
+#
+# "ci/checks/negative_examples/" also appears in pyproject.toml's `extend-exclude` (keeps ruff off
+# it) and ci/checks/test_checks.py's FIXTURES (points the self-tests at it) -- if this path ever
+# moves, update all three.
 _EXCLUDED_PREFIXES = ("ci/checks/negative_examples/", "ci/proof_socket_block/")
 
 
@@ -77,6 +85,7 @@ def main() -> int:
 
     diff_base = compute_diff_base(event_name, event, REPO_ROOT)
     changed = list_changed_paths(diff_base, REPO_ROOT)
+    deleted = list_deleted_paths(diff_base, REPO_ROOT)
     scannable = [p for p in changed if _is_scannable(p)]
     files = build_diff_files(scannable, REPO_ROOT, diff_base)
 
@@ -86,7 +95,7 @@ def main() -> int:
     violations += check_c(files)
     violations += check_d(files)
     violations += check_f(files)
-    violations += check_g(files, REPO_ROOT)
+    violations += check_g(files, REPO_ROOT, deleted_paths=deleted)
     violations += check_h(files)
 
     if event_name == "pull_request":
