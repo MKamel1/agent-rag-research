@@ -593,6 +593,11 @@ CREATE TABLE chunks (
   contextual_header TEXT
 );
 
+-- DocumentStore reconstruction (get/get_paper) filters blocks and chunks by paper_id; without these
+-- indexes each lookup full-scans these ~1-5M-row tables on the always-on query server at corpus_cap ~15k.
+CREATE INDEX idx_blocks_paper_id ON blocks(paper_id);
+CREATE INDEX idx_chunks_paper_id ON chunks(paper_id);
+
 CREATE TABLE summaries (
   summary_id   TEXT PRIMARY KEY,
   paper_id     TEXT NOT NULL REFERENCES papers(paper_id),
