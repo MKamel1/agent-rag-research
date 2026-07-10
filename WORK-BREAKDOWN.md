@@ -130,6 +130,8 @@ M1a, before this implementation existed") **plus** the specifics below.
   bug). Tested end-to-end with all fakes (incl. `FakeGpuLock`) and a poisoned paper.
 - **T-B1 Parser (M2)** — the Phase-0-chosen adapter behind the `Parser` interface + PDF/LaTeX routing +
   GROBID references. *Accept:* golden fixtures pass; every block has page+bbox; broken PDF → quarantine.
+  *CI-allowlist:* introduces the real parser vendor (MinerU/Marker/Docling/GROBID) → add it to `VENDOR_RULES`
+  in `ci/checks/vendor_isolation.py` in this same PR (§12; CI green doesn't prove isolation for an unlisted vendor).
 - **T-C1 Chunker (M3)** — section-aware, parent-child links (`parent_id` always a `block_id`, per the
   multi-block anchoring rule in DATA-CONTRACTS), anchors preserved, equations/code never split,
   title+section-path prefix. **Do NOT implement contextual-header generation** — it's a V1 feature (PRD
@@ -144,9 +146,15 @@ M1a, before this implementation existed") **plus** the specifics below.
   `FakeGpuLock` test proves Summarizer acquires `gpu_lock.acquire("summarize")` and never co-resides with
   Embedder/Reranker; degenerate/figures-only `ParsedDoc` → `PermanentError` → quarantine, not a crash. Tested
   via `FakeSummarizer` for anything downstream (zero GPU).
+  *CI-allowlist:* introduces the real generation-LLM vendor and a GPU-bound adapter → add it to `VENDOR_RULES`
+  and confirm its class name is covered by `_ADAPTER_SUFFIXES` in `ci/checks/` in this same PR (§12; CI green
+  doesn't prove isolation/lock-coverage for an unlisted vendor/adapter).
 - **T-C3 Embedder (M4)** — real adapter (TEI/vLLM), constructor takes `gpu_lock: GpuLock`, `embed()` +
   `info`. *Accept:* the Embedder **contract test** passes against fake and real (determinism, length, dim,
   normalization); real adapter acquires `gpu_lock.acquire("embed")` around the batch call.
+  *CI-allowlist:* introduces the real embedding vendor (TEI/vLLM client) and a GPU-bound adapter → add it to
+  `VENDOR_RULES` and confirm its class name is covered by `_ADAPTER_SUFFIXES` in `ci/checks/` in this same PR
+  (§12; CI green doesn't prove isolation/lock-coverage for an unlisted vendor/adapter).
 - **T-D1 DocumentStore (M5)** — SQLite + blob filesystem;
   `put/get/get_blocks/get_block/get_chunk/get_summary/get_span/iter_papers`. *Accept:* `put` **atomic** —
   a test injects a failure between the `blocks` and `chunks` inserts inside one `put()` and asserts, via a
@@ -165,6 +173,8 @@ M1a, before this implementation existed") **plus** the specifics below.
   `rebuild()` reproduces results, and **top-1** agreement between `FakeVectorStore` and real Qdrant on an
   engineered fixture (not full-ordering equality — TEST-STRATEGY.md explains why that's unachievable).
   **Only** module importing `qdrant_client`.
+  *CI-allowlist:* `qdrant_client` is the real vendor → add it to `VENDOR_RULES` in `ci/checks/vendor_isolation.py`
+  in this same PR (§12; CI green doesn't prove isolation for an unlisted vendor).
 - **T-E1 Retriever (M7)** — two methods sharing one pipeline: embed-query → hybrid → RRF → rerank (injected
   `Reranker` dependency; real adapter takes `gpu_lock: GpuLock`, `FakeReranker` — **non-identity,
   call-recording** — in tests) → resolve. `retrieve()` restricts to `kind="chunk"`, resolves each `Hit` via
@@ -186,6 +196,9 @@ M1a, before this implementation existed") **plus** the specifics below.
   (if a cross-encoder score is later surfaced, adding a nullable `score` field to `RerankCandidate` would
   follow this repo's existing forward-compat-nullable convention, e.g. `Chunk.contextual_header`).
   `retrieve()` runs the Spike-2 eval set.
+  *CI-allowlist (Reranker):* the real `Reranker` adapter introduces the cross-encoder vendor and a GPU-bound
+  adapter → add it to `VENDOR_RULES` and confirm its class name is covered by `_ADAPTER_SUFFIXES` in
+  `ci/checks/` in this same PR (§12; CI green doesn't prove isolation/lock-coverage for an unlisted vendor/adapter).
 - **T-E2 McpServer (M8)** — `search_papers`/`semantic_search`/`get_paper`/`get_span`. *Accept:* every tool
   returns records (never bare text); `search_papers` calls `Retriever.retrieve_papers()` and returns the
   typed `PaperSearchResponse` (`results` + `Coverage`); `semantic_search` calls `Retriever.retrieve()` and
