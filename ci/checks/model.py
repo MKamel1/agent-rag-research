@@ -18,6 +18,8 @@ from pathlib import Path
 # those checks would flag their own implementation on the very push that adds them — the
 # self-referential trap this ticket's design constraint warns about, just one level removed from
 # the "negative_examples" one.
+#
+# Curated, not derived -- extend this when a new top-level pipeline module/adapter directory lands.
 PIPELINE_SCOPE_PREFIXES = ("rag/", "contracts/")
 
 

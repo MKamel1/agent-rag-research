@@ -18,6 +18,8 @@ import re
 
 from ci.checks.model import DiffFile, Violation, in_pipeline_scope
 
+# Curated, not derived -- extend/update this if `DocumentStore` (the one module allowed to slice
+# these ids) ever moves or gains a sibling once M5/T-D1 lands it.
 EXEMPT_PATH = "rag/document_store.py"
 
 _ID_FIELDS = r"(?:chunk_id|block_id|summary_id)"

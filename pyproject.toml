@@ -28,6 +28,10 @@ line-length = 100
 # each of CONVENTIONS §12(a)-(h) needs a committed fixture proven to fail its check) — not a
 # lint target. Excluding it here keeps `ruff check .` clean without watering down what it means
 # for the rest of the tree to be clean.
+#
+# This path string also appears in ci/run_enforcement.py's _EXCLUDED_PREFIXES (keeps it out of the
+# real enforcement scan) and ci/checks/test_checks.py's FIXTURES (points the self-tests at it) --
+# if this path ever moves, update all three.
 extend-exclude = ["ci/checks/negative_examples"]
 
 [tool.ruff.lint]

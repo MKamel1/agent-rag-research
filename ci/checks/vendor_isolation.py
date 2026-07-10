@@ -35,6 +35,7 @@ class VendorRule:
     allowed_paths: tuple[str, ...]  # repo-relative paths this token is allowed to appear in
 
 
+# Curated, not derived -- extend this when a new vendor SDK/adapter lands (see module docstring).
 VENDOR_RULES: tuple[VendorRule, ...] = (
     VendorRule("qdrant", re.compile(r"qdrant", re.I), ("rag/vector_index.py",)),
     VendorRule("mineru", re.compile(r"mineru", re.I), ("rag/parser.py",)),
