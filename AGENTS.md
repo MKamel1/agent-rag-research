@@ -61,7 +61,7 @@ later session (or the human) can see who's doing what:
 
 | Owner | Modules | Session/agent | Status |
 |---|---|---|---|
-| F | Shared foundation (T-F1…T-F7) | _unassigned_ | not started |
+| F | Shared foundation (T-F1…T-F7) | _unassigned_ | done — frozen at `foundation-v0-frozen` |
 | A | Harvester, Orchestrator | _unassigned_ | not started |
 | B | Parser | _unassigned_ | not started |
 | C | Chunker, Summarizer, Embedder | _unassigned_ | not started |
