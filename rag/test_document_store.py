@@ -102,7 +102,7 @@ def make_parsed_doc(**o) -> ParsedDoc:
         figures=[],
         tables=[],
         references=[],
-        parser_id="mineru-1.x",
+        parser_id="test-parser-1.x",
     )
     f.update(o)
     return ParsedDoc(**f)
