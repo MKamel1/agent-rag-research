@@ -97,8 +97,14 @@ building. Do not lower the bar silently; grounding is the product.
 **Gate (pass/fail):**
 - Lock the embedder, reranker, and retrieval config (top-k, hybrid weights, rerank depth).
 - **Recall@10 ≥ ~0.85.**
-- **Hybrid must beat dense enough to justify its complexity** — if it doesn't, drop it (don't carry complexity
-  that doesn't earn its keep). Same test for the reranker.
+- **Hybrid and the reranker are kept in V0/V1 regardless of this spike's result** — the eval set is
+  synthetic (a question generated from its own gold chunk), which is directionally biased toward making
+  both components look unnecessary (shared vocabulary inflates lexical/dense match) exactly when they
+  exist to rescue real, vocabulary-mismatched research questions the synthetic eval underrepresents. The
+  synthetic eval's shared-vocabulary bias cannot be trusted to justify dropping either. Spike 2's job here
+  is to **lock the retrieval config** (embedder choice, top-k, hybrid weights, rerank depth) and confirm
+  Recall@10 ≥ ~0.85, not to decide keep/drop. A future post-V0/V1 revisit may reconsider dropping either
+  component, but only against a human-phrased (not synthetic) eval set.
 
 **Output:** locked `Embedder` model + `EmbedderInfo.version`, reranker choice, and the `Config` retrieval
 knobs. The eval set becomes the **permanent regression gate** for any future model/DB swap (TEST-STRATEGY).
