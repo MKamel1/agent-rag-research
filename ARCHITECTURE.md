@@ -85,18 +85,18 @@ Ten modules, each independently ownable (owners A–F) and testable through its 
 - **Interface:** `summarize(ParsedDoc) -> str` (returns `summary_text`; `summary_id` is always the
   deterministic `f"{paper_id}:summary"`, per DATA-CONTRACTS §IDs — never invented by this module).
   - *Invariants:* non-empty output; **GPU-bound** — the local generation LLM (ADR-08, served per
-    ADR-09) is subject to the single-GPU lock exactly like Embedder and the reranker (operational
-    invariant §3 below) and never co-resides with them.
+    ADR-09) acquires the shared `GpuLock` around its inference call exactly like Embedder and the
+    reranker (Operational invariants §3 below); it is expected to **co-reside** with them in VRAM
+    for the life of the process, not be evicted between calls.
   - *Errors:* a `ParsedDoc` with no usable prose (e.g. figures-only after a bad parse) → `PermanentError`
     → quarantine, not a crash.
 - **Hides (depth):** the summarization prompt, the model choice/serving stack, GPU-lock acquisition.
 - **Seam:** *hypothetical* (one local model, no plugin registry — principle 4) — but its LLM client is
   still an **injected dependency** (principle 3, same as every module), so a deterministic
   `FakeSummarizer` powers zero-GPU downstream tests exactly as `FakeEmbedder` does.
-- **Note — this module was missing from earlier drafts of this doc** even though `PaperRecord`
-  (DATA-CONTRACTS §M5) already required `summary_text`/`summary_id` as non-nullable fields. Summaries
-  are in V0 scope (CONTEXT.md's V0 definition names them explicitly) — do not defer this to V1 by
-  analogy with contextual headers; it's a different decision.
+- **Note:** `PaperRecord` (DATA-CONTRACTS §M5) requires `summary_text`/`summary_id` as non-nullable
+  fields. Summaries are in V0 scope (CONTEXT.md's V0 definition names them explicitly) — do not defer
+  this to V1 by analogy with contextual headers; it's a different decision.
 - **Test:** `ParsedDoc` fixture → non-empty `summary_text`; the GPU-lock test asserts Summarizer and
   Embedder never hold the lock simultaneously (shared test with Embedder/Orchestrator).
 
@@ -175,7 +175,7 @@ Ten modules, each independently ownable (owners A–F) and testable through its 
 - **Seam:** *internal* seams for (V2) HyDE / graph-expansion. **External interface is stable across V1–V3**
   (V1–V3 only add fields to `GroundedResult`/`PaperSearchResult` or new methods, per Extensibility below).
 - **Test:** seed stores (incl. `FakeReranker`) with fixtures → assert `retrieve()` returns expected
-  grounded passages and `retrieve_papers()` returns expected unanchored paper results; the ~50-question
+  grounded passages and `retrieve_papers()` returns expected unanchored paper results; the ~200-question
   **Spike-2 eval set** runs against `retrieve()` (Recall@10 / MRR).
 
 ### M8 · McpServer  *(owner E)* — protocol edge (acceptably thin)
@@ -196,9 +196,13 @@ Ten modules, each independently ownable (owners A–F) and testable through its 
 - **Interface:** `ingest(focus_area, cap)` — runs harvest→parse→{chunk, summarize}→embed→**compute
   relevance_score**→store.
   - *Invariants:* **idempotent, resumable, checkpointed per stage**; writes source-of-truth *before*
-    the derived index (ordering invariant, §6A); **single-GPU backpressure** so stages don't thrash VRAM
-    (Embedder, Summarizer, and the reranker never co-reside — Operational invariants §3 below, `GpuLock`
-    per DATA-CONTRACTS.md).
+    the derived index (ordering invariant, §6A); **single-GPU compute serialization** via `GpuLock`
+    (Operational invariants §3 below, DATA-CONTRACTS.md) so two GPU-bound calls never execute at the
+    same instant — Embedder, Summarizer, and the reranker are expected to **co-reside** in VRAM within
+    the 24GB budget, not be evicted between stages.
+  - *Pipelining:* the Orchestrator pipelines CPU-bound work (harvest/parse/chunk/store) for paper N+1
+    concurrently with GPU-bound work for paper N, so the GPU-bound-call queue never sits idle waiting on
+    CPU stages — this, not model eviction, is how the single GPU is kept busy.
   - *`relevance_score` (DATA-CONTRACTS §M5):* after Summarizer produces `summary_text` and before
     `DocumentStore.put`, the Orchestrator computes `cosine(embedder.embed([summary_text])[0],
     topic_query_vec)` using the **same injected `Embedder`** (no new dependency) and sets it on the
@@ -208,9 +212,8 @@ Ten modules, each independently ownable (owners A–F) and testable through its 
     paper. The query string is identical for every paper in a run; embedding it inside the per-paper loop
     (an easy mistake — it reads naturally as "compute both vectors, then score") means calling `embed()`
     on a constant value `corpus_cap` times (15,000 at V0's cap), each acquiring `GpuLock` for no reason.
-    This was previously named only in `PaperRef`/the SQL schema with no module actually assigned to
-    compute it — the Orchestrator is the owner now; `PaperRef.relevance_score` itself stays `None` (it
-    can't be computed before a summary exists).
+    The Orchestrator owns computing it; `PaperRef.relevance_score` itself stays `None` (it can't be
+    computed before a summary exists).
 - **Hides (depth):** staging, checkpoints, resume, dedup, GPU queueing, relevance-score computation.
 - **Seam:** composes the stage modules. **V1 adds a `ClaimExtractor` stage** — the orchestrator gains a
   stage; no other module changes.
@@ -238,35 +241,37 @@ Full patterns + code-shape in `CONVENTIONS.md`; schemas in `DATA-CONTRACTS.md`.
    to `quarantine(paper_id, stage, error, ts)` and the pipeline **continues**. Quarantine is visible and
    re-runnable; it is *never* a silent `except: pass`. Transient errors retry with backoff; contract
    violations crash early (they are bugs, not data problems).
-3. **Single GPU = one GPU-bound model resident at a time (a hard residency rule, not just a call-serialization
-   rule).** The embedder, reranker, and any summarizer **cannot co-reside** at working precision on 24 GB.
-   This has **two distinct mechanisms**, because a file lock around an inference call is not sufficient by
-   itself — models served by long-running processes (TEI, Ollama) stay resident in VRAM after the call
-   returns and the lock releases, so two such services can co-reside regardless of who held the lock during
-   the call:
-   - **(1) Stage-batched ingestion (the residency mechanism).** `IngestionOrchestrator` (M9) runs GPU stages
-     as sequential **batches**, not interleaved per-paper calls: embed *all* pending texts for the batch,
-     then explicitly **evict** the embedding model (e.g. Ollama `keep_alive=0`; stop/unload the TEI
-     container or model), *then* summarize all pending texts, evict, and so on. Residency is sequential
-     **by pipeline design** — the Orchestrator itself unloads a stage's model before the next stage's model
-     loads — not an accident of lock timing. This is the fix for the actual invariant ("cannot co-reside"):
-     no adapter is ever resident while another is being loaded for the next stage.
-   - **(2) `GpuLock` — cross-process COMPUTE serializer, not a residency guarantee.** `IngestionOrchestrator`
-     (M9) and `McpServer` (M8) are the system's two composition roots and V0 explicitly allows them to run
-     concurrently as separate processes (a multi-day ingest next to an always-on query server) — the typed,
-     injected **`GpuLock`** (DATA-CONTRACTS.md "GpuLock" section) serializes *inference calls* across that
-     process boundary so two GPU-bound calls never execute at the same instant, backed by a cross-process
-     file lock keyed off `Config.gpu_lock_path`. This is real and still needed (e.g. the always-on
-     `McpServer`'s reranker call vs. a running ingest stage), but **acquiring the lock around a call does
-     not evict a resident model when the call returns** — that is (1)'s job, not the lock's. Do not treat
-     "the lock serialized our calls" as proof that two models can't be resident simultaneously.
-   - **Sizing consequence:** because `McpServer`'s reranker is normally resident for the life of the
-     always-on query server, ingestion's stage batches must be sized (and their own models evicted) with
-     that standing residency already accounted for, not against the full 24 GB.
+3. **Single GPU = use it to its best, don't idle it.** The goal is to keep the one 24GB GPU busy and
+   minimize total run time — not to reload/unload models between stages, which idles the GPU on every
+   stage transition and works against that goal. Per PRD ADR-02/ADR-08's VRAM arithmetic (embedder
+   ~8.5GB @ Q8, summarizer ~7-8GB 4-bit, reranker ~1-2GB, ≈ 17-18GB total), the embedder, summarizer, and
+   reranker are **expected to co-reside** within the 24GB budget for the life of the process — they stay
+   loaded simultaneously, nobody evicts anybody.
+   - **`GpuLock` — cross-process compute serializer only.** `IngestionOrchestrator` (M9) and `McpServer`
+     (M8) are the system's two composition roots and V0 explicitly allows them to run concurrently as
+     separate processes (a multi-day ingest next to an always-on query server) — the typed, injected
+     **`GpuLock`** (DATA-CONTRACTS.md "GpuLock" section) serializes *inference calls* across that process
+     boundary so two GPU-bound calls never execute at the same instant, backed by a cross-process file
+     lock keyed off `Config.gpu_lock_path`. It does not manage residency or eviction — that is not its
+     job. In V0, a query simply queues behind an in-flight ingest call: no priority, no timeout. This is
+     an accepted V0 simplification, revisit only if it proves to be a real problem in practice.
+   - **The ~17-18GB co-residence estimate is unmeasured.** PHASE0-RUNBOOK.md's S0 step boots **both**
+     composition roots concurrently against the real serving stack and reads **peak concurrent VRAM** to
+     confirm it actually fits, and decides/documents whether the two processes share one embedding server
+     or each stands up its own (a VRAM-doubling ambiguity otherwise left open). If the measurement comes
+     back over budget (considered unlikely per the arithmetic above), the documented fallback is to
+     reconsider model choice/quantization — not stage-batched eviction; nothing is built for this
+     contingency now.
+   - **Keeping the GPU busy is pipelining, not eviction.** `IngestionOrchestrator` pipelines CPU-bound
+     work (harvest/parse/chunk/store) for paper N+1 concurrently with GPU-bound work for paper N, so the
+     GPU-bound-call queue never runs dry waiting on CPU work (M9 above). This is a design property of
+     T-A2, not a new type or contract.
+   - **If you see CUDA OOM,** the most likely cause is that the measured/assumed co-residence budget was
+     wrong — re-check the Phase-0 VRAM measurement and the model quantization choices. Co-residence is the
+     expected, correct steady state, not a bug to diagnose away.
    - "Backpressure" = a bounded queue so CPU stages (harvest, parse, DB writes) don't run arbitrarily far
-     ahead of the GPU. Never assume two models fit, and never write a GPU-bound adapter that skips
-     acquiring the lock "because this call is quick" — the lock still matters for call-level serialization,
-     it just isn't the residency mechanism.
+     ahead of the GPU. Never write a GPU-bound adapter that skips acquiring `GpuLock` "because this call is
+     quick" — the lock is what keeps two GPU-bound calls from executing at the same instant.
 
 **Dependency-direction rule (prevents the leak juniors always cause).** Vendor SDKs live **only** inside their
 adapter: `qdrant_client` is imported **only** by the `VectorStore` adapter (M6); the embedding client only by
@@ -306,7 +311,7 @@ Every future feature is a **new adapter, new module, or new stage** behind a sta
   correctness can't be faked.
 - **Contract tests at swap seams:** the same assertion suite runs against the fake *and* the real
   adapter (fake `VectorStore` vs Qdrant; fake vs real `Embedder`), so swaps are safe.
-- **Retrieval eval set** (Spike 2, ~50 causal-domain questions) runs against `Retriever.retrieve()` as the
+- **Retrieval eval set** (Spike 2, ~200 causal-domain questions) runs against `Retriever.retrieve()` as the
   headline quality gate (Recall@10, MRR) and the regression gate for any future model/DB swap.
 
 ## Ownership & parallelization

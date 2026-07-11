@@ -70,6 +70,11 @@ Concretely, for this build:
    at by default. Where a cheap mechanical proxy exists (e.g. grepping for manual `chunk_id`/`block_id`/
    `summary_id` string-slicing outside `DocumentStore`, §12), take it; where none exists, flag it in review
    rather than assuming the mechanical gates already cover it.
+9. **No review-history narration in frozen specs.** Don't write sentences like "this module was missing
+   from earlier drafts," "the reviewed design left X undocumented," or "previously mis-cited as ADR-N" into
+   spec prose or `contracts/*.py` docstrings — that's noise to a memoryless agent re-reading cold. Rationale
+   for past changes belongs in ADRs or git history; a frozen spec/docstring describes only the current,
+   in-force state.
 
 ---
 
@@ -170,36 +175,46 @@ one source of truth for progress.
 
 ## 6. The single-GPU rule (the hardest constraint — DoD "critical constrained resource")
 
-24 GB holds **one** GPU-bound model at working precision at a time. Embedder, reranker, and any summarizer
-**cannot co-reside**. This is a **residency** invariant, and it takes two mechanisms to deliver — a lock
-around an inference call does not by itself keep two models from being resident at once, because a model
-served by a long-running process (TEI, Ollama) stays loaded in VRAM after the call returns and the lock
-releases:
+Use the one 24GB GPU to its best: keep it busy, don't idle it, minimize total run time. Per PRD
+ADR-02/ADR-08's VRAM arithmetic (embedder ~8.5GB @ Q8, summarizer ~7-8GB 4-bit, reranker ~1-2GB, ≈
+17-18GB total), the embedder, reranker, and summarizer are **expected to co-reside** within the 24GB
+budget — they stay loaded simultaneously, nobody evicts anybody. Reloading/unloading models between
+stages would waste time and idle the GPU on every stage transition, working against the goal — reject
+that as a mechanism.
 
-1. **Stage-batched ingestion + explicit eviction (the residency mechanism).** `IngestionOrchestrator` runs
-   GPU stages as sequential batches — embed everything pending, then **evict** the embedding model (Ollama
-   `keep_alive=0`; stop/unload TEI), then summarize everything pending, evict, etc. — so residency is
-   sequential by pipeline construction, not by hoping the lock's release implies unloading (ARCHITECTURE
-   "Operational invariants" §3).
-2. **`GpuLock` — cross-process compute serializer, not a residency guarantee.** A typed `GpuLock`
-   (DATA-CONTRACTS.md), constructor-injected into every real `Embedder`/`Summarizer`/`Reranker` adapter,
-   backed by a cross-process file lock keyed off `Config.gpu_lock_path`, serializes *inference calls* across
-   processes — this has to hold **across processes**, not just within one: `IngestionOrchestrator` and
-   `McpServer` are separate composition roots (§2) that V0 explicitly allows to run concurrently (a
-   multi-day ingest next to an always-on query server), so an in-process `threading.Lock` cannot be the
-   mechanism. **The adapter acquires the lock itself around its own inference call** — callers
-   (`IngestionOrchestrator`, `Retriever`) call `embed()`/`summarize()`/`rerank()` exactly as they would with
-   no lock at all. But acquiring/releasing the lock around a call does **not** unload the model when the
-   call ends — that's (1)'s job. Size ingestion's stage batches accounting for `McpServer`'s reranker being
-   normally resident the whole time the query server is up.
+`GpuLock` — a typed `GpuLock` (DATA-CONTRACTS.md), constructor-injected into every real
+`Embedder`/`Summarizer`/`Reranker` adapter, backed by a cross-process file lock keyed off
+`Config.gpu_lock_path` — is the **cross-process compute serializer**: it stops two GPU-bound inference
+calls from executing at the same instant. This has to hold **across processes**, not just within one:
+`IngestionOrchestrator` and `McpServer` are separate composition roots (§2) that V0 explicitly allows to
+run concurrently (a multi-day ingest next to an always-on query server), so an in-process
+`threading.Lock` cannot be the mechanism. **The adapter acquires the lock itself around its own
+inference call** — callers (`IngestionOrchestrator`, `Retriever`) call `embed()`/`summarize()`/`rerank()`
+exactly as they would with no lock at all. `GpuLock` does not manage residency or eviction — that is not
+its job; the models simply stay resident. **V0 fairness/timeout stance:** `acquire()` has no priority and
+no timeout — a query simply queues behind an in-flight ingest inference call. This is an accepted V0
+simplification, not an oversight; revisit only if it proves to be a real problem in practice.
+
+The ~17-18GB co-residence estimate is unmeasured — PHASE0-RUNBOOK.md's S0 step boots both composition
+roots concurrently and reads peak concurrent VRAM to confirm it fits, and decides whether the two
+processes share one embedding server or each stands up its own. If it comes back over budget (unlikely
+per the arithmetic), the documented fallback is reconsidering model choice/quantization, not
+stage-batched eviction.
+
+The Orchestrator keeps the GPU busy via **pipelining**, not eviction: CPU-bound work (harvest/parse/
+chunk/store) for paper N+1 proceeds while GPU-bound work for paper N is in flight, so the GPU-bound-call
+queue never runs dry (ARCHITECTURE "Operational invariants" §3).
 
 - There is no "or accept the load cost" fallback. If a real GPU-bound adapter's constructor doesn't declare
-  a `gpu_lock: GpuLock` parameter, that is a bug, not a judgment call — T-F6 greps for it, same as a vendor
-  import outside its adapter (§1, §12).
-- If you see CUDA OOM, the answer is almost never "reduce batch size a bit" — it's "two models are resident
-  that shouldn't be." Check (a) both processes are pointed at the same `gpu_lock_path`, and (b) the
-  ingestion stage that should have evicted its model before the next one loaded actually did — a green
-  `GpuLock` acquire/release does not prove eviction happened.
+  a `gpu_lock: GpuLock` parameter, that is a bug, not a judgment call — T-F6 greps for it as a **necessary
+  prefilter, not sufficient proof**: it only shows the parameter exists in the signature, not that
+  `acquire()` wraps the real inference call — the actual guarantor of that is the per-adapter
+  `FakeGpuLock.acquired` unit assertion (TEST-STRATEGY.md), same style as a vendor import outside its
+  adapter (§1, §12).
+- If you see CUDA OOM, the answer is almost never "reduce batch size a bit" — it most likely means the
+  measured/assumed co-residence budget was wrong. Re-check the Phase-0 VRAM measurement and the model
+  quantization choices before anything else; co-residence is the expected, correct steady state, not
+  something to diagnose away.
 
 ---
 
@@ -299,7 +314,10 @@ judgment and stay as review items.
 - [ ] **CI:** any `except Exception:` / `except:` in the diff? → fail the build.
 - [ ] **CI:** any `os.getenv`/`os.environ` outside the Config loader? → fail the build.
 - [ ] **CI:** does the real `Embedder`/`Summarizer`/`Reranker` adapter's `__init__` declare a `gpu_lock:
-      GpuLock` parameter? → fail the build if a GPU-bound real adapter omits it (§6).
+      GpuLock` parameter? → fail the build if a GPU-bound real adapter omits it (§6). This grep is a
+      **necessary prefilter, not sufficient proof** — it only shows the parameter exists in the
+      constructor signature, not that `acquire()` actually wraps the real inference call. The actual
+      guarantor of that is the per-adapter `FakeGpuLock.acquired` unit assertion (TEST-STRATEGY.md).
 - [ ] **CI:** does every module source file have a sibling test file that imports its public interface? →
       fail the build if not (§0.7's mechanical existence-proxy; the *ordering* half — test committed before
       implementation — is checked at the M1a→M1b milestone gate in WORK-BREAKDOWN.md, not per-push).

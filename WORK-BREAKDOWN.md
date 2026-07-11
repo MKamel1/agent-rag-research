@@ -72,7 +72,10 @@ mechanical gate — don't rely on every other agent remembering not to touch it.
   `except Exception`/bare `except`, (d) fails on `os.getenv`/`os.environ` outside the Config loader, (e)
   fails if a diff touches `contracts/`, `Config`, the SQLite schema, or the fakes **without** an explicit
   "foundation-change" label, (f) fails if the real `Embedder`/`Summarizer`/`Reranker` adapter's `__init__`
-  doesn't declare a `gpu_lock: GpuLock` parameter, (g) fails if a module source file has no sibling test
+  doesn't declare a `gpu_lock: GpuLock` parameter — a **necessary prefilter, not sufficient proof**: it
+  only shows the parameter exists in the signature, not that `acquire()` wraps the real inference call;
+  the actual guarantor of that is the per-adapter `FakeGpuLock.acquired` unit assertion (TEST-STRATEGY.md),
+  (g) fails if a module source file has no sibling test
   file importing its public interface, (h) fails on manual `chunk_id`/`block_id`/`summary_id` string-slicing
   outside `DocumentStore`, (i) **runs the non-adapter unit-test suites (M1, M3, M5, M7, M8, M9) with network
   mechanically blocked and GPU visibility stripped** — `pytest --p no:cacheprovider -p pytest_socket
@@ -138,10 +141,10 @@ M1a, before this implementation existed") **plus** the specifics below.
   final `relevance_score` values would pass even if the topic query were re-embedded every paper, since
   `FakeEmbedder` is deterministic — this call-count assertion is what actually catches the loop-placement
   bug). Tested end-to-end with all fakes (incl. `FakeGpuLock`) and a poisoned paper. **Also accept:** the
-  **residency mechanism** (stage-batched GPU stages + explicit model eviction between them, ARCHITECTURE
-  "Operational invariants" §3) is implemented and demonstrated — not just `GpuLock` acquisition/release —
-  e.g. a test/spy proving the embedding stage runs to completion and evicts before the summarize stage
-  loads its model, not merely that the two never held `GpuLock` at the same instant.
+  Orchestrator demonstrates **GPU-stage pipelining across papers** — CPU-bound work (harvest/parse/chunk/
+  store) for paper N+1 proceeds while GPU-bound work for paper N is in flight, so the GPU-bound-call queue
+  doesn't sit idle waiting on CPU stages (ARCHITECTURE "Operational invariants" §3) — via a spy/timing-based
+  test.
 - **T-B1 Parser (M2)** — the Phase-0-chosen adapter behind the `Parser` interface + PDF/LaTeX routing +
   GROBID references. *Accept:* golden fixtures pass; every block has page+bbox; broken PDF → quarantine.
   *CI-allowlist:* introduces the real parser vendor (MinerU/Marker/Docling/GROBID) → add it to `VENDOR_RULES`
@@ -157,21 +160,15 @@ M1a, before this implementation existed") **plus** the specifics below.
   `gpu_lock: GpuLock`, `summarize()`. *Accept:* non-empty `summary_text` on the golden-fixture set, **and**
   non-degenerate (differs across ≥2 fixtures, differs from that paper's own title/abstract verbatim —
   catches a hardcoded-constant or copy-the-abstract implementation that a bare non-empty check would miss);
-  `FakeGpuLock` test proves Summarizer acquires `gpu_lock.acquire("summarize")` and never co-resides with
-  Embedder/Reranker; degenerate/figures-only `ParsedDoc` → `PermanentError` → quarantine, not a crash. Tested
-  via `FakeSummarizer` for anything downstream (zero GPU). **Also accept:** the real adapter demonstrates
-  **model eviction** (e.g. Ollama `keep_alive=0`, or stop/unload) once its stage's batch completes — the
-  residency mechanism (ARCHITECTURE §3), not just lock acquisition — so the next GPU stage's model is
-  provably not competing for VRAM with a still-resident summarizer.
+  `FakeGpuLock` test proves the real adapter acquires `gpu_lock.acquire("summarize")` around its inference
+  call; degenerate/figures-only `ParsedDoc` → `PermanentError` → quarantine, not a crash. Tested via
+  `FakeSummarizer` for anything downstream (zero GPU).
   *CI-allowlist:* introduces the real generation-LLM vendor and a GPU-bound adapter → add it to `VENDOR_RULES`
   and confirm its class name is covered by `_ADAPTER_SUFFIXES` in `ci/checks/` in this same PR (§12; CI green
   doesn't prove isolation/lock-coverage for an unlisted vendor/adapter).
 - **T-C3 Embedder (M4)** — real adapter (TEI/vLLM), constructor takes `gpu_lock: GpuLock`, `embed()` +
   `info`. *Accept:* the Embedder **contract test** passes against fake and real (determinism, length, dim,
-  normalization); real adapter acquires `gpu_lock.acquire("embed")` around the batch call. **Also:** the
-  **residency mechanism** is implemented and demonstrated — the embedding service is evicted (TEI
-  stop/unload) once the ingestion batch that needed it completes, not left resident indefinitely; a
-  passing `GpuLock` test alone does not satisfy this criterion (ARCHITECTURE §3, A1).
+  normalization); real adapter acquires `gpu_lock.acquire("embed")` around the batch call.
   *CI-allowlist:* introduces the real embedding vendor (TEI/vLLM client) and a GPU-bound adapter → add it to
   `VENDOR_RULES` and confirm its class name is covered by `_ADAPTER_SUFFIXES` in `ci/checks/` in this same PR
   (§12; CI green doesn't prove isolation/lock-coverage for an unlisted vendor/adapter).
@@ -215,10 +212,10 @@ M1a, before this implementation existed") **plus** the specifics below.
   start returning — is Owner E's decision to make here; the frozen docs deliberately don't presuppose it
   (if a cross-encoder score is later surfaced, adding a nullable `score` field to `RerankCandidate` would
   follow this repo's existing forward-compat-nullable convention, e.g. `Chunk.contextual_header`).
-  `retrieve()` runs the Spike-2 eval set. **Also accept (real Reranker adapter):** because `McpServer` is
-  an always-on composition root, its real `Reranker` is normally **resident for the life of the process** —
-  the residency mechanism (A1, ARCHITECTURE §3) is implemented and demonstrated by ensuring ingestion's
-  stage sizing accounts for that standing residency (not just that `GpuLock` calls don't overlap in time).
+  `retrieve()` runs the Spike-2 eval set. Because `McpServer` is an always-on composition root, its real
+  `Reranker` is expected to stay **resident for the life of the process** — that's exactly the
+  co-residence-within-budget the Phase-0 VRAM measurement (ARCHITECTURE §3, PHASE0-RUNBOOK S0) confirms,
+  not something this ticket needs to separately satisfy.
   *CI-allowlist (Reranker):* the real `Reranker` adapter introduces the cross-encoder vendor and a GPU-bound
   adapter → add it to `VENDOR_RULES` and confirm its class name is covered by `_ADAPTER_SUFFIXES` in
   `ci/checks/` in this same PR (§12; CI green doesn't prove isolation/lock-coverage for an unlisted vendor/adapter).
@@ -243,7 +240,7 @@ M1a, before this implementation existed") **plus** the specifics below.
   same run (T-A2 — not a separate step here); spot-check that `papers.relevance_score` is non-null corpus-wide
   before calling the seed done, so the later `relevance_filter` flip has real numbers to threshold on. Also
   log **query attribution** + spot-check harvest precision (PRD Levers "instrumenting the off choice").
-- **T-EVAL** Run the ~50-question retrieval eval on the real corpus; confirm Recall@10 ≥ 0.85. This number is
+- **T-EVAL** Run the ~200-question retrieval eval on the real corpus; confirm Recall@10 ≥ 0.85. This number is
   the baseline every future swap must beat.
 
 ---
