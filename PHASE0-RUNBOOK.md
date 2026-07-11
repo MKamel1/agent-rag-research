@@ -36,6 +36,9 @@ Goal: the box is healthy and the pipeline runs end-to-end on **one** paper.
 
 ## Spike 1 — Parse + provenance fidelity  *(unblocks: Parser adapter choice, ADR-06)*
 
+**Gates:** Parser (M2), Chunker (M3), and any ticket consuming `Anchor` (WORK-BREAKDOWN.md) — `Anchor`'s
+shape is the frozen-contract bet this spike settles. M1/Harvester is unaffected and proceeds regardless.
+
 **Assumption at risk:** a parser recovers equations/code/tables **and** its blocks anchor back to the source
 (the grounding contract). Char offsets are already known not to survive PDF→markdown — the contract is
 **block-bbox + snippet** (CONTEXT.md).
@@ -62,6 +65,8 @@ building. Do not lower the bar silently; grounding is the product.
 ---
 
 ## Spike 2 — Retrieval quality  *(unblocks: embedder + reranker + vector config, ADR-02/03/10/11)*
+
+**Gates:** VectorIndex (M6) / Retriever (M7) tuning — top-k, hybrid weights, rerank depth (WORK-BREAKDOWN.md).
 
 **Assumption at risk:** Qwen3-Embedding-4B ≥ BGE-M3 on *our* corpus, and hybrid+RRF+rerank beats plain dense.
 

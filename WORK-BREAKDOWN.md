@@ -8,6 +8,16 @@ things are true prerequisites: (1) the **shared foundation** (Owner F) must exis
 (2) **Phase 0** must pick the three adapters before the modules that wrap them are final. Everything else fans
 out.
 
+**Gating on Phase 0 (the contract freeze is provisional — DATA-CONTRACTS.md Rule 1):** `Anchor` is a bet
+Spike 1 settles. Concretely:
+- **T-B1 Parser (M2), T-C1 Chunker (M3), and any ticket consuming `Anchor`/`Block`** must not *start*
+  (implementation) before **Spike 1** (block-bbox + snippet round-trip ≥ ~95%, PHASE0-RUNBOOK.md) passes.
+  If Spike 1 forces an `Anchor` shape change, these are exactly the tickets that would need rework.
+- **T-D2 VectorIndex (M6) and T-E1 Retriever (M7) tuning** (top-k, hybrid weights, rerank depth) gate on
+  **Spike 2** (retrieval eval, Recall@10 ≥ ~0.85).
+- **M1/Harvester (T-A1), including the in-progress M1a work, is NOT gated** — it produces `PaperRef`, never
+  touches `Anchor`, and is safe to continue regardless of Spike 1/2 outcomes.
+
 ---
 
 ## Milestones
