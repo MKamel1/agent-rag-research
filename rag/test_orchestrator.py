@@ -196,7 +196,7 @@ class SpyChunker:
         return [make_chunk(parsed)]
 
 
-class SpySummarizer:
+class SummarizerSpy:
     """Wraps the committed FakeSummarizer, adding a call log."""
 
     def __init__(self):
@@ -208,7 +208,7 @@ class SpySummarizer:
         return self._inner.summarize(parsed)
 
 
-class SpyEmbedder:
+class EmbedderSpy:
     """Wraps the committed FakeEmbedder, counting `embed()` calls (for the N+1 hoist assertion)
     and optionally failing on the Nth call (to inject a crash mid-paper)."""
 
@@ -281,7 +281,7 @@ class Rig:
         self.harvester = StubHarvester(refs)
         self.parser = SpyParser(poison=poison)
         self.chunker = SpyChunker()
-        self.summarizer = SpySummarizer()
+        self.summarizer = SummarizerSpy()
         self.document_store = DocStoreDouble(self.events)
         self.vector_store = FakeVectorStore()
         self.state = FakeIngestState()
@@ -294,7 +294,7 @@ class Rig:
             parser=self.parser,
             chunker=self.chunker,
             summarizer=self.summarizer,
-            embedder=embedder or SpyEmbedder(),
+            embedder=embedder or EmbedderSpy(),
             document_store=self.document_store,
             vector_index=vector_index or RecordingVectorIndex(self.vector_store, self.events),
             state=self.state,
@@ -389,7 +389,7 @@ def test_embed_is_called_n_plus_one_times_not_two_n():
     # A per-paper re-embed of the constant topic query would make this 2N; FakeEmbedder is
     # deterministic, so only this call-count assertion catches that loop-placement bug.
     rig = Rig()
-    embedder = SpyEmbedder()
+    embedder = EmbedderSpy()
     rig.ingest(embedder=embedder)
     assert embedder.call_count == N + 1, (
         f"expected N+1={N + 1} embed calls (1 topic + {N} papers), got {embedder.call_count}"
@@ -403,7 +403,7 @@ def test_embed_is_called_n_plus_one_times_not_two_n():
 
 def test_rerun_produces_no_duplicates_and_re_invokes_no_stage():
     rig = Rig()
-    embedder1 = SpyEmbedder()
+    embedder1 = EmbedderSpy()
     rig.ingest(embedder=embedder1)
     assert stored_ids(rig) == set(PAPER_IDS)
 
@@ -411,7 +411,7 @@ def test_rerun_produces_no_duplicates_and_re_invokes_no_stage():
     summarizer_calls_after_run1 = list(rig.summarizer.calls)
 
     # Second run over the same state/stores: everything is `done`, so nothing is reprocessed.
-    embedder2 = SpyEmbedder()
+    embedder2 = EmbedderSpy()
     rig.ingest(embedder=embedder2)
     assert stored_ids(rig) == set(PAPER_IDS)  # still one record per paper, no dupes
     assert rig.chunker.calls == chunker_calls_after_run1
@@ -430,7 +430,7 @@ def test_resume_after_summarized_does_not_reinvoke_chunker_or_summarizer():
 
     # Run 1 crashes on the first paper's summary embed (call 1 = topic_query_vec, call 2 = first
     # paper's embed). The paper is checkpointed at `summarized`; later papers never start.
-    crashing = SpyEmbedder(fail_on_call=2)
+    crashing = EmbedderSpy(fail_on_call=2)
     with pytest.raises(RuntimeError):
         rig.ingest(embedder=crashing)
     assert rig.state.stage_of(FIRST_ID) == "summarized"
@@ -438,7 +438,7 @@ def test_resume_after_summarized_does_not_reinvoke_chunker_or_summarizer():
     assert rig.summarizer.calls.count(FIRST_ID) == 1
 
     # Run 2 (clean embedder, same shared state/stores/spies) resumes.
-    rig.ingest(embedder=SpyEmbedder())
+    rig.ingest(embedder=EmbedderSpy())
 
     # The killed paper is NOT re-chunked or re-summarized — those stages were already checkpointed.
     assert rig.chunker.calls.count(FIRST_ID) == 1
@@ -460,14 +460,14 @@ def test_resume_after_stored_reruns_upsert_and_reaches_done():
     # forever unindexed.
     failing_index = RecordingVectorIndex(rig.vector_store, rig.events, fail_paper_ids={FIRST_ID})
     with pytest.raises(RuntimeError):
-        rig.ingest(embedder=SpyEmbedder(), vector_index=failing_index)
+        rig.ingest(embedder=EmbedderSpy(), vector_index=failing_index)
     assert rig.state.stage_of(FIRST_ID) == "stored"
     assert FIRST_ID in rig.document_store.records  # source of truth was written
     assert f"{FIRST_ID}:summary" not in rig.vector_store._store  # but the index was not
 
     # Run 2: a healthy index (sharing the same FakeVectorStore) must re-run upsert for the paper.
     healthy_index = RecordingVectorIndex(rig.vector_store, rig.events)
-    rig.ingest(embedder=SpyEmbedder(), vector_index=healthy_index)
+    rig.ingest(embedder=EmbedderSpy(), vector_index=healthy_index)
 
     assert any(uid.startswith(FIRST_ID) for uid in healthy_index.upserts), \
         "resume must re-run upsert() for a paper stuck at `stored`"
