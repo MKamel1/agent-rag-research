@@ -74,12 +74,8 @@ Ten modules, each independently ownable (owners A–F) and testable through its 
   - *Config:* `child_parent_expansion on|off` (lever). **No `contextual_header` config exists in V0** —
     there is nothing to toggle.
 - **Hides (depth):** section-aware splitting, parent linkage, atomicity rules, the title/section prefix.
-- **V0 does NOT build contextual-header generation.** That is an LLM call *per chunk* (15,000-papers ×
-  one call) and is explicitly **moved to V1** (PRD ADR-07) rather than gated by a Spike-2 toggle — it's
-  a separate cost/benefit decision, not a rounding error on V0's scope. V0's only obligation is to
-  **monitor**: the Spike-2 retrieval eval tags failures that look context-related (a chunk whose
-  meaning depends on missing surrounding text), producing a real number for V1 to start from instead
-  of a guess. **Do not implement the header-LLM pass in V0; do not add an `on|off` switch for it.**
+- **V0 does NOT build contextual-header generation** — deferred to V1, full rationale + V0's
+  monitoring-only obligation: PRD ADR-07. Do not implement the header-LLM pass in V0.
 - **Seam:** none needed for this in V0 (no LLM dependency injected here yet). V1 adds an internal seam
   for the header-LLM when it builds the feature — see extensibility table below.
 - **Test:** `ParsedDoc` fixture → assert boundaries, parent links, anchors intact, prefix present,
@@ -242,18 +238,35 @@ Full patterns + code-shape in `CONVENTIONS.md`; schemas in `DATA-CONTRACTS.md`.
    to `quarantine(paper_id, stage, error, ts)` and the pipeline **continues**. Quarantine is visible and
    re-runnable; it is *never* a silent `except: pass`. Transient errors retry with backoff; contract
    violations crash early (they are bugs, not data problems).
-3. **Single GPU = one GPU-bound stage at a time (a hard serialization rule).** The embedder, reranker, and
-   any summarizer **cannot co-reside** at working precision on 24 GB. This is **not** just an
-   in-process rule: `IngestionOrchestrator` (M9) and `McpServer` (M8) are the system's two composition
-   roots and V0 explicitly allows them to run concurrently as separate processes (a multi-day ingest next
-   to an always-on query server) — so the serialization has to hold *across* processes, not just within
-   one. The mechanism is a typed, injected **`GpuLock`** (DATA-CONTRACTS.md "GpuLock" section): the real
-   `Embedder`/`Summarizer`/`Reranker` adapters each take a `GpuLock` in their constructor and acquire it
-   themselves around their own inference call, backed by a cross-process file lock keyed off
-   `Config.gpu_lock_path` — so both composition roots contend for the same lock by construction, not by an
-   agent remembering to wrap every call site. "Backpressure" = a bounded queue so CPU stages (harvest,
-   parse, DB writes) don't run arbitrarily far ahead of the GPU. Never assume two models fit, and never
-   write a GPU-bound adapter that skips acquiring the lock "because this call is quick."
+3. **Single GPU = one GPU-bound model resident at a time (a hard residency rule, not just a call-serialization
+   rule).** The embedder, reranker, and any summarizer **cannot co-reside** at working precision on 24 GB.
+   This has **two distinct mechanisms**, because a file lock around an inference call is not sufficient by
+   itself — models served by long-running processes (TEI, Ollama) stay resident in VRAM after the call
+   returns and the lock releases, so two such services can co-reside regardless of who held the lock during
+   the call:
+   - **(1) Stage-batched ingestion (the residency mechanism).** `IngestionOrchestrator` (M9) runs GPU stages
+     as sequential **batches**, not interleaved per-paper calls: embed *all* pending texts for the batch,
+     then explicitly **evict** the embedding model (e.g. Ollama `keep_alive=0`; stop/unload the TEI
+     container or model), *then* summarize all pending texts, evict, and so on. Residency is sequential
+     **by pipeline design** — the Orchestrator itself unloads a stage's model before the next stage's model
+     loads — not an accident of lock timing. This is the fix for the actual invariant ("cannot co-reside"):
+     no adapter is ever resident while another is being loaded for the next stage.
+   - **(2) `GpuLock` — cross-process COMPUTE serializer, not a residency guarantee.** `IngestionOrchestrator`
+     (M9) and `McpServer` (M8) are the system's two composition roots and V0 explicitly allows them to run
+     concurrently as separate processes (a multi-day ingest next to an always-on query server) — the typed,
+     injected **`GpuLock`** (DATA-CONTRACTS.md "GpuLock" section) serializes *inference calls* across that
+     process boundary so two GPU-bound calls never execute at the same instant, backed by a cross-process
+     file lock keyed off `Config.gpu_lock_path`. This is real and still needed (e.g. the always-on
+     `McpServer`'s reranker call vs. a running ingest stage), but **acquiring the lock around a call does
+     not evict a resident model when the call returns** — that is (1)'s job, not the lock's. Do not treat
+     "the lock serialized our calls" as proof that two models can't be resident simultaneously.
+   - **Sizing consequence:** because `McpServer`'s reranker is normally resident for the life of the
+     always-on query server, ingestion's stage batches must be sized (and their own models evicted) with
+     that standing residency already accounted for, not against the full 24 GB.
+   - "Backpressure" = a bounded queue so CPU stages (harvest, parse, DB writes) don't run arbitrarily far
+     ahead of the GPU. Never assume two models fit, and never write a GPU-bound adapter that skips
+     acquiring the lock "because this call is quick" — the lock still matters for call-level serialization,
+     it just isn't the residency mechanism.
 
 **Dependency-direction rule (prevents the leak juniors always cause).** Vendor SDKs live **only** inside their
 adapter: `qdrant_client` is imported **only** by the `VectorStore` adapter (M6); the embedding client only by
