@@ -199,12 +199,11 @@ V0's monitoring-only obligation: PRD ADR-07.
 
 ## M3B Summarizer output
 
-**This module was previously undefined even though `PaperRecord.summary_text`/`summary_id` (§M5),
-`VectorPayload.kind == "summary"` (§M6), and `search_papers`/`get_paper` (§M8) all depend on it. It is
-in V0 scope — CONTEXT.md's V0 definition explicitly returns "grounded passages + summaries + citations",
-and `PaperRecord.summary_text` is a required (non-nullable) field, unlike `contextual_header`, which
-V0 deliberately leaves `None`. Do not treat summaries as a V1 deferral by analogy to contextual headers —
-they are a different decision with a different answer.**
+**This module is in V0 scope**, even though it's easy to mistake for a V1 deferral by analogy to
+`contextual_header` — it isn't. `PaperRecord.summary_text`/`summary_id` (§M5), `VectorPayload.kind ==
+"summary"` (§M6), and `search_papers`/`get_paper` (§M8) all depend on it. CONTEXT.md's V0 definition
+explicitly returns "grounded passages + summaries + citations", and `PaperRecord.summary_text` is a
+required (non-nullable) field, unlike `contextual_header`, which V0 deliberately leaves `None`.
 
 ```python
 # Summarizer.summarize(doc: ParsedDoc) -> str
@@ -318,8 +317,8 @@ score(d) = hybrid_dense_weight     * 1/(RRF_K + rank_dense(d))
 `rank_dense`/`rank_sparse` are each item's 1-indexed rank in the dense-only and sparse/BM25-only result
 lists respectively (a document missing from one list is simply excluded from that term, not given a
 rank). `hybrid_dense_weight` (Config, default `0.5` = equal weighting — the vanilla-RRF case) is the one
-existing Config lever this formula must honor; it was previously undefined against plain RRF. **If
-Qdrant's native fusion doesn't support this weighted form,** the `VectorStore` adapter must compute it
+existing Config lever this formula must honor. **If Qdrant's native fusion doesn't support this weighted
+form,** the `VectorStore` adapter must compute it
 itself by pulling separate dense and sparse ranked lists from Qdrant and fusing them in the adapter —
 never approximate with Qdrant's built-in (unweighted) fusion, or the fake/real contract test stops
 proving anything.
@@ -390,9 +389,9 @@ so it's defined after that type exists, not forward-referenced here).
 
 ### Reranker (Retriever's internal collaborator — not a top-level module, but still injected)
 
-The reviewed design left the reranker undocumented despite `retrieve()`'s pipeline naming a
-"cross-encoder rerank" step and TEST-STRATEGY claiming Retriever tests need **zero GPU** — those are
-only compatible if the reranker is a dependency `Retriever` accepts, not a hardcoded model load.
+`retrieve()`'s pipeline names a "cross-encoder rerank" step, and TEST-STRATEGY requires Retriever tests
+to need **zero GPU** — those are only compatible if the reranker is a dependency `Retriever` accepts, not
+a hardcoded model load.
 
 ```python
 @dataclass(frozen=True)
@@ -408,8 +407,9 @@ class RerankCandidate:
   **only** by the real `Reranker` adapter — same dependency-direction rule as Embedder/VectorStore
   (CONVENTIONS §1).
 - **GPU-bound:** the real adapter's constructor takes a `gpu_lock: GpuLock` (see "GpuLock" section) and
-  acquires `gpu_lock.acquire("rerank")` around the cross-encoder call — subject to the single-GPU lock,
-  same as Embedder and Summarizer — never co-resident.
+  acquires `gpu_lock.acquire("rerank")` around the cross-encoder call — same compute-level serialization
+  as Embedder and Summarizer. It is expected to **co-reside** with them in VRAM within the 24GB budget;
+  `McpServer`'s reranker in particular stays resident for the life of the process.
 - **Test:** `FakeReranker` is deterministic but **must not be an identity reorder** — an identity fake makes
   every Retriever test pass identically whether or not `rerank()` is even called, which leaves the
   ship-critical rerank stage with zero unit-test coverage (a `retrieve()` that drops the rerank call, reranks
@@ -422,24 +422,28 @@ class RerankCandidate:
   isolated test, not a contract test (V0 has only one reranker choice, so there's no second adapter to prove
   agreement against — see ARCHITECTURE principle 4).
 
-## GpuLock — cross-process COMPUTE serialization (not the residency mechanism)
+## GpuLock — cross-process compute serialization
 
 **Why this exists:** the single-GPU rule (ARCHITECTURE "Operational invariants" §3, CONVENTIONS §6) was
-previously enforced only in prose ("the orchestrator holds a GPU lock"), with no type, no constructor
-argument, and no CI check — exactly the kind of rule CONVENTIONS §0.1 says isn't a real guardrail for an
-agent team. It's also a two-process problem, not a one-process problem: `IngestionOrchestrator` (M9) and
-`McpServer` (M8) are the system's two composition roots (CONVENTIONS §2) and normally run as separate OS
-processes — a multi-day ingest alongside an always-on query server. **V0 explicitly allows them to run
-concurrently**; a same-process `threading.Lock` cannot serialize across that boundary, so the lock must be
-a real, injected, cross-process primitive.
+enforced only in prose ("the orchestrator holds a GPU lock"), with no type, no constructor argument, and
+no CI check — exactly the kind of rule CONVENTIONS §0.1 says isn't a real guardrail for an agent team.
+It's also a two-process problem, not a one-process problem: `IngestionOrchestrator` (M9) and `McpServer`
+(M8) are the system's two composition roots (CONVENTIONS §2) and normally run as separate OS processes —
+a multi-day ingest alongside an always-on query server. **V0 explicitly allows them to run concurrently**;
+a same-process `threading.Lock` cannot serialize across that boundary, so the lock must be a real,
+injected, cross-process primitive.
 
-**What `GpuLock` does NOT do:** it serializes *inference calls* — it does not evict a model from VRAM.
-Models served by a long-running process (TEI, Ollama) stay resident after `embed()`/`rerank()` returns and
-the lock is released, so "the lock serialized our calls" is not evidence that two models can't be resident
-at once. The invariant "embedder/reranker/summarizer never co-reside" is delivered by **stage-batched
-ingestion + explicit model eviction between stages** (ARCHITECTURE "Operational invariants" §3, mechanism
-(1)) — `GpuLock` is mechanism (2), the cross-process call serializer (e.g. the always-on `McpServer`'s
-reranker call vs. a running ingest stage), not a substitute for it.
+**What `GpuLock` does:** it is the **cross-process compute serializer, and only that.** It stops two
+GPU-bound inference calls (an ingest embed/summarize/rerank vs. a query-path rerank) from executing at
+the same instant. It does not manage residency or eviction. Per PRD ADR-02/ADR-08's VRAM arithmetic
+(embedder ~8.5GB @ Q8, summarizer ~7-8GB 4-bit, reranker ~1-2GB, ≈ 17-18GB total), the three real models
+are expected to **co-reside** within the 24GB budget for the life of the process — nobody evicts anybody.
+This ~17-18GB estimate is unmeasured; PHASE0-RUNBOOK.md's S0 step confirms actual peak concurrent VRAM
+with both composition roots running.
+
+**V0 fairness/timeout stance:** `acquire()` has no priority and no timeout — a query simply queues behind
+an in-flight ingest inference call until it releases. This is an accepted V0 simplification, not an
+oversight; revisit only if it proves to be a real problem in practice.
 
 ```python
 class GpuLock(Protocol):
@@ -463,7 +467,10 @@ class GpuLock(Protocol):
   a lock at all; correctness doesn't depend on every caller remembering to wrap the call. This is also why
   it is a **constructor argument like every other dependency (principle 3)**, not an ambient singleton.
 - **CI-checkable (T-F6):** the real `Embedder`/`Summarizer`/`Reranker` adapter classes' `__init__` must
-  declare a `gpu_lock` parameter — grep-able, same style as the vendor-import check.
+  declare a `gpu_lock` parameter — grep-able, same style as the vendor-import check. This is a **necessary
+  prefilter, not sufficient proof**: it only shows the parameter exists in the signature, not that
+  `acquire()` wraps the real inference call. The actual guarantor of that is the per-adapter
+  `FakeGpuLock.acquired` unit assertion (TEST-STRATEGY.md).
 
 ## M8 McpServer — response envelope
 
@@ -492,9 +499,8 @@ class Coverage:
 
 @dataclass(frozen=True)
 class SearchResponse:
-    """semantic_search's return shape. Replaces a bare `list[GroundedResult]` — the
-    'coverage note' was previously prose only (no field on any frozen type), so it was unwritable and
-    untestable as specified. This is the fix: the shape that crosses the M8 seam is now fully typed."""
+    """semantic_search's return shape. Replaces a bare `list[GroundedResult]` — the shape that
+    crosses the M8 seam is fully typed so the 'coverage note' is a real, testable field, not prose."""
     results: list[GroundedResult]
     coverage: Coverage
 
@@ -636,8 +642,8 @@ CREATE TABLE quarantine (            -- dead-letter: one bad paper must not kill
 ```
 
 Run SQLite in **WAL mode** (ADR-05 — the relational-store decision; WAL is an implementation detail of
-that choice, not a separate ADR. Previously mis-cited as ADR-07, which is the unrelated chunking/
-contextual-header decision). `authors_json`/`categories_json`/`bbox_json`/`anchor_json` are JSON
+that choice, not ADR-07, which is the unrelated chunking/contextual-header decision).
+`authors_json`/`categories_json`/`bbox_json`/`anchor_json` are JSON
 because they are read whole, never queried by inner field in V0.
 
 **V0 does not enforce foreign keys.** `PRAGMA foreign_keys` is off by default in SQLite, is
