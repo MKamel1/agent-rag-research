@@ -25,23 +25,10 @@ class Citation(FrozenModel):
 
 
 class GroundedResult(FrozenModel):
-    """`passage_text` is the matched `Chunk`'s own text, in full — NOT a `get_span(anchor)` fetch.
-    This IS V0's small-to-big unit: the Chunker already grouped the right blocks at chunk-build
-    time (`Config.child_parent_expansion`); nothing further is expanded at query time
-    (DATA-CONTRACTS.md "What this means for GroundedResult.passage_text").
-
-    `anchor` == the matched Chunk's own anchor (its first block, multi-block anchoring rule).
-    Used for citation display and re-grounding (`get_span(anchor)`) — never the source of
-    `passage_text` itself.
-
-    `GroundedResult` is passage-level only — `Retriever.retrieve()` never returns a
-    summary/whole-paper match (a summary has no block to anchor to). Whole-paper search has its
-    own shape, `PaperSearchResult` (`contracts/mcp_server.py`).
-
-    Why the envelope now (forward-compat): V1/V2 add evidence tiers, `status: superseded_by`,
-    and `conditions`. Because this is already a record with `evidence_tier` + `metadata`, those
-    land as filled fields, not a changed type — no V0 consumer breaks. Never return a bare
-    string from retrieval.
+    """Passage-level retrieval envelope, grounded and forward-compatible to V1/V2. `passage_text`
+    is the matched Chunk's own full text (not a `get_span` fetch); `anchor` is for citation
+    display/re-grounding only. `evidence_tier`/`metadata` are the slots V1/V2 fill in place. Full
+    reasoning: DATA-CONTRACTS.md §M7.
     """
 
     passage_text: str

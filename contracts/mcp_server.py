@@ -26,10 +26,8 @@ class PaperSummaryView(FrozenModel):
 
 
 class Coverage(FrozenModel):
-    """How big was the haystack. Only meaningful for tools that return a top-k SAMPLE of a larger
-    candidate set — `get_paper`/`get_span` each resolve one specific, fully-specified thing, so
-    there is no 'you're seeing part of it' concept for them and they are NOT wrapped in this
-    envelope.
+    """How big was the haystack behind a top-k sample. Not used by `get_paper`/`get_span` (they
+    resolve one fully-specified thing, not a sample). Full reasoning: DATA-CONTRACTS.md §M8.
     """
 
     returned: int = Field(ge=0)  # len(results) — after rerank + top_k truncation
@@ -39,10 +37,8 @@ class Coverage(FrozenModel):
 
 
 class SearchResponse(FrozenModel):
-    """`semantic_search`'s return shape. Replaces a bare `list[GroundedResult]` — the 'coverage
-    note' was previously prose only (no field on any frozen type), so it was unwritable and
-    untestable as specified. This is the fix: the shape that crosses the M8 seam is now fully
-    typed.
+    """`semantic_search`'s return shape — results plus a typed `Coverage`, not a bare
+    `list[GroundedResult]`. Full reasoning: DATA-CONTRACTS.md §M8.
     """
 
     results: list[GroundedResult]
@@ -50,13 +46,10 @@ class SearchResponse(FrozenModel):
 
 
 class PaperSearchResult(FrozenModel):
-    """`search_papers`'s per-item shape — a whole-paper/summary-level match, produced by
-    `Retriever.retrieve_papers()` (§M7). Deliberately NOT a `GroundedResult`: a summary has no
-    block/page/bbox to anchor to (`Anchor` is block-level only), so forcing it through the
-    anchored envelope would require either a nullable `anchor` (breaks the "every result is
-    grounded" invariant) or a dummy/abstract-block anchor (a fabricated citation). Wraps
-    `PaperSummaryView` (the exact shape `get_paper` returns for one paper) with the ranking
-    `score` search adds, instead of duplicating its fields.
+    """`search_papers`'s per-item shape — a whole-paper/summary-level match from
+    `Retriever.retrieve_papers()`. Deliberately not a `GroundedResult` (a summary has no block to
+    anchor to); wraps `PaperSummaryView` with the ranking `score`. Full reasoning:
+    DATA-CONTRACTS.md §M8.
     """
 
     view: PaperSummaryView
@@ -64,11 +57,9 @@ class PaperSearchResult(FrozenModel):
 
 
 class PaperSearchResponse(FrozenModel):
-    """`search_papers`'s return shape — mirrors `SearchResponse` but for whole-paper results, which
-    carry no `evidence_tier`/`metadata` envelope (that envelope stages passage-level grounding
-    claims — tier A/B/C/D — which don't apply here; `PaperSummaryView.summary_text` already says
-    in prose that this is a paraphrase, CONTEXT.md tier C, with no separate field needed to say
-    it twice).
+    """`search_papers`'s return shape — mirrors `SearchResponse` for whole-paper results (no
+    `evidence_tier`/`metadata`; that envelope doesn't apply to summary-level matches). Full
+    reasoning: DATA-CONTRACTS.md §M8.
     """
 
     results: list[PaperSearchResult]
