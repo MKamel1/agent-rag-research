@@ -193,14 +193,9 @@ class Chunk:
     contextual_header: str | None = None   # ALWAYS None in V0 — see below
 ```
 
-**`contextual_header` is a V1 feature, not a V0 toggle.** V0 does **not** generate it — the field exists
-now, nullable, purely so V1 fills it in place with **zero schema migration**. Do not write code in V0 that
-populates this field, and do not add a `Config.contextual_header` on/off switch — there is nothing to switch.
-The title+section-path prefix (free, string concatenation, part of `Chunker.chunk()`) is the V0-scoped piece
-of "contextual" chunking; the LLM-generated header is 15,000-papers × one-LLM-call and is explicitly deferred
-(ADR-07). V0's only obligation is to **monitor**, not build: TEST-STRATEGY's Spike-2 eval tags retrieval
-failures that look context-related, giving V1 a real number instead of a guess. See CONVENTIONS "cost
-landmines" and PRD ADR-07 for the full handoff rationale.
+**`contextual_header` is a V1 feature, not a V0 toggle** — field exists now (nullable, `None` in V0) so V1
+fills it with zero schema migration; do not populate it or add an on/off switch in V0. Full rationale +
+V0's monitoring-only obligation: PRD ADR-07.
 
 ## M3B Summarizer output
 
@@ -265,13 +260,9 @@ class PaperRecord:
     summary_text: str
     summary_id: str
     relevance_score: float | None = None   # AUTHORITATIVE value (unlike PaperRef.relevance_score, always
-        # None). Computed by IngestionOrchestrator (M9), after Summarizer and before this put() call, as
-        # cosine(embed(summary_text), topic_query_vec) using the same injected Embedder — no new vendor
-        # dependency. topic_query_vec = embedder.embed([" ".join(Config.focus_area_queries)])[0] is
-        # computed EXACTLY ONCE per ingestion run (cached at the start of ingest(), before the per-paper
-        # loop), never recomputed per paper — it's a constant across the whole run, so embedding it inside
-        # the loop wastes a GpuLock-guarded GPU call 15,000x at corpus_cap for an unchanging value.
-        # Persisted to papers.relevance_score (SQL schema below).
+        # None). Computed by IngestionOrchestrator (M9) as cosine(embed(summary_text), topic_query_vec) —
+        # full rule, incl. the "compute topic_query_vec exactly once per run" invariant: ARCHITECTURE.md
+        # §M9. Persisted to papers.relevance_score (SQL schema below).
     # blobs (PDF, figure PNGs, markdown) are written to the filesystem; their paths live on ref/parsed.
 
 # DocumentStore interface (all reads return the frozen types above):
@@ -557,7 +548,7 @@ class Config:
     sources: list[str] = field(default_factory=lambda: ["arxiv"])
     relevance_filter: Literal["off", "embedding"] = "off"
     # retrieval knobs (tuned in Spike 2)
-    # NOTE: no `contextual_header` toggle — it's not built in V0 (see Chunk.contextual_header above).
+    # NOTE: no `contextual_header` toggle — it's not built in V0 (PRD ADR-07).
     child_parent_expansion: bool = True
     top_k: int = 10
     rerank_depth: int = 50
@@ -626,14 +617,9 @@ CREATE TABLE summaries (
 -- The idempotency spine (CONVENTIONS "operational invariants"):
 CREATE TABLE ingest_state (
   paper_id     TEXT PRIMARY KEY,
-  stage        TEXT NOT NULL,        -- harvested|parsed|chunked|summarized|embedded|stored|done
-                                       -- `stored` = DocumentStore.put() succeeded (source-of-truth
-                                       -- written). VectorIndex.upsert() runs AFTER `stored` is recorded
-                                       -- and BEFORE `done` is recorded — it is a separate step, not part
-                                       -- of `put()`. A paper stuck at `stored` on resume has NOT
-                                       -- necessarily reached the vector index; resume must re-run
-                                       -- upsert() for it (idempotent, safe to repeat) before advancing to
-                                       -- `done` (ARCHITECTURE "Operational invariants" §1).
+  stage        TEXT NOT NULL,        -- harvested|parsed|chunked|summarized|embedded|stored|done —
+                                       -- full `stored`-vs-`done` resume semantics (why they're
+                                       -- distinct stages): ARCHITECTURE.md "Operational invariants" §1.
   updated_at   TEXT NOT NULL
 );
 

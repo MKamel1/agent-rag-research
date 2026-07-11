@@ -21,10 +21,8 @@ class PaperRecord(FrozenModel):
     paper).
 
     `relevance_score` here is the AUTHORITATIVE value (unlike `PaperRef.relevance_score`, which
-    is always `None`). Computed by `IngestionOrchestrator` (M9), after `Summarizer` and before
-    this `put()` call, as `cosine(embed(summary_text), topic_query_vec)` — see DATA-CONTRACTS.md
-    for the exact "compute topic_query_vec exactly once per ingestion run" rule. Persisted to
-    `papers.relevance_score` (SQL schema).
+    is always `None`) — computed by `IngestionOrchestrator`; full rule (incl. the
+    once-per-run `topic_query_vec` invariant): ARCHITECTURE.md §M9.
     """
 
     ref: PaperRef
