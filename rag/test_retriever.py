@@ -127,7 +127,7 @@ def _seed_chunk(store, docstore, embedder, *, chunk_id, paper_id, block_id, text
     docstore._records[paper_id] = PaperRecord(
         ref=_make_ref(paper_id, categories),
         parsed=ParsedDoc(paper_id=paper_id, markdown="# T", blocks=[], figures=[], tables=[],
-                         references=[], parser_id="mineru-1.x"),
+                         references=[], parser_id="test-parser-1.x"),
         chunks=[chunk], summary_text="s", summary_id=f"{paper_id}:summary")
     store.upsert(chunk_id, embedder.embed([text])[0],
                  _payload(paper_id, "chunk", section_path, categories, embedder))
@@ -140,7 +140,7 @@ def _seed_summary(store, docstore, embedder, *, paper_id, summary_id, summary_te
     docstore._records[paper_id] = PaperRecord(
         ref=_make_ref(paper_id, categories),
         parsed=ParsedDoc(paper_id=paper_id, markdown="# T", blocks=[], figures=[], tables=[],
-                         references=[], parser_id="mineru-1.x"),
+                         references=[], parser_id="test-parser-1.x"),
         chunks=[], summary_text=summary_text, summary_id=summary_id)
     store.upsert(summary_id, embedder.embed([summary_text])[0],
                  _payload(paper_id, "summary", section_path, categories, embedder))
