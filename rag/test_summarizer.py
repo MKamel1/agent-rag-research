@@ -55,7 +55,7 @@ def _prose_doc(**overrides) -> ParsedDoc:
         figures=[],
         tables=[],
         references=[],
-        parser_id="mineru-1.x",
+        parser_id="test-parser-1.x",
     )
     fields.update(overrides)
     return ParsedDoc(**fields)
