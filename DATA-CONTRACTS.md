@@ -15,8 +15,19 @@ Types are shown as Python `@dataclass` / `TypedDict` because the stack (Qdrant, 
 Python. Ship them as real dataclasses in one shared package (`contracts/`), owned by **Owner F**, imported by
 everyone. **Do not** hand-copy these shapes into each module.
 
-- Rule 1 — **These are frozen for V0.** Changing a shared type is a cross-team event: propose it, update this
-  file, bump the package, tell every owner. Never quietly add a field in your own module.
+**Implementation note (T-F1):** the shapes actually ship as runtime-validating **pydantic models**
+(`FrozenModel`, `contracts/_base.py`), not plain dataclasses — WORK-BREAKDOWN.md's T-F1 prefers a form that
+raises loudly on a type mismatch at construction. The `@dataclass`/`TypedDict` notation throughout this file
+is illustrative of *shape* only; it is not the implementation.
+
+- Rule 1 — **These are frozen for V0 — provisionally, pending Phase 0.** Changing a shared type is a
+  cross-team event: propose it, update this file, bump the package, tell every owner. Never quietly add a
+  field in your own module. **The freeze is provisional until Spike 1 and Spike 2 (PHASE0-RUNBOOK.md) pass
+  their gates.** `Anchor` in particular — the spine every shape hangs off — is a bet Spike 1's block-bbox +
+  snippet round-trip (≥ ~95%) settles; if it misses, `Anchor`'s shape is the thing that changes. Spike 2
+  (retrieval eval) similarly gates `Retriever`/`VectorIndex` tuning. M2 (Parser), M3 (Chunker), and anything
+  consuming `Anchor` must not start before Spike 1 passes (WORK-BREAKDOWN.md); M1/Harvester is unaffected —
+  it never touches `Anchor`.
 - Rule 2 — **Every field is either required or has an explicit default.** No "sometimes present" fields.
 - Rule 3 — **IDs are strings, stable, and deterministic** (see §IDs). Never auto-increment integers for
   anything that crosses a seam — they aren't reproducible on rebuild.
