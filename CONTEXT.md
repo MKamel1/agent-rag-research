@@ -12,7 +12,9 @@ detail. When a term here conflicts with usage elsewhere, this file wins (or gets
   **Gated** behind V0 working and the reconciliation/consumption spikes passing.
 - **V2** — cited-answer engine: citation graph + synthesis. Contradiction/benchmark comparison is
   **optional, nice-to-have**, surfaced as agent hints only.
-- **V3** — proactive radar: scheduled digests, "what's new."
+- **V3** — proactive radar: scheduled digests, "what's new." *(Note: PRD.md §9 separately defines a
+  "V3+ (experimental)" bucket for broader cross-paper inference — a different roadmap item under a
+  similar label; a future doc pass should reconcile the naming.)*
 
 ## Core domain terms
 - **Paper** — a canonical source document (arXiv id / DOI).

@@ -19,27 +19,32 @@ worth building — per this doc's own §8 feasibility analysis — is that the a
 unusually honest about what it knows: every answer traces back to a resolvable source span,
 each result is tagged with how much to trust it (evidence tier), coverage is stated rather
 than implied, and "no grounded answer for X" is a first-class response instead of a
-hallucinated one (§8.5/§8.6). On top of that cache, and staged well behind it, sits a more
-ambitious experiment — a claim-centric, self-reconciling memory — pursued opportunistically
-as the corpus and tooling mature, not as the thing this system is sold on.
+hallucinated one (§8.5/§8.6). That grounded cache is also the **foundation the system is
+deliberately built toward a longer-horizon goal on**: a claim-centric, self-reconciling memory
+(§9's V3+ bucket), reached seam by seam as the corpus and tooling mature, not bolted on
+separately.
 
 ### The one-line differentiator
 **A provenance-anchored, local RAG cache with unusually good MCP ergonomics**: every result
 cites a verbatim source span, absence is reported rather than hallucinated, and the system
 describes its own coverage instead of quietly presenting a sample as the whole answer.
 
-### The experiment layered on top (V1+/V2 — not the core promise)
-The more ambitious idea floated for this system — a **claim-centric, self-reconciling
-memory**, where atomic findings are extracted, bidirectionally linked to their sources, and
-continuously reconciled so new knowledge reshapes old — is real and worth pursuing, but §8's
-own feasibility analysis rates autonomous reconciliation research-grade (a ~70%-precision
-ceiling on judging contradiction/supersession) and stages it behind spikes that may not clear
-their bar (§8.4, §9). It lands as an explicitly experimental **V1 enrichment** (tier-labeled,
-agent-verified claims — never a system that arbitrates truth) and an **optional, low-priority
-V2 surfacing layer** that its own owner annotates "at best nice-to-have — won't use much"
-(§8.4). Treat it as the stretch goal the grounded cache was built to support, not the product's
-core promise — a reader calibrating this whole document should do so against the cache, not
-against reconciliation.
+### The longer-horizon goal built on top (staged V1 → V2 → V3+)
+A **claim-centric, self-reconciling memory** — where atomic findings are extracted,
+bidirectionally linked to their sources, and continuously reconciled so new knowledge reshapes
+old — is the system's actual longer-horizon objective, not a discarded or doubted idea: it's
+the explicit **V3+ (experimental)** target (§8.4, §9), built toward deliberately via the V0/V1
+provenance foundation rather than attempted in one leap. It stays honestly staged and gated,
+though: §8's own feasibility analysis rates *full autonomous* reconciliation as research-grade
+(a ~70%-precision ceiling on judging contradiction/supersession) and stages it behind spikes
+that may not clear their bar (§8.4, §9). Concretely: **V1** ships it as tier-labeled,
+agent-verified claim extraction (never a system that arbitrates truth); **V2** adds an
+optional, low-priority contradiction-surfacing layer that its own owner annotates "at best
+nice-to-have — won't use much" (§8.4); **V3+** is where the broader cross-paper inference goal
+itself lives, always surfaced + labeled, never trusted. A reader calibrating this whole
+document should judge V0/V1 against the grounded cache promise it ships now, and judge V3+
+against a real objective staged behind honest feasibility gates — not against a stretch goal
+that was never meant to be believed in.
 
 ---
 
