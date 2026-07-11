@@ -9,9 +9,9 @@ EmbedderInfo`. `Vector` is L2-normalized with `len == info.dim`.
 
 Two parts, deliberately separate (TEST-STRATEGY "Embedder"):
   - The **contract test** (determinism, length, dim, normalization) parametrized over embedder
-    implementations. `FakeEmbedder` runs in default CI now; the real TEI/vLLM adapter joins the
-    *same* parametrized body in the nightly / M2 real-adapter job (it opts out of the socket
-    block there) — the extension point is marked below but NOT wired here (needs a live GPU
+    implementations. `FakeEmbedder` runs in default CI now; the real embedding-server adapter
+    joins the *same* parametrized body in the nightly / M2 real-adapter job (it opts out of the
+    socket block there) — the extension point is marked below but NOT wired here (needs a live GPU
     service). The lock is intentionally NOT asserted inside the contract test.
   - A **separate** lock-focused test: the real adapter acquires `gpu_lock.acquire("embed")`,
     asserted via `FakeGpuLock.acquired`.
@@ -31,8 +31,8 @@ from rag.fakes.fake_embedder import FakeEmbedder  # noqa: E402
 from rag.fakes.fake_gpu_lock import FakeGpuLock  # noqa: E402
 
 # Contract cases. FakeEmbedder is the in-CI implementation of the seam (fast, no GPU). The real
-# TEI/vLLM adapter is appended to this list by the nightly / M2 real-adapter job — the SAME
-# assertions below then run against it, which is what makes "swap the embedding model" safe
+# embedding-server adapter is appended to this list by the nightly / M2 real-adapter job — the
+# SAME assertions below then run against it, which is what makes "swap the embedding model" safe
 # (TEST-STRATEGY "Contract tests"). Do NOT add the real adapter here: it needs a live GPU service
 # and must opt out of --disable-socket at the point that job invokes it.
 _CONTRACT_EMBEDDERS = [pytest.param(lambda: FakeEmbedder(dim=64), id="fake")]
@@ -116,9 +116,9 @@ def _real_embedder_cls():
 
 def _build_embedder(gpu_lock):
     """Construct the real adapter injecting `FakeGpuLock` for `gpu_lock` (frozen param name,
-    CONVENTIONS §6) and a permissive stub for every other required dependency (the TEI/vLLM
-    client, CONVENTIONS §2). No socket, no GPU — the lock is acquired *around* the batch inference
-    call, so `.acquired` is recorded before any Mock result is post-processed.
+    CONVENTIONS §6) and a permissive stub for every other required dependency (the real
+    embedder's client, CONVENTIONS §2). No socket, no GPU — the lock is acquired *around* the
+    batch inference call, so `.acquired` is recorded before any Mock result is post-processed.
     """
     cls = _real_embedder_cls()
     kwargs = {}
