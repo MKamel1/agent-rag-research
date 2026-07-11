@@ -181,7 +181,7 @@ def test_get_paper_returns_paper_summary_view():
                    updated=date(2026, 6, 1), pdf_url=f"https://arxiv.org/pdf/{paper_id}v1")
     docstore._records[paper_id] = PaperRecord(
         ref=ref, parsed=ParsedDoc(paper_id=paper_id, markdown="# T", blocks=blocks, figures=[], tables=[],
-                                  references=[], parser_id="mineru-1.x"),
+                                  references=[], parser_id="test-parser-1.x"),
         chunks=[], summary_text="A short summary.", summary_id=f"{paper_id}:summary")
 
     view = _server(SpyRetriever(), docstore).get_paper(paper_id)
