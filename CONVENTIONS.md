@@ -171,21 +171,35 @@ one source of truth for progress.
 ## 6. The single-GPU rule (the hardest constraint — DoD "critical constrained resource")
 
 24 GB holds **one** GPU-bound model at working precision at a time. Embedder, reranker, and any summarizer
-**cannot co-reside** — and this has to hold **across processes**, not just within one: `IngestionOrchestrator`
-and `McpServer` are separate composition roots (§2) that V0 explicitly allows to run concurrently (a
-multi-day ingest next to an always-on query server), so an in-process `threading.Lock` cannot be the
-mechanism.
+**cannot co-reside**. This is a **residency** invariant, and it takes two mechanisms to deliver — a lock
+around an inference call does not by itself keep two models from being resident at once, because a model
+served by a long-running process (TEI, Ollama) stays loaded in VRAM after the call returns and the lock
+releases:
 
-- The mechanism is a typed `GpuLock` (DATA-CONTRACTS.md), constructor-injected into every real
-  `Embedder`/`Summarizer`/`Reranker` adapter, backed by a cross-process file lock keyed off
-  `Config.gpu_lock_path`. **The adapter acquires the lock itself around its own inference call** — callers
-  (`IngestionOrchestrator`, `Retriever`) call `embed()`/`summarize()`/`rerank()` exactly as they would with
-  no lock at all. Two GPU stages never run concurrently, in one process or two.
+1. **Stage-batched ingestion + explicit eviction (the residency mechanism).** `IngestionOrchestrator` runs
+   GPU stages as sequential batches — embed everything pending, then **evict** the embedding model (Ollama
+   `keep_alive=0`; stop/unload TEI), then summarize everything pending, evict, etc. — so residency is
+   sequential by pipeline construction, not by hoping the lock's release implies unloading (ARCHITECTURE
+   "Operational invariants" §3).
+2. **`GpuLock` — cross-process compute serializer, not a residency guarantee.** A typed `GpuLock`
+   (DATA-CONTRACTS.md), constructor-injected into every real `Embedder`/`Summarizer`/`Reranker` adapter,
+   backed by a cross-process file lock keyed off `Config.gpu_lock_path`, serializes *inference calls* across
+   processes — this has to hold **across processes**, not just within one: `IngestionOrchestrator` and
+   `McpServer` are separate composition roots (§2) that V0 explicitly allows to run concurrently (a
+   multi-day ingest next to an always-on query server), so an in-process `threading.Lock` cannot be the
+   mechanism. **The adapter acquires the lock itself around its own inference call** — callers
+   (`IngestionOrchestrator`, `Retriever`) call `embed()`/`summarize()`/`rerank()` exactly as they would with
+   no lock at all. But acquiring/releasing the lock around a call does **not** unload the model when the
+   call ends — that's (1)'s job. Size ingestion's stage batches accounting for `McpServer`'s reranker being
+   normally resident the whole time the query server is up.
+
 - There is no "or accept the load cost" fallback. If a real GPU-bound adapter's constructor doesn't declare
   a `gpu_lock: GpuLock` parameter, that is a bug, not a judgment call — T-F6 greps for it, same as a vendor
   import outside its adapter (§1, §12).
 - If you see CUDA OOM, the answer is almost never "reduce batch size a bit" — it's "two models are resident
-  that shouldn't be." Check that both processes are pointed at the same `gpu_lock_path` before anything else.
+  that shouldn't be." Check (a) both processes are pointed at the same `gpu_lock_path`, and (b) the
+  ingestion stage that should have evicted its model before the next one loaded actually did — a green
+  `GpuLock` acquire/release does not prove eviction happened.
 
 ---
 

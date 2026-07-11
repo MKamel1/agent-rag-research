@@ -431,7 +431,7 @@ class RerankCandidate:
   isolated test, not a contract test (V0 has only one reranker choice, so there's no second adapter to prove
   agreement against — see ARCHITECTURE principle 4).
 
-## GpuLock — cross-process serialization for GPU-bound stages
+## GpuLock — cross-process COMPUTE serialization (not the residency mechanism)
 
 **Why this exists:** the single-GPU rule (ARCHITECTURE "Operational invariants" §3, CONVENTIONS §6) was
 previously enforced only in prose ("the orchestrator holds a GPU lock"), with no type, no constructor
@@ -441,6 +441,14 @@ agent team. It's also a two-process problem, not a one-process problem: `Ingesti
 processes — a multi-day ingest alongside an always-on query server. **V0 explicitly allows them to run
 concurrently**; a same-process `threading.Lock` cannot serialize across that boundary, so the lock must be
 a real, injected, cross-process primitive.
+
+**What `GpuLock` does NOT do:** it serializes *inference calls* — it does not evict a model from VRAM.
+Models served by a long-running process (TEI, Ollama) stay resident after `embed()`/`rerank()` returns and
+the lock is released, so "the lock serialized our calls" is not evidence that two models can't be resident
+at once. The invariant "embedder/reranker/summarizer never co-reside" is delivered by **stage-batched
+ingestion + explicit model eviction between stages** (ARCHITECTURE "Operational invariants" §3, mechanism
+(1)) — `GpuLock` is mechanism (2), the cross-process call serializer (e.g. the always-on `McpServer`'s
+reranker call vs. a running ingest stage), not a substitute for it.
 
 ```python
 class GpuLock(Protocol):
