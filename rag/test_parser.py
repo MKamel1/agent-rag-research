@@ -73,7 +73,7 @@ def _parsed_doc(**overrides) -> ParsedDoc:
         figures=[],
         tables=[],
         references=[],
-        parser_id="mineru-1.x",
+        parser_id="test-parser-1.x",
     )
     fields.update(overrides)
     return ParsedDoc(**fields)
@@ -235,7 +235,7 @@ def test_scanned_golden_pdf_is_quarantined(pdf_path):
         parse(pdf_path.read_bytes())
 
 
-# References parsing (GROBID) is likewise golden-dependent — asserted here so it activates with
+# References parsing is likewise golden-dependent — asserted here so it activates with
 # the fixtures. A math/table-only page may legitimately have no references, so this checks shape
 # (each parsed Reference has a non-empty `raw`) rather than requiring references to exist.
 @pytest.mark.skipif(not _golden, reason="Spike-1 golden PDFs not committed yet (fixtures/golden/)")
@@ -244,4 +244,4 @@ def test_golden_pdf_references_have_raw_strings(pdf_path):
     doc = parse(pdf_path.read_bytes())
     for ref in doc.references:
         assert isinstance(ref, Reference)
-        assert ref.raw.strip(), "every parsed reference carries its raw string (GROBID)"
+        assert ref.raw.strip(), "every parsed reference carries its raw string"
