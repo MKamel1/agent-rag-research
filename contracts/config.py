@@ -26,7 +26,7 @@ class Config(FrozenModel):
     sources: list[str] = Field(default_factory=lambda: ["arxiv"])
     relevance_filter: Literal["off", "embedding"] = "off"
     # retrieval knobs (tuned in Spike 2)
-    # NOTE: no `contextual_header` toggle — it's not built in V0 (see Chunk.contextual_header).
+    # NOTE: no `contextual_header` toggle — it's not built in V0 (PRD ADR-07).
     child_parent_expansion: bool = True
     top_k: int = Field(default=10, gt=0)
     rerank_depth: int = Field(default=50, gt=0)

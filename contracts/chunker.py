@@ -5,9 +5,8 @@ from contracts.provenance import Anchor
 
 
 class Chunk(FrozenModel):
-    """`contextual_header` is a V1 feature, not a V0 toggle — V0 does NOT generate it. The field
-    exists now, nullable, purely so V1 fills it in place with zero schema migration. Do not
-    write code in V0 that populates this field.
+    """`contextual_header` is a V1 feature, not a V0 toggle — do not populate it in V0.
+    Full rationale: PRD ADR-07.
     """
 
     chunk_id: str

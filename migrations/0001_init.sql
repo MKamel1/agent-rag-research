@@ -61,14 +61,9 @@ CREATE TABLE summaries (
 -- The idempotency spine (CONVENTIONS "operational invariants"):
 CREATE TABLE ingest_state (
   paper_id     TEXT PRIMARY KEY,
-  stage        TEXT NOT NULL,        -- harvested|parsed|chunked|summarized|embedded|stored|done
-                                       -- `stored` = DocumentStore.put() succeeded (source-of-truth
-                                       -- written). VectorIndex.upsert() runs AFTER `stored` is recorded
-                                       -- and BEFORE `done` is recorded — it is a separate step, not part
-                                       -- of `put()`. A paper stuck at `stored` on resume has NOT
-                                       -- necessarily reached the vector index; resume must re-run
-                                       -- upsert() for it (idempotent, safe to repeat) before advancing to
-                                       -- `done` (ARCHITECTURE "Operational invariants" §1).
+  stage        TEXT NOT NULL,        -- harvested|parsed|chunked|summarized|embedded|stored|done —
+                                       -- full `stored`-vs-`done` resume semantics (why they're
+                                       -- distinct stages): ARCHITECTURE.md "Operational invariants" §1.
   updated_at   TEXT NOT NULL
 );
 
