@@ -10,21 +10,36 @@
 ## 1. Vision
 
 A **personal, always-on AI research knowledge system** that runs entirely on the local
-workstation, continuously ingests AI/ML research from legal sources, and builds a
-**living, claim-centric memory** that both Claude and local models can query cheaply
-for grounded, cited answers.
+workstation, continuously ingests AI/ML research from legal sources, and gives Claude and
+local models a **grounded, cited answer instead of a re-fetch** — at ~0 API cost.
 
-Leave it running overnight or over a week → it accumulates an indexed, summarized,
-cross-linked corpus. Any model then queries it instead of re-fetching and re-reading
-PDFs — this is the token savings — and, over time, it does more: it answers hard
-research questions with synthesis, and proactively surfaces what's new and important.
+Leave it running overnight or over a week → it accumulates an indexed, summarized corpus
+any model queries instead of re-reading PDFs (the token savings, G1). What makes that cache
+worth building — per this doc's own §8 feasibility analysis — is that the access layer is
+unusually honest about what it knows: every answer traces back to a resolvable source span,
+each result is tagged with how much to trust it (evidence tier), coverage is stated rather
+than implied, and "no grounded answer for X" is a first-class response instead of a
+hallucinated one (§8.5/§8.6). On top of that cache, and staged well behind it, sits a more
+ambitious experiment — a claim-centric, self-reconciling memory — pursued opportunistically
+as the corpus and tooling mature, not as the thing this system is sold on.
 
 ### The one-line differentiator
-Most "chat with your PDFs" systems are a pile of embedded chunks. **This system's memory
-is claim-centric and self-reconciling**: findings are extracted as atomic, verifiable
-claims, bidirectionally linked to their source artifacts, and continuously reconciled so
-new knowledge reshapes the existing knowledge (and vice versa). That is the "living
-memory" requirement, and it is the hardest and most valuable part of the system.
+**A provenance-anchored, local RAG cache with unusually good MCP ergonomics**: every result
+cites a verbatim source span, absence is reported rather than hallucinated, and the system
+describes its own coverage instead of quietly presenting a sample as the whole answer.
+
+### The experiment layered on top (V1+/V2 — not the core promise)
+The more ambitious idea floated for this system — a **claim-centric, self-reconciling
+memory**, where atomic findings are extracted, bidirectionally linked to their sources, and
+continuously reconciled so new knowledge reshapes old — is real and worth pursuing, but §8's
+own feasibility analysis rates autonomous reconciliation research-grade (a ~70%-precision
+ceiling on judging contradiction/supersession) and stages it behind spikes that may not clear
+their bar (§8.4, §9). It lands as an explicitly experimental **V1 enrichment** (tier-labeled,
+agent-verified claims — never a system that arbitrates truth) and an **optional, low-priority
+V2 surfacing layer** that its own owner annotates "at best nice-to-have — won't use much"
+(§8.4). Treat it as the stretch goal the grounded cache was built to support, not the product's
+core promise — a reader calibrating this whole document should do so against the cache, not
+against reconciliation.
 
 ---
 
