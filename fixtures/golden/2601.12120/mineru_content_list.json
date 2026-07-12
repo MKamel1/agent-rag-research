@@ -1,0 +1,4112 @@
+[
+    {
+        "type": "text",
+        "text": "Lost in Aggregation: The Causal Interpretation of the IV Estimand",
+        "text_level": 1,
+        "bbox": [
+            112,
+            142,
+            882,
+            204
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Danielle Tsao<sup>1</sup>, Krikamol Muandet<sup>2</sup>, Frederick Eberhardt<sup>3</sup>, Emilija Perkovi´c<sup>1</sup>",
+        "bbox": [
+            112,
+            224,
+            883,
+            268
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "<sup>1</sup>University of Washington, Seattle, USA",
+        "bbox": [
+            336,
+            290,
+            660,
+            308
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "<sup>2</sup>CISPA Helmholtz Center for Information Security, Saarbr¨ucken, Germany <sup>3</sup>California Institute of Technology, Pasadena, USA",
+        "bbox": [
+            200,
+            308,
+            795,
+            343
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "dltsao@uw.edu",
+        "bbox": [
+            434,
+            352,
+            562,
+            366
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract",
+        "text_level": 2,
+        "bbox": [
+            457,
+            405,
+            540,
+            420
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Instrumental variable based estimation of a causal efect has emerged as a standard approach to mitigate confounding bias in the social sciences and epidemiology, where conducting randomized experiments can be too costly or impossible. However, justifying the validity of the instrument often poses a significant challenge. In this work, we highlight a problem generally neglected in arguments for instrumental variable validity: the presence of an “aggregate treatment variable”, where the treatment (e.g., education, GDP, caloric intake) is composed of finer-grained components that each may have a diferent efect on the outcome. We show that the causal efect of an aggregate treatment is generally ambiguous, as it depends on how interventions on the aggregate are instantiated at the component level, formalized through the aggregateconstrained component intervention distribution. We then characterize conditions on the interventional distribution and the aggregate setting under which standard instrumental variable estimators identify the aggregate efect. The contrived nature of these conditions implies major limitations on the interpretation of instrumental variable estimates based on aggregate treatments and highlights the need for a broader justificatory base for the exclusion restriction in such settings.",
+        "bbox": [
+            158,
+            433,
+            838,
+            709
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Keywords: Aggregate treatments, Causal inference, Exclusion restriction, Instrumental variables, Structural causal models, Two-stage least squares",
+        "bbox": [
+            111,
+            728,
+            883,
+            765
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction",
+        "text_level": 2,
+        "bbox": [
+            114,
+            792,
+            339,
+            814
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Instrumental variables (IV) allow practitioners to mitigate confounding bias when estimating the causal efect of a treatment A on some outcome Y from observational data alone. The technique is widely used across disciplines, notably in the social sciences (Angrist and Krueger, 1991; Acemoglu et al., 2008) and epidemiology (Rashad, 2006; Nordestgaard et al.,",
+        "bbox": [
+            111,
+            830,
+            883,
+            905
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2601.12120v1 [stat.ME] 17 Jan 2026",
+        "bbox": [
+            22,
+            268,
+            57,
+            724
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_number",
+        "text": "1",
+        "bbox": [
+            493,
+            934,
+            504,
+            948
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "2012), where randomized experiments can be too costly or even impossible to conduct. IV estimation relies on a random variable I, called an instrument, that stands in a particular relationship to the treatment and outcome: I is associated with the treatment A (relevance), but not with the outcome Y (exchangeability), except through its relationship with A (exclusion restriction) (Reiersøl, 1945).",
+        "bbox": [
+            111,
+            92,
+            885,
+            184
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Famously, Angrist and Krueger (1991) use the quarter-of-birth as an instrument to estimate the efect of education on wages. Acemoglu et al. (2008) use the national savings rate as an instrument to estimate the causal efect of gross domestic product (GDP) on the degree of democracy of a country. Rashad (2006) uses air quality as an instrument for estimating the causal efect of caloric intake on body mass index (BMI). Nordestgaard et al. (2012), in turn, use particular genotypes as instruments for estimating the causal efect of body mass index (BMI) on ischemic heart disease. While the relevance condition can be tested explicitly, exclusion and exchangeability are not testable unless one makes additional assumptions about the IV set-up; see, e.g., the approaches by Kitagawa (2015); Burauel (2023). As a result, establishing the validity of the instrument constitutes a substantive epistemic challenge, grounded in expert knowledge and background assumptions, and often highly contested; see, e.g., Bound et al. (1995) and Buckles and Hungerman (2013) with respect to the analysis in Angrist et al. (1996).",
+        "bbox": [
+            111,
+            191,
+            887,
+            431
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "In the above examples, the treatment (education, GDP, caloric intake and BMI, respectively) is an aggregate of many finer-grained quantities into a single univariate variable, where the individual components can have markedly diferent efects on the outcome. For example, as Caetano et al. (2025) note, education, measured in units of time, summarizes many diferent types of education in diferent domains, which very plausibly have diferent influences on future income. Given that the IV estimates are used to inform real-world interventions, two important questions arise:",
+        "bbox": [
+            111,
+            438,
+            885,
+            568
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "(a) What is the nature of the causal efect of interest when the treatment is an aggregate?, and",
+        "bbox": [
+            125,
+            574,
+            883,
+            611
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "(b) Under what circumstances does the classical IV estimator identify this aggregate causal efect?",
+        "bbox": [
+            125,
+            619,
+            883,
+            656
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "The first question relates closely to fundamental assumptions about the nature of causal efects used in the literature on potential outcomes. Originally articulated as part of the single unit treatment value assumption (SUTVA), Rubin (1986) requires for the estimation of a causal efect that “the value of Y for unit u when exposed to treatment t will be the same no matter what mechanism is used to assign treatment t to unit u [...]”. VanderWeele (2009) isolates the concern more precisely in what he calls treatment variation invariance, namely, that the potential outcome takes the same value irrespective of what means are used to instantiate the cause. While VanderWeele considers diferent protocols of instantiating the treatment (such as diferent ways of performing medical surgery), the point similarly applies to aggregate treatments where an aggregate treatment value may be instantiated by a variety of diferent configurations of its components. In many social science settings where IV estimation techniques are used, it is highly plausible that treatment variation invariance is violated.",
+        "bbox": [
+            109,
+            666,
+            887,
+            905
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2",
+        "bbox": [
+            491,
+            933,
+            504,
+            948
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "The second question connects back to the literature in economic theory on aggregation bias, which investigates the mismatch between estimands for macro-relations and aggregated estimands for the corresponding micro-relations in the context of common estimation methods such as ordinary least squares (OLS) (Theil, 1954; Lichtenberg, 1990) and two-stage least squares (2SLS) (Theil, 1959). As this literature highights, the relation between aggregate and components has to be highly constrained in order to attribute meaningful causal efects to aggregate treatments.",
+        "bbox": [
+            111,
+            92,
+            885,
+            220
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We make the following contributions: We formalize the linear IV setting with an aggregate treatment in Section 2 and derive the standard IV estimand applied to this setting. In Section 3 we then motivate and justify what we take to be the ground-truth causal efect of the aggregate treatment on the outcome that would provide a suitable basis for policy advice, addressing the first question above. Section 4 then identifies what additional assumptions about the aggregate setting are necessary in order for the IV estimand to correctly identify the aggregate causal efect, addressing the second question. We show that there are two such scenarios: proportional aggregation (Section 4.1) and instrument-tuned interventions (Section 4.2). Proportional aggregation amounts roughly to the assumption that either each component variable has the same efect on the outcome, or, that the efect on the outcome is mediated by the aggregate treatment. That is, proportionality renders the aggregation claim close to trivial. In contrast, instrument-tuned interventions require a highly contrived intervention policy, which is implausible in real-world practical cases.",
+        "bbox": [
+            111,
+            228,
+            885,
+            468
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "In Section 4.3 we show how IV estimates diverge from the target aggregate causal efect when the particular assumptions of Sections 4.1 and 4.2 are not satisfied. In Section 5 we connect these findings to the exclusion restriction for IV validity to show that these circumstances are untestable in practice and that, consequently, assumptions about aggregation need to be addressed when the exclusion assumption is justified for a domain of application. We also argue that standard techniques to mitigate violations of the exclusion restriction will in general not apply in this aggregate setting. Finally, in Section 6 we consider several related IV settings. We conclude with a strong note of caution: If IV estimates that involve aggregate treatment variables are taken to provide sound policy advice, then rather strong assumptions about the nature of the aggregation or the policy intervention have to be justified.",
+        "bbox": [
+            111,
+            474,
+            885,
+            659
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2 The Aggregate Setting",
+        "text_level": 2,
+        "bbox": [
+            112,
+            684,
+            482,
+            709
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Consider the setting illustrated in Figure 1: From the researcher’s perspective (top) it is a standard IV setting. To estimate the causal efect of treatment A on outcome Y the researcher uses an instrumental variable I to mitigate the potential confounding due to unobserved variable U where I only directly causally afects A and is not confounded with Y . However, suppose that (unbeknownst to the researcher) treatment A is made up of $k > 1$ components $A _ { 1 } , \\ldots A _ { k }$ that may be subject to diferent influences $\\delta _ { j }$ and $\\gamma _ { a _ { j } }$ from the instrument I and confounder U, respectively, and that may have diferent efects $\\beta _ { j }$ on outcome Y (bottom). That is, for the linear case the data generating process is given by the",
+        "bbox": [
+            111,
+            722,
+            885,
+            871
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3",
+        "bbox": [
+            491,
+            933,
+            504,
+            948
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "image",
+        "img_path": "images/436384834a2891ad817681382422645ce6c75bbab37e873802f0e8648a9a5f25.jpg",
+        "image_caption": [
+            "Figure 1: The aggregate setting: Comparison of the classic IV setting as posited by the researcher (top) and the true data generating process (bottom)."
+        ],
+        "image_footnote": [],
+        "bbox": [
+            281,
+            95,
+            712,
+            295
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "following structural causal model (SCM):",
+        "bbox": [
+            112,
+            377,
+            464,
+            396
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "img_path": "images/5b38715d0f9c4ccf6d54a70261c9355f582b2dc780c34f770fb47364f192627e.jpg",
+        "text": "$$\nU  \\epsilon _ { u } \\quad I  \\epsilon _ { i }\\tag{1a}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            339,
+            411,
+            482,
+            429
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "img_path": "images/e1ff0860eb21d8097d86daad136120d95c36ea2c494483de622c3e1e5ab39660.jpg",
+        "text": "$$\nA _ { j } \\gets \\delta _ { j } I + \\gamma _ { a _ { j } } U + \\epsilon _ { a _ { j } } , \\quad j \\in \\{ 1 , . . . , k \\}\\tag{1b}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            334,
+            433,
+            660,
+            454
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "img_path": "images/934395f17a10339f6c200a4759271959b83cdfeb65b1bb37f5e3a426c888d137.jpg",
+        "text": "$$\nA = \\sum _ { j = 1 } ^ { k } \\alpha _ { j } A _ { j }\\tag{1c}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            336,
+            457,
+            467,
+            506
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "img_path": "images/8fcf1ed1a329dd4e0d22613532a59b3277ce67a71b6eac3aa1dd7f52d6428e27.jpg",
+        "text": "$$\nY \\gets \\sum _ { j = 1 } ^ { k } \\beta _ { j } A _ { j } + \\gamma _ { y } U + \\epsilon _ { y } .\\tag{1d}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            339,
+            508,
+            565,
+            559
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Intercepts are omitted for simplicity and without loss of generality. The relation (1c) between A and its components $A _ { j }$ is stated as an equation, rather than as a causal efect, indicating that this relation is definitional or constitutive, rather than causal, and consequently cannot be broken by experimental intervention. Following Caetano et al. (2025), we refer to (1c) as the aggregation rule. For simplicity we consider the aggregation rule to be a simple weighted linear sum, and that the error terms $\\epsilon _ { u } , \\epsilon _ { i } , \\epsilon _ { y } , \\epsilon _ { a _ { j } }$ for $j \\in \\{ 1 \\ldots , k \\}$ are mutually independent with mean zero and finite variance.",
+        "bbox": [
+            111,
+            573,
+            883,
+            702
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Given that the aggregate setting is linear with a single instrument, all standard IV estimation techniques, such as two-stage least squares (2SLS) (Theil, 1953; Basmann, 1957) and indirect least squares (Durbin, 1954; Angrist et al., 1996), target the same estimand (Burgess et al., 2017). We denote this general linear IV estimand as $\\beta _ { \\mathrm { I V } }$ . Applying 2SLS, for example, to derive $\\beta _ { \\mathrm { I V } }$ in the aggregate setting amounts to first regressing A on I to obtain linear predictor A<sup>˜</sup> of $A _ { i }$ and then regressing $Y$ on $\\tilde { A }$ to obtain the estimand. For the aggregate setting this implies:",
+        "bbox": [
+            111,
+            710,
+            885,
+            838
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "img_path": "images/773ff79798fa4d09a66065c7cb04f1b6616357bb0d1fc2a896494ac960c51803.jpg",
+        "text": "$$\n\\tilde { A } = \\frac { \\mathrm { c o v } ( \\sum _ { j = 1 } ^ { k } \\alpha _ { j } A _ { j } , I ) } { \\mathrm { v a r } ( I ) } I ,\\tag{2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            388,
+            849,
+            606,
+            893
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4",
+        "bbox": [
+            493,
+            934,
+            504,
+            948
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "and hence",
+        "bbox": [
+            112,
+            92,
+            204,
+            108
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "img_path": "images/d2f3e391ce61cc3907f57e7993c8c9348468683d4087e43445a8efe4eee49c83.jpg",
+        "text": "$$\n\\beta _ { \\mathrm { I V } } = { \\frac { \\operatorname { c o v } ( Y , { \\tilde { A } } ) } { \\operatorname { v a r } ( { \\tilde { A } } ) } } = { \\frac { \\operatorname { c o v } ( Y , I ) } { \\sum _ { j = 1 } ^ { k } \\alpha _ { j } \\mathrm { c o v } ( A _ { j } , I ) } } = { \\frac { \\sum _ { j = 1 } ^ { k } \\beta _ { j } \\delta _ { j } } { \\sum _ { j = 1 } ^ { k } \\alpha _ { j } \\delta _ { j } } } .\\tag{3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            276,
+            118,
+            717,
+            167
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "For a standard IV model as in the top of Figure $1 , \\beta _ { \\mathrm { { I V } } }$ is interpreted as the causal efect of the treatment on the outcome (defined formally in Section 3). However, for the aggregate setting at the bottom of Figure 1, it is unclear which interventions (if any) correspond to this estimand. In particular, the intervention on A has to be realized in its components with possibly many ways of instantiating a single value.",
+        "bbox": [
+            111,
+            186,
+            885,
+            280
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3 The Causal Efect of an Aggregate Treatment",
+        "text_level": 2,
+        "bbox": [
+            111,
+            306,
+            799,
+            329
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "We use the do-notation $\\operatorname { d o } ( A = a )$ of Pearl (2009) to denote the intervention that sets the value of treatment A to a. In linear models, the target causal efect is normally defined as the expected change in outcome Y resulting from a unit change of the intervention on the treatment A:",
+        "bbox": [
+            111,
+            343,
+            885,
+            416
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "img_path": "images/ad2e5e84939627e8b2f6233507c56869a85211bad390af3bc1f1496e61cf9b07.jpg",
+        "text": "$$\n\\mathbb { E } [ Y | \\mathrm { d o } ( A = a + 1 ) ] - \\mathbb { E } [ Y | \\mathrm { d o } ( A = a ) ] .\\tag{4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            325,
+            429,
+            668,
+            450
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "This type of causal efect is often referred to as the average causal efect, or the average treatment efect (Hernan and Robins, 2026). However, given that A is an aggregate, an intervention $\\operatorname { d o } ( A = a )$ can be instantiated by many combinations of values for the components $A _ { 1 } , \\ldots , A _ { k }$ , with each satisfying the aggregation rule (1c). The same applies to do $( A = a + 1 )$ , which implies that a unit change in A may involve more (or less) than a unit change in any one $A _ { j }$ . Spirtes and Scheines (2004) refer to this type of efect as ambiguous. The efect is not well-defined as it is dependent on the particular values of the component $A _ { j } \\mathrm { ^ { * } s }$ that instantiate the intervention do $( A = a )$ , or in other words, it violates treatment variation invariance (VanderWeele, 2009).",
+        "bbox": [
+            111,
+            462,
+            885,
+            628
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "In addition to this value-ambiguity of the components, one has to determine whether under the intervention $\\operatorname { d o } ( A = a )$ the values of the components $A _ { j }$ are fixed by interventions $\\operatorname { d o } ( A _ { j } )$ that make the $A _ { j }$ independent of their causal parents (here represented by I and $U )$ , or whether do $\\mathfrak { s } ( A = a )$ merely enforces the aggregation rule on the values of the $A _ { j }$ without making the $A _ { j }$ independent of their causal parents. Both of these considerations highlight the need for an explicit distribution relating the intervention on the aggregate A to the change of its components $A _ { 1 } , \\ldots , A _ { k }$",
+        "bbox": [
+            109,
+            636,
+            885,
+            765
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3.1 Aggregate-constrained Component Intervention Distribution (ACID) and the Aggregate Causal Efect",
+        "text_level": 2,
+        "bbox": [
+            111,
+            786,
+            883,
+            830
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "For a given intervention do $( A = a )$ on the aggregate A, we introduce the aggregate-constrained component intervention distribution $\\left( A C I D \\right)$ to describe how the intervention is instantiated in terms of the components $A _ { 1 } , \\ldots , A _ { k }$ , and how the components’ relations to all other variables in the causal system change under intervention. That is, for $\\mathbf { V } = \\{ I , U , A _ { 1 } , . . . , A _ { k } , Y \\}$ , the ACID is given by an interventional distribution:",
+        "bbox": [
+            111,
+            840,
+            887,
+            914
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5",
+        "bbox": [
+            491,
+            934,
+            504,
+            948
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            111,
+            92,
+            553,
+            109
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "img_path": "images/4c90121a47c0e2a27ad16b0d9e42dc2aa103e88ef88b4849384d60006f0ee609.jpg",
+        "text": "$$\nP ( \\mathbf { v } ) _ { \\mathrm { d o } ( A = a ) } = P ( i , u , a _ { 1 } , . . . , a _ { k } , y \\mid \\mathrm { d o } ( A = a ) ) .\\tag{5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            302,
+            125,
+            691,
+            145
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "We emphasize that any causal claim about any aggregate treatment presupposes an ACID, even if it is generally left implicit.",
+        "bbox": [
+            111,
+            159,
+            882,
+            195
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "The following three common desiderata, discussed in more detail in Section 3.3, strike us as essential assumptions about an ACID in the context of IV estimation of linear causal efects:",
+        "bbox": [
+            111,
+            203,
+            883,
+            241
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Surgicality - The intervention $\\operatorname { d o } ( A = a )$ is instantiated in terms of (possibly correlated) interventions on the $A _ { j }$ that make the $A _ { j }$ independent of their observational causes (I and U).",
+        "bbox": [
+            132,
+            250,
+            883,
+            304
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Aggregation Restriction - $\\mathbf { \\partial } \\cdot \\ \\operatorname { d o } ( A \\ = \\ a )$ satisfies the aggregation rule, i.e. the ACID lacks support for any combination of values of $a _ { 1 } , \\ldots , a _ { k }$ that do not satisfy the aggregation rule (1c).",
+        "bbox": [
+            133,
+            313,
+            883,
+            368
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Value Independence - The causal efect of treatment A on Y is independent of the particular value a that A is set to in the intervention do(A = a). So, for all $a , a ^ { \\prime }$ that can be assigned:",
+        "bbox": [
+            133,
+            377,
+            883,
+            431
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "img_path": "images/88ae890a8b3d6cbd00cd4d5353caa82836682131971354aaf65a08c33d81caac.jpg",
+        "text": "$$\n\\begin{array} { r } { \\mathbb { E } [ Y | \\mathrm { d o } ( A = a + 1 ) ] - \\mathbb { E } [ Y | \\mathrm { d o } ( A = a ) ] = \\mathbb { E } [ Y | \\mathrm { d o } ( A = a ^ { \\prime } + 1 ) ] - \\mathbb { E } [ Y | \\mathrm { d o } ( A = a ^ { \\prime } ) ] . } \\end{array}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            191,
+            445,
+            870,
+            465
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "An ACID that satisfies all three desiderata is henceforth referred to as a valid ACID. A valid ACID in (5) will factor in the following way:",
+        "bbox": [
+            111,
+            488,
+            882,
+            526
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "img_path": "images/5aa44d53a3ab94c2738fb443e283ad8ede9e8a3c410146d9eaced652c626de37.jpg",
+        "text": "$$\nP ( { \\bf v } ) _ { \\mathrm { d o } ( A = a ) } = P ( i , u | d o ( A = a ) ) P ( a _ { 1 } , . . . , a _ { k } | i , u , d o ( A = a ) ) P ( y | a _ { 1 } , . . . , a _ { k } , i , u , d o ( A = a ) )\\tag{6a}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            129,
+            540,
+            866,
+            560
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "img_path": "images/6c1bdc2d4481075e178986d3c73cc6b40ba2c26c72124ee6f6e910e8a8d9b88e.jpg",
+        "text": "$$\n= P ( i , u ) P ( a _ { 1 } , . . . , a _ { k } | d o ( A = a ) ) P ( y | a _ { 1 } , . . . , a _ { k } , u )\\tag{6b}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            230,
+            582,
+            642,
+            602
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "img_path": "images/c1d2b3b8e6ddc8158aa902f6a377b00358a6eb3b10c04edb7ac3625fdf9c68c1.jpg",
+        "text": "$$\n= P ( i ) P ( u ) P ^ { * } ( a _ { 1 } , . . . , a _ { k } ; a ) P ( y | a _ { 1 } , . . . , a _ { k } , u ) ,\\tag{6c}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            230,
+            604,
+            606,
+            625
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "where we use the chain rule and the Surgicality assumption to transform the interventional distributions into their observational counterparts. Note that the intervention value a is a parameter of $P ^ { * }$ because the Aggregation Restriction must be satisfied for a. Since the $P ^ { * } .$ -term marks the crucial (and only) diference between the ACID and the observational distribution of V, we will refer to both (5) and the specific $P ^ { * }$ distribution as the ACID, as long as it is clear from context.",
+        "bbox": [
+            111,
+            637,
+            883,
+            748
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "The SCM corresponding to an intervention on the aggregate A for the system described by (1) is then given by:",
+        "bbox": [
+            111,
+            756,
+            883,
+            794
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "img_path": "images/3f4998294aaf79bfdbe6492ff15c21007063c40316e6724faac50a7cfb9c4248.jpg",
+        "text": "$$\nU  \\epsilon _ { u } \\quad I  \\epsilon _ { i }\\tag{7a}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            424,
+            808,
+            566,
+            825
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "img_path": "images/587d29688c31aec015c78dbe226777c592f16084d298941e009a8cbfac6ff5c7.jpg",
+        "text": "$$\n( A _ { 1 } , . . . , A _ { k } ) \\sim P ^ { * } ( a _ { 1 } , . . . , a _ { k } ; a )\\tag{7b}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            348,
+            829,
+            598,
+            849
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "img_path": "images/e655ca6cc4abf4d1925f7f0d02dc71d13005c55717c35b00dae296544623c485.jpg",
+        "text": "$$\nY \\gets \\sum _ { j = 1 } ^ { k } \\beta _ { j } A _ { j } + \\gamma _ { y } U + \\epsilon _ { y } .\\tag{7c}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            423,
+            853,
+            648,
+            902
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6",
+        "bbox": [
+            491,
+            934,
+            504,
+            948
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Furthermore, $\\mathbb { E } [ Y | \\mathrm { d o } ( A = a ) ]$ is now computed as",
+        "bbox": [
+            112,
+            90,
+            544,
+            109
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "img_path": "images/31569594de90ee27fe70debd27817e2307b7413f3479b845f2516adeeb5e07fa.jpg",
+        "text": "$$\n\\mathbb { E } [ Y | \\mathrm { d o } ( A = a ) ] = \\int ( \\beta _ { 1 } a _ { 1 } + . . . + \\beta _ { k } a _ { k } ) d P ^ { * } ( a _ { 1 } , . . . , a _ { k } ; a )\\tag{8}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            259,
+            122,
+            735,
+            160
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "img_path": "images/7c3799fc3c5bf492c38bfb3911f62dc7bc66e9fdcc7cf4870416992e6e35a457.jpg",
+        "text": "$$\n= \\sum _ { j = 1 } ^ { k } \\int \\beta _ { j } a _ { j } d P ^ { * } ( a _ { j } ; a ) ,\\tag{9}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            401,
+            164,
+            606,
+            212
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "where $U$ and $\\epsilon _ { y }$ can be dropped from the calculation. Then for any $P ^ { * }$ that in addition satisfies Value Independence, we have a well-defined aggregate causal efect as follows.",
+        "bbox": [
+            111,
+            226,
+            883,
+            262
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Definition 1 (Aggregate Causal Efect) The causal efect of an aggregate treatment A on an outcome Y , referred to as the aggregate causal efect and denoted by $A C E ( A , Y )$ , is taken to be:",
+        "bbox": [
+            111,
+            270,
+            885,
+            325
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "img_path": "images/3009f4691955d63de92d29f2b66e99816d0696f4df02217fd806ce138534c2ec.jpg",
+        "text": "$$\nA C E ( A , Y ) = \\mathbb { E } [ Y \\mid d o ( A = a + 1 ) ] - \\mathbb { E } [ Y \\mid d o ( A = a ) ] ,\\tag{10}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            267,
+            339,
+            727,
+            359
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "where the expectations of Y are computed as in (9) under a valid ACID.",
+        "bbox": [
+            112,
+            375,
+            723,
+            392
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "For a non-aggregate treatment A, the aggregate causal efect corresponds to the standard average causal efect (Hernan and Robins, 2026).",
+        "bbox": [
+            111,
+            401,
+            883,
+            438
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "With the aggregate causal efect defined, we can now formulate our second question of the introduction precisely: Under what conditions does an investigator facing the aggregate setting in Figure 1, where the $A _ { j }$ are unobserved, correctly identify the aggregate causal efect in (10) using classic IV estimation applied to the aggregate A? More precisely, what are the constraints on SCM (1) and its ACID in (7b) such that the aggregate causal efect corresponds to the IV estimand $\\beta _ { \\mathrm { I V } }$ in (3)?",
+        "bbox": [
+            111,
+            446,
+            885,
+            558
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "3.2 A Gaussian ACID Example",
+        "text_level": 2,
+        "bbox": [
+            112,
+            579,
+            498,
+            599
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Consider an ACID $P ^ { * }$ that, given intervention do $( A = a )$ on the aggregate A, sets the values of the components $A _ { 1 } , . . . , A _ { k }$ according to a multivariate Gaussian distribution:",
+        "bbox": [
+            111,
+            609,
+            883,
+            647
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "img_path": "images/821769c8a7e0343014adcb90cc79b01a31058d8bb99ca490df7f38d9cc63c8a1.jpg",
+        "text": "$$\n\\begin{array} { r } { [ \\boldsymbol { A } _ { 1 } ] ~ } \\\\ { \\vdots } \\\\ { \\boldsymbol { A } _ { k } ] } \\sim N _ { k } ( [ \\begin{array} { c } { c _ { 1 } + a d _ { 1 } } \\\\ { \\vdots } \\\\ { c _ { k } + a d _ { k } } \\end{array} ] , \\boldsymbol { \\Sigma } ) ,  \\end{array}\\tag{11}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            369,
+            657,
+            632,
+            726
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "where to satisfy the Aggregation Restriction the constants $c _ { j } , d _ { j } \\in \\mathbb { R } , j \\in \\{ 1 , \\dots , k \\}$ need to satisfy",
+        "bbox": [
+            111,
+            738,
+            883,
+            775
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "img_path": "images/fc7ef07b9ec45f64b73f33aca0f600976e66bdaea0ef0db65baa4ffe3d6b7f6e.jpg",
+        "text": "$$\n\\sum _ { j = 1 } ^ { k } \\alpha _ { j } c _ { j } = 0 , \\sum _ { j = 1 } ^ { k } \\alpha _ { j } d _ { j } = 1 ,\\tag{12}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            369,
+            787,
+            625,
+            838
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "as well as the following constraint on the covariance matrix for $\\alpha : = ( \\alpha _ { 1 } , \\ldots , \\alpha _ { k } ) ^ { \\top }$",
+        "bbox": [
+            112,
+            853,
+            808,
+            871
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "img_path": "images/d7fbb895fcb40af6a3ee20faa6fdd11180eccf7373169ad0084202741f754fcb.jpg",
+        "text": "$$\n\\alpha ^ { \\top } { \\boldsymbol { \\Sigma } } = 0 , { \\mathrm { w h e r e ~ o f ~ c o u r s e ~ } } { \\boldsymbol { \\Sigma } } \\succeq 0 .\\tag{13}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            356,
+            885,
+            637,
+            904
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "",
+        "bbox": [
+            493,
+            934,
+            504,
+            948
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Surgicality of this ACID is satisfied by construction when the factorizations in (6) are satisfied, and Value Independence is satisfied as seen by the fact that",
+        "bbox": [
+            111,
+            90,
+            883,
+            128
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "img_path": "images/044a359a5c5baf3b2ae928abef11d4c5ce65a50449b034efd98784ceafac5e07.jpg",
+        "text": "$$\n\\quad ( 9 ) = \\sum _ { j = 1 } ^ { k } \\int \\beta _ { j } a _ { j } d P ^ { * } ( a _ { j } ; a ) = \\sum _ { j = 1 } ^ { k } \\beta _ { j } c _ { j } + a \\sum _ { j = 1 } ^ { k } \\beta _ { j } d _ { j }\\tag{14}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            285,
+            140,
+            710,
+            191
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "and hence by (10),",
+        "bbox": [
+            111,
+            204,
+            274,
+            224
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "img_path": "images/a7b73462818dc30c521f289c7cc50773c12c31146df5397f19320d48c93ef3fd.jpg",
+        "text": "$$\n\\operatorname { A C E } ( A , Y ) = \\sum _ { j = 1 } ^ { k } \\beta _ { j } d _ { j } ,\\tag{15}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            398,
+            237,
+            598,
+            287
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "which no longer depends on a.",
+        "bbox": [
+            112,
+            301,
+            372,
+            319
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "In Appendix B.3 we show how the distribution in (11) can also, if desired, be parameterized to match the first and second moments of the observational distribution over $( A _ { 1 } , . . . , A _ { k } ) ^ { \\top }$ conditional on the aggregate $A = a$ . Note from (15) that the ACE does not depend on the choice of Σ beyond (13) and thus also holds for the deterministic case where $\\Sigma = 0$",
+        "bbox": [
+            111,
+            327,
+            883,
+            401
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "3.3 Discussion of the ACID Assumptions",
+        "text_level": 2,
+        "bbox": [
+            111,
+            424,
+            609,
+            444
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "While the assumption of Surgicality is quite standard (Pearl, 2009), it is a strong assumption in the current context: It requires that an intervention on the aggregate amounts to a surgical intervention on each component even though the experimenter may only have direct control over the aggregate. However, any weakening of this desideratum risks mistaking confounding for a causal efect. To take one extreme, if the intervention d $) ( A = a )$ merely amounted to conditioning on the aggregation rule, i.e,",
+        "bbox": [
+            111,
+            454,
+            885,
+            565
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "img_path": "images/9dbc43149a4239e09b7a1b08c32415027937d9ef9b4ef459a3a65b80bfc56c52.jpg",
+        "text": "$$\nP ( \\mathbf { v } ) _ { \\mathrm { d o } ( A = a ) } = P ( i , u , a _ { 1 } , . . . , a _ { k } , y \\mid \\sum _ { j = 1 } ^ { k } \\alpha _ { j } a _ { j } = a )\\tag{16}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            295,
+            577,
+            702,
+            627
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "then intervening on an aggregate would be equivalent to Monte Carlo sampling. In other words, setting $A = a$ would amount to waiting for the observational distribution to bring about suitable values of $A _ { j }$ such that the aggregation rule is satisfied. But that mistakes a sampling technique for an experimental intervention. Moreover, if the $A _ { j }$ had no causal efect on $Y \\ ( { \\mathrm { i . e . , ~ } } \\beta _ { j } = 0 ; j \\in \\{ 1 , . . . , k \\} )$ , but there was confounding between the $A _ { j }$ and $Y .$ then such an ACID would incorrectly suggest that there is an aggregate causal efect of A on $Y$ when there is no directed causal path from A or its components to Y . While this does not apply to our linear Gaussian setting, for an “observationally-tuned” ACID it may be possible that the observational distribution has no support for any value combination of the components $A _ { 1 } , \\ldots , A _ { k }$ that satisfies the aggregation rule for the intervened value a. Hence, making such out-of-distribution interventions impossible, when those are often the motivation for causal estimation in the first place.",
+        "bbox": [
+            111,
+            640,
+            885,
+            859
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "We acknowledge that there may be circumstances where an intervention can be appropriately defined that does not fully sever the relationships of the $A _ { j }$ with $U$ and $I ,$ but we note that many of the above concerns can be generalized if confounding influences are not broken by the intervention.",
+        "bbox": [
+            111,
+            867,
+            885,
+            905
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8",
+        "bbox": [
+            491,
+            934,
+            504,
+            948
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            111,
+            92,
+            883,
+            127
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Satisfying the Aggregation Restriction ensures that the aggregate variable being considered under intervention is in fact the same as that measured under observation. Without this requirement the aggregate causal efect would be highly underdetermined, since the observational relation no longer constrains the interventional one. There may be specific circumstances where modeling a change in the constitutive relations between the $A _ { j }$ and A is appropriate. For example, when a manager wants to increase overall sales and instantiates that by changing the composition of the underlying product palette. In that case the intervention includes a change in the aggregation weights $\\alpha _ { j }$ . But this example already indicates that under such circumstances, any inference from previous observational data of the aggregate is likely to provide only very limited guidance about the efect of the intervention unless the disaggregated product categories were already tracked in the first place (in contrast to our setting where the $A _ { j }$ are unobserved). Given our focus on IV estimation in observational data, we leave such examples aside here. We note that we assume that the aggregation rule is satisfied for each interventional datapoint, not merely in expectation of the interventional distribution, though none of our results hinge on this assumption.",
+        "bbox": [
+            111,
+            137,
+            885,
+            412
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Finally, we focus on causal efects that satisfy Value Independence of the particular intervention value because we are interested in the possible interpretations of classic linear causal model assumptions where the estimated causal efect is reported in terms of a single parameter that specifies the causal efect independently of the intervention value. Unsurprisingly, this demand for value independence of the causal efect is a particularly strong assumption and imposes strong limitations on the ACIDs that can be considered.",
+        "bbox": [
+            111,
+            420,
+            885,
+            530
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "3.4 Related Work",
+        "text_level": 2,
+        "bbox": [
+            112,
+            553,
+            341,
+            571
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "VanderWeele and Hernan (2013) also consider variations in how a treatment is instantiated and ofer two settings. In their Section 4 they define their causal efect using a known prespecified distribution over the diferent versions of the treatment. This distribution is what we refer to as the ACID. The causal efect is then a mixture of the efects of the components according to this distribution. In their Section 5, which more explicitly considers aggregate treatments, they consider as their ACID the observational distribution over the components conditional on the aggregation rule being satisfied. A similar approach is taken by Zhu et al. (2024). As we discussed in the context of such an ACID in (16), this approach requires some care in ensuring that the interventional value is within the observational support, and that the intervention on the components still breaks confounding. In Appendix B.3 we consider such an ACID explicitly. Neither of these articles consider the conditions under which such causal efects can be accurately estimated using IV techniques.",
+        "bbox": [
+            111,
+            583,
+            885,
+            803
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Caetano et al. (2025) also consider aggregates of component treatments, but do not give a ful causal interpretation of the aggregate causal efect. Instead they consider various types of averages over the efects of the components as their target of estimation. If these averages are to be understood as a marginal causal efect that can inform policy, then their implicit ACID is the distribution of weights in their averages. Caetano et al. (2025) note that the issue of defining aggregate causal efects needs to be distinguished from treatment efect heterogeneity, which usually refers to diferent responses to treatment across (subpopulations of) units. In contrast, for aggregate causal efects the variation arises due to diferent instantiations of the same treatment value within a unit. Formally we agree with this distinction, but in practice it is less clear, especially if the subpopulations are not known or sharply delineated: On the standard view of heterogeneous treatment efects we have a population of units that (in fact) divide into subpopulations with diferent causal efects between subpopulations, but the same efect within each subpopulation. One can view the aggregate setting as modeling a population of units where the causal efect of the treatment is an average across units, but each individual may instantiate the treatment diferently in its components. In many ways the aggregate setting we describe can provide an explanation for heterogeneous treatment efects because diferent subpopulations cluster units that instantiate the (aggregate) treatment diferently in their components.",
+        "bbox": [
+            111,
+            811,
+            887,
+            904
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9",
+        "bbox": [
+            491,
+            934,
+            504,
+            948
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            111,
+            92,
+            885,
+            330
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "The approach in Beckers et al. (2020) most closely resembles ours here in that they explicitly denote the ACID describing the relation between intervened aggregate and its components as their intervention distribution, but they do not relate their formal framework to efect estimation.",
+        "bbox": [
+            111,
+            337,
+            885,
+            410
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "4 When Do IVs Correctly Identify the Aggregate Causal Efect?",
+        "text_level": 2,
+        "bbox": [
+            112,
+            436,
+            901,
+            486
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "We next consider settings where the IV estimand may correctly identify the causal efect. The first of these, which we refer to as proportional aggregation, does not depend on the specific form of the ACID; any valid ACID will do. We explore this setting in Section 4.1 below.",
+        "bbox": [
+            111,
+            502,
+            883,
+            575
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Next, using the Gaussian ACID from Section 3.2, we show that there are specific ACIDs that ensure that the IV estimand corresponds to the aggregate causal efect. We refer to these settings as instrument-tuned interventions and explore them in Section 4.2.",
+        "bbox": [
+            111,
+            585,
+            885,
+            640
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "4.1 Proportional Aggregation",
+        "text_level": 2,
+        "bbox": [
+            112,
+            662,
+            475,
+            684
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "To motivate the case of proportional aggregation, consider the aggregate setting with $\\beta _ { j } = \\tau$ and $\\alpha _ { j } = 1$ for all $j .$ . In this case, the components $A _ { j }$ simply split the aggregate A into parts that have the same causal efect $\\tau$ on Y and so it does not matter how an intervention $\\operatorname { d o } ( A = a )$ is instantiated in terms of its components. A generalization of this case is what we refer to as proportional aggregation, where",
+        "bbox": [
+            111,
+            693,
+            885,
+            784
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "equation",
+        "img_path": "images/95feacd0371273a1a01d8d188d101f15c1fbc9f6167be2409c839531715594a6.jpg",
+        "text": "$$\n\\frac { \\beta _ { 1 } } { \\alpha _ { 1 } } = \\cdots = \\frac { \\beta _ { k } } { \\alpha _ { k } } = : \\tau .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            410,
+            790,
+            584,
+            828
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "In this case the IV estimand in (3) is",
+        "bbox": [
+            112,
+            834,
+            429,
+            852
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "equation",
+        "img_path": "images/0b1b218840449980139ec7802b08ee16a50831b454a5a839ba8e6d2d2ef1b19a.jpg",
+        "text": "$$\n\\beta _ { \\mathrm { I V } } = \\frac { \\sum _ { j = 1 } ^ { k } \\tau \\alpha _ { j } \\delta _ { j } } { \\sum _ { j = 1 } ^ { k } \\alpha _ { j } \\delta _ { j } } = \\tau ,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            398,
+            861,
+            598,
+            910
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10",
+        "bbox": [
+            488,
+            934,
+            509,
+            948
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "and the aggregate causal efect under proportional aggregation is also",
+        "bbox": [
+            111,
+            92,
+            702,
+            111
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "equation",
+        "img_path": "images/7e01cf2e57de94524ef4ae5235b33d38defddd63e18322e92422c46237dd08e8.jpg",
+        "text": "$$\n\\begin{array} { l } { \\operatorname { A C E } ( A , Y ) = \\operatorname { \\mathbb E } \\left[ \\tau \\displaystyle \\sum _ { j } \\alpha _ { j } A _ { j } \\ \\bigg \\vert \\ \\mathrm { d o } \\big ( A = a + 1 \\big ) \\right] - \\operatorname { \\mathbb E } \\left[ \\tau \\displaystyle \\sum _ { j } \\alpha _ { j } A _ { j } \\ \\bigg \\vert \\ \\mathrm { d o } \\big ( A = a \\big ) \\right] } \\\\ { = \\tau ( a + 1 ) - \\tau a = \\tau . } \\end{array}\\tag{17a}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            150,
+            119,
+            799,
+            194
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "(17b)",
+        "bbox": [
+            834,
+            175,
+            882,
+            194
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Notice that in this setting, as long as the aggregation rule is respected, any valid ACID can be assumed to relate the intervention on the aggregate A to its components $A _ { 1 } , \\ldots , A _ { k }$",
+        "bbox": [
+            111,
+            218,
+            883,
+            256
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "There are several ways to interpret the assumption of proportional aggregation. In the simplest case where $\\alpha _ { j } ~ = ~ c$ for some constant ${ \\mathit { c } } ,$ it just means that all components of A have the same causal efect on Y . More generally, proportional aggregation amounts to an assumption that the components have the same causal efect once rescaled by their share of the aggregate. Alternatively, since under proportional aggregation A (with U) screens of the $A _ { j }$ from $Y \\ ( { \\mathrm { i . e . } } \\ A _ { j } \\ \\bot \\ Y | A , U )$ , the aggregate A can also be interpreted as mediating all the causal efects from $A _ { j }$ to $Y$ . So, instead of $Y$ being an efect of the $A _ { j }$ (and the confounder) in SCM (1), we would have:",
+        "bbox": [
+            111,
+            263,
+            885,
+            411
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "equation",
+        "img_path": "images/b7c94f08afcc3775997129311d93f423563c5d20e669e4d1d2d88235b904902f.jpg",
+        "text": "$$\nY \\gets \\tau A + \\gamma _ { y } U + \\epsilon _ { y } .\\tag{18}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            406,
+            424,
+            588,
+            444
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "This is a common way of interpreting aggregate treatments: the efect of the components is mediated by the aggregate. Gabriel et al. (2025) take this route, as do the approaches that develop “Bartik instruments” (see e.g. Goldsmith-Pinkham et al. 2020). In all these cases there only is a causal efect between the aggregate and the outcome, but no component causal efects as the $\\beta _ { j }$ in our setting.",
+        "bbox": [
+            109,
+            458,
+            885,
+            551
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Thus, the assumption of proportional aggregation ofers an interpretation of the aggregate setting in Figure 1 that would ensure that the IV estimate can support a policy intervention no matter how the intervention on the aggregate is instantiated in the components. Using our example from the introduction, proportional aggregation would imply that while education is made up of many diferent types of learning, for the assessment of the efect on future wages, one can interpret the IV analysis as assuming that the overall duration of education is the relevant cause, while the specific types of education are irrelevant. Formulated in this way it becomes obvious that this is a rather strong assumption about the nature of the causal efects of diferent types of education that a student experiences in years K-12: the claim would be that it doesn’t matter to future wages whether one adds extra time in kindergarten or in highschool, both would be equally beneficial.",
+        "bbox": [
+            109,
+            559,
+            885,
+            761
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "4.2 Instrument-tuned Interventions",
+        "text_level": 2,
+        "bbox": [
+            111,
+            784,
+            545,
+            803
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "While the assumption of proportional aggregation makes the ACID irrelevant, the second set of scenarios we raise here depends on particular ACIDs that guarantee that the classic IV estimand corresponds to the aggregate causal efect. We refer to these scenarios as instrument-tuned interventions for reasons that will become apparent.",
+        "bbox": [
+            111,
+            813,
+            885,
+            887
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "11",
+        "bbox": [
+            486,
+            934,
+            509,
+            948
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "We focus on the Gaussian ACID introduced in Section 3.2. From previous computations, we have that the IV estimand in (3) will match the aggregate causal efect in (15) when",
+        "bbox": [
+            111,
+            90,
+            883,
+            128
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "equation",
+        "img_path": "images/55e01ddf767c46975988da8a9e213d1e778cd74472ba56779949cdbac6b1a460.jpg",
+        "text": "$$\n{ \\beta _ { \\mathrm { I V } } } = \\frac { \\sum _ { j = 1 } ^ { k } \\beta _ { j } \\delta _ { j } } { \\sum _ { j = 1 } ^ { k } \\alpha _ { j } \\delta _ { j } } \\quad = \\quad \\sum _ { j = 1 } ^ { k } \\beta _ { j } d _ { j } = \\mathrm { A C E } ( A , Y ) .\\tag{19}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            295,
+            140,
+            699,
+            191
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Consider the form of the Gaussian ACID in (11). Equation (19) adds a linear constraint to parameters $d _ { 1 } , \\ldots , d _ { k }$ , in addition to the constraint in (12). The only constraints on the parameters $c _ { 1 } , \\ldots , c _ { k }$ and the covariance matrix Σ are (12) and (13) in Section 3.2.",
+        "bbox": [
+            111,
+            204,
+            883,
+            261
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "As a result there are many possible choices for the parameter values, of which the most straightforward to see has for all $j \\in \\{ 1 , \\ldots , k \\}$ that",
+        "bbox": [
+            111,
+            268,
+            883,
+            305
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "equation",
+        "img_path": "images/f7ce87043e757d799919293005fea285cb72a4e52cd7fb2380304df203d71ef2.jpg",
+        "text": "$$\nd _ { j } = \\frac { \\delta _ { j } } { \\sum _ { j = 1 } ^ { k } \\alpha _ { j } \\delta _ { j } } ,\\tag{20}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            426,
+            315,
+            568,
+            361
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "with $c _ { 1 } , \\ldots c _ { k }$ and $\\varSigma$ chosen according to Section 3.2. In words, the above solution implies that the IV estimand identifies the true aggregate causal efect when the slope of the expectation vector of the ACID is equal to the (normalized) causal efect vector of the instrument with respect to the $A _ { j }$ . This and all other solutions to the parameter constraints are highly contrived in the sense that they require the surgical intervention that characterizes the aggregate causal efect of A on $Y$ to align with the instrument-treatment relationship. It would be a matter of coincidence, or would require detailed knowledge of the aggregate-component relation, to achieve such an ACID in practice. We refer to these scenarios as instrument-tuned interventions.",
+        "bbox": [
+            111,
+            371,
+            885,
+            536
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "When the aggregate consists of more than two components such that some but not all $j \\in \\{ 1 , \\ldots , k \\}$ have a proportional relationship $\\beta _ { j } / \\alpha _ { j } = \\tau$ for some $\\tau ,$ one might also consider a partially instrument-tuned intervention, which only instrument-tunes the slopes of those components $A _ { j }$ for which $\\beta _ { j } / \\alpha _ { j } \\neq \\tau$ . For instance, suppose that for $j = \\{ 1 , \\dots , l \\} , 1 < l < k$ we have $\\begin{array} { r } { \\frac { \\beta _ { j } } { \\alpha _ { j } } = \\tau } \\end{array}$ . Then, $\\beta _ { \\mathrm { I V } } = \\mathrm { A C E } ( A , Y )$ for partially instrument-tuned ACIDs such as a Gaussian ACID where (20) holds for $d _ { j }$ , when $j \\in \\{ l + 1 , \\ldots , k \\}$ , while the remaining parameters $d _ { 1 } , \\ldots , d _ { l }$ and $c _ { 1 } , \\ldots , c _ { k }$ and Σ are such that (12) and (13) are satisfied. More details can be found in Appendix C.",
+        "bbox": [
+            109,
+            545,
+            885,
+            695
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "4.3 Illustrations by Simulation",
+        "text_level": 2,
+        "bbox": [
+            111,
+            718,
+            488,
+            738
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "We conclude this section by illustrating the mismatch that can occur between the aggregate causal efect (15) and the IV estimand (3) as the model coeficients diverge from one of the two settings described above: (a) proportional aggregation and (b) instrument-tuned intervention. In both cases, we simulate data from SCM (1) for $k = 2$ components. The coeficients $\\alpha _ { 1 } , \\alpha _ { 2 } , \\gamma _ { a _ { 1 } } , \\gamma _ { a _ { 2 } } , \\gamma _ { y }$ , and $\\delta _ { 1 } , \\delta _ { 2 }$ are all set to 1 in the below simulations, the coeficient $\\beta _ { 2 }$ is set to 2, and all error variances are set to 1. We generate samples of three diferent sizes n; $n \\in \\{ 1 0 , 1 0 0 , 1 0 0 0 \\}$ . For additional simplicity, to compute the aggregate causal efect we choose a Gaussian ACID with $c _ { 1 } = c _ { 2 } = 0$ in (12). The remaining parameters are chosen particular to each simulation.",
+        "bbox": [
+            109,
+            748,
+            885,
+            914
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "12",
+        "bbox": [
+            488,
+            933,
+            511,
+            948
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "chart",
+        "img_path": "images/d587123f2141218236fd21a353f2ad5427a7e1255b7aac6c8419c2a987358a40.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            138,
+            95,
+            503,
+            366
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "chart",
+        "img_path": "images/57ba328a1190199934c6339b9a6c93c67e3ca66e53ab8d0751fbef7351cd7e59.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 2: A: IV estimates for diferent samples sizes n and edge weights $\\beta _ { 1 }$ . The vertical purple dashed line indicates proportional aggregation. B: IV estimates for diferent sample sizes $n ,$ and ACID slopes $d _ { 1 }$ . The vertical orange dash-dotted line denotes the instrumenttuned intervention. In both plots, $\\beta _ { \\mathrm { I V } }$ is denoted by the yellow line and the $\\operatorname { A C E } ( A , Y )$ is denoted by the grey line. The IV estimates are denoted by: red circles $( n = 1 0 )$ , green triangles $( n = 1 0 0 )$ , blue diamonds $( n = 1 0 0 0 )$"
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            517,
+            95,
+            859,
+            364
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "(a) To study divergence from proportional aggregation, we fix the mean of the Gaussian ACID by $( d _ { 1 } , d _ { 2 } ) \\ : = \\ : ( 2 , - 1 )$ . Per sample size n, we simulate data from SCM (1) for varying values of $\\beta _ { 1 } ~ \\in ~ [ - 1 , 4 ]$ The results of the simulation are given in the plot in Figure 2A, which follows $\\beta _ { 1 }$ on the x-axis. The y-axis follows estimates of the causal efect of $A$ on $Y \\colon$ the IV estimates (computed by 2SLS) are plotted alongside the aggregate causal efect $\\operatorname { A C E } ( A , Y ) = 2 \\beta _ { 1 } - 2$ and the theoretical IV estimand $\\begin{array} { r } { \\beta _ { \\mathrm { I V } } = \\frac { \\beta _ { 1 } } { 2 } + 1 } \\end{array}$",
+        "bbox": [
+            127,
+            525,
+            883,
+            655
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Proportional aggregation is achieved for $\\beta _ { 1 } = 2$ , for which $\\mathrm { A C E } ( A , Y ) = \\beta _ { \\mathrm { I V } } = 2$ We can see from the plot that as the value of $| \\beta _ { 1 } - 2 |$ grows, so does the diference between the $\\operatorname { A C E } ( A , Y )$ and the IV estimates. This diference can be arbitrarily large depending on the value of $\\beta _ { 1 }$",
+        "bbox": [
+            158,
+            661,
+            883,
+            736
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "(b) To study the mismatch between the aggregate causal efect under varied Gaussian ACIDs and the IV estimates from observational data given by SCM (1), we fix $\\beta _ { 1 } = 1$ and vary $d _ { 1 } \\in [ - 2 , 2 ]$ , which in turn also determines the values of $d _ { 2 }$ according to the constraint in (12). For each sample size n, we again simulate data from SCM (1). The results of the simulation are given in the plot in Figure 2B, which follows $d _ { 1 }$ on the x-axis. The $y -$ -axis follows estimates of the causal efect of A on $Y$ , including the sample IV estimates, the aggregate causal efect $\\mathrm { A C E } ( A , Y ) = 2 - d _ { 1 }$ , and the theoretical IV estimand $\\beta _ { \\mathrm { I V } } = 1 . 5$",
+        "bbox": [
+            125,
+            743,
+            885,
+            891
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13",
+        "bbox": [
+            488,
+            933,
+            509,
+            948
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "image",
+        "img_path": "images/b000ca86f5ec86aedcbaf238dca1f83fde7c3fa8c5190695860150d49552a9cf.jpg",
+        "image_caption": [
+            "Figure 3: A violation of the exclusion restriction that is equivalent to the aggregate setting under linearity and Gaussianity."
+        ],
+        "image_footnote": [],
+        "bbox": [
+            359,
+            94,
+            633,
+            202
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "The instrument-tuned intervention is achieved for $d _ { 1 } = 0 . 5$ , for which $\\operatorname { A C E } ( A , Y ) =$ $\\beta _ { \\mathrm { I V } } = 1 . 5$ . As we move further away from the instrument-tuned intervention, that is, as $| d _ { 1 } - 0 . 5 |$ grows, so does the diference between the $\\operatorname { A C E } ( A , Y )$ and the IV estimates.",
+        "bbox": [
+            158,
+            281,
+            883,
+            338
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "5 The Exclusion Assumption and its Justifications",
+        "text_level": 2,
+        "bbox": [
+            112,
+            364,
+            836,
+            387
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "We have shown that unless proportional aggregation is satisfied or a valid ACID suitable for an instrument-tuned intervention is provided, the diference between the IV estimate of the causal efect and the aggregate causal efect is unbounded. What are the implications for IV studies that involve aggregate treatment variables?",
+        "bbox": [
+            111,
+            402,
+            883,
+            477
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "It is tempting to see the aggregation problem as another variation of the ways in which the exclusion restriction can be violated, and to propose the corresponding remedies. The exclusion restriction requires that the instrument I is independent of the outcome Y given the treatment A and confounder $U .$ In our setting, while $I \\perp Y | A _ { 1 } , . . . , A _ { k } , U$ , the exclusion restriction is indeed violated with respect to the aggregate treatment, since we have that $I \\ \\not \\approx Y | A , U$ for $\\begin{array} { r } { A = \\sum _ { j } \\alpha _ { j } A _ { j } } \\end{array}$ with arbitrary $\\alpha _ { j }$ . This is a familiar problem that can also occur when a continuous treatment variable is discretized. Moreover, the Gaussian observational joint distribution over $I , U , A , Y$ in the aggregation setting of Figure 1 (SCM (1)) is equivalent to the Gaussian observational joint distribution of the causal system in Figure 3 (SCM (21) below) that violates the exclusion restriction by having an extra edge for a direct efect of the instrument on the outcome, as reflected by the following result. See Appendix D for the proof.",
+        "bbox": [
+            111,
+            484,
+            885,
+            704
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Proposition 1 (Aggregation as an exclusion violation) Consider SCM (1), where the errors are assumed to be mutually independent standard Gaussians. The distribution $o f$ the vector $( I , U , A , Y ) ^ { \\top }$ is then equivalent to the distribution of the vector $( I ^ { \\prime } , U ^ { \\prime } , A ^ { \\prime } , Y ^ { \\prime } ) ^ { \\top }$ produced by the following SCM (compatible with the graph in Figure 3):",
+        "bbox": [
+            111,
+            712,
+            887,
+            787
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "img_path": "images/ef34b6bd8567613c6199ff9812fe5bb874320921426f3de8b6a5e898efb92fbd.jpg",
+        "text": "$$\n\\begin{array} { l } { { U ^ { \\prime }  \\epsilon _ { u } ^ { \\prime } ; ~ I ^ { \\prime }  \\epsilon _ { i } ^ { \\prime } } } \\\\ { { A ^ { \\prime }  \\delta _ { a } ^ { \\prime } I + \\gamma _ { a } ^ { \\prime } U + \\epsilon _ { a } ^ { \\prime } } } \\\\ { { Y ^ { \\prime }  \\beta ^ { \\prime } A ^ { \\prime } + \\gamma _ { y } ^ { \\prime } U ^ { \\prime } + \\delta _ { y } ^ { \\prime } I + \\epsilon _ { y } ^ { \\prime } } } \\end{array}\\tag{21}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            375,
+            799,
+            620,
+            866
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14",
+        "bbox": [
+            486,
+            934,
+            511,
+            948
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "where error terms are independent mean zero Gaussian with the following variances:",
+        "bbox": [
+            112,
+            92,
+            826,
+            109
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "img_path": "images/4b19327940470e5222af2e867144492f5a76132a9ce68dc1a73ecb24b4273da9.jpg",
+        "text": "$$\nv a r ( \\epsilon _ { u } ^ { \\prime } ) = v a r ( \\epsilon _ { i } ^ { \\prime } ) = 1 , \\quad v a r ( \\epsilon _ { a } ^ { \\prime } ) = \\sum _ { j } \\alpha _ { j } ^ { 2 } , \\quad v a r ( \\epsilon _ { y } ^ { \\prime } ) = 1 + \\frac { \\sum _ { l < j } ( \\beta _ { l } \\alpha _ { j } - \\beta _ { j } \\alpha _ { l } ) ^ { 2 } } { \\sum _ { j } \\alpha _ { j } ^ { 2 } } .\\tag{22}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            151,
+            121,
+            810,
+            169
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "In the case of proportional aggregation (where $\\beta _ { j } / \\alpha _ { j } = \\tau$ , for $j \\in \\{ 1 , \\dots k \\} )$ , the exclusion restriction is satisfied because in Proposition 1 the coeficient on the direct efect from the instrument to the outcome is zero $\\left( \\delta _ { y } ^ { \\prime } = 0 \\right.$ , see Appendix D).",
+        "bbox": [
+            111,
+            193,
+            883,
+            250
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "However, for any other choice of non-zero coeficients of the aggregation setting, the exclusion restriction violation persists. In particular, even though $\\beta _ { \\mathrm { I V } } = \\mathrm { A C E } ( A , Y )$ under an instrument-tuned intervention, the observational setting still violates the exclusion restriction with respect to the aggregate treatment. The ACIDs derived in Section 4.2 are just chosen in such a way that the IV estimand coincides with the aggregate causal efect.",
+        "bbox": [
+            111,
+            256,
+            885,
+            349
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "This point highlights the crux of considering existing remedies that address the exclusion restriction violations in other contexts: The adjustment that is needed to ensure that the IV estimand matches the aggregate causal efect depends on the particular ACID used to define the causal efect. Thus, although extensive work addresses the exclusion restriction violations in linear SCMs, such as those from treatment measurement error, instrument endogeneity, or direct instrument efects (Vansteelandt et al., 2009; Zhu et al., 2022; Biener et al., 2024; Cinelli and Hazlett, 2025; Ye et al., 2023), these methods do not carry over here unless they coincide with a suitable ACID. Put diferently, the $\\beta ^ { \\prime }$ of Proposition 1 will not, in general, equal the causal aggregate efect unless a particular ACID is assumed and justified.",
+        "bbox": [
+            111,
+            357,
+            887,
+            522
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Researchers often make a significant efort to provide domain-specific justifications for why they believe the exclusion restriction is satisfied in their application. However, a discussion of aggregate treatments does not generally appear in these justificatory arguments. In the over-identified case (when there are more instruments than treatments), practitioners often apply what is known as the “Sargan test” to argue that the exclusion restriction is satisfied (Sargan, 1958). The null hypothesis of the Sargan test is that the IV estimands corresponding to diferent instruments are equal (Windmeijer, 2019). Rejecting the null hypothesis then indicates a violation of the exclusion restriction. However, not rejecting the null hypothesis does not directly imply that the exclusion restriction is satisfied (Kiviet, 2017). In the next section, we explore how one might use the Sargan test to check for proportional aggregation, and what additional justifications may be needed.",
+        "bbox": [
+            109,
+            530,
+            885,
+            733
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "5.1 Using the Sargan Test to Test for Proportional Aggregation",
+        "text_level": 2,
+        "bbox": [
+            111,
+            755,
+            872,
+            776
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "If there are at least two instruments, each standing in a configuration with $A _ { 1 } , \\ldots , A _ { k }$ and Y as in the bottom of Figure 1, then, under proportional aggregation, the IV estimand and resulting estimates should not be sensitive to the choice of instrument. Hence, under linearity and homoskedasticity, the null hypothesis of the Sargan test is satisfied under proportional aggregation (Sargan, 1958; Windmeijer, 2019), providing some evidence for the validity of the IV estimand in the aggregate setting. Here we investigate the extent of this evidence in regards to instrument strength and the stand-alone implications of the null hypothesis.",
+        "bbox": [
+            109,
+            784,
+            885,
+            914
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "15",
+        "bbox": [
+            486,
+            933,
+            511,
+            948
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "table",
+        "img_path": "images/110b56a08ecfe981da676c9b4cb3b9e80a9e39ff857d4bccdd997449bf448765.jpg",
+        "table_caption": [
+            "Table 1: Instrument configurations and relevance with A"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Instrument configuration</td><td> $( \\delta _ { 1 1 } , \\delta _ { 1 2 } )$ </td><td> $( \\delta _ { 2 1 } , \\delta _ { 2 2 } )$ </td><td> $\\operatorname { c o r } ( I _ { 1 } , A )$ </td><td> $\\mathrm { c o r } ( I _ { 2 } , A )$ </td></tr><tr><td>Strong-Weak</td><td>(5,3)</td><td>(0.1,0.2)</td><td>0.977</td><td>0.037</td></tr><tr><td>Strong-Strong</td><td>(5,3)</td><td>(4,2)</td><td>0.788</td><td>0.591</td></tr><tr><td>Weak-Weak</td><td></td><td>(0.15, 0.1) (0.08,0.05)</td><td>0.143</td><td>0.074</td></tr></table>",
+        "bbox": [
+            173,
+            193,
+            820,
+            305
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "chart",
+        "img_path": "images/099099340b2f8c9c77cdd98ebd9079c6d04ced764de9b4e3d8e64381b4ab811b.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            137,
+            469,
+            498,
+            739
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "chart",
+        "img_path": "images/2a226a265c45bd36c2c751ccb1d1ca655776f0ce90777de25e654a4ff60a807f.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 4: Empirical power of the Sargan test for two strong instruments (red), one strong and one weak instrument (green), and two weak instruments (blue) as a function of deviations from proportional aggregation for A: type-I-error 0.01, B: type-I-error 0.5. $H _ { 0 }$ is true for $\\beta _ { 1 } = 2$ (marked with the purple dashed line)."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            519,
+            469,
+            859,
+            739
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "16",
+        "bbox": [
+            486,
+            933,
+            511,
+            949
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "In a simulation we illustrate the power of the Sargan test to check the assumption of proportional aggregation using two instruments $I _ { 1 }$ and $I _ { 2 }$ with varying strengths. We consider data generated by the following SCM:",
+        "bbox": [
+            111,
+            92,
+            883,
+            147
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "img_path": "images/4de79ec5384fa1eb4fd298e2f1fa7b0ef5ea1006ca78e85c42d6e1f042bbe2d8.jpg",
+        "text": "$$\nU \\gets \\epsilon _ { u } ; \\quad I _ { 1 } \\gets \\epsilon _ { i _ { 1 } } ; \\quad I _ { 2 } \\gets \\epsilon _ { i _ { 2 } }\\tag{23a}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            362,
+            161,
+            620,
+            181
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "img_path": "images/ab4066a7662129a6e2174ad23c23868d7dbdf65eb223a26c86f98dea889c84f5.jpg",
+        "text": "$$\nA _ { 1 }  \\delta _ { 1 1 } I _ { 1 } + \\delta _ { 2 1 } I _ { 2 } + 0 . 5 U + \\epsilon _ { a _ { 1 } }\\tag{23b}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            364,
+            183,
+            632,
+            202
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "img_path": "images/db564a149455ce298d9d27de2e944742dcb9b21c02e14cd854f00912ec3e10bf.jpg",
+        "text": "$$\nA _ { 2 }  \\delta _ { 1 2 } I _ { 1 } + \\delta _ { 2 2 } I _ { 2 } + 0 . 5 U + \\epsilon _ { a _ { 2 } }\\tag{23c}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            364,
+            205,
+            633,
+            224
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "img_path": "images/bfe5c05524a783411e64ea56337ecca12dc79d2601c6ed259ca378612d390f8a.jpg",
+        "text": "$$\nA = A _ { 1 } + A _ { 2 }\\tag{23d}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            364,
+            227,
+            477,
+            244
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "img_path": "images/d0f0207549e2e9c8951fa25b0deac49f6d0e00652c2d1675c7d23f3ed7f68f6a.jpg",
+        "text": "$$\nY \\gets \\beta _ { 1 } A _ { 1 } + 2 A _ { 2 } + 2 U + \\epsilon _ { y } .\\tag{23e}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            362,
+            250,
+            604,
+            268
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "All error terms are mutually independent Gaussians with mean zero and variance 1. Kiviet and Kripfganz (2021) report that the power of the Sargan test is compromised when at least one of the two instruments is weak. We therefore consider three instrument configurations as described in Table 1: one where both instruments are weak, one where only one is weak, and one where both are strong. Several formal definitions for a “weak” instrument have been proposed (i.e. the threshold for violation of the relevance assumption), with the ruleof-thumb for a weak instrument based on data being a first-stage F-statistic $< 1 1$ (Stock et al., 2002). Here, we use instrument-treatment population correlations to judge whether an instrument is strong or weak. In particular, we say an instrument is strong if this correlation is above 0.5, and weak if the correlation is below 0.2. Our definition of strong and weak instruments is conservative with respect to the rule-of-thumb F-statistics $< 1 1$ , as most of the datasets in even our two weak instruments setting have an observed F-statistic $\\geq 1 1$ (see Appendix E for details).",
+        "bbox": [
+            111,
+            282,
+            885,
+            521
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "For each of the three instrument configurations, we simulate 100 datasets each of sample size $n = 1 0 0 0$ for each $\\beta _ { 1 } \\in [ - 1 , 4 ]$ in one-tenth increments. Note that proportional aggregation is satisfied at $\\beta _ { 1 } = 2$ . For $\\beta _ { 1 } \\neq 2$ , the null hypothesis of the Sargan test is false, and we would expect to reject the null hypothesis. For each of our settings we conduct a Sargan test with type-I-error 0.01 and 0.5 (similar to Kiviet and Kripfganz, 2021). The rejection frequency for the Sargan tests with type-I-error 0.01 is reported in Figure 4A, while Figure 4B shows the rejection frequency with type-I-error 0.5. As $\\beta _ { 1 }$ shifts away from proportional aggregation, the null hypothesis of the Sargan test is more severely violated, so we expect to see a larger rejection frequency (indicating larger power of the test) in both plots.",
+        "bbox": [
+            111,
+            530,
+            885,
+            695
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "In the configuration with two strong instruments the test behaves as expected. However, when even one of the instruments is weak the Sargan test exhibits very low power when the type-I-error is 0.01. This is somewhat corrected for the configuration with one strong instrument for the type-I-error 0.5, but the configuration with two weak instruments has practically zero power for either choice of type-I-error. A similar pattern in the non-aggregate treatment setting was noted by Kiviet and Kripfganz (2021). Based on the results of this simulation, we would recommend using a large type-I-error in combination with strong instruments for the Sargan test as a diagnostic tool.",
+        "bbox": [
+            111,
+            702,
+            885,
+            849
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Importantly, however, even if the null hypothesis of the Sargan test is true, meaning that the IV estimands obtained by diferent instruments are equal, that does not necessarily imply that proportional aggregation is satisfied. For instance, suppose we have m instruments",
+        "bbox": [
+            111,
+            857,
+            885,
+            912
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "17",
+        "bbox": [
+            488,
+            934,
+            509,
+            948
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "$I _ { 1 } , \\ldots , I _ { m }$ such that the components $A _ { 1 } , \\ldots , A _ { k }$ are functions of all m instruments. Let $\\delta _ { l j }$ denote the efect of $I _ { l }$ on component variable $A _ { j } , l \\in \\{ 1 , \\dots , m \\} , j \\in \\{ 1 , \\dots , k \\}$ . The instruments are not correlated with U and do not have an efect on $Y$ except through $A _ { 1 } , \\ldots , A _ { k }$",
+        "bbox": [
+            111,
+            90,
+            883,
+            166
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Here the null hypothesis of the Sargan test is equivalent to the IV estimand $\\beta _ { \\mathrm { I V } } ^ { I _ { b } }$ obtained using instrument $I _ { b }$ , being equal to the IV estimand $\\beta _ { \\mathrm { I V } } ^ { I _ { c } }$ obtained using instrument $I _ { c }$ for all pairs of instruments $I _ { b }$ and $I _ { c } , b , c \\in \\{ 1 , . . . , m \\}$ . Then, (3) implies:",
+        "bbox": [
+            111,
+            172,
+            883,
+            229
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "equation",
+        "img_path": "images/ef9a04d78df2370fd53475527ecc09bae5222e955f0b4fb05ee2379eb5732e56.jpg",
+        "text": "$$\n\\beta _ { \\mathrm { I V } } ^ { I _ { b } } = \\frac { \\sum _ { j } \\beta _ { j } \\delta _ { b j } } { \\sum _ { j } \\alpha _ { j } \\delta _ { b j } } = \\frac { \\sum _ { j } \\beta _ { j } \\delta _ { c j } } { \\sum _ { j } \\alpha _ { j } \\delta _ { c j } } = \\beta _ { \\mathrm { I V } } ^ { I _ { c } } .\\tag{24}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            348,
+            236,
+            645,
+            282
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Rearranging, we have that (24) is satisfied as long as:",
+        "bbox": [
+            111,
+            290,
+            566,
+            309
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "equation",
+        "img_path": "images/70c628ca5ec9a2c025f4644e63d047e1eeca8e07c3a9abf8dee9706e0f847aab.jpg",
+        "text": "$$\n\\left( \\sum _ { j } \\beta _ { j } \\delta _ { b j } \\right) \\left( \\sum _ { j } \\alpha _ { j } \\delta _ { c j } \\right) = \\left( \\sum _ { j } \\beta _ { j } \\delta _ { c j } \\right) \\left( \\sum _ { j } \\alpha _ { j } \\delta _ { b j } \\right) .\\tag{25}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            269,
+            318,
+            725,
+            369
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Equation (25) is satisfied if, for example,",
+        "bbox": [
+            112,
+            378,
+            460,
+            397
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "equation",
+        "img_path": "images/15058eb2381e399ac46430e096bf496bab3379cce03c42ea589ea46444520cb3.jpg",
+        "text": "$$\n\\sum _ { i , j } ( \\beta _ { i } \\alpha _ { j } - \\alpha _ { i } \\beta _ { j } ) \\delta _ { b i } \\delta _ { c j } = 0 \\qquad \\mathrm { o r } \\qquad \\sum _ { i , j } \\beta _ { i } \\alpha _ { j } ( \\delta _ { b i } \\delta _ { c j } - \\delta _ { c i } \\delta _ { b j } ) = 0 .\\tag{26}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            228,
+            406,
+            764,
+            446
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "In the setting of proportional aggregation, we have that $\\beta _ { i } \\alpha _ { j } = \\beta _ { j } \\alpha _ { i }$ for all $i , j ,$ , meaning that the first equality in (26) holds. However, there are many other settings that could lead to (25) being satisfied; for instance, as implied by the second equality in (26), if $\\delta _ { b j } = \\delta _ { c j }$ for all $j \\in \\{ 1 , \\ldots , k \\}$ . Since any of these situations are possible under the null hypothesis of the Sargan test, the justification of proportional aggregation requires more than just reporting a belief about the null hypothesis being true.",
+        "bbox": [
+            111,
+            455,
+            885,
+            566
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "6 Extensions and Variations",
+        "text_level": 2,
+        "bbox": [
+            112,
+            592,
+            529,
+            614
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "The aggregate setting displayed in the bottom of Figure 1, corresponding to SCM (1), is a generic case, but there are several sub-cases that are likely to be of interest in practice. For simplicity of illustration we only consider the aggregate $A$ to consist of two components $A _ { 1 } , A _ { 2 }$ in this section. Consider the following cases: (b) the entire treatment is instrumented, but only part of the treatment has an efect on the outcome, that is, $\\beta _ { 2 } = 0$ , (c) only part of the treatment is instrumented $( \\delta _ { 2 } = 0 )$ but the entire treatment has an efect on the outcome, and (d) the treatment contains components that are irrelevant to instrument and outcome $\\left( \\delta _ { 2 } = \\beta _ { 2 } = 0 \\right)$ . The IV estimand for these settings is given in the first row of Table 2. As discussed before, unless one assumes proportional aggregation, the true aggregate causal efect depends on the specific ACID used. Under proportional aggregation, the aggregate causal efect is always given by τ , which the estimands in cases (b)-(d) simplify to as well. That is, under proportional aggregation, the IV estimand matches the causal efect for these settings.",
+        "bbox": [
+            109,
+            630,
+            885,
+            869
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "For the Gaussian ACID discussed in Section 4.2, the aggregate causal efect is given in the second row of Table 2. Unsurprisingly, the requirements for the IV estimand to match the aggregate causal efect are versions of the constraints in Section (4.2) adjusted to the respective settings here. Overall, even though cases (b)-(d) represent scenarios that are likely to occur in the social sciences where IV techniques are used, the point is again that unless proportional aggregation holds, highly contrived ACIDs are needed for the IV estimand to match the aggregate causal efect.",
+        "bbox": [
+            111,
+            876,
+            883,
+            912
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "page_number",
+        "text": "18",
+        "bbox": [
+            488,
+            934,
+            509,
+            948
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "table",
+        "img_path": "images/75c3a5c53fa5098ec43834aedf5adb803f33ca47584db1f53b2d1f131b55217b.jpg",
+        "table_caption": [
+            "Table 2: IV estimands and aggregate causal efects for settings described in Section 6 under a Gaussian ACID"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Case</td><td>general (b)</td><td> $\\beta _ { 2 } = 0$  (c)</td><td> $\\delta _ { 2 } = 0$  (d)  $\\delta _ { 2 } = \\beta _ { 2 } = 0$ </td></tr><tr><td> $\\beta _ { \\mathrm { I V } }$ </td><td> $\\beta _ { 1 } \\delta _ { 1 } { + } \\beta _ { 2 } \\delta _ { 2 }$   $\\underline { { \\beta _ { 1 } \\delta _ { 1 } } }$ </td><td> $\\underline { { \\beta _ { 1 } } }$ </td><td> $\\beta _ { 1 }$ </td></tr><tr><td></td><td> $\\alpha _ { 1 } \\delta _ { 1 } + \\alpha _ { 2 } \\delta _ { 2 }$ </td><td> $\\alpha _ { 1 } \\delta _ { 1 } + \\alpha _ { 2 } \\delta _ { 2 }$ </td><td> $\\alpha _ { 1 }$   $\\alpha _ { 1 }$ </td></tr><tr><td> $\\operatorname { A C E } ( A , Y )$   $d _ { 1 } \\beta _ { 1 } + d _ { 2 } \\beta _ { 2 }$ </td><td> $d _ { 1 } \\beta _ { 1 }$ </td><td> $d _ { 1 } \\beta _ { 1 } + d _ { 2 } \\beta _ { 2 }$ </td><td> $d _ { 1 } \\beta _ { 1 }$ </td></tr></table>",
+        "bbox": [
+            187,
+            138,
+            807,
+            239
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            111,
+            266,
+            885,
+            358
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "In Appendix F we also consider the possibility of aggregated instruments or aggregated outcomes. These are widely used (Spiga et al., 2023; Lal et al., 2024), but as long as the treatment is not aggregated, then aggregated instruments or outcomes pose no problems for IV estimation. Similarly, the aggregation of confounders is not an issue since the adjustment set is irrelevant in an IV analysis.",
+        "bbox": [
+            111,
+            367,
+            885,
+            459
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "The classic IV setting considers linear causal relations with additive Gaussian noise. It is natural to ask whether this parametric restriction unnecessarily complicates the inference. The first thing to note is that without linearity and Gaussianity we generally lose Value Independence (see Appendix B.1), that is, the true target causal efect is no longer welldefined for continuous treatment A, but will depend on the particular values do $( A = a )$ that the aggregate A is set to. Moreover, non-linearities in the causal efects will in general mean that the aggregate causal efect is going to become far more sensitive to how the aggregate value is realized through the ACID in the components. The consideration of non-linear causal efects then does not appear to be a promising route to achieve a match between the IV estimand and the aggregate causal efect. However, as in other causal discovery settings, non-linearities may help identify the components of the treatment, and, once the components are identified, the causal efects can be estimated for each component individually.",
+        "bbox": [
+            111,
+            467,
+            885,
+            688
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "This last point leads to a more general point about the aggregate setting. If proportional aggregation cannot reasonably be assumed, then an understanding of the aggregate-component relation becomes crucial: Is it possible to identify the components and estimate their efects separately? Is it possible to instantiate a specific ACID? Or is it possible to change the aggregation rule such that proportional aggregation can be achieved? Each of these possibilities takes us beyond the setting we consider here, where the components $A _ { 1 } , \\ldots , A _ { k }$ are not known to the researcher.",
+        "bbox": [
+            111,
+            695,
+            885,
+            824
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "page_number",
+        "text": "19",
+        "bbox": [
+            488,
+            933,
+            511,
+            948
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "7 Conclusion",
+        "text_level": 2,
+        "bbox": [
+            112,
+            87,
+            318,
+            108
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "Instrumental variable analyses have long served as a compass for social scientists, economists, and epidemiologists, providing orientation in settings with unobserved confounding where causal identification would otherwise be elusive. Despite sustained scrutiny of instrument validity, the conditions of relevance, exclusion, and exchangeability ofer a clear causal framework that has enabled impactful policy interventions, ranging from education and labormarket reforms to public health interventions, that would otherwise be infeasible using standard regression analysis alone.",
+        "bbox": [
+            111,
+            125,
+            885,
+            253
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "However, when treatments are aggregates of multiple components that have diferent efects on the outcome, our results show that classical IV methods identify causal efects only under highly restrictive assumptions about the system or about how the instrument relates to the aggregation. We have described these assumptions as proportional aggregation (Section 4.1) and instrument-tuned interventions (Section 4.2). On the one hand, these findings raise concerns about whether IV analyses can continue to provide clear directional guidance in settings with aggregated treatments, a common feature of social science applications. In such cases, aggregation in the linear Gaussian case is formally equivalent to a violation of the exclusion restriction (Section 5), rendering statistical testing infeasible without additional assumptions. On the other hand, our results also provide guidance for analyses that may have become “lost in aggregation” by emphasizing that any claim that the exclusion restriction holds must not only rule out direct efects of the instrument on the outcome, but also justify why the treatment should not be viewed as an aggregate; alternatively, assumptions such as proportional aggregation or instrument-tuned interventions must be made explicit and defended.",
+        "bbox": [
+            111,
+            261,
+            885,
+            535
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "These assumptions are strong and reflect fundamental limitations of the IV setting; in the absence of additional evidence, IV estimates should therefore be used with caution as guides for policy intervention when the treatment is plausibly an aggregate.",
+        "bbox": [
+            111,
+            544,
+            885,
+            601
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "Acknowledgments",
+        "text_level": 2,
+        "bbox": [
+            114,
+            626,
+            367,
+            650
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "This work originated at the 2023 Causality Workshop at the Bellairs Research Institute that FE, KM & EP attended. FE would like to thank the participants of the 2025 Causality Workshop at Duke for their feedback on an initial presentation of the material, in particular Matt Masten, Betsy Ogburn and Jiji Zhang. This material is based upon work supported by the National Science Foundation under Grant No. 2210210, the Natural Sciences and Engineering Research Council of Canada under Grant No. 599253.",
+        "bbox": [
+            111,
+            664,
+            885,
+            775
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "References",
+        "text_level": 2,
+        "bbox": [
+            112,
+            801,
+            267,
+            823
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Acemoglu, D., Johnson, S., Robinson, J. A. and Yared, P. (2008) Income and democracy. American Economic Review, 98, 808–842."
+        ],
+        "bbox": [
+            114,
+            833,
+            882,
+            868
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "page_number",
+        "text": "20",
+        "bbox": [
+            486,
+            933,
+            511,
+            948
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Angrist, J. D., Imbens, G. W. and Rubin, D. B. (1996) Identification of causal efects using instrumental variables. Journal of the American Statistical Association, 91, 444–455.",
+            "Angrist, J. D. and Krueger, A. B. (1991) Does compulsory school attendance afect schooling and earnings? The Quarterly Journal of Economics, 106, 979–1014.",
+            "Basmann, R. L. (1957) A generalized classical method of linear estimation of coeficients in a structural equation. Econometrica: Journal of the Econometric Society, 77–83.",
+            "Beckers, S., Eberhardt, F. and Halpern, J. Y. (2020) Approximate causal abstractions. In Proceedings of the Conference on Uncertainty in Artificial Intelligence, 606–615.",
+            "Biener, A. I., Meyerhoefer, C. and Cawley, J. (2024) Non-classical measurement error in instrumental variables estimation: An application to the medical care costs of obesity. Health Economics, 33, 2558–2574.",
+            "Bound, J., Jaeger, D. A. and Baker, R. M. (1995) Problems with instrumental variables estimation when the correlation between the instruments and the endogenous explanatory variable is weak. Journal of the American Statistical Association, 90, 443–450.",
+            "Buckles, K. S. and Hungerman, D. M. (2013) Season of birth and later outcomes: Old questions, new answers. Review of Economics and Statistics, 95, 711–724.",
+            "Burauel, P. F. (2023) Evaluating instrument validity using the principle of independent mechanisms. Journal of Machine Learning Research, 24, 1–56.",
+            "Burgess, S., Small, D. S. and Thompson, S. G. (2017) A review of instrumental variable estimators for Mendelian randomization. Statistical Methods in Medical Research, 26, 2333–2355.",
+            "Caetano, C., Caetano, G., Callaway, B. and Dyal, D. (2025) Causal inference for aggregated treatment. ArXiv preprint arXiv:2506.22885.",
+            "Cinelli, C. and Hazlett, C. (2025) An omitted variable bias framework for sensitivity analysis of instrumental variables. Biometrika, 112.",
+            "Durbin, J. (1954) Errors in variables. Revue de l’institut International de Statistique, 23–32.",
+            "Gabriel, E. E., Sachs, M. C. and Sj¨olander, A. (2025) The impact of coarsening an exposure on partial identifiability in instrumental variable settings. Biostatistics, 26.",
+            "Goldsmith-Pinkham, P., Sorkin, I. and Swift, H. (2020) Bartik instruments: What, when, why, and how. American Economic Review, 110, 2586–2624.",
+            "Hernan, M. A. and Robins, J. M. (2026) Causal Inference: What If. Taylor & Francis.",
+            "Kitagawa, T. (2015) A test for instrument validity. Econometrica, 83, 2043–2063.",
+            "Kiviet, J. F. (2017) Discriminating between (in) valid external instruments and (in) valid exclusion restrictions. Journal of Econometric Methods, 6, 20160005."
+        ],
+        "bbox": [
+            112,
+            90,
+            883,
+            128
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "page_number",
+        "text": "21",
+        "bbox": [
+            486,
+            934,
+            509,
+            948
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Kiviet, J. F. and Kripfganz, S. (2021) Instrument approval by the Sargan test and its consequences for coeficient estimation. Economics Letters, 205, 109935.",
+            "Lal, A. et al. (2024) How much should we trust instrumental variable estimates in political science? Practical advice based on 67 replicated studies. Political Analysis, 1–20.",
+            "Lichtenberg, F. R. (1990) Aggregation of variables in least-squares regression. The American Statistician, 44, 169–171.",
+            "Nordestgaard, B. G., Palmer, T. M., Benn, M., Zacho, J., Tybjaerg-Hansen, A., Davey Smith, G. and Timpson, N. J. (2012) The efect of elevated body mass index on ischemic heart disease risk: Causal estimates from a Mendelian randomisation approach. PLOS Medicine, 9.",
+            "Pearl, J. (2009) Causality. Cambridge university press.",
+            "Rashad, I. (2006) Structural estimation of caloric intake, exercise, smoking, and obesity. The Quarterly Review of Economics and Finance, 46, 268–283.",
+            "Reiersøl, O. (1945) Confluence analysis by means of instrumental sets of variables. Ph.D. thesis, Almqvist & Wiksell.",
+            "Rubin, D. B. (1986) Comment: Which ifs have causal answers. Journal of the American Statistical Association, 81, 961–962.",
+            "Sargan, J. D. (1958) The estimation of economic relationships using instrumental variables. Econometrica: Journal of the Econometric Society, 393–415.",
+            "Spiga, F., Gibson, M., Dawson, S., Tilling, K., Davey Smith, G., Munafo, M. R. and Higgins, J. P. (2023) Tools for assessing quality and risk of bias in Mendelian randomization studies: a systematic review. International Journal of Epidemiology, 52, 227–249.",
+            "Spirtes, P. and Scheines, R. (2004) Causal inference of ambiguous manipulations. Philosophy of Science, 71, 833–845.",
+            "Stock, J. H., Wright, J. H. and Yogo, M. (2002) A survey of weak instruments and weak identification in generalized method of moments. Journal of Business & Economic Statistics, 20, 518–529.",
+            "Theil, H. (1953) Repeated least squares applied to complete equation systems. The Hague: Central planning bureau.",
+            "— (1954) Linear Aggregation of Economic Relations. North-Holland Publishing Company Amsterdam.",
+            "— (1959) The aggregation implications of identifiable structural macrorelations. Econometrica: Journal of the Econometric Society, 14–29.",
+            "VanderWeele, T. J. (2009) Concerning the consistency assumption in causal inference. Epidemiology, 20, 880–883."
+        ],
+        "bbox": [
+            112,
+            90,
+            882,
+            128
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "page_number",
+        "text": "22",
+        "bbox": [
+            486,
+            933,
+            511,
+            948
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "VanderWeele, T. J. and Hernan, M. A. (2013) Causal inference under multiple versions of treatment. Journal of Causal Inference, 1, 1–20.",
+            "Vansteelandt, S., Babanezhad, M. and Goetghebeur, E. (2009) Correcting instrumental variables estimators for systematic measurement error. Statistica Sinica, 19, 1223.",
+            "Windmeijer, F. (2019) Two-stage least squares as minimum distance. The Econometrics Journal, 22, 1–9.",
+            "Ye, T., Ertefaie, A., Flory, J., Hennessy, S. and Small, D. S. (2023) Instrumented diferencein-diferences. Biometrics, 79, 569–581.",
+            "Zhu, Y., Budhathoki, K., K¨ubler, J. M. and Janzing, D. (2024) Meaningful causal aggregation and paradoxical confounding. In Proceedings of Causal Learning and Reasoning, 1192– 1217.",
+            "Zhu, Y., Gultchin, L., Gretton, A., Kusner, M. J. and Silva, R. (2022) Causal inference with treatment measurement error: A nonparametric instrumental variable approach. In Proceedings of the Conference on Uncertainty in Artificial Intelligence, 2414–2424."
+        ],
+        "bbox": [
+            112,
+            90,
+            883,
+            127
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "A Full IV Calculations",
+        "text_level": 2,
+        "bbox": [
+            112,
+            436,
+            454,
+            459
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "In classic (non-aggregate) 2SLS estimation, A is first regressed on I and the linear predictor A<sup>˜</sup> from this regression is then used in the second stage. At the population level, $\\begin{array} { r } { \\tilde { A } = \\frac { \\mathrm { c o v } ( A , I ) } { \\mathrm { v a r } ( I ) } I } \\end{array}$",
+        "bbox": [
+            111,
+            474,
+            882,
+            516
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "In the second stage (often called the “reduced stage”), Y is regressed on ${ \\tilde { A } } .$ The IV estimand is the coeficient for A<sup>˜</sup> from the reduced stage regression, which by relevance, the exclusion restriction, and exchangeability is simplified as follows:",
+        "bbox": [
+            111,
+            526,
+            883,
+            582
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "equation",
+        "img_path": "images/c510e93496b8aefec1a1238105b0d24a60de75809a07f9053652a5aa625e0583.jpg",
+        "text": "$$\n\\frac { \\mathrm { c o v } ( Y , \\tilde { A } ) } { \\mathrm { v a r } ( \\tilde { A } ) } = \\frac { \\mathrm { c o v } \\left( Y , \\frac { \\mathrm { c o v } ( A , I ) } { \\mathrm { v a r } ( I ) } I \\right) } { \\mathrm { v a r } \\left( \\frac { \\mathrm { c o v } ( A , I ) } { \\mathrm { v a r } ( I ) } I \\right) } = \\frac { \\mathrm { c o v } ( Y , I ) } { \\mathrm { c o v } ( A , I ) } ,\\tag{27}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            313,
+            594,
+            683,
+            655
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "such that the rightmost side is the causal efect of A on $Y$",
+        "bbox": [
+            111,
+            667,
+            611,
+            685
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "In contrast, for 2SLS in the aggregate setting (Figure 1), the linear predictor $\\tilde { A }$ from the first stage regression is now",
+        "bbox": [
+            111,
+            695,
+            883,
+            732
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "equation",
+        "img_path": "images/7b574511a02699e4a57b5668febaa36b2e8b2a3ab9b9775c81d18102f62df0af.jpg",
+        "text": "$$\n\\tilde { A } = \\frac { \\mathrm { c o v } ( \\sum _ { j } \\alpha _ { j } A _ { j } , I ) } { \\mathrm { v a r } ( I ) } I .\\tag{28}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            398,
+            743,
+            596,
+            785
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "In turn, the updated IV estimand, denoted here as $\\beta _ { \\mathrm { I V } }$ , is",
+        "bbox": [
+            111,
+            797,
+            604,
+            815
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "equation",
+        "img_path": "images/6f7ff888ca28acf4b9dab5a8dda62c58527a595c3a1decff507bc0c6a36a5418.jpg",
+        "text": "$$\n\\beta _ { \\mathrm { I V } } = { \\frac { \\cos ( Y , { \\tilde { A } } ) } { \\operatorname { v a r } ( { \\tilde { A } } ) } } = { \\frac { \\sum _ { j } \\beta _ { j } \\delta _ { j } } { \\sum _ { j } \\alpha _ { j } \\delta _ { j } } }\\tag{29}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            379,
+            827,
+            614,
+            872
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "page_number",
+        "text": "23",
+        "bbox": [
+            486,
+            933,
+            509,
+            948
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "due to the following simplifications under SCM (1):",
+        "bbox": [
+            112,
+            92,
+            549,
+            109
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "equation",
+        "img_path": "images/de2ca571b1f9b03e6307a1a4a1d65577a27a712e4e33003e5ea8d1d42da6ff17.jpg",
+        "text": "$$\n\\mathrm { c o v } ( Y , { \\tilde { A } } ) ~ = ~ { \\frac { \\mathrm { c o v } ( \\sum _ { j } \\alpha _ { j } A _ { j } , I ) } { \\mathrm { v a r } ( I ) } } \\mathrm { c o v } ( \\sum _ { j } \\beta _ { j } A _ { j } + \\gamma _ { y } U + \\epsilon _ { y } , I )\\tag{30}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            215,
+            122,
+            707,
+            169
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "equation",
+        "img_path": "images/b382b6a4994235489088dd20fb6bc5ea1cef50091a5ab3be1b87396f8031eaad.jpg",
+        "text": "$$\n= { \\frac { \\operatorname { c o v } ( \\sum _ { j } \\alpha _ { j } A _ { j } , I ) } { \\operatorname { v a r } ( I ) } } \\sum \\beta _ { j } \\operatorname { c o v } ( A _ { j } , I )\\tag{31}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            310,
+            170,
+            607,
+            212
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "equation",
+        "img_path": "images/22187e4c46344c866c67ce00118ed5dc4216d83cba40141ba962bf13d82e4504.jpg",
+        "text": "$$\n\\operatorname { v a r } ( { \\tilde { A } } ) = { \\frac { \\operatorname { c o v } ^ { 2 } ( \\sum _ { j } \\alpha _ { j } A _ { j } , I ) } { \\operatorname { v a r } ( I ) } } = { \\frac { \\operatorname { c o v } ( \\sum _ { j } \\alpha _ { j } A _ { j } , I ) } { \\operatorname { v a r } ( I ) } } \\sum _ { j } \\alpha _ { j } \\operatorname { c o v } ( A _ { j } , I )\\tag{32}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            248,
+            214,
+            779,
+            261
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "equation",
+        "img_path": "images/1c200b163577ce21f082d2ed62c08728bbc22f6e72a20e0275228f24144b1e2b.jpg",
+        "text": "$$\n\\mathrm { c o v } ( A _ { j } , I ) = \\mathrm { c o v } ( \\delta _ { j } I + \\gamma _ { a _ { j } } U + \\epsilon _ { a _ { j } } , I ) = \\delta _ { j } \\mathrm { v a r } ( I )\\tag{33}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            220,
+            266,
+            630,
+            286
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "B Examples of Valid and Invalid ACIDs",
+        "text_level": 2,
+        "bbox": [
+            112,
+            314,
+            694,
+            337
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "B.1 Surgicality and the Aggregation Restriction Do Not Imply Value Independence",
+        "text_level": 2,
+        "bbox": [
+            112,
+            354,
+            882,
+            397
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "We present an ACID that satisfies Surgicality and Aggregation Restriction but not Value Independence under SCM (1) with $k = 2$ components. First, for independent variables $Z _ { 1 } \\sim \\mathrm { U n i f o r m } [ - 2 , 2 ]$ and $Z _ { 2 } \\sim \\mathrm { U n i f o r m } [ - 1 , 1 ]$ , note that the unconditional joint density function $p _ { Z _ { 1 } , Z _ { 2 } }$ is",
+        "bbox": [
+            111,
+            406,
+            883,
+            481
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "equation",
+        "img_path": "images/a2a8353790c919c73f1bdf0c936c402586a18fe9fcc501f78b95dca75f61f63c.jpg",
+        "text": "$$\np _ { Z _ { 1 } , Z _ { 2 } } ( z _ { 1 } , z _ { 2 } ) = { \\frac { 1 } { 4 } } \\times { \\frac { 1 } { 2 } } = { \\frac { 1 } { 8 } } , \\quad ( z _ { 1 } , z _ { 2 } ) \\in [ - 2 , 2 ] \\times [ - 1 , 1 ] .\\tag{34}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            261,
+            492,
+            730,
+            527
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "The probability density function $p _ { Z }$ of $Z = Z _ { 1 } + Z _ { 2 }$ is then",
+        "bbox": [
+            112,
+            540,
+            614,
+            558
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "equation",
+        "img_path": "images/4643cef4ebdf5a694cdee5c025c932fe4bf538a636e459a1d6ee1b289bd04921.jpg",
+        "text": "$$\np _ { Z } ( a ) = \\int _ { - 2 } ^ { 2 } p _ { Z _ { 1 } } ( z _ { 1 } ) p _ { Z _ { 2 } } ( a - z _ { 1 } ) d z _ { 1 } = \\int _ { \\operatorname* { m a x } \\{ a - 2 , - 1 \\} } ^ { \\operatorname* { m i n } \\{ a + 2 , 1 \\} } \\frac { 1 } { 8 } d z _ { 1 } = \\left\\{ \\begin{array} { l l } { \\int _ { - 1 } ^ { a + 2 } \\frac { 1 } { 8 } d z _ { 1 } = \\frac { a + 3 } { 8 } , } & { a \\in [ - 3 , - 1 ] } \\\\ { \\int _ { - 1 } ^ { 1 } \\frac { 1 } { 8 } d z _ { 1 } = \\frac { 1 } { 4 } , } & { a \\in [ - 1 , 1 ] } \\\\ { \\int _ { a - 2 } ^ { 1 } \\frac { 1 } { 8 } d z _ { 1 } = \\frac { 3 - a } { 8 } , } & { a \\in [ 1 , 3 ] , } \\end{array} \\right.\\tag{35}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            116,
+            571,
+            869,
+            637
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "where $p _ { Z _ { 1 } }$ and $p _ { Z _ { 2 } }$ denote the marginal distributions of $Z _ { 1 }$ and $Z _ { 2 }$ respectively.",
+        "bbox": [
+            112,
+            671,
+            777,
+            689
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "Then to construct the ACID $P ^ { * }$ of interest for $( A _ { 1 } , A _ { 2 } ) ^ { \\top }$ , consider $P ^ { * }$ where $A _ { 1 } \\sim \\mathrm { U n i f o r m [ - 2 , 2 ] }$ and the marginal density of $A _ { 2 }$ matches the conditional density function of $Z _ { 2 }$ given that $Z = a$",
+        "bbox": [
+            111,
+            696,
+            905,
+            752
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "equation",
+        "img_path": "images/a80f293fb7e8f30a9f7d931cf557b1414bb99aa1ee13283ebb93d25257f73e24.jpg",
+        "text": "$$\n{ \\begin{array} { r l } & { p _ { 2 } ^ { * } ( a _ { 2 } ; a ) = { \\frac { 1 } { p _ { Z } ( a ) } } \\times { \\frac { 1 } { 8 } } , ~ a _ { 2 } \\in [ \\operatorname* { m a x } \\{ a - 2 , - 1 \\} , \\operatorname* { m i n } \\{ a + 2 , 1 \\} ] } \\\\ & { ~ = { \\left\\{ \\begin{array} { l l } { \\frac { 1 } { a + 3 } , } & { a \\in [ - 3 , - 1 ] , ~ a _ { 2 } \\in [ - 1 , a + 2 ] } \\\\ { { \\frac { 1 } { 2 } } , } & { a \\in [ - 1 , 1 ] , ~ a _ { 2 } \\in [ - 1 , 1 ] } \\\\ { { \\frac { 1 } { 3 - a } } , } & { a \\in [ 1 , 3 ] , ~ a _ { 2 } \\in [ a - 2 , 1 ] . } \\end{array} \\right. } } \\end{array} }\\tag{36}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            240,
+            761,
+            753,
+            869
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "(37)",
+        "bbox": [
+            846,
+            827,
+            880,
+            844
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "page_number",
+        "text": "24",
+        "bbox": [
+            486,
+            934,
+            509,
+            948
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "For simplicity, consider the SCM (1) coeficients: $\\beta _ { 1 } = 2 , \\beta _ { 2 } = 3$ , and $\\alpha _ { j } = 1 , \\delta _ { j } = \\gamma _ { a _ { i } } = 0$ for $j = 1 , 2$ . Then from (9), we have under $P ^ { * }$ that $\\mathbb { E } [ A _ { 1 } | \\mathrm { d o } ( A = a ) ] = \\mathbb { E } [ Z _ { 1 } ] = 0$ and",
+        "bbox": [
+            111,
+            90,
+            883,
+            128
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "equation",
+        "img_path": "images/cfe0af0106c8252a103b81951554f0f3a926980e85831800b82d90897da2339e.jpg",
+        "text": "$$\n\\mathbb { E } [ A _ { 2 } | \\ \\mathrm { d o } ( A = a ) ] = \\int a _ { 2 } d P ^ { * } ( a _ { 2 } ; a ) = \\left\\{ \\begin{array} { l l } { \\int _ { - 1 } ^ { a + 2 } \\frac { a _ { 2 } } { a + 3 } d a _ { 2 } = \\frac { a _ { 2 } ^ { 2 } } { 2 } \\bigg | _ { - 1 } ^ { a + 2 } = \\frac { a + 1 } { 2 } , } & { a \\in [ - 3 , - 1 ] } \\\\ { \\int _ { - 1 } ^ { 1 } \\frac { a _ { 2 } } { 2 } d a _ { 2 } = 0 , } & { a \\in [ - 1 , 1 ] } \\\\ { \\int _ { a - 2 } ^ { 1 } \\frac { a _ { 2 } } { 3 - a } d a _ { 2 } = \\frac { 1 - a } { 2 } , } & { a \\in [ 1 , 3 ] . } \\end{array} \\right.\\tag{38}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            129,
+            140,
+            826,
+            227
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "To see that Value Independence does not hold, observe for $a = - 2$ that",
+        "bbox": [
+            112,
+            237,
+            743,
+            255
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "equation",
+        "img_path": "images/9461e9d886d256c8873898ff26730bbc1643885a22b19db169e3f532428ae0d1.jpg",
+        "text": "$$\n\\mathbb { E } [ Y | \\mathrm { d o } ( A = - 1 ) ] - \\mathbb { E } [ Y | \\mathrm { d o } ( A = - 2 ) ] = \\beta _ { 2 } \\left( 0 - \\left( - \\frac { 1 } { 2 } \\right) \\right) = \\frac { 3 } { 2 }\\tag{39}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            233,
+            265,
+            761,
+            305
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "whereas for $a = - 0 . 9$",
+        "bbox": [
+            111,
+            316,
+            300,
+            333
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "equation",
+        "img_path": "images/c2867554facaa572992adf1c613b95da99988b75d4514e1b228defff3f688b89.jpg",
+        "text": "$$\n\\mathbb { E } [ Y | \\mathrm { d o } ( A = 0 . 1 ) ] - \\mathbb { E } [ Y | \\mathrm { d o } ( A = - 0 . 9 ) ] = 0 .\\tag{40}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            310,
+            345,
+            684,
+            366
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "B.2 Example of a Valid Non-Gaussian ACID",
+        "text_level": 2,
+        "bbox": [
+            112,
+            390,
+            651,
+            410
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "Consider an ACID that satisfies Surgicality and the aggregation rule, such that the marginal distributions of $\\alpha _ { 1 } A _ { 1 } , . . . , \\alpha _ { k } A _ { k }$ under the ACID are identical. Such an ACID would satisfy value independence. To see this, observe that $\\begin{array} { r } { \\sum _ { i } \\alpha _ { j } \\mathbb { E } [ A _ { j } | \\mathrm { d o } ( A = a ) ] = a } \\end{array}$ and $\\alpha _ { i } \\mathbb { E } [ A _ { i } | \\mathrm { d o } ( A =$ $a ) ] = \\alpha _ { j } \\mathbb { E } [ A _ { j } | \\mathrm { d o } ( A = a ) ]$ for all $i , j$ . Hence, $\\begin{array} { r } { \\mathbb E [ \\dot { A _ { j } } | \\mathrm { d o } ( A = a ) ] = \\frac { a } { k \\alpha _ { j } } } \\end{array}$ for $j = 1 , . . . , k$ . It follows that $\\begin{array} { r } { \\mathrm { A C E } ( A , Y ) = \\sum _ { j } \\frac { \\beta _ { j } } { k \\alpha _ { j } } } \\end{array}$ , which does not depend on a.",
+        "bbox": [
+            111,
+            420,
+            883,
+            520
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "B.3 The “Natural” Gaussian ACID",
+        "text_level": 2,
+        "bbox": [
+            112,
+            540,
+            544,
+            560
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "One may want to consider an ACID that (surgically) sets the component variables $( A _ { 1 } , . . . , A _ { k } )$ to the values they would have in the observational distribution, conditional on the aggregate constraint $A = a$ . For our linear Gaussian setting that amounts to appropriately parameterizing the multivariate Gaussian distribution in (11) to match the conditional distribution of $( A _ { 1 } , . . . , A _ { k } )$ given the aggregation rule from their observational joint distribution in SCM (1).",
+        "bbox": [
+            111,
+            570,
+            883,
+            662
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "Let $\\nu _ { j }$ denote the observational variance of $A _ { j }$ for $j = 1 , . . . ,$ k and let $\\rho _ { i j }$ denote the observational covariance of $A _ { i }$ with $A _ { j }$ . Then under SCM (1),",
+        "bbox": [
+            111,
+            671,
+            883,
+            708
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "equation",
+        "img_path": "images/37c34825c211944169740da497c39b2c915bbe3b337f365c829d1acb46a0bbf4.jpg",
+        "text": "$$\n\\left[ \\begin{array} { c } { A _ { 1 } } \\\\ { \\vdots } \\\\ { A _ { k } } \\end{array} \\right] \\sim N \\left( \\left[ \\begin{array} { c } { c _ { 1 } + a d _ { 1 } } \\\\ { \\vdots } \\\\ { c _ { k } + a d _ { k } } \\end{array} \\right] , \\Sigma ^ { \\prime } = \\left[ \\begin{array} { c c c } { \\nu _ { 1 } } & { \\dots } & { \\rho _ { 1 k } } \\\\ & { \\ddots } & \\\\ { \\rho _ { k 1 } } & { \\dots } & { \\nu _ { k } } \\end{array} \\right] \\right) .\\tag{41}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            287,
+            718,
+            710,
+            786
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "Let $\\alpha = ( \\alpha _ { 1 } , \\ldots , \\alpha _ { k } ) ^ { \\top }$ . Given the aggregation rule, $( A _ { 1 } , . . . , A _ { k } )$ has the conditional mean vector:",
+        "bbox": [
+            111,
+            797,
+            882,
+            833
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "equation",
+        "img_path": "images/9e5aee6e35f2007d94342c6514d6c1b7643b03daaf1966ddcf907074b2ef0eea.jpg",
+        "text": "$$\n\\left[ \\begin{array} { c } { d _ { 1 } } \\\\ { \\vdots } \\\\ { d _ { k } } \\end{array} \\right] = \\frac { \\Sigma ^ { \\prime } \\alpha } { \\alpha ^ { \\top } \\Sigma ^ { \\prime } \\alpha } = \\frac { 1 } { \\sum _ { i , j } \\alpha _ { i } \\rho _ { i j } \\alpha _ { j } } \\left[ \\begin{array} { c } { \\sum _ { j } \\rho _ { 1 j } \\alpha _ { j } } \\\\ { \\vdots } \\\\ { \\sum _ { j } \\rho _ { k j } \\alpha _ { j } . } \\end{array} \\right]\\tag{42}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            315,
+            842,
+            681,
+            910
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "page_number",
+        "text": "25",
+        "bbox": [
+            486,
+            934,
+            509,
+            948
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "and conditional covariance matrix",
+        "bbox": [
+            112,
+            92,
+            405,
+            109
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "equation",
+        "img_path": "images/1c09f260d29b04bb1f2d7e2c0cba11ff6abbe6b5a9f1e942ad195a04fb9fd2f3.jpg",
+        "text": "$$\n\\Sigma = { \\Sigma } ^ { \\prime } - \\frac { { \\Sigma } ^ { \\prime } \\alpha \\alpha ^ { \\top } { \\Sigma } ^ { \\prime } } { \\alpha ^ { \\top } { \\Sigma } ^ { \\prime } \\alpha } .\\tag{43}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            408,
+            119,
+            588,
+            157
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "The “Natural ACID” to consider is thus a multivariate Gaussian as in (11) with $( c _ { 1 } , \\ldots , c _ { k } ) =$ $( 0 , \\ldots , 0 ) , ( d _ { 1 } , \\ldots , d _ { k } ) ^ { \\top }$ as in (42), and Σ as in (43). Here, the fractional constant is simply $1 / \\mathrm { v a r } ( A )$ and the elements of the conditional mean vector are the covariances of the components with A. It follows that",
+        "bbox": [
+            111,
+            167,
+            883,
+            242
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "equation",
+        "img_path": "images/5ec3f2ae35849cc4a2d1f776f3ea2aa7f19eadff2c52b087927f361d62687939.jpg",
+        "text": "$$\n\\operatorname { A C E } ( A , Y ) = { \\frac { \\sum _ { j } \\beta _ { j } \\operatorname { c o v } ( A _ { j } , A ) } { \\operatorname { v a r } ( A ) } } .\\tag{44}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            361,
+            252,
+            633,
+            295
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "In general, this will not be equal to the IV estimand in (3) unless an instrument-tuned intervention is assumed.",
+        "bbox": [
+            111,
+            308,
+            883,
+            344
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "C Partially Instrument-tuned Interventions Calculations",
+        "text_level": 2,
+        "bbox": [
+            112,
+            371,
+            882,
+            421
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "Suppose that for $j = \\{ 1 , \\dots , l \\} , 1 < l < k$ , we have $\\begin{array} { r } { \\frac { \\beta _ { j } } { \\alpha _ { j } } = \\tau } \\end{array}$",
+        "bbox": [
+            111,
+            434,
+            611,
+            459
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "Rewriting $\\textstyle \\sum _ { j = 1 } ^ { k } A _ { j }$ in terms of τ and plugging into (10) yields:",
+        "bbox": [
+            111,
+            469,
+            645,
+            491
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "equation",
+        "img_path": "images/c303d8637378d95867f17ab49383bfc0adc550197ecebf0a552792c9ec4262fc.jpg",
+        "text": "$$\n\\operatorname { A C E } ( A , Y ) = \\tau + \\sum _ { j = l + 1 } ^ { k } ( \\beta _ { j } - \\tau \\alpha _ { j } ) d _ { j } .\\tag{45}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            343,
+            503,
+            651,
+            555
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "Furthermore, the IV estimand corresponds to:",
+        "bbox": [
+            111,
+            568,
+            504,
+            587
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "equation",
+        "img_path": "images/acb1c5c40522c7a9fab6c98d3c44a9d25dc713958c28a1bdaf561cde3410ed59.jpg",
+        "text": "$$\n\\beta _ { \\mathrm { I V } } = \\frac { \\sum _ { j = 1 } ^ { k } \\beta _ { j } \\delta _ { j } } { \\sum _ { j = 1 } ^ { k } \\alpha _ { j } \\delta _ { j } } = \\tau + \\frac { \\sum _ { j = l + 1 } ^ { k } ( \\beta _ { j } - \\tau \\alpha _ { j } ) \\delta _ { j } } { \\sum _ { j = 1 } ^ { k } \\alpha _ { j } \\delta _ { j } } .\\tag{46}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            305,
+            598,
+            686,
+            648
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "Then, from (45) and (46), we have that $\\beta _ { \\mathrm { I V } } = \\mathrm { A C E } ( A , Y )$ if the following equality holds:",
+        "bbox": [
+            111,
+            660,
+            861,
+            680
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "equation",
+        "img_path": "images/3c8b1e5db5595136864b26b48fa840bdf6838821b27b5c7cd31650f877c66028.jpg",
+        "text": "$$\n\\frac { \\sum _ { j = l + 1 } ^ { k } ( \\beta _ { j } - \\tau \\alpha _ { j } ) \\delta _ { j } } { \\sum _ { j = 1 } ^ { k } \\alpha _ { j } \\delta _ { j } } = \\sum _ { j = l + 1 } ^ { k } ( \\beta _ { j } - \\tau \\alpha _ { j } ) d _ { j } ,\\tag{47}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            325,
+            693,
+            671,
+            743
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "which is true if for instance, (20) holds for $d _ { j }$ , when $j \\in \\{ l + 1 , \\ldots , k \\}$ , while the remaining parameters $d _ { 1 } , \\ldots , d _ { l }$ and $c _ { 1 } , \\ldots , c _ { k }$ and Σ need only be chosen such that (12) and (13) are satisfied. Hence, for this setting, we are only instrument-tuning slopes of those components that do not obey the proportional relationship in (47). Of course, such a partially instrument-tuned intervention needs to be justified by strong assumptions on the component relationships with the outcome and the aggregate.",
+        "bbox": [
+            111,
+            757,
+            885,
+            868
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "page_number",
+        "text": "26",
+        "bbox": [
+            486,
+            933,
+            511,
+            948
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "D Proof of Proposition 1",
+        "text_level": 2,
+        "bbox": [
+            112,
+            87,
+            483,
+            109
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "text",
+        "text": "In the Gaussian case, showing Markov equivalence of SCMs (1) and (21) amounts to matching their implied covariance matrices. By definition,",
+        "bbox": [
+            111,
+            125,
+            883,
+            161
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "equation",
+        "img_path": "images/554259c51f8e04b540e77be8a81afe3b803e7cdecdbf6195fbe0f51b5b3b535d.jpg",
+        "text": "$$\n\\operatorname { v a r } ( I ) = \\operatorname { v a r } ( U ) = \\operatorname { v a r } ( I ^ { \\prime } ) = \\operatorname { v a r } ( U ^ { \\prime } ) = 1 \\ \\operatorname { a n d } \\ \\operatorname { c o v } ( I , U ) = \\operatorname { c o v } ( I ^ { \\prime } , U ^ { \\prime } ) = 0 .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            189,
+            169,
+            803,
+            188
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "text",
+        "text": "The remaining entries of the respective covariance matrices are computed as follows. Beginning with Σ, it is helpful to expand the structural equations for $Y$ and A from SCM (1) with respect to the errors terms:",
+        "bbox": [
+            111,
+            196,
+            883,
+            251
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "equation",
+        "img_path": "images/3ecd379d05878f5d4246e8a98d82baed24c33fd29c38ec3707fd545b7b893813.jpg",
+        "text": "$$\nA \\gets \\epsilon _ { i } ( \\sum _ { j } \\alpha _ { j } \\delta _ { j } ) + \\epsilon _ { u } ( \\sum _ { j } \\alpha _ { j } \\gamma _ { a _ { j } } ) + \\sum _ { j } \\alpha _ { j } \\epsilon _ { a _ { j } }\\tag{48}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            272,
+            256,
+            647,
+            296
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "equation",
+        "img_path": "images/523f218ec117750650938dfa788fa96a4a708fe2620dafea959d716006a40acc.jpg",
+        "text": "$$\nY \\gets \\epsilon _ { i } ( \\sum _ { j } \\beta _ { j } \\delta _ { j } ) + \\epsilon _ { u } ( \\sum _ { j } \\beta _ { j } \\gamma _ { a _ { j } } + \\gamma _ { y } ) + \\sum _ { j } \\beta _ { j } \\epsilon _ { a _ { j } } + \\epsilon _ { y }\\tag{49}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            271,
+            297,
+            723,
+            338
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "text",
+        "text": "Since all errors have unit variance, it follows that",
+        "bbox": [
+            111,
+            344,
+            532,
+            361
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "equation",
+        "img_path": "images/c04bdbda9ce4ae0d4025a5728230fd1d5ecb00966caded1b7ff08e09f86f6c93.jpg",
+        "text": "$$\n\\begin{array} { r l } & { \\displaystyle \\cos ( I , A ) = \\sum _ { j } \\alpha _ { j } \\delta _ { j } , \\quad \\mathrm { c o v } ( U , A ) = \\sum _ { j } \\alpha _ { j } \\gamma _ { a j } , \\quad \\mathrm { c o v } ( I , Y ) = \\sum _ { j } \\beta _ { j } \\delta _ { j } } \\\\ & { \\displaystyle \\mathrm { c o v } ( U , Y ) = \\sum _ { j } \\beta _ { j } \\gamma _ { a j } + \\gamma _ { y } } \\\\ & { \\displaystyle \\mathrm { c o v } ( A , Y ) = ( \\sum _ { j } \\alpha _ { j } \\delta _ { j } ) ( \\sum _ { j } \\beta _ { j } \\delta _ { j } ) + ( \\sum _ { j } \\alpha _ { j } \\gamma _ { a j } ) ( \\sum _ { j } \\beta _ { j } \\gamma _ { a j } + \\gamma _ { y } ) + \\sum _ { j } \\alpha _ { j } \\beta _ { j } , } \\\\ & { \\displaystyle \\mathrm { v a r } ( A ) = ( \\sum _ { j } \\alpha _ { j } \\delta _ { j } ) ^ { 2 } + ( \\sum _ { j } \\alpha _ { j } \\gamma _ { a j } ) ^ { 2 } + \\sum _ { j } \\alpha _ { j } ^ { 2 } } \\\\ & { \\displaystyle \\mathrm { v a r } ( Y ) = ( \\sum _ { j } \\beta _ { j } \\delta _ { j } ) ^ { 2 } + ( \\sum _ { j } \\beta _ { j } \\gamma _ { a j } + \\gamma _ { y } ) ^ { 2 } + \\sum _ { j } \\beta _ { j } ^ { 2 } + 1 } \\end{array}\\tag{50}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            191,
+            367,
+            807,
+            575
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "text",
+        "text": "Similarly, $Y ^ { \\prime }$ and $A ^ { \\prime }$ from SCM (21) can be rewritten as",
+        "bbox": [
+            111,
+            580,
+            589,
+            599
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "equation",
+        "img_path": "images/d158f0d38c331121a26db6df3e40d31fb65440c81cd3d7a7f90baedaa53eb176.jpg",
+        "text": "$$\n\\begin{array} { r l } & { A ^ { \\prime } \\gets \\delta _ { a } ^ { \\prime } \\epsilon _ { i } ^ { \\prime } + \\gamma _ { a } ^ { \\prime } \\epsilon _ { u } ^ { \\prime } + \\epsilon _ { a } ^ { \\prime } } \\\\ & { Y \\gets \\epsilon _ { i } ^ { \\prime } ( \\beta ^ { \\prime } \\delta _ { a } ^ { \\prime } + \\delta _ { y } ^ { \\prime } ) + \\epsilon _ { u } ^ { \\prime } ( \\beta ^ { \\prime } \\gamma _ { a } ^ { \\prime } + \\gamma _ { y } ^ { \\prime } ) + \\beta ^ { \\prime } \\epsilon _ { a } ^ { \\prime } + \\epsilon _ { y } ^ { \\prime } . } \\end{array}\\tag{51}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            302,
+            606,
+            692,
+            650
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "text",
+        "text": "(52)",
+        "bbox": [
+            846,
+            630,
+            880,
+            647
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "text",
+        "text": "By the above, we then have,",
+        "bbox": [
+            112,
+            656,
+            356,
+            674
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "equation",
+        "img_path": "images/b59a22fd8241da8308087bdb69ab18fcd0888e8f63c1e5c9b0e0420e413cbf35.jpg",
+        "text": "$$\n\\operatorname { c o v } ( I ^ { \\prime } , A ^ { \\prime } ) = \\delta _ { a } ^ { \\prime } , \\quad \\operatorname { c o v } ( U ^ { \\prime } , A ^ { \\prime } ) = \\gamma _ { a } ^ { \\prime } , \\quad \\operatorname { c o v } ( I ^ { \\prime } , Y ^ { \\prime } ) = \\beta ^ { \\prime } \\delta _ { a } ^ { \\prime } + \\delta _ { y } ^ { \\prime }\n$$",
+        "text_format": "latex",
+        "bbox": [
+            238,
+            681,
+            748,
+            703
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "equation",
+        "img_path": "images/5b7ec3bc7dff04f91b88baa4e484b28332a3c9e0b0e3f90f0a9db01b92eaf36f.jpg",
+        "text": "$$\n\\begin{array} { r l } & { \\mathrm { c o v } ( U ^ { \\prime } , Y ^ { \\prime } ) = \\beta ^ { \\prime } \\gamma _ { a } ^ { \\prime } + \\gamma _ { y } ^ { \\prime } } \\\\ & { \\mathrm { c o v } ( A ^ { \\prime } , Y ^ { \\prime } ) = \\beta ^ { \\prime } { \\delta _ { a } ^ { \\prime } } ^ { 2 } + \\delta _ { y } ^ { \\prime } \\delta _ { a } ^ { \\prime } + \\beta ^ { \\prime } { \\gamma _ { a } ^ { \\prime } } ^ { 2 } + \\gamma _ { y } ^ { \\prime } \\gamma _ { a } ^ { \\prime } + \\beta ^ { \\prime } \\mathrm { v a r } ( \\epsilon _ { a } ^ { \\prime } ) } \\\\ & { \\mathrm { v a r } ( A ^ { \\prime } ) = { \\delta _ { a } ^ { \\prime } } ^ { 2 } + { \\gamma _ { a } ^ { \\prime } } ^ { 2 } + \\mathrm { v a r } ( \\epsilon _ { a } ^ { \\prime } ) , } \\\\ & { \\mathrm { v a r } ( Y ^ { \\prime } ) = ( \\beta ^ { \\prime } \\delta _ { a } ^ { \\prime } + \\delta _ { y } ^ { \\prime } ) ^ { 2 } + ( \\beta ^ { \\prime } \\gamma _ { a } ^ { \\prime } + \\gamma _ { y } ^ { \\prime } ) ^ { 2 } + \\beta ^ { \\prime } { } ^ { 2 } \\mathrm { v a r } ( \\epsilon _ { a } ^ { \\prime } ) + \\mathrm { v a r } ( \\epsilon _ { y } ^ { \\prime } ) } \\end{array}\\tag{53}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            233,
+            705,
+            759,
+            803
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "text",
+        "text": "The covariances of the treatment with the instrument and the unobserved confounder are straightforward to match between (50) and (53), i.e. cov $( I , A ) = \\mathrm { { c o v } } ( I ^ { \\prime } , A ^ { \\prime } )$ and $\\operatorname { c o v } ( U , A ) =$ $\\operatorname { c o v } ( U ^ { \\prime } , A ^ { \\prime } )$ implies that",
+        "bbox": [
+            111,
+            808,
+            883,
+            863
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "equation",
+        "img_path": "images/f793658b712600c18e78bcd1394ab7237baf7dde77c8d6afaabd3a70ef9cba62.jpg",
+        "text": "$$\n\\delta _ { a } ^ { \\prime } = \\sum _ { j } \\alpha _ { j } \\delta _ { j } , \\ \\gamma _ { a } ^ { \\prime } = \\sum _ { j } \\alpha _ { j } \\gamma _ { a _ { j } } .\\tag{54}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            367,
+            868,
+            627,
+            909
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "page_number",
+        "text": "27",
+        "bbox": [
+            486,
+            933,
+            509,
+            948
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "text",
+        "text": "Matching the covariances of the outcome with the confounder, instrument, and treatment and substituting in constraints from (54) yields a system of three equations:",
+        "bbox": [
+            111,
+            92,
+            883,
+            128
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "equation",
+        "img_path": "images/fd54f833e098e4ea23288ec4e8de857d443b48f4a5f95823e9a92dfbb970e06b.jpg",
+        "text": "$$\n\\sum _ { j } \\beta _ { j } \\delta _ { j } = \\beta ^ { \\prime } \\delta _ { a } ^ { \\prime } + \\delta _ { y } ^ { \\prime } , \\qquad \\sum _ { j } \\beta _ { j } \\gamma _ { a _ { j } } + \\gamma _ { y } = \\beta ^ { \\prime } \\gamma _ { a } ^ { \\prime } + \\gamma _ { y } ^ { \\prime }\\tag{55}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            258,
+            136,
+            697,
+            176
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "equation",
+        "img_path": "images/da5bd64fbe6b58eaf0ad2cc671ed2e2d852bfd70e2fa239cbe11014ac3207dc7.jpg",
+        "text": "$$\n\\delta _ { a } ^ { \\prime } ( \\sum _ { j } \\beta _ { j } \\delta _ { j } ) + \\gamma _ { a } ^ { \\prime } ( \\sum _ { j } \\beta _ { j } \\gamma _ { a _ { j } } + \\gamma _ { y } ) + \\sum _ { j } \\alpha _ { j } \\beta _ { j } =\n$$",
+        "text_format": "latex",
+        "bbox": [
+            199,
+            178,
+            589,
+            218
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "equation",
+        "img_path": "images/6672ee5f47abdbd292a08d8c235048059a929eaffdde9f02b089d271818b3887.jpg",
+        "text": "$$\n\\beta ^ { \\prime } { \\delta _ { a } ^ { \\prime } } ^ { 2 } + \\delta _ { y } ^ { \\prime } \\delta _ { a } ^ { \\prime } + \\beta ^ { \\prime } { \\gamma _ { a } ^ { \\prime } } ^ { 2 } + \\gamma _ { y } ^ { \\prime } \\gamma _ { a } ^ { \\prime } + \\beta ^ { \\prime } \\mathrm { v a r } ( \\epsilon _ { a } ^ { \\prime } )\\tag{56}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            467,
+            219,
+            795,
+            244
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "text",
+        "text": "Then (55) implies that",
+        "bbox": [
+            111,
+            252,
+            310,
+            270
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "equation",
+        "img_path": "images/4c22c1c59d385827098c063789fd60ea5ea10d133f35ef3535f03efae9e62d73.jpg",
+        "text": "$$\n\\delta _ { y } ^ { \\prime } = \\sum _ { j } \\beta _ { j } \\delta _ { j } - \\beta ^ { \\prime } \\delta _ { a } ^ { \\prime } , \\quad \\gamma _ { y } ^ { \\prime } = \\sum _ { j } \\beta _ { j } \\gamma _ { a _ { j } } + \\gamma _ { y } - \\beta ^ { \\prime } \\gamma _ { a } ^ { \\prime }\\tag{57}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            289,
+            279,
+            707,
+            318
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "text",
+        "text": "and furthermore, plugging into (56),",
+        "bbox": [
+            111,
+            327,
+            423,
+            345
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "equation",
+        "img_path": "images/7efd9dacd98ad4b5e7bb3e3912f2f7a4dd29538dcb5722a37b245a98c83defef.jpg",
+        "text": "$$\n\\delta _ { a } ^ { \\prime } ( \\beta ^ { \\prime } \\delta _ { a } ^ { \\prime } + \\delta _ { y } ^ { \\prime } ) + \\gamma _ { a } ^ { \\prime } ( \\beta ^ { \\prime } \\gamma _ { a } ^ { \\prime } + \\gamma _ { y } ^ { \\prime } ) + \\sum _ { j } \\alpha _ { j } \\beta _ { j } = \\beta ^ { \\prime } { \\delta _ { a } ^ { \\prime } } ^ { 2 } + \\delta _ { y } ^ { \\prime } \\delta _ { a } ^ { \\prime } + \\beta ^ { \\prime } { \\gamma _ { a } ^ { \\prime } } ^ { 2 } + \\gamma _ { y } ^ { \\prime } \\gamma _ { a } ^ { \\prime } + \\beta ^ { \\prime } \\mathrm { v a r } ( \\epsilon _ { a } ^ { \\prime } )\\tag{58}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            138,
+            353,
+            821,
+            392
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "text",
+        "text": "which simplifies to",
+        "bbox": [
+            111,
+            401,
+            274,
+            419
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "equation",
+        "img_path": "images/eed257ef02dc72d012bef11a059ce307a3ee25dbe34ad4e3d608d38d51f4741f.jpg",
+        "text": "$$\n\\beta ^ { \\prime } = \\frac { \\sum _ { j } \\alpha _ { j } \\beta _ { j } } { \\mathrm { v a r } ( \\epsilon _ { a } ^ { \\prime } ) } .\\tag{59}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            434,
+            426,
+            560,
+            468
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "text",
+        "text": "Matching the variance of the treatment, we have",
+        "bbox": [
+            112,
+            477,
+            527,
+            493
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "equation",
+        "img_path": "images/a351f05b2ba746863c2bf2f8d56619272574f0357e763c883156ce3d645baf59.jpg",
+        "text": "$$\n( \\sum _ { j } \\alpha _ { j } \\delta _ { j } ) ^ { 2 } + ( \\sum _ { j } \\alpha _ { j } \\gamma _ { a _ { j } } ) ^ { 2 } + \\sum _ { j } \\alpha _ { j } ^ { 2 } = { \\delta _ { a } ^ { \\prime } } ^ { 2 } + { \\gamma _ { a } ^ { \\prime } } ^ { 2 } + \\mathrm { v a r } ( \\epsilon _ { a } ^ { \\prime } ) ,\\tag{60}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            258,
+            501,
+            736,
+            541
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "text",
+        "text": "and plugging in the constraints from (54) yields:",
+        "bbox": [
+            111,
+            549,
+            524,
+            568
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "equation",
+        "img_path": "images/bb15e5dccf1f86a340e2fa805a64484abc6221ffc4f2c4bb22064b4893724e8a.jpg",
+        "text": "$$\n\\operatorname { v a r } ( \\epsilon _ { a } ^ { \\prime } ) = \\sum _ { j } \\alpha _ { j } ^ { 2 } .\\tag{61}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            424,
+            577,
+            570,
+            616
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "text",
+        "text": "Similarly, matching the variance of the outcome yields",
+        "bbox": [
+            112,
+            623,
+            575,
+            642
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "equation",
+        "img_path": "images/41a5d0cc3f27a463dd794af49193cfa5a6d58921cb4f57b3262e8455c91ebdd9.jpg",
+        "text": "$$\n( \\sum _ { j } \\beta _ { j } \\delta _ { j } ) ^ { 2 } + ( \\sum _ { j } \\beta _ { j } \\gamma _ { a j } + \\gamma _ { y } ) ^ { 2 } + \\sum \\beta _ { j } ^ { 2 } + 1 = ( \\beta ^ { \\prime } \\delta _ { a } ^ { \\prime } + \\delta _ { y } ^ { \\prime } ) ^ { 2 } + ( \\beta ^ { \\prime } \\gamma _ { a } ^ { \\prime } + \\gamma _ { y } ^ { \\prime } ) ^ { 2 } + \\beta ^ { \\prime 2 } \\mathrm { v a r } ( \\epsilon _ { a } ^ { \\prime } ) + \\mathrm { v a r } ( \\epsilon _ { y } ^ { \\prime } ) ,\\tag{62}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            112,
+            648,
+            906,
+            689
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "text",
+        "text": "and plugging in (55) yields",
+        "bbox": [
+            112,
+            717,
+            344,
+            736
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "equation",
+        "img_path": "images/1d58862632822144074cd7156be8c3eef78937a6dfe628bf534cd23a7a3c1698.jpg",
+        "text": "$$\n\\sum \\beta _ { j } ^ { 2 } + 1 = \\beta ^ { \\prime 2 } \\mathrm { v a r } ( \\epsilon _ { a } ^ { \\prime } ) + \\mathrm { v a r } ( \\epsilon _ { y } ^ { \\prime } ) ,\\tag{63}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            354,
+            744,
+            640,
+            770
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "text",
+        "text": "which simplifies to:",
+        "bbox": [
+            112,
+            780,
+            279,
+            796
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "equation",
+        "img_path": "images/1383e777f440d1742a1ca8c06ddd2f6b935a0083508e01d8f0e13c74a375adf2.jpg",
+        "text": "$$\n\\mathrm { v a r } ( \\epsilon _ { y } ^ { \\prime } ) = \\sum \\beta _ { j } ^ { 2 } + 1 - \\beta ^ { \\prime 2 } \\mathrm { v a r } ( \\epsilon _ { a } ^ { \\prime } ) = \\sum \\beta _ { j } ^ { 2 } + 1 - \\frac { ( \\sum _ { j } \\alpha _ { j } \\beta _ { j } ) ^ { 2 } } { \\sum _ { j } \\alpha _ { j } ^ { 2 } } = 1 + \\frac { \\sum _ { j } \\beta _ { j } ^ { 2 } \\sum _ { j } \\alpha _ { j } ^ { 2 } - ( \\sum _ { j } \\alpha _ { j } \\beta _ { j } ) ^ { 2 } } { \\sum _ { j } \\alpha _ { j } ^ { 2 } }\\tag{64}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            111,
+            803,
+            900,
+            849
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "equation",
+        "img_path": "images/2dc43374e4d4639b5aecbd9f0bd92bb7b43e03ffb82c539329d57347d68dad1d.jpg",
+        "text": "$$\n= 1 + \\frac { \\sum _ { l < j } ( \\beta _ { l } \\alpha _ { j } - \\beta _ { j } \\alpha _ { l } ) ^ { 2 } } { \\sum _ { j } \\alpha _ { j } ^ { 2 } } ,\\tag{65}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            174,
+            869,
+            403,
+            915
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "page_number",
+        "text": "28",
+        "bbox": [
+            486,
+            933,
+            509,
+            948
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "text",
+        "text": "where the last equality is by Lagrange’s identity. In summary, the aggregate IV SCM (1) is equivalent to SCM (21) where",
+        "bbox": [
+            111,
+            90,
+            883,
+            127
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "equation",
+        "img_path": "images/d95673413e67c2d082052edc0593babce18f9b729c03718ae668db84fcc6a3e7.jpg",
+        "text": "$$\n\\beta ^ { \\prime } = \\frac { \\sum _ { j } \\alpha _ { j } \\beta _ { j } } { \\sum _ { j } \\alpha _ { j } ^ { 2 } } , \\quad \\delta _ { a } ^ { \\prime } = \\sum _ { j } \\alpha _ { j } \\delta _ { j } , \\quad \\gamma _ { a } ^ { \\prime } = \\sum _ { j } \\alpha _ { j } \\gamma _ { a _ { j } } ,\\tag{66}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            292,
+            141,
+            702,
+            188
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "equation",
+        "img_path": "images/47afe08cd6eefebdd36d97766e0c7ea8b15356926f57957fdeab4af2989bad31.jpg",
+        "text": "$$\n\\delta _ { y } ^ { \\prime } = \\sum _ { j } \\beta _ { j } \\delta _ { j } - \\frac { ( \\sum _ { j } \\alpha _ { j } \\beta _ { j } ) ( \\sum _ { j } \\alpha _ { j } \\delta _ { j } ) } { \\sum _ { j } \\alpha _ { j } ^ { 2 } } ,\\tag{67}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            294,
+            189,
+            604,
+            237
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "equation",
+        "img_path": "images/2da78c6cf7fac2c196be99e1a552696a7fd9ce04978c19baa59d8bde986593e9.jpg",
+        "text": "$$\n\\gamma _ { y } ^ { \\prime } = \\sum _ { j } \\beta _ { j } \\gamma _ { a _ { j } } + \\gamma _ { y } - \\frac { ( \\sum _ { j } \\alpha _ { j } \\beta _ { j } ) ( \\sum _ { j } \\alpha _ { j } \\gamma _ { a _ { j } } ) } { \\sum _ { j } \\alpha _ { j } ^ { 2 } } ,\\tag{68}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            290,
+            239,
+            663,
+            286
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "and",
+        "bbox": [
+            112,
+            301,
+            150,
+            316
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "equation",
+        "img_path": "images/f150ffe7da413c130decd2ee526ac56f6bbb32695ac51fec1467a35a86b437b9.jpg",
+        "text": "$$\n\\mathrm { v a r } ( \\epsilon _ { a } ^ { \\prime } ) = \\sum _ { j } \\alpha _ { j } ^ { 2 } , \\quad \\mathrm { v a r } ( \\epsilon _ { y } ^ { \\prime } ) = 1 + \\frac { \\sum _ { l < j } ( \\beta _ { l } \\alpha _ { j } - \\beta _ { j } \\alpha _ { l } ) ^ { 2 } } { \\sum _ { j } \\alpha _ { j } ^ { 2 } } .\\tag{69}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            269,
+            327,
+            723,
+            375
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "In the proportional aggregation case where $\\beta _ { j } = \\tau \\alpha _ { j } , j \\in \\{ 1 , \\dots , k \\}$ , SCM (21) collapses to a classic IV model:",
+        "bbox": [
+            111,
+            398,
+            883,
+            434
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "equation",
+        "img_path": "images/918377cbca45f165bed81407279cac9a54041d6ff17ce22f20b8da7eeb1eee04.jpg",
+        "text": "$$\n\\beta ^ { \\prime } = \\frac { \\sum _ { j } \\alpha _ { j } \\beta _ { j } } { \\sum _ { j } \\alpha _ { j } ^ { 2 } } = \\frac { \\tau ^ { 2 } ( \\sum \\beta _ { j } ^ { 2 } ) } { \\tau ( \\sum \\beta _ { j } ^ { 2 } ) } = \\tau\\tag{70}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            364,
+            443,
+            630,
+            488
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "such that",
+        "bbox": [
+            111,
+            502,
+            197,
+            517
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "equation",
+        "img_path": "images/28a45f3286c881d1063e68b6ba73fb599cab998df27907b21f5e86df436fcf2f.jpg",
+        "text": "$$\n\\delta _ { y } ^ { \\prime } = \\sum _ { j } \\beta _ { j } \\delta _ { j } - \\beta ^ { \\prime } ( \\sum _ { j } \\alpha _ { j } \\delta _ { j } ) = \\sum _ { j } \\beta _ { j } \\delta _ { j } - \\tau \\left( { \\frac { 1 } { \\tau } } \\Big [ \\sum _ { j } \\beta _ { j } \\delta _ { j } \\Big ] \\right) = 0 .\\tag{71}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            228,
+            529,
+            767,
+            579
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "page_number",
+        "text": "29",
+        "bbox": [
+            486,
+            933,
+            509,
+            948
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "E Supplementary Materials for the Simulation Regarding the Sargan Test",
+        "text_level": 2,
+        "bbox": [
+            112,
+            85,
+            885,
+            138
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "chart",
+        "img_path": "images/583d27a7eb6b6553bb7e5e03b1e175f010113c2bec985deea2eb1d5a3eb90c73.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            155,
+            181,
+            393,
+            497
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "chart",
+        "img_path": "images/ae8a0c72900b14439716d49a634a9a808866136d9f433081b1ccd5fcb4ace7ec.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            393,
+            181,
+            619,
+            507
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "chart",
+        "img_path": "images/e218be733bc8296c74b5d227a580cc0bdcc0609d398435230abb994325430467.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 5: Distribution of F-statistics for pairs of instruments of diferent strengths. The typical cut-of of 11 is marked in yellow where applicable."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            619,
+            180,
+            844,
+            501
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "text",
+        "text": "E.1 Calculations for Table 1",
+        "text_level": 2,
+        "bbox": [
+            112,
+            592,
+            467,
+            611
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "text",
+        "text": "Under SCM (23),",
+        "bbox": [
+            112,
+            621,
+            264,
+            640
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "equation",
+        "img_path": "images/dd38451588173b2e57cb92e3968f42fa178beae34c36005b8ea841dd3ddb1730.jpg",
+        "text": "$$\n\\operatorname { v a r } ( A ) = ( \\delta _ { 1 1 } + \\delta _ { 2 1 } ) ^ { 2 } + ( \\delta _ { 1 2 } + \\delta _ { 2 2 } ) ^ { 2 } + 3\\tag{72}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            343,
+            652,
+            676,
+            674
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "equation",
+        "img_path": "images/80a98ab01face9f7d86e2616c03780b78ebf0a02b1935be91ac9d0ac1ef176db.jpg",
+        "text": "$$\n\\mathrm { c o v } ( I _ { l } , A ) = \\delta _ { l 1 } + \\delta _ { l 2 } , \\qquad l = 1 , 2 .\\tag{73}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            320,
+            676,
+            609,
+            695
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "text",
+        "text": "Thus the last two columns of Table 1 are calculated as",
+        "bbox": [
+            111,
+            710,
+            578,
+            728
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "equation",
+        "img_path": "images/9117bb25b74f23c581cc474f0b5dc9c1a9d11bd54f4a8f22c1c566f0a22b7e4e.jpg",
+        "text": "$$\n\\cot ( I _ { l } , A ) = \\frac { \\cot ( I _ { l } , A ) } { \\operatorname { s d } ( I _ { l } ) \\operatorname { s d } ( A ) } = \\frac { \\delta _ { l 1 } + \\delta _ { l 2 } } { \\sqrt { \\left( \\delta _ { 1 1 } + \\delta _ { 2 1 } \\right) ^ { 2 } + \\left( \\delta _ { 1 2 } + \\delta _ { 2 2 } \\right) ^ { 2 } + 3 } } , \\quad l = 1 , 2 .\\tag{74}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            200,
+            737,
+            794,
+            787
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "page_number",
+        "text": "30",
+        "bbox": [
+            486,
+            933,
+            511,
+            948
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "image",
+        "img_path": "images/2e7347610b51baf40b517b9b579c18c1ec699fddfdfca45f01a23e69a1492921.jpg",
+        "image_caption": [
+            "Figure 6: Aggregate setting with aggregate outcome $Y$ and treatment A."
+        ],
+        "image_footnote": [],
+        "bbox": [
+            303,
+            94,
+            691,
+            275
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "text",
+        "text": "F Extensions: Aggregating Other Variables",
+        "text_level": 2,
+        "bbox": [
+            112,
+            334,
+            740,
+            358
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "text",
+        "text": "F.1 Aggregate Treatment and Aggregate Outcome",
+        "text_level": 2,
+        "bbox": [
+            112,
+            375,
+            720,
+            396
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "text",
+        "text": "We consider the following extensions to SCM (1), also visualized in the bottom of Figure 6:",
+        "bbox": [
+            111,
+            405,
+            883,
+            424
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "equation",
+        "img_path": "images/f96838cfcceecb0d969d7e817a86340a52caa1891b1b32878a43b7e3f473cb9a.jpg",
+        "text": "$$\nY = \\sum _ { i = 1 } ^ { m } \\omega _ { i } Y _ { i } , \\quad Y _ { i } \\gets \\sum _ { j = 1 } ^ { k } \\beta _ { j i } A _ { j } + \\gamma _ { y i } U + \\epsilon _ { y i }\\tag{75}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            310,
+            438,
+            684,
+            487
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "text",
+        "text": "We have not added any new information to A nor I and the first stage calculation for A<sup>˜</sup> remains the same. The reduced stage is altered by the fact that",
+        "bbox": [
+            111,
+            503,
+            885,
+            540
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "equation",
+        "img_path": "images/5e794285ced18482ebd83ce8e0aa05e1e8656eb6565041a8f545b7bff14ee846.jpg",
+        "text": "$$\n\\mathrm { c o v } ( Y , \\tilde { A } ) ~ = ~ \\mathrm { c o v } \\left( \\sum _ { i = 1 } ^ { m } \\sum _ { j = 1 } ^ { k } \\omega _ { i } \\beta _ { j i } A _ { j } + \\gamma _ { y } U + \\epsilon _ { y } , { \\frac { \\mathrm { c o v } ( \\sum _ { j } \\alpha _ { j } A _ { j } , I ) } { \\mathrm { v a r } ( I ) } } I \\right)\\tag{76}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            214,
+            554,
+            777,
+            602
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "equation",
+        "img_path": "images/51914e92bc551d0871b495999cbd5439e7ffd992c1e90909acab28e1d7a04fad.jpg",
+        "text": "$$\n= { \\frac { \\operatorname { c o v } ( \\sum _ { j } \\alpha _ { j } A _ { j } , I ) } { \\operatorname { v a r } ( I ) } } \\sum _ { i = 1 } ^ { m } \\sum _ { j = 1 } ^ { k } \\omega _ { i } \\beta _ { j i } \\delta _ { j } \\operatorname { v a r } ( I ) .\\tag{77}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            310,
+            606,
+            650,
+            656
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "text",
+        "text": "This alteration produces a new IV estimand, $\\beta _ { \\mathrm { I V } } ^ { y }$ , that reflects the granularity of Y and A:",
+        "bbox": [
+            111,
+            670,
+            877,
+            689
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "equation",
+        "img_path": "images/abc42f30403d54f94d5f321eaf4cbfcd85c8e144611d3139683a091ed0f49683.jpg",
+        "text": "$$\n\\beta _ { \\mathrm { I V } } ^ { y } = \\sum _ { i = 1 } ^ { m } \\omega _ { i } \\frac { \\sum _ { j } \\beta _ { j i } \\delta _ { j } } { \\sum _ { j } \\alpha _ { j } \\delta _ { j } } .\\tag{78}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            403,
+            702,
+            591,
+            748
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "text",
+        "text": "$\\beta _ { \\mathrm { I V } } ^ { y }$ is a weighted sum of IV estimands of the form $\\beta _ { \\mathrm { I V } }$ , where each estimand and weight corresponds to an outcome component $Y _ { i }$ and its related discussions in the main text.",
+        "bbox": [
+            111,
+            772,
+            883,
+            809
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "text",
+        "text": "F.2 Aggregate Treatment and Aggregate Instrument",
+        "text_level": 2,
+        "bbox": [
+            112,
+            832,
+            743,
+            853
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "text",
+        "text": "We now consider an aggregate instrument I. With reference to Section F.1, we consider Y as a non-aggregate variable without loss of generality. We refer to Figure 7 and the structural",
+        "bbox": [
+            111,
+            862,
+            885,
+            898
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "page_number",
+        "text": "31",
+        "bbox": [
+            486,
+            934,
+            509,
+            948
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "image",
+        "img_path": "images/2f6a7530b8c78ca9857b2259c80d3ac49570631e69cb6422d306412c361c3919.jpg",
+        "image_caption": [
+            "Figure 7: Aggregate setting with aggregate instrument I and treatment A."
+        ],
+        "image_footnote": [],
+        "bbox": [
+            302,
+            94,
+            692,
+            273
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "text",
+        "text": "equations in (80) for details.",
+        "bbox": [
+            111,
+            337,
+            356,
+            354
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "equation",
+        "img_path": "images/571704773a50bf024442588f9b8f6af9fc3c9366a9453e431ddf7ec4a8a790af.jpg",
+        "text": "$$\nI = \\sum _ { j = 1 } ^ { m } \\eta _ { j } I _ { j }\\tag{79}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            390,
+            364,
+            500,
+            412
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "equation",
+        "img_path": "images/9c7c34f23a6f18d08548f7666d48c5620431b8beb51c990037ba8e1241619f7e.jpg",
+        "text": "$$\nA _ { i }  \\sum _ { j = 1 } ^ { k } \\delta _ { i j } I _ { j } + \\gamma _ { a _ { i } } U + \\epsilon _ { a _ { i } }\\tag{80}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            382,
+            416,
+            612,
+            467
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "text",
+        "text": "Unlike the aggregate Y case, we are unable to decompose the 2SLS calculation into more granular calculations (i.e. one for each of $I _ { 1 } , . . . , I _ { k } )$ . Instead, consider the linear projection of $A _ { i }$ onto I:",
+        "bbox": [
+            111,
+            484,
+            883,
+            539
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "equation",
+        "img_path": "images/9d64e9e966813de540042f0e12a2f01f60c14a935d29fdd18bc5b0310d0c68ca.jpg",
+        "text": "$$\nA _ { i } = \\xi _ { i } I + \\epsilon _ { a _ { i } }\\tag{81}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            437,
+            551,
+            558,
+            569
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "text",
+        "text": "such that $\\begin{array} { r } { \\xi _ { i } = \\frac { \\cos ( A _ { i } , I ) } { \\mathrm { v a r } ( I ) } } \\end{array}$ and $\\mathrm { c o v } ( \\epsilon _ { a _ { i } } , I ) = 0$ . Then $\\beta _ { \\mathrm { I V } } ^ { I }$ is just a modified version of $\\beta _ { \\mathrm { I V } }$ from (3) where $\\delta _ { 1 } , . . . , \\delta _ { k }$ are replaced with the OLS coeficients from (81):",
+        "bbox": [
+            111,
+            582,
+            883,
+            625
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "equation",
+        "img_path": "images/2c8accbfe2a0f24851c6cbbf3f5d14105df24f0584895275752889029a6e1d7f.jpg",
+        "text": "$$\n\\beta _ { \\mathrm { I V } } ^ { I } = { \\frac { \\operatorname { c o v } ( Y , I ) } { \\operatorname { c o v } ( A , I ) } } = { \\frac { \\operatorname { c o v } \\left( \\sum _ { j = 1 } ^ { k } \\beta _ { j } A _ { j } , I \\right) } { \\operatorname { c o v } \\left( \\sum _ { j = 1 } ^ { k } \\alpha _ { j } A _ { j } , I \\right) } } = { \\frac { \\sum _ { j = 1 } ^ { k } \\beta _ { j } \\xi _ { j } } { \\sum _ { j = 1 } ^ { k } \\alpha _ { j } \\xi _ { j } } } .\\tag{82}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            271,
+            633,
+            722,
+            694
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "text",
+        "text": "Thus the discussions in the main text once more apply, with the alteration that the IV estimand is no longer a function of a single instrument’s efects on the $A _ { i }$ but is rather a function of the OLS estimands from regressing each $A _ { i }$ on the aggregate I.",
+        "bbox": [
+            111,
+            704,
+            885,
+            758
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "text",
+        "text": "We note that IV estimation provides a valid estimand when A is not an aggregate but I and Y are aggregates. Indeed, performing IV estimation with an aggregate instrument I and components $I _ { 1 } , . . . , I _ { k }$ means that instead of regressing each of A and Y on the instrument vector $( I _ { 1 } , . . . , I _ { k } ) ^ { \\intercal }$ , we have chosen to regress on the fixed linear combination $\\begin{array} { r } { I = \\sum _ { j = 1 } ^ { k } \\eta _ { j } I _ { j } } \\end{array}$ As IV estimation only requires the instrument I to be associated with A, substituting such an I raises no issues. Conversely, an aggregated outcome Y implies a straightforward interpretation of the IV estimand as a weighted sum of the individual IV estimands for the outcome components, where weights are the components’ contributions to the aggregate.",
+        "bbox": [
+            111,
+            766,
+            885,
+            915
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "page_number",
+        "text": "32",
+        "bbox": [
+            486,
+            933,
+            511,
+            948
+        ],
+        "page_idx": 31
+    }
+]

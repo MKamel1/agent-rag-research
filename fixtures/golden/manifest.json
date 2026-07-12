@@ -1,0 +1,69 @@
+[
+  {
+    "paper_id": "2409.02332",
+    "category": "math-heavy",
+    "pdf": "2409.02332/paper.pdf",
+    "mineru_content_list": "2409.02332/mineru_content_list.json"
+  },
+  {
+    "paper_id": "2410.00903",
+    "category": "math-heavy",
+    "pdf": "2410.00903/paper.pdf",
+    "mineru_content_list": "2410.00903/mineru_content_list.json"
+  },
+  {
+    "paper_id": "2604.23107",
+    "category": "code-heavy",
+    "pdf": "2604.23107/paper.pdf",
+    "mineru_content_list": "2604.23107/mineru_content_list.json"
+  },
+  {
+    "paper_id": "2605.05993",
+    "category": "code-heavy",
+    "pdf": "2605.05993/paper.pdf",
+    "mineru_content_list": "2605.05993/mineru_content_list.json"
+  },
+  {
+    "paper_id": "2409.01266",
+    "category": "multi-column",
+    "pdf": "2409.01266/paper.pdf",
+    "mineru_content_list": "2409.01266/mineru_content_list.json"
+  },
+  {
+    "paper_id": "2504.08836",
+    "category": "multi-column",
+    "pdf": "2504.08836/paper.pdf",
+    "mineru_content_list": "2504.08836/mineru_content_list.json"
+  },
+  {
+    "paper_id": "2506.14329",
+    "category": "table-heavy",
+    "pdf": "2506.14329/paper.pdf",
+    "mineru_content_list": "2506.14329/mineru_content_list.json"
+  },
+  {
+    "paper_id": "2601.12120",
+    "category": "table-heavy",
+    "pdf": "2601.12120/paper.pdf",
+    "mineru_content_list": "2601.12120/mineru_content_list.json"
+  },
+  {
+    "paper_id": "2602.15916",
+    "category": "scanned-ocr",
+    "pdf": "2602.15916/paper.pdf",
+    "mineru_content_list": "2602.15916/mineru_content_list.json"
+  },
+  {
+    "paper_id": "2605.07029",
+    "category": "scanned-ocr",
+    "pdf": "2605.07029/paper.pdf",
+    "mineru_content_list": "2605.07029/mineru_content_list.json"
+  },
+  {
+    "paper_id": "synthetic_scan_2605.07029",
+    "category": "broken-scanned-quarantine",
+    "pdf": "synthetic_scan_2605.07029/paper.pdf",
+    "mineru_content_list": "synthetic_scan_2605.07029/mineru_content_list.json",
+    "note": "Zero native PDF text layer on every page (pypdfium2 get_text_range() == \"\" for all pages) -- the one true image-only scan. Exercises the Parser's PermanentError -> quarantine path (TEST-STRATEGY.md), not the round-trip/anchor gate."
+  }
+]

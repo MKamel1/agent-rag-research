@@ -1,0 +1,4364 @@
+[
+    {
+        "type": "text",
+        "text": "Adjustment for Confounding using Pre-Trained Representations",
+        "text_level": 1,
+        "bbox": [
+            161,
+            109,
+            812,
+            132
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Rickmer Schulte <sup>1</sup> <sup>2</sup> David Rugamer ¨ <sup>1</sup> <sup>2</sup> Thomas Nagler <sup>1</sup> <sup>2</sup>",
+        "bbox": [
+            279,
+            176,
+            691,
+            193
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract",
+        "text_level": 2,
+        "bbox": [
+            241,
+            219,
+            320,
+            236
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "There is growing interest in extending average treatment effect (ATE) estimation to incorporate non-tabular data, such as images and text, which may act as sources of confounding. Neglecting these effects risks biased results and flawed scientific conclusions. However, incorporating nontabular data necessitates sophisticated feature extractors, often in combination with ideas of transfer learning. In this work, we investigate how latent features from pre-trained neural networks can be leveraged to adjust for sources of confounding. We formalize conditions under which these latent features enable valid adjustment and statistical inference in ATE estimation, demonstrating results along the example of double machine learning. We discuss critical challenges inherent to latent feature learning and downstream parameter estimation arising from the high dimensionality and non-identifiability of representations. Common structural assumptions for obtaining fast convergence rates with additive or sparse linear models are shown to be unrealistic for latent features. We argue, however, that neural networks are largely insensitive to these issues. In particular, we show that neural networks can achieve fast convergence rates by adapting to intrinsic notions of sparsity and dimension of the learning problem.",
+        "bbox": [
+            117,
+            241,
+            444,
+            651
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1. Introduction",
+        "text_level": 2,
+        "bbox": [
+            86,
+            676,
+            217,
+            694
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Causal inference often involves estimating the average treatment effect (ATE), which represents the causal impact of an exposure on an outcome. Under controlled study setups of randomized controlled trials (RCTs), valid inference methods for ATE estimation are well established (Deaton & Cartwright, 2018). However, RCT data is usually scarce and in some cases even impossible to obtain, either due to ethical or economic reasons. This often implies relying on observational data, typically subject to (unmeasured) confounding—(hidden) factors that affect both the exposure and the outcome. To overcome this issue of confounding and to obtain unbiased estimates, several inferential methods have been developed to properly adjust the ATE estimation for confounders. One approach that has garnered significant attention in recent years is the debiased/double machine learning (DML) framework (Chernozhukov et al., 2017; 2018), which allows the incorporation of machine learning methods to adjust for non-linear or complex confounding effects in the ATE estimation. DML is usually applied in the context of tabular features and was introduced for ML methods tailored to such features. However, confounding information might only be present in non-tabular data, such as images or text.",
+        "bbox": [
+            83,
+            703,
+            477,
+            795
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            495,
+            222,
+            888,
+            479
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Non-tabular Data as Sources of Confounding Especially in medical domains, imaging is a key component of the diagnostic process. Frequently, CT scans or X-rays are the basis to infer a diagnosis and a suitable treatment for a patient. However, as the information in such medical images often also affects the outcome of the therapy, the information in the image acts as a confounder. Similarly, treatment and health outcomes are often both related to a patient’s files, which are typically in text form. Consequently, ATE estimation based on such observational data will likely be biased if the confounder is not adequately accounted for. Typical examples would be the severity of a disease or fracture. The extent of a fracture impacts the likelihood of surgical or conservative therapy, and the severity of a disease may impact the decision for palliative or chemotherapy. In both cases, the severity will likely also impact the outcome of interest, e.g., the patient’s recovery rate. Another famous example is the Simpson’s Paradox observed in the kidney stone treatment study of Charig et al. (1986). The size of the stone (information inferred from imaging) impacts both the treatment decision and the outcome, which leads to flawed conclusions about the effectiveness of the treatment if confounding is not accounted for (Julious & Mullee, 1994).",
+        "bbox": [
+            495,
+            496,
+            890,
+            859
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Contemporary Applications While the DML framework provides a solution for non-linear confounding, previous examples demonstrate that modern data applications require extending ATE estimation to incorporate non-tabular data. In contrast to traditional statistical methods and classical machine learning approaches, information in non-tabular data usually requires additional feature extraction mechanisms to condense high-dimensional inputs to the relevant information in the data. This is usually done by employing neural network-based approaches such as foundation models or other pre-trained neural networks. While it may seem straightforward to use such feature extractors to extract latent features from non-tabular data and use the resulting information in classical DML approaches, we show that this necessitates special caution. In particular, incorporating such features into ATE estimation requires overcoming previously unaddressed theoretical and practical challenges, including non-identifiability, high dimensionality, and the resulting limitations of standard assumptions like sparsity.",
+        "bbox": [
+            496,
+            875,
+            888,
+            906
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2506.14329v1 [stat.ML] 17 Jun 2025",
+        "bbox": [
+            22,
+            268,
+            57,
+            726
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_footnote",
+        "text": "<sup>1</sup>Department of Statistics, LMU Munich, Munich, Germany <sup>2</sup>Munich Center for Machine Learning (MCML), Munich, Germany. Correspondence to: Rickmer Schulte <schulte@stat.unimuenchen.de>.",
+        "bbox": [
+            84,
+            803,
+            477,
+            856
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_footnote",
+        "text": "Proceedings of the 42<sup>nd</sup> International Conference on Machine Learning, Vancouver, Canada. PMLR 267, 2025. Copyright 2025 by the author(s).",
+        "bbox": [
+            84,
+            864,
+            475,
+            906
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_number",
+        "text": "1",
+        "bbox": [
+            480,
+            922,
+            491,
+            934
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "image",
+        "img_path": "images/e4ecb7f2787d6a14e5a6d3899273b60e3fe755916e5e3a973a6a5e8e5ba95234.jpg",
+        "image_caption": [
+            "Figure 1. Schematic (left) and DAG visualization (right) of the effect of a treatment T on outcome Y that is confounded by nontabular data W (e.g. information from medical imaging)."
+        ],
+        "image_footnote": [],
+        "bbox": [
+            114,
+            87,
+            434,
+            198
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            83,
+            270,
+            477,
+            529
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Problem Setup Given n independent and identically distributed (i.i.d.) observations of (T, W, Y ), we are interested in estimating the ATE of a binary variable $T \\in \\{ 0 , 1 \\}$ on some outcome of interest $Y \\in \\mathbb { R }$ while adjusting for some source of confounding $W \\in \\mathbb { W }$ (cf. Figure 1). W is pretreatment data from some potentially complex sampling space W that is assumed to be sufficient for adjustment. The definition of sufficiency will be formalized in Section 3.1. Under positivity and consistency assumption—the standard assumptions in causality—the target parameter of interest can be identified as",
+        "bbox": [
+            83,
+            541,
+            477,
+            709
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "equation",
+        "img_path": "images/0fb6cd23b77340a316a9036810e1167de92056f23a7e47407ca84eab9e2ea67a.jpg",
+        "text": "$$\n\\mathrm { A T E } : = \\mathbb { E } [ \\mathbb { E } [ Y | T = 1 , W ] - \\mathbb { E } [ Y | T = 0 , W ] ] .\\tag{1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            120,
+            719,
+            436,
+            738
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "While there are many well-known ATE estimators, most require to estimate either the outcome regression function",
+        "bbox": [
+            84,
+            750,
+            475,
+            780
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "equation",
+        "img_path": "images/bc5afbc9feb693bf529923618514fd56996f00fd3a02bcaa8ea9c5c605f67fed.jpg",
+        "text": "$$\ng ( t , w ) : = \\mathbb { E } [ Y | T = t , W = w ]\\tag{2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            173,
+            791,
+            385,
+            808
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "or the propensity score",
+        "bbox": [
+            84,
+            820,
+            240,
+            835
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "equation",
+        "img_path": "images/6052af9600aa46f8d15030c7dd6cf995c486ceb5ddd67a8154b1da5ad2a49772.jpg",
+        "text": "$$\nm ( t | w ) : = \\mathbb { P } [ T = t | W = w ]\\tag{3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            183,
+            847,
+            377,
+            863
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "at parametric rate $\\sqrt { n }$ . Doubly robust estimators such as the Augmented Inverse Probability Weighted, the Targeted",
+        "bbox": [
+            84,
+            875,
+            475,
+            906
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Maximum Likelihood Estimation or the DML approach estimate both nuisance functions g and m. These methods thus only require the product of their estimation errors to converge at ${ \\sqrt { n } } .$ -rate (Robins & Rotnitzky, 1995; van der Laan & Rubin, 2006; van der Laan & Rose, 2011; Chernozhukov et al., 2017; 2018). However, even this can be hard to achieve, given the curse of dimensionality when considering the high-dimensionality of non-tabular data W such as images. Especially given the often limited number of samples available in many medical studies involving images, estimating m and g as a function of W, e.g., via neural networks, might not be feasible or overfit easily. To cope with such issues, a common approach is to adopt ideas from transfer learning and use pre-trained neural networks.",
+        "bbox": [
+            495,
+            84,
+            888,
+            297
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Our Contributions In this paper, we discuss under what conditions pre-trained representations $Z : = \\varphi ( W )$ obtained from pre-trained neural networks φ can replace W in the estimation of nuisance functions (2) and (3). Although the dimensionality of Z is usually drastically reduced compared to W, one major obstacle from a theoretical point of view is that representations can only be learned up to invertible linear transformations (e.g., rotations). We argue that common assumptions allowing fast convergence rates, e.g., sparsity or additivity of the nuisance function, are no longer reasonable in such settings. In contrast, we build on the idea of low intrinsic dimensionality of the pre-trained representations. Combining invariance of intrinsic dimensions and functional smoothness with structural sparsity, we establish conditions that allow for sufficiently fast convergence rates of nuisance function estimation and, thus, valid ATE estimation and inference. Our work, therefore, not only advances the theoretical understanding of causal inference in this context but also provides practical insights for integrating modern machine learning tools into ATE estimation.",
+        "bbox": [
+            495,
+            316,
+            888,
+            621
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2. Related Work",
+        "text_level": 2,
+        "bbox": [
+            496,
+            637,
+            640,
+            654
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "The DML framework was initially proposed for tabular features in combination with classical machine learning methods (Chernozhukov et al., 2017; 2018). Several theoretical and practical extensions to incorporate neural networks have been made with a focus on tabular data (Shi et al., 2019; Farrell et al., 2021; Chernozhukov et al., 2022; Zhang & Bradic, 2024). Additionally, there is a growing body of research that aims to incorporate non-tabular data as adjustment into DML (Veitch et al., 2019; 2020; Klaassen et al., 2024). While the latter directly incorporates the non-tabular data in the estimation, none of them discuss conditions that would theoretically justify fast convergence rates necessary for valid inference. A different strand of research instead uses either derived predictions (Zhang et al., 2023; Battaglia et al., 2024; Jerzak et al., 2022; 2023a;b) or proxy variables (Kuroki & Pearl, 2014; Kallus et al., 2018; Miao et al., 2018;",
+        "bbox": [
+            495,
+            664,
+            890,
+            906
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "header",
+        "text": "Adjustment for Confounding using Pre-Trained Representations",
+        "bbox": [
+            282,
+            56,
+            691,
+            70
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2",
+        "bbox": [
+            480,
+            922,
+            493,
+            934
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Mastouri et al., 2021; Dhawan et al., 2024) in downstream estimation. In contrast to these proposals, we consider the particularly broad setup of using pre-trained representations for confounding adjustment. Given the increasing popularity of pre-trained models, Dai et al. (2022) and Christgau & Hansen (2024) establish theoretical conditions justifying the use of derived representations in downstream tasks, which we will review in the next section. The idea of a low intrinsic dimensionality of non-tabular data and its latent representations to explain the superior performance of deep neural networks in non-tabular data domains has been explored and validated both empirically (Gong et al., 2019; Ansuini et al., 2019; Pope et al., 2021; Konz & Mazurowski, 2024) and theoretically (Chen et al., 2019; Schmidt-Hieber, 2019; Nakada & Imaizumi, 2020). By connecting several of those theoretical ideas and empirical findings, our work establishes a set of novel theoretical results and conditions that allow to obtain valid inference when using pre-trained representations in adjustment for confounding.",
+        "bbox": [
+            83,
+            84,
+            477,
+            373
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3. Properties of Pre-Trained Representations",
+        "text_level": 2,
+        "bbox": [
+            84,
+            391,
+            465,
+            409
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Given the high dimensional nature of non-tabular data, together with the often limited number of samples available (especially in medical domains), training feature extractors such as deep neural networks from scratch is often infeasible. This makes the use of latent features from pre-trained neural networks a popular alternative (Erhan et al., 2010). In order to use pre-trained representations for adjustment in the considered ATE setup, certain conditions regarding the representations are required.",
+        "bbox": [
+            84,
+            416,
+            477,
+            554
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.1. Sufficiency of Pre-Trained Representations",
+        "text_level": 2,
+        "bbox": [
+            84,
+            565,
+            419,
+            582
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Given any pre-trained model $\\varphi ,$ trained independently of W on another dataset, we denote the learned (last-layer) representations as $Z : = \\varphi ( W )$ . Due to the non-identifiability of Z up to certain orthogonal transformations, further discussed in Section 3.2, we define the following conditions for the induced equivalence class of representations Z following Christgau & Hansen (2024). For this, we abstract the adjustment as conditioning on information in the ATE estimation, namely conditioning on the uniquely identifiable information contained in the sigma-algebra $\\sigma ( Z )$ generated by any $Z \\in { \\mathcal { Z } }$ (see also Appendix A.1 for a special case).",
+        "bbox": [
+            83,
+            589,
+            477,
+            756
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Definition 3.1. [Christgau $\\&$ Hansen (2024)] Given the joint distribution P of $( T , W , Y )$ , sigma-algebra $\\sigma ( Z )$ of $Z .$ and $t \\in \\{ 0 , 1 \\}$ , we say that any $Z \\in { \\mathcal { Z } }$ is",
+        "bbox": [
+            84,
+            760,
+            475,
+            806
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "(i) P-valid if:",
+        "bbox": [
+            94,
+            819,
+            196,
+            833
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "img_path": "images/dbedd4ed744cb6d0324beab1559f597e9f039237f2bd1dc351f6c4f047b4ce63.jpg",
+        "text": "$$\n\\mathbb { E } _ { P } [ \\mathbb { E } _ { P } [ Y | T = t , \\sigma ( Z ) ] ] = \\mathbb { E } _ { P } [ \\mathbb { E } _ { P } [ Y | T = t , W ] ]\n$$",
+        "text_format": "latex",
+        "bbox": [
+            129,
+            844,
+            460,
+            862
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "(ii) P-OMS (Outcome Mean Sufficient) if:",
+        "bbox": [
+            89,
+            871,
+            380,
+            886
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "img_path": "images/fd0f51fabf0bd578bd6d57558a8b27b39de9f95aeb8470da8520ff544a55651d.jpg",
+        "text": "$$\n\\mathbb { E } _ { P } [ Y | T = t , \\sigma ( Z ) ] = \\mathbb { E } _ { P } [ Y | T = t , W ] \\quad ( P \\mathrm { - a . s . } )\n$$",
+        "text_format": "latex",
+        "bbox": [
+            127,
+            896,
+            465,
+            914
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "(iii) P-ODS (Outcome Distribution Sufficient) if:",
+        "bbox": [
+            496,
+            84,
+            830,
+            99
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "img_path": "images/270a8118beef66731f0d7e49aaa722a7398aaf23def622b91cd049b65348c4dd.jpg",
+        "text": "$$\nY \\perp _ { P } W | T , Z .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            653,
+            114,
+            761,
+            131
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Remark 3.2. If $Z \\in { \\mathcal { Z } }$ is P-ODS, it is also called a sufficient embedding in the literature (Dai et al., 2022).",
+        "bbox": [
+            495,
+            138,
+            887,
+            170
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "The three conditions in Definition 3.1 place different restrictions on the nuisance functions (2) and (3). While P-ODS is most restrictive (followed by P-OMS) and thus guarantees valid downstream inference more generally, the strictly weaker condition of P-validity is already sufficient (and in fact necessary) to guarantee that $Z \\in { \\mathcal { Z } }$ is a valid adjustment set in the ATE estimation (Christgau & Hansen, 2024). Thus, any pre-trained representation Z considered in the following is assumed to be at least P-valid.",
+        "bbox": [
+            495,
+            179,
+            888,
+            318
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "image",
+        "img_path": "images/97edb6aa55944d791e304fe7e839f5f44daffc35b5b4364a44db020f002a52ea.jpg",
+        "image_caption": [
+            "Figure 2. Schematic visualization ofa pre-trained neural network $\\varphi ( \\cdot )$ and representations $Z = \\varphi ( W )$"
+        ],
+        "image_footnote": [],
+        "bbox": [
+            498,
+            332,
+            883,
+            458
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.2. Non-Identifiability under ILTs",
+        "text_level": 2,
+        "bbox": [
+            496,
+            513,
+            745,
+            530
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "In practice, the representation $Z = \\varphi ( W )$ is extracted from some layer of a pre-trained neural network $\\varphi .$ . This information does not change under bijective transformations of $Z ,$ , so the representation $Z$ itself is not identifiable. We argue that, in this context, non-identifiability with respect to invertible linear transformations (ILTs) is most important. Suppose $Z = \\varphi ( W )$ is extracted from a deep network’s ℓth layer. During pre-training the network further processes $Z$ through a model head $\\phi ( Z )$ , as schematically depicted in Figure 2. The model head usually has the form $\\phi ^ { > \\ell } ( A Z + b )$ where A, b are the weights and biases of the ℓth layer, and $\\phi ^ { > \\ell }$ summarizes all following computations. Due to this structure, any bijective linear transformation $Z \\mapsto Q Z$ can be reversed by the weights $A \\mapsto \\tilde { A } = A Q ^ { - 1 }$ so that the networks $\\phi ^ { > \\ell } ( A \\cdot + b )$ and $\\phi ^ { > \\ell } ( \\tilde { A } Q \\cdot + b )$ have the same output.",
+        "bbox": [
+            495,
+            536,
+            887,
+            781
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Definition 3.3 (Invariance to ILTs). Given a latent representation $Z ,$ , we say that a model (head) $\\phi _ { \\xi }$ with parameters $\\xi \\in \\Xi$ is non-identifiable up to invertible linear transformations if for any invertible matrix $Q \\in \\mathbb { R } ^ { d \\times d }$ $\\exists \\tilde { \\xi } \\in \\Xi : \\phi _ { \\xi } ( Q Z ) = \\phi _ { \\tilde { \\xi } } ( Z )$",
+        "bbox": [
+            496,
+            785,
+            888,
+            863
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Important examples of ILTs are rotations, permutations, and scalings of the feature space as well as compositions thereof.",
+        "bbox": [
+            496,
+            875,
+            888,
+            906
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "header",
+        "text": "Adjustment for Confounding using Pre-Trained Representations",
+        "bbox": [
+            282,
+            56,
+            691,
+            70
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3",
+        "bbox": [
+            480,
+            922,
+            493,
+            935
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "table",
+        "img_path": "images/26edf1a0b2da56b94ffb598453eb274772d6dd913216adaea2577994a26e0d8a.jpg",
+        "table_caption": [
+            "Adjustment for Confounding using Pre-Trained Representations",
+            "Table 1. Assumptions and related minimax convergence rates of the estimation error"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td rowspan=1 colspan=1>Smoothness</td><td rowspan=1 colspan=1>+ Additivity</td><td rowspan=1 colspan=1>+ Sparsity &amp; Linearity</td><td rowspan=1 colspan=1>Intrinsic Dimension</td></tr><tr><td rowspan=1 colspan=1>Stone (1982)</td><td rowspan=1 colspan=1>Stone (1985)</td><td rowspan=1 colspan=1>Raskutti et al. (2009)</td><td rowspan=1 colspan=1> $\\mathbf { B i c k e l } \\ \\& \\ \\mathrm { L i } \\ ( 2 0 0 7 )$ </td></tr><tr><td rowspan=1 colspan=1> $\\overline { { O ( n ^ { - } ^ { \\frac { s } { 2 s + d } } ) } }$ </td><td rowspan=1 colspan=1> $\\overline { { O ( n ^ { - } ^ { \\frac { s } { 2 s + 1 } } ) } }$ </td><td rowspan=1 colspan=1> $\\overline { { O ( \\sqrt { p \\log ( d ) / n } ) } } , p \\ll d$ </td><td rowspan=1 colspan=1> $\\overline { { O ( n ^ { - \\frac { s } { 2 s + d _ { \\mathcal { M } } } } ) , d _ { \\mathcal { M } } \\ll d } }$ </td></tr></table>",
+        "bbox": [
+            88,
+            82,
+            898,
+            151
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "4. Estimation using Pre-Trained Representations",
+        "text_level": 2,
+        "bbox": [
+            84,
+            195,
+            357,
+            231
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "The previous section discussed sufficient and necessary (information theoretic) conditions for pre-trained representations, justifying their usage for adjustment in downstream tasks. The following section will discuss aspects of the functional estimation in such adjustments. Valid statistical inference in downstream tasks usually requires fast convergence of nuisance function estimators. However, obtaining fast convergence rates in high-dimensional estimation problems is particularly difficult. We argue that some commonly made assumptions are unreasonable due to the non-identifiability of representations. We discuss this in the general setting of nonparametric estimation as described in the following.",
+        "bbox": [
+            83,
+            239,
+            477,
+            422
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "The Curse of Dimensionality The general problem in nonparametric regression is to estimate some function $f$ in the regression model",
+        "bbox": [
+            84,
+            435,
+            473,
+            482
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "img_path": "images/a0362264d97c95907e54ede27bdd2830fadfe4ed65dc3ea88e0d3bc700ce21f3.jpg",
+        "text": "$$\nY = f ( X ) + \\epsilon\\tag{4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            227,
+            493,
+            331,
+            510
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "with outcome $Y ~ \\in ~ \\mathbb { R }$ , features $X ~ \\in ~ \\mathbb { R } ^ { d }$ , and error $\\epsilon \\sim \\mathcal { N } ( 0 , \\sigma ^ { 2 } )$ . The minimax rate for estimating Lipschitz functions is known to be $n ^ { - \\frac { 1 } { 2 + d } }$ (Stone, 1982). This rate becomes very slow for increasing d, known as the curse of dimensionality. Several additional structural and distributional assumptions are commonly encountered to obtain faster convergence rates in high dimensions.",
+        "bbox": [
+            83,
+            520,
+            475,
+            631
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "4.1. Structural Assumption I: Smoothness",
+        "text_level": 2,
+        "bbox": [
+            84,
+            646,
+            383,
+            661
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "A common structural assumption is the smoothness of the function $f$ in (4), i.e., the existence of s bounded and continuous derivatives. Most convergence rate results assume at least some level of smoothness (see Table 1). The following lemma verifies that this condition is also preserved under ILTs.",
+        "bbox": [
+            83,
+            670,
+            475,
+            760
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Lemma 4.1 (Smoothness Invariance under ILTs). Let $D \\subseteq$ $\\mathbb { R } ^ { d }$ be an open set, $f : D \\to \\mathbb { R }$ be an s-smooth-function on D, and Q by any ILT. Then $h = f \\circ Q ^ { - 1 } \\colon Q ( D ) \\to \\mathbb { R }$ is also s-smooth on the transformed domain $Q ( D )$",
+        "bbox": [
+            84,
+            763,
+            475,
+            827
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "The proof of Lemma 4.1 and subsequent lemmas of this section are given in Appendix A.",
+        "bbox": [
+            84,
+            837,
+            473,
+            868
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "The lemma shows that a certain level of smoothness of a function defined on latent representations may reasonably be assumed due to its invariance to ILTs. If the feature dimension is large, however, an unrealistic amount of smoothness would be required to guarantee fast convergence rates (e.g., of order $n ^ { - 1 / 4 } )$ . This necessitates additional structural or distributional assumptions.",
+        "bbox": [
+            83,
+            875,
+            475,
+            906
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            495,
+            196,
+            888,
+            273
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "4.2. Structural Assumptions II: Additivity & Sparsity",
+        "text_level": 2,
+        "bbox": [
+            496,
+            290,
+            875,
+            306
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "The common structural assumption is that f is additive, $\\textstyle f ( x ) = \\sum _ { i = 1 } ^ { d } f _ { j } ( x _ { j } )$ , i.e., the sum of univariate s-smooth functions. In this case, the minimax convergence rate reduces to $\\scriptstyle n ^ { - { \\frac { s } { 2 s + 1 } } }$ (Stone, 1985). Another common approach is to rely on the idea of sparsity. Assuming that f is p-sparse implies that it only depends on $p \\ <$ min $. ( n , d )$ features. In case one further assumes the univariate functions to be linear in each feature, i.e. $\\begin{array} { r } { f ( x ) = \\sum _ { j = 1 } ^ { p } \\beta _ { j } x _ { j } } \\end{array}$ with coefficient $\\beta _ { j } \\in \\mathbb { R }$ , the optimal convergence rate reduces to $\\sqrt { p \\log ( d / p ) / n }$ (Raskutti et al., 2009).",
+        "bbox": [
+            496,
+            313,
+            888,
+            469
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "It can easily be shown that the previously discussed conditions are both preserved under permutation and scaling. But as the following lemma shows, sparsity and additivity of f are (almost surely) not preserved under generic ILTs such as rotations.",
+        "bbox": [
+            496,
+            474,
+            887,
+            550
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Lemma 4.2 (Non-Invariance of Additivity and Sparsity under ILTs). Let $f : \\mathbb { R } ^ { d }  \\mathbb { R }$ be a function of $\\ b { \\cdot } _ { x } \\in \\mathbb { R } ^ { d }$ . We distinguish between two cases:",
+        "bbox": [
+            496,
+            555,
+            887,
+            601
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "(i) Additive: $\\begin{array} { r } { f ( x ) = \\sum _ { i = 1 } ^ { d } f _ { j } ( x _ { j } ) } \\end{array}$ , with univariatefunctions $f _ { j } : \\mathbb { R } \\to \\mathbb { R } ,$ , and at least one $f _ { j }$ being non-linear.",
+        "bbox": [
+            504,
+            616,
+            887,
+            650
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "(ii) Sparse Linear: $\\begin{array} { r } { f ( \\boldsymbol { x } ) = \\sum _ { j = 1 } ^ { d } \\beta _ { j } x _ { j } } \\end{array}$ , where $\\beta _ { j } \\in \\mathbb { R }$ and at least one (but not all) $\\beta _ { j } = 0$",
+        "bbox": [
+            501,
+            659,
+            885,
+            693
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Then, for almost every Q drawn from the Haar measure on the set of ILTs, it holds:",
+        "bbox": [
+            496,
+            708,
+            887,
+            739
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "(i) If f is additive, then $h = f \\circ Q ^ { - 1 }$ is not additive.",
+        "bbox": [
+            504,
+            756,
+            856,
+            772
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "(ii) If f is sparse linear, then $h = f \\circ Q ^ { - 1 }$ is not sparse.",
+        "bbox": [
+            501,
+            781,
+            877,
+            799
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Given the non-identifiability of representations with respect to ILTs and the non-invariance result of Lemma 4.2, any additivity or sparsity assumption about the target function f of the latent features seems unjustified. An example of this rotational non-invariance of sparsity is given in Figure 3. This also implies that learners such as the lasso (with underlying sparsity assumption), tree-based methods that are based on axis-aligned splits (including corresponding boosting methods), and most feature selection algorithms are not ILT-invariant. Further examples can be found in $\\mathrm { N g }$ (2004).",
+        "bbox": [
+            495,
+            814,
+            888,
+            906
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4",
+        "bbox": [
+            480,
+            922,
+            493,
+            934
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "chart",
+        "img_path": "images/fa35369528ce162ea8d0ea7f0cb08688549da708a8d92727d6e0816007b84623.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 3. Non-zero coefficients ofa linear classifier on latentfeatures, showing that sparsity is lost with an increasing number of randomfeature rotations."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            91,
+            84,
+            464,
+            191
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            84,
+            268,
+            475,
+            344
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "4.3. Distributional Assumption: Intrinsic Dimension",
+        "text_level": 2,
+        "bbox": [
+            84,
+            359,
+            454,
+            376
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "While the previous conditions are structural assumptions regarding the function f itself, faster convergence rates can also be achieved by making distribution assumptions about the support of $f . \\mathrm { A }$ popular belief is that the d-dimensional data $X \\in \\mathbb { R } ^ { d }$ lie on or close to a low-dimensional manifold M with intrinsic dimension $d _ { \\mathcal { M } }$ . This relates to the famous manifold hypothesis that many high-dimensional data concentrate on low-dimensional manifolds (Fefferman et al., 2016, e.g.,). There is strong empirical support for this assumption, especially for non-tabular modalities such as text and images, see Appendix B.1. Given that $d _ { \\mathcal { M } } \\ll d ,$ and again assuming f to be s-smooth, this can lead to a much faster convergence rate of $n ^ { - \\frac { s } { 2 s + d } }$ (Bickel & Li, 2007), as it is independent of the dimension d of the ambient space.",
+        "bbox": [
+            83,
+            383,
+            475,
+            598
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Similarly to Lemma 4.1, the following lemma shows the invariance of the intrinsic dimension of a manifold with respect to any ILT of the coordinates in the d-dimensional ambient space.",
+        "bbox": [
+            83,
+            604,
+            475,
+            665
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Lemma 4.3 (Intrinsic Dimension Invariance under ILTs). Let $\\mathcal { M } \\subset \\mathbb { R } ^ { d }$ be a smooth manifold ofdimension $d _ { \\mathcal { M } } \\leq d _ { \\cdot }$ For any ILT Q, the transformed set",
+        "bbox": [
+            83,
+            670,
+            475,
+            715
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "img_path": "images/de5d920d886a8ac86d22aeea472156b5278aef03dded6f6fb0bf70c6847f1911.jpg",
+        "text": "$$\nQ ( \\mathcal { M } ) \\ = \\ \\{ Q x \\ | \\ x \\in \\mathcal { M } \\} .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            179,
+            727,
+            379,
+            743
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "is also a smooth manifold ofdimension $d _ { \\mathcal { M } }$",
+        "bbox": [
+            84,
+            755,
+            377,
+            770
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Remark 4.4. Put differently, in case the latent representations $Z \\in \\mathbb { R } ^ { d }$ lie on a $d _ { \\mathcal { M } }$ -dimensional smooth manifold M, then the IL-transformed representations $Q ( Z )$ also lie on a smooth manifold $Q ( \\mathcal { M } )$ of dimension $d _ { \\mathcal { M } }$",
+        "bbox": [
+            84,
+            775,
+            475,
+            837
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Summarizing previous results, the structural and distribution assumptions of smoothness and low intrinsic dimensionality are invariant with respect to any ILT of the features. Hence, as opposed to additivity or sparsity, the two conditions hold not only for a particular instantiation of a latent representation $Z$ but for the entire equivalence class of latent representations induced by the class of ILTs. This is crucial given the non-identifiability of latent representations, highlighting the importance of low intrinsic dimensions (IDs).",
+        "bbox": [
+            84,
+            844,
+            475,
+            906
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            495,
+            85,
+            888,
+            161
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Deep Networks Can Adapt to Intrinsic Dimensions Recently, several theoretical works have shown that DNNs can adapt to the low intrinsic dimension of the data and thereby attain the optimal rate of $n ^ { - \\frac { s } { 2 s + d } } { \\mathcal { M } }$ (Chen et al., 2019; Schmidt-Hieber, 2019; Nakada & Imaizumi, 2020; Kohler et al., 2023). In Section 5, we present a new convergence rate result that builds on the ideas of low ID and a hierarchical composition of functions particularly suited for DNNs.",
+        "bbox": [
+            495,
+            176,
+            888,
+            314
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "5. Downstream Inference",
+        "text_level": 2,
+        "bbox": [
+            496,
+            333,
+            714,
+            349
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The manifold assumption alone, however, cannot guarantee sufficient approximation rates in our setting. Even if the manifold dimension $d _ { \\mathcal { M } }$ is much smaller than the ambient dimension d (for example, $d _ { \\mathcal { M } } \\approx 3 0 )$ , an unreasonably high degree of smoothness would need to be assumed to allow for convergence rates below $n ^ { - 1 / 4 }$ . In what follows, we give a more realistic assumption to achieve such rates. In particular, we combine the low-dimensional manifold structure in the feature space with a structural smoothness and sparsity assumption on the target function.",
+        "bbox": [
+            495,
+            359,
+            888,
+            512
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "5.1. Structural Sparsity on the Manifold",
+        "text_level": 2,
+        "bbox": [
+            496,
+            526,
+            782,
+            541
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Kohler & Langer (2021) recently derived convergence rates based on the following assumption.",
+        "bbox": [
+            496,
+            550,
+            887,
+            580
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Definition 5.1 (Hierarchical composition model, HCM).",
+        "bbox": [
+            496,
+            585,
+            870,
+            602
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "(a) We say that $f \\colon  { \\mathbb { R } ^ { d } } \\to$ R satisfies a HCM oflevel 0, if $f ( x ) = x _ { j } f o r s o m e j \\in \\{ 1 , \\ldots , d \\} .$",
+        "bbox": [
+            501,
+            613,
+            888,
+            645
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "(b) We say that f satisfies a HCM oflevel $k \\geq 1$ , ifthere is a s-smoothfunction $h \\colon \\mathbb { R } ^ { p } \\to \\mathbb { R }$ such that",
+        "bbox": [
+            501,
+            654,
+            887,
+            684
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "img_path": "images/a544ae7a374fdf025b9722f3eaaf69cf01d7bbf52ba35a842b6a112e796118af.jpg",
+        "text": "$$\nf ( x ) = h \\bigl ( h _ { 1 } ( x ) , \\ldots , h _ { p } ( x ) \\bigr ) ,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            606,
+            695,
+            808,
+            713
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "where $h _ { 1 } , \\ldots , h _ { p } : \\mathbb { R } ^ { d } $ R are HCMs oflevel $k - 1$",
+        "bbox": [
+            529,
+            723,
+            883,
+            739
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The collection P of all pairs $( s , p ) \\in \\mathbb { R } \\times \\mathbb { N }$ appearing in the specification is called the constraint set ofthe HCM.",
+        "bbox": [
+            495,
+            757,
+            885,
+            789
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "An illustration of Definition 5.1 is given in Appendix B.2. The assumption includes the case of sparse linear and (generalized) additive models as a special case but is much more general. Kohler & Langer (2021) and Schmidt-Hieber (2020) exploit such a structure to show that neural networks can approximate the target function at a rate that is only determined by the worst-case pair $( s , p )$ appearing in the constraint set. It already follows from Lemma 4.2 that the constraint set of such a model is not invariant to ILTs of the input space. Furthermore, the assumption does not exploit the potentially low intrinsic dimensionality of the input space. To overcome these limitations, we propose a new assumption combining the input space’s manifold structure with the hierarchical composition model.",
+        "bbox": [
+            495,
+            799,
+            888,
+            906
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "header",
+        "text": "Adjustment for Confounding using Pre-Trained Representations",
+        "bbox": [
+            281,
+            56,
+            691,
+            70
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5",
+        "bbox": [
+            480,
+            922,
+            493,
+            935
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            83,
+            85,
+            475,
+            190
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Assumption 5.2. The target function $f _ { 0 }$ can be decomposed as $f _ { 0 } = f \\circ \\psi$ , where $\\mathcal { M }$ is a smooth, compact, $d _ { \\mathcal { M } } .$ -dimensional manifold, $\\psi \\colon \\mathcal { M } \\to \\mathbb { R } ^ { p }$ is s<sub>ψ</sub>-smooth, and $f$ is a HCM of level $k \\in \\mathbb N$ with constraint set $\\mathcal { P } _ { \\cdot }$",
+        "bbox": [
+            84,
+            194,
+            475,
+            256
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Whitney’s embedding theorem (e.g., Lee & Lee, 2012, Chapter 6) allows any smooth manifold to be smoothly embedded into $\\mathbb { R } ^ { 2 d \\mathcal { M } }$ . This corresponds to a mapping ψ with $s _ { \\psi } = \\infty$ and $p = 2 d _ { { \\mathcal { M } } }$ in the assumption above. If not all information in the pre-trained representation Z is relevant, however, $p$ can be much smaller. Importantly, Assumption 5.2 is not affected by ILTs.",
+        "bbox": [
+            83,
+            267,
+            477,
+            372
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Lemma 5.3 (Invariance of Assumption 5.2 under ILTs). Let $Q$ be any ILT. $I f f _ { 0 }$ satisfies Assumption 5.2for a given $\\mathcal { P }$ and $( s _ { \\psi } , d _ { \\mathcal { M } } )$ , then $\\tilde { f } _ { 0 } = f _ { 0 } \\circ Q ^ { - 1 }$ satisfies Assumption 5.2 with the same $\\mathcal { P }$ and $( s _ { \\psi } , d _ { \\mathcal { M } } )$",
+        "bbox": [
+            84,
+            377,
+            475,
+            439
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "5.2. Convergence Rate of DNNs",
+        "text_level": 2,
+        "bbox": [
+            84,
+            454,
+            310,
+            469
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "We now show that DNNs can efficiently exploit this structure. Let $( Y _ { i } , Z _ { i } ) _ { i = 1 } ^ { n }$ be i.i.d. observations and ℓ be a loss function. Define",
+        "bbox": [
+            84,
+            478,
+            475,
+            522
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "img_path": "images/f1b71aaf776df2bd3c14ea23ed30fba8bb8de65f2fc40ca5a75094e10a95e5d4.jpg",
+        "text": "$$\n\\begin{array} { r l } & { f _ { 0 } = \\underset { f : \\mathbb { R } ^ { d }  \\mathbb { R } } { \\arg \\operatorname* { m i n } } \\mathbb { E } [ \\ell ( f ( Z ) , Y ) ] , } \\\\ & { } \\\\ & { \\hat { f } = \\underset { f \\in \\mathcal { F } ( L _ { n } , \\nu _ { n } ) } { \\arg \\operatorname* { m i n } } \\frac { 1 } { n } \\sum _ { i = 1 } ^ { n } \\ell ( f ( Z _ { i } ) , Y _ { i } ) , } \\end{array}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            156,
+            532,
+            403,
+            602
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "where $\\mathcal { F } ( L , \\nu )$ is the set of feed-forward neural networks with L layers and ν neurons per layer. Let $Z \\sim P _ { Z }$ and define the $L _ { 2 } ( P _ { Z } )$ -norm of a function $f$ as $\\| f \\| _ { L _ { 2 } ( P _ { Z } ) } ^ { 2 } =$ $\\int f ( z ) ^ { 2 } d P ( z )$ . We make the following assumption on the loss function ℓ.",
+        "bbox": [
+            83,
+            612,
+            473,
+            689
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Assumption 5.4. There is $a , b \\in ( 0 , \\infty )$ such that",
+        "bbox": [
+            84,
+            694,
+            418,
+            710
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "img_path": "images/df20778f4bf9e15583a90fe44ad970adc227b0c9d8592e14e50808dc7cb8fbb1.jpg",
+        "text": "$$\n\\frac { \\mathbb { E } [ \\ell ( f ( Z ) , Y ) ] - \\mathbb { E } [ \\ell ( f _ { 0 } ( Z ) , Y ) ] } { \\| f - f _ { 0 } \\| _ { L _ { 2 } ( P _ { Z } ) } ^ { 2 } } \\in [ a , b ] .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            140,
+            718,
+            419,
+            756
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Assumption 5.4 is satisfied for the squared and logistic loss, among others (e.g., Farrell et al., 2021, Lemma 8).",
+        "bbox": [
+            84,
+            771,
+            475,
+            803
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Theorem 5.5. Suppose Assumption 5.2 and Assumption 5.4 hold. There are sequences $L _ { n } , \\nu _ { n }$ and a corresponding sequence of neural network architectures $\\mathcal { F } ( L _ { n } , \\nu _ { n } )$ such that (up to log nfactors)",
+        "bbox": [
+            83,
+            805,
+            475,
+            867
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "img_path": "images/db7b580b77105b9c4dc3b4227059d44d471bb6d2bb142fe0a4a4856b6488ddc7.jpg",
+        "text": "$$\n\\| \\hat { f } - f _ { 0 } \\| _ { L _ { 2 } ( P _ { Z } ) } = O _ { p } \\left( \\operatorname* { m a x } _ { ( s , p ) \\in \\mathcal { P } \\cup ( s _ { \\psi } , d _ { \\mathcal { M } } ) } n ^ { - \\frac { s } { 2 s + p } } \\right) .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            107,
+            877,
+            449,
+            909
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "The result shows that the convergence rate of the neural networks is only determined by the worst-case pair $( s , p )$ appearing in the constraint set of the HCM and the embedding map ψ. The theorem extends the results of Kohler & Langer (2021) in two ways. First, it allows for more general loss functions than the square loss. This is important since classification methods are often used to adjust for confounding effects. Second, it explicitly exploits the manifold structure of the input space, which may lead to much sparser HCM specifications and dramatically improved rates.",
+        "bbox": [
+            495,
+            85,
+            888,
+            238
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "5.3. Validity of DML Inference",
+        "text_level": 2,
+        "bbox": [
+            496,
+            252,
+            717,
+            267
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "In the previous sections, we explored plausible conditions under which the ATE is identifiable, and DNNs can estimate the nuisance functions with fast rates. We now combine our findings to give a general result for the validity of DML from pre-trained representations.",
+        "bbox": [
+            495,
+            275,
+            887,
+            352
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "For binary treatment $T \\in \\{ 0 , 1 \\}$ and pre-trained representations $Z ,$ we define the outcome regression function",
+        "bbox": [
+            495,
+            358,
+            887,
+            390
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "img_path": "images/811e3d2f83ea51d8a14628785852cbc7b09e249632acc7930d2fde8d8f2e418f.jpg",
+        "text": "$$\ng ( t , z ) : = \\mathbb { E } [ Y | T = t , Z = z ] ,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            588,
+            400,
+            794,
+            416
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "and the propensity score",
+        "bbox": [
+            496,
+            428,
+            663,
+            443
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "img_path": "images/d4ff66fbce889199c651b29178ff70626760bbbf6fb8c8e69e7eee68924f184c.jpg",
+        "text": "$$\nm ( z ) : = \\mathbb { P } [ T = 1 | Z = z ] .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            601,
+            453,
+            781,
+            469
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Suppose we are given an i.i.d. sample $( Y _ { i } , Z _ { i } , T _ { i } ) _ { i = 1 } ^ { n }$ . DML estimators of the ATE are typically based on a cross-fitting procedure. Specifically, let $\\bigcup _ { k = 1 } ^ { K ^ { - } } I _ { k } \\ = \\ \\{ 1 , \\ldots , n \\}$ be a partition of the sample indices such that $| I _ { k } | / n \\to 1 / K$ Let $\\hat { g } ^ { ( k ) }$ and $\\hat { m } ^ { ( k ) }$ denote estimators of g and m computed only from the samples $( Y _ { i } , Z _ { i } , T _ { i } ) _ { i \\notin I _ { k } }$ . Defining",
+        "bbox": [
+            495,
+            479,
+            887,
+            571
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "img_path": "images/5013eb68a2bf2438f2a5897e0cdaca993a131782c719fcaa0920646811fc1040.jpg",
+        "text": "$$\n\\widehat { \\mathrm { A T E } } ^ { ( k ) } = \\frac { 1 } { | I _ { k } | } \\sum _ { i \\in I _ { k } } \\rho ( T _ { i } , Y _ { i } , Z _ { i } ; \\hat { g } ^ { ( k ) } , \\hat { m } ^ { ( k ) } ) ,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            542,
+            579,
+            841,
+            617
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "with orthogonalized score",
+        "bbox": [
+            496,
+            627,
+            673,
+            642
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "img_path": "images/48467182189f301d6293e73c9eab6fdc4be2afdb3d85e3bd4586614c7c781af8.jpg",
+        "text": "$$\n\\begin{array} { r l } & { \\rho ( T _ { i } , Y _ { i } , Z _ { i } ; g , m ) = g ( 1 , Z _ { i } ) - g ( 0 , Z _ { i } ) } \\\\ & { \\quad + \\frac { T _ { i } \\left( Y _ { i } - g ( 1 , Z _ { i } ) \\right) } { m ( Z _ { i } ) } + \\frac { \\left( 1 - T _ { i } \\right) \\left( Y _ { i } - g ( 0 , Z _ { i } ) \\right) } { 1 - m ( Z _ { i } ) } , } \\end{array}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            522,
+            652,
+            867,
+            705
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "the final DML estimate of ATE is given by",
+        "bbox": [
+            496,
+            713,
+            782,
+            729
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "img_path": "images/6270f1741d39e49fd07fbf3396b149f8ed958a96e35a2c242a43958db3518424.jpg",
+        "text": "$$\n\\widehat { \\mathrm { A T E } } = \\frac { 1 } { K } \\sum _ { k = 1 } ^ { K } \\widehat { \\mathrm { A T E } } ^ { ( k ) } .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            607,
+            738,
+            774,
+            781
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "We need the following additional conditions.",
+        "bbox": [
+            496,
+            789,
+            795,
+            805
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Assumption 5.6. It holds",
+        "bbox": [
+            496,
+            809,
+            673,
+            824
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "img_path": "images/c271c52a2b7cc9e3264462ab93d0e75d98f079026fe67e53075b248f9a204905.jpg",
+        "text": "$$\n\\begin{array} { r l } & { \\underset { t \\in \\{ 0 , 1 \\} } { \\operatorname* { m a x } } \\mathbb { E } [ | g ( t , Z ) | ^ { 5 } ] < \\infty , \\quad \\mathbb { E } [ | Y | ^ { 5 } ] < \\infty , } \\\\ & { \\mathbb { E } [ | Y - g ( T , Z ) | ^ { 2 } ] > 0 , \\quad \\mathrm { P r } ( m ( Z ) \\in ( \\varepsilon , 1 - \\varepsilon ) ) = 1 , } \\end{array}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            506,
+            834,
+            874,
+            881
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "for some $\\varepsilon > 0$",
+        "bbox": [
+            498,
+            890,
+            606,
+            905
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "header",
+        "text": "Adjustment for Confounding using Pre-Trained Representations",
+        "bbox": [
+            282,
+            56,
+            691,
+            70
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6",
+        "bbox": [
+            480,
+            922,
+            493,
+            934
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "The first two conditions ensure that the tails of $Y$ and $g ( t , Z )$ are not too heavy. The second two conditions are required for the ATE to be identifiable.",
+        "bbox": [
+            83,
+            84,
+            475,
+            131
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Theorem 5.7. Suppose the pre-trained representation is $P -$ valid, Assumption 5.6 holds, and the outcome regression and propensity scorefunctions g and m satisfy Assumption 5.2 with constraints $\\mathcal { P } _ { g } \\cup ( s _ { \\psi } , d _ { \\mathcal { M } } )$ and $\\mathcal { P } _ { m } \\cup ( s _ { \\psi } ^ { \\prime } , d _ { \\mathcal { M } } )$ , respectively. Supposefurther",
+        "bbox": [
+            83,
+            135,
+            477,
+            212
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "img_path": "images/c59700fdf39d8071fc86f62af7211833618501d4d069dbd0b8af8ab8a80e6a7e.jpg",
+        "text": "$$\n\\operatorname* { m i n } _ { \\substack { ( s , p ) \\in \\mathcal { P } _ { g } \\cup ( s _ { \\psi } , d _ { \\mathcal { M } } ) } } \\frac { s } { p } \\times \\operatorname* { m i n } _ { \\substack { ( s ^ { \\prime } , p ^ { \\prime } ) \\in \\mathcal { P } _ { m } \\cup ( s _ { \\psi } ^ { \\prime } , d _ { \\mathcal { M } } ) } } \\frac { s ^ { \\prime } } { p ^ { \\prime } } > \\frac { 1 } { 4 } ,\\tag{5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            106,
+            220,
+            436,
+            255
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "and the estimators $\\hat { g } ^ { ( k ) }$ and $\\hat { m } ^ { ( k ) }$ are DNNs as specified in Theorem 5.5 with the restriction that $\\hat { m } ^ { ( k ) }$ is clipped away from 0 and 1. Then",
+        "bbox": [
+            83,
+            266,
+            475,
+            314
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "img_path": "images/4e46ec634411be55051f0c5ba7a861c3c3db0a7ac22b28a2ee95155b153e92e0.jpg",
+        "text": "$$\n{ \\sqrt { n } } ( { \\widehat { \\mathrm { A T E } } } - { \\mathrm { A T E } } ) \\to { \\mathcal { N } } ( 0 , \\sigma ^ { 2 } ) ,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            169,
+            324,
+            390,
+            343
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "where $\\sigma ^ { 2 } = \\mathbb { E } [ \\rho ( T _ { i } , Y _ { i } , Z _ { i } ; g , m ) ^ { 2 } ] .$",
+        "bbox": [
+            84,
+            353,
+            323,
+            371
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Condition (5) is our primary regularity condition, ensuring sufficiently fast convergence for valid DML inference. It characterizes the necessary trade-off between smoothness and dimensionality of the components in the HCM. In particular, it is satisfied when each component function in the model has input dimension less than twice its smoothness.",
+        "bbox": [
+            83,
+            381,
+            475,
+            473
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "6. Experiments",
+        "text_level": 2,
+        "bbox": [
+            84,
+            491,
+            218,
+            508
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "In the following, we will complement our theoretical results from the previous section with empirical evidence from several experiments. The experiments include both images and text as non-tabular data, which act as the source of confounding in the ATE setting. Further experiments can be found in Appendix D.",
+        "bbox": [
+            83,
+            517,
+            475,
+            609
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "6.1. Validity of ATE Inference from Pre-Trained Representations",
+        "text_level": 2,
+        "bbox": [
+            84,
+            625,
+            426,
+            655
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Text Data We utilize the IMDb Movie Reviews dataset from Lhoest et al. (2021) consisting of 50,000 movie reviews labeled for sentiment analysis. The latent features $Z$ as representations of the movie reviews are computed using the last hidden layer of the pre-trained Transformerbased model BERT (Devlin et al., 2019). More specifically, each review results in a 768-dimensional latent variable Z by extracting the [CLS] token that summarizes the entire sequence. For this, each review is tokenized using BERT’s subword tokenizer (bert-base-uncased), truncated to a maximum length of 128 tokens, and padded where necessary.",
+        "bbox": [
+            83,
+            662,
+            477,
+            832
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Image Data We further use the dataset from Kermany et al. (2018) that contains 5,863 chest X-ray images of children. Each image is labeled according to whether the lung disease pneumonia is present or not. The latent features are obtained by passing the images through a pre-trained convolutional neural network and extracting the 1024-dimensional last hidden layer features of the model. We use the pretrained Densenet-121 model from the TorchXRayVision library (Cohen et al., 2022), which was trained on several publicly available chest X-ray datasets (Cohen et al., 2020). Further details on the datasets and pre-trained models used in our experiments are provided in Appendix C.1.",
+        "bbox": [
+            83,
+            844,
+            477,
+            906
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/3afd16871b2710cc65a3f0920c70aa3aa374d9b04120bb62518213aac6bed0f8.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 4. Label Confounding: Comparison of ATE estimators on the IMDb dataset. DML and S-Learner use pre-trained representations. Point estimates and 95% CIs are depicted."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            500,
+            82,
+            883,
+            231
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            495,
+            305,
+            890,
+            428
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Confounding Setup For both data applications, we simulate treatment and outcome variables while inducing confounding based on the labels. As an example, for the modified image dataset, children with pneumonia have a higher chance of receiving treatment compared to healthy children. In contrast, pneumonia negatively impacts the outcome variable. The same confounding is present in our modified text dataset. Hence, the label creates a negative bias in both ATE settings if not properly accounted for. Further details about the confounding setups are provided in Appendix C.2.",
+        "bbox": [
+            495,
+            444,
+            890,
+            598
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "ATE Estimators We compare the performance of DML using three types of nuisance estimators: linear models with and without $L _ { 1 }$ -penalization (Lasso/ Linear), as well as random forest (RF). For comparison, we also include another common causal estimator, called S-Leaner, which only estimates the outcome function (2) (details in Appendix C.3). In each of the simulations, estimators facilitate the information contained in the non-tabular data to adjust for confounding by using the latent features from the pre-trained models in the estimation. As a benchmark, we compare the estimate to the ones of a Naive estimator (unadjusted estimation) and the Oracle estimator (adjusts for the true label).",
+        "bbox": [
+            495,
+            614,
+            888,
+            797
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Label Confounding Results The results for the IMDb experiment over 5 simulations are depicted in Figure 4. As expected, the naive estimator shows a strong negative bias. The same can be observed for the S-Learner (for all nuisance estimators) and for DML using lasso or random forest. In contrast, DML using linear nuisance estimators (without sparsity-inducing penalty) yields unbiased estimates with good coverage, as can be seen by the confidence intervals (CIs). First, these results indicate that DML seems to benefit from the doubly robust estimation. Second, DML fails when using ILT non-invariant nuisance estimators such as lasso or random forest. This is because neither of the two can achieve sufficiently fast convergence rates without structural assumptions, such as sparsity or additivity. The latter being unlikely to hold given that representations were shown to be identifiable only up to ILTs. The results for image-based experiment are given in Appendix D.1, where the same phenomenon can be observed.",
+        "bbox": [
+            495,
+            814,
+            890,
+            906
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "header",
+        "text": "Adjustment for Confounding using Pre-Trained Representations",
+        "bbox": [
+            281,
+            56,
+            691,
+            70
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7",
+        "bbox": [
+            480,
+            922,
+            493,
+            935
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/3fc3895c21eefc46ab30521aefd403d63c05a73cd70ed8737e996f43454a6e57.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 5. Complex Confounding: Comparison of ATE estimators on the X-ray dataset. DML and S-Learner use pre-trained representations. Point estimates and 95% CIs are depicted."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            88,
+            83,
+            472,
+            229
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            83,
+            304,
+            478,
+            487
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "6.2. Neural Networks Adapt to Functions on Low Dimensional Manifolds",
+        "text_level": 2,
+        "bbox": [
+            84,
+            512,
+            434,
+            542
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "In a second line of experiments, we investigate the ability of neural network-based nuisance estimation to adapt to low intrinsic dimensions. The features in our data sets already concentrate on a low-dimensional manifold. For example, Figure 6 shows that the intrinsic dimension of the X-ray images is around $d _ { \\mathcal { M } } = 1 2$ , whereas the ambient dimension is $d = 1 0 2 4$ . To simulate complex confounding with structural smoothness and sparsity, we first train an autoencoder (AE) with 5-dimensional latent space on the pre-trained representations. These low-dimensional encodings from the AE are then used to simulate confounding. Due to this construction of confounding, the true nuisance functions correspond to encoder-then-linear functions, which are multi-layered hierarchical compositions and therefore align with Assumption 5.2. We refer to this as complex confounding.",
+        "bbox": [
+            83,
+            551,
+            477,
+            780
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Complex Confounding Results We again compare DML and the S-Learner with different nuisance estimators. In contrast to the previous section, we now use a neural network (with ReLU activation, 100 hidden layers with 50 neurons each) instead of a linear model in the outcome regression nuisance estimation. The results are depicted in Figure 5. Similar to the previous experiments, we find that the naive estimate is strongly biased similar to the random forestbased estimators. In contrast, the neural network-based estimators exhibit much less bias. While the S-Learner’s confidence intervals are too optimistic, the DML estimator shows high coverage and is therefore the only estimator that enables valid inference. The results for the IMDb dataset with complex confounding are given in Appendix D.1.",
+        "bbox": [
+            83,
+            799,
+            477,
+            906
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "chart",
+        "img_path": "images/d6ca7ce540bef25701788f6398283fb9770352c10bdc99057dd83917dcb70fd3.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 6. Different Intrinsic Dimension (ID) estimates of pretrained representations obtainedfrom different pre-trained models. Representations are based on the X-Ray dataset."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            500,
+            84,
+            882,
+            229
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            495,
+            301,
+            888,
+            410
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Low Intrinsic Dimension We also investigate the low intrinsic dimension hypothesis about pre-trained representations. Using different intrinsic dimension (ID) estimators such as the Maximum Likelihood (MLE) (Levina & Bickel, 2004), the Expected Simplex Skewness (ESS), and the local Principal Component Analysis (lPCA) we estimate the ID of different pre-trained representations of the X-ray dataset obtained from different pre-trained models from the TorchXRayVision library (Cohen et al., 2022). The results in Figure 6 indicate that the intrinsic dimension of the pre-trained representations is much smaller than the dimension of the ambient space (1024). A finding that is in line with previous research, which is further discussed in Appendix B.1. Additional information on the experiment and the estimators used can be found in Appendix C.4.",
+        "bbox": [
+            495,
+            424,
+            890,
+            651
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "6.3. The Power of Pre-Training for Estimation",
+        "text_level": 2,
+        "bbox": [
+            496,
+            671,
+            825,
+            686
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "In another line of experiments, we explore the benefits of pre-training in our setup. In particular, we are investigating whether pre-trained neural feature extractors actually outperform non-pre-trained feature extractors in the nuisance estimation of DML-based ATE estimation. We conduct the experiments in the context of the previously introduced image-based Label Confounding setup. To adjust for confounding in this setup, nuisance estimators must extract the relevant information from the X-rays. For this purpose, we compare DML using pre-trained feature extractors against DML using neural feature extractors that are trained on downstream data from scratch. While the former uses the same pre-trained Densenet-121 model that was used in previous image-based experiments, the latter incorporates Convolutional Neural Networks (CNNs) as nuisance estimators into the DML ATE estimation routine. The following experiment is based on 500 sampled images from the X-Ray dataset, where five-layer CNNs are used in the non-pre-trained DML version. Further details about the training and architecture of the utilized CNNs can be found in Appendix C.5.",
+        "bbox": [
+            495,
+            694,
+            890,
+            907
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "header",
+        "text": "Adjustment for Confounding using Pre-Trained Representations",
+        "bbox": [
+            282,
+            56,
+            691,
+            70
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8",
+        "bbox": [
+            480,
+            922,
+            493,
+            935
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "chart",
+        "img_path": "images/602de664513d684e3fa315a020b44d633ae45da8afd4b4b7dd42bff41693f34b.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 7. Comparison of DML using pre-trained representations “DML (Pre-trained)” and DML withoutpre-training “DML (CNN)” for ATE estimation. Experiment is based on the X-Ray dataset. Point estimates and 95% CIs are depicted."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            88,
+            83,
+            472,
+            231
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            83,
+            319,
+            475,
+            426
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "The results are depicted in Figure 7. For illustrative purposes, we also show the estimates of the Naive and Oracle estimators, which match those of previous experiments. The key finding of Figure 7 is that DML using pre-trained feature extractors (DML (Pre-trained)) yields unbiased ATE estimates and well-calibrated confidence intervals, while DML without pre-training (DML (CNN)) does not. The same phenomenon can be observed in experiments with varying sample sizes and CNN architecture. These experiments are discussed in Appendix D.2. Overall, the results emphasize the benefits of using DML in combination with pre-trained models when utilizing non-tabular data such as images, for confounding adjustment in ATE estimation.",
+        "bbox": [
+            83,
+            433,
+            477,
+            631
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Further Experiments Further experiments on the asymptotic normality of DML-based ATE estimation as well as the role of the HCM structure of the nuisance functions are given and discussed in Appendix D.3 and D.4.",
+        "bbox": [
+            83,
+            648,
+            475,
+            710
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "7. Discussion",
+        "text_level": 2,
+        "bbox": [
+            84,
+            728,
+            199,
+            744
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "In this work, we explore ATE estimation under confounding induced by non-tabular data. We investigate conditions under which pre-trained neural representations can effectively be used to adjust for such kind of confounding. While the representations typically have lower dimensionality, their invariance under orthogonal transformations challenges common assumptions to obtain fast nuisance function convergence rates, like sparsity and additivity. Instead, the study leverages the concept of low intrinsic dimensionality, combining it with invariance properties and structural sparsity to establish conditions for fast convergence rates in nuisance estimation. This ensures valid ATE estimation and inference, contributing both theoretical insights and practical guidance for integrating machine learning into causal inference.",
+        "bbox": [
+            83,
+            755,
+            478,
+            906
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            495,
+            85,
+            887,
+            147
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Limitations and Future Research In this work, we focus on a single source of confounding from a non-tabular data modality. A potential future research direction is to study the influence of multiple modalities on ATE estimation. In particular, having multiple modalities requires further causal and structural assumptions on the interplay of the modalities. For example, this could mean that each modality is best processed by a separate network or that the confounding information can only be extracted through a joint network that correctly fuses modalities at some point. We note, however, that this is more of a technical aspect and a matter of domain knowledge, and thus being of minor relevance for the discussion and theoretical contributions of our study.",
+        "bbox": [
+            495,
+            161,
+            888,
+            358
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Moreover, we focused on the estimation of the ATE in this paper, given its popularity in both theory and practice. However, our approach could also be extended to cover other target parameters such as the average treatment effect on the treated (ATT) or the conditional ATE (CATE). While each of these would require a dedicated discussion of the necessary assumptions, we believe that many of the core ideas and results presented here—such as the convergence rates for neural network-based estimation—could also be transferred and used in a theoretical investigation in those settings.",
+        "bbox": [
+            495,
+            364,
+            888,
+            532
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Impact Statement",
+        "text_level": 2,
+        "bbox": [
+            496,
+            550,
+            653,
+            568
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "This paper presents work whose goal is to advance the field of Machine Learning. There are many potential societal consequences of our work, none which we feel must be specifically highlighted here.",
+        "bbox": [
+            495,
+            575,
+            887,
+            638
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "References",
+        "text_level": 2,
+        "bbox": [
+            498,
+            655,
+            594,
+            672
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Aghajanyan, A., Zettlemoyer, L., and Gupta, S. Intrinsic dimensionality explains the effectiveness of language model fine-tuning. arXiv preprint arXiv:2012.13255, 2020.",
+            "Ansuini, A., Laio, A., Macke, J. H., and Zoccolan, D. Intrinsic dimension of data representations in deep neural networks. Advances in Neural Information Processing Systems, 32, 2019.",
+            "Bach, P., Chernozhukov, V., Kurz, M. S., and Spindler, M. DoubleML-an object-oriented implementation of double machine learning in python. Journal of Machine Learning Research, 23(53):1–6, 2022.",
+            "Bartlett, P. L., Harvey, N., Liaw, C., and Mehrabian, A."
+        ],
+        "bbox": [
+            501,
+            680,
+            887,
+            739
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "header",
+        "text": "Adjustment for Confounding using Pre-Trained Representations",
+        "bbox": [
+            282,
+            56,
+            691,
+            70
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9",
+        "bbox": [
+            480,
+            922,
+            493,
+            934
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Nearly-tight VC-dimension and pseudodimension bounds for piecewise linear neural networks. Journal ofMachine Learning Research, 20(63):1–17, 2019.",
+            "Battaglia, L., Christensen, T., Hansen, S., and Sacher, S. Inference for regression with variables generated from unstructured data. 2024.",
+            "Bickel, P. J. and Li, B. Local polynomial regression on unknown manifolds. Lecture Notes-Monograph Series, pp. 177–186, 2007.",
+            "Charig, C. R., Webb, D. R., Payne, S. R., and Wickham, J. E. Comparison of treatment of renal calculi by open surgery, percutaneous nephrolithotomy, and extracorporeal shockwave lithotripsy. British Medical Journal (Clinical research ed.), 292(6524):879–882, 1986.",
+            "Chen, H., Harinen, T., Lee, J.-Y., Yung, M., and Zhao, Z. CausalML: Python Package for Causal Machine Learning, 2020.",
+            "Chen, M., Jiang, H., Liao, W., and Zhao, T. Efficient approximation of deep relu networks for functions on low dimensional manifolds. Advances in Neural Information Processing Systems, 32, 2019.",
+            "Chernozhukov, V., Chetverikov, D., Demirer, M., Duflo, E., Hansen, C., and Newey, W. Double/debiased/neyman machine learning of treatment effects. American Economic Review, 107(5):261–265, 2017.",
+            "Chernozhukov, V., Chetverikov, D., Demirer, M., Duflo, E., Hansen, C., Newey, W., and Robins, J. Double/debiased machine learning for treatment and structural parameters. The Econometrics Journal, 21(1), 2018.",
+            "Chernozhukov, V., Newey, W., Quintas-Martınez, V. M., and Syrgkanis, V. Riesznet and forestriesz: Automatic debiased machine learning with neural nets and random forests. In International Conference on Machine Learning, pp. 3901–3914. PMLR, 2022.",
+            "Christgau, A. M. and Hansen, N. R. Efficient adjustment for complex covariates: Gaining efficiency with DOPE. arXiv preprint arXiv:2402.12980, 2024.",
+            "Cohen, J. P., Hashir, M., Brooks, R., and Bertrand, H. On the limits of cross-domain generalization in automated Xray prediction. In Medical Imaging with Deep Learning, pp. 136–155. PMLR, 2020.",
+            "Cohen, J. P., Viviano, J. D., Bertin, P., Morrison, P., Torabian, P., Guarrera, M., Lungren, M. P., Chaudhari, A., Brooks, R., Hashir, M., et al. TorchXRayVision: A library of chest X-ray datasets and models. In International Conference on Medical Imaging with Deep Learning, pp. 231–249. PMLR, 2022.",
+            "Dai, B., Shen, X., and Wang, J. Embedding learning. Journal of the American Statistical Association, 117(537): 307–319, 2022.",
+            "Deaton, A. and Cartwright, N. Understanding and misunderstanding randomized controlled trials. Social science & medicine, 210:2–21, 2018.",
+            "Deng, J., Dong, W., Socher, R., Li, L.-J., Li, K., and Fei-Fei, L. Imagenet: A large-scale hierarchical image database. In 2009 IEEE conference on computer vision and pattern recognition, pp. 248–255. Ieee, 2009.",
+            "Devlin, J., Chang, M.-W., Lee, K., and Toutanova, K. BERT: Pre-training of deep bidirectional transformers for language understanding. In Burstein, J., Doran, C., and Solorio, T. (eds.), Proceedings ofthe 2019 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies, Volume 1 (Long and Short Papers), pp. 4171–4186, Minneapolis, Minnesota, June 2019. Association for Computational Linguistics.",
+            "Dhawan, N., Cotta, L., Ullrich, K., Krishnan, R. G., and Maddison, C. J. End-To-End Causal Effect Estimation from Unstructured Natural Language Data. In Advances in Neural Information Processing Systems, volume 37, pp. 77165–77199, 2024.",
+            "Erhan, D., Courville, A., Bengio, Y., and Vincent, P. Why does unsupervised pre-training help deep learning? In Proceedings ofthe thirteenth international conference on artificial intelligence and statistics, pp. 201–208. JMLR Workshop and Conference Proceedings, 2010.",
+            "Farrell, M. H., Liang, T., and Misra, S. Deep neural networks for estimation and inference. Econometrica, 89(1): 181–213, 2021.",
+            "Fefferman, C., Mitter, S., and Narayanan, H. Testing the manifold hypothesis. Journal ofthe American Mathematical Society, 29(4):983–1049, 2016.",
+            "Fukunaga, K. and Olsen, D. R. An Algorithm for Finding Intrinsic Dimensionality of Data. IEEE Transactions on computers, 100(2):176–183, 1971.",
+            "Gong, S., Boddeti, V. N., and Jain, A. K. On the intrinsic dimensionality of image representations. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition, pp. 3987–3996, 2019.",
+            "Huang, G., Liu, Z., Van Der Maaten, L., and Weinberger, K. Q. Densely connected convolutional networks. In Proceedings ofthe IEEE conference on computer vision and pattern recognition, pp. 4700–4708, 2017."
+        ],
+        "bbox": [
+            99,
+            85,
+            475,
+            131
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "header",
+        "text": "Adjustment for Confounding using Pre-Trained Representations",
+        "bbox": [
+            281,
+            56,
+            691,
+            70
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10",
+        "bbox": [
+            477,
+            922,
+            496,
+            935
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Jerzak, C. T., Johansson, F., and Daoud, A. Estimating causal effects under image confounding bias with an application to poverty in Africa. arXiv preprint arXiv:2206.06410, 2022.",
+            "Jerzak, C. T., Johansson, F., and Daoud, A. Integrating earth observation data into causal inference: challenges and opportunities. arXiv preprint arXiv:2301.12985, 2023a.",
+            "Jerzak, C. T., Johansson, F. D., and Daoud, A. Image-based Treatment Effect Heterogeneity. In Proceedings of the Second Conference on Causal Learning and Reasoning, pp. 531–552. PMLR, 2023b.",
+            "Johnsson, K., Soneson, C., and Fontes, M. Low Bias Local Intrinsic Dimension Estimation from Expected Simplex Skewness. IEEE transactions on pattern analysis and machine intelligence, 37(1):196–202, 2015.",
+            "Julious, S. A. and Mullee, M. A. Confounding and Simpson’s paradox. BMJ, 309(6967):1480–1481, 1994.",
+            "Kallus, N., Mao, X., and Udell, M. Causal inference with noisy and missing covariates via matrix factorization. Advances in Neural Information Processing Systems, 31, 2018.",
+            "Kermany, D., Zhang, K., and Goldbaum, M. Labeled Optical Coherence Tomography (OCT) and Chest X-Ray Images for Classification. Mendeley Data, 2018.",
+            "Klaassen, S., Teichert-Kluge, J., Bach, P., Chernozhukov, V., Spindler, M., and Vijaykumar, S. DoubleMLDeep: Estimation of Causal Effects with Multimodal Data. arXiv preprint arXiv:2402.01785, 2024.",
+            "Kohler, M. and Langer, S. On the rate of convergence of fully connected deep neural network regression estimates. The Annals ofStatistics, 49(4):2231–2249, 2021.",
+            "Kohler, M., Langer, S., and Reif, U. Estimation of a regression function on a manifold by fully connected deep neural networks. Journal of Statistical Planning and Inference, 222:160–181, 2023. ISSN 0378-3758. doi: https://doi.org/10.1016/j.jspi.2022.05.008.",
+            "Konz, N. and Mazurowski, M. A. The effect of intrinsic dataset properties on generalization: Unraveling learning differences between natural and medical images. In International Conference on Learning Representations, 2024.",
+            "Kuroki, M. and Pearl, J. Measurement bias and effect restoration in causal inference. Biometrika, 101(2):423– 437, 2014.",
+            "Lee, J. M. and Lee, J. M. Smooth manifolds. Springer, 2012.",
+            "Levina, E. and Bickel, P. Maximum likelihood estimation of intrinsic dimension. Advances in Neural Information Processing Systems, 17, 2004.",
+            "Lhoest, Q., Villanova del Moral, A., Jernite, Y., Thakur, A., von Platen, P., Patil, S., Chaumond, J., Drame, M., Plu, J., Tunstall, L., Davison, J., Sa<sup>ˇ</sup> sko, M., Chhablani,ˇ G., Malik, B., Brandeis, S., Le Scao, T., Sanh, V., Xu, C., Patry, N., McMillan-Major, A., Schmid, P., Gugger, S., Delangue, C., Matussiere, T., Debut, L., Bekman, S.,\\` Cistac, P., Goehringer, T., Mustar, V., Lagunas, F., Rush, A., and Wolf, T. Datasets: A Community Library for Natural Language Processing. In Proceedings ofthe 2021 Conference on Empirical Methods in Natural Language Processing: System Demonstrations, pp. 175–184, 2021.",
+            "Mastouri, A., Zhu, Y., Gultchin, L., Korba, A., Silva, R., Kusner, M., Gretton, A., and Muandet, K. Proximal Causal Learning with Kernels: Two-Stage Estimation and Moment Restriction. In Proceedings of the 38th International Conference on Machine Learning, volume 139 of Proceedings of Machine Learning Research, pp. 7512–7523. PMLR, 2021.",
+            "Miao, W., Geng, Z., and Tchetgen Tchetgen, E. J. Identifying causal effects with proxy variables of an unmeasured confounder. Biometrika, 105(4):987–993, 2018.",
+            "Nakada, R. and Imaizumi, M. Adaptive approximation and generalization of deep neural network with intrinsic dimensionality. Journal ofMachine Learning Research, 21(174):1–38, 2020.",
+            "Ng, A. Y. Feature selection, L<sub>1</sub> vs. L<sub>2</sub> regularization, and rotational invariance. In Proceedings ofthe twenty-first International Conference on Machine Learning, pp. 78, 2004.",
+            "Pope, P., Zhu, C., Abdelkader, A., Goldblum, M., and Goldstein, T. The intrinsic dimension of images and its impact on learning. In International Conference on Learning Representations, 2021.",
+            "Raskutti, G., Yu, B., and Wainwright, M. J. Lower bounds on minimax rates for nonparametric regression with additive sparsity and smoothness. Advances in Neural Information Processing Systems, 22, 2009.",
+            "Robins, J. M. and Rotnitzky, A. Semiparametric efficiency in multivariate regression models with missing data. Journal ofthe American Statistical Association, 90(429):122– 129, 1995.",
+            "Robinson, P. M. Root-N-consistent semiparametric regression. Econometrica: Journal of the Econometric Society, pp. 931–954, 1988."
+        ],
+        "bbox": [
+            86,
+            85,
+            475,
+            145
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "header",
+        "text": "Adjustment for Confounding using Pre-Trained Representations",
+        "bbox": [
+            281,
+            56,
+            691,
+            70
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "11",
+        "bbox": [
+            477,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Schmidt-Hieber, J. Deep ReLu network approximation of functions on a manifold. arXiv preprint arXiv:1908.00695, 2019.",
+            "Schmidt-Hieber, J. Nonparametric regression using deep neural networks with ReLU activation function. The Annals ofStatistics, 2020.",
+            "Shi, C., Blei, D., and Veitch, V. Adapting Neural Networks for the Estimation of Treatment Effects. Advances in Neural Information Processing Systems, 32, 2019.",
+            "Stone, C. J. Optimal global rates of convergence for nonparametric regression. The Annals ofStatistics, pp. 1040– 1053, 1982.",
+            "Stone, C. J. Additive regression and other nonparametric models. The Annals of Statistics, 13(2):689–705, 1985.",
+            "van der Laan, M. J. and Rose, S. Targeted Learning: Causal Inferencefor Observational and Experimental Data, volume 4. Springer, 2011.",
+            "van der Laan, M. J. and Rubin, D. Targeted Maximum Likelihood Learning. The International Journal ofBiostatistics, 2(1), 2006.",
+            "van der Vaart, A. W. Asymptotic Statistics. Cambridge Series in Statistical and Probabilistic Mathematics. Cambridge University Press, 1998.",
+            "Van der Vaart, A. W. and Wellner, J. A. Weak Convergence and Empirical Processes: With Applications to Statistics. Springer Nature, 2023.",
+            "Veitch, V., Wang, Y., and Blei, D. Using embeddings to correct for unobserved confounding in networks. Advances in Neural Information Processing Systems, 32, 2019.",
+            "Veitch, V., Sridhar, D., and Blei, D. Adapting text embeddings for causal inference. In Conference on Uncertainty in Artificial Intelligence, pp. 919–928. PMLR, 2020.",
+            "Young, E. H. and Shah, R. D. ROSE Random Forests for Robust Semiparametric Efficient Estimation. arXiv preprint arXiv:2410.03471, 2024.",
+            "Zhang, J., Xue, W., Yu, Y., and Tan, Y. Debiasing Machine-Learning-or AI-Generated Regressors in Partial Linear Models. Available at SSRN, 2023.",
+            "Zhang, Y. and Bradic, J. Causal inference through multistage learning and doubly robust deep neural networks. arXiv preprint arXiv:2407.08560, 2024."
+        ],
+        "bbox": [
+            86,
+            85,
+            477,
+            130
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "header",
+        "text": "Adjustment for Confounding using Pre-Trained Representations",
+        "bbox": [
+            281,
+            56,
+            691,
+            70
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "12",
+        "bbox": [
+            477,
+            922,
+            496,
+            934
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "A. Proofs and Additional Results",
+        "text_level": 2,
+        "bbox": [
+            84,
+            83,
+            367,
+            99
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "A.1. Equivalence Class of Representations",
+        "text_level": 2,
+        "bbox": [
+            84,
+            109,
+            383,
+            125
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Lemma A.1 (Equivalence Class of Representations). Let $( \\Omega , { \\mathcal { F } } , P )$ be a probability space, and let $Z : \\Omega \\to \\mathbb { R } ^ { d }$ be a measurable map (a random representation). Thenfor each $I L T Q$ the random variable $Q ( Z )$ satisfies",
+        "bbox": [
+            83,
+            132,
+            885,
+            164
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "img_path": "images/dae3ebe8cdd6aca10733f54f65bac4268e98b22c6f273b9afdcc108d0e5addcf.jpg",
+        "text": "$$\n\\sigma { \\bigl ( } Q ( Z ) { \\bigr ) } = \\sigma ( Z ) ,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            415,
+            170,
+            553,
+            186
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "where $\\sigma ( Z )$ denotes the σ-algebra generated by the random variable Z. Consequently,",
+        "bbox": [
+            84,
+            193,
+            658,
+            209
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "img_path": "images/3e1ff703f76e15bc4ace30010fe68172e4c4b983dd222ab080e8481329ddc8b7.jpg",
+        "text": "$$\n{ \\mathcal { Z } } \\ = \\ \\{ Q ( Z ) \\ | \\ Q \\in { \\mathcal { Q } } \\}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            397,
+            214,
+            573,
+            232
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "forms an equivalence class ofrepresentations that are indistinguishablefrom the viewpoint ofmeasurable information.",
+        "bbox": [
+            83,
+            238,
+            864,
+            255
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Proof. Each $Q \\in \\mathcal { Q }$ is an invertible linear transformation. Consequently, $Q$ is a Borel measurable bijection with a Bore measurable inverse. To show $\\sigma ( Q ( Z ) ) = \\sigma ( Z )$ , consider any Borel set $B \\subseteq \\mathbb { R } ^ { d }$ . We have",
+        "bbox": [
+            83,
+            268,
+            885,
+            300
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "img_path": "images/845241039ef0ca5e31968737ab4691acfaff8a310e339351a2bf98f6580714d1.jpg",
+        "text": "$$\n\\{ \\omega \\in \\Omega : Q ( Z ( \\omega ) ) \\in B \\} = \\{ \\omega \\in \\Omega : Z ( \\omega ) \\in Q ^ { - 1 } ( B ) \\} .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            294,
+            306,
+            676,
+            323
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Since $Q ^ { - 1 } ( B )$ is Borel (as $Q$ is a Borel isomorphism), the pre-image $\\{ \\omega : Z ( \\omega ) \\in Q ^ { - 1 } ( B ) \\}$ belongs to $\\sigma ( Z )$ . Similarly, for any Borel set $A \\subseteq \\mathbb { R } ^ { d }$",
+        "bbox": [
+            84,
+            329,
+            887,
+            359
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "img_path": "images/c2e416a0160bee3feb7fa16349b0b490387896594a17261f9c64a0135b431ae2.jpg",
+        "text": "$$\n\\{ \\omega \\in \\Omega : Z ( \\omega ) \\in A \\} = \\{ \\omega \\in \\Omega : Q ( Z ( \\omega ) ) \\in Q ( A ) \\} ,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            303,
+            359,
+            666,
+            376
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "which belongs to $\\sigma ( Q ( Z ) )$ . Therefore, $\\sigma ( Q ( Z ) ) = \\sigma ( Z )$",
+        "bbox": [
+            84,
+            378,
+            468,
+            395
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "A.2. Proof of Lemma 4.1",
+        "text_level": 2,
+        "bbox": [
+            84,
+            411,
+            263,
+            426
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Proof. We consider $f$ being $C ^ { s }$ on the open domain $D \\subseteq \\mathbb { R } ^ { d }$ , so by definition, all partial derivatives of $f$ up to order s exist and are continuous on $D .$ . Further, we consider any invetible matrix $Q .$ . Such linear transformations are known to be infinitely smooth (as all their partial derivatives of any order exist and are constant, hence continuous). Hence, the function $h = f \\circ Q ^ { - 1 }$ is the composition of a $C ^ { s }$ function f with a linear (and thus $C ^ { \\infty } )$ map $Q ^ { - 1 }$",
+        "bbox": [
+            83,
+            434,
+            887,
+            497
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Applying the multivariate chain rule, we can easily verify that the differentiability properties of h are inherited from those of $f$ and the linear transformation $Q ^ { - 1 }$ . Specifically, since $Q ^ { - 1 }$ is $C ^ { \\infty }$ , and $f { \\mathrm { ~ i s ~ } } C ^ { s }$ , their composition h retains the $C ^ { s }$ smoothness. Lastly, the (transformed) domain $Q ( D )$ is also open as linear (and thus continuous) transformations preserve the openness of sets in $\\mathbb { R } ^ { d }$ . Therefore, h is well-defined and $C ^ { s }$ on $Q ( D )$ ). □",
+        "bbox": [
+            84,
+            502,
+            887,
+            564
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "A.3. Proof of Lemma 4.2",
+        "text_level": 2,
+        "bbox": [
+            84,
+            579,
+            263,
+            594
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Proof. Suppose that $Q$ is an invertible matrix representing the linear map $z \\mapsto Q ( z )$ . Denote by $\\tilde { Q } = Q ^ { - 1 }$ its inverse and its rows by $\\tilde { q } _ { 1 } , \\dots , \\tilde { q } _ { d }$",
+        "bbox": [
+            84,
+            603,
+            885,
+            635
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "(i) Additivity",
+        "text_level": 2,
+        "bbox": [
+            84,
+            650,
+            181,
+            665
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Assume that $f : \\mathcal { X } \\to \\mathbb { R }$ is additive, where $\\mathcal { X } \\subseteq \\mathbb { R } ^ { d }$ , such that",
+        "bbox": [
+            84,
+            672,
+            496,
+            689
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "img_path": "images/4ddb7f7d947ae081e5d76ec31a161048b6cd230249285a709f2f16f73bc8138e.jpg",
+        "text": "$$\nf ( \\boldsymbol { x } ) = \\sum _ { j = 1 } ^ { d } f _ { j } ( x _ { j } ) ,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            418,
+            695,
+            552,
+            738
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "and suppose that at least one $f _ { j }$ is nonlinear. Now consider the transformed input space ${ \\tilde { \\mathcal { X } } } : = Q ( \\mathcal { X } ) = \\{ Q x \\mid x \\in \\mathcal { X } \\}$ induced by the invertible linear transformation $Q .$ . Let $h : \\tilde { \\mathcal { X } } \\to \\mathbb { R }$ be given by $h ( \\tilde { x } ) : = f ( Q ^ { - 1 } \\tilde { x } )$ . Then h represents the same mapping as $f$ but expressed in the transformed coordinate system $\\tilde { \\mathcal X }$ . In particular, $h ( \\tilde { x } ) = f ( x ) , \\forall \\tilde { x } \\in \\tilde { \\mathcal { X } }$ . Further, we have",
+        "bbox": [
+            84,
+            746,
+            887,
+            808
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "img_path": "images/8079a740f7162e45883fc7147dd92aa2dd797ed01232b404d3ab444a7ccd6551.jpg",
+        "text": "$$\nh ( \\tilde { x } ) = \\sum _ { j = 1 } ^ { d } f _ { j } ( \\tilde { q } _ { j } ^ { \\top } \\tilde { x } ) .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            413,
+            811,
+            558,
+            854
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "Assume without loss of generality that $f _ { 1 }$ is nonlinear. The set of invertible matrices where $\\tilde { q } _ { 1 }$ equals a multiple of a standard basis vector has Haar measure 0. Hence, $f _ { 1 } ( \\tilde { q } _ { 1 } ^ { - } \\tilde { x } )$ is almost everywhere a nonlinear function of all coordinates of ${ \\tilde { x } } ,$ implying that h is not additive.",
+        "bbox": [
+            84,
+            859,
+            888,
+            906
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "header",
+        "text": "Adjustment for Confounding using Pre-Trained Representations",
+        "bbox": [
+            281,
+            56,
+            691,
+            70
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13",
+        "bbox": [
+            477,
+            922,
+            496,
+            935
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "(ii) Sparsity",
+        "text_level": 2,
+        "bbox": [
+            84,
+            85,
+            173,
+            99
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Assume $f : \\mathcal { X } \\to \\mathbb { R }$ , where $\\boldsymbol { \\mathcal { X } } \\subseteq \\mathbb { R } ^ { d }$ , is sparse linear of the form $f ( x ) = \\beta ^ { \\top } x$ with $1 \\leq \\| \\beta \\| _ { 0 } < d .$ . We again consider the transformed input space ${ \\tilde { \\mathcal { X } } } : = Q ( \\mathcal { X } ) = \\{ Q x \\mid x \\in \\mathcal { X } \\}$ , induced by the invertible linear transformation $Q ,$ and define $h : \\tilde { \\mathcal { X } } \\to \\mathbb { R }$ given by $h ( \\tilde { x } ) : = f ( Q ^ { - 1 } \\tilde { x } )$ . Then we have $\\dot { h ( x ) } = f ( Q ^ { - 1 } \\tilde { x } ) = \\beta ^ { \\top } Q ^ { - 1 } \\tilde { x } = : \\tilde { \\beta } ^ { \\top } \\tilde { x }$ . While the map h is still linear, the set of matrices $Q$ such that $\\| \\tilde { \\beta } \\| _ { 0 } = \\| \\beta ^ { \\top } Q ^ { - 1 } \\| _ { 0 } \\neq$ d has Haar measure zero. Hence, h is almost everywhere not sparse. □",
+        "bbox": [
+            84,
+            108,
+            887,
+            184
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "A.4. Proof of Lemma 4.3",
+        "text_level": 2,
+        "bbox": [
+            84,
+            200,
+            263,
+            214
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Proof. As in the previous proof in Appendix A.2, it is essential to note that ILTs $Q$ are linear, invertible maps that are $C ^ { \\infty }$ (infinitely differentiable) with inverses that are likewise $C ^ { \\infty }$ . Specifically, Q serves as a global diffeomorphism on $\\mathbb { R } ^ { d }$ ensuring that both $Q$ and $Q ^ { - 1 }$ are smooth $( C ^ { \\infty } )$ functions.",
+        "bbox": [
+            84,
+            223,
+            885,
+            270
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Given that M is a $d _ { \\mathcal { M } }$ -dimensional smooth manifold, for each point x on the manifold $( x \\in M )$ , there exists a neighborhood $U \\subseteq M$ and a smooth chart $\\varphi : U \\to \\mathbb { R } ^ { d _ { \\mathcal { M } } }$ that is a diffeomorphism onto its image. Applying the orthogonal transformation $Q$ to M results in the set $Q ( M )$ , and correspondingly, the image $Q ( U ) \\subseteq Q ( M )$ ). To construct a smooth chart for $Q ( M )$ , we can consider the map",
+        "bbox": [
+            84,
+            276,
+            887,
+            337
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "img_path": "images/1a4715c7b6a5fe0fd77cfb93a6b1b31c986bb1a8df279e6f8356d1239343fd0d.jpg",
+        "text": "$$\n\\tilde { \\varphi } : Q ( U ) \\to \\mathbb { R } ^ { d _ { \\mathcal { M } } } , \\quad \\tilde { \\varphi } ( Q ( x ) ) = \\varphi ( x ) ,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            351,
+            337,
+            619,
+            353
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "where $x \\in U$ . Since $Q$ is a diffeomorphism, the composition $\\tilde { \\varphi } = \\varphi \\circ Q ^ { - 1 }$ restricted to $Q ( U )$ remains a smooth diffeomorphism onto its image. Hence, this defines a valid smooth chart for $Q ( M )$ . Covering $Q ( M )$ with such transformed charts derived from those of M ensures that $Q ( M )$ inherits a smooth manifold structure. Each chart $\\tilde { \\varphi }$ smoothly maps an open subset of $Q ( M )$ to an open subset of $\\mathbb { R } ^ { d _ { \\mathcal { M } } }$ , preserving the intrinsic dimension. Therefore, the intrinsic dimension $d _ { \\mathcal { M } }$ of the manifold M is preserved under any orthogonal transformation $Q ,$ and $Q ( M )$ remains a $d _ { \\mathcal { M } }$ -dimensional smooth manifold in $\\mathbb { R } ^ { d }$ □",
+        "bbox": [
+            83,
+            356,
+            887,
+            446
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "A.5. Proof of Lemma 5.3",
+        "text_level": 2,
+        "bbox": [
+            84,
+            463,
+            263,
+            478
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Proof. Recall that Q is an invertible linear map, $f _ { 0 } = f \\circ \\psi \\colon { \\mathcal { M } } \\to \\mathbb { R }$ , and $\\tilde { f } _ { 0 } = f _ { 0 } \\circ \\psi \\circ Q ^ { - 1 } \\colon Q ( \\mathcal { M } ) \\to \\mathbb { R }$ . Write $\\tilde { f } = f \\circ$ ψ<sup>˜</sup> with $\\tilde { \\psi } = \\psi \\circ Q ^ { - 1 } \\colon Q ( \\mathcal { M } ) \\to \\mathbb { R }$ . Since M is a smooth manifold, $Q ( \\mathcal { M } )$ is a smooth manifold with the same intrinsic dimension $d _ { \\mathcal { M } }$ by Lemma 4.3. Since $z \\mapsto Q ^ { - 1 }$ is continuous and M is compact, $Q ( \\mathcal { M } )$ is also compact. Next, since ψ is $s _ { \\psi }$ -smooth by assumption, ψ<sup>˜</sup> is also $s _ { \\psi }$ -smooth by Lemma 4.1. Finally, the HCM part f in the two models $f _ { 0 }$ and $\\tilde { f } _ { 0 }$ is the same, so they share the same constraint set $\\mathcal { P }$ . This concludes the proof. □",
+        "bbox": [
+            84,
+            486,
+            887,
+            565
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "A.6. Proof of Theorem 5.5",
+        "text_level": 2,
+        "bbox": [
+            84,
+            580,
+            272,
+            595
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "We will use Theorem 3.4.1 of Van der Vaart & Wellner (2023) to show that the neural network $\\hat { f }$ converges at the rate stated in the theorem. For ease of reference, we restate a slightly simplified version of the theorem adapted to the notation used in our paper. Here and in the following, we write $a \\lesssim b$ to indicate $a \\leq C b$ for a constant $C \\in ( 0 , \\infty )$ not depending on n.",
+        "bbox": [
+            84,
+            604,
+            885,
+            650
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Proposition A.2. Let ${ \\mathcal { F } } _ { n }$ be a sequence of function classes, ℓ be some loss function, $f _ { 0 }$ the estimation target, and",
+        "bbox": [
+            84,
+            652,
+            833,
+            667
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "img_path": "images/0109ba3ecb269a7866d3d27394082b4bbd06868417bb676d248b325bc947ccca.jpg",
+        "text": "$$\n{ \\hat { f } } = \\underset { f \\in \\mathcal { F } _ { n } } { \\arg \\operatorname* { m i n } } { \\frac { 1 } { n } } \\sum _ { i = 1 } ^ { n } \\ell ( f ( Z _ { i } ) , Y _ { i } ) .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            374,
+            674,
+            596,
+            712
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Define ${ \\mathcal { F } } _ { n , \\delta } = \\{ f \\in { \\mathcal { F } } _ { n } \\colon \\| f - f _ { 0 } \\| _ { L _ { 2 } ( P _ { Z } ) } \\leq \\delta \\}$ and suppose that for every $\\delta > 0$ , it holds",
+        "bbox": [
+            84,
+            717,
+            678,
+            733
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "img_path": "images/5863980eae874ccebd03b6ecd99f84b1f81b9927e6c9463b2c5e0f74f1d77b0c.jpg",
+        "text": "$$\n\\operatorname* { i n f } _ { f \\in { \\mathcal { F } _ { n , \\delta } } \\setminus \\sqrt { \\mathcal { F } _ { n , \\delta / 2 } } } \\mathbb { E } [ \\ell ( f ( Z ) , Y ) ] - \\mathbb { E } [ \\ell ( f _ { 0 } ( Z ) , Y ) ] \\gtrsim \\delta ^ { 2 } ,\\tag{A.2.1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            308,
+            739,
+            661,
+            765
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "and, writing $\\bar { \\ell } _ { f } ( z , y ) = \\ell ( f ( z ) , y ) - \\ell ( f _ { 0 } ( z ) , y )$ , that",
+        "bbox": [
+            84,
+            772,
+            441,
+            789
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "img_path": "images/76d08a939ca30d664c301476cbc4498c6bc3d8ace40ae9e66f534a42f4ec9a2d.jpg",
+        "text": "$$\n\\mathbb { E } \\left[ \\operatorname* { s u p } _ { f \\in { \\mathcal { F } } _ { n , \\delta } } \\left| \\frac { 1 } { n } \\sum _ { i = 1 } ^ { n } { \\bar { \\ell } } _ { f } ( Z _ { i } , Y _ { i } ) - \\mathbb { E } [ { \\bar { \\ell } } _ { f } ( Z , Y ) ] \\right| \\right] \\lesssim \\frac { \\phi _ { n } ( \\delta ) } { \\sqrt { n } } ,\\tag{A.2.2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            297,
+            795,
+            671,
+            835
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "for functions $\\phi _ { n } ( \\delta )$ such that $\\delta \\mapsto \\phi _ { n } ( \\delta ) / \\delta ^ { 2 - \\varepsilon }$ is decreasing for some $\\varepsilon > 0 .$ . If there are $\\widetilde f _ { 0 } \\in \\mathcal { F } _ { n }$ and $\\varepsilon _ { n } \\geq 0$ such that",
+        "bbox": [
+            83,
+            843,
+            872,
+            859
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "img_path": "images/95b1e19321f0f0b95e7100c9a96be97c80ed3ccd96e7aef56fa4d41a1d010026.jpg",
+        "text": "$$\n\\varepsilon _ { n } ^ { 2 } \\gtrsim \\mathbb { E } [ \\ell ( \\tilde { f } _ { 0 } ( Z ) , Y ) ] - \\mathbb { E } [ \\ell ( f _ { 0 } ( Z ) , Y ) ] ,\\tag{A.2.3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            367,
+            863,
+            635,
+            882
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "img_path": "images/0ffa64d55e54eb1cb03b42aa5be642f41c969f86125ee9f32d049fa9b928cd9b.jpg",
+        "text": "$$\n\\phi _ { n } ( \\varepsilon _ { n } ) \\lesssim \\sqrt { n } \\varepsilon _ { n } ^ { 2 } ,\\tag{A.2.4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            334,
+            885,
+            455,
+            902
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "header",
+        "text": "Adjustment for Confounding using Pre-Trained Representations",
+        "bbox": [
+            282,
+            56,
+            691,
+            70
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14",
+        "bbox": [
+            477,
+            922,
+            496,
+            934
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "it holds $\\| \\hat { f } - f _ { 0 } \\| _ { L _ { 2 } ( P _ { Z } ) } = O _ { p } ( \\varepsilon _ { n } )$",
+        "bbox": [
+            84,
+            83,
+            323,
+            102
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Proof of Theorem 5.5. Define $\\begin{array} { r } { ( s ^ { * } , d ^ { * } ) = \\arg \\operatorname* { m i n } _ { ( s , p ) \\in \\mathcal { P } \\cup ( s _ { \\psi } , d _ { { \\mathcal { M } } } ) } s / p } \\end{array}$ and denote the targeted rate of convergence by",
+        "bbox": [
+            84,
+            116,
+            854,
+            133
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "img_path": "images/a100a651d814be51b2f78fee2ebe93742d0e9d38450294d5d540d305fc1bb949.jpg",
+        "text": "$$\n\\varepsilon _ { n } = \\operatorname* { m a x } _ { ( s , p ) \\in \\mathcal { P } \\cup ( s _ { \\psi } , d _ { \\ M } ) } n ^ { - \\frac { s } { 2 s + p } } ( \\log n ) ^ { 4 } = n ^ { - \\frac { s ^ { * } } { 2 s ^ { * } + d ^ { * } } } ( \\log n ) ^ { 4 } .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            284,
+            145,
+            684,
+            172
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "We now check the conditions of Proposition A.2.",
+        "bbox": [
+            83,
+            183,
+            411,
+            198
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Condition (A.2.1): Follows from Assumption 5.4, since",
+        "bbox": [
+            84,
+            213,
+            472,
+            228
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "img_path": "images/23f91da4d6945c074258c2215daf89107d89518b7aeded45f550d612b9b6ef3c.jpg",
+        "text": "$$\n\\operatorname* { i n f } _ { f \\in { \\mathscr F } _ { n , \\delta } \\times { \\mathscr F } _ { n , \\delta / 2 } } \\mathbb E [ \\ell ( f ( Z ) , Y ) ] - \\mathbb E [ \\ell ( f _ { 0 } ( Z ) , Y ) ] \\geq \\operatorname* { i n f } _ { f \\in { \\mathscr F } _ { n , \\delta } \\backslash { \\mathscr F } _ { n , \\delta / 2 } } a \\| f - f _ { 0 } \\| _ { L _ { 2 } ( P _ { Z } ) } ^ { 2 } \\geq \\frac { a } { 4 } \\delta ^ { 2 } .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            189,
+            239,
+            781,
+            267
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Condition (A.2.2): Let $N ( \\varepsilon , \\mathcal { F } , L _ { 2 } ( Q ) )$ be the minimal number of ε-balls required to cover $\\mathcal { F }$ in the $L _ { 2 } ( Q )$ -norm. Theorem 2.14.2 of Van der Vaart & Wellner (2023) states that eq. (A.2.2) holds with",
+        "bbox": [
+            83,
+            285,
+            888,
+            316
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "img_path": "images/d7fb4921d19765264600aa91e63a05c2d74b11a1039691cd7204600ebb1392be.jpg",
+        "text": "$$\n\\phi _ { n } ( \\delta ) = J _ { n } ( \\delta ) \\left( 1 + \\frac { J _ { n } ( \\delta ) } { \\delta ^ { 2 } \\sqrt { n } } \\right) ,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            379,
+            325,
+            591,
+            359
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "where",
+        "bbox": [
+            83,
+            367,
+            132,
+            381
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "img_path": "images/f254cca902cb79546a369b7944f23c7a4e97012dd74caa25843b145b9f786da3.jpg",
+        "text": "$$\nJ _ { n } ( \\delta ) = \\operatorname* { s u p } _ { Q } \\int _ { 0 } ^ { \\delta } { \\sqrt { 1 + \\log N ( \\epsilon , { \\mathcal { F } } ( L , \\nu ) , L _ { 2 } ( Q ) ) } } d \\epsilon ,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            308,
+            390,
+            663,
+            425
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "with the supremum taken over all probability measures $Q .$ Lemma A.3 in Appendix A.7 gives",
+        "bbox": [
+            83,
+            435,
+            704,
+            450
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "img_path": "images/182cde9965d0ab14392e501d5630d280174eac35a3ba71b189e443eb2e515148.jpg",
+        "text": "$$\nJ _ { n } ( \\delta ) \\lesssim \\delta \\sqrt { \\log ( 1 / \\delta ) } L \\nu \\sqrt { \\log ( L \\nu ) } ,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            362,
+            462,
+            607,
+            478
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "which implies that $\\delta \\mapsto \\phi _ { n } ( \\delta ) / \\delta ^ { 2 - 1 / 2 }$ is decreasing, so the condition is satisfied.",
+        "bbox": [
+            83,
+            491,
+            617,
+            507
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Condition (A.2.3): According to Lemma A.4 in Appendix A.7 there are sequences $L _ { n } = O ( \\log \\varepsilon _ { n } ^ { - 1 } ) , \\nu _ { n } = O ( \\varepsilon _ { n } ^ { - d ^ { * } / 2 s ^ { * } } )$ such that there is a neural network $\\widetilde { f } _ { 0 } \\in \\mathcal { F } ( L _ { n } , \\nu _ { n } )$ with",
+        "bbox": [
+            84,
+            522,
+            887,
+            556
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "img_path": "images/20cf146163b9b350f64ab3a504acabbea5d01f8576ab5efb45eee3870791acba.jpg",
+        "text": "$$\n\\operatorname* { s u p } _ { z \\in \\mathcal { M } } | \\widetilde { f } _ { 0 } ( z ) - f _ { 0 } ( z ) | = O ( \\varepsilon _ { n } ) .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            380,
+            568,
+            589,
+            593
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Together with Assumption 5.4, this implies",
+        "bbox": [
+            84,
+            603,
+            374,
+            618
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "img_path": "images/01ccc567f34882e9620c339b5deafdd0b9527cb63e1cb6133349f30a6ca74896.jpg",
+        "text": "$$\n\\begin{array} { r } { \\mathbb { E } [ \\ell ( \\tilde { f } _ { 0 } ( Z ) , Y ) ] - \\mathbb { E } [ \\ell ( f _ { 0 } ( Z ) , Y ) ] \\le b \\| \\tilde { f } _ { 0 } - f _ { 0 } \\| _ { L _ { 2 } ( P _ { Z } ) } ^ { 2 } \\le b \\underset { z \\in M } { \\operatorname* { s u p } } | \\widetilde { f } _ { 0 } ( z ) - f _ { 0 } ( z ) | ^ { 2 } \\lesssim \\varepsilon _ { n } ^ { 2 } , } \\end{array}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            194,
+            627,
+            776,
+            654
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "as required.",
+        "bbox": [
+            84,
+            665,
+            166,
+            680
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Condition (A.2.4): Using $L _ { n } = O ( \\log \\varepsilon _ { n } ^ { - 1 } ) , \\nu _ { n } = O ( \\varepsilon _ { n } ^ { - d ^ { * } / 2 s ^ { * } } )$ and our bound on $J _ { n } ( \\delta )$ from Lemma A.3, we get",
+        "bbox": [
+            84,
+            695,
+            854,
+            714
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "img_path": "images/a8154bad516c97a0cd11de95c90354c93429b2f7bc70c8f4c564f148f3ba582d.jpg",
+        "text": "$$\nJ _ { n } ( \\delta ) \\lesssim \\delta \\log ^ { 1 / 2 } ( \\delta ^ { - 1 } ) \\varepsilon _ { n } ^ { - \\frac { d ^ { * } } { 2 s ^ { * } } } \\log ^ { 3 / 2 } ( \\varepsilon _ { n } ^ { - 1 } ) .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            343,
+            724,
+            627,
+            746
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "Now observe that",
+        "bbox": [
+            84,
+            756,
+            207,
+            770
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "img_path": "images/bb5c87671e713a36b356ced47e6a6a3c8a53efce2a54289d328aa92e408521c9.jpg",
+        "text": "$$\n\\begin{array} { r l } & { \\frac { \\phi _ { n } \\left( \\varepsilon _ { n } \\right) } { \\varepsilon _ { n } ^ { 2 } } \\lesssim \\varepsilon _ { n } ^ { - \\frac { d ^ { * } } { s ^ { * } } - 1 } \\log ^ { 2 } ( \\varepsilon _ { n } ^ { - 1 } ) + \\frac { \\varepsilon _ { n } ^ { - \\frac { d ^ { * } } { s ^ { * } } - 2 } \\log ^ { 4 } \\left( \\varepsilon _ { n } ^ { - 1 } \\right) } { \\sqrt { n } } } \\\\ & { \\phantom { \\frac { \\varepsilon _ { n } ^ { 2 } } { s _ { n } ^ { 2 } } } = \\varepsilon _ { n } ^ { - \\frac { 2 s ^ { * } + d ^ { * } } { 2 s ^ { * } } } \\log ^ { 2 } ( \\varepsilon _ { n } ^ { - 1 } ) + \\varepsilon _ { n } ^ { - \\frac { 2 s ^ { * } + d ^ { * } } { s ^ { * } } } \\log ^ { 4 } ( \\varepsilon _ { n } ^ { - 1 } ) n ^ { - 1 / 2 } } \\\\ & { \\phantom { \\frac { \\varepsilon _ { n } ^ { 2 } } { s _ { n } ^ { 2 } } } \\lesssim n ^ { 1 / 2 } ( \\log n ) ^ { - 2 } + n ^ { 1 / 2 } , } \\end{array}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            285,
+            780,
+            686,
+            864
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "where the last step follows from our definition of $\\varepsilon _ { n }$ and the fact that lo $\\xi ( \\varepsilon _ { n } ^ { - 1 } ) \\ \\lesssim$ log n. In particular, $\\varepsilon _ { n }$ satisfies $\\phi _ { n } ( \\varepsilon _ { n } ) \\lesssim \\sqrt { n } \\varepsilon _ { n } ^ { 2 }$ , which concludes the proof of the theorem. □",
+        "bbox": [
+            83,
+            875,
+            887,
+            906
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "header",
+        "text": "Adjustment for Confounding using Pre-Trained Representations",
+        "bbox": [
+            282,
+            56,
+            691,
+            70
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "15",
+        "bbox": [
+            477,
+            922,
+            496,
+            934
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "A.7. Auxiliary results",
+        "text_level": 2,
+        "bbox": [
+            84,
+            85,
+            240,
+            99
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Lemma A.3. Let $\\mathcal { F } ( L , \\nu )$ be a set of neural networks with $\\begin{array} { r } { \\operatorname* { s u p } _ { f \\in \\mathcal { F } ( \\mathcal { L } , \\nu ) } \\| f \\| _ { \\infty } < \\infty } \\end{array}$ . For all $\\delta > 0$ sufficiently small, it holds",
+        "bbox": [
+            83,
+            108,
+            887,
+            137
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "img_path": "images/85a094e54aec97854a10c1eab67b43dcb4a05a4cf5a51d628ea09eef534288d5.jpg",
+        "text": "$$\n\\operatorname* { s u p } _ { Q } \\int _ { 0 } ^ { \\delta } \\sqrt { 1 + \\log N ( \\epsilon , \\mathcal { F } ( L , \\nu ) , L _ { 2 } ( Q ) ) } d \\epsilon \\lesssim \\delta \\sqrt { \\log ( 1 / \\delta ) } L \\nu \\sqrt { \\log ( L \\nu ) } .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            240,
+            147,
+            728,
+            184
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Proof. Denote by $\\operatorname { V C } ( { \\mathcal { F } } )$ the Vapnik-Chervonenkis dimension of the set ${ \\mathcal F } .$ By Theorem 2.6.7 in Van der Vaart & Wellner (2023), it holds",
+        "bbox": [
+            84,
+            202,
+            887,
+            233
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "img_path": "images/0789ee40a9d87a781e7d078135510d7dae61cc27a9d0654df6bcae360b249f01.jpg",
+        "text": "$$\n\\operatorname* { s u p } _ { Q } \\log N ( \\varepsilon , \\mathcal { F } , L _ { 2 } ( Q ) ) \\lesssim \\log ( 1 / \\varepsilon ) \\mathrm { V C } ( \\mathcal { F } ) ,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            334,
+            244,
+            635,
+            270
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "for $\\varepsilon > 0$ sufficiently small. By Theorem 7 of Bartlett et al. (2019), we have",
+        "bbox": [
+            84,
+            282,
+            588,
+            297
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "img_path": "images/c86220081d933bb6cadacf9b7280f9347d4975cf3ecb608d4f08d7ae41ca67c5.jpg",
+        "text": "$$\n\\operatorname { V C } ( { \\mathcal { F } } ( L , \\nu ) ) \\lesssim L ^ { 2 } \\nu ^ { 2 } \\log ( L \\nu ) .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            379,
+            309,
+            591,
+            327
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "For small ε, this gives",
+        "bbox": [
+            84,
+            339,
+            235,
+            354
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "img_path": "images/f482febdf314adc7c7b62b6676b8448af5d42ce3363149bf20044171dd223968.jpg",
+        "text": "$$\n\\operatorname* { s u p } _ { Q } \\sqrt { 1 + \\log N ( \\varepsilon , \\mathcal { F } ( L , \\nu ) , L _ { 2 } ( Q ) ) } \\lesssim \\sqrt { \\log ( 1 / \\varepsilon ) } L \\nu \\sqrt { \\log ( L \\nu ) } ,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            264,
+            367,
+            704,
+            395
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Integrating the right-hand side gives the desired result.",
+        "bbox": [
+            84,
+            406,
+            446,
+            421
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Lemma A.4. Suppose $f _ { 0 }$ satisfies Assumption 5.2 for a given constraint set $\\mathcal { P }$ and $( s _ { \\psi } , d _ { \\mathcal { M } } )$ . Define $( s ^ { * } , d ^ { * } ) \\ =$ $\\begin{array} { r } { \\arg \\operatorname* { m i n } _ { ( s , p ) \\in \\mathcal { P } \\cup ( s _ { \\psi } , d _ { { \\mathcal M } } ) } s / p . } \\end{array}$ . Then for any $\\varepsilon > 0$ sufficiently small, there is a neural network architecture $\\mathcal { F } ( L , \\nu )$ with $L = O ( \\log \\varepsilon ^ { - 1 } ) , \\nu = O ( \\varepsilon ^ { - d ^ { * } / 2 s ^ { * } } )$ such that there is $\\widetilde { f } _ { 0 } \\in \\mathcal { F } ( L , \\nu )$ with",
+        "bbox": [
+            84,
+            433,
+            885,
+            483
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "img_path": "images/49db417c1ae5df1280a6ab36feebaf4e6f7c618f2db5adbc550c617a65325e8e.jpg",
+        "text": "$$\n\\operatorname* { s u p } _ { z \\in \\mathcal { M } } | \\widetilde { f } _ { 0 } ( z ) - f _ { 0 } ( z ) | = O ( \\varepsilon ) .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            385,
+            494,
+            584,
+            522
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Proof. The proof proceeds in three steps. We first approximate the embedding component $\\psi$ by a neural network $\\widetilde { \\psi } ,$ then the HCM component $f$ by a neural network $\\widetilde { f } .$ . Finally, we concatenate the networks to approximate the composition $f _ { 0 } = f \\circ \\psi$ by $\\widetilde f _ { 0 } = \\widetilde f \\circ \\widetilde \\psi$",
+        "bbox": [
+            84,
+            542,
+            885,
+            592
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Approximation of the embedding component. Recall that $\\psi \\colon \\mathcal { M }  \\mathbb { R } ^ { d }$ is a s -smooth mapping. Write $\\psi ( z ) = $ $( \\psi _ { 1 } ( z ) , \\dots , \\psi _ { d } ( z ) )$ and note that each $\\psi _ { j } \\colon { \\mathcal { M } } \\to$ R is also s -smooth. Since $\\mathcal { M }$ is a smooth $d _ { \\mathcal { M } }$ -dimensional manifold, it has Minkowski dimension $d _ { \\mathcal { M } }$ . Then Theorem 2 of Kohler et al. (2023) (setting $M = \\varepsilon ^ { - 1 / 2 s _ { \\psi } }$ in their notation) implies that there is a neural network $\\tilde { \\psi } _ { j } \\in \\mathcal { F } ( L _ { \\psi } , \\nu _ { \\psi } )$ with $L _ { \\psi } = O ( \\log \\varepsilon ^ { - 1 } )$ and $\\nu _ { \\psi } = { \\cal O } ( \\varepsilon ^ { - d _ { M } / 2 s _ { \\psi } } )$ such that",
+        "bbox": [
+            83,
+            607,
+            885,
+            671
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "img_path": "images/469a05b6f873f2b5788632a23e516dc23e8db4bf56980bed13311bcce186d42d.jpg",
+        "text": "$$\n\\operatorname* { s u p } _ { z \\in \\mathcal { M } } | \\widetilde { \\psi } _ { j } ( z ) - \\psi _ { j } ( z ) | = O ( \\varepsilon ) .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            383,
+            683,
+            588,
+            710
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Parallelize the networks $\\widetilde { \\psi } _ { j }$ into a single network $\\widetilde { \\psi } : = ( \\widetilde { \\psi } _ { 1 } , \\dots , \\widetilde { \\psi } _ { d } ) \\colon \\mathcal { M } \\to \\mathbb { R } ^ { d }$ . By construction, the parallelized network $\\widetilde { \\psi }$ has $L _ { \\psi }$ layers, width $d \\times \\nu _ { \\psi } = { \\cal O } ( \\nu _ { \\psi } )$ , and satisfies",
+        "bbox": [
+            84,
+            722,
+            885,
+            758
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "img_path": "images/e883bbf440217a11ad80dd688c6f69f704a0cb49767a186344d16a9c4e63c75b.jpg",
+        "text": "$$\n\\operatorname* { s u p } _ { z \\in \\mathcal { M } } \\| \\widetilde { \\psi } ( z ) - \\psi ( z ) \\| = O ( \\varepsilon ) .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            385,
+            768,
+            584,
+            797
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Approximation of the HCM component. Let $a \\in ( 0 , \\infty )$ be arbitrary. By Theorem 3(a) of Kohler & Langer (2021) (setting $M _ { i , j } \\ = \\ \\varepsilon ^ { - 1 / 2 p _ { j } ^ { ( i ) } }$ in their notation), there is a neural network $\\widetilde { f } \\in \\mathcal { F } ( L _ { f } , \\nu _ { f } )$ with $L _ { f } \\ = \\ O ( \\log \\varepsilon ^ { - 1 } )$ and $\\nu _ { f } = \\bar { O } ( \\varepsilon ^ { - \\tilde { d } ^ { * } / 2 s ^ { * } } )$ such that",
+        "bbox": [
+            84,
+            816,
+            887,
+            867
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "img_path": "images/554b47264f87911ae86d50db1f4fd9a42cac6e682873c4d270425fe5f07f4bb5.jpg",
+        "text": "$$\n\\operatorname* { s u p } _ { x \\in [ - a , a ] ^ { d } } | \\widetilde { f } ( x ) - f ( x ) | = O ( \\varepsilon ) ,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            375,
+            878,
+            596,
+            909
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "16",
+        "bbox": [
+            477,
+            922,
+            496,
+            934
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "header",
+        "text": "Adjustment for Confounding using Pre-Trained Representations",
+        "bbox": [
+            281,
+            56,
+            691,
+            70
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Combined approximation. Now concatenate the networks $\\widetilde { \\psi }$ and $\\widetilde { f }$ to obtain the network $\\widetilde { f } _ { 0 } = \\widetilde { f } \\circ \\widetilde { \\psi } \\in \\mathcal { F } ( L _ { \\psi } +$ $L _ { f } , \\operatorname* { m a x } \\{ \\nu _ { \\psi } , \\nu _ { f } \\} ,$ ). Observe that $L _ { \\psi } + L _ { f } = O ( \\log \\varepsilon ^ { - 1 } )$ and $\\nu _ { \\psi } + \\nu _ { f } = O ( \\varepsilon ^ { - d ^ { * } / 2 s ^ { * } } )$ , so the network has the right size. I remains to show that its approximation error is sufficiently small. Define",
+        "bbox": [
+            84,
+            82,
+            888,
+            130
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "img_path": "images/3fcf12c195e0895a270878d17db58467eeb800406bc1f7dddef1f972dd0e617b.jpg",
+        "text": "$$\n\\gamma : = \\operatorname* { s u p } _ { z \\in \\mathcal { M } } \\| \\widetilde { \\psi } ( z ) - \\psi ( z ) \\| ,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            393,
+            136,
+            576,
+            162
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "which is $O ( \\varepsilon )$ by the construction of ${ \\widetilde { \\psi } } ,$",
+        "bbox": [
+            84,
+            169,
+            348,
+            188
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "img_path": "images/0f9ae312d1b7455b4eed5f1233ec5a81c08899b2506baf5c4639fdbd62460b0c.jpg",
+        "text": "$$\na : = \\operatorname* { s u p } _ { z \\in \\mathcal { M } } \\| \\psi ( z ) \\| + \\gamma ,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            406,
+            194,
+            563,
+            218
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "which is $O ( 1 )$ by assumption, and",
+        "bbox": [
+            84,
+            223,
+            315,
+            239
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "img_path": "images/b2c916de93ee96c3a2f2e4c1d381b30fd3cc60ce6c3cb1786901bad83f363424.jpg",
+        "text": "$$\nK : = \\operatorname* { s u p } _ { x , x ^ { \\prime } } { \\frac { | f ( x ) - f ( x ^ { \\prime } ) | } { \\| x - x ^ { \\prime } \\| } } ,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            395,
+            244,
+            576,
+            279
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "which is finite since f is Lipschitz due to mi $\\mathsf { l } _ { ( s , d ) \\in \\mathcal { P } } s \\ge 1$ and the fact that finite compositions of Lipschitz functions are Lipschitz. By the triangle inequality, we have",
+        "bbox": [
+            83,
+            284,
+            885,
+            314
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "img_path": "images/1fd67d4fa5d446ab65435ba6906acdb4e39348e9edfbd0c3288824b79a19d24d.jpg",
+        "text": "$$\n\\begin{array} { r l } { \\displaystyle \\operatorname* { s u p } _ { z \\in \\mathcal { M } } | \\widetilde { f } _ { 0 } ( z ) - f _ { 0 } ( z ) | \\leq \\displaystyle \\operatorname* { s u p } _ { z \\in \\mathcal { M } } | \\widetilde { f } ( \\widetilde { \\psi } ( z ) ) - f ( \\widetilde { \\psi } ( z ) ) | + \\displaystyle \\operatorname* { s u p } _ { z \\in \\mathcal { M } } \\| f ( \\widetilde { \\psi } ( z ) ) - f ( \\psi ( z ) ) \\| } & { } \\\\ { \\leq \\displaystyle \\operatorname* { s u p } _ { x \\in [ - a , a ] ^ { d } } | \\widetilde { f } ( x ) - f ( x ) | + K } & { } \\\\ { = O ( \\varepsilon ) , } \\end{array}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            218,
+            319,
+            751,
+            398
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "as claimed.",
+        "bbox": [
+            84,
+            405,
+            165,
+            420
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "A.8. Proof of Theorem 5.7",
+        "text_level": 2,
+        "bbox": [
+            84,
+            436,
+            272,
+            450
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Proof. We validate the conditions of Theorem II.1 of Chernozhukov et al. (2017). Our Assumption 5.6 covers all their moment and boundedness conditions on g and m. By Theorem 5.5, we further know that",
+        "bbox": [
+            84,
+            460,
+            885,
+            491
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "img_path": "images/fb88ce09b3f3a65161ca1163d5a934a37879989f1dea8926a3d0bcffd5208541.jpg",
+        "text": "$$\n\\| \\hat { m } ^ { ( k ) } - m \\| _ { L _ { 2 } ( P _ { Z } ) } + \\| \\hat { g } ^ { ( k ) } - g \\| _ { L _ { 2 } ( P _ { Z } ) } = o _ { p } ( 1 ) .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            318,
+            494,
+            650,
+            515
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Further, Theorem 5.5 yields",
+        "bbox": [
+            84,
+            520,
+            274,
+            535
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "img_path": "images/47e4c17f1f30ee96642f7f5111ccd1763b1d50f8bab64c63db3f299499dc92b6.jpg",
+        "text": "$$\n\\| \\hat { m } ^ { ( k ) } - m \\| _ { L _ { 2 } ( P _ { Z } ) } \\times \\| \\hat { g } ^ { ( k ) } - g \\| _ { L _ { 2 } ( P _ { Z } ) } = O _ { p } \\left( \\operatorname* { m a x } _ { ( s , p ) \\in \\mathcal { P } _ { g } \\cup \\{ s _ { * } \\} , d _ { \\mathrm { M } } ) } n ^ { - \\frac { s } { 2 s + p } } \\times \\operatorname* { m a x } _ { ( s ^ { \\prime } , p ^ { \\prime } ) \\in \\mathcal { P } _ { m } \\cup \\{ s _ { * } ^ { \\prime } , d _ { \\mathrm { M } } \\} } n ^ { - \\frac { s ^ { \\prime } } { 2 s ^ { \\prime } + p ^ { \\prime } } } \\right)\n$$",
+        "text_format": "latex",
+        "bbox": [
+            133,
+            541,
+            834,
+            622
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "We have to show that the term on the right is of order $o _ { p } ( n ^ { - 1 / 2 } )$ . Observe that",
+        "bbox": [
+            84,
+            631,
+            602,
+            646
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "img_path": "images/f916a5115ca7a466d8fe145c86d946361a4235caee0ffbe44ab6003ab9a648d0.jpg",
+        "text": "$$\n\\begin{array} { r c l } { \\displaystyle \\frac { s } { 2 s + p } + \\frac { s ^ { \\prime } } { 2 s ^ { \\prime } + p ^ { \\prime } } > \\frac { 1 } { 2 } } & { \\Leftrightarrow } & { \\displaystyle \\frac { 1 } { 2 + p / s } + \\frac { 1 } { 2 + p ^ { \\prime } / s ^ { \\prime } } > \\frac { 1 } { 2 } } \\\\ & { \\Leftrightarrow } & { \\displaystyle \\frac { 4 + p / s + p ^ { \\prime } / s ^ { \\prime } } { ( 2 + p / s ) ( 2 + p ^ { \\prime } / s ^ { \\prime } ) } > \\frac { 1 } { 2 } } \\\\ & { \\Leftrightarrow } & { \\displaystyle 4 + p / s + p ^ { \\prime } / s ^ { \\prime } > 2 + p / s + p ^ { \\prime } / s ^ { \\prime } + \\frac { p p ^ { \\prime } } { 2 s s ^ { \\prime } } } \\\\ & { \\Leftrightarrow } & { \\displaystyle 4 > \\frac { p p ^ { \\prime } } { s s ^ { \\prime } } . } \\end{array}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            233,
+            651,
+            738,
+            784
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Thus, our condition",
+        "bbox": [
+            84,
+            787,
+            220,
+            801
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "img_path": "images/595a501f2d904e26697b66bdae320bab38730346d33063485618aac4b68795a7.jpg",
+        "text": "$$\n\\operatorname* { m i n } _ { \\substack { ( s , p ) \\in \\mathcal { P } _ { g } \\cup ( s _ { \\psi } , d _ { { \\mathcal { M } } } ) } } \\frac { s } { p } \\times \\operatorname* { m i n } _ { \\substack { ( s ^ { \\prime } , p ^ { \\prime } ) \\in \\mathcal { P } _ { m } \\cup ( s _ { \\psi } ^ { \\prime } , d _ { { \\mathcal { M } } } ) } } \\frac { s ^ { \\prime } } { p ^ { \\prime } } > \\frac { 1 } { 4 } ,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            320,
+            808,
+            651,
+            840
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "implies",
+        "bbox": [
+            84,
+            847,
+            140,
+            861
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "img_path": "images/adb7fff0b7744b00c07530e7c7d49f8d4be0230e6c6a92f9dea974a35b7479fc.jpg",
+        "text": "$$\n\\| \\hat { m } ^ { ( k ) } - m \\| _ { L _ { 2 } ( P _ { Z } ) } \\times \\| \\hat { g } ^ { ( k ) } - g \\| _ { L _ { 2 } ( P _ { Z } ) } = o _ { p } ( n ^ { - 1 / 2 } ) ,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            303,
+            866,
+            666,
+            886
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "as required.",
+        "bbox": [
+            84,
+            891,
+            166,
+            905
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "header",
+        "text": "Adjustment for Confounding using Pre-Trained Representations",
+        "bbox": [
+            282,
+            56,
+            691,
+            70
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "17",
+        "bbox": [
+            477,
+            922,
+            496,
+            934
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "B. Additional Related Literature & Visualizations",
+        "text_level": 2,
+        "bbox": [
+            84,
+            83,
+            508,
+            99
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "B.1. Empirical Evidence of Low Intrinsic Dimensions",
+        "text_level": 2,
+        "bbox": [
+            84,
+            109,
+            462,
+            125
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "Using different intrinsic dimension (ID) estimators such as the maximum likelihood estimator (MLE; Levina & Bickel, 2004) on popular image datasets such as ImageNet (Deng et al., 2009), several works find clear empirical evidence for low ID of both the image data and related latent features obtained from pre-trained NNs (Gong et al., 2019; Ansuini et al., 2019; Pope et al., 2021). The existence of the phenomenon of low intrinsic dimensions was also verified in the medical imaging (Konz & Mazurowski, 2024) and text-domain (Aghajanyan et al., 2020). All of the mentioned research finds a striking inverse relation between intrinsic dimensions and (state-of-the-art) model performance, which nicely matches the previously introduced theory about ID-related convergence rates.",
+        "bbox": [
+            83,
+            133,
+            888,
+            239
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "B.2. Hierarchical Composition Model (HCM) Visualization",
+        "text_level": 2,
+        "bbox": [
+            84,
+            251,
+            503,
+            267
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "This section provides an illustration of the Hierarchical Composition Model (HCM) that was formally introduced in Definition 5.1. As the name suggests, every HCM is a composition of HCMs of lower level. In Figure 8 we give an illustration of a particular HCM of level 2 and constraint set $\\mathcal { P } _ { 2 1 }$ , which we abbreviated by $H C M ( 2 , \\mathcal { P } _ { 2 1 } )$ . Following the notation of Definition 5.1, the $H C M ( 2 , \\mathcal { P } _ { 2 1 } )$ corresponds to the function $f :  { \\mathbb { R } ^ { d } } \\to  { \\mathbb { R } }$ defined by $f ( \\boldsymbol { x } ) = h _ { 1 } ^ { [ 2 ] } ( h _ { 1 } ^ { [ 1 ] } ( \\boldsymbol { x } ) , \\dots , h _ { p } ^ { [ 1 ] } ( \\boldsymbol { x } ) )$ Each $h _ { j } ^ { [ 1 ] } ( x )$ for $j \\in \\{ 1 , \\ldots , p \\}$ corresponds to a HCM of level 1, which itself are compositions of HCMs of level 0. Each of the latter corresponds to a feature in the data. The constraint set of each HCM corresponds to the collection of pairs of the degree of smoothness and number of inputs of each HCM it is composed of. For example, assuming that $h _ { 1 } ^ { [ 2 ] }$ is a s-smooth function, then the constraint set of the $H C M ( 2 , \\mathcal { P } _ { 2 1 } )$ function $f$ is $\\mathcal { P } _ { 2 1 } = \\bigcup _ { i = 1 } ^ { p } \\mathcal { P } _ { 1 j } \\cup ( s , p )$ . The HCM framework fits both regression and classification. In the latter, the conditional probability would need to satisfy the HCM condition, and any non-linear link function for classification would just correspond to a simple function in the final layer of the HCM.",
+        "bbox": [
+            83,
+            271,
+            888,
+            431
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "image",
+        "img_path": "images/0f7c5d92716f83de6f8df650fe87c4e1a98b06b1e753773a4adfcfde9b5ee469.jpg",
+        "image_caption": [
+            "Figure 8. Visualization ofa HCM: The illustration depicts a HCM oflevel 2 and constraint set $\\mathcal { P } _ { 2 1 }$ . The HCM oflevel 2 is a composition ofHCMs oflevel $I , i . e . , h _ { 1 } , h _ { 2 } , \\ldots , h _ { p }$ . The latter are itselfcompositions ofHCMs oflevel 0, each corresponding to afeature ofthe data."
+        ],
+        "image_footnote": [],
+        "bbox": [
+            130,
+            443,
+            833,
+            689
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "C. Experimental Details and Computing Environment",
+        "text_level": 2,
+        "bbox": [
+            84,
+            744,
+            544,
+            761
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "We conduct several simulation studies to investigate the performance of different Average Treatment Effect (ATE) estimators of a binary treatment on some outcome in the presence of a confounding induced by non-tabular data. In the experiments, the confounding is induced by the labels, i.e., the pneumonia status or the review as well as more complex functions of the pre-trained features. Nuisance function estimation is based on the pre-trained representations that are obtained from passing the non-tabular data through the pre-trained neural models and extracting the last hidden layer features.",
+        "bbox": [
+            83,
+            766,
+            888,
+            844
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "C.1. Data and Pre-trained Models",
+        "text_level": 2,
+        "bbox": [
+            84,
+            854,
+            328,
+            869
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "IMDb For the text data, we utilize the IMDb Movie Reviews dataset from Lhoest et al. (2021) consisting of 50,000 movie reviews labeled for sentiment analysis. For each review, we extract the [CLS] token, a 768-dimensional vector per review entry, of the pre-trained Transformer-based model BERT (Devlin et al., 2019). To process the text, we use BERT’s subword tokenizer (bert-base-uncased) and truncate sequences to a maximum length of 128 tokens. We use padding if necessary. After preprocessing and extraction of pre-trained representations, we sub-sampled 1,000 and 4,000 pre-trained representations for the two confounding setups to make the simulation study tractable.",
+        "bbox": [
+            83,
+            875,
+            887,
+            906
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "header",
+        "text": "Adjustment for Confounding using Pre-Trained Representations",
+        "bbox": [
+            282,
+            56,
+            691,
+            70
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "page_number",
+        "text": "18",
+        "bbox": [
+            477,
+            922,
+            495,
+            935
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            83,
+            84,
+            888,
+            147
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "X-Ray For the image data simulation, we use the dataset from Kermany et al. (2018) that originally contains 5,863 chest X-ray images of children that were obtained from routine clinical care in the Guangzhou Women and Children’s Medical Center, Guangzhou. We preprocess the data such that each patient appears only once in the dataset. This reduces the effective sample size to 3,769 chest X-rays. Each image is labeled according to whether the lung disease pneumonia is present or not. The latent features are obtained by passing the images through a pre-trained convolutional neural network and extracting the 1024-dimensional last hidden layer features of the model. For this purpose, we use a pre-trained Densenet-121 model from the TorchXRayVision library (Cohen et al., 2022). Specifically, we use the model called densenet121-res224-all, which is a Densenet-121 model with resolution 224 × 224 that was pre-trained on all chest X-ray datasets considered in Cohen et al. (2020). We chose this model for the extraction of pre-trained representation in our experiments, based on its superior performance in benchmark studies conducted in prior work (Cohen et al., 2020). Note that the dataset from the Guangzhou Women and Children’s Medical Center that we use, was not used during the training of the model. This is important from a theoretical and practical viewpoint, as the confounding simulation via labels might otherwise be too easy to adjust for given that the model could have memorized the input data. However, using this kind of data we rule out this possibility.",
+        "bbox": [
+            83,
+            167,
+            888,
+            366
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "C.2. Confounding",
+        "text_level": 2,
+        "bbox": [
+            84,
+            381,
+            217,
+            397
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "As introduced in the main text, we simulate confounding both on the true labels of the non-tabular data as well as encodings from a trained autoencoder. While this induces a different degree of complexity for the confounding, the simulated confounding is somewhat similar in both settings. We first discuss the simpler setting of Label Confounding. In all of the experiments, the true average treatment effect was chosen to be two.",
+        "bbox": [
+            83,
+            405,
+            887,
+            467
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Label Confounding Label Confounding was induced by simulating treatment and outcome both dependent on the binary label. In the case of the label being one (so in case of pneumonia or in case of a positive review), the probability of treatment is 0.7 compared to 0.3 when the label is zero. The chosen probabilities guaranteed a sufficient amount of overlap between the two groups. The outcome Y is simulated based on a linear model including a binary treatment indicator multiplied by the true treatment effect (chosen to be 2), as well as a linear term for the label. Gaussian noise is added to obtain the final simulated outcome. The linear term for the label has a negative coefficient in order to induce a negative bias to the average treatment setup compared to a randomized setting. Given that the confounding simulation is only based on the labels, the study was in fact randomized with respect to any other source of confounding.",
+        "bbox": [
+            83,
+            487,
+            888,
+            611
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Complex Confounding To simulate Complex Confounding with structural smoothness and sparsity, we first train an autoencoder (AE) with 5-dimensional latent space on the pre-trained representations, both in the case of the text and image representations. These AE-encodings are then used to simulate confounding similarly as in the previous experiment. The only difference is that we now sample the coefficients for the 5-dimensional AE-encodings. For the propensity score, these are sampled from a normal distribution, while the sampled coefficients for outcome regression are restricted to be negative, to ensure a sufficiently larger confounding effect, that biases naive estimation. We choose a 5-dimensional latent space to allow for sufficiently good recovery of the original pre-trained representations.",
+        "bbox": [
+            83,
+            631,
+            888,
+            739
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "C.3. ATE Estimators",
+        "text_level": 2,
+        "bbox": [
+            84,
+            753,
+            236,
+            768
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "We estimate the ATE using multiple methods across 5 simulation iterations. In each of these, we estimate a Naive estimator that simply regresses the outcome on treatment while not adjusting for confounding. The Oracle estimator uses a linear regression of outcome on both treatment and the true label that was used to induce confounding. The S-Learner estimates the outcome regression function $g ( t , z ) = \\mathbb { E } [ Y \\mid T = t , Z = z ]$ by fitting a single model gˆ(t, z) to all data, treating the treatment indicator as a feature. The average treatment effect estimate of the S-Learner is then given by",
+        "bbox": [
+            83,
+            777,
+            888,
+            854
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "equation",
+        "img_path": "images/111a4e91928e76fc3518e45ce456ccb13cb8d0c249becbc4dfeb198d4e67b8bf.jpg",
+        "text": "$$\n\\widehat { A T E _ { S } } = \\frac { 1 } { n } \\sum _ { i = 1 } ^ { n } \\hat { g } ( 1 , z _ { i } ) - \\hat { g } ( 0 , z _ { i } ) .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            364,
+            869,
+            604,
+            909
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "header",
+        "text": "Adjustment for Confounding using Pre-Trained Representations",
+        "bbox": [
+            281,
+            56,
+            691,
+            70
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "page_number",
+        "text": "19",
+        "bbox": [
+            477,
+            922,
+            496,
+            934
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "In contrast, the Double Machine Learning (DML) estimators estimates both the outcome regression function and the propensity score to obtain its double robustness property. In our experiments, DML estimators use the partialling-out approach for ATE estimation, which is further discussed in the next paragraph.",
+        "bbox": [
+            83,
+            85,
+            887,
+            131
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "In the Label Confounding experiments, both the S-Learner and DML estimators are used in combination with linear and random forest-based nuisance estimators. DML (Linear) uses standard linear regression for the estimation of the outcome regression function, and logistic regression with $L _ { 2 } .$ -penalty for the estimation of the propensity score. Both nuisance function estimators are ILT-invariant. DML (Lasso) uses $L _ { 1 }$ -penalized linear and logistic regression with cross-validated penalty parameter selection for the outcome regression and propensity score estimation, respectively. The S-Learner (Linear) and S-Learner (Lasso) use unpenalized and $L _ { 1 }$ -penalized linear regression for the outcome regression, respectively. The random forest-based nuisance estimation (both for DML and S-Learner) is based on the standard random forest implementation from scikit-learn. The number of estimated trees is varied in certain experiments to improve numerical stability.",
+        "bbox": [
+            83,
+            137,
+            888,
+            261
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "In the Complex Confounding experiments, we also use neural network-based nuisance estimators for DML and the S-Learner. For this purpose, we employed neural networks with a depth of 100 and a width of 50 while using ReLU activation and Adam for optimization. While DML (NN) and S-Learner (NN) use neural networks for the outcome regression, logistic regression is employed in DML (NN) for propensity score estimation to enhance numerical stability. Generally, DML is used with sample splitting and with two folds for cross-validation. For the S-Learner and DML the Python packages CausalML (Chen et al., 2020) and DoubleML (Bach et al., 2022) are used, respectively.",
+        "bbox": [
+            83,
+            266,
+            888,
+            358
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "Partially Linear Model and Orthogonal Scores In our experiments, we simulated two different types of confounding. In both cases we use non-tabular data to adjust for this confounding, given that the confounding inducing information is contained in this data source, but not available otherwise. However, as this information is non-linearly embedded in the non-tabular data, the model that we aim to estimate follows the structure of a so-called partially linear model (PLM). Given a binary treatment variable T, the PLM is a special case of the more general confounding setup that we consider in the theoretical discussion of this paper. Specifically, the PLM considers the case where the outcome regression function in (2) decomposes as",
+        "bbox": [
+            83,
+            373,
+            888,
+            479
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "equation",
+        "img_path": "images/4182e0bc4bbb21b9d118d373c5f9b80016ab79c1271cd6b5dcb78b015011c2c9.jpg",
+        "text": "$$\ng ( T , W ) = \\mathbb { E } [ Y | T , W ] = \\theta _ { 0 } T + \\tilde { g } ( W ) .\\tag{6}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            349,
+            479,
+            619,
+            496
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "The structure of the propensity score in (3) remains the same. The parameter $\\theta _ { 0 }$ in the PLM corresponds to the target parameter considered in (1), namely the ATE. In their theoretical investigation, Chernozhukov et al. (2018) discuss ATE estimation both in the partially linear model and in the more general setup, which they refer to as interactive model. Given that we consider the more general case in Section 5, the orthogonalized score stated in this section matches that of Chernozhukov et al. (2018) for the ATE in the interactive model. In case of the PLM, Chernozhukov et al. (2018) consider two other orthogonalized scores, one of which is the so-called partialling-out score function, which dates back to Robinson (1988). The partialling-out score corresponds to an unscaled version of the ATE score in the (binary) interactive model in case the outcome regression decomposes as in (6). The scaling is based on certain estimated weights. Therefore, score functions as the partialling-out score are sometimes referred to as unweighted scores (Young & Shah, 2024). While the theoretical result in Theorem 5.7 could also be obtained for DML with partialling-out score under similar assumptions, the key requirement being again (5), the approach may not be asymptotically efficient given that it does not use the efficient influence function. However, the potential loss of asymptotic efficiency is often outweighed by increased robustness in finite-sample estimation when using unweighted scores, which has contributed to the popularity of approaches such as the partialling-out method in practice (van der Vaart (1998, §25.9), Chernozhukov et al. (2018, §2.2.4), Young & Shah (2024)). Accordingly, we also adapted the partialling-out approach in the DML-based ATE estimation in our experiments.",
+        "bbox": [
+            83,
+            503,
+            890,
+            732
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "C.4. Intrinsic Dimensions of Pre-trained Representations",
+        "text_level": 2,
+        "bbox": [
+            84,
+            746,
+            486,
+            761
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "In Section 6.2 we also provide empirical evidence that validates the hypothesis of low intrinsic dimensions of pre-trained representations. For this, we use different pre-trained models from the from the TorchXRayVision library (Cohen et al., 2022). All of these are trained on chest X-rays and use a Densenet-121 (Huang et al., 2017) architecture. Given the same architecture of the models, the dimension of the last layer hidden features is 1024 for all models. The different names of the pre-trained models on the x-axis in Figure 6 indicate the dataset they were trained on. We use the 3,769 chest X-rays from the X-rays dataset described above and pass these through each pre-trained model to extract the last layer features of each model, which we call the pre-trained representations of the data. Subsequently, we use standard intrinsic dimension estimators such as the Maximum Likelihood Estimator (MLE) (Levina & Bickel, 2004), the Expected Simplex Skewness (ESS) estimator (Johnsson et al., 2015), and the local Principal Component Analysis (lPCA) estimator (Fukunaga & Olsen,",
+        "bbox": [
+            83,
+            770,
+            890,
+            907
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "header",
+        "text": "Adjustment for Confounding using Pre-Trained Representations",
+        "bbox": [
+            281,
+            56,
+            691,
+            70
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "page_number",
+        "text": "20",
+        "bbox": [
+            475,
+            922,
+            496,
+            935
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "1971), with a choice of number of neighbors set to 5, 25 and 50, respectively. While the intrinsic dimension estimates vary by the pre-trained model and the intrinsic dimension estimator used, the results indicated that the intrinsic dimension of the pre-trained representations is much smaller than the dimension of the ambient space (1024).",
+        "bbox": [
+            83,
+            85,
+            887,
+            132
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "C.5. Double Machine Learning with Convolutional Neural Networks as Nuisance Estimators",
+        "text_level": 2,
+        "bbox": [
+            84,
+            146,
+            733,
+            161
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "In Section 6.3, we compare DML with pre-trained neural networks against DML without pre-trained neural networks. This experiment investigates the benefits of pre-training for nuisance estimation in the context of DML-based ATE estimation. Experiments are conducted on the X-Ray dataset, and confounding is simulated based on Label Confounding. DML (Pretrained) uses the same pre-trained Densenet-121 from the TorchXRayVision library (Cohen et al., 2022) that was previously used as pre-trained neural feature extractors in the other image-based experiments. Building on this pre-trained feature extractor, DML (Pre-trained) then uses linear models on the pre-trained features for the nuisance function estimation. In contrast, DML without a pre-trained feature extractor uses standard Convolutional Neural Networks (CNNs) to estimate the nuisance functions directly on top of the images. The experiment of Figure 7 uses a five-layer CNN with 3×3 convolutions, batch normalization, ReLU activation, and max pooling, followed by a model head consisting of fully connected layers with dropout. Training uses Adam optimization with early stopping. When the network is utilized for propensity score estimation, the outputs are converted to probabilities via a sigmoid activation. Both DML with and without pre-trained feature extractors use the “partialling-out” approach in combination with sample-splitting for doubly-robust ATE estimation.",
+        "bbox": [
+            83,
+            170,
+            890,
+            353
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "C.6. Computational Environment",
+        "text_level": 2,
+        "bbox": [
+            84,
+            367,
+            326,
+            383
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "All computations were performed on a user PC with Intel(R) Core(TM) i7-8665U CPU @ 1.90GHz, 8 cores, and 16 GB RAM. Run times of each experiment do not exceed one hour. The code to reproduce the results of the experiments can be found at https://github.com/rickmer-schulte/Pretrained-Causal-Adjust.",
+        "bbox": [
+            83,
+            391,
+            887,
+            438
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "D. Further Experiments",
+        "text_level": 2,
+        "bbox": [
+            84,
+            457,
+            294,
+            473
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "This section provides additional results from experiments that extend those discussed in the main body of the paper.",
+        "bbox": [
+            84,
+            482,
+            844,
+            498
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "D.1. Comparison of ATE Estimators",
+        "text_level": 2,
+        "bbox": [
+            84,
+            513,
+            344,
+            529
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "The results depicted in Figure 9 and Figure 10 complement Figure 4 and Figure 5 that are discussed in Section 6.",
+        "bbox": [
+            84,
+            537,
+            826,
+            554
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "Label Confounding (X-Ray) The results for the Label Confounding simulation based on the X-Ray dataset over 5 simulations are depicted in Figure 9. As before, the naive estimator shows a strong negative bias. Similarly, the S-Learner (for all three types of nuisance estimators) and for DML using random forest or lasso exhibit a negative bias and too narrow confidence intervals. In contrast, DML using linear nuisance estimator (without sparsity-inducing penalty) yields less biased estimates with good coverage due to its properly adapted confidence intervals.",
+        "bbox": [
+            83,
+            568,
+            888,
+            645
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "chart",
+        "img_path": "images/68d25841768699a3e9173ac0eef5a6d8f05ef431a84acbc0efaff3a26c852037.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 9. Label Confounding (X-Ray): Comparison of ATE estimators on the X-Ray dataset. DML & S-Learner use pre-trained representations and three types of nuisance estimators: linear models without L<sub>1</sub>-penalization (Linear), linear models with L<sub>1</sub>- penalization (Lasso), as well as randomforest (RF). Point estimates and 95% CIs are depicted."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            246,
+            655,
+            723,
+            839
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "header",
+        "text": "Adjustment for Confounding using Pre-Trained Representations",
+        "bbox": [
+            281,
+            56,
+            691,
+            70
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "page_number",
+        "text": "21",
+        "bbox": [
+            475,
+            922,
+            495,
+            934
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "Complex Confounding (IMDb) A similar pattern can be observed for the Complex Confounding setting on the IMDb data depicted in Figure 10. The naive estimator and both of the random forest-based ATE estimators exhibit strong bias. In contrast, both neural network-based estimators show very little bias. This provides further evidence that neural networks can adapt to the low intrinsic dimension of the data. However, unlike the DML estimator, the S-Learner still produces overly narrow confidence intervals and thus has poor coverage. As in the example discussed in the main body of the text, the DML (NN) estimator is the only one that yields unbiased estimates and valid inference.",
+        "bbox": [
+            83,
+            84,
+            888,
+            178
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "chart",
+        "img_path": "images/5a826d998f0f52997b162e391b26a77de9d05acf1483cf6c037f76f7a5af42e7.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 10. Complex Confounding (IMDb): Comparison ofATE estimators on the IMDb dataset. DML & S-Learner use pre-trained representations and either neural network (NN) or random forest (RF) based nuisance estimators. Point estimates and 95% CIs are depicted."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            246,
+            191,
+            723,
+            372
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "D.2. DML with and without Pre-Training",
+        "text_level": 2,
+        "bbox": [
+            84,
+            452,
+            379,
+            468
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "The experiment on DML with and without pre-trained representations explored the benefits of pre-training for DML and was discussed in Section 6.3. We extend this line of experiment by considering different sample sizes, as well as neura network architectures for the non-pre-trained model. While the DML (CNN) estimator in Figure 7 uses five-layer CNNs for the nuisance function estimation, the DML (CNN) estimator in Figure 11 uses a slightly simpler model architecture of two-layer CNNs with ReLU activation and max-pooling, followed by fully connected layers as model head. The slightly less complex model architecture requires fewer neural network parameters to be trained, which might be beneficial in the context of the X-Ray dataset, considering the comparably small sample size available for model training.",
+        "bbox": [
+            83,
+            476,
+            888,
+            583
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "Overall, Figure 11 confirms the previous finding that DML with pre-trained representations performs much better than DML without pre-training. While the former yields unbiased ATE estimates, the ATE estimates of the latter show a strong negative bias. As the two plots show, this result is independent of the model architecture and sample size used.",
+        "bbox": [
+            83,
+            589,
+            887,
+            636
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "chart",
+        "img_path": "images/e0d00c4131d1337f70016fea8b2a9afc5746c1ccbda3cf8b3123bc8cd7170a4e.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            88,
+            647,
+            480,
+            799
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "chart",
+        "img_path": "images/d43d3bba81ba5f0ca9303ee7798af6393dc2c3d9eef865b27205c3245a4fe534.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 11. DML with/out Pre-Training: Comparison ofDML using pre-trained representations “DML (Pre-trained)” and DML withou pre-training “DML (CNN)”for ATE estimation using 500 (Left) and all 3769 (Right) imagesfrom the X-Ray dataset. Point estimates and 95% CIs are depicted."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            493,
+            648,
+            883,
+            799
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "header",
+        "text": "Adjustment for Confounding using Pre-Trained Representations",
+        "bbox": [
+            281,
+            56,
+            691,
+            70
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "page_number",
+        "text": "22",
+        "bbox": [
+            475,
+            922,
+            496,
+            934
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "D.3. Asymptotic Normality of DML ATE Estimation",
+        "text_level": 2,
+        "bbox": [
+            84,
+            85,
+            455,
+            101
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "This line of experiments explores the asymptotic normality of the DML estimator. For this purpose, we extend the ATE estimation experiments of Figure 9 with Label Confounding and Figure 5 with Complex Confounding that are based on the X-Ray dataset. While the two figures depict the estimates of different ATEs over 5 simulation iterations, we repeat both experiments with 200 iterations and collect the ATE estimates. We standardize each estimate and plot the corresponding empirical distribution. The results are shown in Figure 12. The left plot depicts the empirical distribution of the 200 standardized point estimates of the Oracle and Naive estimator, as well as DML with linear nuisance estimator in the Label Confounding experiment. The right plot displays the empirical distribution of the 200 standardized point estimates of the Naive, S-Learner, and DML estimator in the Label Confounding experiment. The latter two use neural network-based nuisance estimation. While the distributions of the Naive and S-Learner estimators show a strong bias, the distribution of the DML approach matches the theoretical standard normal distribution in both experiments.",
+        "bbox": [
+            83,
+            108,
+            888,
+            261
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "chart",
+        "img_path": "images/d322a2241073b4e6c72c5556bb016cf0cd07cb66b4394c8b4d6b2ec6a0ed87e8.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            93,
+            279,
+            473,
+            500
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "chart",
+        "img_path": "images/698101c86530905819f8d4e0ead78e12fc8e9f819165153a384e3cd0e5014944.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 12. Asymptotic Normality ofDML: Comparison ofthe empirical distributions ofstandardized point estimates ofdifferent ATE estimators on the X-ray dataset. Left: Distribution of200 standardized point estimates ofthe Naive, Oracle, and DML with linear nuisance estimationfrom the Label Confounding experiment. Right: Distribution of200 standardized point estimates ofthe Naive, S-Learner with NN-based nuisance estimation (S-Learner) and DML with NN-based nuisance estimation from the Complex Confounding experiment."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            500,
+            279,
+            879,
+            500
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "D.4. Effects of the Hierarchical Composition Model (HCM) Structure on Estimation",
+        "text_level": 2,
+        "bbox": [
+            84,
+            603,
+            674,
+            617
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "In this experiment, we investigate the effect of the Hierarchical Composition Model (HCM) structure in the context of ATE estimation. The HCM was formally introduced in Definition 5.1 and later used in Theorem 5.5 to derive convergence rates of neural network-based estimation. This result showed that the convergence rate of neural networks is determined by the worst-case pair that appeared in the constraint set of the HCM. The core benefit of the HCM in our context is, that it constitutes a very flexible class of functions, while at the same time, it enables to obtain fast convergence rates in case the target function factors favorably according to the hierarchical structure of the HCM. The latter could be fulfilled in case each composition in the hierarchical structure only depends on a few prior compositions. This structural sparsity would improve the worst-case pair in the constraint set and thereby could allow for obtaining fast convergence rates.",
+        "bbox": [
+            83,
+            626,
+            888,
+            750
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "Now, in the DML ATE estimation, one might be interested in what happens when the nuisance functions do not factor according to the HCM structure, such that sufficiently fast convergence rates for the nuisance estimation, required in the ATE estimation, can be achieved. We simulate such a scenario by extending the previously introduced setup of Complex Confounding. Instead of simulating confounding based on low-dimensional encodings from a AE trained on the pre-trained representations from the X-Ray experiments (as done in some of the previous experiments), we do this directly based on the pre-trained representations. For this purpose, we define the nuisance functions (outcome regression and propensity score) to depend on the product ofallfeatures in each pre-trained representation. Hence, the nuisance functions depend on all 1024 features, thereby mimicking the curse of dimensionality scenario discussed in Section 4. Further, the nuisance functions are constructed such that bias is introduced in the ATE estimation. In the following, we estimate the same set of ATE estimators that were previously used in the Complex Confounding experiments.",
+        "bbox": [
+            83,
+            755,
+            888,
+            906
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "header",
+        "text": "Adjustment for Confounding using Pre-Trained Representations",
+        "bbox": [
+            282,
+            56,
+            691,
+            70
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "page_number",
+        "text": "23",
+        "bbox": [
+            475,
+            922,
+            496,
+            935
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "The results are depicted in Figure 13. All estimators show substantial bias (even the DML approach), given that none of the estimators is able to properly adapt to this complex type of confounding structure. The results are a validation of the fact that no (nuisance) estimator can escape the curse ofdimensionality without utilizing certain beneficial structural assumptions.",
+        "bbox": [
+            83,
+            85,
+            887,
+            132
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "chart",
+        "img_path": "images/bf882e377cae885f2bc1f72eb328e13512c6980a2553fdacbe29fb4de3d657b8.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 13. Comparison ofATE estimators: DML & S-Learner use pre-trained representations and either neural network (NN) or random forest (RF) based nuisance estimators. Point estimates and 95% CIs are depicted."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            248,
+            145,
+            723,
+            325
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "header",
+        "text": "Adjustment for Confounding using Pre-Trained Representations",
+        "bbox": [
+            281,
+            56,
+            691,
+            70
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "page_number",
+        "text": "24",
+        "bbox": [
+            475,
+            922,
+            496,
+            934
+        ],
+        "page_idx": 23
+    }
+]

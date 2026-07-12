@@ -133,7 +133,7 @@ rebuild, ADR-04).
 
 - [ ] GPU healthy; Qdrant + embedding server + summarization LLM service up; pipeline runs end-to-end
       (including summarize) on the representative set.
-- [ ] **Parser locked with numbers**; anchor round-trip ≥ ~95%; golden fixtures committed.
+- [x] **Parser locked with numbers**; anchor round-trip ≥ ~95%; golden fixtures committed.[^spike1]
 - [ ] **Embedder + reranker + retrieval config locked with numbers**; Recall@10 ≥ ~0.85; hybrid/rerank each
       justified their complexity.
 - [ ] The ~200-question, agent-generated retrieval eval set exists and is committed as a regression gate.
@@ -142,3 +142,10 @@ rebuild, ADR-04).
 
 Once these hold, the adapters behind the three real seams are chosen, and Owners A–E integrate their modules
 against them. Everything before this point is de-risking; everything after is the V0 build (WORK-BREAKDOWN.md).
+
+[^spike1]: Spike 1 concluded: MinerU locked as the sole V0 `Parser` adapter (Docling and Marker evaluated
+    and dropped — see `phase0-results.md`). One gap carried forward, not silently treated as done: the
+    method's step 4, the arXiv-LaTeX ingest trial (best-case anchoring against `.tex` for arXiv papers),
+    was never run — no artifact in `.phase0-data/` addresses it. It doesn't block the parser-lock decision
+    (a separate, optional path, not a gate condition) but is an open follow-up recorded in
+    `phase0-results.md`.

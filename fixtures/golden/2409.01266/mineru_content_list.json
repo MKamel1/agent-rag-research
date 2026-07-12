@@ -1,0 +1,2814 @@
+[
+    {
+        "type": "text",
+        "text": "Double Machine Learning meets Panel Data - Promises, Pitfalls, and Potential Solutions",
+        "text_level": 1,
+        "bbox": [
+            133,
+            154,
+            862,
+            224
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Jonathan Fuhr and Dominik Papies",
+        "bbox": [
+            346,
+            255,
+            651,
+            272
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "School of Business and Economics, University of T¨ubingen, T¨ubingen, Germany",
+        "bbox": [
+            209,
+            295,
+            789,
+            310
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Last edited: September 4, 2024",
+        "bbox": [
+            364,
+            349,
+            632,
+            367
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract",
+        "text_level": 2,
+        "bbox": [
+            459,
+            411,
+            539,
+            428
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Estimating causal efect using machine learning (ML) algorithms can help to relax functional form assumptions if used within appropriate frameworks. However, most of these frameworks assume settings with cross-sectional data, whereas researchers often have access to panel data, which in traditional methods helps to deal with unobserved heterogeneity between units. In this paper, we explore how we can adapt double/debiased machine learning (DML) (Chernozhukov et al., 2018) for panel data in the presence of unobserved heterogeneity. This adaptation is challenging because DML’s cross-fitting procedure assumes independent data and the unobserved heterogeneity is not necessarily additively separable in settings with nonlinear observed confounding. We assess the performance of several intuitively appealing estimators in a variety of simulations. While we find violations of the cross-fitting assumptions to be largely inconsequential for the accuracy of the efect estimates, many of the considered methods fail to adequately account for the presence of unobserved heterogeneity. However, we find that using predictive models based on the correlated random efects approach (Mundlak, 1978) within DML leads to accurate coeficient estimates across settings, given a sample size that is large relative to the number of observed confounders. We also show that the influence of the unobserved heterogeneity on the observed confounders plays a significant role for the performance of most alternative methods.",
+        "bbox": [
+            155,
+            443,
+            843,
+            852
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2409.01266v1 [econ.EM] 2 Sep 2024",
+        "bbox": [
+            22,
+            251,
+            58,
+            712
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_number",
+        "text": "1",
+        "bbox": [
+            493,
+            906,
+            503,
+            917
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction",
+        "text_level": 2,
+        "bbox": [
+            112,
+            87,
+            302,
+            106
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Across multiple quantitative disciplines, recent years have seen an explosion of research on methodologies that try to use machine learning (ML) to help estimate causal efects (e.g., Athey et al., 2019; Chernozhukov et al., 2018). These methods aim to relax assumptions in the causal estimation process by using modern ML methods to learn certain properties of the data. Arguably one of the most popular of these methods is the double/debiased machine learning (DML) framework by Chernozhukov et al. (2018). DML can help relax assumptions about how to adjust for observed confounders by modeling the confounding relationships with flexible ML methods. That is, in the case of a large number of potentially important confounders, or in cases where the functional forms of the confounding influences are unknown, DML uses flexible ML methods to pick the most important confounders and adjust for them flexibly. This framework has seen applications in a variety of disciplines (e.g., Felderer et al., 2023; Gordon et al., 2022; Parpouchi et al., 2021), as well as further developments and extensions to settings beyond the original ones (e.g., Bodory et al., 2022; Chiang et al., 2022; Liu et al., 2021).",
+        "bbox": [
+            107,
+            132,
+            888,
+            481
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "At the same time, many more traditional methods from statistics and econometrics are still the default approaches for credible causal efect estimation. This is mostly because they aim to relax assumptions that are stronger than the estimation assumptions DML can relax. These methods address assumptions about causal identification, e.g., how to estimate causal efects in the presence of unobserved confounding. Examples are panel data methods, diference-in-diferences, synthetic control, instrumental variables, and regression discontinuity designs (e.g., Cunningham, 2021; Huntington-Klein, 2022). While there has been progress in using some of these methods within the DML framework (see, e.g., Chernozhukov et al., 2024), very little research has explored how to adapt DML to settings with panel data, which will be the focus of our paper.",
+        "bbox": [
+            109,
+            492,
+            887,
+            731
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "In many applications, we observe the same units (e.g., individuals, firms, cities, etc.) repeatedly over time. This kind of data structure – panel data – can be very beneficial for the identification and estimation of causal efects, since it can help to eliminate any time-constant source of unobserved confounding or heterogeneity between units (Wooldridge, 2010). However, even when using panel data in this way, we could still benefit from methods that flexibly adjust for the observed and time-varying confounders. Hence, combining a method like DML with panel data methods could enable us to relax both assumptions about unobserved confounding and about functional forms in the observed confounding. For example, we might be interested in estimating the efect of price on demand for a product repeatedly sold across various stores. Our data might contain information about advertising and promotions, which act as covariates we would want to flexibly adjust for with a method such as DML. However, there could also be time-constant unobserved store characteristics influencing both the price and the demand (e.g., the management quality), which we can potentially eliminate by exploiting the panel structure.",
+        "bbox": [
+            109,
+            741,
+            887,
+            869
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2",
+        "bbox": [
+            493,
+            906,
+            504,
+            917
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            90,
+            887,
+            303
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Unfortunately, it does not yet seem obvious how we can use DML for panel data in the presence of unobserved heterogeneity. Chernozhukov et al. (2018) developed the original method and its statistical guarantees in a cross-sectional setting under the assumption of unconfoundedness. Panel data poses two major problems for DML: (1) DML uses a form of sample splitting called “cross-fitting”, which relies on i.i.d. data and becomes complicated if another dimension (e.g., time) is present. (2) In linear panel data models, we can use fixed efects to eliminate time-constant confounding (e.g., Wooldridge, 2010), but only if the parametric model is correctly specified. On the other hand, within the DML algorithm, it is not straightforward where we can similarly handle unobserved heterogeneity, especially in the settings with nonlinear confounding influences, in which the original DML excels.",
+        "bbox": [
+            109,
+            311,
+            887,
+            579
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "In this paper, our goal is to explore the potentials and problems that using DML for panel data can pose. We state the challenges, consider diferent potential solutions, evaluate them in a variety of simulations, clarify and discuss the necessary assumptions, and finally give recommendations for applied researchers when using DML in panel data settings. Our focus is on whether diferent point estimators can reliably recover a known true causal efect from panel data, potentially in the presence of unobserved heterogeneity (as opposed to deriving asymptotic properties and constructing variance estimators).",
+        "bbox": [
+            109,
+            588,
+            887,
+            773
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "To preview our results, we find that violations of the independence assumption within the crossfitting procedure are less consequential for the estimated coeficients than expected. However, many of the considered estimation methods struggle to remove the unobserved heterogeneity in settings with nonlinear observed confounding. For example, a seemingly natural approach of conducting",
+        "bbox": [
+            109,
+            782,
+            887,
+            883
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3",
+        "bbox": [
+            493,
+            906,
+            504,
+            919
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "DML on the time-demeaned variables (similar to fixed efects estimation) is strongly biased in settings with nonlinear confounding. We also show that the influence of the unobserved heterogeneity on the observed confounders has an impact on the accuracy of several methods. Nevertheless, an alternative approach that explicitly models the unobserved heterogeneity in the ML models within DML, based on the correlated random efects approach (Mundlak, 1978), performs well across a variety of settings. Since explicitly modeling the unobserved heterogeneity involves the introduction of additional predictors in the ML models, this approach requires the sample size being large relative to the number of observed confounders.",
+        "bbox": [
+            109,
+            90,
+            887,
+            301
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "The remainder of our paper proceeds as follows: Section 2 briefly reviews DML and traditional panel data methods, before discussing literature at the intersection of these research streams. Section 3 states the challenges when using DML for panel data and considers several solutions for each challenge. In Section 4, we assess these potential solutions on simulated data, generated from a variety of data-generating processes, and point out advantages and drawbacks of each method. Section 5 concludes with a discussion of the results and derives recommendations for using DML with panel data in practice.",
+        "bbox": [
+            109,
+            311,
+            887,
+            496
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "2 Literature overview",
+        "text_level": 2,
+        "bbox": [
+            111,
+            532,
+            383,
+            551
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Our paper contributes to the literature by drawing together research around DML and the classic econometric literature around panel data, seeking to explore how these research streams can be mutually beneficial. We therefore first review the original DML method, as well as textbook panel data methods. Then, we survey work that aims to use general ML methods with panel data, extends DML to similar settings, or directly tries to adapt DML to work with panel data.",
+        "bbox": [
+            109,
+            577,
+            887,
+            705
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "DML (Chernozhukov et al., 2018) is a general estimation framework that allows using modern ML methods to flexibly adjust for observed confounding influences. Using flexible ML methods instead of a predetermined (e.g., linear) model helps to relax assumptions about variable selection and functional forms in settings where we observe all important confounders. DML does not directly address the problem of unobserved confounding (though it can help in instrumental variables settings to make the (conditional) exogeneity assumption of instruments more credible). We illustrate the intuition behind the DML algorithm for a data-generating process (DGP) based on the causal graph in Figure 1. Here, we want to estimate the causal efect of a treatment $W _ { i }$ on an outcome $Y _ { i } .$ However, confounders $X _ { i }$ influence both treatment and outcome and therefore bias the estimation if we do not adequately adjust for them. In practice, researchers often attempt to adjust for such confounders by including the corresponding variables linearly (or with another prespecified functional form) in a regression model. Yet the true way the confounders influence treatment and outcome (the functions $m _ { 0 } ( )$ and $g _ { 0 } ( \\ u ) )$ might be unknown and potentially complex. This is where DML suggests modeling these influences with flexible ML methods, which are potentially capable of learning these relationships from the data. For this, the DML algorithm proceeds in five steps (here, illustrated for the partially linear model): (1) Randomly split the dataset into K folds, (2) hold out one fold, train two ML models on the remaining $K - 1$ folds: first, predict treatment $W _ { i }$ from confounders $X _ { i } ;$ second, predict outcome $Y _ { i }$ from confounders $X _ { i } .$ , (3) make predictions for treatment and outcome from the estimated models, using the held out fold, and subtract them from the true values to obtain residuals, (4) use OLS to regress the outcome residual on the treatment residual and obtain the coeficient, (5) repeat steps $( 2 ) \\AA - \\thinspace ( 4 )$ for each of the K folds, and average the resulting coeficients to get the final estimate.",
+        "bbox": [
+            109,
+            715,
+            887,
+            871
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4",
+        "bbox": [
+            493,
+            906,
+            504,
+            917
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            90,
+            887,
+            523
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Chernozhukov et al. (2018) coin the term “cross-fitting” for the technique of splitting the data, doing training and efect estimation on separate samples, and repeating the procedure for all samples. The random splitting in the cross-fitting procedure relies on the observations being independent and identically distributed (i.i.d.) (Chernozhukov et al., 2018), which is one of the challenges arising for applications with clustered or panel data. We will further elaborate on this issue when we describe potential ways of combining DML with panel data.",
+        "bbox": [
+            109,
+            532,
+            887,
+            689
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "image",
+        "img_path": "images/c673345e5c49108f88f01336035a1006a42783333b08e42740daacfe6065b38d.jpg",
+        "image_caption": [
+            "Figure 1: Causal graph for the assumed causal structure “unconfoundedness”. $W _ { i } { : }$ treatment variable, $Y _ { i } { : }$ outcome variable, $X _ { i } { \\mathrm { : } }$ observed confounding variables. The relationships between $X _ { i }$ and $W \\ ( m _ { 0 } ( ) )$ , and $X _ { i }$ and $Y _ { i } \\ ( g _ { 0 } ( ) )$ , are potentially complex and nonlinear."
+        ],
+        "image_footnote": [],
+        "bbox": [
+            331,
+            705,
+            666,
+            770
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5",
+        "bbox": [
+            493,
+            906,
+            504,
+            917
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "On the other hand, a major emphasis in econometric research is finding methods that can estimate causal efects even in the presence of unobserved confounding. We can overcome one particular type of such omitted variable bias by exploiting the special structure of panel data – observing the same units repeatedly over time (e.g., Wooldridge, 2010). This type of data is very prevalent in many research fields, where the units could represent individuals, firms, products, cities, etc. If some unobserved confounders vary only between units, but not over time for the same unit, we can use panel data estimators (e.g., the fixed efects estimator) to eliminate any such time-constant unobserved heterogeneity (Wooldridge, 2010). By eliminating any time-constant confounding, we can relax the assumption of “no unobserved confounding” to “no time-variant unobserved confounding”, which is considerably more plausible in many applications.",
+        "bbox": [
+            109,
+            90,
+            887,
+            358
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "The fixed efects (FE) estimator works by either time-demeaning the data or by using a dummy variable regression (Wooldridge, 2012). In the time-demeaning approach, we subtract the time mean of each variable from the variable itself. Through this “within-transformation”, we eliminate any (even unobserved) time-constant variables, since they are identical to their time means (Wooldridge, 2012). In the equivalent dummy variable approach, we simply include a binary/dummy variable for each unit in the regression. While this leads to a large number of explanatory variables (which can be problematic with small samples and many units), it gives the identical efect estimates as the time-demeaning approach in two-dimensional panels (Wooldridge, 2012). Transferring either approach to the DML framework is not trivial. One challenge is the decision at which step of the DML algorithm the time-demeaning or the inclusion of dummy variables should occur. The first option is “early”, meaning we demean all variables before training the two ML models or include the dummy variables already in the training of the ML models. The alternative is “late”, meaning that after computing the residuals in step (3), we time-demean the residuals before running the residualon-residual regression, or we include the dummy variables directly in the final regression without demeaning first. We will discuss potential benefits and drawbacks of each of these approaches in Sections 3 and 4, but also present another option that mostly overcomes these challenges.",
+        "bbox": [
+            107,
+            366,
+            888,
+            801
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "One lesser known alternative to the fixed efects estimator is the correlated random efects (CRE) approach (e.g., Wooldridge, 2010). Whereas on the one hand, a classical random efects approach assumes no correlation between the unobserved heterogeneity and the covariates, and on the other hand, the fixed efects approach does not restrict this relationship at all, the CRE framework unifies these approaches by explicitly modeling this correlation (Wooldridge, 2012). The initial suggestion by Mundlak (1978) was to let the unobserved heterogeneity be correlated with the average level of the covariates over time, which amounts to including the time means of each covariate in a pooled OLS or random efects regression (in addition to the original variables which vary by both time and unit). Later approaches by Chamberlain (1982, 1984) instead model the unobserved heterogeneity with a linear model of the covariates’ time history. The attractive feature of these CRE approaches in our setting is that at least in the linear case, they give coeficient estimates identical to the FE approach (Wooldridge, 2012), while more explicitly modeling the unobserved heterogeneity instead of removing it, which could prove useful for the ML prediction steps.",
+        "bbox": [
+            109,
+            810,
+            887,
+            882
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6",
+        "bbox": [
+            491,
+            906,
+            504,
+            919
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            107,
+            90,
+            887,
+            358
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "table",
+        "img_path": "images/7c0bc8b2f2924c1cc4d11ddcf31afbc6bc160f7e5353353760d6f7ba400515b3.jpg",
+        "table_caption": [
+            "Table 1: Methods at the intersection of DML and panel data"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>Reference</td><td>ML algorithms</td><td>Splitting procedure</td><td>Made for panel data</td><td>Considers unobs. het.</td></tr><tr><td>DML</td><td>Chernozhukov et al. (2018)</td><td>Any</td><td>Standard cross-fitting</td><td>No</td><td>No</td></tr><tr><td>Fixed effects / CRE</td><td>Wooldridge (2010)</td><td>n.a.</td><td>None</td><td>Yes</td><td>Yes</td></tr><tr><td>Cluster-Lasso</td><td>Belloni et al. (2016)</td><td>Only lasso</td><td>None</td><td>Yes</td><td>Yes (early demeaning)</td></tr><tr><td>DML for Diff-in-diff</td><td>Chang (2020)</td><td>Any</td><td>Standard cross-fitting</td><td>Not really (only 2 periods)</td><td>No</td></tr><tr><td>Multiway DML</td><td>Chiang et al. (2022)</td><td>Any</td><td>Multiway cross-fitting</td><td>No (but clustered data)</td><td>No</td></tr><tr><td>(Debiased) orthogonal lasso</td><td>Semenova et al. (2023)</td><td>Only lasso</td><td>Neighbors-left-out cross-fitting</td><td>Yes</td><td>Yes (sparse FEs)</td></tr><tr><td>Extensions of within-group, first-difference, and CRE</td><td>Clarke and Polselli (2023)</td><td>Lasso, regression trees, random forests</td><td>Split by unit in cross-fitting</td><td>Yes</td><td>Yes</td></tr></table>",
+        "bbox": [
+            119,
+            391,
+            879,
+            681
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "In Table 1, we summarise some features of standard DML, the fixed-efects estimator, and further developments related to DML that have explored panel data or similar settings. The first two rows show the previously described original DML framework and the traditional fixed efects estimator. The DML framework uses cross-fitting and allows for usage of any well-performing ML algorithm, but assumes a cross-sectional setting and does not consider any unobserved heterogeneity. On the other hand, the traditional fixed efects estimator and the correlated random efects approach can handle time-constant unobserved heterogeneity in panel data, whereas they do not use any ML algorithms (and no sample splitting) to make adjustment for time-variant variables more flexible. We use these two methods as a starting point and explore how the literature up to the time of writing this article (April 2024) has attempted to harmonize ML-based efect estimation with panel data settings.",
+        "bbox": [
+            107,
+            713,
+            887,
+            869
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7",
+        "bbox": [
+            493,
+            906,
+            504,
+            919
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            90,
+            887,
+            219
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "First, Belloni et al. (2016) published a method for efect estimation in panel data settings with potentially high-dimensional time-varying confounders, even before the publication of DML in Chernozhukov et al. (2018). They treat the unobserved heterogeneity as fixed efects and remove them through demeaning in a first step. Then, they use a variant of lasso that accounts for the clustering of units (Cluster-Lasso) to select important predictors in the treatment and in the outcome model, and use the selected variables as controls in a final OLS regression of the (demeaned) outcome on the treatment (Belloni et al., 2016). While lasso can learn the correct model under certain sparsity assumptions even without sample splitting, researchers must manually decide which variable transformations to include in the algorithm, since the authors’ method does not facilitate the use of more flexible ML methods such as random forests or neural networks (Chernozhukov et al., 2018).",
+        "bbox": [
+            109,
+            229,
+            887,
+            525
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Second, Chang (2020) extends the DML framework to the semiparametric diference-in-diferences estimator, for situations where the parallel trends assumption only holds after adjusting flexibly for controls. While their setting does have a time dimension, they only use it to derive a time indicator for post-treatment, which indicates whether an observation comes from before or after reception of the (binary) treatment. They then derive a DML estimator for the average treatment efect on the treated (ATT), which is very similar to the ATT estimator in Chernozhukov et al. (2018), but uses the diference in observed outcomes instead of the outcome itself (see also Chernozhukov et al., 2024). Moreover, they only consider time-constant confounders and therefore do not deal with unobserved unit-level heterogeneity. This setting is thus closer to the classical cross-sectional setting and does not encounter the problems we face when dealing with panel data in DML.",
+        "bbox": [
+            109,
+            534,
+            888,
+            801
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "The third method also does not directly consider panel data but instead extends DML to multiway clustered data (Chiang et al., 2022). This setting is related to panel data in that the data is also double indexed, but instead of a time dimension there are two distinct unit/cluster dimensions (e.g., markets and products). To account for the clustered structure, Chiang et al. (2022) develop a novel multiway $( K ^ { 2 } { \\mathrm { - f o l d } } )$ cross-fitting procedure that enables DML with any ML algorithm, even if the data is not i.i.d., but clustered along multiple dimensions. However, the authors’ main goal is valid inference in the multiway clustered setting, they do not address identification by accounting for cluster-specific unobserved heterogeneity. Also, their method does not need to consider the unique challenges of the time dimension in cross-fitting.",
+        "bbox": [
+            109,
+            810,
+            887,
+            882
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8",
+        "bbox": [
+            491,
+            906,
+            504,
+            917
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            90,
+            887,
+            247
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Fourth, Semenova et al. (2023) develop methods for conditional average treatment efects in high-dimensional dynamic panel data settings. They build on the correlated random efects approach (Mundlak, 1978) and assume approximate sparse fixed efects (i.e., only few fixed efects are important/nonzero). Their “neighbors-left-out” splitting procedure adapts cross-fitting to support weakly dependent (panel) data. However, the authors rely on a version of lasso as the only possible ML algorithm for panel data and only hint at the potential of other ML methods in such a setting.",
+        "bbox": [
+            109,
+            257,
+            887,
+            412
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Finally, in an independent development parallel to ours, Clarke and Polselli (2023) develop DML estimators for panel data that account for unobserved individual heterogeneity in the partially linear model. They implement their approaches with lasso, regression trees, and random forests, but can in principle incorporate any ML algorithm. For the cross-fitting, they split the data by unit, such that the full time series of each unit ends up in the same fold. Their first approach is an “approximation approach”, where they first transform the raw data to remove the unobserved heterogeneity, and then use DML on the transformed data. The alternative approaches integrate the correlated random efects model by Mundlak (1978) in a DML framework. In simulations with nonlinear and discontinuous settings, Clarke and Polselli (2023) find superior performance of the latter methods built on CRE compared to standard linear methods or the approximation approach. However, they also demonstrate that DML with tree-based ML algorithms does not lead to valid inference in their settings.",
+        "bbox": [
+            109,
+            422,
+            887,
+            746
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Our study contributes to this literature in general and Clarke and Polselli (2023) specifically in four ways: (1) In addition to estimators similar to those in Clarke and Polselli (2023), we consider further intuitively appealing approaches for dealing with unobserved heterogeneity within DML; (2) we assess these approaches in a substantially wider variety of simulation settings that difer with respect to the true DGP, revealing, e.g., the particular sensitivity of the most promising approach to an increasing number of observed confounders; (3) we explicitly demonstrate and discuss the consequences of DGPs where the unobserved heterogeneity also influences the observed confounding, which is likely to occur in many applications, and (4) we investigate the impact of various distinct splitting strategies in the cross-fitting procedure on the estimated efects.",
+        "bbox": [
+            109,
+            755,
+            887,
+            883
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9",
+        "bbox": [
+            493,
+            905,
+            504,
+            919
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            107,
+            90,
+            887,
+            191
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "3 Possible methods for DML with panel data",
+        "text_level": 2,
+        "bbox": [
+            109,
+            227,
+            658,
+            247
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "In this section, we provide a detailed description of the problems that emerge when using DML for settings with panel data, and consider adaptations of DML to address these issues. We identify two problems: (1) the sample-splitting/cross-fitting procedure of DML with dependent data, and (2) accounting for potential unobserved heterogeneity in DML. For both problems, we explore a variety of possible solution approaches in the following.",
+        "bbox": [
+            107,
+            272,
+            887,
+            401
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "3.1 Diferent splitting strategies for DML with panel data",
+        "text_level": 2,
+        "bbox": [
+            111,
+            429,
+            689,
+            446
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "One essential component of the original DML framework (Chernozhukov et al., 2018) is the crossfitting procedure. This kind of sample splitting is important to remove overfitting bias that can arise if we use the same observations for training the ML models and estimating the efects (Chernozhukov et al., 2018). To avoid this overfitting in DML, we train the ML methods on a part of the data, but make predictions and estimate the efects on another part that we did not use for training. In general, sample splitting leads to less eficient estimation, since we use only part of the data for training and estimation, respectively. Nevertheless, DML regains full eficiency by switching the roles of the training and estimation sample and averaging the resulting estimates (“cross-fitting”) (Chernozhukov et al., 2018).",
+        "bbox": [
+            109,
+            467,
+            887,
+            707
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "However, cross-fitting relies on the assumption that the observations are independent and identically distributed (i.i.d.) (Chernozhukov et al., 2018). As soon as we enter settings with panel data, this assumption is violated, because data points are dependent over time (i.e., serial correlation/autocorrelation) and/or within a cluster, and can end up in the same or in diferent samples when randomly splitting the data (Chiang et al., 2022). As a consequence, there is a danger of overfitting the ML models to the hold-out data. While this certainly makes consistency statements, asymptotic analysis, and valid confidence intervals dificult (e.g., Wooldridge, 2010), it is unclear how severe the practical consequences for the estimated efect coeficients really are. In our study, we will assess how diferent splitting strategies afect the finite-sample performance of diferent DML estimators. We leave the analysis of asymptotic properties and the construction of valid confidence intervals to future research.",
+        "bbox": [
+            109,
+            717,
+            887,
+            872
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10",
+        "bbox": [
+            488,
+            906,
+            509,
+            919
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            90,
+            887,
+            218
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "When implementing cross-fitting for panel data, there are a variety of options for how to split the sample (Table 2). First, we could do the standard random split as in the original DML algorithm for the cross-sectional setting, ignoring the special panel structure. This can potentially lead to the overfitting bias previously described.",
+        "bbox": [
+            109,
+            228,
+            887,
+            329
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "table",
+        "img_path": "images/418094e663e30d81d57684b48ec805fa38e2371022b87adb9fb9f4d05e58f246.jpg",
+        "table_caption": [
+            "Table 2: Diferent approaches to sample splitting when using DML with panel or clustered data"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Splitting strategy</td><td>Description</td><td>Problems</td></tr><tr><td>Random</td><td>ing panel structure</td><td>Random splitting as in classic DML, ignor- Ignores panel structure and dependency within units/across time</td></tr><tr><td>By unit</td><td>All observations of the same unit end up in the same fold, otherwise random</td><td>ML methods cannot predict unit-specific ef- fects in the hold-out fold; time dependence potentially still present</td></tr><tr><td>By time (period)</td><td>All observations of the same period end up in the same fold, otherwise random</td><td>Time dependence of period-adjacent obser- vations; cluster dependence potentially still present</td></tr><tr><td>By time (folds)</td><td>T/K adjacent periods end up in the same fold</td><td>Time dependence at the splitting point of adjacent folds; cluster dependence poten- tially still present</td></tr><tr><td>left-out)</td><td>By time (neighbors- T/K adjacent periods end up in the same fold, folds adjacent to the prediction fold are excluded from training</td><td>Cluster dependence potentially still present</td></tr></table>",
+        "bbox": [
+            119,
+            363,
+            879,
+            612
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Secondly, we could split the data by the unit dimension and ensure that observations of each unit (index i) end up in only the training or the estimation sample at any point (as done in, e.g., Clarke and Polselli (2023)). While this ensures independence between training and estimation fold in the unit dimension, it becomes problematic if we expect the ML methods to also model unit-specific efects (Semenova et al., 2023). That is, we cannot model unit-specific unobserved heterogeneity by, e.g., including unit dummies as predictors in the ML algorithm, since the units in the hold-out sample (used for prediction and estimation of efects) are not present in the training sample. Thus, when splitting by unit, we cannot remove the unobserved heterogeneity with such an approach.",
+        "bbox": [
+            107,
+            642,
+            887,
+            856
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "11",
+        "bbox": [
+            488,
+            905,
+            508,
+            919
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Alternatively to splitting by unit, we could split along the other dimension, i.e., by time. Here we consider three diferent options. These options have in common that they do not address the potential cluster dependence along the unit dimension. First, we can ensure that all observations of the same period (index t) end up in the same sample. However, this does not help in the case of serial correlation, since the adjacent observations in the time dimension can still end up in the other sample and thus induce a dependence.",
+        "bbox": [
+            109,
+            90,
+            887,
+            246
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "The fourth splitting strategy improves upon the previous one by splitting the time-ordered data into K folds. That is, observations with indices from t = 1 to $t = T / K$ end up in the first fold, from $t = T / K + 1 { \\mathrm { ~ t o ~ } } t = 2 T / K$ in the second fold, etc. This procedure reduces the time dependence to only be substantial at the splitting point of adjacent folds: The last observation of the first fold and the first observation of the second fold might be correlated, but the further one moves from the splitting point, the smaller the correlation gets.",
+        "bbox": [
+            109,
+            257,
+            887,
+            412
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "To also eliminate the correlations around the splitting points, Semenova et al. (2023) propose a strategy they call “neighbors-left-out cross-fitting”. They suggest dividing the data into a relatively large number of time-adjacent folds $( K \\ge 1 0 )$ , of which we hold out not only the fold used for prediction and estimation, but also the folds in its immediate neighborhood. By this, the training and the estimation samples should be approximately independent, even in weakly dependent time series or panel data. See Appendix A.1.1 for a graphical illustration of the final two cross-fitting approaches.",
+        "bbox": [
+            109,
+            422,
+            887,
+            606
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "3.2 Accounting for unobserved heterogeneity in DML",
+        "text_level": 2,
+        "bbox": [
+            111,
+            636,
+            647,
+            654
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "The second challenge when using DML with panel data is accounting for unobserved heterogeneity. One of the main motivations for using panel data in the first place is to account for unobserved influences that only vary along one dimension and are constant in the other (e.g., Wooldridge, 2010, Chapter 10). This can, for example, be a unit-specific but time-constant unobserved variable such as $U _ { i }$ in Figure 2 or in the partially linear model of Equations 1 and 2. If this variable influences both treatment and outcome, it acts as an unobserved confounder and leads to an omitted variables bias if we employ standard cross-sectional methods (Wooldridge, 2010). We will later consider three diferent DGPs that difer with respect to which variables the unobserved heterogeneity influences (see Figure 2). However, since we typically do not know the true DGP in practice, the ideal method should perform well in each of these settings.",
+        "bbox": [
+            109,
+            672,
+            887,
+            885
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "12",
+        "bbox": [
+            488,
+            906,
+            509,
+            917
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            89,
+            885,
+            135
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "image",
+        "img_path": "images/c7866a58c1b9081426b5cdd336d6d0b224a1f1ee8f6a7a1b6a041992da96a273.jpg",
+        "image_caption": [
+            "(A)"
+        ],
+        "image_footnote": [],
+        "bbox": [
+            135,
+            148,
+            361,
+            237
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "image",
+        "img_path": "images/e0e389c8ff4100c39ca0c793875d8053dcb6e4d551e29152c5c4bcf3cb9718ad.jpg",
+        "image_caption": [
+            "(B)"
+        ],
+        "image_footnote": [],
+        "bbox": [
+            385,
+            150,
+            612,
+            232
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "image",
+        "img_path": "images/14352bb51ba589b3aff6abd8dc757031edb1f8e068673dd52c79df58376c7878.jpg",
+        "image_caption": [
+            "(C)",
+            "Figure 2: Possible DGPs for panel data settings. $W _ { i t }$ (treatment), $Y _ { i t }$ (outcome), and $X _ { i t }$ (observed confounders) vary across both units and time. $U _ { i }$ is unobserved unit-specific and time-constant heterogeneity. We consider three causal structures: (A) $U _ { i }$ does not influence any other variables (or does not exist), (B) $U _ { i }$ only influences $W _ { i t }$ and $Y _ { i t }$ , (C) $U _ { i }$ additionally influences $X _ { i t }$ ."
+        ],
+        "image_footnote": [],
+        "bbox": [
+            635,
+            150,
+            862,
+            232
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "img_path": "images/1a5b746909fd9faa341dc22b305fff3bf2d141f6f706002f1d55088b7c245a89.jpg",
+        "text": "$$\nY _ { i t } = \\alpha _ { 1 } + \\beta W _ { i t } + \\gamma g _ { 0 } ( X _ { i t } ) + \\delta U _ { i } + \\mu _ { i t }\\tag{1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            341,
+            372,
+            655,
+            391
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "equation",
+        "img_path": "images/56832ec452ccea15239f5a49553785a9600a2bd3eae48e4ffa0730d628063d3b.jpg",
+        "text": "$$\nW _ { i t } = \\alpha _ { 2 } + \\gamma m _ { 0 } ( X _ { i t } ) + \\delta U _ { i } + \\eta _ { i t }\\tag{2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            366,
+            404,
+            630,
+            422
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "In traditional econometrics, the most common way of dealing with unobserved heterogeneity in panel data is fixed efects estimation (e.g., Wooldridge, 2010, Chapter 10). If there is unobserved confounding which varies only along one cluster dimension, using fixed efects can eliminate its biasing influence (Wooldridge, 2012, Chapter 14). Traditionally, we implement fixed efects estimation by time-demeaning all variables and running OLS on the transformed variables. Since the unobserved heterogeneity is fixed over time, it disappears from the demeaned equation (Wooldridge, 2012). Alternatively, we can run an OLS regression where we include a dummy/binary variable for each unit, which leads to the exact same results as fixed efects estimation in the standard setting (Wooldridge, 2012).",
+        "bbox": [
+            107,
+            449,
+            887,
+            689
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "However, if we want to use DML to flexibly adjust for observed confounding in the presence of unobserved heterogeneity, it is not obvious where and how in the algorithm we can consider fixed efects (or alternative ways of accounting for unobserved heterogeneity). Should we demean the variables before the ML predictions or demean the residuals afterwards? Can we consider the fixed efects directly within the ML step? How? In the following, we discuss several conceivable approaches for this setting (Table 3).",
+        "bbox": [
+            107,
+            698,
+            887,
+            856
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13",
+        "bbox": [
+            488,
+            905,
+            509,
+            919
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "text",
+        "text": "First, we could ignore the potential for unobserved cluster-level confounding and simply use the original DML algorithm on the pooled data (“Pooled DML”). This is only appropriate if there is no unobserved heterogeneity; if this assumption is violated, the estimates will be biased.",
+        "bbox": [
+            109,
+            90,
+            887,
+            162
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "table",
+        "img_path": "images/2c8d731f7eec4289b0a40890c8b0b63bade88d91c0a16a95e9751083b78636ba.jpg",
+        "table_caption": [
+            "Table 3: Diferent approaches to fixed efects within DML"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Approach</td><td>Description</td></tr><tr><td>Pooled DML</td><td>Ignores the panel dimension and unobserved heterogeneity, does standard DML on full data</td></tr><tr><td>Early demeaning Late demeaning</td><td>First demeans all variables, then runs standard DML on the demeaned data First runs steps (1)-(3) of DML on original data, then demeans the residuals before running OLS</td></tr><tr><td>DML with dummies DML with CRE</td><td>Runs standard DML, but adds a dummy for each unit in the prediction steps Runs standard DML, but adds time means for treatment and confounders in the pre- diction steps as in correlated random effects</td></tr></table>",
+        "bbox": [
+            119,
+            196,
+            879,
+            367
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "The second and third approach are inspired by the traditional fixed efects estimation and deal with the unobserved heterogeneity by introducing an additional step in the DML algorithm. In what we call “early demeaning”, we try to eliminate the unobserved heterogeneity before DML. That is, we demean all variables first, then perform DML on the demeaned variables. If we fully eliminate the unobserved heterogeneity by this fixed efects transformation, the prediction tasks in DML should be easier, since the ML methods only need to model observed variation. The “within-transformed” outcome and treatment equations for the ML training are",
+        "bbox": [
+            107,
+            397,
+            887,
+            583
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "equation",
+        "img_path": "images/0f1ced4aea3a5cb2254b60ef6481551d9b8bd610abc87ebcf63544b20098d2b6.jpg",
+        "text": "$$\n\\begin{array} { r l } & { y _ { i t } - \\bar { y } _ { i } = \\gamma g _ { 0 } ( x _ { i t } - \\bar { x _ { i } } ) + \\mu _ { i t } - \\bar { \\mu _ { i } } } \\\\ & { } \\\\ & { w _ { i t } - \\bar { w _ { i } } = \\delta m _ { 0 } ( x _ { i t } - \\bar { x _ { i } } ) + \\eta _ { i t } - \\bar { \\eta _ { i } } , } \\end{array}\\tag{3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            357,
+            603,
+            637,
+            654
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "where $\\bar { w } _ { i }$ is the mean treatment over time $\\begin{array} { r } { \\left( \\frac { 1 } { T } \\sum _ { t = 1 } ^ { T } w _ { i t } \\right) } \\end{array}$ . This early demeaning is only appropriate if the time mean is additively separable in the true DGP, which holds in the linear case, but not necessarily if $g _ { 0 } ( \\ u )$ or $m _ { 0 } ( )$ m () are nonlinear, as we will show below. This approach is similar to the “approximate approach” in Clarke and Polselli (2023).",
+        "bbox": [
+            109,
+            672,
+            885,
+            775
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "In the third approach, we deal with the fixed efects later in the DML algorithm (“late demeaning”). Here, we run steps (1)-(3) of DML first (ML and residualization), before we demean the residuals in the final DML step and regress the demeaned outcome residual on the demeaned treatment residual:",
+        "bbox": [
+            109,
+            785,
+            885,
+            830
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14",
+        "bbox": [
+            488,
+            905,
+            509,
+            919
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            89,
+            885,
+            135
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "img_path": "images/722b7a981b30a115c69848947e53b533eae4f9f1ace0e52f1023033e75a35f8e.jpg",
+        "text": "$$\nv _ { i t } ^ { y } - \\bar { v _ { i } ^ { y } } = v _ { i t } ^ { w } - \\bar { v _ { i } ^ { w } } + \\epsilon _ { i t } - \\bar { \\epsilon _ { i } } .\\tag{4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            382,
+            164,
+            614,
+            185
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "This late demeaning increases the dificulty for the ML prediction tasks early in the algorithm, since the unobserved heterogeneity is still present and acts as additional noise. However, if the ML method still manages to successfully model the observed confounding, the remaining unobserved heterogeneity may be additively separable afterwards.",
+        "bbox": [
+            107,
+            209,
+            887,
+            311
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "In contrast to the previous two approaches, the final two strategies try to directly model the unobserved heterogeneity within the two ML models in DML. Instead of an additional step in the algorithm, these approaches change the predictors/features supplied to the ML methods. Approach four (“DML with dummies”) includes unit dummies in the prediction steps of DML, inspired by the equivalence of the dummy variable regression to fixed efects estimation in the standard linear setting (Wooldridge, 2012). That is, the outcome and treatment equations for the ML training are",
+        "bbox": [
+            107,
+            320,
+            887,
+            478
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "equation",
+        "img_path": "images/e2d62ee49a4df7ee3d53bf8d3bd9ac496e7f31f8a8d7387ec17d703e8d11ab52.jpg",
+        "text": "$$\n\\begin{array} { r l } & { y _ { i t } = \\gamma g _ { 0 } ( x _ { i t } , z 1 _ { i } , . . . , z N _ { i } ) + \\mu _ { i t } } \\\\ & { } \\\\ & { w _ { i t } = \\delta m _ { 0 } ( x _ { i t } , z 1 _ { i } , . . . , z N _ { i } ) + \\eta _ { i t } , } \\end{array}\\tag{5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            369,
+            500,
+            627,
+            549
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "where $z 1 _ { i }$ to $z N _ { i }$ are dummy variables for each unit, which are 1 if the observation belongs to that unit and 0 if it does not. This should work well in settings where there are relatively few units, or in settings with high-dimensional fixed efects (i.e., many units), if we can assume that only few of these are important (“sparse” fixed efects). This sparsity assumption is common in the literature, but often not realistic in settings with unit-specific unobserved heterogeneity (e.g., Belloni et al., 2016). If the assumption is violated, the prediction tasks will likely become too complex if the number of observations is not significantly larger than the number of relevant fixed efects.",
+        "bbox": [
+            107,
+            566,
+            887,
+            751
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "The final approach (“DML with CRE”) avoids this sparsity assumption about the fixed efects by explicitly modeling the relationship between the unobserved heterogeneity and the covariates as proposed in the correlated random efects approach (e.g., Mundlak, 1978). Chernozhukov et al. (2022) mention a similar DML approach for panel data in the application of their novel automatic debiased ML framework, and Clarke and Polselli (2023) also introduce a related CRE estimator. In the context of DML, using Mundlak-type correlated random efects amounts to including the treatment and covariate time means in addition to the time-varying covariates into the ML predictions for both the outcome and the treatment:",
+        "bbox": [
+            107,
+            758,
+            887,
+            861
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "15",
+        "bbox": [
+            488,
+            905,
+            509,
+            919
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            90,
+            887,
+            190
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "img_path": "images/c7a17b8bcb00a51e06d1c3f244e2da8e75f5e0fc5cf59e3c1faa0cfe113cb580.jpg",
+        "text": "$$\n\\begin{array} { l } { { y _ { i t } = \\gamma g _ { 0 } ( x _ { i t } , \\bar { x _ { i } } , \\bar { w _ { i } } ) + \\mu _ { i t } } } \\\\ { { \\ } } \\\\ { { w _ { i t } = \\delta m _ { 0 } ( x _ { i t } , \\bar { x _ { i } } , \\bar { w _ { i } } ) + \\eta _ { i t } . } } \\end{array}\\tag{6}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            390,
+            210,
+            606,
+            260
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "This way, we can model the time-constant unobserved heterogeneity without introducing a large number of additional variables. However, if J is the number of covariates, the number of predictors in the ML models using the CRE approach increases by a factor of $2 * J .$ , since we introduce the time mean for each additional variable as well. By comparison, all other approaches only scale by the factor J.",
+        "bbox": [
+            109,
+            276,
+            887,
+            405
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "4 Simulations",
+        "text_level": 2,
+        "bbox": [
+            111,
+            441,
+            290,
+            460
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "We now explore how the suggested methods perform on simulated data. First, we give an overview of how we implemented the considered DML methods and introduce alternative traditional statistical methods as benchmarks. Then, we describe our baseline DGPs, which we subsequently use to compare diferent cross-fitting techniques, as well as diferent estimation methods. Finally, we extend our baseline simulations and change diferent characteristics of the DGPs to investigate the methods’ sensitivity to these modified situations.<sup>1</sup>",
+        "bbox": [
+            107,
+            486,
+            887,
+            642
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "4.1 Method implementations",
+        "text_level": 2,
+        "bbox": [
+            111,
+            671,
+            408,
+            689
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "In addition to the various DML approaches described in the previous section, we also implemented several traditional statistical methods as comparison baselines (Table 4). The first method is a naive simple OLS regression, where we regress the outcome on the treatment but adjust neither for observed covariates nor for unobserved heterogeneity. As the second method, we also use an OLS regression of the outcome on the treatment, but now include all observed covariates linearly, i.e., pooled OLS (POLS) (Wooldridge, 2010). This method will be biased and inconsistent if there is any unobserved heterogeneity and/or if the confounding influence is not linear. Thirdly, we use the standard fixed efects estimator, where we adjust for all covariates linearly and try to adjust for the unobserved heterogeneity by including fixed efects.",
+        "bbox": [
+            107,
+            709,
+            887,
+            838
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_footnote",
+        "text": "<sup>1</sup>All code for method implementation, data generation, and estimation is available on OSF: https://osf.io/ 8skxu/?view\\_only=1d56c1e412084ee399cd9a3fdcb39c02.",
+        "bbox": [
+            109,
+            845,
+            885,
+            875
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "16",
+        "bbox": [
+            488,
+            905,
+            509,
+            919
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            107,
+            90,
+            887,
+            190
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Approaches 4-8 are the various DML implementations for panel data discussed in Table 3. As the predictive ML algorithm in step (3) of DML, we use boosted trees as implemented in XGBoost. In our implementation, we use default values for the learning rate eta (0.3) and the maximum tree depth (6), and employ early stopping if the validation set performance does not improve for 10 rounds. We tune the optimal maximum number of boosting iterations by choosing from up to 200 rounds with 5-fold cross-validation. We experimented with using other flexible ML methods within DML, which lead to very similar results. We choose XGBoost as representative of flexible ML algorithms due to its strong performance within DML in cross-sectional settings, as well as its computational eficiency compared to other flexible methods (Chen et al., 2023). One noticeable feature of the “DML (dummies)” method is that generating unit dummies potentially leads to a very large number of variables. In settings with many units, this not only complicates the prediction task, but also substantially increases the computation time for this approach compared to alternatives. In Appendix A.2, we show timing results for various combinations of numbers of units and periods. In our baseline simulation with 500 units and 10 periods, computing DML with dummies for one dataset takes about 330 seconds, whereas the second slowest method (DML with CRE) is computed within less than 8 seconds.",
+        "bbox": [
+            109,
+            200,
+            887,
+            635
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Finally, we include an infeasible “oracle FE” method as an additional benchmark. Here we use the standard fixed efects framework, but always in combination with a parametric model that uses the correct (in practice unknown) functional form of the covariates. This method indicates whether researchers could in theory estimate the true efect from the data if they knew the true functional form of the confounding, i.e., specified the correct parametric model.",
+        "bbox": [
+            109,
+            643,
+            887,
+            772
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "4.2 Baseline data generation",
+        "text_level": 2,
+        "bbox": [
+            111,
+            801,
+            405,
+            818
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "For all simulations, we follow one of the causal graphs in Figure 2. We are interested in the efect of a treatment variable $W _ { i t } ~ \\mathrm { ( e . g . , ~ p r i c e ) }$ on an outcome variable $Y _ { i t }$ (e.g., demand), so we need to adjust for the observed confounder(s) $X _ { i t }$ (e.g., advertising), which influence both treatment and outcome. Observed confounders, treatment and outcome can vary across multiple dimensions (e.g., both unit and time) and are therefore double-indexed. Furthermore, there can exist some form of unobserved heterogeneity (e.g., store characteristics such as management quality) between diferent units. We model this as an unobserved variable $U _ { i } .$ , which varies across only one dimension (here, the unit dimension). In our baseline simulation settings, we diferentiate between three causal structures that difer in how $U _ { i }$ influences the other variables: (A) $U _ { i }$ does not exist, or at least exerts no influence on the other variables. In this setting, we have no unobserved heterogeneity, hence flexibly adjusting for $X _ { i t }$ should sufice. (B) $U _ { i }$ does exist, but influences only the treatment and the outcome directly, not the observed confounders $X _ { i t }$ . (C) In addition to treatment and outcome, $U _ { i }$ also influences the observed confounders $X _ { i t }$ and thus impacts treatment and outcome via multiple pathways. In our example, we consider structure (C) to be the most plausible, since the unobserved management quality certainly also influences decisions on advertising and promotions.",
+        "bbox": [
+            109,
+            839,
+            887,
+            883
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "17",
+        "bbox": [
+            488,
+            906,
+            509,
+            919
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "table",
+        "img_path": "images/a31006c55394d7857292a27dd614b41091164862c60b55df0e14fbc98d1f3ecf.jpg",
+        "table_caption": [
+            "Table 4: Description of implemented methods"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Label</td><td>Description</td></tr><tr><td>Simple OLS</td><td>Linear regression ignoring all covariates and unobserved heterogeneity</td></tr><tr><td>POLS</td><td>Pooled OLS: Linear regression with all covariates but not dealing with unobserved heterogeneity</td></tr><tr><td>Fixed effects</td><td>Linear regression with all covariates and accounting for unobserved heterogeneity with fixed effects</td></tr><tr><td>PDML</td><td>Pooled DML: ignoring panel dimension and unobserved heterogeneity, using XGBoost as predictive algorithm</td></tr><tr><td>DML (early FE)</td><td>Early demeaning: using standard DML with XGBoost as predictive algorithm on de- meaned data</td></tr><tr><td>DML (late FE)</td><td>Late demeaning: running steps (1)-(3) of standard DML with XGBoost as predictive algorithm first, then demeaning residuals in step (4) before OLS</td></tr><tr><td>DML (dummies)</td><td>Standard DML with XGBoost as predictive algorithm, but adding a dummy for each unit in the prediction models</td></tr><tr><td>DML (CRE)</td><td>DML with correlated random effects, adding time means for treatment and confounders in the prediction models</td></tr><tr><td>Oracle FE</td><td>Standard fixed effects estimation, always knowing the true form of the confounding (infeasible)</td></tr></table>",
+        "bbox": [
+            119,
+            109,
+            877,
+            421
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            449,
+            887,
+            799
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "In the baseline simulation, we only consider a single variable for each of $U _ { i } , X _ { i t } , W _ { i t } .$ , and $Y _ { i t }$ . In all simulations, we draw single exogenous variables from a standard normal distribution $( N ( 0 , 1 ) )$ ). If the variable is clustered and time-constant like $U _ { i }$ , we draw the values on the unit-level and replicate the same value across all time periods for a given unit. We generate all other variables according to Equations 7-9, where the inclusion of $U _ { i }$ in each equation depends on whether we simulate the causal structure (A), (B), or (C). Intercepts and noise terms follow a standard normal distribution $( \\alpha , \\epsilon _ { i t } , \\eta _ { i t } , \\mu _ { i t } \\sim N ( 0 , 1 ) )$ ). g<sub>0</sub>() and $m _ { 0 } ( )$ indicate the functional form of the observed confounding. In our baseline simulations, we use either a linear functional form $\\left( g _ { 0 } ( X _ { i t } ) = m _ { 0 } ( X _ { i t } ) = X _ { i t } \\right)$ , for which linear methods are appropriate, or a nonlinear u-shaped functional form $( g _ { 0 } ( X _ { i t } ) = m _ { 0 } ( X _ { i t } ) = { X _ { i t } } ^ { 2 } )$ ， for which linear methods are misspecified, but for which flexible ML methods might be capable of learning the correct functional form.<sup>2</sup> We draw the coeficients for the influence of the observed confounders (γ) and for the unobserved confounders (δ) for each simulation from a standard normal distribution $( \\gamma , \\delta \\sim N ( 0 , 1 ) ) \\quad$ ). We set the true causal efect of interest $\\beta$ to one $( \\beta = 1 )$ ). The main goal of the simulations is to investigate how well diferent methods can recover this coeficient across various settings. We specify the number of units N and the number of periods T in each of the following result sections.",
+        "bbox": [
+            109,
+            809,
+            887,
+            881
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "page_number",
+        "text": "18",
+        "bbox": [
+            488,
+            906,
+            509,
+            919
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            107,
+            90,
+            887,
+            440
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "equation",
+        "img_path": "images/aff31d3be10ff107325438595200c16d4d48d5cabe5f80cb4d036be888d4ef85.jpg",
+        "text": "$$\nX _ { i t } = \\alpha _ { 0 } + \\delta U _ { i } + \\epsilon _ { i t }\\tag{7}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            416,
+            465,
+            580,
+            483
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "equation",
+        "img_path": "images/fd46b2b59c47d8e9bec4c0349e68ceb2c8a8c36ee2340c0dd7e029662e8298e2.jpg",
+        "text": "$$\nW _ { i t } = \\alpha _ { 1 } + \\gamma g _ { 0 } ( X _ { i t } ) + \\delta U _ { i } + \\eta _ { i t }\\tag{8}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            370,
+            497,
+            625,
+            516
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "equation",
+        "img_path": "images/cd975cf39077f5fced43846910ae4c48caf41b125545c2b860e97b7901697316.jpg",
+        "text": "$$\nY _ { i t } = \\alpha _ { 2 } + \\beta W _ { i t } + \\gamma m _ { 0 } ( X _ { i t } ) + \\delta U _ { i } + \\mu _ { i t }\\tag{9}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            339,
+            529,
+            656,
+            547
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "4.3 Comparison of cross-fitting techniques",
+        "text_level": 2,
+        "bbox": [
+            111,
+            575,
+            537,
+            593
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Before we compare the performance of the considered estimators, we investigate how the diferent cross-fitting techniques introduced in Section 3.1 afect the coeficient estimates. For this, we simulate data according to the baseline DGP with the most complex causal structure (C) and u-shaped confounding influences. The dataset is a balanced panel with $N = 1 0 0$ units across $T = 5 0$ periods. We choose this relatively large number of periods to still have multiple periods in the hold-out fold when splitting the data into time-adjacent folds. We violate the original cross-fitting assumption of i.i.d. data both with the presence of unobserved unit heterogeneity and with a relatively large degree of autocorrelation. We introduce autocorrelation by changing the DGP of the outcome model (Equation 9) to include serially correlated errors: Now, we simulate $\\mu _ { i t }$ as a weakly dependent time series according to an AR(1) model, i.e., $\\mu _ { i t } = \\rho \\mu _ { i t - 1 } + e _ { i t }$ , with the ar-coeficient $\\rho = 0 . 9$ If the cross-fitting procedure afects the coeficient estimates, it should be especially visible when violating the independence assumption. For each considered DML estimator, we implement all of the cross-fitting techniques from Table 2.",
+        "bbox": [
+            109,
+            614,
+            887,
+            827
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "page_footnote",
+        "text": "<sup>2</sup>We experimented with other nonlinear functional forms (e.g., a discontinuous step function), which led to very similar results.",
+        "bbox": [
+            109,
+            833,
+            885,
+            861
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "page_number",
+        "text": "19",
+        "bbox": [
+            488,
+            906,
+            509,
+            919
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            90,
+            887,
+            218
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "In describing the results, we only compare the performance of diferent cross-fitting techniques within the same DML estimator. In the next section, we will further describe and interpret the diferences in performance between the diferent estimators. Our simulation results display a surprisingly small influence of the choice of cross-fitting technique on the estimated coeficients (Figure 3), except for some special cases. Within most estimation methods, the diferent splitting strategies lead to very similar estimated efects. One notable exception is cross-fitting when splitting by unit: as anticipated by Semenova et al. (2023), this results in substantial bias if we expect the ML methods to model the unobserved heterogeneity in the hold-out fold, while only observing the units present in the training folds. For this splitting strategy, using unit dummies within DML (Figure 3B) leads to heavily biased efect estimates, because the dummy variables in the hold-out data belong to diferent units than the dummy variables used for training. To a (much) weaker degree, we make similar observations for DML with CRE (Figure 3A) and pooled DML (Figure 3D), though the issues become more pronounced in settings with very few units and many periods (e.g., $N = 1 0$ and $T = 5 0 0$ , see Appendix A.1.2).",
+        "bbox": [
+            109,
+            229,
+            887,
+            607
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "From these observations, we conclude that we should not split by unit when cross-fitting, at least if unobserved heterogeneity could be plausibly present in our specific application. While there is theoretical basis for ensuring independence of clustered data, especially for constructing valid confidence intervals (e.g., Chiang et al., 2022), failing to adequately model the unobserved heterogeneity will likely lead to a more substantial bias in the estimated efects. Besides splitting by unit, the results of the other cross-fitting techniques are hardly distinguishable. Therefore, in the absence of a strong argument for a specific cross-fitting technique, we will proceed with the rest of our simulations using the “random” sample splitting method.",
+        "bbox": [
+            107,
+            617,
+            887,
+            829
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "page_number",
+        "text": "20",
+        "bbox": [
+            488,
+            906,
+            509,
+            917
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "chart",
+        "img_path": "images/58e4a2e3ab31126f824d31ee48e5abc27de29546a069c9757207d866e4cc29e8.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 3: Results for utilizing diferent cross-fitting techniques (Table 2) within various DML estimators. The vertical axis depicts the estimated coeficient. The dashed line marks the true causal efect $( \\beta = 1 )$ . The boxplots show the distribution of estimated coeficients across 100 simulated datasets for each method. Data is generated according to DGP (3), with one observed confounder, u-shaped functional forms and a large degree of autocorrelation $( \\rho = 0 . 9 )$ . NLO: neighbors-left-out cross-fitting."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            119,
+            90,
+            877,
+            381
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "4.4 Comparison of estimation methods",
+        "text_level": 2,
+        "bbox": [
+            111,
+            500,
+            503,
+            517
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "We now compare the diferent estimation methods in six diferent baseline settings that difer in the causal structure and the functional form of the observed confounding. In all baseline simulations, we use $N = 5 0 0$ diferent units across T = 10 diferent periods. For now, we assume no autocorrelation of the error terms.",
+        "bbox": [
+            109,
+            536,
+            885,
+            637
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "The plots in the first column (Figure 4A, C, and E) show results from simulations with a linear influence of the observed confounders $X _ { i t }$ , whereas the results in the second column (Figure 4B, D, and F) originate from a nonlinear, u-shaped functional form. The DGPs of the first row follow the causal structure (A), where we simulate no unobserved heterogeneity. By contrast, in the second row simulations, the unobserved heterogeneity $U _ { i }$ influences only the treatment $W _ { i t }$ and the outcome $Y _ { i t } ,$ but not the observed confounders $X _ { i t }$ (causal structure (B)). The third row contains results from causal structure (C), where the unobserved heterogeneity additionally influences $X _ { i t }$ . In terms of complexity, the simulation settings become more challenging from the top left to the bottom right panel.",
+        "bbox": [
+            109,
+            647,
+            887,
+            832
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "page_number",
+        "text": "21",
+        "bbox": [
+            488,
+            905,
+            508,
+            919
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            89,
+            885,
+            136
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "chart",
+        "img_path": "images/3e38b9d9ce12675a584c6c86b0eff193a6ff4338f52351fbbdcb82a3eaa324b3.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 4: Results for our baseline simulation with $N = 5 0 0$ units and $T = 1 0$ periods. The horizontal axis displays the diferent methods from Table 4. The vertical axis depicts the estimated coeficient. The dashed line marks the true causal efect $( \\beta = 1 )$ . The boxplots show the distribution of estimated coeficients across 100 simulated datasets for each method. The three rows contain three diferent DGPs: $^ { * } n o U ^ { * }$ indicates no unobserved heterogeneity, $^ { \\mathrm { 6 } } U \\mid X ^ { \\prime \\prime }$ means the unobserved heterogeneity influences treatment and outcome, but not confounders, and $^ { \\ast } U \\to X ^ { \\prime \\prime }$ means the unobserved heterogeneity also influences the confounders."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            120,
+            152,
+            879,
+            589
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "Across simulation settings, the naive simple linear regression performs worst, since it neither adjusts for potential unobserved heterogeneity nor for observed confounding. By contrast, the (infeasible) fixed efects regression with the oracle for the functional form always delivers unbiased and precise estimates.",
+        "bbox": [
+            107,
+            729,
+            885,
+            830
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "page_number",
+        "text": "22",
+        "bbox": [
+            488,
+            905,
+            509,
+            917
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "In the simplest setting with no unobserved heterogeneity and linear confounding influence (Figure 4A), all methods except for the naive regression perform well and give unbiased estimates. If we instead simulate u-shaped confounding relationships of the observed covariates $X _ { i t }$ (Figure 4B), several methods become strongly biased. While this is not surprising for the linear methods (with and without fixed efects), the DML variant with early demeaning also incurs substantial bias. This is because $W _ { i t }$ and $Y _ { i t }$ are nonlinear in $X _ { i t }$ , not in $\\ddot { X _ { i t } } = \\left( X _ { i t } - \\bar { X _ { i } } \\right)$ , and the time means are not additively separable (i.e., $g _ { 0 } ( X _ { i t } - \\bar { X } _ { i } ) \\not = g _ { 0 } ( X _ { i t } ) - \\bar { X } _ { i } )$ . Hence, after demeaning, $\\ddot { X _ { i t } }$ might not be suficient to predict the treatment and outcome, respectively. This is especially problematic in a large N, small T setting like our baseline: after removing the between-variation along the unit dimension (N), there is only little variation left along the time dimension (T) to model the nonlinear functional form of the observed confounding.",
+        "bbox": [
+            109,
+            90,
+            887,
+            385
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "In the case of unobserved heterogeneity influencing treatment and outcome in addition to linear observed confounding (Figure 4C), we see the importance of using some sort of fixed efects estimator. Now methods such as the linear regression and pooled DML are biased, since they only adjust for the observed confounding and not for the unobserved heterogeneity. While DML with dummies performs much better, it is also not quite unbiased, because the large number of nonsparse unit dummies $( z 1 _ { i } , . . . , z 5 0 0 _ { i } )$ makes the predictions challenging, and likely leads to variable selection mistakes. All other methods deliver precise and unbiased estimates. Moving to nonlinear confounding within the same causal structure (Figure 4D), the linear fixed efects estimator and DML with early demeaning become biased as well. DML with dummies is similarly biased as in the previous setting. Of the feasible methods, only DML with correlated random efects and DML with late demeaning are close to unbiased, with the latter being slightly more precise. Since $U _ { i }$ does not influence $X _ { i t }$ , the unobserved heterogeneity is additively separable after modeling the observed nonlinear confounding influence, which is how the late demeaning method operates.",
+        "bbox": [
+            109,
+            395,
+            887,
+            746
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "In the most complex causal structure considered, the unobserved heterogeneity also influences the observed confounders $X _ { i t }$ , and thus the treatment and outcome via this second indirect path as well. In this setting with linear confounding influences, the extent of the bias for pooled OLS and pooled DML is somewhat attenuated (Figure 4E). While these methods had no information at all about the unobserved confounding in the causal structure (B), they now can learn something about",
+        "bbox": [
+            109,
+            755,
+            887,
+            883
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "page_number",
+        "text": "23",
+        "bbox": [
+            488,
+            906,
+            509,
+            917
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "$U _ { i } ,$ , since it is part of $X _ { i t }$ via the path $U _ { i } \\to X _ { i t }$ . For these methods, the influence of $U _ { i }$ on $X _ { i t }$ is beneficial, since they can to some extent exploit that observed confounders now contain information about the unobserved heterogeneity. On the other hand, compared to the previous causal structure (no influence $U _ { i } \\to X _ { i t } )$ , the late demeaning method now incurs bias. In the $U _ { i } \\to X _ { i t }$ setting, this method “overfits” treatment and outcome by modeling their relationship with $U _ { i }$ twice. First, by predicting these variables from $X _ { i t } .$ , which now also contains information about $U _ { i }$ . Second, by demeaning the residuals after the predictions. Both residualization and demeaning try to remove the same confounding variation induced by $U _ { i }$ . Although they only remove this variation imperfectly (see, e.g., pooled OLS and pooled DML), trying to remove it twice leads to unintentionally removing exogenous variation that we need for estimating the efect of W on Y from the residuals, hence causing a biased estimate.",
+        "bbox": [
+            109,
+            90,
+            887,
+            385
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "The final and most challenging setting follows the same causal structure, but uses a nonlinear influence of the observed confounders (Figure 4F). As in Panel E, the late demeaning method again cannot deliver unbiased estimates. The only feasible method without substantial bias is DML with correlated random efects, followed by DML with dummies, which incurs a similar bias as in the previous three settings. Compared to Panel D, pooled DML is less biased, since it (partially) learns about $U _ { i }$ through $X _ { i t }$",
+        "bbox": [
+            109,
+            395,
+            887,
+            551
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "Across settings, only DML with correlated random efects consistently delivers estimates that are close to the true efect. If the influence of the observed confounders is linear, standard fixed efects estimation is appropriate and suficient, but it fails if that influence is diferent from the one specified in the fixed efects model (e.g., nonlinear instead of linear). If we can rule out an influence of the unobserved heterogeneity on the observed confounders, DML with late demeaning gives very accurate estimates. However, since we rarely can rule out that influence with certainty in practice (or have reason to believe that it exists, like in our example), our simulations suggest that DML with correlated random efects is most robust to any of the considered baseline settings.",
+        "bbox": [
+            109,
+            561,
+            887,
+            772
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "4.5 Simulation extensions",
+        "text_level": 2,
+        "bbox": [
+            111,
+            801,
+            377,
+            818
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "From the initial baseline, we vary diferent characteristics of the DGP to explore how the suggested methods perform in a variety of settings.",
+        "bbox": [
+            111,
+            839,
+            885,
+            883
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "page_number",
+        "text": "24",
+        "bbox": [
+            488,
+            906,
+            509,
+            917
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "4.5.1 Changing the panel dimensions N/ T",
+        "text_level": 2,
+        "bbox": [
+            111,
+            90,
+            514,
+            107
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "First, we vary the relation of the number of units (N) to the number of time periods (T), while keeping the overall number of observations constant. In addition to the baseline setting $[ N = 5 0 0$ $T = 1 0 ]$ , we also consider the combinations [N = 100, T = 50], [N = 50, T = 100], and $[ N = 1 0 $ $T = 5 0 0 ]$ . Since we currently only simulate unobserved heterogeneity on the unit dimension and not on the time dimension, we expect the smaller numbers of units (and thus decreased dimensionality) to benefit the DML with dummies method most of all.",
+        "bbox": [
+            107,
+            127,
+            887,
+            282
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "We report results for the setting with N = 10 units and T = 500 periods (Figure 5). In comparison to our baseline (Figure 4), the estimates of two particular methods change substantially. First, using DML with dummy variables now results in virtually unbiased estimates. The ML algorithm only has to handle 10 dummy variables (one for each unit) instead of the 500 dummies in the baseline scenario. This easier task does not result in variable selection mistakes, and thus the method estimates the efect almost as precisely as DML with correlated random efects. Second, DML with early demeaning now also delivers precise estimates in the less complex nonlinear settings (Figure 5B and D), but still not for the complex setting in Panel F. As mentioned above, the early demeaning removes unit-specific between-variation, which the ML method subsequently cannot use for the prediction task. However, in the absence of $U _ { i } \\to X _ { i t }$ , this is only consequential if the between-variation is crucial for modeling the confounding relationships. In the current small N, large T setting, the within-variation still consists of 500 observations per unit, which is suficient for modeling the nonlinear functional forms. In the more complex setting (Panel F), the early demeaning still cannot fully remove the unobserved heterogeneity, since the time means are not additively separable due to the nonlinear function: $g _ { 0 } ( X _ { i t } - \\bar { X } _ { i } ) \\neq g _ { 0 } ( X _ { i t } ) - \\bar { X } _ { i }$ . The performance of the remaining methods is very similar to the baseline setting.",
+        "bbox": [
+            109,
+            292,
+            887,
+            727
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "The settings with $[ N = 1 0 0 , T = 5 0 ]$ and $[ N = 5 0 , T = 1 0 0 ]$ lead to results between the baseline and the $[ N = 1 0 , T = 5 0 0 ]$ setting, such that DML with dummies and DML with early demeaning decline in accuracy as N increases and T decreases (see Appendix A.3.1).",
+        "bbox": [
+            109,
+            734,
+            887,
+            809
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "page_number",
+        "text": "25",
+        "bbox": [
+            488,
+            905,
+            509,
+            917
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "chart",
+        "img_path": "images/aef0d11ffb0a1af7b78528ada38a0fe4bd7b05d9d239c3ecd0a57cef5bec7480.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 5: Results for the setting with $N = 1 0$ units and ${ T = 5 0 0 \\ p e r i \\mathrm { o d s } }$ . The dashed line marks the true causal efect $( \\beta = 1 )$ The boxplots show the distribution of estimated coeficients across 100 simulated datasets for each method. The three rows contain three diferent DGPs: $^ { * } n o U ^ { * }$ indicates no unobserved heterogeneity, $^ { \\mathrm { 6 } } U \\mid X ^ { \\prime \\prime }$ means the unobserved heterogeneity influences treatment and outcome, but not confounders, and $^ { \\ast } U \\to X ^ { \\prime \\prime }$ means the unobserved heterogeneity also influences the confounders."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            120,
+            90,
+            879,
+            527
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "4.5.2 Increasing the number of observed confounders",
+        "text_level": 2,
+        "bbox": [
+            111,
+            648,
+            606,
+            665
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "In the second extension, we test how the diferent methods scale for larger numbers of observed confounders $X _ { i t }$ . We focus on causal structure (C) with nonlinear confounding and generate $X _ { j i t }$ for $j = 1 , . . . , J$ confounders according to Equation 10, where we draw $\\epsilon _ { j i t }$ from a multivariate normal distribution with a mean of zero and a randomly generated covariance matrix $( \\mathrm { i . e . , } \\ \\epsilon _ { j i t } \\sim N ( 0 , \\Sigma )$ , $\\Sigma = A ^ { \\prime } A$ , with $A \\sim N ( 0 , 1 ) )$ .",
+        "bbox": [
+            107,
+            685,
+            885,
+            813
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "equation",
+        "img_path": "images/ac775405cccd70af07fb9c51dfa48d37cfed21cca4c2319cba02d1274af34e84.jpg",
+        "text": "$$\nX _ { j i t } = \\alpha _ { 0 j } + \\delta U _ { i } + \\epsilon _ { j i t }\\tag{10}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            406,
+            827,
+            589,
+            845
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "page_number",
+        "text": "26",
+        "bbox": [
+            488,
+            905,
+            509,
+            919
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "Also, we now draw separate confounding coeficients $\\gamma _ { j }$ for each confounder and divide each by the overall number of confounders J (Equations 11 and 12). In doing so, we ensure that on average, the overall strength of the confounding influence is similar to the baseline scenario, and that we are only varying the number of confounders.",
+        "bbox": [
+            107,
+            90,
+            887,
+            190
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "equation",
+        "img_path": "images/f5fc94eb4c980e6e9dbbd21224bc131b62f941a43013e7d216bbc1ff5560d5f5.jpg",
+        "text": "$$\nW _ { i t } = \\alpha _ { 1 } + \\sum _ { j = 1 } ^ { J } \\frac { \\gamma _ { j } } { J } g _ { 0 } ( X _ { j i t } ) + \\delta U _ { i } + \\eta _ { i t }\\tag{11}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            348,
+            204,
+            648,
+            251
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "equation",
+        "img_path": "images/5b3b0010553f1b92827c765ce5c33c3c963a2a342047572d574c103cc410eeb5.jpg",
+        "text": "$$\nY _ { i t } = \\alpha _ { 2 } + \\beta W _ { i t } + \\sum _ { j = 1 } ^ { J } \\frac { \\gamma _ { j } } { J } m _ { 0 } ( X _ { j i t } ) + \\delta U _ { i } + \\mu _ { i t }\\tag{12}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            316,
+            255,
+            678,
+            301
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "text",
+        "text": "For this setting and the next, we introduce two new methods as baselines to facilitate the interpretation of the results. First, the method $\\mathrm { ^ { 6 6 } F E }$ only” does not adjust for the observed confounding $( X _ { i t } )$ at all, but only aims to account for unobserved heterogeneity by using fixed efects. This method allows us to determine how important directly adjusting for the unobserved heterogeneity is. Second, the (infeasible) method “Oracle $\\mathrm { w } / \\mathrm { o } \\ \\mathrm { F E } ^ { \\mathrm { \\prime } }$ adjusts for the observed confounding by knowing the “true” functional form, but does not account for the unobserved heterogeneity, thereby demonstrating the significance of adjusting for the $X _ { i t }$ only. Finally, the additional benefit of also adjusting for the unobserved heterogeneity becomes visible in the previously described “Oracle $\\mathrm { F E } ^ { \\mathrm { , } \\mathrm { , } \\mathrm { , } }$ method.",
+        "bbox": [
+            107,
+            316,
+            887,
+            555
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "chart",
+        "img_path": "images/22b3197c1ea6955b076590130edd525028d7d09ecf7982525e9aca875793700d.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 6: Mean absolute error in the estimated coeficient across 100 simulations by number of observed confounders. The simulated influence of the observed confounders is u-shaped, the causal structure is (C), ${ \\mathrm { i . e . , } } U _ { i } \\to X _ { i t } . \\ N = 5 0 0 , T = 1 0$"
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            114,
+            565,
+            877,
+            803
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "page_number",
+        "text": "27",
+        "bbox": [
+            488,
+            905,
+            509,
+            917
+        ],
+        "page_idx": 26
+    },
+    {
+        "type": "text",
+        "text": "We display the resulting mean absolute error (MAE) in the causal coeficient for each method for between 1 and 10 observed confounders (Figure 6). We first observe that the (infeasible) oracle methods are barely afected by changing the number of confounders: the full oracle (“Oracle FE”) perfectly adjusts for both observed and unobserved confounding and remains unbiased for all numbers of confounders, while only adjusting perfectly for observed confounding (“Oracle w/o FE”) leads to an almost constant bias around 30%.",
+        "bbox": [
+            109,
+            90,
+            885,
+            246
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "text",
+        "text": "Contrary to the oracle methods, virtually all other approaches increase in MAE as the number of confounders increases. Also, the gap between methods explicitly accounting for unobserved heterogeneity and their counterpart that does not becomes smaller or vanishes for larger numbers of confounders. For example, “FE only” incurs a similar degree of bias as “Simple $\\mathrm { O L S ^ { 9 } }$ after 5 confounders. Comparing the DML methods (excluding early demeaning) to the functional form oracle, we observe that they all are substantially more accurate. This indicates that these methods do not only adjust for the observed confounding well (as “Oracle w/o $\\mathrm { F E } ^ { \\mathfrak { s } }$ does), but also capture parts of the unobserved heterogeneity. Interestingly, the pooled DML approach outperforms the functional form oracle as well, even though it has no explicit way of adjusting for the unobserved heterogeneity. This is because PDML can indirectly adjust for part of the unobserved heterogeneity, as $X _ { i t }$ contains variation caused by U<sub>i</sub> $( U _ { i } \\to X _ { i t } )$ , which facilitates the prediction of treatment and outcome. However, as the number of confounders and thus the dimensionality increases at a constant sample size, all DML methods after some point struggle to still adjust efectively. The pooled DML and “late” fixed efects approaches improve from one to two confounders, before increasing in bias similar to the others methods for more confounders. These approaches can benefit from multiple $X _ { i t } { \\mathrm { : } }$ as the dimensionality of $X _ { i t }$ increases, the direct influence of the unobserved $U _ { i }$ becomes less important, while the indirect influence is blocked by adjusting for the $X _ { i t }$ . This benefit of having multiple observed confounders in the $U _ { i } \\to X _ { i t }$ case becomes even more evident when the prediction tasks are simpler, $\\mathrm { e . g . }$ , for linear confounding or larger sample sizes (see Figures 17 and 18, respectively, in the Appendix). At the same time, adjustment for further $X _ { i t }$ becomes more challenging in our baseline setting, hence the negative efects of additional confounders quickly dominate and the bias increases.",
+        "bbox": [
+            109,
+            257,
+            887,
+            856
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "page_number",
+        "text": "28",
+        "bbox": [
+            488,
+            906,
+            509,
+            917
+        ],
+        "page_idx": 27
+    },
+    {
+        "type": "text",
+        "text": "Using fixed efects late in DML and using dummies behave relatively similarly, with the dummy approach scaling slightly worse with the number of confounders. While DML with the CRE approach is almost unbiased for one confounder, its bias increases with the number of confounders more quickly than that of the other methods. From seven confounders on, it incurs bias similar to the late fixed efects method; for ten confounders, it is similar to the pooled DML. This is likely because the dimensionality in the CRE approach increases by a factor of 2 ∗ J, as for each observed confounder we have to adjust both for the time-varying variable and its time mean. By contrast, the other methods only have to handle J variables, making the adjustment process less complex. While this appears to be a downside of the DML with CRE method, in the next set of simulations we investigate whether the method can handle larger numbers of confounders, provided a suficiently large sample size.",
+        "bbox": [
+            109,
+            90,
+            887,
+            386
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "4.5.3 Varying the sample size",
+        "text_level": 2,
+        "bbox": [
+            111,
+            414,
+            393,
+            431
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "We now assess how the sample size influences the estimates of the diferent methods. Is the bias in the estimates only a consequence of finite samples or is there some systematic issue with the estimators that prevents them from getting closer to the true efect? The results show that while most feasible methods are not guaranteed to substantially improve with sample size, DML with CRE can be unbiased as long as the number of observations is large relative to the number and strength of the observed confounders.",
+        "bbox": [
+            109,
+            450,
+            887,
+            606
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "First, we vary the number of units N in the baseline setting with causal structure (C) and one observed confounder with a u-shaped functional form (Figure 7). DML with CRE is the only feasible method that is close to the oracle method, and it gets more precise as the number of observations increases. None of the other DML-based methods substantially improve in larger samples, since they systematically lack the ability to model the unobserved heterogeneity.",
+        "bbox": [
+            109,
+            617,
+            887,
+            746
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "text",
+        "text": "This behavior changes when we look at a setting with more observed confounders (Figure 8; 5 confounders). Now the other DML-based methods (except for the early demeaning) substantially improve as the sample size increases, since the additional observed confounders contain more information about the unobserved heterogeneity. However, DML with CRE remains dominant at every sample size, even extends its advantage for very large samples, and converges to the oracle method for $N = 5 0 0 0$",
+        "bbox": [
+            109,
+            756,
+            887,
+            856
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "page_number",
+        "text": "29",
+        "bbox": [
+            488,
+            905,
+            509,
+            919
+        ],
+        "page_idx": 28
+    },
+    {
+        "type": "chart",
+        "img_path": "images/af05304b8c1e9d51081b05f5c9222b467b4570f9ddff91899ce354aceebdd54f.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 7: Mean absolute error in the estimated coeficient across 100 simulations for 1 observed confounder by the number of units. The number of periods is fixed at $T = 1 0$ . The simulated influence of the observed confounder is u-shaped, the causal structure is (C), i.e., $U _ { i } \\to X _ { i t }$ . We computed DML (dummies) only for up to $N = 1 0 0 0 .$ , as it becomes computationally too costly for larger values."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            116,
+            90,
+            875,
+            324
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            426,
+            885,
+            469
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "text",
+        "text": "We observe similar results for settings where we vary the number of periods T while keeping the number of units constant at $N = 5 0 0$ (see Figures 19 and 20 in the Appendix). As the only noticeable diference, DML with early demeaning there also improves as the number of periods $( \\mathrm { i . e . }$ the amount of within-variation) increases, although it is still heavily biased even at $T = 4 0 0$",
+        "bbox": [
+            109,
+            481,
+            887,
+            582
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "text",
+        "text": "4.5.4 Two-way fixed efects",
+        "text_level": 2,
+        "bbox": [
+            111,
+            611,
+            374,
+            627
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "text",
+        "text": "Here, we augment the unit-specific unobserved heterogeneity by also including time-specific unobserved heterogeneity. Hence, the DGP in Equations 13-15 now also contains the unobserved variable $U _ { t }$ , which varies only over time. In the estimation process, methods using fixed efects now employ",
+        "bbox": [
+            109,
+            647,
+            887,
+            722
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "page_number",
+        "text": "30",
+        "bbox": [
+            486,
+            905,
+            509,
+            919
+        ],
+        "page_idx": 29
+    },
+    {
+        "type": "chart",
+        "img_path": "images/1ffcf756322d63bf963ecf98d229df9d15a241975e813e7f59163239fde01fc2.jpg",
+        "content": "",
+        "chart_caption": [
+            "Number of units (log-scale, $\\mathrm { T } = 1 0$ constant)",
+            "Figure 8: Mean absolute error in the estimated coeficient across 100 simulations for 5 observed confounders by the number of units. The number of periods is fixed at $T = 1 0$ . The simulated influence of the observed confounders is u-shaped, the causal structure is (C), i.e., $U _ { i } \\to X _ { i t }$ . We computed DML (dummies) only for up to $N = 1 0 0 0$ , as it becomes computationally too costly for larger values."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            116,
+            92,
+            874,
+            305
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "text",
+        "text": "both unit and time fixed efects, while the correlated random efects approach includes both unit and time means for treatment and covariates, in addition to the original covariates.",
+        "bbox": [
+            109,
+            426,
+            885,
+            470
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "equation",
+        "img_path": "images/c2964773106db5c74c35558205677045a643818c0d65a378352cc5ba10025292.jpg",
+        "text": "$$\nX _ { i t } = \\alpha _ { 0 } + \\delta U _ { i } + \\delta U _ { t } + \\epsilon _ { i t }\\tag{13}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            393,
+            497,
+            604,
+            513
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "equation",
+        "img_path": "images/0d4ab47f8a224bb8cdd823171b073856f8b9ba63f30f04e09423fafac42b7407.jpg",
+        "text": "$$\nW _ { i t } = \\alpha _ { 1 } + \\gamma g _ { 0 } ( X _ { i t } ) + \\delta U _ { i } + \\delta U _ { t } + \\eta _ { i t }\\tag{14}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            348,
+            529,
+            650,
+            546
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "equation",
+        "img_path": "images/02944fa6042412477607eca37fdad75392dbb4c12174fe987044a0f129ab81ef.jpg",
+        "text": "$$\nY _ { i t } = \\alpha _ { 2 } + \\beta W _ { i t } + \\gamma m _ { 0 } ( X _ { i t } ) + \\delta U _ { i } + \\delta U _ { t } + \\mu _ { i t }\\tag{15}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            315,
+            559,
+            679,
+            578
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "text",
+        "text": "Compared to the baseline setting, no method performs substantially diferent under two-way fixed efects (Figure 9). All methods that cannot fully account for the unobserved heterogeneity in the baseline now perform slightly worse, since there is additional time-varying heterogeneity they can also not account for. DML with correlated random efects seem virtually unafected by the added dimension.",
+        "bbox": [
+            109,
+            604,
+            885,
+            732
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "text",
+        "text": "4.5.5 Autocorrelation",
+        "text_level": 2,
+        "bbox": [
+            111,
+            762,
+            323,
+            777
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "text",
+        "text": "One relevant diference between cross-sectional and panel data is the potential for autocorrelation (or serial correlation) in the latter, i.e., the error terms of the outcome model could be correlated across time (Wooldridge, 2012, Chapter 10). Serial correlation does not prevent consistency and unbiasedness in OLS under strict exogeneity (Wooldridge, 2012, Chapter 12), but invalidates the usual OLS standard errors (even though cluster robust standard errors are available for traditional methods). While standard errors are not the focus of our analysis, we want to explore whether serial correlation can also become problematic for the estimated coeficients in DML, where it violates the i.i.d. assumption in the cross-fitting procedure. We already explored the impact of diferent cross-fitting procedures on the estimates in the presence of autocorrelation in Section 4.3. Now, we investigate how diferent degrees of autocorrelation afect the estimates in our baseline setting with causal structure (C).",
+        "bbox": [
+            109,
+            799,
+            885,
+            872
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "page_number",
+        "text": "31",
+        "bbox": [
+            486,
+            905,
+            508,
+            919
+        ],
+        "page_idx": 30
+    },
+    {
+        "type": "chart",
+        "img_path": "images/c0b09cebb42ccf8e33080d61a0a690c481cbfd1952db35709f5c6a44a82e745a.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 9: Results for DGPs with unobserved heterogeneity in both the unit and the time dimension with $N = 5 0 0$ units and $T = 1 0$ periods. The dashed line marks the true causal efect $( \\beta = 1 )$ . The boxplots show the distribution of estimated coeficients across 100 simulated datasets for each method. The three rows contain three diferent DGPs: $^ { * } n o U ^ { * }$ indicates no unobserved heterogeneity, ${ } ^ { \\ast } U \\left| X ^ { \\ast } \\right.$ means the unobserved heterogeneity influences treatment and outcome, but not confounders, and $^ { \\ast } U \\to X ^ { \\prime \\prime }$ means the unobserved heterogeneity also influences the confounders."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            122,
+            90,
+            879,
+            527
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            109,
+            664,
+            887,
+            876
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "page_number",
+        "text": "32",
+        "bbox": [
+            486,
+            905,
+            509,
+            919
+        ],
+        "page_idx": 31
+    },
+    {
+        "type": "text",
+        "text": "To test the methods’ sensitivity to autocorrelation, we change the DGP of the outcome model (Equation 9) to include serially correlated errors: Now, we simulate $\\mu _ { i t }$ according to an AR(1) model, i.e., $\\mu _ { i t } = \\rho \\mu _ { i t - 1 } + e _ { i t }$ , with the ar-coeficient $\\rho$ equal to 0, 0.5, or 0.9, implying no, medium, and substantial autocorrelation, respectively. We allow for a longer time series than in our baseline by going back to the setting with $N = 1 0 0$ observations and $T = 5 0$ periods.",
+        "bbox": [
+            107,
+            90,
+            887,
+            219
+        ],
+        "page_idx": 32
+    },
+    {
+        "type": "chart",
+        "img_path": "images/a8c29d34ec234c26547d73cd1bf410fafaf22f7390cf48826b823796df9ee52e.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 10: Results for diferent degrees of autocorrelation with $N = 1 0 0$ units and $T = 5 0$ periods. Panel $\\mathrm { A } ,$ B: no autocorrelation; Panel C, D: medium degree of autocorrelation; Panel E, F: strong autocorrelation. The dashed line marks the true causal efect $( \\beta = 1 )$ . The boxplots show the distribution of estimated coeficients across 100 simulated datasets for each method. The simulated causal structure is (C), i.e., $U _ { i } \\to X _ { i t }$"
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            119,
+            236,
+            879,
+            672
+        ],
+        "page_idx": 32
+    },
+    {
+        "type": "text",
+        "text": "We find that even larger degrees of autocorrelation do not substantially alter our conclusions about the estimated coeficients (Figure 10). Only the distribution of the estimates of the wellperforming method becomes slightly wider, while still being centered around very similar values.",
+        "bbox": [
+            107,
+            782,
+            887,
+            856
+        ],
+        "page_idx": 32
+    },
+    {
+        "type": "page_number",
+        "text": "33",
+        "bbox": [
+            486,
+            905,
+            509,
+            919
+        ],
+        "page_idx": 32
+    },
+    {
+        "type": "text",
+        "text": "We conclude that in DML, the degree of autocorrelation is not critical for the accuracy of the estimated coeficients, and will probably only complicate the construction of valid standard errors.",
+        "bbox": [
+            109,
+            90,
+            885,
+            136
+        ],
+        "page_idx": 33
+    },
+    {
+        "type": "text",
+        "text": "5 Discussion",
+        "text_level": 2,
+        "bbox": [
+            111,
+            171,
+            277,
+            190
+        ],
+        "page_idx": 33
+    },
+    {
+        "type": "text",
+        "text": "In this article, we explored how we can adapt the double/debiased machine learning framework to deal with unobserved heterogeneity in panel data settings. For this purpose, we considered several intuitive methods to account for unit-specific heterogeneity within DML. If DML can thereby adjust for time-constant unobserved confounding, similarly to the traditional fixed efects estimator, it allows us to relax two assumptions in the estimation of causal efects: (1) the assumption that we have chosen the correct functional forms in a parametric model, since a flexible ML method can in principle learn these within DML, and (2) the assumption that there is no unobserved confounding, since accounting for unobserved heterogeneity allows us to rely on the weaker assumption of no time-varying unobserved confounding. However, adaptations of DML to panel data settings are not straightforward due to two issues. First, the dependence of observations within the same cluster and/or across time violates assumptions underlying the cross-fitting procedure of DML. Secondly, nonlinear confounding relationships complicate the elimination of unobserved heterogeneity.",
+        "bbox": [
+            107,
+            217,
+            887,
+            540
+        ],
+        "page_idx": 33
+    },
+    {
+        "type": "text",
+        "text": "While our results show that the cross-fitting procedure is not crucial for the accuracy of the estimated efects, we also find that many of the intuitive methods fail to recover the true efect in simulated data with nonlinear influences of the observed confounders. Although most DML-based methods are superior to estimating a misspecified (i.e., linear) fixed efects model in such settings, most of them cannot fully remove the confounding bias. We demonstrate that the influence of the unobserved unit-specific confounding on the observed time-varying confounders $( U _ { i } \\to X _ { i t } )$ plays a critical role in the viability of some methods: due to the nonlinear influence of the observed confounders, the unobserved heterogeneity is no longer additively separable and most approaches cannot easily eliminate it. The only DML estimator delivering good estimates across settings is the one using the Mundlak-type correlated random efects approach within DML: by using the timemeans of the treatment and the covariates as additional predictors within DML, this approach can explicitly model the unobserved heterogeneity, even in cases with nonlinear observed confounding.",
+        "bbox": [
+            109,
+            549,
+            887,
+            872
+        ],
+        "page_idx": 33
+    },
+    {
+        "type": "page_number",
+        "text": "34",
+        "bbox": [
+            486,
+            906,
+            509,
+            919
+        ],
+        "page_idx": 33
+    },
+    {
+        "type": "text",
+        "text": "One caveat of this estimator is the need for a sample size that is large relative to the number of observed confounders, which however is not unreasonable in many applications.",
+        "bbox": [
+            109,
+            90,
+            887,
+            135
+        ],
+        "page_idx": 34
+    },
+    {
+        "type": "text",
+        "text": "We next discuss whether it is reasonable to stress the importance of the influence of the unobserved heterogeneity on the observed confounding $( U _ { i } \\to X _ { i t } )$ like we do in this article. Is this path likely to be present in typical applications? We consider two classical causal questions as examples: the evaluation of job programs, and the estimation of the price elasticity of demand for consumer goods. First, one standard problem in econometric textbooks is estimating the efect of a job program $( W _ { i t } )$ on future earnings of the participants (Y<sub>it</sub>) (e.g., Wooldridge, 2010, Chapter 10). Important unobserved, but (relatively) time-constant confounders (U<sub>i</sub>) could be the ability or motivation of individuals, which could influence both whether they participate in the training and their future earnings. Observed confounders typically consist of individual characteristics like age, sex, years of schooling, marital status, number of hours worked before the training, etc. While some of these are certainly not influenced by the unobserved heterogeneity (age, sex) and would drop out of a fixed efects regression anyway, others can vary over time (schooling, marital status, hours worked) and are plausibly influenced by the ability and/or motivation $( U _ { i } \\to X _ { i t } )$ . Secondly, we return to our example from the introduction. Because pricing decisions are very consequential for many products, retailing firms want to know the efect of price $( W _ { i t } )$ on demand $( Y _ { i t } )$ (e.g., Bijmolt et al., 2005). However, if the available panel data consists of diferent stores over time, there could be unobserved heterogeneity $( U _ { i } ) , \\mathrm { e . g . }$ , due to management quality, the attractiveness of the store location, or demographic characteristics of residents nearby (e.g., Papies et al., 2017; Wooldridge, 2010). At the same time, observed factors like advertising, sales promotions, or prices of competitor products could function as time-varying confounding variables $( X _ { i t } )$ , and are likely also influenced by the unobserved time-constant factors $( U _ { i } \\to X _ { i t } )$ . In sum, these two examples illustrate that the influence of $U _ { i }$ on $X _ { i t }$ is arguably common in practice. As a consequence, researchers should ensure that the estimators they use are capable of dealing with this setting, like we show for DML with CRE.",
+        "bbox": [
+            109,
+            145,
+            887,
+            800
+        ],
+        "page_idx": 34
+    },
+    {
+        "type": "text",
+        "text": "From our results, we derive the following recommendations: (1) In applications where researchers currently use the traditional fixed efects regression, we recommend additionally using DML with correlated random efects and comparing the estimated coeficients. This robustness check can indicate potential for functional form misspecification if the estimated efects are very diferent. (2) When comparing the results, we recommend making the confidence in the DML estimate dependent on the sample size. We encourage a higher confidence in the accuracy of the estimated efect if the sample size is large and the number of observed confounders is small. (3) We recommend not splitting by unit within cross-fitting, at least if the goal is to model the unobserved heterogeneity within the ML prediction steps. (4) We discourage interpreting standard errors or confidence intervals stemming from our considered DML estimators. There is still a lack of clarity about how to obtain valid variance estimators in these settings with both cluster and time dependence, especially in combination with the cross-fitting procedure.",
+        "bbox": [
+            109,
+            810,
+            887,
+            882
+        ],
+        "page_idx": 34
+    },
+    {
+        "type": "page_number",
+        "text": "35",
+        "bbox": [
+            488,
+            906,
+            509,
+            917
+        ],
+        "page_idx": 34
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            107,
+            90,
+            887,
+            330
+        ],
+        "page_idx": 35
+    },
+    {
+        "type": "text",
+        "text": "Our final recommendation already ties in with the limitations of our study. We focus only on whether the suggested estimators are capable of retrieving the true causal efect in a variety of simulated settings. We do not provide any asymptotic properties of these estimators and are thus not able to construct valid confidence intervals. Also, our considered estimators are motivated by intuitively appealing adaptations of existing panel data methods and not built on Neymanorthogonal scores like the ones in Chernozhukov et al. (2018). By contrast, Clarke and Polselli (2023) derive a Neyman-orthogonal score for a similar setting, but also show inference to be problematic in a number of situations. Further exploration of the possibilities and limitations of statistical inference in these settings will be crucial for a more widespread adoption of these methods in practical applications. Finally, we are assuming the absence of dynamic efects and efect heterogeneity, and only consider additive fixed efects. Future research could study the consequences of violating these assumptions and propose alternative DML adaptations for these situations.",
+        "bbox": [
+            107,
+            339,
+            887,
+            662
+        ],
+        "page_idx": 35
+    },
+    {
+        "type": "text",
+        "text": "Acknowledgements",
+        "text_level": 2,
+        "bbox": [
+            112,
+            698,
+            336,
+            718
+        ],
+        "page_idx": 35
+    },
+    {
+        "type": "text",
+        "text": "Funded by the Deutsche Forschungsgemeinschaft (DFG, German Research Foundation) under Germany’s Excellence Strategy – EXC number 2064/1 – Project number 390727645. The authors acknowledge support by the state of Baden-W¨urttemberg through bwHPC.",
+        "bbox": [
+            109,
+            742,
+            885,
+            815
+        ],
+        "page_idx": 35
+    },
+    {
+        "type": "page_number",
+        "text": "36",
+        "bbox": [
+            488,
+            905,
+            509,
+            919
+        ],
+        "page_idx": 35
+    },
+    {
+        "type": "text",
+        "text": "References",
+        "text_level": 2,
+        "bbox": [
+            111,
+            87,
+            241,
+            107
+        ],
+        "page_idx": 36
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Athey, S., Tibshirani, J., and Wager, S. (2019). Generalized random forests. Annals of Statistics, 47(2):1148–1178.",
+            "Belloni, A., Chernozhukov, V., Hansen, C., and Kozbur, D. (2016). Inference in High-Dimensional Panel Models With an Application to Gun Control. Journal of Business & Economic Statistics, 34(4):590–605.",
+            "Bijmolt, T. H. A., van Heerde, H. J., and Pieters, R. G. M. (2005). New Empirical Generalizations on the Determinants of Price Elasticity. Journal of Marketing Research, 42(2):141–156.",
+            "Bodory, H., Huber, M., and Laf´ers, L. (2022). Evaluating (weighted) dynamic treatment efects by double machine learning. The Econometrics Journal, 25(3):628–648.",
+            "Chamberlain, G. (1982). Multivariate regression models for panel data. Journal of Econometrics, 18(1):5–46.",
+            "Chamberlain, G. (1984). Chapter 22 Panel data. In Handbook of Econometrics, volume 2, pages 1247–1318. Elsevier.",
+            "Chang, N.-C. (2020). Double/debiased machine learning for diference-in-diferences models. The Econometrics Journal, 23(2):177–191.",
+            "Chen, T., He, T., Benesty, M., Khotilovich, V., Tang, Y., Cho, H., Chen, K., Mitchell, R., Cano, I., Zhou, T., Li, M., Xie, J., Lin, M., Geng, Y., Li, Y., and Yuan, J. (2023). xgboost: Extreme Gradient Boosting.",
+            "Chernozhukov, V., Chetverikov, D., Demirer, M., Duflo, E., Hansen, C., Newey, W., and Robins, J. (2018). Double/debiased machine learning for treatment and structural parameters. The Econometrics Journal, 21(1):C1–C68.",
+            "Chernozhukov, V., Hansen, C., Kallus, N., Spindler, M., and Syrgkanis, V. (2024). Applied Causal Inference Powered by ML and AI. arXiv:2403.02467 [cs, econ, stat]."
+        ],
+        "bbox": [
+            111,
+            131,
+            885,
+            176
+        ],
+        "page_idx": 36
+    },
+    {
+        "type": "page_number",
+        "text": "37",
+        "bbox": [
+            486,
+            905,
+            509,
+            919
+        ],
+        "page_idx": 36
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Chernozhukov, V., Newey, W. K., and Singh, R. (2022). Automatic Debiased Machine Learning of Causal and Structural Efects. Econometrica, 90(3):967–1027.",
+            "Chiang, H. D., Kato, K., Ma, Y., and Sasaki, Y. (2022). Multiway Cluster Robust Double/Debiased Machine Learning. Journal of Business & Economic Statistics, 40(3):1046–1056.",
+            "Clarke, P. and Polselli, A. (2023). Double Machine Learning for Static Panel Models with Fixed Efects. arXiv:2312.08174 [cs, econ, stat].",
+            "Cunningham, S. (2021). Causal Inference: The Mixtape. Yale University Press.",
+            "Felderer, B., Kueck, J., and Spindler, M. (2023). Using Double Machine Learning to Understand Nonresponse in the Recruitment of a Mixed-Mode Online Panel. Social Science Computer Review, 41(2):461–481.",
+            "Gordon, B. R., Moakler, R., and Zettelmeyer, F. (2022). Close Enough? A Large-Scale Exploration of Non-Experimental Approaches to Advertising Measurement. Marketing Science, 42(4):768– 793.",
+            "Huntington-Klein, N. (2022). The Efect: An Introduction to Research Design and Causality. Chapman and Hall/CRC.",
+            "Liu, M., Zhang, Y., and Zhou, D. (2021). Double/debiased machine learning for logistic partially linear model. The Econometrics Journal, 24(3):559–588.",
+            "Mundlak, Y. (1978). On the Pooling of Time Series and Cross Section Data. Econometrica, 46(1):69– 85.",
+            "Papies, D., Ebbes, P., and Van Heerde, H. J. (2017). Addressing Endogeneity in Marketing Models. In Leeflang, P. S. H., Wieringa, J. E., Bijmolt, T. H., and Pauwels, K. H., editors, Advanced Methods for Modeling Markets, pages 581–627. Springer International Publishing, Cham.",
+            "Parpouchi, M., Moniruzzaman, A., and Somers, J. M. (2021). The association between experiencing homelessness in childhood or youth and adult housing stability in Housing First. BMC Psychiatry, 21(1):138."
+        ],
+        "bbox": [
+            111,
+            89,
+            887,
+            136
+        ],
+        "page_idx": 37
+    },
+    {
+        "type": "page_number",
+        "text": "38",
+        "bbox": [
+            486,
+            905,
+            509,
+            919
+        ],
+        "page_idx": 37
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Semenova, V., Goldman, M., Chernozhukov, V., and Taddy, M. (2023). Inference on heterogeneous treatment efects in high-dimensional dynamic panels under weak dependence. Quantitative Economics, 14(2):471–510.",
+            "Wooldridge, J. (2012). Introductory Econometrics: A Modern Approach. Cengage Learning, Inc, Mason, OH, 5 edition.",
+            "Wooldridge, J. M. (2010). Econometric Analysis of Cross Section and Panel Data. MIT Press, Cambridge, MA, USA, 2 edition."
+        ],
+        "bbox": [
+            112,
+            89,
+            885,
+            162
+        ],
+        "page_idx": 38
+    },
+    {
+        "type": "page_number",
+        "text": "39",
+        "bbox": [
+            486,
+            905,
+            509,
+            919
+        ],
+        "page_idx": 38
+    },
+    {
+        "type": "text",
+        "text": "A Appendix",
+        "text_level": 2,
+        "bbox": [
+            111,
+            87,
+            277,
+            107
+        ],
+        "page_idx": 39
+    },
+    {
+        "type": "text",
+        "text": "A.1 Cross-fitting techniques illustrations and results",
+        "text_level": 2,
+        "bbox": [
+            111,
+            131,
+            633,
+            148
+        ],
+        "page_idx": 39
+    },
+    {
+        "type": "text",
+        "text": "A.1.1 Illustration of splitting procedures",
+        "text_level": 2,
+        "bbox": [
+            111,
+            167,
+            495,
+            185
+        ],
+        "page_idx": 39
+    },
+    {
+        "type": "table",
+        "img_path": "images/ee88c6f6bbfae95dfa99a28c745c6b2ad1191056150a7dc08249c090e9f2e59d.jpg",
+        "table_caption": [
+            "Figure 11: Illustration of cross-fitting when splitting by time into folds with adjacent periods. Data is split by time into K folds (here, $K = 1 0 )$ . Each M is one fold of data. We train the two ML models on the folds within the golden box. We make predictions with these models and estimate the efects on the fold printed in bold within the grey box."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td> $\\mathbf { \\mathcal { M } _ { 1 } }$ </td><td colspan=\"4\"> $\\lvert \\mathcal { M } _ { 2 }$   $\\mathcal { M } _ { 3 }$   $\\mathcal { M } _ { 4 }$   $\\mathcal { M } _ { 5 }$   $\\mathcal { M } _ { 6 }$   $\\mathcal { M } _ { 7 }$   $\\mathcal { M } _ { 8 }$   $\\mathcal { M } _ { 9 }$   $\\mathcal { M } _ { 1 0 }$ </td></tr><tr><td> $\\mathcal { M } _ { 1 }$ </td><td colspan=\"4\"> $\\mathcal { M } _ { 5 }$   $\\mathcal { M } _ { 6 }$   $\\mathcal { M } _ { 7 }$ </td></tr><tr><td> $\\mathbf { { \\mathcal { M } } _ { 2 } }$   $\\mathcal { M } _ { 1 }$ </td><td> $\\mathcal { M } _ { 3 }$   $\\mathcal { M } _ { 4 }$   $\\boldsymbol { \\mathcal { M } _ { 4 } }$ </td><td> $\\mathcal { M } _ { 5 }$   $\\mathcal { M } _ { 6 }$   $\\mathcal { M } _ { 7 }$ </td><td colspan=\"2\"> $\\mathcal { M } _ { 8 }$   $\\mathcal { M } _ { 9 }$   $\\mathcal { M } _ { 1 0 }$   $\\mathcal { M } _ { 8 }$   $\\mathcal { M } _ { 9 }$   $\\mathcal { M } _ { 1 0 }$ </td></tr><tr><td colspan=\"5\"> $\\mathcal { M } _ { 2 }$   $\\mathbf { \\mathcal { M } } _ { 3 }$ </td></tr><tr><td colspan=\"4\"> $\\mathcal { M } _ { 1 }$   $\\mathcal { M } _ { 2 }$   $\\mathcal { M } _ { 3 }$   $\\mathbf { \\mathcal { M } } _ { 4 }$ </td></tr><tr><td colspan=\"2\"> $\\mathcal { M } _ { 1 }$   $\\mathcal { M } _ { 2 }$   $\\mathcal { M } _ { 3 }$   $\\mathcal { M } _ { 4 }$   $\\mathbf { \\mathcal { M } } _ { 5 }$   $\\lvert \\mathcal { M } _ { 6 }$ </td><td colspan=\"4\"> $\\mathcal { M } _ { 7 }$   $\\mathcal { M } _ { 8 }$   $\\mathcal { M } _ { 9 }$   $\\mathcal { M } _ { 1 0 }$ </td></tr><tr><td colspan=\"4\"> $\\mathcal { M } _ { 1 }$   $\\mathcal { M } _ { 2 }$   $\\mathcal { M } _ { 3 }$   $\\mathcal { M } _ { 4 }$   $\\mathcal { M } _ { 5 }$   $\\mathbf { \\mathcal { M } } _ { 6 }$   $\\mathbf { \\mathcal { M } } _ { 7 }$   $\\mathcal { M } _ { 8 }$   $\\mathcal { M } _ { 9 }$ </td></tr><tr><td colspan=\"4\"> $\\mathcal { M } _ { 1 }$   $\\mathcal { M } _ { 2 }$   $\\mathcal { M } _ { 3 }$   $\\mathcal { M } _ { 4 }$   $\\mathcal { M } _ { 5 }$   $\\mathcal { M } _ { 6 }$ </td><td colspan=\"4\"> $\\mathcal { M } _ { 1 0 }$   $\\mathbf { \\mathcal { M } } _ { 7 }$   $\\mathcal { M } _ { 8 }$   $\\mathcal { M } _ { 9 }$   $\\mathcal { M } _ { 1 0 }$ </td></tr><tr><td colspan=\"5\"></td><td colspan=\"2\"> $\\mathcal { M } _ { 7 }$ </td></tr><tr><td colspan=\"5\"> $\\mathcal { M } _ { 1 }$   $\\mathcal { M } _ { 2 }$   $\\mathcal { M } _ { 3 }$   $\\mathcal { M } _ { 4 }$   $\\mathcal { M } _ { 5 }$   $\\mathcal { M } _ { 6 }$ </td><td colspan=\"2\"> $\\mathbf { \\mathcal { M } } _ { 8 }$   $\\lvert \\mathcal { M } _ { 9 }$   $\\mathcal { M } _ { 1 0 }$ </td></tr><tr><td colspan=\"5\"> $\\mathcal { M } _ { 1 }$   $\\mathcal { M } _ { 2 }$   $\\mathcal { M } _ { 3 }$   $\\mathcal { M } _ { 4 }$   $\\mathcal { M } _ { 5 }$   $\\mathcal { M } _ { 6 }$   $\\mathcal { M } _ { 7 }$   $\\mathcal { M } _ { 8 }$ </td><td colspan=\"2\"> $\\mathbf { \\mathcal { M } _ { 9 } }$   $\\boxed { \\mathcal { M } _ { 1 0 } }$ </td></tr><tr><td colspan=\"5\"> $\\mathcal { M } _ { 1 }$   $\\mathcal { M } _ { 2 }$   $\\mathcal { M } _ { 3 }$   $\\mathcal { M } _ { 4 }$   $\\mathcal { M } _ { 5 }$   $\\mathcal { M } _ { 6 }$   $\\mathcal { M } _ { 7 }$ </td><td colspan=\"2\"> $\\mathcal { M } _ { 8 }$   $\\mathcal { M } _ { 9 }$   $\\mathbf { \\mathcal { M } _ { 1 0 } }$ </td></tr></table>",
+        "bbox": [
+            276,
+            209,
+            746,
+            429
+        ],
+        "page_idx": 39
+    },
+    {
+        "type": "table",
+        "img_path": "images/be00ce139f84365515968cbf839a098093061234e6ac06890e8e7ad860563517.jpg",
+        "table_caption": [
+            "Figure 12: Illustration of “neighbors-left-out cross-fitting” (Semenova et al., 2023). Data is split by time into K folds (here, $K = 1 0 )$ . Each $\\mathcal { M }$ is one fold of data. We train the two ML models on the folds within the golden box. We make predictions with these models and estimate the efects on the fold printed in bold. The other folds within the grey box are in the immediate neighborhood of the bold fold and excluded from both training and estimation."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td> $\\mathbf { \\mathcal { M } _ { 1 } }$   $\\mathcal { M } _ { 2 }$   $\\mathcal { M } _ { 3 }$   $\\mathcal { M } _ { 4 }$   $\\mathcal { M } _ { 5 }$   $\\mathcal { M } _ { 6 }$   $\\mathcal { M } _ { 7 }$   $\\mathcal { M } _ { 8 }$   $\\mathcal { M } _ { 9 }$   $\\mathcal { M } _ { 1 0 }$ </td></tr><tr><td> $\\mathcal { M } _ { 1 }$   $\\mathbf { { \\mathcal { M } } _ { 2 } }$   $\\mathcal { M } _ { 3 }$   $\\mathcal { M } _ { 4 }$   $\\mathcal { M } _ { 5 }$   $\\mathcal { M } _ { 6 }$   $\\mathcal { M } _ { 7 }$   $\\mathcal { M } _ { 8 }$   $\\mathcal { M } _ { 9 }$   $\\mathcal { M } _ { 1 0 }$ </td></tr><tr><td> $\\mathcal { M } _ { 1 }$   $\\mathcal { M } _ { 2 }$   $\\mathbf { \\mathcal { M } } _ { 3 }$   $\\mathcal { M } _ { 4 }$   $\\mathcal { M } _ { 5 }$   $\\mathcal { M } _ { 6 }$   $\\mathcal { M } _ { 7 }$   $\\mathcal { M } _ { 8 }$   $\\mathcal { M } _ { 9 }$   $\\mathcal { M } _ { 1 0 }$ </td></tr><tr><td></td></tr><tr><td> $\\mathcal { M } _ { 1 }$   $\\mathcal { M } _ { 2 }$   $\\mathcal { M } _ { 3 }$   $\\mathbf { \\mathcal { M } } _ { 4 }$   $\\mathcal { M } _ { 5 }$   $\\mathcal { M } _ { 6 }$   $\\mathcal { M } _ { 7 }$   $\\mathcal { M } _ { 8 }$   $\\mathcal { M } _ { 9 }$   $\\mathcal { M } _ { 1 0 }$ </td></tr><tr><td> $\\mathcal { M } _ { 1 }$   $\\mathcal { M } _ { 2 }$   $\\mathcal { M } _ { 3 }$   $\\mathcal { M } _ { 4 }$   $\\mathbf { \\mathcal { M } } _ { 5 }$   $\\mathcal { M } _ { 6 }$   $\\mathcal { M } _ { 7 }$   $\\mathcal { M } _ { 8 }$   $\\mathcal { M } _ { 9 }$   $\\mathcal { M } _ { 1 0 }$ </td></tr><tr><td> $\\mathcal { M } _ { 1 }$   $\\mathcal { M } _ { 2 }$   $\\mathcal { M } _ { 3 }$   $\\mathcal { M } _ { 4 }$   $\\mathcal { M } _ { 5 }$   $\\mathbf { \\mathcal { M } } _ { 6 }$   $\\mathcal { M } _ { 7 }$   $\\mathcal { M } _ { 8 }$   $\\mathcal { M } _ { 9 }$   $\\mathcal { M } _ { 1 0 }$ </td></tr><tr><td></td></tr><tr><td> $\\mathcal { M } _ { 1 }$   $\\mathcal { M } _ { 2 }$   $\\mathcal { M } _ { 3 }$   $\\mathcal { M } _ { 4 }$   $\\mathcal { M } _ { 5 }$   $\\mathcal { M } _ { 6 }$   $\\mathbf { \\delta } \\mathbf { \\mathcal { M } } _ { 7 }$   $\\mathcal { M } _ { 8 }$   $\\mathcal { M } _ { 9 }$   $\\mathcal { M } _ { 1 0 }$ </td></tr><tr><td> $\\mathcal { M } _ { 1 }$   $\\mathcal { M } _ { 2 }$   $\\mathcal { M } _ { 3 }$   $\\mathcal { M } _ { 4 }$   $\\mathcal { M } _ { 5 }$   $\\mathcal { M } _ { 6 }$   $\\mathcal { M } _ { 7 }$   $\\mathbf { \\mathcal { M } } _ { 8 }$   $\\mathcal { M } _ { 9 }$   $\\mathcal { M } _ { 1 0 }$ </td></tr><tr><td> $\\mathcal { M } _ { 1 }$   $\\mathcal { M } _ { 2 }$   $\\mathcal { M } _ { 3 }$   $\\mathcal { M } _ { 4 }$   $\\mathcal { M } _ { 5 }$   $\\mathcal { M } _ { 6 }$   $\\mathcal { M } _ { 7 }$   $\\mathcal { M } _ { 8 }$   $\\mathbf { \\mathcal { M } _ { 9 } }$   $\\mathcal { M } _ { 1 0 }$ </td></tr><tr><td> $\\mathcal { M } _ { 1 }$   $\\mathcal { M } _ { 2 }$   $\\mathcal { M } _ { 3 }$   $\\mathcal { M } _ { 4 }$   $\\mathcal { M } _ { 5 }$   $\\mathcal { M } _ { 6 }$   $\\mathcal { M } _ { 7 }$   $\\mathcal { M } _ { 8 }$   $\\mathcal { M } _ { 9 }$   $\\mathbf { \\mathcal { M } } _ { 1 0 }$ </td></tr></table>",
+        "bbox": [
+            276,
+            536,
+            746,
+            756
+        ],
+        "page_idx": 39
+    },
+    {
+        "type": "page_number",
+        "text": "40",
+        "bbox": [
+            488,
+            905,
+            511,
+            919
+        ],
+        "page_idx": 39
+    },
+    {
+        "type": "text",
+        "text": "A.1.2 Results for cross-fitting with diferent N and T",
+        "text_level": 2,
+        "bbox": [
+            111,
+            89,
+            607,
+            107
+        ],
+        "page_idx": 40
+    },
+    {
+        "type": "chart",
+        "img_path": "images/64fe8f558ae107270d3415fcb50a8b2c7c1de52b8ed45cb9af136be7523e610b.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 13: Results for utilizing diferent cross-fitting techniques (Table 2) within various DML estimators for $\\underline { { N = 1 0 } }$ and $\\underline { { T = 5 0 0 } }$ . The vertical axis depicts the estimated coeficient. The dashed line marks the true causal efect $( \\beta = 1 )$ . The boxplots show the distribution of estimated coeficients across 100 simulated datasets for each method. Data is generated according to DGP (3), with one observed confounder, u-shaped functional forms and a large degree of autocorrelation $( \\rho = . 9 )$ . NLO: neighbors-left-out cross-fitting."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            117,
+            133,
+            879,
+            425
+        ],
+        "page_idx": 40
+    },
+    {
+        "type": "page_number",
+        "text": "41",
+        "bbox": [
+            486,
+            905,
+            508,
+            919
+        ],
+        "page_idx": 40
+    },
+    {
+        "type": "chart",
+        "img_path": "images/e94fbd1449f965d7eb67f2e4f50be47e3b14bc4ec451878cc937aaef1c05ced5.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 14: Results for utilizing diferent cross-fitting techniques (Table 2) within various DML estimators for $\\underline { { N = 2 5 0 } }$ and $T = 2 0$ . The vertical axis depicts the estimated coeficient. The dashed line marks the true causal efect $( \\beta = 1 )$ . The boxplots show the distribution of estimated coeficients across 100 simulated datasets for each method. Data is generated according to DGP (3), with one observed confounder, u-shaped functional forms and a large degree of autocorrelation $( \\rho = . 9 )$ . NLO: neighbors-left-out cross-fitting."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            117,
+            291,
+            879,
+            584
+        ],
+        "page_idx": 41
+    },
+    {
+        "type": "page_number",
+        "text": "42",
+        "bbox": [
+            486,
+            905,
+            509,
+            919
+        ],
+        "page_idx": 41
+    },
+    {
+        "type": "text",
+        "text": "A.2 Computational eficiency of diferent approaches",
+        "text_level": 2,
+        "bbox": [
+            111,
+            88,
+            638,
+            107
+        ],
+        "page_idx": 42
+    },
+    {
+        "type": "text",
+        "text": "In addition to their varying estimation performance, the diferent considered estimation approaches also strongly difer in their computational eficiency (Table 5). Most notably, DML with dummies is computationally much more expensive than the alternatives, especially in settings where the number of units and thus dummy variables gets large. In our baseline setting, the estimation for a single dataset with N = 500 units and T = 10 periods, using 5-fold cross-fitting, is approximately 42.8 times slower compared to the second slowest method (DML with CRE). This efect is less pronounced in settings with fewer units (and thus fixed efects).",
+        "bbox": [
+            107,
+            127,
+            887,
+            311
+        ],
+        "page_idx": 42
+    },
+    {
+        "type": "table",
+        "img_path": "images/02606a1fda073d8eb285932e862408c9c2d806bbfa3a5bf00d8e983c7e80345c.jpg",
+        "table_caption": [
+            "Table 5: Computation times (in seconds) for diferent approaches and diferent data structures"
+        ],
+        "table_footnote": [
+            "Note: N: number of units, T: number of periods. Reported execution times are the averages of five iterations for each methoddataset combination. We simulated the data according to DGP (3) of the baseline simulation setting. For this simple comparison, we computed each method on a standard laptop with an Intel Core i5-8365U 4-core CPU with 1.60 GHz and 16 GB of RAM."
+        ],
+        "table_body": "<table><tr><td>Method</td><td> $N = 5 0 0 ~ / ~ T = 1 0$ </td><td> $N = 1 0 0 \\ / \\ T = 5 0$ </td><td> $N = 5 0 ~ / ~ T = 1 0 0$ </td><td> $N = 1 0 ~ / ~ T = 5 0 0$ </td></tr><tr><td>DML (early FE)</td><td>4.56</td><td>5.10</td><td>4.54</td><td>5.61</td></tr><tr><td>PDML</td><td>6.38</td><td>6.78</td><td>6.56</td><td>6.72</td></tr><tr><td>DML (late FE)</td><td>6.40</td><td>6.71</td><td>6.63</td><td>6.89</td></tr><tr><td>DML (CRE)</td><td>7.69</td><td>8.22</td><td>7.79</td><td>7.89</td></tr><tr><td>DML (dummies)</td><td>329.43</td><td>47.67</td><td>23.56</td><td>13.09</td></tr></table>",
+        "bbox": [
+            119,
+            347,
+            883,
+            463
+        ],
+        "page_idx": 42
+    },
+    {
+        "type": "page_number",
+        "text": "43",
+        "bbox": [
+            486,
+            905,
+            509,
+            919
+        ],
+        "page_idx": 42
+    },
+    {
+        "type": "text",
+        "text": "A.3 Further settings and results",
+        "text_level": 2,
+        "bbox": [
+            111,
+            88,
+            441,
+            107
+        ],
+        "page_idx": 43
+    },
+    {
+        "type": "text",
+        "text": "A.3.1 Results for intermediate numbers of N and $T$",
+        "text_level": 2,
+        "bbox": [
+            109,
+            126,
+            594,
+            143
+        ],
+        "page_idx": 43
+    },
+    {
+        "type": "chart",
+        "img_path": "images/12502e03c8120087ca08c11d6a463e43c8a7ba5264e8663d2aaf6909f32be11d.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 15: Results for the setting with $\\underline { { N = 1 0 0 } }$ units and $\\underline { { T = 5 0 } }$ periods. The horizontal axis displays the diferent methods from Table 4. The vertical axis depicts the estimated coeficient. The dashed line marks the true causal efect $( \\beta = 1 )$ . The boxplots show the distribution of estimated coeficients across 100 simulated datasets for each method. The three rows contain three diferent DGPs: $^ { * } n o U ^ { * }$ indicates no unobserved heterogeneity, ${ \\ddot { \\mathbf { \\theta } } } ^ {  } U \\mid X ^ { \\prime \\prime }$ means the unobserved heterogeneity influences treatment and outcome, but not confounders, and ${ } ^ { \\mathfrak { s } } U \\to X ^ { \\mathfrak { s } }$ means the unobserved heterogeneity also influences the confounders."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            120,
+            166,
+            879,
+            604
+        ],
+        "page_idx": 43
+    },
+    {
+        "type": "page_number",
+        "text": "44",
+        "bbox": [
+            486,
+            906,
+            509,
+            917
+        ],
+        "page_idx": 43
+    },
+    {
+        "type": "chart",
+        "img_path": "images/d5c653364f68ad41096e305f631420f1a3b260bf8b12022c03645085235f79f1.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 16: Results for the setting with $\\underline { { N = 5 0 } }$ units and $T = 1 0 0$ periods. The horizontal axis displays the diferent methods from Table 4. The vertical axis depicts the estimated coeficient. The dashed line marks the true causal efect $( \\beta = 1 )$ . The boxplots show the distribution of estimated coeficients across 100 simulated datasets for each method. The three rows contain three diferent DGPs: $^ { * } n o U ^ { * }$ indicates no unobserved heterogeneity, $^ { \\mathrm { 6 } } U \\mid X ^ { \\prime \\prime }$ means the unobserved heterogeneity influences treatment and outcome, but not confounders, and $^ { \\ast } U \\to X ^ { \\prime \\prime }$ means the unobserved heterogeneity also influences the confounders."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            120,
+            212,
+            879,
+            648
+        ],
+        "page_idx": 44
+    },
+    {
+        "type": "page_number",
+        "text": "45",
+        "bbox": [
+            486,
+            906,
+            509,
+            919
+        ],
+        "page_idx": 44
+    },
+    {
+        "type": "text",
+        "text": "A.3.2 Varying the number of observed confounders in linear settings or with more periods",
+        "text_level": 2,
+        "bbox": [
+            109,
+            89,
+            885,
+            136
+        ],
+        "page_idx": 45
+    },
+    {
+        "type": "chart",
+        "img_path": "images/ca4d71b81a0bba37a108c331bab55afe39caa5573a6addf32b3a39461e5c3b09.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 17: Mean absolute error in the estimated coeficient across 100 simulations by number of observed confounders. The simulated confounding influence is linear, the causal structure is (C), i.e., $U _ { i } \\to X _ { i t }$ $N = 5 0 0 , T = 1 0$"
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            114,
+            159,
+            877,
+            395
+        ],
+        "page_idx": 45
+    },
+    {
+        "type": "chart",
+        "img_path": "images/410881aa021b021c4b4422fd1a789dbca7eb8bc4849152278f972df8b32605a9.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 18: Mean absolute error in the estimated coeficient across 100 simulations by number of observed confounders. The simulated confounding influence is u-shaped, the causal structure is (C), i.e., $U _ { i } \\to X _ { i t }$ $N = 5 0 0 , \\underline { { T } } = 1 0 0$ . We computed DML (dummies) only for 1 and 5 confounders due to unreasonably high computational costs for this data size."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            114,
+            486,
+            877,
+            726
+        ],
+        "page_idx": 45
+    },
+    {
+        "type": "page_number",
+        "text": "46",
+        "bbox": [
+            486,
+            905,
+            509,
+            919
+        ],
+        "page_idx": 45
+    },
+    {
+        "type": "text",
+        "text": "A.3.3 Increasing sample size by increasing the number of periods",
+        "text_level": 2,
+        "bbox": [
+            109,
+            89,
+            717,
+            108
+        ],
+        "page_idx": 46
+    },
+    {
+        "type": "chart",
+        "img_path": "images/a0ec7e046c51d7926d54056ebe9cd1aa33dde9b644a3640d43210a1ddbda51b8.jpg",
+        "content": "",
+        "chart_caption": [
+            "Number of periods (log-scale, N = 500 constant)",
+            "Figure 19: Mean absolute error in the estimated coeficient across 100 simulations for 1 observed confounder by the number of periods. The number of units is fixed at $N = 5 0 0$ . The simulated confounding influence is u-shaped, the causal structure is (C), i.e., $U _ { i } \\to X _ { i t }$ . We computed DML (dummies) only for up to $T = 1 0 0$ as it becomes computationally too costly for larger values."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            114,
+            132,
+            877,
+            348
+        ],
+        "page_idx": 46
+    },
+    {
+        "type": "chart",
+        "img_path": "images/aa7979c157770c41110fe96a66d11d65ddaa83bc59a2515c5fc8869e30bdd543.jpg",
+        "content": "",
+        "chart_caption": [
+            "Number of periods (log-scale, N = 500 constant)",
+            "Figure 20: Mean absolute error in the estimated coeficient across 100 simulations for 5 observed confounders by the number of periods. The number of units is fixed at $N = 5 0 0$ . The simulated confounding influence is u-shaped, the causal structure is (C), i.e., $U _ { i } \\to X _ { i t }$ . We computed DML (dummies) only for up to $T = 1 0 0$ as it becomes computationally too costly for larger values."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            114,
+            479,
+            877,
+            695
+        ],
+        "page_idx": 46
+    },
+    {
+        "type": "page_number",
+        "text": "47",
+        "bbox": [
+            486,
+            905,
+            509,
+            919
+        ],
+        "page_idx": 46
+    }
+]
