@@ -21,19 +21,27 @@ from contracts.embedder import EmbedderInfo, Vector
 from contracts.errors import ContractError
 from contracts.gpu_lock import GpuLock
 
+# The real TEI server enforces `max_client_batch_size=32` (empirically confirmed: 161 texts ->
+# HTTP 422 "batch size 161 > maximum allowed batch size 32"; 32 texts -> HTTP 200). Not a tunable
+# — it's the server's own hard ceiling, so `embed()` sub-batches to respect it.
+_MAX_BATCH_SIZE = 32
+
 
 class TeiEmbedder:
-    """Real `Embedder` adapter: one batched HTTP call per `embed()` invocation, through an
+    """Real `Embedder` adapter: one or more batched HTTP calls per `embed()` invocation — split
+    into groups of at most `_MAX_BATCH_SIZE` to respect the server's batch-size limit — through an
     injected client pointed at a TEI-style `/embed` endpoint (or a compatible server).
 
     Preconditions: none beyond `texts` being a list of `str` — an empty list is a valid, zero-cost
     call (returns `[]`), not a precondition violation (matches the frozen contract test).
     Postconditions: `len(output) == len(texts)`, order-preserving (`output[i]` is the vector for
-    `texts[i]`); every vector has `len == info.dim` and is L2-normalized — re-normalized here
-    regardless of whether the server already does, so the invariant holds independent of server
-    config. A response that violates either of these is `ContractError` (a broken invariant, not
-    a per-paper failure — CONVENTIONS.md §4).
-    Acquires `gpu_lock.acquire("embed")` around the batch call only (CONVENTIONS.md §6).
+    `texts[i]`) — holds across sub-batches too, since their results are concatenated back in the
+    same order the inputs were split; every vector has `len == info.dim` and is L2-normalized —
+    re-normalized here regardless of whether the server already does, so the invariant holds
+    independent of server config. A response that violates either of these is `ContractError` (a
+    broken invariant, not a per-paper failure — CONVENTIONS.md §4).
+    Acquires `gpu_lock.acquire("embed")` once around all sub-batches (CONVENTIONS.md §6): from the
+    caller's side `embed()` is still a single call, so the lock scope matches that.
     """
 
     def __init__(self, client: httpx.Client, gpu_lock: GpuLock, info: EmbedderInfo):
@@ -50,9 +58,12 @@ class TeiEmbedder:
             return []
 
         with self._gpu_lock.acquire("embed"):
-            response = self._client.post("/embed", json={"inputs": texts})
-            response.raise_for_status()
-            raw_vectors = response.json()
+            raw_vectors = []
+            for start in range(0, len(texts), _MAX_BATCH_SIZE):
+                batch = texts[start : start + _MAX_BATCH_SIZE]
+                response = self._client.post("/embed", json={"inputs": batch})
+                response.raise_for_status()
+                raw_vectors.extend(response.json())
 
         if len(raw_vectors) != len(texts):
             raise ContractError(
