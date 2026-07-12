@@ -220,11 +220,20 @@ def test_check_g_ignores_deleted_test_file_outside_pipeline_scope(tmp_path):
     assert violations == []
 
 
-# --- (h) manual chunk_id/block_id/summary_id slicing ----------------------------------------
+# --- (h) manual .id (chunk_id/block_id/summary_id) slicing ----------------------------------
 
 
 def test_check_h_flags_manual_slicing_outside_document_store():
     f = _fixture("id_slicing_bad.py", logical_path="rag/retriever.py")
+    violations = check_h([f])
+    assert len(violations) == 1
+    assert violations[0].check == "h"
+
+
+def test_check_h_flags_removesuffix_not_just_split():
+    # Blind spot 2 from the proposal: the old regex only matched `.split(`/slice syntax, missing
+    # `.removesuffix(`/`.removeprefix(` — the exact operation the real pre-fix retriever.py used.
+    f = _fixture("id_slicing_removesuffix_bad.py", logical_path="rag/retriever.py")
     violations = check_h([f])
     assert len(violations) == 1
     assert violations[0].check == "h"
@@ -238,6 +247,27 @@ def test_check_h_allows_slicing_inside_document_store():
 def test_check_h_passes_clean_file():
     f = _fixture("id_slicing_good.py", logical_path="rag/retriever.py")
     assert check_h([f]) == []
+
+
+def test_check_h_allows_sanctioned_helper_in_real_retriever():
+    # The real, committed rag/retriever.py centralizes the "{paper_id}:summary" parse into
+    # `_paper_id_from_summary_hit_id` — proving the sanctioned exception (by name+line-range) lets
+    # the actual production file through clean, not just a synthetic fixture.
+    f = DiffFile.from_whole_file("rag/retriever.py", REPO_ROOT)
+    assert check_h([f]) == []
+
+
+def test_check_h_flags_new_adhoc_parse_site_elsewhere_in_same_file():
+    # The sanctioned exception is fenced to _paper_id_from_summary_hit_id's own line range, not to
+    # its whole file: a second, unsanctioned function in the same (logical) rag/retriever.py that
+    # parses `.id` the same way must still trip the check.
+    f = _fixture("id_slicing_new_adhoc_bad.py", logical_path="rag/retriever.py")
+    violations = check_h([f])
+    assert len(violations) == 1
+    assert violations[0].check == "h"
+    # The flagged line is the rogue function's parse, not the sanctioned helper's.
+    flagged_line_text = f.content.splitlines()[violations[0].line - 1]
+    assert "candidate.id.removesuffix" in flagged_line_text
 
 
 # --- (e) foundation-change label (pull_request-only; no DiffFile needed) ---------------------
