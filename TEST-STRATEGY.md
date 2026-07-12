@@ -27,7 +27,7 @@ object. This is a preference for new tests, not a retroactive rewrite of existin
 | **Unit (via fakes)** | one module's behaviour through its interface | ms, no GPU/net | every owner, for their module |
 | **Golden fixtures** | Parser output on real PDFs (the one thing fakes can't cover) | seconds, no net | Owner B |
 | **Contract tests** | a fake and its real adapter behave identically at the seam | slow (real deps) | Owner of the seam (C, D) |
-| **Retrieval eval** | end-to-end retrieval quality on labeled questions | slow | Owner E, questions agent-generated |
+| **Retrieval eval** | end-to-end retrieval quality on labeled questions | slow | Owner E, question set imported (externally LLM-authored, `fixtures/eval/`) |
 
 ---
 
@@ -136,34 +136,48 @@ that used the fake.
 
 ## Retrieval eval set (the headline quality gate — from Spike 2)
 
-**Agent-generated, no human labeler (PRD §11 Q6, RESOLVED).** A teacher-student pattern:
+**Externally built, imported as the permanent regression gate — supersedes the originally-planned synthetic
+from-chunks generation (PRD §11 Q6).** The set is already committed at `fixtures/eval/`:
+`eval_questions_blind.json` (210 `{question_id, question_text, question_type}` records, zero answer/source
+leakage) and `eval_ground_truth.json` (210 matching `{question_id, answer_text, source_paper_id,
+source_paper_title, section_path, passage_excerpt, question_type, difficulty}` records). It was built by
+LLM subagents reading the full text of the same 100-paper Phase-0 corpus and authoring: 100 single-paper
+reading-comprehension questions (one per paper), 10 cross-paper synthesis questions across 10 thematic
+clusters, 50 single-paper deep-reasoning questions, and 50 multi-paper deep-reasoning questions. Its own
+automated QA (`rag-system-eval-set/tests/test_eval_dataset.py`, outside this repo) checks item counts,
+blind/ground-truth ID alignment, zero field-leakage in the blind file, and category-quota coverage — it is
+**structural** QA, not a semantic degenerate-question filter; there's no automated check here for
+near-verbatim excerpt overlap, general-knowledge-answerable questions, or title-only-answerable questions,
+unlike the judge pass the original synthetic plan called for.
 
-- **(a) Generation.** After Spike 1's parser + chunker run over the golden/representative papers, sample
-  chunks stratified across CONTEXT.md's 6 V0 sub-topics (causal ML / inference / discovery /
-  treatment-effect estimation / representation learning / causal-LLM setups), section type
-  (method/results/related-work), and equation-bearing vs. prose blocks — capped per paper so no single
-  paper dominates. Prompt the local generation LLM (same tier as Summarizer, ADR-08 — no new dependency)
-  to write **one natural question each sampled chunk answers**. **Gold label = that chunk's `chunk_id`**
-  — this is what makes Recall@10/MRR computable with zero human labeling: the gold answer is
-  definitionally the source chunk. Commit to `fixtures/eval/eval_set.jsonl`:
-  `{question, gold_chunk_id, paper_id, sub_topic, generator_model, prompt_version}`.
-- **(b) Automated judge/quality filter.** A second LLM pass discards degenerate generated questions:
-  near-verbatim question/chunk lexical overlap (would be trivially retrievable), questions answerable
-  without the passage (general knowledge), under-specified questions (the gold chunk isn't uniquely the
-  target), and questions answerable from the title/section-path prefix alone rather than the chunk body.
-  Over-generate ~300, target **~200 survivors** committed (raised from an earlier ~50-question plan now
-  that generation is compute, not a human labeling bottleneck — ~200 tightens the Recall@10 confidence
-  interval and gives each of the 6 sub-topics enough questions to expose sub-topic-specific failures).
-- **(c) Explicit caveat — read this, don't try to engineer it away.** Questions generated *from* a chunk
-  carry higher lexical/semantic overlap with it than an independent user's phrasing would, so
-  **Recall@10 on this set is an optimistic upper bound, not a guarantee of real-world query quality.**
-  It's still valid as a **permanent regression gate** — a swap that drops it is still worse — just don't
-  read "Recall@10 = 0.85 on this set" as "0.85 on real user queries."
+- **(a) The format gap.** The imported ground truth gold-labels each question with `source_paper_id` +
+  `section_path` + a verbatim `passage_excerpt` (≤200 chars, truncated), **not a `chunk_id`.** `chunk_id`s
+  don't exist until Spike 1's parser and this system's own chunker have actually run over these papers, so
+  the gold labels in the committed fixture are paper/passage-level, not chunk-level, by necessity.
+- **(b) Resolution (Spike 2's job, not done yet).** Once Spike 1 has produced real `Chunk`s for these 100
+  papers, resolve each question's `passage_excerpt` to a `chunk_id` by fuzzy/substring-matching the excerpt
+  against the text of the chunks belonging to that `source_paper_id`. This happens at Spike-2-execution
+  time, against the real corpus — it cannot be done now and must never be guessed or fabricated. A question
+  whose excerpt can't be confidently matched to exactly one chunk is **flagged** (`question_id` + reason:
+  no match / ambiguous match / split across chunk boundaries) and excluded from that run's Recall@10/MRR
+  denominator rather than silently dropped from the fixture or force-matched to the nearest chunk. The
+  flagged rate itself is a signal worth recording — a high rate points at chunking quality, not eval-set
+  quality.
+- **(c) Bias caveat — read this, don't try to engineer it away.** The original synthetic method's caveat
+  (Recall@10 is an optimistic upper bound because each question was generated *from* its own gold chunk,
+  inflating lexical/semantic overlap between question and gold passage) applies less directly to this set:
+  these questions were authored from a full paper read, and `passage_excerpt` was located afterward as
+  supporting evidence for an already-written answer, not used as the question's generation seed. That's a
+  materially different bias profile, not zero bias — the questions are still LLM-authored from the papers'
+  own text, so some shared domain vocabulary with the source passage likely remains, just not the tight
+  generated-from-this-exact-span echo the synthetic method had. Don't read "Recall@10 = 0.85 on this set"
+  as "0.85 on real user queries" either way.
 - This is a **build-time QA** decision, distinct from CONTEXT.md's *runtime* "no human in the loop"
-  principle (agent-as-reasoner, no approval queue) — using an LLM to build a test fixture doesn't touch
-  the ~0-API-cost *runtime* property.
+  principle (agent-as-reasoner, no approval queue) — importing an externally-authored test fixture doesn't
+  touch the ~0-API-cost *runtime* property.
 
-Runs against the **real** `Retriever.retrieve()` end-to-end and reports **Recall@10 and MRR**.
+Runs against the **real** `Retriever.retrieve()` end-to-end (using the resolved `chunk_id` gold labels from
+step (b)) and reports **Recall@10 and MRR**.
 - Also record **retrieval-failure rate** (faithfulness ≠ correctness — PRD §11B): how often the right passage
   simply wasn't in the returned set.
 - **Tag context-related failures** (chunk retrieved-adjacent but scored low because it reads ambiguously
