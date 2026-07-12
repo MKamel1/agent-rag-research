@@ -62,11 +62,11 @@ later session (or the human) can see who's doing what:
 | Owner | Modules | Session/agent | Status |
 |---|---|---|---|
 | F | Shared foundation (T-F1…T-F7) | _unassigned_ | done — frozen at `foundation-v0-frozen` |
-| A | Harvester, Orchestrator | _unassigned_ | not started |
-| B | Parser | _unassigned_ | not started |
-| C | Chunker, Summarizer, Embedder | _unassigned_ | not started |
-| D | DocumentStore, VectorIndex | _unassigned_ | not started |
-| E | Retriever, McpServer | _unassigned_ | not started |
+| A | Harvester, Orchestrator | _unassigned_ | M1b implementation open — T-A1 (PR #36), T-A2 (PR #38), pending review/merge |
+| B | Parser | _unassigned_ | not started — blocked on Phase-0 Spike 1 (parser bake-off / anchor round-trip) |
+| C | Chunker, Summarizer, Embedder | _unassigned_ | M1b implementation open — T-C2 (PR #31), T-C3 (PR #32), pending review/merge; T-C1 (Chunker) not started — blocked on Phase-0 Spike 1 (parser bake-off / anchor round-trip) |
+| D | DocumentStore, VectorIndex | _unassigned_ | M1b implementation open — T-D1 (PR #33), T-D2 (PR #37), pending review/merge |
+| E | Retriever, McpServer | _unassigned_ | M1b implementation open — T-E1 (PR #34), T-E2 (PR #35), pending review/merge |
 
 **Foundation sign-off authority (T-F7, CONVENTIONS §0.2):** the human operator, GitHub `@MKamel1`. Any PR
 touching `contracts/`, `config.py`, `config.yaml`, `migrations/`, or `rag/fakes/` requires their explicit

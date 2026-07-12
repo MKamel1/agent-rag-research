@@ -21,6 +21,10 @@ Owner F's tickets (T-F1…T-F7) don't need the split — see `owners/OWNER-F.md`
 Subject: `T-<id>: <imperative what>` (e.g. `T-C1: add Chunker unit tests against frozen interface`).
 Body: the *why*, not a restatement of the diff.
 
+Ad-hoc documentation-only fixes not tied to a WORK-BREAKDOWN ticket use a `T-DOC<n>` subject prefix
+instead (e.g. `T-DOC1`, `T-DOC2`, informally numbered) — these aren't formal tickets and aren't tracked
+in WORK-BREAKDOWN.md.
+
 **Single author, no trailers.** Every commit in this repo is authored as
 `MKamel1 <47995864+MKamel1@users.noreply.github.com>` (repo-local `git config user.name`/`user.email` —
 set this before your first commit, regardless of which tool or model is actually doing the typing). Do
