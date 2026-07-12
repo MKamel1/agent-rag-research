@@ -90,6 +90,13 @@ building. Do not lower the bar silently; grounding is the product.
    excluded from that run's Recall@10/MRR denominator, not silently dropped from the fixture and not force-
    matched to the nearest chunk. Report the flagged count/rate in `phase0-results.md` — a high flag rate is
    itself a signal about chunking quality.
+   **Known limitation — the flag rate conflates two causes.** 24% of ground-truth excerpts contain
+   non-ASCII/math characters and 87/210 are truncated mid-sentence — both extracted by a different pipeline
+   than whichever parser Spike 1 picks. A meaningful share of match failures will therefore reflect
+   cross-tool extraction drift, not chunking quality. Normalize (unicode NFKC + whitespace collapse) on both
+   sides before substring-matching, and only read the post-normalization flag rate as a chunking-quality
+   signal. Also set a **floor on the exclusion rate** — an invalidating threshold above which the run itself
+   is suspect, not just the number worth noting — rather than an unbounded "record and note" policy.
    **On the lexical-overlap caveat:** the original synthetic method's caveat (Recall@10 is an optimistic
    upper bound because the question was generated *from* its own gold chunk, inflating lexical/semantic
    overlap) applies less directly here — these questions were authored from a full paper read, and the
@@ -102,6 +109,22 @@ building. Do not lower the bar silently; grounding is the product.
    category-quota coverage — it does **not** run an equivalent to the originally-planned judge pass (no
    automated check for near-verbatim excerpt overlap, answerable-without-the-passage, or
    answerable-from-title-alone questions). Treat that as an open risk, not a solved one.
+   **Known limitation — title leakage (disclose, don't silently fix).** That open risk isn't hypothetical:
+   ~80% of the 210 `question_text`s contain the source paper's title verbatim (some the literal arXiv ID),
+   and 168/210 gold passages sit in Abstract/Introduction, where the paper's own title co-occurs with the
+   passage in raw parser output. A retriever can score well on this set via exact-string title-matching,
+   independent of real semantic retrieval quality — that undermines using the full-set Recall@10 alone for
+   the embedder/hybrid/rerank decisions this spike exists to make. **The Spike-2 harness MUST report
+   Recall@10 split into title-present vs. title-absent subsets** (roughly ~40 questions are title-absent,
+   giving a leakage-controlled lower bound). A hybrid/rerank "win" on the full set is not evidence about
+   those components unless it also holds on the title-absent split.
+   **Known limitation — multi-paper items score on one paper.** 60/210 questions are typed
+   Multi-Paper-Reasoning/Multi-Paper-Synthesis, but their ground truth (`source_paper_id` +
+   `passage_excerpt`) is singular — one paper, one snippet — even though the question requires synthesizing
+   2+ papers. A retriever that finds only one of the required papers still scores a Recall@10 hit on these.
+   Don't build a multi-gold schema for this (YAGNI) — instead, **scope the primary Recall@10 gate to the 150
+   single-passage items**, and report the 60 multi-paper items separately as a "primary-passage-only" lower
+   bound, not blended into the headline number.
 2. Embed with each candidate: **Qwen3-Embedding-4B** and **BGE-M3** (optionally 8B), served via TEI/vLLM.
 3. Sweep configs: `{dense}` vs `{hybrid dense+sparse+RRF}` vs `{hybrid + cross-encoder rerank}`
    (BGE-reranker-v2-m3 or Qwen3-Reranker). Optionally A/B SPECTER2/SciNCL for summary routing (PRD §11B).
@@ -163,7 +186,11 @@ rebuild, ADR-04).
 - [ ] **Embedder + reranker + retrieval config locked with numbers**; Recall@10 ≥ ~0.85; hybrid/rerank each
       justified their complexity.
 - [ ] The 210-question retrieval eval set (`fixtures/eval/`) has every `passage_excerpt` resolved to a real
-      `chunk_id` against the Spike-1 corpus, with unmatched excerpts flagged (not dropped or guessed).
+      `chunk_id` against the Spike-1 corpus, with unmatched excerpts flagged (not dropped or guessed) and the
+      exclusion rate under its invalidating floor (see Spike 2 Method step 1's flag-rate limitation note).
+- [ ] Spike 2's Recall@10 is reported both on the full 210-question set **and** split title-present vs.
+      title-absent, and separately for the 150 single-passage items vs. the 60 multi-paper items (see Spike 2
+      Method step 1's known-limitation notes) — not just as one blended headline number.
 - [ ] Real papers/hour measured → a realistic 15k backfill plan (smoke-test 200 papers, then run overnight).
 - [ ] `phase0-results.md` records every number, so no decision is "asserted, not proven" (PRD §9 ethos).
 

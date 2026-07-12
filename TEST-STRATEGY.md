@@ -148,7 +148,27 @@ automated QA (`rag-system-eval-set/tests/test_eval_dataset.py`, outside this rep
 blind/ground-truth ID alignment, zero field-leakage in the blind file, and category-quota coverage — it is
 **structural** QA, not a semantic degenerate-question filter; there's no automated check here for
 near-verbatim excerpt overlap, general-knowledge-answerable questions, or title-only-answerable questions,
-unlike the judge pass the original synthetic plan called for.
+unlike the judge pass the original synthetic plan called for. This repo's own
+`fixtures/eval/test_eval_fixture_invariants.py` re-asserts the structural half of that QA in-repo (count,
+ID alignment, zero leakage, quota coverage) so it's covered by CODEOWNERS on `fixtures/**` — it does not
+attempt the semantic filter either.
+
+- **Known limitation — title leakage.** That semantic gap is not hypothetical: ~80% of the 210
+  `question_text`s contain the source paper's title verbatim (some the literal arXiv ID), and 168/210 gold
+  passages sit in Abstract/Introduction, where the paper's own title co-occurs with the passage in raw
+  parser output. A retriever can score well here via exact-string title-matching, independent of real
+  semantic retrieval quality — this undermines using the full-set Recall@10 alone for the
+  embedder/hybrid/rerank decisions Spike 2 exists to make. **The Spike-2 harness must report Recall@10 split
+  into title-present vs. title-absent subsets** (roughly ~40 questions are title-absent, a
+  leakage-controlled lower bound); a hybrid/rerank "win" on the full set is not evidence about those
+  components unless it also holds on the title-absent split.
+- **Known limitation — multi-paper items score on one paper.** 60/210 questions are typed
+  Multi-Paper-Reasoning/Multi-Paper-Synthesis, but their ground truth (`source_paper_id` + `passage_excerpt`)
+  is singular — one paper, one snippet — even though the question requires synthesizing 2+ papers. A
+  retriever that finds only one of the required papers still scores a Recall@10 hit on these. No multi-gold
+  schema is planned (YAGNI) — the primary Recall@10 gate is scoped to the 150 single-passage items, with the
+  60 multi-paper items reported separately as a "primary-passage-only" lower bound, not blended into the
+  headline number.
 
 - **(a) The format gap.** The imported ground truth gold-labels each question with `source_paper_id` +
   `section_path` + a verbatim `passage_excerpt` (≤200 chars, truncated), **not a `chunk_id`.** `chunk_id`s
@@ -163,6 +183,13 @@ unlike the judge pass the original synthetic plan called for.
   denominator rather than silently dropped from the fixture or force-matched to the nearest chunk. The
   flagged rate itself is a signal worth recording — a high rate points at chunking quality, not eval-set
   quality.
+  **Known limitation — the flag rate conflates two causes.** 24% of ground-truth excerpts contain
+  non-ASCII/math characters and 87/210 are truncated mid-sentence — both extracted by a different pipeline
+  than whichever parser Spike 1 picks. A meaningful share of match failures will therefore reflect
+  cross-tool extraction drift, not chunking quality. Normalize (unicode NFKC + whitespace collapse) on both
+  sides before substring-matching, and only read the post-normalization flag rate as a chunking-quality
+  signal — not the raw one. There should also be a **floor on the exclusion rate**: an invalidating
+  threshold above which the run itself is suspect, not just an unbounded "record and note" policy.
 - **(c) Bias caveat — read this, don't try to engineer it away.** The original synthetic method's caveat
   (Recall@10 is an optimistic upper bound because each question was generated *from* its own gold chunk,
   inflating lexical/semantic overlap between question and gold passage) applies less directly to this set:
@@ -186,6 +213,9 @@ step (b)) and reports **Recall@10 and MRR**.
 - This set is permanent: it's the **regression gate** for any future embedding-model or vector-DB swap. A swap
   that drops Recall@10 below the Spike-2 baseline is rejected.
 - Gate: Recall@10 ≥ ~0.85 (PRD Spike 2).
+- Per the known limitations above, report Recall@10 on the full 210-question set **and** split
+  title-present/title-absent, and separately for the 150 single-passage items vs. the 60 multi-paper items —
+  the headline 0.85 number is read alongside these splits, not instead of them.
 
 ---
 
