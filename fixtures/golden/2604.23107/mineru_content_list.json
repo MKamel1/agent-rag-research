@@ -1,0 +1,2606 @@
+[
+    {
+        "type": "text",
+        "text": "MOCA: A Transformer-based Modular Causal Inference Framework with One-way Cross-attention and Cutting Feedback",
+        "text_level": 1,
+        "bbox": [
+            114,
+            141,
+            883,
+            194
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Lei Wang Department of Biostatistics and Informatics Colorado School of Public Health lei.2.wang@cuanschutz.edu",
+        "bbox": [
+            310,
+            214,
+            686,
+            285
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Debashis Ghosh Department of Biostatistics and Informatics Colorado School of Public Health debashis.ghosh@cuanschutz.edu",
+        "bbox": [
+            312,
+            292,
+            686,
+            362
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract",
+        "text_level": 2,
+        "bbox": [
+            460,
+            397,
+            537,
+            411
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Causal efect estimation from observational data requires careful adjustment for confounding. Classical estimators such as inverse probability weighting and augmented inverse probability weighting are efective under favorable model specification, but may become unstable when treatment assignment and outcome mechanisms are complex, non-linear and high-dimensional. Machine learning and representation-learning approaches improve flexibility, yet joint training can allow outcome-related information to influence treatment-side representations, which is undesirable from a causal perspective. We propose MOCA (Modular One-way Causal Attention), a transformer-based framework that separates treatment and outcome modeling through modular design, and makes confounder adjustments with a one-way attention process. A cutting-feedback strategy implemented with gradient detachment further prevents outcome loss from updating the treatment module. This design preserves directional information flow while retaining the representation power of transformer architectures for causal inference. Across multiple simulated scenarios, including linear, nonlinear, heavy-tailed, hidden-confounding, and high-dimensional settings, MOCA showed competitive or improved performance relative to IPW, AIPW, X-learner, TARNet, and DragonNet. We further illustrate the method on Infant Health and Development Program dataset and Dehejia–Wahba dataset for real world benchmarks. These results suggest that modular attention with one-way information flow provides a promising and interpretable direction for causal inference with modern deep learning models.",
+        "bbox": [
+            155,
+            420,
+            841,
+            694
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Keywords: causal inference; transformer; cross-attention; modular learning; treatment efect estimation; cutting feedback",
+        "bbox": [
+            112,
+            704,
+            883,
+            738
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction",
+        "text_level": 2,
+        "bbox": [
+            114,
+            762,
+            303,
+            780
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "In observational studies, treatment assignment is typically not randomized, leading to the presence of confounders that afect both treatment assignment and outcomes. Many modern causal methodologies are built on the Rubin potential outcomes framework [Rubin, 2005]. A central quantity of interest is the average treatment efect (ATE). Classical approaches can perform well when the models are correctly specified. Propensity score methods like inverse probability weighting (IPW) [Robins et al., 2000] and doubly robust estimators such as augmented inverse probability weighting (AIPW) [Bang and Robins, 2005] are widely used approaches for confounding adjustment.",
+        "bbox": [
+            111,
+            796,
+            885,
+            916
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2604.23107v1 [stat.ML] 25 Apr 2026",
+        "bbox": [
+            22,
+            266,
+            58,
+            727
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_number",
+        "text": "1",
+        "bbox": [
+            493,
+            938,
+            504,
+            950
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "However, parametric causal estimators often rely on restrictive assumptions, and cannot capture complex patterns such as nonlinear efects, or high-dimensional covariates. To address these limitations and give conditional average treatment efect (CATE) estimates, machine learning-based approaches, such as the T-learner and X-learner have been introduced [Künzel et al., 2019]. Besides, representation-learning approaches such as TARNet [Johansson et al., 2016] and DragonNet [Shi et al., 2019] have embedded the problem of causal inference within a deep learning framework consisting of representation learning paired with two potential outcome heads.",
+        "bbox": [
+            111,
+            94,
+            885,
+            213
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Yet joint representation learning may allow for outcome information to afect treatment representations, which is undesired in causal estimation. To address these challenges, we draw inspiration from recent advances in transformer architectures and cross-attention mechanisms with a modular framework. Transformers [Vaswani et al., 2017] have demonstrated remarkable ability to capture complex dependent structures through attention-based representation learning, while cross-attention provides a natural mechanism for directional information transfer between modules. Building on these ideas, we propose a modular causal modeling framework in this article.",
+        "bbox": [
+            111,
+            214,
+            885,
+            333
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "In our framework, the treatment branch is designed to learn propensity-related representations, while the outcome branch receives treatment-side information only through one-way cross-attention. This two-step design reflects the causal role of treatment modeling as an adjustment mechanism for confounding. We also incorporate a cutting-feedback strategy through gradient detachment, preventing the outcome loss from propagating backward to afect the treatment module.",
+        "bbox": [
+            111,
+            334,
+            885,
+            419
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Our proposed method, MOCA (Modular One-way Causal Attention), preserves treatment modeling independence while still allowing the outcome module to adapt to complex response surfaces. In this way, the framework retains modern machine learning advantages while maintaining the structural requirements of causal inference and supporting interpretable treatment efect estimation.",
+        "bbox": [
+            111,
+            419,
+            885,
+            488
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2 Problem Setup and Causal Estimand",
+        "text_level": 2,
+        "bbox": [
+            112,
+            511,
+            586,
+            530
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We consider an observational dataset consisting of n independent units: $\\{ ( X _ { i } , T _ { i } , Y _ { i } ) \\} _ { i = 1 } ^ { n }$ , where $X _ { i } \\in \\mathbb { R } ^ { p }$ denotes the observed covariates, $T _ { i } \\in \\{ 0 , 1 \\}$ is the binary treatment indicator, and $Y _ { i }$ is the observed outcome. Under the potential outcomes framework, each unit i has two potential outcomes, $Y _ { i } ( 0 )$ and $Y _ { i } ( 1 )$ , corresponding to the outcomes that would be observed under control and treatment [Rubin, 2005]. The following assumptions are made.",
+        "bbox": [
+            111,
+            544,
+            883,
+            631
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "1. Consistency: the observed outcome equals the corresponding potential outcome under the treatment received: $Y _ { i } = Y _ { i } \\left( T _ { i } \\right)$ , implying no other version of treatment;",
+        "bbox": [
+            133,
+            641,
+            883,
+            676
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2. Ignorability (unconfoundedness): $( Y _ { i } ( 0 ) , Y _ { i } ( 1 ) ) \\bot T _ { i } \\mid X _ { i }$ . That is, conditional on the observed covariates, treatment assignment is independent of the potential outcomes, which implies no unobserved confounding;",
+        "bbox": [
+            133,
+            686,
+            883,
+            738
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "3. Positivity: $0 < P \\left( T _ { i } = 1 \\ | \\ X _ { i } = x \\right) < 1$ for all x in the support of X, which ensures that each covariate profile has a positive probability of receiving either treatment level.",
+        "bbox": [
+            133,
+            750,
+            882,
+            784
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "For a unit i with covariate vector $X _ { i } = x _ { i }$ , a natural goal is to evaluate its individual level treatment efect (ITE), $\\tau _ { i } : = Y _ { i } ( 1 ) - Y _ { i } ( 0 )$ . However, $\\tau _ { i }$ is fundamentally unobservable, since for each unit we only observe one potential outcome.",
+        "bbox": [
+            112,
+            795,
+            883,
+            844
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We instead focus on the conditional average treatment efect (CATE), $\\tau ( x ) \\mathrel { \\mathop : } = \\mathbb { E } \\{ Y ( 1 ) - Y ( 0 ) $ $X = x \\}$ . Although $\\tau ( x )$ is a population-level quantity, it serves as the optimal target for individuallevel prediction. In particular, let $\\hat { \\tau } ( X _ { i } )$ denote an estimator of $\\tau _ { i }$ . The mean squared error (MSE)",
+        "bbox": [
+            112,
+            845,
+            883,
+            898
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2",
+        "bbox": [
+            491,
+            938,
+            504,
+            950
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "at $X _ { i } = x _ { i }$ can be decomposed as",
+        "bbox": [
+            112,
+            94,
+            379,
+            111
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "img_path": "images/fcaef25ef983c7c04ff300ba5821b262db73efdfe3acc7a8808795bc2cbc2d8f.jpg",
+        "text": "$$\n\\begin{array} { r } { \\mathbb { E } \\Big [ ( \\tau _ { i } - \\hat { \\tau } ( X _ { i } ) ) ^ { 2 } \\mid X _ { i } = x _ { i } \\Big ] = \\mathbb { E } \\Big [ ( \\tau _ { i } - \\tau ( x _ { i } ) ) ^ { 2 } \\mid X _ { i } = x _ { i } \\Big ] + \\mathbb { E } \\Big [ ( \\tau ( x _ { i } ) - \\hat { \\tau } ( X _ { i } ) ) ^ { 2 } \\mid X _ { i } = x _ { i } \\Big ] . } \\end{array}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            153,
+            117,
+            841,
+            145
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "The first term represents irreducible uncertainty, which cannot be reduced by any estimator. Therefore, minimizing the MSE for estimating $\\tau _ { i }$ is equivalent to minimizing the MSE for estimating $\\tau ( x _ { i } )$ . This justifies that the best estimator for CATE is also the best estimator for ITE.",
+        "bbox": [
+            111,
+            152,
+            883,
+            203
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "For the average treatment efect (ATE), $\\tau = \\mathbb { E } \\left[ Y ( 1 ) - Y ( 0 ) \\right]$ . In practice, estimation requires learning the potential outcome $\\mu _ { 0 } ( x ) = \\mathbb { E } [ Y ( 0 ) \\mid X = x ] , \\mu _ { 1 } ( x ) = \\mathbb { E } [ Y ( 1 ) \\mid X = x ]$ , so that $\\tau ( x ) = \\mu _ { 1 } ( x ) - \\mu _ { 0 } ( x )$ , and $\\tau = \\mathbb { E } ( \\tau ( x ) )$ ).",
+        "bbox": [
+            111,
+            204,
+            883,
+            256
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3 Proposed Method",
+        "text_level": 2,
+        "bbox": [
+            112,
+            277,
+            364,
+            297
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We propose a modular transformer-based architecture for causal efect estimation that explicitly separates the treatment assignment mechanism from the potential outcome modeling mechanism (Figure 1). We now describe the steps of the algorithm.",
+        "bbox": [
+            111,
+            310,
+            883,
+            363
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.1 Scalar Feature Tokenization",
+        "text_level": 2,
+        "bbox": [
+            112,
+            381,
+            436,
+            397
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "First, each scalar covariate $X _ { i j }$ embedded independently into a d-dimensional token. For the j-th covariate of subject i, the initial tokenizer produces $h _ { i j } ^ { ( 0 ) } = W _ { j } X _ { i j } + b _ { j } , h _ { i j } ^ { ( 0 ) } \\in \\mathbb { R } ^ { d }$ , where $W _ { j } \\in \\mathbb { R } ^ { d \\times 1 }$ and $b _ { j } \\in \\mathbb { R } ^ { d }$ . In self-attention, positional information is not incorporated [Lee et al., 2019]. Thus, a learnable positional embedding $p _ { j } \\in \\mathbb { R } ^ { d }$ is then added: $\\widetilde { h } _ { i j } = h _ { i j } ^ { ( 0 ) } + p _ { j }$ . Thus, for subject i, the token matrix is",
+        "bbox": [
+            111,
+            406,
+            885,
+            501
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "img_path": "images/cc8d78bbab00cd6cc9301aba0e2aad49c7855627e1f2749252a54969070218f7.jpg",
+        "text": "$$\n\\begin{array} { r } { H _ { i } = \\left[ \\widetilde { h } _ { i 1 } ^ { \\top } , ~ \\widetilde { h } _ { i 2 } ^ { \\top } , ~ . . . , ~ \\widetilde { h } _ { i p } ^ { \\top } \\right] ^ { \\top } \\in \\mathbb { R } ^ { p \\times d } . } \\end{array}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            359,
+            507,
+            635,
+            536
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.2 Treatment Module",
+        "text_level": 2,
+        "bbox": [
+            112,
+            553,
+            349,
+            569
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "3.2.1 Linear and Self-Attention Branch",
+        "text_level": 2,
+        "bbox": [
+            112,
+            579,
+            482,
+            594
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "The treatment module learns a treatment representation that summarizes confounding information. There are two branches, a linear branch and a self-attention branch. The linear treatment branch is $H _ { i } ^ { ( L , T ) } = T o k ^ { ( L , T ) } ( X _ { i } ) \\in \\mathbb { R } ^ { p \\times d }$ . The self-attention treatment branch first tokenizes $X _ { i } \\colon H _ { i } ^ { ( S , T , 0 ) } =$ $T o k ^ { ( S , T ) } ( X _ { i } ) \\in \\mathbb { R } ^ { p \\times d }$ , then applies a Transformer encoder: $H _ { i } ^ { ( S , T ) } = E n c _ { T } \\left( T o k ^ { ( S , T ) } ( X _ { i } ) \\right) ^ { \\setminus } \\in \\mathbb { R } ^ { p \\times d }$",
+        "bbox": [
+            111,
+            606,
+            882,
+            679
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "The encoder uses self-attention and a feed-forward subnetwork with GELU activation. To be more specific: for an input token matrix $H _ { i } ^ { ( S , T , 0 ) } \\in \\mathbb { R } ^ { p \\times d }$ , the self-attention mechanism first computes queries, keys, and values from the same input:",
+        "bbox": [
+            111,
+            680,
+            883,
+            731
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "img_path": "images/94a0d377fd1f8bbf0a56b72ea71dd4e188e4666fc11c1bb389ae9d79cd2e9f13.jpg",
+        "text": "$$\nQ = H _ { i } ^ { ( S , T , 0 ) } W _ { Q } , K = H _ { i } ^ { ( S , T , 0 ) } W _ { K } , V = H _ { i } ^ { ( S , T , 0 ) } W _ { V } ,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            290,
+            737,
+            704,
+            760
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "where $W _ { Q } , W _ { K } , W _ { V }$ are learned projection matrices. For a single attention head, the self-attention output is",
+        "bbox": [
+            111,
+            768,
+            882,
+            803
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "img_path": "images/e83a8206dd7c40e99045ab40058459bc6f8762f9dbbb036a18e6b1882d654de4.jpg",
+        "text": "$$\nS e l f A t t n ( H ) = s o f t m a x ~ \\left( \\frac { Q K ^ { \\top } } { \\sqrt { d _ { k } } } \\right) V = s o f t m a x \\left( \\frac { ( H _ { i } ^ { ( S , T , 0 ) } W Q ) ( H _ { i } ^ { ( S , T , 0 ) } W K ) ^ { \\top } } { \\sqrt { d _ { k } } } \\right) ( H _ { i } ^ { ( S , T , 0 ) } W V ) ,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            119,
+            809,
+            875,
+            852
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "where",
+        "bbox": [
+            112,
+            859,
+            165,
+            875
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "img_path": "images/a1cabfe2dcab9c2d34d6955e771c1d7a3b977f56925acd3ee2a0001518aec043.jpg",
+        "text": "$$\n\\widetilde { h } _ { a } = \\sum _ { b = 1 } ^ { p } \\alpha _ { a b } v _ { b } , \\alpha _ { a b } = \\frac { \\exp { \\left( q _ { a } ^ { \\top } k _ { b } / \\sqrt { d _ { k } } \\right) } } { \\sum _ { b ^ { \\prime } = 1 } ^ { p } \\exp { \\left( q _ { a } ^ { \\top } k _ { b ^ { \\prime } } / \\sqrt { d _ { k } } \\right) } } .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            316,
+            871,
+            676,
+            919
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3",
+        "bbox": [
+            493,
+            938,
+            504,
+            950
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Thus, each feature token adaptively attends to all other feature tokens, allowing the model to capture nonlinear cross-feature interactions. With multi-head attention, the m-th head is",
+        "bbox": [
+            111,
+            93,
+            883,
+            128
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "img_path": "images/6b9126a9562d95e14bac22aecc7d8704abc8859fe5f1306a0f6fe92d12d7ab81.jpg",
+        "text": "$$\nh e a d ^ { ( m ) } ( H _ { i } ^ { ( S , T , 0 ) } ) = s o f t m a x \\left( \\frac { Q ^ { ( m ) } K ^ { ( m ) \\top } } { \\sqrt { d _ { k } } } \\right) V ^ { ( m ) } ,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            295,
+            137,
+            699,
+            176
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "and the outputs of all heads are concatenated and linearly projected:",
+        "bbox": [
+            111,
+            186,
+            658,
+            203
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "img_path": "images/5713205e9bc5cb7f96c58a157f1f0807c79768a34d844b33a1ed9c843998ab1c.jpg",
+        "text": "$$\nM H A ( H _ { i } ^ { ( S , T , 0 ) } ) = C o n c a t ( h e a d ^ { ( 1 ) } ( H _ { i } ^ { ( S , T , 0 ) } ) , \\dots , h e a d ^ { ( M ) } ( H _ { i } ^ { ( S , T , 0 ) } ) ) W o .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            215,
+            210,
+            779,
+            234
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "where $W _ { O }$ denotes the learned output projection matrix in multi-head attention, which maps the concatenated outputs from all heads back to the model dimension. A transformer encoder layer then applies residual connections and layer normalization around both the multi-head self-attention block and the feed-forward block:",
+        "bbox": [
+            111,
+            244,
+            883,
+            313
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "img_path": "images/da47bf04b8691fea3fa4c727bad72bf8d3d7a96d182ee235d155513cbb064842.jpg",
+        "text": "$$\n\\tilde { H } = L a y e r N o r m ~ ( H _ { i } ^ { ( S , T , 0 ) } + M H A ( H _ { i } ^ { ( S , T , 0 ) } ) ) , H ^ { + } = L a y e r N o r m ~ ( \\tilde { H } + F F N ( \\tilde { H } ) ) .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            168,
+            319,
+            825,
+            342
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "The feed-forward network is $F F N ( u ) = W _ { 2 } \\ G E L U ( W _ { 1 } u + b _ { 1 } ) + b _ { 2 }$ , where GELU is used as the activation function. Therefore, the self-attention treatment representation can be written recursively as $H _ { i } ^ { ( S , T ) } = T r a n s f o r m e r L a y e r \\left( H _ { i } ^ { ( S , T , 0 ) } \\right)$ 2",
+        "bbox": [
+            111,
+            352,
+            883,
+            406
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "The self-attention branch is designed to capture nonlinear feature interactions by updating each feature representation using input-dependent weights determined by all other feature tokens. Combined with nonlinear feed-forward transformations, this allows the branch to represent complex, non-additive relationships among covariates. Although self-attention can provide some linear information, it is not the most eficient and stable way to learn them [Babiloni et al., 2023]. The linear branch acts as a low-complexity shortcut, which provides reliable linear efects and reduces the computational burden on the attention branch.",
+        "bbox": [
+            111,
+            407,
+            885,
+            526
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.2.2 Treatment Gating Mechanism",
+        "text_level": 2,
+        "bbox": [
+            112,
+            546,
+            450,
+            563
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "There is a cross-attention process needed to learn a treatment query : $q ^ { ( T ) } \\in \\mathbb { R } ^ { d }$ which is used to summarize each branch mentioned above via multi-head attention. To be specific,",
+        "bbox": [
+            111,
+            570,
+            883,
+            606
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "img_path": "images/732a4ffff088ca373fa7383113ed414066c991c3787e282d8ff1d4744047d9d6.jpg",
+        "text": "$$\n\\begin{array} { r } { z _ { i } ^ { ( L , T ) } = M H A ( q ^ { ( T ) } , H _ { i } ^ { ( L , T ) } , H _ { i } ^ { ( L , T ) } ) \\in \\mathbb { R } ^ { d } , z _ { i } ^ { ( S , T ) } = M H A ( q ^ { ( T ) } , H _ { i } ^ { ( S , T ) } , H _ { i } ^ { ( S , T ) } ) \\in \\mathbb { R } ^ { d } . } \\end{array}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            169,
+            613,
+            823,
+            637
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "In order to combine the information from two branches, a fusion gate is introduced with gate weights. To be more specific, we concatenate the two summary vectors: $\\boldsymbol { r } _ { i } ^ { ( T ) } = [ z _ { i } ^ { ( L , T ) } ; z _ { i } ^ { ( S , T ) } ] \\in \\mathbb { R } ^ { 2 d }$ A two-layer gating network is applied: $g _ { i } ^ { ( T ) } = W _ { g 2 } ^ { ( T ) } ~ G E L U \\left( W _ { g 1 } ^ { ( T ) } r _ { i } ^ { ( T ) } + \\mathring { b } _ { g 1 } ^ { ( T ) } \\right) \\mathring { + } \\mathring { b } _ { g 2 } ^ { ( T ) } \\in \\mathbb { R } ^ { 2 }$ . Next, a temperature-scaled softmax gives the treatment gate weights:",
+        "bbox": [
+            111,
+            647,
+            883,
+            722
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "img_path": "images/c913c1cb3646e071c6a4cdd94e9bab7072f9d053c6260cd9b084859e2b76f480.jpg",
+        "text": "$$\n\\alpha _ { i } ^ { ( T ) } = s o f t m a x \\left( \\frac { g _ { i } ^ { ( T ) } } { \\tau _ { g } } \\right) = \\left[ \\begin{array} { c } { { \\alpha _ { i L } ^ { ( T ) } } } \\\\ { { \\alpha _ { i S } ^ { ( T ) } } } \\end{array} \\right] , \\alpha _ { i L } ^ { ( T ) } + \\alpha _ { i S } ^ { ( T ) } = 1 .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            284,
+            729,
+            709,
+            773
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "In addition, a propensity score head is introduced to transform the gated treatment representation into a treatment assignment probability. Suppose the weighted concatenation is: $f _ { i } ^ { ( T ) } \\ = \\ [ \\alpha _ { i L } ^ { ( T ) } z _ { i } ^ { ( L , T ) } ; \\alpha _ { i S } ^ { ( T ) } z _ { i } ^ { ( S , T ) } ] \\ \\in \\ \\mathbb { R } ^ { 2 d }$ . The propensity-score logit is then computed by $l _ { i } ^ { ( T ) } =$ $W _ { p 2 } \\ G E L U ( W _ { p 1 } f _ { i } ^ { ( T ) } + b _ { p 1 } ) + b _ { p 2 }$ , and the estimated propensity score is $\\boldsymbol { \\widehat { e } } _ { i } = \\sigma \\left( l _ { i } ^ { ( T ) } \\right)$ , where $\\sigma ( u ) = 1 / ( 1 + e ^ { - u } )$ . At the same time, the treatment latent representation passed to the outcome module is $z _ { i } ^ { ( T ) } \\equiv \\overset { ^ { \\cdot } } { \\alpha } _ { i L } ^ { ( T ) } z _ { i } ^ { ( L , T ) } + \\alpha _ { i S } ^ { ( T ) } z _ { i } ^ { ( S , T ) } \\in \\mathbb { R } ^ { d }$ . This is converted into a single treatment token $H _ { i } ^ { ( T ) } = ( z _ { i } ^ { ( T ) } ) ^ { \\top } \\in \\mathbb { R } ^ { 1 \\times d }$",
+        "bbox": [
+            111,
+            782,
+            885,
+            916
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4",
+        "bbox": [
+            493,
+            938,
+            504,
+            950
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "3.3 Outcome Module",
+        "text_level": 2,
+        "bbox": [
+            112,
+            93,
+            336,
+            109
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The outcome module has two separate child modules; one is for control group $Y _ { i } ( 0 )$ and another is for treatment group $Y _ { i } ( 1 )$ . It uses two separate learnable queries $q ^ { ( 0 ) } \\in \\mathbb { R } ^ { d } , q ^ { ( 1 ) } \\in \\dot { \\mathbb { R } } ^ { d }$ , for estimating $\\mu _ { 0 } ( x )$ and $\\mu _ { 1 } ( x )$ from two child modules, respectively. Within each child module, it contains three branches: 1. a linear branch, 2. a nonlinear self-attention branch and 3. a frozen treatment branch. For linear and self-attention branch, same as the procedure in treatment module, we define $H _ { i } ^ { ( L , Y ) } = T o k ^ { ( L , Y ) } ( X _ { i } ) , H _ { i } ^ { ( S , Y ) } = E n c _ { Y } \\left( T o k ^ { ( S , Y ) } ( X _ { i } ) \\right)$",
+        "bbox": [
+            111,
+            119,
+            883,
+            226
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "For the frozen treatment branch, a key feature of our framework is that information flows from the treatment module to the outcome module only, but not in the reverse direction. We refer to this as one-way cross-attention with cutting feedback.",
+        "bbox": [
+            111,
+            226,
+            883,
+            276
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "In many real-world problems, modeling mistakes are common. Employing a joint model can lead to the propagation of erroneous information. The cutting feedback idea is widely used in Modular Bayesian Inference for addressing this [Bayarri et al., 2009]. In our practice, the treatment module is first trained, and the frozen treatment branch will not get updated during the outcome learning. Suppose the treatment outputs are obtained as $\\left( \\hat { e } _ { i } , \\ H _ { i } ^ { ( T ) } \\right) = \\mathcal { F } _ { T } \\left( X _ { i } ; \\boldsymbol { \\theta } _ { T } \\right)$ . They are treated as constants with respect to the outcome loss. Formally, the outcome model can be written as",
+        "bbox": [
+            111,
+            277,
+            885,
+            382
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "img_path": "images/8b1412aab2d8f8879d2b9047f20ebbb5cbebc019e2e7381a3e9cacc27f236348.jpg",
+        "text": "$$\n\\big ( \\widehat { \\mu } _ { 0 } ( X _ { i } ) , \\widehat { \\mu } _ { 1 } ( X _ { i } ) \\big ) = \\mathcal { F } _ { Y } ( X _ { i } , \\ s t o p g r a d ( H _ { i } ^ { ( T ) } ) , \\ s t o p g r a d ( \\widehat { e } _ { i } ) ; \\theta _ { Y } ) .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            250,
+            392,
+            743,
+            412
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Here, stopgrad(·) means that these quantities are used in the forward pass, but gradients are not propagated back through them. Therefore, $\\begin{array} { r } { \\frac { \\partial \\mathcal { L } _ { Y } } { \\partial \\theta _ { T } } = 0 } \\end{array}$ . In summary, for each arm $t \\in \\{ 0 , 1 \\}$ , the query $q ^ { ( t ) }$ attends to three sources of information: 1. the outcome linear branch, 2. the outcome self-attention branch, 3. the frozen treatment branch. Thus,",
+        "bbox": [
+            111,
+            421,
+            883,
+            492
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "img_path": "images/16a2a7e848304eac39b1d447d2a719297ffe27376233e513bd713e8d07015af0.jpg",
+        "text": "$$\n\\begin{array} { r l } & { z _ { i } ^ { ( L , t ) } = \\mathrm { M H A } \\left( q ^ { ( t ) } , H _ { i } ^ { ( L , Y ) } , H _ { i } ^ { ( L , Y ) } \\right) , } \\\\ & { z _ { i } ^ { ( S , t ) } = \\mathrm { M H A } \\left( q ^ { ( t ) } , H _ { i } ^ { ( S , Y ) } , H _ { i } ^ { ( S , Y ) } \\right) , } \\\\ & { z _ { i } ^ { ( T , t ) } = \\mathrm { M H A } \\left( q ^ { ( t ) } , H _ { i } ^ { ( T ) } , H _ { i } ^ { ( T ) } \\right) . } \\end{array}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            354,
+            498,
+            640,
+            580
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Note that the $z _ { i } ^ { ( T , t ) }$ represents one-way cross-attention, with the query $q ^ { ( t ) }$ coming from the outcome module, while the key and value come from the treatment module. Therefore, the outcome is allowed to ask the treatment representation for information, but the treatment branch itself does not query the outcome branch. We then concatenate all three elements: $\\boldsymbol { r } _ { i } ^ { ( t ) } = [ z _ { i } ^ { ( L , t ) } ; z _ { i } ^ { ( S , t ) } ; z _ { i } ^ { ( T , t ) } ] \\in \\mathbb { R } ^ { 3 d }$ A fusion gate is also introduced to combine all information. For each arm $t ,$ an arm-specific gating network is used:",
+        "bbox": [
+            111,
+            592,
+            883,
+            698
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "img_path": "images/56eb92f72ef8239247317c2605b4f3ed5ff2d13e6f4286f60fc8d1bd3f1675d0.jpg",
+        "text": "$$\ng _ { i } ^ { ( t ) } = W _ { g 2 } ^ { ( t ) } \\mathrm { G E L U } \\Big ( W _ { g 1 } ^ { ( t ) } r _ { i } ^ { ( t ) } + b _ { g 1 } ^ { ( t ) } \\Big ) + b _ { g 2 } ^ { ( t ) } \\in \\mathbb { R } ^ { 3 } ,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            267,
+            702,
+            635,
+            728
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "img_path": "images/05768fd059dd65df0b9a2a64d154382ee79104d1e2e195c9bffac5be724f012b.jpg",
+        "text": "$$\n\\begin{array} { r } { \\alpha _ { i } ^ { ( t ) } = \\mathrm { s o f t m a x } \\left( \\frac { g _ { i } ^ { ( t ) } } { \\tau _ { g } } \\right) = \\left[ \\alpha _ { i S } ^ { ( t ) } \\right] , \\qquad \\alpha _ { i L } ^ { ( t ) } + \\alpha _ { i S } ^ { ( t ) } + \\alpha _ { i T } ^ { ( t ) } = 1 . } \\end{array}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            267,
+            731,
+            727,
+            794
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The weighted fusion vector is $f _ { i } ^ { ( t ) } = [ \\alpha _ { i L } ^ { ( t ) } z _ { i } ^ { ( L , t ) } ; \\alpha _ { i S } ^ { ( t ) } z _ { i } ^ { ( S , t ) } ; \\alpha _ { i T } ^ { ( t ) } z _ { i } ^ { ( T , t ) } ] \\in \\mathbb { R } ^ { 3 d }$ ., based on which, each arm has its own prediction head:",
+        "bbox": [
+            111,
+            803,
+            883,
+            840
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "img_path": "images/64694867df30cbcea18db7cec73a857c726f73c6fa0827479efe2d81598db740.jpg",
+        "text": "$$\n\\widehat { \\mu } _ { t } ( X _ { i } ) = W _ { h 2 } ^ { ( t ) } \\ G E L U ( W _ { h 1 } ^ { ( t ) } f _ { i } ^ { ( t ) } + b _ { h 1 } ^ { ( t ) } ) + b _ { h 2 } ^ { ( t ) } , t \\in \\{ 0 , 1 \\} .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            281,
+            847,
+            712,
+            871
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Therefore, $\\widehat { \\tau } _ { i } \\left( X _ { i } \\right) = \\widehat { \\mu } _ { 1 } \\left( X _ { i } \\right) - \\widehat { \\mu } _ { 0 } \\left( X _ { i } \\right)$ , which reflect the estimated CATE. And the ATE estimator is $\\widehat { A T E } _ { \\mathrm { M e a n T a u } } = n ^ { - 1 } \\sum _ { i = 1 } ^ { n } \\widehat { \\tau } _ { i } \\left( X _ { i } \\right)$",
+        "bbox": [
+            112,
+            878,
+            882,
+            916
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5",
+        "bbox": [
+            493,
+            938,
+            504,
+            950
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3.4 Training Objective",
+        "text_level": 2,
+        "bbox": [
+            112,
+            93,
+            349,
+            111
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "The treatment and outcome modules are trained separately. First, the treatment module is trained using the binary cross-entropy loss function: $\\begin{array} { r } { \\mathcal { L } _ { T } = - \\frac { 1 } { n } \\sum _ { i = 1 } ^ { n } [ T _ { i } \\log \\widehat { e } _ { i } + ( 1 - T _ { i } ) \\log ( 1 - \\widehat { e } _ { i } ) ] } \\end{array}$ . The outcome module is trained only on observed factual outcomes. Let $\\mathcal { T } _ { 0 } = \\{ i : T _ { i } = 0 \\} , \\mathcal { T } _ { 1 } = \\{ i : T _ { i } =$ 1}. Then the loss is",
+        "bbox": [
+            111,
+            119,
+            883,
+            189
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "img_path": "images/c4049cff00ef69452fe4ca26032a69acab5be85d0966299beabdbff91374e9a2.jpg",
+        "text": "$$\n\\mathcal { L } _ { Y } = \\frac { 1 } { \\mid \\mathcal { Z } _ { 0 } \\mid } \\sum _ { i \\in \\mathcal { I } _ { 0 } } ( Y _ { i } - \\widehat { \\mu } _ { 0 } ( X _ { i } ) ) ^ { 2 } + \\frac { 1 } { \\mid \\mathcal { Z } _ { 1 } \\mid } \\sum _ { i \\in \\mathcal { I } _ { 1 } } ( Y _ { i } - \\widehat { \\mu } _ { 1 } ( X _ { i } ) ) ^ { 2 } .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            271,
+            199,
+            723,
+            238
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "3.5 Modularization and Cutting Feedback Rules",
+        "text_level": 2,
+        "bbox": [
+            112,
+            256,
+            596,
+            273
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Cutting feedback originates from modular Bayesian analysis, where unwanted reverse feedback is removed during posterior updating [Frazier and Nott, 2025]. In our work, we mimic this principle through a two-step estimation procedure. There are four rules [Liu and Goudie, 2025] used here to ensure a meaningful modular mechanism.",
+        "bbox": [
+            111,
+            282,
+            885,
+            352
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "3.5.1 Rule 1: Self-contained modules",
+        "text_level": 2,
+        "bbox": [
+            112,
+            371,
+            462,
+            387
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "This rule requires the model to be decomposed into distinct modules, where each module is self-contained; that ${ \\mathrm { i s } } ,$ internally coherent and functionally separable from the rest of the system (Figure 2). We have introduced two modules: a treatment module and an outcome module. Formally, we write $\\Psi _ { T } = ( X , T ; \\theta _ { S , T } , \\theta _ { L , T } ) , \\Psi _ { Y } = ( X , T , Y ; \\theta _ { S , Y } , \\theta _ { L , Y } )$ . The treatment module produces an intermediate representation $H ^ { ( T ) }$ , which acts as frozen information passed to the downstream outcome module. The overlap between the two modules is $\\Psi _ { T \\cap Y } = \\{ X , T ; H ^ { ( T ) } \\}$ . Since $\\{ X , T \\}$ is the observed dataset and $H ^ { ( T ) }$ is the frozen representative information, each module remains self-contained in the sense that it is defined by its own data inputs and corresponding parameters.",
+        "bbox": [
+            109,
+            396,
+            885,
+            535
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "3.5.2 Rule 2: Module ordering",
+        "text_level": 2,
+        "bbox": [
+            112,
+            553,
+            406,
+            569
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "The direction of information flow is explicitly defined from the treatment module to the outcome module. In other words, the treatment module is treated as the parent module, and the outcome module is treated as the child module. Hence, our method satisfies Rule 2 by explicitly imposing the directed modular order $\\Psi _ { T } \\prec \\Psi _ { Y }$",
+        "bbox": [
+            111,
+            579,
+            885,
+            647
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "3.5.3 Rule 3: Cutting feedback",
+        "text_level": 2,
+        "bbox": [
+            112,
+            666,
+            408,
+            683
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "This rule states that inference for the parent module should be based only on its own module. In our work, we implement this idea through stop-gradient. Specifically, the outcome model is written as",
+        "bbox": [
+            111,
+            693,
+            883,
+            727
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "equation",
+        "img_path": "images/d8df149abded49a96e85cf638c9cbb5502e60bc40def8ec08589c3fff3b421da.jpg",
+        "text": "$$\n\\begin{array} { r } { \\left( \\mu _ { 0 } ( X _ { i } ) , \\mu _ { 1 } ( X _ { i } ) \\right) = \\mathcal { F } _ { Y } \\left( X _ { i } , \\mathrm { s t o p g r a d } ( H _ { i } ^ { ( T ) } ) , \\mathrm { s t o p g r a d } ( e _ { i } ) ; \\theta _ { Y } \\right) . } \\end{array}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            251,
+            738,
+            740,
+            762
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "and the outcome loss satisfies $\\begin{array} { r } { \\frac { \\partial \\mathcal { L } _ { Y } } { \\partial \\theta _ { T } } = 0 } \\end{array}$ . This means that the child module may input information from the parent module, but it cannot modify the parent module through reverse feedback. Thus, our framework satisfies Rule 3 through the use of detach / cutting feedback.",
+        "bbox": [
+            111,
+            777,
+            885,
+            830
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "3.5.4 Rule 4: A cut-style downstream update",
+        "text_level": 2,
+        "bbox": [
+            112,
+            848,
+            539,
+            866
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "In modular Bayesian analysis, this rule refers to posterior updating under a cut distribution. In our machine learning framework, we instead propose a cut-style downstream update for the parameters",
+        "bbox": [
+            111,
+            875,
+            885,
+            909
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6",
+        "bbox": [
+            491,
+            938,
+            504,
+            950
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "in the outcome module. Step 1 learns the treatment module, and Step 2 learns the outcome module conditional on the treatment representation. This is directly analogous to the logic of cut inference in modular Bayesian analysis: $p _ { \\mathrm { c u t } } ( \\theta _ { T } , \\theta _ { Y } \\mid \\mathrm { d a t a } ) = p ( \\theta _ { T } \\mid$ treatment data) $p ( \\boldsymbol { \\theta } _ { Y } \\mid \\boldsymbol { \\theta } _ { T }$ , outcome data).",
+        "bbox": [
+            111,
+            93,
+            883,
+            146
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4 Related Work",
+        "text_level": 2,
+        "bbox": [
+            112,
+            169,
+            320,
+            188
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.1 Classical Causal Inference Estimators",
+        "text_level": 2,
+        "bbox": [
+            112,
+            202,
+            531,
+            218
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "The propensity score is defined as the conditional probability of treatment assignment given observed covariates,",
+        "bbox": [
+            111,
+            228,
+            883,
+            261
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "img_path": "images/ed7fe2a940a135f3cf6bbfab3274917ee12a113f6d8db37e16a43caf616f52e9.jpg",
+        "text": "$$\ne ( x ) = P ( T = 1 \\mid X = x ) .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            393,
+            262,
+            599,
+            280
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "By balancing covariates between treated and control groups, the propensity score can be used for matching and weighting. A common weighting estimator is inverse probability weighting (IPW), [Robins et al., 2000] which estimates the ATE as",
+        "bbox": [
+            112,
+            289,
+            883,
+            340
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "img_path": "images/cc858ad4896237223e0470c9e632ab07f32c05e39cec4345de4532af5943b616.jpg",
+        "text": "$$\n\\widehat { \\tau } _ { I P W } = \\frac { 1 } { n } \\sum _ { i = 1 } ^ { n } \\left( \\frac { T _ { i } Y _ { i } } { \\widehat { e } ( X _ { i } ) } - \\frac { ( 1 - T _ { i } ) Y _ { i } } { 1 - \\widehat { e } ( X _ { i } ) } \\right) .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            348,
+            352,
+            645,
+            392
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "A doubly robust estimator combines propensity score estimation and outcome regression. One example is the augmented inverse probability weighting (AIPW) estimator [Bang and Robins, 2005]:",
+        "bbox": [
+            111,
+            404,
+            885,
+            439
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "img_path": "images/6a1227776ecfff77e07208e3cb6fbd446c423881f516b6ef69ffa69ad13dcec4.jpg",
+        "text": "$$\n\\widehat { \\tau } _ { A I P W } = \\frac { 1 } { n } \\sum _ { i = 1 } ^ { n } \\left[ \\widehat { \\mu } _ { 1 } ( X _ { i } ) - \\widehat { \\mu } _ { 0 } ( X _ { i } ) + \\frac { T _ { i } \\{ Y _ { i } - \\widehat { \\mu } _ { 1 } ( X _ { i } ) \\} } { \\widehat { e } ( X _ { i } ) } - \\frac { ( 1 - T _ { i } ) \\{ Y _ { i } - \\widehat { \\mu } _ { 0 } ( X _ { i } ) \\} } { 1 - \\widehat { e } ( X _ { i } ) } \\right] .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            184,
+            450,
+            808,
+            489
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "This estimator is consistent if either the treatment model or the outcome regression model is correctly specified, which makes it robust.",
+        "bbox": [
+            111,
+            502,
+            883,
+            536
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.2 Machine Learning Based Causal Efect Estimation",
+        "text_level": 2,
+        "bbox": [
+            112,
+            555,
+            653,
+            573
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Meta-learning approaches adapt supervised learning algorithms to estimate treatment efects. The T-learner fits two separate outcome models, using the control and treated samples respectively, and estimates the treatment efect by $\\widehat { \\tau } ( x ) = \\widehat { \\mu } _ { 1 } ( x ) - \\widehat { \\mu } _ { 0 } ( x )$",
+        "bbox": [
+            111,
+            582,
+            883,
+            635
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "This approach is simple and flexible, but may sufer when one treatment group has limited sample size. The X-learner improves upon the T-learner by first imputing pseudo-treatment efects and then learning treatment efect functions separately in each group, often achieving better performance under treatment imbalance [Künzel et al., 2019]. In our analysis, we will compare to X-learner since it considers the treatment adjustments.",
+        "bbox": [
+            111,
+            651,
+            883,
+            736
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Representation learning methods for causal inference seek to learn latent covariate representations that are useful for estimating both treatment assignment and potential outcomes. TARNet and DragonNet are two examples.",
+        "bbox": [
+            111,
+            737,
+            883,
+            786
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Let Φ(X) denote a learned representation of the covariates. TARNet predicts the two potential outcome surfaces through separate heads [Johansson et al., 2016]:",
+        "bbox": [
+            111,
+            787,
+            883,
+            821
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "img_path": "images/9386bc69294515ee43a91ade746fd2e133e9f7c6f705d6cd726304fd709a65ba.jpg",
+        "text": "$$\n\\widehat { \\mu } _ { 0 } ( X ) = h _ { 0 } ( \\Phi ( X ) ) , \\widehat { \\mu } _ { 1 } ( X ) = h _ { 1 } ( \\Phi ( X ) ) .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            339,
+            835,
+            655,
+            853
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "The factual prediction is",
+        "bbox": [
+            140,
+            866,
+            339,
+            882
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "equation",
+        "img_path": "images/a6216c5aa968b413a639c2c888ac9463d24d62e04454e447e670faa0d1446e6c.jpg",
+        "text": "$$\n\\widehat { Y } = T \\widehat { \\mu } _ { 1 } ( X ) + ( 1 - T ) \\widehat { \\mu } _ { 0 } ( X ) ,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            377,
+            881,
+            617,
+            901
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7",
+        "bbox": [
+            493,
+            938,
+            504,
+            950
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "and the training objective is typically based on factual outcome loss,",
+        "bbox": [
+            140,
+            94,
+            683,
+            111
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "img_path": "images/151f083f89dfaef088dbcd1be28500cd8134e31bd91a2b6698f63e6022762f75.jpg",
+        "text": "$$\n\\mathcal { L } _ { T A R N e t } = \\frac { 1 } { n } \\sum _ { i = 1 } ^ { n } \\ell ( Y _ { i } , \\ T _ { i } \\widehat { \\mu } _ { 1 } ( X _ { i } ) + ( 1 - T _ { i } ) \\widehat { \\mu } _ { 0 } ( X _ { i } ) ) ,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            294,
+            122,
+            700,
+            162
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "where $\\ell ( \\cdot , \\cdot )$ is usually mean squared error for continuous outcomes or cross-entropy for binary outcomes.",
+        "bbox": [
+            111,
+            175,
+            883,
+            208
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "DragonNet extends TARNet by adding an explicit treatment prediction head [Shi et al., 2019]. In addition to the shared representation $\\Phi ( X )$ and the outcome heads $h _ { 0 } ( \\Phi ( X ) )$ and $h _ { 1 } ( \\Phi ( X ) )$ DragonNet estimates the propensity score through",
+        "bbox": [
+            111,
+            209,
+            883,
+            261
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "img_path": "images/c6372b2db21c20ee95364dbaaa48ad396f96aa5d13434efbd2c6ba17bea37eff.jpg",
+        "text": "$$\n{ \\widehat { e } } ( X ) = g ( \\Phi ( X ) ) .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            426,
+            273,
+            566,
+            292
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Its objective combines outcome prediction loss and treatment classification loss:",
+        "bbox": [
+            112,
+            306,
+            740,
+            323
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "img_path": "images/18e1d15bac8c06643b55d8f796e06d331edd96da2dba01bde5a88b5e9371add1.jpg",
+        "text": "$$\n\\mathcal { L } _ { D r a g o n N e t } = \\frac { 1 } { n } \\sum _ { i = 1 } ^ { n } [ \\ell ( Y _ { i } , \\ T _ { i } \\widehat { \\mu } _ { 1 } ( X _ { i } ) + ( 1 - T _ { i } ) \\widehat { \\mu } _ { 0 } ( X _ { i } ) ) + \\alpha \\ \\ell ( T _ { i } , \\widehat { e } ( X _ { i } ) ) ] ,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            220,
+            333,
+            774,
+            375
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "where $\\ell _ { t }$ is the treatment cross-entropy loss,",
+        "bbox": [
+            140,
+            387,
+            490,
+            404
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "img_path": "images/8ae876e1561fe96099070ff9a9c4dface7ed26baa689156b47b4fb0c3b1a7eef.jpg",
+        "text": "$$\n\\ell _ { t } ( T _ { i } ,  { \\hat { e } } ( X _ { i } ) ) = - [ T _ { i } \\log  { \\hat { e } } ( X _ { i } ) + ( 1 - T _ { i } ) \\log ( 1 -  { \\hat { e } } ( X _ { i } ) ) ] .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            281,
+            416,
+            714,
+            435
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "While this shared-representation strategy can improve statistical eficiency, the treatment and outcome tasks are still optimized jointly through the same latent representation. Since the treatment classification loss is included in the joint objective, gradient updates will pass information from outcome components to the treatment components. From a causal modeling perspective, this inverse flow should be avoided.",
+        "bbox": [
+            111,
+            448,
+            885,
+            534
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "4.3 Transformer for Tabular Data",
+        "text_level": 2,
+        "bbox": [
+            112,
+            553,
+            457,
+            570
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Transformer and attention-based architectures have recently shown strong performance in tabular modeling because they can flexibly capture nonlinear dependencies and higher-order feature interactions [Wang et al., 2025]. Such flexibility is potentially valuable for causal inference, however, the application of transformers in causal inference is still a new attempt. For example, utilizing Transformers to capture complex, long-range dependencies among time-varying confounders [Melnychuk et al., 2022].",
+        "bbox": [
+            111,
+            579,
+            885,
+            683
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Most existing causal models typically do not emphasize directional information flow between treatment and outcome representations, nor do they explicitly implement cutting feedback to prevent outcome-side gradients from updating treatment-side representations. These limitations motivate architectures that preserve the representational power of attention while introducing mechanism-aware structure.",
+        "bbox": [
+            111,
+            683,
+            885,
+            768
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "4.4 Variance estimation for MOCA using Rubin-style pooling.",
+        "text_level": 2,
+        "bbox": [
+            111,
+            786,
+            728,
+            805
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "In the real data analysis, machine learning based methods like TARNet, and DragonNet mainly provide point estimates and do not natively output variance estimates. In our work, we adopted a Rubin-style pooling rule [Barnard and Rubin, 1999] to quantify uncertainty for the proposed MOCA estimator. For the j-th MOCA run, we defined the predicted CATE for subject i as",
+        "bbox": [
+            111,
+            814,
+            885,
+            882
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "equation",
+        "img_path": "images/65ddae7ddce143a556526fa3e1287d900b612e1a2d221eef7f9f820970cec254.jpg",
+        "text": "$$\n\\hat { \\tau } _ { i j } ( X _ { i } ) = \\hat { \\mu } _ { 1 , j } ( X _ { i } ) - \\hat { \\mu } _ { 0 , j } ( X _ { i } ) ,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            379,
+            895,
+            617,
+            914
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8",
+        "bbox": [
+            493,
+            938,
+            504,
+            950
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "where $\\hat { \\mu } _ { 1 , j } ( X _ { i } )$ and $\\hat { \\mu } _ { 0 , j } ( X _ { i } )$ are the model-predicted potential outcomes under treatment and control, respectively. The corresponding ATE estimate from the j-th run was then computed as the sample mean of the predicted CATE, $\\begin{array} { r } { \\hat { \\tau } _ { j } = \\frac { 1 } { n } \\sum _ { i = 1 } ^ { n } \\hat { \\tau } _ { i j } } \\end{array}$ . To quantify the within-run uncertainty, we estimated the variance of $\\hat { \\tau } _ { j }$ using the sample variance of the predicted CATE,",
+        "bbox": [
+            111,
+            93,
+            883,
+            162
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "equation",
+        "img_path": "images/8843e458aed62b0c0cf7746381e43fb71fd9adc3e4da8c1e991a5a06daa19523.jpg",
+        "text": "$$\nU _ { j } = { \\widehat { \\mathrm { V a r } } } ( { \\widehat { \\tau } } _ { j } ) = { \\frac { 1 } { n } } \\cdot { \\frac { 1 } { n - 1 } } \\sum _ { i = 1 } ^ { n } ( { \\widehat { \\tau } } _ { i j } - { \\bar { \\tau } } _ { j } ) ^ { 2 } ,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            339,
+            171,
+            655,
+            213
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "where $\\begin{array} { r } { \\bar { \\tau } _ { j } = \\frac { 1 } { n } \\sum _ { i = 1 } ^ { n } \\hat { \\tau } _ { i j } } \\end{array}$ . Thus, $U _ { j }$ directly reflects the variability of the predicted treatment efects within the j-th fitted MOCA model. After repeating MOCA fitting m times, yielding $( \\hat { \\tau } _ { 1 } , U _ { 1 } ) , \\dots , ( \\hat { \\tau } _ { m } , U _ { m } )$ , we combined the results using a Rubin-style pooling rule. Specifically, the pooled treatment efect estimate was $\\begin{array} { r } { \\bar { \\tau } = \\frac { 1 } { m } \\sum _ { j = 1 } ^ { m } \\hat { \\tau } _ { j } } \\end{array}$ , the average within-run variance was $\\bar { U } =$ $\\begin{array} { r } { \\frac { 1 } { m } \\sum _ { j = 1 } ^ { m } U _ { j } } \\end{array}$ , and the between-run variance was",
+        "bbox": [
+            111,
+            222,
+            883,
+            310
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "equation",
+        "img_path": "images/6dc85f5d37bc1bff499e4f08715c195cfab84fdc0b4759220a9221a9708a010f.jpg",
+        "text": "$$\nB = \\frac { 1 } { m - 1 } \\sum _ { j = 1 } ^ { m } ( \\hat { \\tau } _ { j } - \\bar { \\tau } ) ^ { 2 } .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            400,
+            319,
+            594,
+            361
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "The final pooled variance was then calculated as",
+        "bbox": [
+            111,
+            369,
+            498,
+            386
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "equation",
+        "img_path": "images/ac6ff1e9f832406646344d3b570c7d18ebec556cd2fb3ca7803c840b393f8d0e.jpg",
+        "text": "$$\nT = \\bar { U } + \\left( 1 + { \\frac { 1 } { m } } \\right) B .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            408,
+            392,
+            584,
+            426
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "In our real data analysis, we also applied this pooling process for other machine learning methods.",
+        "bbox": [
+            111,
+            434,
+            885,
+            452
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "5 Simulation Study",
+        "text_level": 2,
+        "bbox": [
+            112,
+            473,
+            359,
+            493
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "To comprehensively evaluate the performance of the proposed method, we conducted six simulation studies under multiple data-generating mechanisms. Including MOCA with its one-way and two-way version, there are $^ { 7 }$ methods compared in the simulation. IPW and AIPW are well-established methods in classical causal inference, and AIPW is especially attractive due to its doubly robust property. X-learner represent machine-learning-based approaches that have shown competitive performance in treatment efect estimation. TARNet and DragonNet are representation-learning methods and provide important neural-network-based benchmarks for comparison.",
+        "bbox": [
+            111,
+            507,
+            883,
+            627
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "All simulations and model training were conducted in $\\mathrm { P y }$ thon (3.11.4). The proposed model was implemented in PyTorch (version $2 . 5 . 1 \\mathrm { + c u 1 2 1 } )$ , with $\\mathrm { N u m P y }$ (version 2.4.3) and Pandas (3.0.1) used for data generation and numerical computation. Random seeds with diferent seeds for diferent samples were fixed to ensure reproducibility. We considered two sample-size settings: 100 and 1,000 observations in each of the training, validation, and test sets.",
+        "bbox": [
+            111,
+            627,
+            885,
+            714
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "5.1 Simulation setting",
+        "text_level": 2,
+        "bbox": [
+            112,
+            732,
+            346,
+            750
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "The data generation mechanisms are based on a classical setting of potential outcomes. For each individual $i = 1 , \\ldots , n$ , let $X _ { i } = ( X _ { i 1 } , \\ldots , X _ { i p } ) ^ { \\top }$ denote the covariate vector, $T _ { i } \\in \\{ 0 , 1 \\}$ the treatment assignment, and $Y _ { i } ( 0 ) , Y _ { i } ( 1 )$ the potential outcomes. The observed outcome is $Y _ { i } = T _ { i } Y _ { i } ( 1 ) + ( 1 - T _ { i } ) Y _ { i } ( 0 )$ . Across all scenarios, treatment is generated from",
+        "bbox": [
+            111,
+            758,
+            883,
+            827
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "equation",
+        "img_path": "images/c40d4dd35720ca29077cdbd700cdece33d364b945c541721a2ac6fd3b214b8aa.jpg",
+        "text": "$$\nT _ { i } \\sim { B e r n o u l l i ( e _ { i } ) } , e _ { i } = \\operatorname* { P r } ( T _ { i } = 1 \\mid X _ { i } ) = e x p i t ( \\eta _ { i } ) ,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            290,
+            837,
+            704,
+            854
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "where $\\begin{array} { r } { e x p i t { ( x ) } = \\frac { 1 } { 1 + e ^ { - x } } } \\end{array}$ . Potential outcomes are generated as $Y _ { i } ( 0 ) = \\mu _ { 0 } ( X _ { i } ) + \\varepsilon _ { i 0 } , Y _ { i } ( 1 ) =$ $\\mu _ { 1 } ( X _ { i } ) + \\varepsilon _ { i 1 }$ , with $\\varepsilon _ { i 0 } , \\varepsilon _ { i 1 } \\stackrel { \\cdot } { \\sim } i . i . d . N ( 0 , 1 )$ . Unless otherwise specified, observed covariates are generated independently from standard normal distributions: $X _ { i j } \\sim i . i . d . N ( 0 , 1 )$",
+        "bbox": [
+            111,
+            863,
+            883,
+            916
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9",
+        "bbox": [
+            491,
+            938,
+            504,
+            950
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Linear In the linear scenario, $p = 5$ , with treatment propensity is specified by the logistic model $\\eta _ { i } = - 0 . 3 + 1 . 6 X _ { i 1 } - 2 . 0 X _ { i 2 } + 1 . 0 X _ { i 3 } + 1 . 2 X _ { i 4 } + 0 . 8 X _ { i 5 }$ . And the potential outcome mean functions",
+        "bbox": [
+            111,
+            93,
+            883,
+            131
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "equation",
+        "img_path": "images/39ad0321a7ef3690dde50a3c371b655d11f94e6c4e545816c4f733e88dc6fc14.jpg",
+        "text": "$$\n\\mu _ { 0 } ( X _ { i } ) = 1 . 0 + 1 . 0 X _ { i 1 } + 0 . 5 X _ { i 2 } - 0 . 5 X _ { i 3 } + 1 . 8 X _ { i 4 } - 0 . 2 X _ { i 5 } ,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            261,
+            140,
+            732,
+            159
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "equation",
+        "img_path": "images/05fc18eece9ccf9d17d86208c64401ff0ded9b5c6593c7929f9eca21544fea44.jpg",
+        "text": "$$\n\\mu _ { 1 } ( X _ { i } ) = 2 . 0 + 1 . 2 X _ { i 1 } + 0 . 3 X _ { i 2 } - 0 . 1 X _ { i 3 } + 0 . 2 X _ { i 4 } - 1 . 6 X _ { i 5 } .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            261,
+            161,
+            733,
+            179
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Nonlinear In the nonlinear scenario, the treatment propensity is generated from $\\eta _ { i } = - 0 . 3 +$ $0 . 6 X _ { i 1 } - 2 . 0 \\sin ( X _ { i 2 } ) + 1 . 8 X _ { i 3 } ^ { 2 } + X _ { i 4 } X _ { i 5 }$ . And the potential outcome mean functions are",
+        "bbox": [
+            111,
+            196,
+            885,
+            231
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "equation",
+        "img_path": "images/2f8227f5638de65ba4fb66dbe0d4b1ee7fae5af6b76f0b791d660205ca15c46d.jpg",
+        "text": "$$\n\\mu _ { 0 } ( X _ { i } ) = 1 . 0 + X _ { i 1 } + 0 . 5 \\sin ( X _ { i 2 } ) - 0 . 5 X _ { i 3 } ^ { 2 } + 1 . 5 X _ { i 4 } X _ { i 5 } ,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            263,
+            237,
+            707,
+            256
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "equation",
+        "img_path": "images/f59e75088f903dd316daa63ece9dace4035525c1d6278c8288ed70dc8fb3c704.jpg",
+        "text": "$$\n\\mu _ { 1 } ( X _ { i } ) = 2 . 0 + 1 . 2 \\cos ( X _ { i 1 } ) + 0 . 8 X _ { i 2 } X _ { i 3 } - 0 . 3 X _ { i 4 } ^ { 2 } + 0 . 5 X _ { i 5 } .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            263,
+            258,
+            732,
+            279
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "This design introduces nonlinear main efects and interactions in both the treatment and outcome models, making it more challenging for methods that rely on linear specification.",
+        "bbox": [
+            111,
+            284,
+            883,
+            319
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Hidden confounding In this scenario, and an unobserved confounder $U _ { i } \\sim N ( 0 , 1 )$ afects both treatment assignment and potential outcomes. The treatment propensity is $\\eta _ { i } = - 0 . 3 + 1 . 2 X _ { i 1 } -$ $1 . 0 X _ { i 2 } + 0 . 8 X _ { i 3 } + 0 . 5 X _ { i 4 } + 1 . 5 U _ { i }$ . The potential outcome mean functions are",
+        "bbox": [
+            111,
+            335,
+            883,
+            388
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "equation",
+        "img_path": "images/e3d227143ba1bfa3a5e36102d34d8ac47ca270121a0442953c9ee166dd510168.jpg",
+        "text": "$$\n\\mu _ { 0 } ( X _ { i } , U _ { i } ) = 1 . 0 + 1 . 0 X _ { i 1 } + 0 . 5 X _ { i 2 } - 0 . 5 X _ { i 3 } + 1 . 2 X _ { i 4 } + 3 . 0 U _ { i } ,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            253,
+            393,
+            740,
+            411
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "equation",
+        "img_path": "images/3a071f0c11831b1f0924bf6e6452c50f7c23ac232935e1c17c6300b1d1ae57c6.jpg",
+        "text": "$$\n\\mu _ { 1 } ( X _ { i } , U _ { i } ) = 2 . 0 + 1 . 0 X _ { i 1 } + 0 . 3 X _ { i 2 } - 0 . 2 X _ { i 3 } + 0 . 8 X _ { i 5 } + 1 . 5 U _ { i } .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            253,
+            414,
+            740,
+            433
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Because $U _ { i }$ is omitted from the observed covariates used for estimation, the ignorability assumption is violated.",
+        "bbox": [
+            111,
+            438,
+            885,
+            472
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Hidden confounding (multiple-U) Here, multiple latent confounders afect both treatment and outcomes: $U _ { i 1 } , U _ { i 2 } , U _ { i 3 } \\sim i . i . d . N ( 0 , 1 )$ ). The treatment propensity is",
+        "bbox": [
+            111,
+            491,
+            883,
+            525
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "equation",
+        "img_path": "images/aef792597c2a9c899903147db59dab0974d59e8af7867e9b6a8b2c63d0a7eac9.jpg",
+        "text": "$$\n\\eta _ { i } = - 0 . 3 + 1 . 2 X _ { i 1 } - 1 . 0 X _ { i 2 } + 0 . 8 X _ { i 3 } + 0 . 5 X _ { i 4 } + 1 . 5 U _ { i 1 } + 1 . 0 U _ { i 2 } - 0 . 8 U _ { i 3 } .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            205,
+            531,
+            789,
+            549
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "The potential outcome mean functions are",
+        "bbox": [
+            111,
+            556,
+            450,
+            573
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "equation",
+        "img_path": "images/d81e5a561cf55fbdcc5b47235a29866311c2ded73f312a2b91d438b4e255256b.jpg",
+        "text": "$$\n\\mu _ { 0 } ( X _ { i } , U _ { i } ) = 1 . 0 + 1 . 0 X _ { i 1 } + 0 . 5 X _ { i 2 } - 0 . 5 X _ { i 3 } + 1 . 2 X _ { i 4 } + 3 . 0 U _ { i 1 } + 2 . 0 U _ { i 2 } - 1 . 0 U _ { i 3 } ,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            179,
+            579,
+            813,
+            598
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "equation",
+        "img_path": "images/dd69d019888a5d9053fb4ef87fa3e895b4c0f7c8051b8eec3bd277aec6a74896.jpg",
+        "text": "$$\n\\mu _ { 1 } ( X _ { i } , U _ { i } ) = 2 . 0 + 1 . 0 X _ { i 1 } + 0 . 3 X _ { i 2 } - 0 . 2 X _ { i 3 } + 0 . 8 X _ { i 5 } + 1 . 5 U _ { i 1 } + 1 . 0 U _ { i 2 } - 0 . 2 U _ { i 3 } .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            181,
+            601,
+            812,
+            618
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Again, ignorability is violated, but more severely than in the single-U case because treatment and outcomes are jointly influenced by several latent variables.",
+        "bbox": [
+            111,
+            625,
+            883,
+            659
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "t-distribution This scenario is same as the linear version, but the covariates are generated from a heavy-tailed distribution: $X _ { i j } \\sim i . i . d . t _ { 3 } , j = 1 , . . . , 5$ . This setting preserves a relatively simple structural form for treatment and outcome regressions while making estimation harder through heavy-tailed covariates.",
+        "bbox": [
+            111,
+            676,
+            883,
+            744
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "High-dimensional In the high-dimensional scenario, the covariate dimension is increased to $p = 3 0 0$ , with $X _ { i j } \\sim i . i . d . N ( 0 , 1 ) , j = 1 , \\dots , 3 0 0$ . The treatment propensity depends only on the first five covariates:",
+        "bbox": [
+            111,
+            763,
+            883,
+            814
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "equation",
+        "img_path": "images/26c7c970b4b2939ebdf4b0fdf35daa80967e115728883bad84bb2f58961b315d.jpg",
+        "text": "$$\n\\eta _ { i } = - 2 . 0 + 1 . 6 X _ { i 1 } - 2 . 2 X _ { i 2 } + 3 . 1 X _ { i 3 } + 1 . 2 X _ { i 4 } + 2 . 1 X _ { i 5 } { . }\n$$",
+        "text_format": "latex",
+        "bbox": [
+            272,
+            821,
+            720,
+            839
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "The potential outcome mean functions are defined through dense linear combinations: $\\mu _ { 0 } ( X _ { i } ) =$ $1 . 0 + X _ { i } ^ { \\top } \\beta _ { 0 } , \\mu _ { 1 } ( X _ { i } ) = 2 . 0 + X _ { i } ^ { \\top } \\beta _ { 1 }$ , where $\\beta _ { 0 } , \\beta _ { 1 } \\in \\mathbb { R } ^ { 3 0 0 } , \\beta _ { 0 } \\sim N ( 0 , 0 . 2 ^ { 2 } I _ { 3 0 0 } ) , \\beta _ { 1 } \\sim N ( 0 , 0 . 2 ^ { 2 } I _ { 3 0 0 } )$",
+        "bbox": [
+            111,
+            847,
+            882,
+            882
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "This scenario is designed to evaluate performance when the covariate space is high-dimensional and the outcome surfaces are driven by many weak signals.",
+        "bbox": [
+            111,
+            882,
+            883,
+            915
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10",
+        "bbox": [
+            488,
+            938,
+            509,
+            950
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "6 Results",
+        "text_level": 2,
+        "bbox": [
+            112,
+            92,
+            243,
+            109
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "6.1 Simulation Results",
+        "text_level": 2,
+        "bbox": [
+            112,
+            125,
+            351,
+            141
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "The simulation results suggest that MOCA is competitive for ATE estimation across all considered settings, and that the one-way attention version generally performs better than the two-way version [Table 1]. This supports the overall efectiveness of MOCA and highlights the value of one-way attention and cutting feedback.",
+        "bbox": [
+            111,
+            151,
+            885,
+            219
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Under nonlinear, t-distribution, and high-dimensional settings, MOCA outperform traditional methods such as IPW and AIPW with less outliers [Figure 3-4]. IPW and AIPW may have the estimated propensity scores become extremely large or small [Rosenbaum and Rubin, 1983], leading to unstable weights, increased bias, more outliers, and ultimately larger RMSE [Li et al., 2019]. In these scenarios, MOCA is not only competitive with other machine learning approaches, but also clearly improves upon traditional estimators.",
+        "bbox": [
+            111,
+            219,
+            885,
+            321
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Under violations of ignorabillity through the presence of hidden confounders, MOCA also shows advantages when the sample size is small. In particular, its bias is generally smaller than that of competing methods, and the one-way version again performs better than the two-way version. This suggests that when the model is misspecified and information is incomplete, it is important to prevent mutual contamination between the treatment module and the outcome module. However, when the sample size increases to 1000, none of the methods can estimate the ATE well [Table S1, Figure S1-S2]. Therefore, although MOCA shows some robustness to ignorability violation in small samples, valid estimation still fundamentally relies on identifiable assumptions being satisfied [VanderWeele and Arah, 2011].",
+        "bbox": [
+            111,
+            321,
+            885,
+            476
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "For CATE estimation, this is one of the main advantages of machine learning based approaches [Table S2-S3, Figure S3-S4]. Because MOCA, X-learner, TARNet, and DragonNet can all produce individual-level predictions of the potential outcomes, it is natural to further assess their ability to estimate CATE. Overall, MOCA is efective for CATE estimation in most scenarios.",
+        "bbox": [
+            111,
+            477,
+            885,
+            545
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "TARNet, and DragonNet, which rely on learned representations, perform worse than the metalearning frameworks X-learner under heavy-tailed t-distributed data. Shared representations and trained with squared-error loss can be less stable under heavy-tailed outcomes [Fan et al., 2021]. MOCA, on the other hand, still provided a relatively comparable result.",
+        "bbox": [
+            111,
+            545,
+            885,
+            612
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Overall, MOCA performs better than traditional methods such as IPW and AIPW under nonlinear, high-dimensional, t-distributed, and even hidden-confounding settings, while remaining competitive with other machine learning based methods. At the same time, the use of one-way attention and cutting feedback helps reduce potential information pollution and preserves the methodological rationale of the model within the causal inference framework.",
+        "bbox": [
+            111,
+            613,
+            885,
+            699
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "6.2 Real Data Results",
+        "text_level": 2,
+        "bbox": [
+            112,
+            717,
+            344,
+            734
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Two open-sourced real datasets are used here [Table 2]. We estimated uncertainty for MOCA by repeatedly fitting the model and combining the resulting ATE estimates using a Rubin-style pooling rule [Barnard and Rubin, 1999]. IHDP refers to the Infant Health and Development Program dataset, which comes from a randomized experiment conducted between 1985 and 1988 to study the efect of home-based intervention on infants’ cognitive test scores [Louizos et al., 2017]. There are 747 observations with 608 controls and 139 treatments. This version contains the treatment indicator, the observed outcome y<sub>factual</sub>, the counterfactual outcome y<sub>cfactual</sub>, the mean potential outcomes under control and treatment $( \\mu _ { 0 }$ and $\\mu _ { 1 } )$ , and 25 covariates. Among these, $X _ { 1 } – X _ { 6 }$ are continuous variables, while $X _ { 7 }  – X _ { 2 5 }$ are binary variables. A counterfactual outcome included in this dataset, so that we can show the ATE bias directly. The IHDP results show that MOCA has the smallest ATE bias of 0.006. We have a pooling estimated ATE of 3.991 and a 95% confidence interval of (3.69, 4.29).",
+        "bbox": [
+            109,
+            744,
+            885,
+            916
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "11",
+        "bbox": [
+            488,
+            938,
+            509,
+            950
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            111,
+            93,
+            883,
+            127
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "DW refers to the Dehejia–Wahba dataset, which is a subset of the Lalonde data [Dehejia and Wahba, 1999]. It contains 445 observations with 185 treatments and 260 controls. Typically, we expected ATE is a positive number, and the doubly robust method AIPW can be a good reference [Iacus et al., 2019]. The variables include the treatment indicator treated, age, education, race, marital status, no-degree status, earnings in 1974 and 1975, post-treatment earnings in 1978, and unemployment indicators u74 and u75. Among these, re78 is usually treated as the posttreatment outcome. However, this dataset does not have a truth for reference. In this case, we will report only the ATE instead. The ATE based on doubly robust method AIPW is 784.214 with a 95% confidence interval of (-1746.59, 3315.02), which is a potential reference for other methods. MOCA pooling estimates ATE to be 672.201 and a 95% confidence interval of (-388.15, 1732.55), which is closest to the AIPW method.",
+        "bbox": [
+            111,
+            127,
+            887,
+            316
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "7 Discussion",
+        "text_level": 2,
+        "bbox": [
+            112,
+            339,
+            279,
+            358
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "In conclusion, this paper introduces a modular causal transformer framework that combines representation learning, one-way cross-attention, and cutting feedback for treatment efect estimation. The proposed design aims to preserve the usefulness of treatment information for confounding adjustment while avoiding undesirable reverse influence from outcome learning to treatment representation. Empirical results show that this framework can provide competitive and often improved performance, particularly in settings with nonlinear covariate efects, treatment efect heterogeneity, and complex dependency structures.",
+        "bbox": [
+            111,
+            373,
+            887,
+            492
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "At the same time, several limitations should be acknowledged. First, although the proposed model showed favorable empirical performance, it remains more computationally intensive than conventional estimators such as IPW, AIPW. Transformer-based architectures require tuning of multiple hyperparameters and may be sensitive to optimization settings, sample size, and training stability. In relatively simple settings, the added complexity of the model may not translate into substantial improvement over simpler approaches. Richer architectures can better capture complex structure, but may also overfit or underperform when the true mechanism is simple or when the available sample size is limited [Hastie et al., 2009]. Second, the validity of the MOCA still relies on standard identification assumptions such as consistency, ignorability, and positivity. The model cannot fully correct for hidden confounding when important variables are entirely unobserved. Third, although the one-way modular design helps reduce feedback contamination, it still relies on the correctness of treatment module. In addition, the hard cutting of feedback, while conceptually attractive for protecting the treatment mechanism, may be overly restrictive in some settings [Carmona and Nicholls, 2020]. This suggests that the optimal degree of modularization may vary across applications. In addition, future work could explore methods that combine the proposed architecture with sensitivity analysis or proxy-variable strategies to better address hidden confounding.",
+        "bbox": [
+            111,
+            492,
+            887,
+            785
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "12",
+        "bbox": [
+            488,
+            936,
+            509,
+            950
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "References",
+        "text_level": 2,
+        "bbox": [
+            112,
+            90,
+            245,
+            111
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Francesca Babiloni, Italo Marras, Jiankang Deng, Filippos Kokkinos, Matteo Maggioni, Grigorios Chrysos, and Stefanos Zafeiriou. Linear complexity self-attention with 3rd order polynomials. IEEE Transactions on Pattern Analysis and Machine Intelligence, 45(11):12726–12737, 2023.",
+            "Heejung Bang and James M. Robins. Doubly robust estimation in missing data and causal inference models. Biometrics, 61(4):962–973, 2005.",
+            "John Barnard and Donald B. Rubin. Small-sample degrees of freedom with multiple imputation. Biometrika, 86(4):948–955, 1999.",
+            "M. J. Bayarri, J. O. Berger, and F. Liu. Modularization in bayesian analysis, with emphasis on analysis of computer models. Bayesian Analysis, 2009.",
+            "Chris Carmona and Geof Nicholls. Semi-modular inference: Enhanced learning in multi-modular models by tempering the influence of components. In Proceedings of the 23rd International Conference on Artificial Intelligence and Statistics, pages 4226–4235, 2020.",
+            "Rajeev H. Dehejia and Sadek Wahba. Causal efects in nonexperimental studies: Reevaluating the evaluation of training programs. Journal of the American Statistical Association, 94(448): 1053–1062, 1999.",
+            "Jianqing Fan, Weichen Wang, and Zhihua Zhu. A shrinkage principle for heavy-tailed data: High-dimensional robust low-rank matrix recovery. The Annals of Statistics, 49(3):1239–1266, 2021.",
+            "D. T. Frazier and D. J. Nott. Cutting feedback and modularized analyses in generalized bayesian inference. Bayesian Analysis, 20(4):1647–1675, 2025.",
+            "Trevor Hastie, Robert Tibshirani, and Jerome Friedman. The Elements of Statistical Learning: Data Mining, Inference, and Prediction. Springer, 2 edition, 2009.",
+            "Stefano M. Iacus, Gary King, and Giuseppe Porro. A theory of statistical inference for matching methods in causal research. Political Analysis, 27(1):46–68, 2019.",
+            "Fredrik Johansson, Uri Shalit, and David Sontag. Learning representations for counterfactual inference. In Proceedings of the 33rd International Conference on Machine Learning, pages 3020–3029, 2016.",
+            "Sören R. Künzel, Jasjeet S. Sekhon, Peter J. Bickel, and Bin Yu. Metalearners for estimating heterogeneous treatment efects using machine learning. Proceedings of the National Academy of Sciences, 116(10):4156–4165, 2019.",
+            "Juho Lee, Yoonho Lee, Jungtaek Kim, Adam Kosiorek, Seungjin Choi, and Yee Whye Teh. Set transformer: A framework for attention-based permutation-invariant neural networks. In Proceedings of the 36th International Conference on Machine Learning, pages 3744–3753, 2019.",
+            "Fan Li, Lauren E. Thomas, and Fan Li. Addressing extreme propensity scores via the overlap weights. American Journal of Epidemiology, 188(1):250–257, 2019.",
+            "Y. Liu and R. J. Goudie. A general framework for cutting feedback within modularized bayesian inference. Journal of the Royal Statistical Society Series B: Statistical Methodology, 87(4): 1171–1199, 2025."
+        ],
+        "bbox": [
+            112,
+            125,
+            885,
+            176
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13",
+        "bbox": [
+            488,
+            936,
+            509,
+            950
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "Christos Louizos, Uri Shalit, Joris M. Mooij, David Sontag, Richard Zemel, and Max Welling. Causal efect inference with deep latent-variable models. Advances in Neural Information Processing Systems, 30, 2017.",
+            "Viktoriia Melnychuk, D. Frauen, and Stefan Feuerriegel. Causal transformer for estimating counterfactual outcomes. In Proceedings of the 39th International Conference on Machine Learning, pages 15293–15329, 2022.",
+            "James M. Robins, Miguel A. Hernán, and Babette Brumback. Marginal structural models and causal inference in epidemiology. Epidemiology, 11(5):550–560, 2000.",
+            "Paul R. Rosenbaum and Donald B. Rubin. The central role of the propensity score in observational studies for causal efects. Biometrika, 70(1):41–55, 1983.",
+            "Donald B. Rubin. Causal inference using potential outcomes: Design, modeling, decisions. Journal of the American Statistical Association, 100(469):322–331, 2005.",
+            "Claudia Shi, David Blei, and Victor Veitch. Adapting neural networks for the estimation of treatment efects. Advances in Neural Information Processing Systems, 32, 2019.",
+            "Tyler J. VanderWeele and Onyebuchi A. Arah. Unmeasured confounding for general outcomes, treatments, and confounders: Bias formulas for sensitivity analysis. Epidemiology, 22(1):42–52, 2011.",
+            "Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N. Gomez, Lukasz Kaiser, and Illia Polosukhin. Attention is all you need. Advances in Neural Information Processing Systems, 30, 2017.",
+            "A. Wang, X. Piao, X. Zhang, Y. Guo, and Y. Zhang. Rat: Residual attention transformer for tabular data. IEEE Transactions on Big Data, 2025."
+        ],
+        "bbox": [
+            114,
+            93,
+            885,
+            145
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14",
+        "bbox": [
+            488,
+            936,
+            509,
+            952
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "text",
+        "text": "Tables and Figures",
+        "text_level": 2,
+        "bbox": [
+            112,
+            90,
+            339,
+            112
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "table",
+        "img_path": "images/8b15384f3d71baed3ce93f7a91d05e33233bf306f5eac051f08fca800a522a33.jpg",
+        "table_caption": [
+            "Table 1. Summary ATE results for simulation with testing sample size 100"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>ATE bias mean</td><td>ATE bias median</td><td>ATE bias SD</td><td>ATE RMSE mean</td></tr><tr><td colspan=\"5\">Linear</td></tr><tr><td>IPW</td><td>-0.184</td><td>-0.311</td><td>1.274</td><td>0.977</td></tr><tr><td>AIPW</td><td>0.029</td><td>0.005</td><td>0.587</td><td>0.333</td></tr><tr><td>X-Learner</td><td>0.014</td><td>-0.007</td><td>0.301</td><td>0.239</td></tr><tr><td>MOCA-OneWay</td><td>0.027</td><td>0.040</td><td>0.538</td><td>0.449</td></tr><tr><td>MOCA-TwoWay</td><td>0.186</td><td>0.132</td><td>0.506</td><td>0.421</td></tr><tr><td>TARNet</td><td>0.138</td><td>0.085</td><td>0.387</td><td>0.328</td></tr><tr><td>DragonNet</td><td>0.177</td><td>0.217</td><td>0.411</td><td>0.356</td></tr><tr><td colspan=\"5\">Non-linear</td></tr><tr><td>IPW</td><td>0.433</td><td>0.401</td><td>0.991</td><td>0.816</td></tr><tr><td>AIPW</td><td>0.080</td><td>0.275</td><td>1.485</td><td>1.010</td></tr><tr><td>X-Learner</td><td>0.329</td><td>0.201</td><td>0.592</td><td>0.474</td></tr><tr><td>MOCA-OneWay</td><td>-0.166</td><td>-0.115</td><td>0.697</td><td>0.571</td></tr><tr><td>MOCA-TwoWay</td><td>0.097</td><td>0.035</td><td>0.587</td><td>0.474</td></tr><tr><td>TARNet</td><td>0.069</td><td>0.062</td><td>0.372</td><td>0.287</td></tr><tr><td>DragonNet</td><td>0.022</td><td>0.049</td><td>0.354</td><td>0.270</td></tr><tr><td colspan=\"5\">t distribution</td></tr><tr><td>IPW</td><td>-0.726</td><td>0.400</td><td>9.059</td><td>2.517</td></tr><tr><td>AIPW</td><td>0.407</td><td>-0.011</td><td>2.101</td><td>0.768</td></tr><tr><td>X-Learner</td><td>0.045</td><td>-0.018</td><td>0.264</td><td>0.219</td></tr><tr><td>MOCA-OneWay</td><td>0.094</td><td>0.051</td><td>0.515</td><td>0.375</td></tr><tr><td>MOCA-TwoWay</td><td>0.188</td><td>0.236</td><td>0.668</td><td>0.578</td></tr><tr><td>TARNet</td><td>0.360</td><td>0.357</td><td>0.422</td><td>0.424</td></tr><tr><td>DragonNet</td><td>0.320</td><td>0.325</td><td>0.481</td><td>0.470</td></tr><tr><td colspan=\"5\">Hidden confounding</td></tr><tr><td>IPW</td><td>2.688</td><td>2.652</td><td>1.164</td><td>2.688</td></tr><tr><td>AIPW</td><td>2.266</td><td>2.495</td><td>0.904</td><td>2.354</td></tr><tr><td>X-Learner</td><td>2.284</td><td>2.288</td><td>0.472</td><td>2.284</td></tr><tr><td>MOCA-OneWay</td><td>1.687</td><td>1.701</td><td>0.620</td><td>1.687</td></tr><tr><td>MOCA-TwoWay</td><td>2.041</td><td>2.131</td><td>0.813</td><td>2.041</td></tr><tr><td>TARNet</td><td>2.144</td><td>2.138</td><td>0.391</td><td>2.144</td></tr><tr><td>DragonNet</td><td>2.146</td><td>2.285</td><td>0.482</td><td>2.146</td></tr><tr><td colspan=\"5\">Hidden confounding MultiU</td></tr><tr><td>IPW</td><td>3.777</td><td>3.518</td><td>1.297</td><td>3.777</td></tr><tr><td>AIPW</td><td>3.374</td><td>3.319</td><td>0.807</td><td>3.374</td></tr><tr><td>X-Learner</td><td>3.081</td><td>3.180</td><td>0.508</td><td>3.081</td></tr><tr><td>MOCA-OneWay</td><td>2.169</td><td>2.170</td><td>0.518</td><td>2.169</td></tr><tr><td>MOCA-TwoWay</td><td>2.645</td><td>2.550</td><td>0.670</td><td>2.645</td></tr><tr><td>TARNet</td><td>2.762</td><td>2.844</td><td>0.483</td><td>2.762</td></tr><tr><td>DragonNet</td><td>2.822</td><td>2.820</td><td>0.567</td><td>2.822</td></tr><tr><td>High dimension</td><td></td><td></td><td></td><td></td></tr><tr><td>IPW</td><td>11.275</td><td>9.551</td><td>27.263</td><td>20.430</td></tr><tr><td>AIPW</td><td>-9.318</td><td>-1.951</td><td>31.857</td><td>19.971</td></tr><tr><td>X-Learner</td><td>0.292</td><td>0.304</td><td>0.902</td><td>0.755</td></tr><tr><td>MOCA-OneWay</td><td>-0.648</td><td>-0.675</td><td>0.760</td><td>0.806</td></tr><tr><td>MOCA-TwoWay</td><td>-0.503</td><td>-0.531</td><td>0.680</td><td>0.686</td></tr><tr><td>TARNet</td><td>-0.279</td><td>-0.244</td><td>0.824</td><td>0.689</td></tr><tr><td>DragonNet</td><td>-0.342</td><td>-0.255</td><td>0.758</td><td>0.639</td></tr></table>",
+        "bbox": [
+            111,
+            170,
+            890,
+            901
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "15",
+        "bbox": [
+            488,
+            936,
+            509,
+            952
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "table",
+        "img_path": "",
+        "table_caption": [],
+        "table_footnote": [],
+        "bbox": [
+            112,
+            92,
+            888,
+            327
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Table 2. Results for the IHDP and DW real data analyses",
+        "bbox": [
+            266,
+            347,
+            730,
+            363
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "table",
+        "img_path": "images/c34e89c01648999799d4f3ca015a11fd2ec0178ceb6a80e0298421dc7afe273a.jpg",
+        "table_caption": [],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Dataset</td><td>Method</td><td>ATE</td><td>ATE Bias</td><td>Pooling ATE</td><td>Pooling ATE Bias</td><td>95% CI</td></tr><tr><td rowspan=\"5\">IHDP Data</td><td>IPW</td><td>8.866</td><td>4.911</td><td></td><td></td><td>(0.60, 17.13)</td></tr><tr><td>AIPW</td><td>3.325</td><td>-0.630</td><td></td><td></td><td>(1.80, 4.85)</td></tr><tr><td>X-Learner</td><td>3.861</td><td>-0.094</td><td>3.905</td><td>-0.061</td><td>(3.72, 4.08)</td></tr><tr><td>MOCA</td><td>3.961</td><td>0.006</td><td>3.991</td><td>0.025</td><td>(3.69, 4.29)</td></tr><tr><td>TARNet</td><td>3.756</td><td>-0.199</td><td>3.833</td><td>-0.133</td><td>(3.41, 4.26)</td></tr><tr><td rowspan=\"6\">DW Data</td><td>DragonNet</td><td>3.874</td><td>-0.081</td><td>4.093</td><td>0.127</td><td>(3.70, 4.48) (-2277.80, 4412.10)</td></tr><tr><td>IPW</td><td>1067.148</td><td></td><td></td><td></td><td></td></tr><tr><td>AIPW</td><td>784.214</td><td></td><td></td><td></td><td>(-1746.59, 3315.02)</td></tr><tr><td>X-Learner</td><td>2216.231</td><td></td><td>1754.876</td><td></td><td>(210.45, 3299.30)</td></tr><tr><td>MOCA</td><td>852.520</td><td></td><td>672.201</td><td></td><td>(-388.15, 1732.55)</td></tr><tr><td>TARNet DragonNet</td><td>1568.681 2555.009</td><td></td><td>1640.669 1628.595</td><td></td><td>(8.57, 3272.77) (-17.16, 3274.35)</td></tr></table>",
+        "bbox": [
+            114,
+            390,
+            882,
+            613
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "16",
+        "bbox": [
+            488,
+            936,
+            509,
+            952
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "image",
+        "img_path": "images/5349c977e5a7d511ecb25956deae209d9b8ca3e4292b9ed52ab4a5b3b4038acd.jpg",
+        "image_caption": [
+            "Figure 1: Illustration for MOCA framework with one-way attention."
+        ],
+        "image_footnote": [],
+        "bbox": [
+            143,
+            324,
+            854,
+            642
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "17",
+        "bbox": [
+            488,
+            936,
+            509,
+            952
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "image",
+        "img_path": "images/ca3c544dee8a933e75d294ca9f78d30004f7a375e567381a035a4afaca9cd7e5.jpg",
+        "image_caption": [
+            "Figure 2: Information flow for MOCA with treatment and outcome modules."
+        ],
+        "image_footnote": [],
+        "bbox": [
+            233,
+            247,
+            763,
+            714
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "page_number",
+        "text": "18",
+        "bbox": [
+            488,
+            936,
+            509,
+            952
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "chart",
+        "img_path": "images/32ad9e921069ff793670d4c31ee5d808fd25cf6ca9cb801474689d15e3ef1c05.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 3: ATE bias boxplot for testing sample size 100."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            145,
+            125,
+            854,
+            429
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "chart",
+        "img_path": "images/2288aad1d359e82d7ced01964ece8f444896f5e90eba32ff043849943fa7add7.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 4: ATE RMSE boxplot for testing sample size 100."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            147,
+            539,
+            854,
+            843
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "page_number",
+        "text": "19",
+        "bbox": [
+            488,
+            936,
+            509,
+            950
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Supplementary Material",
+        "text_level": 2,
+        "bbox": [
+            112,
+            90,
+            400,
+            112
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "S1 Additional Tables",
+        "text_level": 2,
+        "bbox": [
+            111,
+            127,
+            379,
+            147
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "table",
+        "img_path": "images/5caf9c682af97c34ae96551e89e400b2caf5464580a1a40e57161afe19ebdce6.jpg",
+        "table_caption": [
+            "Table S1. Summary ATE results for simulation with testing sample size 1000"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>ATE bias mean</td><td>ATE bias median</td><td>ATE bias SD</td><td>ATE RMSE mean</td></tr><tr><td colspan=\"5\">Linear</td></tr><tr><td>IPW</td><td>0.003</td><td>-0.054</td><td>0.619</td><td>0.470</td></tr><tr><td>AIPW</td><td>0.031</td><td>0.049</td><td>0.171</td><td>0.127</td></tr><tr><td>X-Learner</td><td>0.001</td><td>0.003</td><td>0.078</td><td>0.059</td></tr><tr><td>MOCA-OneWay</td><td>0.004</td><td>0.009</td><td>0.112</td><td>0.088</td></tr><tr><td>MOCA-TwoWay</td><td>0.001</td><td>0.004</td><td>0.075</td><td>0.060</td></tr><tr><td>TARNet</td><td>0.010</td><td>0.009</td><td>0.121</td><td>0.098</td></tr><tr><td>DragonNet</td><td>0.017</td><td>0.016</td><td>0.165</td><td>0.137</td></tr><tr><td colspan=\"5\">Non-linear</td></tr><tr><td>IPW</td><td>0.331</td><td>0.346</td><td>0.231</td><td>0.353</td></tr><tr><td>AIPW</td><td>0.230</td><td>0.269</td><td>0.202</td><td>0.266</td></tr><tr><td>X-Learner</td><td>0.276</td><td>0.267</td><td>0.155</td><td>0.277</td></tr><tr><td>MOCA-OneWay</td><td>-0.009</td><td>-0.033</td><td>0.165</td><td>0.142</td></tr><tr><td>MOCA-TwoWay</td><td>0.033</td><td>0.039</td><td>0.163</td><td>0.137</td></tr><tr><td>TARNet</td><td>-0.079</td><td>-0.081</td><td>0.153</td><td>0.145</td></tr><tr><td>DragonNet</td><td>-0.108</td><td>-0.094</td><td>0.173</td><td>0.157</td></tr><tr><td colspan=\"5\">t distribution</td></tr><tr><td>IPW</td><td>0.260</td><td>0.117</td><td>1.035</td><td>0.572</td></tr><tr><td>AIPW</td><td>0.038</td><td>0.004</td><td>0.286</td><td>0.139</td></tr><tr><td>X-Learner</td><td>0.013</td><td>0.015</td><td>0.075</td><td>0.061</td></tr><tr><td>MOCA-OneWay</td><td>0.130</td><td>0.138</td><td>0.131</td><td>0.155</td></tr><tr><td>MOCA-TwoWay</td><td>0.087</td><td>0.088</td><td>0.139</td><td>0.126</td></tr><tr><td>TARNet</td><td>0.130</td><td>0.121</td><td>0.124</td><td>0.145</td></tr><tr><td>DragonNet</td><td>0.158</td><td>0.169</td><td>0.176</td><td>0.188</td></tr><tr><td colspan=\"5\">Hidden confounding</td></tr><tr><td>IPW</td><td>2.419</td><td>2.379</td><td>0.319</td><td>2.419</td></tr><tr><td>AIPW</td><td>2.470</td><td>2.470</td><td>0.194</td><td>2.470</td></tr><tr><td>X-Learner</td><td>2.374</td><td>2.388</td><td>0.181</td><td>2.374</td></tr><tr><td>MOCA-OneWay</td><td>2.417</td><td>2.439</td><td>0.166</td><td>2.417</td></tr><tr><td>MOCA-TwoWay</td><td>2.369</td><td>2.377</td><td>0.156</td><td>2.369</td></tr><tr><td>TARNet</td><td>2.323</td><td>2.361</td><td>0.188</td><td>2.323</td></tr><tr><td>DragonNet</td><td>2.368</td><td>2.386</td><td>0.188</td><td>2.368</td></tr><tr><td colspan=\"5\">Hidden confounding MultiU</td></tr><tr><td>IPW</td><td>3.296</td><td>3.318</td><td>0.282</td><td>3.296</td></tr><tr><td>AIPW</td><td>3.328</td><td>3.322</td><td>0.177</td><td>3.328</td></tr><tr><td>X-Learner</td><td>3.292</td><td>3.267</td><td>0.165</td><td>3.292</td></tr><tr><td>MOCA-OneWay</td><td>3.301</td><td>3.294</td><td>0.158</td><td>3.301</td></tr><tr><td>MOCA-TwoWay</td><td>3.297</td><td>3.309</td><td>0.157</td><td>3.297</td></tr><tr><td>TARNet</td><td>3.246</td><td>3.287</td><td>0.252</td><td>3.246</td></tr><tr><td>DragonNet</td><td>3.281</td><td>3.281</td><td>0.200</td><td>3.281</td></tr><tr><td colspan=\"5\">High dimension</td></tr><tr><td>IPW</td><td>30.048</td><td>24.230</td><td>23.054</td><td>30.784</td></tr><tr><td>AIPW</td><td>2.347</td><td>4.546</td><td>17.815</td><td>14.271</td></tr><tr><td>X-Learner</td><td>-0.040</td><td>-0.011</td><td>0.408</td><td>0.292</td></tr><tr><td>MOCA-OneWay</td><td>0.009</td><td>0.042</td><td>0.546</td><td>0.402</td></tr><tr><td>MOCA-TwoWay</td><td>0.230</td><td>0.209</td><td>0.339</td><td>0.312</td></tr><tr><td>TARNet</td><td>0.284</td><td>0.289</td><td>0.237</td><td>0.304</td></tr><tr><td>DragonNet</td><td>0.286</td><td>0.281</td><td>0.303</td><td>0.337</td></tr></table>",
+        "bbox": [
+            111,
+            205,
+            890,
+            904
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "page_number",
+        "text": "20",
+        "bbox": [
+            486,
+            936,
+            509,
+            952
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "table",
+        "img_path": "",
+        "table_caption": [],
+        "table_footnote": [],
+        "bbox": [
+            111,
+            92,
+            890,
+            361
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "Table S2. Summary CATE results for simulation with testing sample size 100",
+        "bbox": [
+            191,
+            381,
+            807,
+            397
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "table",
+        "img_path": "images/d5c54fb74eb84ff8ba9b39b9621a68357fb54592ad95a443501de2c1891bec19.jpg",
+        "table_caption": [],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>CATE bias mean</td><td>CATE bias SD</td><td>CATE RMSE mean</td></tr><tr><td colspan=\"4\">Linear</td></tr><tr><td>X-Learner</td><td>0.014</td><td>0.301</td><td>0.577</td></tr><tr><td>MOCA-OneWay</td><td>0.027</td><td>0.538</td><td>2.184</td></tr><tr><td>MOCA-TwoWay</td><td>0.186</td><td>0.506</td><td>1.986</td></tr><tr><td>TARNet</td><td>0.138</td><td>0.387</td><td>1.037</td></tr><tr><td>DragonNet</td><td>0.177</td><td>0.411</td><td>1.089</td></tr><tr><td colspan=\"4\">Non-linear</td></tr><tr><td>X-Learner</td><td>0.329</td><td>0.592</td><td>2.406</td></tr><tr><td>MOCA-OneWay</td><td>-0.166</td><td>0.697</td><td>2.328</td></tr><tr><td>MOCA-TwoWay</td><td>0.097</td><td>0.587</td><td>2.258</td></tr><tr><td>TARNet</td><td>0.069</td><td>0.372</td><td>1.684</td></tr><tr><td>DragonNet</td><td>0.022</td><td>0.354</td><td>1.686</td></tr><tr><td colspan=\"4\">t distribution</td></tr><tr><td>X-Learner</td><td>0.045</td><td>0.264</td><td>0.574</td></tr><tr><td>MOCA-OneWay</td><td>0.094</td><td>0.515</td><td>2.049</td></tr><tr><td>MOCA-TwoWay</td><td>0.188</td><td>0.668</td><td>2.031</td></tr><tr><td>TARNet</td><td>0.360</td><td>0.422</td><td>1.486</td></tr><tr><td>DragonNet</td><td>0.320</td><td>0.481</td><td>1.507</td></tr><tr><td colspan=\"4\">Hidden confounding</td></tr><tr><td>X-Learner</td><td>2.284</td><td>0.472</td><td>2.948</td></tr><tr><td>MOCA-OneWay</td><td>1.687</td><td>0.620</td><td>2.701</td></tr><tr><td>MOCA-TwoWay</td><td>2.041</td><td>0.813</td><td>2.924</td></tr><tr><td>TARNet</td><td>2.144</td><td>0.391</td><td>2.954</td></tr><tr><td>DragonNet</td><td>2.146</td><td>0.482</td><td>2.943</td></tr><tr><td colspan=\"4\">Hidden confounding MultiU</td></tr><tr><td>X-Learner</td><td>3.081</td><td>0.508</td><td>3.898</td></tr><tr><td>MOCA-OneWay</td><td>2.169</td><td>0.518</td><td>3.263</td></tr><tr><td>MOCA-TwoWay</td><td>2.645</td><td>0.670</td><td>3.593</td></tr><tr><td>TARNet</td><td>2.762</td><td>0.483</td><td>3.734</td></tr><tr><td>DragonNet</td><td>2.822</td><td>0.567</td><td>3.798</td></tr><tr><td colspan=\"4\">High dimension</td></tr><tr><td>X-Learner</td><td>0.292</td><td>0.902</td><td>4.878</td></tr><tr><td>MOCA-OneWay</td><td>-0.648</td><td>0.760</td><td>5.116</td></tr><tr><td>MOCA-TwoWay</td><td>-0.503</td><td>0.680</td><td>5.090</td></tr><tr><td>TARNet</td><td>-0.279</td><td>0.824</td><td>4.948</td></tr><tr><td>DragonNet</td><td>-0.342</td><td>0.758</td><td>4.976</td></tr></table>",
+        "bbox": [
+            111,
+            425,
+            883,
+            904
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "page_number",
+        "text": "21",
+        "bbox": [
+            486,
+            936,
+            509,
+            952
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "table",
+        "img_path": "",
+        "table_caption": [],
+        "table_footnote": [],
+        "bbox": [
+            112,
+            90,
+            883,
+            375
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "Table S3. Summary CATE results for simulation with testing sample size 1000",
+        "bbox": [
+            186,
+            395,
+            810,
+            412
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "table",
+        "img_path": "images/1644c0a861fe1337b9a41faa27871e5d14ec9be5fb315838eff991337f435d9f.jpg",
+        "table_caption": [],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Method</td><td>CATE bias mean</td><td>CATE bias SD</td><td>CATE RMSE mean</td></tr><tr><td colspan=\"4\">Linear</td></tr><tr><td>X-Learner</td><td>0.001</td><td>0.078</td><td>0.161</td></tr><tr><td>MOCA-OneWay</td><td>0.004</td><td>0.112</td><td>0.416</td></tr><tr><td>MOCA-TwoWay</td><td>0.001</td><td>0.075</td><td>0.390</td></tr><tr><td>TARNet</td><td>0.010</td><td>0.121</td><td>0.446</td></tr><tr><td>DragonNet</td><td>0.017</td><td>0.165</td><td>0.487</td></tr><tr><td colspan=\"4\">Non-linear</td></tr><tr><td>X-Learner</td><td>0.276</td><td>0.155</td><td>2.040</td></tr><tr><td>MOCA-OneWay</td><td>-0.009</td><td>0.165</td><td>1.307</td></tr><tr><td>MOCA-TwoWay</td><td>0.033</td><td>0.163</td><td>1.172</td></tr><tr><td>TARNet</td><td>-0.079</td><td>0.153</td><td>0.866</td></tr><tr><td>DragonNet</td><td>-0.108</td><td>0.173</td><td>0.874</td></tr><tr><td colspan=\"4\">t distribution</td></tr><tr><td>X-Learner</td><td>0.013</td><td>0.075</td><td>0.162</td></tr><tr><td>MOCA-OneWay</td><td>0.130</td><td>0.131</td><td>1.000</td></tr><tr><td>MOCA-TwoWay</td><td>0.087</td><td>0.139</td><td>0.903</td></tr><tr><td>TARNet</td><td>0.130</td><td>0.124</td><td>0.697</td></tr><tr><td>DragonNet</td><td>0.158</td><td>0.176</td><td>0.698</td></tr><tr><td colspan=\"4\">Hidden confounding</td></tr><tr><td>X-Learner</td><td>2.374</td><td>0.181</td><td>2.853</td></tr><tr><td>MOCA-OneWay</td><td>2.417</td><td>0.166</td><td>2.925</td></tr><tr><td>MOCA-TwoWay</td><td>2.369</td><td>0.156</td><td>2.887</td></tr><tr><td>TARNet</td><td>2.323</td><td>0.188</td><td>2.895</td></tr><tr><td>DragonNet</td><td>2.368</td><td>0.188</td><td>2.937</td></tr><tr><td colspan=\"4\">Hidden confounding MultiU</td></tr><tr><td>X-Learner</td><td>3.292</td><td>0.165</td><td>3.887</td></tr><tr><td>MOCA-OneWay</td><td>3.301</td><td>0.158</td><td>3.928</td></tr><tr><td>MOCA-TwoWay</td><td>3.297</td><td>0.157</td><td>3.924</td></tr><tr><td>TARNet</td><td>3.246</td><td>0.252</td><td>3.926</td></tr><tr><td>DragonNet</td><td>3.281</td><td>0.200</td><td>3.954</td></tr><tr><td colspan=\"4\">High dimension</td></tr><tr><td>X-Learner</td><td>-0.040</td><td>0.408</td><td>2.888</td></tr><tr><td>MOCA-OneWay</td><td>0.009</td><td>0.546</td><td>4.409</td></tr><tr><td>MOCA-TwoWay</td><td>0.230</td><td>0.339</td><td>4.356</td></tr><tr><td>TARNet</td><td>0.284</td><td>0.237</td><td>3.299</td></tr><tr><td>DragonNet</td><td>0.286</td><td>0.303</td><td>3.366</td></tr></table>",
+        "bbox": [
+            111,
+            439,
+            883,
+            900
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "page_number",
+        "text": "22",
+        "bbox": [
+            486,
+            936,
+            509,
+            950
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "table",
+        "img_path": "",
+        "table_caption": [],
+        "table_footnote": [],
+        "bbox": [
+            112,
+            90,
+            882,
+            392
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "page_number",
+        "text": "23",
+        "bbox": [
+            486,
+            936,
+            509,
+            952
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "chart",
+        "img_path": "images/0b3cbae93ad61b16d97ac607135191396a96d91d5efd33523138506f72f4c67a.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure S1: ATE bias boxplot for testing sample size 1000."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            148,
+            137,
+            852,
+            440
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "chart",
+        "img_path": "images/d9708246c406bab89f6a7ce1b9f3b19303a75c45aad2146f53de358321108528.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure S2: ATE RMSE boxplot for testing sample size 1000."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            143,
+            501,
+            854,
+            804
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "page_number",
+        "text": "S2",
+        "bbox": [
+            114,
+            92,
+            147,
+            108
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "header",
+        "text": "Additional Figures",
+        "bbox": [
+            168,
+            90,
+            388,
+            111
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "page_number",
+        "text": "24",
+        "bbox": [
+            486,
+            936,
+            511,
+            950
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "chart",
+        "img_path": "images/25a77ec110bb42e07bba2e1cab72b7fbcc1f2669c2179fbd1bbec40b0c167243.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure S3: CATE bias boxplot for testing sample size 100."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            147,
+            89,
+            852,
+            393
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "chart",
+        "img_path": "images/646308147f0094fd3dd4699e41ff5cdbb5765be3bb25913783888beb728c92a2.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure S4: CATE bias boxplot for testing sample size 1000."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            147,
+            452,
+            854,
+            756
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "page_number",
+        "text": "25",
+        "bbox": [
+            486,
+            936,
+            509,
+            950
+        ],
+        "page_idx": 24
+    }
+]
