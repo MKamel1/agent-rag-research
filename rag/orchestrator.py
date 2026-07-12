@@ -12,6 +12,14 @@ doesn't sit idle waiting on CPU stages. This orchestrator acquires the injected 
 no work of its own -- the stage adapters (Summarizer/Embedder) acquire it themselves around their
 own inference calls; the Orchestrator only wires the same `GpuLock` instance through (accepted as
 a constructor argument, stored, never `.acquire()`d here).
+
+Cross-thread `state` access (decision proposal `.phase0-data/orchestrator-checkpoint-proposal.md`
+§5): `_prepare` (the prefetch-pool thread) and `_finish` (the main thread) both call
+`state.get`/`state.checkpoint` concurrently for adjacent papers. The injected `state` MUST be safe
+to call from two threads at once -- this is a precondition on every `state` adapter, not something
+this orchestrator serializes itself. A real sqlite3-backed adapter needs its own locking or a
+connection-per-call (sqlite3 connections default to `check_same_thread=True`); see
+`rag/ingest_state_sqlite.py` for one such adapter.
 """
 
 from __future__ import annotations
@@ -24,19 +32,35 @@ from dataclasses import dataclass
 from contracts.chunker import Chunk
 from contracts.config import Config
 from contracts.document_store import PaperRecord
-from contracts.errors import PermanentError
+from contracts.errors import ContractError, PermanentError
 from contracts.harvester import PaperRef
+from contracts.ingest_state import CheckpointArtifacts
 from contracts.parser import ParsedDoc
 
 # The `ingest_state.stage` vocabulary, in progress order (DATA-CONTRACTS.md, migrations/0001).
+# `failed` is deliberately NOT a member: a parse/summarize `PermanentError` moves a paper straight
+# to `quarantine`, whose row removes any `ingest_state`/`ingest_checkpoint` row for that paper (see
+# `FakeIngestState.quarantine`) -- so `state.get()` never legitimately returns that value.
+# ARCHITECTURE.md "Operational invariants" §1 previously listed "+ failed" here too; that wording
+# was the stale half of this inconsistency and has been corrected to match this list.
 _STAGES = ("harvested", "parsed", "chunked", "summarized", "embedded", "stored", "done")
 
 
 def _at_least(stage: str | None, target: str) -> bool:
-    """Has a checkpoint's `stage` already reached (or passed) `target`?"""
+    """Has a checkpoint's `stage` already reached (or passed) `target`?
+
+    Raises `ContractError` (not a raw `ValueError`) naming the offending value if `stage` is ever
+    outside `_STAGES` -- a violation of the frozen `ingest_state.stage` vocabulary is a bug
+    (CONVENTIONS.md §4: crash loud and legible, not an opaque index-lookup error).
+    """
     if stage is None:
         return False
-    return _STAGES.index(stage) >= _STAGES.index(target)
+    try:
+        return _STAGES.index(stage) >= _STAGES.index(target)
+    except ValueError as error:
+        raise ContractError(
+            f"ingest_state stage {stage!r} is not one of the frozen vocabulary {_STAGES}"
+        ) from error
 
 
 def _cosine(a: list[float], b: list[float]) -> float:
@@ -63,14 +87,17 @@ class _Prepared:
 
 class IngestionOrchestrator:
     """Preconditions: every injected collaborator satisfies its documented interface
-    (ARCHITECTURE.md M1-M6); `state` persists `ingest_state`-shaped checkpoints keyed by
-    `paper_id` (`get`/`checkpoint`/`quarantine`, see `rag/test_orchestrator.py`'s
-    `FakeIngestState` for the exact shape this suite commits). Postconditions: `ingest()` is
-    idempotent (a fully-`done` corpus re-run touches no stage) and resumable at every stage
-    boundary; a `PermanentError` from `parser.parse`/`summarizer.summarize` quarantines that one
-    paper and the run continues; any other exception propagates out of `ingest()` and stops the
-    run (CONVENTIONS.md §4 -- only `PermanentError` is "this paper is bad", everything else is a
-    bug or an infrastructure failure worth crashing loud on).
+    (ARCHITECTURE.md M1-M6); `state` persists `ingest_state`/`ingest_checkpoint`-shaped
+    checkpoints keyed by `paper_id` (`get`/`checkpoint`/`quarantine`, see
+    `rag/fakes/fake_ingest_state.py`'s `FakeIngestState` for the exact shape this suite commits,
+    and `contracts/ingest_state.py` for the typed `CheckpointArtifacts` payload), and MUST be safe
+    to call from two threads concurrently (see module docstring, "Cross-thread `state` access").
+    Postconditions: `ingest()` is idempotent (a fully-`done` corpus re-run touches no stage) and
+    resumable at every stage boundary; a `PermanentError` from `parser.parse`/
+    `summarizer.summarize` quarantines that one paper and the run continues; any other exception
+    propagates out of `ingest()` and stops the run (CONVENTIONS.md §4 -- only `PermanentError` is
+    "this paper is bad", everything else is a bug or an infrastructure failure worth crashing loud
+    on).
     """
 
     def __init__(
@@ -128,7 +155,7 @@ class IngestionOrchestrator:
         paper_id = ref.paper_id
         checkpoint = self._state.get(paper_id)
         stage = checkpoint.stage if checkpoint else None
-        artifacts = checkpoint.artifacts if checkpoint else {}
+        artifacts = checkpoint.artifacts if checkpoint else CheckpointArtifacts()
 
         if stage == "done":
             return None
@@ -138,17 +165,21 @@ class IngestionOrchestrator:
             return _Prepared(ref=ref, parsed=None, chunks=None)
 
         if _at_least(stage, "parsed"):
-            parsed = artifacts["parsed"]
+            parsed = artifacts.parsed
         else:
             try:
                 parsed = self._parser.parse(ref)
             except PermanentError as error:
                 self._state.quarantine(paper_id, "parsed", error)
                 return None
-            self._state.checkpoint(paper_id, "parsed", parsed=parsed)
+            self._state.checkpoint(
+                paper_id, "parsed", artifacts=CheckpointArtifacts(parsed=parsed)
+            )
 
         chunks = self._chunker.chunk(parsed)
-        self._state.checkpoint(paper_id, "chunked", parsed=parsed, chunks=chunks)
+        self._state.checkpoint(
+            paper_id, "chunked", artifacts=CheckpointArtifacts(parsed=parsed, chunks=chunks)
+        )
         return _Prepared(ref=ref, parsed=parsed, chunks=chunks)
 
     # -- GPU-bound: summarize/embed, then store (put) and index (upsert) -----------------------
@@ -158,7 +189,7 @@ class IngestionOrchestrator:
         paper_id = ref.paper_id
         checkpoint = self._state.get(paper_id)
         stage = checkpoint.stage if checkpoint else None
-        artifacts = checkpoint.artifacts if checkpoint else {}
+        artifacts = checkpoint.artifacts if checkpoint else CheckpointArtifacts()
 
         if _at_least(stage, "stored"):
             # Resume across the stored->done gap (ARCHITECTURE "Operational invariants" §1):
@@ -173,11 +204,11 @@ class IngestionOrchestrator:
             self._state.checkpoint(paper_id, "done")
             return
 
-        parsed = prepared.parsed if prepared.parsed is not None else artifacts["parsed"]
-        chunks = prepared.chunks if prepared.chunks is not None else artifacts["chunks"]
+        parsed = prepared.parsed if prepared.parsed is not None else artifacts.parsed
+        chunks = prepared.chunks if prepared.chunks is not None else artifacts.chunks
 
         if _at_least(stage, "summarized"):
-            summary_text = artifacts["summary_text"]
+            summary_text = artifacts.summary_text
         else:
             try:
                 summary_text = self._summarizer.summarize(parsed)
@@ -185,7 +216,11 @@ class IngestionOrchestrator:
                 self._state.quarantine(paper_id, "summarized", error)
                 return
             self._state.checkpoint(
-                paper_id, "summarized", parsed=parsed, chunks=chunks, summary_text=summary_text
+                paper_id,
+                "summarized",
+                artifacts=CheckpointArtifacts(
+                    parsed=parsed, chunks=chunks, summary_text=summary_text
+                ),
             )
 
         # One batched embed() call per paper (summary + every chunk together) -- not two separate
@@ -199,10 +234,12 @@ class IngestionOrchestrator:
         self._state.checkpoint(
             paper_id,
             "embedded",
-            parsed=parsed,
-            chunks=chunks,
-            summary_text=summary_text,
-            relevance_score=relevance_score,
+            artifacts=CheckpointArtifacts(
+                parsed=parsed,
+                chunks=chunks,
+                summary_text=summary_text,
+                relevance_score=relevance_score,
+            ),
         )
 
         record = PaperRecord(

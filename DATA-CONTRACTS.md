@@ -568,6 +568,36 @@ No module calls `os.getenv` or reads the file itself. Changing scope = edit the 
 
 ---
 
+## M9 IngestionOrchestrator — checkpoint contract (`CheckpointArtifacts`)
+
+Decision record: `.phase0-data/orchestrator-checkpoint-proposal.md` (Option A) — fixes the T-A2
+(PR #38) gap where `ingest_state` carries only `stage`, not the artifacts a resumed run needs to
+skip re-invoking Chunker/Summarizer. `contracts/ingest_state.py`:
+
+```python
+class CheckpointArtifacts(FrozenModel):
+    parsed: ParsedDoc | None = None
+    chunks: list[Chunk] | None = None
+    summary_text: str | None = None
+    relevance_score: float | None = None
+```
+
+`state.checkpoint(paper_id, stage, artifacts)` merges `artifacts`'s non-`None` fields onto the
+row's existing `CheckpointArtifacts` (never un-sets an already-known field with `None`) and upserts
+`stage` — same "upsert keyed by stable id" idempotency rule as `ingest_state` itself (Operational
+invariants §1). Persisted in the additive `ingest_checkpoint` table below, keyed by `paper_id`; the
+row's artifacts are cleared once a paper reaches `done` (nothing left to resume — `ingest_state`'s
+own row is untouched, so a `done` paper is still skipped on re-run).
+
+**Named ceiling:** `ingest_checkpoint` holds transient, re-derivable data, not source of truth — if
+a future stage's artifacts get too large for a JSON column (e.g. full parsed docs at scale), revisit
+storage format (filesystem blob + path) then; don't build that now.
+
+**V1 forward-compat:** the `ClaimExtractor` stage (ARCHITECTURE.md "Extensibility") adds one more
+optional field here (`claims: list[Claim] | None`) — no new table, no new migration.
+
+---
+
 ## SQLite schema (source of truth — Owner D; V1 columns are noted but NOT created in V0)
 
 ```sql
@@ -639,6 +669,19 @@ CREATE TABLE quarantine (            -- dead-letter: one bad paper must not kill
 -- V1+ (DO NOT CREATE IN V0): claims(claim_id, paper_id, method, dataset, metric, value,
 --   conditions_json, anchor_json, ...), claim_relations(...), citation_edges(...). Named here only so
 --   Owner D leaves room; the schema is additive (new tables), never a migration of the above.
+```
+
+### ingest_checkpoint (additive — `migrations/0002_ingest_checkpoint.sql`, T-A2 checkpoint-durability fix)
+
+Durable storage for the `CheckpointArtifacts` shape above. Additive to the `ingest_state`/`quarantine`
+tables — `0001_init.sql` is never edited retroactively; a new column set for a future stage (V1's
+`ClaimExtractor`) is a new optional field on `CheckpointArtifacts`, not a schema migration.
+
+```sql
+CREATE TABLE ingest_checkpoint (
+  paper_id       TEXT PRIMARY KEY REFERENCES ingest_state(paper_id),
+  artifacts_json TEXT NOT NULL   -- serialized CheckpointArtifacts (contracts/ingest_state.py)
+);
 ```
 
 Run SQLite in **WAL mode** (ADR-05 — the relational-store decision; WAL is an implementation detail of
