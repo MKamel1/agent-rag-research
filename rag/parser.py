@@ -53,7 +53,8 @@ Ambiguities the frozen interface/tests don't resolve, decided here (rather than 
 - **GROBID endpoint.** `contracts/config.py` has no `grobid_url` field (adding one is a
   foundation-adjacent change to `contracts/`, out of this ticket's scope). Defaults to this
   project's documented `docker-compose` address (`rag-grobid`, port 8070) and is overridable via a
-  keyword argument for tests/deployment variance — never read from `os.getenv` (CONVENTIONS §3).
+  keyword argument for tests/deployment variance — never read from the process environment
+  directly (CONVENTIONS §3).
 
 - **Output directory for extracted figure/table images.** `ParsedDoc.figures[].image_path` must be
   a real filesystem path (DATA-CONTRACTS.md "source-of-truth blob"). No `Config` field owns this
