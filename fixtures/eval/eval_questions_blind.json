@@ -1,0 +1,1060 @@
+{
+  "_metadata": {
+    "description": "Blind reading-comprehension, synthesis, and deep reasoning evaluation questions (210 items). System under test sees ONLY this file.",
+    "structure": "Array of question objects without answers, source paper IDs, or passage excerpts.",
+    "total_items": 210,
+    "last_updated": "2026-07-11T02:59:58Z"
+  },
+  "questions": [
+    {
+      "question_id": "Q-001",
+      "question_text": "In the paper \"Policy Learning with Observational Data: The Case of Hepatitis C Treatment for HIV/HCV Co-Infected Patients\" by Raphaël Langevin, what is the estimated reduction in total treatment costs that reallocating treatments among treated individuals could achieve relative to the status quo?",
+      "question_type": "Result-Comprehension"
+    },
+    {
+      "question_id": "Q-002",
+      "question_text": "In \"Targeted maximum likelihood estimation of vaccine effectiveness and immune correlates in test-negative design studies with missing data\" by Leah I. B. Andrews et al., what is Assumption 6, referred to as the core TND assumption?",
+      "question_type": "Assumption-Comprehension"
+    },
+    {
+      "question_id": "Q-003",
+      "question_text": "According to \"Do we actually understand the impact of renewables on electricity prices? A causal inference approach\" by Davide Cacciarelli et al., what specific non-linear effect does wind power generation have on UK wholesale electricity prices over 2018-2024 at low versus mid-penetration levels?",
+      "question_type": "Result-Comprehension"
+    },
+    {
+      "question_id": "Q-004",
+      "question_text": "In \"Causal Inference with Generative Artificial Intelligence: Application to Texts as Treatments\" by Kosuke Imai and Kentaro Nakamura, what key advantage does the GenAI-Powered Inference (GPI) methodology offer over existing methods regarding causal representation?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-005",
+      "question_text": "In \"Heatwave increases nighttime light intensity in hyperdense cities of the Global South: A double machine learning study\" by Ramit Debnath et al., on which days of a heatwave do Cairo, Delhi, Guangzhou, and São Paulo exhibit significantly elevated nighttime light (NTL) intensity?",
+      "question_type": "Result-Comprehension"
+    },
+    {
+      "question_id": "Q-006",
+      "question_text": "In \"Monodense Deep Neural Model for Determining Item Price Elasticity\" by Lakshya Garg et al., what are the three types of layers combined in the proposed Monodense-DL network architecture?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-007",
+      "question_text": "In \"Generative Synthetic Data for Causal Inference: Pitfalls, Remedies, and Opportunities\" by Yichen Xu, into what two distinct error components does Proposition 3.1 separate synthetic average treatment effect (ATE) error?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-008",
+      "question_text": "In \"Multi-Treatment-DML: Causal Estimation for Multi-Dimensional Continuous Treatments with Monotonicity Constraints in Personal Loan Risk Optimization\" by Kexin Zhao et al., what specific three financial variables make up the K-dimensional continuous treatment vector (K = 3)?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-009",
+      "question_text": "In \"Double Machine Learning at Scale to Predict Causal Impact of Customer Actions\" by Sushant More et al., what quantitative gains in validation metrics and computational time does the CI-DML implementation achieve over baseline methods?",
+      "question_type": "Result-Comprehension"
+    },
+    {
+      "question_id": "Q-010",
+      "question_text": "In \"A Machine-Learning-Compatible Omnibus Test for Treatment Effect Heterogeneity\" by Elia Lapenta, Anthony Strittmatter, and Pedro Vergara Merino, across what four empirical designs do the authors apply their testing approach?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-011",
+      "question_text": "In \"Causal Inference with Categorical Unobserved Confounder via Mixture Learning\" by Aytijhya Saha, Stephen Bates, and Devavrat Shah, under what assumption regarding the unobserved confounder do the authors establish identifiability of causal effects in both multi-proxy and multi-treatment settings?",
+      "question_type": "Assumption-Comprehension"
+    },
+    {
+      "question_id": "Q-012",
+      "question_text": "In \"Latent Variable Modeling for Robust Causal Effect Estimation\" by Tetsuro Morimura et al., at which stage of Double Machine Learning (DML) are latent variables incorporated to ensure computational tractability?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-013",
+      "question_text": "In \"AI-Driven Predictive Modelling for Groundwater Salinization in Israel\" by Laxmi Pandey et al., what specific anthropogenic covariates are identified as influential drivers of groundwater salinity across Israel?",
+      "question_type": "Result-Comprehension"
+    },
+    {
+      "question_id": "Q-014",
+      "question_text": "In \"Finite-Population Inference for Heterogeneity in Many-Group Synthetic Difference-in-Differences\" by Takahiro Hoshino and Makoto Nakakita, why do naive plug-in second moments overstate effect heterogeneity across treated groups?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-015",
+      "question_text": "In \"Doubly cross-fit debiased machine learning of heterogeneous treatment effects under principal stratification\" by Jiaqi Tong and Fan Li, what specific class of causal estimands do the authors introduce to capture within-stratum treatment effect variation across a subset of covariates?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-016",
+      "question_text": "In \"Double Debiased Machine Learning for Mediation Analysis with Continuous Treatments\" by Houssam Zenati et al., what type of treatment variable does their proposed DML mediation algorithm accommodate to estimate target mediated response curves?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-017",
+      "question_text": "In \"Causal inference and model explainability tools for retail\" by Pranav Gupta and Nithin Surendran, what empirical observation do the authors make regarding the variance of SHAP values for inherently explainable models?",
+      "question_type": "Result-Comprehension"
+    },
+    {
+      "question_id": "Q-018",
+      "question_text": "In \"Disentangled Double Machine Learning for Accurate Causal Effect Estimation\" by Guodu Xiang et al., into what three distinct causal roles does the causal role disentanglement strategy decompose covariates?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-019",
+      "question_text": "In \"From Structural Equation Modelling to Double Machine Learning: Robustness Analysis for Survey-Based Research\" by Ka Ching Chan et al., what specific roles do SEM, OLS, and DML play in their staged robustness framework?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-020",
+      "question_text": "In \"Causal Inference Using Factor Models\" by Jushan Bai and Peng Wang, how does their dual modeling strategy characterize potential outcomes Yit(0) and Yit(1)?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-021",
+      "question_text": "What subsampling method do Aouar and Yu employ in 'Double Machine Learning for Adaptive Causal Representation in High-Dimensional Data' as an alternative to traditional random splitting, and upon what statistical metric is it based?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-022",
+      "question_text": "In Shan's analysis of 3.2 million U.S. adults in 'Age-Dependent Heterogeneity in the Association Between Physical Activity and Mental Distress', what are the adjusted odds ratios for physical activity against frequent mental distress in the youngest (18-24) versus the 55-64 age group?",
+      "question_type": "Result-Comprehension"
+    },
+    {
+      "question_id": "Q-023",
+      "question_text": "In 'The Impact of Formations on Football Matches Using Double Machine Learning', how many formations are categorized, and approximately how many professional league fixtures are included in the dataset?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-024",
+      "question_text": "In Lee, Loganathan, and Raghavan's simulation of geo-level marketing impact ('Dynamic Synthetic Controls vs. Panel-Aware Double Machine Learning'), what are the default values for the total number of geographies, treated geographies, pre-period length, and post-period campaign window?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-025",
+      "question_text": "In Engh and Aronow's paper 'Using LLMs to Directly Guess Conditional Expectations Can Improve Efficiency in Causal Estimation', what specific multimodal language model is used to generate direct predictions of log price and feedback score quantile from eBay jewelry listings?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-026",
+      "question_text": "In Uehara's paper introducing 'SHIFT: Robust Double Machine Learning for Average Dose-Response Functions under Heavy-Tailed Contamination', how is the inlier cutoff of the defensive OLS refit scaled, and what empirical impact does this design choice have on level-RMSE at p = 0.25 localized contamination?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-027",
+      "question_text": "In 'Do Real-World Datasets Contain Natural Experiments? An Empirical Study Using Causal Feature Selection', what specific differentiable causal discovery algorithm do Gare et al. use to recover the causal graph structure?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-028",
+      "question_text": "In 'Instrumental and Proximal Causal Inference with Gaussian Processes', what Gaussian process framework do Zhang et al. propose for uncertainty-aware causal learning in IV and proximal settings?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-029",
+      "question_text": "In 'Optimizing Prompts for Large Language Models: A Causal Approach', what two-stage framework do Chen et al. propose to eliminate confounding bias in query-adaptive prompt optimization?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-030",
+      "question_text": "In 'A Practical Guide to Instrumental Variables Methods with Heterogeneous Treatment Effects', how do the implicit weights on covariate-specific LATEs differ between the standard linear IV estimand (\\beta_{IV}) and Angrist-Imbens's saturate-and-weight 2SLS estimand (\\beta_{AI})?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-031",
+      "question_text": "In 'Predictive and Prescriptive AI toward Optimizing Wildfire Suppression', what three specific algorithmic components make up the exact two-sided branch-and-price-and-cut algorithm developed by Boussioux et al.?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-032",
+      "question_text": "In 'Geometric Causal Models', what mathematical framework do Weinstein and Blei deploy to prove causal identification from a single non-i.i.d. dependent process possessing group symmetry?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-033",
+      "question_text": "In Plečko's paper 'Causal Bias Detection in Generative Artificial Intelligence', what specific graphical framework is introduced to jointly model real-world data generation and generative AI model mechanisms?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-034",
+      "question_text": "In 'Does Topic Sentiment Cause Perceived Ideology? Comparing Human and LLM Annotations in Political News Articles', what four ideology annotation paradigms does Chatterjee compare using Double Machine Learning (DML)?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-035",
+      "question_text": "In 'Causal Effect Estimation with Learned Instrument Representations', what four specific empirical moment conditions are enforced by ZNet to decompose covariates X into a confounding component f(X) and an instrumental component g(X)?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-036",
+      "question_text": "In 'CaSPECT: Discovering Causally Homogeneous Subgroups via Directed Spectral Clustering', what are the four sequential stages of the CaSPECT algorithm?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-037",
+      "question_text": "In 'Temporal Causal Prior-Data Fitted Networks for Panel Data with Learned Reliability Signals', what exact scoring formula does TCPFN use to rank candidate edges during zero-shot temporal causal discovery?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-038",
+      "question_text": "In 'Double Machine Learning for Static Panel Data with Instrumental Variables: New Method and Applications', what prevalence statistics do Baiardi et al. document regarding the use of instrumental variables in AER panel data publications?",
+      "question_type": "Contribution-Comprehension"
+    },
+    {
+      "question_id": "Q-039",
+      "question_text": "In 'Visible or Covert? The Causal Effect of Inspector Visibility on Fare Evasion Detection: A Causal Machine Learning and Policy Learning Approach', what is the estimated average treatment effect (ATE) of uniformed versus plainclothes inspections on detection efficiency?",
+      "question_type": "Result-Comprehension"
+    },
+    {
+      "question_id": "Q-040",
+      "question_text": "In 'Adjustment for Confounding using Pre-Trained Representations', what three formal sufficiency conditions do Schulte, Rügamer, and Nagler define for pre-trained representations Z to be valid for ATE adjustment?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-041",
+      "question_text": "According to Jiang et al. in 'A Continuous-Time Ensemble Kalman-Bucy Smoother for Causal Inference and Model Discovery', how does their continuous-time EnKBS differ from existing continuous-time formulations like the unscented RTS smoother in terms of what is propagated?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-042",
+      "question_text": "In 'Lost in Aggregation: The Causal Interpretation of the IV Estimand' by Tsao et al., what is the formula for the general linear IV estimand β_IV when the treatment A is an aggregate sum A = \\sum_{j=1}^k \\alpha_j A_j with component instrument effects \\delta_j and outcome effects \\beta_j?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-043",
+      "question_text": "In 'A Novel Computational Framework for Causal Inference: Tree-Based Discretization with ILP-Based Matching' by Yang and Noor-E-Alam, what specific decision tree model inspires their proposed tree-based discretization technique?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-044",
+      "question_text": "In 'Causal ASCEND: Scalable Two-tier Causal Discovery on High Dimensional Multi-omics Data' by Asiedu and Watson, what does the acronym ASCEND stand for?",
+      "question_type": "Contribution-Comprehension"
+    },
+    {
+      "question_id": "Q-045",
+      "question_text": "In 'Beyond Parallel Trends in Staggered Difference-in-Differences: Identification under Higher-Order Parallelism' by Zecharias Anteneh, what unique challenge specific to staggered adoption designs is resolved by Theorem 4.4 when aggregating group-time average treatment effects?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-046",
+      "question_text": "According to Simha et al. in 'A Causal Framework for Evaluating ICU Discharge Strategies', what Python package do they generalize and extend to evaluate optimal stopping rules when variables are censored at stopping?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-047",
+      "question_text": "In 'Measuring Opportunity Cost with Stock Lifetime Value' by Decrouez et al., what stock-centric metric do the authors introduce to capture long-term opportunity cost in short e-commerce A/B tests?",
+      "question_type": "Contribution-Comprehension"
+    },
+    {
+      "question_id": "Q-048",
+      "question_text": "In 'Statistical Foundations of LLM-based A/B Testing: A Surrogacy Framework for Human Causal Inference' by Persson, Schultzberg, and Ankargren, what percentage of the human treatment effect do raw LLM outputs recover in their empirical application to the Upworthy Research Archive dataset?",
+      "question_type": "Result-Comprehension"
+    },
+    {
+      "question_id": "Q-049",
+      "question_text": "In 'Information and voting: Evidence from Peru's 2026 presidential election' by Gallardo, Velarde, and Gutarra, what natural experiment created treated and control voters who cast ballots before versus after observing election-night flash estimates?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-050",
+      "question_text": "In 'Testing Effect Homogeneity and Confounding in High-Dimensional Experimental and Observational Studies' by Armendariz and Huber, what clinical trial dataset do they use in their empirical application, and how do they define the experimental sites?",
+      "question_type": "Result-Comprehension"
+    },
+    {
+      "question_id": "Q-051",
+      "question_text": "According to Table 1 of 'Identification and Bounding of Central Moments of Causal Effects Using Marginal Moments Information', does Theorem 5 yield nontrivial sharp bounds when bounding target moment m=2 using available moment k=3?",
+      "question_type": "Result-Comprehension"
+    },
+    {
+      "question_id": "Q-052",
+      "question_text": "According to Waagepetersen et al. in 'Outcome-adapted Automatic Debiased Machine Learning', on what well-known semi-synthetic benchmark dataset does their neural network implementation achieve state-of-the-art estimation accuracy?",
+      "question_type": "Result-Comprehension"
+    },
+    {
+      "question_id": "Q-053",
+      "question_text": "In 'Two Layers of Instability in Causal Estimation' by Alexis Bellot, what constitutes the 'second layer' of instability in causal estimation identified by the author?",
+      "question_type": "Contribution-Comprehension"
+    },
+    {
+      "question_id": "Q-054",
+      "question_text": "In 'Wasserstein Policy Learning for Distributional Outcomes' by Huang, Leung, Wu, and Zhang, how do the authors define the policy reward when potential outcomes are probability measures in P_2(R)?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-055",
+      "question_text": "In 'Balanced Twins: Causal Inference on Time Series with Hidden Confounding' by Ouali et al., what neural framework do the authors propose for estimating individual treatment effects under hidden confounding?",
+      "question_type": "Contribution-Comprehension"
+    },
+    {
+      "question_id": "Q-056",
+      "question_text": "According to Wu, Bai, and Cui in 'Proximal Mediation Analysis with Hidden Recanting Witnesses', what causal inference framework do they leverage to identify path-specific effects when recanting witnesses are hidden or unobserved?",
+      "question_type": "Contribution-Comprehension"
+    },
+    {
+      "question_id": "Q-057",
+      "question_text": "According to Sungbum Kim and Jiayi Wang in 'Kernel-Based Functional Balancing for Causal Inference with Compositional Treatments', how does their proposed Augmented Weighted Estimator (AWE) differ from standard double machine learning regarding sample splitting?",
+      "question_type": "Contribution-Comprehension"
+    },
+    {
+      "question_id": "Q-058",
+      "question_text": "In 'Prediction-Powered Causal Inference by Automatic Debiased Machine Learning and Semi-Supervised Riesz Regression' by Masahiro Kato, what does the acronym PPCI stand for?",
+      "question_type": "Contribution-Comprehension"
+    },
+    {
+      "question_id": "Q-059",
+      "question_text": "In 'Causal Longitudinal Prior-Fitted Networks for Counterfactual Outcome Prediction' by Zare et al., what prior-fitted architecture do the authors introduce for zero-shot longitudinal counterfactual outcome prediction?",
+      "question_type": "Contribution-Comprehension"
+    },
+    {
+      "question_id": "Q-060",
+      "question_text": "In 'Improved Guarantees for Heterogeneous Treatment-Effect Estimation via Matrix Completion' by Mehrotra et al., what specific row-wise l_2 estimation error rate does their matrix completion estimator achieve without knowledge of propensities?",
+      "question_type": "Result-Comprehension"
+    },
+    {
+      "question_id": "Q-061",
+      "question_text": "According to Dhawan et al. in 'Causal Risk Minimization for High-Dimensional Treatments', what three experimental settings of increasing complexity were used to evaluate the CRM estimators, and how many unique treatments were in the text treatment dataset?",
+      "question_type": "Result-Comprehension"
+    },
+    {
+      "question_id": "Q-062",
+      "question_text": "In Uehara's evaluation on the freMTPL2 motor-insurance claims dataset, what unique behavior did the proposed estimator demonstrate that neither quantile regression nor loss-only DML produced?",
+      "question_type": "Result-Comprehension"
+    },
+    {
+      "question_id": "Q-063",
+      "question_text": "Why does making the second stage of the canonical X-Learner Bayesian lead to credible interval under-coverage in the few-placebo regime studied by Uehara?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-064",
+      "question_text": "In Plecko et al.'s ICU example evaluating mechanical ventilation on in-hospital mortality across MIMIC-III, AUMCdb, and SICdb, what empirical paradox indicates unobserved confounding when adjusting only for EHR covariates?",
+      "question_type": "Result-Comprehension"
+    },
+    {
+      "question_id": "Q-065",
+      "question_text": "In 'Causality as the Statistical Conscience of Artificial Intelligence', what four canonical methods are unified under the Causal Statistical Estimator (CSE) family?",
+      "question_type": "Contribution-Comprehension"
+    },
+    {
+      "question_id": "Q-066",
+      "question_text": "In Mateos et al.'s paper, what novel method is introduced to jointly estimate sparse linear DAG structure and exogenous noise scales, and in what scenario does it outperform Ordinary Least Squares (OLS)?",
+      "question_type": "Result-Comprehension"
+    },
+    {
+      "question_id": "Q-067",
+      "question_text": "What theoretical tools do Tamano & Imaizumi use to establish minimax optimality for GANICE under continuous treatment-covariate conditioning?",
+      "question_type": "Contribution-Comprehension"
+    },
+    {
+      "question_id": "Q-068",
+      "question_text": "In Husar & Volfovsky's DARTS framework, how does the sequential experimental design select which covariates to measure under a budget while maintaining randomization validity?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-069",
+      "question_text": "How does TabCF extend its distributional estimation capabilities from univariate outcomes to multiple multivariate outcomes?",
+      "question_type": "Contribution-Comprehension"
+    },
+    {
+      "question_id": "Q-070",
+      "question_text": "In MOCA's problem formulation, why is minimizing the mean squared error (MSE) for estimating individual treatment effect (ITE) equivalent to minimizing the MSE for estimating conditional average treatment effect (CATE)?",
+      "question_type": "Assumption-Comprehension"
+    },
+    {
+      "question_id": "Q-071",
+      "question_text": "In Kato's framework, under what circumstances should covariate balancing be understood as an appropriate special case of regressor balancing?",
+      "question_type": "Contribution-Comprehension"
+    },
+    {
+      "question_id": "Q-072",
+      "question_text": "What primary limitation of conventional subgroup comparisons in Difference-in-Differences designs does the Balanced Group Average Treatment Effect on the Treated (BGATT) resolve?",
+      "question_type": "Contribution-Comprehension"
+    },
+    {
+      "question_id": "Q-073",
+      "question_text": "What computational complexity guarantee does Hollering et al.'s algorithm achieve when searching for an identification formula of maximal degree d?",
+      "question_type": "Result-Comprehension"
+    },
+    {
+      "question_id": "Q-074",
+      "question_text": "Under what condition does Generative Augmented Inference (GAI) strictly improve asymptotic efficiency over human-data-only estimation?",
+      "question_type": "Result-Comprehension"
+    },
+    {
+      "question_id": "Q-075",
+      "question_text": "In Alinezhad et al.'s evaluation on a pharmacokinetic-pharmacodynamic (PK-PD) tumor-growth simulator under high-confounding regimes, what relative improvement in 1-Wasserstein distributional accuracy does CDM achieve?",
+      "question_type": "Result-Comprehension"
+    },
+    {
+      "question_id": "Q-076",
+      "question_text": "What classic condition for averages is recovered as a special case when curves in P2(R^d) are parallel in the sense of the Levi-Civita connection on the Wasserstein manifold?",
+      "question_type": "Contribution-Comprehension"
+    },
+    {
+      "question_id": "Q-077",
+      "question_text": "In Ulichney & Coston's framework for pre-deployment evaluation of black-box prediction models, what two types of data from the source and target environments are assumed to be observed by the evaluator?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-078",
+      "question_text": "According to Lu et al.'s mechanism analysis on 201 listed mining firms from 2010 to 2022, through what three distinct channels does equity balance curb corporate greenwashing?",
+      "question_type": "Result-Comprehension"
+    },
+    {
+      "question_id": "Q-079",
+      "question_text": "In Arunkumar et al.'s Double Machine Learning study of 464 gig workers, what nonmonotonic pattern characterizes how algorithmic control moderates the mediated link between supportive HR practices and worker performance?",
+      "question_type": "Result-Comprehension"
+    },
+    {
+      "question_id": "Q-080",
+      "question_text": "In Yu et al.'s theoretical convergence analysis of stochastic gradient descent (SGD) under unknown nuisance parameters, how does the asymptotic neighborhood radius around theta* depend on nuisance misspecification error ||g_hat - g_0||_G when Neyman orthogonality is satisfied versus not satisfied?",
+      "question_type": "Result-Comprehension"
+    },
+    {
+      "question_id": "Q-081",
+      "question_text": "According to Li et al. in 'Targeted Deep Architectures: A TMLE-Based Framework for Robust Causal Inference in Neural Networks', how does TDA define a parametric submodel within a neural network's weight space, and how does it derive the targeting gradient without inverting the empirical Fisher information?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-082",
+      "question_text": "According to Jin, Mackey, and Syrgkanis in 'It's Hard to Be Normal: The Impact of Noise on Structure-agnostic Estimation', for what type of treatment noise distribution in the partially linear model is the standard double machine learning (DML) estimator proved to be minimax rate-optimal?",
+      "question_type": "Result-Comprehension"
+    },
+    {
+      "question_id": "Q-083",
+      "question_text": "According to Shao et al. in 'Double Machine Learning for Conditional Moment Restrictions: IV Regression, Proximal Causal Learning and Beyond', what convergence rate does the proposed DML-CMR estimator achieve?",
+      "question_type": "Result-Comprehension"
+    },
+    {
+      "question_id": "Q-084",
+      "question_text": "According to Hays and Raghavan in 'Double Machine Learning for Causal Inference under Shared-State Interference', what is the key modeling assumption regarding individuals' potential outcomes under shared-state interference?",
+      "question_type": "Assumption-Comprehension"
+    },
+    {
+      "question_id": "Q-085",
+      "question_text": "According to Fuhr and Papies in 'Double Machine Learning meets Panel Data -- Promises, Pitfalls, and Potential Solutions', why is adapting DML to panel data with unobserved heterogeneity challenging?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-086",
+      "question_text": "According to He and Elwert in 'Causal Overlap Effects: A Cumulative Fixed Effect Approach', what two dimensions constitute the multidimensional treatment framework for causal overlap effects?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-087",
+      "question_text": "According to Jung Hyub Lee in 'Conformalized Lee Inference: Distribution-Free Individual Treatment Effect Intervals under Monotone Sample Selection', at what quantile of the treated-selected nonconformity scores does conformalized Lee inference calibrate to guarantee valid coverage?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-088",
+      "question_text": "According to Fu, Samii, and Wang in 'Inference for Group Interaction Experiments', why can the common rule of thumb to 'cluster at the level of randomization' be misleading when interference is present in group interaction experiments?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-089",
+      "question_text": "According to Rutgers and Singh in 'Generated outcomes as generated regressors: Equivalences in recursive causal estimation', what numerical relationship holds among the recursive plug-in, recursive balancing weight, and recursive doubly robust estimators when each stage is fitted by OLS?",
+      "question_type": "Result-Comprehension"
+    },
+    {
+      "question_id": "Q-090",
+      "question_text": "According to Baldi Antognini and Verme in 'A Toolkit for the Study of Treatment-Effect Discontinuities', how do Horizontal Discontinuity Analysis (HDA) and Vertical Discontinuity Analysis (VDA) differ in analyzing treatment-effect discontinuities?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-091",
+      "question_text": "According to Montiel Olea et al. in 'Decision Theory for the Archetype Discovery Problem', how does the oracle procedure for archetype discovery differ conceptually from the Sorted Group Average Treatment Effects (GATES) procedure?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-092",
+      "question_text": "According to Zhang, Liu, and Zhang in 'Higher-Order Debiased Estimators for General Treatment Models', why are existing higher-order influence function (HOIF) methods insufficient for parameters like Quantile Treatment Effects (QTE)?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-093",
+      "question_text": "According to Luo and Liu in 'BGM-IV: an AI-powered Bayesian generative modeling approach for instrumental variable analysis', how does BGM-IV modify the outcome likelihood to correct for endogeneity?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-094",
+      "question_text": "According to Sun and Zhang in 'Nonparametric Identification and Inference for Counterfactual Distributions with Confounding', how do the authors address the non-differentiability of min/max operators when estimating covariate-informed Frechet-Hoeffding bounds?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-095",
+      "question_text": "According to Joan Alegre Canton in 'Choosing What to Calibrate and What to Estimate in Structural Models', how does the proposed partition-selection rule choose which structural parameters to calibrate versus estimate?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-096",
+      "question_text": "According to Jun and Zincenko in 'Sensitivity Analysis for the Average Treatment Effect under Discrete Unobserved Confounders', how does the sharp identified set for the Average Treatment Effect (ATE) behave relative to the cutoff on the number of latent types?",
+      "question_type": "Result-Comprehension"
+    },
+    {
+      "question_id": "Q-097",
+      "question_text": "According to Bhattacharjee, Li, and Xue in 'A Test for Treatment Heterogeneity under a Distributional Difference-in-Difference Framework', how is the counterfactual post-treatment distribution of the treated group constructed using optimal transport?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-098",
+      "question_text": "According to Dominik Wied in 'A Synthetic Control Approach to Conditional Distributional Treatment Effects', how is the Parallel Trends in Parameters (PTP) identification condition formulated?",
+      "question_type": "Assumption-Comprehension"
+    },
+    {
+      "question_id": "Q-099",
+      "question_text": "According to Dong and Heiler in 'Sharp Bounds and Inference in Sample Selection Models with Treatment Endogeneity', why is it impossible to obtain sharp complier treatment effect bounds merely by scaling sharp ITT effect bounds by the complier share?",
+      "question_type": "Result-Comprehension"
+    },
+    {
+      "question_id": "Q-100",
+      "question_text": "According to Junjie Li and Dongyuan Mu in 'Semiparametric Difference-in-Differences Estimation With Missing Not at Random Data: A Shadow Variable Approach', what key conditional independence and relevance properties must a shadow variable satisfy to identify the ATT under MNAR?",
+      "question_type": "Assumption-Comprehension"
+    },
+    {
+      "question_id": "Q-101",
+      "question_text": "How do Kosuke Imai and Kentaro Nakamura in \"Causal Inference with Generative Artificial Intelligence: Application to Texts as Treatments\" and Yichen Xu in \"Generative Synthetic Data for Causal Inference: Pitfalls, Remedies, and Opportunities\" differ in their theoretical analysis and architectural use of deep generative models (such as LLMs) for Average Treatment Effect (ATE) estimation, particularly regarding what role the generative model plays in the estimation pipeline and how each paper addresses confounding or overlap limitations?",
+      "question_type": "Multi-Paper-Synthesis"
+    },
+    {
+      "question_id": "Q-102",
+      "question_text": "How do Morimura et al. in 'Latent Variable Modeling for Robust Causal Effect Estimation' and Xiang et al. in 'Disentangled Double Machine Learning for Accurate Causal Effect Estimation' differ in how and at which stage they incorporate latent or disentangled factors within the Double Machine Learning (DML) pipeline?",
+      "question_type": "Multi-Paper-Synthesis"
+    },
+    {
+      "question_id": "Q-103",
+      "question_text": "How do Chris Engh and P. M. Aronow (2025) in 'Using LLMs to Directly Guess Conditional Expectations Can Improve Efficiency in Causal Estimation' and Wei Chen et al. (2026) in 'Optimizing Prompts for Large Language Models: A Causal Approach' differ in their integration of LLMs and semantic embeddings within Double Machine Learning (DML) architectures, and what distinct role does DML play in each paper?",
+      "question_type": "Multi-Paper-Synthesis"
+    },
+    {
+      "question_id": "Q-104",
+      "question_text": "How do Schulte et al. (2506.14329, 'Adjustment for Confounding using Pre-Trained Representations') and Dean et al. (2602.10370, 'Causal Effect Estimation with Learned Instrument Representations') differ in their use of learned neural network representations for observational causal inference, specifically regarding: (1) whether the representation targets backdoor confounding adjustment versus instrumental variable construction, (2) why Schulte et al. argue that standard structural assumptions (e.g., sparsity or additivity) fail for pre-trained representations in Double Machine Learning and what geometric property they rely on instead, and (3) what explicit empirical moment conditions Dean et al.'s ZNet enforces to decompose ambient features into an instrument and a residual confounder?",
+      "question_type": "Multi-Paper-Synthesis"
+    },
+    {
+      "question_id": "Q-105",
+      "question_text": "How do Tsao et al. (2026) in \"Lost in Aggregation: The Causal Interpretation of the IV Estimand\" and Armendariz and Huber (2026) in \"Testing Effect Homogeneity and Confounding in High-Dimensional Experimental and Observational Studies\" differ in their characterization of why standard Instrumental Variable (IV) estimands may fail to recover general causal effects across populations or interventions, and what solutions or identifying conditions does each paper propose?",
+      "question_type": "Multi-Paper-Synthesis"
+    },
+    {
+      "question_id": "Q-106",
+      "question_text": "How do Waagepetersen et al. (2026) in \"Outcome-adapted Automatic Debiased Machine Learning\" (arXiv:2607.03351) and Kato (2026) in \"Prediction-Powered Causal Inference by Automatic Debiased Machine Learning and Semi-Supervised Riesz Regression\" (arXiv:2606.12892) differ in their mechanisms for achieving asymptotic efficiency gains over standard baseline Automatic Debiased Machine Learning (AutoDML) estimators?",
+      "question_type": "Multi-Paper-Synthesis"
+    },
+    {
+      "question_id": "Q-107",
+      "question_text": "How do Eichi Uehara's analyses in \"Stop Suppressing the Tail: Causal Inference for Extreme Events\" (2605.27474) and \"Calibrated Inference for the Conditional Average Treatment Effect in the Few-Placebo Regime via Gaussian Processes\" (2605.27473) demonstrate that attaching post-hoc diagnostics or uncertainty quantification to point estimators fails in extreme or imbalanced data regimes, and what specific failure mechanisms occur when reading tail shape from robust DML residuals versus constructing Bayesian credible intervals on X-Learner pseudo-outcomes?",
+      "question_type": "Multi-Paper-Synthesis"
+    },
+    {
+      "question_id": "Q-108",
+      "question_text": "Both Kato (2026) ('Covariate Balancing and Riesz Regression Should Be Guided by the Neyman Orthogonal Score in Debiased Machine Learning') and Yu et al. (2025) ('Stochastic Gradients under Nuisances') leverage Neyman orthogonality to control nuisance parameter errors in Double Machine Learning (DML) / Orthogonal Statistical Learning. How do the two papers differ in their structural operationalization of Neyman orthogonality regarding nuisance errors, specifically concerning (1) how Kato determines the required functional form of balancing weights for ATE versus ATT estimation, and (2) how Yu et al. characterize the convergence neighborhood of stochastic gradient updates as a function of nuisance estimation error ||ĝ - g0||_G?",
+      "question_type": "Multi-Paper-Synthesis"
+    },
+    {
+      "question_id": "Q-109",
+      "question_text": "How do Shao et al. (2025) in 'Double Machine Learning for Conditional Moment Restrictions: IV Regression, Proximal Causal Learning and Beyond' and Li et al. (2025) in 'Targeted Deep Architectures: A TMLE-Based Framework for Robust Causal Inference in Neural Networks' differ in their approaches to debiasing deep neural network estimators for complex causal parameters, specifically regarding their reliance on influence functions and post-hoc submodels?",
+      "question_type": "Multi-Paper-Synthesis"
+    },
+    {
+      "question_id": "Q-110",
+      "question_text": "Both \"A Test for Treatment Heterogeneity under a Distributional Difference-in-Difference Framework\" (Bhattacharjee, Li, and Xue) and \"A Synthetic Control Approach to Conditional Distributional Treatment Effects\" (Wied) develop causal inference methodologies for distributional policy evaluation beyond mean-shift effects and apply them to analyze the 1992 New Jersey minimum wage increase. How do their identification strategies differ regarding the space in which counterfactual distributions are constructed, and what distinct statistical mechanisms do they use to test the null hypothesis of no distributional treatment effect?",
+      "question_type": "Multi-Paper-Synthesis"
+    },
+    {
+      "question_id": "Q-111",
+      "question_text": "Suppose an applied researcher uses Langevin's (\"Policy Learning with Observational Data: The Case of Hepatitis C Treatment for HIV/HCV Co-Infected Patients\") framework to derive optimal treatment guidelines from observational data via a weighted K-means algorithm. Suppose that within one of the estimated homogeneous patient subgroups, patients vary in an unobserved health shock that simultaneously influences both the physician's treatment assignment and the patient's potential health outcomes. Why would the weighted K-means CATE estimator fail to consistently identify the true policy rule in this scenario, and what theoretical condition of Langevin's framework is violated?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-112",
+      "question_text": "Suppose an epidemiologist applies the targeted maximum likelihood estimation (TMLE) framework of Andrews, van der Laan, and Gilbert (\"Targeted maximum likelihood estimation of vaccine effectiveness and immune correlates in test-negative design studies with missing data\") to estimate COVID-19 vaccine effectiveness from a test-negative design (TND) study. Suppose the vaccine under evaluation not only reduces symptomatic COVID-19 (Y=1, D=1) but also cross-protects against non-SARS-CoV-2 respiratory illnesses that cause symptomatic test-negative presentations (Y=0, D=1). Based on the paper's identification strategy, why does the TMLE estimator fail to target the true full-data conditional risk ratio RR(PF)(x) under this scenario, and how is the resulting estimate biased?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-113",
+      "question_text": "Suppose an energy economist analyzes the causal impact of wind power penetration on UK wholesale electricity prices using the framework of Cacciarelli et al. (\"Do we actually understand the impact of renewables on electricity prices? A causal inference approach\"). If the economist replaces the authors' Local Partially Linear Double Machine Learning (LPL-DML) estimator with a standard global Partially Linear Double Machine Learning (PL-DML) estimator (Y = θD + g(X) + ε), why would the analysis fail to capture the true pricing dynamics of wind power integration demonstrated in the paper?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-114",
+      "question_text": "Suppose a computational social scientist uses the GenAI-Powered Inference (GPI) methodology of Imai and Nakamura (\"Causal Inference with Generative Artificial Intelligence: Application to Texts as Treatments\") to estimate the causal effect of a specific textual treatment feature generated by an LLM on human survey responses. Why is the authors' \"separability assumption\" between treatment and confounding features technically necessary for nonparametric identification when using the LLM's internal representation, and what goes wrong with treatment effect estimation if this assumption is violated?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-115",
+      "question_text": "Suppose an urban data scientist applies the methodology of Debnath, Chandel, Han, and Bardhan (\"Heatwave increases nighttime light intensity in hyperdense cities of the Global South: A double machine learning study\") to estimate the causal effect of heatwaves on nighttime light (NTL) radiance across hyperdense cities using Double Machine Learning (DML). If the analyst uses complex tree-based ensemble models to predict the climatic nuisance functions E[Y|X] and E[D|X] but omits DML's cross-fitting (sample-splitting) procedure, evaluating the nuisance estimators on the same sample used for training, why does the resulting estimate of the heatwave effect fail to achieve √N-consistency and asymptotic normality?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-116",
+      "question_text": "In \"Causal Inference with Categorical Unobserved Confounder via Mixture Learning\", Saha, Bates, and Shah (2026) establish non-parametric and parametric identifiability of causal effects under a symmetric multi-proxy architecture using at least three observed proxies Z1, Z2, Z3. Suppose an applied researcher applies their three-stage estimation procedure to observational data where two of the proxies share an unobserved common measurement shock independent of the latent categorical confounder U (violating conditional independence Z1 ⫫ Z2 | U). Why does Kruskal's tensor decomposition fail to uniquely recover the underlying mixture distribution of U under this violation, and how does this failure cascade through the subsequent stages of estimating the Average Treatment Effect (ATE)?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-117",
+      "question_text": "In \"Latent Variable Modeling for Robust Causal Effect Estimation\", Morimura et al. (2025) propose Latent Double Machine Learning (Latent DML) by restricting latent variable modeling exclusively to the second stage of DML, parameterizing the outcome and treatment residuals as R = θV + fu(Z) + Wu and V = fv(Z) + Wv where Z ⫫ X. Suppose an applied researcher encounters a data-generating process where the unobserved factor Z interacts non-additively with observed covariates X in generating the treatment and outcome mechanisms (e.g., non-separable confounding g(X, Z) and m(X, Z)). Why does applying Latent DML's second-stage-only latent inference fail to consistently estimate the causal effect θ in this non-additive setting, and what orthogonality failure occurs in the first-stage residuals?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-118",
+      "question_text": "In \"AI-Driven Predictive Modelling for Groundwater Salinization in Israel\", Pandey et al. (2026) apply Double Machine Learning (DML) to estimate the causal effect of anthropogenic drivers such as Treated Wastewater (TWW) application on chloride concentrations while controlling for high-dimensional geological and meteorological covariates. Suppose a researcher applies standard partially linear DML using random K-fold cross-fitting across monitoring boreholes. If strong spatial autocorrelation exists among neighboring monitoring wells such that adjacent wells share unobserved localized hydrogeological anomalies, why does standard random-split cross-fitting invalidate Neyman orthogonality and bias the estimated causal effect of TWW, and how must the sample-splitting scheme be adapted?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-119",
+      "question_text": "In \"Finite-Population Inference for Heterogeneity in Many-Group Synthetic Difference-in-Differences\", Hoshino and Nakakita (2026) develop finite-population inference for the between-group variance V and covariate projection γ* across many treated groups against a common control pool. Suppose an applied researcher computes Synthetic Difference-in-Differences (SDID) estimates across states and estimates V using naive plug-in sample variance while treating group-specific estimates as cross-sectionally independent. Grounded in Hoshino and Nakakita (2026), why does this naive plug-in approach severely distort finite-population effect heterogeneity, and what specific covariance kernel and noise corrections are required for valid second-stage inference?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-120",
+      "question_text": "In \"Doubly cross-fit debiased machine learning of heterogeneous treatment effects under principal stratification\", Tong and Li (2026) propose a doubly cross-fit doubly robust (DCDR) orthogonal learner to estimate the conditional principal causal effect (CPCE) τ_{d0d1}(X) within principal stratum G = d0d1 across a low-dimensional subset of effect modifiers X ⊊ C under an odds ratio sensitivity parameterization. Suppose an investigator estimates the principal score e_{d0d1}(C) and conditional outcome regressions m_{zd}(C) via machine learning and plugs them directly into a weighted regression on X without orthogonal debiasing. Why does this naive plug-in approach fail to achieve root-N consistency for τ_{d0d1}(X), and what technical role does the DCDR Neyman-orthogonal score play in resolving the nested nuisance structure?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-121",
+      "question_text": "In 'Double Machine Learning for Adaptive Causal Representation in High-Dimensional Data' by Lynda Aouar and Han Yu, the authors estimate an average treatment effect in a structural causal model using Double Machine Learning (DML). Suppose an applied econometrician analyzes a high-dimensional observational dataset where the covariate vector exhibits severe multimodality and heavy-tailed clustering across units. If the practitioner uses standard uniform random K-fold sample splitting for cross-fitting instead of Support Points Sample Splitting (SPSS), why might the finite-sample quality of the nuisance estimators degrade and jeopardize the o(N^{-1/4}) convergence requirement in Theorem 1, and how does SPSS theoretically mitigate this risk?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-122",
+      "question_text": "In 'Age-Dependent Heterogeneity in the Association Between Physical Activity and Mental Distress: A Causal Machine Learning Analysis of 3.2 Million U.S. Adults' by Yuan Shan, the author investigates treatment effect heterogeneity using Causal Forest via Double Machine Learning (DML). Suppose an epidemiologist attempts to estimate the Conditional Average Treatment Effect (CATE) across age groups but omits the first-stage DML orthogonal residualization of outcome and treatment against demographic confounders, fitting a standard regression forest directly on raw variables or disabling 'honest' sample splitting between tree structure building and leaf estimation. Based on the theoretical framework of Causal Forest DML, why will the resulting CATE estimates suffer from systematic bias and invalid doubly-robust inference?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-123",
+      "question_text": "In 'The Impact of Formations on Football Matches Using Double Machine Learning. Is it worth parking the bus?' by Genís Ruiz-Menárguez and Llorenç Badiella, the authors adapt Double Machine Learning (DML) to estimate causal effects of k^2 categorical formation combinations via a matrix-based residualization process. Suppose an analyst encodes all k^2 formation combinations using standard one-hot binary dummy variables (1 if combination (i,j) occurs, 0 otherwise) without omitting a reference category or applying effect coding. Why does the second-stage DML regression fail mathematically under standard one-hot encoding, and why does the authors' effect-coding scheme (1 for combination (i,j), -1 for omitted combination D_{k,k}, and 0 otherwise) allow uniquely recovering the causal effect \\hat{\\beta}_{k,k} of the omitted reference combination?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-124",
+      "question_text": "In 'Dynamic Synthetic Controls vs. Panel-Aware Double Machine Learning for Geo-Level Marketing Impact Estimation' by Sang Su Lee, Vineeth Loganathan, and Vijay Raghavan, the authors compare Augmented Synthetic Controls (ASC) against panel-aware Double Machine Learning (DML) variants using tree-based nuisance models. Suppose an analyst applies panel DML to a geo-level marketing rollout across N markets over T weeks but splits cross-fitting folds randomly at the observation (i,t) level rather than clustering folds by geographic unit i, or feeds raw panel levels directly into XGBoost without applying a panel transformation such as Within-Group demeaning (WG-DML) or Correlated Random Effects (CRE-DML). Why will the resulting average treatment effect on the treated (ATT) suffer from severe bias and under-coverage under complex marketplace dynamics?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-125",
+      "question_text": "In 'Using LLMs to Directly Guess Conditional Expectations Can Improve Efficiency in Causal Estimation' by Chris Engh and P. M. Aronow, the authors incorporate multimodal LLM predictions into Double Machine Learning (DML) nuisance estimation. Suppose a researcher estimates a causal effect in a partially linear model where the confounders W are represented by a high-dimensional embedding vector X_i \\in \\mathbb{R}^p (p \\gg n) along with an LLM-generated conditional expectation guess \\tilde{Y}_i. Why is it technically necessary or advantageous in their partially penalized LASSO nuisance regression to leave the scalar coefficient on the LLM guess unpenalized while penalizing the high-dimensional embedding vector, and what happens if the LLM guess is subjected to the same L_1 penalty as the embeddings?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-126",
+      "question_text": "In 'Predictive and Prescriptive AI toward Optimizing Wildfire Suppression' by Leonard Boussioux, Alexandre Jacquillat, Ryne Reger, and Jacob Wachspress, the authors embed a two-sided column generation scheme into a branch-and-cut tree to jointly optimize crew routing and wildfire suppression. Why does the traditional most-fractional branching rule fail to guarantee exactness due to the endogenous non-linear wildfire dynamics, and how does their proposed dual-aware maximum-variance branching scheme ensure exact convergence to an optimal integer solution?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-127",
+      "question_text": "In 'Geometric Causal Models' by Eli N. Weinstein and David M. Blei, the authors formulate causal inference for dependent, non-i.i.d. data by assuming that underlying causal mechanisms are symmetric under a group of transformations G acting on the index set Ω. Why is group-theoretic symmetry (coupled with ergodic theory for amenable groups) technically necessary for causal identification from a single observed spatial or network dataset, and what would fail in nonparametric effect estimation if the underlying causal mechanism lacked group equivariance?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-128",
+      "question_text": "In 'Causal Bias Detection in Generative Artificial Intelligence' by Drago Plecko, the author formalizes causal fairness for generative AI using a switching framework that distinguishes real-world causal mechanisms from those learned by a generative model M. Why does standard causal fairness decomposition for predictive ML fail to capture bias in generative AI models, and how does the author's causal decomposition separate fairness impacts arising from causal pathways versus the replacement of real-world mechanisms by M's internal mechanisms?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-129",
+      "question_text": "In 'Does Topic Sentiment Cause Perceived Ideology? Comparing Human and LLM Annotations in Political News Articles' by Upasana Chatterjee, the author uses Double Machine Learning (DML) and causal mediation analysis to compare expert human annotations with LLM annotations. Why does fine-tuning GPT-4o-mini on ideology-labeled data induce significant community-level causal treatment effects and natural direct effects (NDEs) of topic sentiment on perceived ideology even though standard F1 evaluation scores improve, and what does this reveal about shortcut learning in LLM silver-label annotations?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-130",
+      "question_text": "In 'Causal Effect Estimation with Learned Instrument Representations' by Frances Dean, Jenna Fields, Radhika Bhalerao, Marie Charpignon, and Ahmed Alaa, the authors propose ZNet to construct latent instrumental representations Z̃ = g(X) and residual confounders X̃ = f(X) from observed covariates X. Why is enforcing empirical moment conditions for relevance, exclusion restriction, and instrumental unconfoundedness technically necessary during representation learning, and what failure mode occurs in two-stage IV effect estimation if the exclusion restriction moment condition is insufficiently enforced?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-131",
+      "question_text": "In 'A Continuous-Time Ensemble Kalman-Bucy Smoother for Causal Inference and Model Discovery' by Zhang Jiang, Marios Andreou, Sebastian Reich, and Nan Chen, why does classical continuous-time filtering exhibit detection delays and bias when reconstructing hidden state trajectories driven by rapid regime transitions or extreme forcing, and how does the proposed continuous-time Ensemble Kalman-Bucy Smoother (EnKBS) resolve this limitation to enable Bayesian assimilative causal inference without requiring tangent-linear or adjoint models?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-132",
+      "question_text": "In 'Lost in Aggregation: The Causal Interpretation of the IV Estimand' by Danielle Tsao, Krikamol Muandet, Frederick Eberhardt, and Emilija Perković, consider an applied setting where a treatment variable $A = \\sum_{j=1}^k \\alpha_j A_j$ is an aggregate of distinct components $A_j$ with heterogeneous causal effects $\\beta_j$ on an outcome $Y$ and distinct sensitivities $\\delta_j$ to an instrumental variable $I$. Why does the standard two-stage least squares (2SLS) instrumental variable estimand $\\beta_{IV}$ fail to identify the average causal effect of a unit intervention $do(A=a+1) - do(A=a)$, and what role does the Aggregate-Constrained Component Intervention Distribution (ACID) play in determining whether $\\beta_{IV}$ has a valid causal interpretation?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-133",
+      "question_text": "In 'A Novel Computational Framework for Causal Inference: Tree-Based Discretization with ILP-Based Matching' by Tianyu Yang and Md. Noor-E-Alam, why do conventional coarsened exact matching (CEM) and propensity score matching (PSM) struggle to achieve unbiased estimation of the Average Treatment Effect on the Treated (ATT) in high-dimensional observational data, and how does the paper's integration of M5 model-tree discretization with an Integer Linear Programming (ILP) matching formulation resolve these trade-offs?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-134",
+      "question_text": "In 'Causal ASCEND: Scalable Two-tier Causal Discovery on High Dimensional Multi-omics Data' by Stephen Asiedu and David Watson, consider a high-dimensional multi-omics dataset where thousands of upstream background variables (e.g., SNPs) causally precede downstream foreground variables (e.g., gene expressions). Why does conditioning on the full background layer fail for constraint-based causal discovery, and why is ASCEND's divide-and-conquer strategy of maintaining dynamically updated nearest-ancestor conditioning sets both statistically valid and computationally necessary?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-135",
+      "question_text": "In 'Beyond Parallel Trends in Staggered Difference-in-Differences: Identification under Higher-Order Parallelism' by Zecharias Anteneh, consider a staggered adoption setting where pre-treatment outcome gaps between treated cohorts and control groups follow smooth polynomial trajectories rather than remaining flat. Why does standard Difference-in-Differences yield biased treatment effect estimates or suffer from pre-test distortion in this setting, and why is Theorem 4.4 necessary to aggregate group-time treatment effects $ATT(g,t)$ across cohorts?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-136",
+      "question_text": "In 'Identification and Bounding of Central Moments of Causal Effects Using Marginal Moments Information' by Naoya Hashimoto, Yuta Kawakami, and Jin Tian (2026), the authors identify the variance of the individual causal effect (ICE), \\mu^{(2)} = \\text{Var}(Y_1 - Y_0), from marginal potential outcome variances \\sigma_1^{(2)} and \\sigma_0^{(2)} under the Independent Effect Deviation (IED) assumption (Y_1 - Y_0) \\perp \\perp Y_0, yielding \\mu^{(2)} = \\sigma_1^{(2)} - \\sigma_0^{(2)}. Suppose in an applied clinical setting that treatment effect heterogeneity is positively correlated with baseline health Y_0 such that \\text{Cov}(Y_1 - Y_0, Y_0) > 0. If an investigator assumes IED and uses the formula \\hat{\\mu}^{(2)} = \\sigma_1^{(2)} - \\sigma_0^{(2)}, how will this estimate systematically relate to the true ICE variance \\mu^{(2)}, and what fundamental mathematical identity explains this bias?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-137",
+      "question_text": "In 'Outcome-adapted Automatic Debiased Machine Learning' by Asger Waagepetersen, Asbjørn Risom, Niels Richard Hansen, and Anton Rask Lundborg (2026), the authors establish that learning a covariate representation Z = \\phi(X) that preserves outcome predictive power (\\gamma(Z) = \\mathbb{E}[Y|X]) while discarding information about the Riesz representer \\alpha(X) yields an estimator that is asymptotically more efficient than baseline AutoDML using all covariates X. Suppose an applied researcher instead uses a representation Z_{\\text{Riesz}} that fully preserves predictive power for \\alpha(X) but discards covariates that affect only \\alpha(X) and not \\gamma(X). Using the orthogonal score / doubly robust influence function, explain mathematically why projecting the Riesz representer onto an outcome-sufficient representation Z (\\alpha_Z(Z) = \\mathbb{E}[\\alpha(X)|Z]) reduces asymptotic variance compared to using the full Riesz representer \\alpha(X).",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-138",
+      "question_text": "In 'Two Layers of Instability in Causal Estimation' by Alexis Bellot (2026), the author introduces a second layer of instability in causal inference arising from how an estimator summarizes uncertainty over a multimodal distribution \\Pi_P of structural causal models (SCMs) compatible with data distribution P. Why do 'model-selective' plug-in estimators (such as selecting the maximum-likelihood nuisance model \\hat{M} = \\arg\\max_M \\Pi_P(M) and reporting \\Psi(\\hat{M})) exhibit discontinuous jumps under infinitesimal perturbations of P, whereas 'effect-aligned' summaries such as the posterior mean \\mathbb{E}_{\\Pi_P}[\\Psi(M)] remain continuous in P, and what decision-theoretic loss functions explain this distinction?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-139",
+      "question_text": "In 'Wasserstein Policy Learning for Distributional Outcomes' by Yiyan Huang, Cheuk Hang Leung, Qi Wu, and Zhiheng Zhang (2026), the authors map 1D distribution-valued outcomes in (\\mathcal{P}_2(\\mathbb{R}), W_2) to the L^2([0,1]) space of quantile functions via the 2-Wasserstein quantile isometry and propose cross-fitted Doubly Robust (DR) estimators for policy-indexed quantile curves. Suppose that due to finite-sample noise across quantile levels t \\in [0,1], the unconstrained DR estimated quantile curve \\hat{Q}(t) is non-monotonic and thus does not represent a valid probability distribution. Why is applying a monotone rearrangement operator \\mathcal{M}[\\hat{Q}](t) technically necessary to ensure a valid Wasserstein outcome, and why does this post-processing step never worsen the L^2([0,1]) estimation error relative to the true quantile curve Q^*(t)?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-140",
+      "question_text": "In 'Balanced Twins: Causal Inference on Time Series with Hidden Confounding' by Maha Ouali, Badih Ghattas, Emmanuel Flachaire, Philippe Charpentier, and Laurent Bozzi (2026), the authors propose Balanced-Twin (B-Twin), which estimates individual treatment effects (ITE) in high-frequency time series by learning low-dimensional latent representations and balancing weights across control units rather than directly regressing future outcomes on pre-treatment histories. Suppose an applied researcher instead uses a deep autoregressive model that directly extrapolates post-treatment counterfactual outcomes from pre-treatment trajectories. Why does direct outcome extrapolation fail under non-stationary outcome dynamics, and why is learning balancing weights in a low-dimensional latent space without strict convexity constraints technically necessary for individual-level high-frequency time series?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-141",
+      "question_text": "Suppose a data scientist trains an IPW-CRM estimator for high-dimensional text treatments using standard cross-entropy propensity score calibration without explicit moment-balancing regularization across treatment groups. According to \"Causal Risk Minimization for High-Dimensional Treatments\" by Nikita Dhawan, Arnav Paruthi, Andrew Kim, Lovedeep Gondara, Jekaterina Novikova, and Chris J. Maddison, why would this estimator fail to consistently estimate the average potential outcome (APO) function when confounders exhibit strong non-linear relationships with the outcome, and how does the paper's APO error decomposition justify higher-order moment balance regularization?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-142",
+      "question_text": "Suppose a causal inference practitioner implementing double machine learning (DML) for an Average Dose-Response Function (ADRF) under heavy-tailed outcomes attempts to estimate the Generalized Pareto Distribution (GPD) tail shape \\xi(t) directly from the second-stage residuals of a Huber-tuned local-linear smoother. According to \"Stop Suppressing the Tail: Causal Inference for Extreme Events\" by Eichi Uehara, why does this residual-based tail estimation suffer from severe circular dependence, and why is computing the tail diagnostic (PDHTE+JK) on the pilot-median-centered outcome technically necessary to ensure method-invariance?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-143",
+      "question_text": "Suppose a researcher estimating Conditional Average Treatment Effects (CATE) in an unequal-allocation A/B test with a very small control group (N_0 \\ll N_1) attempts to obtain credible intervals by either running a Bayesian second-stage regression on the X-Learner's treated-arm pseudo-outcome or regressing Kennedy's doubly-robust (DR) orthogonal score. According to \"Calibrated Inference for the Conditional Average Treatment Effect in the Few-Placebo Regime via Gaussian Processes\" by Eichi Uehara, why do both meta-learner approaches fail to produce calibrated credible intervals in this few-placebo regime, and how does GP-CATE structurally resolve this failure?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-144",
+      "question_text": "Suppose a healthcare data scientist studying electronic health records attempts to elicit unobserved clinical confounders U from ICU physicians by randomly pairing treated patients (X_i=1) with untreated patients (X_j=0) without matching on observed severity covariates Z (the marginal comparison baseline M_{marg}). Based on \"Confounder Detection via Treatment Intent: A New Observational Study Design\" by Drago Plecko, Patrik Okanovic, Torsten Hoefler, and Elias Bareinboim, why does this marginal pairing fail to reliably elicit unobserved confounders, and why are structured matching strategies like Z-matching (M_{Z-match}) under monotonicity and log-supermodularity technically necessary?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-145",
+      "question_text": "Suppose an AI engineer deploys a deep neural network trained via standard Empirical Risk Minimization (ERM) on a large observational medical dataset to predict diagnostic outcomes across multiple hospital systems with varying demographics and protocols. According to \"Causality as the Statistical Conscience of Artificial Intelligence: From Pearl's Ladder to Trustworthy Machines\" by Ernest Fokoué, why is ERM over observational data mathematically guaranteed to suffer catastrophic performance degradation under out-of-distribution (OOD) shift across environments, and what structural assumption is technically necessary to achieve causal OOD generalization?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-146",
+      "question_text": "Suppose an analyst estimates the Average Treatment Effect (ATE) in an observational study with substantial treatment effect heterogeneity across covariates Z, where the true outcome regression γ0(D, Z) involves strong interactions between treatment D and Z. Following Masahiro Kato in \"Covariate Balancing and Riesz Regression Should Be Guided by the Neyman Orthogonal Score in Debiased Machine Learning\", the analyst constructs balancing weights α̂(Di, Zi) by imposing standard covariate balancing constraints that match moments of functions depending only on Z. Why does this standard covariate balancing fail to eliminate the first-order finite-sample bias from misspecification of γ̂(d, z), and what technical modification to the balancing basis functions is required by the Neyman orthogonal score?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-147",
+      "question_text": "Suppose an applied researcher evaluating a policy with a Difference-in-Differences (DiD) design wants to compare treatment effects between two demographic groups (Z=0 and Z=1). The researcher estimates separate group-specific Average Treatment Effects on the Treated (ATTs) under conditional parallel trends given covariates W, and finds a statistically significant difference ATT_{Z=1} - ATT_{Z=0} > 0. According to Nora Bearth, Nadja van 't Hoff, and Torben S. D. Johansen in \"Group-Level Treatment Effect Heterogeneity in Difference-in-Differences: A Balanced Approach\", why could concluding that group membership Z=1 enhances the treatment response be misleading, and what dual adjustment must the doubly robust influence function for the Balanced Group Average Treatment Effect on the Treated (BGATT) perform to isolate treatment-response heterogeneity?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-148",
+      "question_text": "Suppose an algorithm attempts to decide rational identifiability of direct causal effects Λ in an acyclic linear structural causal model X = Λ^⊤ X + ε with latent confounding by directly computing a standard Gröbner basis elimination ideal from the polynomial system Σ = (I-Λ)^{-⊤} Ω (I-Λ)^{-1}. According to Benjamin Hollering, Pratik Misra, and Nils Sturma in \"Efficient Symbolic Computations for Identifying Causal Effects\", why does this direct elimination approach fail computationally beyond small graphs, and what two structural mechanisms enable their algorithm to decide rational identifiability up to degree d in quasi-polynomial time?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-149",
+      "question_text": "Suppose a researcher uses large language models to generate low-cost auxiliary annotations z for a generalized linear model parameter β*, where human labels y are observed only for a random subsample (w=1). When AI outputs z are discrete, systematically biased, or uncalibrated relative to y, why does Prediction-Powered Inference (PPI) risk increasing estimation variance relative to human-only estimation, and how does the Neyman-orthogonal score ψ(Ξ; e, g; β) in Generative Augmented Inference (GAI) by Cheng Lu, Mengxin Wang, Dennis J. Zhang, and Heng Zhang guarantee valid inference and asymptotic variance reduction without assuming z is a surrogate label?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-150",
+      "question_text": "Suppose an analyst models sequential counterfactual tumor-growth trajectories under time-dependent confounding, where treatment decisions depend heavily on evolving patient states and outcomes follow multimodal distributions. Standard deep longitudinal causal inference models (such as Causal Transformers or Counterfactual Recurrent Networks) rely on explicit adversarial domain-confusion balancing or inverse-probability weighting to deconfound representations and yield point estimates. According to Farbod Alinezhad, Jianfei Cao, Gary J. Young, and Brady Post in \"Causal Diffusion Models for Counterfactual Outcome Distributions in Longitudinal Data\", why do point-estimate architectures augmented with Monte Carlo dropout fail to accurately capture the counterfactual outcome distribution under strong confounding, and how does the Causal Diffusion Model (CDM) achieve superior distributional accuracy without explicit adversarial deconfounding?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-151",
+      "question_text": "In \"Targeted Deep Architectures: A TMLE-Based Framework for Robust Causal Inference in Neural Networks\" by Yi Li, David Mccoy, Nolan Gunter, Kaitlyn Lee, Alejandro Schuler, and Mark van der Laan, why does Targeted Deep Architectures (TDA) project the nonparametric influence function onto the span of the neural network loss gradients with respect to a small targeting parameter subset, rather than optimizing an extended targeted loss over all network weights or using unprojected full-model influence functions? What breaks statistically and computationally in overparameterized neural networks if this projection onto local parametric submodel score gradients is removed?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-152",
+      "question_text": "In \"It's Hard to Be Normal: The Impact of Noise on Structure-agnostic Estimation\" by Jikai Jin, Lester Mackey, and Vasilis Syrgkanis, consider a partially linear causal model where the treatment noise is independent of covariates and follows an asymmetric non-Gaussian distribution with a non-zero third cumulant. Why does standard Double Machine Learning (DML) fail to achieve higher-order robustness beyond second-order rates in this setting, and how does the Agnostic Cumulant-based Estimator (ACE) leverage the non-Gaussianity of the treatment noise to achieve higher-order structure-agnostic insensitivity to nuisance errors?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-153",
+      "question_text": "In \"Double Machine Learning for Conditional Moment Restrictions: IV Regression, Proximal Causal Learning and Beyond\" by Daqian Shao, Ashkan Soleymani, Francesco Quinzan, and Marta Kwiatkowska, why does naively plugging deep neural network (DNN) first-stage nuisance estimates into the second stage of Conditional Moment Restriction (CMR) problems fail to achieve √N-consistency, and how does DML-CMR overcome this without relying on standard classical influence functions?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-154",
+      "question_text": "In \"Double Machine Learning for Causal Inference under Shared-State Interference\" by Chris Hays and Manish Raghavan, when applying Double Machine Learning (DML) to sequentially arriving units whose interactions are mediated by shared-state interference, why does standard cross-sectional DML inference fail, and what specific Markovian structure on the observed data process is technically required to establish asymptotic normality and valid variance estimation?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-155",
+      "question_text": "In \"Double Machine Learning meets Panel Data -- Promises, Pitfalls, and Potential Solutions\" by Jonathan Fuhr and Dominik Papies, when applying Double Machine Learning (DML) to panel data with time-constant unobserved unit heterogeneity and nonlinear observed confounding, why does naively applying DML to time-demeaned variables (within-transformation DML) produce severely biased treatment effect estimates, and why does integrating the Correlated Random Effects (CRE) approach resolve this failure?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-156",
+      "question_text": "Suppose a researcher wants to summarize heterogeneous policy effects \\phi(x) over a discrete covariate space \\mathcal{X} into K archetype sets to minimize the weighted mean-squared error loss L(\\bar{\\phi}; \\phi, p) = \\sum_{x \\in \\mathcal{X}} p(x)(\\phi(x) - \\bar{\\phi}(x))^2. Why does standard Sorted Group Average Treatment Effects (GATES) with K equally-spaced quantiles fail to achieve the oracle risk minimization characterized by Montiel Olea, Velez, Xu, Yu, and Zhang in \"Decision Theory for the Archetype Discovery Problem\", and what specific clustering mechanism on the scalar policy effects is technically required to minimize this loss?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-157",
+      "question_text": "In \"Higher-Order Debiased Estimators for General Treatment Models\", Zhang, Liu, and Zhang investigate implicitly defined causal parameters such as Quantile Treatment Effects (QTE) where nuisance functions exhibit Hölder smoothness index s over dimension d. Why do standard first-order influence function (doubly robust) estimators fail to achieve root-n consistency when s/d \\in (0.25, 0.5], and how does higher-order influence function (HOIF) debiasing overcome this sub-optimality for implicitly defined M/Z-estimation functionals?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-158",
+      "question_text": "In \"BGM-IV: an AI-powered Bayesian generative modeling approach for instrumental variable analysis\", Luo and Liu propose a latent Bayesian generative model for nonlinear IV regression with high-dimensional covariates. Why does conditioning the outcome likelihood directly on the observed treatment X in the latent posterior inference fail under treatment endogeneity (\\mathbb{E}[\\epsilon | X, V] \\neq 0), and why is replacing it with the IV-integrated pseudo-likelihood \\int p_\\omega(y | x, z_0, z_1) p_\\phi(x | w, z_0, z_2) dx technically necessary to recover the structural causal function?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-159",
+      "question_text": "In \"Nonparametric Identification and Inference for Counterfactual Distributions with Confounding\", Sun and Zhang derive bounds on the joint counterfactual distribution (Y(1), Y(0)) under observed confounding using conditional copulas. Why are the covariate-integrated Fréchet-Hoeffding bounds U(y_1, y_0) = \\mathbb{E}_X[\\min\\{\\theta_1(X), \\theta_0(X)\\}] strictly tighter than the marginal Fréchet-Hoeffding upper bound \\min\\{F_{Y(1)}(y_1), F_{Y(0)}(y_0)\\} whenever conditional CDFs \\theta_a(X) vary with X, and what structural assumption on individual potential outcomes corresponds to attaining this upper bound?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-160",
+      "question_text": "In \"Choosing What to Calibrate and What to Estimate in Structural Models\", Alegre Canton treats the choice of which structural parameters to calibrate versus estimate as an econometric partition-selection problem. When evaluating the local sensitivity of a target counterfactual object to calibration errors across admissible partitions, why is it technically invalid to compare unnormalized derivative sensitivities across different choices of calibrated parameters, and how does the proposed scalar sensitivity statistic ensure minimax robustness against worst-case local calibration bias?",
+      "question_type": "Single-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-161",
+      "question_text": "Suppose a research team attempts to estimate causal treatment effects from high-dimensional text or tabular data by first training an end-to-end fully generative model (such as an LLM or conditional GAN) on observational data and then estimating counterfactual contrasts on synthetic samples. According to the loss decomposition derivations in Xu (2026, 2604.23904), why will this fully generative synthesis fail to preserve true Average Treatment Effect (ATE) contrasts under limited overlap, and how does the GenAI-Powered Inference (GPI) framework of Imai and Nakamura (2024, 2410.00903) circumvent this structural bottleneck when treatments are high-dimensional texts?",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-162",
+      "question_text": "When developing observational policy rules across patient subpopulations—such as HIV/HCV co-infected patients in Langevin (2026, 2605.16593)—why could partitioning individuals via weighted K-means and fitting within-subgroup outcome models yield biased or suboptimal decision rules if high-dimensional confounders are present, and how does applying the ML-compatible nonparametric omnibus test of Lapenta, Strittmatter, and Vergara Merino (2026, 2607.06412) prior to policy learning protect against such failure?",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-163",
+      "question_text": "In applied financial and economic risk optimization, why do standard causal estimators—including single-dimensional local partially linear Double Machine Learning (PL-DML) in Cacciarelli et al. (2025, 2501.10423) and unconstrained neural regressions such as Monodense-DL in Garg et al. (2026, 2603.29261)—fail when jointly evaluating multi-dimensional continuous treatments under domain-enforced structural rules, and how does the Multi-Treatment-DML framework of Zhao et al. (2025, 2508.02183) overcome these structural deficiencies?",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-164",
+      "question_text": "Suppose an observational cohort study faces missing exposure or treatment data subject to two-phase sampling or incomplete records that are missing at random (MAR) conditional on observed confounders. Why would applying standard Double Machine Learning pipelines designed for fully observed treatments—such as those implemented in More et al. (2024, 2409.02332) or Debnath et al. (2025, 2503.00557)—to complete cases yield biased or sub-efficient causal effect estimates, and how does the semiparametric Targeted Maximum Likelihood Estimation (TMLE) framework of Andrews, van der Laan, and Gilbert (2026, 2605.21793) achieve efficient, doubly robust identification under exposure missingness?",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-165",
+      "question_text": "When analyzing continuous treatments where the marginal causal effect varies non-linearly across the treatment domain—such as the U-shaped impact of wind power generation on wholesale prices identified in Cacciarelli et al. (2025, 2501.10423)—why do global partially linear DML implementations (as scaled in More et al., 2024, 2409.02332) or direct neural estimators without Neyman orthogonality (such as Monodense-DL in Garg et al., 2026, 2603.29261) fail to accurately estimate localized treatment elasticities, and how does Local Partially Linear DML resolve this tradeoff?",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-166",
+      "question_text": "Suppose an applied researcher aims to estimate average and conditional treatment effects from observational data where key confounding variables are unobserved. Compare three competing approaches from this cluster: Latent-DML ('Latent Variable Modeling for Robust Causal Effect Estimation' by Morimura et al.), Disentangled DML ('Disentangled Double Machine Learning for Accurate Causal Effect Estimation' by Xiang et al.), and Multi-Proxy Mixture Learning ('Causal Inference with Categorical Unobserved Confounder via Mixture Learning' by Saha, Bates, & Shah). Under what precise mathematical assumptions regarding proxy availability, latent confounder support, and nuisance function estimation does each method achieve identifiability, and why would standard representation learning in Latent-DML or Disentangled DML fail to consistently estimate causal effects when the unobserved confounder is strictly categorical with no direct observed representation, whereas Saha et al.'s tensor decomposition method succeeds?",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-167",
+      "question_text": "Both Tong & Li ('Doubly cross-fit debiased machine learning of heterogeneous treatment effects under principal stratification') and Zenati et al. ('Double Debiased Machine Learning for Mediation Analysis with Continuous Treatments') address complex causal estimands involving post-treatment intermediate variables—conditional principal causal effects and natural direct/indirect mediation effects with continuous treatments, respectively. Compare how Tong & Li (2606.29076) and Zenati et al. (2503.06156) achieve Neyman orthogonality to overcome nested nuisance structures where second-stage estimators depend on first-stage conditional expectations or densities of intermediate variables. Specifically, how does Tong & Li's directional derivative approach under an odds ratio sensitivity parameterization differ mathematically from Zenati et al.'s kernelized doubly robust moment function combined with a Bayes transformation, and why would plug-in sequential estimation without these specific orthogonalizations fail to achieve n^{-1/2} asymptotic convergence in both settings?",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-168",
+      "question_text": "Consider a panel data setting where multiple treated groups undergo policy interventions against a common control pool, and the researcher seeks to evaluate treatment effect heterogeneity across groups while accounting for unobserved time-varying shocks. Contrast the structural frameworks and estimands of Hoshino & Nakakita ('Finite-Population Inference for Heterogeneity in Many-Group Synthetic Difference-in-Differences') and Bai & Wang ('Causal Inference Using Factor Models'). Under what specific conditions regarding unobserved shocks and post-intervention structural shifts will Synthetic Difference-in-Differences (SDID) plug-in second-moment estimators yield upwardly biased variance decompositions, and how does Bai & Wang's dual potential-outcome factor modeling avoid confounding treatment effects with unit-time idiosyncratic noise?",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-169",
+      "question_text": "Empirical pipelines often use Double Machine Learning (DML) residualization to adjust for observed confounders flexibly, such as in survey-based structural equation modeling ('From Structural Equation Modelling to Double Machine Learning: Robustness Analysis for Survey-Based Research' by Chan et al.) or retail causal analytics ('Causal inference and model explainability tools for retail' by Gupta & Surendran). Explain why standard DML residualization—as employed in conventional cross-learner sensitivity workflows—can suffer from severe finite-sample estimation bias when high-dimensional covariates contain treatment-specific or outcome-specific factors alongside true confounders. How does Disentangled DML ('Disentangled Double Machine Learning for Accurate Causal Effect Estimation' by Xiang et al.) mathematically resolve both nuisance function misspecification and the resulting treatment-outcome residual dependence that standard DML leaves uncorrected?",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-170",
+      "question_text": "Applied causal frameworks frequently attempt to characterize treatment effect heterogeneity or driver attribution by coupling predictive or DML models with post-hoc Explainable AI tools such as SHAP ('AI-Driven Predictive Modelling for Groundwater Salinization in Israel' by Pandey et al. and 'Causal inference and model explainability tools for retail' by Gupta & Surendran). Critique the theoretical validity of using post-hoc SHAP attributions on residuals or predictive models to infer treatment effect heterogeneity within latent subpopulations, compared to Tong & Li's ('Doubly cross-fit debiased machine learning of heterogeneous treatment effects under principal stratification') doubly cross-fit regularized sieve estimation. Why do SHAP-based attribution rankings fail to identify causal effect heterogeneity when intermediate post-treatment variables exist or monotonicity is violated, and how does Tong & Li's sieve-based limit theory guarantee honest confidence bands across low-dimensional modifiers?",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-171",
+      "question_text": "Consider estimating a continuous Average Dose-Response Function (ADRF) in a high-dimensional observational study where the outcome suffers from localized heavy-tailed outlier contamination and the nuisance conditional expectations exhibit severe curse-of-dimensionality. How do the second-stage SHIFT estimator of Uehara (2026, 2605.00176), the Support Points Sample Splitting (SPSS) framework of Aouar & Yu (2024, 2411.14665), and the LLM conditional expectation guessing approach of Engh & Aronow (2025, 2510.09684) theoretically interact to address first- and second-stage vulnerabilities in Double Machine Learning (DML)? Specifically, explain: (1) Why standard kernel-weighted local-linear DML fails under localized heavy-tailed contamination despite Neyman orthogonalization, and how SHIFT's Graduated Non-Convexity (GNC) Welsch-loss second stage with post-GNC residual MAD-scaled defensive OLS refitting resolves unbounded functional influence; and (2) Why replacing random K-fold splits with energy-distance SPSS and incorporating LLM direct expectation guesses improves first-stage nuisance efficiency, yet why flexible tree-based nuisance learners can degrade robust DML shape recovery under uniform contamination compared to linear regularized models.",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-172",
+      "question_text": "In evaluating marketing lift across regional markets in two-sided platforms, practitioners frequently face curved baseline trends, heterogeneous response lags, external treated-biased shocks, and non-linear outcome links. Comparing the geo-experiment framework of Lee, Loganathan, & Raghavan (2025, 2508.20335) with the categorical treatment DML formulation of Ruiz-Menárguez & Badiella (2026, 2602.16830) and the Causal Forest DML approach of Shan (2026, 2604.19066), why do standard Augmented Synthetic Control (ASC) estimators suffer from severe bias and near-zero 95% confidence interval coverage under non-linear links and external shocks, whereas Panel-Aware Double Machine Learning variants restore nominal coverage? Furthermore, how does matrix-based residualization in DML enable robust identification when treatments are multi-valued or combinatorial rather than binary rollout indicators?",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-173",
+      "question_text": "When identifying causal effects under unobserved confounding with Instrumental Variables (IV) or proximal variables in the presence of covariate-dependent treatment effect heterogeneity, how do classical linear 2SLS specifications with covariates analyzed by Słoczyński, Sun, & Uysal (2026, 2605.15115) theoretically differ from the Deconditional Gaussian Process (DGP) framework of Zhang et al. (2026, 2603.02159)? Specifically, explain: (1) Why linear IV/2SLS specifications with covariates fail to recover a convex combination of covariate-specific Local Average Treatment Effects (LATEs) and can induce negative weights under parametric misspecification; and (2) How Zhang et al.'s DGP formulation recovers kernel IV estimators as the posterior mean while utilizing posterior variance for calibrated Epistemic Uncertainty (EU) quantification to safeguard against misspecified causal identification.",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-174",
+      "question_text": "In large language model workflows, Automatic Prompt Optimization (APO) and feature selection over complex queries frequently suffer from correlational confounding between treatment parameters and instance difficulty. Comparing Causal Prompt Optimization (CPO) by Chen et al. (2026, 2602.01711) with the causal feature selection framework of Gare et al. (2026, 2606.03251), explain: (1) Why offline reward models in prompt engineering are fundamentally confounded by query attributes, and how CPO uses Double Machine Learning (DML) over prompt-query embedding spaces to learn an unbiased causal reward model; and (2) How Gare et al.'s approach of recovering underlying causal graphs to detect implicit natural experiments explains why treating data features as interventional rather than purely observational yields superior generalization on out-of-distribution and challenging queries.",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-175",
+      "question_text": "When estimating causal treatment effects across high-dimensional categorical or multi-valued treatments in observational data—such as tactical formation combinations in football (Ruiz-Menárguez & Badiella, 2026, 2602.16830) or age-graded physical activity doses across 3.2 million adults (Shan, 2026, 2604.19066)—how do the orthogonalization techniques of Double Machine Learning adapt to complex treatment spaces? Specifically, explain: (1) How the matrix-based residualization process of Ruiz-Menárguez & Badiella (2602.16830) resolves the combinatorial challenge of multi-category treatment contrasts where scalar residualization fails; and (2) How integrating DML orthogonalization with Generalized Random Forests (Shan, 2604.19066) and Support Points Sample Splitting (Aouar & Yu, 2024, 2411.14665) ensures unbiased recovery of non-linear conditional average treatment effect (CATE) gradients without finite-sample subsampling distortion.",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-176",
+      "question_text": "Suppose an empirical economist estimates causal effects in a panel data setting with endogenous treatment and high-dimensional non-tabular confounders (e.g., text and satellite images) encoded into latent representations via pre-trained models ('Adjustment for Confounding using Pre-Trained Representations', Schulte et al.). To identify the effect, they evaluate applying Double Machine Learning with either a shift-share instrument requiring rich covariate adjustment ('Double Machine Learning for Static Panel Data with Instrumental Variables: New Method and Applications', Baiardi et al.) or learning latent instrument representations via ZNet ('Causal Effect Estimation with Learned Instrument Representations', Dean et al.). First, why do standard sparse linear or additive ML models fail to achieve valid DML nuisance convergence on pre-trained representations according to Schulte et al., and why do neural networks succeed? Second, according to Baiardi et al., how does flexible non-linear ML covariate adjustment affect instrument strength and inference in panel IV DML? Third, how does ZNet structurally separate confounders from instruments when explicit IVs are absent?",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-177",
+      "question_text": "Researchers increasingly adopt Large Language Models (LLMs) as automated silver-label annotators or proxies for human decision-making in computational social science. In 'Does Topic Sentiment Cause Perceived Ideology? Comparing Human and LLM Annotations in Political News Articles' (Chatterjee), fine-tuning GPT-4o-mini maximizes classification accuracy (F1=72.48) but induces a spurious causal effect of topic sentiment on perceived ideology that is absent in human experts. In 'Causal Bias Detection in Generative Artificial Intelligence' (Plecko), how does the structural formulation of generative AI models differ from standard predictive classifiers regarding causal mechanisms across covariates? How does Plecko's mechanism-replacement decomposition theoretically explain why optimizing task accuracy during fine-tuning in Chatterjee creates spurious causal couplings (such as natural direct effects) that distort downstream Double Machine Learning estimates?",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-178",
+      "question_text": "When analyzing complex structured observational data, standard Euclidean clustering or i.i.d. causal estimators often fail. In 'CaSPECT: Discovering Causally Homogeneous Subgroups via Directed Spectral Clustering' (Pratihar et al.), the authors discover causally homogeneous subpopulations without propensity score models by embedding units via Chung's directed Laplacian on an ATE-weighted causal DAG. In 'Geometric Causal Models' (Weinstein & Blei), the authors identify causal effects in dependent, non-i.i.d. data (such as networks or spatial grids) by leveraging group-theoretic symmetries. First, why does standard Euclidean clustering in covariate space fail to group causally homogeneous individuals according to Pratihar et al., and how does Chung's directed Laplacian solve this? Second, how does the role of graph topology in CaSPECT differ fundamentally from permutation or translation equivariance in Geometric Causal Models? Third, when network interference across units violates SUTVA, why does CaSPECT's unit-level backdoor adjustment break down while Geometric Causal Models achieve identification via amenable group ergodic theory?",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-179",
+      "question_text": "In complex spatio-temporal resource allocation problems such as wildfire management ('Predictive and Prescriptive AI toward Optimizing Wildfire Suppression', Boussioux et al.), historical crew assignments suffer from severe time-varying confounding because crews are endogenously assigned to high-risk fires. To evaluate causal dynamics across panel trajectories, an analyst compares using a zero-shot causal foundation model ('Temporal Causal Prior-Data Fitted Networks for Panel Data with Learned Reliability Signals', Talupula & Sharma) versus tailored Double Machine Learning coupled with integer optimization. First, how does TCPFN's discrete-token panel architecture prevent inter-horizon leakage, and how does its Causal Judgment Head diagnose time-varying confounding or feedback regimes? Second, why would purely associative time-series predictions fail when embedded into downstream prescriptive optimization? Third, how does Boussioux et al.'s branch-and-price-and-cut algorithm integrate counterfactual DML spread estimates to solve the discrete resource allocation problem under non-linear wildfire dynamics?",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-180",
+      "question_text": "To address treatment effect heterogeneity across diverse populations, empirical decision-makers often rely either on supervised Conditional Average Treatment Effect (CATE) estimation paired with policy trees ('Visible or Covert? The Causal Effect of Inspector Visibility on Fare Evasion Detection: A Causal Machine Learning and Policy Learning Approach', Wallimann et al.) or graph-based spectral subpopulation discovery ('CaSPECT: Discovering Causally Homogeneous Subgroups via Directed Spectral Clustering', Pratihar et al.). First, how does optimal policy tree learning on CATE estimates partition a population compared to CaSPECT's spectral embedding via Chung's directed Laplacian on a causal DAG? Second, when complex multi-pathway causal topology exists without simple axis-aligned covariate splits, why might shallow policy trees fail to isolate causally homogeneous subgroups where CaSPECT succeeds? Third, why do policy trees directly provide prescriptive assignment rules whereas CaSPECT requires downstream estimation within spectral clusters?",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-181",
+      "question_text": "How do the identification and testing requirements for treatment effect homogeneity in staggered panel settings differ between Armendariz and Huber ('Testing Effect Homogeneity and Confounding in High-Dimensional Experimental and Observational Studies') and Anteneh ('Beyond Parallel Trends in Staggered Difference-in-Differences: Identification under Higher-Order Parallelism'), specifically when pre-treatment outcome trajectories exhibit differential trends across cohorts? Why would testing conditional ATET homogeneity under standard difference-in-differences parallel trends yield biased conclusions when pre-trends diverge, and how does Anteneh's higher-order parallelism (Parallel[p]) combined with Theorem 4.4 resolve identification and aggregation across cohorts supporting different polynomial orders?",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-182",
+      "question_text": "Suppose a researcher applies Armendariz and Huber's ('Testing Effect Homogeneity and Confounding in High-Dimensional Experimental and Observational Studies') double machine learning test to compare conditional treatment effects estimated via instrumental variables (IV) in an observational study against those from a randomized controlled trial (RCT) to test for unobserved confounding. If the treatment variable is an aggregate measure composed of distinct components with heterogeneous effects on the outcome, why could Armendariz and Huber's test indicate confounding or lack of generalizability even when unobserved confounding is absent, and what theoretical conditions from Tsao et al. ('Lost in Aggregation: The Causal Interpretation of the IV Estimand') are required for the IV and RCT estimands to coincide?",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-183",
+      "question_text": "Suppose an e-commerce platform evaluates a dynamic pricing A/B test over a short experimental window and seeks to predict long-term profitability across customer segments. Why do standard short-term metrics fail to identify long-term treatment effects in inventory-constrained environments as shown by Decrouez et al. ('Measuring Opportunity Cost with Stock Lifetime Value'), and how does the surrogate calibration framework of Persson et al. ('Statistical Foundations of LLM-based A/B Testing: A Surrogacy Framework for Human Causal Inference') explain why even an inventory-aware surrogate metric like Stock Lifetime Value (SLV) or an LLM-simulated customer response requires nonparametric calibration rather than raw surrogate treatment effect estimation?",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-184",
+      "question_text": "Suppose a researcher is trying to discover causal relationships in a system where unobserved latent variables or rapid dynamic feedback loops drive observed measurements over time. Why would a constraint-based hierarchical discovery algorithm like ASCEND introduced by Asiedu and Watson ('Causal ASCEND: Scalable Two-tier Causal Discovery on High Dimensional Multi-omics Data') break down or fail to discover the true causal mechanism when applied to cross-sectional snapshots of a continuous-time system, and how does the continuous-time Ensemble Kalman-Bucy Smoother (EnKBS) of Jiang et al. ('A Continuous-Time Ensemble Kalman-Bucy Smoother for Causal Inference and Model Discovery') leverage temporal smoothing to recover causal structures under partial observability?",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-185",
+      "question_text": "Suppose a clinical data scientist has access to longitudinal electronic health record data and attempts to evaluate dynamic ICU discharge protocols—conceptualized as optimal stopping strategies that depend on time-varying patient health markers—using Yang and Noor-E-Alam's ('A Novel Computational Framework for Causal Inference: Tree-Based Discretization with ILP-Based Matching') tree-based discretization and ILP-based matching algorithm. Why would Yang and Noor-E-Alam's static matching framework yield biased causal estimates under dynamic stopping regimes, and how does Simha et al.'s ('A Causal Framework for Evaluating ICU Discharge Strategies') generalized g-formula framework overcome these longitudinal challenges?",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-186",
+      "question_text": "Suppose an empirical researcher estimating an average treatment effect functional via Automatic Debiased Machine Learning (AutoDML) faces high-dimensional covariates and has access to both a labeled sample and an auxiliary unlabeled sample of regressors. How do the theoretical sources of asymptotic efficiency gain in Outcome-adapted AutoDML (Waagepetersen et al., 2026) compare mathematically to those in semi-supervised Prediction-Powered Causal Inference (EE-DML-PPCI; Kato, 2026), and why would applying a representation that is jointly predictive of both the outcome and the Riesz representer fail to achieve the respective semiparametric efficiency bounds in either regime?",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-187",
+      "question_text": "In finite-sample heterogeneous treatment effect (HTE) estimation across units, how does the second layer of estimator instability identified by Bellot (2026)—where point summaries jump discontinuously due to multimodal structural causal model (SCM) posterior distributions—interact with the failure of classical spectral and Frobenius matrix completion bounds demonstrated by Mehrotra et al. (2026), and why does Mehrotra et al.'s propensity-free low-rank row-wise estimator avoid the discontinuous jumps exhibited by inverse propensity weighted (IPW) summaries?",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-188",
+      "question_text": "Consider an observational setting with sequential treatment interventions and intermediate variables where unobserved confounding affects both treatment assignment and subsequent outcome trajectories. Under what structural conditions would the Balanced Twins latent representation matching procedure (Ouali et al., 2026) fail to identify direct and indirect causal pathways in the presence of treatment-induced unobserved confounding, and how does the proximal multiply robust identification strategy of Wu et al. (2026) resolve this failure through proxy variables when recanting witnesses are hidden?",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-189",
+      "question_text": "In a causal decision-making environment where interventions are compositional budget allocations on a simplex and the resulting outcomes are full probability distributions rather than scalar means, what mathematical challenges arise when combining the Kernel-Based Functional Balancing weights of Kim & Wang (2026) with the Doubly Robust Wasserstein policy learning objective of Huang et al. (2026), and how do the respective RKHS representer approximations and infinite-dimensional quantile uniform deviation bounds govern the resulting regret rate?",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-190",
+      "question_text": "Suppose a clinician uses CausalLongPFN (Zare et al., 2026) to predict history-conditional potential outcome distributions under competing multi-step treatment sequences, but wishes to quantify the individual causal effect (ICE) variance and skewness across heterogeneous patient trajectories. Why can the ICE central moments not be directly computed from CausalLongPFN's marginal predictive distributions alone without additional dependence assumptions, and how do the marginal moment bounding theorems of Hashimoto et al. (2026) provide sharp nonparametric bounds on the ICE skewness and kurtosis from CausalLongPFN's predicted marginal central moments?",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-191",
+      "question_text": "A quantitative risk manager must estimate deep-tail interventional return levels (α = 0.001) and conditional shortfalls under continuous regulatory interventions where financial outcomes exhibit Pareto heavy tails (shape ξ ≥ 0.5). Compare how GANICE ('Extended Wasserstein-GAN Approach to Causal Distribution Learning: Density-Free Estimation and Minimax Optimality' by Tamano & Imaizumi) and TailWelsch-DML with PDHTE+JK ('Stop Suppressing the Tail: Causal Inference for Extreme Events' by Uehara) perform in this regime, explaining why global Wasserstein minimization or bulk-centered residual estimators break down in deep tails.",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-192",
+      "question_text": "An engineering team designs a budget-constrained A/B test with severe treatment arm imbalance (N_0 = 50 placebo units vs. N_1 = 10,000 treated units) and requires calibrated 95% Bayesian credible intervals for the Conditional Average Treatment Effect τ(x). One engineer proposes applying MOCA ('MOCA: A Transformer-based Modular Causal Inference Framework with One-way Cross-attention and Cutting Feedback' by Wang & Ghosh) or an X-Learner with Bayesian second-stage regression on pseudo-outcomes, arguing that gradient detachment prevents outcome-induced confounding. Contrast this with GP-CATE ('Calibrated Inference for the Conditional Average Treatment Effect in the Few-Placebo Regime via Gaussian Processes' by Uehara), explaining why point-estimate nuisance regressions fail to provide calibrated intervals in the few-placebo regime.",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-193",
+      "question_text": "Consider estimating interventional outcome distributions in intensive care units where clinical interventions suffer from unobserved confounding due to subjective physician severity assessments. Analyze the mathematical regime where Causal Risk Minimization ('Causal Risk Minimization for High-Dimensional Treatments' by Dhawan et al.) breaks down, and compare how TabCF ('TabCF: Distributional Control Function Estimation with Tabular Foundation Models' by Chen et al.) and Treatment Intent Elicitation ('Confounder Detection via Treatment Intent: A New Observational Study Design' by Plecko et al.) identify interventional distributions under contradictory structural assumptions.",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-194",
+      "question_text": "In a clinical trial with high-dimensional pretreatment biomarkers where measurement costs are budget-constrained and exogenous outcome noises exhibit severe heteroscedasticity across variables, researchers must select prognostic covariates to adjust treatment estimates. Compare the theoretical trade-offs between applying continuous score-based DAG discovery with ordinary least squares ('Concomitant DAG Learning: On the Roles of Noise Adaptivity, Sparsity, and Non-negativity' by Mateos et al.) versus running DARTS ('DARTS: Targeting Prognostic Covariates in Budget-Constrained Sequential Experiments' by Husar & Volfovsky).",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-195",
+      "question_text": "An AI system deployed to generate personalized customer text interventions trained via empirical risk minimization (ERM) suffers catastrophic performance degradation under out-of-distribution (OOD) intervention prompts. Explain how the Statistical Necessity Theorem for Causal Generalization ('Causality as the Statistical Conscience of Artificial Intelligence: From Pearl's Ladder to Trustworthy Machines' by Fokoué) diagnoses this structural failure, and compare how Causal Risk Minimization ('Causal Risk Minimization for High-Dimensional Treatments' by Dhawan et al.) and MOCA ('MOCA: A Transformer-based Modular Causal Inference Framework with One-way Cross-attention and Cutting Feedback' by Wang & Ghosh) provide complementary loss-based and architectural remedies.",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-196",
+      "question_text": "In semiparametric double machine learning, Yu et al. (\"Stochastic Gradients under Nuisances\", Facheng Yu, Ronak Mehta, Alex Luedtke, Zaid Harchaoui) establish convergence guarantees for stochastic gradient updates under unknown nuisance parameters, comparing regimes where Neyman orthogonality holds versus where it fails. Conversely, Kato (\"Covariate Balancing and Riesz Regression Should Be Guided by the Neyman Orthogonal Score in Debiased Machine Learning\", Masahiro Kato) examines finite-dimensional balancing approximations for Average Treatment Effect (ATE) estimation under treatment effect heterogeneity. Why does standard covariate balancing fail to achieve first-order score error elimination for heterogeneous ATE estimation even when starting from a Neyman orthogonal score, and how does Kato's regressor balancing via Riesz regression on basis functions $\\Phi(D, Z)$ theoretically connect to Yu et al.'s requirement for nuisance-insensitive orthogonalized score updates?",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-197",
+      "question_text": "Suppose an evaluator faces an observational panel dataset where treatment effects vary across sub-groups and the distribution of baseline covariates shifts substantially across groups and environments. Bearth et al. (\"Group-Level Treatment Effect Heterogeneity in Difference-in-Differences: A Balanced Approach\", Nora Bearth, Nadja van 't Hoff, Torben S. D. Johansen) propose the Balanced Group Average Treatment Effect on the Treated (BGATT) in Difference-in-Differences, while Ulichney & Coston (\"Beyond the Training Distribution: Evaluating Predictions Under Distribution Shift and Selection Bias\", Annie Ulichney, Amanda Coston) study pre-deployment evaluation under joint covariate shift and selective labeling. How does Bearth et al.'s BGATT isolate genuine treatment response heterogeneity from covariate compositional shifts across groups under conditional parallel trends, and why would standard plug-in evaluations or traditional interaction-based regression models fail in comparison to the efficient influence function (EIF) reweighting strategies derived in both papers?",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-198",
+      "question_text": "Predicting full counterfactual outcome distributions over time requires going beyond standard point-estimate trajectories. Alinezhad et al. (\"Causal Diffusion Models for Counterfactual Outcome Distributions in Longitudinal Data\", Farbod Alinezhad, Jianfei Cao, Gary J. Young, Brady Post) introduce Causal Diffusion Models (CDM) for sequential interventions under time-dependent confounding, whereas Saidi et al. (\"Wasserstein Parallel Transport for Predicting the Dynamics of Statistical Systems\", Tristan Luca Saidi, Gonzalo Mena, Larry Wasserman, Florian Gunsilius) introduce Wasserstein Parallel Trends (WPT). Compare the identifying mechanics and structural assumptions required to predict counterfactual distributional dynamics in longitudinal data using CDM versus WPT. Specifically, explain under what confounding regimes and distributional space geometries each method is theoretically valid, and why applying WPT directly to sequentially confounded individual trajectories or applying Euclidean parallel trends subtraction to Wasserstein probability measures breaks down.",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-199",
+      "question_text": "When incorporating AI-generated annotations or complex latent representations into causal and statistical inference, Lu et al. (\"Generative Augmented Inference\", Cheng Lu, Mengxin Wang, Dennis J. Zhang, Heng Zhang) propose Generative Augmented Inference (GAI), contrasting it with Prediction-Powered Inference (PPI). Meanwhile, applied causal studies such as Lu et al. (\"A Novel VAE-DML Fusion Framework for Causal Analysis of Greenwashing in the Mining Industry\", Yuxin Lu et al.) and Arunkumar et al. (\"When Algorithms Manage Humans: A Double Machine Learning Approach to Estimating Nonlinear Effects of Algorithmic Control on Gig Worker Performance and Wellbeing\", Arunkumar V et al.) integrate deep representation learning and flexible ML models into Double Machine Learning (DML). Why does treating AI outputs or latent representations as surrogate labels fail when annotations are discrete, uncalibrated, or biased, and how does embedding these auxiliary signals as features within nonparametric Neyman-orthogonal score functions guarantee valid asymptotic inference and efficiency gains without imposing surrogate assumptions?",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-200",
+      "question_text": "Consider designing an end-to-end causal pipeline for linear structural causal models (LSCMs) under latent confounding that first determines identifiability and then estimates the identified causal effects from sample data. Hollering et al. (\"Efficient Symbolic Computations for Identifying Causal Effects\", Benjamin Hollering, Pratik Misra, Nils Sturma) present a quasi-polynomial symbolic computation algorithm for rational identifiability, while Yu et al. (\"Stochastic Gradients under Nuisances\", Facheng Yu et al.) and Kato (\"Covariate Balancing and Riesz Regression Should Be Guided by the Neyman Orthogonal Score in Debiased Machine Learning\", Masahiro Kato) analyze semiparametric estimation under nuisance parameter misspecification. Why would standard Gröbner basis algorithms fail computationally at the identification stage for moderate graphs, and why would naively plugging empirical covariance estimates into an identified rational formula fail statistically under nuisance misspecification without the orthogonalization conditions analyzed by Yu et al. and Kato?",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-201",
+      "question_text": "Suppose an analyst is estimating causal effects using deep neural network nuisance models under three simultaneous empirical conditions: (1) conditional moment restriction (CMR) structure such as Instrumental Variable (IV) regression or Proximal Causal Learning (PCL), (2) non-Gaussian independent treatment noise in a partially linear structural equation, and (3) overparameterized neural networks with singular or ill-conditioned parameter Hessians. Why would standard two-stage plug-in neural CMR estimators and standard first-order Double Machine Learning (DML) estimators fail or yield suboptimal convergence rates under these conditions, and how do the theoretical results of Shao et al. (2506.14950), Jin, Mackey, & Syrgkanis (2507.02275), and Li et al. (2507.12435) define the exact mathematical regime required for optimal structure-agnostic and targeted estimation?",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-202",
+      "question_text": "How do the challenges of unobserved unit heterogeneity and multi-period recursive dependence undermine standard cross-sectional or single-stage estimation strategies in longitudinal data, and how do Fuhr & Papies (2409.01266), He & Elwert (2607.04567), and Rutgers & Singh (2606.29009) modify the identifying structure or bias-correction mechanics to achieve valid causal inference across multiple time periods?",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-203",
+      "question_text": "When unit interactions violate standard SUTVA (no-interference) assumptions in either sequential online marketplaces or group-based randomized experiments, why do standard individual-level estimators and unadjusted variance formulas fail, and how do Hays & Raghavan (2504.08836), Fu, Samii, & Wang (2607.02385), and Li et al. (2507.12435) establish valid estimation and inference across these interference regimes?",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-204",
+      "question_text": "In non-standard distribution-free or distributional causal inference, how do sample selection bias and treatment effect sign discontinuities undermine standard prediction intervals and aggregate treatment summaries, and how do Lee (2607.02898) and Antognini & Verme (2606.28017) construct valid distribution-free inference and discontinuity testing for complex distributional regimes?",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-205",
+      "question_text": "How do first-order Neyman orthogonality, higher-order cumulant orthogonality, and influence-function gradient projection differ in their mathematical mechanisms for eliminating nuisance estimation bias in machine learning causal inference, and how do Shao et al. (2506.14950), Jin, Mackey, & Syrgkanis (2507.02275), and Li et al. (2507.12435) establish semiparametric efficiency or minimax optimality under their respective structural assumptions?",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-206",
+      "question_text": "Suppose an applied econometrician wants to estimate quantile treatment effects (QTE) and individual-level counterfactual distribution bounds under high-dimensional covariates where nuisance functions only satisfy Hölder smoothness s/d in (0.25, 0.5]. Why would standard first-order semiparametric estimators and uncorrected double/triple machine learning estimators fail to achieve n^{-1/2}-consistency and semiparametric efficiency in this regime, and how do the higher-order debiased U-process correction of Zhang, Liu, and Zhang (2026) ('Higher-Order Debiased Estimators for General Treatment Models') and the representation cross-fitting scheme of Sun and Zhang (2026) ('Nonparametric Identification and Inference for Counterfactual Distributions with Confounding') fundamentally differ in handling nuisance estimation errors?",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-207",
+      "question_text": "Consider an observational setting with endogenously assigned binary or continuous treatments, high-dimensional covariates, and unobserved confounding where an instrumental variable W is available. Compare how Luo and Liu (2026) ('BGM-IV: an AI-powered Bayesian generative modeling approach for instrumental variable analysis'), Sun and Zhang (2026) ('Nonparametric Identification and Inference for Counterfactual Distributions with Confounding'), and Dong and Heiler (2026) ('Sharp Bounds and Inference in Sample Selection Models with Treatment Endogeneity') utilize the instrument W to identify causal effects. Specifically, why do Luo and Liu (2026) and Sun and Zhang (2026) achieve point identification of structural or counterfactual distributions while Dong and Heiler (2026) only achieve partial identification (sharp bounds), and how do their respective treatment of the instrument differ mathematically?",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-208",
+      "question_text": "Suppose a policy evaluation study with two time periods and repeated observations suffers simultaneously from treatment effect heterogeneity across the outcome distribution, covariate-dependent distributional shifts, and outcome-dependent nonresponse (Missing Not At Random, MNAR). Compare how Bhattacharjee, Li, and Xue (2026) ('A Test for Treatment Heterogeneity under a Distributional Difference-in-Difference Framework'), Wied (2026) ('A Synthetic Control Approach to Conditional Distributional Treatment Effects'), and Li and Mu (2026) ('Semiparametric Difference-in-Differences Estimation With Missing Not at Random Data: A Shadow Variable Approach') generalize or depart from the classical additive mean parallel trends assumption (PTA). Why would standard two-way fixed effects (TWFE) and classical mean DiD fail in each scenario, and what specific mathematical mechanisms do these three papers use to identify counterfactual outcomes?",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-209",
+      "question_text": "In applied econometric modeling of policy effects, researchers frequently partition or discretize complex parameter spaces—such as summarizing heterogeneous policy effects into K groups, partitioning structural parameters into calibrated versus estimated subsets, or modeling unobserved confounders through discrete latent types. Compare how Montiel Olea et al. (2026) ('Decision Theory for the Archetype Discovery Problem'), Alegre Canton (2026) ('Choosing What to Calibrate and What to Estimate in Structural Models'), and Jun and Zincenko (2026) ('Sensitivity Analysis for the Average Treatment Effect under Discrete Unobserved Confounders') formalize optimal partitioning and sensitivity. Specifically, how do their objective criteria (weighted MSE risk, worst-case local calibration bias, and finite-mixture sharp identified sets) prevent the severe bias or information loss caused by ad-hoc or conventional discretization rules?",
+      "question_type": "Multi-Paper-Reasoning"
+    },
+    {
+      "question_id": "Q-210",
+      "question_text": "When evaluating causal treatment effects under unmeasured confounding or endogenous sample selection, researchers face a critical theoretical choice between constructing sharp partial identification bounds and establishing nonparametric point identification via latent representation learning. Compare the identification regimes of Jun and Zincenko (2026) ('Sensitivity Analysis for the Average Treatment Effect under Discrete Unobserved Confounders'), Dong and Heiler (2026) ('Sharp Bounds and Inference in Sample Selection Models with Treatment Endogeneity'), and Sun and Zhang (2026) ('Nonparametric Identification and Inference for Counterfactual Distributions with Confounding'). Why do Jun and Zincenko (2026) and Dong and Heiler (2026) derive sharp partial identification sets rather than point estimates, and what specific completeness and operator assumptions enable Sun and Zhang (2026) to point-identify the latent confounding subspace from instrumental variables?",
+      "question_type": "Multi-Paper-Reasoning"
+    }
+  ]
+}
