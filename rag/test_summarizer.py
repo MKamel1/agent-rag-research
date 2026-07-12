@@ -21,12 +21,13 @@ import contextlib
 import inspect
 from unittest.mock import MagicMock
 
+import httpx
 import pytest
 
 # M1a CI convention (CONVENTIONS §0.7 / §11): skip the whole suite until rag/summarizer.py lands.
 _mod = pytest.importorskip("rag.summarizer")
 
-from contracts.errors import PermanentError  # noqa: E402
+from contracts.errors import PermanentError, TransientError  # noqa: E402
 from contracts.parser import Figure, ParsedDoc  # noqa: E402
 from contracts.provenance import Block  # noqa: E402
 from rag.fakes.fake_gpu_lock import FakeGpuLock  # noqa: E402
@@ -115,6 +116,32 @@ def _build_summarizer(gpu_lock):
     return cls(**kwargs)
 
 
+def _build_summarizer_with_client(client, gpu_lock):
+    """Like `_build_summarizer`, but injects a real `client` (an `httpx.Client` wired to a
+    `MockTransport`, same offline-fixture style as `rag/test_harvester_arxiv_source.py`) instead
+    of a `MagicMock` — needed by the HTTP-failure-mapping tests below, where
+    `client.post(...).raise_for_status()` must actually raise.
+    """
+    cls = _real_summarizer_cls()
+    kwargs = {}
+    for pname, p in inspect.signature(cls).parameters.items():
+        if pname == "gpu_lock":
+            kwargs[pname] = gpu_lock
+        elif pname == "client":
+            kwargs[pname] = client
+        elif pname == "model":
+            # Goes into the real JSON request body below (`json={"model": ...}` in
+            # rag/summarizer.py) — a MagicMock isn't JSON-serializable, unlike the other
+            # MagicMock-stubbed dependencies, which are never touched before the HTTP call fails.
+            kwargs[pname] = "test-model"
+        elif p.default is inspect.Parameter.empty and p.kind in (
+            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+            inspect.Parameter.KEYWORD_ONLY,
+        ):
+            kwargs[pname] = MagicMock()
+    return cls(**kwargs)
+
+
 # ---------------------------------------------------------------------------
 # GPU lock: acquires "summarize", never co-resides with Embedder/Reranker
 # ---------------------------------------------------------------------------
@@ -149,6 +176,44 @@ def test_empty_markdown_parsed_doc_raises_permanent_error():
     adapter = _build_summarizer(FakeGpuLock())
     with pytest.raises(PermanentError):
         adapter.summarize(_prose_doc(markdown="", blocks=[]))
+
+
+# ---------------------------------------------------------------------------
+# Vendor/HTTP failure mapping (CONVENTIONS §4): a real Ollama/vLLM hiccup must come out as
+# TransientError/PermanentError, never as a bare httpx/KeyError exception — otherwise the
+# orchestrator (which only catches PermanentError from this stage) crashes the whole run instead
+# of retrying/quarantining the one paper. Same split as rag/harvester.py's `ArxivSource`.
+# ---------------------------------------------------------------------------
+
+
+def test_5xx_response_maps_to_transient_error():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(503, json={"error": "model is loading"})
+
+    client = httpx.Client(base_url="http://ollama.local", transport=httpx.MockTransport(handler))
+    adapter = _build_summarizer_with_client(client, FakeGpuLock())
+    with pytest.raises(TransientError):
+        adapter.summarize(_prose_doc())
+
+
+def test_connection_failure_maps_to_transient_error():
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("connection refused", request=request)
+
+    client = httpx.Client(base_url="http://ollama.local", transport=httpx.MockTransport(handler))
+    adapter = _build_summarizer_with_client(client, FakeGpuLock())
+    with pytest.raises(TransientError):
+        adapter.summarize(_prose_doc())
+
+
+def test_response_body_missing_response_field_maps_to_permanent_error():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"unexpected_shape": True})
+
+    client = httpx.Client(base_url="http://ollama.local", transport=httpx.MockTransport(handler))
+    adapter = _build_summarizer_with_client(client, FakeGpuLock())
+    with pytest.raises(PermanentError):
+        adapter.summarize(_prose_doc())
 
 
 # ---------------------------------------------------------------------------

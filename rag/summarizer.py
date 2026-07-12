@@ -10,7 +10,7 @@ several adapters), so no vendor SDK import is needed at all.
 
 import httpx
 
-from contracts.errors import PermanentError
+from contracts.errors import PermanentError, TransientError
 from contracts.gpu_lock import GpuLock
 from contracts.parser import ParsedDoc
 
@@ -22,6 +22,11 @@ _SUMMARY_PROMPT = (
     "Summarize the following academic paper in 3-5 sentences. Cover its method and its main "
     "finding. Do not copy the title or abstract verbatim.\n\n{paper}"
 )
+
+# Same taxonomy split as rag/harvester.py's ArxivSource (CONVENTIONS.md §4): a rate-limited or
+# momentarily-unhealthy server is transient (retry, then quarantine); any other 4xx is this
+# server's/request's fault (quarantine the paper, don't retry).
+_RETRYABLE_STATUSES = {429, 500, 502, 503, 504}
 
 
 class OllamaSummarizer:
@@ -50,16 +55,37 @@ class OllamaSummarizer:
             )
 
         with self._gpu_lock.acquire("summarize"):
-            response = self._client.post(
-                "/api/generate",
-                json={
-                    "model": self._model,
-                    "prompt": _SUMMARY_PROMPT.format(paper=prose),
-                    "stream": False,
-                },
-            )
-            response.raise_for_status()
-            summary_text = response.json()["response"].strip()
+            try:
+                response = self._client.post(
+                    "/api/generate",
+                    json={
+                        "model": self._model,
+                        "prompt": _SUMMARY_PROMPT.format(paper=prose),
+                        "stream": False,
+                    },
+                )
+                response.raise_for_status()
+            except httpx.HTTPStatusError as error:
+                status = error.response.status_code
+                if status in _RETRYABLE_STATUSES:
+                    raise TransientError(
+                        f"{parsed.paper_id}: generation LLM server returned {status}"
+                    ) from error
+                raise PermanentError(
+                    f"{parsed.paper_id}: generation LLM server returned {status}"
+                ) from error
+            except httpx.HTTPError as error:
+                # Timeouts, connection errors, etc. — all transient (retry with backoff).
+                raise TransientError(
+                    f"{parsed.paper_id}: generation LLM request failed: {error}"
+                ) from error
+
+            try:
+                summary_text = response.json()["response"].strip()
+            except KeyError as error:
+                raise PermanentError(
+                    f"{parsed.paper_id}: generation LLM response missing 'response' field"
+                ) from error
 
         if not summary_text:
             raise PermanentError(
