@@ -191,11 +191,12 @@ M1a, before this implementation existed") **plus** the specifics below.
 - **T-D2 VectorIndex (M6)** — Qdrant adapter behind `VectorStore`; hybrid dense+sparse fused by calling the
   shared `rrf_fuse` (`contracts/fusion.py`, `RRF_K=60` + `hybrid_dense_weight`) — **not** a local
   reimplementation of the formula; `rebuild()`; `SearchFilters` (typed, not a dict) implemented identically
-  to the fake. *Accept:* the `rrf_fuse` unit test (owned by T-F1, run here too) plus the **cross-adapter
-  smoke test** — upsert→search round-trips the id, `SearchFilters` cases filter identically on both,
-  `rebuild()` reproduces results, and **top-1** agreement between `FakeVectorStore` and real Qdrant on an
-  engineered fixture (not full-ordering equality — TEST-STRATEGY.md explains why that's unachievable).
-  **Only** module importing `qdrant_client`.
+  to the fake. The sparse channel indexes `VectorPayload.text` — the real chunk/summary passage text — not
+  `section_path`, so keyword search actually searches passage content. *Accept:* the `rrf_fuse` unit test
+  (owned by T-F1, run here too) plus the **cross-adapter smoke test** — upsert→search round-trips the id,
+  `SearchFilters` cases filter identically on both, `rebuild()` reproduces results, and **top-1** agreement
+  between `FakeVectorStore` and real Qdrant on an engineered fixture (not full-ordering equality —
+  TEST-STRATEGY.md explains why that's unachievable). **Only** module importing `qdrant_client`.
   *CI-allowlist:* `qdrant_client` is the real vendor → add it to `VENDOR_RULES` in `ci/checks/vendor_isolation.py`
   in this same PR (§12; CI green doesn't prove isolation for an unlisted vendor).
 - **T-E1 Retriever (M7)** — two methods sharing one pipeline: embed-query → hybrid → RRF → rerank (injected

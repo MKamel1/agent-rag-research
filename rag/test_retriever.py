@@ -97,11 +97,12 @@ def _make_ref(paper_id: str, categories=("cs.LG",)) -> PaperRef:
     )
 
 
-def _payload(paper_id, kind, section_path, categories, embedder):
+def _payload(paper_id, kind, section_path, categories, embedder, text):
     return {
         "paper_id": paper_id,
         "kind": kind,
         "section_path": section_path,
+        "text": text,
         "categories": list(categories),
         "published": "2026-06-01",
         "embedding_version": embedder.info.version,
@@ -130,7 +131,7 @@ def _seed_chunk(store, docstore, embedder, *, chunk_id, paper_id, block_id, text
                          references=[], parser_id="test-parser-1.x"),
         chunks=[chunk], summary_text="s", summary_id=f"{paper_id}:summary")
     store.upsert(chunk_id, embedder.embed([text])[0],
-                 _payload(paper_id, "chunk", section_path, categories, embedder))
+                 _payload(paper_id, "chunk", section_path, categories, embedder, text))
     return chunk
 
 
@@ -143,7 +144,7 @@ def _seed_summary(store, docstore, embedder, *, paper_id, summary_id, summary_te
                          references=[], parser_id="test-parser-1.x"),
         chunks=[], summary_text=summary_text, summary_id=summary_id)
     store.upsert(summary_id, embedder.embed([summary_text])[0],
-                 _payload(paper_id, "summary", section_path, categories, embedder))
+                 _payload(paper_id, "summary", section_path, categories, embedder, summary_text))
 
 
 def _make_retriever(store, docstore, reranker, embedder=None):

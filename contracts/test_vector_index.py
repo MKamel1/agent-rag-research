@@ -56,6 +56,7 @@ def test_vector_payload_is_a_plain_dict_shape():
         "paper_id": "2506.01234",
         "kind": "chunk",
         "section_path": "3. Method",
+        "text": "We propose a doubly robust estimator for the average treatment effect.",
         "categories": ["cs.LG"],
         "published": "2026-06-01",
         "embedding_version": "1.0.0",

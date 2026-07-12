@@ -45,9 +45,10 @@ def embed(self, texts):  # deterministic, order-preserving
 ```
 
 **`FakeVectorStore`** — in-memory dict of vectors + a brute-force search: dense = cosine over all vectors,
-sparse = simple BM25/token-overlap over `qtext`, fused with the *same RRF* the real store uses. Powers all
-`Retriever` tests. Because it fuses the same way, a test that passes here should pass against Qdrant — which is
-exactly what the contract test verifies.
+sparse = simple BM25/token-overlap of `qtext` against each point's real passage text (`VectorPayload.text`),
+fused with the *same RRF* the real store uses. Powers all `Retriever` tests. Because it fuses the same way
+and indexes the same real text, a test that passes here should pass against Qdrant — which is exactly what
+the contract test verifies.
 
 **`FakeSource`** — yields a fixed list of `PaperRef`s from a fixture file (no arXiv calls); the fixture
 **must include two versions (`v1`/`v2`) of at least one base `paper_id`** so the dedup-by-base-id assertion

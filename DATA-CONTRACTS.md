@@ -342,17 +342,26 @@ synthetic rank inputs; the fake-vs-Qdrant cross-adapter test is a **best-effort 
 unrelated dense/sparse implementations (hash-cosine vs. a trained model; token-overlap vs. real BM25) that
 have no reason to agree past the top few results even when `rrf_fuse` itself is correct on both sides.
 
-`VectorPayload` (stored beside each vector — kept minimal; the DocumentStore holds the real text):
+`VectorPayload` (stored beside each vector):
 
 ```python
 class VectorPayload(TypedDict):
     paper_id: str
     kind: Literal["chunk", "summary"]
     section_path: str
+    text: str                  # real chunk/summary passage text -- what the sparse channel indexes
     categories: list[str]      # for metadata filtering
     published: str             # ISO date, for date-range filters
     embedding_version: str     # must match the collection's model version
 ```
+
+`text` carries the real passage content and is what the sparse/keyword channel tokenizes (previously
+the sparse channel had no real text available at this seam and hashed `section_path` — a heading
+string — instead, so "keyword search" wasn't actually searching passage content; found via Spike 2's
+retrieval sweep, where the hybrid config scored far worse than dense-only). `section_path` remains as
+metadata (filtering/display) only, not as a text source for search. The DocumentStore is still the
+source of truth for this text — it's duplicated into the payload because the vector store needs it
+locally, at upsert time, to build the sparse vector.
 
 ## M7 Retriever output (the envelope — frozen shape, forward-compatible to V2)
 
