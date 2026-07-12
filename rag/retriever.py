@@ -10,6 +10,7 @@ resolved into an unanchored `PaperSearchResult`). Both rerank through the same i
 GPU) or the real cross-encoder adapter interchangeably (CONVENTIONS §1/§2).
 """
 
+from contracts.errors import ContractError
 from contracts.mcp_server import PaperSearchResult, PaperSummaryView
 from contracts.retriever import Citation, GroundedResult, RerankCandidate
 from contracts.vector_index import SearchFilters
@@ -49,7 +50,10 @@ class Retriever:
             # taken at chunk-build time, DATA-CONTRACTS.md "Provenance & structure") — the
             # citation reads it from the source block, not the derived copy.
             block = self._document_store.get_block(chunk.anchor.block_id)
-            ref = self._document_store.get(chunk.paper_id).ref
+            record = self._document_store.get(chunk.paper_id)
+            if record is None:
+                raise ContractError(f"DocumentStore has no record for paper_id={chunk.paper_id!r}")
+            ref = record.ref
             citation = Citation(
                 paper_id=chunk.paper_id,
                 title=ref.title,
@@ -98,6 +102,8 @@ class Retriever:
             # here there is no resolver that hands back paper_id at all).
             paper_id = candidate.id.removesuffix(_SUMMARY_ID_SUFFIX)
             record = self._document_store.get(paper_id)
+            if record is None:
+                raise ContractError(f"DocumentStore has no record for paper_id={paper_id!r}")
             section_paths = self._distinct_section_paths(record.parsed.blocks)
             view = PaperSummaryView(
                 paper_id=paper_id,
