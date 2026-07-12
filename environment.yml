@@ -36,19 +36,22 @@ dependencies:
       - pydantic>=2          # contracts/ (T-F1) prefers runtime-validating models over plain dataclasses
       - qdrant-client         # ADR-01 — Qdrant is locked, not a Phase-0 open question
       - pyyaml                # T-F2's Config loader (config.yaml)
-      - httpx                 # generic HTTP client — arXiv (M1) + TEI/vLLM embedder (M4) adapters
+      - httpx                 # generic HTTP client — arXiv (M1) + TEI/vLLM embedder (M4) + GROBID (M2) adapters
       - mcp                   # M8 McpServer — MCP protocol is decided, not a Phase-0 open question
       - filelock               # GpuLock's real adapter (DATA-CONTRACTS.md "GpuLock" — FileGpuLock)
       - ruff                  # drives several T-F6 static/grep-adjacent checks
+      # ADR-06 / T-B1 — Phase-0 Spike 1 locked MinerU's `pipeline` backend as the sole V0 Parser
+      # adapter (Docling and Marker evaluated and dropped, PHASE0-RUNBOOK.md's Spike-1 footnote);
+      # moved up from "Deferred" below per that file's own instruction once a winner locks.
+      - "mineru[core]==3.4.4"  # AGPL-3.0 — see PRD.md §11B license note before using outside personal/local use
+      - pypdfium2              # mineru's own PDF-opening dependency; rag/parser.py uses it directly
+                                # too, as a cheap pre-MinerU validation gate (see that module's docstring)
+      - markdownify            # rag/parser.py: MinerU's table_body is raw HTML; rendered to GFM markdown
+                                # for TableItem.markdown/the table's Block text (contracts/parser.py)
+      # GROBID itself runs as a Docker service (rag-grobid, PHASE0-RUNBOOK.md S0) — httpx above is its
+      # only client-side dependency, no dedicated GROBID client library needed (rag/parser.py).
 
 # --- Deferred: Phase-0 candidates (NOT installed by `conda env create`; add temporarily during S1/S2) ---
-#
-# Parser candidates (ADR-06, PHASE0-RUNBOOK.md Spike 1 picks one):
-#   pip install mineru          # AGPL-3.0 — see PRD.md §11B license note before using outside personal/local use
-#   pip install marker-pdf      # Apache-2.0
-#   pip install docling         # Apache-2.0
-#   # + a GROBID client (GROBID itself runs as a Docker service, kept regardless of the winner — it's
-#   #   the reference/metadata parser, ARCHITECTURE.md §M2)
 #
 # Embedder/reranker eval helpers (ADR-02/ADR-10, PHASE0-RUNBOOK.md Spike 2 picks the winners; the
 # models themselves are served over TEI/vLLM as Docker services, not conda deps — these are only the
