@@ -35,6 +35,13 @@ _EXT_ID_KEY = "_ext_id"  # private payload key carrying the caller's original st
 _DENSE_VECTOR = "dense"
 _SPARSE_VECTOR = "sparse"
 _SPARSE_MODULUS = 2_147_483_647  # keeps hashed token indices within Qdrant's u32 index range
+# Depth cap on each side of hybrid_search's dense/sparse query, before RRF fusion. An accepted
+# top-k approximation (not exhaustive retrieval) — a document ranked beyond this on both sides
+# is dropped from fusion. Deliberate simplification, not a bug.
+_FUSION_DEPTH_CAP = 10_000
+# Per-page size for rebuild()'s scroll through the collection. Paged (see rebuild()) so this is
+# just a page size, not a ceiling on how many points rebuild() can see.
+_SCROLL_PAGE_SIZE = 100_000
 
 
 def _point_id(external_id: str) -> str:
@@ -99,10 +106,7 @@ class VectorIndex:
         # First network round-trip to Qdrant; a service that isn't there (down, wrong host/port)
         # is exactly CONVENTIONS.md §4's TransientError case, not a ContractError — this adapter
         # has no retry/backoff of its own (that's the caller's job), it just classifies the error.
-        try:
-            exists = self._client.collection_exists(self._collection)
-        except ApiException as e:
-            raise TransientError(f"could not reach Qdrant: {e}") from e
+        exists = self._call(self._client.collection_exists, self._collection)
         if exists:
             return
         self._client.create_collection(
@@ -113,10 +117,22 @@ class VectorIndex:
             sparse_vectors_config={_SPARSE_VECTOR: models.SparseVectorParams()},
         )
 
+    @staticmethod
+    def _call(fn, *args, **kwargs):
+        # Every Qdrant round-trip in this adapter goes through here, so a transient network blip
+        # or a Qdrant restart mid-call is classified the same way everywhere (CONVENTIONS.md §4) —
+        # the vendor's ApiException must never escape this module, the one seam whose job is to
+        # hide the vendor.
+        try:
+            return fn(*args, **kwargs)
+        except ApiException as e:
+            raise TransientError(f"Qdrant call failed: {e}") from e
+
     def upsert(self, id: str, vector: list[float], payload: VectorPayload) -> None:
         stored_payload = dict(payload)
         stored_payload[_EXT_ID_KEY] = id
-        self._client.upsert(
+        self._call(
+            self._client.upsert,
             self._collection,
             points=[
                 models.PointStruct(
@@ -135,20 +151,22 @@ class VectorIndex:
     ) -> list[Hit]:
         query_filter = _qdrant_filter(filters)
 
-        dense_hits = self._client.query_points(
+        dense_hits = self._call(
+            self._client.query_points,
             self._collection,
             query=qvec,
             using=_DENSE_VECTOR,
             query_filter=query_filter,
-            limit=10_000,
+            limit=_FUSION_DEPTH_CAP,
             with_payload=True,
         ).points
-        sparse_hits = self._client.query_points(
+        sparse_hits = self._call(
+            self._client.query_points,
             self._collection,
             query=_sparse_vector(qtext),
             using=_SPARSE_VECTOR,
             query_filter=query_filter,
-            limit=10_000,
+            limit=_FUSION_DEPTH_CAP,
             with_payload=True,
         ).points
 
@@ -169,13 +187,25 @@ class VectorIndex:
         an `Embedder`, DATA-CONTRACTS.md §M6). Reads every point straight back out of Qdrant
         first (no separate local cache to keep in sync).
         """
-        points, _ = self._client.scroll(
-            self._collection, limit=100_000, with_payload=True, with_vectors=True
-        )
-        self._client.delete_collection(self._collection)
+        points = []
+        offset = None
+        while True:
+            page, offset = self._call(
+                self._client.scroll,
+                self._collection,
+                limit=_SCROLL_PAGE_SIZE,
+                offset=offset,
+                with_payload=True,
+                with_vectors=True,
+            )
+            points.extend(page)
+            if offset is None:
+                break
+        self._call(self._client.delete_collection, self._collection)
         self._ensure_collection()
         if points:
-            self._client.upsert(
+            self._call(
+                self._client.upsert,
                 self._collection,
                 points=[
                     models.PointStruct(id=p.id, vector=p.vector, payload=p.payload) for p in points
