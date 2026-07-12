@@ -240,8 +240,9 @@ M1a, before this implementation existed") **plus** the specifics below.
   same run (T-A2 — not a separate step here); spot-check that `papers.relevance_score` is non-null corpus-wide
   before calling the seed done, so the later `relevance_filter` flip has real numbers to threshold on. Also
   log **query attribution** + spot-check harvest precision (PRD Levers "instrumenting the off choice").
-- **T-EVAL** Run the ~200-question retrieval eval on the real corpus; confirm Recall@10 ≥ 0.85. This number is
-  the baseline every future swap must beat.
+- **T-EVAL** Run the 210-question retrieval eval (`fixtures/eval/`, gold `chunk_id`s resolved in Spike 2 —
+  PHASE0-RUNBOOK.md) on the real corpus; confirm Recall@10 ≥ 0.85. This number is the baseline every future
+  swap must beat.
 
 ---
 

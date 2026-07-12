@@ -71,40 +71,89 @@ building. Do not lower the bar silently; grounding is the product.
 **Assumption at risk:** Qwen3-Embedding-4B ≥ BGE-M3 on *our* corpus, and hybrid+RRF+rerank beats plain dense.
 
 **Method:**
-1. Parse + chunk the S0/representative papers (using the Spike-1 parser). Build the **~200-question eval
-   set** on the resulting chunks — **agent-generated, no human labeler** (PRD §11 Q6, RESOLVED; full
-   mechanism in TEST-STRATEGY.md "Retrieval eval set"): sample chunks stratified across the 6 causal
-   sub-topics (CONTEXT.md), generate one natural question per sampled chunk with the local generation LLM
-   (gold label = that chunk's `chunk_id`), then run an automated judge pass to discard degenerate
-   questions (near-verbatim question/chunk overlap, answerable without the passage, under-specified,
-   answerable from the title/section prefix alone). Over-generate ~300, commit ~200 survivors to
-   `fixtures/eval/eval_set.jsonl`. **Caveat to carry forward:** synthetic questions have more
-   lexical/semantic overlap with their source chunk than a real user's phrasing would, so Recall@10 on
-   this set is an optimistic upper bound — still a valid permanent regression gate, just not a
-   real-world-query guarantee.
+1. **The eval set is already committed** — `fixtures/eval/eval_questions_blind.json` +
+   `fixtures/eval/eval_ground_truth.json` (210 questions with ground truth), built externally by LLM
+   subagents reading the full text of this same 100-paper Phase-0 corpus and authoring reading-comprehension
+   (110) and deep-reasoning (100) questions per paper/cluster, plus 10 cross-paper synthesis questions. This
+   **supersedes** the originally-planned synthetic method (sample a chunk, generate one question from it,
+   gold = that chunk's `chunk_id`) — that method is no longer used and `TEST-STRATEGY.md`'s "Retrieval eval
+   set" section has been updated to match.
+   **The format gap this creates:** the imported ground truth gold-labels each question with
+   `source_paper_id` + `section_path` + a verbatim `passage_excerpt` (≤200 chars) — not a `chunk_id`.
+   `chunk_id`s don't exist yet; they're only produced once Spike 1's chosen parser + this system's own
+   chunker actually run over these papers. So Spike 2's first job, once Spike 1 is done, is **resolution**:
+   for each of the 210 questions, fuzzy/substring-match its `passage_excerpt` against the text of the
+   chunks produced for that `source_paper_id`, and record the matching `chunk_id` as the gold label. Do
+   this at Spike-2-execution time, against real chunks — do not fabricate or guess a `chunk_id` now or ever.
+   **Any question whose excerpt can't be confidently matched to a single chunk must be flagged** (logged
+   with its `question_id` and reason — ambiguous match, no match, or split across chunk boundaries) and
+   excluded from that run's Recall@10/MRR denominator, not silently dropped from the fixture and not force-
+   matched to the nearest chunk. Report the flagged count/rate in `phase0-results.md` — a high flag rate is
+   itself a signal about chunking quality.
+   **Known limitation — the flag rate conflates two causes.** 24% of ground-truth excerpts contain
+   non-ASCII/math characters and 87/210 are truncated mid-sentence — both extracted by a different pipeline
+   than whichever parser Spike 1 picks. A meaningful share of match failures will therefore reflect
+   cross-tool extraction drift, not chunking quality. Normalize (unicode NFKC + whitespace collapse) on both
+   sides before substring-matching, and only read the post-normalization flag rate as a chunking-quality
+   signal. Also set a **floor on the exclusion rate** — an invalidating threshold above which the run itself
+   is suspect, not just the number worth noting — rather than an unbounded "record and note" policy.
+   **On the lexical-overlap caveat:** the original synthetic method's caveat (Recall@10 is an optimistic
+   upper bound because the question was generated *from* its own gold chunk, inflating lexical/semantic
+   overlap) applies less directly here — these questions were authored from a full paper read, and the
+   `passage_excerpt` was located afterward as supporting evidence for an already-written answer, not used
+   as the generation seed. That said, don't read this set as bias-free: the questions are still LLM-authored
+   from the papers' own text, so some shared domain vocabulary with the source passage is still likely, just
+   not the tight generated-from-this-exact-span echo the synthetic method had. Also worth naming plainly:
+   the imported set's own automated QA (`rag-system-eval-set/tests/test_eval_dataset.py`) checks *structural*
+   integrity — item counts, question/ground-truth ID alignment, zero field-leakage in the blind file,
+   category-quota coverage — it does **not** run an equivalent to the originally-planned judge pass (no
+   automated check for near-verbatim excerpt overlap, answerable-without-the-passage, or
+   answerable-from-title-alone questions). Treat that as an open risk, not a solved one.
+   **Known limitation — title leakage (disclose, don't silently fix).** That open risk isn't hypothetical:
+   ~80% of the 210 `question_text`s contain the source paper's title verbatim (some the literal arXiv ID),
+   and 168/210 gold passages sit in Abstract/Introduction, where the paper's own title co-occurs with the
+   passage in raw parser output. A retriever can score well on this set via exact-string title-matching,
+   independent of real semantic retrieval quality — that undermines using the full-set Recall@10 alone for
+   the embedder/hybrid/rerank decisions this spike exists to make. **The Spike-2 harness MUST report
+   Recall@10 split into title-present vs. title-absent subsets** (roughly ~40 questions are title-absent,
+   giving a leakage-controlled lower bound). A hybrid/rerank "win" on the full set is not evidence about
+   those components unless it also holds on the title-absent split.
+   **Known limitation — multi-paper items score on one paper.** 60/210 questions are typed
+   Multi-Paper-Reasoning/Multi-Paper-Synthesis, but their ground truth (`source_paper_id` +
+   `passage_excerpt`) is singular — one paper, one snippet — even though the question requires synthesizing
+   2+ papers. A retriever that finds only one of the required papers still scores a Recall@10 hit on these.
+   Don't build a multi-gold schema for this (YAGNI) — instead, **scope the primary Recall@10 gate to the 150
+   single-passage items**, and report the 60 multi-paper items separately as a "primary-passage-only" lower
+   bound, not blended into the headline number.
 2. Embed with each candidate: **Qwen3-Embedding-4B** and **BGE-M3** (optionally 8B), served via TEI/vLLM.
 3. Sweep configs: `{dense}` vs `{hybrid dense+sparse+RRF}` vs `{hybrid + cross-encoder rerank}`
    (BGE-reranker-v2-m3 or Qwen3-Reranker). Optionally A/B SPECTER2/SciNCL for summary routing (PRD §11B).
    **Contextual headers are NOT part of this sweep** — they're a V1 feature, not a V0 build decision
    (ADR-07); don't spend Phase-0 time generating them.
-4. Measure **Recall@10, MRR**, and **retrieval-failure rate** (PRD §11B: how often the right chunk wasn't
-   retrieved at all). **Tag context-related failures automatically** — a result where the gold chunk was
-   retrieved-adjacent (same paper/section, near-miss rank) but scored low, suggesting it reads
-   ambiguously without surrounding text (e.g. "we set β=0.9" with no visible link to "Adam optimizer
-   ablation"). This tag is the **monitoring signal handed to V1** for the contextual-header decision —
-   record the count/rate in `phase0-results.md`, but do not act on it in V0.
+4. Run the real `Retriever.retrieve()` against the resolved gold `chunk_id`s and measure **Recall@10, MRR**,
+   and **retrieval-failure rate** (PRD §11B: how often the right chunk wasn't retrieved at all). **Tag
+   context-related failures automatically** — a result where the gold chunk was retrieved-adjacent (same
+   paper/section, near-miss rank) but scored low, suggesting it reads ambiguously without surrounding text
+   (e.g. "we set β=0.9" with no visible link to "Adam optimizer ablation"). This tag is the **monitoring
+   signal handed to V1** for the contextual-header decision — record the count/rate in `phase0-results.md`,
+   but do not act on it in V0.
 
 **Gate (pass/fail):**
 - Lock the embedder, reranker, and retrieval config (top-k, hybrid weights, rerank depth).
 - **Recall@10 ≥ ~0.85.**
-- **Hybrid and the reranker are kept in V0/V1 regardless of this spike's result** — the eval set is
-  synthetic (a question generated from its own gold chunk), which is directionally biased toward making
-  both components look unnecessary (shared vocabulary inflates lexical/dense match) exactly when they
-  exist to rescue real, vocabulary-mismatched research questions the synthetic eval underrepresents. The
-  synthetic eval's shared-vocabulary bias cannot be trusted to justify dropping either. Spike 2's job here
-  is to **lock the retrieval config** (embedder choice, top-k, hybrid weights, rerank depth) and confirm
-  Recall@10 ≥ ~0.85, not to decide keep/drop. A future post-V0/V1 revisit may reconsider dropping either
-  component, but only against a human-phrased (not synthetic) eval set.
+- **Hybrid and the reranker are kept in V0/V1 regardless of this spike's result.** The original rationale
+  was that the eval set was synthetic (a question generated from its own gold chunk), which is directionally
+  biased toward making both components look unnecessary (shared vocabulary inflates lexical/dense match)
+  exactly when they exist to rescue real, vocabulary-mismatched research questions a chunk-echo eval
+  underrepresents. That specific premise no longer holds as stated — the imported 210-question set (see
+  Method step 1) isn't generated from its own gold chunk, so it doesn't carry that exact bias. The policy
+  still stands, though: these questions are LLM-authored from the papers' own text and so may still skew
+  toward shared domain vocabulary with the source passage, just less severely than the chunk-echo method
+  would. Spike 2's job here remains to **lock the retrieval config** (embedder choice, top-k, hybrid
+  weights, rerank depth) and confirm Recall@10 ≥ ~0.85, not to decide keep/drop. A future post-V0/V1 revisit
+  may reconsider dropping either component, but only once there's a real Recall@10 delta measured on this
+  human/LLM-authored set against a genuinely vocabulary-mismatched query sample — the 210-question set is a
+  step toward that, not a finished proof either way.
 
 **Output:** locked `Embedder` model + `EmbedderInfo.version`, reranker choice, and the `Config` retrieval
 knobs. The eval set becomes the **permanent regression gate** for any future model/DB swap (TEST-STRATEGY).
@@ -136,7 +185,12 @@ rebuild, ADR-04).
 - [ ] **Parser locked with numbers**; anchor round-trip ≥ ~95%; golden fixtures committed.
 - [ ] **Embedder + reranker + retrieval config locked with numbers**; Recall@10 ≥ ~0.85; hybrid/rerank each
       justified their complexity.
-- [ ] The ~200-question, agent-generated retrieval eval set exists and is committed as a regression gate.
+- [ ] The 210-question retrieval eval set (`fixtures/eval/`) has every `passage_excerpt` resolved to a real
+      `chunk_id` against the Spike-1 corpus, with unmatched excerpts flagged (not dropped or guessed) and the
+      exclusion rate under its invalidating floor (see Spike 2 Method step 1's flag-rate limitation note).
+- [ ] Spike 2's Recall@10 is reported both on the full 210-question set **and** split title-present vs.
+      title-absent, and separately for the 150 single-passage items vs. the 60 multi-paper items (see Spike 2
+      Method step 1's known-limitation notes) — not just as one blended headline number.
 - [ ] Real papers/hour measured → a realistic 15k backfill plan (smoke-test 200 papers, then run overnight).
 - [ ] `phase0-results.md` records every number, so no decision is "asserted, not proven" (PRD §9 ethos).
 

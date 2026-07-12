@@ -14,7 +14,10 @@ readme = "README.md"
 # like any other suite. Deliberately excludes "ci/proof_socket_block" — that suite proves a real
 # network call gets blocked, so it must never run inside this default, already-socket-disabled
 # collection (see that file's own docstring); the enforcement job invokes it explicitly instead.
-testpaths = ["rag", "contracts", "ci/checks"]
+# "fixtures/eval" is the imported 210-question Spike-2 eval set's own mechanical invariants suite
+# (test_eval_fixture_invariants.py) — collected here so CODEOWNERS-protected fixture drift fails CI,
+# not just a sibling project's own test run.
+testpaths = ["rag", "contracts", "ci/checks", "fixtures/eval"]
 python_files = ["test_*.py"]
 # T-F6(i) (WORK-BREAKDOWN.md / CONVENTIONS.md §12): non-adapter suites run with sockets disabled.
 # Real-adapter contract tests opt out of --disable-socket explicitly at the point they're invoked
