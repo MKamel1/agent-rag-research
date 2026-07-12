@@ -8,11 +8,12 @@ the same collection), each turned into a rank-ordered id list, fused via the sha
 `rag/fakes/fake_vector_store.py` exactly, just with Qdrant standing in for the brute-force
 cosine/token-overlap scan.
 
-Sparse side: like the fake, there is no raw chunk/summary text available at this seam
-(`VectorPayload` deliberately carries none — `DocumentStore` holds it) — `section_path` is the
-only text-shaped field, so it is hashed into a bag-of-words sparse vector at `upsert()` time and
-`qtext` is hashed the same way at query time. This is a fake-parity choice, not a real BM25/SPLADE
-index — same caveat `FakeVectorStore`'s own docstring makes.
+Sparse side: `VectorPayload.text` (the real chunk/summary passage text) is hashed into a
+bag-of-words sparse vector at `upsert()` time, and `qtext` is hashed the same way at query time —
+same tokenization, same hasher, so the two sides are comparable. This is still a client-side hash
+bag-of-words, not a real BM25/SPLADE index (no IDF weighting, no trained model) — that upgrade is a
+separate, bigger change, out of scope here. `section_path` remains in the payload as metadata but
+is no longer the sparse channel's source; matches `FakeVectorStore`'s own docstring/behavior.
 
 Qdrant point ids must be an unsigned int or UUID (never an arbitrary string), so the caller's
 `id` (a `chunk_id`/`summary_id`) is mapped to a stable `uuid.uuid5` and the original string is
@@ -139,7 +140,7 @@ class VectorIndex:
                     id=_point_id(id),
                     vector={
                         _DENSE_VECTOR: vector,
-                        _SPARSE_VECTOR: _sparse_vector(payload["section_path"]),
+                        _SPARSE_VECTOR: _sparse_vector(payload["text"]),
                     },
                     payload=stored_payload,
                 )
