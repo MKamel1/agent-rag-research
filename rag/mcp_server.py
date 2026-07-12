@@ -31,20 +31,29 @@ class McpServer:
     def semantic_search(
         self, query: str, filters: SearchFilters | None = None, k: int = 10
     ) -> SearchResponse:
+        """Passage-level search, delegated whole to `Retriever.retrieve()`. Postcondition: on an
+        empty corpus/no hits, `results == []` — empty is a valid answer, not an error.
+        """
         results = self._retriever.retrieve(query, filters, k)
         return SearchResponse(results=results, coverage=self._coverage(results))
 
     def search_papers(
         self, query: str, filters: SearchFilters | None = None, k: int = 10
     ) -> PaperSearchResponse:
+        """Whole-paper/summary-level search, delegated whole to `Retriever.retrieve_papers()`.
+        Postcondition: on no hits, `results == []`.
+        """
         results = self._retriever.retrieve_papers(query, filters, k)
         return PaperSearchResponse(results=results, coverage=self._coverage(results))
 
     def get_paper(self, paper_id: str) -> PaperSummaryView:
+        """Precondition: `paper_id` is a stored paper; else `ContractError`. Postcondition:
+        `section_paths` are the distinct `Block.section_path` values, in reading order.
+        """
         record = self._document_store.get(paper_id)
         if record is None:
             raise ContractError(f"get_paper: unknown paper_id {paper_id!r}")
-        section_paths = self._distinct_section_paths(self._document_store.get_blocks(paper_id))
+        section_paths = self._distinct_section_paths(record.parsed.blocks)
         return PaperSummaryView(
             paper_id=paper_id,
             title=record.ref.title,
@@ -61,6 +70,9 @@ class McpServer:
         )
 
     def get_span(self, anchor: Anchor) -> str:
+        """Precondition: `anchor` resolves to a stored block; else `ContractError` (a dangling
+        anchor is a grounding bug, not a normal "not found").
+        """
         return self._document_store.get_span(anchor)
 
     @staticmethod
