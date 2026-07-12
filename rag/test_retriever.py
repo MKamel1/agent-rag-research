@@ -311,6 +311,15 @@ def test_retrieve_filters_is_searchfilters_not_dict():
 # ===========================================================================
 # retrieve_papers() — whole-paper / summary level
 # ===========================================================================
+def test_paper_id_from_summary_hit_id_parses_frozen_format():
+    # Pins the "{paper_id}:summary" convention (DATA-CONTRACTS.md "IDs — the spine", Rule 3) that
+    # `_paper_id_from_summary_hit_id` is the ONE sanctioned place in the codebase allowed to parse
+    # (ci/checks/id_slicing.py fences its check around this exact function). If this format ever
+    # changes, this is the one place that depends on it, and it should break loudly here first
+    # rather than silently parsing garbage at the call site.
+    assert _mod._paper_id_from_summary_hit_id("2506.01234:summary") == "2506.01234"
+
+
 def test_retrieve_papers_empty_corpus_returns_empty_list():
     r = _make_retriever(FakeVectorStore(), RecordingDocStore(), FakeReranker())
     assert r.retrieve_papers("any query", filters=None, k=10) == []

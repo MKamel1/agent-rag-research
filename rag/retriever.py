@@ -18,6 +18,20 @@ from contracts.vector_index import SearchFilters
 _SUMMARY_ID_SUFFIX = ":summary"
 
 
+def _paper_id_from_summary_hit_id(hit_id: str) -> str:
+    """Recovers `paper_id` from a `summary`-kind `Hit.id`/`RerankCandidate.id` string.
+
+    This is the ONE sanctioned place in the codebase that parses the `"{paper_id}:summary"`
+    format (DATA-CONTRACTS.md "IDs — the spine"). `get_summary`/`Hit` carry no `paper_id` field to
+    resolve() against (unlike `get_chunk`/`get_block`, which hand `paper_id` back on the resolved
+    record) — there is no getter to call instead. `ci/checks/id_slicing.py` fences its check
+    around this exact function by name; if a second call site ever needs this, that need is the
+    signal to promote `paper_id` to a first-class field on `Hit` instead of adding a second ad-hoc
+    parse site.
+    """
+    return hit_id.removesuffix(_SUMMARY_ID_SUFFIX)
+
+
 class Retriever:
     """Constructor-injected collaborators only (CONVENTIONS §2): `embedder`, `vector_store`,
     `document_store`, `reranker`. Never constructs a vendor client itself — that stays inside
@@ -93,14 +107,10 @@ class Retriever:
 
         results = []
         for candidate in self._reranker.rerank(query, candidates):
-            # `summary_id` is documented as "{paper_id}:summary" (DATA-CONTRACTS.md "IDs" — the
-            # public spine, not a DocumentStore-internal secret the way chunk/block ids are
-            # elsewhere): `Hit`/`get_summary` carry no paper_id field to resolve() against, so
-            # this is the one legitimate place the format is read rather than parsed away by
-            # `get_chunk`/`get_block`/`get_summary` (CONVENTIONS §12(h) bans slicing chunk_id/
-            # block_id/summary_id to avoid *re-deriving* what those resolvers already hand back;
-            # here there is no resolver that hands back paper_id at all).
-            paper_id = candidate.id.removesuffix(_SUMMARY_ID_SUFFIX)
+            # See `_paper_id_from_summary_hit_id`'s docstring for why this is the one sanctioned
+            # parse of the "{paper_id}:summary" format (CONVENTIONS §12(h) / DATA-CONTRACTS.md
+            # "IDs" — every other id-resolving read goes through a DocumentStore getter instead).
+            paper_id = _paper_id_from_summary_hit_id(candidate.id)
             record = self._document_store.get(paper_id)
             if record is None:
                 raise ContractError(f"DocumentStore has no record for paper_id={paper_id!r}")

@@ -271,7 +271,16 @@ class PaperRecord:
 #   get_block(block_id) -> Block                # ContractError if unknown — a dangling parent_id is a bug
 #   get_chunk(chunk_id) -> Chunk                # ContractError if unknown
 #   get_summary(summary_id) -> str              # ContractError if unknown; hides the "{paper_id}:summary"
-#                                                # ID format from callers — Retriever never parses it
+#                                                # ID format from callers, with one bounded exception:
+#                                                # Retriever.retrieve_papers() is the one sanctioned
+#                                                # parser of this format, via its
+#                                                # _paper_id_from_summary_hit_id() helper (rag/
+#                                                # retriever.py) — get_summary/Hit carry no paper_id
+#                                                # field to resolve() against, so no getter hands it
+#                                                # back the way get_chunk/get_block do. If a second
+#                                                # module ever needs this, that need is the signal to
+#                                                # promote paper_id to a first-class field on Hit
+#                                                # instead of allowing a second ad-hoc parse site.
 #   get_span(anchor: Anchor) -> str             # resolves an anchor to the FULL text of anchor.block_id
 #                                                # (i.e. Block.text) — NOT the shorter Anchor.snippet.
 #                                                # snippet is already inline on the Anchor for quick
