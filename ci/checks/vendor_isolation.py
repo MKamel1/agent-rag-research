@@ -45,14 +45,23 @@ VENDOR_RULES: tuple[VendorRule, ...] = (
     VendorRule("ollama", re.compile(r"ollama", re.I), ("rag/summarizer.py",)),
     # vLLM ADR-09 covers both the embedder and the summarizer's local-LLM serving.
     VendorRule("vllm", re.compile(r"vllm", re.I), ("rag/embedder.py", "rag/summarizer.py")),
-    # environment.yml: "generic HTTP client -- arXiv (M1) + TEI/vLLM embedder (M4) adapters" --
-    # rag/harvester.py is the arXiv side (T-A1); add rag/embedder.py here too once M4 lands.
-    # rag/test_harvester_arxiv_source.py is ArxivSource's own sibling test, which legitimately
-    # builds httpx.MockTransport/Response fixtures to exercise the adapter offline (zero network).
+    # environment.yml: "generic HTTP client -- arXiv (M1) + TEI/vLLM embedder (M4) adapters".
+    # rag/harvester.py is the arXiv side (T-A1); rag/embedder.py's real adapter talks to the
+    # TEI/vLLM server over plain HTTP (httpx is its actual vendor dependency, not vllm, which
+    # only appears there as a docstring reference to ADR-09); rag/summarizer.py's real adapter
+    # (T-C2) also talks to Ollama over plain HTTP. rag/test_harvester_arxiv_source.py and
+    # rag/test_summarizer.py legitimately build httpx.MockTransport/Client fixtures to exercise
+    # their adapters offline (zero network).
     VendorRule(
         "httpx",
         re.compile(r"httpx", re.I),
-        ("rag/harvester.py", "rag/test_harvester_arxiv_source.py"),
+        (
+            "rag/harvester.py",
+            "rag/test_harvester_arxiv_source.py",
+            "rag/embedder.py",
+            "rag/summarizer.py",
+            "rag/test_summarizer.py",
+        ),
     ),
 )
 
