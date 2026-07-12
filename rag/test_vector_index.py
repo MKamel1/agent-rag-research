@@ -102,6 +102,7 @@ def _payload(**overrides) -> VectorPayload:
         "paper_id": "2506.01234",
         "kind": "chunk",
         "section_path": "3. Method",
+        "text": "sample passage text",
         "categories": ["cs.LG"],
         "published": "2026-06-01",
         "embedding_version": "v1",
@@ -112,14 +113,15 @@ def _payload(**overrides) -> VectorPayload:
 
 def _seed_dominant_fixture(adapter) -> str:
     """Upsert a fixture engineered so ONE document ("winner") dominates BOTH signals: its vector
-    equals the query vector (dense rank 1) AND its section_path shares every query token (sparse
-    rank 1). The other documents are dense-orthogonal and share no query tokens. Returns the id of
-    the document that must come back top-1. Same fixture the real adapter reuses in the nightly job.
+    equals the query vector (dense rank 1) AND its `text` shares every query token (sparse rank 1).
+    The other documents are dense-orthogonal and share no query tokens. Returns the id of the
+    document that must come back top-1. Same fixture the real adapter reuses in the nightly job.
+    `section_path` is left at a plausible default throughout -- it's no longer the sparse source.
     """
-    adapter.upsert("winner", [1.0, 0.0], _payload(section_path="method estimator"))
-    adapter.upsert("dense_only", [1.0, 0.0], _payload(section_path="unrelated header"))
-    adapter.upsert("sparse_only", [0.0, 1.0], _payload(section_path="method estimator"))
-    adapter.upsert("noise", [0.0, 1.0], _payload(section_path="acknowledgements"))
+    adapter.upsert("winner", [1.0, 0.0], _payload(text="method estimator"))
+    adapter.upsert("dense_only", [1.0, 0.0], _payload(text="unrelated header"))
+    adapter.upsert("sparse_only", [0.0, 1.0], _payload(text="method estimator"))
+    adapter.upsert("noise", [0.0, 1.0], _payload(text="acknowledgements"))
     return "winner"
 
 
@@ -177,6 +179,60 @@ def assert_rebuild_reproduces_results(adapter):
     assert after[0].id == winner
 
 
+def assert_sparse_channel_distinguishes_real_text(adapter):
+    """Two points share an IDENTICAL `section_path` (so a heading-based sparse signal could never
+    tell them apart) but have different real `text`. Dense vectors are identical too (a tie), and
+    ids are chosen so the id-ascending tie-break would pick the WRONG winner absent a real sparse
+    signal -- so this only passes if the sparse channel is genuinely keying off `text`.
+    """
+    adapter.upsert(
+        "aaa_wrong", [0.0, 1.0], _payload(section_path="3. Method", text="totally unrelated content")
+    )
+    adapter.upsert(
+        "zzz_right", [0.0, 1.0], _payload(section_path="3. Method", text="a treatment effect estimator")
+    )
+    hits = adapter.hybrid_search(
+        qvec=[0.0, 1.0], qtext="treatment effect estimator", filters=None, k=10
+    )
+    assert hits[0].id == "zzz_right"
+
+
+def assert_summary_gets_real_sparse_signal_despite_empty_section_path(adapter):
+    """Production code (`rag/orchestrator.py`) passes `section_path=""` for `kind="summary"`
+    payloads -- before this fix that meant zero sparse signal for every summary vector. With `text`
+    populated, a summary must still be reachable via the sparse channel even with `section_path`
+    empty. Same tie-break trick as above: identical dense vectors, ids chosen so a broken/absent
+    sparse signal would pick the wrong winner.
+    """
+    adapter.upsert(
+        "decoy", [1.0, 0.0], _payload(kind="summary", section_path="", text="unrelated topic entirely")
+    )
+    adapter.upsert(
+        "target",
+        [1.0, 0.0],
+        _payload(kind="summary", section_path="", text="a comprehensive causal discovery survey"),
+    )
+    hits = adapter.hybrid_search(qvec=[1.0, 0.0], qtext="causal discovery survey", filters=None, k=10)
+    assert hits[0].id == "target"
+
+
+def assert_rebuild_preserves_sparse_text_signal(adapter):
+    """`rebuild()` copies payload+vectors verbatim (no re-embedding) -- confirm the new `text` field,
+    and therefore the sparse channel's ability to distinguish real content, survives a rebuild.
+    """
+    adapter.upsert(
+        "aaa_wrong", [0.0, 1.0], _payload(section_path="3. Method", text="totally unrelated content")
+    )
+    adapter.upsert(
+        "zzz_right", [0.0, 1.0], _payload(section_path="3. Method", text="a treatment effect estimator")
+    )
+    adapter.rebuild()
+    hits = adapter.hybrid_search(
+        qvec=[0.0, 1.0], qtext="treatment effect estimator", filters=None, k=10
+    )
+    assert hits[0].id == "zzz_right"
+
+
 CONTRACT = (
     assert_upsert_search_round_trips_id,
     assert_filters_by_category,
@@ -184,6 +240,9 @@ CONTRACT = (
     assert_filters_by_kind,
     assert_top1_is_the_dominant_document,
     assert_rebuild_reproduces_results,
+    assert_sparse_channel_distinguishes_real_text,
+    assert_summary_gets_real_sparse_signal_despite_empty_section_path,
+    assert_rebuild_preserves_sparse_text_signal,
 )
 
 
