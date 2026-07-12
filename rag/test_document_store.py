@@ -200,6 +200,28 @@ def test_put_is_atomic_across_all_four_tables(tmp_path):
         con.close()
 
 
+def test_put_failure_on_reput_leaves_prior_blob_untouched(store):
+    # The blob write is NOT inside the SQL transaction (it's a filesystem write), so it has to be
+    # made atomic by hand: a failed re-put must not leave the OLD db row paired with the NEW
+    # (should-be-rolled-back) markdown text on disk — that torn read is exactly the bug this test
+    # guards against.
+    store.put(make_paper_record())  # good initial put — "old" markdown is "# Title"
+
+    # Same injection as test_put_is_atomic_across_all_four_tables: fails mid-transaction, AFTER
+    # the blob for the new content would already have been written under the old (buggy) impl.
+    bad_record = make_paper_record(
+        parsed=make_parsed_doc(markdown="# NEW CONTENT THAT SHOULD NEVER BE VISIBLE"),
+        chunks=[make_chunk(chunk_id=f"{PAPER_ID}:c0"), make_chunk(chunk_id=f"{PAPER_ID}:c0")],
+    )
+    with pytest.raises((sqlite3.IntegrityError, ContractError)):
+        store.put(bad_record)
+
+    # get() must still return the PRIOR good markdown, not the failed put's content.
+    got = store.get(PAPER_ID)
+    assert got.parsed.markdown == "# Title"
+    assert "NEW CONTENT" not in got.parsed.markdown
+
+
 # --------------------------------------------------------------------------------------------------
 # idempotency under CHANGED content — a re-put replaces, it does not silently no-op
 # --------------------------------------------------------------------------------------------------

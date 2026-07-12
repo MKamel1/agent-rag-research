@@ -16,6 +16,7 @@ also happens to round-trip `pdf_url` exactly. `papers.markdown_path` DOES have a
 """
 
 import json
+import os
 import sqlite3
 from collections.abc import Iterator
 from datetime import date
@@ -63,83 +64,99 @@ class DocumentStore:
         Relies on `sqlite3`'s own transaction handling: the first DML statement below opens an
         implicit transaction; the `with self._con:` block commits it on success or rolls it back
         (and re-raises) on any exception — no manual BEGIN/COMMIT/ROLLBACK bookkeeping needed.
+
+        The blob write has to honor the same all-or-nothing rule even though it lives outside
+        the DB transaction: since `markdown_path` is deterministic (`{paper_id}.md`), writing the
+        new content straight to that path would overwrite the prior good blob before the DB
+        transaction below is known to succeed. A rolled-back re-put would then leave `get()`
+        returning old DB rows paired with the NEW (should-have-been-discarded) markdown text —
+        a torn read. So the new content is written to a temp file first and only swapped into
+        place (`os.replace`, atomic on the same filesystem) after the transaction commits; on any
+        failure the temp file is discarded and the prior blob is untouched.
         """
         ref = record.ref
         paper_id = ref.paper_id
         markdown_path = self._blob_dir / f"{paper_id}.md"
-        markdown_path.write_text(record.parsed.markdown)
+        tmp_path = self._blob_dir / f"{paper_id}.md.tmp"
+        tmp_path.write_text(record.parsed.markdown, encoding="utf-8")
 
-        with self._con:
-            self._con.execute("DELETE FROM chunks WHERE paper_id = ?", (paper_id,))
-            self._con.execute("DELETE FROM blocks WHERE paper_id = ?", (paper_id,))
-            self._con.execute("DELETE FROM summaries WHERE paper_id = ?", (paper_id,))
-            self._con.execute(
-                """
-                INSERT INTO papers
-                    (paper_id, version, title, abstract, authors_json, categories_json,
-                     published, updated, pdf_path, markdown_path, relevance_score)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(paper_id) DO UPDATE SET
-                    version=excluded.version, title=excluded.title, abstract=excluded.abstract,
-                    authors_json=excluded.authors_json, categories_json=excluded.categories_json,
-                    published=excluded.published, updated=excluded.updated,
-                    pdf_path=excluded.pdf_path, markdown_path=excluded.markdown_path,
-                    relevance_score=excluded.relevance_score
-                """,
-                (
-                    paper_id,
-                    ref.version,
-                    ref.title,
-                    ref.abstract,
-                    json.dumps(ref.authors),
-                    json.dumps(ref.categories),
-                    ref.published.isoformat(),
-                    ref.updated.isoformat(),
-                    ref.pdf_url,  # see module docstring: no local PDF-blob path to store instead
-                    str(markdown_path),
-                    record.relevance_score,
-                ),
-            )
-            for block in record.parsed.blocks:
+        try:
+            with self._con:
+                self._con.execute("DELETE FROM chunks WHERE paper_id = ?", (paper_id,))
+                self._con.execute("DELETE FROM blocks WHERE paper_id = ?", (paper_id,))
+                self._con.execute("DELETE FROM summaries WHERE paper_id = ?", (paper_id,))
                 self._con.execute(
                     """
-                    INSERT INTO blocks
-                        (block_id, paper_id, idx, type, text, page, bbox_json, section_path)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO papers
+                        (paper_id, version, title, abstract, authors_json, categories_json,
+                         published, updated, pdf_path, markdown_path, relevance_score)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(paper_id) DO UPDATE SET
+                        version=excluded.version, title=excluded.title, abstract=excluded.abstract,
+                        authors_json=excluded.authors_json, categories_json=excluded.categories_json,
+                        published=excluded.published, updated=excluded.updated,
+                        pdf_path=excluded.pdf_path, markdown_path=excluded.markdown_path,
+                        relevance_score=excluded.relevance_score
                     """,
                     (
-                        block.block_id,
-                        block.paper_id,
-                        block.index,
-                        block.type,
-                        block.text,
-                        block.page,
-                        json.dumps(list(block.bbox)),
-                        block.section_path,
+                        paper_id,
+                        ref.version,
+                        ref.title,
+                        ref.abstract,
+                        json.dumps(ref.authors),
+                        json.dumps(ref.categories),
+                        ref.published.isoformat(),
+                        ref.updated.isoformat(),
+                        ref.pdf_url,  # see module docstring: no local PDF-blob path to store instead
+                        str(markdown_path),
+                        record.relevance_score,
                     ),
                 )
-            for chunk in record.chunks:
+                for block in record.parsed.blocks:
+                    self._con.execute(
+                        """
+                        INSERT INTO blocks
+                            (block_id, paper_id, idx, type, text, page, bbox_json, section_path)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            block.block_id,
+                            block.paper_id,
+                            block.index,
+                            block.type,
+                            block.text,
+                            block.page,
+                            json.dumps(list(block.bbox)),
+                            block.section_path,
+                        ),
+                    )
+                for chunk in record.chunks:
+                    self._con.execute(
+                        """
+                        INSERT INTO chunks
+                            (chunk_id, paper_id, text, anchor_json, section_path, parent_id,
+                             contextual_header)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            chunk.chunk_id,
+                            chunk.paper_id,
+                            chunk.text,
+                            chunk.anchor.model_dump_json(),
+                            chunk.section_path,
+                            chunk.parent_id,
+                            chunk.contextual_header,
+                        ),
+                    )
                 self._con.execute(
-                    """
-                    INSERT INTO chunks
-                        (chunk_id, paper_id, text, anchor_json, section_path, parent_id,
-                         contextual_header)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                    """,
-                    (
-                        chunk.chunk_id,
-                        chunk.paper_id,
-                        chunk.text,
-                        chunk.anchor.model_dump_json(),
-                        chunk.section_path,
-                        chunk.parent_id,
-                        chunk.contextual_header,
-                    ),
+                    "INSERT INTO summaries (summary_id, paper_id, text) VALUES (?, ?, ?)",
+                    (record.summary_id, paper_id, record.summary_text),
                 )
-            self._con.execute(
-                "INSERT INTO summaries (summary_id, paper_id, text) VALUES (?, ?, ?)",
-                (record.summary_id, paper_id, record.summary_text),
-            )
+        except Exception:
+            tmp_path.unlink(missing_ok=True)
+            raise
+
+        os.replace(tmp_path, markdown_path)
 
     # ----------------------------------------------------------------------------------------
     # reads
@@ -166,7 +183,7 @@ class DocumentStore:
         )
         parsed = ParsedDoc(
             paper_id=paper_id,
-            markdown=Path(row["markdown_path"]).read_text(),
+            markdown=self._read_markdown_blob(row["markdown_path"]),
             blocks=self.get_blocks(paper_id),
             figures=[],  # no schema table (schema projection gap)
             tables=[],  # no schema table (schema projection gap)
@@ -191,6 +208,16 @@ class DocumentStore:
             summary_id=summary_row["summary_id"] if summary_row else f"{paper_id}:summary",
             relevance_score=row["relevance_score"],
         )
+
+    @staticmethod
+    def _read_markdown_blob(markdown_path: str) -> str:
+        """A missing/unreadable blob means the store's own papers-row -> blob-file invariant is
+        broken (put() always writes it first) — a bug, not a normal "not found" case, so it's a
+        ContractError rather than a raw FileNotFoundError leaking out of this module."""
+        try:
+            return Path(markdown_path).read_text(encoding="utf-8")
+        except OSError as e:
+            raise ContractError(f"unreadable markdown blob: {markdown_path!r} ({e})") from e
 
     def get_blocks(self, paper_id: str) -> list[Block]:
         rows = self._con.execute(
