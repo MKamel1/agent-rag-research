@@ -18,6 +18,7 @@ from contracts.errors import ContractError, PermanentError, TransientError
 from contracts.fusion import RRF_K, rrf_fuse
 from contracts.gpu_lock import GpuLock
 from contracts.harvester import PaperRef
+from contracts.ingest_state import Checkpoint, CheckpointArtifacts
 from contracts.mcp_server import (
     Coverage,
     PaperSearchResponse,
@@ -36,6 +37,8 @@ __all__ = [
     "Bbox",
     "Block",
     "BlockType",
+    "Checkpoint",
+    "CheckpointArtifacts",
     "Chunk",
     "Citation",
     "Config",
