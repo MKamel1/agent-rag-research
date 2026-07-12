@@ -187,4 +187,125 @@ gate.
 
 ## Spike 2 — Retrieval quality
 
-Not run yet. Not covered by this document.
+**Status: done.** Locked embedder + retrieval config for V0, with numbers.
+
+**Sources:** `.phase0-data/spike2-scoring/score_summary.json` (full per-config/per-split numbers),
+`.phase0-data/spike2-scoring/chunks.jsonl` (3341 real `Chunker`-produced chunks over the S0
+representative set), `fixtures/eval/eval_questions_blind.json` + `eval_ground_truth.json` (the
+210-question eval set, PR #40).
+
+### Method
+
+Two embedders (Qwen3-Embedding-4B, BGE-M3) × three retrieval configs (dense-only; hybrid
+dense+sparse+RRF, no rerank; hybrid+cross-encoder-rerank) swept against all 210 eval questions —
+6 configs total. Scoring: a question is a hit if a top-10 result matches the gold `source_paper_id`
+and its chunk text fuzzy-matches (`rapidfuzz.partial_ratio >= 75`) the gold `passage_excerpt`.
+
+**Two real defects were found in the eval set/scoring after the first pass, and fixed before
+locking anything:**
+
+1. Four multi-paper questions (Q-101, Q-102, Q-103, Q-108) had the wrong `source_paper_id` recorded
+   — the excerpt fuzzy-matched a *different* paper referenced in `section_path` far better than the
+   recorded one. Three (Q-101, Q-103, Q-108) were corrected against real chunk text (best-match
+   scores 90.5/99.0/81.0 vs. 48.5/49.5/45.0 on the previously-recorded papers). Q-102 was left
+   unresolved — no paper clears even a weak match — and falls into the exclusion below rather than
+   being reassigned on a guess. PR #45 (`fix/spike2-eval-ground-truth-source-ids`,
+   `foundation-change` labeled, touches `fixtures/` — open, awaiting human sign-off).
+2. 18 of 210 questions have a gold passage that is structurally unscorable — even the single
+   best-matching chunk in the *correct* (corrected) source paper scores below the 75 threshold,
+   mostly from parser text-corruption (garbled per-character formatting artifacts in math/subscript
+   notation) or from table-content excerpts not reflected in chunk prose. No retriever could ever
+   score these as hits. Per `TEST-STRATEGY.md`'s own prescription, these are **flagged and excluded
+   from the Recall@10/MRR denominator**, not silently counted as misses — logged with their
+   best-attainable score in `score_summary.json`'s `excluded_qids`.
+
+All numbers below are post-fix, n=192 (18 excluded).
+
+### Headline numbers
+
+| Config | Recall@10 | MRR |
+|---|---|---|
+| **qwen3-4B, dense** | **0.875** | 0.490 |
+| qwen3-4B, hybrid (RRF, no rerank) | 0.260 | 0.056 |
+| **qwen3-4B, hybrid+rerank** | **0.844** | **0.601** |
+| bgem3, dense | 0.828 | 0.484 |
+| bgem3, hybrid (RRF, no rerank) | 0.146 | 0.033 |
+| bgem3, hybrid+rerank | 0.812 | 0.612 |
+
+Split by title/arXiv-ID presence in question text (148 title-present / 44 title-absent) and by
+single- vs. multi-paper question type (133 single / 59 multi) — required by `PHASE0-RUNBOOK.md`
+so the aggregate isn't read as uniform:
+
+| Config | Recall@10 (title-present) | Recall@10 (title-absent) | Recall@10 (single) | Recall@10 (multi) |
+|---|---|---|---|---|
+| qwen3-4B, dense | 0.885 | 0.841 | 0.895 | 0.831 |
+| qwen3-4B, hybrid+rerank | 0.851 | 0.818 | 0.887 | 0.746 |
+| bgem3, dense | 0.838 | 0.795 | 0.895 | 0.678 |
+| bgem3, hybrid+rerank | 0.831 | 0.750 | 0.880 | 0.661 |
+
+Recall holds up close to the aggregate on both splits — no sign the headline number is an artifact
+of title leakage or purely single-paper questions. Multi-paper recall is meaningfully lower across
+every config (a single gold label on a question whose answer may need two papers — a known,
+accepted eval-set limitation, not a retrieval defect, per `TEST-STRATEGY.md`).
+
+### The gate, and why hybrid+rerank is locked despite being under it
+
+`PHASE0-RUNBOOK.md` requires Recall@10 >= ~0.85. qwen3-4B dense-only clears it (0.875); hybrid+rerank
+is close but technically under (0.844). **Locked anyway, per the runbook's own explicit rule:
+hybrid search and the reranker stay in V0/V1 regardless of this spike's numeric result.** The eval
+set is synthetic — questions generated from their own gold chunk — which is structurally biased
+toward making dense-only look sufficient (shared vocabulary inflates dense/lexical match exactly
+where hybrid exists to rescue a real vocabulary-mismatched query the synthetic set underrepresents).
+This spike's job was to lock the config with real numbers, not to decide keep/drop.
+
+**Why plain "hybrid" (RRF, no rerank) scores so badly (0.15-0.26) — this is not primarily a
+"sparse search is weak" finding.** It traces to a real contract bug: `VectorPayload`
+(`contracts/vector_index.py`) never carried real chunk/summary text into the sparse-search channel,
+only `section_path` (a generic heading like "3. Method") — so the "keyword" side was never actually
+searching real content, in the fake or the real adapter. **This is being fixed as of this writing**
+(PR #44 `fix-vector-payload-text`, foundation-change labeled, plus companion commits on PR #37
+`T-D2-impl` and PR #38 `T-A2-impl` — all three open, integrated and green in local testing, under
+principal-design-review at time of writing, not yet merged). The numbers above were measured
+against the old, buggy sparse channel and may improve once that fix lands — this does not change
+today's lock decision, since the real V0 config is always "hybrid+rerank" together (plain hybrid
+alone was never a shippable config, only a Spike 2 diagnostic arm), and that combined config already
+performs close to dense-only with meaningfully better MRR (0.601 vs. 0.490 — the correct chunk ranks
+higher when found, not just present in the top 10).
+
+**A related, still-open finding, not resolved by this spike:** Recall@10 correlates with gold-chunk
+size — smaller chunks retrieve markedly better (~0.90 in the smallest-size quartile observed earlier
+this session vs. ~0.65-0.76 in the largest). Worth investigating chunking strategy in a future pass;
+not acted on here (`Chunker`'s current whole-section grouping is unchanged, out of Spike 2's scope).
+
+### The 8B embedder — attempted, not measured
+
+Qwen3-Embedding-8B was downloaded and an attempt was made to serve and sweep it identically. Blocked
+by a real hardware/serving-stack ceiling, not a config problem: the TEI serving image in use only
+supports `float16`/`float32`, no int8/quantized mode, so the "~8.5GB at Q8" option `PRD.md` ADR-02
+anticipated isn't achievable with this stack — at `float16` it does not fit in VRAM alongside the
+embedder/reranker services already required to stay up. Getting 8B running would need either
+stopping required services mid-sweep or a different serving stack (e.g. vLLM) — out of scope for
+this spike. Per ADR-02's own original reasoning (8B's expected gain over 4B is a few MTEB points,
+not worth ~2x compute for a 15k-paper corpus) and given 4B now clears the gate on corrected data,
+**8B is not pursued for V0.**
+
+### Locked for V0
+
+- **Embedder: Qwen3-Embedding-4B.**
+- **Retrieval config: hybrid (dense+sparse+RRF) + cross-encoder rerank** — locked per the runbook's
+  mandatory-inclusion rule above, not because it numerically beat dense-only here.
+- Known eval-set caveats carried forward, unchanged from the method notes: ~78% of questions contain
+  the source paper's title/arXiv ID in their text (a pre-existing, monitored, accepted bias, not a
+  defect — see `TEST-STRATEGY.md`); the multi-paper single-gold-label limitation (above).
+
+### Summary for the record
+
+| Gate | Result |
+|---|---|
+| Lock embedder + reranker + retrieval config with numbers | **Done** — Qwen3-Embedding-4B, hybrid+rerank |
+| Recall@10 >= ~0.85 | qwen3-4B dense **0.875** (pass); hybrid+rerank **0.844** (just under, locked anyway per runbook's keep-regardless rule) |
+| Hybrid must earn its complexity | Not decided by this spike (runbook forecloses that on a synthetic eval) — but a real contract bug explaining hybrid's poor standalone score was found and is being fixed (PR #44/#37/#38) |
+| 200-question eval set exists, committed as regression gate | Yes, PR #40 |
+| Recall@10 reported full-set + title-present/absent + single/multi splits | Yes, table above |
+| Ground-truth defects found and handled | 4 mislabeled `source_paper_id` rows (3 fixed, 1 excluded), 18 structurally-unscorable questions excluded from denominator — PR #45, open |
+| 8B embedder evaluated | Attempted, blocked by serving-stack VRAM ceiling; not pursued given ADR-02's own cost/benefit reasoning and 4B clearing the gate |
