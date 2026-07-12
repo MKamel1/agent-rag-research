@@ -47,6 +47,12 @@ def _paper_id_from_error(error: Exception) -> str:
     return match.group("id") if match else "<unknown>"
 
 
+def _version_num(version: str) -> int:
+    # `version` is "v1", "v2", ... "v10", ... — compare the integer, not the string
+    # ("v9" > "v10" lexically, which would keep the older version for 10+-version papers).
+    return int(version.lstrip("v"))
+
+
 def _default_retry_sleep(seconds: float) -> None:
     time.sleep(seconds)
 
@@ -78,6 +84,11 @@ class Harvester:
         self._retry_sleep = retry_sleep or _default_retry_sleep
 
     def harvest(self, focus_area: list[str], cap: int, ordering: str) -> Iterator[PaperRef]:
+        # ponytail ceiling: `seen_ids`/`cap` are post-fetch filters, not fetch cursors — a resume
+        # still re-fetches every page from `source` and discards most of it, and `cap` counts raw
+        # refs (pre-dedup, so a paper with 5 versions costs 5 of the cap) rather than distinct
+        # papers returned. Fine for a one-shot V0 seed at current scale; revisit if resume cost or
+        # cap accuracy ever matters (real fetch cursor / dedup-aware cap).
         latest: dict[str, PaperRef] = {}
         retry_counts: dict[str, int] = {}
 
@@ -85,7 +96,7 @@ class Harvester:
             try:
                 for ref in self._source.fetch(focus_area, cap, ordering):
                     prev = latest.get(ref.paper_id)
-                    if prev is None or ref.version > prev.version:
+                    if prev is None or _version_num(ref.version) > _version_num(prev.version):
                         latest[ref.paper_id] = ref
                 break  # this attempt reached the end of the source without error
             except PermanentError as error:
@@ -94,6 +105,16 @@ class Harvester:
                 self._quarantine(_paper_id_from_error(error), error)
                 break
             except TransientError as error:
+                # ceiling: this retry/quarantine model is per-paper by contract (it recovers
+                # "which paper failed" from `paper_id=...` in the error text), but the real
+                # `ArxivSource` below fails per-STREAM — a page-fetch error carries no paper_id,
+                # so at runtime every transient error lands in one `"<unknown>"` bucket here. That
+                # means: (a) a transient error restarts the WHOLE fetch from page 0 next attempt
+                # (costly at the 15k-paper M4 scale), (b) `max_retries` is effectively a global
+                # per-run budget rather than per-paper, and (c) exhausting it quarantines
+                # `"<unknown>"` and `harvest()` ends early with a partial corpus, silently. Not
+                # fixed here — out of scope for this change. If the M4 15k-paper run shows this
+                # biting, follow up with a resume-cursor / per-page retry redesign.
                 paper_id = _paper_id_from_error(error)
                 retry_counts[paper_id] = retry_counts.get(paper_id, 0) + 1
                 if retry_counts[paper_id] > self._max_retries:
