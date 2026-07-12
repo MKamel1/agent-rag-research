@@ -18,8 +18,10 @@ Two parts, deliberately separate (TEST-STRATEGY "Embedder"):
 """
 
 import contextlib
+import hashlib
 import inspect
 import math
+import random
 from unittest.mock import MagicMock
 
 import pytest
@@ -27,6 +29,7 @@ import pytest
 # M1a CI convention (CONVENTIONS §0.7 / §11): skip the whole suite until rag/embedder.py lands.
 _mod = pytest.importorskip("rag.embedder")
 
+from contracts.embedder import EmbedderInfo  # noqa: E402
 from rag.fakes.fake_embedder import FakeEmbedder  # noqa: E402
 from rag.fakes.fake_gpu_lock import FakeGpuLock  # noqa: E402
 
@@ -142,3 +145,74 @@ def test_real_embedder_acquires_the_embed_gpu_lock():
         "real Embedder must acquire gpu_lock.acquire('embed') around its batch call — the "
         "single-GPU rule's only enforcement (CONVENTIONS §6)"
     )
+
+
+# ---------------------------------------------------------------------------
+# Sub-batching: the real TEI server enforces `max_client_batch_size=32` (empirically confirmed:
+# 161 texts -> HTTP 422, 32 texts -> HTTP 200). `IngestionOrchestrator` relies on exactly one
+# `embed()` call per paper covering the summary plus every chunk together, so `embed()` itself
+# must split any larger input into <=32-item HTTP batches, transparently to the caller.
+# ---------------------------------------------------------------------------
+
+
+def _hash_to_raw_vector(text: str, dim: int) -> list[float]:
+    # Same recipe as FakeEmbedder: same text -> same vector, different text -> (virtually
+    # certainly) different vector, with no cross-process randomness.
+    seed = int(hashlib.sha256(text.encode("utf-8")).hexdigest(), 16)
+    rng = random.Random(seed)
+    return [rng.uniform(-1.0, 1.0) for _ in range(dim)]
+
+
+class _FakeTeiResponse:
+    def __init__(self, vectors):
+        self._vectors = vectors
+
+    def raise_for_status(self):
+        pass
+
+    def json(self):
+        return self._vectors
+
+
+class _FakeTeiClient:
+    """Stand-in for `httpx.Client`. Records the size of every POSTed batch (so a test can assert
+    sub-batching happened and stayed within the server's limit) and returns one vector per input
+    text, derived only from that text's own content — so a text's embedding is the same no matter
+    which sub-batch it lands in, and order-preservation can be checked against content, not just
+    position.
+    """
+
+    def __init__(self, dim: int):
+        self._dim = dim
+        self.batch_sizes: list[int] = []
+
+    def post(self, url, json):
+        batch = json["inputs"]
+        self.batch_sizes.append(len(batch))
+        return _FakeTeiResponse([_hash_to_raw_vector(t, self._dim) for t in batch])
+
+
+def test_embed_sub_batches_over_the_tei_limit_and_preserves_order():
+    dim = 8
+    client = _FakeTeiClient(dim)
+    info = EmbedderInfo(model_id="fake-tei", dim=dim, version="v1")
+    adapter = _real_embedder_cls()(client=client, gpu_lock=FakeGpuLock(), info=info)
+
+    texts = [f"paper chunk number {i}" for i in range(45)]  # > 32, forces >=2 HTTP batches
+    vectors = adapter.embed(texts)
+
+    # (a) multiple POSTs, each within the server's 32-item limit.
+    assert len(client.batch_sizes) > 1
+    assert all(size <= 32 for size in client.batch_sizes)
+    assert sum(client.batch_sizes) == len(texts)
+
+    # (b) same length, SAME ORDER: vectors[i] is specifically the vector for texts[i] -- not just
+    # "any 45 embeddings" -- verified by recomputing each text's embedding on its own (a
+    # single-text call always stays under the batch limit) and comparing position-by-position.
+    assert len(vectors) == len(texts)
+    for i, text in enumerate(texts):
+        assert vectors[i] == adapter.embed([text])[0]
+
+    # (c) determinism preserved across sub-batching: re-running the same multi-batch call gives
+    # byte-identical output (mirrors test_deterministic_same_input_same_output's style).
+    assert adapter.embed(texts) == vectors
