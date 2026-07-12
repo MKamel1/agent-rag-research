@@ -45,6 +45,10 @@ VENDOR_RULES: tuple[VendorRule, ...] = (
     VendorRule("ollama", re.compile(r"ollama", re.I), ("rag/summarizer.py",)),
     # vLLM ADR-09 covers both the embedder and the summarizer's local-LLM serving.
     VendorRule("vllm", re.compile(r"vllm", re.I), ("rag/embedder.py", "rag/summarizer.py")),
+    # rag/embedder.py's real (M4) adapter talks to the TEI/vLLM server over plain HTTP, not a
+    # vendor SDK -- httpx is its actual vendor dependency, not vllm (which only appears there as
+    # a docstring reference to ADR-09).
+    VendorRule("httpx", re.compile(r"httpx", re.I), ("rag/embedder.py",)),
 )
 
 
