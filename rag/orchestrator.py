@@ -268,11 +268,16 @@ class IngestionOrchestrator:
         self._vector_index.upsert(
             record.summary_id,
             summary_vec,
-            {**payload_common, "kind": "summary", "section_path": ""},
+            {**payload_common, "kind": "summary", "section_path": "", "text": record.summary_text},
         )
         for chunk, vector in zip(record.chunks, chunk_vecs, strict=True):
             self._vector_index.upsert(
                 chunk.chunk_id,
                 vector,
-                {**payload_common, "kind": "chunk", "section_path": chunk.section_path},
+                {
+                    **payload_common,
+                    "kind": "chunk",
+                    "section_path": chunk.section_path,
+                    "text": chunk.text,
+                },
             )
