@@ -58,9 +58,10 @@ VENDOR_RULES: tuple[VendorRule, ...] = (
     # TEI/vLLM server over plain HTTP (httpx is its actual vendor dependency, not vllm, which
     # only appears there as a docstring reference to ADR-09); rag/summarizer.py's real adapter
     # (T-C2) also talks to Ollama over plain HTTP; rag/parser.py's real adapter (T-B1) also talks
-    # to GROBID's REST API over plain HTTP for reference resolution. rag/test_harvester_arxiv_source.py,
-    # rag/test_summarizer.py, and rag/test_embedder.py legitimately build httpx.MockTransport/Client
-    # fixtures to exercise their adapters offline (zero network).
+    # to GROBID's REST API over plain HTTP for reference resolution; rag/reranker.py's real adapter
+    # likewise talks to TEI's cross-encoder endpoint over plain HTTP. rag/test_harvester_arxiv_source.py,
+    # rag/test_summarizer.py, rag/test_embedder.py, and rag/test_reranker.py legitimately build
+    # httpx.MockTransport/Client fixtures to exercise their adapters offline (zero network).
     VendorRule(
         "httpx",
         re.compile(r"httpx", re.I),
@@ -72,6 +73,8 @@ VENDOR_RULES: tuple[VendorRule, ...] = (
             "rag/summarizer.py",
             "rag/test_summarizer.py",
             "rag/parser.py",
+            "rag/reranker.py",
+            "rag/test_reranker.py",
         ),
     ),
 )
