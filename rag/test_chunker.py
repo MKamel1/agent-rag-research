@@ -217,6 +217,62 @@ def test_expansion_off_splits_each_block_into_its_own_chunk():
     assert lone_equation, "off must separate the equation from its defining prose"
 
 
+# ---------------------------------------------------------------------------
+# Oversized-section splitting (real corpus finding, .phase0-data/known-issue-pass2-oom.md): a
+# long unbroken section with no sub-headings must not become one arbitrarily huge chunk.
+# ---------------------------------------------------------------------------
+
+_LONG_SECTION_PATH = "C.2 Proofs"
+
+
+def _long_prose_block(index: int, words: int, section_path: str = _LONG_SECTION_PATH) -> Block:
+    return _block(index, " ".join(["word"] * words), "prose", section_path)
+
+
+def test_oversized_section_is_split_into_multiple_chunks():
+    blocks = [_long_prose_block(0, 900), _long_prose_block(1, 900)]  # 1,800 words > the cap
+    chunks = _chunk(_parsed_doc(blocks=blocks))
+    assert len(chunks) == 2, "a section over the size cap must split into more than one chunk"
+
+
+def test_section_within_the_cap_is_not_split():
+    blocks = [_long_prose_block(0, 500), _long_prose_block(1, 500)]  # 1,000 words, under the cap
+    chunks = _chunk(_parsed_doc(blocks=blocks))
+    assert len(chunks) == 1, "a section under the size cap must stay one chunk"
+
+
+def test_oversized_section_split_still_keeps_equation_glued_to_its_prose():
+    blocks = [
+        _long_prose_block(0, 1600),  # already over the cap alone
+        _block(1, EQUATION_LATEX, "equation", _LONG_SECTION_PATH),
+        _long_prose_block(2, 200),
+    ]
+    chunks = _chunk(_parsed_doc(blocks=blocks))
+    equation_chunks = [c for c in chunks if EQUATION_LATEX in c.text]
+    assert len(equation_chunks) == 1
+    # A split point may never fall directly before an equation -- it stays with whatever prose
+    # precedes it, even though that prose block alone already exceeds the size cap.
+    assert blocks[0].text in equation_chunks[0].text
+
+
+def test_split_sub_chunks_anchor_to_their_own_first_block_not_the_sections_first_block():
+    blocks = [_long_prose_block(0, 900), _long_prose_block(1, 900)]
+    chunks = _chunk(_parsed_doc(blocks=blocks))
+    assert len(chunks) == 2
+    assert chunks[0].anchor.block_id == blocks[0].block_id
+    assert chunks[1].anchor.block_id == blocks[1].block_id, (
+        "the second split chunk must anchor to ITS OWN first block, not the section's overall "
+        "first block"
+    )
+
+
+def test_single_block_bigger_than_the_cap_is_still_emitted_whole():
+    blocks = [_long_prose_block(0, 5000)]
+    chunks = _chunk(_parsed_doc(blocks=blocks))
+    assert len(chunks) == 1, "a single oversized block is not split within itself"
+    assert len(chunks[0].text.split()) >= 5000
+
+
 def test_chunks_are_emitted_and_ids_are_unique():
     chunks = _chunk()
     assert chunks, "a non-empty ParsedDoc must yield at least one chunk"
