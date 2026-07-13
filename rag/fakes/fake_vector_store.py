@@ -21,15 +21,12 @@ class FakeVectorStore:
 
     - Dense ranking: cosine similarity of `qvec` against every stored vector that survives
       `filters`, ranked descending (ties broken by id ascending for determinism).
-    - Sparse ranking: token-overlap of `qtext` against the stored payload's `section_path`.
-      `VectorPayload` deliberately carries no raw chunk/summary text (the `DocumentStore` holds
-      that) — `section_path` is the only text-shaped field available on the payload, so it's
-      used here as a fake-only stand-in sparse-index source. This is a simplification specific
-      to this fake, not a claim about what the real Qdrant adapter's sparse index scores against
-      (that adapter has the real chunk/summary text to index). A candidate with zero token
-      overlap is excluded from the sparse ranked list entirely (mirrors a real sparse/BM25 index
-      simply not retrieving a document for a query it shares no terms with), rather than being
-      included at some arbitrary tail rank.
+    - Sparse ranking: token-overlap of `qtext` against the stored payload's `text` — the real
+      chunk/summary passage text (`VectorPayload.text`). This matches what the real Qdrant
+      adapter's sparse index scores against: both sides index real passage content, not a
+      heading. A candidate with zero token overlap is excluded from the sparse ranked list
+      entirely (mirrors a real sparse/BM25 index simply not retrieving a document for a query it
+      shares no terms with), rather than being included at some arbitrary tail rank.
 
     `hybrid_dense_weight` is a `Config` lever (DATA-CONTRACTS.md §Config, default `0.5`), not a
     per-call `hybrid_search` argument — same as the real adapter, which is constructed once with
@@ -58,7 +55,7 @@ class FakeVectorStore:
         )
 
         sparse_scores = {
-            doc_id: self._token_overlap_score(qtext, self._store[doc_id][1]["section_path"])
+            doc_id: self._token_overlap_score(qtext, self._store[doc_id][1]["text"])
             for doc_id in candidate_ids
         }
         sparse_ranked_ids = sorted(
@@ -108,7 +105,7 @@ class FakeVectorStore:
         return dot / (norm_a * norm_b)
 
     @staticmethod
-    def _token_overlap_score(qtext: str, section_path: str) -> int:
+    def _token_overlap_score(qtext: str, text: str) -> int:
         query_tokens = set(qtext.lower().split())
-        section_tokens = set(section_path.lower().split())
-        return len(query_tokens & section_tokens)
+        text_tokens = set(text.lower().split())
+        return len(query_tokens & text_tokens)

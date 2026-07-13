@@ -13,6 +13,12 @@ Spike 1 settles. Concretely:
 - **T-B1 Parser (M2), T-C1 Chunker (M3), and any ticket consuming `Anchor`/`Block`** must not *start*
   (implementation) before **Spike 1** (block-bbox + snippet round-trip ≥ ~95%, PHASE0-RUNBOOK.md) passes.
   If Spike 1 forces an `Anchor` shape change, these are exactly the tickets that would need rework.
+  **Update: Spike 1 has concluded** — MinerU is locked as the sole V0 `Parser` adapter (round-trip
+  100% audited, throughput the deciding factor; Docling and Marker evaluated and dropped). T-B1 and T-C1
+  are unblocked to start implementation. See `phase0-results.md` for the full numbers and reasoning, and
+  `fixtures/golden/` for the committed golden fixture set. One caveat carried forward, not a blocker: the
+  arXiv-LaTeX ingest trial (runbook Spike 1 method step 4) was never run — see `phase0-results.md`'s "Open
+  item carried forward" note.
 - **T-D2 VectorIndex (M6) and T-E1 Retriever (M7) tuning** (top-k, hybrid weights, rerank depth) gate on
   **Spike 2** (retrieval eval, Recall@10 ≥ ~0.85).
 - **M1/Harvester (T-A1), including the in-progress M1a work, is NOT gated** — it produces `PaperRef`, never
@@ -185,11 +191,12 @@ M1a, before this implementation existed") **plus** the specifics below.
 - **T-D2 VectorIndex (M6)** — Qdrant adapter behind `VectorStore`; hybrid dense+sparse fused by calling the
   shared `rrf_fuse` (`contracts/fusion.py`, `RRF_K=60` + `hybrid_dense_weight`) — **not** a local
   reimplementation of the formula; `rebuild()`; `SearchFilters` (typed, not a dict) implemented identically
-  to the fake. *Accept:* the `rrf_fuse` unit test (owned by T-F1, run here too) plus the **cross-adapter
-  smoke test** — upsert→search round-trips the id, `SearchFilters` cases filter identically on both,
-  `rebuild()` reproduces results, and **top-1** agreement between `FakeVectorStore` and real Qdrant on an
-  engineered fixture (not full-ordering equality — TEST-STRATEGY.md explains why that's unachievable).
-  **Only** module importing `qdrant_client`.
+  to the fake. The sparse channel indexes `VectorPayload.text` — the real chunk/summary passage text — not
+  `section_path`, so keyword search actually searches passage content. *Accept:* the `rrf_fuse` unit test
+  (owned by T-F1, run here too) plus the **cross-adapter smoke test** — upsert→search round-trips the id,
+  `SearchFilters` cases filter identically on both, `rebuild()` reproduces results, and **top-1** agreement
+  between `FakeVectorStore` and real Qdrant on an engineered fixture (not full-ordering equality —
+  TEST-STRATEGY.md explains why that's unachievable). **Only** module importing `qdrant_client`.
   *CI-allowlist:* `qdrant_client` is the real vendor → add it to `VENDOR_RULES` in `ci/checks/vendor_isolation.py`
   in this same PR (§12; CI green doesn't prove isolation for an unlisted vendor).
 - **T-E1 Retriever (M7)** — two methods sharing one pipeline: embed-query → hybrid → RRF → rerank (injected
@@ -240,8 +247,9 @@ M1a, before this implementation existed") **plus** the specifics below.
   same run (T-A2 — not a separate step here); spot-check that `papers.relevance_score` is non-null corpus-wide
   before calling the seed done, so the later `relevance_filter` flip has real numbers to threshold on. Also
   log **query attribution** + spot-check harvest precision (PRD Levers "instrumenting the off choice").
-- **T-EVAL** Run the ~200-question retrieval eval on the real corpus; confirm Recall@10 ≥ 0.85. This number is
-  the baseline every future swap must beat.
+- **T-EVAL** Run the 210-question retrieval eval (`fixtures/eval/`, gold `chunk_id`s resolved in Spike 2 —
+  PHASE0-RUNBOOK.md) on the real corpus; confirm Recall@10 ≥ 0.85. This number is the baseline every future
+  swap must beat.
 
 ---
 

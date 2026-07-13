@@ -31,15 +31,23 @@ class SearchFilters(FrozenModel):
 
 
 class VectorPayload(TypedDict):
-    """Stored beside each vector — kept minimal; the DocumentStore holds the real text. A plain
-    `TypedDict` (not a `FrozenModel`) on purpose: this is exactly the dict handed to the vector
-    store client's `payload=` argument (Qdrant et al. expect plain dicts, not model instances) —
-    DATA-CONTRACTS.md itself defines it as `TypedDict`, unlike every other shape in this file.
+    """Stored beside each vector. A plain `TypedDict` (not a `FrozenModel`) on purpose: this is
+    exactly the dict handed to the vector store client's `payload=` argument (Qdrant et al. expect
+    plain dicts, not model instances) — DATA-CONTRACTS.md itself defines it as `TypedDict`, unlike
+    every other shape in this file.
+
+    `text` carries the real chunk/summary passage text — it is what the sparse/keyword search
+    channel tokenizes and indexes (previously the sparse channel had no real text available at this
+    seam and hashed `section_path` instead, a heading string, which meant "keyword search" wasn't
+    actually searching passage content). `section_path` remains as metadata only (filtering/display),
+    not as a text source for search. The DocumentStore is still the source of truth for this text;
+    it is duplicated here because the vector store needs it locally to build the sparse vector.
     """
 
     paper_id: str
     kind: Literal["chunk", "summary"]
     section_path: str
+    text: str
     categories: list[str]  # for metadata filtering
     published: str  # ISO date, for date-range filters
     embedding_version: str  # must match the collection's model version

@@ -1,19 +1,26 @@
-"""migrate.py — apply the V0 SQLite schema (migrations/0001_init.sql) to a database file.
+"""migrate.py — apply the SQLite schema (migrations/000N_*.sql) to a database file.
 
 Usage:
     python migrations/migrate.py <path/to/db.sqlite>
 
 Precondition: none — safe to run against a path that does not exist yet (sqlite3 creates the file).
-Postcondition: the database at `path` has WAL journal mode active and contains exactly the V0 tables
-(papers, blocks, chunks, summaries, ingest_state, quarantine) — no V1+ tables (DATA-CONTRACTS.md
-"SQLite schema": V1 tables are named in a comment only, never created here).
+Postcondition: the database at `path` has WAL journal mode active and contains exactly the tables
+defined across every `000N_*.sql` file in this directory (0001_init.sql's V0 tables — papers,
+blocks, chunks, summaries, ingest_state, quarantine — plus 0002_ingest_checkpoint.sql's
+`ingest_checkpoint`) — no V1+ tables (DATA-CONTRACTS.md "SQLite schema": V1 tables are named in a
+comment only, never created here).
 
-This script is intentionally a thin, literal executor of 0001_init.sql — it does not contain any
-DDL of its own. If the schema needs to change, edit 0001_init.sql (and DATA-CONTRACTS.md first,
-since that doc is the source of truth), not this file.
+This script is intentionally a thin, literal executor of the numbered `.sql` files in this
+directory — it does not contain any DDL of its own. If a schema needs to change, edit the
+relevant `000N_*.sql` file (and DATA-CONTRACTS.md first, since that doc is the source of truth),
+not this file. A new table is always a new, additive `000N_*.sql` file (0001_init.sql's own header
+comment) — never an edit to an already-applied one.
 
-Note on the `0001_` filename: despite the naming, there is no tracked-migration framework here (no
-`schema_version` table, no file-discovery/ordering) — just this one hardcoded `SCHEMA_FILE`.
+Note on the `000N_` filenames: despite the numbering, there is no tracked-migration framework here
+(no `schema_version` table, no partial-apply resume) — every file in this directory is applied, in
+filename order, every time `migrate()` runs. Re-running against an already-migrated database is
+expected to fail loudly (see `test_migrate_on_already_migrated_db_fails_loudly_not_silently`), not
+silently no-op.
 """
 
 import sqlite3
@@ -21,23 +28,26 @@ import sys
 from pathlib import Path
 
 MIGRATIONS_DIR = Path(__file__).parent
-SCHEMA_FILE = MIGRATIONS_DIR / "0001_init.sql"
+
+
+def _schema_files() -> list[Path]:
+    return sorted(MIGRATIONS_DIR.glob("[0-9][0-9][0-9][0-9]_*.sql"))
 
 
 def migrate(db_path: str) -> None:
-    """Apply the V0 schema to the SQLite database at `db_path`, creating the file if needed.
+    """Apply every numbered schema file to the SQLite database at `db_path`, creating the file if
+    needed, in filename order (0001 before 0002, ...).
 
     Sets WAL journal mode (ADR-05) before creating tables. Table creation uses plain `CREATE TABLE`
     (no `IF NOT EXISTS`) — running this against an already-migrated database is expected to fail
     loudly (ContractError-equivalent for the schema: re-running a migration is a bug, not a no-op to
     paper over) rather than silently doing nothing.
     """
-    schema_sql = SCHEMA_FILE.read_text()
-
     conn = sqlite3.connect(db_path)
     try:
         conn.execute("PRAGMA journal_mode=WAL;")
-        conn.executescript(schema_sql)
+        for schema_file in _schema_files():
+            conn.executescript(schema_file.read_text())
         conn.commit()
     finally:
         conn.close()

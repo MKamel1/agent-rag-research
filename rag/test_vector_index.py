@@ -1,8 +1,9 @@
-# M1A-DORMANT (re-enable in M1b): the real-adapter cross-adapter tests skip until
-# rag/vector_index.py exists. M1b DoD (CONVENTIONS §11) requires this suite active (importorskip
-# resolves) and green. The rrf_fuse unit tests and the FakeVectorStore side of the cross-adapter
-# smoke test run NOW (they touch only contracts.fusion + rag.fakes, which already exist) — that is
-# the CI-green M1a portion (TEST-STRATEGY.md "VectorIndex" / "Contract tests").
+# M1b: real-adapter cross-adapter tests are active. They need a live vector-store service
+# reachable at localhost:6333 (this repo's documented default, CONVENTIONS.md §2's example) and
+# opt out of the global `--disable-socket` via the `enable_socket` marker (pytest-socket) on just
+# those tests; if no service is reachable (the common case — this default job doesn't run one),
+# they skip with a clear reason rather than failing the build, same as the nightly/M2 job's
+# real-adapter contract tests are meant to.
 """M6 VectorIndex test suite (T-D2), written test-first (TEST-STRATEGY.md "VectorIndex" + the
 `rrf_fuse`/cross-adapter "Contract tests" section, DATA-CONTRACTS.md §M6).
 
@@ -16,16 +17,16 @@ found unachievable):
    `SearchFilters` (categories / date-range / kind) filter identically, `rebuild()` reproduces
    results, and the **top-1** result (NOT full ordering) matches on a fixture engineered so one
    document dominates both the dense and sparse signal. The `FakeVectorStore` side runs now; the
-   real-adapter side needs the vector service + opts out of the global `--disable-socket` in the
-   nightly/M2 job, so it is guarded by `pytest.importorskip("rag.vector_index")` and skipped here
-   (M1a does NOT build the nightly job or import the real backend SDK).
+   real-adapter side needs a live vector-store service and network, so
+   `test_real_adapter_satisfies_contract` below is marked `@pytest.mark.enable_socket` and skips
+   (not fails) if it can't reach one.
 """
 
 from datetime import date
 
 import pytest
 
-from contracts.errors import ContractError
+from contracts.errors import ContractError, TransientError
 from contracts.fusion import RRF_K, rrf_fuse
 from contracts.vector_index import SearchFilters, VectorPayload
 from rag.fakes.fake_vector_store import FakeVectorStore
@@ -101,6 +102,7 @@ def _payload(**overrides) -> VectorPayload:
         "paper_id": "2506.01234",
         "kind": "chunk",
         "section_path": "3. Method",
+        "text": "sample passage text",
         "categories": ["cs.LG"],
         "published": "2026-06-01",
         "embedding_version": "v1",
@@ -111,14 +113,15 @@ def _payload(**overrides) -> VectorPayload:
 
 def _seed_dominant_fixture(adapter) -> str:
     """Upsert a fixture engineered so ONE document ("winner") dominates BOTH signals: its vector
-    equals the query vector (dense rank 1) AND its section_path shares every query token (sparse
-    rank 1). The other documents are dense-orthogonal and share no query tokens. Returns the id of
-    the document that must come back top-1. Same fixture the real adapter reuses in the nightly job.
+    equals the query vector (dense rank 1) AND its `text` shares every query token (sparse rank 1).
+    The other documents are dense-orthogonal and share no query tokens. Returns the id of the
+    document that must come back top-1. Same fixture the real adapter reuses in the nightly job.
+    `section_path` is left at a plausible default throughout -- it's no longer the sparse source.
     """
-    adapter.upsert("winner", [1.0, 0.0], _payload(section_path="method estimator"))
-    adapter.upsert("dense_only", [1.0, 0.0], _payload(section_path="unrelated header"))
-    adapter.upsert("sparse_only", [0.0, 1.0], _payload(section_path="method estimator"))
-    adapter.upsert("noise", [0.0, 1.0], _payload(section_path="acknowledgements"))
+    adapter.upsert("winner", [1.0, 0.0], _payload(text="method estimator"))
+    adapter.upsert("dense_only", [1.0, 0.0], _payload(text="unrelated header"))
+    adapter.upsert("sparse_only", [0.0, 1.0], _payload(text="method estimator"))
+    adapter.upsert("noise", [0.0, 1.0], _payload(text="acknowledgements"))
     return "winner"
 
 
@@ -176,6 +179,60 @@ def assert_rebuild_reproduces_results(adapter):
     assert after[0].id == winner
 
 
+def assert_sparse_channel_distinguishes_real_text(adapter):
+    """Two points share an IDENTICAL `section_path` (so a heading-based sparse signal could never
+    tell them apart) but have different real `text`. Dense vectors are identical too (a tie), and
+    ids are chosen so the id-ascending tie-break would pick the WRONG winner absent a real sparse
+    signal -- so this only passes if the sparse channel is genuinely keying off `text`.
+    """
+    adapter.upsert(
+        "aaa_wrong", [0.0, 1.0], _payload(section_path="3. Method", text="totally unrelated content")
+    )
+    adapter.upsert(
+        "zzz_right", [0.0, 1.0], _payload(section_path="3. Method", text="a treatment effect estimator")
+    )
+    hits = adapter.hybrid_search(
+        qvec=[0.0, 1.0], qtext="treatment effect estimator", filters=None, k=10
+    )
+    assert hits[0].id == "zzz_right"
+
+
+def assert_summary_gets_real_sparse_signal_despite_empty_section_path(adapter):
+    """Production code (`rag/orchestrator.py`) passes `section_path=""` for `kind="summary"`
+    payloads -- before this fix that meant zero sparse signal for every summary vector. With `text`
+    populated, a summary must still be reachable via the sparse channel even with `section_path`
+    empty. Same tie-break trick as above: identical dense vectors, ids chosen so a broken/absent
+    sparse signal would pick the wrong winner.
+    """
+    adapter.upsert(
+        "decoy", [1.0, 0.0], _payload(kind="summary", section_path="", text="unrelated topic entirely")
+    )
+    adapter.upsert(
+        "target",
+        [1.0, 0.0],
+        _payload(kind="summary", section_path="", text="a comprehensive causal discovery survey"),
+    )
+    hits = adapter.hybrid_search(qvec=[1.0, 0.0], qtext="causal discovery survey", filters=None, k=10)
+    assert hits[0].id == "target"
+
+
+def assert_rebuild_preserves_sparse_text_signal(adapter):
+    """`rebuild()` copies payload+vectors verbatim (no re-embedding) -- confirm the new `text` field,
+    and therefore the sparse channel's ability to distinguish real content, survives a rebuild.
+    """
+    adapter.upsert(
+        "aaa_wrong", [0.0, 1.0], _payload(section_path="3. Method", text="totally unrelated content")
+    )
+    adapter.upsert(
+        "zzz_right", [0.0, 1.0], _payload(section_path="3. Method", text="a treatment effect estimator")
+    )
+    adapter.rebuild()
+    hits = adapter.hybrid_search(
+        qvec=[0.0, 1.0], qtext="treatment effect estimator", filters=None, k=10
+    )
+    assert hits[0].id == "zzz_right"
+
+
 CONTRACT = (
     assert_upsert_search_round_trips_id,
     assert_filters_by_category,
@@ -183,6 +240,9 @@ CONTRACT = (
     assert_filters_by_kind,
     assert_top1_is_the_dominant_document,
     assert_rebuild_reproduces_results,
+    assert_sparse_channel_distinguishes_real_text,
+    assert_summary_gets_real_sparse_signal_despite_empty_section_path,
+    assert_rebuild_preserves_sparse_text_signal,
 )
 
 
@@ -192,13 +252,25 @@ def test_fake_adapter_satisfies_contract(check):
     check(FakeVectorStore())
 
 
+@pytest.mark.enable_socket  # opts out of the default job's --disable-socket for this test only
 @pytest.mark.parametrize("check", CONTRACT, ids=[c.__name__ for c in CONTRACT])
 def test_real_adapter_satisfies_contract(check):
-    # Dormant until M1b: the real adapter needs the vector service and opts out of the global
-    # --disable-socket in the nightly/M2 CI job. M1b replaces the skip below with:
-    #     adapter = real.VectorIndex(<config + service handle>)
-    #     check(adapter)
-    # so the SAME contract functions above run against the real backend (top-1 agreement, etc.).
+    # Needs a live vector-store service at localhost:6333 (this repo's documented default). Most
+    # default runs of this suite don't have one up, so a connection failure skips with a clear
+    # reason rather than failing the build — the nightly/M2 job is where this is expected to
+    # actually run and be required green. A fresh collection per `check` mirrors the fake's
+    # fresh-instance-per-check isolation; it's torn down after, so reruns never see stale state.
     real = pytest.importorskip("rag.vector_index")
-    assert hasattr(real, "VectorIndex")
-    pytest.skip("real vector adapter contract runs in the nightly/M2 job (needs vector service)")
+
+    collection = f"m1a_contract_{check.__name__}"
+    try:
+        adapter = real.VectorIndex(
+            host="localhost", port=6333, collection_name=collection, dim=2, hybrid_dense_weight=0.5
+        )
+    except TransientError as e:
+        pytest.skip(f"no live vector-store service reachable at localhost:6333: {e}")
+
+    try:
+        check(adapter)
+    finally:
+        adapter._client.delete_collection(collection)

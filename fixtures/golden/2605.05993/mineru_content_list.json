@@ -1,0 +1,2836 @@
+[
+    {
+        "type": "text",
+        "text": "TabCF: Distributional Control Function Estimation with Tabular Foundation Models",
+        "text_level": 1,
+        "bbox": [
+            117,
+            138,
+            879,
+            190
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Geping Chen Iowa State University gepingc@iastate.edu",
+        "bbox": [
+            155,
+            212,
+            352,
+            265
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Chunlin Li University of Virginia chunlin@virginia.edu",
+        "bbox": [
+            392,
+            212,
+            598,
+            263
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Zhengyuan Zhu Iowa State University zhuz@iastate.edu",
+        "bbox": [
+            245,
+            271,
+            429,
+            323
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Tianzhong Yang University of Minnesota yang3704@umn.edu",
+        "bbox": [
+            635,
+            210,
+            841,
+            265
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Jing Zhou University of Manchester jing.zhou@manchester.ac.uk",
+        "bbox": [
+            485,
+            272,
+            753,
+            325
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Abstract",
+        "text_level": 2,
+        "bbox": [
+            460,
+            359,
+            537,
+            373
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Instrumental variable (IV) and control function (CF) methods are powerful tools for causal efect estimation in the presence of unmeasured confounding, yet most existing approaches target only mean efects and/or demand substantial fitting and tuning efort. In this paper, we introduce a simple method, TabCF, for control function regression using tabular foundation models, which enables accurate, fast, identification-transparent, and tuning-light causal estimation of distributional quantities, such as interventional means and quantiles; we also propose a copulabased approximation for multivariate outcomes. TabCF performs favorably against representative methods across a broad range of small- to medium-sized synthetic and real data scenarios. The central message is two-fold: for practitioners, it highlights that TabCF is an efective tool for distributional causal inference; for researchers, it suggests that the proposed approach could be considered a strong baseline for future method development. Code is available at https://github.com/GepingChen/TabCF.",
+        "bbox": [
+            156,
+            382,
+            839,
+            565
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "1 Introduction",
+        "text_level": 2,
+        "bbox": [
+            114,
+            588,
+            299,
+            607
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Instrumental variables (IV) and control functions (CF) are powerful tools tackling unmeasured confounding in causal inference, but a majority of the IV literature has focused on mean efects [2, 8, 15, 16, 21, 29]. In many applications, however, the object of interest is distributional: practitioners want to know how an intervention changes risk, tail behavior, inequality, or other heterogeneous features of the outcome distribution, not only its average.",
+        "bbox": [
+            111,
+            621,
+            885,
+            707
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "Recent work has made remarkable progress on distributional IV estimation, including methods that target the full interventional distribution [20, 23]. Meanwhile, many flexible IV estimators, including those mentioned above, remain expensive to tune and often require dataset-specific architecture choices, hyperparameter search, or repeated refitting for diferent estimands [5, 16, 20, 23]. More recently, advances in tabular foundation models (TFMs) have attracted considerable attention. These models amortize learning across many tasks and produce predictive distributions in a single forward pass [27], showing strong performance on small- to medium-sized samples and calibrated predictive uncertainty without per-dataset training [14, 19]. However, existing causal methods based on TFMs either focus only on mean efects [4, 26] or rely on agnostic identification approaches [34].",
+        "bbox": [
+            111,
+            707,
+            885,
+            861
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "In response to this practical gap, we introduce TabCF, showing that the explicit control function identification formula of [22] can be operationalized with modern TFMs to produce an empirically accurate, computationally fast, and tuning-light estimator for interventional distribution functionals under continuous treatment IV settings. Specifically, we summarize the strengths of TabCF in the following aspects:",
+        "bbox": [
+            111,
+            861,
+            885,
+            912
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "aside_text",
+        "text": "arXiv:2605.05993v1 [stat.ML] 7 May 2026",
+        "bbox": [
+            22,
+            268,
+            58,
+            724
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "page_number",
+        "text": "1",
+        "bbox": [
+            493,
+            935,
+            504,
+            948
+        ],
+        "page_idx": 0
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            111,
+            90,
+            883,
+            126
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "1. TabCF delivers strong performance out of the box. By design, TabCF inherits the strengths of modern TFMs [19, 33], and delivers accurate and fast distributional estimation while requiring minimal tuning. We also provide a user-friendly software for TabCF, publicly available at https://github.com/GepingChen/TabCF.",
+        "bbox": [
+            133,
+            137,
+            885,
+            207
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2. TabCF supports additional practical flexibility. Existing TFMs for causal inference largely focus on univariate outcomes [4, 26, 34]. To enable causal analysis of multiple outcomes, we have extended TabCF based on a practical copula to approximate joint interventional distributions, thereby greatly expanding its applicability. Moreover, the TabCF interface also allows the adjustment of pretreatment covariates, a feature that is practically necessary yet overlooked in many existing implementations [5, 23, 35].",
+        "bbox": [
+            132,
+            215,
+            887,
+            320
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "3. TabCF is transparent in causal analysis. TabCF adopts an identification approach that facilitates direct estimation using TFMs. This design separates the role of causal assumptions from the choice of the predictive backbone model. As a result, it preserves the interpretability of causal analysis, allows diagnostics of each step, and unleashes the power of using a foundation model as a plug-in distributional regressor.",
+        "bbox": [
+            132,
+            330,
+            885,
+            416
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "We have conducted comprehensive experiments: TabCF performs favorably against representative and state-of-the-art methods across a broad range of small- to medium-sized data scenarios. The central message is two-fold: for practitioners, TabCF is an efective tool for distributional causal inference; for researchers, we believe TabCF will serve as a strong baseline for future method development.",
+        "bbox": [
+            111,
+            428,
+            885,
+            513
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Related work. Our work connects TFMs and causal inference.",
+        "text_level": 2,
+        "bbox": [
+            112,
+            531,
+            627,
+            547
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "TFMs have received growing attention in recent years, due to their strong performance in broad scenarios. Notably, the TabArena leaderboard [11] displays several TFMs in its top ranks: the TabPFN family, including TabPFNv1 [18], TabPFNv2 [19], and TabPFNv2.5 [14]; the TabICL family, including TabICLv1 [32] and TabICLv2 [33]; TabDPT [25]; and Mitra [41]. Since TabCF targets interventional distributions, distributional prediction is especially relevant: TabPFNv2 and TabPFNv2.5 model regression through binned predictive distributions, while TabICLv2 directly predicts many quantiles and reconstructs distributions, densities, and moments. By contrast, TabDPT and Mitra are less direct distributional backbones in their current forms.",
+        "bbox": [
+            111,
+            549,
+            885,
+            685
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "Besides general TFMs, amortized causal inference also gathers significant interest. BBCI [6] learns a task-specific estimator by meta-training a predictor on dataset-efect pairs, enabling amortized estimation of causal efects; however, their implementation is not publicly available. CausalPFN [4] targets average causal efects while assuming unconfoundedness, so it is not designed for IV settings with hidden confounding. Do-PFN [34] predicts conditional interventional distributions without requiring the ground truth causal graph, but its identification logic is absorbed into the learned posterior, making it less transparent. CausalFM [26] trains PFN-based estimators for various identification regimes, but focuses only on average/conditional average treatment efects rather than interventional distributions. Moreover, their implementations [4, 26, 34] are limited to binary treatments.",
+        "bbox": [
+            111,
+            685,
+            887,
+            858
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "page_number",
+        "text": "2",
+        "bbox": [
+            491,
+            934,
+            504,
+            948
+        ],
+        "page_idx": 1
+    },
+    {
+        "type": "text",
+        "text": "2 TabCF framework",
+        "text_level": 2,
+        "bbox": [
+            112,
+            88,
+            364,
+            107
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "We consider a structural causal model with unobserved confounding,",
+        "bbox": [
+            111,
+            122,
+            651,
+            138
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "img_path": "images/cdd1568a1ee34f46213e1dc49f53046f20dd36564776f70fa9b76951a8bf403b.jpg",
+        "text": "$$\nY = g ( X , W , \\varepsilon ) , \\qquad X = h ( Z , W , \\eta ) ,\\tag{1}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            352,
+            151,
+            642,
+            169
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "where Y is an outcome, X is a continuous treatment, Z is an instrument, and W is a vector of observed pretreatment covariates. The disturbances ε and η capture unobserved factors afecting the outcome and treatment, respectively. The absence of Z from the outcome equation encodes the exclusion restriction [2]: Z afects Y only through X. We allow $( \\eta , \\varepsilon )$ to be arbitrarily dependent conditional on W. Thus, treatment assignment may remain confounded after adjusting for W, because unobserved factors influencing X may also influence $Y \\ [ 2 2 ]$ . Our target is the interventional outcome cumulative distribution function (CDF):",
+        "bbox": [
+            111,
+            181,
+            885,
+            301
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "equation",
+        "img_path": "images/57e1a0b6b8b4ac33bb09e93085072d0d57a0d618dbd265517466ea71eb71a937.jpg",
+        "text": "$$\nF _ { Y ( x ) } ( y ) : = \\mathbb { P } ( Y \\leq y \\mid \\mathrm { d o } ( X = x ) ) , \\qquad y \\in \\mathbb { R } ,\\tag{2}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            313,
+            313,
+            681,
+            332
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "which fully characterizes distributional causal efects, where do(·) is the do-operator [30]. Common causal functionals can be derived from this CDF, such as:",
+        "bbox": [
+            111,
+            343,
+            883,
+            376
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "(a) Interventional mean: $\\begin{array} { r } { \\mu ( x ) = \\mathbb { E } [ Y \\mid \\mathrm { d o } ( X = x ) ] = \\int _ { 0 } ^ { \\infty } ( 1 - F _ { Y ( x ) } ( y ) ) d y - \\int _ { - \\infty } ^ { 0 } F _ { Y ( x ) } ( y ) d y } \\end{array}$",
+        "bbox": [
+            140,
+            377,
+            859,
+            396
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "(b) Interventional τ-quantile: $q _ { \\tau } ( x ) = \\operatorname* { i n f } \\{ y \\in \\mathbb { R } : F _ { Y ( x ) } ( y ) \\geq \\tau \\}$ for any $\\tau \\in ( 0 , 1 )$",
+        "bbox": [
+            140,
+            395,
+            781,
+            411
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "(c) Interventional Gini index: $\\begin{array} { r } { \\mu ( x ) ^ { - 1 } \\int _ { 0 } ^ { \\infty } F _ { Y ( x ) } ( y ) ( 1 - F _ { Y ( x ) } ( y ) ) d y , Y ( x ) \\ge 0 } \\end{array}$ almost surely.",
+        "bbox": [
+            140,
+            411,
+            856,
+            430
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "2.1 Preliminaries",
+        "text_level": 2,
+        "bbox": [
+            112,
+            448,
+            297,
+            464
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Tabular foundation model (TFM) and in-context distributional learning. When ε and η are independent (i.e., no hidden confounding), the interventional distribution $F _ { Y ( x ) } ( y )$ reduces to the conditional distribution $F _ { Y \\mid X } ( y \\mid x )$ . In such situations, modern TFMs [19, 33] can provide fast, accurate estimation of conditional distributions via in-context learning. Given a dataset D and a test point x, rather than performing per-dataset training to learn the conditional distribution, TFMs learn a direct map $( x , { D } ) \\mapsto F _ { Y \\mid X } ( y \\mid x )$ by pretraining a transformer on a large collection of synthetic datasets generated from a flexible structural prior. At inference time, the pretrained model parameters are fixed: the model receives the entire observed dataset as “context” and returns ${ \\widehat { F } } _ { Y \\mid X } ( \\cdot \\mid x )$ for any test point x in a single forward pass, without gradient-based fitting on D. The procedure does not require explicit tuning and has demonstrated strong performance on small-to-medium samples.",
+        "bbox": [
+            111,
+            474,
+            885,
+            646
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "However, the reduction from $F _ { Y ( x ) }$ to $F _ { Y \\mid X }$ relies on the absence of hidden confounding. When ε and η are dependent, $F _ { Y \\mid X }$ generally difers from the interventional distribution $F _ { Y ( x ) }$ , so directly estimating the conditional distribution is no longer suficient for causal inference. To target $F _ { Y ( x ) }$ in this setting, we integrate TFMs with a control function approach.",
+        "bbox": [
+            111,
+            646,
+            885,
+            715
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "Instrumental variable and control function. Instrumental variable (IV) is a special type of variable that helps mitigate hidden confounding. In equation 1, Z is called an IV if it satisfies:",
+        "bbox": [
+            111,
+            733,
+            883,
+            767
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "(IV1) Relevance: X must depend on $Z ,$ or equivalently $Z \\not \\perp X \\mid W$",
+        "bbox": [
+            112,
+            777,
+            658,
+            795
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "(IV2) Exclusion: Z afects Y only through X, or equivalently $Y \\perp \\perp Z \\mid X , W , \\varepsilon$",
+        "bbox": [
+            112,
+            805,
+            743,
+            823
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "(IV3) Unconfoundedness: $Z \\perp \\perp ( \\varepsilon , \\eta ) \\mid W$",
+        "bbox": [
+            112,
+            833,
+            450,
+            851
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "With a valid IV, causal efects can be identified under suitable assumptions [2]. For example, in the linear causal model, the IV approach is called the two-stage least squares (2SLS) regression, where the mean coeficient is identified as Cov $\\cdot ( Y , Z \\mid W ) / \\mathrm { C o v } ( X , Z \\mid W )$",
+        "bbox": [
+            111,
+            861,
+            883,
+            912
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "page_number",
+        "text": "3",
+        "bbox": [
+            491,
+            935,
+            504,
+            948
+        ],
+        "page_idx": 2
+    },
+    {
+        "type": "text",
+        "text": "The control function (CF) approach is a subfamily of IV-based methods [15, 31, 39]. The idea of CF is to construct a function of $( X , Z , W )$ that is independent of the instrument Z conditional on W and controls for the latent variation in X that is related to the outcome disturbance. As a result, one can use CF as a proxy for the unmeasured confounding. In the linear causal model, CF is also called the two-stage residual inclusion (2SRI) regression [39], and is mathematically equivalent to 2SLS.",
+        "bbox": [
+            111,
+            90,
+            887,
+            194
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "2.2 Choice of CF identification strategy",
+        "text_level": 2,
+        "bbox": [
+            111,
+            213,
+            514,
+            231
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Not all CF methods, together with their identification conditions, are equally convenient to integrate with TFMs. In the literature, identification schemes based on CF can be informally categorized into two groups: the “explicit approach” and the “implicit approach.” In the explicit approach, the target causal quantity is represented directly as a functional of observed data objects [12, 22]. In this case, estimation is naturally plug-in: one estimates the required nuisance components from the data and substitutes them into the explicit identification formula. In the implicit approach, by contrast, the target causal quantity is not expressed in closed form as a direct functional of observed quantities. Instead, it is characterized as the solution to an equation, an optimization problem, a fixed point, or an inverse problem [24, 31]. While both approaches are valid, we find the explicit approach preferable when integrating TFMs, as the implicit approach may amplify estimation errors introduced by the foundation model; see Appendix A.1 for further discussion.",
+        "bbox": [
+            111,
+            239,
+            885,
+            428
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "In this work, we take the explicit approach of [22] and impose the following identifiability conditions for the control function",
+        "bbox": [
+            111,
+            428,
+            885,
+            462
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "img_path": "images/183496e03f7b4b6303984ee60e783539b4b5486bdbbbec2e05c18b73d69584c2.jpg",
+        "text": "$$\nV = F _ { X \\mid Z , W } ( X \\mid Z , W ) .\\tag{3}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            401,
+            476,
+            593,
+            494
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "(CF1) Monotonicity: The conditional CDF $F _ { \\eta | W } ( \\cdot \\mid w )$ is strictly monotonic on its support. For $F _ { W } \\mathrm { - a l m o s t }$ every w, the map $\\eta \\mapsto h ( z , w , \\eta )$ is continuous and strictly monotonic, where the orientation does not depend on z.",
+        "bbox": [
+            112,
+            507,
+            883,
+            559
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "(CF2) Common support: For $F _ { W }$ -almost every w and for all $x \\in { \\mathrm { s u p p } } ( X )$ , we have $\\operatorname { s u p p } ( V \\mid X =$ $x , W = w ) = \\operatorname { s u p p } ( V \\mid W = w ) = [ 0 , 1 ]$ , where supp(·) is the support set of a distribution.",
+        "bbox": [
+            112,
+            570,
+            882,
+            606
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Under (CF1), V is a one-to-one transform of $\\eta .$ . Therefore, equation 1 and (IV3) imply $\\varepsilon \\perp \\perp$ $X \\mid V , W$ . Meanwhile, (CF2) ensures the conditional law $\\boldsymbol { Y } \\mid ( \\boldsymbol { X } = \\boldsymbol { x } , \\boldsymbol { V } = \\boldsymbol { v } , \\boldsymbol { W } = \\boldsymbol { w } )$ is defined for all relevant $( x , v , w )$ . As a result, conditioning on $( X , V , W )$ isolates the latent heterogeneity for outcomes, and the conditional CDF $F _ { Y | X , V , W } ( \\cdot \\mid x , v , w )$ can help recover interventional distributions by integrating out V . This is summarized in Proposition 2.1.",
+        "bbox": [
+            111,
+            619,
+            885,
+            707
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Proposition 2.1. Suppose $( I V I ) { - } ( I V { 3 } )$ and $( C F 1 ) \\ – ( C F 2 )$ hold. Then for $( x , y ) \\in \\operatorname { s u p p } ( X ) \\times \\mathbb { R }$ ， the interventional conditional and marginal CDFs are respectively identified as",
+        "bbox": [
+            111,
+            717,
+            883,
+            751
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "equation",
+        "img_path": "images/9bc0b115377198301c8efa8b1d4f8d574de3d9ecefb5321c20db7bc98f1a0d9d.jpg",
+        "text": "$$\nF _ { Y ( x ) | W } ( y \\mid w ) = \\int _ { 0 } ^ { 1 } F _ { Y | X , V , W } ( y \\mid x , v , w ) d v , \\qquad F _ { Y ( x ) } ( y ) = \\mathbb { E } _ { W } \\left[ F _ { Y ( x ) | W } ( y \\mid W ) \\right] .\\tag{4}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            169,
+            762,
+            825,
+            799
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "2.3 TabCF Procedure",
+        "text_level": 2,
+        "bbox": [
+            112,
+            815,
+            341,
+            832
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "We now turn to estimation and let $\\mathcal { D } _ { n } = \\{ ( W _ { i } , Z _ { i } , X _ { i } , Y _ { i } ) \\} _ { i = 1 } ^ { n }$ denote the observed sample of n i.i.d. copies of $( W , Z , X , Y )$ . TabCF produces the distributional estimate in the following three stages:",
+        "bbox": [
+            111,
+            842,
+            885,
+            877
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "page_number",
+        "text": "4",
+        "bbox": [
+            493,
+            935,
+            504,
+            948
+        ],
+        "page_idx": 3
+    },
+    {
+        "type": "text",
+        "text": "Stage U1: constructing the control variable. We treat $( Z , W ) \\mapsto X$ as a distributional regression task with context dataset ${ \\mathcal D } _ { n } ^ { ( 1 ) } = \\{ ( { Z } _ { i } , { W } _ { i } ) , { X } _ { i } ) \\} _ { i = 1 } ^ { n }$ . TabCF yields an estimated distribution $\\widehat { F } _ { X | Z , W } ( \\cdot \\mid z , w )$ for any test point $( z , w )$ . We then form the plug-in control variable by the probability integral transform, $\\widehat { V } _ { i } = \\widehat { F } _ { X \\mid Z , W } ( X _ { i } \\mid Z _ { i } , W _ { i } ) , i = 1 , \\ldots , n$",
+        "bbox": [
+            111,
+            90,
+            885,
+            167
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Stage U2: estimating the conditional outcome distribution. Next, we treat $( X , V , W ) \\mapsto Y$ as a second distributional regression task with context dataset $\\mathcal { D } _ { n } ^ { ( 2 ) } = \\{ ( ( X _ { i } , \\widehat { V } _ { i } , W _ { i } ) , Y _ { i } ) \\} _ { i = 1 } ^ { n }$ . TabCF returns a distributional estimate $\\widehat { F } _ { Y | X , V , W } ( y \\mid x , v , w )$ for any test point $( x , v , w )$",
+        "bbox": [
+            111,
+            185,
+            883,
+            242
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Stage U3: estimating the interventional distributions. Combining the two stages, we estimate the interventional CDFs in equation 4 by their empirical approximation defined as",
+        "bbox": [
+            111,
+            260,
+            883,
+            295
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "img_path": "images/a9bd715c7e998b435bc12ab8faf0e8aa913b04c9bd17f1b37ae3dbdd88d4b1ec.jpg",
+        "text": "$$\n\\widehat { F } _ { Y ( x ) | W } ( y \\mid w ) = \\frac { 1 } { n } \\sum _ { i = 1 } ^ { n } \\widehat { F } _ { Y | X , V , W } ( y \\mid x , \\widehat { V } _ { i } , w ) , \\quad \\widehat { F } _ { Y ( x ) } ( y ) = \\frac { 1 } { n } \\sum _ { i = 1 } ^ { n } \\widehat { F } _ { Y | X , V , W } ( y \\mid x , \\widehat { V } _ { i } , W _ { i } ) .\\tag{5}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            151,
+            306,
+            841,
+            348
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "We make two remarks: First, TabCF only uses TFMs for distributional regression. Due to this plug-in approach, it is convenient to obtain all intermediate nuisance estimates, which enable model diagnostics and thus improve the transparency of causal data analysis; see Appendix A.2 for further discussion. By contrast, it is less straightforward for recent amortized, black-box causal inference methods [4, 6, 26, 34].",
+        "bbox": [
+            111,
+            361,
+            883,
+            445
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Second, TabCF uses the full sample to estimate both stages. We also considered sample splitting and cross-fitting; however, in our synthetic experiments, cross-fitting did not improve final interventional mean or quantile accuracy and took longer runtime. We therefore use the full sample for TabCF; see Appendix A.3.",
+        "bbox": [
+            111,
+            445,
+            883,
+            515
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "3 Extending to multivariate outcomes",
+        "text_level": 2,
+        "bbox": [
+            112,
+            537,
+            563,
+            558
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "We now extend TabCF from a univariate outcome to a K-dimensional response $Y = \\left( Y _ { 1 } , \\dots , Y _ { K } \\right)$ with $K \\geq 2$ . The goal is to estimate the joint interventional distribution of Y given the intervention $\\operatorname { d o } ( X = x )$",
+        "bbox": [
+            111,
+            570,
+            885,
+            622
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "img_path": "images/24cdac25a5fbba00345b955adaa0737fea8d26b3120f7b5f3cfd3d58e4df3e4d.jpg",
+        "text": "$$\nF _ { Y ( x ) } ( y ) = \\mathbb { P } { \\Big ( } Y _ { 1 } \\leq y _ { 1 } , \\ldots , Y _ { K } \\leq y _ { K } ~ | ~ \\operatorname { d o } ( X = x ) { \\Big ) } , \\qquad y = ( y _ { 1 } , \\ldots , y _ { K } ) \\in \\mathbb { R } ^ { K } .\\tag{6}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            189,
+            636,
+            805,
+            661
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "By Sklar’s theorem [36], there exists a copula function $C _ { x } : [ 0 , 1 ] ^ { K } \\to [ 0 , 1 ]$ such that",
+        "bbox": [
+            112,
+            675,
+            772,
+            694
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "equation",
+        "img_path": "images/f3c985c9903fea42a42e168a5ac398d80eb78d3ca868b586145159c077ae3e39.jpg",
+        "text": "$$\nF _ { Y ( x ) } ( y ) = C _ { x } { \\Big ( } F _ { Y _ { 1 } ( x ) } ( y _ { 1 } ) , \\dots , F _ { Y _ { K ( x ) } } ( y _ { K } ) { \\Big ) } .\\tag{7}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            325,
+            707,
+            668,
+            731
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The marginal interventional distributions are identified under the CF assumptions. The joint interventional law additionally requires assumptions on the copula. TabCF uses an x-invariant working copula $C \\ = \\ C _ { x }$ to combine the marginals as a practical approximation instead of a nonparametric identification result for $F _ { Y ( x ) } ( y )$",
+        "bbox": [
+            111,
+            743,
+            883,
+            813
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "The estimation proceeds in two stages:",
+        "bbox": [
+            140,
+            813,
+            447,
+            829
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Stage M1: estimating the marginal interventional distributions. For $k = 1 , \\ldots , K$ , we estimate the marginal interventional distribution $\\widehat { F } _ { Y _ { k } ( x ) }$ following Stages U1–U3 in Section 2.3.",
+        "bbox": [
+            111,
+            848,
+            883,
+            883
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "page_number",
+        "text": "5",
+        "bbox": [
+            493,
+            934,
+            504,
+            948
+        ],
+        "page_idx": 4
+    },
+    {
+        "type": "text",
+        "text": "Stage M2: fitting a copula. We fit a copula model to summarize the dependence among the response components after the marginal interventional distributions have been estimated. The fitted copula is then used to merge the marginal estimates ${ \\widehat F _ { Y _ { k } ( x ) } } ^ { * } { \\mathrm { { s } } }$ into a joint interventional distribution.",
+        "bbox": [
+            111,
+            90,
+            885,
+            143
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4 Synthetic experiments",
+        "text_level": 2,
+        "bbox": [
+            112,
+            166,
+            410,
+            186
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "We examine the operating characteristics of TabCF and compare it with the representative methods.",
+        "bbox": [
+            111,
+            199,
+            885,
+            217
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "4.1 Univariate outcome: Comparative studies on interventional means",
+        "text_level": 2,
+        "bbox": [
+            112,
+            236,
+            808,
+            253
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "We consider the following treatment models and outcome models, where we draw $Z \\sim \\mathcal { N } ( 1 . 5 , 0 . 7 5 ^ { 2 } )$ and $H , \\varepsilon _ { X } , \\varepsilon _ { Y } \\sim \\mathcal { N } ( 0 , 1 )$ . These settings are adapted from [20].",
+        "bbox": [
+            111,
+            261,
+            882,
+            297
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Treatment models. We define the treatment X using the following settings:",
+        "bbox": [
+            112,
+            315,
+            736,
+            333
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "(T1) Additive linear mean: $X = Z + H + \\varepsilon _ { X } ;$",
+        "bbox": [
+            112,
+            335,
+            477,
+            352
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "(T2) Quadratic mean with linear scale: $\\begin{array} { r } { X = \\left( 2 Z + \\frac { 1 } { 4 } Z ^ { 2 } \\right) + ( 1 + 0 . 1 5 Z ) \\left( H + \\varepsilon _ { X } \\right) . } \\end{array}$",
+        "bbox": [
+            112,
+            356,
+            753,
+            375
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Outcome models. We define the outcome Y using the following settings:",
+        "bbox": [
+            111,
+            392,
+            712,
+            410
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "(O1) Piecewise outcome: $Y = \\mathbf { 1 } _ { \\{ X \\leq 1 \\} } \\frac { 1 } { 5 } \\big ( 5 . 5 + 2 X + 3 H + \\varepsilon _ { Y } \\big ) + \\mathbf { 1 } _ { \\{ X > 1 \\} } \\log \\big ( ( 2 X + H ) ^ { 2 } + \\varepsilon _ { Y } ^ { 2 } \\big )$",
+        "bbox": [
+            112,
+            411,
+            849,
+            431
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "(O2) Periodic outcome with linear trend: $Y = 3 \\sin ( 2 X ) + 2 X - 3 H + \\varepsilon _ { Y } ;$",
+        "bbox": [
+            112,
+            433,
+            697,
+            450
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "(O3) Periodic nonadditive interaction: $Y = 1 + 2 X + \\cos ( 2 X ) + X H - H + \\varepsilon _ { Y } .$",
+        "bbox": [
+            112,
+            454,
+            743,
+            470
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Combining the two treatment models with the three outcome models yields six settings. We do not include pretreatment covariates W in the settings for comparative studies, because some competitors implementations do not allow them. We have included additional experiments with covariates in Appendix C.1. Note that the above treatment models satisfy the common support (CF2) condition. We further examine the scenarios where (CF2) is moderately violated in Appendix C.2.",
+        "bbox": [
+            111,
+            473,
+            885,
+            559
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Under the above settings, we evaluate the estimation of the interventional mean function $\\mu ( x ) = \\operatorname { \\mathbb { E } } [ Y \\mid \\operatorname { d o } ( X = x ) ]$",
+        "bbox": [
+            111,
+            559,
+            882,
+            594
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Benchmark methods. We compare TabCF against a set of classical and modern baselines that are commonly used for IV-based mean estimation. We include: (i) control function (CF) estimators in linear and nonlinear variants [15]; (ii) flexible ML-based IV methods such as DIV [20], DeepIV [16] and DeepGMM [5]; and (iii) TabPFN-naive [19], which directly estimates the conditional distribution as if there was no confounding (without IV adjustment). Appendix D provides short descriptions and implementation details for each baseline.",
+        "bbox": [
+            111,
+            613,
+            885,
+            717
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "text",
+        "text": "Metric. We report the mean squared error (MSE) of the estimated interventional mean curve on a held-out grid of intervention levels. Let the evaluation grid $\\{ x _ { g } \\} _ { g = 1 } ^ { 2 0 0 }$ be equally spaced from the lower 5% quantile to the upper 5% quantile of X distribution. For each $x _ { g } ,$ we approximate the ground-truth mean $\\mu ( x _ { g } )$ by Monte Carlo under $\\operatorname { d o } ( X = x _ { g } )$ : draw 5000 i.i.d. samples $\\{ y _ { g m } \\} _ { m = 1 } ^ { M }$ from the true interventional distribution and compute $\\begin{array} { r } { \\bar { y } _ { g } = \\frac { 1 } { 5 0 0 0 } \\sum _ { m = 1 } ^ { 5 0 0 0 } y _ { g m } } \\end{array}$ . For an estimator ${ \\widehat { \\mu } } ( x )$ we report $\\begin{array} { r } { \\mathrm { M S E } = \\frac { 1 } { 2 0 0 } \\sum _ { g = 1 } ^ { 2 0 0 } \\left( \\widehat { \\mu } ( x _ { g } ) - \\bar { y } _ { g } \\right) ^ { 2 } } \\end{array}$",
+        "bbox": [
+            111,
+            734,
+            883,
+            843
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "page_number",
+        "text": "6",
+        "bbox": [
+            493,
+            934,
+            504,
+            948
+        ],
+        "page_idx": 5
+    },
+    {
+        "type": "chart",
+        "img_path": "images/df8ca11c986f3da343d760c03a661203ef310a83b03d3b08e396d1639067aba2.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 1: Results of interventional mean estimation. Rows correspond to treatment settings; columns correspond to outcome settings. Results are averaged over 100 random seeds with standard deviations in shaded regions."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            176,
+            88,
+            826,
+            473
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Results. Figure 1 shows that the hardest estimation settings are the periodic and periodicnonadditive outcome designs, where endogeneity-ignorant or less tailored baselines can incur substantially larger errors. Across diferent scenarios, TabCF remains in the best-performing cluster and is especially stable as the outcome mechanism becomes more nonlinear.",
+        "bbox": [
+            111,
+            565,
+            887,
+            636
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "4.2 Univariate outcome: Comparative studies on interventional quantiles",
+        "text_level": 2,
+        "bbox": [
+            112,
+            654,
+            834,
+            671
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "For the same settings in Section 4.1, we evaluate the estimation of the interventional quantile function $q _ { \\tau } ( x ) = \\operatorname* { i n f } \\{ y \\in \\mathbb { R } : F _ { Y ( x ) } ( y ) \\geq \\tau \\}$ for $\\tau \\in ( 0 , 1 )$",
+        "bbox": [
+            111,
+            680,
+            882,
+            717
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Benchmark methods. We compare TabCF against two quantile baselines: DIV [20] and IVQR [9]. For TabCF and DIV, interventional quantiles are obtained by inverting the estimated interventional CDF, whereas IVQR estimates a quantile-specific structural curve directly at each specified level. Appendix D summarizes the benchmark methods and their scope.",
+        "bbox": [
+            111,
+            733,
+            885,
+            804
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "text",
+        "text": "Metric. Again, let the evaluation grid $\\{ x _ { g } \\} _ { g = 1 } ^ { 2 0 0 }$ be equally spaced from the lower 5% quantile to the upper 5% quantile of the distribution of X. Let $q _ { \\tau } ( x _ { g } )$ denote a Monte Carlo approximation to the ground truth interventional τ-quantile at $x _ { g }$ . For each $\\tau ,$ we report pointwise errors aggregated over the grid, $\\begin{array} { r } { \\mathrm { M S E } ( \\tau ) = \\frac { 1 } { 2 0 0 } \\sum _ { g = 1 } ^ { 2 0 0 } ( \\widehat { q } _ { \\tau } ( x _ { g } ) - q _ { \\tau } ( x _ { g } ) ) ^ { 2 } } \\end{array}$",
+        "bbox": [
+            111,
+            820,
+            883,
+            892
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "page_number",
+        "text": "7",
+        "bbox": [
+            493,
+            934,
+            504,
+            948
+        ],
+        "page_idx": 6
+    },
+    {
+        "type": "chart",
+        "img_path": "images/f9ebee7b5cb8b3aad12eebda9672b86a050f719c931a297d754dad32406e896d.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 2: Interventional quantile MSE at $n = 4 0 0 0 .$ . Rows correspond to treatment settings; columns correspond to outcome settings. Results are averaged over 100 random seeds with standard deviations in shaded regions."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            196,
+            284,
+            807,
+            645
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "page_number",
+        "text": "8",
+        "bbox": [
+            491,
+            934,
+            506,
+            948
+        ],
+        "page_idx": 7
+    },
+    {
+        "type": "text",
+        "text": "Results. Figure 2 shows a clear separation between the TabCF and the existing competitors. Across all six settings, both TabCF variants substantially outperform DIV and IVQR, often by a wide margin. Within the foundation model family, the TabPFN backbone performs best on linear-additive treatment cases with piecewise and periodic-nonadditive outcomes, while the TabICL backbone performs best on the remaining four designs, including nonlinear treatment cases. The strongest gains appear in the periodic and periodic-nonadditive outcome settings, where the gap between TabCF and DIV/IVQR is largest. Errors remain smallest over the middle quantiles and rise as τ approaches 0.1 or 0.9, but this edge degradation is still milder for the two TabCF variants than for the classical baselines. Overall, TabCF is most useful when the structural relationship is indeed nonlinear.",
+        "bbox": [
+            111,
+            92,
+            885,
+            262
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "4.3 Univariate outcome: Runtime analysis",
+        "text_level": 2,
+        "bbox": [
+            112,
+            281,
+            539,
+            299
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "chart",
+        "img_path": "images/963c942c6a2030a275f5305e51fa43d4f3ba2b24c3032d55cd3c231bceedc813.jpg",
+        "content": "",
+        "chart_caption": [
+            "(a)"
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            266,
+            319,
+            504,
+            491
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "chart",
+        "img_path": "images/53b58e0b8368771174223d56ab2bc8b774cc0fb4f6ab4e26c52eb140ea6e3888.jpg",
+        "content": "",
+        "chart_caption": [
+            "(b)",
+            "Figure 3: Runtime comparison at $n = 1 0 0 0 \\colon$ (a) reports the results of the interventional mean estimation, and (b) reports the results of the interventional quantile estimation. Results are averaged over 100 random seeds with error bars."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            513,
+            318,
+            730,
+            491
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "Beyond estimation accuracy, computational eficiency is also important for practical IV estimation, especially when competing methods require repeated model fitting or distributional optimization. Figure 3 summarizes the runtime comparison, among nonlinear methods, for estimating interventional means and quantiles at $n = 1 0 0 0$ . TabCF is significantly faster than the state-of-the-art methods.",
+        "bbox": [
+            111,
+            587,
+            885,
+            655
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "In our experiments, all GPU experiments were run on a cluster with NVIDIA A100-SXM4-80GB GPUs, using PyTorch 2.8.0+cu128; jobs were submitted with 8 CPU cores and 64GB of host memory. The R baselines (Linear CF, Nonlinear IV, and DIV) are launched through the cluster’s R module stack as CPU jobs with eight CPU cores and 64GB RAM, while TabCF, TabPFN-naive, DeepIV, and DeepGMM use Python implementations.",
+        "bbox": [
+            111,
+            656,
+            885,
+            741
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "4.4 Multivariate outcomes: Comparative studies on joint interventional distribution",
+        "text_level": 2,
+        "bbox": [
+            112,
+            760,
+            885,
+            792
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "We evaluate the extension of TabCF in the bivariate case $Y = \\left( Y _ { 1 } , Y _ { 2 } \\right)$ . Across all designs, we use the setup: $Z \\sim \\mathcal { N } ( 1 . 5 , 0 . 7 5 ^ { 2 } ) , H \\sim \\mathcal { N } ( 0 , 1 )$ , and $\\varepsilon _ { X } \\sim \\mathcal { N } ( 0 , 1 )$ and $\\varepsilon _ { 1 } , \\varepsilon _ { 2 } \\sim \\mathcal { N } ( 0 , 1 )$ with correlation $\\rho _ { \\varepsilon }$ , with all latent variables mutually independent except for the correlation in $( \\varepsilon _ { 1 } , \\varepsilon _ { 2 } )$ . Note that $\\rho _ { \\varepsilon }$ controls the correlation of the outcome noise only. The treatment is generated as $X = Z + H + \\varepsilon _ { X }$ We consider four bivariate outcome settings:",
+        "bbox": [
+            111,
+            803,
+            883,
+            888
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "(BO1) Linear baseline: Let $( Y _ { 1 } , Y _ { 2 } ) ^ { \\top } = ( 1 , 0 . 5 ) ^ { \\top } X - ( 3 , 1 ) ^ { \\top } H + ( \\varepsilon _ { 1 } , \\varepsilon _ { 2 } ) ^ { \\top }$ (BO2) Nonlinear outcomes: Let $Y _ { 1 } = \\psi _ { 1 } ( X + H + \\varepsilon _ { 1 } )$ and $Y _ { 2 } = \\psi _ { 2 } ( X + H + \\varepsilon _ { 2 } )$ , where $\\psi _ { 1 } ( w ) =$ $2 w + 3 \\sin ( 2 w )$ and $\\psi _ { 2 } ( w ) = { \\textstyle \\frac { 1 } { 2 } } \\psi _ { 1 } ( w )$ . This yields non-Gaussian interventional outcome distributions through a nonlinear transformation.",
+        "bbox": [
+            99,
+            890,
+            679,
+            909
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "page_number",
+        "text": "9",
+        "bbox": [
+            491,
+            935,
+            504,
+            948
+        ],
+        "page_idx": 8
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            99,
+            90,
+            883,
+            142
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "(BO3) Piecewise pre-additive outcomes: Let $Y _ { 1 } = h _ { 1 } ( X + H + \\varepsilon _ { 1 } )$ and $Y _ { 2 } = h _ { 2 } ( X + H + \\varepsilon _ { 2 } )$ , where $\\begin{array} { r } { h _ { 1 } ( w ) = \\mathbf { 1 } _ { \\{ w < 0 \\} } w + \\mathbf { 1 } _ { \\{ 0 \\leq w \\leq 1 \\} } 2 w + \\mathbf { 1 } _ { \\{ w > 1 \\} } ( 2 + \\frac { 1 } { 2 } ( w - 1 ) ) } \\end{array}$ and $h _ { 2 } ( w ) = \\frac { 1 } { 2 } h _ { 1 } ( w )$ . This introduces kinks at $w = 0$ and $w = 1$ to test robustness to non-smooth pre-additive transformations.",
+        "bbox": [
+            99,
+            145,
+            883,
+            196
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "(BO4) Softplus pre-additive outcomes: Let $Y _ { 1 } = s _ { 1 } ( X + H + \\varepsilon _ { 1 } )$ and $Y _ { 2 } = s _ { 2 } ( X + H + \\varepsilon _ { 2 } )$ , where $s _ { 1 } ( w ) = \\log \\bigl ( 1 + \\exp ( 2 w ) \\bigr )$ and $s _ { 2 } ( w ) = \\textstyle \\frac { 1 } { 2 } s _ { 1 } ( w )$ . This design replaces the piecewise map with a smooth monotone alternative, yielding non-Gaussian marginals without derivative discontinuities.",
+        "bbox": [
+            99,
+            200,
+            885,
+            270
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Benchmark methods. We compare four methods that accommodate multivariate outcomes: (i) TabCF; (ii) DIV [20]; (iii) TabPFN-naive [19], which ignores the instrument in the marginal stage; and (iv) an independence baseline, which estimates the same interventional marginal distributions but ignores the dependence structure of the joint distribution.",
+        "bbox": [
+            111,
+            289,
+            885,
+            358
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Metric. For evaluation, we compute the sliced Wasserstein distance between the estimated and true joint interventional distributions on an equally spaced grid $\\{ x _ { g } \\} _ { g = 1 } ^ { 2 0 0 }$ over [0, 3].",
+        "bbox": [
+            111,
+            377,
+            883,
+            412
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "chart",
+        "img_path": "images/56dda03c504c491e465dd67447c22b7398dd5ec145416d6d2fcfea50f5285daf.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 4: Bivariate-outcome sliced Wasserstein distance to the oracle joint interventional distribution for four settings when $n = 2 0 0 0$ and $\\rho _ { \\varepsilon } = 0 . 6$ . Results are averaged over 100 random seeds with standard deviations in shaded regions. Lower values indicate better results."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            117,
+            429,
+            877,
+            628
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Results. Figure 4 shows the results of bivariate-outcome comparisons. Across various scenarios, TabCF consistently ranks among the strongest methods.",
+        "bbox": [
+            111,
+            731,
+            885,
+            765
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "4.5 Additional experiments",
+        "text_level": 2,
+        "bbox": [
+            112,
+            784,
+            395,
+            801
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "Appendix C contains additional experiments, including settings with pretreatment covariates in Appendix C.1, violations of common support (CF2) in Appendix C.2, and weak IV relevance (IV1) in Appendix C.3. Overall, TabCF continues exhibiting strong performance in these settings.",
+        "bbox": [
+            111,
+            810,
+            885,
+            863
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "page_number",
+        "text": "10",
+        "bbox": [
+            488,
+            934,
+            509,
+            948
+        ],
+        "page_idx": 9
+    },
+    {
+        "type": "text",
+        "text": "5 Real data examples",
+        "text_level": 2,
+        "bbox": [
+            112,
+            88,
+            379,
+            108
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "We complement the simulation study with four real data examples: (AJR) the colonial-origins design for institutions and long-run development [1]; (Fulton Fish) demand at the Fulton Fish Market using weather-based instruments [13]; (Card) the Card college-proximity design for returns to schooling [7]; and (CigarettesSW) state-level cigarette demand [37]. Following the evaluations used in recent distributional-IV work [20], we report interventional mean curves for all four applications and, for Fulton Fish, an additional compact interventional quantile comparison. Further details on the empirical settings, including the treatment, instrument, outcome, and interpretation of each benchmark, are provided in Appendix E.",
+        "bbox": [
+            109,
+            122,
+            885,
+            261
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "chart",
+        "img_path": "images/c5271d975c2f057ff3e1c307a2639f9556e8f901b36998efb12996f0cc4d41ca.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 5: Results of interventional mean estimations on AJR, Fulton Fish, Card, and CigarettesSW."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            133,
+            275,
+            872,
+            433
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "chart",
+        "img_path": "images/e072219918fa4fad12367ba3073f7c480243891353142e27564cf0610621ad67.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 6: Results of interventional quantile estimation on Fulton Fish."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            192,
+            512,
+            805,
+            678
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "Figures 5–6 summarize the results. In AJR and Card, TabCF produces curves qualitatively consistent with standard economic interpretations. In Fulton Fish and CigarettesSW, TabCF yields plausible downward-sloping demand responses. Overall, these examples illustrate that TabCF produces economically interpretable curves under standard benchmark IV settings.",
+        "bbox": [
+            109,
+            727,
+            885,
+            797
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "6 Discussion",
+        "text_level": 2,
+        "bbox": [
+            112,
+            819,
+            276,
+            838
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "In this work, we introduce TabCF, a simple yet efective control function method based on tabular foundation models. TabCF ofers accurate, fast, transparent, and tuning-light causal estimation of distributional quantities. Moreover, it is intended as a general control function framework rather than as an estimator tied to a particular tabular foundation model. The foundation model is used only as a probabilistic regression module. This modularity is useful because the same causal wrapper can, in principle, benefit from future tabular foundation models with better calibration, longer contexts, or faster inference, without changing the underlying causal identification argument.",
+        "bbox": [
+            111,
+            852,
+            887,
+            905
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "page_number",
+        "text": "11",
+        "bbox": [
+            488,
+            934,
+            509,
+            948
+        ],
+        "page_idx": 10
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            111,
+            92,
+            885,
+            160
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Limitations. Despite the promising performance, TabCF has several limitations. It inherits the weaknesses of the current tabular foundation models. For example, it heavily relies on GPU acceleration, while CPU inference may be substantially slower. Moreover, in contrast to conventional methods, TabCF performance does not necessarily improve with an increasing sample size (as shown in Appendix Figure 9), due to the context window limit of foundation models [25, 28]. Subsampling strategies may be useful for addressing this issue [40]. Finally, the IV and CF methods rely on inherently untestable assumptions. In this work, we did not consider the possibility of invalid instruments [8]. This can be partially addressed by using median estimators [17]. We leave this for future research.",
+        "bbox": [
+            111,
+            179,
+            885,
+            333
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "Acknowledgment",
+        "text_level": 2,
+        "bbox": [
+            114,
+            356,
+            310,
+            376
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "This research is supported by U.S. NSF grant DMS-2515789.",
+        "bbox": [
+            111,
+            390,
+            589,
+            406
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "text",
+        "text": "References",
+        "text_level": 2,
+        "bbox": [
+            114,
+            430,
+            240,
+            450
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[1] Daron Acemoglu, Simon Johnson, and James A. Robinson. The Colonial Origins of Comparative Development: An Empirical Investigation. American Economic Review, 91(5):1369–1401, 2001.",
+            "[2] Joshua D. Angrist, Guido W. Imbens, and Donald B. Rubin. Identification of Causal Efects Using Instrumental Variables. Journal of the American Statistical Association, 91(434):444–455, 1996. doi: 10.1080/01621459.1996.10476902.",
+            "[3] Mona Azadkia and Sourav Chatterjee. A simple measure of conditional dependence. The Annals of Statistics, 49(6):3070–3102, 2021.",
+            "[4] Vahid Balazadeh, Hamidreza Kamkari, Valentin Thomas, Junwei Ma, Bingru Li, Jesse C. Cresswell, and Rahul G. Krishnan. CausalPFN: Amortized causal efect estimation via incontext learning. In Advances in Neural Information Processing Systems, volume 38, 2025. URL https://openreview.net/forum?id=RblaNJGx8C.",
+            "[5] Andrew Bennett, Nathan Kallus, and Tobias Schnabel. Deep Generalized Method of Moments for Instrumental Variable Analysis. In Advances in Neural Information Processing Systems, volume 32, 2019.",
+            "[6] Lucius EJ Bynum, Aahlad Manas Puli, Diego Herrero-Quevedo, Nhi Nguyen, Carlos Fernandez-Granda, Kyunghyun Cho, and Rajesh Ranganath. Black box causal inference: Efect estimation via meta prediction. arXiv preprint arXiv:2503.05985, 2025.",
+            "[7] David Card. Using Geographic Variation in College Proximity to Estimate the Return to Schooling. In L. N. Christofides, E. K. Grant, and R. Swidinsky, editors, Aspects of Labour Market Behaviour: Essays in Honour of John Vanderkamp, pages 201–222. University of Toronto Press, Toronto, 1995."
+        ],
+        "bbox": [
+            122,
+            464,
+            883,
+            498
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "page_number",
+        "text": "12",
+        "bbox": [
+            488,
+            934,
+            509,
+            948
+        ],
+        "page_idx": 11
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[8] Li Chen, Chunlin Li, Xiaotong Shen, and Wei Pan. Discovery and inference of a causal network with hidden confounding. Journal of the American Statistical Association, 119(548):2572–2584, 2024.",
+            "[9] Victor Chernozhukov and Christian Hansen. An IV model of quantile treatment efects. Econometrica, 73(1):245–261, 2005.",
+            "[10] Victor Chernozhukov, Denis Chetverikov, Mert Demirer, Esther Duflo, Christian Hansen, Whitney Newey, and James Robins. Double/debiased machine learning for treatment and structural parameters. The Econometrics Journal, 21(1):C1–C68, 2018. doi: 10.1111/ectj.12097.",
+            "[11] Nick Erickson, Lennart Purucker, Andrej Tschalzev, David Holzmüller, Prateek Mutalik Desai, David Salinas, and Frank Hutter. TabArena: A living benchmark for machine learning on tabular data. In Advances in Neural Information Processing Systems, 2025. URL https: //arxiv.org/abs/2506.16791.",
+            "[12] Jean-Pierre Florens, James J. Heckman, Costas Meghir, and Edward Vytlacil. Identification of Treatment Efects Using Control Functions in Models with Continuous, Endogenous Treatment and Heterogeneous Efects. Econometrica, 76(5):1191–1206, 2008.",
+            "[13] Kathryn Graddy. Testing for Imperfect Competition at the Fulton Fish Market. RAND Journal of Economics, 26(1):75–92, 1995.",
+            "[14] Léo Grinsztajn, Klemens Flöge, Oscar Key, Felix Birkel, Philipp Jund, Brendan Roof, Benjamin Jäger, Dominik Safaric, Simone Alessi, Adrian Hayler, Mihir Manium, Rosen Yu, Felix Jablonski, Shi Bin Hoo, Anurag Garg, Jake Robertson, Magnus Bühler, Vladyslav Moroshan, Lennart Purucker, Clara Cornu, Lilly Charlotte Wehrhahn, Alessandro Bonetto, Bernhard Schölkopf, Sauraj Gambhir, Noah Hollmann, and Frank Hutter. TabPFN-2.5: Advancing the state of the art in tabular foundation models. arXiv preprint arXiv:2511.08667, 2025. URL https: //arxiv.org/abs/2511.08667.",
+            "[15] Zijian Guo and Dylan S Small. Control function instrumental variable estimation of nonlinear causal efect models. Journal of Machine Learning Research, 17(100):1–35, 2016.",
+            "[16] Jason Hartford, Greg Lewis, Kevin Leyton-Brown, and Matt Taddy. Deep IV: A flexible approach for counterfactual prediction. In Proceedings of the 34th International Conference on Machine Learning, volume 70 of Proceedings of Machine Learning Research, pages 1414–1423, 2017.",
+            "[17] Jason S Hartford, Victor Veitch, Dhanya Sridhar, and Kevin Leyton-Brown. Valid causal inference with (some) invalid instruments. In International Conference on Machine Learning, pages 4096–4106. PMLR, 2021.",
+            "[18] Noah Hollmann, Samuel Müller, Katharina Eggensperger, and Frank Hutter. TabPFN: A transformer that solves small tabular classification problems in a second. In International Conference on Learning Representations, 2023.",
+            "[19] Noah Hollmann, Samuel Müller, Lennart Purucker, Arjun Krishnakumar, Max Körfer, Shi Bin Hoo, Robin Tibor Schirrmeister, and Frank Hutter. Accurate predictions on small data with a tabular foundation model. Nature, 637(8045):319–326, 2025.",
+            "[20] Anastasiia Holovchak, Sorawit Saengkyongam, Nicolai Meinshausen, and Xinwei Shen. Distributional Instrumental Variable Method. arXiv preprint arXiv:2502.07641, 2025."
+        ],
+        "bbox": [
+            122,
+            90,
+            885,
+            141
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "page_number",
+        "text": "13",
+        "bbox": [
+            488,
+            934,
+            509,
+            948
+        ],
+        "page_idx": 12
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[21] Guido W. Imbens and Joshua D. Angrist. Identification and Estimation of Local Average Treatment Efects. Econometrica, 62(2):467–475, 1994.",
+            "[22] Guido W. Imbens and Whitney K. Newey. Identification and Estimation of Triangular Simultaneous Equations Models Without Additivity. Econometrica, 77(5):1481–1512, 2009.",
+            "[23] Lucas Kook and Niklas Pfister. Instrumental Variable Estimation of Distributional Causal Efects. Electronic Journal of Statistics, 19(2):5249–5288, 2025. doi: 10.1214/25-EJS2460.",
+            "[24] Sokbae Lee. Endogeneity in Quantile Regression Models: A Control Function Approach. Journal of Econometrics, 141(2):1131–1158, 2007. doi: 10.1016/j.jeconom.2007.01.014.",
+            "[25] Junwei Ma, Valentin Thomas, Rasa Hosseinzadeh, Alex Labach, Jesse C. Cresswell, Keyvan Golestan, Guangwei Yu, Anthony L. Caterini, and Maksims Volkovs. TabDPT: Scaling tabular foundation models on real data. In Advances in Neural Information Processing Systems, 2025. URL https://openreview.net/forum?id=pIZxEOZCId.",
+            "[26] Yuchen Ma, Dennis Frauen, Emil Javurek, and Stefan Feuerriegel. Foundation Models for Causal Inference via Prior-Data Fitted Networks. In International Conference on Learning Representations, 2026. URL https://openreview.net/forum?id=d2L1ndOKjq.",
+            "[27] Samuel Müller, Noah Hollmann, Santiago Pineda Arango, Josif Grabocka, and Frank Hutter. Transformers Can Do Bayesian Inference. In International Conference on Learning Representations, 2022.",
+            "[28] Thomas Nagler. Statistical foundations of prior-data fitted networks. In Proceedings of the 40th International Conference on Machine Learning, volume 202 of Proceedings of Machine Learning Research, pages 25660–25676. PMLR, 2023. URL https://proceedings.mlr.press/ v202/nagler23a.html.",
+            "[29] Whitney K. Newey and James L. Powell. Instrumental Variable Estimation of Nonparametric Models. Econometrica, 71(5):1565–1578, 2003. doi: 10.1111/1468-0262.00459.",
+            "[30] Judea Pearl. Causality: Models, Reasoning and Inference. Cambridge University Press, 2nd edition, 2009.",
+            "[31] Aahlad Manas Puli and Rajesh Ranganath. General Control Functions for Causal Efect Estimation from Instrumental Variables. In Advances in Neural Information Processing Systems, volume 33, pages 8440–8451, 2020.",
+            "[32] Jingang Qu, David Holzmüller, Gaël Varoquaux, and Marine Le Morvan. TabICL: A Tabular Foundation Model for In-Context Learning on Large Data. In Proceedings of the 42nd International Conference on Machine Learning, volume 267 of Proceedings of Machine Learning Research, pages 50817–50847. PMLR, 2025. URL https://proceedings.mlr.press/v267/qu25d.html.",
+            "[33] Jingang Qu, David Holzmüller, Gaël Varoquaux, and Marine Le Morvan. TabICLv2: A better, faster, scalable, and open tabular foundation model. arXiv preprint arXiv:2602.11139, 2026. URL https://arxiv.org/abs/2602.11139.",
+            "[34] Jake Robertson, Arik Reuter, Siyuan Guo, Noah Hollmann, Frank Hutter, and Bernhard Schölkopf. Do-PFN: In-context learning for causal efect estimation. In Advances in Neural Information Processing Systems, volume 38, 2025. URL https://nips.cc/virtual/2025/ poster/118284."
+        ],
+        "bbox": [
+            112,
+            90,
+            883,
+            126
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "page_number",
+        "text": "14",
+        "bbox": [
+            488,
+            934,
+            509,
+            948
+        ],
+        "page_idx": 13
+    },
+    {
+        "type": "list",
+        "sub_type": "ref_text",
+        "list_items": [
+            "[35] Sorawit Saengkyongam, Leonard Henckel, Niklas Pfister, and Jonas Peters. Exploiting Independent Instruments: Identification and Distribution Generalization. In Proceedings of the 39th International Conference on Machine Learning, 2022.",
+            "[36] M Sklar. Fonctions de répartition à n dimensions et leurs marges. Annales de l’ISUP, 8(3): 229–231, 1959.",
+            "[37] James H. Stock and Mark W. Watson. Introduction to Econometrics. Addison Wesley, Boston, 2 edition, 2007.",
+            "[38] GJ Székely, ML Rizzo, and NK Bakirov. Measuring and testing dependence by correlation of distances. Annals of Statistics, 35(6):2769–2794, 2007.",
+            "[39] Joseph V Terza, Anirban Basu, and Paul J Rathouz. Two-stage residual inclusion estimation: addressing endogeneity in health econometric modeling. Journal of Health Economics, 27(3): 531–543, 2008.",
+            "[40] Valentin Thomas, Junwei Ma, Rasa Hosseinzadeh, Keyvan Golestan, Guangwei Yu, Maksims Volkovs, and Anthony L. Caterini. Retrieval & fine-tuning for in-context tabular models. In Advances in Neural Information Processing Systems, 2024. URL https://openreview.net/ forum?id=337dHOexCM.",
+            "[41] Xiyuan Zhang, Danielle C. Maddix, Junming Yin, Nick Erickson, Abdul Fatir Ansari, Boran Han, Shuai Zhang, Leman Akoglu, Christos Faloutsos, Michael W. Mahoney, Cuixiong Hu, Huzefa Rangwala, George Karypis, and Yuyang Wang. Mitra: Mixed Synthetic Priors for Enhancing Tabular Foundation Models. In Advances in Neural Information Processing Systems, volume 38, 2025. URL https://openreview.net/forum?id=t8YRsWY6HM."
+        ],
+        "bbox": [
+            114,
+            90,
+            885,
+            142
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "page_number",
+        "text": "15",
+        "bbox": [
+            488,
+            934,
+            509,
+            948
+        ],
+        "page_idx": 14
+    },
+    {
+        "type": "text",
+        "text": "A Further considerations on TabCF design",
+        "text_level": 2,
+        "bbox": [
+            112,
+            88,
+            620,
+            108
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "A.1 Comparison of explicit and implicit control function approaches",
+        "text_level": 2,
+        "bbox": [
+            112,
+            121,
+            789,
+            140
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Here, we further discuss the explicit and implicit control function (CF) approaches in Section 2.2. We record one of our early (failed) attempts to integrate tabular foundation models (TFMs) with an “implicit” identification approach [24]. The following experiment compares estimators using an explicit (TabCF) or an implicit identification [24]. We evaluate them with the interventional quantile setting in Section 4.2. TabPFNv2.5 is used for both estimators in this comparison.",
+        "bbox": [
+            111,
+            148,
+            885,
+            234
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "chart",
+        "img_path": "images/377de6889645fa831f0260433f4f40e714ba6ef9f149cf7fef9653ef59111949.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 7: Comparison between TabCF and an implicit control function approach [24] on interventional quantile estimation. Both methods use TabPFNv2.5 for nuisance estimation. Results are averaged over 30 random seeds with standard deviations in shaded regions."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            197,
+            246,
+            807,
+            606
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Figure 7 shows that integrating the implicit CF approach with TFM has larger estimation errors. This is likely due to error amplification when solving equations, performing optimization, or solving inverse problems.",
+        "bbox": [
+            111,
+            689,
+            885,
+            741
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "A.2 Diagnostics on control function",
+        "text_level": 2,
+        "bbox": [
+            112,
+            760,
+            475,
+            777
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "In TabCF, the most important intermediate quantity is $\\widehat { V }$ . We recommend the following empirical checking to assess its quality.",
+        "bbox": [
+            111,
+            786,
+            883,
+            821
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "Goodness-of-fit checking. A good fitting should yield",
+        "bbox": [
+            112,
+            839,
+            570,
+            857
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "equation",
+        "img_path": "images/1fff9dbbbdb2bef322a219ca7ba00c56dc54f5a0b8eab8245068cf3b8b8809ff.jpg",
+        "text": "$$\n\\widehat { V } \\mid ( W = w ) \\sim \\mathrm { U n i f } ( 0 , 1 ) \\quad \\mathrm { a n d } \\quad \\widehat { V } \\perp \\perp Z \\mid ( W = w ) ,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            289,
+            868,
+            705,
+            888
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "page_number",
+        "text": "16",
+        "bbox": [
+            488,
+            934,
+            509,
+            948
+        ],
+        "page_idx": 15
+    },
+    {
+        "type": "text",
+        "text": "approximately, for any relevant w. When W is absent, one can use Q-Q plot to assess $\\widehat { V } \\sim \\mathrm { U n i f } ( 0 , 1 )$ and nonparametric testing $( \\mathrm { e . g . }$ , distance correlation test [38]) to assess $\\widehat { V }$ ⊥⊥ Z. When W is of low dimensions, one can stratify W and check each stratum. If W is of high dimensions, one should resort to other approaches, which is beyond the scope of this work. It is worth noting that passing this goodness-of-fit checking does not imply the IV and CF conditions are satisfied.",
+        "bbox": [
+            111,
+            90,
+            885,
+            178
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Conditional independence checking. If the IV and CF conditions are well satisfied, then one should have",
+        "bbox": [
+            111,
+            195,
+            883,
+            229
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "img_path": "images/44045ec576b56d348201c9e7c580e982cdefaf2e98b0609e3e51bab677741a14.jpg",
+        "text": "$$\nY \\perp \\perp Z | \\left( X = x , \\widehat { V } = v , W = w \\right)\n$$",
+        "text_format": "latex",
+        "bbox": [
+            364,
+            228,
+            629,
+            247
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "approximately, for any relevant $( x , v , w )$ . This can be examined by nonparametric testing or independence scores (e.g., FOCI [3]). Failure of this diagnostic indicates a violation of some parts of the IV/CF specification, but passing it does not prove the conditions are met.",
+        "bbox": [
+            111,
+            256,
+            885,
+            308
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "A.3 Comparison of full-sample and cross-fitted control function",
+        "text_level": 2,
+        "bbox": [
+            112,
+            325,
+            743,
+            343
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "As described in Section 2.3, TabCF uses the full sample for CF construction. An alternative is to use sample splitting and cross-fitting [10] to reduce the potential impact of overfitting nuisances. Here, we compare the full-sample and cross-fitting approaches for TabCF.",
+        "bbox": [
+            111,
+            353,
+            885,
+            404
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "The TabCF estimator fits the first-stage conditional CDF on the full training sample and evaluates ${ \\widehat { V } } _ { i } = { \\widehat { F } } _ { X \\mid Z } ( X _ { i } \\mid Z _ { i } )$ on the same observations, whereas cross-fitting uses five folds: for each fold, the first-stage model is fitted on the other four folds, and $\\widehat { V } _ { i }$ is predicted out of fold. The same second-stage TabCF estimator is then fitted using these $\\widehat { V } _ { i }$ values.",
+        "bbox": [
+            111,
+            404,
+            885,
+            476
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "For interventional means, the MSE is computed on the same intervention grids as in Section 4.1,",
+        "bbox": [
+            138,
+            476,
+            885,
+            492
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "img_path": "images/26e376c4042a12442fea74581e819b5305e1965aae7fd12533a6341573cddf32.jpg",
+        "text": "$$\n\\frac { 1 } { 2 0 0 } \\sum _ { g = 1 } ^ { 2 0 0 } \\{ \\widehat { \\mu } ( x _ { g } ) - \\mu ( x _ { g } ) \\} ^ { 2 } ,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            397,
+            503,
+            601,
+            551
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "with the true mean approximated by a Monte Carlo simulation. For interventional quantiles, let $\\mathcal { T } = \\{ 0 . 1 , 0 . 2 , \\ldots , 0 . 9 \\}$ . We first compute the grid MSE at each quantile level,",
+        "bbox": [
+            111,
+            563,
+            883,
+            598
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "equation",
+        "img_path": "images/9e8b802447aaafef984aa98968a4e9d8e142983db45d470d63800ffcde50d869.jpg",
+        "text": "$$\n\\mathrm { M S E } ( \\tau ) = \\frac { 1 } { 2 0 0 } \\sum _ { g = 1 } ^ { 2 0 0 } \\{ \\widehat { q } _ { \\tau } ( x _ { g } ) - q _ { \\tau } ( x _ { g } ) \\} ^ { 2 } , \\qquad \\tau \\in \\mathcal { T } ,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            302,
+            608,
+            694,
+            655
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "and then report the average $\\begin{array} { r } { \\frac { 1 } { 9 } \\sum _ { \\tau \\in \\mathcal { T } } \\mathrm { M S E } ( \\tau ) } \\end{array}$ . We set the sample size $n = 1 0 0 0$",
+        "bbox": [
+            111,
+            669,
+            736,
+            688
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Table 1 shows that cross-fitting leaves the final mean and quantile errors essentially unchanged across the six settings. Table 2 shows that the extra cost is concentrated in Stage U1, where cross-fitting requires five first-stage fits, while Stage U2/U3 remains nearly unchanged. We therefore use the full-sample control function for TabCF implementation.",
+        "bbox": [
+            111,
+            688,
+            885,
+            756
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "B Proof of Proposition 2.1",
+        "text_level": 2,
+        "bbox": [
+            112,
+            779,
+            434,
+            799
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Proof. The proof proceeds in three steps.",
+        "bbox": [
+            112,
+            813,
+            437,
+            829
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "text",
+        "text": "Step 1: Conditional independence. Fix w in the support of W and z in the conditional support of $Z \\mid W = w$ . By (CF1), without loss of generality, we assume the map $\\eta \\mapsto h ( z , w , \\eta )$ is strictly increasing and continuous, hence invertible in its third argument; denote the inverse by",
+        "bbox": [
+            111,
+            829,
+            885,
+            882
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "page_number",
+        "text": "17",
+        "bbox": [
+            488,
+            934,
+            509,
+            948
+        ],
+        "page_idx": 16
+    },
+    {
+        "type": "table",
+        "img_path": "images/54f0b9c8919072ede6c29aeb6c868bdf511869dbc01719c4504bdf4ad193bcbf.jpg",
+        "table_caption": [
+            "Table 1: Estimation comparison of full-sample and cross-fitted control function. Results are averaged over 30 random seeds with standard deviations in parentheses. The quantile MSE column averages the nine τ-specific MSEs for $\\tau = 0 . 1 , \\dots , 0 . 9$"
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Setting</td><td>Approach</td><td>MSE for Mean</td><td>MSE for Quantile</td></tr><tr><td>(T1,01)</td><td>Full-sample </td><td>0.00 (0.00)</td><td>0.00 (0.00)</td></tr><tr><td>(T1,01)</td><td>5-fold cross-fitted </td><td>0.00 (0.00)</td><td>0.00 (0.00)</td></tr><tr><td>(T1,O2)</td><td>Full-sample  $\\hat { V }$ </td><td>0.15 (0.14)</td><td>0.17 (0.08)</td></tr><tr><td>(T1,O2)</td><td>5-fold cross-fitted </td><td>0.15 (0.14)</td><td>0.17 (0.08)</td></tr><tr><td>(T1,O3)</td><td>Full-sample  $\\hat { V }$ </td><td>0.08 (0.08)</td><td>0.09 (0.05)</td></tr><tr><td>(T1,O3)</td><td>5-fold cross-fitted  $\\hat { V }$ </td><td>0.08 (0.08)</td><td>0.09 (0.05)</td></tr><tr><td>(T2,01)</td><td>Full-sample  $\\hat { V }$ </td><td>0.00 (0.00)</td><td>0.00 (0.00)</td></tr><tr><td>(T2,01)</td><td>5-fold cross-fitted  $\\hat { V }$ </td><td>0.00 (0.00)</td><td>0.00 (0.00)</td></tr><tr><td>(T2,02)</td><td>Full-sample  $\\hat { V }$ </td><td>0.06 (0.06)</td><td>0.07 (0.02)</td></tr><tr><td>(T2,O2)</td><td>5-fold cross-fitted  $\\hat { V }$ </td><td>0.06 (0.06)</td><td>0.07 (0.02)</td></tr><tr><td>(T2,O3)</td><td>Full-sample </td><td>0.10 (0.07)</td><td>0.13 (0.05)</td></tr><tr><td>(T2,O3)</td><td>5-fold cross-fitted  $\\hat { V }$ </td><td>0.10 (0.07)</td><td>0.13 (0.05)</td></tr></table>",
+        "bbox": [
+            223,
+            215,
+            772,
+            478
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "table",
+        "img_path": "images/f11a037d4a9f4414486384a61df01df09e3c673f032257c4ba42f931cd38663d.jpg",
+        "table_caption": [
+            "Table 2: Runtime comparison of full-sample and cross-fitted control function. Results are averaged over 30 random seeds with standard deviations in parentheses."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>Setting</td><td>Approach</td><td>Stage U1</td><td>Stage U2/U3</td><td>Total Runtime</td></tr><tr><td>(Mean, TabPFN)</td><td>Full-sample  $\\hat { V }$ </td><td>0.71 (0.00)</td><td>0.52 (0.00)</td><td>1.23 (0.00)</td></tr><tr><td>(Mean, TabPFN)</td><td>5-fold cross-fitted</td><td> $\\hat { V }$  3.28 (0.06)</td><td>0.50 (0.00)</td><td>3.78 (0.06)</td></tr><tr><td>(Mean, TabICL)</td><td>Full-sample  $\\hat { V }$ </td><td>0.42 (0.00)</td><td>0.48 (0.02)</td><td>0.89 (0.02)</td></tr><tr><td>(Mean, TabICL)</td><td>5-fold cross-fitted</td><td> $\\hat { V }$  1.92 (0.06)</td><td>0.48 (0.04)</td><td>2.40 (0.07)</td></tr><tr><td>(Quantile, TabPFN)</td><td>Full-sample  $\\hat { V }$ </td><td>0.67 (0.00)</td><td>0.54 (0.00)</td><td>1.21 (0.01)</td></tr><tr><td>(Quantile, TabPFN)</td><td>5-fold cross-fitted</td><td> $\\hat { V }$  3.17 (0.01)</td><td>0.54 (0.04)</td><td>3.72 (0.04)</td></tr><tr><td>(Quantile, TabICL)</td><td>Full-sample  $\\hat { V }$ </td><td>0.37 (0.02)</td><td>0.56 (0.03)</td><td>0.93 (0.03)</td></tr><tr><td>(Quantile, TabICL)</td><td>5-fold cross-fitted</td><td> $\\hat { V }$  1.78 (0.05)</td><td>0.57 (0.00)</td><td>2.35 (0.05)</td></tr></table>",
+        "bbox": [
+            153,
+            660,
+            844,
+            842
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "page_number",
+        "text": "18",
+        "bbox": [
+            488,
+            934,
+            509,
+            948
+        ],
+        "page_idx": 17
+    },
+    {
+        "type": "text",
+        "text": "$h ^ { - 1 } ( z , w , \\cdot )$ . Using $X = h ( Z , W , \\eta )$ and (IV3) unconfoundedness, for any x we have",
+        "bbox": [
+            111,
+            90,
+            763,
+            108
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "equation",
+        "img_path": "images/9d98f99865ae4e4e872fbfdcf56dbd3a73475f3f64fc4ccb1c855a2f302f405d.jpg",
+        "text": "$$\n\\begin{array} { r l } & { F _ { X | Z , W } ( x \\mid z , w ) = { \\mathbb P } \\{ h ( z , w , \\eta ) \\le x \\mid Z = z , W = w \\} } \\\\ & { \\qquad = { \\mathbb P } \\{ \\eta \\le h ^ { - 1 } ( z , w , x ) \\mid Z = z , W = w \\} } \\\\ & { \\qquad = { \\mathbb P } \\{ \\eta \\le h ^ { - 1 } ( z , w , x ) \\mid W = w \\} } \\\\ & { \\qquad = F _ { \\eta | W } \\big ( h ^ { - 1 } ( z , w , x ) \\mid w \\big ) . } \\end{array}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            281,
+            119,
+            714,
+            205
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Evaluating at $x = X = h ( Z , W , \\eta )$ gives",
+        "bbox": [
+            111,
+            217,
+            426,
+            234
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "equation",
+        "img_path": "images/dd621d21b10cb910e0878e56c81246805d3d884492513fb53d8375e3ab580415.jpg",
+        "text": "$$\nV = F _ { X | Z , W } ( X \\mid Z , W ) = F _ { \\eta | W } ( \\eta \\mid W ) \\qquad \\mathrm { a . s . }\n$$",
+        "text_format": "latex",
+        "bbox": [
+            313,
+            246,
+            683,
+            266
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Because $F _ { \\eta | W } ( \\cdot \\mid w )$ is continuous and strictly increasing, the probability integral transform implies",
+        "bbox": [
+            112,
+            276,
+            883,
+            295
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "equation",
+        "img_path": "images/531ecb61d01cb70c82e8402213d5f080a8b985613e3439389454e793e6ccaf36.jpg",
+        "text": "$$\nV \\mid W = w \\sim \\operatorname { U n i f } ( 0 , 1 ) .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            398,
+            306,
+            594,
+            323
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Moreover, since V is a measurable function of $( \\eta , W )$ and $Z \\perp \\perp \\eta \\mid W$ , we have",
+        "bbox": [
+            111,
+            335,
+            730,
+            353
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "equation",
+        "img_path": "images/7c96d07ed7e98254949e63e5d10338e180052921b917db1b956c5ca1e06f5cf7.jpg",
+        "text": "$$\nV \\perp \\perp Z \\mid W .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            447,
+            366,
+            549,
+            382
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Step 2: Control function exogeneity. Since $V ~ = ~ F _ { \\eta | W } ( \\eta ~ \\vert ~ W )$ and $F _ { \\eta | W } ( \\cdot \\ | \\ W )$ is strictly increasing, conditioning on $( V , W )$ is equivalent to conditioning on $( \\eta , W )$ . Under (IV3), $Z \\perp \\perp ( \\eta , \\varepsilon ) \\mid W$ , and hence $Z \\perp \\perp \\varepsilon \\mid \\eta , W$ . Because $X = h ( Z , W , \\eta )$ is measurable with respect to $( Z , W , \\eta )$ , it follows that",
+        "bbox": [
+            111,
+            395,
+            885,
+            465
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "equation",
+        "img_path": "images/d119fac6b96e7955f08bc12512e74999104af6cdcbc0ba40c95a522901ad9aca.jpg",
+        "text": "$$\n\\varepsilon \\downarrow \\downarrow X \\mid \\eta , W , \\qquad { \\mathrm { a n d ~ t h e r e f o r e } } \\qquad \\varepsilon \\downarrow \\downarrow X \\mid V , W .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            295,
+            477,
+            697,
+            494
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Consequently, for all $( x , v , w )$ in the relevant support,",
+        "bbox": [
+            111,
+            507,
+            535,
+            523
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "equation",
+        "img_path": "images/cb9f2a12c2e1a0777e04300bd71c90df4d8cba101f42376afe7d3a63394d8856.jpg",
+        "text": "$$\n\\begin{array} { r l } & { F _ { Y \\mid X , V , W } ( y \\mid x , v , w ) = \\mathbb { P } ( Y \\leq y \\mid X = x , V = v , W = w ) } \\\\ & { \\qquad = \\mathbb { P } \\{ g ( X , W , \\varepsilon ) \\leq y \\mid X = x , V = v , W = w \\} } \\\\ & { \\qquad = \\mathbb { P } \\{ g ( x , w , \\varepsilon ) \\leq y \\mid X = x , V = v , W = w \\} } \\\\ & { \\qquad = \\mathbb { P } \\{ g ( x , w , \\varepsilon ) \\leq y \\mid V = v , W = w \\} . } \\end{array}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            240,
+            535,
+            753,
+            617
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Step 3: Interventional CDF. Under the intervention $\\operatorname { d o } ( X = x )$ , the structural outcome equation becomes $Y = g ( x , W , \\varepsilon )$ . For fixed $w ,$",
+        "bbox": [
+            111,
+            630,
+            883,
+            665
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "equation",
+        "img_path": "images/f26b25cad49924a6773635ee4ac771749600b69b79288ae4b073da24b6e1ba32.jpg",
+        "text": "$$\n\\begin{array} { l } { F _ { Y ( x ) \\mid W = w } ( y ) = \\operatorname { \\mathbb { P } } \\{ g ( x , w , \\varepsilon ) \\leq y \\mid W = w \\} } \\\\ { \\quad \\ = \\int \\operatorname { \\mathbb { P } } \\{ g ( x , w , \\varepsilon ) \\leq y \\mid V = v , W = w \\} d F _ { V \\mid W = w } ( v ) } \\\\ { \\quad \\ = \\int _ { 0 } ^ { 1 } F _ { Y \\mid X , V , W } ( y \\mid x , v , w ) d v , } \\end{array}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            240,
+            675,
+            754,
+            768
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "where the last equality uses $V \\mid W = w \\sim \\operatorname { U n i f } ( 0 , 1 )$ . Finally, since W is pretreatment,",
+        "bbox": [
+            111,
+            780,
+            790,
+            796
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "equation",
+        "img_path": "images/80ba54bc139e9d304661c366bdddacb102c2d8adc62b01ff896fee437dec40ad.jpg",
+        "text": "$$\n\\begin{array} { l } { F _ { Y ( x ) } ( y ) = \\operatorname { \\mathbb { E } } _ { W } \\bigl [ F _ { Y ( x ) \\mid W } ( y \\mid W ) \\bigr ] } \\\\ { \\displaystyle \\quad = \\operatorname { \\mathbb { E } } _ { W } \\biggl [ \\int _ { 0 } ^ { 1 } F _ { Y \\mid X , V , W } ( y \\mid x , v , W ) d v \\biggr ] . } \\end{array}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            315,
+            808,
+            679,
+            868
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "Assumption (CF2) ensures that $F _ { Y | X , V , W } ( y \\mid x , v , w )$ is well-defined for all relevant v and for $F _ { W } \\mathrm { - a l m o s t }$ every w. This proves the identification result. □",
+        "bbox": [
+            112,
+            878,
+            885,
+            912
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "page_number",
+        "text": "19",
+        "bbox": [
+            488,
+            934,
+            509,
+            948
+        ],
+        "page_idx": 18
+    },
+    {
+        "type": "text",
+        "text": "C Additional synthetic experiments",
+        "text_level": 2,
+        "bbox": [
+            111,
+            88,
+            539,
+            108
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "C.1 Experiments with pretreatment covariates",
+        "text_level": 2,
+        "bbox": [
+            112,
+            121,
+            581,
+            140
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "This section examines the settings in which observed pretreatment covariates are available. We repeat the interventional quantile estimation experiments in Sections 4.2 after a covariate augmentation of the same six treatment-outcome settings. Let $h _ { 0 }$ and $g _ { 0 }$ denote the treatment and outcome structural functions in Section 4.1, respectively. We draw an observed pretreatment covariate $W \\sim \\mathcal { N } ( 0 , 1 )$ independently, and set",
+        "bbox": [
+            111,
+            148,
+            885,
+            234
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "equation",
+        "img_path": "images/d6137b3cf28dcd0e6f68a9ef8fb5d5f75f7604be0afba08f4c13a33f912bd936.jpg",
+        "text": "$$\nX = h _ { 0 } ( Z , H , \\varepsilon _ { X } ) + 0 . 5 W , \\qquad Y = g _ { 0 } ( X , H , \\varepsilon _ { Y } ) + 0 . 5 W .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            272,
+            247,
+            723,
+            266
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "chart",
+        "img_path": "images/62dc8e0658d02654bb75d3f4d4b78880838875b4ad486f20d24b165aa6060be5.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 8: Interventional quantile MSE with one observed pretreatment covariate at $n = 4 0 0 0$ . Rows correspond to treatment settings, and columns correspond to outcome settings. Results are averaged over 100 random seeds with standard deviations in shaded regions."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            197,
+            291,
+            805,
+            651
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "Results. Figure 8 shows that TabCF remains accurate after covariate adjustment. This is also a practical advantage of the TabCF interface, because many existing methods [5, 23, 35] do not natively support pretreatment covariates.",
+        "bbox": [
+            111,
+            753,
+            885,
+            806
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "C.2 Experiments on violation of common support condition",
+        "text_level": 2,
+        "bbox": [
+            111,
+            824,
+            709,
+            842
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "TabCF requires the common support condition (CF2), which may not be satisfied in practice. Thus, it is crucial to assess its robustness to violations of (CF2). To this end, we consider synthetic experiments with a bounded instrument, $Z \\sim \\mathrm { U n i f } [ 0 , 3 ]$ . Apart from replacing the instrument",
+        "bbox": [
+            111,
+            851,
+            887,
+            904
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "page_number",
+        "text": "20",
+        "bbox": [
+            486,
+            934,
+            509,
+            948
+        ],
+        "page_idx": 19
+    },
+    {
+        "type": "text",
+        "text": "distribution, we use the same settings as the experiments in Section 4. Recall that the treatment models are given as:",
+        "bbox": [
+            111,
+            92,
+            883,
+            125
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "(T1) Additive linear mean: $X = Z + H + \\varepsilon _ { X } ;$",
+        "bbox": [
+            112,
+            127,
+            478,
+            145
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "(T2) Quadratic mean with linear scale: $\\begin{array} { r } { X = \\left( 2 Z + \\frac { 1 } { 4 } Z ^ { 2 } \\right) + ( 1 + 0 . 1 5 Z ) \\left( H + \\varepsilon _ { X } \\right) . } \\end{array}$",
+        "bbox": [
+            112,
+            147,
+            754,
+            167
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "Common support condition (CF2) is violated. Let $\\eta = H + \\varepsilon _ { X } \\sim \\mathcal { N } ( 0 , 2 )$ . Because $Z$ is bounded, conditioning on an observed treatment value restricts the possible values of the first-stage disturbance. In the linear case,",
+        "bbox": [
+            111,
+            184,
+            885,
+            236
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "equation",
+        "img_path": "images/6361f39c2a5eaf9b2b8af458c123149c4f4b5b77aec762a41782d5ac99f62df8.jpg",
+        "text": "$$\n\\operatorname { s u p p } ( \\eta \\mid X = x ) = [ x - 3 , x ] \\subsetneq \\mathbb { R } = \\operatorname { s u p p } ( \\eta ) .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            320,
+            250,
+            673,
+            268
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "In the nonlinear case,",
+        "bbox": [
+            111,
+            281,
+            287,
+            297
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "equation",
+        "img_path": "images/42b3ac0a9457e9f297b4fe507409e6647fed7166b6f54e151386582c7c9f30f3.jpg",
+        "text": "$$\n\\operatorname { s u p p } ( \\eta \\mid X = x ) = \\left\\{ { \\frac { x - 2 z - z ^ { 2 } / 4 } { 1 + 0 . 1 5 z } } : z \\in [ 0 , 3 ] \\right\\} \\subsetneq \\mathbb { R } .\n$$",
+        "text_format": "latex",
+        "bbox": [
+            287,
+            309,
+            705,
+            347
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "text",
+        "text": "Thus, unlike the normal Z design, these bounded-IV setups violate the common support condition in Section 2.2. The evaluation is nevertheless restricted to the central treatment region, so the violation is moderate.",
+        "bbox": [
+            111,
+            357,
+            885,
+            409
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "chart",
+        "img_path": "images/e5c5642dac548ac05e2a75b3ae2186633476f0661886ca048d87d19f8e421165.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 9: Interventional mean estimation under $Z \\sim \\mathrm { U n i f } [ 0 , 3 ]$ . Rows correspond to treatment settings, and columns correspond to outcome settings. Results are averaged over 100 random seeds with standard deviations in shaded regions."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            176,
+            417,
+            826,
+            801
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "page_number",
+        "text": "21",
+        "bbox": [
+            486,
+            934,
+            509,
+            948
+        ],
+        "page_idx": 20
+    },
+    {
+        "type": "chart",
+        "img_path": "images/2fa3ee45af039be03ec35d73bec51dee31bda4fec4368b62e80f6efccf44e054.jpg",
+        "content": "",
+        "chart_caption": [],
+        "chart_footnote": [],
+        "bbox": [
+            196,
+            88,
+            807,
+            448
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "chart",
+        "img_path": "images/5b7a711282798a61a097eaf1bccd71f2689e04df1cd8fcc2aca0301f8d218f0d.jpg",
+        "content": "",
+        "chart_caption": [
+            "Figure 10: Interventional quantile estimation under $Z \\sim \\mathrm { U n i f } [ 0 , 3 ]$ at $n = 4 0 0 0$ . Rows correspond to treatment settings and columns correspond to outcome settings. Results are averaged over 100 random seeds with standard deviations in shaded regions.",
+            "Figure 11: Bivariate-outcome sliced Wasserstein distance under $Z \\sim \\mathrm { U n i f } [ 0 , 3 ]$ when $n = 2 0 0 0$ and $\\rho _ { \\varepsilon } = 0 . 6$ . Results are averaged over 100 random seeds with standard deviations in shaded regions.",
+            "Results. Figures 9–11 are the uniform-Z counterparts of the experiments in Sections 4.1, 4.2, and 4.4, respectively. The results show that TabCF remains competitive under this moderate violation of the common support condition, supporting the empirical robustness of the method beyond the well-specified regime used for the experiments in Section 4."
+        ],
+        "chart_footnote": [],
+        "bbox": [
+            117,
+            531,
+            879,
+            731
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "page_number",
+        "text": "22",
+        "bbox": [
+            486,
+            934,
+            509,
+            948
+        ],
+        "page_idx": 21
+    },
+    {
+        "type": "text",
+        "text": "C.3 Experiments on instrument relevance",
+        "text_level": 2,
+        "bbox": [
+            112,
+            90,
+            534,
+            108
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "This section examines how TabCF behaves as the strength of instrument Z varies, especially when the IV strength is weak.",
+        "bbox": [
+            111,
+            117,
+            883,
+            150
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "We use the interventional quantile setting with $n = 4 0 0 0 , \\tau = 0 . 5 , Z \\sim \\mathcal { N } ( 1 . 5 , 0 . 7 5 ^ { 2 } )$ , and modify the six treatment-outcome settings from Section 4.2. We consider three weak-IV setups indexed by $\\kappa \\in \\{ 0 . 0 5 , 0 . 1 5 , 0 . 2 5 \\}$ as described below, where smaller κ makes X less dependent on Z. For treatment model (T1), we modify it by setting",
+        "bbox": [
+            111,
+            151,
+            885,
+            220
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "equation",
+        "img_path": "images/a0a1762f28dd9c0c4548cd62fa1d2c4db452f035c53ef742fa3de90068389e76.jpg",
+        "text": "$$\nX = 1 . 5 + \\kappa ( Z - 1 . 5 ) + H + \\varepsilon _ { X } ,\n$$",
+        "text_format": "latex",
+        "bbox": [
+            367,
+            233,
+            629,
+            251
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "while for treatment model (T2), we shrink both the mean and scale toward their marginal normal-Z expectations,",
+        "bbox": [
+            111,
+            265,
+            883,
+            299
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "equation",
+        "img_path": "images/526a993d71d2dea7ea6ad949c886448fa0c2e2a7629233d08e6343330e6a3f6d.jpg",
+        "text": "$$\n\\begin{array} { r } { X = \\bar { m } + \\kappa \\{ m ( Z ) - \\bar { m } \\} + \\{ \\bar { s } + \\kappa ( s ( Z ) - \\bar { s } ) \\} ( H + \\varepsilon x ) , \\quad m ( z ) = 2 z + \\frac { 1 } { 4 } z ^ { 2 } , \\quad s ( z ) = 1 + 0 . 1 5 z . } \\end{array}\n$$",
+        "text_format": "latex",
+        "bbox": [
+            127,
+            311,
+            866,
+            332
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "Here m¯ and s¯ denote the corresponding marginal expectations under the normal-Z distribution.",
+        "bbox": [
+            112,
+            343,
+            864,
+            361
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "table",
+        "img_path": "images/a87af62d4800d693c9379b726d5598a788a8112e4b74a1726f3027f87342d245.jpg",
+        "table_caption": [
+            "Table 3: MSE of interventional median $( \\tau = 0 . 5 )$ estimation. Results are averaged over 100 random seeds with standard deviations in parentheses."
+        ],
+        "table_footnote": [],
+        "table_body": "<table><tr><td>κ</td><td>Setting</td><td>TabCF (TabPFNv2.5)</td><td>TabCF (TabICLv2)</td><td>DIV</td><td>IVQR</td></tr><tr><td>0.05</td><td>(T1,01)</td><td>0.02 (0.01)</td><td>0.08 (0.04)</td><td>0.02 (0.01)</td><td>0.06 (0.39)</td></tr><tr><td>0.05</td><td>(T1,02)</td><td>5.51 (0.63)</td><td>3.86 (0.84)</td><td>7.32 (0.24)</td><td>5.33 (6.41)</td></tr><tr><td>0.05</td><td>(T1,03)</td><td>0.86 (0.16)</td><td>1.89 (0.67)</td><td>0.66 (0.13)</td><td>1.48 (28.05)</td></tr><tr><td>0.05</td><td>(T2,01)</td><td>0.01 (0.01)</td><td>0.05 (0.04)</td><td>0.00 (0.01)</td><td>0.09 (0.03)</td></tr><tr><td>0.05</td><td>(T2,02)</td><td>2.53 (0.57)</td><td>4.08 (0.81)</td><td>7.63 (0.53)</td><td>5.28 (2.52)</td></tr><tr><td>0.05</td><td>(T2,03)</td><td>0.59 (0.43)</td><td>1.73 (1.89)</td><td>0.97 (0.10)</td><td>1.71 (1.67)</td></tr><tr><td>0.15</td><td>(T1,01)</td><td>0.03 (0.02)</td><td>0.03 (0.08)</td><td>0.02 (0.00)</td><td>0.03 (0.01)</td></tr><tr><td>0.15</td><td>(T1,02)</td><td>2.81 (0.71)</td><td>2.22 (0.66)</td><td>6.09 (0.52)</td><td>4.58 (0.39)</td></tr><tr><td>0.15</td><td>(T1,03)</td><td>0.67 (0.07)</td><td>1.19 (0.41)</td><td>0.62 (0.09)</td><td>0.92 (0.39)</td></tr><tr><td>0.15</td><td>(T2,01)</td><td>0.00 (0.01)</td><td>0.01 (0.03)</td><td>0.00 (0.00)</td><td>0.09 (0.01)</td></tr><tr><td>0.15</td><td>(T2,02)</td><td>0.54 (0.21)</td><td>1.66 (0.48)</td><td>4.91 (0.27)</td><td>4.67 (0.29)</td></tr><tr><td>0.15</td><td>(T2,03)</td><td>0.30 (0.19)</td><td>0.70 (0.82)</td><td>0.94 (0.09)</td><td>1.02 (0.24)</td></tr><tr><td>0.25</td><td>(T1,01)</td><td>0.02 (0.02)</td><td>0.02 (0.02)</td><td>0.02 (0.00)</td><td>0.03 (0.01)</td></tr><tr><td>0.25</td><td>(T1,02)</td><td>1.88 (0.67)</td><td>1.57 (0.48)</td><td>4.95 (0.39)</td><td>4.42 (0.16)</td></tr><tr><td>0.25</td><td>(T1,03)</td><td>0.48 (0.09)</td><td>0.86 (0.30)</td><td>0.53 (0.07)</td><td>0.96 (0.15)</td></tr><tr><td>0.25</td><td>(T2,01)</td><td>0.00 (0.00)</td><td>0.01 (0.01)</td><td>0.00 (0.00)</td><td>0.08 (0.01)</td></tr><tr><td>0.25</td><td>(T2,02)</td><td>0.18 (0.16)</td><td>0.59 (0.22)</td><td>4.50 (0.09)</td><td>4.55 (0.15)</td></tr><tr><td>0.25</td><td>(T2,O3)</td><td>0.10 (0.22)</td><td>0.31 (0.27)</td><td>0.91 (0.09)</td><td>0.97 (0.14)</td></tr></table>",
+        "bbox": [
+            137,
+            417,
+            859,
+            733
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "Results. Table 3 shows that weaker relevance mainly afects the harder periodic outcome settings. Errors generally decrease as κ increases, most visibly for O2 and O3. Across these weak-IV regimes, TabCF with TabPFNv2.5 is competitive in nearly all settings and are often the best-performing methods in the nonlinear T2 rows, while DIV remains strong in the simplest O1 cases and in some T1/O3 settings. IVQR is comparatively stable in the easiest cases but is less accurate on the harder weak-IV designs. Overall, TabCF degrades gracefully as instrument relevance weakens. This result also suggests TabPFNv2.5 is more robust than TabICLv2 for TabCF in weak relevance regime.",
+        "bbox": [
+            109,
+            770,
+            887,
+            891
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "page_number",
+        "text": "23",
+        "bbox": [
+            486,
+            934,
+            509,
+            948
+        ],
+        "page_idx": 22
+    },
+    {
+        "type": "text",
+        "text": "D Implementation notes",
+        "text_level": 2,
+        "bbox": [
+            112,
+            88,
+            411,
+            108
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "D.1 TabCF",
+        "text_level": 2,
+        "bbox": [
+            112,
+            121,
+            241,
+            138
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "Interventional means. For the mean experiments in Section 4.1, TabCF is implemented as the two-stage plug-in procedure from Section 2.3. The first stage fits a probabilistic tabular backbone to X given Z and forms ${ \\widehat { V } } _ { i } = { \\widehat { F } } _ { X \\mid Z } ( X _ { i } \\mid Z _ { i } )$ using the backbone’s predictive CDF. The second stage fits the same type of backbone to Y given $( X , { \\widehat { V } } )$ and evaluates the structural mean on the intervention grid by averaging over $v \\in [ 0 , 1 ]$ . In light of the common-support condition in Section 2.2, the reported MSE is computed only on held-out intervention values whose X values fall in the empirical 0.05–0.95 quantile range of the test-set treatment distribution; the training data used to fit the two stages are not trimmed. The TabPFN and TabICL variants difer only in this predictive backbone; no design-specific hyperparameter search is performed.",
+        "bbox": [
+            111,
+            148,
+            885,
+            308
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "Interventional quantiles. For Section 4.2, the implementation estimates the full interventional CDF before computing quantiles. After constructing $\\widehat { V }$ as above, we fit a conditional CDF model for $Y \\mid X , { \\widehat { V } }$ , evaluate ${ \\widehat { F } } _ { Y \\mid X , V } ( y \\mid x , v )$ on a fixed $( x , y )$ grid, integrate the CDF values over the same v quadrature rule, and then invert the resulting monotone CDF numerically for each requested τ. This keeps the quantile estimator tied to a single estimated distribution rather than fitting a separate quantile regression at each level. Because each intervention value requires repeated CDF evaluations across both outcome and control-function grids, the quantile experiments use 200 treatment values for evaluation. These treatment values are chosen as evenly spaced empirical quantiles over the central 0.05–0.95 range of the held-out treatment distribution, matching the same interior-support convention used in the mean experiments while keeping the distributional computation feasible.",
+        "bbox": [
+            111,
+            324,
+            885,
+            496
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "For Section 4.4, TabCF first applies the scalar distributional estimator componentwise to obtain marginal interventional CDFs for $Y _ { 1 }$ and $Y _ { 2 }$ . The joint law is then assembled with an x-invariant copula fitted from pseudo-uniform scores derived from the estimated marginals. The same marginalfitting interface is used for the TabPFN, TabICL, and naive marginal variants; the independence baseline keeps the TabCF marginals but fixes the copula to $C ( u _ { 1 } , u _ { 2 } ) = u _ { 1 } u _ { 2 }$ . For the bivariate experiments, we evaluate the joint law at 13 equally spaced intervention values over [0, 3], ensuring that the target interventions remain within the central design region used to generate the data. This coarser grid also controls computation, since each intervention value requires marginal distribution evaluation for both outcomes, copula-based sampling or CDF evaluation, and comparison with the oracle joint law.",
+        "bbox": [
+            111,
+            496,
+            885,
+            667
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "D.2 Competing methods",
+        "text_level": 2,
+        "bbox": [
+            112,
+            685,
+            370,
+            704
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "This appendix summarizes the benchmark methods used in Sections 4.1 and 4.2. For each method, we indicate, when relevant, whether it is primarily designed for interventional mean estimation, distribution/quantile estimation, or both. We list only methods that appear in the reported benchmark tables and figures; related-work methods that are discussed elsewhere but not benchmarked here are omitted unless needed for clarification",
+        "bbox": [
+            111,
+            712,
+            885,
+            799
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "Two-stage residual inclusion. Two-stage residual inclusion (2SRI) regression was developed in econometrics for interventional mean estimation based on augmenting the outcome regression with a control variable that accounts for endogeneity [15, 39]. Following the DIV benchmark implementation, we include both a linear CF baseline and a nonlinear CF baseline; the nonlinear version uses natural cubic splines for basis expansion. The implementations use R’s lm routine, together with splines::ns for the nonlinear variant. We use the benchmark defaults, including df = 5 for the spline basis.",
+        "bbox": [
+            111,
+            818,
+            885,
+            904
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "page_number",
+        "text": "24",
+        "bbox": [
+            486,
+            934,
+            509,
+            948
+        ],
+        "page_idx": 23
+    },
+    {
+        "type": "text",
+        "text": "",
+        "bbox": [
+            111,
+            92,
+            883,
+            126
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "DeepIV. DeepIV [16] estimates the conditional distribution p(X | Z) in the first stage and then learns a second-stage response model by integrating over that estimated treatment distribution. It is primarily designed for interventional mean estimation rather than full distributional recovery. The method repository is https://github.com/jhartford/DeepIV; our benchmark uses the econml.iv.nnet.DeepIV implementation from https://github.com/py-why/EconML. We use the fixed default settings in our benchmark wrapper, including the specified feed-forward Keras architectures, training options, and restart count.",
+        "bbox": [
+            111,
+            143,
+            885,
+            266
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "DeepGMM. DeepGMM [5] uses neural networks within a generalized method of moments (GMM) objective to learn a structural function satisfying the moment conditions, targeting mean efects. The method repository is https://github.com/CausalML/DeepGMM. We call the released ToyModelSelectionMethod with its built-in model selection and training defaults.",
+        "bbox": [
+            109,
+            284,
+            885,
+            353
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "DIV. Distributional Instrumental Variable (DIV) [20] is a generative-model-based IV method that directly targets the interventional distribution in nonlinear settings. In our comparisons, DIV is the distributional baseline used for both mean and quantile functionals: means are computed from the estimated interventional distribution, and quantiles are obtained by inverting the estimated interventional CDF. The software is the R package DistributionIV; its CRAN page is https: //cran.r-project.org/package=DistributionIV, and a read-only CRAN GitHub mirror is https: //github.com/cran/DistributionIV. We use the package/default benchmark settings for the neural DIV fit (e.g., default noise dimensions, layer count, epochs, and learning rate in the simulation wrapper).",
+        "bbox": [
+            109,
+            371,
+            887,
+            527
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "IVQR. Instrumental variable quantile regression (IVQR) [9] targets quantile treatment efects using IVs. It is a standard quantile-focused econometric baseline in our interventional quantile experiments. The R package repository is https://github.com/yuchang0321/IVQR. We use the package’s default IVQR estimation choices together with the benchmark wrapper’s automatic coeficient grid.",
+        "bbox": [
+            111,
+            545,
+            885,
+            614
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "TabPFN-naive. TabPFN-naive uses the TabPFNv2.5 predictive backbone as TabCF but treats the task as a direct regression of Y on X, without any IV adjustment or control-function step. It therefore serves as an endogeneity-ignorant reference that isolates the value of the IV correction rather than the predictive backbone itself. The TabPFN repository is https://github.com/PriorLabs/TabPFN. We use the default pretrained TabPFNRegressor configuration in this naive regression wrapper.",
+        "bbox": [
+            111,
+            632,
+            887,
+            719
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "E Details of real data examples",
+        "text_level": 2,
+        "bbox": [
+            111,
+            741,
+            491,
+            761
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "This appendix provides background details for the four real-data applications summarized in Section 5. The purpose of these applications is not to provide a definitive empirical re-analysis of each original study. Instead, we use them as standardized scalar-IV benchmarks for assessing whether TabCF produces economically interpretable and appropriately regularized causal curves on small or moderatesized tabular data. For comparability across applications, we retain one excluded instrument, one endogenous treatment, and one outcome in each dataset. Continuous-treatment applications are evaluated on a grid over the observed treatment support, while the schooling application is evaluated only at observed schooling levels because education is ordered and discrete.",
+        "bbox": [
+            109,
+            775,
+            887,
+            912
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "page_number",
+        "text": "25",
+        "bbox": [
+            486,
+            934,
+            509,
+            948
+        ],
+        "page_idx": 24
+    },
+    {
+        "type": "text",
+        "text": "AJR. The colonial-origins application follows the Acemoglu-Johnson-Robinson design, in which historical settler mortality is used as an instrument for institutional quality [1]. There are n = 64 countries. The economic mechanism is that European colonization strategies difered across disease environments: where settler mortality was high, colonial powers were less likely to establish inclusive institutions and secure property-rights protections. The treatment is therefore a measure of institutional quality, and the outcome is long-run income measured by log GDP per capita. Prior linear-IV analyses and the recent DIV application both suggest a positive, approximately linear relationship between institutional quality and income [20]. Thus, a desirable flexible method should recover the positive direction of the efect without introducing unsupported nonlinearities.",
+        "bbox": [
+            111,
+            90,
+            885,
+            247
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "Fulton Fish. The Fulton Fish Market application is a canonical example in which price is endogenous because market-clearing prices respond to both supply and demand shocks [13]. It consists of $n = 1 1 1$ days of transaction-level data. Weather conditions provide a natural source of exogenous variation in supply: rougher sea conditions afect the quantity of fish brought to market and therefore prices, while plausibly having no direct efect on consumer demand conditional on price. We use this supply-side variation to estimate how the log quantity sold changes with log average price. This benchmark is useful because economic theory gives a clear qualitative reference: demand should decrease as price rises, while the small sample leaves room for flexible methods to overfit local variation. On the same benchmark, the interventional quantile comparison among TabCF (TabPFNv2.5), DIV, and IVQR yields uniformly downward-sloping structural quantile curves. TabCF remains the smoothest across quantile levels, while DIV and IVQR produce steeper and more quantile-sensitive demand responses.",
+        "bbox": [
+            109,
+            265,
+            887,
+            472
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "Card. The Card application (n = 1484) uses geographic proximity to a four-year college as an instrument for educational attainment [7]. The instrument shifts the cost of obtaining additional schooling, and the outcome is the log wage in adulthood. Unlike the continuous-treatment benchmarks above, this application has a binary instrument and an ordered discrete treatment. Moreover, the original Card-style specifications typically include a richer set of pre-treatment covariates than the scalar-IV benchmark used here. We therefore interpret this application as a stress test for regularized curve estimation under a familiar empirical design, rather than as a fully specified replication of the original returns-to-schooling analysis. The fitted curve should be read primarily as a comparison of how the methods regularize the wage–schooling relationship over the observed education support.",
+        "bbox": [
+            111,
+            489,
+            885,
+            645
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "text",
+        "text": "CigarettesSW. The cigarette-demand application uses state-level $( n = 4 8 \\times 2 )$ variation in cigarette taxes to instrument for real cigarette prices [37]. The outcome is log packs per capita, and the treatment is log real price. Since cigarette prices may reflect both policy variation and unobserved demand conditions, tax variation provides the excluded source of price variation used for IV estimation. This application serves as a second demand benchmark: the economically relevant qualitative question is whether the fitted interventional mean curve is consistent with lower consumption at higher prices while remaining stable in a small state-level panel.",
+        "bbox": [
+            111,
+            661,
+            887,
+            784
+        ],
+        "page_idx": 25
+    },
+    {
+        "type": "page_number",
+        "text": "26",
+        "bbox": [
+            486,
+            934,
+            509,
+            948
+        ],
+        "page_idx": 25
+    }
+]

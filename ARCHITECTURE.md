@@ -227,9 +227,14 @@ These back the invariants asserted above. They are **not optional** and each has
 Full patterns + code-shape in `CONVENTIONS.md`; schemas in `DATA-CONTRACTS.md`.
 
 1. **Idempotency & resume = an `ingest_state` table, not cleverness.** One row per `paper_id` with a
-   per-stage status (`harvested/parsed/chunked/summarized/embedded/stored/done` + `failed`). Every stage **checks the
+   per-stage status (`harvested/parsed/chunked/summarized/embedded/stored/done`). Every stage **checks the
    row before doing work and upserts after** — so a re-run skips completed work and a crash resumes mid-corpus.
    All writes are **upserts keyed by stable id** (never blind `INSERT`), so re-running never duplicates.
+   `failed` is **not** part of this vocabulary — a bad paper never sits at `ingest_state.stage="failed"`; it
+   moves to `quarantine` instead (invariant 2 below), whose row removal is what "this paper is bad" durably
+   means. (An earlier version of this doc listed `+ failed` here; that wording was stale — the schema,
+   `rag/orchestrator.py`'s `_STAGES`, and every `state` fake/adapter have always agreed on the six values
+   above, T-A2 checkpoint-durability fix.)
    **`stored` vs. `done`, pinned exactly (closes the one gap the six-stage list leaves open):** `stored` is
    set immediately after `DocumentStore.put()` succeeds (source-of-truth written). `VectorIndex.upsert()`
    runs **after** that — it is not part of the `put()` call — and only once it succeeds does the Orchestrator

@@ -97,11 +97,12 @@ def _make_ref(paper_id: str, categories=("cs.LG",)) -> PaperRef:
     )
 
 
-def _payload(paper_id, kind, section_path, categories, embedder):
+def _payload(paper_id, kind, section_path, categories, embedder, text):
     return {
         "paper_id": paper_id,
         "kind": kind,
         "section_path": section_path,
+        "text": text,
         "categories": list(categories),
         "published": "2026-06-01",
         "embedding_version": embedder.info.version,
@@ -130,7 +131,7 @@ def _seed_chunk(store, docstore, embedder, *, chunk_id, paper_id, block_id, text
                          references=[], parser_id="test-parser-1.x"),
         chunks=[chunk], summary_text="s", summary_id=f"{paper_id}:summary")
     store.upsert(chunk_id, embedder.embed([text])[0],
-                 _payload(paper_id, "chunk", section_path, categories, embedder))
+                 _payload(paper_id, "chunk", section_path, categories, embedder, text))
     return chunk
 
 
@@ -143,7 +144,7 @@ def _seed_summary(store, docstore, embedder, *, paper_id, summary_id, summary_te
                          references=[], parser_id="test-parser-1.x"),
         chunks=[], summary_text=summary_text, summary_id=summary_id)
     store.upsert(summary_id, embedder.embed([summary_text])[0],
-                 _payload(paper_id, "summary", section_path, categories, embedder))
+                 _payload(paper_id, "summary", section_path, categories, embedder, summary_text))
 
 
 def _make_retriever(store, docstore, reranker, embedder=None):
@@ -311,6 +312,15 @@ def test_retrieve_filters_is_searchfilters_not_dict():
 # ===========================================================================
 # retrieve_papers() — whole-paper / summary level
 # ===========================================================================
+def test_paper_id_from_summary_hit_id_parses_frozen_format():
+    # Pins the "{paper_id}:summary" convention (DATA-CONTRACTS.md "IDs — the spine", Rule 3) that
+    # `_paper_id_from_summary_hit_id` is the ONE sanctioned place in the codebase allowed to parse
+    # (ci/checks/id_slicing.py fences its check around this exact function). If this format ever
+    # changes, this is the one place that depends on it, and it should break loudly here first
+    # rather than silently parsing garbage at the call site.
+    assert _mod._paper_id_from_summary_hit_id("2506.01234:summary") == "2506.01234"
+
+
 def test_retrieve_papers_empty_corpus_returns_empty_list():
     r = _make_retriever(FakeVectorStore(), RecordingDocStore(), FakeReranker())
     assert r.retrieve_papers("any query", filters=None, k=10) == []

@@ -271,7 +271,16 @@ class PaperRecord:
 #   get_block(block_id) -> Block                # ContractError if unknown — a dangling parent_id is a bug
 #   get_chunk(chunk_id) -> Chunk                # ContractError if unknown
 #   get_summary(summary_id) -> str              # ContractError if unknown; hides the "{paper_id}:summary"
-#                                                # ID format from callers — Retriever never parses it
+#                                                # ID format from callers, with one bounded exception:
+#                                                # Retriever.retrieve_papers() is the one sanctioned
+#                                                # parser of this format, via its
+#                                                # _paper_id_from_summary_hit_id() helper (rag/
+#                                                # retriever.py) — get_summary/Hit carry no paper_id
+#                                                # field to resolve() against, so no getter hands it
+#                                                # back the way get_chunk/get_block do. If a second
+#                                                # module ever needs this, that need is the signal to
+#                                                # promote paper_id to a first-class field on Hit
+#                                                # instead of allowing a second ad-hoc parse site.
 #   get_span(anchor: Anchor) -> str             # resolves an anchor to the FULL text of anchor.block_id
 #                                                # (i.e. Block.text) — NOT the shorter Anchor.snippet.
 #                                                # snippet is already inline on the Anchor for quick
@@ -333,17 +342,26 @@ synthetic rank inputs; the fake-vs-Qdrant cross-adapter test is a **best-effort 
 unrelated dense/sparse implementations (hash-cosine vs. a trained model; token-overlap vs. real BM25) that
 have no reason to agree past the top few results even when `rrf_fuse` itself is correct on both sides.
 
-`VectorPayload` (stored beside each vector — kept minimal; the DocumentStore holds the real text):
+`VectorPayload` (stored beside each vector):
 
 ```python
 class VectorPayload(TypedDict):
     paper_id: str
     kind: Literal["chunk", "summary"]
     section_path: str
+    text: str                  # real chunk/summary passage text -- what the sparse channel indexes
     categories: list[str]      # for metadata filtering
     published: str             # ISO date, for date-range filters
     embedding_version: str     # must match the collection's model version
 ```
+
+`text` carries the real passage content and is what the sparse/keyword channel tokenizes (previously
+the sparse channel had no real text available at this seam and hashed `section_path` — a heading
+string — instead, so "keyword search" wasn't actually searching passage content; found via Spike 2's
+retrieval sweep, where the hybrid config scored far worse than dense-only). `section_path` remains as
+metadata (filtering/display) only, not as a text source for search. The DocumentStore is still the
+source of truth for this text — it's duplicated into the payload because the vector store needs it
+locally, at upsert time, to build the sparse vector.
 
 ## M7 Retriever output (the envelope — frozen shape, forward-compatible to V2)
 
@@ -568,6 +586,36 @@ No module calls `os.getenv` or reads the file itself. Changing scope = edit the 
 
 ---
 
+## M9 IngestionOrchestrator — checkpoint contract (`CheckpointArtifacts`)
+
+Decision record: `.phase0-data/orchestrator-checkpoint-proposal.md` (Option A) — fixes the T-A2
+(PR #38) gap where `ingest_state` carries only `stage`, not the artifacts a resumed run needs to
+skip re-invoking Chunker/Summarizer. `contracts/ingest_state.py`:
+
+```python
+class CheckpointArtifacts(FrozenModel):
+    parsed: ParsedDoc | None = None
+    chunks: list[Chunk] | None = None
+    summary_text: str | None = None
+    relevance_score: float | None = None
+```
+
+`state.checkpoint(paper_id, stage, artifacts)` merges `artifacts`'s non-`None` fields onto the
+row's existing `CheckpointArtifacts` (never un-sets an already-known field with `None`) and upserts
+`stage` — same "upsert keyed by stable id" idempotency rule as `ingest_state` itself (Operational
+invariants §1). Persisted in the additive `ingest_checkpoint` table below, keyed by `paper_id`; the
+row's artifacts are cleared once a paper reaches `done` (nothing left to resume — `ingest_state`'s
+own row is untouched, so a `done` paper is still skipped on re-run).
+
+**Named ceiling:** `ingest_checkpoint` holds transient, re-derivable data, not source of truth — if
+a future stage's artifacts get too large for a JSON column (e.g. full parsed docs at scale), revisit
+storage format (filesystem blob + path) then; don't build that now.
+
+**V1 forward-compat:** the `ClaimExtractor` stage (ARCHITECTURE.md "Extensibility") adds one more
+optional field here (`claims: list[Claim] | None`) — no new table, no new migration.
+
+---
+
 ## SQLite schema (source of truth — Owner D; V1 columns are noted but NOT created in V0)
 
 ```sql
@@ -639,6 +687,19 @@ CREATE TABLE quarantine (            -- dead-letter: one bad paper must not kill
 -- V1+ (DO NOT CREATE IN V0): claims(claim_id, paper_id, method, dataset, metric, value,
 --   conditions_json, anchor_json, ...), claim_relations(...), citation_edges(...). Named here only so
 --   Owner D leaves room; the schema is additive (new tables), never a migration of the above.
+```
+
+### ingest_checkpoint (additive — `migrations/0002_ingest_checkpoint.sql`, T-A2 checkpoint-durability fix)
+
+Durable storage for the `CheckpointArtifacts` shape above. Additive to the `ingest_state`/`quarantine`
+tables — `0001_init.sql` is never edited retroactively; a new column set for a future stage (V1's
+`ClaimExtractor`) is a new optional field on `CheckpointArtifacts`, not a schema migration.
+
+```sql
+CREATE TABLE ingest_checkpoint (
+  paper_id       TEXT PRIMARY KEY REFERENCES ingest_state(paper_id),
+  artifacts_json TEXT NOT NULL   -- serialized CheckpointArtifacts (contracts/ingest_state.py)
+);
 ```
 
 Run SQLite in **WAL mode** (ADR-05 — the relational-store decision; WAL is an implementation detail of

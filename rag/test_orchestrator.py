@@ -1,8 +1,8 @@
 # M1A-DORMANT (re-enable in M1b): skips until rag/orchestrator.py exists. M1b's Definition of Done
 # (CONVENTIONS §11) requires this suite to be active (importorskip resolves) and green.
 """T-A2 IngestionOrchestrator (M9) — tests-first suite (M1a). Drives the frozen `ingest()`
-interface end-to-end with all fakes (`FakeEmbedder`, `FakeGpuLock`, `FakeSummarizer`,
-`FakeVectorStore`) plus test-local spies. Zero network, zero GPU.
+interface end-to-end with all fakes (`FakeEmbedder`, `FakeGpuLock`, `FakeIngestState`,
+`FakeSummarizer`, `FakeVectorStore`) plus test-local spies. Zero network, zero GPU.
 
 Covers TEST-STRATEGY.md "Orchestrator" + WORK-BREAKDOWN T-A2:
   - full fake run: every paper reaches `done`;
@@ -53,12 +53,14 @@ to it (CONVENTIONS §0.7) or it is revised in review:
 `state` (the ingest_state / checkpoint store). "Checkpointed per stage" + "resume without
 re-running Chunker/Summarizer" operationally requires the checkpoint to persist BOTH the stage
 label AND that stage's output artifacts (the parsed doc / chunks / summary are lost on crash and
-are not yet in the atomic-whole-record DocumentStore before `stored`). Assumed minimal API,
-backed by the `ingest_state`/`quarantine` tables in production:
+are not yet in the atomic-whole-record DocumentStore before `stored`). API, backed by the
+`ingest_state`/`ingest_checkpoint`/`quarantine` tables in production (T-A2 checkpoint-durability
+fix, `.phase0-data/orchestrator-checkpoint-proposal.md` Option A — `rag/fakes/fake_ingest_state.py`
+is the committed fake, `contracts/ingest_state.py` the typed artifacts payload):
 
-    state.get(paper_id) -> Checkpoint | None      # Checkpoint has .stage and .artifacts (dict)
-    state.checkpoint(paper_id, stage, **artifacts) # upsert stage + merge artifacts (idempotent)
-    state.quarantine(paper_id, stage, error)       # dead-letter; run continues
+    state.get(paper_id) -> Checkpoint | None           # Checkpoint has .stage, .artifacts
+    state.checkpoint(paper_id, stage, artifacts=None)  # upsert stage; merge artifacts (idempotent)
+    state.quarantine(paper_id, stage, error)           # dead-letter; run continues
 
 Stage vocabulary is the frozen `ingest_state.stage` set (migrations/0001_init.sql):
 harvested|parsed|chunked|summarized|embedded|stored|done.
@@ -81,6 +83,7 @@ from contracts.parser import ParsedDoc
 from contracts.provenance import Anchor, Block
 from rag.fakes.fake_embedder import FakeEmbedder
 from rag.fakes.fake_gpu_lock import FakeGpuLock
+from rag.fakes.fake_ingest_state import FakeIngestState
 from rag.fakes.fake_source import FakeSource
 from rag.fakes.fake_summarizer import FakeSummarizer
 from rag.fakes.fake_vector_store import FakeVectorStore
@@ -306,38 +309,6 @@ class Rig:
         orch = orch or self.new_orchestrator(embedder=embedder, vector_index=vector_index)
         orch.ingest(self.config.focus_area_queries, self.config.corpus_cap)
         return orch
-
-
-class _Checkpoint:
-    def __init__(self, paper_id: str):
-        self.paper_id = paper_id
-        self.stage: str | None = None
-        self.artifacts: dict = {}
-
-
-class FakeIngestState:
-    """In-memory stand-in for the `ingest_state`/`quarantine` tables: per-paper stage + the stage
-    artifacts needed to resume without recompute, plus a dead-letter map."""
-
-    def __init__(self):
-        self._rows: dict[str, _Checkpoint] = {}
-        self.quarantined: dict[str, tuple[str, Exception]] = {}
-
-    def get(self, paper_id: str) -> _Checkpoint | None:
-        return self._rows.get(paper_id)
-
-    def checkpoint(self, paper_id: str, stage: str, **artifacts) -> None:
-        row = self._rows.setdefault(paper_id, _Checkpoint(paper_id))
-        row.stage = stage
-        row.artifacts.update(artifacts)
-
-    def quarantine(self, paper_id: str, stage: str, error: Exception) -> None:
-        self.quarantined[paper_id] = (stage, error)
-        self._rows.pop(paper_id, None)
-
-    def stage_of(self, paper_id: str) -> str | None:
-        row = self._rows.get(paper_id)
-        return row.stage if row else None
 
 
 def stored_ids(rig: Rig) -> set[str]:
