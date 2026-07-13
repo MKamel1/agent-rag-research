@@ -1,32 +1,35 @@
 """M9 IngestionOrchestrator (ARCHITECTURE.md "M9 · IngestionOrchestrator", owner A).
 
 `IngestionOrchestrator.ingest(focus_area, cap)` wires harvest -> parse -> {chunk, summarize} ->
-embed -> compute relevance_score -> store (put) -> index (upsert), one paper at a time, resuming
-from the injected `state` checkpoint store wherever a prior run left off (CONVENTIONS.md §5's
-idempotency pattern: read the row before doing a stage's work, upsert it after).
+embed -> compute relevance_score -> store (put) -> index (upsert), resuming from the injected
+`state` checkpoint store wherever a prior run left off (CONVENTIONS.md §5's idempotency pattern:
+read the row before doing a stage's work, upsert it after).
 
-Pipelining (ARCHITECTURE.md "Operational invariants" §3 / CONVENTIONS.md §6): CPU-bound work
-(parse/chunk) for paper N+1 runs on a one-deep background prefetch while GPU-bound work
-(summarize/embed) for paper N is in flight on the main thread, so the GPU-bound-call queue
-doesn't sit idle waiting on CPU stages. This orchestrator acquires the injected `GpuLock` around
-no work of its own -- the stage adapters (Summarizer/Embedder) acquire it themselves around their
-own inference calls; the Orchestrator only wires the same `GpuLock` instance through (accepted as
-a constructor argument, stored, never `.acquire()`d here).
+Two passes, not per-paper pipelining (ARCHITECTURE.md "Operational invariants" §3 -- corrected):
+`parse_phase()` drives every paper to `chunked` (MinerU, GPU-bound); `finish_phase()` then drives
+every paper from wherever it sits to `done` (Summarizer+Embedder, also GPU-bound). This project's
+own real-adapter VRAM measurements showed MinerU and the Summarizer together don't fit this
+project's GPU budget, so the two GPU-bound stages must never run in the same window -- an earlier
+per-paper-pipelined design (CPU prep for paper N+1 overlapping GPU finish for paper N) was
+correctness-neutral but memory-unsafe once the corpus needed both models loaded during overlap.
+The two-pass split is not a performance regression; it is the fix for a real, reproduced CUDA OOM.
+`before_parse_phase`/`before_finish_phase` (constructor args, both default no-op) are hooks for a
+composition root to evict the model the *other* phase doesn't need -- see `app/assembly.py`.
 
-Cross-thread `state` access (decision proposal `.phase0-data/orchestrator-checkpoint-proposal.md`
-§5): `_prepare` (the prefetch-pool thread) and `_finish` (the main thread) both call
-`state.get`/`state.checkpoint` concurrently for adjacent papers. The injected `state` MUST be safe
-to call from two threads at once -- this is a precondition on every `state` adapter, not something
-this orchestrator serializes itself. A real sqlite3-backed adapter needs its own locking or a
-connection-per-call (sqlite3 connections default to `check_same_thread=True`); see
-`rag/ingest_state_sqlite.py` for one such adapter.
+This orchestrator acquires the injected `GpuLock` around no work of its own -- the stage adapters
+(Summarizer/Embedder) acquire it themselves around their own inference calls; the Orchestrator
+only wires the same `GpuLock` instance through (accepted as a constructor argument, stored, never
+`.acquire()`d here).
+
+`state` access: `_prepare`/`_finish` each call `state.get`/`state.checkpoint` for one paper at a
+time, sequentially within their own phase (no cross-thread concurrency anymore -- the prior
+one-deep prefetch thread is gone along with the per-paper interleaving it existed for).
 """
 
 from __future__ import annotations
 
 import math
 from collections.abc import Iterable
-from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 
 from contracts.chunker import Chunk
@@ -112,6 +115,9 @@ class IngestionOrchestrator:
         state,
         gpu_lock,
         config: Config,
+        *,
+        before_parse_phase=None,
+        before_finish_phase=None,
     ):
         self._harvester = harvester
         self._parser = parser
@@ -123,31 +129,56 @@ class IngestionOrchestrator:
         self._state = state
         self._gpu_lock = gpu_lock  # wired through to the composition root; never acquired here.
         self._config = config
+        # Model-lifecycle hooks (ARCHITECTURE.md §3): a composition root wires these to evict the
+        # GPU-bound model *this* phase doesn't need, so it never has to co-reside with the model
+        # the other phase does need. No-op by default -- every fake/test caller that doesn't pass
+        # these gets the prior single-process behavior unchanged.
+        self._before_parse_phase = before_parse_phase or (lambda: None)
+        self._before_finish_phase = before_finish_phase or (lambda: None)
 
     def ingest(self, focus_area: list[str], cap: int) -> None:
+        refs = self.harvest(focus_area, cap)
+        if not refs:
+            return
+        self.parse_phase(refs)
+        self.finish_phase(refs)
+
+    def harvest(self, focus_area: list[str], cap: int) -> list[PaperRef]:
+        """Public so a two-process caller (`app/parse_phase.py`/`app/ingest.py`) can harvest once
+        per process without reaching into `_harvester` directly -- each process re-harvests its
+        own `refs` rather than one process handing a list to the other (cheap relative to a
+        multi-day parse phase; `_finish_checkpoint`'s `state` guard makes re-harvesting safe even
+        if the two calls return slightly different sets)."""
+        return list(self._harvester.harvest(focus_area, cap, self._config.ordering))
+
+    def parse_phase(self, refs: list[PaperRef]) -> None:
+        """Pass 1: drive every ref to (at least) `chunked` using the CPU/MinerU-bound `_prepare`.
+        Sequential, not pipelined against Pass 2 -- see module docstring for why."""
+        self._before_parse_phase()
+        for ref in refs:
+            self._prepare(ref)
+
+    def finish_phase(self, refs: list[PaperRef]) -> None:
+        """Pass 2: drive every ref from wherever it sits to `done` using the GPU-bound `_finish`.
+        Resumes purely from durable `state`/`CheckpointArtifacts` -- nothing from Pass 1 is held
+        in memory across the phase boundary (matters at 15k-paper scale)."""
         # Hoisted exactly once per run, before the per-paper loop -- ARCHITECTURE.md §M9. The
         # query string never changes across papers in a run, so embedding it inside the loop
         # below would call embed() on a constant value once per paper for no reason.
         topic_query_vec = self._embedder.embed([" ".join(self._config.focus_area_queries)])[0]
+        self._before_finish_phase()
+        for ref in refs:
+            self._finish_checkpoint(ref, topic_query_vec)
 
-        refs = list(self._harvester.harvest(focus_area, cap, self._config.ordering))
-        if not refs:
+    def _finish_checkpoint(self, ref: PaperRef, topic_query_vec: list[float]) -> None:
+        """Guard `_finish` needs that the old inline loop got for free from `_prepare`'s return
+        value: skip a ref that Pass 1 quarantined (no `state` row at all) or that's already
+        `done` (idempotent re-run) -- `_finish` has no `parsed`/`chunks` to work with for either
+        and was never meant to be called on them."""
+        checkpoint = self._state.get(ref.paper_id)
+        if checkpoint is None or checkpoint.stage == "done":
             return
-
-        # One-deep prefetch: while the main thread runs GPU-bound `_finish` for paper i, the pool
-        # thread runs CPU-bound `_prepare` for paper i+1, so paper i+1's GPU stage never has to
-        # wait on its own parse/chunk once we reach it (ARCHITECTURE "Operational invariants" §3).
-        with ThreadPoolExecutor(max_workers=1) as pool:
-            prep_future = pool.submit(self._prepare, refs[0])
-            for i, ref in enumerate(refs):
-                this_future = prep_future
-                prep_future = (
-                    pool.submit(self._prepare, refs[i + 1]) if i + 1 < len(refs) else None
-                )
-                prepared = this_future.result()
-                if prepared is None:
-                    continue  # quarantined during prep, or already `done` -- nothing to finish
-                self._finish(prepared, topic_query_vec)
+        self._finish(_Prepared(ref=ref, parsed=None, chunks=None), topic_query_vec)
 
     # -- CPU-bound: harvest (already done)/parse/chunk -----------------------------------------
 

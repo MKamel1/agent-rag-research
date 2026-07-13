@@ -86,8 +86,9 @@ Ten modules, each independently ownable (owners A–F) and testable through its 
   deterministic `f"{paper_id}:summary"`, per DATA-CONTRACTS §IDs — never invented by this module).
   - *Invariants:* non-empty output; **GPU-bound** — the local generation LLM (ADR-08, served per
     ADR-09) acquires the shared `GpuLock` around its inference call exactly like Embedder and the
-    reranker (Operational invariants §3 below); it is expected to **co-reside** with them in VRAM
-    for the life of the process, not be evicted between calls.
+    reranker (Operational invariants §3 below). Unlike Embedder/Reranker, it is **not** expected to
+    stay resident for the whole ingest process — §3's measured VRAM budget means it's evicted before
+    the parse phase and reloaded for the finish phase (`unload()`, `before_parse_phase` hook).
   - *Errors:* a `ParsedDoc` with no usable prose (e.g. figures-only after a bad parse) → `PermanentError`
     → quarantine, not a crash.
 - **Hides (depth):** the summarization prompt, the model choice/serving stack, GPU-lock acquisition.
@@ -246,34 +247,63 @@ Full patterns + code-shape in `CONVENTIONS.md`; schemas in `DATA-CONTRACTS.md`.
    to `quarantine(paper_id, stage, error, ts)` and the pipeline **continues**. Quarantine is visible and
    re-runnable; it is *never* a silent `except: pass`. Transient errors retry with backoff; contract
    violations crash early (they are bugs, not data problems).
-3. **Single GPU = use it to its best, don't idle it.** The goal is to keep the one 24GB GPU busy and
-   minimize total run time — not to reload/unload models between stages, which idles the GPU on every
-   stage transition and works against that goal. Per PRD ADR-02/ADR-08's VRAM arithmetic (embedder
-   ~8.5GB @ Q8, summarizer ~7-8GB 4-bit, reranker ~1-2GB, ≈ 17-18GB total), the embedder, summarizer, and
-   reranker are **expected to co-reside** within the 24GB budget for the life of the process — they stay
-   loaded simultaneously, nobody evicts anybody.
-   - **`GpuLock` — cross-process compute serializer only.** `IngestionOrchestrator` (M9) and `McpServer`
-     (M8) are the system's two composition roots and V0 explicitly allows them to run concurrently as
-     separate processes (a multi-day ingest next to an always-on query server) — the typed, injected
-     **`GpuLock`** (DATA-CONTRACTS.md "GpuLock" section) serializes *inference calls* across that process
-     boundary so two GPU-bound calls never execute at the same instant, backed by a cross-process file
-     lock keyed off `Config.gpu_lock_path`. It does not manage residency or eviction — that is not its
-     job. In V0, a query simply queues behind an in-flight ingest call: no priority, no timeout. This is
-     an accepted V0 simplification, revisit only if it proves to be a real problem in practice.
-   - **The ~17-18GB co-residence estimate is unmeasured.** PHASE0-RUNBOOK.md's S0 step boots **both**
-     composition roots concurrently against the real serving stack and reads **peak concurrent VRAM** to
-     confirm it actually fits, and decides/documents whether the two processes share one embedding server
-     or each stands up its own (a VRAM-doubling ambiguity otherwise left open). If the measurement comes
-     back over budget (considered unlikely per the arithmetic above), the documented fallback is to
-     reconsider model choice/quantization — not stage-batched eviction; nothing is built for this
-     contingency now.
-   - **Keeping the GPU busy is pipelining, not eviction.** `IngestionOrchestrator` pipelines CPU-bound
-     work (harvest/parse/chunk/store) for paper N+1 concurrently with GPU-bound work for paper N, so the
-     GPU-bound-call queue never runs dry waiting on CPU work (M9 above). This is a design property of
-     T-A2, not a new type or contract.
-   - **If you see CUDA OOM,** the most likely cause is that the measured/assumed co-residence budget was
-     wrong — re-check the Phase-0 VRAM measurement and the model quantization choices. Co-residence is the
-     expected, correct steady state, not a bug to diagnose away.
+3. **Single GPU, four real consumers, measured VRAM (corrected — this section previously asserted
+   an unmeasured budget that turned out wrong).** A real end-to-end ingestion run reproduced a genuine
+   CUDA OOM. Measured footprints on this project's 24GB card: MinerU (parser) **~6.6GB**, Embedder (TEI
+   Qwen3-Embedding-4B) **~8.2GB**, Reranker (TEI BGE-reranker-v2-m3) **~1.4GB**, Summarizer (Ollama
+   qwen3:14b) **~11.8GB** — higher than the original ~7-8GB estimate. Embedder+Reranker+MinerU together
+   (~16.2GB) fit comfortably; the combination that doesn't fit is **MinerU + Summarizer at the same
+   time** (with Embedder+Reranker also resident, ~28GB). Embedder+Reranker are meant to be **always**
+   resident — they serve live queries continuously via `McpServer` — so MinerU and the Summarizer are
+   the two that must never be loaded together.
+   - **Fix: two-pass ingestion, not per-paper pipelining.** `IngestionOrchestrator.ingest()` (M9) runs
+     `parse_phase()` (every paper to `chunked`, MinerU) then `finish_phase()` (every paper from wherever
+     it sits to `done`, Summarizer+Embedder) — not the per-paper CPU/GPU pipelining this section
+     previously described. That pipelining was correctness-neutral but memory-unsafe: it required
+     MinerU and the Summarizer to co-reside during the overlap window. The two-pass split reuses the
+     existing `ingest_state` stage/checkpoint machinery to resume — nothing new was invented for
+     persistence, only the entry point changed (`rag/orchestrator.py`'s module docstring has the detail).
+   - **MinerU eviction is a subprocess, not an in-process unload.** Tried first, measured insufficient:
+     clearing MinerU's process-lifetime model caches (`ModelSingleton`/`AtomModelSingleton`) plus
+     `torch.cuda.empty_cache()` only released 57% of what one parse call had allocated — some
+     PaddlePaddle-backed OCR/table sub-models don't free through PyTorch's cache-clearing, and this
+     residue would accumulate paper after paper across a long run. `app/parse_phase.py` runs Pass 1 as
+     its own subprocess; its exit is what actually guarantees full VRAM release, regardless of what
+     MinerU's internal caches do. `app/ingest.py` runs that subprocess, then runs `finish_phase()` in
+     its own process once it exits.
+   - **Summarizer eviction is a real, verified mechanism.** `OllamaSummarizer.unload()` sends Ollama's
+     documented no-generation `keep_alive: 0` request — confirmed to evict the model immediately with no
+     inference call. `IngestionOrchestrator`'s constructor takes optional `before_parse_phase`/
+     `before_finish_phase` hooks (no-op by default); the composition root wires `before_parse_phase =
+     summarizer.unload` so Pass 1's subprocess evicts any resident Summarizer before MinerU loads.
+   - **Runtime residency — Pass 1 confirmed safe by a real run; Pass 2's real numbers are tighter
+     than first measured.** Pass 1 (parse) = MinerU 6.6 + Embedder 8.2 + Reranker 1.4 = **16.2GB**,
+     confirmed by two real end-to-end runs (`rag/test_composition_e2e.py`) with no OOM. Pass 2
+     (finish) was originally estimated at Summarizer 11.8 + Embedder 8.2 + Reranker 1.4 = 21.4GB
+     from small isolated test calls — but a **real full-length paper** measured higher on both:
+     Summarizer ~13.5GB (longer context → bigger KV cache than a short test prompt) and Embedder
+     ~9-10GB during its actual batch call (many real chunks, not 1-2 test strings), reproducibly
+     hitting a real `CUDA_ERROR_OUT_OF_MEMORY` in the TEI embed container at the ~24GB ceiling
+     (confirmed twice). **This is a separate, still-open finding from the MinerU/Summarizer fix
+     above (which is confirmed working) — Pass 2 itself needs its own follow-up** (candidates:
+     batch the embed call into smaller sub-batches so peak activation memory drops, evict the
+     Reranker during ingest-only runs since it's query-time-only, or accept tighter quantization).
+     Logged in `LESSONS-LEARNED.md`, not solved here.
+   - **`GpuLock` — cross-process compute serializer only, unchanged by this fix.** `IngestionOrchestrator`
+     (M9) and `McpServer` (M8) are the system's two composition roots and V0 explicitly allows them to
+     run concurrently as separate processes (a multi-day ingest next to an always-on query server) — the
+     typed, injected **`GpuLock`** (DATA-CONTRACTS.md "GpuLock" section) serializes *inference calls*
+     across that process boundary so two GPU-bound calls never execute at the same instant, backed by a
+     cross-process file lock keyed off `Config.gpu_lock_path`. It does not manage residency or eviction —
+     that's the job of the phase-boundary hooks above, a separate concern. In V0, a query simply queues
+     behind an in-flight ingest call: no priority, no timeout — accepted V0 simplification, unchanged.
+     `McpServer` never references either eviction hook and is unaffected by an ingest run.
+   - **If external GPU pressure means eviction still isn't enough** (something other than this system is
+     also on the GPU): no scheduler, no retry loop for V0 — a failure surfaces loud (`PermanentError`
+     from a parse OOM quarantines that paper; `TransientError` from a summarize OOM retries/stops the
+     run) and a re-run resumes from checkpoints. `# ponytail:` marks this ceiling at the phase-boundary
+     call sites — a poll-and-backoff `_ensure_vram` upgrade is a real option if this ever proves to be a
+     real problem, not built now.
    - "Backpressure" = a bounded queue so CPU stages (harvest, parse, DB writes) don't run arbitrarily far
      ahead of the GPU. Never write a GPU-bound adapter that skips acquiring `GpuLock` "because this call is
      quick" — the lock is what keeps two GPU-bound calls from executing at the same instant.

@@ -291,7 +291,9 @@ class Rig:
         self.gpu_lock = FakeGpuLock()
         self.config = Config(focus_area_queries=["causal inference", "treatment effect"])
 
-    def new_orchestrator(self, embedder=None, vector_index=None):
+    def new_orchestrator(
+        self, embedder=None, vector_index=None, before_parse_phase=None, before_finish_phase=None
+    ):
         return IngestionOrchestrator(
             harvester=self.harvester,
             parser=self.parser,
@@ -303,6 +305,8 @@ class Rig:
             state=self.state,
             gpu_lock=self.gpu_lock,
             config=self.config,
+            before_parse_phase=before_parse_phase,
+            before_finish_phase=before_finish_phase,
         )
 
     def ingest(self, orch=None, embedder=None, vector_index=None):
@@ -474,3 +478,35 @@ def test_orchestrator_wraps_no_gpu_work_of_its_own():
     rig = Rig()
     rig.ingest()
     assert rig.gpu_lock.acquired == []
+
+
+# ================================================================================================
+# Phase-boundary model-lifecycle hooks (ARCHITECTURE.md §3: two-pass ingest, not per-paper
+# pipelining — `before_parse_phase`/`before_finish_phase` let a composition root evict the model
+# the *other* phase doesn't need before it starts. No-op by default (every test above passes
+# neither and is unaffected); these two prove the ordering a real hook depends on.)
+# ================================================================================================
+
+def test_before_parse_phase_hook_fires_before_any_parsing():
+    rig = Rig()
+    snapshot = {}
+    orch = rig.new_orchestrator(before_parse_phase=lambda: snapshot.setdefault(
+        "parses_done_when_hook_fired", len(rig.parser.calls)
+    ))
+    rig.ingest(orch=orch)
+    assert snapshot["parses_done_when_hook_fired"] == 0
+    assert len(rig.parser.calls) == len(PAPER_IDS)  # the phase itself still ran to completion
+
+
+def test_before_finish_phase_hook_fires_after_every_parse_and_before_any_summarize():
+    rig = Rig()
+    snapshot = {}
+
+    def hook():
+        snapshot["parses_done"] = len(rig.parser.calls)
+        snapshot["summaries_done"] = len(rig.summarizer.calls)
+
+    rig.ingest(orch=rig.new_orchestrator(before_finish_phase=hook))
+    assert snapshot["parses_done"] == len(PAPER_IDS)  # Pass 1 fully finished first
+    assert snapshot["summaries_done"] == 0  # Pass 2's own work hadn't started yet
+    assert len(rig.summarizer.calls) == len(PAPER_IDS)  # and still completes normally after

@@ -146,11 +146,14 @@ M1a, before this implementation existed") **plus** the specifics below.
   `topic_query_vec` embed + one `summary_text` embed per paper), not `2N` (a test that only checks the
   final `relevance_score` values would pass even if the topic query were re-embedded every paper, since
   `FakeEmbedder` is deterministic — this call-count assertion is what actually catches the loop-placement
-  bug). Tested end-to-end with all fakes (incl. `FakeGpuLock`) and a poisoned paper. **Also accept:** the
-  Orchestrator demonstrates **GPU-stage pipelining across papers** — CPU-bound work (harvest/parse/chunk/
-  store) for paper N+1 proceeds while GPU-bound work for paper N is in flight, so the GPU-bound-call queue
-  doesn't sit idle waiting on CPU stages (ARCHITECTURE "Operational invariants" §3) — via a spy/timing-based
-  test.
+  bug). Tested end-to-end with all fakes (incl. `FakeGpuLock`) and a poisoned paper. **Corrected accept**
+  (was: GPU-stage pipelining across papers via a spy/timing test — real VRAM measurements showed this
+  requires MinerU and the Summarizer to co-reside, which reproduces a real CUDA OOM on this project's GPU
+  budget; ARCHITECTURE.md §3 has the numbers): the Orchestrator runs **two sequential passes**
+  (`parse_phase()` then `finish_phase()`, both over the whole corpus) instead, with `before_parse_phase`/
+  `before_finish_phase` hooks so a composition root can evict the model the other phase doesn't need.
+  Accept: a test proves the hook ordering (fires once, before/after the right phase's work) and that
+  correctness/idempotency/resume still hold under the two-pass split (`rag/test_orchestrator.py`).
 - **T-B1 Parser (M2)** — the Phase-0-chosen adapter behind the `Parser` interface + PDF/LaTeX routing +
   GROBID references. *Accept:* golden fixtures pass; every block has page+bbox; broken PDF → quarantine.
   *CI-allowlist:* introduces the real parser vendor (MinerU/Marker/Docling/GROBID) → add it to `VENDOR_RULES`
