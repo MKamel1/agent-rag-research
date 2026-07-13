@@ -83,6 +83,14 @@ def build_ingestion_orchestrator(
     return IngestionOrchestrator(
         harvester, parser, chunker, summarizer, embedder, document_store, vector_index,
         state, gpu_lock, config,
+        # Evict the Summarizer before Pass 1 (MinerU needs its VRAM back) -- see
+        # rag/orchestrator.py's module docstring and ARCHITECTURE.md §3. No `before_finish_phase`
+        # hook is wired here: Pass 1 (MinerU) runs in a separate subprocess (`app/parse_phase.py`),
+        # so that process's own exit is what releases MinerU's VRAM before Pass 2 -- verified
+        # empirically that clearing MinerU's in-process model caches only partially frees memory
+        # (PaddlePaddle-backed OCR/table sub-models don't release via torch.cuda.empty_cache()),
+        # so subprocess isolation is the real mechanism here, not an in-process unload callback.
+        before_parse_phase=summarizer.unload,
     )
 
 

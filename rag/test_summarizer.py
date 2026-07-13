@@ -19,6 +19,7 @@ Two tiers, per TEST-STRATEGY "Golden rule" (downstream tests are zero-GPU):
 
 import contextlib
 import inspect
+import json
 from unittest.mock import MagicMock
 
 import httpx
@@ -214,6 +215,41 @@ def test_response_body_missing_response_field_maps_to_permanent_error():
     adapter = _build_summarizer_with_client(client, FakeGpuLock())
     with pytest.raises(PermanentError):
         adapter.summarize(_prose_doc())
+
+
+# ---------------------------------------------------------------------------
+# unload() — proactive eviction for the two-pass ingest's phase boundary (ARCHITECTURE.md §3).
+# No `prompt` and `keep_alive: 0` is Ollama's documented no-generation unload; must not acquire
+# gpu_lock (it's not an inference call) and must not raise on a failed request (best-effort).
+# ---------------------------------------------------------------------------
+
+
+def test_unload_sends_keep_alive_zero_with_no_prompt_and_does_not_acquire_the_lock():
+    requests = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(json.loads(request.content))
+        return httpx.Response(200, json={})
+
+    client = httpx.Client(base_url="http://ollama.local", transport=httpx.MockTransport(handler))
+    lock = FakeGpuLock()
+    adapter = _build_summarizer_with_client(client, lock)
+
+    adapter.unload()
+
+    assert len(requests) == 1
+    assert requests[0] == {"model": "test-model", "keep_alive": 0}
+    assert lock.acquired == []  # not an inference call -- must not queue behind gpu_lock
+
+
+def test_unload_is_best_effort_and_swallows_a_failed_request():
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("connection refused", request=request)
+
+    client = httpx.Client(base_url="http://ollama.local", transport=httpx.MockTransport(handler))
+    adapter = _build_summarizer_with_client(client, FakeGpuLock())
+
+    adapter.unload()  # must not raise
 
 
 # ---------------------------------------------------------------------------

@@ -92,3 +92,16 @@ class OllamaSummarizer:
                 f"{parsed.paper_id}: generation LLM returned an empty summary"
             )
         return summary_text
+
+    def unload(self) -> None:
+        """Proactively evict this model from GPU memory (ARCHITECTURE.md §3's two-phase ingest:
+        Pass 1/MinerU needs this model's VRAM back). `keep_alive: 0` with no `prompt` is Ollama's
+        documented no-generation unload (what `ollama stop <model>` wraps) -- returns immediately,
+        no inference call, so it doesn't queue behind `gpu_lock`. Best-effort: a server that's
+        unreachable or already has the model unloaded just leaves it not-loaded either way, so a
+        failure here isn't a reason to fail the caller's phase transition.
+        """
+        try:
+            self._client.post("/api/generate", json={"model": self._model, "keep_alive": 0})
+        except httpx.HTTPError:
+            pass
