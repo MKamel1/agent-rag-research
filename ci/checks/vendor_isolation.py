@@ -42,16 +42,25 @@ VENDOR_RULES: tuple[VendorRule, ...] = (
     VendorRule("marker_pdf", re.compile(r"marker[_-]pdf", re.I), ("rag/parser.py",)),
     VendorRule("docling", re.compile(r"docling", re.I), ("rag/parser.py",)),
     VendorRule("grobid", re.compile(r"grobid", re.I), ("rag/parser.py",)),
-    VendorRule("ollama", re.compile(r"ollama", re.I), ("rag/summarizer.py",)),
-    # vLLM ADR-09 covers both the embedder and the summarizer's local-LLM serving.
-    VendorRule("vllm", re.compile(r"vllm", re.I), ("rag/embedder.py", "rag/summarizer.py")),
+    # rag/test_summarizer.py legitimately builds httpx.MockTransport fixtures with an
+    # "http://ollama.local" stand-in URL (and a docstring/comment naming Ollama) to exercise the
+    # adapter offline -- same reasoning as the httpx rule's own test-file exemptions below.
+    VendorRule("ollama", re.compile(r"ollama", re.I), ("rag/summarizer.py", "rag/test_summarizer.py")),
+    # vLLM ADR-09 covers both the embedder and the summarizer's local-LLM serving; rag/test_summarizer.py
+    # mentions vLLM in the same comment as Ollama, for the same reason.
+    VendorRule(
+        "vllm",
+        re.compile(r"vllm", re.I),
+        ("rag/embedder.py", "rag/summarizer.py", "rag/test_summarizer.py"),
+    ),
     # environment.yml: "generic HTTP client -- arXiv (M1) + TEI/vLLM embedder (M4) adapters".
     # rag/harvester.py is the arXiv side (T-A1); rag/embedder.py's real adapter talks to the
     # TEI/vLLM server over plain HTTP (httpx is its actual vendor dependency, not vllm, which
     # only appears there as a docstring reference to ADR-09); rag/summarizer.py's real adapter
-    # (T-C2) also talks to Ollama over plain HTTP. rag/test_harvester_arxiv_source.py and
-    # rag/test_summarizer.py legitimately build httpx.MockTransport/Client fixtures to exercise
-    # their adapters offline (zero network).
+    # (T-C2) also talks to Ollama over plain HTTP; rag/parser.py's real adapter (T-B1) also talks
+    # to GROBID's REST API over plain HTTP for reference resolution. rag/test_harvester_arxiv_source.py,
+    # rag/test_summarizer.py, and rag/test_embedder.py legitimately build httpx.MockTransport/Client
+    # fixtures to exercise their adapters offline (zero network).
     VendorRule(
         "httpx",
         re.compile(r"httpx", re.I),
@@ -59,8 +68,10 @@ VENDOR_RULES: tuple[VendorRule, ...] = (
             "rag/harvester.py",
             "rag/test_harvester_arxiv_source.py",
             "rag/embedder.py",
+            "rag/test_embedder.py",
             "rag/summarizer.py",
             "rag/test_summarizer.py",
+            "rag/parser.py",
         ),
     ),
 )
