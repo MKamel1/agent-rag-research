@@ -4,10 +4,13 @@
 covers only the vendor-specific parsing `ArxivSource` hides (CONVENTIONS.md §1).
 """
 
+import re
+from datetime import date
+
 import httpx
 import pytest
 
-from contracts.errors import PermanentError
+from contracts.errors import PermanentError, TransientError
 from rag.harvester import ArxivSource
 
 _ATOM_ENTRY = """<?xml version="1.0" encoding="UTF-8"?>
@@ -112,3 +115,21 @@ def test_fetch_stops_when_a_page_comes_back_empty(monkeypatch):
     client = httpx.Client(transport=httpx.MockTransport(handler))
     source = make_source(client=client, page_size=10)
     assert list(source.fetch(["x"], cap=100, ordering="freshest_first")) == []
+
+
+@pytest.mark.real_adapter  # hits the real export.arxiv.org API — never run by default
+def test_real_arxiv_api_returns_one_well_formed_paper_ref():
+    """Never exercised against the actual vendor before now -- only the canned Atom feed above.
+    Capped at one result via a narrow query so this stays fast and doesn't hammer arXiv's API."""
+    source = ArxivSource()
+    try:
+        refs = list(source.fetch(["causal inference"], cap=1, ordering="freshest_first"))
+    except TransientError as e:
+        pytest.skip(f"arXiv API not reachable: {e}")
+
+    assert len(refs) == 1
+    ref = refs[0]
+    assert re.fullmatch(r"\d{4}\.\d{4,5}", ref.paper_id), ref.paper_id
+    assert ref.title.strip()
+    assert isinstance(ref.published, date)
+    assert ref.pdf_url.startswith("https://arxiv.org/pdf/")
