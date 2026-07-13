@@ -31,7 +31,6 @@ import pytest
 _mod = pytest.importorskip("rag.embedder")
 
 from contracts.embedder import EmbedderInfo  # noqa: E402
-from contracts.errors import TransientError  # noqa: E402
 from rag.fakes.fake_embedder import FakeEmbedder  # noqa: E402
 from rag.fakes.fake_gpu_lock import FakeGpuLock  # noqa: E402
 
@@ -63,10 +62,15 @@ def assert_vectors_are_l2_normalized(embedder):
 
 
 def assert_deterministic_same_input_same_output(embedder):
-    # Empirically confirmed bit-exact against the real TEI server too (two live /embed calls on
-    # the same text returned identical vectors, max abs diff 0.0) — no tolerance needed here.
+    # Elementwise approx, not exact `==`: FakeEmbedder (a hash) is bit-exact either way, but the
+    # real TEI server batches concurrent requests server-side, and reduction-order/kernel
+    # non-associativity under load can make two separate /embed calls on the same text differ in
+    # the last bits — a one-off manual check being bit-exact on a quiet server isn't proof it stays
+    # that way under real traffic. A tolerance-based check is still a real determinism assertion
+    # for both adapters, just not brittle to real-server floating-point noise.
     text = "the doubly-robust estimator"
-    assert embedder.embed([text]) == embedder.embed([text])
+    a, b = embedder.embed([text])[0], embedder.embed([text])[0]
+    assert a == pytest.approx(b, abs=1e-6)
 
 
 def assert_order_preserving_and_distinct_texts_give_distinct_vectors(embedder):
@@ -122,7 +126,10 @@ def test_real_adapter_satisfies_contract(check):
     adapter = real.TeiEmbedder(client, FakeGpuLock(), info)
     try:
         adapter.embed(["probe"])
-    except (TransientError, httpx.HTTPError) as e:
+    except httpx.TransportError as e:
+        # TransportError (connect/timeout) means no server to talk to -> skip cleanly. It does NOT
+        # include HTTPStatusError, so a server that IS up but returns a real 4xx/5xx fails this
+        # test instead of silently skipping past a genuine regression.
         pytest.skip(f"no live TEI embedder reachable at localhost:8080: {e}")
 
     check(adapter)
