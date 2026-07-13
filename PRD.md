@@ -943,27 +943,53 @@ on one GPU → this is the primary driver for the **vLLM move (ADR-09)** and, ev
 **Revisit if.** A better-fitting open model ships, the judge's precision is insufficient at 4-bit
 (try higher quant / 32B), or throughput forces model-size cuts.
 
-### ADR-09 — LLM serving stack: Ollama for v1 → vLLM later
+### ADR-09 — LLM serving stack: Ollama for now → vLLM required for V1
 **Context.** Serve the generation models (summaries, claims, judge) locally; v1 favors simplicity,
 later phases favor throughput.
 
-**Decision.** **Ollama for v1**; **migrate generation (and possibly embeddings) to vLLM** when
-overnight throughput becomes the bottleneck.
+**Decision.** **Ollama for now**; **migrating generation (and possibly embeddings) to vLLM is now
+a V1 requirement, not a later/if-needed throughput optimization** (upgraded 2026-07-13 — see
+Rationale). vLLM's `thinking_token_budget` (a real, working feature as of mid-2026, though young —
+caps a reasoning model's internal "thinking" tokens independently of its final-answer tokens,
+forcing it out of reasoning at a set count instead of letting reasoning silently consume the whole
+response budget) is the correct fix for a real problem Ollama structurally cannot solve.
 
 **Rationale.** Ollama is the least-friction way to pull/run quantized models on one GPU for
-batch/background work. vLLM's continuous batching + PagedAttention give far higher throughput but
-cost operational complexity we don't need on day one. Defer that cost until data says otherwise.
+batch/background work, and vLLM's continuous batching + PagedAttention give far higher throughput
+at real operational complexity cost — the original reason to defer. A second, independent reason
+surfaced 2026-07-13 while fixing a real Summarizer GPU-OOM (`.phase0-data/known-issue-pass2-oom.md`):
+Ollama generates a reasoning model's internal "thinking" and its final answer as **one continuous
+token stream sharing a single `num_predict` budget** — verified directly (a 30-token budget on a
+"think it through" prompt produced only reasoning text and an empty final answer). There is no way
+on Ollama to let a model reason as long as it needs to without risking it starving its own answer,
+short of setting an unbounded/very large budget and eating unpredictable GPU cost per call. This is
+a correctness/reliability gap, not just a throughput one — it means reasoning cannot be safely
+enabled at all on the current stack for any GPU-budget-conscious call.
 
-**Risks/limitations.** Ollama's throughput ceiling is lower; a late migration means re-validating
-prompts/outputs on vLLM. Kept low-risk by hiding model calls behind a thin client interface.
+**Interim mitigation (until the migration lands).** `rag/summarizer.py` currently ships with
+thinking forced off (`think: False`) and a fixed `_NUM_PREDICT = 768` output cap — a deliberately
+blunt, interim setting, not a tuned one (see that file's `ponytail:`-tagged comment). This sidesteps
+the shared-budget problem by not using reasoning at all for now, rather than solving it properly.
+
+**Risks/limitations.** Ollama's throughput ceiling is lower; a migration means re-validating
+prompts/outputs on vLLM, including retuning the interim limits above. Kept low-risk by hiding model
+calls behind a thin client interface. vLLM's `thinking_token_budget` is itself young (features and
+bugfixes still landing through 2026) — validate it directly against this project's real model/prompt
+before trusting it in production, the same way every other adapter in this codebase was validated
+against real infra rather than assumed to work from docs alone.
 
 **Phase & scaling link.** Directly tied to ADR-03 and ADR-08: as v2/v3 add claim-judging and
 continuous ingest, generation load rises → **vLLM becomes the convergence point for both
 generation and embedding serving.** Scaling past one GPU (tensor/pipeline parallel, or a second
-3090/bigger card) is a vLLM-era concern, not a v1 one.
+3090/bigger card) is a vLLM-era concern. The reasoning-budget gap above means this is now also a
+correctness prerequisite for turning thinking on anywhere in the pipeline, not purely a scaling one.
 
-**Revisit if.** Overnight jobs miss their window on Ollama, or we need to serve generation +
-embeddings from one batched stack.
+**Revisit if.** Not "if" for the reasoning-budget driver — this is now a planned V1 migration, not a
+conditional one. When it lands: enable thinking with a real `thinking_token_budget` sized properly
+for the summarization task, remove `rag/summarizer.py`'s current blunt `_NUM_PREDICT` output cap in
+favor of the real separate budget, and retune `_TOKENS_PER_WORD_ESTIMATE`/`_NUM_CTX_FLOOR`/
+`_NUM_CTX_CEILING` against vLLM's own real (and likely different) memory/context behavior rather
+than carrying over Ollama-measured numbers unverified.
 
 ### ADR-10 — Reranker: BGE-reranker-v2-m3 (cross-encoder)
 **Context.** First-stage hybrid retrieval optimizes recall; a second-stage reranker optimizes

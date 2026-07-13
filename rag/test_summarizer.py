@@ -32,6 +32,11 @@ from contracts.errors import PermanentError, TransientError  # noqa: E402
 from contracts.parser import Figure, ParsedDoc  # noqa: E402
 from contracts.provenance import Block  # noqa: E402
 from rag.fakes.fake_gpu_lock import FakeGpuLock  # noqa: E402
+from rag.summarizer import (  # noqa: E402
+    _NUM_CTX_CEILING,
+    _NUM_CTX_FLOOR,
+    _fit_for_summarization,
+)
 
 PAPER_ID = "2506.01234"
 
@@ -163,6 +168,43 @@ def test_summarize_acquires_the_gpu_lock_with_the_summarize_stage_label():
 
 
 # ---------------------------------------------------------------------------
+# _fit_for_summarization: reference/appendix trimming + per-paper num_ctx sizing
+# (.phase0-data/known-issue-pass2-oom.md) -- pure logic, no GPU/network involved.
+# ---------------------------------------------------------------------------
+
+
+def test_fit_for_summarization_drops_references_section():
+    prose = "# Method\n\nWe do X.\n\n# References\n\n" + ("Citation. " * 5000)
+    text, _ = _fit_for_summarization(PAPER_ID, prose)
+    assert "References" not in text
+    assert "We do X." in text
+
+
+def test_fit_for_summarization_drops_appendix_section():
+    prose = "# Method\n\nWe do X.\n\n# Appendix\n\n" + ("Proof. " * 5000)
+    text, _ = _fit_for_summarization(PAPER_ID, prose)
+    assert "Appendix" not in text
+    assert "We do X." in text
+
+
+def test_fit_for_summarization_num_ctx_scales_with_length_within_bounds():
+    _, short_ctx = _fit_for_summarization(PAPER_ID, "word " * 50)
+    _, long_ctx = _fit_for_summarization(PAPER_ID, "word " * 5000)
+    assert short_ctx < long_ctx
+    assert _NUM_CTX_FLOOR <= short_ctx <= _NUM_CTX_CEILING
+    assert _NUM_CTX_FLOOR <= long_ctx <= _NUM_CTX_CEILING
+
+
+def test_fit_for_summarization_truncates_and_clamps_for_huge_input():
+    # No references/appendix heading here -- exercises the fallback truncation path for a paper
+    # whose main body alone still exceeds the safe ceiling (a real, observed corpus case).
+    huge = "word " * 200_000
+    text, num_ctx = _fit_for_summarization(PAPER_ID, huge)
+    assert num_ctx <= _NUM_CTX_CEILING  # rounding can land a few tokens under, never over
+    assert len(text.split()) < 200_000
+
+
+# ---------------------------------------------------------------------------
 # Degenerate / figures-only input -> PermanentError -> quarantine, not a crash
 # ---------------------------------------------------------------------------
 
@@ -205,6 +247,26 @@ def test_connection_failure_maps_to_transient_error():
     adapter = _build_summarizer_with_client(client, FakeGpuLock())
     with pytest.raises(TransientError):
         adapter.summarize(_prose_doc())
+
+
+def test_summarize_request_disables_thinking_and_sets_context_options():
+    captured = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured["body"] = json.loads(request.content)
+        return httpx.Response(200, json={"response": "A summary."})
+
+    client = httpx.Client(base_url="http://ollama.local", transport=httpx.MockTransport(handler))
+    adapter = _build_summarizer_with_client(client, FakeGpuLock())
+    adapter.summarize(_prose_doc())
+
+    body = captured["body"]
+    assert body["think"] is False, (
+        "thinking must stay off on this Ollama-based v1 stack -- verified directly this session "
+        "that a thinking-enabled call shares one token budget between reasoning and the answer, "
+        "so an unbounded/large budget risks an empty answer (see rag/summarizer.py's comment)"
+    )
+    assert "num_ctx" in body["options"] and "num_predict" in body["options"]
 
 
 def test_response_body_missing_response_field_maps_to_permanent_error():

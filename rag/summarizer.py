@@ -8,25 +8,85 @@ file. The adapter talks to that stack over plain HTTP (`httpx`, already a core d
 several adapters), so no vendor SDK import is needed at all.
 """
 
+import logging
+import re
+
 import httpx
 
 from contracts.errors import PermanentError, TransientError
 from contracts.gpu_lock import GpuLock
 from contracts.parser import ParsedDoc
 
-# Kept short and generic: the workhorse-tier model (ADR-08) fills in method + finding from the
-# paper's own text. Prompt tuning is not this ticket's job (no golden-fixture LLM to tune
-# against here, see the M1a test suite's docstring) — this is a reasonable v1 default, not a
-# locked contract.
+logger = logging.getLogger(__name__)
+
+# Empirically validated, not a hand-picked default: a fork this session ran the current 3-5
+# sentence "method + finding" prompt and this richer one against 5 real papers' own abstracts
+# and skeptically graded the results (does each summary state a concrete, checkable fact the
+# abstract doesn't?). The old prompt added a real new fact in only 2/5 papers -- it's mostly a
+# reworded abstract, which the paper already provides for free at harvest time. This prompt added
+# a real new fact in 5/5 (named alternative methods, convergence rates, sample sizes, stated
+# limitations -- see .phase0-data/known-issue-pass2-oom.md for the full comparison).
 _SUMMARY_PROMPT = (
-    "Summarize the following academic paper in 3-5 sentences. Cover its method and its main "
-    "finding. Do not copy the title or abstract verbatim.\n\n{paper}"
+    "Summarize this academic paper's contribution in 4-6 sentences. Include, if stated in the "
+    "paper: (a) the core method, (b) the main quantitative result or effect size, (c) key "
+    "assumptions or conditions required for the method to work, (d) dataset or sample size used, "
+    "(e) any limitations the authors state. Do not copy the abstract verbatim.\n\n{paper}"
 )
 
 # Same taxonomy split as rag/harvester.py's ArxivSource (CONVENTIONS.md §4): a rate-limited or
 # momentarily-unhealthy server is transient (retry, then quarantine); any other 4xx is this
 # server's/request's fault (quarantine the paper, don't retry).
 _RETRYABLE_STATUSES = {429, 500, 502, 503, 504}
+
+# References/appendix sections can dominate a real paper's length (one real corpus paper: ~72,000
+# of 109,000 words was a proof appendix) while adding nothing a method+finding summary needs --
+# dropped before summarizing. See .phase0-data/known-issue-pass2-oom.md for the corpus evidence.
+_LOW_VALUE_SECTION_HEADING = re.compile(
+    r"\n#{1,3}\s*(references|bibliography|appendix|supplementary)\b", re.IGNORECASE
+)
+
+# ponytail: fixed interim limits, not a proper per-request budget. Real testing this session found
+# (a) VRAM scales with the *configured* context window, not the text actually sent, so a smaller
+# num_ctx than the server's default saves real memory; (b) a single call can't be trusted to
+# reliably use anywhere near a large requested num_ctx -- real truncation appeared as low as
+# ~20,500 tokens for reasons not root-caused. So the ceiling here is deliberately conservative,
+# and thinking is off (`think: False` below) because a thinking-enabled model shares ONE token
+# budget between its reasoning and its answer (verified directly: a 30-token budget produced only
+# reasoning text and an empty answer) -- there's no way to protect the answer's budget from it on
+# this Ollama-based v1 stack. Upgrade path: PRD.md ADR-09's planned v1->vLLM migration ships a real
+# `thinking_token_budget` that forces the model out of reasoning at a set token count instead of
+# silently starving the answer -- re-enable thinking and retune all four constants below then,
+# rather than tightening this blunt setup further.
+_TOKENS_PER_WORD_ESTIMATE = 2.2  # real corpus samples this session measured 1.84-2.11 tokens/word
+_PROMPT_OVERHEAD_TOKENS = 200
+_NUM_CTX_FLOOR = 4096
+_NUM_CTX_CEILING = 16384
+_NUM_PREDICT = 768
+
+
+def _fit_for_summarization(paper_id: str, prose: str) -> tuple[str, int]:
+    """Drops low-value sections, then truncates further if the paper still doesn't fit the safe
+    ceiling, returning the text to actually send plus the `num_ctx` sized for it.
+    """
+    match = _LOW_VALUE_SECTION_HEADING.search(prose)
+    trimmed = prose[: match.start()] if match else prose
+
+    words = trimmed.split()
+    max_words = int((_NUM_CTX_CEILING - _PROMPT_OVERHEAD_TOKENS) / _TOKENS_PER_WORD_ESTIMATE)
+    if len(words) > max_words:
+        logger.warning(
+            "%s: paper text (%d words after dropping references/appendix) still exceeds the "
+            "summarizer's safe token ceiling -- truncating to the first %d words",
+            paper_id,
+            len(words),
+            max_words,
+        )
+        words = words[:max_words]
+        trimmed = " ".join(words)
+
+    estimated_tokens = int(len(words) * _TOKENS_PER_WORD_ESTIMATE) + _PROMPT_OVERHEAD_TOKENS
+    num_ctx = max(_NUM_CTX_FLOOR, min(estimated_tokens, _NUM_CTX_CEILING))
+    return trimmed, num_ctx
 
 
 class OllamaSummarizer:
@@ -54,14 +114,18 @@ class OllamaSummarizer:
                 f"{parsed.paper_id}: no usable prose to summarize (empty or figures-only parse)"
             )
 
+        text, num_ctx = _fit_for_summarization(parsed.paper_id, prose)
+
         with self._gpu_lock.acquire("summarize"):
             try:
                 response = self._client.post(
                     "/api/generate",
                     json={
                         "model": self._model,
-                        "prompt": _SUMMARY_PROMPT.format(paper=prose),
+                        "prompt": _SUMMARY_PROMPT.format(paper=text),
                         "stream": False,
+                        "think": False,
+                        "options": {"num_ctx": num_ctx, "num_predict": _NUM_PREDICT},
                     },
                 )
                 response.raise_for_status()
