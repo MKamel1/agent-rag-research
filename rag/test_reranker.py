@@ -26,7 +26,7 @@ def test_rerank_acquires_the_rerank_gpu_lock():
 
     client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
     lock = FakeGpuLock()
-    reranker = TeiReranker(client, lock, model="BGE-reranker-v2-m3")
+    reranker = TeiReranker(client, lock)
 
     reranker.rerank("q", _candidates(("a", "text a")))
 
@@ -41,7 +41,7 @@ def test_rerank_reorders_by_score_and_fabricates_nothing():
         )
 
     client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
-    reranker = TeiReranker(client, FakeGpuLock(), model="BGE-reranker-v2-m3")
+    reranker = TeiReranker(client, FakeGpuLock())
     candidates = _candidates(("a", "text a"), ("b", "text b"))
 
     result = reranker.rerank("q", candidates)
@@ -58,7 +58,7 @@ def test_rerank_ties_break_by_original_index_ascending():
         )
 
     client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
-    reranker = TeiReranker(client, FakeGpuLock(), model="BGE-reranker-v2-m3")
+    reranker = TeiReranker(client, FakeGpuLock())
     candidates = _candidates(("a", "text a"), ("b", "text b"))
 
     result = reranker.rerank("q", candidates)
@@ -71,7 +71,7 @@ def test_rerank_empty_candidates_returns_empty_without_http_call():
         raise AssertionError("should not make an HTTP call for empty candidates")
 
     client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
-    reranker = TeiReranker(client, FakeGpuLock(), model="BGE-reranker-v2-m3")
+    reranker = TeiReranker(client, FakeGpuLock())
 
     assert reranker.rerank("q", []) == []
 
@@ -87,9 +87,20 @@ def test_5xx_response_maps_to_transient_error():
         return httpx.Response(503)
 
     client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
-    reranker = TeiReranker(client, FakeGpuLock(), model="BGE-reranker-v2-m3")
+    reranker = TeiReranker(client, FakeGpuLock())
 
     with pytest.raises(TransientError):
+        reranker.rerank("q", _candidates(("a", "text a")))
+
+
+def test_4xx_response_maps_to_permanent_error():
+    def handler(request):
+        return httpx.Response(400)
+
+    client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
+    reranker = TeiReranker(client, FakeGpuLock())
+
+    with pytest.raises(PermanentError):
         reranker.rerank("q", _candidates(("a", "text a")))
 
 
@@ -98,7 +109,7 @@ def test_connection_failure_maps_to_transient_error():
         raise httpx.ConnectError("connection refused")
 
     client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
-    reranker = TeiReranker(client, FakeGpuLock(), model="BGE-reranker-v2-m3")
+    reranker = TeiReranker(client, FakeGpuLock())
 
     with pytest.raises(TransientError):
         reranker.rerank("q", _candidates(("a", "text a")))
@@ -109,7 +120,7 @@ def test_malformed_response_body_maps_to_permanent_error():
         return httpx.Response(200, json={"unexpected": "shape"})
 
     client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
-    reranker = TeiReranker(client, FakeGpuLock(), model="BGE-reranker-v2-m3")
+    reranker = TeiReranker(client, FakeGpuLock())
 
     with pytest.raises(PermanentError):
         reranker.rerank("q", _candidates(("a", "text a")))
@@ -120,7 +131,7 @@ def test_response_index_out_of_range_maps_to_permanent_error():
         return httpx.Response(200, json=[{"index": 5, "score": 1.0}])
 
     client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
-    reranker = TeiReranker(client, FakeGpuLock(), model="BGE-reranker-v2-m3")
+    reranker = TeiReranker(client, FakeGpuLock())
 
     with pytest.raises(PermanentError):
         reranker.rerank("q", _candidates(("a", "text a")))
@@ -135,7 +146,7 @@ def test_response_index_out_of_range_maps_to_permanent_error():
 @pytest.mark.enable_socket
 def test_real_reranker_returns_a_valid_permutation_of_a_real_candidate_set():
     client = httpx.Client(base_url="http://localhost:8082", timeout=30.0)
-    reranker = TeiReranker(client, FakeGpuLock(), model="BGE-reranker-v2-m3")
+    reranker = TeiReranker(client, FakeGpuLock())
     candidates = _candidates(
         ("relevant", "we estimate the average treatment effect using double machine learning"),
         ("irrelevant", "a recipe for chocolate chip cookies"),

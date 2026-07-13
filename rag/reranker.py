@@ -26,10 +26,9 @@ class TeiReranker:
     fabricates new ones, per DATA-CONTRACTS.md "Reranker".
     """
 
-    def __init__(self, client: httpx.Client, gpu_lock: GpuLock, model: str):
+    def __init__(self, client: httpx.Client, gpu_lock: GpuLock):
         self._client = client
         self._gpu_lock = gpu_lock
-        self._model = model
 
     def rerank(
         self, query: str, candidates: list[RerankCandidate]
