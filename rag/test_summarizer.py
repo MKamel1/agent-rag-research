@@ -11,10 +11,10 @@ derived by the caller, never invented here).
 Two tiers, per TEST-STRATEGY "Golden rule" (downstream tests are zero-GPU):
   - The **lock** and **PermanentError** behaviours run zero-GPU here, in default CI (a stubbed LLM
     client + `FakeGpuLock`; no inference actually happens).
-  - The **quality / non-degeneracy** check needs the real generation LLM over Owner B's golden
-    fixtures — it opts out of the socket-disabled default run (nightly / M2 real-adapter job).
-    Its assertions are encoded here; the `real_summarizer`/`golden_papers` fixtures that feed it
-    are provided by that job and skip by default, so the default suite stays green.
+  - The **quality / non-degeneracy** check needs the real generation LLM over synthetic
+    golden-paper fixtures — it opts out of the socket-disabled default run (`real_adapter`
+    marker). The `real_summarizer`/`golden_papers` fixtures build a real Ollama-backed adapter
+    directly and skip only if Ollama is actually unreachable, so the default suite stays green.
 """
 
 import contextlib
@@ -217,9 +217,10 @@ def test_response_body_missing_response_field_maps_to_permanent_error():
 
 
 # ---------------------------------------------------------------------------
-# Quality / non-degeneracy on the golden-fixture set (real LLM — nightly / M2).
-# The `real_summarizer` and `golden_papers` fixtures are supplied by the real-adapter job and
-# skip by default, so this assertion set is encoded now but stays green in default CI.
+# Quality / non-degeneracy on synthetic golden-paper fixtures (real LLM, `real_adapter` marker).
+# `real_summarizer` builds a real Ollama-backed Summarizer directly and skips only if Ollama is
+# unreachable — not supplied externally — so this assertion set stays green in default CI (marker
+# deselected) and self-contained whenever `-m real_adapter` is actually run.
 # ---------------------------------------------------------------------------
 
 
