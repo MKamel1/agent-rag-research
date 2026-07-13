@@ -292,7 +292,8 @@ class Rig:
         self.config = Config(focus_area_queries=["causal inference", "treatment effect"])
 
     def new_orchestrator(
-        self, embedder=None, vector_index=None, before_parse_phase=None, before_finish_phase=None
+        self, embedder=None, vector_index=None, before_parse_phase=None, before_finish_phase=None,
+        before_embed=None,
     ):
         return IngestionOrchestrator(
             harvester=self.harvester,
@@ -307,6 +308,7 @@ class Rig:
             config=self.config,
             before_parse_phase=before_parse_phase,
             before_finish_phase=before_finish_phase,
+            before_embed=before_embed,
         )
 
     def ingest(self, orch=None, embedder=None, vector_index=None):
@@ -510,3 +512,26 @@ def test_before_finish_phase_hook_fires_after_every_parse_and_before_any_summari
     assert snapshot["parses_done"] == len(PAPER_IDS)  # Pass 1 fully finished first
     assert snapshot["summaries_done"] == 0  # Pass 2's own work hadn't started yet
     assert len(rig.summarizer.calls) == len(PAPER_IDS)  # and still completes normally after
+
+
+def test_before_embed_hook_fires_once_per_paper_right_before_that_papers_embed_call():
+    """Finer-grained than the phase-level hooks above (ARCHITECTURE.md §3, 2026-07-13 addition):
+    fires per-paper, immediately before that paper's own `embed()` call -- not once per phase --
+    since a real end-to-end run found the Summarizer sitting fully GPU-resident throughout the
+    Embedder's work otherwise, real per-paper VRAM waste rather than a one-time cost.
+    """
+    rig = Rig()
+    fire_counts_by_call_index = []
+
+    def hook():
+        fire_counts_by_call_index.append(len(rig.embedder_spy.calls))
+
+    embedder = EmbedderSpy()
+    rig.embedder_spy = embedder
+    rig.ingest(orch=rig.new_orchestrator(embedder=embedder, before_embed=hook))
+
+    # topic_query_vec is embed() call #0 (before any paper); the hook must not fire for that one
+    # -- nothing needs evicting since no paper has summarized yet. Then one hook fire immediately
+    # before each paper's own embed() call, in lockstep with the call count at that moment.
+    assert fire_counts_by_call_index == list(range(1, len(PAPER_IDS) + 1))
+    assert embedder.call_count == len(PAPER_IDS) + 1  # topic_query_vec hoist + one per paper

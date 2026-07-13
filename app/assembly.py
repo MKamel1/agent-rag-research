@@ -91,6 +91,15 @@ def build_ingestion_orchestrator(
         # (PaddlePaddle-backed OCR/table sub-models don't release via torch.cuda.empty_cache()),
         # so subprocess isolation is the real mechanism here, not an in-process unload callback.
         before_parse_phase=summarizer.unload,
+        # Evict the Summarizer again before *each paper's* embed step, not just once before Pass
+        # 1 -- found necessary 2026-07-13: within Pass 2, the Summarizer stays fully GPU-resident
+        # (real measured ~11.5GB for a long paper) for the whole time the Embedder is working,
+        # though nothing needs it loaded then. On a real long paper this left too little headroom
+        # and the Embedder hit a real CUDA OOM (ruled out batch size and individual chunk length
+        # first via direct measurement -- see .phase0-data/known-issue-pass2-oom.md). Real reload
+        # cost for the next paper's summarize call: ~2.5s, negligible against a ~15-20s real
+        # summarize call.
+        before_embed=summarizer.unload,
     )
 
 
