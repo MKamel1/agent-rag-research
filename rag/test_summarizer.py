@@ -225,26 +225,79 @@ def test_response_body_missing_response_field_maps_to_permanent_error():
 
 @pytest.fixture
 def real_summarizer():
-    pytest.skip(
-        "real generation-LLM Summarizer runs only in the nightly/M2 real-adapter job (GPU); "
-        "the default socket-disabled CI has no service — see pyproject [tool.pytest] socket note"
-    )
+    client = httpx.Client(base_url="http://localhost:11434", timeout=120.0)
+    summarizer = _real_summarizer_cls()(client, FakeGpuLock(), model="qwen3:14b")
+    try:
+        client.get("/api/tags").raise_for_status()
+    except httpx.HTTPError as e:
+        pytest.skip(f"no live Ollama at localhost:11434: {e}")
+    return summarizer
+
+
+class _GoldenPaper:
+    """ponytail: a minimal stand-in for Owner B's golden-fixture objects (paper_id/parsed/title/
+    abstract) — synthetic, not a real re-parse of fixtures/golden/'s PDFs. This test's job is to
+    prove the real Ollama-backed Summarizer produces real, non-degenerate signal, not to re-prove
+    Parser works (that's rag/test_parser.py's real_adapter suite, already covered)."""
+
+    def __init__(self, paper_id: str, title: str, abstract: str, markdown: str):
+        self.paper_id = paper_id
+        self.title = title
+        self.abstract = abstract
+        self.parsed = ParsedDoc(
+            paper_id=paper_id,
+            markdown=markdown,
+            blocks=[
+                Block(
+                    block_id=f"{paper_id}:b0", paper_id=paper_id, text=abstract,
+                    type="prose", page=0, bbox=(10.0, 20.0, 110.0, 220.0),
+                    section_path="1. Introduction", index=0,
+                )
+            ],
+            figures=[], tables=[], references=[], parser_id="test-parser-1.x",
+        )
 
 
 @pytest.fixture
 def golden_papers():
-    # Owner B's golden Parser fixtures (fixtures/golden/) exposed as objects with `.parsed`
-    # (ParsedDoc), `.title`, `.abstract`. Provided by the real-adapter job alongside a live LLM.
-    pytest.skip("golden Parser fixtures + real LLM are supplied by the nightly/M2 real-adapter job")
+    return [
+        _GoldenPaper(
+            paper_id="2506.01234",
+            title="A Causal Method for Treatment Effect Estimation",
+            abstract="We propose a novel double machine learning estimator for treatment effect "
+            "estimation under high-dimensional confounding.",
+            markdown="# A Causal Method\n\nWe propose a novel double machine learning estimator "
+            "for treatment effect estimation under high-dimensional confounding. Our method "
+            "combines cross-fitting with a debiased Neyman-orthogonal score, and we show it "
+            "achieves root-n consistency under standard regularity conditions. Experiments on "
+            "semi-synthetic benchmarks demonstrate lower bias than naive plug-in estimators.",
+        ),
+        _GoldenPaper(
+            paper_id="2507.05678",
+            title="Sparse Attention Mechanisms for Long-Context Retrieval",
+            abstract="We introduce a sparse attention variant that reduces quadratic attention "
+            "cost to near-linear while preserving retrieval accuracy on long documents.",
+            markdown="# Sparse Attention for Long Context\n\nWe introduce a sparse attention "
+            "variant that reduces quadratic attention cost to near-linear while preserving "
+            "retrieval accuracy on long documents. Our approach clusters keys by locality-"
+            "sensitive hashing and attends only within-cluster, then verifies against a held-out "
+            "long-document benchmark showing negligible accuracy loss versus full attention.",
+        ),
+    ]
 
 
+@pytest.mark.real_adapter  # needs a live Ollama instance — never run by default
 def test_summaries_are_non_empty_and_non_degenerate_on_golden_fixtures(
     real_summarizer, golden_papers
 ):
     summaries = {p.paper_id: real_summarizer.summarize(p.parsed) for p in golden_papers}
 
-    for pid, text in summaries.items():
-        assert text.strip(), f"{pid}: summary_text must be non-empty"
+    for p in golden_papers:
+        text = summaries[p.paper_id]
+        assert text.strip(), f"{p.paper_id}: summary_text must be non-empty"
+        assert text.strip() != p.parsed.markdown.strip(), (
+            f"{p.paper_id}: summary must not just echo the input back"
+        )
 
     # Non-degenerate across the set: a hardcoded constant / near-collapsed summary would make
     # every vector land on one point. At least two distinct golden papers must summarize
