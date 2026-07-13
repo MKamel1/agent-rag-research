@@ -204,6 +204,7 @@ _golden = _golden_pdfs()
 _scanned = _scanned_golden_pdfs()
 
 
+@pytest.mark.real_adapter  # needs a live GROBID + first-run MinerU model download (network)
 @pytest.mark.skipif(not _golden, reason="Spike-1 golden PDFs not committed yet (fixtures/golden/)")
 @pytest.mark.parametrize("pdf_path", _golden, ids=lambda p: p.name)
 def test_golden_pdf_parses_and_satisfies_invariants(pdf_path):
@@ -213,6 +214,7 @@ def test_golden_pdf_parses_and_satisfies_invariants(pdf_path):
     assert_parseddoc_invariants(doc)  # every block/figure/table anchored; reading order; parser_id
 
 
+@pytest.mark.real_adapter  # needs a live GROBID + first-run MinerU model download (network)
 @pytest.mark.skipif(not _golden, reason="Spike-1 golden PDFs not committed yet (fixtures/golden/)")
 @pytest.mark.parametrize("pdf_path", _golden, ids=lambda p: p.name)
 def test_golden_pdf_preserves_equations_as_latex(pdf_path):
@@ -225,6 +227,7 @@ def test_golden_pdf_preserves_equations_as_latex(pdf_path):
             assert block.text.strip(), "equation block must carry its LaTeX in `text`"
 
 
+@pytest.mark.real_adapter  # needs a live GROBID + first-run MinerU model download (network)
 @pytest.mark.skipif(
     not _scanned, reason="Spike-1 scanned/broken golden PDF not committed yet (fixtures/golden/)"
 )
@@ -238,6 +241,7 @@ def test_scanned_golden_pdf_is_quarantined(pdf_path):
 # References parsing is likewise golden-dependent — asserted here so it activates with
 # the fixtures. A math/table-only page may legitimately have no references, so this checks shape
 # (each parsed Reference has a non-empty `raw`) rather than requiring references to exist.
+@pytest.mark.real_adapter  # needs a live GROBID + first-run MinerU model download (network)
 @pytest.mark.skipif(not _golden, reason="Spike-1 golden PDFs not committed yet (fixtures/golden/)")
 @pytest.mark.parametrize("pdf_path", _golden, ids=lambda p: p.name)
 def test_golden_pdf_references_have_raw_strings(pdf_path):

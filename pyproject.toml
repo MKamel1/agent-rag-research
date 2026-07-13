@@ -22,7 +22,19 @@ python_files = ["test_*.py"]
 # T-F6(i) (WORK-BREAKDOWN.md / CONVENTIONS.md §12): non-adapter suites run with sockets disabled.
 # Real-adapter contract tests opt out of --disable-socket explicitly at the point they're invoked
 # (nightly/on-demand CI job, not this default config) — see .github/workflows/ci.yml.
-addopts = "--disable-socket -q"
+addopts = "--disable-socket -q -m 'not real_adapter'"
+markers = [
+    # Tests that need a real vendor service (GROBID/MinerU model download/live GPU) and can't
+    # reliably finish fast on every push (TEST-STRATEGY.md "CI expectations": nightly/on-demand,
+    # not every commit). Deselected by default (see addopts above); the nightly workflow selects
+    # them explicitly with `-m real_adapter`. Some real-adapter tests (e.g. the VectorIndex/Qdrant
+    # contract test) instead use pytest-socket's own `enable_socket` + a clean skip-on-connect-
+    # failure, because a local service either answers immediately or refuses immediately — this
+    # marker is for the slower/uncertain cases (a first-run model download, not a fast localhost
+    # probe) where "skip if unavailable" would silently hide a real dependency instead of making it
+    # explicit that the job needs pre-provisioned infrastructure.
+    "real_adapter: needs real vendor infra (network + often GPU); nightly/on-demand only",
+]
 
 [tool.ruff]
 target-version = "py312"
