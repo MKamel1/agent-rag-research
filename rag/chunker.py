@@ -29,6 +29,20 @@ _SNIPPET_MAX_CHARS = 200
 # technical safety ceiling like `rag/summarizer.py`'s `_NUM_CTX_CEILING`, not a scope lever.
 _MAX_CHUNK_WORDS = 1500
 
+# A sub-chunk born from splitting an oversized section can open mid-argument ("as established
+# above, we then have...") with "above" now in a *different* chunk -- carrying the immediately
+# preceding sub-chunk's last block forward closes that gap, the same way `child_parent_expansion`
+# already merges multiple blocks' text into one `Chunk.text` while `anchor`/`parent_id` stay
+# pinned to only the first block (DATA-CONTRACTS.md "Provenance & structure": anchor is for
+# citation display, not the source of the passage content). Gated by size, not block type -- the
+# split point is always right before a *prose* block, and that prose often refers back to the
+# *equation* just before it, so restricting to prose-only would exclude the useful case. 250 words
+# comfortably covers a typical lead-in paragraph (real corpus median chunk is ~440 words) while
+# skipping oversized trailing blocks, which are skipped rather than truncated -- truncating could
+# bisect an equation, exactly the failure mode the split-point rule above exists to avoid.
+# ponytail: a retrieval-quality tuning knob, not a semantic contract; reasonable range 150-300.
+_OVERLAP_MAX_WORDS = 250
+
 
 def _extract_title(markdown: str) -> str:
     """First H1 line (`# Title`) in the doc's markdown. `# ` (single hash) only — `## Section`
@@ -64,8 +78,8 @@ class Chunker:
         groups = self._group_blocks(doc.blocks)
         sized_groups = [sub for group in groups for sub in self._split_oversized(group)]
         return [
-            self._build_chunk(doc.paper_id, title, index, group)
-            for index, group in enumerate(sized_groups)
+            self._build_chunk(doc.paper_id, title, index, group, overlap)
+            for index, (group, overlap) in enumerate(sized_groups)
         ]
 
     def _group_blocks(self, blocks: list[Block]) -> list[list[Block]]:
@@ -90,8 +104,13 @@ class Chunker:
                 groups.append([block])
         return groups
 
-    def _split_oversized(self, group: list[Block]) -> list[list[Block]]:
+    def _split_oversized(
+        self, group: list[Block]
+    ) -> list[tuple[list[Block], Block | None]]:
         """Splits a `_group_blocks` group once it exceeds `_MAX_CHUNK_WORDS`, in reading order.
+        Each returned sub-group is paired with an overlap block (the immediately preceding
+        sub-group's last block, carried forward -- see `_OVERLAP_MAX_WORDS`) or `None` for the
+        first sub-group of a split and for the non-split fast path.
 
         A split point may only fall directly before a `type == "prose"` block -- never before an
         equation/code/table/caption block -- so a split can never separate one of those from the
@@ -100,7 +119,7 @@ class Chunker:
         are this module's atomic unit; that's a Parser-level anomaly, not this function's job).
         """
         if sum(len(block.text.split()) for block in group) <= _MAX_CHUNK_WORDS:
-            return [group]
+            return [(group, None)]
         sub_groups: list[list[Block]] = []
         current: list[Block] = []
         current_words = 0
@@ -114,16 +133,30 @@ class Chunker:
             current.append(block)
             current_words += block_words
         sub_groups.append(current)
-        return sub_groups
+
+        result: list[tuple[list[Block], Block | None]] = [(sub_groups[0], None)]
+        for prev, sub in zip(sub_groups, sub_groups[1:]):
+            last = prev[-1]
+            overlap = last if len(last.text.split()) <= _OVERLAP_MAX_WORDS else None
+            result.append((sub, overlap))
+        return result
 
     def _build_chunk(
-        self, paper_id: str, title: str, index: int, group: list[Block]
+        self,
+        paper_id: str,
+        title: str,
+        index: int,
+        group: list[Block],
+        overlap: Block | None = None,
     ) -> Chunk:
         # Multi-block anchoring rule: anchor/parent_id always pin the FIRST block in the group
         # (reading order) — never an average or the last block (DATA-CONTRACTS.md "Provenance &
-        # structure").
+        # structure"). `overlap` (a carried-forward block from the *previous* sub-chunk, see
+        # `_split_oversized`) is prepended into the body text only -- it never becomes `first`,
+        # so anchor/parent_id/section_path stay pinned to this chunk's own true start.
         first = group[0]
-        body = "\n\n".join(block.text for block in group)
+        body_blocks = ([overlap.text] if overlap else []) + [b.text for b in group]
+        body = "\n\n".join(body_blocks)
         text = f"{title}\n{first.section_path}\n\n{body}"
         anchor = Anchor(
             paper_id=paper_id,
