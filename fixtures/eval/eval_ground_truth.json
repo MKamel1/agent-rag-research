@@ -1009,7 +1009,7 @@
     {
       "question_id": "Q-101",
       "answer_text": "Imai and Nakamura use deep generative models (LLMs) to generate or reproduce unstructured text treatments and extract their true internal vectorized representations; under a separability assumption between treatment and confounding features, these representations allow a neural network and double machine learning (DML) to disentangle confounders from treatment features without learning representations from outcome data. Conversely, Xu analyzes generative models used as fully generative tabular synthesizers for the entire data triplet (W, A, Y) and proves that prediction loss penalizes treatment-effect errors only through an overlap-weighted term, causing fully generative synthesizers to underlearn counterfactual contrasts under limited overlap. To resolve this, Xu proposes a hybrid synthesis framework that uses generative models solely for covariates W while modeling treatment assignment A and outcome mechanisms Y separately.",
-      "source_paper_id": "2410.00903",
+      "source_paper_id": "2604.23904",
       "source_paper_title": "Causal Inference with Generative Artificial Intelligence: Application to Texts as Treatments",
       "section_path": "Paper 2410.00903 Sec 1 (Introduction); Paper 2604.23904 Sec 1 (Introduction)",
       "passage_excerpt": "the outcome-prediction loss decomposes into prognostic error plus an overlap-weighted treatment-effect error, with weight π(W ){1 − π(W )}. Thus, under imbalance or limited overlap, a model may reprod",
@@ -1029,7 +1029,7 @@
     {
       "question_id": "Q-103",
       "answer_text": "Engh and Aronow (2025) use DML to estimate a downstream treatment effect parameter under high-dimensional multimodal confounding by incorporating direct LLM point predictions of conditional expectations alongside text and image embeddings as unpenalized predictors in cross-fitted partially penalized LASSO nuisance models. In contrast, Chen et al. (2026) apply DML directly to semantic embeddings of prompts and queries to learn an offline causal reward model that estimates the Conditional Average Treatment Effect (CATE) of prompt variations, orthogonalizing prompt semantics from query difficulty confounding.",
-      "source_paper_id": "2510.09684",
+      "source_paper_id": "2602.01711",
       "source_paper_title": "Using LLMs to Directly Guess Conditional Expectations Can Improve Efficiency in Causal Estimation; Optimizing Prompts for Large Language Models: A Causal Approach",
       "section_path": "Paper 2510.09684 Sec 1 & 2.5; Paper 2602.01711 Sec 1",
       "passage_excerpt": "First, it learns an offline causal reward model by applying Double Machine Learning (DML) to semantic embeddings of prompts and queries, isolating the causal effect of prompt variations from confoundi",
@@ -1079,7 +1079,7 @@
     {
       "question_id": "Q-108",
       "answer_text": "Kato demonstrates that finite-sample balancing functions must be derived from the regression error appearing in the Neyman orthogonal score, proving that ATE estimation under treatment effect heterogeneity requires regressor balancing over X=(D,Z) via Riesz regression, whereas covariate balancing over Z alone is only sufficient when the score error depends solely on covariates (as in ATT estimation). In contrast, Yu et al. study stochastic gradient descent optimization under nuisance parameters, proving that exact Neyman orthogonality shrinks the asymptotic convergence neighborhood around the true parameter from a squared dependence ||ĝ - g0||_G^2 to a fourth-power dependence ||ĝ - g0||_G^4, and develop Orthogonalized SGD (OSGD) to interpolate between these regimes when exact orthogonality is absent.",
-      "source_paper_id": "2605.06386",
+      "source_paper_id": "2508.20326",
       "source_paper_title": "Covariate Balancing and Riesz Regression Should Be Guided by the Neyman Orthogonal Score in Debiased Machine Learning",
       "section_path": "Paper 2605.06386 Sec 1 (Introduction) & Sec 1.1; Paper 2508.20326 Sec 1 (Introduction - Contributions)",
       "passage_excerpt": "We find that θ(n) converges linearly to a neighborhood of θ⋆ —the optimum in the well-specified case—with a radius that has a fourth-power (resp. squared) dependence on ∥ĝ − g0 ∥G when Neyman orthogo",
