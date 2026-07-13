@@ -1,8 +1,9 @@
 """End-to-end proof that the two composition roots (app.assembly) actually wire up into a real,
 running pipeline -- the first real run of this entire system against a live paper, not a fake.
 
-Needs the full real stack up: arXiv, GROBID, MinerU (via rag.parser), Ollama, TEI embed/rerank,
-Qdrant. Uses a throwaway temp DB/blob dir and a disposable Qdrant collection per run.
+Needs the full real stack up: the arXiv API, the reference-resolution service, the real Parser
+adapter (rag.parser), the real Summarizer/Embedder/Reranker services, and the real vector store.
+Uses a throwaway temp DB/blob dir and a disposable vector-store collection per run.
 """
 
 import shutil
