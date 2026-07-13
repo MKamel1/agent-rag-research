@@ -24,56 +24,52 @@ import math
 import random
 from unittest.mock import MagicMock
 
+import httpx
 import pytest
 
 # M1a CI convention (CONVENTIONS §0.7 / §11): skip the whole suite until rag/embedder.py lands.
 _mod = pytest.importorskip("rag.embedder")
 
 from contracts.embedder import EmbedderInfo  # noqa: E402
+from contracts.errors import TransientError  # noqa: E402
 from rag.fakes.fake_embedder import FakeEmbedder  # noqa: E402
 from rag.fakes.fake_gpu_lock import FakeGpuLock  # noqa: E402
 
-# Contract cases. FakeEmbedder is the in-CI implementation of the seam (fast, no GPU). The real
-# embedding-server adapter is appended to this list by the nightly / M2 real-adapter job — the
-# SAME assertions below then run against it, which is what makes "swap the embedding model" safe
-# (TEST-STRATEGY "Contract tests"). Do NOT add the real adapter here: it needs a live GPU service
-# and must opt out of --disable-socket at the point that job invokes it.
-_CONTRACT_EMBEDDERS = [pytest.param(lambda: FakeEmbedder(dim=64), id="fake")]
-
-
-@pytest.fixture(params=_CONTRACT_EMBEDDERS)
-def embedder(request):
-    return request.param()
-
-
 # ---------------------------------------------------------------------------
-# The Embedder contract (runs against every implementation in _CONTRACT_EMBEDDERS)
+# The Embedder contract — standalone assert_*(embedder) functions run against every
+# implementation, same shape as rag/test_vector_index.py's CONTRACT tuple. FakeEmbedder runs in
+# default CI (fast, no GPU); the real TeiEmbedder runs the identical assertions against a live TEI
+# server (`test_real_adapter_satisfies_contract` below), opting out of --disable-socket via
+# `enable_socket` and skipping cleanly if no server is reachable — this is what proves "swap the
+# embedding model" is safe (TEST-STRATEGY "Contract tests"), not just that the fake behaves.
 # ---------------------------------------------------------------------------
 
 
-def test_output_length_equals_input_length(embedder):
+def assert_output_length_equals_input_length(embedder):
     texts = ["alpha", "beta", "gamma"]
     vectors = embedder.embed(texts)
     assert len(vectors) == len(texts)
 
 
-def test_every_vector_has_length_equal_to_info_dim(embedder):
+def assert_every_vector_has_length_equal_to_info_dim(embedder):
     for vec in embedder.embed(["alpha", "beta"]):
         assert len(vec) == embedder.info.dim
 
 
-def test_vectors_are_l2_normalized(embedder):
+def assert_vectors_are_l2_normalized(embedder):
     for vec in embedder.embed(["alpha", "beta", "a longer passage of text about estimators"]):
         norm = math.sqrt(sum(x * x for x in vec))
         assert norm == pytest.approx(1.0, abs=1e-6)
 
 
-def test_deterministic_same_input_same_output(embedder):
+def assert_deterministic_same_input_same_output(embedder):
+    # Empirically confirmed bit-exact against the real TEI server too (two live /embed calls on
+    # the same text returned identical vectors, max abs diff 0.0) — no tolerance needed here.
     text = "the doubly-robust estimator"
     assert embedder.embed([text]) == embedder.embed([text])
 
 
-def test_order_preserving_and_distinct_texts_give_distinct_vectors(embedder):
+def assert_order_preserving_and_distinct_texts_give_distinct_vectors(embedder):
     a, b = "alpha", "beta"
     batch = embedder.embed([a, b])
     # 1:1 order-preserving: batch[i] is the vector for texts[i].
@@ -84,15 +80,52 @@ def test_order_preserving_and_distinct_texts_give_distinct_vectors(embedder):
     assert batch[0] != batch[1]
 
 
-def test_empty_input_gives_empty_output(embedder):
+def assert_empty_input_gives_empty_output(embedder):
     assert embedder.embed([]) == []
 
 
-def test_info_exposes_model_id_dim_and_version(embedder):
+def assert_info_exposes_model_id_dim_and_version(embedder):
     info = embedder.info
     assert info.dim > 0
     assert isinstance(info.model_id, str) and info.model_id
     assert isinstance(info.version, str) and info.version
+
+
+CONTRACT = (
+    assert_output_length_equals_input_length,
+    assert_every_vector_has_length_equal_to_info_dim,
+    assert_vectors_are_l2_normalized,
+    assert_deterministic_same_input_same_output,
+    assert_order_preserving_and_distinct_texts_give_distinct_vectors,
+    assert_empty_input_gives_empty_output,
+    assert_info_exposes_model_id_dim_and_version,
+)
+
+
+@pytest.mark.parametrize("check", CONTRACT, ids=[c.__name__ for c in CONTRACT])
+def test_fake_adapter_satisfies_contract(check):
+    check(FakeEmbedder(dim=64))
+
+
+@pytest.mark.enable_socket  # opts out of the default job's --disable-socket for this test only
+@pytest.mark.parametrize("check", CONTRACT, ids=[c.__name__ for c in CONTRACT])
+def test_real_adapter_satisfies_contract(check):
+    # Needs a live TEI embedding server at localhost:8080 (this repo's documented default,
+    # Qwen3-Embedding-4B/dim 2560 per phase0-results.md's Spike 2 lock). Most default runs of this
+    # suite don't have one up, so a connection failure skips with a clear reason rather than
+    # failing the build — the nightly/M2 job is where this is expected to actually run and be
+    # required green.
+    real = pytest.importorskip("rag.embedder")
+
+    client = httpx.Client(base_url="http://localhost:8080", timeout=30.0)
+    info = EmbedderInfo(model_id="Qwen3-Embedding-4B", dim=2560, version="v1")
+    adapter = real.TeiEmbedder(client, FakeGpuLock(), info)
+    try:
+        adapter.embed(["probe"])
+    except (TransientError, httpx.HTTPError) as e:
+        pytest.skip(f"no live TEI embedder reachable at localhost:8080: {e}")
+
+    check(adapter)
 
 
 # ---------------------------------------------------------------------------
