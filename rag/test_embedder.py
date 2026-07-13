@@ -127,10 +127,13 @@ def test_real_adapter_satisfies_contract(check):
     adapter = real.TeiEmbedder(client, FakeGpuLock(), info)
     try:
         adapter.embed(["probe"])
-    except httpx.TransportError as e:
-        # TransportError (connect/timeout) means no server to talk to -> skip cleanly. It does NOT
-        # include HTTPStatusError, so a server that IS up but returns a real 4xx/5xx fails this
-        # test instead of silently skipping past a genuine regression.
+    except (httpx.TransportError, TransientError) as e:
+        # TeiEmbedder now maps connect/timeout failures to TransientError too (it used to let the
+        # raw httpx.TransportError through, which this except clause originally targeted alone) --
+        # still catching httpx.TransportError directly as a defensive fallback in case that
+        # mapping ever changes. PermanentError (a real 4xx) is deliberately NOT caught here, same
+        # as rag/test_reranker.py's identical real-adapter test: a server that's up but genuinely
+        # broken must still fail this test, not silently skip past a real regression.
         pytest.skip(f"no live TEI embedder reachable at localhost:8080: {e}")
 
     check(adapter)
