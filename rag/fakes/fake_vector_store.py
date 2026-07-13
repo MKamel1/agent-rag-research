@@ -6,7 +6,7 @@ Real interface (ARCHITECTURE.md M6, owner D):
 `rebuild() -> None`. `contracts/vector_index.py` owns the data shapes (`Hit`, `SearchFilters`,
 `VectorPayload`); `contracts/fusion.py` owns the RRF formula itself — this fake calls
 `rrf_fuse`, it never reimplements it (DATA-CONTRACTS.md "RRF fusion formula (frozen)":
-"both `FakeVectorStore` and the real Qdrant adapter call it").
+"both `FakeVectorStore` and the real vector-store adapter call it").
 """
 
 import math
@@ -22,7 +22,7 @@ class FakeVectorStore:
     - Dense ranking: cosine similarity of `qvec` against every stored vector that survives
       `filters`, ranked descending (ties broken by id ascending for determinism).
     - Sparse ranking: token-overlap of `qtext` against the stored payload's `text` — the real
-      chunk/summary passage text (`VectorPayload.text`). This matches what the real Qdrant
+      chunk/summary passage text (`VectorPayload.text`). This matches what the real vector-store
       adapter's sparse index scores against: both sides index real passage content, not a
       heading. A candidate with zero token overlap is excluded from the sparse ranked list
       entirely (mirrors a real sparse/BM25 index simply not retrieving a document for a query it

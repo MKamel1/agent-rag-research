@@ -32,9 +32,9 @@ class SearchFilters(FrozenModel):
 
 class VectorPayload(TypedDict):
     """Stored beside each vector. A plain `TypedDict` (not a `FrozenModel`) on purpose: this is
-    exactly the dict handed to the vector store client's `payload=` argument (Qdrant et al. expect
-    plain dicts, not model instances) — DATA-CONTRACTS.md itself defines it as `TypedDict`, unlike
-    every other shape in this file.
+    exactly the dict handed to the vector store adapter's `payload=` argument (real vector-store
+    clients expect plain dicts, not model instances) — DATA-CONTRACTS.md itself defines it as
+    `TypedDict`, unlike every other shape in this file.
 
     `text` carries the real chunk/summary passage text — it is what the sparse/keyword search
     channel tokenizes and indexes (previously the sparse channel had no real text available at this
