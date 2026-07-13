@@ -14,7 +14,16 @@ per-paper-pipelined design (CPU prep for paper N+1 overlapping GPU finish for pa
 correctness-neutral but memory-unsafe once the corpus needed both models loaded during overlap.
 The two-pass split is not a performance regression; it is the fix for a real, reproduced CUDA OOM.
 `before_parse_phase`/`before_finish_phase` (constructor args, both default no-op) are hooks for a
-composition root to evict the model the *other* phase doesn't need -- see `app/assembly.py`.
+composition root to evict the model the *other* phase doesn't need -- see `app/assembly.py`. A
+third, finer-grained hook, `before_embed` (also default no-op), fires per-paper, right before each
+of `_finish`'s two `embedder.embed()` calls -- found necessary 2026-07-13 by a real end-to-end run:
+even *within* Pass 2, the Summarizer sits fully GPU-resident (its own real VRAM use, e.g. ~11.5GB
+for a long paper) for the entire time the Embedder is working, though nothing needs it loaded
+during that window -- on a real long paper this left too little headroom and the Embedder hit a
+real CUDA OOM. `app/assembly.py` wires `before_embed=summarizer.unload` (the same `unload()` used
+for the Pass-1 boundary) -- real reload cost measured at ~2.5s, negligible against a real per-paper
+summarize call (~15-20s). See `.phase0-data/known-issue-pass2-oom.md`'s 2026-07-13 entries for the
+full real-measurement trail (why batch size and individual chunk length were ruled out first).
 
 This orchestrator acquires the injected `GpuLock` around no work of its own -- the stage adapters
 (Summarizer/Embedder) acquire it themselves around their own inference calls; the Orchestrator
@@ -118,6 +127,7 @@ class IngestionOrchestrator:
         *,
         before_parse_phase=None,
         before_finish_phase=None,
+        before_embed=None,
     ):
         self._harvester = harvester
         self._parser = parser
@@ -135,6 +145,7 @@ class IngestionOrchestrator:
         # these gets the prior single-process behavior unchanged.
         self._before_parse_phase = before_parse_phase or (lambda: None)
         self._before_finish_phase = before_finish_phase or (lambda: None)
+        self._before_embed = before_embed or (lambda: None)
 
     def ingest(self, focus_area: list[str], cap: int) -> None:
         refs = self.harvest(focus_area, cap)
@@ -228,6 +239,7 @@ class IngestionOrchestrator:
             # a documented, accepted V0 cost of this rare resume path -- Embedder is deterministic
             # per (text, model, version) (ARCHITECTURE M4), so it reproduces the same vectors.
             record = self._document_store.get(paper_id)
+            self._before_embed()
             summary_vec, *chunk_vecs = self._embedder.embed(
                 [record.summary_text] + [c.text for c in record.chunks]
             )
@@ -258,6 +270,7 @@ class IngestionOrchestrator:
         # calls -- so the per-paper embed cost stays at exactly one call (the `topic_query_vec`
         # hoist above is the only other embed() call in a run, giving the N+1 total ARCHITECTURE
         # requires, never 2N).
+        self._before_embed()
         summary_vec, *chunk_vecs = self._embedder.embed(
             [summary_text] + [c.text for c in chunks]
         )
