@@ -141,8 +141,8 @@ M1a, before this implementation existed") **plus** the specifics below.
   injected **`GpuLock`** around no work of its own (the GPU-bound stages acquire it themselves) but wires it
   identically to every stage adapter so two GPU stages never co-run; computes and persists `relevance_score`
   (DATA-CONTRACTS §M5/§M9) per paper — a test asserts `papers.relevance_score` is non-null after an
-  end-to-end fake run; **hoists `topic_query_vec` to once per run** — a call-count assertion on
-  `FakeEmbedder` (via a spy) asserts `embed()` is called `N+1` times for `N` fixture papers (one
+  end-to-end fake run; **hoists `topic_query_vec` to once per run** (ARCHITECTURE.md §M9) — a call-count
+  assertion on `FakeEmbedder` (via a spy) asserts `embed()` is called `N+1` times for `N` fixture papers (one
   `topic_query_vec` embed + one `summary_text` embed per paper), not `2N` (a test that only checks the
   final `relevance_score` values would pass even if the topic query were re-embedded every paper, since
   `FakeEmbedder` is deterministic — this call-count assertion is what actually catches the loop-placement
