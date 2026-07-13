@@ -31,6 +31,7 @@ import pytest
 _mod = pytest.importorskip("rag.embedder")
 
 from contracts.embedder import EmbedderInfo  # noqa: E402
+from contracts.errors import PermanentError, TransientError  # noqa: E402
 from rag.fakes.fake_embedder import FakeEmbedder  # noqa: E402
 from rag.fakes.fake_gpu_lock import FakeGpuLock  # noqa: E402
 
@@ -126,10 +127,13 @@ def test_real_adapter_satisfies_contract(check):
     adapter = real.TeiEmbedder(client, FakeGpuLock(), info)
     try:
         adapter.embed(["probe"])
-    except httpx.TransportError as e:
-        # TransportError (connect/timeout) means no server to talk to -> skip cleanly. It does NOT
-        # include HTTPStatusError, so a server that IS up but returns a real 4xx/5xx fails this
-        # test instead of silently skipping past a genuine regression.
+    except (httpx.TransportError, TransientError) as e:
+        # TeiEmbedder now maps connect/timeout failures to TransientError too (it used to let the
+        # raw httpx.TransportError through, which this except clause originally targeted alone) --
+        # still catching httpx.TransportError directly as a defensive fallback in case that
+        # mapping ever changes. PermanentError (a real 4xx) is deliberately NOT caught here, same
+        # as rag/test_reranker.py's identical real-adapter test: a server that's up but genuinely
+        # broken must still fail this test, not silently skip past a real regression.
         pytest.skip(f"no live TEI embedder reachable at localhost:8080: {e}")
 
     check(adapter)
@@ -256,3 +260,46 @@ def test_embed_sub_batches_over_the_tei_limit_and_preserves_order():
     # (c) determinism preserved across sub-batching: re-running the same multi-batch call gives
     # byte-identical output (mirrors test_deterministic_same_input_same_output's style).
     assert adapter.embed(texts) == vectors
+
+
+# ---------------------------------------------------------------------------
+# Error taxonomy — TransientError/PermanentError, never a bare httpx exception (CONVENTIONS §4).
+# Found missing during a real end-to-end run this session: a real CUDA OOM in the TEI server
+# surfaced as a raw, unhandled httpx.HTTPStatusError and crashed the whole ingestion run instead
+# of quarantining the one paper. Same taxonomy as rag/summarizer.py / rag/reranker.py.
+# ---------------------------------------------------------------------------
+
+
+def _build_real_embedder(client, gpu_lock):
+    info = EmbedderInfo(model_id="test-model", dim=8, version="v1")
+    return _real_embedder_cls()(client=client, gpu_lock=gpu_lock, info=info)
+
+
+def test_5xx_response_maps_to_transient_error():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(503)
+
+    client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
+    adapter = _build_real_embedder(client, FakeGpuLock())
+    with pytest.raises(TransientError):
+        adapter.embed(["a passage to embed"])
+
+
+def test_4xx_response_maps_to_permanent_error():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(400)
+
+    client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
+    adapter = _build_real_embedder(client, FakeGpuLock())
+    with pytest.raises(PermanentError):
+        adapter.embed(["a passage to embed"])
+
+
+def test_connection_failure_maps_to_transient_error():
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("connection refused", request=request)
+
+    client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
+    adapter = _build_real_embedder(client, FakeGpuLock())
+    with pytest.raises(TransientError):
+        adapter.embed(["a passage to embed"])

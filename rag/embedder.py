@@ -18,13 +18,18 @@ import math
 import httpx
 
 from contracts.embedder import EmbedderInfo, Vector
-from contracts.errors import ContractError
+from contracts.errors import ContractError, PermanentError, TransientError
 from contracts.gpu_lock import GpuLock
 
 # The real TEI server enforces `max_client_batch_size=32` (empirically confirmed: 161 texts ->
 # HTTP 422 "batch size 161 > maximum allowed batch size 32"; 32 texts -> HTTP 200). Not a tunable
 # — it's the server's own hard ceiling, so `embed()` sub-batches to respect it.
 _MAX_BATCH_SIZE = 32
+
+# Same taxonomy split as rag/summarizer.py / rag/reranker.py: a rate-limited or momentarily-
+# unhealthy server (or a real OOM in the embedding server, seen for real this session on a
+# long-tail paper) is transient (retry, then quarantine); any other 4xx is this request's fault.
+_RETRYABLE_STATUSES = {429, 500, 502, 503, 504}
 
 
 class TeiEmbedder:
@@ -61,8 +66,16 @@ class TeiEmbedder:
             raw_vectors = []
             for start in range(0, len(texts), _MAX_BATCH_SIZE):
                 batch = texts[start : start + _MAX_BATCH_SIZE]
-                response = self._client.post("/embed", json={"inputs": batch})
-                response.raise_for_status()
+                try:
+                    response = self._client.post("/embed", json={"inputs": batch})
+                    response.raise_for_status()
+                except httpx.HTTPStatusError as error:
+                    status = error.response.status_code
+                    if status in _RETRYABLE_STATUSES:
+                        raise TransientError(f"embedding server returned {status}") from error
+                    raise PermanentError(f"embedding server returned {status}") from error
+                except httpx.HTTPError as error:
+                    raise TransientError(f"embedding request failed: {error}") from error
                 raw_vectors.extend(response.json())
 
         if len(raw_vectors) != len(texts):
