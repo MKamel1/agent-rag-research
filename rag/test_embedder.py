@@ -31,6 +31,7 @@ import pytest
 _mod = pytest.importorskip("rag.embedder")
 
 from contracts.embedder import EmbedderInfo  # noqa: E402
+from contracts.errors import PermanentError, TransientError  # noqa: E402
 from rag.fakes.fake_embedder import FakeEmbedder  # noqa: E402
 from rag.fakes.fake_gpu_lock import FakeGpuLock  # noqa: E402
 
@@ -256,3 +257,46 @@ def test_embed_sub_batches_over_the_tei_limit_and_preserves_order():
     # (c) determinism preserved across sub-batching: re-running the same multi-batch call gives
     # byte-identical output (mirrors test_deterministic_same_input_same_output's style).
     assert adapter.embed(texts) == vectors
+
+
+# ---------------------------------------------------------------------------
+# Error taxonomy — TransientError/PermanentError, never a bare httpx exception (CONVENTIONS §4).
+# Found missing during a real end-to-end run this session: a real CUDA OOM in the TEI server
+# surfaced as a raw, unhandled httpx.HTTPStatusError and crashed the whole ingestion run instead
+# of quarantining the one paper. Same taxonomy as rag/summarizer.py / rag/reranker.py.
+# ---------------------------------------------------------------------------
+
+
+def _build_real_embedder(client, gpu_lock):
+    info = EmbedderInfo(model_id="test-model", dim=8, version="v1")
+    return _real_embedder_cls()(client=client, gpu_lock=gpu_lock, info=info)
+
+
+def test_5xx_response_maps_to_transient_error():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(503)
+
+    client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
+    adapter = _build_real_embedder(client, FakeGpuLock())
+    with pytest.raises(TransientError):
+        adapter.embed(["a passage to embed"])
+
+
+def test_4xx_response_maps_to_permanent_error():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(400)
+
+    client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
+    adapter = _build_real_embedder(client, FakeGpuLock())
+    with pytest.raises(PermanentError):
+        adapter.embed(["a passage to embed"])
+
+
+def test_connection_failure_maps_to_transient_error():
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("connection refused", request=request)
+
+    client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
+    adapter = _build_real_embedder(client, FakeGpuLock())
+    with pytest.raises(TransientError):
+        adapter.embed(["a passage to embed"])
