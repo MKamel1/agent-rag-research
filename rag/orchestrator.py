@@ -117,7 +117,7 @@ class IngestionOrchestrator:
     from `parser.parse` gets a bounded retry (`max_retries`, `retry_sleep` -- same shape as
     `rag/harvester.py`'s `Harvester`) and then quarantines if the retry budget is exhausted
     (T-DOC12 -- a real end-to-end run crashed the whole `parse_phase()` subprocess on an
-    unretried GROBID `TransientError` propagating out of `parser.parse`, CONVENTIONS.md §4's
+    unretried reference-extraction `TransientError` propagating out of `parser.parse`, CONVENTIONS.md §4's
     "retry with backoff, then quarantine" was simply never wired up for this call). Any other
     exception propagates out of `ingest()` and stops the run (CONVENTIONS.md §4 -- everything
     else is a bug or an infrastructure failure worth crashing loud on).
@@ -253,7 +253,7 @@ class IngestionOrchestrator:
 
     def _parse_with_retry(self, ref: PaperRef) -> ParsedDoc | None:
         """The per-paper error boundary `parser.parse` needs (T-DOC12): a real end-to-end run
-        crashed the whole `parse_phase()` subprocess when one paper's GROBID reference-extraction
+        crashed the whole `parse_phase()` subprocess when one paper's reference-extraction
         call raised `TransientError` -- correctly classified by `rag/parser.py`, but nothing
         between there and here retried or quarantined it, so it propagated out of `ingest()` and
         killed every paper still queued behind it. `PermanentError` was already quarantined
