@@ -973,7 +973,7 @@ def test_parse_phase_batch_failure_fallback_still_quarantines_a_genuinely_bad_pa
 
 
 def test_parse_phase_skips_batch_call_for_papers_already_parsed_or_further_along():
-    # A ref already at (or past) "parsed" from a prior run doesn't need a fresh MinerU call --
+    # A ref already at (or past) "parsed" from a prior run doesn't need a fresh parser call --
     # `_prepare_batch` excludes it from `parser.parse_batch()` entirely and lets `_prepare`'s own
     # pre-existing resume logic (unchanged by T-DOC16) handle it.
     parser = SpyBatchParser()

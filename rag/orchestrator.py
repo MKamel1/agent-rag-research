@@ -219,14 +219,14 @@ class IngestionOrchestrator:
 
         Batches `refs` into groups of `config.parse_batch_size` and tries
         `parser.parse_batch()` once per group (T-DOC16, `.phase0-data/
-        pass1-gpu-underutilization.md`): MinerU's `do_parse` pools pages from every open document
-        into shared windows and runs one batched tensor call per pipeline stage across them,
-        filling the GPU-idle gaps a one-document-at-a-time `parser.parse()` loop leaves between
-        its own sequential stages. `parser.parse_batch` is whole-batch-fails, by design (see
-        `rag/parser.py`'s module docstring) -- a `TransientError`/`PermanentError` from it falls
-        back to today's proven-safe per-paper `_prepare`/`_parse_with_retry` path for that group,
-        unchanged. The last group of a harvest may be shorter than `parse_batch_size`; that's
-        handled naturally by slicing, not a special case.
+        pass1-gpu-underutilization.md`) -- one batched parser call for the whole group fills the
+        GPU-idle gaps a one-document-at-a-time `parser.parse()` loop leaves between a single
+        document's own sequential processing stages; see `rag/parser.py`'s module docstring for
+        the vendor-specific mechanism. `parser.parse_batch` is whole-batch-fails, by design (same
+        docstring) -- a `TransientError`/`PermanentError` from it falls back to today's
+        proven-safe per-paper `_prepare`/`_parse_with_retry` path for that group, unchanged. The
+        last group of a harvest may be shorter than `parse_batch_size`; that's handled naturally
+        by slicing, not a special case.
         """
         self._before_parse_phase()
         batch_size = self._config.parse_batch_size
@@ -235,7 +235,7 @@ class IngestionOrchestrator:
 
     def _prepare_batch(self, batch: list[PaperRef]) -> None:
         """One `parse_phase` group. Only refs that haven't reached `parsed` yet (a fresh paper, or
-        one that crashed before checkpointing `parsed` on a prior run) need an actual MinerU call
+        one that crashed before checkpointing `parsed` on a prior run) need an actual parser call
         -- refs already at `parsed` or further along are left entirely to `_prepare`'s own
         pre-existing resume logic below, same as before this method existed.
 
