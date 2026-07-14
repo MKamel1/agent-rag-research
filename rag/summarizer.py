@@ -169,7 +169,7 @@ class OllamaSummarizer:
 
     def unload(self) -> None:
         """Proactively evict this model from GPU memory (ARCHITECTURE.md §3's two-phase ingest:
-        Pass 1/MinerU needs this model's VRAM back; also fired before each paper's embed step,
+        Pass 1's parser needs this model's VRAM back; also fired before each paper's embed step,
         rag/orchestrator.py's `before_embed` hook). `keep_alive: 0` with no `prompt` is Ollama's
         documented no-generation unload request (what `ollama stop <model>` wraps) -- it doesn't
         queue behind `gpu_lock` since it's not an inference call. That request only *schedules*
