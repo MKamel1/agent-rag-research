@@ -7,6 +7,8 @@
 # model choice ever needs to differ.
 """
 
+import time
+from collections.abc import Callable
 from pathlib import Path
 
 import httpx
@@ -38,6 +40,15 @@ _RERANK_MODEL = "BGE-reranker-v2-m3"
 _EMBEDDER_INFO = EmbedderInfo(model_id="Qwen3-Embedding-4B", dim=2560, version="v1")
 _QDRANT_HOST = "localhost"
 _QDRANT_PORT = 6333
+# `IngestionOrchestrator.parse_phase` calls `parser.parse(ref)` once per paper, sequentially, for
+# the whole ~100-120 paper corpus -- with no delay this is a tight loop of GETs against arXiv,
+# a real risk of tripping their rate limiting (429s, which this class already maps to
+# PermanentError -> a quarantined paper, shrinking the corpus for no good reason). arXiv's
+# published API guidance is "no more than one request every 3 seconds" (see
+# rag/harvester.py's own _RATE_LIMIT_SECONDS for that same number, applied to the search API);
+# this is direct PDF fetching, not the query API, so half that is a defensible, simpler bound --
+# enough spacing to avoid 429s without meaningfully slowing the parse phase.
+_PDF_DOWNLOAD_DELAY_SECONDS = 1.5
 
 
 class _PdfDownloadParser:
@@ -45,10 +56,14 @@ class _PdfDownloadParser:
     module's frozen `parse(raw: bytes) -> ParsedDoc` interface — the Orchestrator hands a
     `PaperRef`, the real Parser wants PDF bytes. Lives here, not in `rag/parser.py`: downloading
     is composition-root wiring, not part of the Parser module's own contract.
+
+    `sleep` is constructor-injectable (default `time.sleep`), same pattern as
+    `rag.harvester.ArxivSource`, so a unit test can assert the delay fires without a real sleep.
     """
 
-    def __init__(self, client: httpx.Client):
+    def __init__(self, client: httpx.Client, *, sleep: Callable[[float], None] = time.sleep):
         self._client = client
+        self._sleep = sleep
 
     def parse(self, ref: PaperRef) -> ParsedDoc:
         try:
@@ -56,6 +71,11 @@ class _PdfDownloadParser:
             resp.raise_for_status()
         except httpx.HTTPError as e:
             raise PermanentError(f"failed to download PDF from {ref.pdf_url}: {e}") from e
+        finally:
+            # Spaces out consecutive downloads regardless of success/failure -- a failed
+            # request still counts against arXiv's rate limit, and the next `parse()` call
+            # (next paper in the orchestrator's loop) shouldn't fire immediately after it.
+            self._sleep(_PDF_DOWNLOAD_DELAY_SECONDS)
         return parse_pdf_bytes(resp.content)
 
 
