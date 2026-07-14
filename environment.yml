@@ -7,11 +7,12 @@
 # Layering rationale (read before adding anything):
 #   - "Core" below is pinned NOW because it's either locked by an ADR (PRD.md §12) or required by the
 #     test harness itself (TEST-STRATEGY.md), independent of which Phase-0 adapter wins.
-#   - "Deferred" is NOT pinned here because ADR-06 (parser) and ADR-02/ADR-10 (embedder/reranker) are
-#     explicitly undecided until PHASE0-RUNBOOK.md Spikes 1 & 2 run. Pinning them now would misrepresent
-#     the design docs' own "not decided yet" status. Install the deferred set temporarily for Spike 1/2,
-#     then edit this file to keep ONLY the winners — that edit is a foundation-adjacent change tied to
-#     the Phase-0 lock (see GIT-WORKFLOW.md), not a free one.
+#   - "Deferred" below is what's left NOT pinned after Spikes 1 & 2 (PHASE0-RUNBOOK.md) both concluded.
+#     ADR-06 (parser) locked MinerU — its package already moved up into "Core" below, per the rule that
+#     locking a winner is a foundation-adjacent edit (GIT-WORKFLOW.md). ADR-02/ADR-10 (embedder/reranker)
+#     also locked (Qwen3-Embedding-4B + BGE-reranker-v2-m3), but neither needs a Core package: both are
+#     served over TEI as Docker services, reached over plain HTTP via the `httpx` Core dependency — see
+#     the Deferred section below for why its two packages stay deferred rather than moving up.
 #   - Qdrant / TEI-vLLM / Ollama / GROBID are NOT conda deps — they run as Docker services
 #     (PHASE0-RUNBOOK.md S0 stands them up). Only their *client libraries* live here.
 
@@ -51,13 +52,15 @@ dependencies:
       # GROBID itself runs as a Docker service (rag-grobid, PHASE0-RUNBOOK.md S0) — httpx above is its
       # only client-side dependency, no dedicated GROBID client library needed (rag/parser.py).
 
-# --- Deferred: Phase-0 candidates (NOT installed by `conda env create`; add temporarily during S1/S2) ---
+# --- Deferred: Spike-2 sweep-only helpers (NOT installed by `conda env create`) ---
 #
-# Embedder/reranker eval helpers (ADR-02/ADR-10, PHASE0-RUNBOOK.md Spike 2 picks the winners; the
-# models themselves are served over TEI/vLLM as Docker services, not conda deps — these are only the
-# local helper libs needed to run the Spike-2 sweep):
+# Spike 2 has concluded (PR #46, phase0-results.md): Qwen3-Embedding-4B + BGE-reranker-v2-m3 locked as
+# the V0 embedder/reranker (ADR-02/ADR-10). No package moves up into "Core" for this: the locked models
+# are served over TEI as Docker services (PHASE0-RUNBOOK.md S0), and `rag/embedder.py`/`rag/reranker.py`
+# talk to TEI over plain HTTP via `httpx`, already a Core dependency — no vendor SDK needed in production.
+# The two packages below were only local helper libs to run the offline Spike-2 sweep script itself
+# (comparing Qwen3-4B against the BGE-M3 baseline outside the TEI serving path); install temporarily only
+# if re-running that sweep (e.g. re-validating the lock after a materially stronger embedder ships,
+# ADR-02 "Revisit if"):
 #   pip install sentence-transformers
 #   pip install FlagEmbedding    # BGE-M3 / BGE-reranker-v2-m3 baseline comparison
-#
-# After Spike 1/2 lock the winners: move only the winning package(s) up into "Core" above, delete this
-# comment block's losers, and treat that edit as a foundation-adjacent change (GIT-WORKFLOW.md).

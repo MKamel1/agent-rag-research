@@ -256,8 +256,12 @@ dominate; vectors ≈ 0.14 MB int8 / 0.57 MB fp32/paper; SQLite ≈ 0.1 MB/paper
   storing raw PDFs** (keep markdown, re-fetch on demand) to ~halve per-paper cost.
 - **RAM (96 GB)** is ample to hundreds of thousands of papers *with* Qdrant quantization +
   on-disk payload (ADR-01). RAM is not the bottleneck; disk is.
-- **GPU (24 GB)** is the real constraint: embedder + reranker + generation LLM can't co-reside at
-  full precision → stages run **sequentially with queueing** (backpressure). Bounds throughput, not storage.
+- **GPU (24 GB)** is the real constraint, but not evenly across every pair of consumers: measured
+  footprints show Embedder+Reranker+MinerU together fit comfortably (~16.2GB); the pair that doesn't
+  co-reside is **MinerU (parser) + the Summarizer (generation LLM)** — Embedder+Reranker are meant to
+  stay **always** resident (they serve live queries via `McpServer`), so ingestion's parse and
+  summarize/embed stages instead run as **two sequential passes**, not per-paper pipelining, to keep
+  MinerU and the Summarizer apart (ARCHITECTURE.md GPU-residency section). Bounds throughput, not storage.
 
 **Grounding invariants (structural, not hope-based):**
 1. **Mandatory provenance** — every chunk/claim/summary stores a provenance anchor (quotable
@@ -283,17 +287,17 @@ Records)** — every decision here is reasoned there, not just stated.
 
 | Decision | Recommendation (v1) | Why / upgrade path |
 |---|---|---|
-| **PDF → structured content** | **MinerU** (or **Marker**) for body → markdown with LaTeX equations, tables, code + reading order; **GROBID** for clean metadata + reference extraction. | Both handle scientific math/code far better than plain `pdfminer`. GROBID's reference parsing seeds the citation graph. Pick one of MinerU/Marker in the Phase-0 spike by quality on your papers. |
+| **PDF → structured content** | **MinerU** — locked (Spike 1, PR #41) — for body → markdown with LaTeX equations, tables, code + reading order; **GROBID** for clean metadata + reference extraction. | Both handle scientific math/code far better than plain `pdfminer`. GROBID's reference parsing seeds the citation graph. Marker and Docling were benchmarked and dropped in Spike 1 — see ADR-06 / `phase0-results.md` for the numbers. |
 | **Chunking** | **V0:** structure-aware (by section), each chunk prefixed with paper title + section path (free). **V1:** add **contextual-retrieval** headers (short local-LLM-generated context per chunk) — gated on V0's monitoring signal, not built in V0 (ADR-07). | Section-aware chunks + the free prefix measurably lift retrieval precision at zero cost. Equations and code kept as first-class blocks, not flattened. The LLM-per-chunk header cost is deliberately a separate, evidence-gated V1 decision. |
-| **Embedding model** | **Lean Qwen3-Embedding-4B for quality** (dense-only, top of MTEB, strong on code, 32K ctx, flexible dims); **BGE-M3** as the convenience baseline (emits dense **+** sparse **+** multi-vector → hybrid for free). **Decide in Spike 2 on eval numbers.** | Qwen3-4B has the higher quality ceiling and is stronger on our code-heavy corpus, but is dense-only → pair with a separate sparse method (Qdrant BM25/SPLADE) for hybrid. BGE-M3 trades some quality for one-model hybrid convenience + built-in RRF. Both fit on 24 GB. Caveat: neither *understands* equations — they tokenize LaTeX; deep math semantics is a later concern. |
+| **Embedding model** | **Qwen3-Embedding-4B — locked** (Spike 2, PR #46; dense-only, top of MTEB, strong on code, 32K ctx, flexible dims). BGE-M3 was measured as the convenience-baseline candidate and not selected — see ADR-02. | Qwen3-4B has the higher quality ceiling and is stronger on our code-heavy corpus, confirmed on the real eval (Recall@10 0.875 dense / 0.844 hybrid+rerank vs. BGE-M3's 0.828 / 0.812). Its dense-only limitation is closed by a separate sparse method (Qdrant BM25/SPLADE) for hybrid. Caveat: neither *understands* equations — they tokenize LaTeX; deep math semantics is a later concern. |
 | **Vector DB** | **Qdrant** (Docker, persistent). | Chosen over **Chroma** for: native **sparse+dense hybrid**, stronger **metadata filtering at scale**, and **quantization** in an always-on container. Chroma is fine for a prototype but thinner on hybrid/filtering for a long-lived, filter-heavy KB. LanceDB is the zero-ops embedded fallback (and is multimodal-friendly if we ever colocate figure blobs). (Your doc's "Quadrand" = Qdrant.) |
 | **Figure/table capture** | **Extract + store figures/tables as artifacts during the initial parse** (PNG + caption + section + bbox + `vlm_description=null`); index captions in v1. | Re-parsing the backlog later is the expensive, lossy path; MinerU/Marker already emit figures during the parse we're paying for anyway. This turns the future VLM from a full re-ingestion into a bolt-on ("run VLM over stored figures"), and captions add retrieval value **immediately**, pre-VLM. |
 | **Math / equation handling** | **v1:** keep inline LaTeX, normalize macros, index the explaining prose. **v2:** local LLM emits a plain-English description of each key equation → embed it alongside the LaTeX (rides the claim-extraction pass). **Later/optional:** LaTeX→MathML/SymPy for structural equation search, and/or rendered-equation-as-image via the VLM phase. | Embedders tokenize LaTeX, they don't *understand* it — so retrieval by *meaning* comes from the prose + the LLM-generated description, reusing infra we already run. No dedicated math model needed for the common case; structural/VLM options held in reserve. |
 | **Graph RAG** | **Yes — graph-aware retrieval over the citation + claim graphs (v2). No generic entity-graph engine.** | The living-memory design already yields two *meaningful, verifiable* graphs (paper→paper citations; claim→claim supports/contradicts/supersedes). Retrieval seeds via hybrid vector search, then traverses those edges for lineage/contradiction context. Microsoft-style GraphRAG (LLM-extracted entity graph + community summaries) is skipped: costly, hallucination-prone, and its global-sensemaking payoff overlaps the v3 radar. Revisit community summaries only if v3 needs cross-field theme detection. |
 | **Relational store** | **SQLite** (WAL mode) for metadata, claims, claim relations, citation edges, artifact links. | Handles this scale easily; recursive CTEs cover citation-graph queries. DuckDB if analytics get heavy. |
 | **Summarization / claim-extraction LLM** | **Qwen3-14B** (4-bit) as workhorse; **Qwen2.5/Qwen3-32B** (4-bit, ~20 GB) for synthesis. | Strong on math + code + structured extraction, fits the 3090. Use the small model for high-volume extraction, the 32B for v2 synthesis. |
-| **Reranker** | **BGE-reranker-v2-m3** (or Qwen3-Reranker) cross-encoder over top-k. | Large quality win for little cost; pairs with BGE-M3. |
-| **Embedding *serving*** | **TEI (Text Embeddings Inference) — or vLLM** — with native HF weights for the bulk embedding job; **not** GGUF/Ollama. | Embedding the backlog is a throughput job; benchmarks put **TEI fastest** (Ollama ~9× slower); *validated: TEI ≥ Infinity, so don't default to Infinity, and vLLM now serves embeddings first-class*. Ollama is the slowest and degrades at batch ≥16 → keep it for interactive only. Just run the embedder at **fp16/Q8 (skip GGUF quantization — a 4B embedder barely costs VRAM)**; the old "never Q4" was prudence, not a proven cliff. |
+| **Reranker** | **BGE-reranker-v2-m3 — locked** (Spike 2, PR #46) cross-encoder over top-k. | Large quality win for little cost; part of the locked hybrid+rerank config (Recall@10 0.844 / MRR 0.601 — ADR-10). |
+| **Embedding *serving*** | **TEI (Text Embeddings Inference)** — locked, `float16`, with native HF weights for the bulk embedding job; **not** GGUF/Ollama. A T-VLLM-1 spike evaluated migrating to vLLM and stayed on TEI — see ADR-09. | Embedding the backlog is a throughput job; benchmarks put **TEI fastest** (Ollama ~9× slower). Ollama is the slowest and degrades at batch ≥16 → keep it for interactive only. **Runs at `float16`, not Q8/int8** — the TEI serving image in actual use only supports `float16`/`float32`, no quantized mode (confirmed in Spike 2, `phase0-results.md`); the earlier "fp16/Q8" framing assumed a quantization path this stack doesn't have. |
 | **Serving stack (LLM)** | **Ollama** for v1 (summarization/claim LLM); **vLLM** later. | Ollama = simplest for the single-GPU generation workload where its convenience wins and throughput matters less. Move to vLLM when overnight throughput becomes the bottleneck. |
 | **Embedding-model replaceability** | **Design for swap now:** text is source of truth; vectors are a disposable, **version-stamped** (`model+dim+version`) derived index in per-model Qdrant collections; embedding hidden behind one `embed()` interface; re-embed is a first-class idempotent/resumable job. | A model swap **invalidates the whole vector index** (no cross-model comparability, often different dims) → a full re-embed is unavoidable and is the system's most expensive migration. These cheap measures make it a config-change + background re-index + atomic cutover, not a rewrite. Qwen3's **MRL** dims also allow query-time truncation without re-embedding. |
 | **RAG?** | **Yes.** | Grounding + citations + token savings are the whole point. |
@@ -537,7 +541,11 @@ full 15K overnight/over a few days — parse time is the one unmeasured variable
 `arXiv → parse (text+eq+code, block-bbox+snippet anchors) → structure-aware chunk (no contextual
 headers — V1, ADR-07) → embed (one model) → Qdrant + SQLite → hybrid+RRF+rerank+parent-block
 expansion → MCP search/get_paper (cited)`
-- **No claims, no reconciliation, no evidence tiers, no self-describing MCP scaffolding, no Obsidian.**
+- **No claims, no reconciliation, no *range* of evidence tiers, no self-describing MCP scaffolding,
+  no Obsidian.** (V0's envelope does carry an `evidence_tier` field — see §8.5's precedence note —
+  but it's pinned to `"A"` for every result, since there are no claims/summaries to tag B/C/D yet;
+  `contracts/retriever.py` enforces the pin. "No evidence tiers" here means no B/C/D distinctions to
+  make, not that the field is absent.)
 - Store: **Qdrant** (persistent Docker service, ADR-01) + SQLite (metadata, chunk/summary text, provenance anchors).
 - Access: MCP `search_papers`, `semantic_search`, `get_paper`, `get_span` — returns grounded passages +
   summaries + **citations**. The **consuming agent reasons** over the passages (no human loop, §8.3-R4).
@@ -583,8 +591,11 @@ expansion → MCP search/get_paper (cited)`
    until Spike 4 gives a papers/hour number. **Relevance filter: RESOLVED → `off` for V0, but
    instrumented** (precomputed relevance score + precision spot-checks) so A→B is a data-driven,
    free flip later (see Levers).
-2. **MinerU vs Marker:** decide in Spike 1 (quality on *your* papers).
-3. **BGE-M3 vs Qwen3-Embedding-4B:** decide in Spike 2 (eval numbers).
+2. ~~**MinerU vs Marker:** decide in Spike 1 (quality on *your* papers).~~ **RESOLVED:** MinerU locked
+   as the sole V0 parser (Spike 1, PR #41) — see ADR-06 / `phase0-results.md`.
+3. ~~**BGE-M3 vs Qwen3-Embedding-4B:** decide in Spike 2 (eval numbers).~~ **RESOLVED:**
+   Qwen3-Embedding-4B locked, paired with BGE-reranker-v2-m3 (Spike 2, PR #46) — see ADR-02/ADR-10 /
+   `phase0-results.md`.
 4. **Auto-supersession bar:** what judge precision is high enough to let it rewrite belief state (vs. flag-only forever)?
 5. **Obsidian as source-of-truth vs. rendered view:** are notes generated/regenerated from SQLite, or hand-editable? (Recommend: generated view, SQLite is truth.)
 6. ~~**Eval set ownership**~~ **RESOLVED for V0:** no human labeler. The retrieval eval set is
@@ -735,22 +746,32 @@ north-star (token-saving cache). We also need hybrid (a sparse signal alongside 
 | Context / dims | 8K / 1024 | 32K / **MRL flexible** | 32K / MRL |
 | Cost / throughput | Light, fast | Heavier | ~2× 4B; slower for bulk |
 
-**Decision.** **Lean Qwen3-Embedding-4B for quality; keep BGE-M3 as the convenience
-baseline. Final pick in Spike 2 on our own labeled eval set.** Include 8B (Q8/bf16) as a
-Spike-2 candidate.
+**Decision — locked (Spike 2 concluded, PR #46; full numbers in `phase0-results.md`).**
+**Qwen3-Embedding-4B**, paired with hybrid (dense+sparse+RRF) + cross-encoder rerank (ADR-10). On
+the real 210-question eval set (n=192 after excluding 18 structurally-unscorable questions):
+Qwen3-4B dense-only Recall@10 **0.875** (clears the ≥0.85 gate); Qwen3-4B hybrid+rerank Recall@10
+**0.844** / MRR **0.601** — just under the Recall@10 gate but locked anyway per
+`PHASE0-RUNBOOK.md`'s keep-hybrid-regardless rule (ADR-11). BGE-M3 was measured, not selected:
+dense **0.828**, hybrid+rerank **0.812** Recall@10 / **0.612** MRR — Qwen3-4B beat it in every
+configuration. **8B was not selected** — see Risks/limitations for why it was never actually run.
 
 **Rationale.** Qwen3-4B has the higher quality ceiling and is stronger on code (which we have
-a lot of). Its dense-only limitation is cheap to close — Qdrant can generate BM25/SPLADE sparse
-vectors independently of the dense model, so we still get hybrid. BGE-M3's one-model
-dense+sparse convenience is real but trades away quality. 8B's few-point MTEB gain doesn't
-justify ~2× per-chunk compute for a large backlog; VRAM (fits at Q8 ≈ 8.5 GB / bf16 ≈ 16 GB on
-24 GB) is *not* the deciding factor — throughput is.
+a lot of), confirmed by the eval numbers above beating BGE-M3 on Recall@10 in both dense and
+hybrid+rerank configurations. Its dense-only limitation is cheap to close — Qdrant can generate
+BM25/SPLADE sparse vectors independently of the dense model, so we still get hybrid. BGE-M3's
+one-model dense+sparse convenience is real but trades away quality.
 
 **Risks/limitations.** No general embedder *understands* equations — they tokenize LaTeX (see
-ADR-05 / §7 math row). Quality claims are leaderboard-based; our eval set is the real arbiter.
-GGUF-8B specifically: prefer **fp16/Q8 and skip GGUF quantization** (a 4B embedder barely costs
-VRAM). *Correction: the earlier "never Q4 for embeddings" is prudence, not a benchmarked cliff —
-no hard study shows a Q4 embedding-retrieval collapse; the risk/reward just doesn't favor it.*
+ADR-05 / §7 math row). GGUF-8B was downloaded and an attempt was made to serve and sweep it
+identically, but was blocked by a real serving-stack ceiling, not a config problem: the TEI
+image in use only supports `float16`/`float32`, no int8/quantized mode — the "~8.5GB at Q8"
+option this ADR originally anticipated is **not achievable with this stack**; at `float16` 8B
+does not fit in VRAM alongside the embedder/reranker services already required to stay up.
+*Correction: the VRAM framing below this ADR originally used ("Q8 ≈ 8.5GB... not the deciding
+factor") assumed a quantization mode the actual serving stack doesn't support — throughput was
+never actually compared for 8B, because it was never measured.* Per ADR-02's original cost/benefit
+reasoning (8B's expected gain over 4B is a few MTEB points, not worth ~2× compute for a 15k-paper
+corpus) and given 4B clears the gate on real data, 8B is not pursued for V0.
 
 **Phase & scaling link.** v1 embeds chunks; **v2 reuses the identical model + interface to
 embed atomic claims** for the living-memory nearest-neighbor step (ADR-12) — one model serves
@@ -758,7 +779,8 @@ both, so no second embedding stack. Scaling: 4B's throughput advantage compounds
 backlog; MRL lets us **drop query-time dimensions** to trade recall for speed/RAM without
 re-embedding.
 
-**Revisit if.** Spike-2 eval shows 8B clearly better *and* ingest throughput is acceptable; or
+**Revisit if.** A future serving stack (e.g. vLLM) makes running 8B alongside the required
+services feasible and a re-run shows it clearly better *and* ingest throughput is acceptable; or
 a materially stronger open embedder ships (re-run the eval — see ADR-04 for swap cost).
 
 ### ADR-03 — Embedding *serving*: TEI/Infinity, not GGUF/Ollama
@@ -848,15 +870,22 @@ we separately need clean structured metadata + references to seed the citation g
 - **arXiv LaTeX source** — *>90% of arXiv ships `.tex`; near-perfect equations/sections/citations, no OCR — preferred ingest path for arXiv, but grounds to `.tex` spans, a separate coordinate basis from PDF.*
 - **GROBID** — best-in-class *metadata + reference* parsing (emits PDF coords); watch multi-page/ACL ref-list failures.
 
-**Decision.** **MinerU (math/layout) *or* Marker (throughput)** for the body (pick in Spike 1) **+
-GROBID for metadata/references**; **prefer the arXiv-LaTeX path for arXiv papers**; add Docling if
-tables matter. Body parser also **emits figure/table images + captions + bboxes** (ADR-13).
-*Grounding contract is block-bbox+snippet, not char offsets (validated — see §6A).*
+**Decision — locked (Spike 1 concluded, PR #41; full numbers in `phase0-results.md`).**
+**MinerU**, sole V0 body parser, **+ GROBID for metadata/references**; **prefer the arXiv-LaTeX
+path for arXiv papers**. Marker and Docling were both benchmarked and dropped — Marker on
+throughput (2.54 s/page vs. MinerU's 0.34 s/page, ~16.4 days vs. ~2.2 days on the corrected
+15,000-paper backfill) plus a new code/algorithm-block classification reliability risk found
+during scoring; Docling on throughput (1.48 s/page, ~9.5 days) with neither of the runbook's
+"add Docling" conditions (tables load-bearing, or its speed wins) holding for V0. Body parser
+also **emits figure/table images + captions + bboxes** (ADR-13). *Grounding contract is
+block-bbox+snippet, not char offsets (validated — see §6A).*
 
 **Rationale.** Body extraction and reference extraction are different problems; using the tool
 that's best at each beats one mediocre pass. GROBID's structured references are what make the
-citation graph (v2) cheap and accurate. MinerU vs Marker is a quality call best settled on real
-inputs, not benchmarks — hence the spike.
+citation graph (v2) cheap and accurate. All three body-parser candidates cleared the ≥95%
+block-anchor round-trip gate (statistically tied), so throughput and content-fidelity — not
+round-trip — decided it; only MinerU's backfill estimate fits the PRD's "overnight/over a few
+days" target (§6A/§11), and it also had the best code/algorithm-block recall of the three.
 
 **Risks/limitations.** Parsers err on dense multi-column math and exotic layouts; equation LaTeX
 is imperfect. Parsing is CPU/GPU-heavy — a throughput factor for the backlog. Mitigation: parse
@@ -1021,12 +1050,14 @@ precision@k, which is what the LLM/user actually consumes.
 
 **Options considered.** No reranker (cheaper, worse precision) · **BGE-reranker-v2-m3** · **Qwen3-Reranker**.
 
-**Decision.** **Cross-encoder reranker (BGE-reranker-v2-m3, or Qwen3-Reranker) over top-k**;
-final choice in Spike 2 alongside the embedder.
+**Decision — locked (Spike 2 concluded, PR #46, alongside the embedder; see ADR-02).**
+**BGE-reranker-v2-m3** cross-encoder over top-k, served via TEI (`rag/reranker.py`). Part of
+the locked hybrid+rerank config: Recall@10 **0.844** / MRR **0.601** on the real 210-question
+eval set (n=192) — see ADR-02 for the full numbers and BGE-M3 comparison.
 
 **Rationale.** Cross-encoders jointly attend to query+passage and reliably deliver a large
-precision lift for modest cost on a small candidate set (top 50–100 → top 5–10). Pairs naturally
-with BGE-M3; Qwen3-Reranker pairs with Qwen3 embeddings. Cheap, high-leverage.
+precision lift for modest cost on a small candidate set (top 50–100 → top 5–10). Cheap,
+high-leverage.
 
 **Risks/limitations.** Adds latency per query and a model to serve; benefit depends on candidate-set
 size (tune k). Negligible for our query volumes.
@@ -1215,11 +1246,20 @@ spans on demand via `get_span` rather than inline). Models can still ignore meta
 tool-description instructions + a synthesis system prompt that mandates tier/citation discipline.
 Tier tagging is only as good as upstream provenance (couples to §6A, ADR-12).
 
-**Phase & scaling link.** **v1** ships the envelope + tiers A–C + provenance + citations + coverage
-+ absence + `get_span` (retrieval-only). **v2** adds tier D + `synthesize`/`find_contradictions`/
-`compare_on_benchmark` as reconciliation lands (§8.4). **v3** `whats_new` digests reuse the same
-contract so proactively-surfaced items carry the same reliability labels. Scaling: contract is
-per-result, independent of corpus size.
+**Phase & scaling link — reconciled with §8.5's precedence note and the real code (`evidence_tier`
+pinned `"A"` in `contracts/retriever.py`).** **V0 already ships the envelope now** — provenance,
+citations, coverage, absence, `get_span`, and the `evidence_tier` field itself — but that field is
+pinned to `"A"` for every result, since B/C/D have nothing to tag yet (no claims/summaries in V0's
+scope). **V1** activates tiers **B–C for real** (claims, summaries distinguished as claim-derived vs.
+paraphrase). **V2** adds tier **D** + `synthesize`/`find_contradictions`/`compare_on_benchmark` as
+reconciliation lands (§8.4). **V3** `whats_new` digests reuse the same contract so
+proactively-surfaced items carry the same reliability labels. Scaling: contract is per-result,
+independent of corpus size.
+
+*Naming note (why this drifted before):* this ADR's phase labels were previously written as
+lowercase `v1`/`v2`/`v3`, easy to misread as a different axis from §9's uppercase `V0`/`V1`/`V2`/`V3`
+build-phase naming (CONTEXT.md "Phases / product stages"). They're the same axis — this ADR now uses
+the canonical uppercase form throughout to remove the ambiguity.
 
 **Revisit if.** Token overhead of the envelope hurts, or evals show models ignore tiers despite
 prompt discipline (→ stronger structural separation, e.g., separate tool calls per tier).

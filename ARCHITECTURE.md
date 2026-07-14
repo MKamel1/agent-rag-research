@@ -8,7 +8,10 @@ depth). Companion docs: [PRD.md](PRD.md), [CONTEXT.md](CONTEXT.md).
 
 1. **Deep modules.** Small interface, lots of behaviour behind it. Callers/tests learn little, get a lot.
 2. **Source-of-truth vs. derived.** `DocumentStore` (SQLite + blobs) is authoritative; `VectorIndex`
-   is derived and **rebuildable** from it (ADR-04). This split is the backbone of replaceability.
+   is derived from it (ADR-04) — its own `rebuild()` is a same-model Qdrant reindex (scrolls and
+   re-upserts its own existing points, no re-embedding); recovering it from `DocumentStore` after an
+   embedding-model swap needs a separate, not-yet-built orchestrator pass. This split is still the
+   backbone of replaceability.
 3. **Accept dependencies, return results.** Every module takes its collaborators as arguments and
    returns data (no hidden singletons, no ambient side effects) → each is testable in isolation.
 4. **Build a seam only where behaviour actually varies.** *Two adapters = real seam; one = hypothetical.*
@@ -68,8 +71,9 @@ Ten modules, each independently ownable (owners A–F) and testable through its 
   - *Invariants:* **every block carries a provenance anchor (bbox+page)**; equations preserved as LaTeX;
     reading order correct. (Anchor is block-level, not char-offset — validated, §6A.)
   - *Errors:* parse failure → typed error → paper **quarantined**, pipeline continues.
-- **Hides (depth):** MinerU / Marker / Docling body parse + GROBID references + PDF-vs-LaTeX routing.
-- **Seam:** `Parser` adapter — **REAL** (Spike 1 picks MinerU/Marker/Docling; may change).
+- **Hides (depth):** MinerU body parse + GROBID references + PDF-vs-LaTeX routing.
+- **Seam:** `Parser` adapter — **REAL** (Spike 1 locked MinerU as the sole V0 parser, PR #41;
+  Marker and Docling were benchmarked and dropped — `phase0-results.md`).
 - **Test:** golden fixtures — PDFs with expected `ParsedDoc`; every adapter runs the *same* golden set.
 - **V3 extension:** VLM fills `figures[].vlm_description` — enrichment behind `ParsedDoc`, callers unchanged.
 
@@ -373,7 +377,7 @@ Every future feature is a **new adapter, new module, or new stage** behind a sta
 | V3 VLM figure understanding | enricher filling `ParsedDoc.figures[].vlm_description` (M2 output) | none |
 | V3 radar / whats_new | new scheduled orchestrator + M8 tool | none |
 | Vector DB swap (Qdrant↔LanceDB) | new `VectorStore` **adapter** (M6) | none — callers unaffected |
-| Embedding-model swap | new `Embedder` adapter + `VectorIndex.rebuild()` | none |
+| Embedding-model swap | new `Embedder` adapter + orchestrator-level re-embed+reupsert pass (not yet built) | none |
 
 ## Test strategy (summary — full doc: TEST-STRATEGY.md)
 

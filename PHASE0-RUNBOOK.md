@@ -183,12 +183,12 @@ rebuild, ADR-04).
 - [ ] GPU healthy; Qdrant + embedding server + summarization LLM service up; pipeline runs end-to-end
       (including summarize) on the representative set.
 - [x] **Parser locked with numbers**; anchor round-trip ≥ ~95%; golden fixtures committed.[^spike1]
-- [ ] **Embedder + reranker + retrieval config locked with numbers**; Recall@10 ≥ ~0.85; hybrid/rerank each
-      justified their complexity.
-- [ ] The 210-question retrieval eval set (`fixtures/eval/`) has every `passage_excerpt` resolved to a real
+- [x] **Embedder + reranker + retrieval config locked with numbers**; Recall@10 ≥ ~0.85; hybrid/rerank each
+      justified their complexity.[^spike2]
+- [x] The 210-question retrieval eval set (`fixtures/eval/`) has every `passage_excerpt` resolved to a real
       `chunk_id` against the Spike-1 corpus, with unmatched excerpts flagged (not dropped or guessed) and the
       exclusion rate under its invalidating floor (see Spike 2 Method step 1's flag-rate limitation note).
-- [ ] Spike 2's Recall@10 is reported both on the full 210-question set **and** split title-present vs.
+- [x] Spike 2's Recall@10 is reported both on the full 210-question set **and** split title-present vs.
       title-absent, and separately for the 150 single-passage items vs. the 60 multi-paper items (see Spike 2
       Method step 1's known-limitation notes) — not just as one blended headline number.
 - [ ] Real papers/hour measured → a realistic 15k backfill plan (smoke-test 200 papers, then run overnight).
@@ -203,3 +203,10 @@ against them. Everything before this point is de-risking; everything after is th
     was never run — no artifact in `.phase0-data/` addresses it. It doesn't block the parser-lock decision
     (a separate, optional path, not a gate condition) but is an open follow-up recorded in
     `phase0-results.md`.
+
+[^spike2]: Spike 2 concluded (PR #46): Qwen3-Embedding-4B + hybrid (dense+sparse+RRF) + BGE-reranker-v2-m3
+    locked as the V0 retrieval config, on the real 210-question eval set (n=192 after excluding 18
+    structurally-unscorable questions). Qwen3-4B dense-only Recall@10 **0.875** clears the ≥0.85 gate;
+    Qwen3-4B hybrid+rerank Recall@10 **0.844** / MRR **0.601** — technically just under the Recall@10
+    gate, locked anyway per this runbook's own keep-hybrid-regardless rule (a synthetic eval set
+    structurally favors dense-only; see `phase0-results.md`). BGE-M3 was measured and not selected.

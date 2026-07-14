@@ -57,19 +57,23 @@ except the real adapters' own contract tests) run **zero-GPU, zero-network** —
 ## Owner → session mapping and sign-off authority
 
 Filled in as each owner is actually dispatched — update this table when you start work as an owner so a
-later session (or the human) can see who's doing what:
+later session (or the human) can see who's doing what. All six tracks have landed on `main`; V0 is now
+in the hardening phase, tracked as ungoverned `T-DOC<n>` fixes (see WORK-BREAKDOWN.md's T-DOC series and
+GIT-WORKFLOW.md) rather than as new owner tickets. For the ticket-by-ticket build history, closed PRs
+#31-#38, #40-#46 are the authoritative record — this table is a landing summary, not a live tracker:
 
 | Owner | Modules | Session/agent | Status |
 |---|---|---|---|
 | F | Shared foundation (T-F1…T-F7) | _unassigned_ | done — frozen at `foundation-v0-frozen` |
-| A | Harvester, Orchestrator | _unassigned_ | M1b implementation open — T-A1 (PR #36), T-A2 (PR #38), pending review/merge |
-| B | Parser | _unassigned_ | not started — blocked on Phase-0 Spike 1 (parser bake-off / anchor round-trip) |
-| C | Chunker, Summarizer, Embedder | _unassigned_ | M1b implementation open — T-C2 (PR #31), T-C3 (PR #32), pending review/merge; T-C1 (Chunker) not started — blocked on Phase-0 Spike 1 (parser bake-off / anchor round-trip) |
-| D | DocumentStore, VectorIndex | _unassigned_ | M1b implementation open — T-D1 (PR #33), T-D2 (PR #37), pending review/merge |
-| E | Retriever, McpServer | _unassigned_ | M1b implementation open — T-E1 (PR #34), T-E2 (PR #35), pending review/merge |
+| A | Harvester, Orchestrator | _unassigned_ | done — T-A1 (PR #36), T-A2 (PR #38) merged; hardened by T-DOC4/5/6/7/8/10 (PRs #62-65, #67-68) |
+| B | Parser | _unassigned_ | done — Spike 1 locked MinerU (PR #41); T-B1 (PR #43) merged |
+| C | Chunker, Summarizer, Embedder | _unassigned_ | done — T-C1 (PR #42), T-C2 (PR #31), T-C3 (PR #32) merged; hardened by PRs #56/#57/#59/#60/#61 (Summarizer OOM fix, embedder error taxonomy, chunk cap + overlap) |
+| D | DocumentStore, VectorIndex | _unassigned_ | done — T-D1 (PR #33), T-D2 (PR #37) merged; hardened by PR #44 (sparse-channel text) |
+| E | Retriever, McpServer | _unassigned_ | done — T-E1 (PR #34), T-E2 (PR #35) merged; hardened by PR #50 (real Reranker) and PR #52 (real Embedder seam) |
 
 **Foundation sign-off authority (T-F7, CONVENTIONS §0.2):** the human operator, GitHub `@MKamel1`. Any PR
-touching `contracts/`, `config.py`, `config.yaml`, `migrations/`, or `rag/fakes/` requires their explicit
+touching a foundation-protected path (`.github/CODEOWNERS` — currently `contracts/`, `rag/config.py`,
+`config.yaml`, `migrations/`, `rag/fakes/`, `fixtures/`, `ci/`, `.github/`) requires their explicit
 approval before merge — mechanized via `.github/CODEOWNERS` + branch protection, see GIT-WORKFLOW.md.
 
 ## If you're picking up work right now

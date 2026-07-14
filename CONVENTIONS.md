@@ -35,11 +35,15 @@ Concretely, for this build:
      silently redefine a "close enough" local version, and does not patch around a mismatch in its own
      module.** A shape mismatch between a module and `contracts/` is *always* a bug in the module, never
      grounds for a second definition.
-   - Changes to `contracts/`, `Config`, the schema, or the fakes require **explicit human sign-off** before
-     merge (a CI rule: a diff touching those paths is auto-flagged, not auto-mergeable). This is a
-     build-process gate, distinct from the *product's* agent-as-reasoner design (CONTEXT.md) — it's about
-     protecting a shared dependency from silent drift, not about the RAG system's own human-in-the-loop
-     policy (which is separately, deliberately, rejected — CONTEXT.md "Rejected/non-goals").
+   - Changes to a foundation-protected path require **explicit human sign-off** before merge (a CI rule: a
+     diff touching those paths is auto-flagged, not auto-mergeable). **Protected paths are read from
+     `.github/CODEOWNERS`** — that file is the single source of truth for the list (currently `contracts/`,
+     `rag/config.py`, `config.yaml`, `migrations/`, `rag/fakes/`, `fixtures/`, `ci/`, `.github/`; see
+     GIT-WORKFLOW.md "Foundation freeze") — not hand-enumerated here, so this doc can't drift out of sync
+     with the actual enforcement mechanism the way an inline list would. This is a build-process gate,
+     distinct from the *product's* agent-as-reasoner design (CONTEXT.md) — it's about protecting a shared
+     dependency from silent drift, not about the RAG system's own human-in-the-loop policy (which is
+     separately, deliberately, rejected — CONTEXT.md "Rejected/non-goals").
 3. **Correctness is judged by tests passing against the interface, never by how plausible the code looks.**
    An agent's own confidence in its output is not signal. The contract tests (TEST-STRATEGY.md) are the
    actual arbiter of "did this module get the shape right" — treat a module as unverified until its tests
@@ -309,9 +313,10 @@ judgment and stay as review items.
 
 - [ ] **CI:** grep — does any vendor name (`qdrant`, `mineru`, embedding client) appear outside its adapter
       file? → fail the build.
-- [ ] **CI:** does the diff define a dataclass/TypedDict with a name already in `contracts/`, or touch
-      `contracts/`/`Config`/schema/fakes without the "foundation change" label + human sign-off? → fail the
-      build.
+- [ ] **CI:** does the diff define a dataclass/TypedDict with a name already in `contracts/`, or touch any
+      foundation-protected path (`.github/CODEOWNERS` — currently `contracts/`, `rag/config.py`,
+      `config.yaml`, `migrations/`, `rag/fakes/`, `fixtures/`, `ci/`, `.github/`) without the "foundation
+      change" label + human sign-off? → fail the build.
 - [ ] **CI:** any `except Exception:` / `except:` in the diff? → fail the build.
 - [ ] **CI:** any `os.getenv`/`os.environ` outside the Config loader? → fail the build.
 - [ ] **CI:** does the real `Embedder`/`Summarizer`/`Reranker` adapter's `__init__` declare a `gpu_lock:
@@ -319,13 +324,16 @@ judgment and stay as review items.
       **necessary prefilter, not sufficient proof** — it only shows the parameter exists in the
       constructor signature, not that `acquire()` actually wraps the real inference call. The actual
       guarantor of that is the per-adapter `FakeGpuLock.acquired` unit assertion (TEST-STRATEGY.md).
-- [ ] **CI:** does every module source file have a sibling test file that imports its public interface? →
-      fail the build if not (§0.7's mechanical existence-proxy; the *ordering* half — test committed before
+- [ ] **CI:** does every module source file have a sibling test file (`test_<name>.py` in the same
+      directory)? → fail the build if not (`ci/checks/sibling_tests.py` — a pure existence check, not a
+      check of what the sibling file imports or asserts; §0.7's mechanical existence-proxy; the *ordering*
+      half — test committed before
       implementation — is checked at the M1a→M1b milestone gate in WORK-BREAKDOWN.md, not per-push).
 - [ ] **CI:** grep for direct slicing/parsing of `chunk_id`/`block_id`/`summary_id` strings (e.g.
       `.split(":")` on one of these fields) outside `DocumentStore`'s own module → fail the build (§0.8;
       DATA-CONTRACTS §IDs — Retriever/McpServer must resolve via `get_chunk`/`get_block`/`get_summary`).
-- [ ] **CI:** run the non-adapter unit-test suites (M1, M3, M5, M7, M8, M9) with network sockets blocked
+- [ ] **CI:** run every non-adapter unit-test suite (all of `pyproject.toml`'s `testpaths`, e.g. M1, M3,
+      M5, M7, M8, M9, plus `app`) with network sockets blocked
       (`pytest-socket --disable-socket` or equivalent) and `CUDA_VISIBLE_DEVICES=""` set → any test that
       bypasses its fake and reaches for a live Qdrant/HF download/GPU crashes loudly instead of silently
       passing on a CI box (or local dev machine) that happens to have network or a GPU attached. The
