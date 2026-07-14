@@ -198,7 +198,10 @@ class ArxivSource:
         for term in focus_area:
             if yielded >= cap:
                 return
-            query = f"all:{term}"
+            # arXiv's search API silently OR-splits an unquoted multi-word term (e.g. `all:causal
+            # inference` matches `causal OR inference`, pulling in unrelated single-word hits) --
+            # quoting forces an exact-phrase match instead. Single-word terms need no quoting.
+            query = f'all:"{term}"' if " " in term else f"all:{term}"
             start = 0
             while yielded < cap:
                 if not first_request:
