@@ -311,6 +311,12 @@ ID" rule rather than left as bare PR titles/branch names. All merged to `main`.
   `vector_index.upsert()` calls while auditing this method for the same bug class -- not named in
   the original ticket, only `TransientError` applies there (the real vector-store adapter never
   raises `PermanentError`).
+- **T-DOC15** (`T-DOC15-mineru-vram-peak-fix`) — correct ARCHITECTURE.md/CONVENTIONS.md's claim that
+  MinerU uses a flat ~6.6GB of VRAM; real measurement shows its pipeline backend (sequential
+  layout/OCR/table/formula sub-model loads, `rag/parser.py`'s `_run_mineru_pipeline`) peaks around
+  ~13GB routinely and up to ~23.7GB observed, leaving Pass 1 a real margin of ~1GB rather than the
+  "~16.2GB fits comfortably" previously claimed. **Open risk, not fixed here:** that ~1GB margin is thin
+  and needs a human decision on footprint reduction or a guard — out of scope for this doc-only fix.
 
 ---
 
