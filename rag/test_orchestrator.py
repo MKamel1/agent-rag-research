@@ -77,7 +77,7 @@ import pytest
 from contracts.chunker import Chunk
 from contracts.config import Config
 from contracts.document_store import PaperRecord
-from contracts.errors import PermanentError
+from contracts.errors import PermanentError, TransientError
 from contracts.harvester import PaperRef
 from contracts.parser import ParsedDoc
 from contracts.provenance import Anchor, Block
@@ -179,14 +179,27 @@ class StubHarvester:
 
 
 class SpyParser:
-    def __init__(self, poison: set[str] | None = None):
+    def __init__(self, poison: set[str] | None = None, transient: dict[str, int] | None = None):
+        """`poison`: paper_ids that raise `PermanentError` on every call (pre-existing coverage).
+        `transient`: paper_id -> how many `TransientError`s to raise before that paper's `parse`
+        finally succeeds (T-DOC12 regression coverage, the real GROBID-hiccup shape) -- a count
+        at or above the orchestrator's retry budget never recovers, exercising the
+        exhausted-retry-then-quarantine path instead.
+        """
         self.calls: list[str] = []
         self._poison = poison or set()
+        self._transient_budget = dict(transient or {})
+        self._transient_calls_made: dict[str, int] = {}
 
     def parse(self, ref: PaperRef) -> ParsedDoc:
         self.calls.append(ref.paper_id)
         if ref.paper_id in self._poison:
             raise PermanentError(f"unparseable: {ref.paper_id}")
+        budget = self._transient_budget.get(ref.paper_id, 0)
+        made = self._transient_calls_made.get(ref.paper_id, 0)
+        if made < budget:
+            self._transient_calls_made[ref.paper_id] = made + 1
+            raise TransientError(f"GROBID reference extraction failed: {ref.paper_id}")
         return make_parsed(ref)
 
 
@@ -279,10 +292,10 @@ class Rig:
     `state` persist across `new_orchestrator()` calls so a crash-then-restart shares them; the
     stage spies are shared too so a call-count assertion spans both runs."""
 
-    def __init__(self, refs=REFS, poison=None):
+    def __init__(self, refs=REFS, poison=None, transient=None):
         self.events: list = []
         self.harvester = StubHarvester(refs)
-        self.parser = SpyParser(poison=poison)
+        self.parser = SpyParser(poison=poison, transient=transient)
         self.chunker = SpyChunker()
         self.summarizer = SummarizerSpy()
         self.document_store = DocStoreDouble(self.events)
@@ -290,10 +303,13 @@ class Rig:
         self.state = FakeIngestState()
         self.gpu_lock = FakeGpuLock()
         self.config = Config(focus_area_queries=["causal inference", "treatment effect"])
+        # Records every `retry_sleep(seconds)` call instead of really sleeping (T-DOC12) -- same
+        # injected-sleep pattern `rag.harvester.ArxivSource`'s own test suite uses.
+        self.retry_sleeps: list[float] = []
 
     def new_orchestrator(
         self, embedder=None, vector_index=None, before_parse_phase=None, before_finish_phase=None,
-        before_embed=None,
+        before_embed=None, max_retries=2,
     ):
         return IngestionOrchestrator(
             harvester=self.harvester,
@@ -309,6 +325,8 @@ class Rig:
             before_parse_phase=before_parse_phase,
             before_finish_phase=before_finish_phase,
             before_embed=before_embed,
+            max_retries=max_retries,
+            retry_sleep=self.retry_sleeps.append,
         )
 
     def ingest(self, orch=None, embedder=None, vector_index=None):
@@ -464,6 +482,44 @@ def test_poisoned_paper_is_quarantined_and_the_rest_complete():
 
     assert poisoned in rig.state.quarantined
     assert poisoned not in rig.document_store.records  # never stored
+    survivors = set(PAPER_IDS) - {poisoned}
+    assert stored_ids(rig) == survivors
+    assert done_ids(rig) == survivors
+
+
+# ================================================================================================
+# T-DOC12 regression: a `TransientError` from `parser.parse` (e.g. rag/parser.py's GROBID
+# reference-extraction call) must not crash `parse_phase()` -- a real end-to-end run hit exactly
+# this (one paper's GROBID call returned a transient 500) and it propagated all the way out of
+# `ingest()`, killing the `python -m app.parse_phase` subprocess (and, via app/ingest.py's
+# `subprocess.run(..., check=True)`, the parent `app.ingest` process too) with every paper still
+# queued behind the failing one losing its progress for that run.
+# ================================================================================================
+
+def test_transient_parse_error_recovers_after_bounded_retry():
+    flaky = PAPER_IDS[1]
+    rig = Rig(transient={flaky: 1})  # one TransientError, then succeeds on retry
+    rig.ingest()
+
+    assert flaky not in rig.state.quarantined
+    assert rig.retry_sleeps == [1.0]  # exactly one retry, backoff attempt 1 -> 2**(1-1)
+    assert stored_ids(rig) == set(PAPER_IDS)
+    assert done_ids(rig) == set(PAPER_IDS)
+
+
+def test_transient_parse_error_exhausts_retries_then_quarantines_and_the_rest_complete():
+    # This is the actual regression for the crash: before T-DOC12, ANY TransientError out of
+    # `parser.parse` (not just an exhausted-retry one) propagated out of the per-paper loop and
+    # crashed the whole batch -- the poisoned paper's failure must instead land in `quarantine`,
+    # and the loop must continue to every other paper (matching the pre-existing PermanentError
+    # quarantine behavior in the test above).
+    poisoned = PAPER_IDS[1]
+    rig = Rig(transient={poisoned: 99})  # always raises -- exhausts the retry budget
+    rig.ingest()
+
+    assert poisoned in rig.state.quarantined
+    assert poisoned not in rig.document_store.records  # never stored
+    assert rig.retry_sleeps == [1.0, 2.0]  # max_retries=2 default -> 2 retries before quarantine
     survivors = set(PAPER_IDS) - {poisoned}
     assert stored_ids(rig) == survivors
     assert done_ids(rig) == survivors
