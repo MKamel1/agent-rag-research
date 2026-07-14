@@ -23,7 +23,7 @@ from rag.chunker import Chunker
 from rag.document_store import DocumentStore
 from rag.embedder import TeiEmbedder
 from rag.gpu_lock import FileGpuLock
-from rag.harvester import ArxivSource, Harvester
+from rag.harvester import ArxivSource, Harvester, QuarantineSink
 from rag.ingest_state_sqlite import SqliteIngestState
 from rag.mcp_server import McpServer
 from rag.orchestrator import IngestionOrchestrator
@@ -124,7 +124,7 @@ class _PdfDownloadParser:
         return resp.content
 
 
-def _sqlite_harvest_quarantine_sink(state: SqliteIngestState) -> Callable[[str, Exception], None]:
+def _sqlite_harvest_quarantine_sink(state: SqliteIngestState) -> QuarantineSink:
     """Adapts `Harvester`'s `QuarantineSink` (`rag/harvester.py`: `Callable[[str, Exception],
     None]`) to `SqliteIngestState.quarantine`'s `(paper_id, stage, error)` shape, so a
     harvest-level failure lands in the same `quarantine` SQL table `IngestionOrchestrator` already
