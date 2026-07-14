@@ -62,6 +62,13 @@ VENDOR_RULES: tuple[VendorRule, ...] = (
     # likewise talks to TEI's cross-encoder endpoint over plain HTTP. rag/test_harvester_arxiv_source.py,
     # rag/test_summarizer.py, rag/test_embedder.py, and rag/test_reranker.py legitimately build
     # httpx.MockTransport/Client fixtures to exercise their adapters offline (zero network).
+    #
+    # rag/test_prefetch_pdfs.py (app/prefetch_pdfs.py's test) builds the same kind of
+    # httpx.MockTransport/Client fixtures to exercise app/prefetch_pdfs.py's real arXiv-PDF
+    # download adapter offline (zero network) -- same pattern as the other adapter test files
+    # above. app/prefetch_pdfs.py itself isn't listed here: it lives under app/, which
+    # model.PIPELINE_SCOPE_PREFIXES (rag/, contracts/) already excludes from this check entirely,
+    # so it can't trip rule (a) regardless of this allowlist.
     VendorRule(
         "httpx",
         re.compile(r"httpx", re.I),
@@ -75,6 +82,7 @@ VENDOR_RULES: tuple[VendorRule, ...] = (
             "rag/parser.py",
             "rag/reranker.py",
             "rag/test_reranker.py",
+            "rag/test_prefetch_pdfs.py",
         ),
     ),
 )
