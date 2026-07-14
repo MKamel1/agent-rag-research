@@ -617,6 +617,21 @@ storage format (filesystem blob + path) then; don't build that now.
 **V1 forward-compat:** the `ClaimExtractor` stage (ARCHITECTURE.md "Extensibility") adds one more
 optional field here (`claims: list[Claim] | None`) — no new table, no new migration.
 
+`state.quarantine(paper_id, stage, error)` writes a dead-letter row to the `quarantine` table (below)
+and deletes `paper_id`'s `ingest_state`/`ingest_checkpoint` rows, if any — same effect as a paper
+that was never harvested. **Idempotent:** quarantining a `paper_id` that's already quarantined is a
+safe no-op (first reason wins, logged as a warning), not an error — `harvest()` does not exclude
+already-quarantined `paper_id`s (a killed-and-resumed run, or a later run entirely, can legitimately
+re-harvest and re-attempt one; this is intentional, not a bug — see `rag/orchestrator.py`'s `harvest`
+docstring for why), so re-quarantining the same paper is an expected, not exceptional, event.
+
+`IngestionOrchestrator._guard_per_paper` (`rag/orchestrator.py`) also calls `quarantine()` as a
+last-line-of-defense backstop for an exception `parser.parse`/`summarizer.summarize` didn't
+classify as `PermanentError` — those rows carry an `error` string prefixed `UNEXPECTED:` so a
+query over the `quarantine` table (or a dashboard) can distinguish "an already-understood failure
+mode" from "this was a surprise, go look at it" without grepping logs. `ContractError` is never
+recorded this way — CONVENTIONS.md §4 requires it to always crash the run instead.
+
 ---
 
 ## SQLite schema (source of truth — Owner D; V1 columns are noted but NOT created in V0)

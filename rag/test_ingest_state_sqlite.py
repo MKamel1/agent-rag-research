@@ -13,6 +13,7 @@ through `IngestionOrchestrator`, with a brand-new `SqliteIngestState` instance s
 fresh process on resume (not a shared Python object, unlike every other resume test in this repo).
 """
 
+import sqlite3
 from datetime import date
 
 import pytest
@@ -165,6 +166,44 @@ def test_quarantine_removes_the_row_entirely(tmp_path):
     assert state.get(ref.paper_id) is None
 
 
+def test_quarantine_is_idempotent_for_an_already_quarantined_paper(tmp_path):
+    # T-DOC14 regression: a real multi-day run, killed and resumed several times, re-harvested and
+    # re-attempted a paper already quarantined from an earlier run (harvest() doesn't exclude
+    # quarantined paper_ids -- by design, see rag/orchestrator.py's `harvest` docstring). The
+    # second `quarantine()` call hit `quarantine.paper_id`'s PRIMARY KEY and raised
+    # sqlite3.IntegrityError uncaught, crashing the entire batch -- the bookkeeping for an
+    # already-failed paper must never be allowed to crash processing of every OTHER paper still in
+    # flight (CONVENTIONS.md §4: quarantine-and-continue).
+    db_path = str(tmp_path / "test.sqlite")
+    migrate(db_path)
+    state = SqliteIngestState(db_path)
+
+    ref = _make_ref(0)
+    state.quarantine(ref.paper_id, "parsed", RuntimeError("404: PDF not found"))
+
+    # Re-quarantining is a safe no-op -- must not raise sqlite3.IntegrityError.
+    state.quarantine(ref.paper_id, "parsed", RuntimeError("404: PDF not found (retry)"))
+
+    # First reason wins: the original quarantine row is untouched by the second call.
+    with sqlite3.connect(db_path) as conn:
+        rows = conn.execute(
+            "SELECT stage, error FROM quarantine WHERE paper_id = ?", (ref.paper_id,)
+        ).fetchall()
+    assert rows == [("parsed", "404: PDF not found")]
+
+    # A different error on the repeat attempt is still a no-op (first reason wins regardless).
+    state.quarantine(ref.paper_id, "summarized", RuntimeError("different failure entirely"))
+    with sqlite3.connect(db_path) as conn:
+        rows = conn.execute(
+            "SELECT stage, error FROM quarantine WHERE paper_id = ?", (ref.paper_id,)
+        ).fetchall()
+    assert rows == [("parsed", "404: PDF not found")]
+
+    # state stays absent either way -- matches the "looks never-harvested" contract harvest()
+    # relies on to safely retry a quarantined paper.
+    assert state.get(ref.paper_id) is None
+
+
 # ================================================================================================
 # End-to-end crash-and-restart, real schema -- the regression test for the T-A2 blocker itself
 # ================================================================================================
@@ -279,12 +318,23 @@ def test_crash_and_restart_resumes_via_real_sqlite_schema_without_reinvoking_sta
 
     # Run 1: crash on the first paper's post-summarize embed call (call 1 = the once-per-run
     # topic_query_vec hoist, call 2 = paper 0's summary+chunks embed).
+    #
+    # Drives harvest/parse_phase/finish_phase directly instead of ingest(), and calls
+    # `_finish_checkpoint` per-ref instead of `finish_phase(refs)` -- bypassing `finish_phase`'s
+    # `_guard_per_paper` per-paper safety net (T-DOC14 add-on: an in-process exception for one
+    # paper no longer crashes the whole batch by default). This test simulates a genuine process
+    # crash (the scenario "a brand-new SqliteIngestState instance standing in for a fresh process"
+    # below is about) -- an OS-level kill isn't something any Python try/except could catch, so
+    # simulating one must bypass that layer too, exactly like the real thing would.
     run1_state = SqliteIngestState(db_path)
-    orch1 = build_orchestrator(
-        run1_state, EmbedderSpy(fail_on_call=2), RecordingVectorIndex(vector_store)
-    )
+    crashing_embedder = EmbedderSpy(fail_on_call=2)
+    orch1 = build_orchestrator(run1_state, crashing_embedder, RecordingVectorIndex(vector_store))
+    harvested = orch1.harvest(config.focus_area_queries, len(refs))
+    orch1.parse_phase(harvested)
+    topic_query_vec = crashing_embedder.embed([" ".join(config.focus_area_queries)])[0]
     with pytest.raises(RuntimeError):
-        orch1.ingest(config.focus_area_queries, cap=len(refs))
+        for ref in harvested:
+            orch1._finish_checkpoint(ref, topic_query_vec)
 
     assert run1_state.stage_of(refs[0].paper_id) == "summarized"
     assert chunker.calls.count(refs[0].paper_id) == 1

@@ -60,7 +60,9 @@ is the committed fake, `contracts/ingest_state.py` the typed artifacts payload):
 
     state.get(paper_id) -> Checkpoint | None           # Checkpoint has .stage, .artifacts
     state.checkpoint(paper_id, stage, artifacts=None)  # upsert stage; merge artifacts (idempotent)
-    state.quarantine(paper_id, stage, error)           # dead-letter; run continues
+    state.quarantine(paper_id, stage, error)           # dead-letter; run continues; idempotent
+                                                        # (no-op, first reason wins, if paper_id is
+                                                        # already quarantined)
 
 Stage vocabulary is the frozen `ingest_state.stage` set (migrations/0001_init.sql):
 harvested|parsed|chunked|summarized|embedded|stored|done.
@@ -70,13 +72,17 @@ documented choice; if M1b threads a separate byte-fetch step, `SpyParser` moves 
 --------------------------------------------------------------------------------------------------
 """
 
+import logging
+from datetime import date
+
 import pytest
 
 from contracts.chunker import Chunk
 from contracts.config import Config
 from contracts.document_store import PaperRecord
-from contracts.errors import PermanentError, TransientError
+from contracts.errors import ContractError, PermanentError, TransientError
 from contracts.harvester import PaperRef
+from contracts.ingest_state import Checkpoint, CheckpointArtifacts
 from contracts.parser import ParsedDoc
 from contracts.provenance import Anchor, Block
 from rag.fakes.fake_embedder import FakeEmbedder
@@ -539,9 +545,21 @@ def test_resume_after_summarized_does_not_reinvoke_chunker_or_summarizer():
 
     # Run 1 crashes on the first paper's summary embed (call 1 = topic_query_vec, call 2 = first
     # paper's embed). The paper is checkpointed at `summarized`; later papers never start.
+    #
+    # Drives harvest/parse_phase directly, then calls `_finish_checkpoint` per-ref instead of
+    # `finish_phase(refs)` -- bypassing `finish_phase`'s `_guard_per_paper` per-paper safety net
+    # (T-DOC14 add-on: an in-process exception for one paper no longer crashes the whole batch by
+    # default). This test simulates a genuine process crash ("Run 1 crashes" -> "Run 2 ... shared
+    # state ... resumes"), which the safety net can't and shouldn't absorb -- an OS-level kill
+    # isn't something any Python try/except could catch.
     crashing = EmbedderSpy(fail_on_call=2)
+    orch = rig.new_orchestrator(embedder=crashing)
+    harvested = orch.harvest(rig.config.focus_area_queries, rig.config.corpus_cap)
+    orch.parse_phase(harvested)
+    topic_query_vec = crashing.embed([" ".join(rig.config.focus_area_queries)])[0]
     with pytest.raises(RuntimeError):
-        rig.ingest(embedder=crashing)
+        for ref in harvested:
+            orch._finish_checkpoint(ref, topic_query_vec)
     assert rig.state.stage_of(FIRST_ID) == "summarized"
     assert rig.chunker.calls.count(FIRST_ID) == 1
     assert rig.summarizer.calls.count(FIRST_ID) == 1
@@ -567,9 +585,20 @@ def test_resume_after_stored_reruns_upsert_and_reaches_done():
     # Run 1: the first paper's put() succeeds (paper at `stored`) but the index upsert crashes
     # before `done`. A naive orchestrator that marks `done` at put()-time would leave this paper
     # forever unindexed.
+    #
+    # Drives harvest/parse_phase directly, then calls `_finish_checkpoint` per-ref instead of
+    # `finish_phase(refs)` -- bypassing `finish_phase`'s `_guard_per_paper` per-paper safety net
+    # (T-DOC14 add-on), for the same "simulate a genuine process crash" reason given in
+    # `test_resume_after_summarized_does_not_reinvoke_chunker_or_summarizer` above.
     failing_index = RecordingVectorIndex(rig.vector_store, rig.events, fail_paper_ids={FIRST_ID})
+    embedder = EmbedderSpy()
+    orch = rig.new_orchestrator(embedder=embedder, vector_index=failing_index)
+    harvested = orch.harvest(rig.config.focus_area_queries, rig.config.corpus_cap)
+    orch.parse_phase(harvested)
+    topic_query_vec = embedder.embed([" ".join(rig.config.focus_area_queries)])[0]
     with pytest.raises(RuntimeError):
-        rig.ingest(embedder=EmbedderSpy(), vector_index=failing_index)
+        for ref in harvested:
+            orch._finish_checkpoint(ref, topic_query_vec)
     assert rig.state.stage_of(FIRST_ID) == "stored"
     assert FIRST_ID in rig.document_store.records  # source of truth was written
     assert f"{FIRST_ID}:summary" not in rig.vector_store._store  # but the index was not
@@ -757,6 +786,150 @@ def test_transient_upsert_error_exhausts_retries_then_quarantines_and_the_rest_c
     assert rig.retry_sleeps == [1.0, 2.0]
     survivors = set(PAPER_IDS) - {poisoned}
     assert done_ids(rig) == survivors
+
+
+# ================================================================================================
+# Unexpected-exception safety net (T-DOC14 add-on, `_guard_per_paper`): a bug nobody anticipated
+# for one paper must not kill the batch either -- same "quarantine and continue" contract as a
+# classified PermanentError above, but for the unclassified case, plus a circuit breaker for when
+# repeated "unexpected" failures signal a systemic fault instead of per-paper flakiness. Exercised
+# through `parse_phase` (CPU-only, no Embedder/GpuLock wiring needed) -- `_guard_per_paper` is one
+# function shared verbatim by `finish_phase`, so this is a full test of its behavior, not a
+# parse-phase-specific test.
+# ================================================================================================
+
+def _synthetic_refs(n: int) -> list[PaperRef]:
+    """`n` distinct minimal PaperRefs -- REFS (module-level, above) only has 3 fixture papers,
+    not enough to exercise a 5-consecutive-failure circuit breaker."""
+    return [
+        PaperRef(
+            paper_id=f"2601.{i:05d}",
+            version="v1",
+            title=f"Synthetic paper {i}",
+            abstract=f"Abstract {i}",
+            authors=["A. Author"],
+            categories=["cs.LG"],
+            published=date(2026, 1, 1),
+            updated=date(2026, 1, 1),
+            pdf_url=f"https://arxiv.org/pdf/2601.{i:05d}v1",
+        )
+        for i in range(n)
+    ]
+
+
+class ParserWithUnexpectedBug:
+    """Like SpyParser, but `buggy` paper_ids raise a plain, unclassified exception (simulating an
+    unanticipated bug) instead of the `PermanentError` SpyParser's `poison` set raises -- exercises
+    the safety-net path, not the pre-existing PermanentError-quarantine path."""
+
+    def __init__(self, buggy: set[str] | None = None):
+        self.calls: list[str] = []
+        self._buggy = buggy or set()
+
+    def parse(self, ref: PaperRef) -> ParsedDoc:
+        self.calls.append(ref.paper_id)
+        if ref.paper_id in self._buggy:
+            raise ZeroDivisionError(f"unanticipated bug parsing {ref.paper_id}")
+        return make_parsed(ref)
+
+
+class QuarantineAlsoBrokenState(FakeIngestState):
+    """A `state` adapter whose `quarantine()` itself always raises -- the "even the recording
+    attempt fails" case `_guard_per_paper` must survive without crashing the batch."""
+
+    def quarantine(self, paper_id, stage, error):
+        raise RuntimeError("state backend is also broken")
+
+
+def _prepare_only_rig(refs, parser, state=None):
+    """Minimal wiring for a parse_phase-only scenario -- no Embedder/DocumentStore/VectorIndex
+    needed since these tests never reach finish_phase."""
+    return IngestionOrchestrator(
+        harvester=StubHarvester(refs=refs),
+        parser=parser,
+        chunker=SpyChunker(),
+        summarizer=SummarizerSpy(),
+        embedder=EmbedderSpy(),
+        document_store=DocStoreDouble([]),
+        vector_index=RecordingVectorIndex(FakeVectorStore(), []),
+        state=state if state is not None else FakeIngestState(),
+        gpu_lock=FakeGpuLock(),
+        config=Config(focus_area_queries=["causal inference"]),
+    )
+
+
+def test_unexpected_exception_for_one_paper_is_quarantined_distinctly_and_the_rest_complete():
+    refs = _synthetic_refs(4)
+    buggy_id = refs[1].paper_id
+    parser = ParserWithUnexpectedBug(buggy={buggy_id})
+    state = FakeIngestState()
+    orch = _prepare_only_rig(refs, parser, state=state)
+
+    orch.parse_phase(refs)  # must not raise -- 1 unexpected failure is far below the threshold
+
+    # Recorded, but distinctly from a normal PermanentError quarantine (UNEXPECTED prefix).
+    assert buggy_id in state.quarantined
+    _, recorded_error = state.quarantined[buggy_id]
+    assert str(recorded_error).startswith("UNEXPECTED:")
+    # Every other paper reached chunked -- the bug in one paper didn't stop the batch.
+    for ref in refs:
+        if ref.paper_id != buggy_id:
+            assert state.stage_of(ref.paper_id) == "chunked"
+
+
+def test_a_broken_quarantine_call_during_unexpected_handling_still_does_not_crash_the_batch(caplog):
+    refs = _synthetic_refs(3)
+    buggy_id = refs[0].paper_id
+    parser = ParserWithUnexpectedBug(buggy={buggy_id})
+    state = QuarantineAlsoBrokenState()
+    orch = _prepare_only_rig(refs, parser, state=state)
+
+    with caplog.at_level(logging.CRITICAL, logger="rag.orchestrator"):
+        orch.parse_phase(refs)  # must not raise even though state.quarantine() itself raises
+
+    assert any(
+        buggy_id in record.message and "UNRECORDED" in record.message
+        for record in caplog.records
+    ), "a broken quarantine() call must be logged loudly, not silently swallowed"
+    # The batch still continues past the paper whose bookkeeping failed.
+    for ref in refs:
+        if ref.paper_id != buggy_id:
+            assert state.stage_of(ref.paper_id) == "chunked"
+
+
+def test_circuit_breaker_stops_the_run_after_enough_consecutive_unexpected_failures():
+    threshold = IngestionOrchestrator._MAX_CONSECUTIVE_UNEXPECTED_FAILURES
+    refs = _synthetic_refs(threshold + 2)  # more refs than the breaker should ever reach
+    parser = ParserWithUnexpectedBug(buggy={ref.paper_id for ref in refs})  # every paper is buggy
+    orch = _prepare_only_rig(refs, parser)
+
+    with pytest.raises(RuntimeError, match="consecutive unexpected"):
+        orch.parse_phase(refs)
+
+    # Stopped exactly at the threshold -- did not burn through every remaining paper first (that
+    # would defeat the point: a systemic failure should be noticed fast, not after wasting the
+    # whole run).
+    assert parser.calls == [ref.paper_id for ref in refs[:threshold]]
+
+
+def test_contract_error_is_never_swallowed_by_the_safety_net():
+    # ContractError is a broken invariant, not "this paper is bad" (CONVENTIONS.md §4) -- it must
+    # ALWAYS crash the run loud, even a single occurrence, never quarantined and never counted
+    # toward `_guard_per_paper`'s circuit breaker. A corrupted `ingest_state.stage` value (outside
+    # the frozen vocabulary) is `_at_least`'s real, reachable trigger for this.
+    refs = _synthetic_refs(2)
+    state = FakeIngestState()
+    state._rows[refs[0].paper_id] = Checkpoint(
+        stage="bogus_stage_outside_the_frozen_vocabulary", artifacts=CheckpointArtifacts()
+    )
+    orch = _prepare_only_rig(refs, SpyParser(), state=state)
+
+    with pytest.raises(ContractError):
+        orch.parse_phase(refs)
+
+    # Never quarantined -- a ContractError is a bug, not a per-paper failure to record and move on
+    # from.
+    assert refs[0].paper_id not in state.quarantined
 
 
 # ================================================================================================
