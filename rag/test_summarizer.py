@@ -378,6 +378,30 @@ def test_unload_times_out_and_logs_a_warning_if_the_model_never_disappears(monke
     )
 
 
+def test_unload_swallows_a_malformed_api_ps_response_and_logs_a_warning(monkeypatch, caplog):
+    # A 200 response that isn't valid JSON: response.json() raises json.JSONDecodeError (a
+    # ValueError subclass), not httpx.HTTPError -- must still be swallowed as best-effort, not
+    # raised through to the caller's phase transition.
+    monkeypatch.setattr(_mod, "_UNLOAD_POLL_INTERVAL_SECONDS", 0.01)
+    monkeypatch.setattr(_mod, "_UNLOAD_POLL_TIMEOUT_SECONDS", 0.05)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "POST":
+            return httpx.Response(200, json={})
+        return httpx.Response(200, content=b"<html>not json</html>")
+
+    client = httpx.Client(base_url="http://ollama.local", transport=httpx.MockTransport(handler))
+    adapter = _build_summarizer_with_client(client, FakeGpuLock())
+
+    with caplog.at_level(logging.WARNING, logger="rag.summarizer"):
+        adapter.unload()  # must not raise despite the unparseable /api/ps body
+
+    assert any("test-model" in record.message for record in caplog.records), (
+        "unload() must log a warning naming the model when /api/ps returns a malformed body it "
+        "can't confirm eviction from"
+    )
+
+
 # ---------------------------------------------------------------------------
 # Quality / non-degeneracy on synthetic golden-paper fixtures (real LLM, `real_adapter` marker).
 # `real_summarizer` builds a real Ollama-backed Summarizer directly and skips only if Ollama is

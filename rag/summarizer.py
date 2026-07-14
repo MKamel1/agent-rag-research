@@ -191,12 +191,19 @@ class OllamaSummarizer:
             try:
                 response = self._client.get("/api/ps")
                 response.raise_for_status()
-            except httpx.HTTPError:
-                break  # can't confirm eviction -- fall through to the warning below
-            loaded = set()
-            for entry in response.json().get("models", []):
-                loaded.add(entry.get("model"))
-                loaded.add(entry.get("name"))
+                models = response.json().get("models") or []
+                loaded = {
+                    name
+                    for entry in models
+                    if isinstance(entry, dict)
+                    for name in (entry.get("model"), entry.get("name"))
+                }
+            except (httpx.HTTPError, ValueError, TypeError):
+                # httpx.HTTPError: transport/status failure. ValueError: non-JSON 200 body
+                # (json.JSONDecodeError is a ValueError subclass). TypeError: a malformed-but-200
+                # shape, e.g. {"models": null}. Either way we can't confirm eviction -- fall
+                # through to the warning below.
+                break
             if self._model not in loaded:
                 return
             time.sleep(_UNLOAD_POLL_INTERVAL_SECONDS)

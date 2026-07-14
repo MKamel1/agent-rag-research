@@ -35,6 +35,9 @@ from rag.vector_index import VectorIndex
 _TEI_EMBED_URL = "http://localhost:8080"
 _TEI_RERANK_URL = "http://localhost:8082"
 _OLLAMA_URL = "http://localhost:11434"
+# Must stay tag-qualified ("qwen3:14b", not "qwen3"): OllamaSummarizer.unload()'s /api/ps
+# eviction check matches this string exactly against Ollama's loaded-model list -- an untagged
+# name would silently defeat eviction confirmation.
 _OLLAMA_MODEL = "qwen3:14b"
 _RERANK_MODEL = "BGE-reranker-v2-m3"
 _EMBEDDER_INFO = EmbedderInfo(model_id="Qwen3-Embedding-4B", dim=2560, version="v1")
