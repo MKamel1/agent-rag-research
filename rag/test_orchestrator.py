@@ -80,8 +80,9 @@ import pytest
 from contracts.chunker import Chunk
 from contracts.config import Config
 from contracts.document_store import PaperRecord
-from contracts.errors import PermanentError
+from contracts.errors import ContractError, PermanentError
 from contracts.harvester import PaperRef
+from contracts.ingest_state import Checkpoint, CheckpointArtifacts
 from contracts.parser import ParsedDoc
 from contracts.provenance import Anchor, Block
 from rag.fakes.fake_embedder import FakeEmbedder
@@ -617,6 +618,26 @@ def test_circuit_breaker_stops_the_run_after_enough_consecutive_unexpected_failu
     # would defeat the point: a systemic failure should be noticed fast, not after wasting the
     # whole run).
     assert parser.calls == [ref.paper_id for ref in refs[:threshold]]
+
+
+def test_contract_error_is_never_swallowed_by_the_safety_net():
+    # ContractError is a broken invariant, not "this paper is bad" (CONVENTIONS.md §4) -- it must
+    # ALWAYS crash the run loud, even a single occurrence, never quarantined and never counted
+    # toward `_guard_per_paper`'s circuit breaker. A corrupted `ingest_state.stage` value (outside
+    # the frozen vocabulary) is `_at_least`'s real, reachable trigger for this.
+    refs = _synthetic_refs(2)
+    state = FakeIngestState()
+    state._rows[refs[0].paper_id] = Checkpoint(
+        stage="bogus_stage_outside_the_frozen_vocabulary", artifacts=CheckpointArtifacts()
+    )
+    orch = _prepare_only_rig(refs, SpyParser(), state=state)
+
+    with pytest.raises(ContractError):
+        orch.parse_phase(refs)
+
+    # Never quarantined -- a ContractError is a bug, not a per-paper failure to record and move on
+    # from.
+    assert refs[0].paper_id not in state.quarantined
 
 
 # ================================================================================================

@@ -245,6 +245,15 @@ class IngestionOrchestrator:
     # TransientError/PermanentError handling (never instead of it) as a backstop for whatever that
     # handling doesn't anticipate -- including a bug in the handling itself.
     #
+    # `ContractError` is deliberately EXCLUDED (re-raised before the broad `except Exception`
+    # below ever sees it) -- CONVENTIONS.md §4 draws a hard line between "an infrastructure
+    # failure or a bug nobody anticipated" (this safety net's whole point: quarantine and keep
+    # going) and "a broken invariant" (must ALWAYS crash, unconditionally, never quarantined,
+    # never counted toward the circuit breaker -- limping past a corrupted `ingest_state.stage`
+    # value with a wrong result is worse than a stack trace naming it). Swallowing every exception
+    # indiscriminately would have quietly defeated that distinction for the one class this project
+    # most needs loud.
+    #
     # It is not an unconditional "never stop" mechanism. `_MAX_CONSECUTIVE_UNEXPECTED_FAILURES`
     # consecutive unexpected failures (reset by any paper that completes without hitting this
     # path) still stops the run. Rationale for both pieces:
@@ -279,6 +288,12 @@ class IngestionOrchestrator:
         crosses the circuit-breaker threshold, in which case it re-raises instead."""
         try:
             fn()
+        except ContractError:
+            # CONVENTIONS.md §4: a ContractError is a broken invariant -- a bug, not "this paper is
+            # bad" -- and must ALWAYS crash the run loud, unconditionally, never be quarantined or
+            # counted toward the circuit breaker. Re-raised before the generic `except Exception`
+            # below would otherwise catch it too (ContractError is an Exception subclass).
+            raise
         except Exception as error:
             consecutive_failures += 1
             logger.error(
