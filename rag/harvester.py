@@ -171,29 +171,50 @@ class ArxivSource:
     def fetch(self, focus_area: list[str], cap: int, ordering: str) -> Iterator[PaperRef]:
         """Precondition: `ordering == "freshest_first"` (V0's only supported ordering,
         DATA-CONTRACTS.md §Config) -> anything else is a caller bug, `PermanentError`.
+
+        Issues one paginated request **per `focus_area` entry** rather than combining all of
+        them into a single `" OR "`-joined query — see the real numbers below. `cap` is one
+        budget shared across the whole `focus_area` list (unchanged external contract: still
+        counts raw refs pre-dedup, same as before this split existed); once it's hit, later
+        `focus_area` entries are skipped. `Harvester.harvest()` merges/dedupes whatever this
+        yields by base paper_id exactly as it already did, so nothing upstream changes.
+
+        Why split (T-DOC8, real measured numbers, not a guess): V0's `config.yaml` ships 33
+        `focus_area_queries`; the old code joined them into one ~1,100-char boolean-OR query.
+        Root-cause testing found that single query gets a genuine `httpx.ReadTimeout` at 30s on
+        a clean call. Raising the timeout doesn't fix it either: 4 further real attempts against
+        that exact combined query (this ticket, 2026-07-13/14), spaced minutes apart with a
+        120s timeout, got zero real responses -- every attempt came back `HTTP 429 "Rate
+        exceeded"`, arriving anywhere from 0.27s to 46s later (never a timeout, never a 200). A
+        single-term query (`all:causal inference`, `all:test`), by contrast, succeeds instantly
+        when not caught by that same rate limiter. The giant combined query is the actual
+        problem; a bigger timeout has nothing to wait out.
         """
         if ordering != "freshest_first":
             raise PermanentError(f"ArxivSource: unsupported ordering={ordering!r}")
 
-        query = " OR ".join(f"all:{q}" for q in focus_area)
-        start = 0
         yielded = 0
         first_request = True
-        while yielded < cap:
-            if not first_request:
-                self._sleep(_RATE_LIMIT_SECONDS)
-            first_request = False
-
-            page_cap = min(self._page_size, cap - yielded)
-            entries = self._fetch_page(query, start, page_cap)
-            if not entries:
+        for term in focus_area:
+            if yielded >= cap:
                 return
-            for ref in entries:
-                if yielded >= cap:
-                    return
-                yield ref
-                yielded += 1
-            start += len(entries)
+            query = f"all:{term}"
+            start = 0
+            while yielded < cap:
+                if not first_request:
+                    self._sleep(_RATE_LIMIT_SECONDS)
+                first_request = False
+
+                page_cap = min(self._page_size, cap - yielded)
+                entries = self._fetch_page(query, start, page_cap)
+                if not entries:
+                    break  # this term is exhausted -> move to the next focus_area entry
+                for ref in entries:
+                    if yielded >= cap:
+                        return
+                    yield ref
+                    yielded += 1
+                start += len(entries)
 
     def _fetch_page(self, query: str, start: int, page_cap: int) -> list[PaperRef]:
         params = {
