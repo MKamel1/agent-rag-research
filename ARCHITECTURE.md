@@ -266,14 +266,22 @@ Full patterns + code-shape in `CONVENTIONS.md`; schemas in `DATA-CONTRACTS.md`.
    re-runnable; it is *never* a silent `except: pass`. Transient errors retry with backoff; contract
    violations crash early (they are bugs, not data problems).
 3. **Single GPU, four real consumers, measured VRAM (corrected — this section previously asserted
-   an unmeasured budget that turned out wrong).** A real end-to-end ingestion run reproduced a genuine
-   CUDA OOM. Measured footprints on this project's 24GB card: MinerU (parser) **~6.6GB**, Embedder (TEI
-   Qwen3-Embedding-4B) **~8.2GB**, Reranker (TEI BGE-reranker-v2-m3) **~1.4GB**, Summarizer (Ollama
-   qwen3:14b) **~11.8GB** — higher than the original ~7-8GB estimate. Embedder+Reranker+MinerU together
-   (~16.2GB) fit comfortably; the combination that doesn't fit is **MinerU + Summarizer at the same
-   time** (with Embedder+Reranker also resident, ~28GB). Embedder+Reranker are meant to be **always**
-   resident — they serve live queries continuously via `McpServer` — so MinerU and the Summarizer are
-   the two that must never be loaded together.
+   an unmeasured, flat budget that turned out wrong).** A real end-to-end ingestion run reproduced a
+   genuine CUDA OOM. Measured footprints on this project's 24GB card: MinerU (parser) is **not** a flat
+   footprint — its pipeline backend loads layout-detection, OCR, table-recognition, and
+   formula-recognition sub-models sequentially per paper (`rag/parser.py`'s `_run_mineru_pipeline`) and
+   **peaks around ~13GB routinely, observed as high as ~23.7GB/24GB (96.4% of the card) during real
+   production Pass 1 runs**; Embedder (TEI Qwen3-Embedding-4B) **~8.2GB**, Reranker (TEI
+   BGE-reranker-v2-m3) **~1.4GB**, Summarizer (Ollama qwen3:14b) **~11.8GB** — higher than the original
+   ~7-8GB estimate. With Embedder+Reranker always resident (**~9.4GB**), Pass 1's real safety margin
+   against MinerU's typical peak is thin — **roughly ~1GB**, not the "fits comfortably" this section
+   previously claimed — and the worst observed spike leaves almost none. The combination that still
+   doesn't fit at all is **MinerU + Summarizer at the same time** (with Embedder+Reranker also resident,
+   ~28GB+). Embedder+Reranker are meant to be **always** resident — they serve live queries continuously
+   via `McpServer` — so MinerU and the Summarizer are the two that must never be loaded together.
+   - **Open risk, not yet decided: Pass 1's ~1GB margin is thin enough that it needs a human call on
+     footprint reduction or a guard** (WORK-BREAKDOWN.md's T-DOC series has the tracking note; this doc
+     only flags it, it doesn't prescribe the fix).
    - **Fix: two-pass ingestion, not per-paper pipelining.** `IngestionOrchestrator.ingest()` (M9) runs
      `parse_phase()` (every paper to `chunked`, MinerU) then `finish_phase()` (every paper from wherever
      it sits to `done`, Summarizer+Embedder) — not the per-paper CPU/GPU pipelining this section
@@ -314,10 +322,14 @@ Full patterns + code-shape in `CONVENTIONS.md`; schemas in `DATA-CONTRACTS.md`.
      length were ruled out first via direct measurement). `before_embed` fires before each of
      `_finish`'s two `embedder.embed()` calls; real reload cost for the next paper's summarize call is
      ~2.5s — negligible against a ~15-20s real summarize call.
-   - **Runtime residency — Pass 1 confirmed safe by a real run; Pass 2's real numbers are tighter
-     than first measured, and the fix now has real-scale evidence behind it.** Pass 1 (parse) =
-     MinerU 6.6 + Embedder 8.2 + Reranker 1.4 = **16.2GB**, confirmed by two real end-to-end runs
-     (`rag/test_composition_e2e.py`) with no OOM. Pass 2 (finish) was originally estimated at
+   - **Runtime residency — Pass 1's margin is thin, not comfortable; Pass 2's real numbers are also
+     tighter than first measured, and the fix now has real-scale evidence behind it.** Pass 1 (parse)
+     was originally estimated from two real end-to-end test runs (`rag/test_composition_e2e.py`) at
+     MinerU 6.6 + Embedder 8.2 + Reranker 1.4 = 16.2GB with no OOM — but that used MinerU's flat
+     ~6.6GB figure. MinerU's real production peak (see §3 above) runs much higher, ~13GB typical and up
+     to ~23.7GB observed, so Pass 1's real safety margin against the always-resident Embedder+Reranker
+     is thin (**~1GB**), not the comfortable one the original 16.2GB figure implied. Pass 2 (finish) was
+     originally estimated at
      Summarizer 11.8 + Embedder 8.2 + Reranker 1.4 = 21.4GB from small isolated test calls — but a
      **real full-length paper** measured higher on both: Summarizer ~13.5GB (longer context → bigger
      KV cache than a short test prompt) and Embedder ~9-10GB during its actual batch call (many real

@@ -181,11 +181,14 @@ one source of truth for progress.
 
 Use the one 24GB GPU to its best: keep it busy, minimize total run time, never OOM. **Corrected —
 this section previously assumed all-day co-residence with no eviction; a real end-to-end run
-reproduced a genuine CUDA OOM under that assumption.** Real measured footprints: MinerU (parser)
-~6.6GB, Embedder (TEI) ~8.2-10GB, Reranker (TEI) ~1.4GB, Summarizer (Ollama) ~11.8-13.5GB — Embedder
-and Reranker are the two meant to stay **always** resident (they serve live queries continuously via
-`McpServer`); MinerU and the Summarizer are **not** — full detail, numbers, and the eviction
-mechanism are in ARCHITECTURE.md "Operational invariants" §3 (authoritative; not re-derived here).
+reproduced a genuine CUDA OOM under that assumption.** Real measured footprints: MinerU (parser) is
+**not** a flat footprint — it peaks **~13GB typical, observed as high as ~23.7GB** (its sub-models
+load sequentially per paper), Embedder (TEI) ~8.2-10GB, Reranker (TEI) ~1.4GB, Summarizer (Ollama)
+~11.8-13.5GB — Embedder and Reranker are the two meant to stay **always** resident (~9.4GB together,
+they serve live queries continuously via `McpServer`); MinerU and the Summarizer are **not**. Pass 1's
+real safety margin against MinerU's typical peak is thin (**~1GB**), not a comfortable one — full
+detail, numbers, and the eviction mechanism are in ARCHITECTURE.md "Operational invariants" §3
+(authoritative; not re-derived here).
 In short: ingestion runs as **two sequential passes** (`parse_phase()` then `finish_phase()`), and the
 Summarizer is proactively evicted (`OllamaSummarizer.unload()`, polled via Ollama's `/api/ps` until
 confirmed gone, not just fire-and-trust the HTTP response) both before Pass 1 and before *each paper's*
