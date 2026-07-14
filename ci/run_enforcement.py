@@ -34,6 +34,13 @@ payload has no label context, so this script prints an explicit "skipped" line f
 runs instead of silently omitting it (T-F6 ticket requirement: "don't make push runs fail or
 silently skip in a way that looks broken").
 
+Check (e)'s labels come from a *live* `GET` to the GitHub API (`_pr_labels`/`_fetch_live_labels`),
+not straight from the cached `GITHUB_EVENT_PATH` snapshot: that file is written once, when the
+triggering event fires, so a label added afterwards (the normal "review, then label" workflow)
+isn't in it and check (e) would fail on a now-stale complaint. The cached payload is still used as
+a fallback -- no `GITHUB_TOKEN`/`GITHUB_REPOSITORY` (e.g. a local dry run) or the API call failing
+for any reason falls back to it rather than crashing the job over a transient API hiccup.
+
 Check (i) is not run from here at all — it's proven by a pytest test
 (`ci/proof_socket_block/test_real_network_blocked.py`), run as its own workflow step.
 """
@@ -43,6 +50,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+import urllib.request
 from pathlib import Path
 
 from ci.checks import (
@@ -99,7 +107,7 @@ def main() -> int:
     violations += check_h(files)
 
     if event_name == "pull_request":
-        labels = [label["name"] for label in event["pull_request"]["labels"]]
+        labels = _pr_labels(event)
         codeowners_paths = read_codeowners_paths(REPO_ROOT / ".github" / "CODEOWNERS")
         violations += check_e(changed, labels, codeowners_paths)
         print(f"check (e): ran (pull_request event, {len(labels)} label(s) on PR)")
@@ -115,6 +123,51 @@ def main() -> int:
     for v in violations:
         print(f"  {v}")
     return 1
+
+
+def _pr_labels(event: dict) -> list[str]:
+    """Check (e)'s label list -- fetched live from the GitHub API when possible (see module
+    docstring for why: `GITHUB_EVENT_PATH` is a one-time snapshot, and a label added to the PR
+    after the triggering event fired is the common case, not an edge case). Falls back to the
+    cached event payload's labels, same as this function's only-ever-had-that behavior, when there
+    is no token/repo to call the API with, or the live call itself fails for any reason.
+    """
+    cached_labels = [label["name"] for label in event["pull_request"]["labels"]]
+
+    token = os.environ.get("GITHUB_TOKEN")
+    repo = os.environ.get("GITHUB_REPOSITORY")
+    pr_number = event["pull_request"].get("number") or event.get("number")
+    if not token or not repo or not pr_number:
+        print(
+            "check (e): no GITHUB_TOKEN/GITHUB_REPOSITORY/PR number available -- "
+            "using cached event payload labels"
+        )
+        return cached_labels
+
+    try:
+        live_labels = _fetch_live_labels(repo, pr_number, token)
+    except (OSError, ValueError, KeyError) as exc:
+        print(f"check (e): live label fetch failed ({exc!r}) -- using cached event payload")
+        return cached_labels
+
+    print(f"check (e): fetched {len(live_labels)} label(s) live from the GitHub API")
+    return live_labels
+
+
+def _fetch_live_labels(repo: str, pr_number: int, token: str) -> list[str]:
+    """`GET` a PR's current labels straight from GitHub -- the Issues API also serves PRs (a PR
+    *is* an issue in GitHub's data model), and it's the same endpoint the `gh` CLI itself calls.
+    Raises on any failure (network error, non-2xx response, unexpected body shape); `_pr_labels`
+    decides what to do about that, so this function's only job is "ask GitHub the truth right now."
+    """
+    url = f"https://api.github.com/repos/{repo}/issues/{pr_number}/labels"
+    request = urllib.request.Request(
+        url,
+        headers={"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"},
+    )
+    with urllib.request.urlopen(request, timeout=10) as response:
+        body = json.loads(response.read())
+    return [label["name"] for label in body]
 
 
 def _load_event() -> dict:

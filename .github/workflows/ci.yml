@@ -68,12 +68,22 @@ jobs:
       # foundation-change label) only runs inside this same step when the event is `pull_request` —
       # ci/run_enforcement.py prints an explicit "skipped" line on `push` instead of silently
       # omitting it, since a push event carries no PR label context to check at all.
+      #
+      # GITHUB_TOKEN/GITHUB_REPOSITORY: check (e) fetches the PR's labels live from the GitHub API
+      # (ci/run_enforcement.py's `_pr_labels`) instead of trusting GITHUB_EVENT_PATH's one-time
+      # snapshot, which goes stale the moment a label is added after the triggering event fired.
+      # `secrets.GITHUB_TOKEN` is Actions' own auto-issued per-run token (default permissions
+      # include read access to issues/PRs, which is all a labels GET needs) — no new secret to
+      # provision. GITHUB_REPOSITORY is already in every step's default env; naming it here too
+      # matches this step's existing explicit style for GITHUB_EVENT_NAME/GITHUB_EVENT_PATH above.
       - name: Run CONVENTIONS.md §12 checks (a)-(d), (f)-(h), and (e) on pull_request
         shell: bash -l {0}
         run: python -m ci.run_enforcement
         env:
           GITHUB_EVENT_NAME: ${{ github.event_name }}
           GITHUB_EVENT_PATH: ${{ github.event_path }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
 
       # (i) is proven, not enforced here — the actual zero-socket wiring lives in `unit-tests`
       # (pytest-socket's `--disable-socket`, pyproject.toml's default addopts) and

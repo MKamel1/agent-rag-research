@@ -7,6 +7,7 @@ shouldn't flag — not just that it "looks right". Collected by the default `pyt
 (they aren't named `test_*.py`) and never executed (checks only read their source text/AST).
 """
 
+import json
 import subprocess
 from pathlib import Path
 
@@ -25,6 +26,11 @@ from ci.checks import (
     discover_contract_names,
     read_codeowners_paths,
 )
+
+# _pr_labels (T-DOC15) is ci/run_enforcement.py's, not ci/checks' -- imported directly (same
+# "test the private seam" pattern as check_c's fake_run test above) because that module has no
+# test file of its own and testpaths doesn't collect bare "ci/" (pyproject.toml).
+from ci.run_enforcement import _pr_labels
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 # "negative_examples" also appears in pyproject.toml's `extend-exclude` (keeps ruff off it) and
@@ -310,6 +316,79 @@ def test_check_e_matches_single_file_entries_exactly():
         codeowners_paths=["/rag/config.py"],
     )
     assert violations == []
+
+
+# --- (e) live label fetch (T-DOC15) -- GITHUB_EVENT_PATH is a one-time snapshot; a label added ---
+# --- to the PR after that snapshot was written (the normal "review, then label" workflow) must ---
+# --- still be seen, or check (e) fails on a now-stale complaint. ---------------------------------
+
+
+class _FakeHTTPResponse:
+    """Just enough of `http.client.HTTPResponse` for `_fetch_live_labels`' `with ... as response:
+    response.read()` -- a context manager wrapping pre-baked bytes, nothing more."""
+
+    def __init__(self, body: bytes):
+        self._body = body
+
+    def read(self) -> bytes:
+        return self._body
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc_info):
+        return False
+
+
+def test_pr_labels_uses_live_api_labels_not_stale_cached_event(monkeypatch):
+    # The regression this change fixes: cached event payload only has "bug" (the label set at the
+    # moment the event fired); the live API says the PR now also has "foundation-change" (added
+    # after). The live set must be what check (e) actually sees.
+    event = {"pull_request": {"number": 42, "labels": [{"name": "bug"}]}}
+    monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
+    monkeypatch.setenv("GITHUB_REPOSITORY", "owner/repo")
+
+    requested = {}
+
+    def fake_urlopen(request, timeout):
+        requested["url"] = request.full_url
+        requested["authorization"] = request.headers["Authorization"]
+        live_payload = [{"name": "bug"}, {"name": "foundation-change"}]
+        return _FakeHTTPResponse(json.dumps(live_payload).encode())
+
+    monkeypatch.setattr("ci.run_enforcement.urllib.request.urlopen", fake_urlopen)
+
+    labels = _pr_labels(event)
+
+    assert labels == ["bug", "foundation-change"]
+    assert requested["url"] == "https://api.github.com/repos/owner/repo/issues/42/labels"
+    assert requested["authorization"] == "Bearer fake-token"
+
+
+def test_pr_labels_falls_back_to_cached_event_without_a_token(monkeypatch):
+    # No GITHUB_TOKEN/GITHUB_REPOSITORY in the environment (e.g. a local dry run) -- must use the
+    # cached event payload, not attempt a network call at all (pytest-socket's --disable-socket
+    # default would fail it loudly if it tried). Explicit delenv, not just "assume the test
+    # environment doesn't have these set" -- a developer's own shell (e.g. `gh` auth) might.
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+    monkeypatch.delenv("GITHUB_REPOSITORY", raising=False)
+    event = {"pull_request": {"number": 42, "labels": [{"name": "bug"}]}}
+    assert _pr_labels(event) == ["bug"]
+
+
+def test_pr_labels_falls_back_to_cached_event_when_live_call_fails(monkeypatch):
+    # A transient API hiccup (network blip, unexpected response) must degrade to the cached
+    # payload, not crash the whole enforcement job.
+    event = {"pull_request": {"number": 42, "labels": [{"name": "bug"}]}}
+    monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
+    monkeypatch.setenv("GITHUB_REPOSITORY", "owner/repo")
+
+    def fake_urlopen(request, timeout):
+        raise OSError("network blip")
+
+    monkeypatch.setattr("ci.run_enforcement.urllib.request.urlopen", fake_urlopen)
+
+    assert _pr_labels(event) == ["bug"]
 
 
 def test_read_codeowners_paths_matches_real_file():
