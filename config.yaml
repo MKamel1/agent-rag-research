@@ -56,7 +56,7 @@ focus_area_queries:
   - "EconML heterogeneous treatment"
 
 # scope levers (CONTEXT.md registry) — V0 defaults, DATA-CONTRACTS.md §Config
-corpus_cap: 2000
+corpus_cap: 30000
 ordering: "freshest_first"
 ingestion_mode: "one_shot_seed"
 sources:
