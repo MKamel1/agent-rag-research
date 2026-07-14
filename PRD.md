@@ -516,7 +516,7 @@ not a rewrite. V0 values:
 | Lever | Meaning | V0 value |
 |---|---|---|
 | `focus_area` | topic definition — arXiv **search queries** (not just categories) that select what to ingest | **Causal methods**: causal ML, causal inference, causal discovery, treatment-effect estimation, causal representation learning, causal LLM/agent setups. Queried across `cs.LG`, `cs.AI`, `stat.ML`, `stat.ME`, `cs.CL`, `econ.EM` |
-| `corpus_cap` | max papers to ingest | **15,000** |
+| `corpus_cap` | max papers to ingest | **2,000** |
 | `ordering` | harvest order | **freshest-first** |
 | `ingestion_mode` | one-shot seed vs forward-only vs backfill | **one-shot seed** (V0); forward-only later |
 | `sources` | where papers come from | **arXiv** (V0) |
@@ -587,7 +587,7 @@ expansion → MCP search/get_paper (cited)`
 
 ## 11. Open Questions / Decisions Still Needed
 1. ~~**Ingestion breadth for v1**~~ **RESOLVED for V0** (see Levers): `focus_area` = causal methods,
-   `corpus_cap` = 15,000, freshest-first, one-shot arXiv seed. Full/other-domain backfill deferred
+   `corpus_cap` = 2,000, freshest-first, one-shot arXiv seed. Full/other-domain backfill deferred
    until Spike 4 gives a papers/hour number. **Relevance filter: RESOLVED → `off` for V0, but
    instrumented** (precomputed relevance score + precision spot-checks) so A→B is a data-driven,
    free flip later (see Levers).
@@ -909,7 +909,7 @@ equations/code intact and carry enough context to be independently meaningful.
 - **Structure-aware (by section/heading)** — respects document structure; variable size. Free —
   no extra model pass.
 - **+ Contextual Retrieval** (prepend a short LLM-generated context to each chunk) — an LLM call
-  **per chunk**, i.e. per-chunk cost × 15,000 papers.
+  **per chunk**, i.e. per-chunk cost × 2,000 papers.
 
 **Decision (revised — cleanly split by phase, not Spike-2-gated).** **V0 ships structure-aware
 chunking only**: by section, equations/code as first-class blocks, each chunk **prefixed with
@@ -923,7 +923,7 @@ worth their cost.
 **Rationale.** Section-aware chunks + the free title/section prefix already capture most of the
 "which ablation is this?" disambiguation win at zero ingest cost. The *remaining* gap — cases the
 prefix doesn't cover — is exactly what an LLM-generated context header would close, but that's a
-15,000× LLM-call cost that deserves its own gated decision with real evidence, not a Spike-2 A/B
+2,000× LLM-call cost that deserves its own gated decision with real evidence, not a Spike-2 A/B
 squeezed into V0's timeline. Splitting it out avoids blocking V0 ship on a cost/benefit call that
 isn't V0's to make.
 
@@ -1043,6 +1043,19 @@ driver, unaffected by this finding. Revisit the embedder specifically only if th
 proves insufficient on its own, or if the fragmentation-OOM investigation independently forces a
 serving-stack change anyway (at that point vLLM's clean-error behavior would be worth folding in, but
 it doesn't clear the bar as a freestanding win by itself today).
+
+**Open item before the generation migration lands — re-validate GPU eviction on vLLM.** The embedder
+spike above never exercised an "unload this model" path — it stood vLLM up alongside TEI, not in
+place of it, and measured steady-state footprint, not fast release-and-reclaim. This project's
+OOM-safety architecture (the two-pass `before_embed`/`before_parse_phase` eviction hooks,
+`OllamaSummarizer.unload()`'s `/api/ps` poll — ARCHITECTURE.md §3) depends on being able to unload the
+generation model cheaply and quickly between phases, and that's validated at real 250-paper run scale
+on Ollama, not on vLLM. If the embedder spike's ~2x resident-VRAM finding also holds for the generation
+model, and vLLM turns out not to have an equally cheap/fast unload primitive, the eviction mechanism
+the whole OOM-safety design depends on may not carry over unmodified. Before the V1 generation
+migration happens, re-test the eviction hooks against vLLM directly rather than assuming Ollama's
+measured unload behavior transfers — the same "verify against real infra" bar the rest of this ADR
+already applies. This is a verify-before-porting flag, not a reason to hold the migration.
 
 ### ADR-10 — Reranker: BGE-reranker-v2-m3 (cross-encoder)
 **Context.** First-stage hybrid retrieval optimizes recall; a second-stage reranker optimizes

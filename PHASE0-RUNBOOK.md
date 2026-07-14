@@ -57,7 +57,7 @@ shape is the frozen-contract bet this spike settles. M1/Harvester is unaffected 
 - GROBID references look sane.
 
 **Output:** the chosen `parser_id` becomes the V0 `Parser` adapter. The scored PDFs become the **golden
-fixtures** (TEST-STRATEGY). Record the throughput number — it feeds the 15k backfill estimate.
+fixtures** (TEST-STRATEGY). Record the throughput number — it feeds the 2k backfill estimate.
 
 **If it fails:** if no parser clears the anchor gate, the grounding contract is at risk — escalate before
 building. Do not lower the bar silently; grounding is the product.
@@ -191,7 +191,7 @@ rebuild, ADR-04).
 - [x] Spike 2's Recall@10 is reported both on the full 210-question set **and** split title-present vs.
       title-absent, and separately for the 150 single-passage items vs. the 60 multi-paper items (see Spike 2
       Method step 1's known-limitation notes) — not just as one blended headline number.
-- [ ] Real papers/hour measured → a realistic 15k backfill plan (smoke-test 200 papers, then run overnight).
+- [ ] Real papers/hour measured → a realistic 2k backfill plan (smoke-test 200 papers, then run overnight).
 - [ ] `phase0-results.md` records every number, so no decision is "asserted, not proven" (PRD §9 ethos).
 
 Once these hold, the adapters behind the three real seams are chosen, and Owners A–E integrate their modules
