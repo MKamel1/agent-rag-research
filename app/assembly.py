@@ -7,6 +7,7 @@
 # model choice ever needs to differ.
 """
 
+import logging
 import time
 from collections.abc import Callable
 from pathlib import Path
@@ -31,6 +32,8 @@ from rag.reranker import TeiReranker
 from rag.retriever import Retriever
 from rag.summarizer import OllamaSummarizer
 from rag.vector_index import VectorIndex
+
+logger = logging.getLogger(__name__)
 
 _TEI_EMBED_URL = "http://localhost:8080"
 _TEI_RERANK_URL = "http://localhost:8082"
@@ -121,6 +124,35 @@ class _PdfDownloadParser:
         return resp.content
 
 
+def _sqlite_harvest_quarantine_sink(state: SqliteIngestState) -> Callable[[str, Exception], None]:
+    """Adapts `Harvester`'s `QuarantineSink` (`rag/harvester.py`: `Callable[[str, Exception],
+    None]`) to `SqliteIngestState.quarantine`'s `(paper_id, stage, error)` shape, so a
+    harvest-level failure lands in the same `quarantine` SQL table `IngestionOrchestrator` already
+    uses for parse/summarize failures (rag/orchestrator.py's `self._state.quarantine(paper_id,
+    "parsed"/"summarized", error)` calls) -- previously `Harvester` was constructed below with no
+    `quarantine=` kwarg, silently defaulting to a no-op, so an exhausted-retry-budget harvest
+    failure (rag/harvester.py's documented `"<unknown>"` bucket for a page-level API failure with
+    no paper identity) left no DB row and no log line anywhere (T-DOC10).
+
+    `Harvester.harvest()`'s postcondition is that it never raises, which means this sink must
+    never raise either: unlike a real per-paper `paper_id`, `"<unknown>"` is a fixed sentinel, so
+    a second harvest-level failure written to the same db would hit `quarantine.paper_id`'s
+    PRIMARY KEY. Caught and logged rather than propagated, so a write failure degrades to
+    log-only visibility instead of crashing the run.
+    """
+
+    def _sink(paper_id: str, error: Exception) -> None:
+        try:
+            state.quarantine(paper_id, "harvested", error)
+        except Exception:
+            logger.exception(
+                "harvest-level quarantine (paper_id=%r, error=%s) could not be written to the "
+                "quarantine table", paper_id, error,
+            )
+
+    return _sink
+
+
 def build_ingestion_orchestrator(
     config: Config, *, db_path: str | None = None, blob_dir: str | None = None,
     collection: str = "papers",
@@ -129,7 +161,8 @@ def build_ingestion_orchestrator(
     db_path = db_path or "papers.db"
     blob_dir = blob_dir or "blobs"
 
-    harvester = Harvester(ArxivSource())
+    state = SqliteIngestState(db_path)
+    harvester = Harvester(ArxivSource(), quarantine=_sqlite_harvest_quarantine_sink(state))
     parser = _PdfDownloadParser(httpx.Client(timeout=60.0))
     chunker = Chunker(config)
     summarizer = OllamaSummarizer(
@@ -140,7 +173,6 @@ def build_ingestion_orchestrator(
     vector_index = VectorIndex(
         _QDRANT_HOST, _QDRANT_PORT, collection, _EMBEDDER_INFO.dim, config.hybrid_dense_weight
     )
-    state = SqliteIngestState(db_path)
 
     return IngestionOrchestrator(
         harvester, parser, chunker, summarizer, embedder, document_store, vector_index,
