@@ -46,7 +46,7 @@ detail. When a term here conflicts with usage elsewhere, this file wins (or gets
   that selects what to ingest. **V0 = causal methods** (causal ML, causal inference, causal
   discovery, treatment-effect estimation, causal representation learning, causal LLM/agent setups)
   across `cs.LG`, `cs.AI`, `stat.ML`, `stat.ME`, `cs.CL`, `econ.EM`.
-- **`corpus_cap`** — max papers to ingest. **V0 = 15,000**, freshest-first, one-shot seed.
+- **`corpus_cap`** — max papers to ingest. **V0 = 2,000**, freshest-first, one-shot seed.
 
 ## Retrieval terms
 - **Multi-granularity** — the three *zoom levels* of a paper used for **routing**: summary (which

@@ -226,7 +226,7 @@ Ten modules, each independently ownable (owners A–F) and testable through its 
     cfg.focus_area_queries)])[0]` — and passed into the per-paper scoring step, never recomputed per
     paper. The query string is identical for every paper in a run; embedding it inside the per-paper loop
     (an easy mistake — it reads naturally as "compute both vectors, then score") means calling `embed()`
-    on a constant value `corpus_cap` times (15,000 at V0's cap), each acquiring `GpuLock` for no reason.
+    on a constant value `corpus_cap` times (2,000 at V0's cap), each acquiring `GpuLock` for no reason.
     The Orchestrator owns computing it; `PaperRef.relevance_score` itself stays `None` (it can't be
     computed before a summary exists).
 - **Hides (depth):** staging, checkpoints, resume, dedup, GPU queueing, relevance-score computation.
