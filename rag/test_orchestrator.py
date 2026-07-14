@@ -70,8 +70,6 @@ documented choice; if M1b threads a separate byte-fetch step, `SpyParser` moves 
 --------------------------------------------------------------------------------------------------
 """
 
-from datetime import date
-
 import pytest
 
 from contracts.chunker import Chunk
@@ -213,25 +211,75 @@ class SpyChunker:
 
 
 class SummarizerSpy:
-    """Wraps the committed FakeSummarizer, adding a call log."""
+    """Wraps the committed FakeSummarizer, adding a call log and (T-DOC13) the same
+    poison/transient fault injection `SpyParser` got in T-DOC12/PR #75 -- `parsed.paper_id` is
+    available directly here, so this keys off it exactly the same way `SpyParser` keys off
+    `ref.paper_id`.
 
-    def __init__(self):
+    `poison`: paper_ids that raise `PermanentError` on every call. `transient`: paper_id -> how
+    many `TransientError`s to raise before that paper's `summarize` finally succeeds; a count at
+    or above the orchestrator's retry budget never recovers, exercising exhausted-retry-then-
+    quarantine instead.
+    """
+
+    def __init__(self, poison: set[str] | None = None, transient: dict[str, int] | None = None):
         self.calls: list[str] = []
         self._inner = FakeSummarizer()
+        self._poison = poison or set()
+        self._transient_budget = dict(transient or {})
+        self._transient_calls_made: dict[str, int] = {}
 
     def summarize(self, parsed: ParsedDoc) -> str:
         self.calls.append(parsed.paper_id)
+        if parsed.paper_id in self._poison:
+            raise PermanentError(f"no usable prose to summarize: {parsed.paper_id}")
+        budget = self._transient_budget.get(parsed.paper_id, 0)
+        made = self._transient_calls_made.get(parsed.paper_id, 0)
+        if made < budget:
+            self._transient_calls_made[parsed.paper_id] = made + 1
+            raise TransientError(f"generation LLM server returned 503: {parsed.paper_id}")
         return self._inner.summarize(parsed)
 
 
-class EmbedderSpy:
-    """Wraps the committed FakeEmbedder, counting `embed()` calls (for the N+1 hoist assertion)
-    and optionally failing on the Nth call (to inject a crash mid-paper)."""
+def _expected_summary_by_paper_id(refs=REFS) -> dict[str, str]:
+    """What `FakeSummarizer` produces for each fixture paper, precomputed so `EmbedderSpy` can
+    tell which paper a given `embed()` call belongs to from `texts[0]` alone -- production's
+    `Embedder.embed(texts) -> list[Vector]` interface carries no `paper_id` (DATA-CONTRACTS.md
+    M4), and `_finish` always puts `summary_text` first in the batch (`[summary_text] + [chunk
+    texts]`, both the main-path and resume-path call sites)."""
+    summarizer = FakeSummarizer()
+    return {ref.paper_id: summarizer.summarize(make_parsed(ref)) for ref in refs}
 
-    def __init__(self, fail_on_call: int | None = None):
+
+_SUMMARY_TEXT_TO_PAPER_ID = {v: k for k, v in _expected_summary_by_paper_id().items()}
+
+
+class EmbedderSpy:
+    """Wraps the committed FakeEmbedder, counting `embed()` calls (for the N+1 hoist assertion),
+    optionally failing on the Nth call (to inject a crash mid-paper), and (T-DOC13) optionally
+    raising `PermanentError`/`TransientError` for a chosen paper's `embed()` call -- same
+    poison/transient shape as `SpyParser`/`SummarizerSpy`, keyed via `_SUMMARY_TEXT_TO_PAPER_ID`
+    since `embed()` itself only ever sees `texts`, never a `paper_id`. `topic_transient` is a
+    separate count for the once-per-run, non-per-paper `topic_query_vec` hoist call (always
+    `embed()` call #1, texts that never match any paper's summary) -- that call has no paper_id to
+    key fault injection off at all.
+    """
+
+    def __init__(
+        self,
+        fail_on_call: int | None = None,
+        poison: set[str] | None = None,
+        transient: dict[str, int] | None = None,
+        topic_transient: int = 0,
+    ):
         self._inner = FakeEmbedder()
         self.calls: list[list[str]] = []
         self._fail_on_call = fail_on_call
+        self._poison = poison or set()
+        self._transient_budget = dict(transient or {})
+        self._transient_calls_made: dict[str, int] = {}
+        self._topic_transient_budget = topic_transient
+        self._topic_transient_made = 0
 
     @property
     def info(self):
@@ -245,6 +293,23 @@ class EmbedderSpy:
         self.calls.append(list(texts))
         if self._fail_on_call is not None and len(self.calls) == self._fail_on_call:
             raise RuntimeError("injected crash: GPU died mid-embed")
+        paper_id = _SUMMARY_TEXT_TO_PAPER_ID.get(texts[0]) if texts else None
+        if paper_id is None:
+            # Not a per-paper batch (texts[0] matches no fixture paper's summary) -- the
+            # once-per-run topic_query_vec call. Gated on paper_id, not call index: a retry
+            # re-invokes embed() for the *same* logical call, so keying off "call #1" would only
+            # match the first attempt and silently stop injecting on the retry.
+            if self._topic_transient_made < self._topic_transient_budget:
+                self._topic_transient_made += 1
+                raise TransientError("embedding server returned 503: topic_query_vec")
+            return self._inner.embed(texts)
+        if paper_id in self._poison:
+            raise PermanentError(f"embedding server returned 400: {paper_id}")
+        budget = self._transient_budget.get(paper_id, 0)
+        made = self._transient_calls_made.get(paper_id, 0)
+        if made < budget:
+            self._transient_calls_made[paper_id] = made + 1
+            raise TransientError(f"embedding server returned 503: {paper_id}")
         return self._inner.embed(texts)
 
 
@@ -269,12 +334,27 @@ class RecordingVectorIndex:
     """Wraps a real FakeVectorStore, logging each `upsert` to the shared `events` and optionally
     failing the first upsert for a chosen paper (to inject a crash in the stored->done gap). The
     underlying FakeVectorStore is shared across runs so a resumed run's upsert lands in the same
-    store a test then inspects."""
+    store a test then inspects.
 
-    def __init__(self, store: FakeVectorStore, events: list, fail_paper_ids: set[str] | None = None):
+    `transient` (T-DOC13): paper_id -> how many `TransientError`s to raise (mirroring
+    `rag/vector_index.py`'s real vector-store-failure classification -- that adapter never raises
+    `PermanentError`) before that paper's upsert batch finally succeeds. Independent of
+    `fail_paper_ids`, which stays a generic uncaught-`RuntimeError` crash for the pre-existing
+    stored->done resume test.
+    """
+
+    def __init__(
+        self,
+        store: FakeVectorStore,
+        events: list,
+        fail_paper_ids: set[str] | None = None,
+        transient: dict[str, int] | None = None,
+    ):
         self._store = store
         self._events = events
         self._fail = set(fail_paper_ids or set())
+        self._transient_budget = dict(transient or {})
+        self._transient_calls_made: dict[str, int] = {}
         self.upserts: list[str] = []
 
     def upsert(self, id: str, vector, payload) -> None:
@@ -282,6 +362,11 @@ class RecordingVectorIndex:
         if paper_id in self._fail:
             self._fail.discard(paper_id)  # fail exactly once, then let the resume succeed
             raise RuntimeError(f"injected crash: index died before upserting {paper_id}")
+        budget = self._transient_budget.get(paper_id, 0)
+        made = self._transient_calls_made.get(paper_id, 0)
+        if made < budget:
+            self._transient_calls_made[paper_id] = made + 1
+            raise TransientError(f"vector store call failed: injected, {paper_id}")
         self._events.append(("upsert", paper_id))
         self.upserts.append(id)
         self._store.upsert(id, vector, payload)
@@ -292,19 +377,22 @@ class Rig:
     `state` persist across `new_orchestrator()` calls so a crash-then-restart shares them; the
     stage spies are shared too so a call-count assertion spans both runs."""
 
-    def __init__(self, refs=REFS, poison=None, transient=None):
+    def __init__(
+        self, refs=REFS, poison=None, transient=None,
+        summarizer_poison=None, summarizer_transient=None,
+    ):
         self.events: list = []
         self.harvester = StubHarvester(refs)
         self.parser = SpyParser(poison=poison, transient=transient)
         self.chunker = SpyChunker()
-        self.summarizer = SummarizerSpy()
+        self.summarizer = SummarizerSpy(poison=summarizer_poison, transient=summarizer_transient)
         self.document_store = DocStoreDouble(self.events)
         self.vector_store = FakeVectorStore()
         self.state = FakeIngestState()
         self.gpu_lock = FakeGpuLock()
         self.config = Config(focus_area_queries=["causal inference", "treatment effect"])
-        # Records every `retry_sleep(seconds)` call instead of really sleeping (T-DOC12) -- same
-        # injected-sleep pattern `rag.harvester.ArxivSource`'s own test suite uses.
+        # Records every `retry_sleep(seconds)` call instead of really sleeping (T-DOC12/T-DOC13)
+        # -- same injected-sleep pattern `rag.harvester.ArxivSource`'s own test suite uses.
         self.retry_sleeps: list[float] = []
 
     def new_orchestrator(
@@ -390,6 +478,32 @@ def test_embed_is_called_n_plus_one_times_not_two_n():
         f"expected N+1={N + 1} embed calls (1 topic + {N} papers), got {embedder.call_count}"
     )
     assert embedder.call_count != 2 * N
+
+
+def test_transient_topic_query_vec_error_recovers_after_bounded_retry():
+    # T-DOC13 review finding: the hoisted topic_query_vec embed() call is the single highest-risk
+    # uncaught call in finish_phase() (runs once, unconditionally, before any per-paper guard even
+    # matters) -- it now gets the same bounded retry as every per-paper call, just no quarantine
+    # (there's no single paper to blame for a run-level setup call).
+    rig = Rig()
+    embedder = EmbedderSpy(topic_transient=1)
+    rig.ingest(embedder=embedder)
+
+    assert rig.retry_sleeps == [1.0]
+    assert done_ids(rig) == set(PAPER_IDS)
+
+
+def test_transient_topic_query_vec_error_exhausts_retries_then_crashes_loud():
+    # Unlike every per-paper call, exhausting the retry budget here re-raises instead of
+    # quarantining -- CONVENTIONS.md §4's "crash loud" outcome for an infrastructure failure with
+    # no per-paper target, matching this call's pre-existing (unguarded) crash behavior.
+    rig = Rig()
+    embedder = EmbedderSpy(topic_transient=99)
+    with pytest.raises(TransientError):
+        rig.ingest(embedder=embedder)
+
+    assert rig.retry_sleeps == [1.0, 2.0]
+    assert rig.state.quarantined == {}  # nothing quarantined -- this call has no paper to blame
 
 
 # ================================================================================================
@@ -488,17 +602,32 @@ def test_poisoned_paper_is_quarantined_and_the_rest_complete():
 
 
 # ================================================================================================
-# T-DOC12 regression: a `TransientError` from `parser.parse` (e.g. rag/parser.py's
-# reference-extraction call) must not crash `parse_phase()` -- a real end-to-end run hit exactly
-# this (one paper's reference-extraction call returned a transient 500) and it propagated all the
-# way out of `ingest()`, killing the `python -m app.parse_phase` subprocess (and, via app/ingest.py's
-# `subprocess.run(..., check=True)`, the parent `app.ingest` process too) with every paper still
-# queued behind the failing one losing its progress for that run.
+# T-DOC12/T-DOC13 regression: a `TransientError` from `parser.parse`, `summarizer.summarize`,
+# `embedder.embed`, or `vector_index.upsert` must not crash the whole batch. A real end-to-end run
+# hit this first for `parser.parse` (one paper's reference-extraction call returned a transient
+# 500) -- it propagated all the way out of `ingest()`, killing the `python -m app.parse_phase`
+# subprocess (and, via app/ingest.py's `subprocess.run(..., check=True)`, the parent `app.ingest`
+# process too) with every paper still queued behind the failing one losing its progress for that
+# run (T-DOC12, PR #75). Auditing `_finish`/`finish_phase()` for the same bug class (T-DOC13,
+# PR #76) found the identical gap: `summarizer.summarize` only guarded `PermanentError`, both
+# `embedder.embed()` call sites guarded neither error type, and `_upsert_record`'s
+# `vector_index.upsert()` calls were unguarded too.
 # ================================================================================================
 
 def test_transient_parse_error_recovers_after_bounded_retry():
     flaky = PAPER_IDS[1]
     rig = Rig(transient={flaky: 1})  # one TransientError, then succeeds on retry
+    rig.ingest()
+
+    assert flaky not in rig.state.quarantined
+    assert rig.retry_sleeps == [1.0]  # exactly one retry, backoff attempt 1 -> 2**(1-1)
+    assert stored_ids(rig) == set(PAPER_IDS)
+    assert done_ids(rig) == set(PAPER_IDS)
+
+
+def test_transient_summarize_error_recovers_after_bounded_retry():
+    flaky = PAPER_IDS[1]
+    rig = Rig(summarizer_transient={flaky: 1})  # one TransientError, then succeeds on retry
     rig.ingest()
 
     assert flaky not in rig.state.quarantined
@@ -522,6 +651,111 @@ def test_transient_parse_error_exhausts_retries_then_quarantines_and_the_rest_co
     assert rig.retry_sleeps == [1.0, 2.0]  # max_retries=2 default -> 2 retries before quarantine
     survivors = set(PAPER_IDS) - {poisoned}
     assert stored_ids(rig) == survivors
+    assert done_ids(rig) == survivors
+
+
+def test_transient_summarize_error_exhausts_retries_then_quarantines_and_the_rest_complete():
+    poisoned = PAPER_IDS[1]
+    rig = Rig(summarizer_transient={poisoned: 99})  # always raises -- exhausts the retry budget
+    rig.ingest()
+
+    assert poisoned in rig.state.quarantined
+    assert poisoned not in rig.document_store.records  # never stored
+    assert rig.retry_sleeps == [1.0, 2.0]  # max_retries=2 default -> 2 retries before quarantine
+    survivors = set(PAPER_IDS) - {poisoned}
+    assert stored_ids(rig) == survivors
+    assert done_ids(rig) == survivors
+
+
+def test_transient_embed_error_recovers_after_bounded_retry():
+    flaky = PAPER_IDS[1]
+    rig = Rig()
+    embedder = EmbedderSpy(transient={flaky: 1})
+    rig.ingest(embedder=embedder)
+
+    assert flaky not in rig.state.quarantined
+    assert rig.retry_sleeps == [1.0]
+    assert stored_ids(rig) == set(PAPER_IDS)
+    assert done_ids(rig) == set(PAPER_IDS)
+
+
+def test_transient_embed_error_exhausts_retries_then_quarantines_and_the_rest_complete():
+    poisoned = PAPER_IDS[1]
+    rig = Rig()
+    embedder = EmbedderSpy(transient={poisoned: 99})
+    rig.ingest(embedder=embedder)
+
+    assert poisoned in rig.state.quarantined
+    assert poisoned not in rig.document_store.records  # never stored (embed fails before put())
+    assert rig.retry_sleeps == [1.0, 2.0]
+    survivors = set(PAPER_IDS) - {poisoned}
+    assert stored_ids(rig) == survivors
+    assert done_ids(rig) == survivors
+
+
+def test_permanent_embed_error_quarantines_immediately_no_retry():
+    # Unlike the parser/summarizer/vector_index seams, `embedder.embed()` was previously unguarded
+    # against PermanentError too (not just TransientError) -- this is the regression test for that
+    # half of the gap.
+    poisoned = PAPER_IDS[1]
+    rig = Rig()
+    embedder = EmbedderSpy(poison={poisoned})
+    rig.ingest(embedder=embedder)
+
+    assert poisoned in rig.state.quarantined
+    assert poisoned not in rig.document_store.records
+    assert rig.retry_sleeps == []  # PermanentError quarantines immediately, no retry/backoff
+    survivors = set(PAPER_IDS) - {poisoned}
+    assert stored_ids(rig) == survivors
+    assert done_ids(rig) == survivors
+
+
+def test_transient_embed_error_on_the_resume_path_is_also_guarded():
+    # The `_finish` branch for a paper already at `stored` (the stored->done resume gap) calls
+    # `embedder.embed()` a second, structurally different way -- this proves the retry/quarantine
+    # guard applies there too, not just the main per-paper path.
+    rig = Rig()
+
+    # Run 1: get FIRST_ID to `stored` via a healthy embedder/index.
+    healthy_index = RecordingVectorIndex(rig.vector_store, rig.events)
+    rig.ingest(embedder=EmbedderSpy(), vector_index=healthy_index)
+    assert rig.state.stage_of(FIRST_ID) == DONE  # sanity: full run completes cleanly first
+
+    # Force FIRST_ID back to `stored` (simulating "crashed after put(), before done" without
+    # re-running the whole pipeline) and re-ingest with an embedder that exhausts retries for it.
+    rig.state.checkpoint(FIRST_ID, "stored")
+    flaky_embedder = EmbedderSpy(transient={FIRST_ID: 99})
+    rig.ingest(embedder=flaky_embedder)
+
+    assert FIRST_ID in rig.state.quarantined
+    assert FIRST_ID in rig.document_store.records  # DocumentStore.put's upsert already ran
+    assert rig.retry_sleeps == [1.0, 2.0]
+
+
+def test_transient_upsert_error_recovers_after_bounded_retry():
+    flaky = PAPER_IDS[1]
+    rig = Rig()
+    index = RecordingVectorIndex(rig.vector_store, rig.events, transient={flaky: 1})
+    rig.ingest(vector_index=index)
+
+    assert flaky not in rig.state.quarantined
+    assert rig.retry_sleeps == [1.0]
+    assert done_ids(rig) == set(PAPER_IDS)
+
+
+def test_transient_upsert_error_exhausts_retries_then_quarantines_and_the_rest_complete():
+    poisoned = PAPER_IDS[1]
+    rig = Rig()
+    index = RecordingVectorIndex(rig.vector_store, rig.events, transient={poisoned: 99})
+    rig.ingest(vector_index=index)
+
+    assert poisoned in rig.state.quarantined
+    # Unlike summarize/embed, the paper IS already stored by the time upsert runs -- quarantining
+    # here relies on DocumentStore.put's upsert semantics to make a later full re-run safe (see
+    # `_upsert_with_retry`'s docstring), not on nothing having been persisted yet.
+    assert poisoned in rig.document_store.records
+    assert rig.retry_sleeps == [1.0, 2.0]
+    survivors = set(PAPER_IDS) - {poisoned}
     assert done_ids(rig) == survivors
 
 
