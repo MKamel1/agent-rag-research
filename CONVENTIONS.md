@@ -169,7 +169,7 @@ Juniors reliably get idempotency wrong. Follow the pattern exactly:
 2. All persistent writes are **upserts keyed by the stable id** (DATA-CONTRACTS §IDs) — never a blind
    `INSERT` that duplicates on re-run.
 3. After the stage succeeds, **update `ingest_state`** to the new stage.
-4. Because ids are deterministic, re-running the whole 2k job is safe: done papers are skipped, half-done
+4. Because ids are deterministic, re-running the whole 30k job is safe: done papers are skipped, half-done
    papers resume, nothing duplicates.
 
 Do **not** rely on "the file exists so skip" or in-memory sets that vanish on crash. The state table is the
@@ -267,11 +267,11 @@ If you can't say *why* your code works, it doesn't work — you just haven't see
 
 ---
 
-## 10. Cost landmines (things that are cheap on 10 papers and painful on 2,000)
+## 10. Cost landmines (things that are cheap on 10 papers and painful on 30,000)
 
 Confirm the plan before you write these — they are silent budget killers at corpus scale:
 
-- **Contextual headers** = one LLM call *per chunk* → 2,000 papers × one call each. This is **not a V0
+- **Contextual headers** = one LLM call *per chunk* → 30,000 papers × one call each. This is **not a V0
   feature at all** — it's cleanly deferred to V1 (PRD ADR-07), not a Spike-2-gated toggle. **Do not
   implement header generation in V0.** V0's only job is to record the monitoring signal (context-poor
   chunk rate, tagged during the Spike-2 eval) so V1 starts with evidence. If you find yourself writing an
@@ -279,7 +279,7 @@ Confirm the plan before you write these — they are silent budget killers at co
 - **Re-embedding** the whole corpus is the most expensive operation in the system. Never trigger it casually;
   it's a deliberate model-swap event (ADR-04) via `VectorIndex.rebuild()`.
 - **Loading a model per paper** instead of per batch. Load once, process a batch, unload. Model load is
-  seconds; doing it 2k times is hours.
+  seconds; doing it 30k times is hours.
 - **Unbounded queues / reading the whole corpus into memory.** Stream with iterators (`iter_papers()`), bound
   your queues.
 

@@ -697,7 +697,7 @@ CREATE TABLE chunks (
 );
 
 -- DocumentStore reconstruction (get/get_paper) filters blocks and chunks by paper_id; without these
--- indexes each lookup full-scans these ~1-5M-row tables on the always-on query server at corpus_cap ~2k.
+-- indexes each lookup full-scans these ~1-5M-row tables on the always-on query server at corpus_cap ~30k.
 CREATE INDEX idx_blocks_paper_id ON blocks(paper_id);
 CREATE INDEX idx_chunks_paper_id ON chunks(paper_id);
 

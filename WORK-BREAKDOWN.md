@@ -39,7 +39,7 @@ Spike 1 settles. Concretely:
 | **M1b** | Implementation: every owner fills in their module to green | every module's unit tests green through its interface, zero GPU/net; Definition of Done met |
 | **M2** | Real adapters + contract tests | fake and real adapter agree at each seam (Embedder, VectorStore, Parser) |
 | **M3** | Integration + smoke test on ~200 papers | full pipeline runs end-to-end; idempotency/resume/quarantine verified on real data |
-| **M4** | Full 2k seed run | corpus ingested (overnight/days); retrieval eval ≥ Recall@10 0.85 on real corpus |
+| **M4** | Full 30k seed run | corpus ingested (overnight/days); retrieval eval ≥ Recall@10 0.85 on real corpus |
 | **M5** | Ship criterion | an agent answers a factual question about an ingested paper with a correct, verifiable citation at ~0 API cost — and you use it (PRD §Phase V0) |
 
 **Critical path:** M0 foundation → (Phase 0 in parallel) → Retriever + its stores (M7/M5/M6) → MCP server (M8)
@@ -254,7 +254,7 @@ M1a, before this implementation existed") **plus** the specifics below.
 - **T-INT1** Swap fakes for real adapters at the two composition roots; run the real-adapter contract tests.
 - **T-INT2** Smoke test on **~200 papers** (fail fast — parse time is the one unmeasured variable). Verify
   idempotency, resume-after-kill, and quarantine on real data. Fix before scaling.
-- **T-SEED** Full **2k** freshest-first seed (overnight/days). Monitor papers/hour, quarantine rate, GPU
+- **T-SEED** Full **30k** freshest-first seed (overnight/days). Monitor papers/hour, quarantine rate, GPU
   memory, Qdrant RAM. `relevance_score` is computed per paper by `IngestionOrchestrator` itself during this
   same run (T-A2 — not a separate step here); spot-check that `papers.relevance_score` is non-null corpus-wide
   before calling the seed done, so the later `relevance_filter` flip has real numbers to threshold on. Also
