@@ -43,6 +43,15 @@ class SqliteIngestState:
     # ponytail: one process-wide lock serializes ALL calls, not just concurrent writers to the
     # same paper_id -- fine at V0's one-orchestrator-process throughput; move to a connection pool
     # + row-level locking (or WAL busy_timeout tuning) if this ever shows up as a bottleneck.
+
+    Cross-PROCESS safety: this lock is per-instance, so it serializes nothing across two separate
+    OS processes -- `checkpoint()`/`quarantine()` are non-atomic read-merge-write/delete
+    sequences with no protection against a second process's call interleaving on the same
+    paper_id. `get()`/`all_known_paper_ids()` are safe to call from a second process (WAL mode
+    lets readers never block on a writer), but a second process must NOT call
+    `checkpoint()`/`quarantine()` against a `db_path` a live `IngestionOrchestrator` is also
+    writing to -- see `app/prefetch_pdfs.py`'s module docstring point 1 for the concrete failure
+    mode this was written to avoid.
     """
 
     def __init__(self, db_path: str):
@@ -153,3 +162,22 @@ class SqliteIngestState:
     def stage_of(self, paper_id: str) -> str | None:
         checkpoint = self.get(paper_id)
         return checkpoint.stage if checkpoint else None
+
+    def all_known_paper_ids(self) -> set[str]:
+        """Every paper_id already tracked in `ingest_state` (any stage) or dead-lettered in
+        `quarantine` -- the full "someone has already handled this paper" set, in one query.
+
+        Exists for a bulk startup scan across a whole harvested corpus (e.g.
+        `app/prefetch_pdfs.py` deciding which papers still need a PDF download) that would
+        otherwise need one `get()` call -- and one connection open -- per paper_id. `get()` stays
+        the right tool for `IngestionOrchestrator`'s own per-paper checkpoint cadence; this is for
+        the different access pattern of "which of these thousands of ids are already spoken for".
+        """
+
+        def _all_ids(conn: sqlite3.Connection) -> set[str]:
+            rows = conn.execute(
+                "SELECT paper_id FROM ingest_state UNION SELECT paper_id FROM quarantine"
+            ).fetchall()
+            return {r[0] for r in rows}
+
+        return self._with_connection(_all_ids)
