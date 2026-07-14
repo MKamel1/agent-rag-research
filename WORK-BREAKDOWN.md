@@ -328,6 +328,13 @@ ID" rule rather than left as bare PR titles/branch names. All merged to `main`.
   `config.parse_batch_size` (default 4) papers per `parser.parse_batch()` call and falls back to the
   existing per-paper `_parse_with_retry` path, unchanged, on any batch failure. Code + fake-backed tests
   only (no real GPU/MinerU run) — a real-GPU validation spike is still required before live rollout.
+- **T-DOC17** (`T-DOC17-quarantine-diagnostics`) — `quarantine.error` was `str(exception)` only, with no
+  structured category or forensic context to diagnose a real parse-content failure once one occurs (none
+  exist in the corpus yet — pure instrumentation). Added the additive `quarantine_diagnostics` table
+  (`migrations/0003_quarantine_diagnostics.sql`) capturing `error_type` (`type(error).__name__`) and an
+  optional `diagnostics_json`, populated by `SqliteIngestState.quarantine()` from a new opportunistic
+  `.diagnostics` attribute-setting convention (`contracts/errors.py`) that `rag/parser.py`'s failure sites
+  now use for cheaply-available context like `pdf_size_bytes`.
 
 ---
 

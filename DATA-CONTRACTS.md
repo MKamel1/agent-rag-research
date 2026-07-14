@@ -749,6 +749,32 @@ CREATE TABLE ingest_checkpoint (
 );
 ```
 
+### quarantine_diagnostics (additive — `migrations/0003_quarantine_diagnostics.sql`, T-DOC17 parse-failure-diagnostics fix)
+
+`quarantine`'s `error` column is `str(exception)` only — no structured category, nothing queryable
+without string-parsing the raw message. `quarantine_diagnostics` is a **new table**, not an
+`ALTER TABLE` on `quarantine`, for two reasons: (a) `quarantine`'s DDL is a frozen,
+parity-tested (`migrations/test_migrate.py`'s `test_0001_init_matches_data_contracts_schema`),
+CODEOWNERS-gated source-of-truth shape — a new table is a smaller disturbance to that contract than
+editing it; (b) `error_type TEXT NOT NULL` cannot be added to `quarantine` via `ALTER TABLE ADD
+COLUMN` in the first place — SQLite forbids adding a NOT NULL column without a default to a table
+that already has rows, and the live `quarantine` table already has rows. A new table lets
+`error_type` stay cleanly `NOT NULL` for every future row instead.
+
+`SqliteIngestState.quarantine(paper_id, stage, error)` additionally inserts here on every call
+(`error_type = type(error).__name__`, `diagnostics_json` = the exception's optional `.diagnostics`
+attribute if present, else `NULL` — see `contracts/errors.py`'s module docstring for the
+`.diagnostics` convention). Same `ON CONFLICT(paper_id) DO NOTHING` idempotent-insert pattern as
+`quarantine` itself.
+
+```sql
+CREATE TABLE quarantine_diagnostics (
+  paper_id         TEXT PRIMARY KEY REFERENCES quarantine(paper_id),
+  error_type       TEXT NOT NULL,   -- type(error).__name__, e.g. "PermanentError"
+  diagnostics_json TEXT             -- optional best-effort context, e.g. {"pdf_size_bytes": ...}
+);
+```
+
 Run SQLite in **WAL mode** (ADR-05 — the relational-store decision; WAL is an implementation detail of
 that choice, not ADR-07, which is the unrelated chunking/contextual-header decision).
 `authors_json`/`categories_json`/`bbox_json`/`anchor_json` are JSON

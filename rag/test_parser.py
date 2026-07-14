@@ -189,6 +189,17 @@ def test_unparseable_input_raises_permanent_error(bad_input, why):
         parse(bad_input)
 
 
+def test_unparseable_input_error_carries_pdf_size_bytes_diagnostics():
+    # T-DOC17: rag/parser.py's own failure-raising sites (_validate_pdf here) attach a best-effort
+    # `.diagnostics` dict before raising -- `quarantine()` opportunistically captures it
+    # (contracts/errors.py's `.diagnostics` convention). At minimum pdf_size_bytes, since raw
+    # bytes are always cheaply at hand at this failure point.
+    bad_input = b"this is not a pdf"
+    with pytest.raises(PermanentError) as exc_info:
+        parse(bad_input)
+    assert exc_info.value.diagnostics == {"pdf_size_bytes": len(bad_input)}
+
+
 # ---------------------------------------------------------------------------
 # parse_batch() (T-DOC16, .phase0-data/pass1-gpu-underutilization.md). Exercises the real
 # `_call_do_parse`/`_read_mineru_output`/`_assemble_parsed_doc` plumbing against a fake
@@ -320,8 +331,10 @@ def test_parse_batch_maps_do_parse_exception_to_permanent_error(tmp_path, monkey
     _install_fake_do_parse(monkeypatch, _raising_do_parse)
     raws = [_one_page_pdf_bytes(200, 200), _one_page_pdf_bytes(300, 300)]
 
-    with pytest.raises(PermanentError):
+    with pytest.raises(PermanentError) as exc_info:
         parse_batch(raws, output_dir=tmp_path)
+    # T-DOC17: opportunistic .diagnostics, total pdf_size_bytes across the whole failed batch.
+    assert exc_info.value.diagnostics == {"pdf_size_bytes": sum(len(r) for r in raws)}
 
 
 def test_parse_batch_rejects_unparseable_member_before_calling_do_parse(tmp_path, monkeypatch):

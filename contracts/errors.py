@@ -15,6 +15,15 @@ T-F1) — that validation failure is a bug too (a caller built a contract object
 callers that want it folded into the pipeline taxonomy should catch `pydantic.ValidationError`
 and re-raise as `ContractError` themselves; `contracts/` does not do that wrapping on their
 behalf, so this module has no pydantic dependency.
+
+**Optional `.diagnostics` convention (T-DOC17):** any raise site MAY, opportunistically, set a
+`.diagnostics` dict attribute on the exception instance before raising (plain `setattr`, e.g.
+`err = PermanentError(msg); err.diagnostics = {"pdf_size_bytes": len(raw)}; raise err`) to attach
+best-effort forensic context. `rag/ingest_state_sqlite.py`'s `SqliteIngestState.quarantine()`
+opportunistically captures it (`migrations/0003_quarantine_diagnostics.sql`'s
+`diagnostics_json`) when present. This is NOT part of the three-class taxonomy contract above — a
+missing `.diagnostics` is always fine and defaults to NULL; it is not a typed attribute/kwarg on
+these classes themselves.
 """
 
 
