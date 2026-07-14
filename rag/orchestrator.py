@@ -159,7 +159,27 @@ class IngestionOrchestrator:
         per process without reaching into `_harvester` directly -- each process re-harvests its
         own `refs` rather than one process handing a list to the other (cheap relative to a
         multi-day parse phase; `_finish_checkpoint`'s `state` guard makes re-harvesting safe even
-        if the two calls return slightly different sets)."""
+        if the two calls return slightly different sets).
+
+        Deliberately does NOT exclude `paper_id`s already sitting in `quarantine` -- only
+        `_harvester`'s own dedup applies. This is intentional, not a gap: `quarantine()` deletes
+        the `ingest_state` row for that paper (module docstring above), so to `_prepare`/`_finish`
+        a quarantined paper is indistinguishable from one never harvested, and will be retried in
+        full on the next `harvest()` call, whether that's a killed-and-resumed run minutes later or
+        a fresh run days later. That's the point: the leading real-world cause of a `PermanentError`
+        here is arXiv indexing a paper's metadata before its PDF finishes processing (a real,
+        observed 404 -- `.phase0-data/100-paper-run-stats.md` "Key learning") -- a condition that
+        resolves on arXiv's side over hours/days, not something permanent about the paper. Giving
+        every run a fresh shot at every quarantined paper is the correct default so those papers
+        aren't lost forever over what was actually a transient upstream state. The cost is bounded
+        and cheap: a paper that's still genuinely bad just re-fails `parser.parse`/`summarizer.
+        summarize` and re-quarantines -- safe because `SqliteIngestState.quarantine` is idempotent
+        (first reason wins, logged, never raises) precisely to make repeated re-attempts of an
+        already-quarantined paper harmless. If quarantine volume or repeated-failure cost ever
+        becomes a real problem at 15k-paper scale, the fix is a `quarantine`-aware exclusion in
+        `harvest()` (e.g. skip a paper_id quarantined within the last N days) -- not yet needed,
+        so not built.
+        """
         return list(self._harvester.harvest(focus_area, cap, self._config.ordering))
 
     def parse_phase(self, refs: list[PaperRef]) -> None:

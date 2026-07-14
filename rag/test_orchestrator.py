@@ -60,7 +60,9 @@ is the committed fake, `contracts/ingest_state.py` the typed artifacts payload):
 
     state.get(paper_id) -> Checkpoint | None           # Checkpoint has .stage, .artifacts
     state.checkpoint(paper_id, stage, artifacts=None)  # upsert stage; merge artifacts (idempotent)
-    state.quarantine(paper_id, stage, error)           # dead-letter; run continues
+    state.quarantine(paper_id, stage, error)           # dead-letter; run continues; idempotent
+                                                        # (no-op, first reason wins, if paper_id is
+                                                        # already quarantined)
 
 Stage vocabulary is the frozen `ingest_state.stage` set (migrations/0001_init.sql):
 harvested|parsed|chunked|summarized|embedded|stored|done.

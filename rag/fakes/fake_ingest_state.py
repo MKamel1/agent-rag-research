@@ -11,7 +11,11 @@ Real interface (assumed by `rag/orchestrator.py`; not yet frozen in `contracts/`
 
     get(paper_id) -> Checkpoint | None
     checkpoint(paper_id, stage, artifacts=None) -> None   # upsert stage, merge artifacts
-    quarantine(paper_id, stage, error) -> None             # dead-letter; row removed
+    quarantine(paper_id, stage, error) -> None             # dead-letter; row removed; idempotent
+                                                            # no-op (first reason wins) if paper_id
+                                                            # is already quarantined -- see
+                                                            # rag/ingest_state_sqlite.py's
+                                                            # SqliteIngestState.quarantine docstring
 
 Backed by one plain dict, not sqlite -- this fake stands in for BOTH the `ingest_state` table
 (`stage`) and the additive `ingest_checkpoint` table (`artifacts`) at once, keyed by `paper_id`.
@@ -49,7 +53,10 @@ class FakeIngestState:
         self._rows[paper_id] = Checkpoint(stage=stage, artifacts=merged)
 
     def quarantine(self, paper_id: str, stage: str, error: Exception) -> None:
-        self.quarantined[paper_id] = (stage, error)
+        # Idempotent, mirroring SqliteIngestState.quarantine: first reason wins, re-quarantining
+        # an already-quarantined paper_id is a safe no-op rather than clobbering the original
+        # reason.
+        self.quarantined.setdefault(paper_id, (stage, error))
         self._rows.pop(paper_id, None)
 
     def stage_of(self, paper_id: str) -> str | None:
