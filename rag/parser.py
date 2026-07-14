@@ -63,6 +63,23 @@ Ambiguities the frozen interface/tests don't resolve, decided here (rather than 
   (ponytail: a real deployment should point `output_dir` at wherever `DocumentStore`'s blob storage
   lives, or add periodic cache eviction, once that integration is wired up — out of scope for a
   Parser that only has to hand back valid paths).
+
+- **`parse_batch(raws) -> list[ParsedDoc]`, whole-batch-fails, no partial results.** Real
+  `nvidia-smi dmon` measurement of a live Pass 1 run found the GPU idling *inside* one document's
+  sequential MinerU sub-model stages (layout -> OCR -> table -> formula), not between documents —
+  `do_parse` natively pools pages from every open document into shared 64-page windows and runs
+  one batched tensor call per stage across them, regardless of N
+  (`.phase0-data/pass1-gpu-underutilization.md`, principal-design-reviewer-vetted). Because pages
+  from all N documents are pooled into that one call, an exception on any page of any document
+  aborts the whole `do_parse` invocation — true per-document isolation would require hooking
+  MinerU's private `on_doc_ready` callback, which `do_parse`'s public signature never exposes, and
+  would couple this adapter to MinerU internals it has no business depending on. The reviewed,
+  locked-in answer is: `parse_batch` raises `PermanentError`/`TransientError` for the batch as a
+  whole on ANY failure (missing/corrupt output for any member, or `do_parse` itself raising) —
+  never a partial list, never a new return-type sentinel (`contracts/errors.py`'s three-typed-
+  exception-only rule). `rag/orchestrator.py::parse_phase` is the caller that recovers per-paper
+  isolation on a batch failure, by falling back to the existing singular `parse()` retry path for
+  that batch's members — not this adapter's job.
 """
 
 from __future__ import annotations
@@ -136,12 +153,90 @@ def parse(
     n_pages = _validate_pdf(raw)
 
     stem = hashlib.sha256(raw).hexdigest()[:16]
+    workdir = _resolve_workdir(output_dir)
+
+    content_list, page_sizes, markdown, page_dir = _run_mineru_pipeline(raw, workdir, stem)
+    return _assemble_parsed_doc(
+        content_list,
+        page_sizes,
+        markdown,
+        page_dir,
+        fallback_paper_id=stem,
+        n_pages=n_pages,
+        grobid_url=grobid_url,
+    )
+
+
+def parse_batch(
+    raws: list[bytes],
+    *,
+    output_dir: str | Path | None = None,
+    grobid_url: str = _DEFAULT_GROBID_URL,
+) -> list[ParsedDoc]:
+    """Parse N PDFs through one MinerU `do_parse` call instead of N separate ones -- see the
+    module docstring's `parse_batch` bullet for why (real GPU-idle measurement, the pooled-window
+    mechanism, and the whole-batch-fails-no-partial-results design decision this implements).
+
+    Preconditions: same as `parse()`, applied to every member of `raws`.
+    Postconditions: on full success, returns exactly `len(raws)` `ParsedDoc`s, one per input, in
+    the same order as `raws` -- each satisfying `parse()`'s own postconditions.
+    Errors: raises `PermanentError`/`TransientError` for the WHOLE batch (never a partial list) if
+    `do_parse` itself raises, or if any one member's expected output is missing/corrupt, or if
+    assembling any one member's `ParsedDoc` fails for any of `parse()`'s own reasons.
+    """
+    if not raws:
+        return []
+
+    for raw in raws:
+        _reject_latex_archive(raw)
+    n_pages_list = [_validate_pdf(raw) for raw in raws]
+
+    stems = [hashlib.sha256(raw).hexdigest()[:16] for raw in raws]
+    workdir = _resolve_workdir(output_dir)
+
+    _call_do_parse(workdir, stems, raws)
+
+    docs = []
+    for stem, n_pages in zip(stems, n_pages_list, strict=True):
+        content_list, page_sizes, markdown, page_dir = _read_mineru_output(workdir, stem)
+        docs.append(
+            _assemble_parsed_doc(
+                content_list,
+                page_sizes,
+                markdown,
+                page_dir,
+                fallback_paper_id=stem,
+                n_pages=n_pages,
+                grobid_url=grobid_url,
+            )
+        )
+    return docs
+
+
+def _resolve_workdir(output_dir: str | Path | None) -> Path:
     default_workdir = Path(tempfile.gettempdir()) / "rag-parser-mineru"
     workdir = Path(output_dir) if output_dir is not None else default_workdir
     workdir.mkdir(parents=True, exist_ok=True)
+    return workdir
 
-    content_list, page_sizes, markdown, page_dir = _run_mineru_pipeline(raw, workdir, stem)
-    paper_id = _derive_paper_id(content_list, fallback=stem)
+
+def _assemble_parsed_doc(
+    content_list: list[dict],
+    page_sizes: dict[int, tuple[float, float]],
+    markdown: str,
+    page_dir: Path,
+    *,
+    fallback_paper_id: str,
+    n_pages: int,
+    grobid_url: str,
+) -> ParsedDoc:
+    """Shared per-document assembly (bbox rescaling/`content_list` walk, the blocks-empty
+    quarantine guard, GROBID reference resolution, final `ParsedDoc` construction) used by both
+    `parse()` and `parse_batch()` -- the two entry points differ only in how `content_list`/
+    `page_sizes`/`markdown`/`page_dir` get produced (one `do_parse` call vs. a batched one), never
+    in what happens to them afterward.
+    """
+    paper_id = _derive_paper_id(content_list, fallback=fallback_paper_id)
     blocks, figures, tables, raw_refs = _build_blocks(content_list, page_sizes, paper_id, page_dir)
 
     if not blocks:
@@ -214,25 +309,30 @@ def _parser_id() -> str:
 def _run_mineru_pipeline(
     raw: bytes, workdir: Path, stem: str
 ) -> tuple[list[dict], dict[int, tuple[float, float]], str, Path]:
+    """Single-document convenience wrapper around `_call_do_parse`/`_read_mineru_output` -- see
+    those two docstrings for what each step does. `parse_batch()` calls them directly instead,
+    once for the whole batch (`_call_do_parse`) then once per member (`_read_mineru_output`).
+    """
+    _call_do_parse(workdir, [stem], [raw])
+    return _read_mineru_output(workdir, stem)
+
+
+def _call_do_parse(workdir: Path, stems: list[str], raws: list[bytes]) -> None:
     """Invoke MinerU's `pipeline` backend in-process (see module docstring for why not a CLI
-    subprocess). Returns `(content_list, page_sizes, markdown, page_dir)`:
-      - `content_list`: MinerU's own flattened per-block list (`*_content_list.json` shape),
-        bbox normalized 0-1000 per page axis.
-      - `page_sizes`: `page_idx -> (width, height)` in PDF points, read back from
-        `*_middle.json`'s `pdf_info[i]["page_size"]` -- needed to rescale `content_list`'s bbox.
-      - `markdown`: the full-document markdown MinerU renders (`*.md`), used for
-        `ParsedDoc.markdown` as a whole.
-      - `page_dir`: the directory holding these outputs (and `images/`), so figure/table image
-        paths can be resolved to absolute paths.
+    subprocess), for one document (`parse()`, `len(stems) == 1`) or N documents in a single call
+    (`parse_batch()`) -- MinerU pools every open document's pages into shared windows and runs one
+    batched tensor call per stage across them regardless of N (module docstring's `parse_batch`
+    bullet), so this call itself doesn't otherwise vary with N. Writes each stem's output under
+    `workdir/{stem}/auto/` as a side effect; `_read_mineru_output` reads it back.
     """
     from mineru.cli.common import do_parse  # lazy -- see module docstring
 
     try:
         do_parse(
             output_dir=str(workdir),
-            pdf_file_names=[stem],
-            pdf_bytes_list=[raw],
-            p_lang_list=["en"],
+            pdf_file_names=stems,
+            pdf_bytes_list=raws,
+            p_lang_list=["en"] * len(stems),
             backend="pipeline",
             parse_method="auto",
             f_draw_layout_bbox=False,
@@ -244,8 +344,25 @@ def _run_mineru_pipeline(
             f_dump_content_list=True,
         )
     except (RuntimeError, ValueError, OSError, PdfiumError) as e:
-        raise PermanentError(f"MinerU pipeline backend failed to parse this PDF: {e}") from e
+        noun = "PDF" if len(stems) == 1 else f"batch of {len(stems)} PDFs"
+        raise PermanentError(f"MinerU pipeline backend failed to parse this {noun}: {e}") from e
 
+
+def _read_mineru_output(
+    workdir: Path, stem: str
+) -> tuple[list[dict], dict[int, tuple[float, float]], str, Path]:
+    """Read one document's MinerU output back off disk after `_call_do_parse` has run (whether
+    that was a single-document or batched call). Returns `(content_list, page_sizes, markdown,
+    page_dir)`:
+      - `content_list`: MinerU's own flattened per-block list (`*_content_list.json` shape),
+        bbox normalized 0-1000 per page axis.
+      - `page_sizes`: `page_idx -> (width, height)` in PDF points, read back from
+        `*_middle.json`'s `pdf_info[i]["page_size"]` -- needed to rescale `content_list`'s bbox.
+      - `markdown`: the full-document markdown MinerU renders (`*.md`), used for
+        `ParsedDoc.markdown` as a whole.
+      - `page_dir`: the directory holding these outputs (and `images/`), so figure/table image
+        paths can be resolved to absolute paths.
+    """
     page_dir = workdir / stem / "auto"
     content_list_path = page_dir / f"{stem}_content_list.json"
     middle_json_path = page_dir / f"{stem}_middle.json"

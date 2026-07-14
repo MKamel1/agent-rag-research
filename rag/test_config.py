@@ -23,6 +23,7 @@ def test_loads_real_repo_config():
     assert len(config.focus_area_queries) == 33
     assert config.corpus_cap == 30_000
     assert config.gpu_lock_path == ".gpu.lock"
+    assert config.parse_batch_size == 4
 
 
 def test_missing_required_field_raises(tmp_path):

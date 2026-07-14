@@ -215,10 +215,69 @@ class IngestionOrchestrator:
 
     def parse_phase(self, refs: list[PaperRef]) -> None:
         """Pass 1: drive every ref to (at least) `chunked` using the CPU/MinerU-bound `_prepare`.
-        Sequential, not pipelined against Pass 2 -- see module docstring for why."""
+        Sequential, not pipelined against Pass 2 -- see module docstring for why.
+
+        Batches `refs` into groups of `config.parse_batch_size` and tries
+        `parser.parse_batch()` once per group (T-DOC16, `.phase0-data/
+        pass1-gpu-underutilization.md`): MinerU's `do_parse` pools pages from every open document
+        into shared windows and runs one batched tensor call per pipeline stage across them,
+        filling the GPU-idle gaps a one-document-at-a-time `parser.parse()` loop leaves between
+        its own sequential stages. `parser.parse_batch` is whole-batch-fails, by design (see
+        `rag/parser.py`'s module docstring) -- a `TransientError`/`PermanentError` from it falls
+        back to today's proven-safe per-paper `_prepare`/`_parse_with_retry` path for that group,
+        unchanged. The last group of a harvest may be shorter than `parse_batch_size`; that's
+        handled naturally by slicing, not a special case.
+        """
         self._before_parse_phase()
-        for ref in refs:
+        batch_size = self._config.parse_batch_size
+        for i in range(0, len(refs), batch_size):
+            self._prepare_batch(refs[i : i + batch_size])
+
+    def _prepare_batch(self, batch: list[PaperRef]) -> None:
+        """One `parse_phase` group. Only refs that haven't reached `parsed` yet (a fresh paper, or
+        one that crashed before checkpointing `parsed` on a prior run) need an actual MinerU call
+        -- refs already at `parsed` or further along are left entirely to `_prepare`'s own
+        pre-existing resume logic below, same as before this method existed.
+
+        `parser.parse_batch` is duck-typed optional (`getattr(..., None)`, not a hard interface
+        requirement): the real composition-root parser (`app/assembly.py`'s `_PdfDownloadParser`)
+        implements it, but a collaborator that doesn't (this suite's pre-existing `SpyParser`,
+        which predates T-DOC16 and covers unrelated per-paper fault-injection scenarios) falls
+        straight through to the unchanged per-ref `_prepare` loop below -- exactly today's
+        behavior, not a new failure mode.
+
+        On a successful `parser.parse_batch()`, each fresh ref's `ParsedDoc` is checkpointed at
+        `parsed` right here, then EVERY ref in the group (fresh and already-resumed alike) is
+        routed through `_prepare`, which finds `parsed` already satisfied for the ones just
+        checkpointed and proceeds straight to chunking -- so the chunk/checkpoint step this method
+        does not change (T-DOC16 scope) never duplicates.
+
+        On `TransientError`/`PermanentError` from `parser.parse_batch()`, no ref in the group was
+        checkpointed (the batch call raises before ever returning ANY `ParsedDoc` -- `rag/
+        parser.py`'s whole-batch-fails contract), so falling back to `_prepare` for every ref in
+        the group is safe and correct: each one re-attempts its own parse via the existing,
+        unchanged `_parse_with_retry` path.
+        """
+        needs_parse = [
+            ref for ref in batch if not _at_least(self._stage(ref.paper_id), "parsed")
+        ]
+        parse_batch_fn = getattr(self._parser, "parse_batch", None)
+        if needs_parse and parse_batch_fn is not None:
+            try:
+                parsed_docs = parse_batch_fn(needs_parse)
+            except (TransientError, PermanentError):
+                parsed_docs = None
+            if parsed_docs is not None:
+                for ref, parsed in zip(needs_parse, parsed_docs, strict=True):
+                    self._state.checkpoint(
+                        ref.paper_id, "parsed", artifacts=CheckpointArtifacts(parsed=parsed)
+                    )
+        for ref in batch:
             self._prepare(ref)
+
+    def _stage(self, paper_id: str) -> str | None:
+        checkpoint = self._state.get(paper_id)
+        return checkpoint.stage if checkpoint else None
 
     def finish_phase(self, refs: list[PaperRef]) -> None:
         """Pass 2: drive every ref from wherever it sits to `done` using the GPU-bound `_finish`.

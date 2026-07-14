@@ -28,6 +28,7 @@ from rag.ingest_state_sqlite import SqliteIngestState
 from rag.mcp_server import McpServer
 from rag.orchestrator import IngestionOrchestrator
 from rag.parser import parse as parse_pdf_bytes
+from rag.parser import parse_batch as parse_pdf_bytes_batch
 from rag.reranker import TeiReranker
 from rag.retriever import Retriever
 from rag.summarizer import OllamaSummarizer
@@ -96,6 +97,26 @@ class _PdfDownloadParser:
             # than stacking with the retry backoff.
             self._sleep(_PDF_DOWNLOAD_DELAY_SECONDS)
         return parse_pdf_bytes(content)
+
+    def parse_batch(self, refs: list[PaperRef]) -> list[ParsedDoc]:
+        """Bridges `IngestionOrchestrator.parse_phase`'s batched `parser.parse_batch(refs)` call
+        (T-DOC16) to the real Parser module's `parse_batch(raws: list[bytes]) -> list[ParsedDoc]`
+        the same way `parse()` bridges to `parse()` above -- download every ref's PDF first (same
+        per-request delay/one-retry-then-`PermanentError` policy as `_download`, applied to each
+        ref in turn), then hand the whole batch of bytes to MinerU in one `do_parse` call.
+
+        A download failure for ANY ref raises `PermanentError` here before `parse_pdf_bytes_batch`
+        is even called -- consistent with `rag/parser.py`'s own whole-batch-fails contract, and
+        exactly what `parse_phase`'s fallback (per-ref `_parse_with_retry`) expects: nothing in
+        this batch was checkpointed, so re-attempting every ref individually is safe.
+        """
+        contents = []
+        for ref in refs:
+            try:
+                contents.append(self._download(ref))
+            finally:
+                self._sleep(_PDF_DOWNLOAD_DELAY_SECONDS)
+        return parse_pdf_bytes_batch(contents)
 
     def _download(self, ref: PaperRef) -> bytes:
         try:

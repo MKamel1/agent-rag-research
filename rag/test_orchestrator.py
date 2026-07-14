@@ -79,6 +79,7 @@ from contracts.config import Config
 from contracts.document_store import PaperRecord
 from contracts.errors import PermanentError, TransientError
 from contracts.harvester import PaperRef
+from contracts.ingest_state import CheckpointArtifacts
 from contracts.parser import ParsedDoc
 from contracts.provenance import Anchor, Block
 from rag.fakes.fake_embedder import FakeEmbedder
@@ -827,3 +828,166 @@ def test_before_embed_hook_fires_once_per_paper_right_before_that_papers_embed_c
     # before each paper's own embed() call, in lockstep with the call count at that moment.
     assert fire_counts_by_call_index == list(range(1, len(PAPER_IDS) + 1))
     assert embedder.call_count == len(PAPER_IDS) + 1  # topic_query_vec hoist + one per paper
+
+
+# ================================================================================================
+# T-DOC16 (.phase0-data/pass1-gpu-underutilization.md): parse_phase() batches papers through
+# `parser.parse_batch()` (config.parse_batch_size at a time) instead of calling `parser.parse()`
+# once per paper. `parser.parse_batch` is duck-typed optional (`getattr(..., None)` in
+# `_prepare_batch`) -- the pre-existing `SpyParser`/`Rig` above don't implement it, so every test
+# above this section exercises the unchanged non-batched fallback path unmodified (confirmed by
+# the full suite staying green with zero changes to `SpyParser`/`Rig`). These tests use a
+# dedicated, minimal parser double instead, and build the `IngestionOrchestrator` directly rather
+# than via `Rig` -- `parse_phase()` only ever touches `_parser`/`_chunker`/`_state`/`_config` (see
+# its own and `_prepare`'s bodies), so `harvester`/`summarizer`/`embedder`/`document_store`/
+# `vector_index`/`gpu_lock` are never touched and can stay `None`.
+# ================================================================================================
+
+
+class SpyBatchParser:
+    """`.parse(ref)` (the pre-existing per-paper interface, used by `_parse_with_retry`'s
+    fallback) plus `.parse_batch(refs)` (T-DOC16). `batch_fail_if_contains`: if a `parse_batch()`
+    call's refs include any of these paper_ids, the WHOLE call raises `batch_fail_error` (default
+    `PermanentError`) -- mirrors `rag/parser.py`'s real whole-batch-fails contract, where one bad
+    member takes the whole `do_parse` call down with it. `singular_poison`: paper_ids that also
+    raise `PermanentError` from the singular `.parse(ref)` path, independent of batch outcome --
+    lets a test prove the fallback both recovers the batch's *good* members AND still correctly
+    quarantines a *genuinely* bad one, exactly like today's per-paper `_parse_with_retry`.
+    """
+
+    def __init__(
+        self,
+        batch_fail_if_contains: set[str] | None = None,
+        batch_fail_error: type[Exception] = PermanentError,
+        singular_poison: set[str] | None = None,
+    ):
+        self.parse_calls: list[str] = []
+        self.batch_calls: list[list[str]] = []
+        self._batch_fail_if_contains = batch_fail_if_contains or set()
+        self._batch_fail_error = batch_fail_error
+        self._singular_poison = singular_poison or set()
+
+    def parse(self, ref: PaperRef) -> ParsedDoc:
+        self.parse_calls.append(ref.paper_id)
+        if ref.paper_id in self._singular_poison:
+            raise PermanentError(f"unparseable even singularly: {ref.paper_id}")
+        return make_parsed(ref)
+
+    def parse_batch(self, refs: list[PaperRef]) -> list[ParsedDoc]:
+        ids = [r.paper_id for r in refs]
+        self.batch_calls.append(ids)
+        if self._batch_fail_if_contains & set(ids):
+            raise self._batch_fail_error(
+                f"whole batch failed, contains: {sorted(self._batch_fail_if_contains & set(ids))}"
+            )
+        return [make_parsed(ref) for ref in refs]
+
+
+def _parse_phase_orchestrator(parser, state, *, parse_batch_size: int) -> IngestionOrchestrator:
+    return IngestionOrchestrator(
+        harvester=None,
+        parser=parser,
+        chunker=SpyChunker(),
+        summarizer=None,
+        embedder=None,
+        document_store=None,
+        vector_index=None,
+        state=state,
+        gpu_lock=None,
+        config=Config(focus_area_queries=["x"], parse_batch_size=parse_batch_size),
+        retry_sleep=lambda seconds: None,
+    )
+
+
+def test_parse_phase_batch_success_checkpoints_all_papers_normally():
+    # config.parse_batch_size (4) >= N (3) -> the whole harvest fits in one parse_batch() call.
+    parser = SpyBatchParser()
+    state = FakeIngestState()
+    orch = _parse_phase_orchestrator(parser, state, parse_batch_size=4)
+
+    orch.parse_phase(REFS)
+
+    assert parser.batch_calls == [PAPER_IDS]
+    assert parser.parse_calls == []  # singular .parse() never used on the success path
+    for paper_id in PAPER_IDS:
+        checkpoint = state.get(paper_id)
+        assert checkpoint.stage == "chunked"
+        assert checkpoint.artifacts.parsed is not None
+        assert checkpoint.artifacts.chunks is not None
+
+
+def test_parse_phase_handles_a_short_final_batch():
+    # parse_batch_size=2, N=3 -> groups of [2, 1]; the last (short) group must still work.
+    parser = SpyBatchParser()
+    state = FakeIngestState()
+    orch = _parse_phase_orchestrator(parser, state, parse_batch_size=2)
+
+    orch.parse_phase(REFS)
+
+    assert parser.batch_calls == [PAPER_IDS[:2], PAPER_IDS[2:]]
+    assert len(parser.batch_calls[-1]) == 1  # the short final batch
+    for paper_id in PAPER_IDS:
+        assert state.get(paper_id).stage == "chunked"
+
+
+@pytest.mark.parametrize("error_cls", [PermanentError, TransientError])
+def test_parse_phase_batch_failure_falls_back_to_singular_path_for_every_paper(error_cls):
+    # Neither error type from parse_batch() needs new quarantine/retry logic of its own -- both
+    # just degrade to today's proven-safe per-paper `_prepare`/`_parse_with_retry` path.
+    parser = SpyBatchParser(
+        batch_fail_if_contains={PAPER_IDS[1]}, batch_fail_error=error_cls
+    )
+    state = FakeIngestState()
+    orch = _parse_phase_orchestrator(parser, state, parse_batch_size=4)
+
+    orch.parse_phase(REFS)
+
+    assert parser.batch_calls == [PAPER_IDS]  # one attempted (failed) batch call
+    assert parser.parse_calls == PAPER_IDS  # fallback: every ref in the batch re-attempted singularly
+    for paper_id in PAPER_IDS:
+        assert state.get(paper_id).stage == "chunked"  # none genuinely bad -- all recover via .parse()
+
+
+def test_parse_phase_batch_failure_fallback_still_quarantines_a_genuinely_bad_paper():
+    # T-DOC16's most important guarantee (the failure mode the design review flagged): a batch
+    # failure must not silently lose or wrongly quarantine the OTHER N-1 good papers just because
+    # one member is genuinely bad -- the fallback must recover the good ones AND still correctly
+    # quarantine the bad one, exactly like `_parse_with_retry` already does outside of batching.
+    poisoned = PAPER_IDS[1]
+    parser = SpyBatchParser(
+        batch_fail_if_contains={poisoned}, singular_poison={poisoned}
+    )
+    state = FakeIngestState()
+    orch = _parse_phase_orchestrator(parser, state, parse_batch_size=4)
+
+    orch.parse_phase(REFS)
+
+    assert parser.batch_calls == [PAPER_IDS]
+    assert parser.parse_calls == PAPER_IDS  # fallback still attempted every ref, poisoned included
+
+    survivors = [pid for pid in PAPER_IDS if pid != poisoned]
+    for pid in survivors:
+        assert state.get(pid).stage == "chunked"  # the other N-1 papers: not lost, not quarantined
+    assert state.get(poisoned) is None  # quarantine deletes the ingest_state row (module docstring)
+    assert poisoned in state.quarantined
+
+
+def test_parse_phase_skips_batch_call_for_papers_already_parsed_or_further_along():
+    # A ref already at (or past) "parsed" from a prior run doesn't need a fresh MinerU call --
+    # `_prepare_batch` excludes it from `parser.parse_batch()` entirely and lets `_prepare`'s own
+    # pre-existing resume logic (unchanged by T-DOC16) handle it.
+    parser = SpyBatchParser()
+    state = FakeIngestState()
+    already_done_id = PAPER_IDS[0]
+    already_parsed = make_parsed(REFS[0])
+    state.checkpoint(already_done_id, "chunked", artifacts=CheckpointArtifacts(
+        parsed=already_parsed, chunks=[make_chunk(already_parsed)]
+    ))
+    orch = _parse_phase_orchestrator(parser, state, parse_batch_size=4)
+
+    orch.parse_phase(REFS)
+
+    fresh_ids = [pid for pid in PAPER_IDS if pid != already_done_id]
+    assert parser.batch_calls == [fresh_ids]  # already_done_id excluded from the batch call
+    for paper_id in PAPER_IDS:
+        assert state.get(paper_id).stage == "chunked"

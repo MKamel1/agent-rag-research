@@ -317,6 +317,17 @@ ID" rule rather than left as bare PR titles/branch names. All merged to `main`.
   ~13GB routinely and up to ~23.7GB observed, leaving Pass 1 a real margin of ~1GB rather than the
   "~16.2GB fits comfortably" previously claimed. **Open risk, not fixed here:** that ~1GB margin is thin
   and needs a human decision on footprint reduction or a guard — out of scope for this doc-only fix.
+- **T-DOC16** (`T-DOC16-mineru-batch-parse`) — real Pass 1 GPU-utilization measurement found the GPU idling
+  *inside* one document's sequential MinerU sub-model stages (avg 27.4% util, 62.7% of samples at 0%, vs.
+  Pass 2's 82.2% on the same card — `.phase0-data/pass1-gpu-underutilization.md`), because `rag/parser.py`
+  only ever sent MinerU one PDF at a time even though `do_parse` natively batches. Added
+  `Parser.parse_batch(raws) -> list[ParsedDoc]` (one `do_parse` call for N documents, whole-batch-fails --
+  no partial results, per a `principal-design-reviewer` pass: MinerU pools every open document's pages into
+  shared windows, so one bad page anywhere aborts the whole call and true per-document isolation would
+  require coupling to MinerU's private, unexposed `on_doc_ready` callback). `parse_phase()` now batches
+  `config.parse_batch_size` (default 4) papers per `parser.parse_batch()` call and falls back to the
+  existing per-paper `_parse_with_retry` path, unchanged, on any batch failure. Code + fake-backed tests
+  only (no real GPU/MinerU run) — a real-GPU validation spike is still required before live rollout.
 
 ---
 
