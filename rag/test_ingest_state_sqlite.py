@@ -318,12 +318,23 @@ def test_crash_and_restart_resumes_via_real_sqlite_schema_without_reinvoking_sta
 
     # Run 1: crash on the first paper's post-summarize embed call (call 1 = the once-per-run
     # topic_query_vec hoist, call 2 = paper 0's summary+chunks embed).
+    #
+    # Drives harvest/parse_phase/finish_phase directly instead of ingest(), and calls
+    # `_finish_checkpoint` per-ref instead of `finish_phase(refs)` -- bypassing `finish_phase`'s
+    # `_guard_per_paper` per-paper safety net (T-DOC14 add-on: an in-process exception for one
+    # paper no longer crashes the whole batch by default). This test simulates a genuine process
+    # crash (the scenario "a brand-new SqliteIngestState instance standing in for a fresh process"
+    # below is about) -- an OS-level kill isn't something any Python try/except could catch, so
+    # simulating one must bypass that layer too, exactly like the real thing would.
     run1_state = SqliteIngestState(db_path)
-    orch1 = build_orchestrator(
-        run1_state, EmbedderSpy(fail_on_call=2), RecordingVectorIndex(vector_store)
-    )
+    crashing_embedder = EmbedderSpy(fail_on_call=2)
+    orch1 = build_orchestrator(run1_state, crashing_embedder, RecordingVectorIndex(vector_store))
+    harvested = orch1.harvest(config.focus_area_queries, len(refs))
+    orch1.parse_phase(harvested)
+    topic_query_vec = crashing_embedder.embed([" ".join(config.focus_area_queries)])[0]
     with pytest.raises(RuntimeError):
-        orch1.ingest(config.focus_area_queries, cap=len(refs))
+        for ref in harvested:
+            orch1._finish_checkpoint(ref, topic_query_vec)
 
     assert run1_state.stage_of(refs[0].paper_id) == "summarized"
     assert chunker.calls.count(refs[0].paper_id) == 1
