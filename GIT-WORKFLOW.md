@@ -37,17 +37,26 @@ trailers by default, override or strip that behavior for commits in this repo.
 
 ## Agent git-action authorization
 
-Agents (any tool — Claude Code, OpenCode, etc.) are **always authorized to `git push`, `git pull`/`git
-fetch`, and `git commit`** in this repo without asking first — these are reversible, low-blast-radius
-actions, and asking permission for each one just slows down routine work.
+Agents (any tool — Claude Code, OpenCode, etc.) are **always authorized to `git push` a branch, `git
+pull`/`git fetch`, and `git commit`** in this repo without asking first — these are reversible,
+low-blast-radius actions on a branch, and asking permission for each one just slows down routine work.
 
-**Merging is different and stays gated: an agent must never run `gh pr merge` (or any equivalent merge
-action) on its own initiative, on any PR — foundation-path or not.** Always open/update the PR and leave
-it for the human operator to review and merge, unless the human explicitly asks the agent to merge that
-specific PR in that conversation (a standing "you can always merge" instruction doesn't count — this is
-a per-request, in-the-moment ask each time). This supersedes the older "resolve findings, then merge"
-language for non-foundation PRs below — that merge step is now always the human's, not the agent's; it
-was already true for foundation-path PRs (see Foundation freeze, below), this just makes it universal.
+**This does NOT cover landing anything on `main` directly.** `main` only ever moves via a merged PR.
+Concretely: never `git push origin main` (or `--force` to any branch), never pass `--admin` or any other
+flag/mechanism that bypasses required-PR / required-status-check branch protection, and never run
+`gh pr merge` (or any equivalent merge action) on its own initiative, on any PR — foundation-path or
+not. Always open/update a PR on its own branch and leave it for the human operator to review and merge,
+unless the human explicitly asks the agent to merge that specific PR in that conversation (a standing
+"you can always merge" instruction doesn't count — this is a per-request, in-the-moment ask each time).
+This supersedes the older "resolve findings, then merge" language for non-foundation PRs below — that
+merge step is now always the human's, not the agent's; it was already true for foundation-path PRs (see
+Foundation freeze, below), this just makes it universal.
+
+**One documented exception, not a precedent:** on 2026-07-14 an agent pushed one doc-only commit
+directly to `main`, bypassing branch protection — the human operator noticed, flagged it, and accepted
+it as a one-time exception while writing this rule specifically to prevent it recurring. If you're an
+agent reading this and considering a direct push to `main` "just this once," the answer is no — that
+exact reasoning is why this section exists.
 
 ## PR flow
 
