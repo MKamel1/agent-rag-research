@@ -240,10 +240,14 @@ def _assemble_parsed_doc(
     blocks, figures, tables, raw_refs = _build_blocks(content_list, page_sizes, paper_id, page_dir)
 
     if not blocks:
-        raise PermanentError(
+        err = PermanentError(
             f"MinerU produced no usable content blocks for this {n_pages}-page PDF -- likely a "
             "scanned/image-only or otherwise unparseable document"
         )
+        # No raw PDF bytes at hand here (this is post-do_parse assembly) -- page count is already
+        # trivially available and is itself useful diagnostic context for this failure mode.
+        err.diagnostics = {"page_count": n_pages}
+        raise err
 
     references = _fetch_references(raw_refs, grobid_url) if raw_refs else []
 
@@ -274,11 +278,13 @@ def _reject_latex_archive(raw: bytes) -> None:
     is_gzip = raw[:2] == b"\x1f\x8b"
     is_tar = len(raw) > 262 and raw[257:262] == b"ustar"
     if is_gzip or is_tar:
-        raise PermanentError(
+        err = PermanentError(
             "input looks like a LaTeX-source archive (gzip/tar), not a PDF -- the arXiv-LaTeX "
             "ingest path is not implemented in V0 (PHASE0-RUNBOOK.md Spike-1 footnote); route this "
             "paper's PDF instead"
         )
+        err.diagnostics = {"pdf_size_bytes": len(raw)}
+        raise err
 
 
 def _validate_pdf(raw: bytes) -> int:
@@ -292,9 +298,13 @@ def _validate_pdf(raw: bytes) -> int:
         n_pages = len(doc)
         doc.close()
     except PdfiumError as e:
-        raise PermanentError(f"unparseable PDF: {e}") from e
+        err = PermanentError(f"unparseable PDF: {e}")
+        err.diagnostics = {"pdf_size_bytes": len(raw)}
+        raise err from e
     if n_pages == 0:
-        raise PermanentError("PDF has zero pages")
+        err = PermanentError("PDF has zero pages")
+        err.diagnostics = {"pdf_size_bytes": len(raw)}
+        raise err
     return n_pages
 
 
@@ -345,7 +355,12 @@ def _call_do_parse(workdir: Path, stems: list[str], raws: list[bytes]) -> None:
         )
     except (RuntimeError, ValueError, OSError, PdfiumError) as e:
         noun = "PDF" if len(stems) == 1 else f"batch of {len(stems)} PDFs"
-        raise PermanentError(f"MinerU pipeline backend failed to parse this {noun}: {e}") from e
+        err = PermanentError(f"MinerU pipeline backend failed to parse this {noun}: {e}")
+        # Opportunistic only -- pdf_size_bytes is cheaply at hand (raws is already in memory);
+        # a per-document breakdown for a batch failure would need more than this catch site
+        # trivially has, so this is a total, not a per-document list.
+        err.diagnostics = {"pdf_size_bytes": sum(len(r) for r in raws)}
+        raise err from e
 
 
 def _read_mineru_output(
@@ -372,7 +387,11 @@ def _read_mineru_output(
         content_list = json.loads(content_list_path.read_text())
         middle = json.loads(middle_json_path.read_text())
     except (OSError, json.JSONDecodeError) as e:
-        raise PermanentError(f"MinerU produced no readable output for this PDF: {e}") from e
+        err = PermanentError(f"MinerU produced no readable output for this PDF: {e}")
+        # No raw PDF bytes at hand at this point (output-reading happens after do_parse, off
+        # disk) -- the stage name is the only thing trivially available here.
+        err.diagnostics = {"stage": "read_mineru_output"}
+        raise err from e
 
     page_sizes = {p["page_idx"]: tuple(p["page_size"]) for p in middle.get("pdf_info", [])}
     markdown = md_path.read_text() if md_path.exists() else ""

@@ -16,6 +16,7 @@ Interface: the same three methods `rag/orchestrator.py` composes against
 `get`/`checkpoint`/`quarantine` -- plus `stage_of` as a test convenience, mirroring the fake.
 """
 
+import json
 import logging
 import sqlite3
 import threading
@@ -132,6 +133,11 @@ class SqliteIngestState:
         because the quarantine row is a dead-letter record of the *original* failure, not a
         mutable checkpoint. A bookkeeping failure for an already-failed paper must never crash the
         batch for every other paper still in flight (CONVENTIONS.md §4).
+
+        Also opportunistically records `quarantine_diagnostics` (`error_type` = `type(error).__name__`,
+        `diagnostics_json` = `error`'s optional `.diagnostics` attribute if set -- see
+        `contracts/errors.py`'s module docstring for the `.diagnostics` convention) with the same
+        idempotent `ON CONFLICT DO NOTHING` semantics.
         """
 
         def _quarantine(conn: sqlite3.Connection) -> None:
@@ -154,6 +160,12 @@ class SqliteIngestState:
                     stage,
                     str(error),
                 )
+            diagnostics = getattr(error, "diagnostics", None)
+            conn.execute(
+                "INSERT INTO quarantine_diagnostics (paper_id, error_type, diagnostics_json) "
+                "VALUES (?, ?, ?) ON CONFLICT(paper_id) DO NOTHING",
+                (paper_id, type(error).__name__, json.dumps(diagnostics) if diagnostics is not None else None),
+            )
             conn.execute("DELETE FROM ingest_state WHERE paper_id = ?", (paper_id,))
             conn.execute("DELETE FROM ingest_checkpoint WHERE paper_id = ?", (paper_id,))
 

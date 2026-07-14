@@ -10,6 +10,9 @@ section names as "DO NOT CREATE IN V0".
 T-A2 checkpoint-durability fix (`.phase0-data/orchestrator-checkpoint-proposal.md`, Option A) added
 0002_ingest_checkpoint.sql, additive to 0001_init.sql's V0 set — `migrate()` now applies both, so
 `ALL_TABLES` (not `V0_TABLES`) is what a freshly migrated database actually contains.
+
+T-DOC17 parse-failure-diagnostics fix added 0003_quarantine_diagnostics.sql, additive to
+`quarantine` — `ALL_TABLES` now also includes `quarantine_diagnostics`.
 """
 
 import re
@@ -21,13 +24,14 @@ import pytest
 from migrations.migrate import migrate
 
 V0_TABLES = {"papers", "blocks", "chunks", "summaries", "ingest_state", "quarantine"}
-ALL_TABLES = V0_TABLES | {"ingest_checkpoint"}
+ALL_TABLES = V0_TABLES | {"ingest_checkpoint", "quarantine_diagnostics"}
 V1_TABLES_NOT_CREATED = {"claims", "claim_relations", "citation_edges"}
 
 REPO_ROOT = Path(__file__).parent.parent
 DATA_CONTRACTS = REPO_ROOT / "DATA-CONTRACTS.md"
 SCHEMA_FILE = Path(__file__).parent / "0001_init.sql"
 CHECKPOINT_SCHEMA_FILE = Path(__file__).parent / "0002_ingest_checkpoint.sql"
+QUARANTINE_DIAGNOSTICS_SCHEMA_FILE = Path(__file__).parent / "0003_quarantine_diagnostics.sql"
 
 
 def _table_names(conn: sqlite3.Connection) -> set[str]:
@@ -131,6 +135,32 @@ def test_0002_ingest_checkpoint_matches_data_contracts_schema():
         contracts_conn.executescript(contracts_sql)
         init_conn.executescript(SCHEMA_FILE.read_text())
         init_conn.executescript(checkpoint_sql)
+
+        assert _table_names(contracts_conn) == _table_names(init_conn) == ALL_TABLES
+        assert _schema_snapshot(contracts_conn) == _schema_snapshot(init_conn)
+    finally:
+        contracts_conn.close()
+        init_conn.close()
+
+
+def test_0003_quarantine_diagnostics_matches_data_contracts_schema():
+    """Same DDL parity check, for the additive `quarantine_diagnostics` table (T-DOC17
+    parse-failure-diagnostics fix). `quarantine_diagnostics` REFERENCES `quarantine`, so
+    0001_init.sql must be applied first for the FK-bearing DDL to parse."""
+    contracts_sql = _extract_schema_sql_block(
+        DATA_CONTRACTS.read_text(), "### quarantine_diagnostics"
+    )
+    diagnostics_sql = QUARANTINE_DIAGNOSTICS_SCHEMA_FILE.read_text()
+
+    contracts_conn = sqlite3.connect(":memory:")
+    init_conn = sqlite3.connect(":memory:")
+    try:
+        contracts_conn.executescript(SCHEMA_FILE.read_text())
+        contracts_conn.executescript(CHECKPOINT_SCHEMA_FILE.read_text())
+        contracts_conn.executescript(contracts_sql)
+        init_conn.executescript(SCHEMA_FILE.read_text())
+        init_conn.executescript(CHECKPOINT_SCHEMA_FILE.read_text())
+        init_conn.executescript(diagnostics_sql)
 
         assert _table_names(contracts_conn) == _table_names(init_conn) == ALL_TABLES
         assert _schema_snapshot(contracts_conn) == _schema_snapshot(init_conn)

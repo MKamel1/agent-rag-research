@@ -13,6 +13,7 @@ through `IngestionOrchestrator`, with a brand-new `SqliteIngestState` instance s
 fresh process on resume (not a shared Python object, unlike every other resume test in this repo).
 """
 
+import json
 import sqlite3
 from datetime import date
 
@@ -20,6 +21,7 @@ import pytest
 
 from contracts.chunker import Chunk
 from contracts.config import Config
+from contracts.errors import PermanentError
 from contracts.harvester import PaperRef
 from contracts.ingest_state import CheckpointArtifacts
 from contracts.parser import ParsedDoc
@@ -202,6 +204,82 @@ def test_quarantine_is_idempotent_for_an_already_quarantined_paper(tmp_path):
     # state stays absent either way -- matches the "looks never-harvested" contract harvest()
     # relies on to safely retry a quarantined paper.
     assert state.get(ref.paper_id) is None
+
+
+# ================================================================================================
+# quarantine_diagnostics (T-DOC17 parse-failure-diagnostics fix, migrations/0003_*.sql)
+# ================================================================================================
+
+
+def _diagnostics_row(db_path: str, paper_id: str):
+    with sqlite3.connect(db_path) as conn:
+        return conn.execute(
+            "SELECT error_type, diagnostics_json FROM quarantine_diagnostics WHERE paper_id = ?",
+            (paper_id,),
+        ).fetchone()
+
+
+def test_quarantine_records_error_type_for_a_generic_exception(tmp_path):
+    # Not parser-specific: error_type is captured for ANY exception passed to quarantine(),
+    # generic stdlib ones included.
+    db_path = str(tmp_path / "test.sqlite")
+    migrate(db_path)
+    state = SqliteIngestState(db_path)
+
+    ref = _make_ref(0)
+    state.quarantine(ref.paper_id, "parsed", ValueError("bad value"))
+
+    assert _diagnostics_row(db_path, ref.paper_id) == ("ValueError", None)
+
+
+def test_quarantine_records_error_type_for_a_taxonomy_exception(tmp_path):
+    db_path = str(tmp_path / "test.sqlite")
+    migrate(db_path)
+    state = SqliteIngestState(db_path)
+
+    ref = _make_ref(0)
+    state.quarantine(ref.paper_id, "parsed", PermanentError("unparseable PDF"))
+
+    error_type, diagnostics_json = _diagnostics_row(db_path, ref.paper_id)
+    assert error_type == "PermanentError"
+    assert diagnostics_json is None
+
+
+def test_quarantine_captures_diagnostics_json_when_error_carries_diagnostics(tmp_path):
+    db_path = str(tmp_path / "test.sqlite")
+    migrate(db_path)
+    state = SqliteIngestState(db_path)
+
+    ref = _make_ref(0)
+    err = PermanentError("unparseable PDF")
+    err.diagnostics = {"pdf_size_bytes": 1234}
+    state.quarantine(ref.paper_id, "parsed", err)
+
+    error_type, diagnostics_json = _diagnostics_row(db_path, ref.paper_id)
+    assert error_type == "PermanentError"
+    assert json.loads(diagnostics_json) == {"pdf_size_bytes": 1234}
+
+
+def test_quarantine_diagnostics_is_idempotent_for_an_already_quarantined_paper(tmp_path):
+    # Mirrors test_quarantine_is_idempotent_for_an_already_quarantined_paper for `quarantine`
+    # itself -- a second quarantine() call for an already-quarantined paper_id must not crash or
+    # overwrite quarantine_diagnostics either.
+    db_path = str(tmp_path / "test.sqlite")
+    migrate(db_path)
+    state = SqliteIngestState(db_path)
+
+    ref = _make_ref(0)
+    first = PermanentError("first failure")
+    first.diagnostics = {"pdf_size_bytes": 111}
+    state.quarantine(ref.paper_id, "parsed", first)
+
+    second = ValueError("different failure entirely")
+    second.diagnostics = {"pdf_size_bytes": 222}
+    state.quarantine(ref.paper_id, "summarized", second)  # must not raise
+
+    error_type, diagnostics_json = _diagnostics_row(db_path, ref.paper_id)
+    assert error_type == "PermanentError"  # first reason wins
+    assert json.loads(diagnostics_json) == {"pdf_size_bytes": 111}
 
 
 # ================================================================================================
