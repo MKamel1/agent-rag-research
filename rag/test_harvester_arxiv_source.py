@@ -117,6 +117,78 @@ def test_fetch_stops_when_a_page_comes_back_empty(monkeypatch):
     assert list(source.fetch(["x"], cap=100, ordering="freshest_first")) == []
 
 
+# --- T-DOC8: one request per focus_area entry, not one combined boolean-OR query -----------------
+# (root cause: a real ~1,100-char " OR "-joined query is genuinely unreliable at any timeout, see
+# harvester.py's `fetch()` docstring for the real measured numbers.)
+
+
+def test_fetch_issues_one_query_per_focus_area_entry_not_one_combined_query():
+    queries_seen = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        queries_seen.append(request.url.params["search_query"])
+        return httpx.Response(200, text=_EMPTY_FEED)
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    source = make_source(client=client, page_size=10)
+    list(
+        source.fetch(["causal inference", "causal discovery"], cap=100, ordering="freshest_first")
+    )
+    # Each entry gets its own bare `all:<term>` query -- never the old " OR "-joined megastring.
+    assert queries_seen == ["all:causal inference", "all:causal discovery"]
+
+
+def test_fetch_shares_one_cap_budget_across_focus_area_entries():
+    # cap is a total budget across the whole focus_area list, not per-entry -- otherwise 33
+    # entries at corpus_cap=15000 each would massively over-fetch.
+    def handler(request: httpx.Request) -> httpx.Response:
+        start = int(request.url.params["start"])
+        entry_id = f"2504.0999{start}v1"
+        body = _ATOM_ENTRY.replace("2504.09999v2", entry_id)
+        return httpx.Response(200, text=body)
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    source = make_source(client=client, page_size=1)
+    refs = list(source.fetch(["term-a", "term-b", "term-c"], cap=2, ordering="freshest_first"))
+    assert len(refs) == 2  # stops at the shared cap, never reaches term-c
+
+
+def test_fetch_moves_to_the_next_focus_area_entry_when_one_is_exhausted():
+    # term-a comes back empty immediately; term-b then contributes one page (its second page is
+    # empty, same as any real exhausted term) -- proves fetch() doesn't stop early just because
+    # one entry has no matches.
+    term_b_calls = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        query = request.url.params["search_query"]
+        if query == "all:term-a":
+            return httpx.Response(200, text=_EMPTY_FEED)
+        term_b_calls.append(request.url.params["start"])
+        if len(term_b_calls) == 1:
+            return httpx.Response(200, text=_ATOM_ENTRY)
+        return httpx.Response(200, text=_EMPTY_FEED)
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    source = make_source(client=client, page_size=10)
+    refs = list(source.fetch(["term-a", "term-b"], cap=100, ordering="freshest_first"))
+    assert len(refs) == 1
+    assert refs[0].paper_id == "2504.09999"
+
+
+def test_fetch_applies_rate_limit_sleep_between_requests_across_focus_area_entries():
+    sleeps = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, text=_EMPTY_FEED)
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    source = ArxivSource(client=client, sleep=lambda s: sleeps.append(s), page_size=10)
+    list(source.fetch(["term-a", "term-b", "term-c"], cap=100, ordering="freshest_first"))
+    # 3 requests total (one per term, each exhausted on its first empty page) -> 2 sleeps; never
+    # sleeps before the very first request of the whole fetch().
+    assert sleeps == [3.0, 3.0]
+
+
 @pytest.mark.real_adapter  # hits the real export.arxiv.org API — never run by default
 def test_real_arxiv_api_returns_one_well_formed_paper_ref():
     """Never exercised against the actual vendor before now -- only the canned Atom feed above.
