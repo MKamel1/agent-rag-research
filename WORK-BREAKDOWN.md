@@ -290,17 +290,27 @@ ID" rule rather than left as bare PR titles/branch names. All merged to `main`.
 - **T-DOC10** (PR #68, `T-DOC10-harvest-quarantine-visibility`) — wire a real `QuarantineSink` for
   harvest-level failures (`app/assembly.py`'s `_sqlite_harvest_quarantine_sink`); previously an
   exhausted-retry-budget harvest failure was silently dropped (no DB row, no log line).
-- **T-DOC12** (`T-DOC12-parse-phase-error-boundary`) — a real 2,000-paper end-to-end run crashed
+- **T-DOC12** (PR #75, `T-DOC12-parse-phase-error-boundary`) — a real 2,000-paper end-to-end run crashed
   the whole `parse_phase()` subprocess (and, via `app/ingest.py`'s `subprocess.run(...,
-  check=True)`, the parent `app.ingest` process too) when one paper's GROBID reference-extraction
+  check=True)`, the parent `app.ingest` process too) when one paper's reference-extraction
   call raised `TransientError`: `rag/orchestrator.py`'s `_prepare()` only ever caught
   `PermanentError` around `parser.parse(ref)`, so the `TransientError` propagated out of
   `ingest()` and every paper still queued behind the failing one lost its progress for that run.
   Added a bounded retry (`IngestionOrchestrator.__init__`'s new `max_retries`/`retry_sleep`,
   same shape as `rag/harvester.py`'s `Harvester`) then quarantine for `TransientError` from
   `parser.parse`, alongside the pre-existing (and already-correct) immediate quarantine for
-  `PermanentError`. `_finish()`'s matching gap (`summarizer.summarize`/`embedder.embed` in
-  `finish_phase()`) was found but is a separate, not-yet-filed follow-up ticket.
+  `PermanentError`.
+- **T-DOC13** (PR #76, `T-DOC13-finish-phase-error-boundary`) — the `_finish()`/`finish_phase()`
+  (Pass 2) analog of T-DOC12 (`_prepare()`/`parse_phase()`, Pass 1), found while fixing T-DOC12 and
+  filed as its direct follow-up: `summarizer.summarize()` only guarded `PermanentError` (a
+  `TransientError` propagated uncaught and would crash the whole `finish_phase()` subprocess, same
+  shape as the crash T-DOC12 fixed); both `embedder.embed()` call sites (main path and the
+  stored->done resume path) were guarded against neither error type at all. Added the same
+  bounded-retry-then-quarantine shape T-DOC12 established (`max_retries`/`retry_sleep`, same
+  exponential backoff). Also found and fixed the same gap in `_upsert_record`'s
+  `vector_index.upsert()` calls while auditing this method for the same bug class -- not named in
+  the original ticket, only `TransientError` applies there (the real vector-store adapter never
+  raises `PermanentError`).
 
 ---
 
