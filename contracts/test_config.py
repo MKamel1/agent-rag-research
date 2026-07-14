@@ -21,6 +21,7 @@ def test_constructs_with_only_the_one_required_field_and_documented_v0_defaults(
     assert config.rerank_depth == 50
     assert config.hybrid_dense_weight == pytest.approx(0.5)
     assert config.gpu_lock_path == ".gpu.lock"
+    assert config.parse_batch_size == 4
 
 
 def test_focus_area_queries_is_required():

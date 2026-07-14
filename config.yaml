@@ -77,3 +77,8 @@ hybrid_dense_weight: 0.5
 
 # both composition roots (IngestionOrchestrator, McpServer) build their real GpuLock from this path
 gpu_lock_path: ".gpu.lock"
+
+# Pass 1 parse_phase: papers per Parser.parse_batch/MinerU do_parse call (T-DOC16,
+# .phase0-data/pass1-gpu-underutilization.md). Conservative default -- real-GPU/host-RAM
+# validation at this N is still pending, see that doc.
+parse_batch_size: 4

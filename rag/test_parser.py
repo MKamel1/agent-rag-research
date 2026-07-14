@@ -28,8 +28,14 @@ What waits on Spike-1 golden fixtures (DEFERRED — see PR body; TEST-STRATEGY.m
   and this suite deliberately does not depend on them.
 """
 
+import hashlib
+import io
+import json
+import sys
+import types
 from pathlib import Path
 
+import pypdfium2 as pdfium
 import pytest
 
 _mod = pytest.importorskip("rag.parser")  # SKIPS the whole module until rag/parser.py exists
@@ -39,6 +45,7 @@ from contracts.parser import Figure, ParsedDoc, Reference, TableItem  # noqa: E4
 from contracts.provenance import Block  # noqa: E402
 
 parse = _mod.parse
+parse_batch = _mod.parse_batch
 
 _FAKE_BBOX = (0.0, 0.0, 0.0, 0.0)  # the forbidden "fake" bbox (OWNER-B.md scope fence)
 _GOLDEN_DIR = Path(__file__).resolve().parents[1] / "fixtures" / "golden"
@@ -180,6 +187,154 @@ def test_unparseable_input_raises_permanent_error(bad_input, why):
     # ARCHITECTURE.md §M2: parse failure -> typed error -> quarantine (NOT a crash, NOT Transient).
     with pytest.raises(PermanentError):
         parse(bad_input)
+
+
+# ---------------------------------------------------------------------------
+# parse_batch() (T-DOC16, .phase0-data/pass1-gpu-underutilization.md). Exercises the real
+# `_call_do_parse`/`_read_mineru_output`/`_assemble_parsed_doc` plumbing against a fake
+# `mineru.cli.common.do_parse` -- injected straight into `sys.modules`, never the real installed
+# `mineru` package, so this stays exactly as zero-GPU/zero-heavy-import as the rest of this
+# module's own "lazy import" design goal (module docstring: "importing rag.parser never pulls in
+# torch/mineru unless a PDF actually reaches MinerU"). The fake writes the same three output files
+# (`_content_list.json`, `_middle.json`, `.md`) a real `do_parse` call would, under
+# `output_dir/{stem}/auto/`. Inputs are real (pypdfium2-built) one-page PDFs so `_validate_pdf` --
+# which gates every call before MinerU is ever reached -- passes; distinct page sizes give each
+# one a distinct content hash, so each gets its own `stem`.
+# ---------------------------------------------------------------------------
+
+
+def _install_fake_do_parse(monkeypatch, fake_do_parse) -> None:
+    """Inject a fake `mineru.cli.common` module (bearing `do_parse = fake_do_parse`) straight into
+    `sys.modules`, so `rag.parser`'s lazy `from mineru.cli.common import do_parse` picks it up
+    without ever importing the real (torch-heavy, optionally network-probing) `mineru` package --
+    works whether or not `mineru` is actually installed in the environment running this test.
+    """
+    fake_common = types.ModuleType("mineru.cli.common")
+    fake_common.do_parse = fake_do_parse
+    fake_cli = types.ModuleType("mineru.cli")
+    fake_cli.common = fake_common
+    fake_mineru = types.ModuleType("mineru")
+    fake_mineru.cli = fake_cli
+    monkeypatch.setitem(sys.modules, "mineru", fake_mineru)
+    monkeypatch.setitem(sys.modules, "mineru.cli", fake_cli)
+    monkeypatch.setitem(sys.modules, "mineru.cli.common", fake_common)
+
+
+def _one_page_pdf_bytes(width: float, height: float) -> bytes:
+    doc = pdfium.PdfDocument.new()
+    doc.new_page(width, height)
+    buf = io.BytesIO()
+    doc.save(buf)
+    return buf.getvalue()
+
+
+def _stem_of(raw: bytes) -> str:
+    return hashlib.sha256(raw).hexdigest()[:16]
+
+
+def _write_fake_mineru_output(output_dir: Path, stem: str, *, text: str) -> None:
+    """Write the same three files `_read_mineru_output` reads back, for one `stem` -- a minimal
+    but real content_list/middle.json pair (one text block, on a page MinerU would have recorded
+    at 612x792pt) so `_assemble_parsed_doc` builds a real, invariant-satisfying `ParsedDoc`.
+    """
+    page_dir = output_dir / stem / "auto"
+    page_dir.mkdir(parents=True, exist_ok=True)
+    content_list = [
+        {"type": "text", "page_idx": 0, "bbox": [100, 100, 900, 200], "text": text, "text_level": 0}
+    ]
+    middle = {"pdf_info": [{"page_idx": 0, "page_size": [612, 792]}]}
+    (page_dir / f"{stem}_content_list.json").write_text(json.dumps(content_list))
+    (page_dir / f"{stem}_middle.json").write_text(json.dumps(middle))
+    (page_dir / f"{stem}.md").write_text(f"# Doc\n\n{text}")
+
+
+def _fake_do_parse_writing(output_dir: Path, texts_by_stem: dict[str, str], *, skip: set[str] = frozenset()):
+    """A `mineru.cli.common.do_parse`-shaped stand-in: writes valid output for every stem in
+    `texts_by_stem` except those in `skip` (simulating "MinerU produced no output for this one
+    member" without needing a real corrupt PDF to trigger it)."""
+
+    def _fake(*, output_dir: str, pdf_file_names: list[str], pdf_bytes_list: list[bytes], **kwargs):
+        for stem in pdf_file_names:
+            if stem in skip:
+                continue
+            _write_fake_mineru_output(Path(output_dir), stem, text=texts_by_stem[stem])
+
+    return _fake
+
+
+def test_parse_batch_is_callable():
+    assert callable(parse_batch)
+
+
+def test_parse_batch_empty_list_returns_empty_list():
+    assert parse_batch([]) == []
+
+
+def test_parse_batch_returns_parseddocs_in_order_on_full_success(tmp_path, monkeypatch):
+    raws = [_one_page_pdf_bytes(w, h) for w, h in [(200, 200), (300, 300), (400, 400)]]
+    stems = [_stem_of(r) for r in raws]
+    texts = {stem: f"body text for document {i}" for i, stem in enumerate(stems)}
+    _install_fake_do_parse(monkeypatch, _fake_do_parse_writing(tmp_path, texts))
+
+    docs = parse_batch(raws, output_dir=tmp_path)
+
+    assert len(docs) == 3
+    assert [d.paper_id for d in docs] == stems  # same order as raws (no arXiv id -> falls back to stem)
+    for doc, stem in zip(docs, stems, strict=True):
+        assert texts[stem] in doc.markdown
+        assert_parseddoc_invariants(doc)
+
+
+def test_parse_batch_single_item_batch_works(tmp_path, monkeypatch):
+    raw = _one_page_pdf_bytes(250, 250)
+    stem = _stem_of(raw)
+    _install_fake_do_parse(monkeypatch, _fake_do_parse_writing(tmp_path, {stem: "solo document"}))
+
+    docs = parse_batch([raw], output_dir=tmp_path)
+
+    assert len(docs) == 1
+    assert_parseddoc_invariants(docs[0])
+
+
+def test_parse_batch_raises_and_returns_nothing_when_one_members_output_is_missing(
+    tmp_path, monkeypatch
+):
+    # T-DOC16's most important guarantee: one bad document must not silently lose or corrupt the
+    # other N-1 good ones -- there is no return value at all on a batch failure, only a raise.
+    raws = [_one_page_pdf_bytes(w, h) for w, h in [(200, 200), (300, 300), (400, 400)]]
+    stems = [_stem_of(r) for r in raws]
+    texts = {stem: f"body text for document {i}" for i, stem in enumerate(stems)}
+    _install_fake_do_parse(
+        monkeypatch,
+        _fake_do_parse_writing(tmp_path, texts, skip={stems[1]}),  # the middle doc's output "never lands"
+    )
+
+    with pytest.raises(PermanentError):
+        parse_batch(raws, output_dir=tmp_path)
+
+
+def test_parse_batch_maps_do_parse_exception_to_permanent_error(tmp_path, monkeypatch):
+    def _raising_do_parse(**kwargs):
+        raise RuntimeError("simulated MinerU pipeline crash")
+
+    _install_fake_do_parse(monkeypatch, _raising_do_parse)
+    raws = [_one_page_pdf_bytes(200, 200), _one_page_pdf_bytes(300, 300)]
+
+    with pytest.raises(PermanentError):
+        parse_batch(raws, output_dir=tmp_path)
+
+
+def test_parse_batch_rejects_unparseable_member_before_calling_do_parse(tmp_path, monkeypatch):
+    # A batch member failing `_validate_pdf`/`_reject_latex_archive` fails the whole batch too --
+    # same whole-batch-fails contract, cheaper (no MinerU call needed to know it's bad).
+    def _unexpectedly_called_do_parse(**kwargs):
+        raise AssertionError("do_parse must not be called when a batch member is unparseable")
+
+    _install_fake_do_parse(monkeypatch, _unexpectedly_called_do_parse)
+    raws = [_one_page_pdf_bytes(200, 200), b"not a pdf at all"]
+
+    with pytest.raises(PermanentError):
+        parse_batch(raws, output_dir=tmp_path)
 
 
 # ---------------------------------------------------------------------------
