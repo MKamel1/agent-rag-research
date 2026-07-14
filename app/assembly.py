@@ -15,7 +15,7 @@ import httpx
 
 from contracts.config import Config
 from contracts.embedder import EmbedderInfo
-from contracts.errors import PermanentError
+from contracts.errors import PermanentError, TransientError
 from contracts.harvester import PaperRef
 from contracts.parser import ParsedDoc
 from rag.chunker import Chunker
@@ -49,6 +49,16 @@ _QDRANT_PORT = 6333
 # this is direct PDF fetching, not the query API, so half that is a defensible, simpler bound --
 # enough spacing to avoid 429s without meaningfully slowing the parse phase.
 _PDF_DOWNLOAD_DELAY_SECONDS = 1.5
+# One-time backoff before the single retry below -- deliberately not the harvester's
+# retry_counts/max_retries/exponential-backoff machinery (rag/harvester.py's `Harvester`): that's
+# sized for a paginated 15k-paper search stream, not a single-file download with one bounded
+# retry. A second constant, not reused, because it answers a different question (how long to
+# wait before re-attempting) than the inter-request delay above (how long to wait after
+# resolving, before the next paper).
+_PDF_DOWNLOAD_RETRY_BACKOFF_SECONDS = 2.0
+# Statuses worth one retry -- rate-limited or a transient server-side hiccup. Not 404/permanent
+# statuses (CONVENTIONS.md §4: those are `PermanentError`, no retry).
+_RETRYABLE_STATUSES = {429, 502, 503, 504}
 
 
 class _PdfDownloadParser:
@@ -58,7 +68,13 @@ class _PdfDownloadParser:
     is composition-root wiring, not part of the Parser module's own contract.
 
     `sleep` is constructor-injectable (default `time.sleep`), same pattern as
-    `rag.harvester.ArxivSource`, so a unit test can assert the delay fires without a real sleep.
+    `rag.harvester.ArxivSource`, so a unit test can assert the delay/backoff fire without a real
+    sleep.
+
+    A transient download failure (429/502/503/504, a timeout, or a transport error --
+    CONVENTIONS.md §4) gets exactly one retry after a short backoff, then `PermanentError` if it
+    fails again. A genuinely permanent failure (404, or whatever `rag.parser.parse` raises for an
+    unparseable PDF) is not retried.
     """
 
     def __init__(self, client: httpx.Client, *, sleep: Callable[[float], None] = time.sleep):
@@ -67,16 +83,39 @@ class _PdfDownloadParser:
 
     def parse(self, ref: PaperRef) -> ParsedDoc:
         try:
+            content = self._download(ref)
+        finally:
+            # Fires exactly once per `parse()` call -- success or final failure -- once the
+            # retry below (if any) has resolved, so it stays a once-per-paper spacing rather
+            # than stacking with the retry backoff.
+            self._sleep(_PDF_DOWNLOAD_DELAY_SECONDS)
+        return parse_pdf_bytes(content)
+
+    def _download(self, ref: PaperRef) -> bytes:
+        try:
+            return self._download_once(ref)
+        except TransientError:
+            self._sleep(_PDF_DOWNLOAD_RETRY_BACKOFF_SECONDS)
+            try:
+                return self._download_once(ref)
+            except TransientError as retry_error:
+                raise PermanentError(
+                    f"failed to download PDF from {ref.pdf_url} after retry: {retry_error}"
+                ) from retry_error
+
+    def _download_once(self, ref: PaperRef) -> bytes:
+        try:
             resp = self._client.get(ref.pdf_url)
             resp.raise_for_status()
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code in _RETRYABLE_STATUSES:
+                raise TransientError(f"failed to download PDF from {ref.pdf_url}: {e}") from e
+            raise PermanentError(f"failed to download PDF from {ref.pdf_url}: {e}") from e
+        except (httpx.TimeoutException, httpx.TransportError) as e:
+            raise TransientError(f"failed to download PDF from {ref.pdf_url}: {e}") from e
         except httpx.HTTPError as e:
             raise PermanentError(f"failed to download PDF from {ref.pdf_url}: {e}") from e
-        finally:
-            # Spaces out consecutive downloads regardless of success/failure -- a failed
-            # request still counts against arXiv's rate limit, and the next `parse()` call
-            # (next paper in the orchestrator's loop) shouldn't fire immediately after it.
-            self._sleep(_PDF_DOWNLOAD_DELAY_SECONDS)
-        return parse_pdf_bytes(resp.content)
+        return resp.content
 
 
 def build_ingestion_orchestrator(
