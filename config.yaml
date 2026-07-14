@@ -63,7 +63,13 @@ sources:
   - "arxiv"
 relevance_filter: "off"
 
-# retrieval knobs (tuned in Spike 2 — these are the V0 defaults until then)
+# retrieval knobs — V0 defaults. Spike 2 (PR #46, phase0-results.md) locked the embedder
+# (Qwen3-Embedding-4B) and reranker (BGE-reranker-v2-m3) choices themselves, served over TEI as
+# Docker services (see ARCHITECTURE.md/PRD.md ADR-02/ADR-10) — there is no `embedder_model` /
+# `reranker_model` key here because `Config` (contracts/config.py, foundation-protected) has no
+# such field; the model choice lives in the TEI service config, not this file. The knobs below
+# (top_k, rerank_depth, hybrid_dense_weight) are themselves untouched by the Spike-2 lock and
+# remain the V0 defaults.
 child_parent_expansion: true
 top_k: 10
 rerank_depth: 50
