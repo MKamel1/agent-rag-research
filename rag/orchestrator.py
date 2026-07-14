@@ -113,12 +113,14 @@ class IngestionOrchestrator:
     to call from two threads concurrently (see module docstring, "Cross-thread `state` access").
     Postconditions: `ingest()` is idempotent (a fully-`done` corpus re-run touches no stage) and
     resumable at every stage boundary; a `PermanentError` from `parser.parse`/
-    `summarizer.summarize` quarantines that one paper and the run continues; a `TransientError`
-    from `parser.parse` gets a bounded retry (`max_retries`, `retry_sleep` -- same shape as
-    `rag/harvester.py`'s `Harvester`) and then quarantines if the retry budget is exhausted
-    (T-DOC12 -- a real end-to-end run crashed the whole `parse_phase()` subprocess on an
-    unretried GROBID `TransientError` propagating out of `parser.parse`, CONVENTIONS.md §4's
-    "retry with backoff, then quarantine" was simply never wired up for this call). Any other
+    `summarizer.summarize`/`embedder.embed`/`vector_index.upsert` quarantines that one paper and
+    the run continues; a `TransientError` from any of those four calls gets a bounded retry
+    (`max_retries`, `retry_sleep` -- same shape as `rag/harvester.py`'s `Harvester`) and then
+    quarantines if the retry budget is exhausted (T-DOC12/T-DOC13 -- two real end-to-end run
+    crashes, first a `parse_phase()` subprocess crash on an unretried GROBID `TransientError` out
+    of `parser.parse` (T-DOC12, PR #75), then the identical gap found in `_finish`/`finish_phase`
+    before it could crash the same way (T-DOC13, PR #76) -- CONVENTIONS.md §4's "retry with
+    backoff, then quarantine" was simply never wired up for any of these four calls). Any other
     exception propagates out of `ingest()` and stops the run (CONVENTIONS.md §4 -- everything
     else is a bug or an infrastructure failure worth crashing loud on).
     """
@@ -152,20 +154,19 @@ class IngestionOrchestrator:
         self._state = state
         self._gpu_lock = gpu_lock  # wired through to the composition root; never acquired here.
         self._config = config
-        # Bounded retry for a `TransientError` from `parser.parse` (T-DOC12) -- same
-        # (`max_retries`, `retry_sleep`) API shape as `rag/harvester.py`'s `Harvester`, so the
-        # bounded-retry call sites in this codebase read the same way. `retry_sleep` defaults to
+        # Bounded retry for a `TransientError` from `parser.parse` (T-DOC12), and from
+        # `summarizer.summarize`/`embedder.embed`/`vector_index.upsert` (T-DOC13) -- same
+        # (`max_retries`, `retry_sleep`) API shape as `rag/harvester.py`'s `Harvester`, so every
+        # bounded-retry call site in this codebase reads the same way. `retry_sleep` defaults to
         # real `time.sleep`; tests inject a no-op/recording stand-in.
         #
-        # Ownership differs from the other two retry sites, though, and deliberately so: both
+        # Ownership differs from the other retry sites, though, and deliberately so: both
         # `Harvester` and `app/assembly.py`'s `_PdfDownloadParser` retry entirely *inside* the
         # adapter touching the flaky I/O, so their caller never sees a retryable error at all.
         # Here the retry lives in the Orchestrator instead, because the Orchestrator already owned
-        # the quarantine decision for `parser`'s `PermanentError` before this change (see
-        # `_parse_with_retry` below) -- this just extends that pre-existing, parser-specific
-        # ownership to `TransientError` too; it is not "the Orchestrator retries its collaborators"
-        # as a house style. A future fix for `_finish`'s identical gap around
-        # `summarizer`/`embedder` should re-derive its own seam, not copy this one by default.
+        # the quarantine decision for `PermanentError` from all four calls before this change --
+        # this just extends that pre-existing, per-call quarantine ownership to `TransientError`
+        # too; it is not "the Orchestrator retries its collaborators" as a house style.
         self._max_retries = max_retries
         self._retry_sleep = retry_sleep or _default_retry_sleep
         # Model-lifecycle hooks (ARCHITECTURE.md §3): a composition root wires these to evict the
@@ -175,6 +176,16 @@ class IngestionOrchestrator:
         self._before_parse_phase = before_parse_phase or (lambda: None)
         self._before_finish_phase = before_finish_phase or (lambda: None)
         self._before_embed = before_embed or (lambda: None)
+
+    @staticmethod
+    def _backoff(attempt: int) -> float:
+        # Same exponential curve (1s, 2s, 4s, ...) as `rag/harvester.py`'s `Harvester._backoff`,
+        # shared by every bounded-retry call site in this class (`_parse_with_retry` T-DOC12,
+        # PR #75; `_summarize_with_retry`/`_embed_with_retry`/`_upsert_with_retry` T-DOC13,
+        # PR #76) -- not shared code across files (one line; a shared helper would be more
+        # machinery than the duplication it removes), just the same documented shape
+        # (CONVENTIONS.md §4).
+        return float(2 ** (attempt - 1))
 
     def ingest(self, focus_area: list[str], cap: int) -> None:
         refs = self.harvest(focus_area, cap)
@@ -205,10 +216,30 @@ class IngestionOrchestrator:
         # Hoisted exactly once per run, before the per-paper loop -- ARCHITECTURE.md §M9. The
         # query string never changes across papers in a run, so embedding it inside the loop
         # below would call embed() on a constant value once per paper for no reason.
-        topic_query_vec = self._embedder.embed([" ".join(self._config.focus_area_queries)])[0]
+        #
+        # Bounded-retried (T-DOC13, review finding) but never quarantined -- unlike every other
+        # embed() call in this class, this one isn't about any one paper, so there is no paper_id
+        # to quarantine. A `TransientError` gets the same backoff as the per-paper calls; once the
+        # budget is exhausted this re-raises and crashes the run loud, same as the pre-existing
+        # behavior for this call (CONVENTIONS.md §4 -- this is the correct outcome for an
+        # infrastructure failure with no single paper to blame, not a regression from adding the
+        # retry).
+        topic_query_vec = self._embed_topic_query_vec_with_retry()
         self._before_finish_phase()
         for ref in refs:
             self._finish_checkpoint(ref, topic_query_vec)
+
+    def _embed_topic_query_vec_with_retry(self) -> list[float]:
+        text = " ".join(self._config.focus_area_queries)
+        attempt = 0
+        while True:
+            try:
+                return self._embedder.embed([text])[0]
+            except TransientError:
+                attempt += 1
+                if attempt > self._max_retries:
+                    raise
+                self._retry_sleep(self._backoff(attempt))
 
     def _finish_checkpoint(self, ref: PaperRef, topic_query_vec: list[float]) -> None:
         """Guard `_finish` needs that the old inline loop got for free from `_prepare`'s return
@@ -279,13 +310,6 @@ class IngestionOrchestrator:
                     return None
                 self._retry_sleep(self._backoff(attempt))
 
-    @staticmethod
-    def _backoff(attempt: int) -> float:
-        # Same exponential curve (1s, 2s, 4s, ...) as `rag/harvester.py`'s `Harvester._backoff` --
-        # not shared code (one line, two call sites; a shared helper would be more machinery than
-        # the duplication it removes), just the same documented shape (CONVENTIONS.md §4).
-        return float(2 ** (attempt - 1))
-
     # -- GPU-bound: summarize/embed, then store (put) and index (upsert) -----------------------
 
     def _finish(self, prepared: _Prepared, topic_query_vec: list[float]) -> None:
@@ -300,12 +324,23 @@ class IngestionOrchestrator:
             # source of truth already written; only the derived index is missing. Re-embedding is
             # a documented, accepted V0 cost of this rare resume path -- Embedder is deterministic
             # per (text, model, version) (ARCHITECTURE M4), so it reproduces the same vectors.
+            #
+            # Quarantining out of THIS branch (T-DOC13, if `_embed_with_retry`/
+            # `_upsert_with_retry` exhaust their budget) is still safe even though
+            # `document_store.put` already ran for this paper_id in a prior run:
+            # `DocumentStore.put` is an upsert (`ON CONFLICT paper_id DO UPDATE`,
+            # rag/document_store.py), so a later full re-ingest of a quarantined paper_id
+            # safely overwrites this record rather than duplicating or orphaning it.
             record = self._document_store.get(paper_id)
             self._before_embed()
-            summary_vec, *chunk_vecs = self._embedder.embed(
-                [record.summary_text] + [c.text for c in record.chunks]
+            embedded = self._embed_with_retry(
+                paper_id, [record.summary_text] + [c.text for c in record.chunks]
             )
-            self._upsert_record(record, summary_vec, chunk_vecs)
+            if embedded is None:
+                return  # quarantined inside _embed_with_retry
+            summary_vec, *chunk_vecs = embedded
+            if not self._upsert_with_retry(paper_id, record, summary_vec, chunk_vecs):
+                return  # quarantined inside _upsert_with_retry
             self._state.checkpoint(paper_id, "done")
             return
 
@@ -315,11 +350,9 @@ class IngestionOrchestrator:
         if _at_least(stage, "summarized"):
             summary_text = artifacts.summary_text
         else:
-            try:
-                summary_text = self._summarizer.summarize(parsed)
-            except PermanentError as error:
-                self._state.quarantine(paper_id, "summarized", error)
-                return
+            summary_text = self._summarize_with_retry(paper_id, parsed)
+            if summary_text is None:
+                return  # quarantined inside _summarize_with_retry
             self._state.checkpoint(
                 paper_id,
                 "summarized",
@@ -333,9 +366,10 @@ class IngestionOrchestrator:
         # hoist above is the only other embed() call in a run, giving the N+1 total ARCHITECTURE
         # requires, never 2N).
         self._before_embed()
-        summary_vec, *chunk_vecs = self._embedder.embed(
-            [summary_text] + [c.text for c in chunks]
-        )
+        embedded = self._embed_with_retry(paper_id, [summary_text] + [c.text for c in chunks])
+        if embedded is None:
+            return  # quarantined inside _embed_with_retry
+        summary_vec, *chunk_vecs = embedded
         relevance_score = _cosine(summary_vec, topic_query_vec)
         self._state.checkpoint(
             paper_id,
@@ -359,8 +393,87 @@ class IngestionOrchestrator:
         self._document_store.put(record)  # source of truth, written before the derived index
         self._state.checkpoint(paper_id, "stored")
 
-        self._upsert_record(record, summary_vec, chunk_vecs)
+        if not self._upsert_with_retry(paper_id, record, summary_vec, chunk_vecs):
+            return  # quarantined inside _upsert_with_retry
         self._state.checkpoint(paper_id, "done")
+
+    def _summarize_with_retry(self, paper_id: str, parsed: ParsedDoc) -> str | None:
+        """The per-paper error boundary `summarizer.summarize` needs (T-DOC13 -- the `_finish`
+        analog of T-DOC12/PR #75's `_parse_with_retry`): a `TransientError` here has the identical
+        crash shape the GROBID `TransientError` had in `parse_phase()` before T-DOC12 -- uncaught,
+        it propagates out of `ingest()` and kills the whole `finish_phase()` subprocess, losing
+        progress for every paper still queued behind it. `PermanentError` was already quarantined
+        correctly here (unchanged); `TransientError` now gets the same `max_retries`-bounded,
+        backed-off retry then quarantine. Returns `None` (already quarantined) on either exhausted
+        `TransientError` or `PermanentError`, same two-outcome shape as `_parse_with_retry`.
+        """
+        attempt = 0
+        while True:
+            try:
+                return self._summarizer.summarize(parsed)
+            except PermanentError as error:
+                self._state.quarantine(paper_id, "summarized", error)
+                return None
+            except TransientError as error:
+                attempt += 1
+                if attempt > self._max_retries:
+                    self._state.quarantine(paper_id, "summarized", error)
+                    return None
+                self._retry_sleep(self._backoff(attempt))
+
+    def _embed_with_retry(self, paper_id: str, texts: list[str]) -> list[list[float]] | None:
+        """Same shape as `_summarize_with_retry`, for either of `_finish`'s two `embedder.embed`
+        call sites (T-DOC13) -- previously unguarded against *both* error types (not even
+        `PermanentError`), unlike `summarizer.summarize`/`parser.parse`. Quarantines at stage
+        "embedded" regardless of which of the two call sites failed: the resume-path call is
+        re-deriving the same "embedded" stage output the main-path call produces, just later.
+        """
+        attempt = 0
+        while True:
+            try:
+                return self._embedder.embed(texts)
+            except PermanentError as error:
+                self._state.quarantine(paper_id, "embedded", error)
+                return None
+            except TransientError as error:
+                attempt += 1
+                if attempt > self._max_retries:
+                    self._state.quarantine(paper_id, "embedded", error)
+                    return None
+                self._retry_sleep(self._backoff(attempt))
+
+    def _upsert_with_retry(
+        self,
+        paper_id: str,
+        record: PaperRecord,
+        summary_vec: list[float],
+        chunk_vecs: list[list[float]],
+    ) -> bool:
+        """Guards `_upsert_record`'s `vector_index.upsert` calls (T-DOC13) -- found while auditing
+        `_finish` for the same bug class beyond what the ticket named: `rag/vector_index.py`'s
+        adapter classifies every Qdrant failure as `TransientError` and never `PermanentError`
+        (there is no "this vector is bad" case, only "Qdrant is unreachable right now"), so only
+        `TransientError` needs handling here -- unlike the other three T-DOC12/T-DOC13 call sites.
+        Retries the whole per-paper batch (summary + every chunk), not just the one call that
+        raised: `VectorIndex.upsert` is idempotent by id (a Qdrant upsert), so re-upserting a
+        point that already landed on an earlier attempt is a no-op in effect, not a duplicate.
+        Returns `True` on success, `False` (already quarantined) on an exhausted retry budget.
+        `chunk_vecs` is a concrete `list`, not the more permissive `Iterable` `_upsert_record`
+        itself accepts (review finding): a retry re-iterates it via `_upsert_record`'s internal
+        `zip(..., strict=True)` on every attempt, which a one-shot iterator would silently break
+        on the second attempt onward.
+        """
+        attempt = 0
+        while True:
+            try:
+                self._upsert_record(record, summary_vec, chunk_vecs)
+                return True
+            except TransientError as error:
+                attempt += 1
+                if attempt > self._max_retries:
+                    self._state.quarantine(paper_id, "done", error)
+                    return False
+                self._retry_sleep(self._backoff(attempt))
 
     def _upsert_record(
         self, record: PaperRecord, summary_vec: list[float], chunk_vecs: Iterable[list[float]]
