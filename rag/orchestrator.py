@@ -37,6 +37,7 @@ one-deep prefetch thread is gone along with the per-paper interleaving it existe
 
 from __future__ import annotations
 
+import logging
 import math
 from collections.abc import Iterable
 from dataclasses import dataclass
@@ -48,6 +49,8 @@ from contracts.errors import ContractError, PermanentError
 from contracts.harvester import PaperRef
 from contracts.ingest_state import CheckpointArtifacts
 from contracts.parser import ParsedDoc
+
+logger = logging.getLogger(__name__)
 
 # The `ingest_state.stage` vocabulary, in progress order (DATA-CONTRACTS.md, migrations/0001).
 # `failed` is deliberately NOT a member: a parse/summarize `PermanentError` moves a paper straight
@@ -106,10 +109,15 @@ class IngestionOrchestrator:
     to call from two threads concurrently (see module docstring, "Cross-thread `state` access").
     Postconditions: `ingest()` is idempotent (a fully-`done` corpus re-run touches no stage) and
     resumable at every stage boundary; a `PermanentError` from `parser.parse`/
-    `summarizer.summarize` quarantines that one paper and the run continues; any other exception
-    propagates out of `ingest()` and stops the run (CONVENTIONS.md §4 -- only `PermanentError` is
-    "this paper is bad", everything else is a bug or an infrastructure failure worth crashing loud
-    on).
+    `summarizer.summarize` quarantines that one paper and the run continues. Any OTHER exception
+    for one paper (a bug, or an infrastructure failure CONVENTIONS.md §4 would otherwise say
+    should crash the run loud) is also quarantined and the run continues -- `parse_phase`/
+    `finish_phase`'s `_guard_per_paper` safety net (see its own comment block, above
+    `_guard_per_paper`'s definition, for the full reasoning) -- UNLESS `_MAX_CONSECUTIVE_
+    UNEXPECTED_FAILURES` such failures happen back-to-back within one phase, which re-raises and
+    does stop the run: real per-paper flakiness and a real systemic fault (disk full, GPU driver
+    crashed) look identical from inside one paper's try/except, and only a run of consecutive
+    failures tells them apart.
     """
 
     def __init__(
@@ -184,22 +192,121 @@ class IngestionOrchestrator:
 
     def parse_phase(self, refs: list[PaperRef]) -> None:
         """Pass 1: drive every ref to (at least) `chunked` using the CPU/MinerU-bound `_prepare`.
-        Sequential, not pipelined against Pass 2 -- see module docstring for why."""
+        Sequential, not pipelined against Pass 2 -- see module docstring for why.
+
+        Wrapped in the per-paper safety net (`_guard_per_paper`, class docstring "Unexpected-
+        exception safety net") -- an unanticipated bug in `_prepare` for one paper must not stop
+        every other paper still queued behind it.
+        """
         self._before_parse_phase()
+        consecutive_unexpected_failures = 0
         for ref in refs:
-            self._prepare(ref)
+            consecutive_unexpected_failures = self._guard_per_paper(
+                ref.paper_id, "parse_phase", consecutive_unexpected_failures,
+                lambda ref=ref: self._prepare(ref),
+            )
 
     def finish_phase(self, refs: list[PaperRef]) -> None:
         """Pass 2: drive every ref from wherever it sits to `done` using the GPU-bound `_finish`.
         Resumes purely from durable `state`/`CheckpointArtifacts` -- nothing from Pass 1 is held
-        in memory across the phase boundary (matters at 15k-paper scale)."""
+        in memory across the phase boundary (matters at 15k-paper scale).
+
+        Wrapped in the per-paper safety net (`_guard_per_paper`, class docstring "Unexpected-
+        exception safety net") -- same reasoning as `parse_phase`.
+        """
         # Hoisted exactly once per run, before the per-paper loop -- ARCHITECTURE.md §M9. The
         # query string never changes across papers in a run, so embedding it inside the loop
         # below would call embed() on a constant value once per paper for no reason.
+        # Deliberately NOT inside the safety net below: a failure here isn't about one paper, it's
+        # either a broken Config or a dead Embedder -- both make every subsequent paper in this
+        # phase pointless to attempt, so this crashes loud rather than burning through the whole
+        # run one quarantine at a time.
         topic_query_vec = self._embedder.embed([" ".join(self._config.focus_area_queries)])[0]
         self._before_finish_phase()
+        consecutive_unexpected_failures = 0
         for ref in refs:
-            self._finish_checkpoint(ref, topic_query_vec)
+            consecutive_unexpected_failures = self._guard_per_paper(
+                ref.paper_id, "finish_phase", consecutive_unexpected_failures,
+                lambda ref=ref: self._finish_checkpoint(ref, topic_query_vec),
+            )
+
+    # -- Unexpected-exception safety net (last line of defense, both phases) -------------------
+    #
+    # CONVENTIONS.md §4 is explicit that only TransientError/PermanentError get caught here; any
+    # other exception is a bug or an infrastructure failure and "should" crash loud so it gets
+    # fixed, not limped past. In principle that's still correct. In practice, three separate real
+    # multi-day production runs this session each crashed the ENTIRE batch on a different single
+    # unanticipated exception type -- a GROBID 500 that wasn't TransientError-wrapped yet, a
+    # finish_phase exception with no boundary at all, and (T-DOC14, this same PR)
+    # `quarantine()`'s own bookkeeping raising sqlite3.IntegrityError on a re-attempted paper. Each
+    # one cost real wall-clock/GPU-idle time to notice and fix, for a fault that ultimately
+    # affected exactly one paper. `_guard_per_paper` is the deliberate, narrowly-scoped exception
+    # to "never catch Exception broadly": it sits OUTSIDE `_prepare`/`_finish`'s own
+    # TransientError/PermanentError handling (never instead of it) as a backstop for whatever that
+    # handling doesn't anticipate -- including a bug in the handling itself.
+    #
+    # It is not an unconditional "never stop" mechanism. `_MAX_CONSECUTIVE_UNEXPECTED_FAILURES`
+    # consecutive unexpected failures (reset by any paper that completes without hitting this
+    # path) still stops the run. Rationale for both pieces:
+    #
+    #   - Recording is defensive at two layers, not one bare `except: pass`: the caught exception
+    #     is logged with its full traceback (so it's actually diagnosable later, not silently
+    #     eaten) and recorded to `quarantine` with a reason prefixed `UNEXPECTED:` (so the
+    #     quarantine table itself distinguishes "an already-understood failure mode" from "this
+    #     was a surprise, go look at it" without needing to grep logs). The `quarantine()` call
+    #     is ITSELF wrapped in its own try/except -- if even that fails, this falls back to a
+    #     `logger.critical` and still continues to the next paper. The loop must be structurally
+    #     unable to crash from this path.
+    #   - The threshold is 5 CONSECUTIVE unexpected failures (not a fraction of a sliding window):
+    #     a real per-paper bug (bad unicode, a corrupt individual PDF, a one-off data-shape
+    #     gremlin) is independent across papers, so 5 of them in a row by chance is vanishingly
+    #     unlikely if failures are genuinely per-paper. A SYSTEMIC fault (disk full, GPU driver
+    #     crashed, network down) instead fails EVERY subsequent paper, so it trips this in at most
+    #     5 papers -- fast enough to stop wasting GPU time, not so eager that two unrelated bad
+    #     papers back-to-back (which does happen at 15k-paper scale) falsely kills a healthy run.
+    #     "Consecutive" (not "N of the last M") also means one success anywhere resets it, so a
+    #     genuinely spiky-but-recovering run is never punished for failures that aren't systemic.
+    #     Revisit this number against real run data if it ever proves too eager or too slow to
+    #     react -- it is a judgment call, not a derived constant.
+
+    _MAX_CONSECUTIVE_UNEXPECTED_FAILURES = 5
+
+    def _guard_per_paper(self, paper_id: str, stage: str, consecutive_failures: int, fn) -> int:
+        """Runs `fn()` (one paper's `_prepare`/`_finish_checkpoint` call). On success, returns 0
+        (resets the caller's consecutive-failure counter). On any exception other than
+        `TransientError`/`PermanentError` (both already handled, and so never seen here, by
+        `fn` itself), quarantines `paper_id` and returns `consecutive_failures + 1` -- unless that
+        crosses the circuit-breaker threshold, in which case it re-raises instead."""
+        try:
+            fn()
+        except Exception as error:
+            consecutive_failures += 1
+            logger.error(
+                "%s: unexpected exception during %s (not a TransientError/PermanentError this "
+                "stage already knows how to handle) -- quarantining and continuing",
+                paper_id,
+                stage,
+                exc_info=error,
+            )
+            try:
+                self._state.quarantine(paper_id, stage, RuntimeError(f"UNEXPECTED: {error!r}"))
+            except Exception:
+                logger.critical(
+                    "%s: quarantine() itself raised while recording an unexpected %s failure -- "
+                    "this paper is UNRECORDED in the quarantine table, continuing anyway",
+                    paper_id,
+                    stage,
+                    exc_info=True,
+                )
+            if consecutive_failures >= self._MAX_CONSECUTIVE_UNEXPECTED_FAILURES:
+                raise RuntimeError(
+                    f"{consecutive_failures} consecutive unexpected per-paper failures during "
+                    f"{stage} -- stopping the run. This looks like a systemic failure (disk "
+                    "full / GPU driver crashed / network down), not per-paper flakiness -- see "
+                    f"the logged traceback for each. Last paper_id={paper_id!r}, error={error!r}"
+                ) from error
+            return consecutive_failures
+        return 0
 
     def _finish_checkpoint(self, ref: PaperRef, topic_query_vec: list[float]) -> None:
         """Guard `_finish` needs that the old inline loop got for free from `_prepare`'s return
