@@ -32,6 +32,20 @@ set this before your first commit, regardless of which tool or model is actually
 message — this repo's history shows one identity. If your tool normally appends its own attribution
 trailers by default, override or strip that behavior for commits in this repo.
 
+## Agent git-action authorization
+
+Agents (any tool — Claude Code, OpenCode, etc.) are **always authorized to `git push`, `git pull`/`git
+fetch`, and `git commit`** in this repo without asking first — these are reversible, low-blast-radius
+actions, and asking permission for each one just slows down routine work.
+
+**Merging is different and stays gated: an agent must never run `gh pr merge` (or any equivalent merge
+action) on its own initiative, on any PR — foundation-path or not.** Always open/update the PR and leave
+it for the human operator to review and merge, unless the human explicitly asks the agent to merge that
+specific PR in that conversation (a standing "you can always merge" instruction doesn't count — this is
+a per-request, in-the-moment ask each time). This supersedes the older "resolve findings, then merge"
+language for non-foundation PRs below — that merge step is now always the human's, not the agent's; it
+was already true for foundation-path PRs (see Foundation freeze, below), this just makes it universal.
+
 ## PR flow
 
 1. **M1a PR** (`T-<id>-tests` → `main`): opens once the red test suite is committed. Reviewed via the
@@ -58,9 +72,11 @@ or a `contracts/` shape it shouldn't own), naming/consistency, and whether the d
 acceptance criteria (WORK-BREAKDOWN.md) — the same checklist this project's design skills use. *In Claude
 Code* this is the `design-review` skill or a code-reviewer agent; *under another tool* (e.g. OpenCode),
 use whatever equivalent review subagent/prompt it provides, covering the same checklist — the mechanism
-differs by tool, the checklist doesn't. Resolve any blocking findings, then merge. The human operator
-spot-checks a sample of merged PRs periodically; this is **not** a per-PR requirement for regular module
-tickets (that's foundation-path PRs, see below).
+differs by tool, the checklist doesn't. Resolve any blocking findings — the PR is then ready to merge,
+but per "Agent git-action authorization" above, the agent leaves the actual merge to the human unless
+explicitly asked to do it. The human operator's diff review at merge time is therefore the real gate for
+regular module tickets too, not just a periodic spot-check (that framing predates the universal
+human-merge rule above; foundation-path PRs, see below, already worked this way).
 
 ## Foundation freeze — the concrete GitHub mechanism for T-F7
 
@@ -85,7 +101,9 @@ tickets (that's foundation-path PRs, see below).
 >   `gh auth refresh -h github.com -s workflow` (interactive) once, or (b) if that's not available,
 >   cherry-pick your commit onto a branch based on a point in history *before* the workflow-file commit,
 >   push that instead, and reconcile later once the scope is granted.
-> - **Invariant: only the human merges foundation-path PRs.** Agents may *open* PRs that touch
+> - **Invariant: only the human merges foundation-path PRs** (one instance of the general
+>   "agent never merges" rule in "Agent git-action authorization" above, stated here because it was the
+>   original, mechanically-enforced case). Agents may *open* PRs that touch
 >   protected paths, but must never run `gh pr merge` on them. Only the human operator merges — and
 >   only after reviewing the diff and confirming the `foundation-change` label is present. Because
 >   `--admin` bypasses both the required CODEOWNER review and the required `enforcement` status check
