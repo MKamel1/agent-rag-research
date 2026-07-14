@@ -34,10 +34,11 @@ class Config(FrozenModel):
     # both composition roots build their real GpuLock from this path, so they contend for the
     # same file.
     gpu_lock_path: str = ".gpu.lock"
-    # Pass 1 (rag/orchestrator.py `parse_phase`): how many papers `Parser.parse_batch` sends
-    # through one MinerU `do_parse` call at a time. T-DOC16 (.phase0-data/
-    # pass1-gpu-underutilization.md): MinerU's per-document pipeline leaves the GPU idle between
-    # its own sequential sub-model stages; batching N documents into one `do_parse` call fills
-    # those gaps. Conservative default, not yet validated against real GPU/host-RAM headroom at
-    # N>4 (real-GPU spike still pending -- see that doc's "Still required" section).
+    # Pass 1 (rag/orchestrator.py `parse_phase`): how many papers `Parser.parse_batch`
+    # (rag/parser.py) sends through one parser backend call at a time. T-DOC16 (.phase0-data/
+    # pass1-gpu-underutilization.md): the parser backend's per-document pipeline leaves the GPU
+    # idle between its own sequential sub-model stages; batching N documents into one call fills
+    # those gaps -- see rag/parser.py's module docstring for the vendor-specific mechanism.
+    # Conservative default, not yet validated against real GPU/host-RAM headroom at N>4
+    # (real-GPU spike still pending -- see that doc's "Still required" section).
     parse_batch_size: int = Field(default=4, gt=0)

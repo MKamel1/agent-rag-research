@@ -38,7 +38,12 @@ class VendorRule:
 # Curated, not derived -- extend this when a new vendor SDK/adapter lands (see module docstring).
 VENDOR_RULES: tuple[VendorRule, ...] = (
     VendorRule("qdrant", re.compile(r"qdrant", re.I), ("rag/vector_index.py",)),
-    VendorRule("mineru", re.compile(r"mineru", re.I), ("rag/parser.py",)),
+    # rag/test_parser.py (T-DOC16) legitimately injects a fake `mineru.cli.common` module into
+    # `sys.modules` (by that exact dotted name -- `rag.parser`'s own lazy `from mineru.cli.common
+    # import do_parse`) to exercise `Parser.parse`/`parse_batch`'s do_parse-calling plumbing
+    # offline, without the real (torch-heavy) `mineru` package -- same reasoning as the
+    # ollama/vllm/httpx test-file exemptions below.
+    VendorRule("mineru", re.compile(r"mineru", re.I), ("rag/parser.py", "rag/test_parser.py")),
     VendorRule("marker_pdf", re.compile(r"marker[_-]pdf", re.I), ("rag/parser.py",)),
     VendorRule("docling", re.compile(r"docling", re.I), ("rag/parser.py",)),
     VendorRule("grobid", re.compile(r"grobid", re.I), ("rag/parser.py",)),
