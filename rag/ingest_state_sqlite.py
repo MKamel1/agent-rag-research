@@ -16,6 +16,7 @@ Interface: the same three methods `rag/orchestrator.py` composes against
 `get`/`checkpoint`/`quarantine` -- plus `stage_of` as a test convenience, mirroring the fake.
 """
 
+import logging
 import sqlite3
 import threading
 from collections.abc import Callable
@@ -23,6 +24,8 @@ from datetime import UTC, datetime
 from typing import TypeVar
 
 from contracts.ingest_state import Checkpoint, CheckpointArtifacts
+
+logger = logging.getLogger(__name__)
 
 _T = TypeVar("_T")
 
@@ -112,12 +115,36 @@ class SqliteIngestState:
         self._with_connection(_checkpoint)
 
     def quarantine(self, paper_id: str, stage: str, error: Exception) -> None:
+        """Idempotent: quarantining a `paper_id` that's already quarantined (harvest doesn't
+        exclude quarantined papers -- see `rag/orchestrator.py`'s `harvest` docstring -- so a
+        re-run can legitimately hit the same bad paper again) is a safe no-op, not a crash. First
+        reason wins, same "upsert, never a blind duplicate INSERT" rule `checkpoint` above already
+        follows (CONVENTIONS.md §5) -- applied here with `DO NOTHING` instead of `DO UPDATE`
+        because the quarantine row is a dead-letter record of the *original* failure, not a
+        mutable checkpoint. A bookkeeping failure for an already-failed paper must never crash the
+        batch for every other paper still in flight (CONVENTIONS.md §4).
+        """
+
         def _quarantine(conn: sqlite3.Connection) -> None:
             now = datetime.now(UTC).isoformat()
-            conn.execute(
-                "INSERT INTO quarantine (paper_id, stage, error, ts) VALUES (?, ?, ?, ?)",
+            cursor = conn.execute(
+                "INSERT INTO quarantine (paper_id, stage, error, ts) VALUES (?, ?, ?, ?) "
+                "ON CONFLICT(paper_id) DO NOTHING",
                 (paper_id, stage, str(error), now),
             )
+            if cursor.rowcount == 0:
+                existing_stage, existing_error = conn.execute(
+                    "SELECT stage, error FROM quarantine WHERE paper_id = ?", (paper_id,)
+                ).fetchone()
+                logger.warning(
+                    "%s: already quarantined (stage=%r error=%r) -- ignoring re-quarantine "
+                    "attempt (stage=%r error=%r)",
+                    paper_id,
+                    existing_stage,
+                    existing_error,
+                    stage,
+                    str(error),
+                )
             conn.execute("DELETE FROM ingest_state WHERE paper_id = ?", (paper_id,))
             conn.execute("DELETE FROM ingest_checkpoint WHERE paper_id = ?", (paper_id,))
 
