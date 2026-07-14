@@ -625,6 +625,13 @@ already-quarantined `paper_id`s (a killed-and-resumed run, or a later run entire
 re-harvest and re-attempt one; this is intentional, not a bug — see `rag/orchestrator.py`'s `harvest`
 docstring for why), so re-quarantining the same paper is an expected, not exceptional, event.
 
+`IngestionOrchestrator._guard_per_paper` (`rag/orchestrator.py`) also calls `quarantine()` as a
+last-line-of-defense backstop for an exception `parser.parse`/`summarizer.summarize` didn't
+classify as `PermanentError` — those rows carry an `error` string prefixed `UNEXPECTED:` so a
+query over the `quarantine` table (or a dashboard) can distinguish "an already-understood failure
+mode" from "this was a surprise, go look at it" without grepping logs. `ContractError` is never
+recorded this way — CONVENTIONS.md §4 requires it to always crash the run instead.
+
 ---
 
 ## SQLite schema (source of truth — Owner D; V1 columns are noted but NOT created in V0)
