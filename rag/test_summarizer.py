@@ -20,6 +20,7 @@ Two tiers, per TEST-STRATEGY "Golden rule" (downstream tests are zero-GPU):
 import contextlib
 import inspect
 import json
+import logging
 from unittest.mock import MagicMock
 
 import httpx
@@ -283,15 +284,29 @@ def test_response_body_missing_response_field_maps_to_permanent_error():
 # unload() — proactive eviction for the two-pass ingest's phase boundary (ARCHITECTURE.md §3).
 # No `prompt` and `keep_alive: 0` is Ollama's documented no-generation unload; must not acquire
 # gpu_lock (it's not an inference call) and must not raise on a failed request (best-effort).
+# `keep_alive: 0` only *schedules* the unload on Ollama's own model scheduler though -- it isn't
+# synchronous with the HTTP response, so unload() must then poll the real `/api/ps` (currently-
+# loaded-models) list until this model is actually gone, bounded by a timeout (see
+# rag/summarizer.py's unload() docstring and _UNLOAD_POLL_* constants).
 # ---------------------------------------------------------------------------
+
+
+def _ps_response(model_names: list[str]) -> httpx.Response:
+    """A stubbed `/api/ps` body listing the given models as currently loaded."""
+    return httpx.Response(
+        200, json={"models": [{"model": name, "name": name} for name in model_names]}
+    )
 
 
 def test_unload_sends_keep_alive_zero_with_no_prompt_and_does_not_acquire_the_lock():
     requests = []
 
     def handler(request: httpx.Request) -> httpx.Response:
-        requests.append(json.loads(request.content))
-        return httpx.Response(200, json={})
+        if request.method == "POST":
+            requests.append(json.loads(request.content))
+            return httpx.Response(200, json={})
+        # GET /api/ps -- already empty, so the poll loop below returns on its first check.
+        return _ps_response([])
 
     client = httpx.Client(base_url="http://ollama.local", transport=httpx.MockTransport(handler))
     lock = FakeGpuLock()
@@ -311,7 +326,56 @@ def test_unload_is_best_effort_and_swallows_a_failed_request():
     client = httpx.Client(base_url="http://ollama.local", transport=httpx.MockTransport(handler))
     adapter = _build_summarizer_with_client(client, FakeGpuLock())
 
-    adapter.unload()  # must not raise
+    adapter.unload()  # must not raise -- both the keep_alive POST and the /api/ps poll fail
+
+
+def test_unload_polls_api_ps_and_returns_promptly_once_the_model_is_gone(monkeypatch):
+    # Speed up the poll interval only -- proves unload() actually re-checks /api/ps rather than
+    # trusting the keep_alive POST alone, without a real multi-second test.
+    monkeypatch.setattr(_mod, "_UNLOAD_POLL_INTERVAL_SECONDS", 0.01)
+    monkeypatch.setattr(_mod, "_UNLOAD_POLL_TIMEOUT_SECONDS", 5.0)
+
+    ps_polls = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "POST":
+            return httpx.Response(200, json={})
+        assert request.url.path == "/api/ps"
+        ps_polls["n"] += 1
+        still_loaded = ps_polls["n"] < 3  # gone on the 3rd poll
+        return _ps_response(["test-model"] if still_loaded else [])
+
+    client = httpx.Client(base_url="http://ollama.local", transport=httpx.MockTransport(handler))
+    adapter = _build_summarizer_with_client(client, FakeGpuLock())
+
+    adapter.unload()
+
+    assert ps_polls["n"] == 3, (
+        "unload() must poll /api/ps repeatedly until the model disappears -- a single fire-and-"
+        "forget keep_alive request doesn't confirm eviction actually completed"
+    )
+
+
+def test_unload_times_out_and_logs_a_warning_if_the_model_never_disappears(monkeypatch, caplog):
+    # Shrink the timeout so this test doesn't actually wait out the production 6s bound.
+    monkeypatch.setattr(_mod, "_UNLOAD_POLL_INTERVAL_SECONDS", 0.01)
+    monkeypatch.setattr(_mod, "_UNLOAD_POLL_TIMEOUT_SECONDS", 0.05)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "POST":
+            return httpx.Response(200, json={})
+        return _ps_response(["test-model"])  # never disappears
+
+    client = httpx.Client(base_url="http://ollama.local", transport=httpx.MockTransport(handler))
+    adapter = _build_summarizer_with_client(client, FakeGpuLock())
+
+    with caplog.at_level(logging.WARNING, logger="rag.summarizer"):
+        adapter.unload()  # must not raise or block the pipeline indefinitely
+
+    assert any("test-model" in record.message for record in caplog.records), (
+        "unload() must log a warning naming the model when it can't confirm eviction before "
+        "the timeout"
+    )
 
 
 # ---------------------------------------------------------------------------

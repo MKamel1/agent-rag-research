@@ -10,6 +10,7 @@ several adapters), so no vendor SDK import is needed at all.
 
 import logging
 import re
+import time
 
 import httpx
 
@@ -62,6 +63,15 @@ _PROMPT_OVERHEAD_TOKENS = 200
 _NUM_CTX_FLOOR = 4096
 _NUM_CTX_CEILING = 16384
 _NUM_PREDICT = 768
+
+# unload()'s /api/ps poll (see unload() docstring): Ollama's keep_alive:0 eviction is scheduled by
+# its own model scheduler, not synchronous with the POST response, so a live nvidia-smi trace this
+# session caught the Summarizer and Embedder GPU-resident simultaneously in 5/36 samples despite
+# this hook firing every time. Polling closes that race. This should be cheap -- Ollama's own
+# eviction is typically fast -- the timeout only bounds a stuck/unreachable server, it's not meant
+# to wait out a slow operation.
+_UNLOAD_POLL_INTERVAL_SECONDS = 0.25
+_UNLOAD_POLL_TIMEOUT_SECONDS = 6.0
 
 
 def _fit_for_summarization(paper_id: str, prose: str) -> tuple[str, int]:
@@ -159,13 +169,41 @@ class OllamaSummarizer:
 
     def unload(self) -> None:
         """Proactively evict this model from GPU memory (ARCHITECTURE.md §3's two-phase ingest:
-        Pass 1/MinerU needs this model's VRAM back). `keep_alive: 0` with no `prompt` is Ollama's
-        documented no-generation unload (what `ollama stop <model>` wraps) -- returns immediately,
-        no inference call, so it doesn't queue behind `gpu_lock`. Best-effort: a server that's
-        unreachable or already has the model unloaded just leaves it not-loaded either way, so a
-        failure here isn't a reason to fail the caller's phase transition.
+        Pass 1/MinerU needs this model's VRAM back; also fired before each paper's embed step,
+        rag/orchestrator.py's `before_embed` hook). `keep_alive: 0` with no `prompt` is Ollama's
+        documented no-generation unload request (what `ollama stop <model>` wraps) -- it doesn't
+        queue behind `gpu_lock` since it's not an inference call. That request only *schedules*
+        the unload on Ollama's internal model scheduler though; the HTTP response can return
+        before the model's VRAM is actually released. So after sending it, this polls the real
+        `/api/ps` (currently-loaded-models) list until this model no longer appears there,
+        bounded by `_UNLOAD_POLL_TIMEOUT_SECONDS` -- confirming eviction actually happened instead
+        of assuming it from the POST response alone. Still best-effort end to end: on timeout, or
+        if the server is unreachable at any point, this logs a warning and returns anyway -- a
+        failure/timeout here isn't a reason to fail or block the caller's phase transition.
         """
         try:
             self._client.post("/api/generate", json={"model": self._model, "keep_alive": 0})
         except httpx.HTTPError:
-            pass
+            pass  # best-effort request -- still worth polling below (e.g. already unloaded)
+
+        deadline = time.monotonic() + _UNLOAD_POLL_TIMEOUT_SECONDS
+        while time.monotonic() < deadline:
+            try:
+                response = self._client.get("/api/ps")
+                response.raise_for_status()
+            except httpx.HTTPError:
+                break  # can't confirm eviction -- fall through to the warning below
+            loaded = set()
+            for entry in response.json().get("models", []):
+                loaded.add(entry.get("model"))
+                loaded.add(entry.get("name"))
+            if self._model not in loaded:
+                return
+            time.sleep(_UNLOAD_POLL_INTERVAL_SECONDS)
+
+        logger.warning(
+            "%s: could not confirm eviction from GPU via /api/ps within %.1fs -- proceeding "
+            "anyway (best-effort; caller's phase transition is not blocked)",
+            self._model,
+            _UNLOAD_POLL_TIMEOUT_SECONDS,
+        )
