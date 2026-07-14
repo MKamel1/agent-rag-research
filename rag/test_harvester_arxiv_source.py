@@ -5,6 +5,7 @@ covers only the vendor-specific parsing `ArxivSource` hides (CONVENTIONS.md §1)
 """
 
 import re
+import time
 from datetime import date
 
 import httpx
@@ -134,8 +135,41 @@ def test_fetch_issues_one_query_per_focus_area_entry_not_one_combined_query():
     list(
         source.fetch(["causal inference", "causal discovery"], cap=100, ordering="freshest_first")
     )
-    # Each entry gets its own bare `all:<term>` query -- never the old " OR "-joined megastring.
-    assert queries_seen == ["all:causal inference", "all:causal discovery"]
+    # Each entry gets its own quoted `all:"<term>"` query -- never the old " OR "-joined megastring.
+    assert queries_seen == ['all:"causal inference"', 'all:"causal discovery"']
+
+
+# --- T-DOC11: quote multi-word terms so arXiv doesn't silently OR-split them ------------------
+# (root cause: a real 250-paper ingest run found `all:causal inference` unquoted matches arXiv's
+# search API as `causal OR inference` -- e.g. also matching a paper that only says "inference",
+# with no real conceptual connection to the focus area.)
+
+
+def test_multi_word_term_is_sent_as_a_quoted_phrase():
+    queries_seen = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        queries_seen.append(request.url.params["search_query"])
+        return httpx.Response(200, text=_EMPTY_FEED)
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    source = make_source(client=client, page_size=10)
+    list(source.fetch(["causal inference"], cap=100, ordering="freshest_first"))
+    # Quoted -> exact-phrase match, not a bare-words string arXiv would OR-split.
+    assert queries_seen == ['all:"causal inference"']
+
+
+def test_single_word_term_is_not_quoted():
+    queries_seen = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        queries_seen.append(request.url.params["search_query"])
+        return httpx.Response(200, text=_EMPTY_FEED)
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    source = make_source(client=client, page_size=10)
+    list(source.fetch(["discovery"], cap=100, ordering="freshest_first"))
+    assert queries_seen == ["all:discovery"]
 
 
 def test_fetch_shares_one_cap_budget_across_focus_area_entries():
@@ -205,3 +239,27 @@ def test_real_arxiv_api_returns_one_well_formed_paper_ref():
     assert ref.title.strip()
     assert isinstance(ref.published, date)
     assert ref.pdf_url.startswith("https://arxiv.org/pdf/")
+
+
+@pytest.mark.real_adapter  # hits the real export.arxiv.org API — never run by default
+def test_real_arxiv_api_quoted_multi_word_term_does_not_or_split():
+    """T-DOC11 regression: a real 250-paper ingest run found arXiv's search API silently treats
+    an unquoted `all:causal inference` as `causal OR inference`, matching papers that contain
+    only one of the two words with no real conceptual connection to the focus area (confirmed
+    live: unquoted + freshest-first pulled supernovae-kinematics and quantum-many-body papers
+    into a "causal inference" query). Quoting forces an exact-phrase match -- assert every
+    result's title+abstract actually contains the phrase "causal inference", not just one word.
+    """
+    time.sleep(3)  # space out from the real call the previous test just made -- avoid 429s
+    source = ArxivSource()
+    try:
+        refs = list(source.fetch(["causal inference"], cap=5, ordering="freshest_first"))
+    except TransientError as e:
+        pytest.skip(f"arXiv API not reachable: {e}")
+
+    assert refs, "expected at least one real result for a quoted-phrase query"
+    for ref in refs:
+        text = f"{ref.title} {ref.abstract}".lower()
+        assert "causal" in text and "inference" in text, (
+            f"{ref.paper_id!r} matched without the actual phrase -- OR-split regressed: {ref.title!r}"
+        )
