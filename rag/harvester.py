@@ -199,9 +199,11 @@ class ArxivSource:
             if yielded >= cap:
                 return
             # arXiv's search API silently OR-splits an unquoted multi-word term (e.g. `all:causal
-            # inference` matches `causal OR inference`, pulling in unrelated single-word hits) --
-            # quoting forces an exact-phrase match instead. Single-word terms need no quoting.
-            query = f'all:"{term}"' if " " in term else f"all:{term}"
+            # inference` matches `causal OR inference`) -- and it doesn't just split on spaces: a
+            # hyphenated single-token term like `all:difference-in-differences` gets split too
+            # (verified live). Always quoting sidesteps needing to model arXiv's tokenizer at all;
+            # quoting a single plain word is a documented no-op on arXiv's side.
+            query = f'all:"{term}"'
             start = 0
             while yielded < cap:
                 if not first_request:
