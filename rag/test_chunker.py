@@ -248,11 +248,12 @@ def test_oversized_section_split_still_keeps_equation_glued_to_its_prose():
         _long_prose_block(2, 200),
     ]
     chunks = _chunk(_parsed_doc(blocks=blocks))
-    equation_chunks = [c for c in chunks if EQUATION_LATEX in c.text]
-    assert len(equation_chunks) == 1
     # A split point may never fall directly before an equation -- it stays with whatever prose
-    # precedes it, even though that prose block alone already exceeds the size cap.
-    assert blocks[0].text in equation_chunks[0].text
+    # precedes it, even though that prose block alone already exceeds the size cap. (The equation
+    # may *also* appear in a later chunk via overlap -- see the overlap test group below; this
+    # test only asserts its primary home is intact, not that it's exclusive to one chunk.)
+    assert EQUATION_LATEX in chunks[0].text
+    assert blocks[0].text in chunks[0].text
 
 
 def test_split_sub_chunks_anchor_to_their_own_first_block_not_the_sections_first_block():
@@ -279,3 +280,111 @@ def test_chunks_are_emitted_and_ids_are_unique():
     ids = [c.chunk_id for c in chunks]
     assert len(ids) == len(set(ids)), "chunk_ids must be unique within a paper"
     assert all(c.paper_id == PAPER_ID for c in chunks)
+
+
+# ---------------------------------------------------------------------------
+# Overlap across split boundaries: a sub-chunk carries its immediate predecessor's last block
+# forward, so it doesn't open mid-argument ("as established above...") with "above" now in a
+# different chunk. Real chunks use identical "word" filler above, which can't distinguish
+# borrowed text from a block's own content -- these use distinguishable sentinel prefixes.
+# ---------------------------------------------------------------------------
+
+
+def _sentinel_prose_block(
+    index: int, words: int, sentinel: str, section_path: str = _LONG_SECTION_PATH
+) -> Block:
+    return _block(index, sentinel + " " + " ".join(["word"] * words), "prose", section_path)
+
+
+def test_split_sub_chunk_borrows_preceding_blocks_last_block():
+    blocks = [
+        _sentinel_prose_block(0, 100, "ALPHA"),  # small -- under _OVERLAP_MAX_WORDS, borrowable
+        _sentinel_prose_block(1, 1400, "BETA"),  # pushes the section over _MAX_CHUNK_WORDS
+    ]
+    chunks = _chunk(_parsed_doc(blocks=blocks))
+    assert len(chunks) == 2
+    assert "ALPHA" in chunks[1].text
+    assert "BETA" in chunks[1].text
+
+
+def test_first_split_sub_chunk_has_no_overlap():
+    blocks = [
+        _sentinel_prose_block(0, 100, "ALPHA"),
+        _sentinel_prose_block(1, 1400, "BETA"),
+    ]
+    chunks = _chunk(_parsed_doc(blocks=blocks))
+    assert "BETA" not in chunks[0].text, "the first sub-chunk has no predecessor to borrow from"
+
+
+def test_overlap_does_not_move_anchor_or_parent_id():
+    blocks = [
+        _sentinel_prose_block(0, 100, "ALPHA"),
+        _sentinel_prose_block(1, 1400, "BETA"),
+    ]
+    chunks = _chunk(_parsed_doc(blocks=blocks))
+    assert "ALPHA" in chunks[1].text, "sanity check: this fixture must actually trigger a borrow"
+    assert chunks[1].anchor.block_id == blocks[1].block_id
+    assert chunks[1].parent_id == blocks[1].block_id
+    assert chunks[1].section_path == blocks[1].section_path
+    # Despite blocks[0]'s text appearing in chunks[1].text via overlap, provenance stays pinned
+    # to chunks[1]'s own true start -- never the borrowed block.
+
+
+def test_overlap_skipped_when_preceding_block_exceeds_threshold():
+    blocks = [
+        _sentinel_prose_block(0, 1600, "ALPHA"),  # exceeds _OVERLAP_MAX_WORDS on its own
+        _sentinel_prose_block(1, 900, "BETA"),
+    ]
+    chunks = _chunk(_parsed_doc(blocks=blocks))
+    assert "ALPHA" not in chunks[1].text, "an oversized preceding block is skipped, not truncated"
+
+
+def test_no_overlap_across_section_boundaries():
+    blocks = [
+        _sentinel_prose_block(0, 500, "ALPHA", section_path="A"),
+        _sentinel_prose_block(1, 500, "BETA", section_path="B"),
+    ]
+    chunks = _chunk(_parsed_doc(blocks=blocks))
+    assert len(chunks) == 2, "two separate under-cap sections stay two separate chunks"
+    assert "ALPHA" not in chunks[1].text, (
+        "overlap only applies across a split, never across a section boundary"
+    )
+
+
+def test_borrowed_equation_kept_whole_primary_copy_keeps_prose():
+    blocks = [
+        _sentinel_prose_block(0, 1400, "ALPHA"),
+        _block(1, EQUATION_LATEX, "equation", _LONG_SECTION_PATH),
+        _sentinel_prose_block(2, 900, "BETA"),
+    ]
+    chunks = _chunk(_parsed_doc(blocks=blocks))
+    assert len(chunks) == 2
+    # Primary home: the equation stays glued to the prose that introduces it.
+    assert EQUATION_LATEX in chunks[0].text
+    assert "ALPHA" in chunks[0].text
+    # Borrowed copy: the small equation block carries forward into the next sub-chunk too.
+    assert EQUATION_LATEX in chunks[1].text
+    assert "BETA" in chunks[1].text
+
+
+def test_overlap_inert_under_expansion_off():
+    blocks = [
+        _sentinel_prose_block(0, 900, "ALPHA"),
+        _sentinel_prose_block(1, 900, "BETA"),
+    ]
+    chunks = _chunk(_parsed_doc(blocks=blocks), _config(child_parent_expansion=False))
+    assert len(chunks) == 2, "off => one chunk per block, regardless of size"
+    assert "BETA" not in chunks[0].text
+    assert "ALPHA" not in chunks[1].text
+
+
+def test_chunk_ids_stay_sequential_and_unique_with_overlap():
+    blocks = [
+        _sentinel_prose_block(0, 100, "ALPHA"),
+        _sentinel_prose_block(1, 1400, "BETA"),
+    ]
+    chunks = _chunk(_parsed_doc(blocks=blocks))
+    assert "ALPHA" in chunks[1].text, "sanity check: this fixture must actually trigger a borrow"
+    ids = [c.chunk_id for c in chunks]
+    assert ids == [f"{PAPER_ID}:c{i}" for i in range(len(ids))]
+    assert len(ids) == len(set(ids))
