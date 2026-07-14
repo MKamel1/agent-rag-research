@@ -281,6 +281,19 @@ ID" rule rather than left as bare PR titles/branch names. All merged to `main`.
 - **T-DOC10** (PR #68, `T-DOC10-harvest-quarantine-visibility`) — wire a real `QuarantineSink` for
   harvest-level failures (`app/assembly.py`'s `_sqlite_harvest_quarantine_sink`); previously an
   exhausted-retry-budget harvest failure was silently dropped (no DB row, no log line).
+- **T-DOC13** (`T-DOC13-finish-phase-error-boundary`) — the `_finish()`/`finish_phase()` (Pass 2)
+  analog of T-DOC12 (PR #75, `_prepare()`/`parse_phase()`, Pass 1): `summarizer.summarize()` only
+  guarded `PermanentError` (a `TransientError` propagated uncaught and would crash the whole
+  `finish_phase()` subprocess, same shape as the GROBID crash T-DOC12 fixed); both
+  `embedder.embed()` call sites (main path and the stored->done resume path) were guarded against
+  neither error type at all. Added the same bounded-retry-then-quarantine shape T-DOC12
+  established (`max_retries`/`retry_sleep`, same exponential backoff). Also found and fixed the
+  same gap in `_upsert_record`'s `vector_index.upsert()` calls while auditing this method for the
+  same bug class -- not named in the original ticket, only `TransientError` applies there (the
+  real Qdrant adapter never raises `PermanentError`). Written against `origin/main` before #75
+  merged, so both PRs independently add the same `max_retries`/`retry_sleep`/`_backoff` surface to
+  `IngestionOrchestrator`; whichever merges second needs a small manual conflict resolution in
+  `rag/orchestrator.py` (keep one copy of the shared constructor params/`_backoff`, not both).
 
 ---
 
