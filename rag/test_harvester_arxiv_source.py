@@ -7,12 +7,16 @@ covers only the vendor-specific parsing `ArxivSource` hides (CONVENTIONS.md §1)
 import re
 import time
 from datetime import date
+from pathlib import Path
 
 import httpx
 import pytest
 
 from contracts.errors import PermanentError, TransientError
+from rag.config import load_config
 from rag.harvester import ArxivSource
+
+REAL_CONFIG_PATH = Path(__file__).resolve().parent.parent / "config.yaml"
 
 _ATOM_ENTRY = """<?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
@@ -159,7 +163,11 @@ def test_multi_word_term_is_sent_as_a_quoted_phrase():
     assert queries_seen == ['all:"causal inference"']
 
 
-def test_single_word_term_is_not_quoted():
+def test_single_word_term_is_quoted_too():
+    # Quoting a plain single word is a documented no-op on arXiv's side -- always quoting (rather
+    # than branching on whether the term "looks like" multiple words) means the fix doesn't have
+    # to correctly guess every separator arXiv's tokenizer splits on. See the hyphenated-term test
+    # below for a real config.yaml term that a naive `" " in term` check would have missed.
     queries_seen = []
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -169,7 +177,43 @@ def test_single_word_term_is_not_quoted():
     client = httpx.Client(transport=httpx.MockTransport(handler))
     source = make_source(client=client, page_size=10)
     list(source.fetch(["discovery"], cap=100, ordering="freshest_first"))
-    assert queries_seen == ["all:discovery"]
+    assert queries_seen == ['all:"discovery"']
+
+
+def test_hyphenated_single_token_term_is_quoted():
+    # Real regression: config.yaml's "difference-in-differences" has no space, but arXiv's
+    # tokenizer OR-splits on the hyphen too (verified live against export.arxiv.org) -- a
+    # `" " in term` check would have missed this real, currently-shipping focus_area_queries
+    # entry. Always-quote (no substring heuristic) covers it without needing to know arXiv's
+    # tokenization rules.
+    queries_seen = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        queries_seen.append(request.url.params["search_query"])
+        return httpx.Response(200, text=_EMPTY_FEED)
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    source = make_source(client=client, page_size=10)
+    list(source.fetch(["difference-in-differences"], cap=100, ordering="freshest_first"))
+    assert queries_seen == ['all:"difference-in-differences"']
+
+
+def test_every_configured_focus_area_query_is_quoted():
+    # Derived from the actual config.yaml contents rather than hand-picked example terms -- this
+    # is what would have caught the hyphenated-term gap above before it shipped.
+    terms = load_config(REAL_CONFIG_PATH).focus_area_queries
+    assert terms, "config.yaml's focus_area_queries is empty -- nothing to check"
+
+    queries_seen = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        queries_seen.append(request.url.params["search_query"])
+        return httpx.Response(200, text=_EMPTY_FEED)
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    source = make_source(client=client, page_size=10)
+    list(source.fetch(terms, cap=len(terms) * 100, ordering="freshest_first"))
+    assert queries_seen == [f'all:"{term}"' for term in terms]
 
 
 def test_fetch_shares_one_cap_budget_across_focus_area_entries():
@@ -195,7 +239,7 @@ def test_fetch_moves_to_the_next_focus_area_entry_when_one_is_exhausted():
 
     def handler(request: httpx.Request) -> httpx.Response:
         query = request.url.params["search_query"]
-        if query == "all:term-a":
+        if query == 'all:"term-a"':
             return httpx.Response(200, text=_EMPTY_FEED)
         term_b_calls.append(request.url.params["start"])
         if len(term_b_calls) == 1:
@@ -261,5 +305,6 @@ def test_real_arxiv_api_quoted_multi_word_term_does_not_or_split():
     for ref in refs:
         text = f"{ref.title} {ref.abstract}".lower()
         assert "causal" in text and "inference" in text, (
-            f"{ref.paper_id!r} matched without the actual phrase -- OR-split regressed: {ref.title!r}"
+            f"{ref.paper_id!r} matched without the actual phrase -- OR-split regressed: "
+            f"{ref.title!r}"
         )

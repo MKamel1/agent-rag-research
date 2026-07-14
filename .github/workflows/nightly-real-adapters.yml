@@ -30,11 +30,12 @@ jobs:
       # suite, which needs GROBID + MinerU's first-run model download) and overrides pyproject.toml's
       # default `-m 'not real_adapter'`. `--allow-hosts` permits the local Docker services this
       # already-running workstation exposes; MinerU's model download (huggingface.co/modelscope,
-      # first run only — subsequent runs use its on-disk cache) needs the public internet too, which
-      # a self-hosted runner already has.
+      # first run only — subsequent runs use its on-disk cache) and rag/test_harvester_arxiv_source.py's
+      # real_adapter tests (export.arxiv.org, T-DOC11) need the public internet too, which a
+      # self-hosted runner already has.
       - name: Run real-adapter tests (needs GROBID :8070, Qdrant :6333, TEI, live GPU)
         shell: bash -l {0}
-        run: pytest -m real_adapter --allow-hosts=127.0.0.1,localhost,huggingface.co,modelscope.cn -v
+        run: pytest -m real_adapter --allow-hosts=127.0.0.1,localhost,huggingface.co,modelscope.cn,export.arxiv.org -v
 
       # Also exercises the VectorIndex/Qdrant and Embedder real-adapter cases that use
       # pytest-socket's own `enable_socket` marker + skip-on-connect-failure instead of this
@@ -43,4 +44,4 @@ jobs:
       # deselecting nothing, so they get a real chance to connect instead of skipping.
       - name: Run full suite with sockets enabled (exercises enable_socket-gated real adapters)
         shell: bash -l {0}
-        run: pytest -m "" --allow-hosts=127.0.0.1,localhost,huggingface.co,modelscope.cn -v
+        run: pytest -m "" --allow-hosts=127.0.0.1,localhost,huggingface.co,modelscope.cn,export.arxiv.org -v
