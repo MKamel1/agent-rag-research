@@ -182,7 +182,7 @@ class SpyParser:
     def __init__(self, poison: set[str] | None = None, transient: dict[str, int] | None = None):
         """`poison`: paper_ids that raise `PermanentError` on every call (pre-existing coverage).
         `transient`: paper_id -> how many `TransientError`s to raise before that paper's `parse`
-        finally succeeds (T-DOC12 regression coverage, the real GROBID-hiccup shape) -- a count
+        finally succeeds (T-DOC12 regression coverage, the real reference-extraction-hiccup shape) -- a count
         at or above the orchestrator's retry budget never recovers, exercising the
         exhausted-retry-then-quarantine path instead.
         """
@@ -199,7 +199,7 @@ class SpyParser:
         made = self._transient_calls_made.get(ref.paper_id, 0)
         if made < budget:
             self._transient_calls_made[ref.paper_id] = made + 1
-            raise TransientError(f"GROBID reference extraction failed: {ref.paper_id}")
+            raise TransientError(f"reference extraction failed: {ref.paper_id}")
         return make_parsed(ref)
 
 
@@ -488,10 +488,10 @@ def test_poisoned_paper_is_quarantined_and_the_rest_complete():
 
 
 # ================================================================================================
-# T-DOC12 regression: a `TransientError` from `parser.parse` (e.g. rag/parser.py's GROBID
+# T-DOC12 regression: a `TransientError` from `parser.parse` (e.g. rag/parser.py's
 # reference-extraction call) must not crash `parse_phase()` -- a real end-to-end run hit exactly
-# this (one paper's GROBID call returned a transient 500) and it propagated all the way out of
-# `ingest()`, killing the `python -m app.parse_phase` subprocess (and, via app/ingest.py's
+# this (one paper's reference-extraction call returned a transient 500) and it propagated all the
+# way out of `ingest()`, killing the `python -m app.parse_phase` subprocess (and, via app/ingest.py's
 # `subprocess.run(..., check=True)`, the parent `app.ingest` process too) with every paper still
 # queued behind the failing one losing its progress for that run.
 # ================================================================================================
