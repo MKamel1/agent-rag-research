@@ -21,7 +21,7 @@ REAL_CONFIG_PATH = REPO_ROOT / "config.yaml"
 def test_loads_real_repo_config():
     config = load_config(REAL_CONFIG_PATH)
     assert len(config.focus_area_queries) == 33
-    assert config.corpus_cap == 15_000
+    assert config.corpus_cap == 30_000
     assert config.gpu_lock_path == ".gpu.lock"
 
 
