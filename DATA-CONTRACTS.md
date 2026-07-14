@@ -453,11 +453,14 @@ injected, cross-process primitive.
 
 **What `GpuLock` does:** it is the **cross-process compute serializer, and only that.** It stops two
 GPU-bound inference calls (an ingest embed/summarize/rerank vs. a query-path rerank) from executing at
-the same instant. It does not manage residency or eviction. Per PRD ADR-02/ADR-08's VRAM arithmetic
-(embedder ~8.5GB @ Q8, summarizer ~7-8GB 4-bit, reranker ~1-2GB, ≈ 17-18GB total), the three real models
-are expected to **co-reside** within the 24GB budget for the life of the process — nobody evicts anybody.
-This ~17-18GB estimate is unmeasured; PHASE0-RUNBOOK.md's S0 step confirms actual peak concurrent VRAM
-with both composition roots running.
+the same instant. It does not manage residency or eviction itself — that's a separate, real mechanism
+(**corrected**: this section previously assumed all-day co-residence with "nobody evicts anybody"; a
+real end-to-end run reproduced a genuine CUDA OOM under that assumption). Only the Embedder and
+Reranker are expected to stay resident for the life of the process; the Summarizer is proactively
+evicted via real eviction hooks (`before_parse_phase`/`before_embed` on `IngestionOrchestrator`,
+wired to `OllamaSummarizer.unload()`) around the phases/calls that don't need it. Full mechanism, real
+measured VRAM figures, and the real-run validation evidence: ARCHITECTURE.md "Operational invariants"
+§3 (authoritative; not re-derived here).
 
 **V0 fairness/timeout stance:** `acquire()` has no priority and no timeout — a query simply queues behind
 an in-flight ingest inference call until it releases. This is an accepted V0 simplification, not an

@@ -51,6 +51,16 @@ Ten modules, each independently ownable (owners A–F) and testable through its 
 - **Seam:** `Source` (arXiv adapter). *Hypothetical for V0* (one source) — keep the interface
   source-agnostic; **do not** build a plugin registry. V3 adds RSS/OpenAlex/Unpaywall adapters here.
 - **Test:** fake `Source` yielding fixture `PaperRef`s; assert dedup + resume.
+- **Real `ArxivSource.fetch()` issues one sequential request per `focus_area_queries` term, not one
+  combined query.** A single `" OR "`-joined query across all ~33 configured terms reliably got
+  `HTTP 429`/timeout from arXiv and returned zero papers across three attempts; splitting into
+  per-term requests (each still spaced by the existing rate-limit delay) fixed it.
+- **Harvest-level failures are quarantined too, not silently dropped.** `Harvester` is constructed
+  with a real `QuarantineSink` (`app/assembly.py`'s `_sqlite_harvest_quarantine_sink`) that writes to
+  the same `quarantine` table `IngestionOrchestrator` uses for parse/summarize failures, under stage
+  `"harvested"` (a fixed `"<unknown>"` paper_id sentinel for page-level failures with no paper
+  identity yet). Previously no sink was wired, so an exhausted-retry-budget harvest failure left no DB
+  row and no log line anywhere.
 
 ### M2 · Parser  *(owner B)*
 - **Interface:** `parse(raw: PdfBytes | LatexSource) -> ParsedDoc`
@@ -199,11 +209,15 @@ Ten modules, each independently ownable (owners A–F) and testable through its 
   - *Invariants:* **idempotent, resumable, checkpointed per stage**; writes source-of-truth *before*
     the derived index (ordering invariant, §6A); **single-GPU compute serialization** via `GpuLock`
     (Operational invariants §3 below, DATA-CONTRACTS.md) so two GPU-bound calls never execute at the
-    same instant — Embedder, Summarizer, and the reranker are expected to **co-reside** in VRAM within
-    the 24GB budget, not be evicted between stages.
-  - *Pipelining:* the Orchestrator pipelines CPU-bound work (harvest/parse/chunk/store) for paper N+1
-    concurrently with GPU-bound work for paper N, so the GPU-bound-call queue never sits idle waiting on
-    CPU stages — this, not model eviction, is how the single GPU is kept busy.
+    same instant — **only Embedder and the reranker are expected to co-reside** in VRAM for the life of
+    the process; the Summarizer is proactively evicted (real, verified mechanism, not just a lock) both
+    before Pass 1 and before each paper's embed step within Pass 2 — §3 below has the full mechanism and
+    why.
+  - *Two-pass structure:* the Orchestrator runs `parse_phase()` (every paper to `chunked`, Pass 1) then
+    `finish_phase()` (every paper from wherever it sits to `done`, Pass 2) — **not** per-paper CPU/GPU
+    pipelining across stages, which would require MinerU and the Summarizer to co-reside (§3 has the
+    real CUDA OOM this reproduced). Within each pass, CPU-bound and GPU-bound work still overlap
+    normally paper-to-paper; the two-pass split is what keeps MinerU and the Summarizer apart.
   - *`relevance_score` (DATA-CONTRACTS §M5):* after Summarizer produces `summary_text` and before
     `DocumentStore.put`, the Orchestrator computes `cosine(embedder.embed([summary_text])[0],
     topic_query_vec)` using the **same injected `Embedder`** (no new dependency) and sets it on the
@@ -271,24 +285,50 @@ Full patterns + code-shape in `CONVENTIONS.md`; schemas in `DATA-CONTRACTS.md`.
      its own subprocess; its exit is what actually guarantees full VRAM release, regardless of what
      MinerU's internal caches do. `app/ingest.py` runs that subprocess, then runs `finish_phase()` in
      its own process once it exits.
-   - **Summarizer eviction is a real, verified mechanism.** `OllamaSummarizer.unload()` sends Ollama's
-     documented no-generation `keep_alive: 0` request — confirmed to evict the model immediately with no
-     inference call. `IngestionOrchestrator`'s constructor takes optional `before_parse_phase`/
-     `before_finish_phase` hooks (no-op by default); the composition root wires `before_parse_phase =
-     summarizer.unload` so Pass 1's subprocess evicts any resident Summarizer before MinerU loads.
+   - **Summarizer eviction is a real, verified mechanism — fired at two points, not one.**
+     `OllamaSummarizer.unload()` sends Ollama's documented no-generation `keep_alive: 0` request, then
+     **polls Ollama's `/api/ps` (currently-loaded-models) endpoint every 0.25s, up to a 6s timeout,
+     until this model no longer appears there**, before returning. `IngestionOrchestrator`'s
+     constructor takes optional `before_parse_phase`/`before_finish_phase`/**`before_embed`** hooks
+     (no-op by default); the composition root wires `before_parse_phase = summarizer.unload` (evicts
+     any resident Summarizer before Pass 1's MinerU loads) **and `before_embed = summarizer.unload`**
+     (evicts it again immediately before *each paper's* embed call within Pass 2 — see below for why).
+     Best-effort end to end: if the poll times out or the server is unreachable, `unload()` logs a
+     warning and returns anyway rather than blocking the caller's phase transition.
+   - **Why the poll, not just the `keep_alive: 0` response: a real scheduled-but-not-complete race.**
+     Ollama's `keep_alive: 0` request only *schedules* the unload on its own internal model scheduler —
+     the HTTP response can return before the model's VRAM is actually released. A live `nvidia-smi`
+     trace caught the Summarizer and Embedder GPU-resident **simultaneously in 5 of 36 samples**
+     despite the eviction hook firing every time, i.e. trusting the POST response alone was
+     silently unreliable. Polling `/api/ps` until the model is confirmed gone (rather than assuming
+     eviction from the request alone) closes that race (PR #63/#64).
+   - **Why `before_embed` exists as a second hook, not just `before_parse_phase`.** Found necessary
+     2026-07-13: within Pass 2, nothing evicted the Summarizer between a paper's own summarize and
+     embed steps — it stayed fully GPU-resident (real measured ~11.5GB for a long paper) for the whole
+     time the Embedder was working, though nothing needed it loaded then. On a real long paper this
+     left too little headroom and the Embedder hit a real CUDA OOM (batch size and individual chunk
+     length were ruled out first via direct measurement). `before_embed` fires before each of
+     `_finish`'s two `embedder.embed()` calls; real reload cost for the next paper's summarize call is
+     ~2.5s — negligible against a ~15-20s real summarize call.
    - **Runtime residency — Pass 1 confirmed safe by a real run; Pass 2's real numbers are tighter
-     than first measured.** Pass 1 (parse) = MinerU 6.6 + Embedder 8.2 + Reranker 1.4 = **16.2GB**,
-     confirmed by two real end-to-end runs (`rag/test_composition_e2e.py`) with no OOM. Pass 2
-     (finish) was originally estimated at Summarizer 11.8 + Embedder 8.2 + Reranker 1.4 = 21.4GB
-     from small isolated test calls — but a **real full-length paper** measured higher on both:
-     Summarizer ~13.5GB (longer context → bigger KV cache than a short test prompt) and Embedder
-     ~9-10GB during its actual batch call (many real chunks, not 1-2 test strings), reproducibly
-     hitting a real `CUDA_ERROR_OUT_OF_MEMORY` in the TEI embed container at the ~24GB ceiling
-     (confirmed twice). **This is a separate, still-open finding from the MinerU/Summarizer fix
-     above (which is confirmed working) — Pass 2 itself needs its own follow-up** (candidates:
-     batch the embed call into smaller sub-batches so peak activation memory drops, evict the
-     Reranker during ingest-only runs since it's query-time-only, or accept tighter quantization).
-     Logged in `LESSONS-LEARNED.md`, not solved here.
+     than first measured, and the fix now has real-scale evidence behind it.** Pass 1 (parse) =
+     MinerU 6.6 + Embedder 8.2 + Reranker 1.4 = **16.2GB**, confirmed by two real end-to-end runs
+     (`rag/test_composition_e2e.py`) with no OOM. Pass 2 (finish) was originally estimated at
+     Summarizer 11.8 + Embedder 8.2 + Reranker 1.4 = 21.4GB from small isolated test calls — but a
+     **real full-length paper** measured higher on both: Summarizer ~13.5GB (longer context → bigger
+     KV cache than a short test prompt) and Embedder ~9-10GB during its actual batch call (many real
+     chunks, not 1-2 test strings), which first reproduced a real `CUDA_ERROR_OUT_OF_MEMORY` in the TEI
+     embed container. The `before_embed` fix above (plus the `/api/ps` poll closing the eviction race)
+     targets exactly that gap, and a real **250-paper end-to-end ingest run**
+     (`.phase0-data/100-paper-run-stats.md`) has since completed with **zero OOM-caused quarantines** —
+     all 43 quarantines were unrelated arXiv 404s on PDF download (freshest-first metadata-vs-PDF-
+     availability lag), concentrated in the first ~120 papers, with zero recurrence after. This is real
+     evidence the fix resolves the practical risk at real-ingest scale — it is **not** a formal
+     guarantee against every pathological case: a single earlier worst-case paper was observed hitting
+     a CUDA OOM inside the TEI embed container even with total tracked usage well under the card's
+     capacity (candidate cause: CUDA allocator fragmentation inside that process, not a total-VRAM-
+     budget overrun), and that specific hypothesis was never independently re-tested after the 250-paper
+     run. See `.phase0-data/known-issue-pass2-oom.md` for the full trail.
    - **`GpuLock` — cross-process compute serializer only, unchanged by this fix.** `IngestionOrchestrator`
      (M9) and `McpServer` (M8) are the system's two composition roots and V0 explicitly allows them to
      run concurrently as separate processes (a multi-day ingest next to an always-on query server) — the

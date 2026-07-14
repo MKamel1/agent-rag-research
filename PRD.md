@@ -991,6 +991,30 @@ favor of the real separate budget, and retune `_TOKENS_PER_WORD_ESTIMATE`/`_NUM_
 `_NUM_CTX_CEILING` against vLLM's own real (and likely different) memory/context behavior rather
 than carrying over Ollama-measured numbers unverified.
 
+**2026-07-14 update — embedder-side spike (T-VLLM-1) resolves the "(and possibly embeddings)" hedge
+above: not now.** A real spike (`.phase0-data/vllm-spike-results.md`) stood up vLLM 0.25.0 serving
+the production embedding model (`Qwen/Qwen3-Embedding-4B`, same weights as TEI) alongside — not
+replacing — the live TEI containers, and measured it directly against the real 4,103-chunk corpus
+used for the 4B-vs-8B comparison. Findings: (a) vLLM does cleanly reject over-length input with a
+structured HTTP 400 instead of TEI's silent `auto_truncate` — a genuine correctness win that maps
+directly onto this project's existing `PermanentError` taxonomy with zero new code; (b) throughput is
+a wash (8.94-9.08 vs. TEI's 8.80 chunks/s, within run-to-run noise); (c) VRAM is a real, measured
+regression — vLLM's resident footprint (19.2-21.0GB) is roughly **2x** TEI's (~10.2GB) at every
+`--max-model-len` tested, on the same 24GB card this project was separately fighting to free up
+headroom on (`.phase0-data/known-issue-pass2-oom.md`). One yellow flag, not resolved either way: 1 of
+11 trials sending input at exactly `--max-model-len` stalled 30+s before responding (matches the
+shape of open vLLM issue #29496); not reproduced in the other 10 trials, so neither confirmed nor
+ruled out as a real bug in this version.
+
+**Decision: do not migrate the embedder to vLLM now — stay on TEI.** The cheaper lever for the same
+truncation problem is on the chunking side (tightening `_MAX_CHUNK_WORDS`,
+`.phase0-data/tuning-parameters.md`), not a full serving-stack migration. This does **not** change the
+**generation**-side V1 requirement above — the thinking-token-budget gap is a separate, still-open
+driver, unaffected by this finding. Revisit the embedder specifically only if the chunking-side fix
+proves insufficient on its own, or if the fragmentation-OOM investigation independently forces a
+serving-stack change anyway (at that point vLLM's clean-error behavior would be worth folding in, but
+it doesn't clear the bar as a freestanding win by itself today).
+
 ### ADR-10 — Reranker: BGE-reranker-v2-m3 (cross-encoder)
 **Context.** First-stage hybrid retrieval optimizes recall; a second-stage reranker optimizes
 precision@k, which is what the LLM/user actually consumes.

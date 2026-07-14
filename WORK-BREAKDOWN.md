@@ -256,6 +256,34 @@ M1a, before this implementation existed") **plus** the specifics below.
 
 ---
 
+## T-DOC series — post-M1b real-run hardening fixes (2026-07-13/14)
+
+Found and fixed while running the real end-to-end pipeline against live infra (`.phase0-data/100-paper-run-stats.md`),
+not part of any owner's original M1b ticket — tracked here per GIT-WORKFLOW.md's "every ticket has a stable
+ID" rule rather than left as bare PR titles/branch names. All merged to `main`.
+
+- **T-DOC4** (PR #62, `T-DOC-pdf-download-ratelimit`) — add a fixed inter-request delay to the PDF-download
+  parser (`app/assembly.py`'s `_PdfDownloadParser`), to avoid tripping arXiv's rate limiting on sequential
+  per-paper PDF fetches.
+- **T-DOC5** (PR #63, `T-DOC-fix-before-embed-race`) — close the `before_embed` unload race: poll Ollama's
+  `/api/ps` until the Summarizer is confirmed evicted, instead of trusting the `keep_alive: 0` HTTP response
+  alone (`rag/summarizer.py`'s `unload()`; ARCHITECTURE.md §3 has the full mechanism).
+- **T-DOC6** (PR #64, `T-DOC6-unload-malformed-response-handling`) — `unload()` must not raise on a
+  malformed `/api/ps` response (non-JSON body, unexpected shape) — degrades to the same best-effort warning
+  path as a timeout, rather than crashing the caller's phase transition.
+- **T-DOC7** (PR #65, `T-DOC7-pdf-transient-error-retry`) — retry transient PDF-download failures
+  (429/502/503/504, timeouts, transport errors) once with backoff instead of quarantining immediately.
+- **T-DOC8** (PR #67, `T-DOC8-arxiv-harvest-query-timeout`) — split `ArxivSource.fetch()`'s single
+  combined `focus_area_queries` search into one sequential request per term; the combined `" OR "` query
+  reliably got `HTTP 429`/timeout from arXiv and returned zero papers.
+- **T-DOC9** (PR #66, `T-DOC9-ci-testpaths-app-coverage`) — add `app/` to pytest's `testpaths` so its test
+  suite (e.g. `_PdfDownloadParser`, composition-root wiring) actually runs in CI.
+- **T-DOC10** (PR #68, `T-DOC10-harvest-quarantine-visibility`) — wire a real `QuarantineSink` for
+  harvest-level failures (`app/assembly.py`'s `_sqlite_harvest_quarantine_sink`); previously an
+  exhausted-retry-budget harvest failure was silently dropped (no DB row, no log line).
+
+---
+
 ## Dependency graph (who blocks whom)
 
 ```

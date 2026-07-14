@@ -175,12 +175,18 @@ one source of truth for progress.
 
 ## 6. The single-GPU rule (the hardest constraint — DoD "critical constrained resource")
 
-Use the one 24GB GPU to its best: keep it busy, don't idle it, minimize total run time. Per PRD
-ADR-02/ADR-08's VRAM arithmetic (embedder ~8.5GB @ Q8, summarizer ~7-8GB 4-bit, reranker ~1-2GB, ≈
-17-18GB total), the embedder, reranker, and summarizer are **expected to co-reside** within the 24GB
-budget — they stay loaded simultaneously, nobody evicts anybody. Reloading/unloading models between
-stages would waste time and idle the GPU on every stage transition, working against the goal — reject
-that as a mechanism.
+Use the one 24GB GPU to its best: keep it busy, minimize total run time, never OOM. **Corrected —
+this section previously assumed all-day co-residence with no eviction; a real end-to-end run
+reproduced a genuine CUDA OOM under that assumption.** Real measured footprints: MinerU (parser)
+~6.6GB, Embedder (TEI) ~8.2-10GB, Reranker (TEI) ~1.4GB, Summarizer (Ollama) ~11.8-13.5GB — Embedder
+and Reranker are the two meant to stay **always** resident (they serve live queries continuously via
+`McpServer`); MinerU and the Summarizer are **not** — full detail, numbers, and the eviction
+mechanism are in ARCHITECTURE.md "Operational invariants" §3 (authoritative; not re-derived here).
+In short: ingestion runs as **two sequential passes** (`parse_phase()` then `finish_phase()`), and the
+Summarizer is proactively evicted (`OllamaSummarizer.unload()`, polled via Ollama's `/api/ps` until
+confirmed gone, not just fire-and-trust the HTTP response) both before Pass 1 and before *each paper's*
+embed call within Pass 2 — real measured reload cost ~2.5s, negligible against a ~15-20s summarize
+call, so eviction is cheap here, not the time-wasting mechanism this section previously rejected it as.
 
 `GpuLock` — a typed `GpuLock` (DATA-CONTRACTS.md), constructor-injected into every real
 `Embedder`/`Summarizer`/`Reranker` adapter, backed by a cross-process file lock keyed off
@@ -190,20 +196,15 @@ calls from executing at the same instant. This has to hold **across processes**,
 run concurrently (a multi-day ingest next to an always-on query server), so an in-process
 `threading.Lock` cannot be the mechanism. **The adapter acquires the lock itself around its own
 inference call** — callers (`IngestionOrchestrator`, `Retriever`) call `embed()`/`summarize()`/`rerank()`
-exactly as they would with no lock at all. `GpuLock` does not manage residency or eviction — that is not
-its job; the models simply stay resident. **V0 fairness/timeout stance:** `acquire()` has no priority and
-no timeout — a query simply queues behind an in-flight ingest inference call. This is an accepted V0
-simplification, not an oversight; revisit only if it proves to be a real problem in practice.
+exactly as they would with no lock at all. `GpuLock` still does not manage residency or eviction itself
+— that's the job of the phase-boundary/`before_embed` hooks above, a separate concern (ARCHITECTURE.md
+§3). **V0 fairness/timeout stance:** `acquire()` has no priority and no timeout — a query simply queues
+behind an in-flight ingest inference call. This is an accepted V0 simplification, not an oversight;
+revisit only if it proves to be a real problem in practice.
 
-The ~17-18GB co-residence estimate is unmeasured — PHASE0-RUNBOOK.md's S0 step boots both composition
-roots concurrently and reads peak concurrent VRAM to confirm it fits, and decides whether the two
-processes share one embedding server or each stands up its own. If it comes back over budget (unlikely
-per the arithmetic), the documented fallback is reconsidering model choice/quantization, not
-stage-batched eviction.
-
-The Orchestrator keeps the GPU busy via **pipelining**, not eviction: CPU-bound work (harvest/parse/
-chunk/store) for paper N+1 proceeds while GPU-bound work for paper N is in flight, so the GPU-bound-call
-queue never runs dry (ARCHITECTURE "Operational invariants" §3).
+A real 250-paper end-to-end ingest run (`.phase0-data/100-paper-run-stats.md`) completed with zero
+OOM-caused quarantines, evidence the eviction fix above holds at real-ingest scale — see
+ARCHITECTURE.md §3 for the caveat (not a formal guarantee against every pathological case).
 
 - There is no "or accept the load cost" fallback. If a real GPU-bound adapter's constructor doesn't declare
   a `gpu_lock: GpuLock` parameter, that is a bug, not a judgment call — T-F6 greps for it as a **necessary
