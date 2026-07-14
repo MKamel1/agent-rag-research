@@ -52,10 +52,22 @@ the contract test verifies.
 
 **`FakeSource`** — yields a fixed list of `PaperRef`s from a fixture file (no arXiv calls); the fixture
 **must include two versions (`v1`/`v2`) of at least one base `paper_id`** so the dedup-by-base-id assertion
-in T-A1 is exercised rather than vacuously true. Also accepts an optional error-injection map (`{paper_id:
-TransientError | PermanentError}`) so Harvester's retry/quarantine paths (T-A1) have something concrete to
-trigger, rather than being untestable without a real flaky API. Used to test the Harvester's dedup/resume
-and the Orchestrator end-to-end.
+in T-A1 is exercised rather than vacuously true. Also accepts an optional error-injection map
+(`errors: dict[paper_id, entry]`) so Harvester's retry/quarantine paths (T-A1) have something concrete to
+trigger, rather than being untestable without a real flaky API. Each `entry` is one of two forms: a bare
+exception instance/class (`TransientError | PermanentError`) — *always* fails every reach of that
+`paper_id`, forever; or a `(exception_or_class, fail_count: int)` tuple — fails the first `fail_count`
+reaches of that `paper_id`, then yields the ref normally from then on (added as a T-F4 follow-up so a
+retry-then-succeed test has something real to assert; the bare form can't exercise recovery since it
+never stops failing). Used to test the Harvester's dedup/resume and the Orchestrator end-to-end.
+
+**`FakeIngestState`** — an in-memory dict standing in for the `ingest_state` + `ingest_checkpoint` +
+`quarantine` tables at once, keyed by `paper_id`: `get(paper_id) -> Checkpoint | None`,
+`checkpoint(paper_id, stage, artifacts=None) -> None` (upsert stage, merge — not overwrite — artifacts;
+reaching `done` clears the row's artifacts), `quarantine(paper_id, stage, error) -> None` (dead-letter,
+row removed). Default `IngestState` dependency for every zero-GPU `IngestionOrchestrator` test (added
+for T-A2's checkpoint-durability fix). `rag/ingest_state_sqlite.py`'s `SqliteIngestState` is the real,
+schema-backed counterpart persisting the same two tables for real.
 
 **`FakeSummarizer`** — deterministic (e.g. a fixed-length truncation of the input `ParsedDoc.markdown`), no
 model, no GPU. Default `Summarizer` dependency for every test of `IngestionOrchestrator` and any module that
@@ -76,8 +88,10 @@ passed to `.acquire(stage)` into an `.acquired` list. Default `GpuLock` dependen
 `Embedder`/`Summarizer`/`Reranker`'s real adapters and of `IngestionOrchestrator`/`Retriever` — lets a test
 assert a GPU-bound call acquired the lock (via `.acquired`) without a real file or a second process.
 
-All six implement the **exact** interfaces in ARCHITECTURE.md / DATA-CONTRACTS.md. If the real interface
-changes, the fake changes with it (they're tested together — see contract tests).
+All seven implement the **exact** interfaces in ARCHITECTURE.md / DATA-CONTRACTS.md (or, for
+`FakeIngestState`, the real interface `rag/orchestrator.py` assumes — not yet frozen in `contracts/`,
+see that fake's module docstring). If the real interface changes, the fake changes with it (they're
+tested together — see contract tests).
 
 ---
 
@@ -175,14 +189,15 @@ attempt the semantic filter either.
   `section_path` + a verbatim `passage_excerpt` (≤200 chars, truncated), **not a `chunk_id`.** `chunk_id`s
   don't exist until Spike 1's parser and this system's own chunker have actually run over these papers, so
   the gold labels in the committed fixture are paper/passage-level, not chunk-level, by necessity.
-- **(b) Resolution (Spike 2's job, not done yet).** Once Spike 1 has produced real `Chunk`s for these 100
-  papers, resolve each question's `passage_excerpt` to a `chunk_id` by fuzzy/substring-matching the excerpt
-  against the text of the chunks belonging to that `source_paper_id`. This happens at Spike-2-execution
-  time, against the real corpus — it cannot be done now and must never be guessed or fabricated. A question
-  whose excerpt can't be confidently matched to exactly one chunk is **flagged** (`question_id` + reason:
-  no match / ambiguous match / split across chunk boundaries) and excluded from that run's Recall@10/MRR
-  denominator rather than silently dropped from the fixture or force-matched to the nearest chunk. The
-  flagged rate itself is a signal worth recording — a high rate points at chunking quality, not eval-set
+- **(b) Resolution (done — Spike 2 has concluded, PR #46; see `phase0-results.md`).** Once Spike 1 had
+  produced real `Chunk`s for these papers, each question's `passage_excerpt` was resolved to a `chunk_id`
+  by fuzzy/substring-matching the excerpt against the text of the chunks belonging to that
+  `source_paper_id`, against the real corpus (never guessed or fabricated). A question whose excerpt
+  couldn't be confidently matched to exactly one chunk was **flagged** (`question_id` + reason: no match /
+  ambiguous match / split across chunk boundaries) and excluded from Recall@10/MRR's denominator rather
+  than silently dropped from the fixture or force-matched to the nearest chunk — 18 of 210 questions were
+  excluded this way, plus 4 rows with a mislabeled `source_paper_id` (3 corrected, 1 excluded). The
+  flagged rate itself was a signal worth recording — a high rate points at chunking quality, not eval-set
   quality.
   **Known limitation — the flag rate conflates two causes.** 24% of ground-truth excerpts contain
   non-ASCII/math characters and 87/210 are truncated mid-sentence — both extracted by a different pipeline
@@ -252,7 +267,10 @@ step (b)) and reports **Recall@10 and MRR**.
   assert the store reflects the new content — a naive re-put test that only checks row *count* passes even
   for a buggy silent no-op that ignores the second `put()` entirely.
 - **VectorIndex** — the `rrf_fuse` unit test + the weaker cross-adapter smoke test (contract tests, above);
-  `rebuild()` from DocumentStore reproduces search results.
+  `rebuild()` is a same-model Qdrant reindex — it scrolls its own existing points back out and re-upserts
+  them verbatim, no `DocumentStore` read and no re-embedding — so its test asserts a rebuilt collection
+  reproduces the *same* search results as before the rebuild, not that it recovers content from
+  `DocumentStore` (`rag/test_vector_index.py`'s `assert_rebuild_preserves_sparse_text_signal`).
 - **Retriever** — seeded fake stores + non-identity `FakeReranker`. `retrieve()` returns grounded results
   resolved via `get_chunk`/`get_block` (not manual id-parsing — assert this by wrapping the (real,
   temp-SQLite) `DocumentStore` in a call-recording spy for this test and asserting those methods were
@@ -296,10 +314,10 @@ step (b)) and reports **Recall@10 and MRR**.
 
 - Unit + fake-contract + golden tests run on **every push**, no GPU, no network — must be fast and green.
   This is **mechanically enforced**, not just true by convention: the T-F6 CI job (WORK-BREAKDOWN.md)
-  runs the non-adapter suites (M1, M3, M5, M7, M8, M9) with sockets blocked (`pytest-socket
-  --disable-socket`) and `CUDA_VISIBLE_DEVICES=""` set, so a test that bypasses its fake and reaches for a
-  real Qdrant/HF model/GPU fails loudly instead of silently passing on a machine that happens to have
-  network or a GPU attached.
+  runs every non-adapter suite (all of `pyproject.toml`'s `testpaths`, e.g. M1, M3, M5, M7, M8, M9, plus
+  `app`) with sockets blocked (`pytest-socket --disable-socket`) and `CUDA_VISIBLE_DEVICES=""` set, so a
+  test that bypasses its fake and reaches for a real Qdrant/HF model/GPU fails loudly instead of silently
+  passing on a machine that happens to have network or a GPU attached.
 - Real-adapter contract tests and the retrieval eval run **nightly or on demand** (they need the GPU box +
   Qdrant). A red nightly blocks release, not every commit.
 - Coverage target is a floor, not a goal: the invariants above must each have a test. A green suite with the

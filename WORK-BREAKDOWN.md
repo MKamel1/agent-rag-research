@@ -21,8 +21,12 @@ Spike 1 settles. Concretely:
   item carried forward" note.
 - **T-D2 VectorIndex (M6) and T-E1 Retriever (M7) tuning** (top-k, hybrid weights, rerank depth) gate on
   **Spike 2** (retrieval eval, Recall@10 ≥ ~0.85).
-- **M1/Harvester (T-A1), including the in-progress M1a work, is NOT gated** — it produces `PaperRef`, never
-  touches `Anchor`, and is safe to continue regardless of Spike 1/2 outcomes.
+  **Update: Spike 2 has concluded** — Qwen3-Embedding-4B + hybrid (dense+sparse+RRF) + BGE-reranker-v2-m3
+  locked as the V0 retrieval config (PR #46). Qwen3-4B dense-only Recall@10 0.875 (clears the gate);
+  hybrid+rerank Recall@10 0.844 (just under, locked anyway per `PHASE0-RUNBOOK.md`'s keep-hybrid-regardless
+  rule). T-D2 (PR #37) and T-E1 (PR #34) have both shipped. See `phase0-results.md` for the full numbers.
+- **M1/Harvester (T-A1) is NOT gated** — it produces `PaperRef`, never touches `Anchor`, and was safe to
+  build regardless of Spike 1/2 outcomes; it has since shipped (PR #36).
 
 ---
 
@@ -76,15 +80,18 @@ mechanical gate — don't rely on every other agent remembering not to touch it.
   mechanically enforces CONVENTIONS §12's automatable items: (a) greps for vendor names outside their
   adapter file, (b) fails if a diff defines a type shadowing a `contracts/` name, (c) fails on
   `except Exception`/bare `except`, (d) fails on `os.getenv`/`os.environ` outside the Config loader, (e)
-  fails if a diff touches `contracts/`, `Config`, the SQLite schema, or the fakes **without** an explicit
-  "foundation-change" label, (f) fails if the real `Embedder`/`Summarizer`/`Reranker` adapter's `__init__`
-  doesn't declare a `gpu_lock: GpuLock` parameter — a **necessary prefilter, not sufficient proof**: it
-  only shows the parameter exists in the signature, not that `acquire()` wraps the real inference call;
-  the actual guarantor of that is the per-adapter `FakeGpuLock.acquired` unit assertion (TEST-STRATEGY.md),
-  (g) fails if a module source file has no sibling test
-  file importing its public interface, (h) fails on manual `chunk_id`/`block_id`/`summary_id` string-slicing
-  outside `DocumentStore`, (i) **runs the non-adapter unit-test suites (M1, M3, M5, M7, M8, M9) with network
-  mechanically blocked and GPU visibility stripped** — `pytest --p no:cacheprovider -p pytest_socket
+  fails if a diff touches a foundation-protected path (`.github/CODEOWNERS` — currently `contracts/`,
+  `rag/config.py`, `config.yaml`, `migrations/`, `rag/fakes/`, `fixtures/`, `ci/`, `.github/`) **without**
+  an explicit "foundation-change" label, (f) fails if the real `Embedder`/`Summarizer`/`Reranker` adapter's
+  `__init__` doesn't declare a `gpu_lock: GpuLock` parameter — a **necessary prefilter, not sufficient
+  proof**: it only shows the parameter exists in the signature, not that `acquire()` wraps the real
+  inference call; the actual guarantor of that is the per-adapter `FakeGpuLock.acquired` unit assertion
+  (TEST-STRATEGY.md), (g) fails if a module source file has no sibling test file (a pure existence check,
+  not a check of what the sibling imports or asserts), (h) fails on manual
+  `chunk_id`/`block_id`/`summary_id` string-slicing
+  outside `DocumentStore`, (i) **runs every non-adapter unit-test suite (all of `pyproject.toml`'s
+  `testpaths`, e.g. M1, M3, M5, M7, M8, M9, plus `app`) with network mechanically blocked and GPU
+  visibility stripped** — `pytest --p no:cacheprovider -p pytest_socket
   --disable-socket` (or equivalent) plus `CUDA_VISIBLE_DEVICES=""` in the job's env — so a test that
   bypasses its fake and reaches for a live Qdrant, a real HF model download, or an actual GPU **crashes with
   a socket/CUDA error** instead of silently passing on a CI box that happens to have network or a GPU
@@ -94,8 +101,10 @@ mechanical gate — don't rely on every other agent remembering not to touch it.
   (i) specifically, the fixture is a unit test that constructs a real `QdrantVectorStore` instead of
   `FakeVectorStore` and is confirmed to fail on socket block, not just "would have been slow."
 - **T-F7 — foundation-change protocol.** Once T-F1–T-F5 are reviewed and merged, tag the commit
-  (`foundation-v0-frozen`). From that point, any PR touching `contracts/`/`Config`/schema/fakes must (i)
-  carry the "foundation-change" label, (ii) state which module's need is forcing the change, and (iii) get
+  (`foundation-v0-frozen`). From that point, any PR touching a foundation-protected path — the list lives
+  in `.github/CODEOWNERS` (currently `contracts/`, `rag/config.py`, `config.yaml`, `migrations/`,
+  `rag/fakes/`, `fixtures/`, `ci/`, `.github/`; see GIT-WORKFLOW.md "Foundation freeze") — must (i) carry
+  the "foundation-change" label, (ii) state which module's need is forcing the change, and (iii) get
   **your (the human's) explicit sign-off** before merge — T-F6(e) blocks the merge button until that
   label + approval exist. This is the one deliberate human-in-the-loop point in the *build process* — not to
   be confused with the product's agent-as-reasoner design, which has none (CONTEXT.md).

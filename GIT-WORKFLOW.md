@@ -22,8 +22,11 @@ Subject: `T-<id>: <imperative what>` (e.g. `T-C1: add Chunker unit tests against
 Body: the *why*, not a restatement of the diff.
 
 Ad-hoc documentation-only fixes not tied to a WORK-BREAKDOWN ticket use a `T-DOC<n>` subject prefix
-instead (e.g. `T-DOC1`, `T-DOC2`, informally numbered) — these aren't formal tickets and aren't tracked
-in WORK-BREAKDOWN.md.
+instead (e.g. `T-DOC1`, `T-DOC2`, informally numbered) — these start life as ungoverned, bare PR
+titles/branch names, not formal tickets. Once enough of them accumulate to be worth a stable reference
+point, they get tracked **retroactively** in a dedicated "T-DOC series" section of WORK-BREAKDOWN.md
+(see that doc) — a batch summary written after the fact, not a live per-ticket tracker kept in sync as
+each one lands.
 
 **Single author, no trailers.** Every commit in this repo is authored as
 `MKamel1 <47995864+MKamel1@users.noreply.github.com>` (repo-local `git config user.name`/`user.email` —
@@ -44,9 +47,10 @@ trailers by default, override or strip that behavior for commits in this repo.
 
 ## CI gating (mechanizes CONVENTIONS §12 / WORK-BREAKDOWN T-F6)
 
-Every push runs `.github/workflows/ci.yml`. Non-adapter suites (M1, M3, M5, M7, M8, M9) run with network
-sockets blocked and `CUDA_VISIBLE_DEVICES=""` — a test that bypasses its fake and reaches for a live
-Qdrant/HF download/GPU fails loudly instead of silently passing. Real-adapter contract tests and the
+Every push runs `.github/workflows/ci.yml`. Every non-adapter suite (all of `pyproject.toml`'s
+`testpaths`, e.g. M1, M3, M5, M7, M8, M9, plus `app`) runs with network sockets blocked and
+`CUDA_VISIBLE_DEVICES=""` — a test that bypasses its fake and reaches for a live Qdrant/HF download/GPU
+fails loudly instead of silently passing. Real-adapter contract tests and the
 retrieval eval run nightly/on-demand — they block release, not every commit. Branch protection on `main`
 requires this check to pass before merge, no exceptions.
 
@@ -94,7 +98,7 @@ tickets (that's foundation-path PRs, see below).
 >   blocks the merge at that point.
 
 CONVENTIONS.md §0.2 / WORK-BREAKDOWN.md T-F7 require the human operator's explicit sign-off on any change
-to `contracts/`, `Config`, the SQLite schema, or the fakes. This is mechanized, not left to memory:
+to a foundation-protected path. This is mechanized, not left to memory:
 
 - `.github/CODEOWNERS` names the human (`@MKamel1`) as required reviewer for `contracts/**`,
   `rag/config.py`, `config.yaml`, `migrations/**`, `rag/fakes/**`, `fixtures/**`, `ci/**`, and

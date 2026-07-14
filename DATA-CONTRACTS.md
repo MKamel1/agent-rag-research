@@ -113,6 +113,30 @@ block's content (e.g. the equation the grouping exists to keep) whenever a `Chun
 The Chunker already did the "small-to-big" work at build time (via `child_parent_expansion` above); V0
 does not additionally expand at query time.
 
+**Oversized-group splitting (one section-path group can become more than one `Chunk`).** The
+grouping above says which `Block`s *belong* together; it doesn't cap size. A real corpus check found
+long unbroken sections (proofs, appendices) routinely producing one giant chunk — up to a real
+29,844-word single chunk, bigger than the embedder's own context window. `rag/chunker.py`'s
+`_split_oversized` runs as a second pass over each `_group_blocks` group and splits it once its total
+word count exceeds a module constant, `_MAX_CHUNK_WORDS = 1500` (**a plain Python constant, not a
+`Config` field** — `contracts/config.py` is a foundation-protected path per `.github/CODEOWNERS`, and
+this is a technical safety ceiling like `rag/summarizer.py`'s context-size cap, not a scope lever a
+caller should be tuning). A split point may only fall directly before a `type == "prose"` block, never
+before an equation/code/table/caption block, so a split never separates one of those from the prose
+that introduces it — the same "equations/code never split from context" invariant the grouping itself
+protects. A single `Block` bigger than the cap on its own is left whole (a Parser-level anomaly, not
+this function's job).
+
+Splitting a group produces two or more sub-chunks, each still following the multi-block anchoring rule
+above independently — **but a split sub-chunk's `text` is not built purely from its own group's
+blocks.** Every sub-chunk after the first is built with the immediately preceding sub-chunk's last
+block prepended to its body (gated by `_OVERLAP_MAX_WORDS = 250`, another module constant — that
+block is dropped, not carried forward, if it's longer than that), so a sub-chunk that opens mid-argument
+still has its lead-in context. This overlap changes `text` only: `anchor`, `parent_id`, and
+`section_path` stay pinned to the sub-chunk's **own** first block, exactly as the multi-block anchoring
+rule already specifies — the overlap block never becomes `anchor.block_id` or `parent_id`, even though
+its text appears inside `Chunk.text`.
+
 ---
 
 ## M1 Harvester output
@@ -285,7 +309,10 @@ class PaperRecord:
 #                                                # (i.e. Block.text) — NOT the shorter Anchor.snippet.
 #                                                # snippet is already inline on the Anchor for quick
 #                                                # display; get_span is the deeper "verify my source" call.
-#   iter_papers() -> Iterator[PaperRecord]      # used by VectorIndex.rebuild()
+#   iter_papers() -> Iterator[PaperRecord]      # V1: input to an orchestrator-level re-embed+reupsert
+#                                                # pass for an embedding-model swap (not yet built).
+#                                                # NOT used by VectorIndex.rebuild() (see M6 below) —
+#                                                # rebuild() reads its points back from Qdrant itself.
 ```
 
 ## M6 VectorIndex
@@ -309,7 +336,11 @@ class SearchFilters:
 # hybrid_search(qvec: Vector, qtext: str, filters: SearchFilters | None, k: int) -> list[Hit]
 #   qvec -> dense side; qtext -> sparse/BM25 side; fused per the RRF formula below; top-k by fused score.
 # upsert(id: str, vector: Vector, payload: VectorPayload) -> None
-# rebuild() -> None    # drops + rebuilds the collection from DocumentStore.iter_papers()
+# rebuild() -> None    # same-model reindex only: scrolls every point back out of Qdrant itself
+#                       # (payload + vector, verbatim), drops + recreates the collection, re-upserts
+#                       # them unchanged. Does NOT re-embed and does NOT read DocumentStore — an
+#                       # embedding-model swap needs a separate, not-yet-built orchestrator pass that
+#                       # reads DocumentStore.iter_papers() and calls Embedder + upsert() itself.
 ```
 
 **RRF fusion formula (frozen — both `FakeVectorStore` and the real Qdrant adapter must implement this
@@ -449,7 +480,12 @@ It's also a two-process problem, not a one-process problem: `IngestionOrchestrat
 (M8) are the system's two composition roots (CONVENTIONS §2) and normally run as separate OS processes —
 a multi-day ingest alongside an always-on query server. **V0 explicitly allows them to run concurrently**;
 a same-process `threading.Lock` cannot serialize across that boundary, so the lock must be a real,
-injected, cross-process primitive.
+injected, cross-process primitive. ("Two composition roots" names the two entrypoints, not an exact
+process count: `app/ingest.py`, the `IngestionOrchestrator` root, additionally forks its own parse phase
+(`app/parse_phase.py`) as a short-lived subprocess so MinerU's VRAM is fully released on that subprocess's
+exit before the finish phase starts — the real process topology during an ingest run is three, not two.
+`FileGpuLock` still serializes correctly across all of them, since every process builds it from the same
+`Config.gpu_lock_path`, below.)
 
 **What `GpuLock` does:** it is the **cross-process compute serializer, and only that.** It stops two
 GPU-bound inference calls (an ingest embed/summarize/rerank vs. a query-path rerank) from executing at
