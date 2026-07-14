@@ -236,14 +236,15 @@ class IngestionOrchestrator:
     # other exception is a bug or an infrastructure failure and "should" crash loud so it gets
     # fixed, not limped past. In principle that's still correct. In practice, three separate real
     # multi-day production runs this session each crashed the ENTIRE batch on a different single
-    # unanticipated exception type -- a GROBID 500 that wasn't TransientError-wrapped yet, a
-    # finish_phase exception with no boundary at all, and (T-DOC14, this same PR)
-    # `quarantine()`'s own bookkeeping raising sqlite3.IntegrityError on a re-attempted paper. Each
-    # one cost real wall-clock/GPU-idle time to notice and fix, for a fault that ultimately
-    # affected exactly one paper. `_guard_per_paper` is the deliberate, narrowly-scoped exception
-    # to "never catch Exception broadly": it sits OUTSIDE `_prepare`/`_finish`'s own
-    # TransientError/PermanentError handling (never instead of it) as a backstop for whatever that
-    # handling doesn't anticipate -- including a bug in the handling itself.
+    # unanticipated exception type -- a reference-extraction service 500 that wasn't
+    # TransientError-wrapped yet, a finish_phase exception with no boundary at all, and (T-DOC14,
+    # this same PR) `quarantine()`'s own bookkeeping raising sqlite3.IntegrityError on a
+    # re-attempted paper. Each one cost real wall-clock/GPU-idle time to notice and fix, for a
+    # fault that ultimately affected exactly one paper. `_guard_per_paper` is the deliberate,
+    # narrowly-scoped exception to "never catch Exception broadly": it sits OUTSIDE
+    # `_prepare`/`_finish`'s own TransientError/PermanentError handling (never instead of it) as a
+    # backstop for whatever that handling doesn't anticipate -- including a bug in the handling
+    # itself.
     #
     # `ContractError` is deliberately EXCLUDED (re-raised before the broad `except Exception`
     # below ever sees it) -- CONVENTIONS.md §4 draws a hard line between "an infrastructure
