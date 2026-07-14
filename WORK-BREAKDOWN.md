@@ -281,6 +281,17 @@ ID" rule rather than left as bare PR titles/branch names. All merged to `main`.
 - **T-DOC10** (PR #68, `T-DOC10-harvest-quarantine-visibility`) — wire a real `QuarantineSink` for
   harvest-level failures (`app/assembly.py`'s `_sqlite_harvest_quarantine_sink`); previously an
   exhausted-retry-budget harvest failure was silently dropped (no DB row, no log line).
+- **T-DOC12** (`T-DOC12-parse-phase-error-boundary`) — a real 2,000-paper end-to-end run crashed
+  the whole `parse_phase()` subprocess (and, via `app/ingest.py`'s `subprocess.run(...,
+  check=True)`, the parent `app.ingest` process too) when one paper's GROBID reference-extraction
+  call raised `TransientError`: `rag/orchestrator.py`'s `_prepare()` only ever caught
+  `PermanentError` around `parser.parse(ref)`, so the `TransientError` propagated out of
+  `ingest()` and every paper still queued behind the failing one lost its progress for that run.
+  Added a bounded retry (`IngestionOrchestrator.__init__`'s new `max_retries`/`retry_sleep`,
+  same shape as `rag/harvester.py`'s `Harvester`) then quarantine for `TransientError` from
+  `parser.parse`, alongside the pre-existing (and already-correct) immediate quarantine for
+  `PermanentError`. `_finish()`'s matching gap (`summarizer.summarize`/`embedder.embed` in
+  `finish_phase()`) was found but is a separate, not-yet-filed follow-up ticket.
 
 ---
 

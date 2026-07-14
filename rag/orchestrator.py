@@ -38,16 +38,23 @@ one-deep prefetch thread is gone along with the per-paper interleaving it existe
 from __future__ import annotations
 
 import math
-from collections.abc import Iterable
+import time
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 
 from contracts.chunker import Chunk
 from contracts.config import Config
 from contracts.document_store import PaperRecord
-from contracts.errors import ContractError, PermanentError
+from contracts.errors import ContractError, PermanentError, TransientError
 from contracts.harvester import PaperRef
 from contracts.ingest_state import CheckpointArtifacts
 from contracts.parser import ParsedDoc
+
+RetrySleep = Callable[[float], None]
+
+
+def _default_retry_sleep(seconds: float) -> None:
+    time.sleep(seconds)
 
 # The `ingest_state.stage` vocabulary, in progress order (DATA-CONTRACTS.md, migrations/0001).
 # `failed` is deliberately NOT a member: a parse/summarize `PermanentError` moves a paper straight
@@ -106,10 +113,14 @@ class IngestionOrchestrator:
     to call from two threads concurrently (see module docstring, "Cross-thread `state` access").
     Postconditions: `ingest()` is idempotent (a fully-`done` corpus re-run touches no stage) and
     resumable at every stage boundary; a `PermanentError` from `parser.parse`/
-    `summarizer.summarize` quarantines that one paper and the run continues; any other exception
-    propagates out of `ingest()` and stops the run (CONVENTIONS.md §4 -- only `PermanentError` is
-    "this paper is bad", everything else is a bug or an infrastructure failure worth crashing loud
-    on).
+    `summarizer.summarize` quarantines that one paper and the run continues; a `TransientError`
+    from `parser.parse` gets a bounded retry (`max_retries`, `retry_sleep` -- same shape as
+    `rag/harvester.py`'s `Harvester`) and then quarantines if the retry budget is exhausted
+    (T-DOC12 -- a real end-to-end run crashed the whole `parse_phase()` subprocess on an
+    unretried GROBID `TransientError` propagating out of `parser.parse`, CONVENTIONS.md §4's
+    "retry with backoff, then quarantine" was simply never wired up for this call). Any other
+    exception propagates out of `ingest()` and stops the run (CONVENTIONS.md §4 -- everything
+    else is a bug or an infrastructure failure worth crashing loud on).
     """
 
     def __init__(
@@ -128,6 +139,8 @@ class IngestionOrchestrator:
         before_parse_phase=None,
         before_finish_phase=None,
         before_embed=None,
+        max_retries: int = 2,
+        retry_sleep: RetrySleep | None = None,
     ):
         self._harvester = harvester
         self._parser = parser
@@ -139,6 +152,22 @@ class IngestionOrchestrator:
         self._state = state
         self._gpu_lock = gpu_lock  # wired through to the composition root; never acquired here.
         self._config = config
+        # Bounded retry for a `TransientError` from `parser.parse` (T-DOC12) -- same
+        # (`max_retries`, `retry_sleep`) API shape as `rag/harvester.py`'s `Harvester`, so the
+        # bounded-retry call sites in this codebase read the same way. `retry_sleep` defaults to
+        # real `time.sleep`; tests inject a no-op/recording stand-in.
+        #
+        # Ownership differs from the other two retry sites, though, and deliberately so: both
+        # `Harvester` and `app/assembly.py`'s `_PdfDownloadParser` retry entirely *inside* the
+        # adapter touching the flaky I/O, so their caller never sees a retryable error at all.
+        # Here the retry lives in the Orchestrator instead, because the Orchestrator already owned
+        # the quarantine decision for `parser`'s `PermanentError` before this change (see
+        # `_parse_with_retry` below) -- this just extends that pre-existing, parser-specific
+        # ownership to `TransientError` too; it is not "the Orchestrator retries its collaborators"
+        # as a house style. A future fix for `_finish`'s identical gap around
+        # `summarizer`/`embedder` should re-derive its own seam, not copy this one by default.
+        self._max_retries = max_retries
+        self._retry_sleep = retry_sleep or _default_retry_sleep
         # Model-lifecycle hooks (ARCHITECTURE.md §3): a composition root wires these to evict the
         # GPU-bound model *this* phase doesn't need, so it never has to co-reside with the model
         # the other phase does need. No-op by default -- every fake/test caller that doesn't pass
@@ -209,11 +238,9 @@ class IngestionOrchestrator:
         if _at_least(stage, "parsed"):
             parsed = artifacts.parsed
         else:
-            try:
-                parsed = self._parser.parse(ref)
-            except PermanentError as error:
-                self._state.quarantine(paper_id, "parsed", error)
-                return None
+            parsed = self._parse_with_retry(ref)
+            if parsed is None:
+                return None  # quarantined inside _parse_with_retry
             self._state.checkpoint(
                 paper_id, "parsed", artifacts=CheckpointArtifacts(parsed=parsed)
             )
@@ -223,6 +250,41 @@ class IngestionOrchestrator:
             paper_id, "chunked", artifacts=CheckpointArtifacts(parsed=parsed, chunks=chunks)
         )
         return _Prepared(ref=ref, parsed=parsed, chunks=chunks)
+
+    def _parse_with_retry(self, ref: PaperRef) -> ParsedDoc | None:
+        """The per-paper error boundary `parser.parse` needs (T-DOC12): a real end-to-end run
+        crashed the whole `parse_phase()` subprocess when one paper's GROBID reference-extraction
+        call raised `TransientError` -- correctly classified by `rag/parser.py`, but nothing
+        between there and here retried or quarantined it, so it propagated out of `ingest()` and
+        killed every paper still queued behind it. `PermanentError` was already quarantined
+        correctly (this is the pre-existing behavior, unchanged); `TransientError` gets the
+        `max_retries`-bounded, backed-off retry CONVENTIONS.md §4 documents for it, then
+        quarantines once the budget is exhausted -- same two-outcome shape as
+        `rag/harvester.py`'s `Harvester.harvest()`. Returns `None` (and has already quarantined)
+        on either exhausted `TransientError` or `PermanentError`; `_prepare` treats both the same
+        way its call site already did before this method existed.
+        """
+        paper_id = ref.paper_id
+        attempt = 0
+        while True:
+            try:
+                return self._parser.parse(ref)
+            except PermanentError as error:
+                self._state.quarantine(paper_id, "parsed", error)
+                return None
+            except TransientError as error:
+                attempt += 1
+                if attempt > self._max_retries:
+                    self._state.quarantine(paper_id, "parsed", error)
+                    return None
+                self._retry_sleep(self._backoff(attempt))
+
+    @staticmethod
+    def _backoff(attempt: int) -> float:
+        # Same exponential curve (1s, 2s, 4s, ...) as `rag/harvester.py`'s `Harvester._backoff` --
+        # not shared code (one line, two call sites; a shared helper would be more machinery than
+        # the duplication it removes), just the same documented shape (CONVENTIONS.md §4).
+        return float(2 ** (attempt - 1))
 
     # -- GPU-bound: summarize/embed, then store (put) and index (upsert) -----------------------
 
