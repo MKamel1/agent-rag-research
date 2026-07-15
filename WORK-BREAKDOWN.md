@@ -335,6 +335,31 @@ ID" rule rather than left as bare PR titles/branch names. All merged to `main`.
   optional `diagnostics_json`, populated by `SqliteIngestState.quarantine()` from a new opportunistic
   `.diagnostics` attribute-setting convention (`contracts/errors.py`) that `rag/parser.py`'s failure sites
   now use for cheaply-available context like `pdf_size_bytes`.
+- **T-DOC18** (`T-DOC18-pdf-cache-check`) — the live ingestion pipeline never read the standalone PDF
+  prefetcher's (PR #79) cache: `_PdfDownloadParser._download_once` (`app/assembly.py`) unconditionally
+  issued a live HTTP GET for every paper, always re-downloading even when `pdf_cache/<paper_id>.pdf`
+  already existed. Added a cache-check before any HTTP call (hit: read from disk, zero HTTP/rate-limit
+  cost) plus write-through on a cache miss (the live path now also populates `pdf_cache/`, same
+  convention the prefetcher writes to), and a single-lookahead prefetch in `parse_batch` so batch N+1's
+  downloads overlap batch N's GPU-bound `parse_batch()` call instead of running strictly before it.
+- **T-DOC19** (`T-DOC19-tei-pass1-eviction`) — real GPU spikes this session confirmed Pass 1 (MinerU) sat
+  far below Pass 2's utilization in part because the TEI Embedder (~8.2GB) and Reranker (~1.4GB)
+  containers stayed GPU-resident through Pass 1 even though neither does any work during it. Added
+  `app/tei_lifecycle.py` (`stop_tei_containers`/`start_tei_containers`, best-effort `docker
+  stop`/`start` + health-poll, same shape as `rag/summarizer.py`'s `unload()`) and wired it into
+  `build_ingestion_orchestrator`'s `before_parse_phase` (alongside the existing summarizer eviction) and
+  previously-unwired `before_finish_phase` hooks, freeing ~9.4GB of VRAM for larger MinerU batches during
+  Pass 1. Safe only because ingestion and live querying never overlap for this deployment (confirmed
+  operational fact, not a general architectural claim) — live MCP queries would fail for the whole Pass 1
+  duration if that assumption ever changes.
+- **T-DOC20** (this doc-sync entry) — recorded T-DOC18/T-DOC19 in ARCHITECTURE.md, CONVENTIONS.md, and
+  PHASE0-RUNBOOK.md (the `rag-tei-embed`/`rag-tei-reranker` container names hadn't appeared anywhere in
+  the repo before this), plus the full GPU-utilization audit findings this session's investigation
+  turned up: Pass 1 measured at 27% GPU utilization vs. Pass 2 at 82%; Embedder and Summarizer confirmed
+  already near-optimal within their serving stacks' real constraints (no further code-level lever
+  available); MinerU's alternative `vlm-engine` backend investigated as the more fundamental fix for
+  Pass 1 but found blocked on an incomplete model download plus missing `transformers`/`vllm`
+  dependencies, correctly deferred as a separate follow-on rather than folded into this pass.
 
 ---
 
