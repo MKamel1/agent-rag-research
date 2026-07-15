@@ -1105,12 +1105,40 @@ as pure retrieval. This is the concrete answer to the scope doc's "indexing / re
 to the chosen embedder (couples to ADR-04). Synthesis can hallucinate if context is weak — mitigated
 by rerank + mandatory citations back to claims/artifacts.
 
+**Real incident (2026-07-15), and a real open scaling risk it exposed.** The rerank stage originally
+fetched only the caller's requested `k` (e.g. 10) candidates to rerank — meaning the cross-encoder
+could never promote a correct passage the cheaper hybrid/RRF pass had ranked just below `k`. Fixed
+(T-DOC24) by fetching a real pool (`_RERANK_POOL_SIZE`) before reranking, truncating to `k` only
+after — this alone was the single biggest lever in taking real T-EVAL Recall@10 from 0.60 to 0.96 at
+the current ~809-paper corpus scale (`.phase0-data/teval-results.md`). But the fix briefly (same
+day, caught immediately) broke every real query in production: the deployed TEI reranker's own
+server-side max batch size (32, its unconfigured default) is smaller than the pool size first
+chosen (50) — fixed as T-DOC25, capping the pool at the real measured server limit. Full incident
+writeup: `LESSONS-LEARNED.md`'s 2026-07-15 entry.
+
+The open risk that incident exposes: **`_RERANK_POOL_SIZE` is a fixed absolute constant, validated
+only at the current small-corpus scale, capped by a real server-side ceiling (32) we haven't yet
+tried to raise.** As the corpus grows toward this project's actual 30,000-paper target
+(`WORK-BREAKDOWN.md` T-SEED), a fixed-size candidate pool becomes a smaller *relative* fraction of a
+much larger, more topically-crowded candidate space — the same "right paper, wrong passage" failure
+mode T-DOC24 fixed at 809 papers could plausibly reappear at scale, now bottlenecked by the
+reranker's own hard limit rather than a code constant that can simply be raised. Recall@10 = 0.96
+at 809 papers is **not** evidence it holds at 30,000 — this has not been re-measured at any larger
+corpus size.
+
 **Phase & scaling link.** **v1 = retrieval only** (search_papers/semantic_search/get_paper);
 **v2 = + synthesis + graph-aware expansion** (ADR-15) over the claim/citation graphs;
 **v3 = the radar consumes the same pipeline** for digest generation. Scaling: retrieval stays
-sub-second with quantization + filtering (ADR-01); cost scales with queries, not corpus.
+sub-second with quantization + filtering (ADR-01); cost scales with queries, not corpus. **Rerank
+pool size specifically does not yet have a scaling story** — see the incident note above.
 
 **Revisit if.** RRF underperforms a learned fuser, or synthesis groundedness misses the §3 bar.
+**Also revisit at each real corpus-size milestone**, starting with the next T-SEED run: re-run
+T-EVAL and confirm Recall@10 still clears 0.85 before trusting it at the new scale. If it degrades,
+the two untried levers are (a) raising the TEI reranker container's own `--max-client-batch-size`
+above its current default of 32 (real infra change, throughput/latency impact unmeasured), or
+(b) narrowing the hybrid-search candidate set before pool size matters (topical
+filtering/routing), rather than assuming pool size alone can scale with corpus size.
 
 ### ADR-12 — Knowledge representation: claim-centric (atomic findings)
 **Context.** "Living memory" (G4) + verifiability (G5) are impossible over an undifferentiated pile

@@ -107,3 +107,46 @@ chunk set in one call is the likely spike), evicting the Reranker specifically d
 runs (it's query-time-only, per `ARCHITECTURE.md`'s module map — nothing in `IngestionOrchestrator`
 needs it), or a smaller Summarizer quantization. Not solved here — this entry exists so the next
 session doesn't have to rediscover it from a fresh OOM.
+
+---
+
+### 2026-07-15 — build-process — a fixed-size tuning constant shipped without checking the real server's own limit, broke production for a day
+
+T-DOC24 fixed a real, confirmed retrieval bug: `Retriever.retrieve()`/`retrieve_papers()` reranked
+only the caller's own `k` (e.g. 10) candidates instead of a real pool, so the cross-encoder reranker
+could never promote a correct passage the cheaper first-pass hybrid/RRF ranking had ranked just
+below `k` — every one of 30 real T-EVAL misses fit this exact shape. The fix (`_RERANK_POOL_SIZE =
+50`, `rag/retriever.py`) was well-reasoned and passed the full fakes-only test suite. It also broke
+every single real `retrieve()` call the moment it merged: the actually-deployed TEI reranker
+container enforces a hard server-side max batch size of **32** (its own default, never explicitly
+raised), and 50 > 32 makes every request 422. Caught the same day via a real T-EVAL re-run
+(Recall@10 dropped to 0.0 across every split — the number itself was the tell, not a separate audit)
+rather than shipped as a false "it works" result; fixed as T-DOC25, `_RERANK_POOL_SIZE = 32`, plus a
+new `enable_socket` real-adapter test that sends exactly `_RERANK_POOL_SIZE` candidates to the real
+local reranker and fails loudly (not skips) if the server rejects it.
+
+**Why it matters / when to revisit:** the general lesson, not just this one constant — **any tuning
+knob whose value is "how much to send a real vendor service in one call" needs a real-adapter test
+proving that value against the actual deployed server, not just fakes-only coverage**, because a
+fake has no server-side ceiling to violate and will happily accept any batch size. `FakeReranker`
+(and `FakeVectorStore`/`FakeEmbedder`) intentionally have no such ceiling — that's correct for what
+they're for (testing wiring/logic fast, without GPU) — but it means they can't catch this whole
+class of bug, only a live call can.
+
+**The more specific, still-open worry:** 32 was measured and works fine against the *current*,
+small T-EVAL-scale corpus (809 papers, ~25K chunks) — Run 3's 0.96 Recall@10 confirms it's enough
+candidate room *at this scale*. It is **not** validated at the project's actual target scale
+(`WORK-BREAKDOWN.md`'s T-SEED ticket: 30,000 papers). A fixed absolute pool size becomes a *smaller
+relative fraction* of the candidate space as the corpus grows — with far more topically-similar
+chunks competing for the initial hybrid/RRF stage's top-32, the odds that the correct passage even
+lands within that window (before the reranker gets a chance to promote it) go down, not up. In other
+words: **the same class of "right paper, wrong passage" miss T-DOC24 fixed at 809 papers could
+plausibly reappear at 30,000 papers, for the same underlying reason (not enough pre-rerank
+candidate room) but now bottlenecked by the *reranker server's own hard limit* rather than a
+code-level constant we can just raise.** Two real levers exist and neither has been tried: (a)
+restart the TEI reranker container with an explicit `--max-client-batch-size` flag above 32 (real,
+untested — unclear how far a single BGE-reranker-v2-m3 call scales before its own latency/throughput
+degrades), or (b) query-time filtering/routing (e.g. restricting hybrid search to a topically-narrower
+candidate set before the pool-size limit even matters) rather than relying on pool size alone to
+scale with corpus size. **Revisit T-EVAL Recall@10 at each real corpus-size milestone** (the next
+being whatever T-SEED actually reaches) — don't assume 0.96 at 809 papers holds at 30,000; re-measure.
