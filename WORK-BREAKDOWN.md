@@ -331,6 +331,42 @@ of this doc's writing — do that alongside merging PR #94). Other splits from t
   list (Tier A — a real V0 gap, not a new idea). Fix: either switch to Qdrant's native BM25/SPLADE sparse
   vector support, or add real IDF weighting to the existing hash-based approach; either way needs a
   before/after T-EVAL re-run to confirm it actually helps (not just assumed).
+- **T-DOC28 (not started)** — `Coverage.candidates` is a no-op: `rag/mcp_server.py`'s `_coverage()` sets
+  `candidates=len(results)`, always identical to `returned`, defeating the field's whole documented purpose
+  (DATA-CONTRACTS.md / PRD.md §8.5: the real fused candidate-pool size *before* rerank/top-k truncation, an
+  "anti-miss" transparency signal so a caller can tell it's seeing a sample). The method's own comment admits
+  this is a workaround — reporting the real value needs a `contracts/`-level change (Retriever would need to
+  expose the pre-truncation pool size), a foundation-change-protocol item, likely why it was left as a stub
+  rather than flagged. More consequential now than when first stubbed: T-DOC24/25 made the pre-rerank pool
+  size a real, tuned, incident-prone number (32, vs. ≤10 typically returned) — exactly the gap this field
+  exists to expose, currently invisible to every caller. `rag/test_mcp_server.py`'s existing coverage test
+  only asserts `candidates >= returned`, trivially true when they're always equal — doesn't catch this.
+- **T-DOC29 (not started)** — `app/` (the real composition-root/entrypoint code: `ingest.py`, `parse_phase.py`,
+  `assembly.py`, `prefetch_pdfs.py`) has 8 real `os.environ.get(...)` calls outside `Config`, directly
+  violating the documented "only `Config` reads env/files, no other module" invariant (CONVENTIONS.md §3,
+  restated verbatim in `rag/config.py`'s own docstring: *"this repo has no env-var config path"*). The CI
+  check meant to enforce exactly this (`ci/checks/env_leak.py`, check (d)) is scoped via
+  `ci/checks/model.py`'s `PIPELINE_SCOPE_PREFIXES = ("rag/", "contracts/")` — `app/` was never added, so this
+  drift has been silently unenforced. Not a bug today (all 8 are real, working, intentional config paths —
+  `RAG_DB_PATH`/`RAG_BLOB_DIR`/`RAG_COLLECTION`/`RAG_INGEST_PAPER_IDS`/`RAG_PDF_CACHE_DIR`/
+  `RAG_BATCH_SIZE_LOG`/`PREFETCH_TARGET`), but it's a documented invariant the codebase claims to hold and
+  doesn't. Fix is a real decision, not just widening the CI check's scope: either (a) accept `app/`'s env-var
+  usage as an intentional, narrower exception to CONVENTIONS §3 (composition-root/entrypoint code, not
+  `rag/`'s pipeline modules) and update the doc to say so explicitly, or (b) actually route these through
+  `Config` and widen `env_leak.py`'s scope to include `app/` for real.
+- **T-DOC30 (not started)** — T-INT2's acceptance bar ("idempotency, resume-after-kill, and quarantine...
+  verified on real data") is unproven, and even if it was informally verified once, there's no durable record
+  of it. Resume *logic* is real and unit-tested with fakes (`rag/test_orchestrator.py`'s
+  `test_resume_after_summarized_does_not_reinvoke_chunker_or_summarizer` /
+  `test_resume_after_stored_reruns_upsert_and_reaches_done`), but nothing in the repo shows a real OS-level
+  kill against real (non-fake) data followed by a confirmed clean resume — no test, no `LESSONS-LEARNED.md`
+  entry, no doc reference beyond the ticket's own promise text. This session's own history strongly suggests
+  a real crash-and-clean-resume happened at least once for real (a production process was interrupted and
+  later resumed from checkpoint, per earlier session context) — but if so, it was never written down anywhere
+  version-controlled, so a fresh agent/session has no way to know whether this real validation ever actually
+  occurred. Fix: either run a real, deliberate kill-mid-ingest test against real (or realistic) data and
+  record the result in `LESSONS-LEARNED.md`, or if a past real incident already proves this, write it up
+  properly instead of letting it stay an unrecorded assumption.
 
 **Key `.phase0-data/` docs for a new agent to read first** (all gitignored/local, not in git history):
 `teval-results.md` (T-EVAL methodology + full before/after numbers), `known-issue-orphaned-chunks.md`
