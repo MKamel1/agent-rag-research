@@ -311,13 +311,9 @@ before/after numbers and methodology: `.phase0-data/teval-results.md` (not yet u
 of this doc's writing — do that alongside merging PR #94). Other splits from the same run: full_set 0.890
 (n=145), multi-paper lower-bound 0.733 (n=45), title-present 0.955 (n=89), title-absent 0.786 (n=56).
 
-**Known open issues, not yet fixed (no PR open):**
-- Task-tracker item (this session's own tracker, not in this repo): a per-paper unexpected-exception safety
-  net exists (PR #78), but the `quarantine()` write inside it isn't itself crash-guarded — a write failure
-  there can still crash the whole run. Real production crash already hit once this way (see PR #83/T-DOC17's
-  own history) and was fixed for that specific table-missing case; the general write-failure gap remains.
-- M5 ship check (a real MCP query returning a citation end-to-end against production data) has not been
-  independently re-verified since the T-DOC22/23/24/25 fixes above — worth doing once PR #94 merges.
+**Known open issues, not yet fixed (no PR open):** the quarantine-write crash guard and the M5 re-verification
+are now formally ticketed as T-DOC32 and T-DOC33 below (see full text there — not restated here to avoid a
+second source of truth). Remaining untracked item:
 - Broader architecture question (queues/pipelining for more consistent GPU/CPU utilization across Pass 1/
   Pass 2) was investigated but not acted on — current mitigations (TEI eviction T-DOC19, adaptive batch
   sizing T-DOC21, PDF cache/prefetch T-DOC18) close most of the gap without the bigger restructuring; revisit
@@ -367,6 +363,62 @@ of this doc's writing — do that alongside merging PR #94). Other splits from t
   occurred. Fix: either run a real, deliberate kill-mid-ingest test against real (or realistic) data and
   record the result in `LESSONS-LEARNED.md`, or if a past real incident already proves this, write it up
   properly instead of letting it stay an unrecorded assumption.
+- **T-DOC31 (not started)** — `rag/parser.py`'s `_derive_paper_id` (~line 415-423) falls back to a content
+  hash (`hashlib.sha256(raw).hexdigest()[:16]`, call sites ~line 154/193) when a PDF has no
+  regex-matchable `arXiv:YYMM.NNNNN` watermark, even though the orchestrator already knows the real
+  `paper_id` before it ever calls `Parser.parse(raw)` — the frozen `Parser` interface just has no id-hint
+  parameter to pass it through (the module's own docstring at `rag/parser.py:36-43` already flags this
+  tension). Confirmed real occurrence during T-DOC30's live kill test (`LESSONS-LEARNED.md`, 2026-07-15
+  entry): paper `2411.14665` landed 42 chunks in SQLite under `chunks.paper_id='211c443e9b22f24a'`
+  instead of the real id. `Qdrant` stayed correct — `_upsert_record` always uses the harvester's real
+  `paper_id`, never the parser-derived one — so retrieval/citation output is unaffected, but any
+  SQLite-side `DocumentStore` join between `papers` and `chunks` by `paper_id` for that paper silently
+  drops 42 rows, and the paper is invisible to anything keying off `papers.paper_id` (e.g. a future
+  `DocumentStore.delete()` cleanup, T-DOC23). Fix: pass the orchestrator's known `paper_id` into
+  `Parser.parse()` (a `contracts/parser.py` interface change, foundation-protected) so the hash fallback
+  is never needed on the ingest path; reserve the hash purely for a truly id-less standalone-file case, if
+  one still needs to exist at all. A full corpus sweep for any other papers already affected (grep
+  `chunks.paper_id` values that don't match any `papers.paper_id` row) is part of this ticket's cleanup,
+  same shape as T-DOC23's orphaned-chunks sweep.
+- **T-DOC32 (not started)** — the per-paper unexpected-exception safety net (PR #78) that wraps each
+  paper's pipeline stages isn't itself safe on its own error path: the `quarantine()` write *inside* that
+  guard is not crash-guarded, so a failure while writing the quarantine record (e.g. a missing table, a
+  locked DB) can still crash the whole ingestion run instead of just that one paper. This already happened
+  once for real, for one specific cause (a missing table), fixed narrowly by T-DOC17's
+  `quarantine.error` diagnostics work (PR #83) — the *general* case (any exception raised by the
+  `quarantine()` write itself, not just that one cause) remains open. Fix: wrap the `quarantine()` call
+  itself in a narrower try/except that logs and continues (never re-raises past the per-paper boundary),
+  with a test that injects a failing quarantine write and asserts the run continues to the next paper
+  instead of crashing.
+- **T-DOC33 (not started) — highest priority of this batch, it's the literal V0 ship criterion.** M5's own
+  exit bar (`WORK-BREAKDOWN.md` Milestones table above: *"an agent answers a factual question about an
+  ingested paper with a correct, verifiable citation at ~0 API cost — and you use it"*) has not been
+  independently re-verified end-to-end since the T-DOC22/23/24/25 fixes landed — every number cited above
+  (Recall@10=0.96, zero retrieval errors) comes from the offline T-EVAL harness calling `Retriever`
+  directly, not from a real MCP client (Claude Desktop, Claude Code, or any other MCP-speaking agent)
+  actually connecting to a running `McpServer` instance and completing a real query → citation round trip
+  against the real 809-paper production corpus. Fix: stand up the real MCP server against production data,
+  connect a real MCP client, ask it a genuine factual question about an ingested paper, and confirm the
+  answer comes back with a verifiable citation (resolves via `get_span`) — record the transcript/result in
+  `LESSONS-LEARNED.md`. This is the one gap in this batch that isn't a code fix — it's a verification step
+  that's never actually been performed, and per V0's own definition of done, nothing else in this list
+  matters if this doesn't work.
+- **T-DOC34 (not started)** — PRD.md ADR-11's "Candidate mitigations" list (Tier A — real V0 gaps, decided
+  but never built) has a second item beyond the sparse/BM25 gap T-DOC27 already covers: **summary-level
+  routing exists as a capability but is never automatically enforced.** `Retriever.retrieve_papers()` /
+  `McpServer.search_papers` can narrow a query to the relevant papers *before* chunk-level retrieval and
+  reranking run — which would shrink the reranker's candidate pool and reduce the chance of the
+  T-DOC24/25-class incident recurring at larger corpus scale — but `PRD.md` §11A is explicit that this
+  routing is "delegated to the agent-as-reasoner... no server-side auto-rewrite": today `semantic_search`
+  always searches the full chunk index regardless of whether the calling agent could have scoped it via
+  `search_papers` first. Not broken (both tools work correctly on their own), but the mitigation ADR-11
+  actually decided on doesn't do anything today unless the calling agent happens to sequence its own tool
+  calls that way — which is not something V0's own MCP tool descriptions currently guide it toward. Fix:
+  either (a) update `McpServer`'s tool descriptions/docstrings to explicitly instruct the calling agent to
+  route through `search_papers` first for multi-paper-scoped queries (a docs-only fix, consistent with
+  "agent-as-reasoner, no server-side arbitration" — CONTEXT.md), or (b) if that proves insufficient in
+  practice, revisit the "no server-side auto-rewrite" decision itself — but (b) would need a documented ADR
+  change, not a silent behavior change, given ADR-11 explicitly decided against it once already.
 
 **Key `.phase0-data/` docs for a new agent to read first** (all gitignored/local, not in git history):
 `teval-results.md` (T-EVAL methodology + full before/after numbers), `known-issue-orphaned-chunks.md`
