@@ -170,6 +170,24 @@ def test_get_unknown_paper_returns_none(store):
     assert store.get("9999.99999") is None
 
 
+def test_markdown_blob_readable_after_a_relative_blob_dir_and_a_cwd_change(tmp_path, monkeypatch):
+    # Real bug (T-DOC22): a relative `blob_dir` (production's own default, "blobs") used to get
+    # written verbatim into `papers.markdown_path`, so `get()` from a *different* process/cwd than
+    # the one that ran `put()` raised ContractError on a perfectly intact blob -- 96/145 T-EVAL
+    # retrieval calls failed exactly this way. `DocumentStore.__init__` must resolve `blob_dir` to
+    # an absolute path up front so the stored path is cwd-independent from then on.
+    monkeypatch.chdir(tmp_path)
+    store = _mod.DocumentStore(db_path=str(tmp_path / "store.db"), blob_dir="blobs")
+    store.put(make_paper_record())
+
+    (tmp_path / "elsewhere").mkdir()
+    monkeypatch.chdir(tmp_path / "elsewhere")
+
+    got = store.get(PAPER_ID)
+    assert got is not None
+    assert got.parsed.markdown == make_parsed_doc().markdown
+
+
 # --------------------------------------------------------------------------------------------------
 # atomicity — a mid-put failure leaves ZERO rows (proven via a fresh connection, not just no-raise)
 # --------------------------------------------------------------------------------------------------
