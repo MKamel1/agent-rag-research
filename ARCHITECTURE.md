@@ -207,7 +207,11 @@ Ten modules, each independently ownable (owners A–F) and testable through its 
   `PaperSearchResponse` envelope (`results` + `Coverage`); `semantic_search` calls `Retriever.retrieve()`
   and returns the typed `SearchResponse` envelope (`results` + `Coverage`) — both in DATA-CONTRACTS §M8;
   `get_paper` returns `PaperSummaryView`; the `filters?` param on the search tools is `SearchFilters`,
-  §M6 — never a raw dict.
+  §M6 — never a raw dict. **Routing (T-DOC34):** summary-level routing (§6 "coarse routing," ADR-11) is
+  surfaced only as tool-description guidance on `search_papers`/`semantic_search` (`rag/mcp_server.py`
+  docstrings) telling the calling agent to call `search_papers` first for paper-scoped queries — there is
+  no server-side auto-narrowing and no paper-id field on `SearchFilters`, consistent with the
+  agent-as-reasoner decision (CONTEXT.md, PRD.md §11A).
 - **Hides:** composes `Retriever` + `DocumentStore`, formats citations. (Thin by nature — it's the
   protocol adapter; it calls `Retriever`'s two methods and wraps their output, it does not reimplement
   any part of the embed/hybrid/RRF/rerank pipeline itself — that stays inside M7.)

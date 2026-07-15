@@ -31,8 +31,18 @@ class McpServer:
     def semantic_search(
         self, query: str, filters: SearchFilters | None = None, k: int = 10
     ) -> SearchResponse:
-        """Passage-level search, delegated whole to `Retriever.retrieve()`. Postcondition: on an
-        empty corpus/no hits, `results == []` — empty is a valid answer, not an error.
+        """Passage-level search, delegated whole to `Retriever.retrieve()`. Always searches the
+        full chunk index across the whole corpus — `filters` (`SearchFilters`) can narrow by
+        category/date/kind, but has no paper-id field, so this tool alone cannot be scoped to one
+        paper or a known handful of papers. If the query is about a specific paper or a small set
+        of papers you already suspect matter, call `search_papers` first: it identifies which
+        paper(s) are actually relevant from a cheap summary-level match before any chunk search
+        runs, so you can decide whether a full-corpus chunk search is even needed and can check
+        this tool's results (each carries its own `paper_id`) against that expectation instead of
+        trusting an unscoped search alone. This project's agent-as-reasoner design (CONTEXT.md,
+        PRD.md §11A) puts that sequencing decision on the calling agent; this server never
+        auto-rewrites or narrows a query on its own. Postcondition: on an empty corpus/no hits,
+        `results == []` — empty is a valid answer, not an error.
         """
         results, retrieval_coverage = self._retriever.retrieve(query, filters, k)
         return SearchResponse(results=results, coverage=self._coverage(results, retrieval_coverage))
@@ -40,8 +50,12 @@ class McpServer:
     def search_papers(
         self, query: str, filters: SearchFilters | None = None, k: int = 10
     ) -> PaperSearchResponse:
-        """Whole-paper/summary-level search, delegated whole to `Retriever.retrieve_papers()`.
-        Postcondition: on no hits, `results == []`.
+        """Whole-paper/summary-level search, delegated whole to `Retriever.retrieve_papers()`. This
+        is the right first call when a query is scoped to a specific paper or a handful of papers:
+        it ranks whole papers by their summary — cheaply, before any chunk-level retrieval or
+        reranking runs — so you can confirm which paper(s) actually matter, or find that a
+        confirmed match's `get_paper` summary already answers the question without needing a
+        broader `semantic_search` chunk search at all. Postcondition: on no hits, `results == []`.
         """
         results, retrieval_coverage = self._retriever.retrieve_papers(query, filters, k)
         return PaperSearchResponse(
