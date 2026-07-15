@@ -181,7 +181,8 @@ class _PdfDownloadParser:
         list[str]) -> list[ParsedDoc]` the same way `parse()` bridges to `parse()` above --
         download every ref's PDF first (same per-request delay/one-retry-then-`PermanentError`
         policy as `_download`, applied to each ref in turn), then hand the whole batch of bytes
-        (plus each ref's real `paper_id`, T-DOC31) to MinerU in one `do_parse` call.
+        (plus each ref's real `paper_id`, T-DOC31) to the real Parser module's batch entrypoint in
+        one call.
 
         A download failure for ANY ref raises `PermanentError` here before `parse_pdf_bytes_batch`
         is even called -- consistent with `rag/parser.py`'s own whole-batch-fails contract, and
