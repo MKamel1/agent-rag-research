@@ -2,9 +2,10 @@
 # (CONVENTIONS §11) requires this suite active (importorskip resolves) and green.
 """M1a tests-first suite for M2 Parser (T-B1).
 
-Written against the FROZEN interface `parse(raw: PdfBytes | LatexSource) -> ParsedDoc`
-(ARCHITECTURE.md §M2) BEFORE `rag/parser.py` exists. Until it does, the whole module is SKIPPED
-(the `importorskip` below) so CI stays green; it activates in M1b when the adapter lands.
+Written against the FROZEN interface `parse(raw: bytes, paper_id: str) -> ParsedDoc`
+(ARCHITECTURE.md §M2, `contracts/parser.py`) BEFORE `rag/parser.py` exists. Until it does, the
+whole module is SKIPPED (the `importorskip` below) so CI stays green; it activates in M1b when the
+adapter lands.
 
 What this suite asserts at M1a (interface contract — no real vendor, no golden fixtures needed):
   * `parse` is exposed and callable.
@@ -40,7 +41,7 @@ import pytest
 
 _mod = pytest.importorskip("rag.parser")  # SKIPS the whole module until rag/parser.py exists
 
-from contracts.errors import PermanentError  # noqa: E402  (foundation — always importable)
+from contracts.errors import ContractError, PermanentError  # noqa: E402  (foundation — always ok)
 from contracts.parser import Figure, ParsedDoc, Reference, TableItem  # noqa: E402
 from contracts.provenance import Block  # noqa: E402
 
@@ -49,6 +50,7 @@ parse_batch = _mod.parse_batch
 
 _FAKE_BBOX = (0.0, 0.0, 0.0, 0.0)  # the forbidden "fake" bbox (OWNER-B.md scope fence)
 _GOLDEN_DIR = Path(__file__).resolve().parents[1] / "fixtures" / "golden"
+_PAPER_ID = "2506.01234"  # a stand-in caller-supplied id -- any real test doesn't care which
 
 
 # ---------------------------------------------------------------------------
@@ -186,7 +188,7 @@ def test_parse_is_callable():
 def test_unparseable_input_raises_permanent_error(bad_input, why):
     # ARCHITECTURE.md §M2: parse failure -> typed error -> quarantine (NOT a crash, NOT Transient).
     with pytest.raises(PermanentError):
-        parse(bad_input)
+        parse(bad_input, _PAPER_ID)
 
 
 def test_unparseable_input_error_carries_pdf_size_bytes_diagnostics():
@@ -196,7 +198,7 @@ def test_unparseable_input_error_carries_pdf_size_bytes_diagnostics():
     # bytes are always cheaply at hand at this failure point.
     bad_input = b"this is not a pdf"
     with pytest.raises(PermanentError) as exc_info:
-        parse(bad_input)
+        parse(bad_input, _PAPER_ID)
     assert exc_info.value.diagnostics == {"pdf_size_bytes": len(bad_input)}
 
 
@@ -278,19 +280,20 @@ def test_parse_batch_is_callable():
 
 
 def test_parse_batch_empty_list_returns_empty_list():
-    assert parse_batch([]) == []
+    assert parse_batch([], []) == []
 
 
 def test_parse_batch_returns_parseddocs_in_order_on_full_success(tmp_path, monkeypatch):
     raws = [_one_page_pdf_bytes(w, h) for w, h in [(200, 200), (300, 300), (400, 400)]]
     stems = [_stem_of(r) for r in raws]
+    paper_ids = ["2501.00001", "2501.00002", "2501.00003"]
     texts = {stem: f"body text for document {i}" for i, stem in enumerate(stems)}
     _install_fake_do_parse(monkeypatch, _fake_do_parse_writing(tmp_path, texts))
 
-    docs = parse_batch(raws, output_dir=tmp_path)
+    docs = parse_batch(raws, paper_ids, output_dir=tmp_path)
 
     assert len(docs) == 3
-    assert [d.paper_id for d in docs] == stems  # same order as raws (no arXiv id -> falls back to stem)
+    assert [d.paper_id for d in docs] == paper_ids  # same order as raws/paper_ids
     for doc, stem in zip(docs, stems, strict=True):
         assert texts[stem] in doc.markdown
         assert_parseddoc_invariants(doc)
@@ -301,9 +304,10 @@ def test_parse_batch_single_item_batch_works(tmp_path, monkeypatch):
     stem = _stem_of(raw)
     _install_fake_do_parse(monkeypatch, _fake_do_parse_writing(tmp_path, {stem: "solo document"}))
 
-    docs = parse_batch([raw], output_dir=tmp_path)
+    docs = parse_batch([raw], [_PAPER_ID], output_dir=tmp_path)
 
     assert len(docs) == 1
+    assert docs[0].paper_id == _PAPER_ID
     assert_parseddoc_invariants(docs[0])
 
 
@@ -314,6 +318,7 @@ def test_parse_batch_raises_and_returns_nothing_when_one_members_output_is_missi
     # other N-1 good ones -- there is no return value at all on a batch failure, only a raise.
     raws = [_one_page_pdf_bytes(w, h) for w, h in [(200, 200), (300, 300), (400, 400)]]
     stems = [_stem_of(r) for r in raws]
+    paper_ids = ["2501.00001", "2501.00002", "2501.00003"]
     texts = {stem: f"body text for document {i}" for i, stem in enumerate(stems)}
     _install_fake_do_parse(
         monkeypatch,
@@ -321,7 +326,7 @@ def test_parse_batch_raises_and_returns_nothing_when_one_members_output_is_missi
     )
 
     with pytest.raises(PermanentError):
-        parse_batch(raws, output_dir=tmp_path)
+        parse_batch(raws, paper_ids, output_dir=tmp_path)
 
 
 def test_parse_batch_maps_do_parse_exception_to_permanent_error(tmp_path, monkeypatch):
@@ -332,7 +337,7 @@ def test_parse_batch_maps_do_parse_exception_to_permanent_error(tmp_path, monkey
     raws = [_one_page_pdf_bytes(200, 200), _one_page_pdf_bytes(300, 300)]
 
     with pytest.raises(PermanentError) as exc_info:
-        parse_batch(raws, output_dir=tmp_path)
+        parse_batch(raws, ["2501.00001", "2501.00002"], output_dir=tmp_path)
     # T-DOC17: opportunistic .diagnostics, total pdf_size_bytes across the whole failed batch.
     assert exc_info.value.diagnostics == {"pdf_size_bytes": sum(len(r) for r in raws)}
 
@@ -347,7 +352,58 @@ def test_parse_batch_rejects_unparseable_member_before_calling_do_parse(tmp_path
     raws = [_one_page_pdf_bytes(200, 200), b"not a pdf at all"]
 
     with pytest.raises(PermanentError):
-        parse_batch(raws, output_dir=tmp_path)
+        parse_batch(raws, ["2501.00001", "2501.00002"], output_dir=tmp_path)
+
+
+def test_parse_batch_rejects_mismatched_paper_ids_length():
+    # A caller bug (mismatched lists), not a quarantinable paper problem -- ContractError, crash
+    # early (CONVENTIONS.md §4), never a silent zip-truncation or an IndexError.
+    raws = [_one_page_pdf_bytes(200, 200), _one_page_pdf_bytes(300, 300)]
+    with pytest.raises(ContractError):
+        parse_batch(raws, ["2501.00001"])  # one id short
+
+
+# ---------------------------------------------------------------------------
+# T-DOC31 regression: `paper_id` is the caller's, always -- never re-derived from the PDF's own
+# content, even when the content contains what looks like a DIFFERENT arXiv watermark. This is
+# exactly the shape of the real bug (LESSONS-LEARNED.md 2026-07-15 T-DOC31 entry): a MinerU text
+# block that happens to match `_ARXIV_ID_RE` must not override the caller-supplied id.
+# ---------------------------------------------------------------------------
+
+
+def test_parse_uses_caller_supplied_paper_id_even_when_content_has_a_different_arxiv_watermark(
+    tmp_path, monkeypatch
+):
+    raw = _one_page_pdf_bytes(250, 250)
+    stem = _stem_of(raw)
+    page_dir = tmp_path / stem / "auto"
+    page_dir.mkdir(parents=True, exist_ok=True)
+    content_list = [
+        {
+            "type": "text",
+            "page_idx": 0,
+            "bbox": [100, 100, 900, 200],
+            "text": "arXiv:2411.14665v2 [cs.LG] some watermark text",
+            "text_level": 0,
+        }
+    ]
+    middle = {"pdf_info": [{"page_idx": 0, "page_size": [612, 792]}]}
+    (page_dir / f"{stem}_content_list.json").write_text(json.dumps(content_list))
+    (page_dir / f"{stem}_middle.json").write_text(json.dumps(middle))
+    (page_dir / f"{stem}.md").write_text("# Doc\n\nbody")
+
+    def _fake(*, output_dir, pdf_file_names, pdf_bytes_list, **kwargs):
+        pass  # output already written above -- do_parse itself does nothing here
+
+    _install_fake_do_parse(monkeypatch, _fake)
+
+    doc = parse(raw, "2506.09999", output_dir=tmp_path)
+
+    assert doc.paper_id == "2506.09999", (
+        "the caller-supplied paper_id must win, even though the content contains a different "
+        "arXiv watermark -- there is no more content-derived fallback/override (T-DOC31)"
+    )
+    assert doc.blocks[0].block_id == "2506.09999:b0"
 
 
 # ---------------------------------------------------------------------------
@@ -376,7 +432,7 @@ _scanned = _scanned_golden_pdfs()
 @pytest.mark.skipif(not _golden, reason="Spike-1 golden PDFs not committed yet (fixtures/golden/)")
 @pytest.mark.parametrize("pdf_path", _golden, ids=lambda p: p.name)
 def test_golden_pdf_parses_and_satisfies_invariants(pdf_path):
-    doc = parse(pdf_path.read_bytes())
+    doc = parse(pdf_path.read_bytes(), pdf_path.stem)
     assert isinstance(doc, ParsedDoc)
     assert doc.blocks, "a real paper must yield at least one block"
     assert_parseddoc_invariants(doc)  # every block/figure/table anchored; reading order; parser_id
@@ -389,7 +445,7 @@ def test_golden_pdf_preserves_equations_as_latex(pdf_path):
     # TEST-STRATEGY.md "Golden fixtures": equations present as LaTeX (math-heavy fixtures).
     # Not every golden PDF is math-heavy, so assert the shape holds *when* equation blocks exist
     # rather than requiring one in every paper.
-    doc = parse(pdf_path.read_bytes())
+    doc = parse(pdf_path.read_bytes(), pdf_path.stem)
     for block in doc.blocks:
         if block.type == "equation":
             assert block.text.strip(), "equation block must carry its LaTeX in `text`"
@@ -403,7 +459,7 @@ def test_golden_pdf_preserves_equations_as_latex(pdf_path):
 def test_scanned_golden_pdf_is_quarantined(pdf_path):
     # TEST-STRATEGY.md: the deliberately broken/scanned PDF must raise PermanentError, not crash.
     with pytest.raises(PermanentError):
-        parse(pdf_path.read_bytes())
+        parse(pdf_path.read_bytes(), pdf_path.stem)
 
 
 # References parsing is likewise golden-dependent — asserted here so it activates with
@@ -413,7 +469,7 @@ def test_scanned_golden_pdf_is_quarantined(pdf_path):
 @pytest.mark.skipif(not _golden, reason="Spike-1 golden PDFs not committed yet (fixtures/golden/)")
 @pytest.mark.parametrize("pdf_path", _golden, ids=lambda p: p.name)
 def test_golden_pdf_references_have_raw_strings(pdf_path):
-    doc = parse(pdf_path.read_bytes())
+    doc = parse(pdf_path.read_bytes(), pdf_path.stem)
     for ref in doc.references:
         assert isinstance(ref, Reference)
         assert ref.raw.strip(), "every parsed reference carries its raw string"
