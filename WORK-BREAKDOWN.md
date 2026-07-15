@@ -351,19 +351,23 @@ second source of truth). Remaining untracked item:
   usage as an intentional, narrower exception to CONVENTIONS §3 (composition-root/entrypoint code, not
   `rag/`'s pipeline modules) and update the doc to say so explicitly, or (b) actually route these through
   `Config` and widen `env_leak.py`'s scope to include `app/` for real.
-- **T-DOC30 (not started)** — T-INT2's acceptance bar ("idempotency, resume-after-kill, and quarantine...
-  verified on real data") is unproven, and even if it was informally verified once, there's no durable record
-  of it. Resume *logic* is real and unit-tested with fakes (`rag/test_orchestrator.py`'s
-  `test_resume_after_summarized_does_not_reinvoke_chunker_or_summarizer` /
-  `test_resume_after_stored_reruns_upsert_and_reaches_done`), but nothing in the repo shows a real OS-level
-  kill against real (non-fake) data followed by a confirmed clean resume — no test, no `LESSONS-LEARNED.md`
-  entry, no doc reference beyond the ticket's own promise text. This session's own history strongly suggests
-  a real crash-and-clean-resume happened at least once for real (a production process was interrupted and
-  later resumed from checkpoint, per earlier session context) — but if so, it was never written down anywhere
-  version-controlled, so a fresh agent/session has no way to know whether this real validation ever actually
-  occurred. Fix: either run a real, deliberate kill-mid-ingest test against real (or realistic) data and
-  record the result in `LESSONS-LEARNED.md`, or if a past real incident already proves this, write it up
-  properly instead of letting it stay an unrecorded assumption.
+- **T-DOC30 (verified — see LESSONS-LEARNED.md's 2026-07-15 entry, PR #98, awaiting @MKamel1 review)** —
+  T-INT2's acceptance bar ("idempotency, resume-after-kill, and quarantine... verified on real data") was
+  unproven: no test, no `LESSONS-LEARNED.md` entry, no doc reference beyond the ticket's own promise text, and
+  the one candidate real-run evidence (`.phase0-data/100-paper-run-stats.md`) turned out on inspection to be
+  two clean, uninterrupted invocations, not an OS-level kill. No informal record of a real crash/kill/resume
+  was found anywhere either (searched every `LESSONS-LEARNED.md` copy under `.claude/worktrees/*`). Fixed by
+  running a real, deliberate kill-mid-ingest test against 5 real arXiv papers (real GROBID/MinerU/TEI/Ollama/
+  Qdrant, throwaway db/collection/blob dir) covering both T-A2 DoD-named gaps — after `chunked`/before
+  `embedded`, and after `DocumentStore.put()`/before `VectorIndex.upsert()` completes — via a real `SIGKILL`
+  against the real `python -m app.ingest` process, then a real resume. Both gaps verified clean (no
+  re-invoked Chunker/Summarizer, no duplicate/orphaned Qdrant points, all 5 papers reached `done`); full
+  numbers/timestamps in `LESSONS-LEARNED.md`. Resume *logic* remains additionally unit-tested with fakes
+  (`rag/test_orchestrator.py`'s `test_resume_after_summarized_does_not_reinvoke_chunker_or_summarizer` /
+  `test_resume_after_stored_reruns_upsert_and_reaches_done`) as before. One unrelated pre-existing bug was
+  found incidentally (a parser paper_id-derivation fallback leaking into `DocumentStore`'s `chunks.paper_id`
+  for a paper with no extractable arXiv self-citation) and flagged, not fixed — out of this ticket's scope,
+  now covered by T-DOC31 (PR #103).
 - **T-DOC31 (not started)** — `rag/parser.py`'s `_derive_paper_id` (~line 415-423) falls back to a content
   hash (`hashlib.sha256(raw).hexdigest()[:16]`, call sites ~line 154/193) when a PDF has no
   regex-matchable `arXiv:YYMM.NNNNN` watermark, even though the orchestrator already knows the real
