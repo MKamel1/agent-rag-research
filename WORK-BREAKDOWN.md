@@ -322,7 +322,8 @@ of this doc's writing — do that alongside merging PR #94). Other splits from t
   Pass 2) was investigated but not acted on — current mitigations (TEI eviction T-DOC19, adaptive batch
   sizing T-DOC21, PDF cache/prefetch T-DOC18) close most of the gap without the bigger restructuring; revisit
   only if a real utilization regression reappears.
-- **T-DOC27 (not started)** — the sparse/hybrid search channel doesn't do what ADR-01 (`PRD.md`) actually
+- **T-DOC27 (in progress — PR #104 open, awaiting @MKamel1 review — validated on throwaway collection,
+  production Qdrant NOT yet re-indexed)** — the sparse/hybrid search channel doesn't do what ADR-01 (`PRD.md`) actually
   decided. ADR-01 chose Qdrant specifically because *"Qdrant treats sparse vectors (BM25/SPLADE) as
   first-class beside dense"* — but `rag/vector_index.py`'s `_sparse_vector` never uses that; it hand-rolls a
   naive raw term-frequency hash with no IDF weighting, so common words carry as much weight as
