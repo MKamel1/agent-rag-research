@@ -435,7 +435,9 @@ second source of truth). Remaining untracked item:
   "agent-as-reasoner, no server-side arbitration" — CONTEXT.md), or (b) if that proves insufficient in
   practice, revisit the "no server-side auto-rewrite" decision itself — but (b) would need a documented ADR
   change, not a silent behavior change, given ADR-11 explicitly decided against it once already.
-- **T-DOC35 (not started)** — **59 papers are `ingest_state='done'` with a `summary` row but zero `blocks`/
+- **T-DOC35 (in progress — PR #107 open, awaiting @MKamel1 review — all 59 papers re-ingested and verified;
+  depends on T-DOC31/PR #103, still open, merging before/alongside this one)** — **59 papers are
+  `ingest_state='done'` with a `summary` row but zero `blocks`/
   `chunks`** — surfaced during T-DOC31's production sweep (PR #103; count matches the 59 papers T-DOC23's
   orphaned-chunks cleanup deleted rows *for*, strongly suggesting these are the same papers whose
   chunk/block rows were removed as orphans but whose `papers`/`summaries`/`ingest_state='done'` rows were
