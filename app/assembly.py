@@ -104,7 +104,7 @@ class _PdfDownloadParser:
     unparseable PDF) is not retried.
 
     `cache_dir` (T-DOC18, giggly-tumbling-globe.md Part 0 Layer 1): the standalone prefetcher
-    (`app/prefetch_pdfs.py`) fills `RAG_PDF_CACHE_DIR/<paper_id>.pdf` continuously, off the GPU
+    (`app/prefetch_pdfs.py`) fills `config.pdf_cache_dir/<paper_id>.pdf` continuously, off the GPU
     critical path, but this class never read it -- every ref did a live HTTP GET regardless of
     whether the prefetcher already had it. If `cache_dir` is given, `_download` checks
     `cache_dir / f"{paper_id}.pdf"` first (same naming convention as `prefetch_pdfs._pdf_path`)
@@ -112,10 +112,11 @@ class _PdfDownloadParser:
     live-download path below and then writes the result to the same path (atomically -- write to
     a per-process-unique `.tmp` sibling and rename, see `_write_cache`) so the live pipeline also
     grows the cache instead of only ever reading it. `cache_dir=None` skips the cache check
-    entirely; `build_ingestion_orchestrator` only ever passes `None` if `RAG_PDF_CACHE_DIR` is
-    explicitly set to an empty value -- an unset var now defaults to the SAME `"pdf_cache"`
-    directory `app/prefetch_pdfs.py` defaults to (T-DOC18 bug fix: these two defaults used to
-    disagree, silently disabling the cache whenever the var wasn't exported).
+    entirely; `build_ingestion_orchestrator` only ever passes `None` if `config.pdf_cache_dir` is
+    explicitly set to an empty value (T-DOC29: a real `Config` field now, not an env var) -- an
+    unset/default value resolves to the SAME `"pdf_cache"` directory `app/prefetch_pdfs.py`
+    defaults to (T-DOC18 bug fix: these two defaults used to disagree, silently disabling the
+    cache; now structurally impossible to drift since both read the one Config field).
 
     Single-lookahead prefetch (T-DOC18 Layer 2): `parse_batch()`'s own download prefix used to be
     a solid block of GPU-idle time in front of every batch's `parse_pdf_bytes_batch()` (MinerU)
@@ -337,8 +338,8 @@ def build_ingestion_orchestrator(
     # Same Config field (T-DOC29: `config.pdf_cache_dir`, one default declared once in
     # contracts/config.py) app/prefetch_pdfs.py also reads -- both processes agree on the same
     # `./pdf_cache` default by construction now, closing off the T-DOC18 bug this used to guard
-    # against by convention (two independently-guessed `os.environ.get(..., default)` fallbacks
-    # that could silently drift apart). `pdf_cache_dir` only ends up `None` here if config.yaml
+    # against by convention (two independently-guessed env-var-with-fallback reads that could
+    # silently drift apart). `pdf_cache_dir` only ends up `None` here if config.yaml
     # explicitly sets `pdf_cache_dir: ""` -- logged below so a genuinely-disabled cache is visible,
     # not silent. mkdir here (not inside _PdfDownloadParser) because only the composition root
     # knows whether this run is even configured to use a cache at all.

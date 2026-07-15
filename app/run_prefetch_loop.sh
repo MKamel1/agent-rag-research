@@ -8,7 +8,14 @@
 # durable ingest_state/pdf_cache checkpoint the script itself already uses, and stops for good
 # once the script exits 0.
 #
-# Usage: RAG_DB_PATH=... RAG_PDF_CACHE_DIR=... PREFETCH_TARGET=30000 ./app/run_prefetch_loop.sh
+# Usage: ./app/run_prefetch_loop.sh
+#
+# db_path/pdf_cache_dir/prefetch_target (T-DOC29: real Config fields, read from config.yaml by
+# `python -m app.prefetch_pdfs` -- no longer RAG_DB_PATH/RAG_PDF_CACHE_DIR/PREFETCH_TARGET env
+# vars) come from whatever config.yaml is in this process's cwd when the loop below runs. To
+# point a prefetch run at non-default values, either edit the real config.yaml directly or `cd`
+# into a directory containing a throwaway config.yaml with the fields you want overridden before
+# invoking this script.
 
 set -uo pipefail
 

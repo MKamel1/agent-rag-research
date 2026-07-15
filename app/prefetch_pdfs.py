@@ -98,8 +98,8 @@ def _cache_dir_from_config(cfg: Config) -> Path:
     # T-DOC29: `cfg.pdf_cache_dir`'s default ("pdf_cache") is declared once in
     # contracts/config.py -- app/assembly.py's build_ingestion_orchestrator reads the SAME Config
     # field, so an ingestion run launched with an unedited config.yaml agrees on the same
-    # directory by construction (previously two independently-guessed `os.environ.get` fallbacks,
-    # the T-DOC18 bug this replaced).
+    # directory by construction (previously two independently-guessed env-var-with-fallback
+    # reads, the T-DOC18 bug this replaced).
     d = Path(cfg.pdf_cache_dir)
     d.mkdir(parents=True, exist_ok=True)
     return d

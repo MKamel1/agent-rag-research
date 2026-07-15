@@ -1,11 +1,11 @@
-"""Check (g) — CONVENTIONS.md §0.7 / §12: every module source file under `rag/`/`contracts/` needs
-a sibling `test_<name>.py` in the same directory. This is the mechanical *existence* proxy only —
-the M1a→M1b *ordering* rule (test committed before implementation) is a git-history check at that
-milestone gate, not a per-push diff check (WORK-BREAKDOWN.md M1a), and out of scope here.
+"""Check (g) — CONVENTIONS.md §0.7 / §12: every module source file under `rag/`/`contracts/`/`app/`
+needs a sibling `test_<name>.py` in the same directory. This is the mechanical *existence* proxy
+only — the M1a→M1b *ordering* rule (test committed before implementation) is a git-history check
+at that milestone gate, not a per-push diff check (WORK-BREAKDOWN.md M1a), and out of scope here.
 
-Scope is `rag/`/`contracts/` (`model.in_pipeline_scope`) — that is exactly and only what
-CONVENTIONS.md §12(g) names; a file elsewhere (this package included) isn't a "module source
-file" in that sense.
+Scope is `rag/`/`contracts/`/`app/` (`model.in_pipeline_scope`; `app/` added by T-DOC29) — that is
+exactly and only what CONVENTIONS.md §12(g) names; a file elsewhere (this package included) isn't
+a "module source file" in that sense.
 
 `files` (built from `changed`) only ever contains paths that still exist on disk
 (`ci.checks.diff.build_diff_files` drops deletions, and `_in_scope` below excludes `test_`-prefixed

@@ -20,7 +20,7 @@ def _run_parse_phase(cfg: Config) -> None:
     subprocess invocation.
 
     `cfg.db_path`/`cfg.blob_dir`/`cfg.collection` (T-DOC29: real Config fields now, not
-    `os.environ` reads) default to `build_ingestion_orchestrator`'s own
+    process-environment reads) default to `build_ingestion_orchestrator`'s own
     "papers.db"/"blobs"/"papers" unless `config.yaml` overrides them. Both this subprocess and
     `app/ingest.py`'s own process load the same `config.yaml` from the same cwd, so they agree on
     one location without any cross-process handoff. A test can still point this subprocess at a

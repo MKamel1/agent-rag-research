@@ -22,8 +22,8 @@ def test_constructs_with_only_the_one_required_field_and_documented_v0_defaults(
     assert config.hybrid_dense_weight == pytest.approx(0.5)
     assert config.gpu_lock_path == ".gpu.lock"
     assert config.parse_batch_size == 4
-    # composition-root levers (T-DOC29) -- defaults must match what os.environ.get(name, default)
-    # used to fall back to in app/ before this ticket moved them onto Config.
+    # composition-root levers (T-DOC29) -- defaults must match what each env-var-with-fallback
+    # read used to return in app/ before this ticket moved them onto Config.
     assert config.db_path == "papers.db"
     assert config.blob_dir == "blobs"
     assert config.collection == "papers"
