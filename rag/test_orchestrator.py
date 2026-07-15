@@ -883,7 +883,9 @@ class SpyBatchParser:
         return [make_parsed(ref) for ref in refs]
 
 
-def _parse_phase_orchestrator(parser, state, *, parse_batch_size: int) -> IngestionOrchestrator:
+def _parse_phase_orchestrator(
+    parser, state, *, parse_batch_size: int, batch_size_provider=None
+) -> IngestionOrchestrator:
     return IngestionOrchestrator(
         harvester=None,
         parser=parser,
@@ -896,6 +898,7 @@ def _parse_phase_orchestrator(parser, state, *, parse_batch_size: int) -> Ingest
         gpu_lock=None,
         config=Config(focus_area_queries=["x"], parse_batch_size=parse_batch_size),
         retry_sleep=lambda seconds: None,
+        batch_size_provider=batch_size_provider,
     )
 
 
@@ -1058,3 +1061,67 @@ def test_parse_phase_prefetch_excludes_refs_already_parsed_or_further_along():
         "group 1's only ref is already parsed -- nothing left in the next batch to prefetch"
     )
     assert parser.batch_calls == [PAPER_IDS[0:2]]  # group 1 never needed a parse_batch() call either
+
+
+# ================================================================================================
+# T-DOC21 (.claude/plans/giggly-tumbling-globe.md): an optional `batch_size_provider` lets a
+# composition root grow/shrink Pass-1 batch boundaries instead of the fixed
+# `config.parse_batch_size` every time. `None` (the default, used by every test above this
+# section) preserves today's exact fixed-stride behavior -- confirmed by every fixed-size test
+# above staying green with zero changes.
+# ================================================================================================
+
+
+def test_parse_phase_uses_a_fixed_size_by_default_when_no_batch_size_provider_is_injected():
+    # Same shape as test_parse_phase_handles_a_short_final_batch, just confirming explicitly that
+    # omitting batch_size_provider (the default) reproduces the pre-T-DOC21 fixed-stride grouping.
+    parser = SpyBatchParser()
+    state = FakeIngestState()
+    orch = _parse_phase_orchestrator(parser, state, parse_batch_size=2)
+
+    orch.parse_phase(REFS)
+
+    assert parser.batch_calls == [PAPER_IDS[0:2], PAPER_IDS[2:3]]
+
+
+def test_parse_phase_uses_the_batch_size_provider_when_injected_not_the_fixed_config_value():
+    # The provider is called twice per loop iteration (current batch size, then a next-batch
+    # lookahead guess -- rag/orchestrator.py's parse_phase docstring) -- repeat each intended size
+    # so both calls in a given iteration agree: real, uneven batch boundaries [1, 2] a fixed
+    # parse_batch_size could never produce (config.parse_batch_size is deliberately set to
+    # something else, 4, to prove the provider -- not the config value -- actually drove this).
+    sizes = iter([1, 1, 2, 2])
+    parser = SpyBatchParser()
+    state = FakeIngestState()
+    orch = _parse_phase_orchestrator(
+        parser, state, parse_batch_size=4, batch_size_provider=lambda: next(sizes)
+    )
+
+    orch.parse_phase(REFS)
+
+    assert parser.batch_calls == [PAPER_IDS[0:1], PAPER_IDS[1:3]]
+    for paper_id in PAPER_IDS:
+        assert state.get(paper_id).stage == "chunked"
+
+
+def test_parse_phase_batch_size_provider_is_called_once_per_batch_not_once_total():
+    call_count = {"n": 0}
+
+    def provider():
+        call_count["n"] += 1
+        return 1  # one paper per batch -> 3 batches for 3 refs
+
+    parser = SpyBatchParser()
+    state = FakeIngestState()
+    orch = _parse_phase_orchestrator(
+        parser, state, parse_batch_size=4, batch_size_provider=provider
+    )
+
+    orch.parse_phase(REFS)
+
+    assert parser.batch_calls == [[p] for p in PAPER_IDS]
+    # Called twice per batch (current size + next-batch lookahead guess), 3 batches -> 6 calls.
+    # The exact count matters less than "more than once, and scales with batch count" -- pin the
+    # real number so a future refactor that changes this has to look at this test, not silently
+    # drift.
+    assert call_count["n"] == 6
