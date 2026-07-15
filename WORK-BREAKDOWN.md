@@ -403,7 +403,7 @@ second source of truth). Remaining untracked item:
   `LESSONS-LEARNED.md`. This is the one gap in this batch that isn't a code fix — it's a verification step
   that's never actually been performed, and per V0's own definition of done, nothing else in this list
   matters if this doesn't work.
-- **T-DOC34 (not started)** — PRD.md ADR-11's "Candidate mitigations" list (Tier A — real V0 gaps, decided
+- **T-DOC34 (in progress — PR #100 open, awaiting @MKamel1 review)** — PRD.md ADR-11's "Candidate mitigations" list (Tier A — real V0 gaps, decided
   but never built) has a second item beyond the sparse/BM25 gap T-DOC27 already covers: **summary-level
   routing exists as a capability but is never automatically enforced.** `Retriever.retrieve_papers()` /
   `McpServer.search_papers` can narrow a query to the relevant papers *before* chunk-level retrieval and
