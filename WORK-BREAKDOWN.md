@@ -484,12 +484,12 @@ tickets are the concrete follow-ups.
   in `teval-results.md`/`WORK-BREAKDOWN.md` to match reality. **Depends on T-DOC35** (else it measures the
   59-paper hole) and benefits from the T-DOC27 prod-Qdrant reindex (below) landing first. Also fold in the
   RAG-review's A5 (measure T-DOC34 summary-routing's effect on the multi-paper split) while the harness is up.
-- **T-DOC38 (not started) — BLOCKER, small, high-value read-path robustness.** `rag/retriever.py:106-107,
+- **T-DOC38 (in progress — PR #106 open) — BLOCKER, small, high-value read-path robustness.** `rag/retriever.py:106-107,
   157-158` raise `ContractError` and zero the *entire* query when a single reranked hit can't be resolved
   (e.g. an orphaned/stale candidate). The ingest side quarantines bad papers; the read side never mirrored
   that invariant — already measured crashing ~8% of eval queries to zero results. Fix: **skip-and-continue**
   (drop the unresolvable hit, log it, return the rest) instead of raising. Pure `rag/` code, no infra.
-- **T-DOC39 (not started)** — the rerank batch ceiling (32) leaks a vendor limit into the pure module and is
+- **T-DOC39 (in progress — PR #106 open)** — the rerank batch ceiling (32) leaks a vendor limit into the pure module and is
   incompletely guarded: `retriever.py:91,143`'s `max(k, 32)` means **any caller passing `k>32` re-triggers
   the same 0%-recall 422 crash T-DOC24/25 caused** (MCP exposes `k` unclamped). Fix: move the batch ceiling
   into `TeiReranker` (where the vendor limit belongs), clamp `k` there, and add a real-adapter contract test
