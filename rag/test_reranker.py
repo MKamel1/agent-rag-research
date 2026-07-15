@@ -160,3 +160,31 @@ def test_real_reranker_returns_a_valid_permutation_of_a_real_candidate_set():
     assert {c.id for c in result} == {"relevant", "irrelevant", "neutral"}
     assert len(result) == 3
     assert result[0].id == "relevant"  # the real cross-encoder should rank the on-topic text first
+
+
+@pytest.mark.enable_socket
+def test_real_reranker_accepts_a_full_rerank_pool_sized_batch():
+    # T-DOC25 regression: T-DOC24 set rag.retriever._RERANK_POOL_SIZE=50, but the real deployed
+    # TEI reranker enforces a hard server-side max batch size of 32 -- every real rerank() call
+    # with the full pool 422'd ("batch size 50 > maximum allowed batch size 32"), breaking every
+    # single real retrieve() call in production. No fakes-only test could catch this (FakeReranker
+    # has no batch-size ceiling). Import the real constant, not a hardcoded number, so this stays
+    # in sync with whatever rag/retriever.py actually sends.
+    from rag.retriever import _RERANK_POOL_SIZE
+
+    client = httpx.Client(base_url="http://localhost:8082", timeout=30.0)
+    reranker = TeiReranker(client, FakeGpuLock())
+    candidates = _candidates(
+        *[(str(i), f"filler passage number {i} about causal inference") for i in range(_RERANK_POOL_SIZE)]
+    )
+    try:
+        result = reranker.rerank("treatment effect estimation methods", candidates)
+    except (httpx.HTTPError, TransientError) as e:
+        pytest.skip(f"no live reranker reachable at localhost:8082: {e}")
+    except PermanentError as e:
+        pytest.fail(
+            f"_RERANK_POOL_SIZE={_RERANK_POOL_SIZE} exceeds what the real reranker server "
+            f"accepts: {e}"
+        )
+
+    assert len(result) == _RERANK_POOL_SIZE
