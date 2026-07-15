@@ -426,3 +426,90 @@ evidence trail (a `LESSONS-LEARNED.md` entry, in this case) should be checked, n
 because the ticket text asserts it confidently — this is the second time in this project's history a
 downstream doc referenced something upstream that didn't actually land (see `WORK-BREAKDOWN.md`'s
 T-DOC30 entry itself, which exists for exactly this reason: an assumed-but-unrecorded past validation).
+
+---
+
+### 2026-07-15 — build-process — 59 `done`-but-chunkless papers re-ingested; discovered mid-fix that the real fix requires T-DOC31 (PR #103), still unmerged (T-DOC35)
+
+**Scale, confirmed exactly:** `SELECT p.paper_id FROM papers p JOIN ingest_state s ON s.paper_id =
+p.paper_id LEFT JOIN chunks c ON c.paper_id = p.paper_id WHERE s.stage='done' AND c.paper_id IS
+NULL` (cross-checked against `blocks` the same way, and against having a `summaries` row) returned
+**exactly 59 paper_ids** against the real production DB — matching the ticket's estimate exactly,
+not just "about 59." Full list captured in the PR; first is `2411.14665` (the same paper T-DOC30's
+2026-07-15 entry above flagged), rest are a contiguous-looking run of `2607.0*`-`2607.11*` ids plus
+a few earlier ones (`2602.07478`, `2605.24076`). Each had a `papers` row, an `ingest_state='done'`
+row, and exactly one `summaries` row, but zero `chunks`/zero `blocks` — and, checked directly
+against the real Qdrant `"papers"` collection, exactly one point each (`kind='summary'`) and zero
+`kind='chunk'` points, i.e. summary-level search could surface them but no passage-level grounding
+existed. Backup: `research-system-rag-data/papers.db.bak-pre-T-DOC35-20260715-145530` (online
+`.backup`, not a raw copy, same precedent as T-DOC23/T-DOC31).
+
+**Reset:** `DELETE FROM ingest_state` + `DELETE FROM summaries` for all 59 (the `papers` row was
+left in place — `DocumentStore.put()` upserts it, never duplicates). No `ingest_checkpoint` rows
+existed for any of the 59 (confirmed before deleting anything), so there was no cached
+`parsed`/`chunks` artifact to resume from — a reset to `harvested`/`parsed` would have been a lie;
+these had to go all the way back to "never ingested" and re-parse for real.
+
+**The subset-first check (2-3 papers) caught a real blocker before it could hit all 59.** Ran
+`RAG_INGEST_PAPER_IDS=2411.14665,2602.07478,2605.24076 python -m app.ingest` against real
+GROBID/MinerU/TEI/Ollama/Qdrant (all already warm) straight off `main` as it stood at the start of
+this ticket. All 3 reached `done` in ~60s with zero quarantines — looked like a clean success. It
+wasn't: `app.corpus_integrity` (the diagnostic this same ticket adds, run immediately after) flagged
+all 3 as *still* offenders. Cause: `rag/parser.py`'s content-hash paper_id fallback (T-DOC31,
+PR #103 — **still open, not merged**, contrary to how the T-DOC30 aside above might read) fired for
+all 3 papers (none has a machine-readable arXiv self-citation MinerU could extract), so their fresh
+chunks/blocks landed in SQLite under a derived hash id (`211c443e9b22f24a`, `a023fccb7c91983b`,
+`ad6936641aef9163`) instead of the real `paper_id` — reproducing the *exact* orphaned-chunks shape
+this ticket exists to clean up, one layer deeper than the ticket's own stated hypothesis. (Qdrant's
+`payload.paper_id` field stayed correct throughout, same as T-DOC30 observed — only the SQLite side
+and the chunk_id itself, which embeds the derived id, were wrong.) Blindly running this same command
+against all 59 would have partially "fixed" the hole while quietly recreating a fresh batch of
+orphans under new hash ids for however many of the 59 hit the same fallback (turned out to be all of
+them — see below).
+
+**Fix for the blocker, scoped to not touch `main` or this ticket's own PR diff:** a throwaway git
+worktree (`/tmp/t-doc35-fixed-ingest`, deleted after use) off `origin/main` with T-DOC31's two
+functional commits cherry-picked on top (`ccbefae` "pass orchestrator's known paper_id into Parser,
+drop hash fallback", `f09ac62` its test updates — both from `origin/T-DOC31-parser-paper-id-hint`,
+PR #103; the two later doc-only T-DOC31 commits were left out, they only touch
+`WORK-BREAKDOWN.md`/`LESSONS-LEARNED.md` and aren't needed to run real code). Full non-adapter suite
+green in that worktree (`pytest app rag contracts ci/checks fixtures/eval --disable-socket`, zero
+failures) before it touched production data. **T-DOC35's own branch/PR never merged or cherry-picked
+T-DOC31's commits** — `contracts/parser.py` is foundation-protected and PR #103 is still awaiting
+@MKamel1's own review; using its code to run the real pipeline correctly is not the same as landing
+it, and this entry — plus the PR body — is the explicit flag that **T-DOC31 (PR #103) needs to merge
+before or alongside this PR**, or any *future* re-ingest of a similarly-fallback-prone paper will
+reproduce this same hole a third time.
+
+**Cleanup of the 3-paper false start:** `DocumentStore.delete(paper_id)` (T-DOC23's cascade-delete,
+designed for exactly this "no matching `papers` row" shape) against the 3 hash ids — cleared their
+orphaned `chunks`/`blocks` rows. Matching Qdrant points deleted via `points/delete` filtered on
+`payload.paper_id` for the 3 *real* ids (106 stale points total — all of them were the mis-keyed
+ones, nothing correct to preserve). `ingest_state`/`summaries` reset again for the same 3 real ids,
+then re-ran the identical `RAG_INGEST_PAPER_IDS` command from the T-DOC31-patched worktree. This
+time all 3 landed chunks/blocks under their real `paper_id` (`2411.14665`: 42 chunks/311 blocks;
+`2602.07478`: 30/114; `2605.24076`: 31/165) — `app.corpus_integrity` clean, and per-paper SQLite
+(chunks+summaries) count matched the real Qdrant point count exactly (43/31/32) for all 3.
+
+**Remaining 56 run the same way** (same patched worktree, same real infra, background process,
+polled every ~25-30s by directly querying `ingest_state.stage` rather than waiting on a
+notification): harvest → MinerU parse batch (all 56 reached `chunked` before Pass 2 started, ~7
+min) → summarize/embed/store (~1 paper every 15-25s once Pass 2 began), all 56 reached `done` with
+zero quarantines, zero `TransientError`/`PermanentError` in the log (only expected
+summarizer-truncation warnings for long papers and MinerU's own OCR-classification debug noise).
+
+**Final verification, real numbers:** `app.corpus_integrity` against the full production DB — **0
+offenders** (every one of the now-809 `done` papers has ≥1 chunk and ≥1 block; corpus-wide `papers`
+count unchanged at 809). No orphaned `chunks`/`blocks` anywhere (`paper_id` not in `papers`) — 0
+rows either direction. Corpus-wide SQLite `chunks`+`summaries` total (26,196) matches the real
+Qdrant `"papers"` collection's `points_count` (26,196) exactly. Per-paper check across all 59:
+SQLite (chunks+summaries) count equals the real Qdrant point count for every single one, zero
+mismatches, zero papers with 0 chunks or 0 blocks.
+
+**Nothing left as a human-triggered follow-up for the 59 themselves — all fixed and verified.** What
+*is* left, explicitly, for @MKamel1: **merge T-DOC31 (PR #103) into `main`.** Until it merges, this
+fallback can fire again for any future ingest of a paper MinerU can't extract a watermark from
+(observed rate in this run: 3/3 of the first subset, and — since the fix was applied before the
+remaining 56 ran — unmeasured for those, but plausibly similar given they're the same historical
+cohort). `app/corpus_integrity.py` (this ticket's other deliverable) is the standing check that
+would catch a recurrence either way, but the parser-side fix is what stops it from happening at all.
