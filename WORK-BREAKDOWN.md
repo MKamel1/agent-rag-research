@@ -331,7 +331,7 @@ of this doc's writing — do that alongside merging PR #94). Other splits from t
   list (Tier A — a real V0 gap, not a new idea). Fix: either switch to Qdrant's native BM25/SPLADE sparse
   vector support, or add real IDF weighting to the existing hash-based approach; either way needs a
   before/after T-EVAL re-run to confirm it actually helps (not just assumed).
-- **T-DOC28 (not started)** — `Coverage.candidates` is a no-op: `rag/mcp_server.py`'s `_coverage()` sets
+- **T-DOC28 (in progress — PR #96 open, awaiting @MKamel1 review)** — `Coverage.candidates` is a no-op: `rag/mcp_server.py`'s `_coverage()` sets
   `candidates=len(results)`, always identical to `returned`, defeating the field's whole documented purpose
   (DATA-CONTRACTS.md / PRD.md §8.5: the real fused candidate-pool size *before* rerank/top-k truncation, an
   "anti-miss" transparency signal so a caller can tell it's seeing a sample). The method's own comment admits
