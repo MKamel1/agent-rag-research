@@ -26,7 +26,10 @@ Goal: the box is healthy and the pipeline runs end-to-end on **one** paper.
    `DocumentStore.put(PaperRecord)` requires non-nullable `summary_text` (DATA-CONTRACTS §M5), so the S0
    exit gate below cannot complete without it. (No LLM service is needed for *chunking* in V0 — contextual
    headers are a V1 feature, ADR-07 — but summarization is a distinct V0-scoped decision; see ARCHITECTURE
-   M3B.)
+   M3B.) The TEI containers are named `rag-tei-embed` (embedder) and `rag-tei-reranker` (reranker). As of
+   T-DOC19, both are stopped automatically before Pass 1 and restarted before Pass 2 by
+   `app/tei_lifecycle.py` to free VRAM for MinerU — no manual bring-up action needed for that, but expect
+   them to be down for the duration of a Pass 1 run.
 3. **Assemble the representative set:** 30–50 papers from the causal-methods `focus_area` — deliberately
    include math-heavy, code-heavy, multi-column, table-heavy, and **one broken/scanned PDF**.
 4. **Exit gate:** one paper flows harvest → parse → {chunk, summarize} → embed → store → a retrievable
