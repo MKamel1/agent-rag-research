@@ -8,12 +8,17 @@ the same collection), each turned into a rank-ordered id list, fused via the sha
 `rag/fakes/fake_vector_store.py` exactly, just with Qdrant standing in for the brute-force
 cosine/token-overlap scan.
 
-Sparse side: `VectorPayload.text` (the real chunk/summary passage text) is hashed into a
-bag-of-words sparse vector at `upsert()` time, and `qtext` is hashed the same way at query time —
-same tokenization, same hasher, so the two sides are comparable. This is still a client-side hash
-bag-of-words, not a real BM25/SPLADE index (no IDF weighting, no trained model) — that upgrade is a
-separate, bigger change, out of scope here. `section_path` remains in the payload as metadata but
-is no longer the sparse channel's source; matches `FakeVectorStore`'s own docstring/behavior.
+Sparse side: `VectorPayload.text` (the real chunk/summary passage text) is hashed into a raw
+term-frequency bag-of-words sparse vector at `upsert()` time, and `qtext` is hashed the same way at
+query time — same tokenization, same hasher, so the two sides are comparable. The collection's
+sparse field is created with Qdrant's native IDF modifier (`_sparse_vector_params()`, server >=
+1.10 — this repo's Qdrant is 1.18) — real BM25-style IDF weighting, computed by Qdrant itself from
+this collection's own live document-frequency stats (applied to the query side at scoring time; see
+Qdrant's sparse-vector indexing docs). `_sparse_vector` itself still only sends raw per-token
+counts — no client-side df table to compute or keep in sync, T-DOC27. `section_path` remains in the
+payload as metadata but is no longer the sparse channel's source; matches `FakeVectorStore`'s own
+docstring/behavior (`FakeVectorStore` stays a plain token-overlap scan — it has no notion of
+corpus-wide document frequency, so it does not attempt to approximate this IDF weighting).
 
 Qdrant point ids must be an unsigned int or UUID (never an arbitrary string), so the caller's
 `id` (a `chunk_id`/`summary_id`) is mapped to a stable `uuid.uuid5` and the original string is
@@ -50,11 +55,24 @@ def _point_id(external_id: str) -> str:
 
 
 def _sparse_vector(text: str) -> models.SparseVector:
+    # Raw per-token counts only -- Qdrant's IDF modifier (_sparse_vector_params()) does the actual
+    # discriminative-term weighting server-side from the collection's own document-frequency
+    # stats, so this function deliberately stays a plain hash-based term-frequency count on both
+    # the upsert and query side (same as before T-DOC27).
     counts: dict[int, float] = {}
     for token in text.lower().split():
         index = int(hashlib.sha1(token.encode()).hexdigest(), 16) % _SPARSE_MODULUS
         counts[index] = counts.get(index, 0.0) + 1.0
     return models.SparseVector(indices=list(counts.keys()), values=list(counts.values()))
+
+
+def _sparse_vector_params() -> models.SparseVectorParams:
+    # T-DOC27: real IDF weighting via Qdrant's native sparse-vector modifier (server >= 1.10) --
+    # the actual feature ADR-01 (PRD.md) chose Qdrant for ("Qdrant treats sparse vectors as
+    # first-class beside dense"). Qdrant computes document-frequency stats itself, live, from
+    # whatever's currently indexed in this collection, and scales the query vector's values by
+    # IDF at scoring time -- no corpus-wide df table for this adapter to build or maintain.
+    return models.SparseVectorParams(modifier=models.Modifier.IDF)
 
 
 def _qdrant_filter(filters: SearchFilters | None) -> models.Filter | None:
@@ -115,7 +133,7 @@ class VectorIndex:
             vectors_config={
                 _DENSE_VECTOR: models.VectorParams(size=self._dim, distance=models.Distance.COSINE)
             },
-            sparse_vectors_config={_SPARSE_VECTOR: models.SparseVectorParams()},
+            sparse_vectors_config={_SPARSE_VECTOR: _sparse_vector_params()},
         )
 
     @staticmethod

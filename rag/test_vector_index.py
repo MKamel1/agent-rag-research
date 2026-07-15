@@ -274,3 +274,72 @@ def test_real_adapter_satisfies_contract(check):
         check(adapter)
     finally:
         adapter._client.delete_collection(collection)
+
+
+# ==================================================================================================
+# T-DOC27 — sparse-channel IDF weighting (ADR-01: "Qdrant treats sparse vectors as first-class").
+#
+# `_sparse_vector` itself is unchanged (still a plain raw-term-frequency hash, on purpose — see its
+# updated comment in rag/vector_index.py): real IDF weighting is now Qdrant's own native sparse-
+# vector modifier, applied server-side from the collection's live document-frequency stats. That
+# means the actual "does a rare/discriminative term outrank a common one" behavior cannot be proven
+# by a fake or a pure-function test against `_sparse_vector` alone (`FakeVectorStore` has no notion
+# of corpus-wide document frequency, and never will per its own docstring) — it can only be observed
+# against a real Qdrant collection, so the discriminative-weighting proof below is `enable_socket`-
+# gated like `test_real_adapter_satisfies_contract` above, not "fake-based" as originally framed.
+# The two zero-network tests below cover what a pure-function test *can* prove: `_sparse_vector`'s
+# own output didn't change, and the collection config now actually requests the modifier.
+# ==================================================================================================
+
+
+def test_sparse_vector_stays_raw_term_frequency_no_client_side_idf():
+    # Regression guard: _sparse_vector must keep sending plain per-token counts -- IDF weighting is
+    # Qdrant's job now (the modifier), not this function's. A repeated token accumulates a count of
+    # 3.0, not some pre-scaled value; a token appearing once is 1.0, same as before T-DOC27.
+    real = pytest.importorskip("rag.vector_index")
+    vec = real._sparse_vector("estimator estimator estimator treatment")
+    values_by_index = dict(zip(vec.indices, vec.values))
+    assert sorted(values_by_index.values()) == [1.0, 3.0]
+
+
+def test_sparse_vector_params_requests_native_idf_modifier():
+    # The actual T-DOC27 fix: the collection's sparse field must be created with Qdrant's IDF
+    # modifier so common words stop carrying as much weight as discriminative ones (ADR-01/ADR-11
+    # Tier A). No `qdrant_client` import needed here -- `.modifier.value` is a plain str off the
+    # object `pytest.importorskip` already handed back (CONVENTIONS §1: qdrant_client is nameable
+    # only inside rag/vector_index.py, not this test file).
+    real = pytest.importorskip("rag.vector_index")
+    params = real._sparse_vector_params()
+    assert params.modifier.value == "idf"
+
+
+@pytest.mark.enable_socket
+def test_real_adapter_sparse_channel_weights_rare_terms_over_common_ones():
+    # The actual behavioral proof the ticket asks for: a document containing a corpus-RARE term
+    # must outrank one that only repeats a term common across the whole corpus, even though both
+    # have identical raw term frequency (1) for their respective term and identical (tied,
+    # dense-weight-zeroed-out) dense vectors -- so only sparse IDF weighting can be deciding the
+    # winner. Before T-DOC27 (raw term frequency, no IDF) this was a dead tie, broken arbitrarily by
+    # the id-ascending tie-break -- "aaa_common_tied" would have won. It must not win now.
+    real = pytest.importorskip("rag.vector_index")
+
+    collection = "m1a_idf_weighting"
+    try:
+        adapter = real.VectorIndex(
+            host="localhost", port=6333, collection_name=collection, dim=2, hybrid_dense_weight=0.0
+        )
+    except TransientError as e:
+        pytest.skip(f"no live vector-store service reachable at localhost:6333: {e}")
+
+    try:
+        # "the" appears in 6 of 7 documents -> high document frequency -> low IDF once weighted.
+        for i in range(5):
+            adapter.upsert(f"common_{i}", [0.0, 1.0], _payload(text="the"))
+        adapter.upsert("aaa_common_tied", [0.0, 1.0], _payload(text="the"))
+        # "rare" appears in exactly 1 of 7 documents -> low document frequency -> high IDF.
+        adapter.upsert("zzz_rare_wins", [0.0, 1.0], _payload(text="rare"))
+
+        hits = adapter.hybrid_search(qvec=[0.0, 1.0], qtext="the rare", filters=None, k=10)
+        assert hits[0].id == "zzz_rare_wins"
+    finally:
+        adapter._client.delete_collection(collection)
