@@ -348,3 +348,81 @@ retrieval via Qdrant — but it likely breaks any SQLite-side `DocumentStore` lo
 `chunks` by `paper_id` would silently miss these rows). Not investigated further; worth its own
 ticket if `DocumentStore`'s own paper_id consistency is ever audited. (Now ticketed and fixed —
 see T-DOC31, PR #103.)
+
+---
+
+### 2026-07-15 — build-process — T-DOC31 production sweep found zero live instances of the bug it was hunting, because an earlier, unrelated cleanup had already deleted them
+
+**Doc-accuracy flag first, since it affects how much to trust the rest of this ticket's premise:**
+`WORK-BREAKDOWN.md`'s T-DOC31 entry cites "T-DOC30's live kill test (`LESSONS-LEARNED.md`, 2026-07-15
+entry)" as where the `2411.14665` → `chunks.paper_id='211c443e9b22f24a'` occurrence was confirmed.
+As of this session, **no such entry exists in this file**, and `WORK-BREAKDOWN.md` itself still lists
+T-DOC30 as `(not started)`. Flagging this rather than silently treating an unverifiable citation as
+read (CONVENTIONS.md §0's "stop and flag it" principle) — this entry does not claim to have read that
+kill-test writeup, because it doesn't exist yet. The underlying bug mechanism itself is real and
+independently confirmed by reading `rag/parser.py`'s pre-fix code directly (`_derive_paper_id`'s
+`hashlib.sha256(raw).hexdigest()[:16]` fallback, called whenever the `arXiv:YYMM.NNNNN` regex didn't
+match watermark text MinerU extracted) — only the specific citation trail is unverifiable.
+
+**The fix (T-DOC31, this ticket):** `rag/parser.py`'s `parse`/`parse_batch` now take a required
+`paper_id`/`paper_ids` parameter and use it directly — the content-hash fallback is deleted outright
+(not kept for a "manual/standalone" case: grepping the whole codebase found no caller that doesn't
+already have a real id). `contracts/parser.py` documents the new interface (a docstring-only change,
+still foundation-protected via CODEOWNERS since it touches `contracts/`). `app/assembly.py`'s
+`_PdfDownloadParser` (the actual bridge from `IngestionOrchestrator`'s `PaperRef`-shaped call to the
+real byte-taking Parser) now passes `ref.paper_id` through. `rag/orchestrator.py` itself needed no
+change — it already calls `self._parser.parse(ref)` with the full `PaperRef` (paper_id included); the
+plumbing gap was one level down, in the composition-root bridge, not the orchestrator.
+
+**Production sweep result: zero orphaned/mismatched rows found — see why below, not a clean bill of
+health.** Backed up the real production DB first (`sqlite3 papers.db ".backup ..."` — an online,
+WAL-consistent snapshot, not a raw file copy, since another process had `papers.db` open for reads at
+the time) to
+`research-system-rag-data/papers.db.bak-pre-T-DOC31-paperid-sweep-20260715-095049` (same directory,
+same naming convention as T-DOC23's `.bak-pre-orphan-cleanup-*`). Then ran the ticket's own sweep query
+(`chunks`/`blocks`/`summaries` LEFT JOIN `papers`, `papers.paper_id IS NULL`) — zero rows, every table.
+Broadened it (in case some instance wasn't "orphaned" in the exact join sense): scanned every
+`paper_id` column in every table (`chunks`, `blocks`, `papers`, `summaries`, `quarantine`) for the
+literal 16-lowercase-hex-char shape `_derive_paper_id`'s fallback produced — also zero, everywhere.
+**No `UPDATE` was run; there was nothing to rename.**
+
+Why zero: `2411.14665` itself (the ticket's cited example) still has its correct `papers` row and a
+`summaries` row under the real id, `ingest_state.stage='done'` — but **zero `blocks` and zero `chunks`
+under either the real id or the hash**. Checking systematically, exactly **59** papers are in this same
+"done, has a summary, zero blocks/chunks" state — the identical count `WORK-BREAKDOWN.md`'s handover
+section attributes to **T-DOC23's** orphaned-row cleanup ("59 orphaned papers... already applied
+directly to the real production DB... verified 0 orphans remain"). Conclusion: T-DOC23's cascade
+delete (same day, run before this session) already swept up every row this bug class produced — a
+hash-derived `paper_id` chunk/block is *definitionally* orphaned under that join, since
+`DocumentStore.put()` always writes the `papers` row under the harvester's real id, never the parser's
+hash. T-DOC23 deleted the mislabeled rows instead of relabeling them, because relabeling wasn't its
+job and it had no way to know the "orphan" and "wrong-hash-id" causes were the same bug.
+
+**Real, unresolved gap this surfaces (left alone, not fixed here — out of this ticket's scope):**
+those same 59 papers (including `2411.14665`) are currently invisible to retrieval — `ingest_state`
+claims `done`, `search_papers`/`get_paper` would return their summary, but zero passages exist to
+ground any answer about their actual content. Fixing this needs real re-ingestion (re-parse + re-chunk
+under the now-fixed Parser, real GPU/MinerU work) for those 59 `paper_id`s specifically, not a metadata
+`UPDATE` — a different, larger action than "correct a mislabeled column," and this ticket's brief was
+explicit that it's a metadata-correction pass, not a re-ingestion one. Worth its own follow-up ticket
+(a `T-DOC<n>` re-ingest-the-59 pass, keyed off exactly the list this entry's query produced) rather than
+assuming T-DOC23's "0 orphans remain" line meant those 59 papers' content gap was also closed — it
+wasn't; T-DOC23 only removed the mislabeled evidence of a gap that JOIN can't see it "closed."
+
+**Known limitation of this sweep, noted for whoever picks up the follow-up above:** both queries only
+catch the *hash-fallback* shape of this bug (an unmatched/orphaned id). A different failure mode of the
+same root cause — MinerU's `_ARXIV_ID_RE` regex matching a *different* real paper's arXiv id (e.g. from
+a citation/reference block) instead of failing to match at all — would produce a **valid-looking,
+non-orphaned** `paper_id` that silently misattributes chunks to the wrong existing paper, and neither
+query here would catch it (it doesn't leave an orphan). Not investigated in this pass; would need a
+per-paper chunk-count/content sanity check across the corpus, not a join, and wasn't ticketed here.
+
+**Why it matters / when to revisit:** two lessons, not one. (1) A sweep query written for one root
+cause can return "zero found" for a genuinely correct reason (the damage was already cleaned up by
+something else) that still leaves the *actual* problem — missing content, not just a mislabeled row —
+completely open; "0 orphans" is not the same claim as "0 papers affected," and conflating them here
+would have closed this ticket without noticing 59 papers are silently empty. (2) A ticket's own cited
+evidence trail (a `LESSONS-LEARNED.md` entry, in this case) should be checked, not assumed present just
+because the ticket text asserts it confidently — this is the second time in this project's history a
+downstream doc referenced something upstream that didn't actually land (see `WORK-BREAKDOWN.md`'s
+T-DOC30 entry itself, which exists for exactly this reason: an assumed-but-unrecorded past validation).
