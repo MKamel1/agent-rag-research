@@ -11,6 +11,13 @@ each tool returns RECORDS (never bare text); `get_paper` -> `PaperSummaryView`; 
 `Embedder`/`VectorStore`/`Reranker` or reimplements the embed/hybrid/RRF/rerank pipeline. That last
 one is proven structurally: the server is constructed with only `retriever` + `document_store`, and
 a spy `Retriever` records that each tool delegates to exactly one of the two methods.
+
+T-DOC28: `SpyRetriever.retrieve()`/`retrieve_papers()` return `(results, RetrievalCoverage)`,
+matching the real `Retriever`'s frozen interface (contracts/retriever.py), with a
+`candidate_count` the caller can set independently of `len(results)` —
+`test_semantic_search_coverage_invariant`/`test_search_papers_coverage_invariant` use that to
+prove `Coverage.candidates` reports the true
+pre-truncation pool, not a `len(results)` stand-in (the exact bug `_coverage()` used to have).
 """
 
 import pytest
@@ -24,7 +31,7 @@ from contracts.mcp_server import (
     SearchResponse,
 )
 from contracts.provenance import Anchor, Block
-from contracts.retriever import Citation, GroundedResult
+from contracts.retriever import Citation, GroundedResult, RetrievalCoverage
 
 _BBOX = (0.0, 0.0, 100.0, 200.0)
 
@@ -36,19 +43,31 @@ _BBOX = (0.0, 0.0, 100.0, 200.0)
 # structurally cannot reach the pipeline, and the spy confirms the delegation.
 # ---------------------------------------------------------------------------
 class SpyRetriever:
-    def __init__(self, results=(), paper_results=()):
+    def __init__(self, results=(), paper_results=(), candidate_count=None):
         self.retrieve_calls: list[tuple] = []
         self.retrieve_papers_calls: list[tuple] = []
         self._results = list(results)
         self._paper_results = list(paper_results)
+        # Defaults to len(results)/len(paper_results) so tests that don't care about Coverage still
+        # get a self-consistent candidate_count; a test proving `candidates > returned` passes an
+        # explicit, larger `candidate_count` instead (see the two coverage-invariant tests below).
+        self._candidate_count = (
+            len(self._results) if candidate_count is None else candidate_count
+        )
+        self._paper_candidate_count = (
+            len(self._paper_results) if candidate_count is None else candidate_count
+        )
 
     def retrieve(self, query, filters=None, k=10):
         self.retrieve_calls.append((query, filters, k))
-        return list(self._results)
+        return list(self._results), RetrievalCoverage(candidate_count=self._candidate_count)
 
     def retrieve_papers(self, query, filters=None, k=10):
         self.retrieve_papers_calls.append((query, filters, k))
-        return list(self._paper_results)
+        return (
+            list(self._paper_results),
+            RetrievalCoverage(candidate_count=self._paper_candidate_count),
+        )
 
 
 class RecordingDocStore:
@@ -116,11 +135,17 @@ def test_semantic_search_returns_search_response_of_records():
 
 
 def test_semantic_search_coverage_invariant():
-    resp = _server(SpyRetriever(results=[_grounded("2506.00001", "2506.00001:b0"),
-                                         _grounded("2506.00002", "2506.00002:b0")])).semantic_search(
-        "estimator", filters=None, k=10)
-    assert resp.coverage.returned == len(resp.results)
-    assert resp.coverage.candidates >= resp.coverage.returned
+    # T-DOC28 regression: candidate_count (32, the real _RERANK_POOL_SIZE) is deliberately larger
+    # than returned (2) so this fails loudly if `_coverage()` ever collapses back to reporting
+    # `len(results)` for both fields (candidates == returned == 2, `>=` would still trivially pass).
+    resp = _server(SpyRetriever(
+        results=[_grounded("2506.00001", "2506.00001:b0"),
+                 _grounded("2506.00002", "2506.00002:b0")],
+        candidate_count=32,
+    )).semantic_search("estimator", filters=None, k=10)
+    assert resp.coverage.returned == len(resp.results) == 2
+    assert resp.coverage.candidates == 32
+    assert resp.coverage.candidates > resp.coverage.returned
 
 
 def test_semantic_search_delegates_only_to_retrieve():
@@ -141,11 +166,14 @@ def test_search_papers_returns_paper_search_response_of_records():
 
 
 def test_search_papers_coverage_invariant():
-    resp = _server(SpyRetriever(paper_results=[_paper_result("2506.00001"),
-                                               _paper_result("2506.00002")])).search_papers(
-        "estimator", filters=None, k=10)
-    assert resp.coverage.returned == len(resp.results)
-    assert resp.coverage.candidates >= resp.coverage.returned
+    # T-DOC28 regression — see test_semantic_search_coverage_invariant's comment.
+    resp = _server(SpyRetriever(
+        paper_results=[_paper_result("2506.00001"), _paper_result("2506.00002")],
+        candidate_count=32,
+    )).search_papers("estimator", filters=None, k=10)
+    assert resp.coverage.returned == len(resp.results) == 2
+    assert resp.coverage.candidates == 32
+    assert resp.coverage.candidates > resp.coverage.returned
 
 
 def test_search_papers_delegates_only_to_retrieve_papers():

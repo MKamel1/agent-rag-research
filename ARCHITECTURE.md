@@ -152,19 +152,27 @@ Ten modules, each independently ownable (owners A–F) and testable through its 
 ### M7 · Retriever  *(owner E)* — the crown-jewel deep module
 - **Interface:** two methods, sharing one internal pipeline, differing only in which `kind` they search
   and how they resolve a `Hit`:
-  - `retrieve(query:str, filters: SearchFilters?, k) -> [GroundedResult]` — **passage-level.** Internally
-    restricts the underlying `hybrid_search` to `kind="chunk"` regardless of what the caller passed for
-    `filters.kind` (categories/date filters from the caller are preserved; `kind` is fixed by which
-    method you called, not a caller choice — this is what keeps "which granularity am I searching"
-    unambiguous without a runtime error path). Never returns a summary/whole-paper match — a summary has
-    no block to anchor to, so it cannot satisfy `GroundedResult` (see DATA-CONTRACTS §M7).
-  - `retrieve_papers(query:str, filters: SearchFilters?, k) -> [PaperSearchResult]` — **whole-paper/
-    summary-level**, **additive** to `retrieve()` (does not change its signature). Internally restricts
-    `hybrid_search` to `kind="summary"`. Closes the summary-retrieval gap: forcing summary results
-    through the anchored `GroundedResult` envelope has no valid anchor to offer (DATA-CONTRACTS §M7).
-    Placed on `Retriever`, not composed ad hoc inside `McpServer`, because the retrieval algorithm
-    (embed-query → hybrid → RRF → rerank) is this module's secret — building it a second time in M8
-    would leak that secret into the "acceptably thin" protocol edge (module-design "hide the secret").
+  - `retrieve(query:str, filters: SearchFilters?, k) -> ([GroundedResult], RetrievalCoverage)` —
+    **passage-level.** Internally restricts the underlying `hybrid_search` to `kind="chunk"` regardless
+    of what the caller passed for `filters.kind` (categories/date filters from the caller are preserved;
+    `kind` is fixed by which method you called, not a caller choice — this is what keeps "which
+    granularity am I searching" unambiguous without a runtime error path). Never returns a summary/
+    whole-paper match — a summary has no block to anchor to, so it cannot satisfy `GroundedResult` (see
+    DATA-CONTRACTS §M7).
+  - `retrieve_papers(query:str, filters: SearchFilters?, k) -> ([PaperSearchResult], RetrievalCoverage)`
+    — **whole-paper/summary-level**, **additive** to `retrieve()` (does not change its signature).
+    Internally restricts `hybrid_search` to `kind="summary"`. Closes the summary-retrieval gap: forcing
+    summary results through the anchored `GroundedResult` envelope has no valid anchor to offer
+    (DATA-CONTRACTS §M7). Placed on `Retriever`, not composed ad hoc inside `McpServer`, because the
+    retrieval algorithm (embed-query → hybrid → RRF → rerank) is this module's secret — building it a
+    second time in M8 would leak that secret into the "acceptably thin" protocol edge (module-design
+    "hide the secret").
+  - **`RetrievalCoverage` (T-DOC28):** both methods return their results list paired with a
+    `RetrievalCoverage` carrying `candidate_count` — the true pre-rerank/pre-top_k `hybrid_search` pool
+    size (`len(Hit list)`), which `list[GroundedResult]`/`list[PaperSearchResult]` alone can't carry once
+    truncated to `k`. `McpServer` uses it to build the real `Coverage.candidates` (§M8) instead of the
+    `len(results)` stand-in it used before this fix. `RetrievalCoverage` itself is never part of an MCP
+    tool's response — DATA-CONTRACTS §M7.
 
   `GroundedResult`/`PaperSearchResult`/`SearchFilters` — authoritative shapes in `DATA-CONTRACTS.md`
   §M7/§M8/§M6; do not re-derive fields here. **Forward-compat:** `GroundedResult` is a *record with an

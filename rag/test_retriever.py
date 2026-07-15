@@ -15,6 +15,12 @@ seam (`rerank(query, candidates: list[RerankCandidate]) -> list[RerankCandidate]
 reorder*: `RerankCandidate` carries no score, so the reranker surfaces no cross-encoder score to
 propagate. The only numeric score in the pipeline is the RRF score `VectorIndex.hybrid_search`
 returns on each `Hit`. Every score assertion below reads that value back from the same fake store.
+
+T-DOC28: both methods now return `(results, RetrievalCoverage)`, not a bare results list — every
+call site below unpacks the tuple (`results, _coverage = r.retrieve(...)`, or discards the whole
+tuple where the return value isn't otherwise used). The dedicated coverage-count tests near the
+end of each section assert `coverage.candidate_count` is the true pre-rerank pool size, not
+`len(results)` again.
 """
 
 import pytest
@@ -26,7 +32,7 @@ from contracts.document_store import PaperRecord
 from contracts.harvester import PaperRef
 from contracts.parser import ParsedDoc
 from contracts.provenance import Anchor, Block
-from contracts.retriever import Citation, GroundedResult
+from contracts.retriever import Citation, GroundedResult, RetrievalCoverage
 from contracts.vector_index import SearchFilters
 from rag.fakes import FakeEmbedder, FakeReranker, FakeVectorStore
 
@@ -178,7 +184,9 @@ def _rrf_hits(store, embedder, query, kind, k=100, categories=None):
 # ===========================================================================
 def test_retrieve_empty_corpus_returns_empty_list():
     r = _make_retriever(FakeVectorStore(), RecordingDocStore(), FakeReranker())
-    assert r.retrieve("any query", filters=None, k=10) == []
+    results, coverage = r.retrieve("any query", filters=None, k=10)
+    assert results == []
+    assert coverage == RetrievalCoverage(candidate_count=0)
 
 
 def test_retrieve_resolves_via_get_chunk_and_get_block_spy():
@@ -201,8 +209,9 @@ def test_retrieve_passage_text_equals_resolved_chunk_text():
     store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
     chunk = _seed_chunk(store, docstore, embedder, chunk_id="2506.00001:c0", paper_id="2506.00001",
                         block_id="2506.00001:b0", text="the estimator is defined as the sample analogue")
-    [result] = r_results = _make_retriever(store, docstore, FakeReranker(), embedder).retrieve(
+    results, _coverage = _make_retriever(store, docstore, FakeReranker(), embedder).retrieve(
         "estimator", filters=None, k=10)
+    [result] = results
     assert result.passage_text == chunk.text
 
 
@@ -216,8 +225,9 @@ def test_retrieve_multiblock_chunk_passage_covers_all_blocks():
     chunk = _seed_chunk(store, docstore, embedder, chunk_id="2506.00009:c0", paper_id="2506.00009",
                         block_id="2506.00009:b0", text=chunk_text,
                         extra_blocks=[("2506.00009:b1", block2_text)])
-    [result] = _make_retriever(store, docstore, FakeReranker(), embedder).retrieve(
+    results, _coverage = _make_retriever(store, docstore, FakeReranker(), embedder).retrieve(
         "estimator", filters=None, k=10)
+    [result] = results
 
     assert result.passage_text == chunk.text
     assert block2_text in result.passage_text          # the 2nd block's content is present...
@@ -228,7 +238,7 @@ def test_retrieve_multiblock_chunk_passage_covers_all_blocks():
 def test_retrieve_evidence_tier_is_pinned_A():
     store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
     _seed_three_chunks(store, docstore, embedder)
-    results = _make_retriever(store, docstore, FakeReranker(), embedder).retrieve(
+    results, _coverage = _make_retriever(store, docstore, FakeReranker(), embedder).retrieve(
         "estimator", filters=None, k=10)
     assert results
     assert all(res.evidence_tier == "A" for res in results)
@@ -237,7 +247,7 @@ def test_retrieve_evidence_tier_is_pinned_A():
 def test_retrieve_results_are_grounded():
     store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
     _seed_three_chunks(store, docstore, embedder)
-    results = _make_retriever(store, docstore, FakeReranker(), embedder).retrieve(
+    results, _coverage = _make_retriever(store, docstore, FakeReranker(), embedder).retrieve(
         "estimator", filters=None, k=10)
     assert results
     for res in results:
@@ -257,7 +267,7 @@ def test_retrieve_score_is_prerank_rrf_score():
     for h in _rrf_hits(store, embedder, query, "chunk"):
         rrf_score_by_block[docstore._chunks[h.id].anchor.block_id] = h.score
 
-    results = _make_retriever(store, docstore, FakeReranker(), embedder).retrieve(
+    results, _coverage = _make_retriever(store, docstore, FakeReranker(), embedder).retrieve(
         query, filters=None, k=10)
     assert results
     for res in results:
@@ -269,7 +279,8 @@ def test_retrieve_rerank_wiring_is_its_own_assertion():
     _seed_three_chunks(store, docstore, embedder)
     query = "estimator"
     reranker = FakeReranker()
-    results = _make_retriever(store, docstore, reranker, embedder).retrieve(query, filters=None, k=10)
+    results, _coverage = _make_retriever(store, docstore, reranker, embedder).retrieve(
+        query, filters=None, k=10)
 
     pre_rerank_ids = [h.id for h in _rrf_hits(store, embedder, query, "chunk")]
     assert len(pre_rerank_ids) >= 2  # otherwise "differs from" is vacuous
@@ -293,7 +304,7 @@ def test_retrieve_restricts_to_chunk_kind():
                 block_id="2506.00001:b0", text="double machine learning estimator")
     _seed_summary(store, docstore, embedder, paper_id="2506.00002", summary_id="2506.00002:summary",
                   summary_text="double machine learning estimator")
-    results = _make_retriever(store, docstore, FakeReranker(), embedder).retrieve(
+    results, _coverage = _make_retriever(store, docstore, FakeReranker(), embedder).retrieve(
         "double machine learning", filters=None, k=10)
     assert [res.paper_id for res in results] == ["2506.00001"]
 
@@ -323,7 +334,7 @@ def test_retrieve_pool_size_lets_reranker_promote_a_passage_ranked_below_k():
     target_id = pre_rerank_ids[-1]
     target_block_id = docstore._chunks[target_id].anchor.block_id
 
-    results = _make_retriever(store, docstore, FakeReranker(), embedder).retrieve(
+    results, coverage = _make_retriever(store, docstore, FakeReranker(), embedder).retrieve(
         query, filters=None, k=10)
 
     assert len(results) == 10
@@ -332,6 +343,10 @@ def test_retrieve_pool_size_lets_reranker_promote_a_passage_ranked_below_k():
         "a candidate ranked below the old k=10 cutoff must be reachable once reranking sees the "
         "full _RERANK_POOL_SIZE pool, not just the caller's k"
     )
+    # T-DOC28: `coverage.candidate_count` must be the true pre-rerank pool size (20 here), not
+    # `len(results)` (10) again -- this is the exact regression `Coverage.candidates` used to hide.
+    assert coverage.candidate_count == 20
+    assert coverage.candidate_count > len(results)
 
 
 def test_retrieve_filters_is_searchfilters_not_dict():
@@ -340,7 +355,7 @@ def test_retrieve_filters_is_searchfilters_not_dict():
                 block_id="2506.00001:b0", text="synthetic control estimator", categories=("stat.ME",))
     _seed_chunk(store, docstore, embedder, chunk_id="2506.00002:c0", paper_id="2506.00002",
                 block_id="2506.00002:b0", text="synthetic control estimator", categories=("cs.CL",))
-    results = _make_retriever(store, docstore, FakeReranker(), embedder).retrieve(
+    results, _coverage = _make_retriever(store, docstore, FakeReranker(), embedder).retrieve(
         "synthetic control", filters=SearchFilters(categories=["stat.ME"]), k=10)
     assert [res.paper_id for res in results] == ["2506.00001"]
 
@@ -359,7 +374,9 @@ def test_paper_id_from_summary_hit_id_parses_frozen_format():
 
 def test_retrieve_papers_empty_corpus_returns_empty_list():
     r = _make_retriever(FakeVectorStore(), RecordingDocStore(), FakeReranker())
-    assert r.retrieve_papers("any query", filters=None, k=10) == []
+    results, coverage = r.retrieve_papers("any query", filters=None, k=10)
+    assert results == []
+    assert coverage == RetrievalCoverage(candidate_count=0)
 
 
 def test_retrieve_papers_resolves_via_get_summary_and_get_spy():
@@ -376,8 +393,9 @@ def test_retrieve_papers_returns_unanchored_paper_search_results():
     store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
     _seed_summary(store, docstore, embedder, paper_id="2506.00001", summary_id="2506.00001:summary",
                   summary_text="a paper about instrumental variables")
-    [result] = _make_retriever(store, docstore, FakeReranker(), embedder).retrieve_papers(
+    results, _coverage = _make_retriever(store, docstore, FakeReranker(), embedder).retrieve_papers(
         "instrumental variables", filters=None, k=10)
+    [result] = results
     # It is a PaperSearchResult (view + score), explicitly NOT a GroundedResult / not anchored.
     assert not isinstance(result, GroundedResult)
     assert not hasattr(result, "anchor")
@@ -392,7 +410,7 @@ def test_retrieve_papers_restricts_to_summary_kind():
                   summary_text="regression discontinuity design")
     _seed_chunk(store, docstore, embedder, chunk_id="2506.00002:c0", paper_id="2506.00002",
                 block_id="2506.00002:b0", text="regression discontinuity design")
-    results = _make_retriever(store, docstore, FakeReranker(), embedder).retrieve_papers(
+    results, _coverage = _make_retriever(store, docstore, FakeReranker(), embedder).retrieve_papers(
         "regression discontinuity", filters=None, k=10)
     assert [res.view.paper_id for res in results] == ["2506.00001"]
 
@@ -408,7 +426,7 @@ def test_retrieve_papers_rerank_wiring_is_its_own_assertion():
                   summary_text="double machine learning")
     query = "causal estimator"
     reranker = FakeReranker()
-    results = _make_retriever(store, docstore, reranker, embedder).retrieve_papers(
+    results, _coverage = _make_retriever(store, docstore, reranker, embedder).retrieve_papers(
         query, filters=None, k=10)
 
     pre_rerank_ids = [h.id for h in _rrf_hits(store, embedder, query, "summary")]
@@ -423,6 +441,25 @@ def test_retrieve_papers_rerank_wiring_is_its_own_assertion():
     prerank_papers = [paper_of[sid] for sid in pre_rerank_ids]
     assert final_papers == expected_final
     assert final_papers != prerank_papers
+
+
+def test_retrieve_papers_coverage_candidate_count_is_true_pool_not_returned_count():
+    # T-DOC28 regression, mirroring test_retrieve_pool_size_lets_reranker_promote_a_passage_ranked_
+    # below_k for retrieve_papers(): seed more summaries than k, confirm candidate_count reports the
+    # true pre-rerank pool (20), not len(results) (10) again.
+    store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
+    query = "causal estimator"
+    for i in range(20):
+        _seed_summary(store, docstore, embedder, paper_id=f"2506.{i:05d}",
+                      summary_id=f"2506.{i:05d}:summary",
+                      summary_text=f"unrelated filler summary about topic number {i}")
+
+    results, coverage = _make_retriever(store, docstore, FakeReranker(), embedder).retrieve_papers(
+        query, filters=None, k=10)
+
+    assert len(results) == 10
+    assert coverage.candidate_count == 20
+    assert coverage.candidate_count > len(results)
 
 
 def test_both_methods_use_the_same_injected_reranker():

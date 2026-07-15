@@ -289,7 +289,10 @@ step (b)) and reports **Recall@10 and MRR**.
 - **McpServer** — each tool returns records (never bare text); `get_paper` returns `PaperSummaryView`;
   `search_papers` returns `PaperSearchResponse` (composed from `Retriever.retrieve_papers()`); `semantic_search`
   returns `SearchResponse` (composed from `Retriever.retrieve()`); both assert `coverage.candidates >=
-  coverage.returned` (a real field now, DATA-CONTRACTS §M8 — not just "present" in the loose sense); a
+  coverage.returned` (a real field now, DATA-CONTRACTS §M8 — not just "present" in the loose sense),
+  using a spy `Retriever` whose stubbed `candidate_count` (T-DOC28's `RetrievalCoverage`) is deliberately
+  larger than `len(results)` so the assertion fails if `Coverage.candidates` ever collapses back to
+  `len(results)` again; a
   citation from either search tool resolves via `get_span`; a spy/mock on `Retriever` asserts `McpServer`
   calls exactly one of its two methods per tool and does not touch `Embedder`/`VectorStore`/`Reranker`
   directly (proves M8 stays thin and doesn't reimplement M7's pipeline).

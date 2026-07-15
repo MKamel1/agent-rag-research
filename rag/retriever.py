@@ -13,11 +13,15 @@ T-DOC24: both methods fetch `_RERANK_POOL_SIZE` candidates for reranking, not ju
 `k` -- see `_RERANK_POOL_SIZE`'s own docstring for why a real T-EVAL investigation found the
 previous "fetch exactly k, rerank those k" shape left the reranker unable to ever promote a
 correct passage the cheaper first-pass hybrid/RRF ranking under-ranked.
+
+T-DOC28: both methods return `(results, RetrievalCoverage)` rather than a bare results list, so
+`McpServer` can report the true pre-truncation pool size (`len(hits)`, below) as
+`Coverage.candidates` instead of the `len(results)` stand-in it used to fall back on.
 """
 
 from contracts.errors import ContractError
 from contracts.mcp_server import PaperSearchResult, PaperSummaryView
-from contracts.retriever import Citation, GroundedResult, RerankCandidate
+from contracts.retriever import Citation, GroundedResult, RerankCandidate, RetrievalCoverage
 from contracts.vector_index import SearchFilters
 
 _SUMMARY_ID_SUFFIX = ":summary"
@@ -70,15 +74,23 @@ class Retriever:
         self._document_store = document_store
         self._reranker = reranker
 
-    def retrieve(self, query: str, filters: SearchFilters | None, k: int) -> list[GroundedResult]:
+    def retrieve(
+        self, query: str, filters: SearchFilters | None, k: int
+    ) -> tuple[list[GroundedResult], RetrievalCoverage]:
         """Passage-level search. Every result is grounded: a resolvable `anchor` + `citation`,
         and `passage_text` is the resolved `Chunk`'s own full text (DATA-CONTRACTS.md
         "Provenance & structure" — NOT `get_span(anchor)`, which would silently drop the 2nd+
         block of a multi-block chunk).
+
+        Returns `(results, coverage)`: `coverage.candidate_count` (T-DOC28) is the true
+        pre-rerank/pre-top_k hybrid-search pool size (`len(hits)`, below) — always `>=
+        len(results)`, since truncation to `k` only ever narrows the pool. `McpServer` uses it to
+        build the real `Coverage.candidates` (contracts/mcp_server.py) instead of the `len(results)`
+        stand-in it used to fall back on.
         """
         hits = self._hybrid_hits(query, filters, max(k, _RERANK_POOL_SIZE), kind="chunk")
         if not hits:
-            return []
+            return [], RetrievalCoverage(candidate_count=0)
         scores = {hit.id: hit.score for hit in hits}
         chunks = {hit.id: self._document_store.get_chunk(hit.id) for hit in hits}
         candidates = [RerankCandidate(id=hit.id, text=chunks[hit.id].text) for hit in hits]
@@ -112,11 +124,11 @@ class Retriever:
             )
         # Reranked results are sized to the pool, not the caller's `k` -- truncate only now that
         # reranking has had the chance to promote a correct passage into the top `k` (T-DOC24).
-        return results[:k]
+        return results[:k], RetrievalCoverage(candidate_count=len(hits))
 
     def retrieve_papers(
         self, query: str, filters: SearchFilters | None, k: int
-    ) -> list[PaperSearchResult]:
+    ) -> tuple[list[PaperSearchResult], RetrievalCoverage]:
         """Whole-paper/summary-level search. Deliberately unanchored — a summary has no block to
         anchor to (DATA-CONTRACTS.md §M7) — so results are `PaperSearchResult`s, not
         `GroundedResult`s. `PaperSearchResult`/`PaperSummaryView` are `contracts/` shapes (owned
@@ -125,10 +137,12 @@ class Retriever:
         not a dependency on the `McpServer` module's logic (CONVENTIONS §1's vendor rule doesn't
         apply to shared shapes within `contracts/`, same as `contracts/mcp_server.py` importing
         `Citation`/`GroundedResult` back from `contracts/retriever.py`).
+
+        Returns `(results, coverage)` — see `retrieve()`'s docstring for what `coverage` carries.
         """
         hits = self._hybrid_hits(query, filters, max(k, _RERANK_POOL_SIZE), kind="summary")
         if not hits:
-            return []
+            return [], RetrievalCoverage(candidate_count=0)
         scores = {hit.id: hit.score for hit in hits}
         texts = {hit.id: self._document_store.get_summary(hit.id) for hit in hits}
         candidates = [RerankCandidate(id=hit.id, text=texts[hit.id]) for hit in hits]
@@ -159,7 +173,7 @@ class Retriever:
             )
             results.append(PaperSearchResult(view=view, score=scores[candidate.id]))
         # See the matching comment in `retrieve()` -- truncate to `k` only after reranking (T-DOC24).
-        return results[:k]
+        return results[:k], RetrievalCoverage(candidate_count=len(hits))
 
     def _hybrid_hits(self, query: str, filters: SearchFilters | None, k: int, *, kind: str):
         qvec = self._embedder.embed([query])[0]
