@@ -10,6 +10,7 @@
 import logging
 import time
 from collections.abc import Callable
+from concurrent.futures import Future, ThreadPoolExecutor
 from pathlib import Path
 
 import httpx
@@ -82,11 +83,34 @@ class _PdfDownloadParser:
     CONVENTIONS.md §4) gets exactly one retry after a short backoff, then `PermanentError` if it
     fails again. A genuinely permanent failure (404, or whatever `rag.parser.parse` raises for an
     unparseable PDF) is not retried.
+
+    Single-lookahead prefetch (T-DOC18 Layer 2): `parse_batch()`'s own download prefix used to be
+    a solid block of GPU-idle time in front of every batch's `parse_pdf_bytes_batch()` (MinerU)
+    call, and batch N+1's downloads never started until batch N's GPU call fully finished.
+    `prefetch_next_batch(refs)` lets a caller that already knows the *next* batch's refs (see
+    `rag/orchestrator.py`'s `parse_phase`/`_prepare_batch`) hand them over just before calling
+    `parse_batch()` for the *current* batch -- a single background thread
+    (`ThreadPoolExecutor(max_workers=1)`) starts resolving those bytes immediately, so they're
+    downloading while the current batch's `parse_pdf_bytes_batch()` call is blocking the main
+    thread on the GPU. The next `parse_batch()` call picks up the prefetched bytes (blocking only
+    if the download genuinely hasn't finished yet) instead of downloading again. Deliberately
+    bounded to one batch of lookahead, matching the plan's memory-pressure ceiling (roughly
+    doubles, not unbounds, the "N raw PDFs in memory at once" peak) -- not the per-paper
+    cross-*stage* prefetch thread the orchestrator's own module docstring says was removed for a
+    real CUDA OOM; this prefetch only ever does CPU/network work (HTTP downloads), never touches a
+    GPU model or `state`, so it doesn't reintroduce that risk.
     """
 
     def __init__(self, client: httpx.Client, *, sleep: Callable[[float], None] = time.sleep):
         self._client = client
         self._sleep = sleep
+        self._executor = ThreadPoolExecutor(max_workers=1)
+        # Set by `prefetch_next_batch()`, consumed (and cleared) by the next matching
+        # `parse_batch()` call. Keyed by paper_id tuple, not the `PaperRef` objects themselves,
+        # so a match is a simple equality check. Only ever read/written from the main thread --
+        # the background thread only ever touches its own `_download_all` call, never this
+        # attribute -- so no lock is needed.
+        self._prefetched: tuple[tuple[str, ...], "Future[list[bytes]]"] | None = None
 
     def parse(self, ref: PaperRef) -> ParsedDoc:
         try:
@@ -109,14 +133,48 @@ class _PdfDownloadParser:
         is even called -- consistent with `rag/parser.py`'s own whole-batch-fails contract, and
         exactly what `parse_phase`'s fallback (per-ref `_parse_with_retry`) expects: nothing in
         this batch was checkpointed, so re-attempting every ref individually is safe.
+
+        If `prefetch_next_batch()` was already called for exactly these refs (the normal case once
+        the lookahead is warmed up -- see the class docstring), this reuses that in-flight/finished
+        download instead of starting a new one.
         """
+        contents = self._resolve_contents(refs)
+        return parse_pdf_bytes_batch(contents)
+
+    def prefetch_next_batch(self, refs: list[PaperRef]) -> None:
+        """Start resolving `refs`' PDF bytes on a background thread now, so they're ready by the
+        time a later `parse_batch(refs)` call for this exact ref list needs them. Call this just
+        before `parse_batch()` for the *current* batch, passing the *next* batch's refs -- see the
+        class docstring. Non-blocking: returns as soon as the download is queued, not once it
+        finishes.
+
+        A no-op if `refs` is empty (nothing to prefetch -- e.g. the last batch of a run) or if an
+        identical prefetch is already in flight/done (no double-submission on repeated calls with
+        the same refs).
+        """
+        if not refs:
+            return
+        key = tuple(ref.paper_id for ref in refs)
+        if self._prefetched is not None and self._prefetched[0] == key:
+            return
+        self._prefetched = (key, self._executor.submit(self._download_all, refs))
+
+    def _resolve_contents(self, refs: list[PaperRef]) -> list[bytes]:
+        key = tuple(ref.paper_id for ref in refs)
+        if self._prefetched is not None and self._prefetched[0] == key:
+            _, future = self._prefetched
+            self._prefetched = None
+            return future.result()
+        return self._download_all(refs)
+
+    def _download_all(self, refs: list[PaperRef]) -> list[bytes]:
         contents = []
         for ref in refs:
             try:
                 contents.append(self._download(ref))
             finally:
                 self._sleep(_PDF_DOWNLOAD_DELAY_SECONDS)
-        return parse_pdf_bytes_batch(contents)
+        return contents
 
     def _download(self, ref: PaperRef) -> bytes:
         try:
