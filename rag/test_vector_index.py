@@ -277,25 +277,28 @@ def test_real_adapter_satisfies_contract(check):
 
 
 # ==================================================================================================
-# T-DOC27 — sparse-channel IDF weighting (ADR-01: "Qdrant treats sparse vectors as first-class").
+# T-DOC27 — sparse-channel IDF weighting (ADR-01: the vector store treats sparse vectors as
+# first-class beside dense).
 #
 # `_sparse_vector` itself is unchanged (still a plain raw-term-frequency hash, on purpose — see its
-# updated comment in rag/vector_index.py): real IDF weighting is now Qdrant's own native sparse-
-# vector modifier, applied server-side from the collection's live document-frequency stats. That
-# means the actual "does a rare/discriminative term outrank a common one" behavior cannot be proven
-# by a fake or a pure-function test against `_sparse_vector` alone (`FakeVectorStore` has no notion
-# of corpus-wide document frequency, and never will per its own docstring) — it can only be observed
-# against a real Qdrant collection, so the discriminative-weighting proof below is `enable_socket`-
-# gated like `test_real_adapter_satisfies_contract` above, not "fake-based" as originally framed.
-# The two zero-network tests below cover what a pure-function test *can* prove: `_sparse_vector`'s
-# own output didn't change, and the collection config now actually requests the modifier.
+# updated comment in rag/vector_index.py): real IDF weighting is now the vector store's own native
+# sparse-vector modifier, applied server-side from the collection's live document-frequency stats.
+# That means the actual "does a rare/discriminative term outrank a common one" behavior cannot be
+# proven by a fake or a pure-function test against `_sparse_vector` alone (`FakeVectorStore` has no
+# notion of corpus-wide document frequency, and never will per its own docstring) — it can only be
+# observed against a real vector-store collection, so the discriminative-weighting proof below is
+# `enable_socket`-gated like `test_real_adapter_satisfies_contract` above, not "fake-based" as
+# originally framed. The two zero-network tests below cover what a pure-function test *can* prove:
+# `_sparse_vector`'s own output didn't change, and the collection config now actually requests the
+# modifier.
 # ==================================================================================================
 
 
 def test_sparse_vector_stays_raw_term_frequency_no_client_side_idf():
     # Regression guard: _sparse_vector must keep sending plain per-token counts -- IDF weighting is
-    # Qdrant's job now (the modifier), not this function's. A repeated token accumulates a count of
-    # 3.0, not some pre-scaled value; a token appearing once is 1.0, same as before T-DOC27.
+    # the vector store's job now (the modifier), not this function's. A repeated token accumulates
+    # a count of 3.0, not some pre-scaled value; a token appearing once is 1.0, same as before
+    # T-DOC27.
     real = pytest.importorskip("rag.vector_index")
     vec = real._sparse_vector("estimator estimator estimator treatment")
     values_by_index = dict(zip(vec.indices, vec.values))
@@ -303,11 +306,11 @@ def test_sparse_vector_stays_raw_term_frequency_no_client_side_idf():
 
 
 def test_sparse_vector_params_requests_native_idf_modifier():
-    # The actual T-DOC27 fix: the collection's sparse field must be created with Qdrant's IDF
+    # The actual T-DOC27 fix: the collection's sparse field must be created with the native IDF
     # modifier so common words stop carrying as much weight as discriminative ones (ADR-01/ADR-11
-    # Tier A). No `qdrant_client` import needed here -- `.modifier.value` is a plain str off the
-    # object `pytest.importorskip` already handed back (CONVENTIONS §1: qdrant_client is nameable
-    # only inside rag/vector_index.py, not this test file).
+    # Tier A). No vendor client import needed here -- `.modifier.value` is a plain str off the
+    # object `pytest.importorskip` already handed back (CONVENTIONS §1: the vendor client is
+    # nameable only inside rag/vector_index.py, not this test file).
     real = pytest.importorskip("rag.vector_index")
     params = real._sparse_vector_params()
     assert params.modifier.value == "idf"
