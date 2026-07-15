@@ -90,9 +90,11 @@ def harvest_refs(config: Config, orchestrator: IngestionOrchestrator) -> list[Pa
 
 class _PdfDownloadParser:
     """Bridges `IngestionOrchestrator`'s `parser.parse(ref: PaperRef)` call to the real Parser
-    module's frozen `parse(raw: bytes) -> ParsedDoc` interface — the Orchestrator hands a
-    `PaperRef`, the real Parser wants PDF bytes. Lives here, not in `rag/parser.py`: downloading
-    is composition-root wiring, not part of the Parser module's own contract.
+    module's frozen `parse(raw: bytes, paper_id: str) -> ParsedDoc` interface — the Orchestrator
+    hands a `PaperRef`, the real Parser wants PDF bytes plus that same `PaperRef`'s already-known
+    `paper_id` (T-DOC31 — never re-derived from the PDF's own content). Lives here, not in
+    `rag/parser.py`: downloading is composition-root wiring, not part of the Parser module's own
+    contract.
 
     `sleep` is constructor-injectable (default `time.sleep`), same pattern as
     `rag.harvester.ArxivSource`, so a unit test can assert the delay/backoff fire without a real
@@ -169,14 +171,17 @@ class _PdfDownloadParser:
             # exception (never a cache hit -- see `_download`) still sleeps, unchanged.
             if not cache_hit:
                 self._sleep(_PDF_DOWNLOAD_DELAY_SECONDS)
-        return parse_pdf_bytes(content)
+        # T-DOC31: `ref.paper_id` is the real id (from the Harvester) -- pass it through instead
+        # of letting the real Parser fall back to deriving one from the PDF's own content.
+        return parse_pdf_bytes(content, ref.paper_id)
 
     def parse_batch(self, refs: list[PaperRef]) -> list[ParsedDoc]:
         """Bridges `IngestionOrchestrator.parse_phase`'s batched `parser.parse_batch(refs)` call
-        (T-DOC16) to the real Parser module's `parse_batch(raws: list[bytes]) -> list[ParsedDoc]`
-        the same way `parse()` bridges to `parse()` above -- download every ref's PDF first (same
-        per-request delay/one-retry-then-`PermanentError` policy as `_download`, applied to each
-        ref in turn), then hand the whole batch of bytes to MinerU in one `do_parse` call.
+        (T-DOC16) to the real Parser module's `parse_batch(raws: list[bytes], paper_ids:
+        list[str]) -> list[ParsedDoc]` the same way `parse()` bridges to `parse()` above --
+        download every ref's PDF first (same per-request delay/one-retry-then-`PermanentError`
+        policy as `_download`, applied to each ref in turn), then hand the whole batch of bytes
+        (plus each ref's real `paper_id`, T-DOC31) to MinerU in one `do_parse` call.
 
         A download failure for ANY ref raises `PermanentError` here before `parse_pdf_bytes_batch`
         is even called -- consistent with `rag/parser.py`'s own whole-batch-fails contract, and
@@ -188,7 +193,7 @@ class _PdfDownloadParser:
         download instead of starting a new one.
         """
         contents = self._resolve_contents(refs)
-        return parse_pdf_bytes_batch(contents)
+        return parse_pdf_bytes_batch(contents, [ref.paper_id for ref in refs])
 
     def prefetch_next_batch(self, refs: list[PaperRef]) -> None:
         """Start resolving `refs`' PDF bytes on a background thread now, so they're ready by the

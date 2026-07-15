@@ -1,4 +1,15 @@
-"""M2 Parser output (DATA-CONTRACTS.md "M2 Parser output")."""
+"""M2 Parser output (DATA-CONTRACTS.md "M2 Parser output").
+
+`Parser.parse(raw, paper_id) -> ParsedDoc` and `Parser.parse_batch(raws, paper_ids) ->
+list[ParsedDoc]` are the module's own interface (ARCHITECTURE.md §M2, owned by Owner B) —
+`contracts/` only defines the data shapes that cross the seam, not the module interface itself
+(see `contracts/embedder.py` for the same note, `contracts/gpu_lock.py` for the one
+interface-shaped exception). `paper_id`/`paper_ids` (T-DOC31): the caller's already-known real
+id(s), required — the adapter never derives `ParsedDoc.paper_id` from the PDF's own content itself
+(e.g. its arXiv watermark) or falls back to a content hash; a mismatch between what the caller
+passes and what ends up on `ParsedDoc.paper_id` is a bug in the adapter, not a legitimate
+fallback path.
+"""
 
 from pydantic import Field
 
