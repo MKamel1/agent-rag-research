@@ -234,7 +234,12 @@ class _FakeTeiLifecycle:
         self.start_calls += 1
 
 
-class _FakeSummarizer:
+class FakeSummarizer:
+    """Named without a leading underscore (unlike this file's other test-local fakes) so
+    `ci/checks/gpu_lock.py`'s check (f) recognizes it as an intentional fake via its `Fake` prefix
+    -- it ends in the `Summarizer` adapter suffix that check exists to police, and this class has
+    no `gpu_lock` param on purpose (it's a spy, not a real adapter)."""
+
     def __init__(self):
         self.unload_calls = 0
 
@@ -247,7 +252,7 @@ def _build_orchestrator_for_hook_test(monkeypatch, tmp_path):
     real orchestrator through the real composition root, with only the collaborators that would
     otherwise need a live network/GPU (VectorIndex's real Qdrant connection, OllamaSummarizer's
     real HTTP client) or don't exist yet in this branch (`app.tei_lifecycle`) stubbed out."""
-    fake_summarizer = _FakeSummarizer()
+    fake_summarizer = FakeSummarizer()
     fake_tei_lifecycle = _FakeTeiLifecycle()
     monkeypatch.setattr("app.assembly.OllamaSummarizer", lambda *a, **k: fake_summarizer)
     monkeypatch.setattr("app.assembly.VectorIndex", lambda *a, **k: object())
