@@ -54,6 +54,16 @@ def stop_tei_containers() -> None:
             _TEI_CONTAINERS,
             error,
         )
+        return
+    # Breadcrumb for an on-call engineer debugging an unexpected outage during Pass 1 (T-DOC19
+    # review finding): a successful stop was otherwise completely silent -- only the failure path
+    # above logged anything -- so a live MCP query failing against these containers during this
+    # window had no log line pointing back to this as the cause.
+    logger.info(
+        "stopped TEI containers %s for Pass 1 -- live MCP queries against them will fail until "
+        "Pass 2's restart (app/ingest.py's _run_finish_phase)",
+        _TEI_CONTAINERS,
+    )
 
 
 def start_tei_containers(client: httpx.Client | None = None) -> None:

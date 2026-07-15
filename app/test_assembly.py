@@ -716,12 +716,13 @@ def test_download_all_sleeps_only_for_the_live_ref_not_the_cached_one(monkeypatc
     )
 
 
-# T-DOC19 -- before_parse_phase/before_finish_phase hook wiring to app.tei_lifecycle
+# T-DOC19 -- before_parse_phase hook wiring to app.tei_lifecycle (before_finish_phase is back to
+# the orchestrator's default no-op -- see the T-DOC19 bug-fix docstring on the noop test below)
 # ================================================================================================
 #
-# `app/tei_lifecycle.py` (stop_tei_containers()/start_tei_containers(), both best-effort, never
-# raise) is built by a sibling branch and isn't present here -- `_FakeTeiLifecycle` below is a
-# local, test-only stand-in matching that exact interface so these wiring tests run standalone.
+# `_FakeTeiLifecycle` below is a local, test-only stand-in for `app/tei_lifecycle.py`'s
+# `stop_tei_containers()`/`start_tei_containers()` interface (both best-effort, never raise) so
+# these wiring tests run standalone rather than depending on the real module's Docker/HTTP calls.
 # These tests cover only that `build_ingestion_orchestrator` composes/wires the hooks correctly
 # (composition-root level) -- not the orchestrator's own hook-calling mechanism, which
 # `rag/test_orchestrator.py` already covers (`test_before_parse_phase_hook_fires_before_any_parsing`
@@ -782,14 +783,22 @@ def test_before_parse_phase_composes_summarizer_unload_and_tei_stop(monkeypatch,
     assert fake_tei_lifecycle.stop_calls == 1, "must also stop the TEI containers"
 
 
-def test_before_finish_phase_is_wired_to_tei_start_not_the_default_noop(monkeypatch, tmp_path):
+def test_before_finish_phase_is_left_as_the_default_noop(monkeypatch, tmp_path):
+    """T-DOC19 bug fix: `build_ingestion_orchestrator` no longer wires `before_finish_phase` to
+    `tei_lifecycle.start_tei_containers` -- `finish_phase()` embeds its once-per-run
+    `topic_query_vec` BEFORE this hook fires (rag/orchestrator.py, frozen), so that wiring
+    restarted TEI too late to help the very embed call that needed it (a real `httpx.ConnectError`
+    against the still-`docker stop`-ped `rag-tei-embed` container, every real Pass 2 run). The
+    restart now happens explicitly in `app/ingest.py`'s `_run_finish_phase`, before
+    `finish_phase()` is called at all -- see `app/test_ingest.py` for the ordering proof."""
     orchestrator, fake_summarizer, fake_tei_lifecycle = _build_orchestrator_for_hook_test(
         monkeypatch, tmp_path
     )
 
-    orchestrator._before_finish_phase()
+    orchestrator._before_finish_phase()  # must not raise even though nothing is wired
 
-    assert fake_tei_lifecycle.start_calls == 1, (
-        "before_finish_phase must no longer be the orchestrator's default no-op"
+    assert fake_tei_lifecycle.start_calls == 0, (
+        "before_finish_phase must be back to the orchestrator's default no-op -- the TEI restart "
+        "now happens in app/ingest.py, earlier than this hook ever fires"
     )
     assert fake_summarizer.unload_calls == 0, "before_finish_phase must not touch the summarizer"

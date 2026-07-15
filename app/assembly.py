@@ -367,11 +367,12 @@ def build_ingestion_orchestrator(
         # sub-models don't release via torch.cuda.empty_cache()), so subprocess isolation is the
         # real mechanism for that, not an in-process unload callback.
         before_parse_phase=_before_parse_phase,
-        # Restart the TEI containers once Pass 1 (parsing) is fully done, before Pass 2's first
-        # summarize/embed call needs them -- `finish_phase()` calls this once, before any paper's
-        # work (rag/orchestrator.py). See app/tei_lifecycle.py for the best-effort start+health-poll
-        # behavior.
-        before_finish_phase=tei_lifecycle.start_tei_containers,
+        # No `before_finish_phase` wiring for TEI here (T-DOC19 fix): `finish_phase()` embeds its
+        # once-per-run `topic_query_vec` BEFORE this hook fires (rag/orchestrator.py, frozen), so
+        # wiring the TEI restart to this hook restarts it too late -- the embed call already needs
+        # a live TEI. `app/ingest.py`'s `_run_finish_phase` instead calls
+        # `tei_lifecycle.start_tei_containers()` explicitly, before `finish_phase()` is invoked at
+        # all, so TEI is confirmed up (or the best-effort timeout has already elapsed) beforehand.
         # Evict the Summarizer again before *each paper's* embed step, not just once before Pass
         # 1 -- found necessary 2026-07-13: within Pass 2, the Summarizer stays fully GPU-resident
         # (real measured ~11.5GB for a long paper) for the whole time the Embedder is working,
