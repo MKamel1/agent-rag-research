@@ -121,3 +121,59 @@ def test_default_vram_probe_is_the_real_free_vram_mib():
 
     sizer = AdaptiveBatchSizer(initial_size=4)
     assert sizer._vram_probe is free_vram_mib
+
+
+def test_decision_log_disabled_by_default_writes_no_file(tmp_path):
+    log_path = tmp_path / "decisions.csv"
+    sizer = AdaptiveBatchSizer(initial_size=4, safety_margin_mib=1000, vram_probe=_probe(3000))
+    sizer.next_size()
+    assert not log_path.exists()
+
+
+def test_decision_log_writes_header_once_then_one_row_per_call(tmp_path):
+    import csv
+
+    log_path = tmp_path / "decisions.csv"
+    sizer = AdaptiveBatchSizer(
+        initial_size=4,
+        safety_margin_mib=1000,
+        growth_step=4,
+        vram_probe=_probe(3000, 3000),
+        decision_log_path=log_path,
+    )
+    sizer.next_size()
+    sizer.next_size()
+
+    with log_path.open() as f:
+        rows = list(csv.reader(f))
+    assert rows[0] == [
+        "timestamp", "old_size", "new_size", "free_vram_mib",
+        "safety_margin_mib", "growth_threshold_mib", "zone",
+    ]
+    assert len(rows) == 3  # header + 2 decisions
+
+
+def test_decision_log_row_records_real_values_for_each_zone(tmp_path):
+    import csv
+
+    log_path = tmp_path / "decisions.csv"
+    sizer = AdaptiveBatchSizer(
+        initial_size=4,
+        safety_margin_mib=1000,
+        growth_step=4,
+        vram_probe=_probe(3000, 1500, 1000, None),
+        decision_log_path=log_path,
+    )
+    sizer.next_size()  # grow: 4 -> 8
+    sizer.next_size()  # hold: 8 -> 8 (1500 is between margin and threshold)
+    sizer.next_size()  # shrink: 8 -> 4 (at the margin)
+    sizer.next_size()  # probe unavailable: holds at 4
+
+    with log_path.open() as f:
+        rows = list(csv.reader(f))[1:]  # drop header
+    assert [r[1:] for r in rows] == [
+        ["4", "8", "3000", "1000", "2000", "grow"],
+        ["8", "8", "1500", "1000", "2000", "hold"],
+        ["8", "4", "1000", "1000", "2000", "shrink"],
+        ["4", "4", "", "1000", "2000", "probe_unavailable"],
+    ]

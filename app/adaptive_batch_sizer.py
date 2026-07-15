@@ -17,12 +17,25 @@ thin. Converges toward "as large as safely fits" over a real run, self-tuning pe
 per-paper-mix, with no separate calibration step.
 """
 
+import csv
 import logging
 from collections.abc import Callable
+from datetime import UTC, datetime
+from pathlib import Path
 
 from app.gpu_headroom import free_vram_mib
 
 logger = logging.getLogger(__name__)
+
+_DECISION_LOG_HEADER = [
+    "timestamp",
+    "old_size",
+    "new_size",
+    "free_vram_mib",
+    "safety_margin_mib",
+    "growth_threshold_mib",
+    "zone",
+]
 
 
 class AdaptiveBatchSizer:
@@ -42,6 +55,16 @@ class AdaptiveBatchSizer:
     could in principle keep growing indefinitely if VRAM stays comfortable, silently exhausting
     host RAM instead (N raw PDFs held in memory during batching is a real, separate resource VRAM
     measurement never sees, flagged by the PR #82 design review).
+
+    `decision_log_path`, if given, appends one CSV row per `next_size()` call (timestamp, old/new
+    size, free VRAM at decision time, the configured margin/threshold, and which zone the decision
+    landed in) -- real, structured evidence for investigating a real Pass-1 run after the fact,
+    the same pattern this project's own continuous `gpu_cpu_perf_log.csv` sampler has already
+    proven valuable for. Deliberately a plain CSV append, not Python `logging` -- this project
+    already found that `logger.info()` calls silently vanish in `app/ingest.py`/`app/
+    parse_phase.py` today (neither configures a handler), and a scattered stdout line is harder to
+    analyze after the fact than one row per decision in a dedicated file regardless. `None`
+    (default) disables logging entirely -- no file created, no per-call overhead.
     """
 
     def __init__(
@@ -54,6 +77,7 @@ class AdaptiveBatchSizer:
         growth_threshold_mib: int | None = None,
         growth_step: int = 4,
         vram_probe: Callable[[], int | None] = free_vram_mib,
+        decision_log_path: str | Path | None = None,
     ):
         """Three real zones, not two: shrink at or below `safety_margin_mib` (danger); grow only
         once free VRAM clears `growth_threshold_mib` (comfortable, defaults to `2 *
@@ -79,6 +103,7 @@ class AdaptiveBatchSizer:
         )
         self._growth_step = growth_step
         self._vram_probe = vram_probe
+        self._decision_log_path = Path(decision_log_path) if decision_log_path else None
 
     def next_size(self) -> int:
         free_mib = self._vram_probe()
@@ -86,14 +111,18 @@ class AdaptiveBatchSizer:
             logger.warning(
                 "AdaptiveBatchSizer: VRAM probe unavailable, holding size at %d", self._current
             )
+            self._log_decision(self._current, self._current, None, "probe_unavailable")
             return self._current
 
         if free_mib <= self._safety_margin_mib:
             new_size = max(self._current // 2, self._min_size)
+            zone = "shrink"
         elif free_mib >= self._growth_threshold_mib:
             new_size = min(self._current + self._growth_step, self._max_size)
+            zone = "grow"
         else:
             new_size = self._current
+            zone = "hold"
 
         if new_size != self._current:
             logger.info(
@@ -103,5 +132,34 @@ class AdaptiveBatchSizer:
                 free_mib,
                 self._safety_margin_mib,
             )
+        old_size = self._current
         self._current = new_size
+        self._log_decision(old_size, new_size, free_mib, zone)
         return self._current
+
+    def _log_decision(
+        self, old_size: int, new_size: int, free_mib: int | None, zone: str
+    ) -> None:
+        """Append one CSV row -- real, structured evidence for a post-hoc investigation of a real
+        Pass-1 run (per the user's explicit request after this session's real, still-unexplained
+        OOM history: "keep a close log of it to be able to investigate later"). No-op when
+        `decision_log_path` wasn't configured, so this stays free for tests/default usage.
+        """
+        if self._decision_log_path is None:
+            return
+        is_new_file = not self._decision_log_path.exists()
+        with self._decision_log_path.open("a", newline="") as f:
+            writer = csv.writer(f)
+            if is_new_file:
+                writer.writerow(_DECISION_LOG_HEADER)
+            writer.writerow(
+                [
+                    datetime.now(UTC).isoformat(),
+                    old_size,
+                    new_size,
+                    free_mib if free_mib is not None else "",
+                    self._safety_margin_mib,
+                    self._growth_threshold_mib,
+                    zone,
+                ]
+            )
