@@ -207,3 +207,83 @@ def test_quarantine_sink_logs_and_does_not_raise_when_the_write_itself_fails(cap
         sink("<unknown>", TransientError("boom"))  # must not raise
 
     assert "quarantine" in caplog.text.lower()
+
+
+# ================================================================================================
+# T-DOC19 -- before_parse_phase/before_finish_phase hook wiring to app.tei_lifecycle
+# ================================================================================================
+#
+# `app/tei_lifecycle.py` (stop_tei_containers()/start_tei_containers(), both best-effort, never
+# raise) is built by a sibling branch and isn't present here -- `_FakeTeiLifecycle` below is a
+# local, test-only stand-in matching that exact interface so these wiring tests run standalone.
+# These tests cover only that `build_ingestion_orchestrator` composes/wires the hooks correctly
+# (composition-root level) -- not the orchestrator's own hook-calling mechanism, which
+# `rag/test_orchestrator.py` already covers (`test_before_parse_phase_hook_fires_before_any_parsing`
+# / `test_before_finish_phase_hook_fires_after_every_parse_and_before_any_summarize`).
+
+
+class _FakeTeiLifecycle:
+    def __init__(self):
+        self.stop_calls = 0
+        self.start_calls = 0
+
+    def stop_tei_containers(self) -> None:
+        self.stop_calls += 1
+
+    def start_tei_containers(self) -> None:
+        self.start_calls += 1
+
+
+class FakeSummarizer:
+    """Named without a leading underscore (unlike this file's other test-local fakes) so
+    `ci/checks/gpu_lock.py`'s check (f) recognizes it as an intentional fake via its `Fake` prefix
+    -- it ends in the `Summarizer` adapter suffix that check exists to police, and this class has
+    no `gpu_lock` param on purpose (it's a spy, not a real adapter)."""
+
+    def __init__(self):
+        self.unload_calls = 0
+
+    def unload(self) -> None:
+        self.unload_calls += 1
+
+
+def _build_orchestrator_for_hook_test(monkeypatch, tmp_path):
+    """Same stubbing pattern as `test_harvest_failure_is_written_to_the_quarantine_table` above --
+    real orchestrator through the real composition root, with only the collaborators that would
+    otherwise need a live network/GPU (VectorIndex's real Qdrant connection, OllamaSummarizer's
+    real HTTP client) or don't exist yet in this branch (`app.tei_lifecycle`) stubbed out."""
+    fake_summarizer = FakeSummarizer()
+    fake_tei_lifecycle = _FakeTeiLifecycle()
+    monkeypatch.setattr("app.assembly.OllamaSummarizer", lambda *a, **k: fake_summarizer)
+    monkeypatch.setattr("app.assembly.VectorIndex", lambda *a, **k: object())
+    monkeypatch.setattr("app.assembly.tei_lifecycle", fake_tei_lifecycle)
+
+    cfg = Config(focus_area_queries=["causal inference"], gpu_lock_path=str(tmp_path / ".gpu.lock"))
+    orchestrator = build_ingestion_orchestrator(
+        cfg, db_path=str(tmp_path / "papers.db"), blob_dir=str(tmp_path / "blobs")
+    )
+    return orchestrator, fake_summarizer, fake_tei_lifecycle
+
+
+def test_before_parse_phase_composes_summarizer_unload_and_tei_stop(monkeypatch, tmp_path):
+    orchestrator, fake_summarizer, fake_tei_lifecycle = _build_orchestrator_for_hook_test(
+        monkeypatch, tmp_path
+    )
+
+    orchestrator._before_parse_phase()
+
+    assert fake_summarizer.unload_calls == 1, "must still evict the Summarizer, as before T-DOC19"
+    assert fake_tei_lifecycle.stop_calls == 1, "must also stop the TEI containers"
+
+
+def test_before_finish_phase_is_wired_to_tei_start_not_the_default_noop(monkeypatch, tmp_path):
+    orchestrator, fake_summarizer, fake_tei_lifecycle = _build_orchestrator_for_hook_test(
+        monkeypatch, tmp_path
+    )
+
+    orchestrator._before_finish_phase()
+
+    assert fake_tei_lifecycle.start_calls == 1, (
+        "before_finish_phase must no longer be the orchestrator's default no-op"
+    )
+    assert fake_summarizer.unload_calls == 0, "before_finish_phase must not touch the summarizer"

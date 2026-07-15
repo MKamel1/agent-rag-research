@@ -14,6 +14,7 @@ from pathlib import Path
 
 import httpx
 
+from app import tei_lifecycle
 from contracts.config import Config
 from contracts.embedder import EmbedderInfo
 from contracts.errors import PermanentError, TransientError
@@ -195,17 +196,29 @@ def build_ingestion_orchestrator(
         _QDRANT_HOST, _QDRANT_PORT, collection, _EMBEDDER_INFO.dim, config.hybrid_dense_weight
     )
 
+    def _before_parse_phase() -> None:
+        # Composed because the `before_parse_phase` hook slot is a single callable, not a list
+        # (rag/orchestrator.py). Both evictions free VRAM MinerU needs during Pass 1 -- see
+        # rag/orchestrator.py's module docstring, ARCHITECTURE.md §3, and app/tei_lifecycle.py.
+        summarizer.unload()
+        tei_lifecycle.stop_tei_containers()
+
     return IngestionOrchestrator(
         harvester, parser, chunker, summarizer, embedder, document_store, vector_index,
         state, gpu_lock, config,
-        # Evict the Summarizer before Pass 1 (MinerU needs its VRAM back) -- see
-        # rag/orchestrator.py's module docstring and ARCHITECTURE.md §3. No `before_finish_phase`
-        # hook is wired here: Pass 1 (MinerU) runs in a separate subprocess (`app/parse_phase.py`),
-        # so that process's own exit is what releases MinerU's VRAM before Pass 2 -- verified
-        # empirically that clearing MinerU's in-process model caches only partially frees memory
-        # (PaddlePaddle-backed OCR/table sub-models don't release via torch.cuda.empty_cache()),
-        # so subprocess isolation is the real mechanism here, not an in-process unload callback.
-        before_parse_phase=summarizer.unload,
+        # Evict the Summarizer, and stop the TEI Embedder/Reranker containers, before Pass 1
+        # (MinerU needs the VRAM both hold). This hook does NOT reload MinerU's own VRAM: Pass 1
+        # runs in a separate subprocess (`app/parse_phase.py`), so that process's own exit is what
+        # releases MinerU's VRAM before Pass 2 -- verified empirically that clearing MinerU's
+        # in-process model caches only partially frees memory (PaddlePaddle-backed OCR/table
+        # sub-models don't release via torch.cuda.empty_cache()), so subprocess isolation is the
+        # real mechanism for that, not an in-process unload callback.
+        before_parse_phase=_before_parse_phase,
+        # Restart the TEI containers once Pass 1 (parsing) is fully done, before Pass 2's first
+        # summarize/embed call needs them -- `finish_phase()` calls this once, before any paper's
+        # work (rag/orchestrator.py). See app/tei_lifecycle.py for the best-effort start+health-poll
+        # behavior.
+        before_finish_phase=tei_lifecycle.start_tei_containers,
         # Evict the Summarizer again before *each paper's* embed step, not just once before Pass
         # 1 -- found necessary 2026-07-13: within Pass 2, the Summarizer stays fully GPU-resident
         # (real measured ~11.5GB for a long paper) for the whole time the Embedder is working,
