@@ -8,6 +8,7 @@
 """
 
 import logging
+import os
 import time
 from collections.abc import Callable
 from pathlib import Path
@@ -82,11 +83,31 @@ class _PdfDownloadParser:
     CONVENTIONS.md §4) gets exactly one retry after a short backoff, then `PermanentError` if it
     fails again. A genuinely permanent failure (404, or whatever `rag.parser.parse` raises for an
     unparseable PDF) is not retried.
+
+    `cache_dir` (T-DOC18, giggly-tumbling-globe.md Part 0 Layer 1): the standalone prefetcher
+    (`app/prefetch_pdfs.py`) fills `RAG_PDF_CACHE_DIR/<paper_id>.pdf` continuously, off the GPU
+    critical path, but this class never read it -- every ref did a live HTTP GET regardless of
+    whether the prefetcher already had it. If `cache_dir` is given, `_download` checks
+    `cache_dir / f"{paper_id}.pdf"` first (same naming convention as `prefetch_pdfs._pdf_path`)
+    and returns its bytes with zero HTTP call on a hit; on a miss it falls back to the unchanged
+    live-download path below and then writes the result to the same path (atomically -- write to
+    a `.tmp` sibling and rename, matching `prefetch_pdfs._download_one`'s own convention) so the
+    live pipeline also grows the cache instead of only ever reading it. `cache_dir=None` (the
+    default) skips the cache check entirely -- this is the fallback `build_ingestion_orchestrator`
+    uses when `RAG_PDF_CACHE_DIR` isn't set, rather than crashing or guessing a directory to
+    create.
     """
 
-    def __init__(self, client: httpx.Client, *, sleep: Callable[[float], None] = time.sleep):
+    def __init__(
+        self,
+        client: httpx.Client,
+        *,
+        sleep: Callable[[float], None] = time.sleep,
+        cache_dir: Path | None = None,
+    ):
         self._client = client
         self._sleep = sleep
+        self._cache_dir = cache_dir
 
     def parse(self, ref: PaperRef) -> ParsedDoc:
         try:
@@ -119,16 +140,43 @@ class _PdfDownloadParser:
         return parse_pdf_bytes_batch(contents)
 
     def _download(self, ref: PaperRef) -> bytes:
+        cached = self._read_cached(ref)
+        if cached is not None:
+            return cached
         try:
-            return self._download_once(ref)
+            content = self._download_once(ref)
         except TransientError:
             self._sleep(_PDF_DOWNLOAD_RETRY_BACKOFF_SECONDS)
             try:
-                return self._download_once(ref)
+                content = self._download_once(ref)
             except TransientError as retry_error:
                 raise PermanentError(
                     f"failed to download PDF from {ref.pdf_url} after retry: {retry_error}"
                 ) from retry_error
+        self._write_cache(ref, content)
+        return content
+
+    def _cache_path(self, ref: PaperRef) -> Path | None:
+        if self._cache_dir is None:
+            return None
+        return self._cache_dir / f"{ref.paper_id}.pdf"
+
+    def _read_cached(self, ref: PaperRef) -> bytes | None:
+        path = self._cache_path(ref)
+        if path is not None and path.exists():
+            return path.read_bytes()
+        return None
+
+    def _write_cache(self, ref: PaperRef, content: bytes) -> None:
+        path = self._cache_path(ref)
+        if path is None:
+            return
+        # Atomic write -- same tmp-then-rename convention as
+        # `prefetch_pdfs._download_one`, so a crash mid-write never leaves a partial `.pdf`
+        # that a later cache-hit check would mistake for complete.
+        tmp_path = path.with_suffix(path.suffix + ".tmp")
+        tmp_path.write_bytes(content)
+        tmp_path.rename(path)
 
     def _download_once(self, ref: PaperRef) -> bytes:
         try:
@@ -184,7 +232,15 @@ def build_ingestion_orchestrator(
 
     state = SqliteIngestState(db_path)
     harvester = Harvester(ArxivSource(), quarantine=_sqlite_harvest_quarantine_sink(state))
-    parser = _PdfDownloadParser(httpx.Client(timeout=60.0))
+    # Same env var app/prefetch_pdfs.py reads (RAG_PDF_CACHE_DIR) -- unset means "no cache dir
+    # configured", which we treat as "skip the cache check", not a guessed default directory to
+    # create (T-DOC18). mkdir here (not inside _PdfDownloadParser) because only the composition
+    # root knows whether this run is even configured to use a cache at all.
+    cache_dir_env = os.environ.get("RAG_PDF_CACHE_DIR")
+    pdf_cache_dir = Path(cache_dir_env) if cache_dir_env else None
+    if pdf_cache_dir is not None:
+        pdf_cache_dir.mkdir(parents=True, exist_ok=True)
+    parser = _PdfDownloadParser(httpx.Client(timeout=60.0), cache_dir=pdf_cache_dir)
     chunker = Chunker(config)
     summarizer = OllamaSummarizer(
         httpx.Client(base_url=_OLLAMA_URL, timeout=300.0), gpu_lock, _OLLAMA_MODEL

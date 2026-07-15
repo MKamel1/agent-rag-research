@@ -48,12 +48,16 @@ def _make_ref(paper_id: str = "2504.09999") -> PaperRef:
     )
 
 
-def _make_parser(monkeypatch, handler, sleeps: list[float]) -> _PdfDownloadParser:
+def _make_parser(
+    monkeypatch, handler, sleeps: list[float], cache_dir=None,
+) -> _PdfDownloadParser:
     client = httpx.Client(transport=httpx.MockTransport(handler))
     # The real Parser (rag.parser.parse) needs an actual PDF/MinerU -- stub it so this test
     # exercises only the download+delay wiring, not the Parser module.
     monkeypatch.setattr("app.assembly.parse_pdf_bytes", lambda raw: raw)
-    return _PdfDownloadParser(client, sleep=lambda seconds: sleeps.append(seconds))
+    return _PdfDownloadParser(
+        client, sleep=lambda seconds: sleeps.append(seconds), cache_dir=cache_dir
+    )
 
 
 def test_sleeps_the_fixed_delay_after_each_download(monkeypatch):
@@ -207,3 +211,137 @@ def test_quarantine_sink_logs_and_does_not_raise_when_the_write_itself_fails(cap
         sink("<unknown>", TransientError("boom"))  # must not raise
 
     assert "quarantine" in caplog.text.lower()
+
+
+# ================================================================================================
+# T-DOC18 — PDF cache (giggly-tumbling-globe.md Part 0 Layer 1): `_PdfDownloadParser` reads
+# `app/prefetch_pdfs.py`'s on-disk `<paper_id>.pdf` cache before doing any HTTP call, and
+# write-throughs a live download's bytes to that same cache afterward.
+# ================================================================================================
+
+
+def test_cache_hit_returns_cached_bytes_with_zero_http_calls(monkeypatch, tmp_path):
+    """A pre-placed `<paper_id>.pdf` in `cache_dir` (the prefetcher's own naming convention) must
+    be read directly -- no call reaches the injected `httpx.Client` at all."""
+    ref = _make_ref("2504.00001")
+    (tmp_path / f"{ref.paper_id}.pdf").write_bytes(b"%PDF-cached")
+
+    call_count = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        call_count["n"] += 1
+        return httpx.Response(200, content=b"%PDF-live")  # would prove the cache was skipped
+
+    sleeps: list[float] = []
+    parser = _make_parser(monkeypatch, handler, sleeps, cache_dir=tmp_path)
+
+    result = parser.parse(ref)
+
+    assert result == b"%PDF-cached", "must return the cached bytes, not live-download them"
+    assert call_count["n"] == 0, "a cache hit must make zero HTTP calls"
+
+
+def test_cache_miss_downloads_live_and_writes_through(monkeypatch, tmp_path):
+    """No file in `cache_dir` yet -- unchanged live-download behavior (one HTTP call, same
+    delay), PLUS the downloaded bytes get written to `cache_dir/<paper_id>.pdf` afterward so the
+    live pipeline also grows the prefetcher's cache."""
+    ref = _make_ref("2504.00002")
+
+    call_count = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        call_count["n"] += 1
+        return httpx.Response(200, content=b"%PDF-live")
+
+    sleeps: list[float] = []
+    parser = _make_parser(monkeypatch, handler, sleeps, cache_dir=tmp_path)
+
+    result = parser.parse(ref)
+
+    assert result == b"%PDF-live"
+    assert call_count["n"] == 1, "a cache miss must still make exactly one live HTTP call"
+    assert sleeps == [_PDF_DOWNLOAD_DELAY_SECONDS], "unchanged inter-request delay behavior"
+
+    cached_path = tmp_path / f"{ref.paper_id}.pdf"
+    assert cached_path.exists(), "a live download must be written through to the cache"
+    assert cached_path.read_bytes() == b"%PDF-live"
+    assert not (tmp_path / f"{ref.paper_id}.pdf.tmp").exists(), (
+        "the atomic tmp file must be renamed away, not left behind"
+    )
+
+
+def test_cache_miss_retry_path_still_writes_through_on_eventual_success(monkeypatch, tmp_path):
+    """Cache-miss + a transient failure that recovers on retry (existing retry/backoff behavior,
+    unchanged) must still write the eventually-successful bytes through to the cache."""
+    ref = _make_ref("2504.00003")
+    attempts = {"count": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        attempts["count"] += 1
+        if attempts["count"] == 1:
+            return httpx.Response(429)
+        return httpx.Response(200, content=b"%PDF-recovered")
+
+    sleeps: list[float] = []
+    parser = _make_parser(monkeypatch, handler, sleeps, cache_dir=tmp_path)
+
+    result = parser.parse(ref)
+
+    assert attempts["count"] == 2, "retry/backoff behavior must be unchanged by caching"
+    assert result == b"%PDF-recovered"
+    assert (tmp_path / f"{ref.paper_id}.pdf").read_bytes() == b"%PDF-recovered"
+
+
+def test_no_cache_dir_configured_skips_cache_check_entirely(monkeypatch):
+    """`cache_dir=None` (the default) must behave exactly like caching didn't exist -- always a
+    live HTTP call, no attempt to read or write any path."""
+    ref = _make_ref("2504.00004")
+    call_count = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        call_count["n"] += 1
+        return httpx.Response(200, content=b"%PDF-live")
+
+    sleeps: list[float] = []
+    parser = _make_parser(monkeypatch, handler, sleeps, cache_dir=None)
+
+    result = parser.parse(ref)
+
+    assert result == b"%PDF-live"
+    assert call_count["n"] == 1, "no cache_dir means every ref is a live download"
+
+
+def test_build_ingestion_orchestrator_wires_rag_pdf_cache_dir_env_var(monkeypatch, tmp_path):
+    """`build_ingestion_orchestrator` must thread `RAG_PDF_CACHE_DIR` into `_PdfDownloadParser`
+    (previously not wired at all -- T-DOC18). When the env var is set, the constructed parser's
+    cache_dir must match it exactly (same convention as `app/prefetch_pdfs.py`'s own env read)."""
+    monkeypatch.setattr("app.assembly.VectorIndex", lambda *a, **k: object())
+
+    cache_dir = tmp_path / "pdf_cache"
+    monkeypatch.setenv("RAG_PDF_CACHE_DIR", str(cache_dir))
+
+    db_path = str(tmp_path / "papers.db")
+    cfg = Config(focus_area_queries=["causal inference"], gpu_lock_path=str(tmp_path / ".gpu.lock"))
+
+    orchestrator = build_ingestion_orchestrator(
+        cfg, db_path=db_path, blob_dir=str(tmp_path / "blobs")
+    )
+
+    assert orchestrator._parser._cache_dir == cache_dir
+    assert cache_dir.is_dir(), "the composition root must ensure the configured dir exists"
+
+
+def test_build_ingestion_orchestrator_env_var_unset_falls_back_to_no_cache(monkeypatch, tmp_path):
+    """Fallback decision (T-DOC18): if `RAG_PDF_CACHE_DIR` isn't set, don't guess a directory to
+    create -- skip the cache check entirely (cache_dir=None), same as before this change existed."""
+    monkeypatch.setattr("app.assembly.VectorIndex", lambda *a, **k: object())
+    monkeypatch.delenv("RAG_PDF_CACHE_DIR", raising=False)
+
+    db_path = str(tmp_path / "papers.db")
+    cfg = Config(focus_area_queries=["causal inference"], gpu_lock_path=str(tmp_path / ".gpu.lock"))
+
+    orchestrator = build_ingestion_orchestrator(
+        cfg, db_path=db_path, blob_dir=str(tmp_path / "blobs")
+    )
+
+    assert orchestrator._parser._cache_dir is None
