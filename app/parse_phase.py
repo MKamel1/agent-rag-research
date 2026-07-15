@@ -27,5 +27,16 @@ if __name__ == "__main__":
         blob_dir=os.environ.get("RAG_BLOB_DIR"),
         collection=os.environ.get("RAG_COLLECTION", "papers"),
     )
-    refs = orchestrator.harvest(cfg.focus_area_queries, cfg.corpus_cap)
+    # RAG_INGEST_PAPER_IDS (optional, comma-separated base arXiv ids): fetch exactly these known
+    # papers via ArxivSource.fetch_by_ids() instead of the query-driven harvest() below -- used by
+    # T-EVAL, whose 210-question eval set names 100 specific source papers that must be in the
+    # corpus for the eval to be meaningful (a focus_area search can't guarantee hitting them).
+    # Unset in normal use -- default behavior is completely unchanged.
+    ids_env = os.environ.get("RAG_INGEST_PAPER_IDS")
+    if ids_env:
+        from rag.harvester import ArxivSource
+
+        refs = ArxivSource().fetch_by_ids([i.strip() for i in ids_env.split(",") if i.strip()])
+    else:
+        refs = orchestrator.harvest(cfg.focus_area_queries, cfg.corpus_cap)
     orchestrator.parse_phase(refs)

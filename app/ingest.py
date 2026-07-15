@@ -35,7 +35,16 @@ def _run_finish_phase(cfg: Config) -> None:
         blob_dir=os.environ.get("RAG_BLOB_DIR"),
         collection=os.environ.get("RAG_COLLECTION", "papers"),
     )
-    refs = orchestrator.harvest(cfg.focus_area_queries, cfg.corpus_cap)
+    # RAG_INGEST_PAPER_IDS: see app/parse_phase.py's identical branch -- kept in sync so both
+    # phases of one run agree on the same explicit paper set instead of Pass 2 falling back to a
+    # fresh query-driven harvest() that Pass 1 never used.
+    ids_env = os.environ.get("RAG_INGEST_PAPER_IDS")
+    if ids_env:
+        from rag.harvester import ArxivSource
+
+        refs = ArxivSource().fetch_by_ids([i.strip() for i in ids_env.split(",") if i.strip()])
+    else:
+        refs = orchestrator.harvest(cfg.focus_area_queries, cfg.corpus_cap)
     tei_lifecycle.start_tei_containers()
     orchestrator.finish_phase(refs)
 
