@@ -30,13 +30,18 @@ _SUMMARY_ID_SUFFIX = ":summary"
 # ranked above the gold one). Fetch a meaningfully larger pool, then truncate to the caller's
 # requested `k` only after reranking has had a chance to reorder it in.
 #
-# 50 is a starting point (investigation suggested 50-100): large enough to give the reranker real
-# room without an unbounded per-query latency cost (every real reranker call now scores this many
-# candidates instead of `k`, a real ~5x increase in reranker load at the previous default k=10).
-# A plain tuning constant, not a `Config` field -- `contracts/config.py` is a CODEOWNERS-protected
-# foundation path and this is a technical knob, not a product-facing scope lever (same convention
-# as `rag/chunker.py`'s `_MAX_CHUNK_WORDS`). Raise it if a real re-measurement shows headroom.
-_RERANK_POOL_SIZE = 50
+# T-DOC25 (urgent correction to T-DOC24): the real TEI `/rerank` endpoint enforces a hard
+# server-side max batch size -- confirmed live: a 50-text request gets a 422 `{"error":"batch
+# size 50 > maximum allowed batch size 32", "error_type":"Validation"}`, a 32-text request
+# succeeds. `TeiReranker.rerank()` maps that 422 to a `PermanentError` (rag/reranker.py, 422 is
+# not in `_RETRYABLE_STATUSES`), so T-DOC24's original 50 broke every single real retrieve() call
+# in production -- 100% failure, not caught before merge because the fakes-only test suite has no
+# real batch-size ceiling to violate. 32 is the real, currently-deployed ceiling for this TEI
+# container (`--model-id BAAI/bge-reranker-v2-m3`, no `--max-client-batch-size` override set); this
+# is a plain tuning constant capped at that measured real limit, not a guess. Raising the server's
+# own limit (a container restart with an explicit flag) is a separate, riskier infra change, out
+# of scope for this fix -- this just makes the code respect the limit that already exists.
+_RERANK_POOL_SIZE = 32
 
 
 def _paper_id_from_summary_hit_id(hit_id: str) -> str:
