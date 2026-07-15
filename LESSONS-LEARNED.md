@@ -143,10 +143,13 @@ lands within that window (before the reranker gets a chance to promote it) go do
 words: **the same class of "right paper, wrong passage" miss T-DOC24 fixed at 809 papers could
 plausibly reappear at 30,000 papers, for the same underlying reason (not enough pre-rerank
 candidate room) but now bottlenecked by the *reranker server's own hard limit* rather than a
-code-level constant we can just raise.** Two real levers exist and neither has been tried: (a)
-restart the TEI reranker container with an explicit `--max-client-batch-size` flag above 32 (real,
-untested — unclear how far a single BGE-reranker-v2-m3 call scales before its own latency/throughput
-degrades), or (b) query-time filtering/routing (e.g. restricting hybrid search to a topically-narrower
-candidate set before the pool-size limit even matters) rather than relying on pool size alone to
-scale with corpus size. **Revisit T-EVAL Recall@10 at each real corpus-size milestone** (the next
-being whatever T-SEED actually reaches) — don't assume 0.96 at 809 papers holds at 30,000; re-measure.
+code-level constant we can just raise.** None of the fixes tried so far do anything to reduce
+*dependence* on pool size in the first place — they just make the pool as big as the server allows.
+A fuller menu of standard techniques that instead make the *first* retrieval pass put the correct
+passage where a fixed-size pool can find it (aggressive summary-level routing, a cheap cascade
+filtering stage before the capacity-limited reranker, real IDF-weighted sparse search instead of
+today's raw-TF hashing, query expansion/HyDE, tuning Qdrant's own HNSW `ef_search` accuracy knob,
+structured pre-filtering) is recorded in `PRD.md` ADR-11's "Candidate mitigations" list — not
+decided or built, just there so the next session doesn't have to invent this list from scratch.
+**Revisit T-EVAL Recall@10 at each real corpus-size milestone** (the next being whatever T-SEED
+actually reaches) — don't assume 0.96 at 809 papers holds at 30,000; re-measure.

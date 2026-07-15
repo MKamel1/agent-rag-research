@@ -1134,11 +1134,50 @@ pool size specifically does not yet have a scaling story** — see the incident 
 
 **Revisit if.** RRF underperforms a learned fuser, or synthesis groundedness misses the §3 bar.
 **Also revisit at each real corpus-size milestone**, starting with the next T-SEED run: re-run
-T-EVAL and confirm Recall@10 still clears 0.85 before trusting it at the new scale. If it degrades,
-the two untried levers are (a) raising the TEI reranker container's own `--max-client-batch-size`
-above its current default of 32 (real infra change, throughput/latency impact unmeasured), or
-(b) narrowing the hybrid-search candidate set before pool size matters (topical
-filtering/routing), rather than assuming pool size alone can scale with corpus size.
+T-EVAL and confirm Recall@10 still clears 0.85 before trusting it at the new scale.
+
+**Candidate mitigations if it degrades — none of these are decided or built, this is a menu for
+whichever future session hits the regression, ranked by how directly each reduces dependence on
+pool size / first-pass luck rather than just being "more retrieval":**
+
+1. **Use the pipeline's own optional summary-level routing more aggressively (already in the
+   Decision above, currently underused).** Route the query to a narrow set of candidate *papers*
+   via summary vectors first, then only chunk-retrieve/rerank within that subset. This is the most
+   structural fix: it shrinks the effective candidate universe a fixed-size pool has to cover down
+   to "papers this query is actually about," independent of how large the total corpus grows — a
+   30,000-paper corpus with good routing can present the chunk-retrieval stage with the same
+   effective search space as today's 809-paper one.
+2. **Cascade retrieval — an intermediate, cheap filtering stage between hybrid search and the
+   (capacity-limited) cross-encoder rerank.** Retrieve a much larger initial candidate set (e.g.
+   200-1000 via a wider ANN `k`), narrow it with something cheaper than the full reranker (a smaller/
+   faster model, or a coarser heuristic score) down to the ~32 the real reranker can actually accept,
+   *then* rerank. Directly attacks "luck of pulling the right resources from the start" — the
+   expensive reranker still only sees 32, but which 32 it sees is chosen by two independent passes
+   instead of one, each catching what the other might miss.
+3. **Give the sparse channel real IDF weighting (BM25/SPLADE) instead of today's naive raw
+   term-frequency hashing (`rag/vector_index.py`'s `_sparse_vector`).** Already flagged as a
+   suspect in the T-EVAL recall-gap investigation (`.phase0-data/teval-results.md`): an
+   under-weighted sparse signal can drag a good dense ranking down in RRF fusion. A more
+   discriminative sparse channel raises the odds the correct passage is *already* near the top of
+   the first-pass fused ranking — reducing how much weight the pool-size cutoff has to carry alone.
+4. **Query expansion / multi-query fusion (HyDE-style: embed a hypothetical answer, or several
+   query rephrasings, retrieve for each, union/fuse the results).** Reduces sensitivity to any one
+   query embedding's luck — if the literal query's phrasing happens to rank the correct passage
+   just below the pool cutoff, a second phrasing or a hypothetical-answer embedding may not.
+5. **Tune Qdrant's own ANN accuracy/speed knob (HNSW `ef_search` at query time, or `m`/
+   `ef_construct` at index-build time — ADR-01).** Default HNSW parameters trade some recall for
+   speed; that trade gets worse (more true near-neighbors missed) as the index grows. Raising
+   `ef_search` costs latency, not architecture, and directly improves how accurate the *first* pass
+   already is — before pool size or reranking even come into play.
+6. **Structured pre-filtering via the existing `SearchFilters` (category/date/etc.), where the
+   query supports it**, same idea as (1) but via explicit metadata rather than learned routing —
+   cheaper to reason about, narrower in applicability (only helps when the query has a filterable
+   facet).
+
+None of these require abandoning the current hybrid → RRF → rerank shape (the Decision above still
+holds) — they're all about making the *first* pass put the correct passage where a fixed-size pool
+can actually find it, rather than just making the pool bigger (which the T-DOC24/25 incident showed
+has its own hard ceiling).
 
 ### ADR-12 — Knowledge representation: claim-centric (atomic findings)
 **Context.** "Living memory" (G4) + verifiability (G5) are impossible over an undifferentiated pile
