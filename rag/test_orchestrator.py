@@ -1085,12 +1085,11 @@ def test_parse_phase_uses_a_fixed_size_by_default_when_no_batch_size_provider_is
 
 
 def test_parse_phase_uses_the_batch_size_provider_when_injected_not_the_fixed_config_value():
-    # The provider is called twice per loop iteration (current batch size, then a next-batch
-    # lookahead guess -- rag/orchestrator.py's parse_phase docstring) -- repeat each intended size
-    # so both calls in a given iteration agree: real, uneven batch boundaries [1, 2] a fixed
-    # parse_batch_size could never produce (config.parse_batch_size is deliberately set to
-    # something else, 4, to prove the provider -- not the config value -- actually drove this).
-    sizes = iter([1, 1, 2, 2])
+    # The provider is called exactly once per loop iteration (config.parse_batch_size is
+    # deliberately set to something else, 4, to prove the provider -- not the config value --
+    # actually drove this): real, uneven batch boundaries [1, 2] a fixed parse_batch_size could
+    # never produce.
+    sizes = iter([1, 2])
     parser = SpyBatchParser()
     state = FakeIngestState()
     orch = _parse_phase_orchestrator(
@@ -1104,7 +1103,12 @@ def test_parse_phase_uses_the_batch_size_provider_when_injected_not_the_fixed_co
         assert state.get(paper_id).stage == "chunked"
 
 
-def test_parse_phase_batch_size_provider_is_called_once_per_batch_not_once_total():
+def test_parse_phase_batch_size_provider_is_called_exactly_once_per_batch():
+    # Real review finding: the production provider (AdaptiveBatchSizer.next_size) is a STATEFUL
+    # bound method -- every call both reads a live VRAM probe and mutates its own internal size.
+    # Calling it a second time "just for the lookahead guess" would silently double the real
+    # growth/shrink rate per iteration, not a free/idempotent peek. This test locks in "once per
+    # batch, period" as the real contract, not just "more than once."
     call_count = {"n": 0}
 
     def provider():
@@ -1120,8 +1124,42 @@ def test_parse_phase_batch_size_provider_is_called_once_per_batch_not_once_total
     orch.parse_phase(REFS)
 
     assert parser.batch_calls == [[p] for p in PAPER_IDS]
-    # Called twice per batch (current size + next-batch lookahead guess), 3 batches -> 6 calls.
-    # The exact count matters less than "more than once, and scales with batch count" -- pin the
-    # real number so a future refactor that changes this has to look at this test, not silently
-    # drift.
-    assert call_count["n"] == 6
+    assert call_count["n"] == 3, "exactly once per batch (3 batches for 3 refs), never twice"
+
+
+def test_parse_phase_with_a_real_stateful_adaptive_sizer_grows_at_the_intended_rate():
+    # Integration test combining the REAL AdaptiveBatchSizer with the REAL parse_phase() loop --
+    # exactly the coverage gap the review found: the isolated AdaptiveBatchSizer tests are
+    # one-call-one-step, and the orchestrator's own provider tests use a scripted lambda, so
+    # nothing exercised a real stateful provider driven by real parse_phase() iterations. A
+    # regression that reintroduces the double-call bug (or any other extra call) would grow the
+    # batch sizes faster than growth_step per real batch, and this test would catch it.
+    from app.adaptive_batch_sizer import AdaptiveBatchSizer
+
+    # 12 genuinely distinct PaperRefs (REFS * 4 would repeat the same 3 Python objects, not
+    # create 12 new ones -- model_copy() with a real paper_id override for each).
+    refs = [
+        ref.model_copy(update={"paper_id": f"{ref.paper_id}-{i}"})
+        for i in range(4)
+        for ref in REFS
+    ]
+    # Comfortable, constant free VRAM throughout -- every call should grow, never shrink/hold.
+    sizer = AdaptiveBatchSizer(
+        initial_size=1, safety_margin_mib=1000, growth_step=4, vram_probe=lambda: 999_999
+    )
+    parser = SpyBatchParser()
+    state = FakeIngestState()
+    orch = _parse_phase_orchestrator(
+        parser, state, parse_batch_size=4, batch_size_provider=sizer.next_size
+    )
+
+    orch.parse_phase(refs)
+
+    sizes = [len(batch) for batch in parser.batch_calls]
+    # One provider call per real batch -> the sizer's internal target grows by exactly
+    # growth_step (4) each call: 1 -> 5 -> 9 -> ... The first call already applies the first
+    # growth step before returning (comfortable VRAM from the very first check), so the first
+    # real batch is 5, not the initial_size=1 -- and the second batch's *target* of 9 is truncated
+    # to whatever's actually left in `refs` (12 total, 5 already consumed -> 7 remain).
+    assert sizes == [5, 7]
+    assert sum(sizes) == len(refs)

@@ -257,10 +257,16 @@ class IngestionOrchestrator:
         self._before_parse_phase()
         i = 0
         while i < len(refs):
+            # Called exactly ONCE per real batch, not twice (review finding, T-DOC21): the
+            # injected provider (`AdaptiveBatchSizer.next_size`) is a *stateful* bound method --
+            # every call both reads a live VRAM probe and mutates its own internal size, so a
+            # second "just for the lookahead guess" call silently doubles the real growth/shrink
+            # rate per iteration, not a free/idempotent peek. The same `size` value is reused for
+            # both this batch's slice and the next-batch lookahead guess -- exactly what the
+            # pre-T-DOC21 fixed-stride code already did with one `batch_size` value for both.
             size = self._batch_size_provider() if self._batch_size_provider else self._config.parse_batch_size
-            next_size = self._batch_size_provider() if self._batch_size_provider else self._config.parse_batch_size
             batch = refs[i : i + size]
-            next_batch = refs[i + size : i + size + next_size]
+            next_batch = refs[i + size : i + 2 * size]
             self._prepare_batch(batch, next_batch)
             i += size
 
