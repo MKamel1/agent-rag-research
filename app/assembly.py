@@ -17,6 +17,7 @@ from pathlib import Path
 import httpx
 
 from app import tei_lifecycle
+from app.adaptive_batch_sizer import AdaptiveBatchSizer
 from contracts.config import Config
 from contracts.embedder import EmbedderInfo
 from contracts.errors import PermanentError, TransientError
@@ -382,6 +383,12 @@ def build_ingestion_orchestrator(
         # cost for the next paper's summarize call: ~2.5s, negligible against a ~15-20s real
         # summarize call.
         before_embed=summarizer.unload,
+        # T-DOC21 (.claude/plans/giggly-tumbling-globe.md): grow/shrink Pass-1 batches to real,
+        # currently-free VRAM instead of the static parse_batch_size every time -- TEI eviction
+        # above frees ~24GB during Pass 1 that a fixed small batch size never used. `initial_size`
+        # is still config.parse_batch_size -- the safe starting point/floor, unchanged if the VRAM
+        # probe is ever unavailable.
+        batch_size_provider=AdaptiveBatchSizer(initial_size=config.parse_batch_size).next_size,
     )
 
 

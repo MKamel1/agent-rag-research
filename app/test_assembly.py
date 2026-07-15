@@ -802,3 +802,18 @@ def test_before_finish_phase_is_left_as_the_default_noop(monkeypatch, tmp_path):
         "now happens in app/ingest.py, earlier than this hook ever fires"
     )
     assert fake_summarizer.unload_calls == 0, "before_finish_phase must not touch the summarizer"
+
+
+def test_batch_size_provider_is_wired_to_an_adaptive_batch_sizer(monkeypatch, tmp_path):
+    """T-DOC21: `build_ingestion_orchestrator` wires `batch_size_provider` to a real
+    `AdaptiveBatchSizer.next_size`, seeded with `config.parse_batch_size` as the starting point --
+    not left at the default (`None`, fixed-size) behavior."""
+    orchestrator, _, _ = _build_orchestrator_for_hook_test(monkeypatch, tmp_path)
+
+    assert orchestrator._batch_size_provider is not None
+
+    sizer = orchestrator._batch_size_provider.__self__
+    from app.adaptive_batch_sizer import AdaptiveBatchSizer
+
+    assert isinstance(sizer, AdaptiveBatchSizer)
+    assert sizer._current == Config(focus_area_queries=["x"]).parse_batch_size == 4

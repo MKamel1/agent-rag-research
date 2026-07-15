@@ -142,6 +142,7 @@ class IngestionOrchestrator:
         before_parse_phase=None,
         before_finish_phase=None,
         before_embed=None,
+        batch_size_provider: Callable[[], int] | None = None,
         max_retries: int = 2,
         retry_sleep: RetrySleep | None = None,
     ):
@@ -177,6 +178,11 @@ class IngestionOrchestrator:
         self._before_parse_phase = before_parse_phase or (lambda: None)
         self._before_finish_phase = before_finish_phase or (lambda: None)
         self._before_embed = before_embed or (lambda: None)
+        # T-DOC21: an optional callable returning the next Pass-1 batch size, called once per
+        # batch in `parse_phase()` below. `None` (the default) keeps today's exact fixed-size
+        # behavior (`config.parse_batch_size` every time) -- every fake/test caller that doesn't
+        # pass this is unaffected.
+        self._batch_size_provider = batch_size_provider
 
     def ingest(self, focus_area: list[str], cap: int) -> None:
         refs = self.harvest(focus_area, cap)
@@ -234,12 +240,29 @@ class IngestionOrchestrator:
         `_PdfDownloadParser`) can start resolving next group's PDF bytes in the background while
         the current group's `parse_batch()` call is blocked on the GPU -- this loop still calls
         `_prepare_batch` once per group, strictly in order; nothing here runs off the main thread.
+
+        Batch size is `config.parse_batch_size` (fixed) unless a `batch_size_provider` was
+        injected (T-DOC21, `.claude/plans/giggly-tumbling-globe.md` "Adaptive Pass-1 batch
+        sizing") -- when present, it's called once per group instead, letting a composition root
+        grow/shrink batches to real, currently-free VRAM instead of one static number. Batch
+        boundaries aren't fixed-stride when this is active, so the loop tracks its own running
+        index rather than using `range(0, len(refs), batch_size)`. The `next_batch` lookahead
+        guess is computed by calling the provider a *second* time -- by construction this may
+        differ from what the batch after next actually ends up using once its own turn comes (real
+        composition is decided when the `while` loop actually gets there, not at prefetch-guess
+        time). Not a bug: `_prepare_batch`'s prefetch match is exact-ref-tuple equality, so a
+        size-mismatched guess is simply a wasted prefetch for that one group, falling through to a
+        fresh, correctness-safe download -- never broken, just occasionally not sped up.
         """
         self._before_parse_phase()
-        batch_size = self._config.parse_batch_size
-        for i in range(0, len(refs), batch_size):
-            next_batch = refs[i + batch_size : i + 2 * batch_size]
-            self._prepare_batch(refs[i : i + batch_size], next_batch)
+        i = 0
+        while i < len(refs):
+            size = self._batch_size_provider() if self._batch_size_provider else self._config.parse_batch_size
+            next_size = self._batch_size_provider() if self._batch_size_provider else self._config.parse_batch_size
+            batch = refs[i : i + size]
+            next_batch = refs[i + size : i + size + next_size]
+            self._prepare_batch(batch, next_batch)
+            i += size
 
     def _prepare_batch(self, batch: list[PaperRef], next_batch: list[PaperRef] | None = None) -> None:
         """One `parse_phase` group. Only refs that haven't reached `parsed` yet (a fresh paper, or
