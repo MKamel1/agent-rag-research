@@ -10,8 +10,35 @@ import os
 import subprocess
 import sys
 
+from app import tei_lifecycle
 from app.assembly import build_ingestion_orchestrator
+from contracts.config import Config
 from rag.config import load_config
+
+
+def _run_finish_phase(cfg: Config) -> None:
+    """Pass 2 setup + run -- pulled out of `__main__` so a test can drive it without spawning the
+    real Pass 1 subprocess.
+
+    Restarts TEI HERE, before `orchestrator.finish_phase()` is ever called (T-DOC19 bug fix):
+    `finish_phase()` embeds its once-per-run `topic_query_vec` BEFORE its own `before_finish_phase`
+    hook fires (`rag/orchestrator.py`, frozen -- see that module's `finish_phase` docstring), so a
+    composition-root hook wired to `tei_lifecycle.start_tei_containers` restarts TEI too late: this
+    process's own `docker stop` (from Pass 1's `before_parse_phase`, still in effect across the
+    Pass-1-subprocess boundary) is still in effect when that embed call fires, and it fails.
+    Calling `start_tei_containers()` explicitly out here, before `finish_phase()` is invoked at
+    all, closes that gap -- see `app/assembly.py` (no longer wires `before_finish_phase` for this).
+    """
+    orchestrator = build_ingestion_orchestrator(
+        cfg,
+        db_path=os.environ.get("RAG_DB_PATH"),
+        blob_dir=os.environ.get("RAG_BLOB_DIR"),
+        collection=os.environ.get("RAG_COLLECTION", "papers"),
+    )
+    refs = orchestrator.harvest(cfg.focus_area_queries, cfg.corpus_cap)
+    tei_lifecycle.start_tei_containers()
+    orchestrator.finish_phase(refs)
+
 
 if __name__ == "__main__":
     cfg = load_config()
@@ -25,11 +52,4 @@ if __name__ == "__main__":
     # own build_ingestion_orchestrator() call below reads, so both phases agree on one location.
     subprocess.run([sys.executable, "-m", "app.parse_phase"], check=True)
 
-    orchestrator = build_ingestion_orchestrator(
-        cfg,
-        db_path=os.environ.get("RAG_DB_PATH"),
-        blob_dir=os.environ.get("RAG_BLOB_DIR"),
-        collection=os.environ.get("RAG_COLLECTION", "papers"),
-    )
-    refs = orchestrator.harvest(cfg.focus_area_queries, cfg.corpus_cap)
-    orchestrator.finish_phase(refs)
+    _run_finish_phase(cfg)
