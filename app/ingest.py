@@ -6,12 +6,11 @@ also GPU-bound) in this process. The two GPU-bound phases never share a process,
 have to share VRAM at the same instant.
 """
 
-import os
 import subprocess
 import sys
 
 from app import tei_lifecycle
-from app.assembly import build_ingestion_orchestrator
+from app.assembly import build_ingestion_orchestrator, harvest_refs
 from contracts.config import Config
 from rag.config import load_config
 
@@ -30,21 +29,12 @@ def _run_finish_phase(cfg: Config) -> None:
     all, closes that gap -- see `app/assembly.py` (no longer wires `before_finish_phase` for this).
     """
     orchestrator = build_ingestion_orchestrator(
-        cfg,
-        db_path=os.environ.get("RAG_DB_PATH"),
-        blob_dir=os.environ.get("RAG_BLOB_DIR"),
-        collection=os.environ.get("RAG_COLLECTION", "papers"),
+        cfg, db_path=cfg.db_path, blob_dir=cfg.blob_dir, collection=cfg.collection,
     )
-    # RAG_INGEST_PAPER_IDS: see app/parse_phase.py's identical branch -- kept in sync so both
-    # phases of one run agree on the same explicit paper set instead of Pass 2 falling back to a
-    # fresh query-driven harvest() that Pass 1 never used.
-    ids_env = os.environ.get("RAG_INGEST_PAPER_IDS")
-    if ids_env:
-        from rag.harvester import ArxivSource
-
-        refs = ArxivSource().fetch_by_ids([i.strip() for i in ids_env.split(",") if i.strip()])
-    else:
-        refs = orchestrator.harvest(cfg.focus_area_queries, cfg.corpus_cap)
+    # harvest_refs (app/assembly.py): shared with app/parse_phase.py's identical call so both
+    # phases of one run agree on the same explicit paper set (cfg.ingest_paper_ids, if set)
+    # instead of Pass 2 falling back to a fresh query-driven harvest() that Pass 1 never used.
+    refs = harvest_refs(cfg, orchestrator)
     tei_lifecycle.start_tei_containers()
     orchestrator.finish_phase(refs)
 
@@ -56,9 +46,10 @@ if __name__ == "__main__":
     # eviction can clear) -- `check=True` lets it raise and stop the run; a re-run resumes from
     # ingest_state checkpoints. Add a poll-and-backoff `_ensure_vram` here if this ever proves to
     # be a real problem in practice (ARCHITECTURE.md §3).
-    # Inherits this process's environment by default -- if RAG_DB_PATH/RAG_BLOB_DIR/RAG_COLLECTION
-    # are set (see app/parse_phase.py), the subprocess picks up the same overrides this process's
-    # own build_ingestion_orchestrator() call below reads, so both phases agree on one location.
+    # No explicit env/cwd handoff needed (T-DOC29): this subprocess inherits this process's cwd by
+    # default and calls the same `load_config()` (see app/parse_phase.py's `__main__`), so it reads
+    # the identical config.yaml -- both phases agree on db_path/blob_dir/collection/etc. by
+    # construction, not by propagating env vars across the process boundary.
     subprocess.run([sys.executable, "-m", "app.parse_phase"], check=True)
 
     _run_finish_phase(cfg)

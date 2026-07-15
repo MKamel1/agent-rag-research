@@ -1,10 +1,14 @@
 """Check (d) — CONVENTIONS.md §3 / §12: no `os.getenv`/`os.environ` outside `rag/config.py`, the
 one module allowed to read the process environment.
 
-Scoped to `rag/`/`contracts/` (`model.in_pipeline_scope`): this rule is about the RAG pipeline
-never scattering env reads outside its one `Config` loader (CONVENTIONS §3) — it was never meant
-to reach into this repo's own CI tooling, which legitimately reads `GITHUB_EVENT_NAME`/
-`GITHUB_EVENT_PATH` as a CI script, not a pipeline module (see `ci/run_enforcement.py`).
+Scoped to `rag/`/`contracts/`/`app/` (`model.in_pipeline_scope`): this rule is about the RAG
+pipeline never scattering env reads outside its one `Config` loader (CONVENTIONS §3) — it was
+never meant to reach into this repo's own CI tooling, which legitimately reads `GITHUB_EVENT_NAME`/
+`GITHUB_EVENT_PATH` as a CI script, not a pipeline module (see `ci/run_enforcement.py`). `app/`
+(the composition-root/entrypoint code) was added to scope by T-DOC29, which found 7 real
+`os.environ.get(...)` reads had silently accumulated there while this check was scoped to only
+`rag/`/`contracts/` — see `contracts/config.py`'s "composition-root levers" fields, which is where
+those reads now live instead.
 """
 
 from __future__ import annotations

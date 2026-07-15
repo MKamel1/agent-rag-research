@@ -9,34 +9,33 @@ full VRAM release regardless of that — `app/ingest.py` runs this file as a sub
 then runs Pass 2 (`finish_phase`) in its own process once this one has exited.
 """
 
-import os
-
-from app.assembly import build_ingestion_orchestrator
+from app.assembly import build_ingestion_orchestrator, harvest_refs
+from contracts.config import Config
 from rag.config import load_config
 
-if __name__ == "__main__":
-    cfg = load_config()
-    # RAG_DB_PATH/RAG_BLOB_DIR/RAG_COLLECTION: optional overrides of build_ingestion_orchestrator's
-    # own "papers.db"/"blobs"/"papers" defaults -- unset in normal use (both this subprocess and
-    # app/ingest.py's own process then agree on the same relative-path defaults). Exists so a test
-    # can point this subprocess at a throwaway location instead of the real one (see
-    # rag/test_composition_e2e.py).
-    orchestrator = build_ingestion_orchestrator(
-        cfg,
-        db_path=os.environ.get("RAG_DB_PATH"),
-        blob_dir=os.environ.get("RAG_BLOB_DIR"),
-        collection=os.environ.get("RAG_COLLECTION", "papers"),
-    )
-    # RAG_INGEST_PAPER_IDS (optional, comma-separated base arXiv ids): fetch exactly these known
-    # papers via ArxivSource.fetch_by_ids() instead of the query-driven harvest() below -- used by
-    # T-EVAL, whose 210-question eval set names 100 specific source papers that must be in the
-    # corpus for the eval to be meaningful (a focus_area search can't guarantee hitting them).
-    # Unset in normal use -- default behavior is completely unchanged.
-    ids_env = os.environ.get("RAG_INGEST_PAPER_IDS")
-    if ids_env:
-        from rag.harvester import ArxivSource
 
-        refs = ArxivSource().fetch_by_ids([i.strip() for i in ids_env.split(",") if i.strip()])
-    else:
-        refs = orchestrator.harvest(cfg.focus_area_queries, cfg.corpus_cap)
+def _run_parse_phase(cfg: Config) -> None:
+    """Pass 1 setup + run -- pulled out of `__main__` (same pattern as `app/ingest.py`'s
+    `_run_finish_phase`) so a test can drive it without a real `python -m app.parse_phase`
+    subprocess invocation.
+
+    `cfg.db_path`/`cfg.blob_dir`/`cfg.collection` (T-DOC29: real Config fields now, not
+    `os.environ` reads) default to `build_ingestion_orchestrator`'s own
+    "papers.db"/"blobs"/"papers" unless `config.yaml` overrides them. Both this subprocess and
+    `app/ingest.py`'s own process load the same `config.yaml` from the same cwd, so they agree on
+    one location without any cross-process handoff. A test can still point this subprocess at a
+    throwaway location by writing its own throwaway `config.yaml` and running from that directory
+    (see `rag/test_composition_e2e.py`).
+    """
+    orchestrator = build_ingestion_orchestrator(
+        cfg, db_path=cfg.db_path, blob_dir=cfg.blob_dir, collection=cfg.collection,
+    )
+    # harvest_refs (app/assembly.py): shared with app/ingest.py's identical call so both phases of
+    # one run agree on the same explicit paper set (cfg.ingest_paper_ids, if set) instead of Pass
+    # 2 falling back to a fresh query-driven harvest() that this phase never used.
+    refs = harvest_refs(cfg, orchestrator)
     orchestrator.parse_phase(refs)
+
+
+if __name__ == "__main__":
+    _run_parse_phase(load_config())

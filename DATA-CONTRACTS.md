@@ -618,6 +618,15 @@ class Config:
     hybrid_dense_weight: float = 0.5
     gpu_lock_path: str = ".gpu.lock"   # both composition roots build their real GpuLock from this path
                                         # (see "GpuLock" section) so they contend for the same file.
+    parse_batch_size: int = 4          # papers per Parser.parse_batch call in parse_phase (T-DOC16)
+    # composition-root levers (T-DOC29) -- app/'s entrypoints read these instead of os.environ now.
+    db_path: str = "papers.db"
+    blob_dir: str = "blobs"
+    collection: str = "papers"
+    pdf_cache_dir: str = "pdf_cache"          # "" explicitly disables the PDF cache
+    batch_size_log_path: str | None = None    # unset writes no CSV -- investigation tooling
+    prefetch_target: int = 30_000             # app/prefetch_pdfs.py's standalone backlog target
+    ingest_paper_ids: list[str] | None = None # T-EVAL harvest-scoping override, unset in normal use
 ```
 
 **Loaded once at startup from one file** (e.g. `config.yaml`), passed down by the orchestrator/MCP entrypoint.

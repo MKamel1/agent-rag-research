@@ -20,7 +20,11 @@ from pathlib import Path
 # the "negative_examples" one.
 #
 # Curated, not derived -- extend this when a new top-level pipeline module/adapter directory lands.
-PIPELINE_SCOPE_PREFIXES = ("rag/", "contracts/")
+# "app/" added by T-DOC29: it's the real composition-root/entrypoint code (ingest.py,
+# parse_phase.py, assembly.py, prefetch_pdfs.py) and was never in scope for check (d)
+# (env_leak.py), silently letting 7 distinct `os.environ.get(...)` reads accumulate there in
+# violation of the same "only Config reads env/files" invariant this scope exists to enforce.
+PIPELINE_SCOPE_PREFIXES = ("rag/", "contracts/", "app/")
 
 
 def in_pipeline_scope(path: str) -> bool:

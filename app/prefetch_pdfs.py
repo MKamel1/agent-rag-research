@@ -71,7 +71,6 @@ problem here):**
 
 from __future__ import annotations
 
-import os
 import time
 from pathlib import Path
 
@@ -94,22 +93,20 @@ _RE_HARVEST_INTERVAL_SECONDS = 3600.0
 _RETRYABLE_STATUSES = {429, 500, 502, 503, 504}
 _MAX_DOWNLOAD_RETRIES = 3
 
-# Single source of truth for the RAG_PDF_CACHE_DIR fallback -- app/assembly.py's
-# build_ingestion_orchestrator reads the SAME env var and must default to the SAME directory, or
-# an ingestion run launched without the var explicitly exported silently never reads/writes the
-# cache this script fills (T-DOC18 bug: two independently-guessed defaults, "pdf_cache" here and
-# None there).
-_DEFAULT_PDF_CACHE_DIR = "pdf_cache"
 
-
-def _cache_dir_from_env() -> Path:
-    d = Path(os.environ.get("RAG_PDF_CACHE_DIR", _DEFAULT_PDF_CACHE_DIR))
+def _cache_dir_from_config(cfg: Config) -> Path:
+    # T-DOC29: `cfg.pdf_cache_dir`'s default ("pdf_cache") is declared once in
+    # contracts/config.py -- app/assembly.py's build_ingestion_orchestrator reads the SAME Config
+    # field, so an ingestion run launched with an unedited config.yaml agrees on the same
+    # directory by construction (previously two independently-guessed `os.environ.get` fallbacks,
+    # the T-DOC18 bug this replaced).
+    d = Path(cfg.pdf_cache_dir)
     d.mkdir(parents=True, exist_ok=True)
     return d
 
 
-def _target_from_env() -> int:
-    return int(os.environ.get("PREFETCH_TARGET", "30000"))
+def _target_from_config(cfg: Config) -> int:
+    return cfg.prefetch_target
 
 
 def _pdf_path(cache_dir: Path, paper_id: str) -> Path:
@@ -247,9 +244,9 @@ def run(
 
 def main() -> None:
     cfg = load_config()
-    db_path = os.environ.get("RAG_DB_PATH", "papers.db")
-    cache_dir = _cache_dir_from_env()
-    target = _target_from_env()
+    db_path = cfg.db_path
+    cache_dir = _cache_dir_from_config(cfg)
+    target = _target_from_config(cfg)
 
     while _cached_count(cache_dir) < target:
         new = run(cfg, db_path, cache_dir, target)
