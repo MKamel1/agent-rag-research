@@ -380,16 +380,23 @@ second source of truth). Remaining untracked item:
   one still needs to exist at all. A full corpus sweep for any other papers already affected (grep
   `chunks.paper_id` values that don't match any `papers.paper_id` row) is part of this ticket's cleanup,
   same shape as T-DOC23's orphaned-chunks sweep.
-- **T-DOC32 (not started)** — the per-paper unexpected-exception safety net (PR #78) that wraps each
-  paper's pipeline stages isn't itself safe on its own error path: the `quarantine()` write *inside* that
-  guard is not crash-guarded, so a failure while writing the quarantine record (e.g. a missing table, a
-  locked DB) can still crash the whole ingestion run instead of just that one paper. This already happened
-  once for real, for one specific cause (a missing table), fixed narrowly by T-DOC17's
-  `quarantine.error` diagnostics work (PR #83) — the *general* case (any exception raised by the
-  `quarantine()` write itself, not just that one cause) remains open. Fix: wrap the `quarantine()` call
+- **T-DOC32 (in progress — PR #101 open, awaiting @MKamel1 review)** — the per-paper unexpected-exception
+  safety net (PR #78) that wraps each paper's pipeline stages isn't itself safe on its own error path: the
+  `quarantine()` write *inside* that guard is not crash-guarded, so a failure while writing the quarantine
+  record (e.g. a missing table, a locked DB) can still crash the whole ingestion run instead of just that
+  one paper. This already happened once for real, for one specific cause (a missing table), fixed narrowly
+  by T-DOC17's `quarantine.error` diagnostics work (PR #83) — the *general* case (any exception raised by
+  the `quarantine()` write itself, not just that one cause) remains open. Fix: wrap the `quarantine()` call
   itself in a narrower try/except that logs and continues (never re-raises past the per-paper boundary),
   with a test that injects a failing quarantine write and asserts the run continues to the next paper
   instead of crashing.
+
+  **Update:** PR #101 found the ticket's own premise didn't match `main` — the "per-paper
+  unexpected-exception safety net (PR #78)" it references was never actually merged (a branch-stacking
+  mishap: its base PR merged before PR #78's own commits landed on top, and the updated branch was never
+  re-merged). What's actually on `main` is four narrower `TransientError`/`PermanentError`-specific
+  retry-then-quarantine methods (T-DOC12/13) that all route through one shared write path,
+  `SqliteIngestState.quarantine()` — that's what PR #101 crash-guards instead.
 - **T-DOC33 (not started) — highest priority of this batch, it's the literal V0 ship criterion.** M5's own
   exit bar (`WORK-BREAKDOWN.md` Milestones table above: *"an agent answers a factual question about an
   ingested paper with a correct, verifiable citation at ~0 API cost — and you use it"*) has not been
