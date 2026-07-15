@@ -298,6 +298,42 @@ def test_retrieve_restricts_to_chunk_kind():
     assert [res.paper_id for res in results] == ["2506.00001"]
 
 
+def test_retrieve_pool_size_lets_reranker_promote_a_passage_ranked_below_k():
+    # T-DOC24 regression: before this fix, retrieve(k=10) fetched only the top 10 pre-rerank RRF
+    # candidates, so a candidate ranked 11th or lower was never even shown to the reranker -- no
+    # matter how the reranker would have scored it, it could not appear in the results. Seed a
+    # pool of 20 candidates, find whichever one lands below the old k=10 cutoff in the real
+    # pre-rerank RRF order, and confirm it now surfaces in the final results: the fix fetches
+    # _RERANK_POOL_SIZE candidates (> k) before reranking, and FakeReranker's full-pool reversal
+    # can promote a bottom-half candidate into the top-k after reranking, exactly what the fix
+    # makes possible.
+    store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
+    query = "double machine learning orthogonal moment estimator"
+    for i in range(20):
+        _seed_chunk(store, docstore, embedder, chunk_id=f"2506.{i:05d}:c0",
+                    paper_id=f"2506.{i:05d}", block_id=f"2506.{i:05d}:b0",
+                    text=f"unrelated filler content about topic number {i}",
+                    section_path=f"{i}. Section")
+
+    pre_rerank_ids = [h.id for h in _rrf_hits(store, embedder, query, "chunk", k=100)]
+    assert len(pre_rerank_ids) == 20
+    # Whichever chunk the real (arbitrary, hash-based) fake embedding ranks last pre-rerank: at
+    # position 19 of 20, it's excluded from an old-style k=10 fetch by construction, and after a
+    # full 20-item reversal lands at position 0 -- comfortably inside the new top-10.
+    target_id = pre_rerank_ids[-1]
+    target_block_id = docstore._chunks[target_id].anchor.block_id
+
+    results = _make_retriever(store, docstore, FakeReranker(), embedder).retrieve(
+        query, filters=None, k=10)
+
+    assert len(results) == 10
+    result_block_ids = [res.anchor.block_id for res in results]
+    assert target_block_id in result_block_ids, (
+        "a candidate ranked below the old k=10 cutoff must be reachable once reranking sees the "
+        "full _RERANK_POOL_SIZE pool, not just the caller's k"
+    )
+
+
 def test_retrieve_filters_is_searchfilters_not_dict():
     store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
     _seed_chunk(store, docstore, embedder, chunk_id="2506.00001:c0", paper_id="2506.00001",

@@ -8,6 +8,11 @@ CONTRACTS.md "Provenance & structure"). `retrieve_papers()` is whole-paper (kind
 resolved into an unanchored `PaperSearchResult`). Both rerank through the same injected
 `Reranker` — a constructor dependency, never hardcoded, so callers can pass `FakeReranker` (zero
 GPU) or the real cross-encoder adapter interchangeably (CONVENTIONS §1/§2).
+
+T-DOC24: both methods fetch `_RERANK_POOL_SIZE` candidates for reranking, not just the caller's
+`k` -- see `_RERANK_POOL_SIZE`'s own docstring for why a real T-EVAL investigation found the
+previous "fetch exactly k, rerank those k" shape left the reranker unable to ever promote a
+correct passage the cheaper first-pass hybrid/RRF ranking under-ranked.
 """
 
 from contracts.errors import ContractError
@@ -16,6 +21,22 @@ from contracts.retriever import Citation, GroundedResult, RerankCandidate
 from contracts.vector_index import SearchFilters
 
 _SUMMARY_ID_SUFFIX = ":summary"
+
+# The reranker can only ever reorder the candidates it's given -- it never fabricates or drops any
+# (TeiReranker.rerank()'s own contract: a length-preserving reordering by score). Fetching only
+# `k` candidates before reranking means the reranker can't promote anything the earlier hybrid/RRF
+# pass ranked below `k` -- a real T-EVAL investigation found every one of 30 real single-passage
+# misses fit exactly this shape (correct paper always in the top 10, wrong specific passage of it
+# ranked above the gold one). Fetch a meaningfully larger pool, then truncate to the caller's
+# requested `k` only after reranking has had a chance to reorder it in.
+#
+# 50 is a starting point (investigation suggested 50-100): large enough to give the reranker real
+# room without an unbounded per-query latency cost (every real reranker call now scores this many
+# candidates instead of `k`, a real ~5x increase in reranker load at the previous default k=10).
+# A plain tuning constant, not a `Config` field -- `contracts/config.py` is a CODEOWNERS-protected
+# foundation path and this is a technical knob, not a product-facing scope lever (same convention
+# as `rag/chunker.py`'s `_MAX_CHUNK_WORDS`). Raise it if a real re-measurement shows headroom.
+_RERANK_POOL_SIZE = 50
 
 
 def _paper_id_from_summary_hit_id(hit_id: str) -> str:
@@ -50,7 +71,7 @@ class Retriever:
         "Provenance & structure" — NOT `get_span(anchor)`, which would silently drop the 2nd+
         block of a multi-block chunk).
         """
-        hits = self._hybrid_hits(query, filters, k, kind="chunk")
+        hits = self._hybrid_hits(query, filters, max(k, _RERANK_POOL_SIZE), kind="chunk")
         if not hits:
             return []
         scores = {hit.id: hit.score for hit in hits}
@@ -84,7 +105,9 @@ class Retriever:
                     citation=citation,
                 )
             )
-        return results
+        # Reranked results are sized to the pool, not the caller's `k` -- truncate only now that
+        # reranking has had the chance to promote a correct passage into the top `k` (T-DOC24).
+        return results[:k]
 
     def retrieve_papers(
         self, query: str, filters: SearchFilters | None, k: int
@@ -98,7 +121,7 @@ class Retriever:
         apply to shared shapes within `contracts/`, same as `contracts/mcp_server.py` importing
         `Citation`/`GroundedResult` back from `contracts/retriever.py`).
         """
-        hits = self._hybrid_hits(query, filters, k, kind="summary")
+        hits = self._hybrid_hits(query, filters, max(k, _RERANK_POOL_SIZE), kind="summary")
         if not hits:
             return []
         scores = {hit.id: hit.score for hit in hits}
@@ -130,7 +153,8 @@ class Retriever:
                 ),
             )
             results.append(PaperSearchResult(view=view, score=scores[candidate.id]))
-        return results
+        # See the matching comment in `retrieve()` -- truncate to `k` only after reranking (T-DOC24).
+        return results[:k]
 
     def _hybrid_hits(self, query: str, filters: SearchFilters | None, k: int, *, kind: str):
         qvec = self._embedder.embed([query])[0]
