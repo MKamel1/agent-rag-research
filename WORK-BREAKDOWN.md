@@ -397,21 +397,22 @@ second source of truth). Remaining untracked item:
   mishap: its base PR merged before PR #78's own commits landed on top, and the updated branch was never
   re-merged). What's actually on `main` is four narrower `TransientError`/`PermanentError`-specific
   retry-then-quarantine methods (T-DOC12/13) that all route through one shared write path,
-  `SqliteIngestState.quarantine()` — that's what PR #101 crash-guards instead.
-- **T-DOC33 (not started) — highest priority of this batch, it's the literal V0 ship criterion.** M5's own
-  exit bar (`WORK-BREAKDOWN.md` Milestones table above: *"an agent answers a factual question about an
-  ingested paper with a correct, verifiable citation at ~0 API cost — and you use it"*) has not been
-  independently re-verified end-to-end since the T-DOC22/23/24/25 fixes landed — every number cited above
-  (Recall@10=0.96, zero retrieval errors) comes from the offline T-EVAL harness calling `Retriever`
-  directly, not from a real MCP client (Claude Desktop, Claude Code, or any other MCP-speaking agent)
-  actually connecting to a running `McpServer` instance and completing a real query → citation round trip
-  against the real 809-paper production corpus. Fix: stand up the real MCP server against production data,
-  connect a real MCP client, ask it a genuine factual question about an ingested paper, and confirm the
-  answer comes back with a verifiable citation (resolves via `get_span`) — record the transcript/result in
-  `LESSONS-LEARNED.md`. This is the one gap in this batch that isn't a code fix — it's a verification step
-  that's never actually been performed, and per V0's own definition of done, nothing else in this list
-  matters if this doesn't work.
-- **T-DOC34 (in progress — PR #100 open, awaiting @MKamel1 review)** — PRD.md ADR-11's "Candidate mitigations" list (Tier A — real V0 gaps, decided
+  `SqliteIngestState.quarantine()` — that's what PR #101 crash-guards instead. **Merged.**
+- **T-DOC33 (verified — see `LESSONS-LEARNED.md`'s 2026-07-15 entry, PR #102, awaiting @MKamel1 review)** —
+  highest priority of this batch, it's the literal V0 ship criterion. M5's own exit bar (`WORK-BREAKDOWN.md`
+  Milestones table above: *"an agent answers a factual question about an ingested paper with a correct,
+  verifiable citation at ~0 API cost — and you use it"*) had never been independently re-verified end-to-end
+  since the T-DOC22/23/24/25 fixes landed — every number cited above (Recall@10=0.96, zero retrieval errors)
+  came from the offline T-EVAL harness calling `Retriever` directly, not from a real MCP client. Turned out
+  this couldn't have been checked before this ticket even if someone had tried: `app/serve.py` had no MCP
+  transport loop at all (its own comment said so) — no real MCP client of any kind could connect. Fixed by
+  adding a real FastMCP stdio transport to `app/serve.py` (no new wiring — `build_mcp_server`'s own
+  composition root, untouched) and a reusable real MCP client, `app/mcp_verify_client.py`. Ran it against
+  real production data (809-paper `papers.db`/Qdrant `"papers"` collection): asked a real factual question
+  about an ingested paper, got back a grounded, typed response whose citation resolved via `get_span` to
+  real stored text and whose content independently verified correct against the source paper. Full
+  transcript and methodology in `LESSONS-LEARNED.md`.
+- **T-DOC34 (merged — PR #100)** — PRD.md ADR-11's "Candidate mitigations" list (Tier A — real V0 gaps, decided
   but never built) has a second item beyond the sparse/BM25 gap T-DOC27 already covers: **summary-level
   routing exists as a capability but is never automatically enforced.** `Retriever.retrieve_papers()` /
   `McpServer.search_papers` can narrow a query to the relevant papers *before* chunk-level retrieval and
