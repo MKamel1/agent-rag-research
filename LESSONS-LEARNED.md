@@ -261,3 +261,90 @@ re-confirm. If Claude Desktop or another interactive MCP host is ever set up on 
 for daily use, that would be a stronger form of "and you use it" than this one-shot scripted
 client — worth doing once, but is a human/environment setup decision, not something to automate
 from inside a sandboxed session.
+
+---
+
+### 2026-07-15 — build-process — real OS-level kill-mid-ingest + resume verified against real data (T-DOC30)
+
+T-INT2/T-A2's acceptance bar ("idempotency, resume-after-kill, and quarantine ... verified on real
+data") had never actually been proven: `.phase0-data/100-paper-run-stats.md`'s "idempotent/resume
+semantics confirmed working" claim, on inspection, was two *clean, uninterrupted* invocations
+(Run 2 simply skipped Run 1's already-`done` papers via the `ingest_state` guard) — not a real
+OS-level kill mid-stage. No gap in that run's 20s-interval timing snapshots either. A search of
+every `LESSONS-LEARNED.md` copy under `.claude/worktrees/*` for `kill`/`resume`/`crash`/`interrupt`
+found nothing — the ticket's "this session's own history strongly suggests a real crash-and-resume
+happened" could not be corroborated, so this was treated as unproven and a real test was run instead
+of accepting it as already-verified.
+
+**Setup:** throwaway resources only (`RAG_DB_PATH=/tmp/t-doc30-resume-verify/papers.db`,
+`RAG_BLOB_DIR=.../blobs`, `RAG_COLLECTION=t_doc30_resume_verify_23770`, all deleted afterward — never
+touched the real `papers` Qdrant collection or a real `RAG_DB_PATH`). 5 real arXiv papers via
+`RAG_INGEST_PAPER_IDS=2409.01266,2409.02332,2410.00903,2411.14665,2503.00557` (already cached in
+`pdf_cache/`). Real composition root, `python -m app.ingest`, run three times in sequence (fresh →
+kill → resume → kill → resume), through the real `GpuLock` file lock, real GROBID/MinerU/TEI/Ollama/
+Qdrant. An external Python poller read `ingest_state.stage` directly every ~20ms (SQLite WAL mode,
+documented in `rag/ingest_state_sqlite.py` as safe for a second process's reads) and sent `SIGKILL`
+to the ingest process's real PID the instant the target stage was observed — not a `sleep`-based
+guess.
+
+**Infra note (unrelated to the resume logic, but blocked the first attempt):** the first invocation
+quarantined all 5 papers at `parsed` with `GROBID reference extraction failed: [Errno 111] Connection
+refused` — the `rag-grobid` Docker container (`lfoppiano/grobid:0.8.0`, port 8070) had exited and
+wasn't running, unlike TEI/Qdrant which were already warm. `docker start rag-grobid` fixed it. Worth
+remembering for the next real-data run on this workstation: GROBID isn't part of the "already warm"
+set the way TEI/Qdrant are.
+
+**Gap 1 (T-A2 DoD: "after `chunked`, before `embedded`" — Chunker/Summarizer must not be
+re-invoked on resume):** killed the process the instant paper `2409.01266` first showed
+`stage='summarized'` (2026-07-15T09:04:34 UTC), before its `embedded` checkpoint could be written.
+Confirmed: process dead, paper stuck at `summarized`, zero quarantines, the other 4 papers untouched
+at `chunked` (Pass 2 processes papers strictly sequentially). Resumed with the identical invocation:
+`2409.01266` went from `summarized` straight to `stored` (0.64s later, per the resumed process's own
+`ingest_state.updated_at`) then `done` (0.08s after that) — and the *whole* resumed process, from
+`python -m app.ingest` start to that paper reaching `done`, took only ~6.2s wall-clock (includes
+re-harvest, Pass-1 subprocess skip-check, and the once-per-run topic-query embed). That is far too
+short to have included a real summarize call — this project's own measured real-adapter Pass-2 cost
+(`.phase0-data/100-paper-run-stats.md`) is **avg 15.02s / median 14.54s / min 6.74s** per paper
+*including* summarize+embed+store. Timing is the evidence here (the project has no spy-style fakes
+in front of the real Ollama/TEI adapters to assert call counts directly), and it lines up exactly
+with `rag/orchestrator.py`'s `_finish`'s `_at_least(stage, "summarized")` guard, which skips the
+`summarizer.summarize()` call entirely once a paper is already checkpointed past that stage.
+
+**Gap 2 (T-A2 DoD: "after `DocumentStore.put()` succeeds, before `VectorIndex.upsert()` runs" —
+`upsert()` must run on resume and the paper must reach `done` with a matching Qdrant entry):** left
+the same resumed process running and killed it the instant a *second* paper, `2503.00557`, first
+showed `stage='stored'` (2026-07-15T09:05:16 UTC). Confirmed directly against real state: SQLite
+already had the full `DocumentStore.put()` result (51 chunks + 1 summary row, matching the paper's
+real chunk count), but Qdrant had only 6 of the expected 52 points for that paper — `_upsert_record`'s
+per-point loop (`rag/orchestrator.py`, one `vector_index.upsert()` call per chunk/summary, not
+batched) was caught genuinely mid-flight, not just at the boundary. Resumed a third time (same
+invocation): all 5 papers reached `done`, zero quarantines. `2503.00557` ended with **exactly 52**
+Qdrant points — the missing 46 were added and the 6 that already landed were not duplicated (Qdrant
+upsert is idempotent by point id, as `_finish`'s own docstring already documented — this confirms it
+against a real Qdrant instance, not just the claim). Corpus-wide integrity check: SQLite's `chunks`
+table (184 rows total across all 5 papers) + 5 summary rows = 189, which matched Qdrant's real total
+collection point count (189) exactly — no orphaned or duplicate points anywhere in the corpus, not
+just the two directly-killed papers.
+
+**Result: both DoD-named gaps are now verified against real data, real infra, a real OS-level
+SIGKILL, and a real resumed process — not fakes, not a clean-invocation stand-in.** `git log`/PR
+history for this entry (`T-DOC30-resume-after-kill-verification`) is the durable record; no permanent
+automated test was added (a real GPU/GROBID/MinerU/Ollama/Qdrant-dependent kill-timing test doesn't
+fit this project's zero-GPU/zero-network CI rule for non-adapter suites, and a one-off manual
+real-data verification — same category as `.phase0-data/100-paper-run-stats.md` — is what T-DOC30
+itself asked for as the alternative to a committed test).
+
+**Aside, found but explicitly not fixed here (out of T-DOC30's scope — flagged, not touched):**
+`rag/parser.py`'s `_derive_paper_id` falls back to a content hash (`stem =
+hashlib.sha256(raw).hexdigest()[:16]`, a documented, deliberate behavior) whenever a PDF's own text
+has no machine-readable arXiv self-citation. That fallback id is what ends up in the SQLite `chunks`
+table's `paper_id` column (and every `chunk_id` prefix) for such a paper — it happened for
+`2411.14665` in this very test run (42 of its chunks landed under
+`chunks.paper_id='211c443e9b22f24a'` instead of `'2411.14665'`). Qdrant's own payload stayed correct
+throughout regardless (`_upsert_record` always uses `record.ref.paper_id`, the harvester's real id,
+never the parser-derived one), so this did not affect this ticket's resume/idempotency conclusions or
+retrieval via Qdrant — but it likely breaks any SQLite-side `DocumentStore` lookup keyed by the real
+`paper_id` for that paper's chunks (e.g. a future `get_chunk`/debugging query joining `papers` to
+`chunks` by `paper_id` would silently miss these rows). Not investigated further; worth its own
+ticket if `DocumentStore`'s own paper_id consistency is ever audited. (Now ticketed and fixed —
+see T-DOC31, PR #103.)
