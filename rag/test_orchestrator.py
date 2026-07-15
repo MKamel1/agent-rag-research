@@ -991,3 +991,70 @@ def test_parse_phase_skips_batch_call_for_papers_already_parsed_or_further_along
     assert parser.batch_calls == [fresh_ids]  # already_done_id excluded from the batch call
     for paper_id in PAPER_IDS:
         assert state.get(paper_id).stage == "chunked"
+
+
+# ================================================================================================
+# T-DOC18 Layer 2 — `_prepare_batch` calls the optional `prefetch_next_batch` hook
+# ================================================================================================
+
+
+class SpyBatchParserWithPrefetch(SpyBatchParser):
+    """`SpyBatchParser` plus the optional `prefetch_next_batch` hook (T-DOC18 Layer 2, implemented
+    for real by `app/assembly.py`'s `_PdfDownloadParser`). Records a single interleaved
+    `calls_order` log (not just separate call lists) so a test can assert the prefetch for group
+    N+1 is requested *before* `parse_batch()` runs for group N, matching `_prepare_batch`'s real
+    call order."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.prefetch_calls: list[list[str]] = []
+        self.calls_order: list[str] = []
+
+    def prefetch_next_batch(self, refs: list[PaperRef]) -> None:
+        ids = [r.paper_id for r in refs]
+        self.prefetch_calls.append(ids)
+        self.calls_order.append(f"prefetch:{ids}")
+
+    def parse_batch(self, refs: list[PaperRef]) -> list[ParsedDoc]:
+        self.calls_order.append(f"batch:{[r.paper_id for r in refs]}")
+        return super().parse_batch(refs)
+
+
+def test_parse_phase_prefetches_the_next_batch_before_the_current_batchs_parse_batch_call():
+    # parse_batch_size=2, N=3 -> groups [2, 1]. Group 0's next batch is group 1's one ref; group 1
+    # is the last group, so it has no next batch and prefetch is never called for it.
+    parser = SpyBatchParserWithPrefetch()
+    state = FakeIngestState()
+    orch = _parse_phase_orchestrator(parser, state, parse_batch_size=2)
+
+    orch.parse_phase(REFS)
+
+    assert parser.prefetch_calls == [PAPER_IDS[2:3]]
+    assert parser.calls_order == [
+        f"prefetch:{PAPER_IDS[2:3]}",
+        f"batch:{PAPER_IDS[0:2]}",
+        f"batch:{PAPER_IDS[2:3]}",
+    ], "the next batch's prefetch must be requested before the current batch's parse_batch() call"
+    for paper_id in PAPER_IDS:
+        assert state.get(paper_id).stage == "chunked"
+
+
+def test_parse_phase_prefetch_excludes_refs_already_parsed_or_further_along():
+    # The next batch's prefetch must go through the same "needs parsing" filter as the current
+    # batch's own parse_batch() call -- a ref already at (or past) "parsed" has no PDF bytes worth
+    # prefetching.
+    parser = SpyBatchParserWithPrefetch()
+    state = FakeIngestState()
+    already_done_id = PAPER_IDS[2]  # would otherwise be the sole member of group 1 (the next batch)
+    already_parsed = make_parsed(REFS[2])
+    state.checkpoint(already_done_id, "chunked", artifacts=CheckpointArtifacts(
+        parsed=already_parsed, chunks=[make_chunk(already_parsed)]
+    ))
+    orch = _parse_phase_orchestrator(parser, state, parse_batch_size=2)
+
+    orch.parse_phase(REFS)
+
+    assert parser.prefetch_calls == [], (
+        "group 1's only ref is already parsed -- nothing left in the next batch to prefetch"
+    )
+    assert parser.batch_calls == [PAPER_IDS[0:2]]  # group 1 never needed a parse_batch() call either

@@ -8,8 +8,10 @@
 """
 
 import logging
+import os
 import time
 from collections.abc import Callable
+from concurrent.futures import Future, ThreadPoolExecutor
 from pathlib import Path
 
 import httpx
@@ -34,6 +36,8 @@ from rag.reranker import TeiReranker
 from rag.retriever import Retriever
 from rag.summarizer import OllamaSummarizer
 from rag.vector_index import VectorIndex
+
+from app.prefetch_pdfs import _DEFAULT_PDF_CACHE_DIR
 
 logger = logging.getLogger(__name__)
 
@@ -83,20 +87,72 @@ class _PdfDownloadParser:
     CONVENTIONS.md §4) gets exactly one retry after a short backoff, then `PermanentError` if it
     fails again. A genuinely permanent failure (404, or whatever `rag.parser.parse` raises for an
     unparseable PDF) is not retried.
+
+    `cache_dir` (T-DOC18, giggly-tumbling-globe.md Part 0 Layer 1): the standalone prefetcher
+    (`app/prefetch_pdfs.py`) fills `RAG_PDF_CACHE_DIR/<paper_id>.pdf` continuously, off the GPU
+    critical path, but this class never read it -- every ref did a live HTTP GET regardless of
+    whether the prefetcher already had it. If `cache_dir` is given, `_download` checks
+    `cache_dir / f"{paper_id}.pdf"` first (same naming convention as `prefetch_pdfs._pdf_path`)
+    and returns its bytes with zero HTTP call on a hit; on a miss it falls back to the unchanged
+    live-download path below and then writes the result to the same path (atomically -- write to
+    a per-process-unique `.tmp` sibling and rename, see `_write_cache`) so the live pipeline also
+    grows the cache instead of only ever reading it. `cache_dir=None` skips the cache check
+    entirely; `build_ingestion_orchestrator` only ever passes `None` if `RAG_PDF_CACHE_DIR` is
+    explicitly set to an empty value -- an unset var now defaults to the SAME `"pdf_cache"`
+    directory `app/prefetch_pdfs.py` defaults to (T-DOC18 bug fix: these two defaults used to
+    disagree, silently disabling the cache whenever the var wasn't exported).
+
+    Single-lookahead prefetch (T-DOC18 Layer 2): `parse_batch()`'s own download prefix used to be
+    a solid block of GPU-idle time in front of every batch's `parse_pdf_bytes_batch()` (MinerU)
+    call, and batch N+1's downloads never started until batch N's GPU call fully finished.
+    `prefetch_next_batch(refs)` lets a caller that already knows the *next* batch's refs (see
+    `rag/orchestrator.py`'s `parse_phase`/`_prepare_batch`) hand them over just before calling
+    `parse_batch()` for the *current* batch -- a single background thread
+    (`ThreadPoolExecutor(max_workers=1)`) starts resolving those bytes immediately, so they're
+    downloading while the current batch's `parse_pdf_bytes_batch()` call is blocking the main
+    thread on the GPU. The next `parse_batch()` call picks up the prefetched bytes (blocking only
+    if the download genuinely hasn't finished yet) instead of downloading again. Deliberately
+    bounded to one batch of lookahead, matching the plan's memory-pressure ceiling (roughly
+    doubles, not unbounds, the "N raw PDFs in memory at once" peak) -- not the per-paper
+    cross-*stage* prefetch thread the orchestrator's own module docstring says was removed for a
+    real CUDA OOM; this prefetch only ever does CPU/network work (HTTP downloads), never touches a
+    GPU model or `state`, so it doesn't reintroduce that risk. The prefetch's own downloads go
+    through `_download` above, so a hit against `cache_dir` short-circuits it exactly the same way
+    it short-circuits a foreground call -- the two pieces compose without either needing to know
+    about the other.
     """
 
-    def __init__(self, client: httpx.Client, *, sleep: Callable[[float], None] = time.sleep):
+    def __init__(
+        self,
+        client: httpx.Client,
+        *,
+        sleep: Callable[[float], None] = time.sleep,
+        cache_dir: Path | None = None,
+    ):
         self._client = client
         self._sleep = sleep
+        self._cache_dir = cache_dir
+        self._executor = ThreadPoolExecutor(max_workers=1)
+        # Set by `prefetch_next_batch()`, consumed (and cleared) by the next matching
+        # `parse_batch()` call. Keyed by paper_id tuple, not the `PaperRef` objects themselves,
+        # so a match is a simple equality check. Only ever read/written from the main thread --
+        # the background thread only ever touches its own `_download_all` call, never this
+        # attribute -- so no lock is needed.
+        self._prefetched: tuple[tuple[str, ...], "Future[list[bytes]]"] | None = None
 
     def parse(self, ref: PaperRef) -> ParsedDoc:
+        cache_hit = False
         try:
-            content = self._download(ref)
+            content, cache_hit = self._download(ref)
         finally:
             # Fires exactly once per `parse()` call -- success or final failure -- once the
             # retry below (if any) has resolved, so it stays a once-per-paper spacing rather
-            # than stacking with the retry backoff.
-            self._sleep(_PDF_DOWNLOAD_DELAY_SECONDS)
+            # than stacking with the retry backoff. Skipped on a cache hit: there was no real
+            # HTTP request to pace, so pacing it anyway is pure idle time that undercuts the
+            # whole point of the cache (T-DOC18). `cache_hit` defaults to False so a `_download`
+            # exception (never a cache hit -- see `_download`) still sleeps, unchanged.
+            if not cache_hit:
+                self._sleep(_PDF_DOWNLOAD_DELAY_SECONDS)
         return parse_pdf_bytes(content)
 
     def parse_batch(self, refs: list[PaperRef]) -> list[ParsedDoc]:
@@ -110,26 +166,104 @@ class _PdfDownloadParser:
         is even called -- consistent with `rag/parser.py`'s own whole-batch-fails contract, and
         exactly what `parse_phase`'s fallback (per-ref `_parse_with_retry`) expects: nothing in
         this batch was checkpointed, so re-attempting every ref individually is safe.
+
+        If `prefetch_next_batch()` was already called for exactly these refs (the normal case once
+        the lookahead is warmed up -- see the class docstring), this reuses that in-flight/finished
+        download instead of starting a new one.
         """
-        contents = []
-        for ref in refs:
-            try:
-                contents.append(self._download(ref))
-            finally:
-                self._sleep(_PDF_DOWNLOAD_DELAY_SECONDS)
+        contents = self._resolve_contents(refs)
         return parse_pdf_bytes_batch(contents)
 
-    def _download(self, ref: PaperRef) -> bytes:
+    def prefetch_next_batch(self, refs: list[PaperRef]) -> None:
+        """Start resolving `refs`' PDF bytes on a background thread now, so they're ready by the
+        time a later `parse_batch(refs)` call for this exact ref list needs them. Call this just
+        before `parse_batch()` for the *current* batch, passing the *next* batch's refs -- see the
+        class docstring. Non-blocking: returns as soon as the download is queued, not once it
+        finishes.
+
+        A no-op if `refs` is empty (nothing to prefetch -- e.g. the last batch of a run) or if an
+        identical prefetch is already in flight/done (no double-submission on repeated calls with
+        the same refs).
+        """
+        if not refs:
+            return
+        key = tuple(ref.paper_id for ref in refs)
+        if self._prefetched is not None and self._prefetched[0] == key:
+            return
+        self._prefetched = (key, self._executor.submit(self._download_all, refs))
+
+    def _resolve_contents(self, refs: list[PaperRef]) -> list[bytes]:
+        key = tuple(ref.paper_id for ref in refs)
+        if self._prefetched is not None and self._prefetched[0] == key:
+            _, future = self._prefetched
+            self._prefetched = None
+            return future.result()
+        return self._download_all(refs)
+
+    def _download_all(self, refs: list[PaperRef]) -> list[bytes]:
+        contents = []
+        for ref in refs:
+            cache_hit = False
+            try:
+                content, cache_hit = self._download(ref)
+                contents.append(content)
+            finally:
+                # See `parse()`'s matching comment -- a cache hit made no real HTTP request, so
+                # there's nothing to rate-limit-pace (T-DOC18).
+                if not cache_hit:
+                    self._sleep(_PDF_DOWNLOAD_DELAY_SECONDS)
+        return contents
+
+    def _download(self, ref: PaperRef) -> tuple[bytes, bool]:
+        """Returns `(content, was_cache_hit)`. `was_cache_hit` is only ever `True` when
+        `_read_cached` returned bytes with zero HTTP calls -- callers use it to skip the
+        rate-limit-pacing sleep, which exists to pace real arXiv requests and has nothing to pace
+        on a cache hit (T-DOC18)."""
+        cached = self._read_cached(ref)
+        if cached is not None:
+            return cached, True
         try:
-            return self._download_once(ref)
+            content = self._download_once(ref)
         except TransientError:
             self._sleep(_PDF_DOWNLOAD_RETRY_BACKOFF_SECONDS)
             try:
-                return self._download_once(ref)
+                content = self._download_once(ref)
             except TransientError as retry_error:
                 raise PermanentError(
                     f"failed to download PDF from {ref.pdf_url} after retry: {retry_error}"
                 ) from retry_error
+        self._write_cache(ref, content)
+        return content, False
+
+    def _cache_path(self, ref: PaperRef) -> Path | None:
+        if self._cache_dir is None:
+            return None
+        return self._cache_dir / f"{ref.paper_id}.pdf"
+
+    def _read_cached(self, ref: PaperRef) -> bytes | None:
+        path = self._cache_path(ref)
+        if path is not None and path.exists():
+            return path.read_bytes()
+        return None
+
+    def _write_cache(self, ref: PaperRef, content: bytes) -> None:
+        path = self._cache_path(ref)
+        if path is None:
+            return
+        # Atomic write -- tmp-then-rename, same convention as `prefetch_pdfs._download_one` --
+        # so a crash mid-write never leaves a partial `.pdf` that a later cache-hit check would
+        # mistake for complete. Unlike `prefetch_pdfs._download_one`'s fixed `<paper_id>.pdf.tmp`
+        # name, this tmp path includes this process's pid: the 24/7 standalone prefetcher and
+        # this live pipeline are structurally likely to grab the same newest paper_id around the
+        # same time, and two processes writing the SAME tmp path can interleave into one
+        # corrupted file that then gets renamed into place as a permanently-poisoned "valid"
+        # cache entry (T-DOC18 bug -- sticky corruption, invisible to `exists()`). A pid-qualified
+        # name can never collide with `prefetch_pdfs`'s tmp name (different pattern entirely) or
+        # with another process's pid, so whichever process's atomic rename() lands last simply
+        # leaves one complete, valid file.
+        tmp_path = path.with_name(f"{path.name}.{os.getpid()}.tmp")
+        tmp_path.write_bytes(content)
+        tmp_path.rename(path)
 
     def _download_once(self, ref: PaperRef) -> bytes:
         try:
@@ -185,7 +319,26 @@ def build_ingestion_orchestrator(
 
     state = SqliteIngestState(db_path)
     harvester = Harvester(ArxivSource(), quarantine=_sqlite_harvest_quarantine_sink(state))
-    parser = _PdfDownloadParser(httpx.Client(timeout=60.0))
+    # Same env var, and now the same default, app/prefetch_pdfs.py reads/uses
+    # (RAG_PDF_CACHE_DIR / _DEFAULT_PDF_CACHE_DIR) -- unset must behave identically in both
+    # places, or the prefetcher fills the default `./pdf_cache` dir while an ingestion run
+    # launched without explicitly exporting the var never reads/writes it, silently making Layer
+    # 1 (T-DOC18's whole point) a permanent no-op (T-DOC18 bug). `pdf_cache_dir` only ends up
+    # `None` now if someone explicitly sets `RAG_PDF_CACHE_DIR=""` (or similar falsy value) --
+    # logged below so a genuinely-disabled cache is visible, not silent. mkdir here (not inside
+    # _PdfDownloadParser) because only the composition root knows whether this run is even
+    # configured to use a cache at all.
+    cache_dir_env = os.environ.get("RAG_PDF_CACHE_DIR", _DEFAULT_PDF_CACHE_DIR)
+    pdf_cache_dir = Path(cache_dir_env) if cache_dir_env else None
+    if pdf_cache_dir is not None:
+        pdf_cache_dir.mkdir(parents=True, exist_ok=True)
+    else:
+        logger.warning(
+            "RAG_PDF_CACHE_DIR is set to an empty value -- the PDF cache (T-DOC18 Layer 1) is "
+            "disabled for this run: every download will be a live HTTP call with no "
+            "write-through cache."
+        )
+    parser = _PdfDownloadParser(httpx.Client(timeout=60.0), cache_dir=pdf_cache_dir)
     chunker = Chunker(config)
     summarizer = OllamaSummarizer(
         httpx.Client(base_url=_OLLAMA_URL, timeout=300.0), gpu_lock, _OLLAMA_MODEL

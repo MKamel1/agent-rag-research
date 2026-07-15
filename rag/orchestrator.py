@@ -227,13 +227,21 @@ class IngestionOrchestrator:
         proven-safe per-paper `_prepare`/`_parse_with_retry` path for that group, unchanged. The
         last group of a harvest may be shorter than `parse_batch_size`; that's handled naturally
         by slicing, not a special case.
+
+        Also slices out the *next* group (`next_batch`, `[]` past the end of `refs`) and hands it
+        to `_prepare_batch` alongside the current one (T-DOC18 Layer 2) purely so a parser that
+        implements the optional `prefetch_next_batch` hook (`app/assembly.py`'s
+        `_PdfDownloadParser`) can start resolving next group's PDF bytes in the background while
+        the current group's `parse_batch()` call is blocked on the GPU -- this loop still calls
+        `_prepare_batch` once per group, strictly in order; nothing here runs off the main thread.
         """
         self._before_parse_phase()
         batch_size = self._config.parse_batch_size
         for i in range(0, len(refs), batch_size):
-            self._prepare_batch(refs[i : i + batch_size])
+            next_batch = refs[i + batch_size : i + 2 * batch_size]
+            self._prepare_batch(refs[i : i + batch_size], next_batch)
 
-    def _prepare_batch(self, batch: list[PaperRef]) -> None:
+    def _prepare_batch(self, batch: list[PaperRef], next_batch: list[PaperRef] | None = None) -> None:
         """One `parse_phase` group. Only refs that haven't reached `parsed` yet (a fresh paper, or
         one that crashed before checkpointing `parsed` on a prior run) need an actual parser call
         -- refs already at `parsed` or further along are left entirely to `_prepare`'s own
@@ -244,7 +252,12 @@ class IngestionOrchestrator:
         implements it, but a collaborator that doesn't (this suite's pre-existing `SpyParser`,
         which predates T-DOC16 and covers unrelated per-paper fault-injection scenarios) falls
         straight through to the unchanged per-ref `_prepare` loop below -- exactly today's
-        behavior, not a new failure mode.
+        behavior, not a new failure mode. `parser.prefetch_next_batch` (T-DOC18 Layer 2) is
+        optional the same way, for the same reason: called, if present, with `next_batch`'s
+        not-yet-parsed refs right before `parse_batch()`, so a parser that supports it can start
+        resolving them in the background while this call's `parse_batch()` blocks on the GPU; a
+        parser without it (or a `next_batch` that's empty -- e.g. the last group) is simply
+        skipped, same behavior as today.
 
         On a successful `parser.parse_batch()`, each fresh ref's `ParsedDoc` is checkpointed at
         `parsed` right here, then EVERY ref in the group (fresh and already-resumed alike) is
@@ -263,6 +276,13 @@ class IngestionOrchestrator:
         ]
         parse_batch_fn = getattr(self._parser, "parse_batch", None)
         if needs_parse and parse_batch_fn is not None:
+            prefetch_fn = getattr(self._parser, "prefetch_next_batch", None)
+            if prefetch_fn is not None and next_batch:
+                next_needs_parse = [
+                    ref for ref in next_batch if not _at_least(self._stage(ref.paper_id), "parsed")
+                ]
+                if next_needs_parse:
+                    prefetch_fn(next_needs_parse)
             try:
                 parsed_docs = parse_batch_fn(needs_parse)
             except (TransientError, PermanentError):
