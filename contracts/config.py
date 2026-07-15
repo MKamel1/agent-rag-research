@@ -42,3 +42,27 @@ class Config(FrozenModel):
     # Conservative default, not yet validated against real GPU/host-RAM headroom at N>4
     # (real-GPU spike still pending -- see that doc's "Still required" section).
     parse_batch_size: int = Field(default=4, gt=0)
+    # composition-root levers (T-DOC29): previously scattered `os.environ.get(...)` reads in
+    # app/ingest.py, app/parse_phase.py, app/assembly.py, app/prefetch_pdfs.py -- moved onto
+    # Config so CONVENTIONS.md §3 ("only Config reads env/files") actually holds for app/, not
+    # just rag/contracts/ (this module's own docstring). Defaults below match each old call site's
+    # `os.environ.get(name, default)` fallback exactly, so an unedited config.yaml reproduces the
+    # old unset-env-var behavior byte for byte.
+    db_path: str = "papers.db"
+    blob_dir: str = "blobs"
+    collection: str = "papers"
+    # "" (empty string) explicitly disables the PDF cache (app/assembly.py logs this, doesn't
+    # crash) -- same meaning an explicitly-empty `RAG_PDF_CACHE_DIR=""` used to have.
+    pdf_cache_dir: str = "pdf_cache"
+    # Unset (None) writes no CSV -- investigation tooling for one run, not a default-on feature
+    # (app/assembly.py's AdaptiveBatchSizer wiring).
+    batch_size_log_path: str | None = None
+    # app/prefetch_pdfs.py's standalone PDF-backlog target. Distinct from corpus_cap (how many
+    # papers one harvest() call returns): this is how many local PDF files the prefetcher tries to
+    # keep cached, independently of the live pipeline's own corpus size.
+    prefetch_target: int = Field(default=30_000, gt=0)
+    # T-EVAL harvest-scoping override (PR #89): when set, app/ingest.py and app/parse_phase.py
+    # fetch exactly these known arXiv ids via `ArxivSource.fetch_by_ids()` instead of the
+    # query-driven harvest() below -- guarantees the 210-question eval set's 100 source papers are
+    # actually in the corpus. None (the default) leaves normal harvest() behavior unchanged.
+    ingest_paper_ids: list[str] | None = None

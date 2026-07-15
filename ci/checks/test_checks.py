@@ -152,6 +152,23 @@ def test_check_d_passes_clean_file():
     assert check_d([f]) == []
 
 
+def test_check_d_flags_env_read_in_app_now_that_scope_includes_it():
+    """T-DOC29: `PIPELINE_SCOPE_PREFIXES` (ci/checks/model.py) now includes `"app/"` -- an
+    `os.environ`/`os.getenv` read there must be caught the same way `rag/` already is. Before this
+    ticket, `app/` was silently out of scope and 7 real `os.environ.get(...)` reads had
+    accumulated in `app/ingest.py`/`app/parse_phase.py`/`app/assembly.py`/`app/prefetch_pdfs.py`
+    unenforced -- this is the negative-fixture proof the gap is actually closed now, not just that
+    the scope tuple has one more string in it."""
+    f = _fixture("env_leak_bad.py", logical_path="app/ingest.py")
+    violations = check_d([f])
+    assert len(violations) == 2  # os.getenv and os.environ, both flagged
+
+
+def test_check_d_passes_clean_app_file():
+    f = _fixture("env_leak_good.py", logical_path="app/ingest.py")
+    assert check_d([f]) == []
+
+
 # --- (f) gpu_lock on real GPU-bound adapters ----------------------------------------------------
 
 

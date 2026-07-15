@@ -32,7 +32,6 @@ from app.assembly import (
     _sqlite_harvest_quarantine_sink,
     build_ingestion_orchestrator,
 )
-from app.prefetch_pdfs import _DEFAULT_PDF_CACHE_DIR
 from contracts.config import Config
 from contracts.errors import PermanentError, TransientError
 from contracts.harvester import PaperRef
@@ -482,17 +481,20 @@ def test_no_cache_dir_configured_skips_cache_check_entirely(monkeypatch):
     assert call_count["n"] == 1, "no cache_dir means every ref is a live download"
 
 
-def test_build_ingestion_orchestrator_wires_rag_pdf_cache_dir_env_var(monkeypatch, tmp_path):
-    """`build_ingestion_orchestrator` must thread `RAG_PDF_CACHE_DIR` into `_PdfDownloadParser`
-    (previously not wired at all -- T-DOC18). When the env var is set, the constructed parser's
-    cache_dir must match it exactly (same convention as `app/prefetch_pdfs.py`'s own env read)."""
+def test_build_ingestion_orchestrator_wires_pdf_cache_dir_config_field(monkeypatch, tmp_path):
+    """`build_ingestion_orchestrator` must thread `config.pdf_cache_dir` into `_PdfDownloadParser`
+    (previously not wired at all -- T-DOC18; T-DOC29 moved this off `os.environ` onto `Config`).
+    When the field is set, the constructed parser's cache_dir must match it exactly (same
+    convention as `app/prefetch_pdfs.py`'s own `config.pdf_cache_dir` read)."""
     monkeypatch.setattr("app.assembly.VectorIndex", lambda *a, **k: object())
 
     cache_dir = tmp_path / "pdf_cache"
-    monkeypatch.setenv("RAG_PDF_CACHE_DIR", str(cache_dir))
-
     db_path = str(tmp_path / "papers.db")
-    cfg = Config(focus_area_queries=["causal inference"], gpu_lock_path=str(tmp_path / ".gpu.lock"))
+    cfg = Config(
+        focus_area_queries=["causal inference"],
+        gpu_lock_path=str(tmp_path / ".gpu.lock"),
+        pdf_cache_dir=str(cache_dir),
+    )
 
     orchestrator = build_ingestion_orchestrator(
         cfg, db_path=db_path, blob_dir=str(tmp_path / "blobs")
@@ -502,44 +504,42 @@ def test_build_ingestion_orchestrator_wires_rag_pdf_cache_dir_env_var(monkeypatc
     assert cache_dir.is_dir(), "the composition root must ensure the configured dir exists"
 
 
-def test_build_ingestion_orchestrator_env_var_unset_defaults_to_same_dir_as_prefetch_pdfs(
-    monkeypatch, tmp_path
-):
-    """T-DOC18 bug fix: `app/prefetch_pdfs.py` defaults `RAG_PDF_CACHE_DIR` to `"pdf_cache"` and
-    fills that real directory continuously. `build_ingestion_orchestrator` previously had NO
-    default (`cache_dir=None` when unset), which made Layer 1's cache check/write-through a
-    permanent, silent no-op the moment anyone launched ingestion without explicitly exporting the
-    var -- the prefetcher's work was invisible to it. Both modules' effective defaults must match
-    exactly, asserted directly against each other (not just "each has some default")."""
+def test_build_ingestion_orchestrator_default_matches_prefetch_pdfs_default(monkeypatch, tmp_path):
+    """T-DOC18 bug fix: `app/prefetch_pdfs.py` defaults its cache dir to `"pdf_cache"` and fills
+    that real directory continuously. `build_ingestion_orchestrator` previously had NO default of
+    its own (`cache_dir=None` when the env var was unset), which made Layer 1's cache
+    check/write-through a permanent, silent no-op -- the prefetcher's work was invisible to it.
+    T-DOC29 makes this structurally impossible to drift again: both modules now read the SAME
+    `Config.pdf_cache_dir` field, whose one default is declared once in `contracts/config.py`, so
+    there's no second `os.environ.get(..., default)` fallback left to disagree with it."""
     monkeypatch.setattr("app.assembly.VectorIndex", lambda *a, **k: object())
-    monkeypatch.delenv("RAG_PDF_CACHE_DIR", raising=False)
     monkeypatch.chdir(tmp_path)  # the default is a relative dir -- don't pollute the real cwd
 
     db_path = str(tmp_path / "papers.db")
     cfg = Config(focus_area_queries=["causal inference"], gpu_lock_path=str(tmp_path / ".gpu.lock"))
+    assert cfg.pdf_cache_dir == "pdf_cache", "sanity check on Config's own default"
 
     orchestrator = build_ingestion_orchestrator(
         cfg, db_path=db_path, blob_dir=str(tmp_path / "blobs")
     )
 
-    assert orchestrator._parser._cache_dir == Path(_DEFAULT_PDF_CACHE_DIR) == Path("pdf_cache"), (
-        "an unset RAG_PDF_CACHE_DIR must resolve to the exact same directory in both "
-        "build_ingestion_orchestrator and app.prefetch_pdfs._cache_dir_from_env"
-    )
+    assert orchestrator._parser._cache_dir == Path("pdf_cache")
     assert orchestrator._parser._cache_dir.is_dir()
 
 
-def test_build_ingestion_orchestrator_env_var_empty_string_disables_cache_and_logs(
+def test_build_ingestion_orchestrator_empty_pdf_cache_dir_disables_cache_and_logs(
     monkeypatch, tmp_path, caplog
 ):
-    """The only way `cache_dir` should still end up `None` post-fix: someone explicitly sets
-    `RAG_PDF_CACHE_DIR=""`. That must stay visible (a log line), not silently disable Layer 1
-    the way an unset var used to (T-DOC18)."""
+    """The only way `cache_dir` should still end up `None`: `config.yaml` explicitly sets
+    `pdf_cache_dir: ""`. That must stay visible (a log line), not silently disable Layer 1."""
     monkeypatch.setattr("app.assembly.VectorIndex", lambda *a, **k: object())
-    monkeypatch.setenv("RAG_PDF_CACHE_DIR", "")
 
     db_path = str(tmp_path / "papers.db")
-    cfg = Config(focus_area_queries=["causal inference"], gpu_lock_path=str(tmp_path / ".gpu.lock"))
+    cfg = Config(
+        focus_area_queries=["causal inference"],
+        gpu_lock_path=str(tmp_path / ".gpu.lock"),
+        pdf_cache_dir="",
+    )
 
     with caplog.at_level(logging.WARNING):
         orchestrator = build_ingestion_orchestrator(
@@ -547,7 +547,7 @@ def test_build_ingestion_orchestrator_env_var_empty_string_disables_cache_and_lo
         )
 
     assert orchestrator._parser._cache_dir is None
-    assert "RAG_PDF_CACHE_DIR" in caplog.text and "disabled" in caplog.text.lower()
+    assert "pdf_cache_dir" in caplog.text and "disabled" in caplog.text.lower()
 
 
 # ================================================================================================

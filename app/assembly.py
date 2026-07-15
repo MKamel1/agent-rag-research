@@ -38,8 +38,6 @@ from rag.retriever import Retriever
 from rag.summarizer import OllamaSummarizer
 from rag.vector_index import VectorIndex
 
-from app.prefetch_pdfs import _DEFAULT_PDF_CACHE_DIR
-
 logger = logging.getLogger(__name__)
 
 _TEI_EMBED_URL = "http://localhost:8080"
@@ -72,6 +70,22 @@ _PDF_DOWNLOAD_RETRY_BACKOFF_SECONDS = 2.0
 # Statuses worth one retry -- rate-limited or a transient server-side hiccup. Not 404/permanent
 # statuses (CONVENTIONS.md §4: those are `PermanentError`, no retry).
 _RETRYABLE_STATUSES = {429, 502, 503, 504}
+
+
+def harvest_refs(config: Config, orchestrator: IngestionOrchestrator) -> list[PaperRef]:
+    """`config.ingest_paper_ids` (optional list of base arXiv ids, T-EVAL harvest-scoping
+    override, PR #89): fetch exactly these known papers via `ArxivSource.fetch_by_ids()` instead
+    of the query-driven `harvest()` below -- guarantees the 210-question eval set's 100 source
+    papers are actually in the corpus (a focus_area search can't guarantee hitting them). `None`
+    (the default) leaves normal `harvest()` behavior completely unchanged.
+
+    Shared by `app/ingest.py` (Pass 2) and `app/parse_phase.py` (Pass 1, run as a subprocess) so
+    both phases of one run agree on the same explicit paper set by construction -- one function,
+    not two copies a docstring asks someone to "keep in sync" (T-DOC29).
+    """
+    if config.ingest_paper_ids:
+        return ArxivSource().fetch_by_ids(config.ingest_paper_ids)
+    return orchestrator.harvest(config.focus_area_queries, config.corpus_cap)
 
 
 class _PdfDownloadParser:
@@ -320,22 +334,20 @@ def build_ingestion_orchestrator(
 
     state = SqliteIngestState(db_path)
     harvester = Harvester(ArxivSource(), quarantine=_sqlite_harvest_quarantine_sink(state))
-    # Same env var, and now the same default, app/prefetch_pdfs.py reads/uses
-    # (RAG_PDF_CACHE_DIR / _DEFAULT_PDF_CACHE_DIR) -- unset must behave identically in both
-    # places, or the prefetcher fills the default `./pdf_cache` dir while an ingestion run
-    # launched without explicitly exporting the var never reads/writes it, silently making Layer
-    # 1 (T-DOC18's whole point) a permanent no-op (T-DOC18 bug). `pdf_cache_dir` only ends up
-    # `None` now if someone explicitly sets `RAG_PDF_CACHE_DIR=""` (or similar falsy value) --
-    # logged below so a genuinely-disabled cache is visible, not silent. mkdir here (not inside
-    # _PdfDownloadParser) because only the composition root knows whether this run is even
-    # configured to use a cache at all.
-    cache_dir_env = os.environ.get("RAG_PDF_CACHE_DIR", _DEFAULT_PDF_CACHE_DIR)
-    pdf_cache_dir = Path(cache_dir_env) if cache_dir_env else None
+    # Same Config field (T-DOC29: `config.pdf_cache_dir`, one default declared once in
+    # contracts/config.py) app/prefetch_pdfs.py also reads -- both processes agree on the same
+    # `./pdf_cache` default by construction now, closing off the T-DOC18 bug this used to guard
+    # against by convention (two independently-guessed `os.environ.get(..., default)` fallbacks
+    # that could silently drift apart). `pdf_cache_dir` only ends up `None` here if config.yaml
+    # explicitly sets `pdf_cache_dir: ""` -- logged below so a genuinely-disabled cache is visible,
+    # not silent. mkdir here (not inside _PdfDownloadParser) because only the composition root
+    # knows whether this run is even configured to use a cache at all.
+    pdf_cache_dir = Path(config.pdf_cache_dir) if config.pdf_cache_dir else None
     if pdf_cache_dir is not None:
         pdf_cache_dir.mkdir(parents=True, exist_ok=True)
     else:
         logger.warning(
-            "RAG_PDF_CACHE_DIR is set to an empty value -- the PDF cache (T-DOC18 Layer 1) is "
+            "config.pdf_cache_dir is set to an empty value -- the PDF cache (T-DOC18 Layer 1) is "
             "disabled for this run: every download will be a live HTTP call with no "
             "write-through cache."
         )
@@ -393,9 +405,9 @@ def build_ingestion_orchestrator(
             # Unset (the default) writes no file, matching AdaptiveBatchSizer's own
             # decision_log_path=None default -- this is investigation tooling for a specific
             # run (the user's "keep a close log of it to investigate later" request), not a
-            # default-on feature. Set RAG_BATCH_SIZE_LOG to a path to capture one CSV row per
-            # batch-size decision for that run.
-            decision_log_path=os.environ.get("RAG_BATCH_SIZE_LOG") or None,
+            # default-on feature. Set config.batch_size_log_path to a path to capture one CSV row
+            # per batch-size decision for that run.
+            decision_log_path=config.batch_size_log_path,
         ).next_size,
     )
 

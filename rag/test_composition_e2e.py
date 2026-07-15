@@ -85,21 +85,23 @@ def test_ingest_then_query_one_real_paper(workdir, monkeypatch):
     db_path = str(workdir / "papers.db")
     blob_dir = str(workdir / "blobs")
     gpu_lock_path = str(workdir / ".gpu.lock")
-    cfg = Config(focus_area_queries=_QUERY, gpu_lock_path=gpu_lock_path)
+    cfg = Config(
+        focus_area_queries=_QUERY, gpu_lock_path=gpu_lock_path,
+        db_path=db_path, blob_dir=blob_dir, collection=collection,
+    )
 
     # Pass 1: a REAL subprocess (mirrors app/ingest.py exactly) so the parser's VRAM release is
     # the real OS-level guarantee this design relies on, not an in-process approximation of it.
-    # monkeypatch.setenv (not a manual merge of this process's environment) so the subprocess --
-    # which inherits the current process's environment by default when `env=` is omitted -- picks
-    # up these overrides alongside everything else already in this test process's environment.
+    # db_path/blob_dir/collection (T-DOC29: real Config fields now, not RAG_DB_PATH/RAG_BLOB_DIR/
+    # RAG_COLLECTION env vars) go into the SAME config.yaml this subprocess loads (cwd=workdir) --
+    # no env-var handoff needed, the subprocess reads the identical file this process's own `cfg`
+    # above was hand-built to match.
     config_yaml = workdir / "config.yaml"
     config_yaml.write_text(yaml.safe_dump({
         "focus_area_queries": _QUERY, "corpus_cap": 1, "gpu_lock_path": gpu_lock_path,
+        "db_path": db_path, "blob_dir": blob_dir, "collection": collection,
     }))
     monkeypatch.setenv("PYTHONPATH", _REPO_ROOT)
-    monkeypatch.setenv("RAG_DB_PATH", db_path)
-    monkeypatch.setenv("RAG_BLOB_DIR", blob_dir)
-    monkeypatch.setenv("RAG_COLLECTION", collection)
     with _GpuSampler() as parse_gpu:
         subprocess.run(
             [sys.executable, "-m", "app.parse_phase"],

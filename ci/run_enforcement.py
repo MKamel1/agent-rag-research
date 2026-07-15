@@ -14,9 +14,10 @@ Actions job) to compute the changed-file list and, for `pull_request` events, th
 Checks (a)-(d) and (f)-(h) run here against *only the changed files* — not a full-repo scan (a
 full-repo scan would re-flag pre-existing content forever, the exact trap this ticket's design
 constraint calls out). Only `.py` files are handed to them (every one is Python-source-specific;
-see `_is_scannable`), and (a)/(d)/(g)/(h) further scope themselves to `rag/`/`contracts/`
-(`ci.checks.model.in_pipeline_scope`) since their CONVENTIONS.md rules are about the pipeline's own
-modules, not this repo's CI tooling — each check's own module docstring explains its scope.
+see `_is_scannable`), and (a)/(d)/(g)/(h) further scope themselves to `rag/`/`contracts/`/`app/`
+(`ci.checks.model.in_pipeline_scope`; `app/` added by T-DOC29) since their CONVENTIONS.md rules are
+about the pipeline's own modules, not this repo's CI tooling — each check's own module docstring
+explains its scope.
 
 `check_g` additionally gets `list_deleted_paths(diff_base, REPO_ROOT)` — the raw deleted-path list
 `build_diff_files` otherwise throws away — so it can catch a deleted `test_<name>.py` whose sibling

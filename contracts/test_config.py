@@ -22,6 +22,25 @@ def test_constructs_with_only_the_one_required_field_and_documented_v0_defaults(
     assert config.hybrid_dense_weight == pytest.approx(0.5)
     assert config.gpu_lock_path == ".gpu.lock"
     assert config.parse_batch_size == 4
+    # composition-root levers (T-DOC29) -- defaults must match what os.environ.get(name, default)
+    # used to fall back to in app/ before this ticket moved them onto Config.
+    assert config.db_path == "papers.db"
+    assert config.blob_dir == "blobs"
+    assert config.collection == "papers"
+    assert config.pdf_cache_dir == "pdf_cache"
+    assert config.batch_size_log_path is None
+    assert config.prefetch_target == 30_000
+    assert config.ingest_paper_ids is None
+
+
+def test_ingest_paper_ids_accepts_an_explicit_list():
+    config = Config(focus_area_queries=["x"], ingest_paper_ids=["2601.00001", "2601.00002"])
+    assert config.ingest_paper_ids == ["2601.00001", "2601.00002"]
+
+
+def test_pdf_cache_dir_accepts_empty_string_to_disable_the_cache():
+    config = Config(focus_area_queries=["x"], pdf_cache_dir="")
+    assert config.pdf_cache_dir == ""
 
 
 def test_focus_area_queries_is_required():
