@@ -3,9 +3,9 @@
 Wraps MinerU (`pipeline` backend — Phase-0 Spike 1's locked choice; Docling and Marker were
 evaluated and dropped, PHASE0-RUNBOOK.md's Spike-1 footnote) for PDF body parsing, and GROBID (a
 separate Docker service, `/api/processCitationList`) for reference extraction. Frozen interface
-(ARCHITECTURE.md §M2): `parse(raw: PdfBytes | LatexSource) -> ParsedDoc`. Only this file may
-import `mineru`/`grobid` tokens (CONVENTIONS §1 — `ci/checks/vendor_isolation.py` already scopes
-both here).
+(ARCHITECTURE.md §M2, `contracts/parser.py`'s module docstring): `parse(raw: bytes, paper_id:
+str) -> ParsedDoc`. Only this file may import `mineru`/`grobid` tokens (CONVENTIONS §1 —
+`ci/checks/vendor_isolation.py` already scopes both here).
 
 Ambiguities the frozen interface/tests don't resolve, decided here (rather than guessed silently):
 
@@ -33,14 +33,22 @@ Ambiguities the frozen interface/tests don't resolve, decided here (rather than 
   `[81.4, 122.0, 527.6, 177.4]`, matching `middle.json`'s own point-space bbox for the same block
   (`[82, 122, 528, 178]`) to rounding.
 
-- **`paper_id`.** The frozen `parse(raw)` signature takes only bytes — no id. arXiv PDFs print
-  `arXiv:YYMM.NNNNN[vN] ...` somewhere on the page (MinerU emits it as its own text block, usually
-  `aside_text`); the base id (version stripped, matching DATA-CONTRACTS.md §IDs' `paper_id`
-  format) is regex-recovered from it when present. Falls back to a content hash
-  (`sha256(raw).hexdigest()[:16]`) for non-arXiv/undetectable input, so `parse()` never raises just
-  because an id couldn't be read off the page. No golden/frozen test pins an exact `paper_id`
-  value — it only needs to be stable and internally consistent (it's used to build every
-  `block_id`, DATA-CONTRACTS.md §IDs' `"{paper_id}:b{index}"` format).
+- **`paper_id`.** (T-DOC31.) The caller — `IngestionOrchestrator`, via `app/assembly.py`'s
+  `_PdfDownloadParser` — already knows the real `paper_id` (it came from the Harvester's
+  `PaperRef`) before `parse`/`parse_batch` is ever called, so both take it as a required
+  parameter and use it directly; nothing here re-derives it from the PDF's own watermark text.
+  Previously this adapter regex-recovered `arXiv:YYMM.NNNNN[vN]` off the page and fell back to a
+  content hash (`sha256(raw).hexdigest()[:16]`) when that regex didn't match — silently wrong
+  whenever a real arXiv paper's watermark wasn't extracted as its own MinerU text block (confirmed
+  real occurrence: `2411.14665` landed under `chunks.paper_id='211c443e9b22f24a'` in SQLite,
+  `LESSONS-LEARNED.md` 2026-07-15 T-DOC31 entry). The hash fallback is gone, not just deprioritized
+  — every real caller in this codebase already has an id, and a hash-derived `paper_id` is worse
+  than an explicit error for the one case that would actually need it (a standalone/manual PDF
+  with no known id): that caller should decide its own id (or generate one itself) rather than
+  this adapter silently manufacturing an unstable one. `stem` (`sha256(raw)[:16]`) still exists
+  below, unrelated to `paper_id` — it's only MinerU's own per-call working-directory/file-naming
+  key, needed because `do_parse` writes output keyed by filename, not because of anything to do
+  with paper identity.
 
 - **LaTeX routing.** PHASE0-RUNBOOK.md's Spike-1 footnote records that the arXiv-LaTeX ingest path
   (ARCHITECTURE.md §M2's "PDF-vs-LaTeX routing") was *never run* in Spike 1 and is explicitly "not
@@ -132,17 +140,20 @@ _FIGURE_TYPES = {"image", "chart"}
 
 def parse(
     raw: bytes,
+    paper_id: str,
     *,
     output_dir: str | Path | None = None,
     grobid_url: str = _DEFAULT_GROBID_URL,
 ) -> ParsedDoc:
     """Parse `raw` PDF bytes into a `ParsedDoc` (ARCHITECTURE.md §M2).
 
-    Preconditions: none the caller must check -- `raw` may be empty/garbage/corrupt; that is
-    exactly the quarantine path below.
-    Postconditions: every returned `Block`/`Figure`/`TableItem` carries a real (non-degenerate)
-    `page` + `bbox` in PDF-point space; `blocks` is in 0-based contiguous reading order;
-    `parser_id`/`markdown` are non-empty (`rag/test_parser.py`'s `assert_parseddoc_invariants`).
+    Preconditions: `paper_id` is the caller's already-known real id (T-DOC31 -- see module
+    docstring's `paper_id` bullet); `raw` may be empty/garbage/corrupt -- that is exactly the
+    quarantine path below, not a precondition the caller must check.
+    Postconditions: `doc.paper_id == paper_id`, unconditionally. Every returned `Block`/`Figure`/
+    `TableItem` carries a real (non-degenerate) `page` + `bbox` in PDF-point space; `blocks` is in
+    0-based contiguous reading order; `parser_id`/`markdown` are non-empty
+    (`rag/test_parser.py`'s `assert_parseddoc_invariants`).
     Errors: unparseable/corrupt/scanned-with-no-extractable-content input -> `PermanentError`
     (quarantine, never a crash, ARCHITECTURE.md §M2). A GROBID connectivity failure ->
     `TransientError` (retry-then-quarantine, CONVENTIONS §4) -- that failure is about the GROBID
@@ -161,7 +172,7 @@ def parse(
         page_sizes,
         markdown,
         page_dir,
-        fallback_paper_id=stem,
+        paper_id=paper_id,
         n_pages=n_pages,
         grobid_url=grobid_url,
     )
@@ -169,6 +180,7 @@ def parse(
 
 def parse_batch(
     raws: list[bytes],
+    paper_ids: list[str],
     *,
     output_dir: str | Path | None = None,
     grobid_url: str = _DEFAULT_GROBID_URL,
@@ -177,15 +189,24 @@ def parse_batch(
     module docstring's `parse_batch` bullet for why (real GPU-idle measurement, the pooled-window
     mechanism, and the whole-batch-fails-no-partial-results design decision this implements).
 
-    Preconditions: same as `parse()`, applied to every member of `raws`.
+    Preconditions: same as `parse()`, applied to every member of `raws`; `paper_ids[i]` is
+    `raws[i]`'s real id, so `len(paper_ids) == len(raws)`.
     Postconditions: on full success, returns exactly `len(raws)` `ParsedDoc`s, one per input, in
-    the same order as `raws` -- each satisfying `parse()`'s own postconditions.
+    the same order as `raws` (`docs[i].paper_id == paper_ids[i]`) -- each satisfying `parse()`'s
+    own postconditions.
     Errors: raises `PermanentError`/`TransientError` for the WHOLE batch (never a partial list) if
     `do_parse` itself raises, or if any one member's expected output is missing/corrupt, or if
     assembling any one member's `ParsedDoc` fails for any of `parse()`'s own reasons.
+    `ContractError` if `paper_ids` doesn't match `raws` 1:1 by length -- a caller bug, not a
+    quarantinable paper problem.
     """
     if not raws:
         return []
+    if len(raws) != len(paper_ids):
+        raise ContractError(
+            f"parse_batch: raws and paper_ids must be the same length, got "
+            f"{len(raws)} raws vs {len(paper_ids)} paper_ids"
+        )
 
     for raw in raws:
         _reject_latex_archive(raw)
@@ -197,7 +218,7 @@ def parse_batch(
     _call_do_parse(workdir, stems, raws)
 
     docs = []
-    for stem, n_pages in zip(stems, n_pages_list, strict=True):
+    for stem, paper_id, n_pages in zip(stems, paper_ids, n_pages_list, strict=True):
         content_list, page_sizes, markdown, page_dir = _read_mineru_output(workdir, stem)
         docs.append(
             _assemble_parsed_doc(
@@ -205,7 +226,7 @@ def parse_batch(
                 page_sizes,
                 markdown,
                 page_dir,
-                fallback_paper_id=stem,
+                paper_id=paper_id,
                 n_pages=n_pages,
                 grobid_url=grobid_url,
             )
@@ -226,7 +247,7 @@ def _assemble_parsed_doc(
     markdown: str,
     page_dir: Path,
     *,
-    fallback_paper_id: str,
+    paper_id: str,
     n_pages: int,
     grobid_url: str,
 ) -> ParsedDoc:
@@ -234,9 +255,9 @@ def _assemble_parsed_doc(
     quarantine guard, GROBID reference resolution, final `ParsedDoc` construction) used by both
     `parse()` and `parse_batch()` -- the two entry points differ only in how `content_list`/
     `page_sizes`/`markdown`/`page_dir` get produced (one `do_parse` call vs. a batched one), never
-    in what happens to them afterward.
+    in what happens to them afterward. `paper_id` is the caller's real id (T-DOC31) -- used as-is,
+    never re-derived from `content_list`.
     """
-    paper_id = _derive_paper_id(content_list, fallback=fallback_paper_id)
     blocks, figures, tables, raw_refs = _build_blocks(content_list, page_sizes, paper_id, page_dir)
 
     if not blocks:
@@ -410,20 +431,6 @@ def _rescale_bbox(bbox_norm, page_width: float, page_height: float) -> Bbox:
         x1 / 1000.0 * page_width,
         y1 / 1000.0 * page_height,
     )
-
-
-def _derive_paper_id(content_list: list[dict], fallback: str) -> str:
-    """Best-effort recovery of the base arXiv id (no version) from wherever MinerU's text blocks
-    mention it -- arXiv PDFs print `arXiv:YYMM.NNNNN[vN] ...` on the page (commonly a margin
-    `aside_text` watermark). Falls back to a content hash for non-arXiv/undetectable input; see
-    module docstring for why the frozen interface leaves this to the adapter.
-    """
-    for item in content_list:
-        text = item.get("text") or ""
-        match = _ARXIV_ID_RE.search(text)
-        if match:
-            return match.group(1)
-    return fallback
 
 
 def _heading_depth(text: str) -> int:
