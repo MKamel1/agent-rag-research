@@ -184,16 +184,29 @@ this section previously assumed all-day co-residence with no eviction; a real en
 reproduced a genuine CUDA OOM under that assumption.** Real measured footprints: MinerU (parser) is
 **not** a flat footprint — it peaks **~13GB typical, observed as high as ~23.7GB** (its sub-models
 load sequentially per paper), Embedder (TEI) ~8.2-10GB, Reranker (TEI) ~1.4GB, Summarizer (Ollama)
-~11.8-13.5GB — Embedder and Reranker are the two meant to stay **always** resident (~9.4GB together,
-they serve live queries continuously via `McpServer`); MinerU and the Summarizer are **not**. Pass 1's
-real safety margin against MinerU's typical peak is thin (**~1GB**), not a comfortable one — full
-detail, numbers, and the eviction mechanism are in ARCHITECTURE.md "Operational invariants" §3
-(authoritative; not re-derived here).
+~11.8-13.5GB — Embedder and Reranker are resident during Pass 2 and live serving (~9.4GB together,
+they serve live queries continuously via `McpServer` then), but are evicted for the entire duration of
+Pass 1 to free that ~9.4GB as MinerU headroom — a scoped exception, safe only because ingestion and
+live querying are confirmed to never overlap in practice for this deployment (see below); MinerU and
+the Summarizer are never resident at the same time as each other either. Pass 1's real safety margin
+against MinerU's typical peak was thin (**~1GB**) under the pre-eviction always-resident measurement
+above — full detail, numbers, and both eviction mechanisms (Summarizer and TEI) are in ARCHITECTURE.md
+"Operational invariants" §3 (authoritative; not re-derived here).
 In short: ingestion runs as **two sequential passes** (`parse_phase()` then `finish_phase()`), and the
 Summarizer is proactively evicted (`OllamaSummarizer.unload()`, polled via Ollama's `/api/ps` until
 confirmed gone, not just fire-and-trust the HTTP response) both before Pass 1 and before *each paper's*
 embed call within Pass 2 — real measured reload cost ~2.5s, negligible against a ~15-20s summarize
 call, so eviction is cheap here, not the time-wasting mechanism this section previously rejected it as.
+
+The Embedder+Reranker (TEI) are evicted too, but only once, for the whole Pass 1 phase rather than
+per-paper: stopped (`app/tei_lifecycle.py`'s `stop_tei_containers()`) via the same `before_parse_phase`
+hook and restarted (`start_tei_containers()`) via `before_finish_phase` before Pass 2 begins. Unlike the
+Summarizer's ~2.5s reload, TEI has no per-call unload API — stopping/starting the container is the only
+lever — so this eviction lasts the entire Pass 1 duration (potentially hours on a full corpus run), not
+a brief pause, and any live MCP query attempted during that window fails outright rather than waiting.
+Accepted **only** because this deployment's ingestion and live querying are confirmed to never overlap
+in practice — not a general claim that Embedder+Reranker co-residency is unneeded, and worth revisiting
+if concurrent live serving ever becomes a real requirement.
 
 `GpuLock` — a typed `GpuLock` (DATA-CONTRACTS.md), constructor-injected into every real
 `Embedder`/`Summarizer`/`Reranker` adapter, backed by a cross-process file lock keyed off
