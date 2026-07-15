@@ -14,6 +14,7 @@ fresh process on resume (not a shared Python object, unlike every other resume t
 """
 
 import json
+import logging
 import sqlite3
 from datetime import date
 
@@ -364,6 +365,20 @@ class RecordingVectorIndex:
         self._store.upsert(id, vector, payload)
 
 
+class PoisonedParser:
+    """Raises `PermanentError` for one specific `paper_id`, parses normally for every other --
+    just enough to drive a real `state.quarantine()` call for T-DOC32's test below without a full
+    `SpyParser` rewrite."""
+
+    def __init__(self, poison_paper_id: str):
+        self._poison = poison_paper_id
+
+    def parse(self, ref: PaperRef) -> ParsedDoc:
+        if ref.paper_id == self._poison:
+            raise PermanentError("unparseable PDF")
+        return _make_parsed(ref)
+
+
 def test_crash_and_restart_resumes_via_real_sqlite_schema_without_reinvoking_stages(tmp_path):
     """Run 1 crashes mid-paper (after `summarized`, before `embedded`) against a real, migrated
     sqlite db. Run 2 opens a BRAND-NEW `SqliteIngestState` on the same db file -- standing in for
@@ -422,3 +437,51 @@ def test_crash_and_restart_resumes_via_real_sqlite_schema_without_reinvoking_sta
     for ref in refs:
         assert run2_state.stage_of(ref.paper_id) == "done"
         assert ref.paper_id in document_store.records
+
+
+# ================================================================================================
+# T-DOC32: the quarantine() write itself must not crash the run
+# ================================================================================================
+
+
+def test_quarantine_write_failure_does_not_crash_the_batch(tmp_path, caplog):
+    """The real-world cause this reproduces (`missing table`) is the same one T-DOC17/PR #83
+    narrowly fixed for one specific case -- this is the general case: ANY `sqlite3.Error` raised
+    by the `quarantine` write itself, not just that one cause. Before T-DOC32, this propagated out
+    of `SqliteIngestState.quarantine()`, through `_parse_with_retry`, `_prepare`, and `parse_phase`,
+    crashing `ingest()` and losing every paper still queued behind the poisoned one."""
+    db_path = str(tmp_path / "test.sqlite")
+    migrate(db_path)
+    with sqlite3.connect(db_path) as conn:
+        conn.execute("DROP TABLE quarantine")  # the real, observed cause (T-DOC17/PR #83)
+
+    poisoned, survivor = _make_ref(0), _make_ref(1)
+    refs = [poisoned, survivor]
+    document_store = DocStoreDouble()
+    config = Config(focus_area_queries=["causal inference"])
+    orch = IngestionOrchestrator(
+        harvester=StubHarvester(refs),
+        parser=PoisonedParser(poisoned.paper_id),
+        chunker=SpyChunker(),
+        summarizer=SummarizerSpy(),
+        embedder=EmbedderSpy(),
+        document_store=document_store,
+        vector_index=RecordingVectorIndex(FakeVectorStore()),
+        state=SqliteIngestState(db_path),
+        gpu_lock=FakeGpuLock(),
+        config=config,
+    )
+
+    with caplog.at_level(logging.CRITICAL, logger="rag.ingest_state_sqlite"):
+        orch.ingest(config.focus_area_queries, cap=len(refs))  # (a) must not raise
+
+    # (b) the next paper in the batch is still processed to completion.
+    assert survivor.paper_id in document_store.records
+
+    # (c) the secondary failure is observable: both the original quarantine reason and the write
+    # failure itself show up in a CRITICAL log record, not silently swallowed.
+    critical_messages = [r.message for r in caplog.records if r.levelno == logging.CRITICAL]
+    assert any(
+        poisoned.paper_id in msg and "unparseable PDF" in msg and "no such table" in msg
+        for msg in critical_messages
+    ), f"expected a CRITICAL log naming both failures, got: {critical_messages}"
