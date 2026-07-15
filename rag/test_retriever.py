@@ -385,6 +385,28 @@ def test_retrieve_all_hits_unresolvable_returns_empty_not_error():
     assert coverage.candidate_count == 1
 
 
+def test_retrieve_pool_size_grows_past_32_when_k_exceeds_it():
+    # T-DOC39: `max(k, _RERANK_POOL_SIZE)` must never silently clamp the pool DOWN to 32 when the
+    # caller's k is larger -- that's the retriever-side half of the T-DOC24/25 regression (the
+    # reranker-side half -- TeiReranker.rerank() defending its own vendor batch limit regardless
+    # of pool size -- has its own mocked+live tests in rag/test_reranker.py). FakeReranker never
+    # drops candidates, so all 40 seeded hits should come back reranked and untruncated up to
+    # k=40, proving the retriever itself imposes no hardcoded 32 cap.
+    store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
+    query = "double machine learning orthogonal moment estimator"
+    for i in range(40):
+        _seed_chunk(store, docstore, embedder, chunk_id=f"2506.{i:05d}:c0",
+                    paper_id=f"2506.{i:05d}", block_id=f"2506.{i:05d}:b0",
+                    text=f"unrelated filler content about topic number {i}",
+                    section_path=f"{i}. Section")
+
+    results, coverage = _make_retriever(store, docstore, FakeReranker(), embedder).retrieve(
+        query, filters=None, k=40)
+
+    assert coverage.candidate_count == 40  # not clamped to _RERANK_POOL_SIZE=32
+    assert len(results) == 40
+
+
 def test_retrieve_filters_is_searchfilters_not_dict():
     store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
     _seed_chunk(store, docstore, embedder, chunk_id="2506.00001:c0", paper_id="2506.00001",
@@ -526,6 +548,22 @@ def test_retrieve_papers_all_hits_unresolvable_returns_empty_not_error():
 
     assert results == []
     assert coverage.candidate_count == 1
+
+
+def test_retrieve_papers_pool_size_grows_past_32_when_k_exceeds_it():
+    # T-DOC39, mirroring retrieve()'s version above for the summary-level path.
+    store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
+    query = "causal estimator"
+    for i in range(40):
+        _seed_summary(store, docstore, embedder, paper_id=f"2506.{i:05d}",
+                      summary_id=f"2506.{i:05d}:summary",
+                      summary_text=f"unrelated filler summary about topic number {i}")
+
+    results, coverage = _make_retriever(store, docstore, FakeReranker(), embedder).retrieve_papers(
+        query, filters=None, k=40)
+
+    assert coverage.candidate_count == 40  # not clamped to _RERANK_POOL_SIZE=32
+    assert len(results) == 40
 
 
 def test_both_methods_use_the_same_injected_reranker():

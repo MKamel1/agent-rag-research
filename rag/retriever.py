@@ -30,24 +30,18 @@ logger = logging.getLogger(__name__)
 _SUMMARY_ID_SUFFIX = ":summary"
 
 # The reranker can only ever reorder the candidates it's given -- it never fabricates or drops any
-# (TeiReranker.rerank()'s own contract: a length-preserving reordering by score). Fetching only
-# `k` candidates before reranking means the reranker can't promote anything the earlier hybrid/RRF
-# pass ranked below `k` -- a real T-EVAL investigation found every one of 30 real single-passage
-# misses fit exactly this shape (correct paper always in the top 10, wrong specific passage of it
-# ranked above the gold one). Fetch a meaningfully larger pool, then truncate to the caller's
-# requested `k` only after reranking has had a chance to reorder it in.
+# (TeiReranker.rerank()'s own contract: a length-preserving-or-shorter reordering by score).
+# Fetching only `k` candidates before reranking means the reranker can't promote anything the
+# earlier hybrid/RRF pass ranked below `k` -- a real T-EVAL investigation found every one of 30
+# real single-passage misses fit exactly this shape (correct paper always in the top 10, wrong
+# specific passage of it ranked above the gold one). Fetch a meaningfully larger pool, then
+# truncate to the caller's requested `k` only after reranking has had a chance to reorder it in.
 #
-# T-DOC25 (urgent correction to T-DOC24): the real TEI `/rerank` endpoint enforces a hard
-# server-side max batch size -- confirmed live: a 50-text request gets a 422 `{"error":"batch
-# size 50 > maximum allowed batch size 32", "error_type":"Validation"}`, a 32-text request
-# succeeds. `TeiReranker.rerank()` maps that 422 to a `PermanentError` (rag/reranker.py, 422 is
-# not in `_RETRYABLE_STATUSES`), so T-DOC24's original 50 broke every single real retrieve() call
-# in production -- 100% failure, not caught before merge because the fakes-only test suite has no
-# real batch-size ceiling to violate. 32 is the real, currently-deployed ceiling for this TEI
-# container (`--model-id BAAI/bge-reranker-v2-m3`, no `--max-client-batch-size` override set); this
-# is a plain tuning constant capped at that measured real limit, not a guess. Raising the server's
-# own limit (a container restart with an explicit flag) is a separate, riskier infra change, out
-# of scope for this fix -- this just makes the code respect the limit that already exists.
+# This is a pure retrieval-quality tuning knob, deliberately uncapped by `k` -- a caller-supplied
+# `k > _RERANK_POOL_SIZE` is fine and expected here; the pool just grows to `k`. It is NOT where
+# the reranker's own vendor batch-size ceiling belongs (T-DOC39 moved that into `TeiReranker`
+# itself, `rag/reranker.py`'s `_MAX_BATCH_SIZE` -- the retriever shouldn't hardcode a vendor's
+# batch limit, and the reranker defends its own limit regardless of how large a pool this fetches).
 _RERANK_POOL_SIZE = 32
 
 
