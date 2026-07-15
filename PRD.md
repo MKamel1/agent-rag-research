@@ -1136,43 +1136,62 @@ pool size specifically does not yet have a scaling story** — see the incident 
 **Also revisit at each real corpus-size milestone**, starting with the next T-SEED run: re-run
 T-EVAL and confirm Recall@10 still clears 0.85 before trusting it at the new scale.
 
-**Candidate mitigations if it degrades — none of these are decided or built, this is a menu for
-whichever future session hits the regression, ranked by how directly each reduces dependence on
-pool size / first-pass luck rather than just being "more retrieval":**
+**Candidate mitigations if it degrades — none of these are built yet, this is a menu for whichever
+future session hits the regression. Split into what's already decided-but-not-actually-built
+(cheapest — close the gap first), what's already considered and deliberately deferred (know where
+it lives before reaching for it), and what's genuinely new (not previously evaluated anywhere in
+this doc):**
 
-1. **Use the pipeline's own optional summary-level routing more aggressively (already in the
-   Decision above, currently underused).** Route the query to a narrow set of candidate *papers*
-   via summary vectors first, then only chunk-retrieve/rerank within that subset. This is the most
-   structural fix: it shrinks the effective candidate universe a fixed-size pool has to cover down
-   to "papers this query is actually about," independent of how large the total corpus grows — a
-   30,000-paper corpus with good routing can present the chunk-retrieval stage with the same
-   effective search space as today's 809-paper one.
-2. **Cascade retrieval — an intermediate, cheap filtering stage between hybrid search and the
-   (capacity-limited) cross-encoder rerank.** Retrieve a much larger initial candidate set (e.g.
-   200-1000 via a wider ANN `k`), narrow it with something cheaper than the full reranker (a smaller/
-   faster model, or a coarser heuristic score) down to the ~32 the real reranker can actually accept,
-   *then* rerank. Directly attacks "luck of pulling the right resources from the start" — the
-   expensive reranker still only sees 32, but which 32 it sees is chosen by two independent passes
-   instead of one, each catching what the other might miss.
-3. **Give the sparse channel real IDF weighting (BM25/SPLADE) instead of today's naive raw
-   term-frequency hashing (`rag/vector_index.py`'s `_sparse_vector`).** Already flagged as a
-   suspect in the T-EVAL recall-gap investigation (`.phase0-data/teval-results.md`): an
-   under-weighted sparse signal can drag a good dense ranking down in RRF fusion. A more
-   discriminative sparse channel raises the odds the correct passage is *already* near the top of
-   the first-pass fused ranking — reducing how much weight the pool-size cutoff has to carry alone.
-4. **Query expansion / multi-query fusion (HyDE-style: embed a hypothetical answer, or several
-   query rephrasings, retrieve for each, union/fuse the results).** Reduces sensitivity to any one
-   query embedding's luck — if the literal query's phrasing happens to rank the correct passage
-   just below the pool cutoff, a second phrasing or a hypothetical-answer embedding may not.
-5. **Tune Qdrant's own ANN accuracy/speed knob (HNSW `ef_search` at query time, or `m`/
-   `ef_construct` at index-build time — ADR-01).** Default HNSW parameters trade some recall for
-   speed; that trade gets worse (more true near-neighbors missed) as the index grows. Raising
-   `ef_search` costs latency, not architecture, and directly improves how accurate the *first* pass
-   already is — before pool size or reranking even come into play.
-6. **Structured pre-filtering via the existing `SearchFilters` (category/date/etc.), where the
-   query supports it**, same idea as (1) but via explicit metadata rather than learned routing —
-   cheaper to reason about, narrower in applicability (only helps when the query has a filterable
-   facet).
+**Tier A — real V0 gaps: already decided, never actually built as decided.** Closing these costs no
+new design decision, just finishing what was already paid for.
+
+1. **Real IDF-weighted sparse search (BM25/SPLADE) — not a new idea, this is literally why Qdrant
+   was chosen over Chroma/LanceDB in the first place** (this ADR's own "Options considered" above:
+   *"Qdrant treats sparse vectors (BM25/SPLADE) as first-class beside dense"*). The actual
+   implementation (`rag/vector_index.py`'s `_sparse_vector`) never uses that — it hand-rolls a naive
+   raw term-frequency hash instead, with no IDF weighting, so common words carry as much weight as
+   discriminative ones. Already flagged as a suspect in the T-EVAL recall-gap investigation
+   (`.phase0-data/teval-results.md`): an under-weighted sparse signal can drag a good dense ranking
+   down in RRF fusion. **Tracked as T-DOC27** (`WORK-BREAKDOWN.md` "Post-freeze status" section) —
+   not yet built.
+2. **Actually enforce summary-level routing, not just leave it optional.** The capability already
+   exists exactly as designed (§6 "coarse routing," this ADR's own pipeline diagram, and a real
+   `retrieve_papers()`/`search_papers` tool) — but §11A is explicit that routing is *"delegated to
+   the agent-as-reasoner... no server-side auto-rewrite."* Nothing forces a caller to actually use
+   it to narrow the field before chunk search, so today it does nothing to shrink the reranker's
+   candidate pool at scale unless the calling agent happens to sequence its own tool calls that way.
+   Wiring it as an automatic (not just available) narrowing step is the most structural fix here: a
+   30,000-paper corpus with *enforced* routing can present chunk-retrieval with the same effective
+   search space as today's 809-paper one, independent of total corpus size.
+3. **Structured pre-filtering via `SearchFilters` (category/date/etc.) — already shipped and used
+   in V0**, same underused-capability story as (2): available, not automatically invoked to solve
+   the scale problem specifically.
+
+**Tier B — already considered, deliberately deferred (§11A/§11B) — know where it lives before
+reaching for it, don't re-litigate the decision.**
+
+4. **Query expansion / HyDE.** §11A: *"❌ Not planned; optional V1+ retrieval mode."* §11B lists it
+   under the V2 parked-ideas bucket specifically — a minor inconsistency between the two sections'
+   phase labels, not fixed here, but HyDE itself is a known, previously-evaluated idea, not new.
+   Reduces sensitivity to any one query embedding's luck (embed several phrasings or a hypothetical
+   answer, fuse the results) — real value for the pool-size problem specifically, if/when it's
+   picked up.
+
+**Tier C — genuinely new, not previously evaluated anywhere in this doc.**
+
+5. **Cascade retrieval — an intermediate, cheap filtering stage between hybrid search and the
+   (capacity-limited) cross-encoder rerank.** Not the same as the already-adopted parent-child/
+   small-to-big retrieval (`child_parent_expansion`, above — that controls what content gets
+   *returned*, not which candidates get filtered). Retrieve a much larger initial candidate set
+   (e.g. 200-1000 via a wider ANN `k`), narrow it with something cheaper than the full reranker (a
+   smaller/faster model, or a coarser heuristic score) down to the ~32 the real reranker can accept,
+   *then* rerank — two independent narrowing passes instead of one, each catching what the other
+   might miss.
+6. **Tune Qdrant's own ANN accuracy/speed knob (HNSW `ef_search` at query time, or `m`/
+   `ef_construct` at index-build time).** An ops/infra lever, not an architectural one. Default HNSW
+   parameters trade some recall for speed; that trade gets worse (more true near-neighbors missed)
+   as the index grows. Raising `ef_search` costs latency, not a redesign, and directly improves how
+   accurate the *first* pass already is — before pool size or reranking even come into play.
 
 None of these require abandoning the current hybrid → RRF → rerank shape (the Decision above still
 holds) — they're all about making the *first* pass put the correct passage where a fixed-size pool
