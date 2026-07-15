@@ -146,6 +146,10 @@ _DEFAULT_PAGE_SIZE = 100
 # arXiv's API usage policy asks for no more than one request every 3 seconds.
 _RATE_LIMIT_SECONDS = 3.0
 _RETRYABLE_STATUSES = {429, 500, 502, 503, 504}
+# Conservative chunk size for `fetch_by_ids`' `id_list` param -- verified working with a real
+# 2-id request; arXiv doesn't publish a hard id_list length limit, so this stays well under any
+# plausible URL-length ceiling rather than testing the edge live against a real service.
+_ID_LIST_CHUNK_SIZE = 50
 
 
 class ArxivSource:
@@ -220,6 +224,46 @@ class ArxivSource:
                     yield ref
                     yielded += 1
                 start += len(entries)
+
+    def fetch_by_ids(self, ids: list[str]) -> list[PaperRef]:
+        """Fetch specific, known papers by base arXiv id -- not the query-driven `fetch()` above.
+        For one-off scripts that need exact papers (e.g. T-EVAL's 210-question eval set names 100
+        specific `source_paper_id`s that must be in the corpus for the eval to be meaningful),
+        where a `focus_area` search can't guarantee hitting them. Not part of the `Source`
+        interface `Harvester` depends on (`Harvester.harvest()` never calls this) -- a caller
+        that wants exact papers bypasses `Harvester` entirely and uses this directly.
+
+        Chunks `ids` into pages of `_ID_LIST_CHUNK_SIZE` (arXiv's `id_list` has no documented hard
+        limit, but a large single request risks an untested URL-length/server-side ceiling --
+        chunking conservatively sidesteps needing to find that limit the hard way) and applies the
+        same inter-request rate-limit delay `fetch()`'s pagination uses.
+
+        A `paper_id` that doesn't resolve to a real arXiv entry is silently absent from the
+        result (arXiv's `id_list` API omits unknown ids from the feed rather than erroring) --
+        callers that need to detect a missing id should diff the input list against the returned
+        `PaperRef.paper_id`s themselves.
+        """
+        refs: list[PaperRef] = []
+        for i in range(0, len(ids), _ID_LIST_CHUNK_SIZE):
+            if i > 0:
+                self._sleep(_RATE_LIMIT_SECONDS)
+            chunk = ids[i : i + _ID_LIST_CHUNK_SIZE]
+            refs.extend(self._fetch_by_id_list(chunk))
+        return refs
+
+    def _fetch_by_id_list(self, ids: list[str]) -> list[PaperRef]:
+        params = {"id_list": ",".join(ids), "max_results": len(ids)}
+        try:
+            response = self._client.get(_API_URL, params=params)
+            response.raise_for_status()
+        except httpx.HTTPStatusError as error:
+            status = error.response.status_code
+            if status in _RETRYABLE_STATUSES:
+                raise TransientError(f"ArxivSource: arXiv API returned {status}") from error
+            raise PermanentError(f"ArxivSource: arXiv API returned {status}") from error
+        except httpx.HTTPError as error:
+            raise TransientError(f"ArxivSource: arXiv API request failed: {error}") from error
+        return self._parse_entries(response.text)
 
     def _fetch_page(self, query: str, start: int, page_cap: int) -> list[PaperRef]:
         params = {

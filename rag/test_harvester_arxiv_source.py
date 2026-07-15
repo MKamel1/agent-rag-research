@@ -308,3 +308,85 @@ def test_real_arxiv_api_quoted_multi_word_term_does_not_or_split():
             f"{ref.paper_id!r} matched without the actual phrase -- OR-split regressed: "
             f"{ref.title!r}"
         )
+
+
+# --- fetch_by_ids: fetch specific known papers by id, not a query-driven search -----------------
+
+
+def test_fetch_by_ids_uses_id_list_param_not_search_query():
+    params_seen = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        params_seen.append(dict(request.url.params))
+        return httpx.Response(200, text=_ATOM_ENTRY)
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    source = make_source(client=client)
+    source.fetch_by_ids(["2504.09999"])
+    assert params_seen[0]["id_list"] == "2504.09999"
+    assert "search_query" not in params_seen[0]
+
+
+def test_fetch_by_ids_returns_parsed_refs():
+    client = httpx.Client(transport=httpx.MockTransport(lambda r: httpx.Response(200, text=_ATOM_ENTRY)))
+    source = make_source(client=client)
+    refs = source.fetch_by_ids(["2504.09999"])
+    assert len(refs) == 1
+    assert refs[0].paper_id == "2504.09999"
+
+
+def test_fetch_by_ids_chunks_large_id_lists_and_rate_limits_between_chunks():
+    calls = []
+    sleeps = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request.url.params["id_list"])
+        return httpx.Response(200, text=_EMPTY_FEED)
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    source = make_source(client=client, sleep=sleeps.append)
+    ids = [f"2504.{i:05d}" for i in range(120)]  # 3 chunks at _ID_LIST_CHUNK_SIZE=50
+    source.fetch_by_ids(ids)
+    assert len(calls) == 3
+    assert calls[0].count(",") == 49  # 50 ids in the first chunk
+    assert calls[2].count(",") == 19  # remaining 20 ids in the last chunk
+    assert sleeps == [3.0, 3.0], "rate-limit sleep between chunks, not before the first one"
+
+
+def test_fetch_by_ids_empty_list_makes_no_requests():
+    calls = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(1)
+        return httpx.Response(200, text=_EMPTY_FEED)
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    source = make_source(client=client)
+    assert source.fetch_by_ids([]) == []
+    assert calls == []
+
+
+def test_fetch_by_ids_maps_retryable_status_to_transient_error():
+    client = httpx.Client(transport=httpx.MockTransport(lambda r: httpx.Response(429)))
+    source = make_source(client=client)
+    with pytest.raises(TransientError):
+        source.fetch_by_ids(["2504.09999"])
+
+
+def test_fetch_by_ids_maps_other_status_to_permanent_error():
+    client = httpx.Client(transport=httpx.MockTransport(lambda r: httpx.Response(404)))
+    source = make_source(client=client)
+    with pytest.raises(PermanentError):
+        source.fetch_by_ids(["2504.09999"])
+
+
+@pytest.mark.real_adapter  # hits the real export.arxiv.org API — never run by default
+def test_real_arxiv_api_fetch_by_ids_returns_the_exact_requested_papers():
+    time.sleep(3)  # space out from other real-adapter tests in this file
+    source = ArxivSource()
+    try:
+        refs = source.fetch_by_ids(["2409.01266", "2409.02332"])
+    except TransientError as e:
+        pytest.skip(f"arXiv API not reachable: {e}")
+
+    assert {r.paper_id for r in refs} == {"2409.01266", "2409.02332"}
