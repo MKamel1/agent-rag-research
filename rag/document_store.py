@@ -40,7 +40,19 @@ class DocumentStore:
     """
 
     def __init__(self, db_path: str, blob_dir: str):
-        self._blob_dir = Path(blob_dir)
+        # `.resolve()` (not a bare `Path(blob_dir)`): `put()` below persists `str(markdown_path)`
+        # (this dir joined with the paper_id) straight into the `papers.markdown_path` column,
+        # and `get()` later re-reads that stored string verbatim (T-D1 -- blob storage is a
+        # projection of the DB row, not re-derived from this instance's own `_blob_dir`). A
+        # relative `blob_dir` (production's own default, `app/assembly.py`'s `blob_dir or
+        # "blobs"`) would get written to the DB as a bare relative string -- readable only from
+        # whatever process cwd happened to be active at ingest time. Any later reader with a
+        # different cwd (a different subprocess invocation, an eval script, the real MCP server
+        # started from a different directory) then hits a `ContractError` on a perfectly intact
+        # blob file, for a paper that has nothing wrong with it. Confirmed as the dominant cause
+        # of T-EVAL's initial Recall@10 measurement: 96/145 resolved retrieval calls hard-failed
+        # this way, not on genuine retrieval misses.
+        self._blob_dir = Path(blob_dir).resolve()
         self._blob_dir.mkdir(parents=True, exist_ok=True)
 
         db_file = Path(db_path)
