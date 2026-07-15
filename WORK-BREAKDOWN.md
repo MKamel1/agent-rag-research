@@ -322,6 +322,15 @@ of this doc's writing — do that alongside merging PR #94). Other splits from t
   Pass 2) was investigated but not acted on — current mitigations (TEI eviction T-DOC19, adaptive batch
   sizing T-DOC21, PDF cache/prefetch T-DOC18) close most of the gap without the bigger restructuring; revisit
   only if a real utilization regression reappears.
+- **T-DOC27 (not started)** — the sparse/hybrid search channel doesn't do what ADR-01 (`PRD.md`) actually
+  decided. ADR-01 chose Qdrant specifically because *"Qdrant treats sparse vectors (BM25/SPLADE) as
+  first-class beside dense"* — but `rag/vector_index.py`'s `_sparse_vector` never uses that; it hand-rolls a
+  naive raw term-frequency hash with no IDF weighting, so common words carry as much weight as
+  discriminative ones. Flagged as a suspect in the T-EVAL recall-gap investigation (an under-weighted sparse
+  signal can drag a good dense ranking down in RRF fusion) and in `PRD.md` ADR-11's "Candidate mitigations"
+  list (Tier A — a real V0 gap, not a new idea). Fix: either switch to Qdrant's native BM25/SPLADE sparse
+  vector support, or add real IDF weighting to the existing hash-based approach; either way needs a
+  before/after T-EVAL re-run to confirm it actually helps (not just assumed).
 
 **Key `.phase0-data/` docs for a new agent to read first** (all gitignored/local, not in git history):
 `teval-results.md` (T-EVAL methodology + full before/after numbers), `known-issue-orphaned-chunks.md`
