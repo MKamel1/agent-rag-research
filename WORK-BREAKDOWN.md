@@ -341,7 +341,7 @@ of this doc's writing — do that alongside merging PR #94). Other splits from t
   size a real, tuned, incident-prone number (32, vs. ≤10 typically returned) — exactly the gap this field
   exists to expose, currently invisible to every caller. `rag/test_mcp_server.py`'s existing coverage test
   only asserts `candidates >= returned`, trivially true when they're always equal — doesn't catch this.
-- **T-DOC29 (not started)** — `app/` (the real composition-root/entrypoint code: `ingest.py`, `parse_phase.py`,
+- **T-DOC29 (in progress — PR #97 open, awaiting @MKamel1 review)** — `app/` (the real composition-root/entrypoint code: `ingest.py`, `parse_phase.py`,
   `assembly.py`, `prefetch_pdfs.py`) has 8 real `os.environ.get(...)` calls outside `Config`, directly
   violating the documented "only `Config` reads env/files, no other module" invariant (CONVENTIONS.md §3,
   restated verbatim in `rag/config.py`'s own docstring: *"this repo has no env-var config path"*). The CI
