@@ -42,13 +42,13 @@ from app.prefetch_pdfs import _DEFAULT_PDF_CACHE_DIR
 logger = logging.getLogger(__name__)
 
 _TEI_EMBED_URL = "http://localhost:8080"
-_TEI_RERANK_URL = "http://localhost:8082"
+_TEI_RERANK_URL = "http://localhost:8082"  # serves BGE-reranker-v2-m3 -- fixed server-side, TEI's
+# /rerank endpoint takes no model param per request, so there's nothing to pass TeiReranker here.
 _OLLAMA_URL = "http://localhost:11434"
 # Must stay tag-qualified ("qwen3:14b", not "qwen3"): OllamaSummarizer.unload()'s /api/ps
 # eviction check matches this string exactly against Ollama's loaded-model list -- an untagged
 # name would silently defeat eviction confirmation.
 _OLLAMA_MODEL = "qwen3:14b"
-_RERANK_MODEL = "BGE-reranker-v2-m3"
 _EMBEDDER_INFO = EmbedderInfo(model_id="Qwen3-Embedding-4B", dim=2560, version="v1")
 _QDRANT_HOST = "localhost"
 _QDRANT_PORT = 6333
@@ -398,7 +398,7 @@ def build_mcp_server(
     vector_index = VectorIndex(
         _QDRANT_HOST, _QDRANT_PORT, collection, _EMBEDDER_INFO.dim, config.hybrid_dense_weight
     )
-    reranker = TeiReranker(httpx.Client(base_url=_TEI_RERANK_URL, timeout=60.0), gpu_lock, _RERANK_MODEL)
+    reranker = TeiReranker(httpx.Client(base_url=_TEI_RERANK_URL, timeout=60.0), gpu_lock)
     retriever = Retriever(embedder, vector_index, document_store, reranker)
 
     return McpServer(retriever, document_store)
