@@ -56,8 +56,9 @@ def _make_parser(
 ) -> _PdfDownloadParser:
     client = httpx.Client(transport=httpx.MockTransport(handler))
     # The real Parser (rag.parser.parse) needs an actual PDF/MinerU -- stub it so this test
-    # exercises only the download+delay wiring, not the Parser module.
-    monkeypatch.setattr("app.assembly.parse_pdf_bytes", lambda raw: raw)
+    # exercises only the download+delay wiring, not the Parser module. Takes `paper_id` too
+    # (T-DOC31) but this stub doesn't need it -- only `raw` flows into the assertions below.
+    monkeypatch.setattr("app.assembly.parse_pdf_bytes", lambda raw, paper_id: raw)
     return _PdfDownloadParser(
         client, sleep=lambda seconds: sleeps.append(seconds), cache_dir=cache_dir
     )
@@ -156,16 +157,19 @@ def test_permanent_failure_is_not_retried(monkeypatch):
 def test_parse_batch_downloads_every_ref_and_returns_docs_in_order(monkeypatch):
     """No prefetch involved -- proves `parse_batch()`'s own baseline behavior (T-DOC16) is
     unchanged by the T-DOC18 refactor: every ref is downloaded, in order, and its bytes reach
-    `parse_pdf_bytes_batch` positionally matched to its ref."""
+    `parse_pdf_bytes_batch` positionally matched to its ref. Also proves T-DOC31: each ref's real
+    `paper_id` reaches `parse_pdf_bytes_batch` too, positionally matched the same way."""
 
     def handler(request: httpx.Request) -> httpx.Response:
         paper_id = request.url.path.rsplit("/", 1)[-1]
         return httpx.Response(200, content=f"%PDF-{paper_id}".encode())
 
     calls: list[list[bytes]] = []
+    id_calls: list[list[str]] = []
 
-    def fake_parse_batch(contents: list[bytes]) -> list[str]:
+    def fake_parse_batch(contents: list[bytes], paper_ids: list[str]) -> list[str]:
         calls.append(contents)
+        id_calls.append(paper_ids)
         return [c.decode() for c in contents]
 
     monkeypatch.setattr("app.assembly.parse_pdf_bytes_batch", fake_parse_batch)
@@ -176,6 +180,9 @@ def test_parse_batch_downloads_every_ref_and_returns_docs_in_order(monkeypatch):
     result = parser.parse_batch(refs)
 
     assert calls == [[b"%PDF-2504.00001", b"%PDF-2504.00002"]]
+    assert id_calls == [["2504.00001", "2504.00002"]], (
+        "each ref's real paper_id must reach parse_pdf_bytes_batch, in the same order as its bytes"
+    )
     assert result == ["%PDF-2504.00001", "%PDF-2504.00002"]
 
 
@@ -199,7 +206,7 @@ def test_prefetch_next_batch_downloads_overlap_the_current_batchs_gpu_call(monke
         events.append((f"download_end:{paper_id}", time.monotonic()))
         return httpx.Response(200, content=f"%PDF-{paper_id}".encode())
 
-    def fake_parse_pdf_bytes_batch(contents: list[bytes]) -> list[str]:
+    def fake_parse_pdf_bytes_batch(contents: list[bytes], paper_ids: list[str]) -> list[str]:
         events.append(("gpu_start", time.monotonic()))
         time.sleep(GPU_SLEEP)
         events.append(("gpu_end", time.monotonic()))
@@ -251,7 +258,8 @@ def test_prefetch_next_batch_is_reused_by_the_matching_parse_batch_call_not_redo
         return httpx.Response(200, content=f"%PDF-{paper_id}".encode())
 
     monkeypatch.setattr(
-        "app.assembly.parse_pdf_bytes_batch", lambda contents: [c.decode() for c in contents]
+        "app.assembly.parse_pdf_bytes_batch",
+        lambda contents, paper_ids: [c.decode() for c in contents],
     )
     sleeps: list[float] = []
     parser = _make_parser(monkeypatch, handler, sleeps)
@@ -303,7 +311,8 @@ def test_parse_batch_falls_back_to_a_fresh_download_when_refs_dont_match_the_pre
         return httpx.Response(200, content=f"%PDF-{paper_id}".encode())
 
     monkeypatch.setattr(
-        "app.assembly.parse_pdf_bytes_batch", lambda contents: [c.decode() for c in contents]
+        "app.assembly.parse_pdf_bytes_batch",
+        lambda contents, paper_ids: [c.decode() for c in contents],
     )
     sleeps: list[float] = []
     parser = _make_parser(monkeypatch, handler, sleeps)
@@ -677,7 +686,8 @@ def test_download_all_makes_zero_sleeps_when_the_whole_batch_is_cached(monkeypat
         raise AssertionError("must not reach the network on an all-cache-hit batch")
 
     monkeypatch.setattr(
-        "app.assembly.parse_pdf_bytes_batch", lambda contents: [c.decode() for c in contents]
+        "app.assembly.parse_pdf_bytes_batch",
+        lambda contents, paper_ids: [c.decode() for c in contents],
     )
     sleeps: list[float] = []
     parser = _make_parser(monkeypatch, handler, sleeps, cache_dir=tmp_path)
@@ -703,7 +713,8 @@ def test_download_all_sleeps_only_for_the_live_ref_not_the_cached_one(monkeypatc
         return httpx.Response(200, content=b"%PDF-live")
 
     monkeypatch.setattr(
-        "app.assembly.parse_pdf_bytes_batch", lambda contents: [c.decode() for c in contents]
+        "app.assembly.parse_pdf_bytes_batch",
+        lambda contents, paper_ids: [c.decode() for c in contents],
     )
     sleeps: list[float] = []
     parser = _make_parser(monkeypatch, handler, sleeps, cache_dir=tmp_path)
