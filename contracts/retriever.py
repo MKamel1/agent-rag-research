@@ -3,7 +3,9 @@
 
 `Retriever`'s own interface (`retrieve`/`retrieve_papers`) and `Reranker`'s own interface
 (`rerank`) are the modules' own interfaces (ARCHITECTURE.md, owned by Owner E) — not reproduced
-here; only the data shapes that cross the seam are.
+here; only the data shapes that cross the seam are. `RetrievalCoverage` (T-DOC28) is one such
+shape: both methods return it alongside their results list so `McpServer` can build a real
+`Coverage.candidates` (see that class's own docstring).
 """
 
 from typing import Literal
@@ -46,3 +48,17 @@ class GroundedResult(FrozenModel):
 class RerankCandidate(FrozenModel):
     id: str  # chunk_id or summary_id — same id space as Hit
     text: str  # the text to score against the query (chunk/summary text)
+
+
+class RetrievalCoverage(FrozenModel):
+    """T-DOC28: the true pre-rerank/pre-top_k candidate-pool size behind one `retrieve()`/
+    `retrieve_papers()` call — `len(Hit list)` from `VectorIndex.hybrid_search()`, before rerank
+    truncates it down to the caller's `k` (`_RERANK_POOL_SIZE`, rag/retriever.py, tunes the floor
+    of this pool). This is the number `contracts/mcp_server.py`'s `Coverage.candidates` is
+    documented to report (DATA-CONTRACTS.md §M8) but `list[GroundedResult]`/
+    `list[PaperSearchResult]` alone can't carry once top_k truncation has cut them down to `k`
+    results. `McpServer` combines this with `len(results)` to build the public `Coverage`
+    envelope — this type itself is never part of an MCP tool's response.
+    """
+
+    candidate_count: int = Field(ge=0)

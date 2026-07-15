@@ -15,7 +15,7 @@ even an option here.
 from contracts.errors import ContractError
 from contracts.mcp_server import Coverage, PaperSearchResponse, PaperSummaryView, SearchResponse
 from contracts.provenance import Anchor
-from contracts.retriever import Citation
+from contracts.retriever import Citation, RetrievalCoverage
 from contracts.vector_index import SearchFilters
 
 
@@ -34,8 +34,8 @@ class McpServer:
         """Passage-level search, delegated whole to `Retriever.retrieve()`. Postcondition: on an
         empty corpus/no hits, `results == []` — empty is a valid answer, not an error.
         """
-        results = self._retriever.retrieve(query, filters, k)
-        return SearchResponse(results=results, coverage=self._coverage(results))
+        results, retrieval_coverage = self._retriever.retrieve(query, filters, k)
+        return SearchResponse(results=results, coverage=self._coverage(results, retrieval_coverage))
 
     def search_papers(
         self, query: str, filters: SearchFilters | None = None, k: int = 10
@@ -43,8 +43,10 @@ class McpServer:
         """Whole-paper/summary-level search, delegated whole to `Retriever.retrieve_papers()`.
         Postcondition: on no hits, `results == []`.
         """
-        results = self._retriever.retrieve_papers(query, filters, k)
-        return PaperSearchResponse(results=results, coverage=self._coverage(results))
+        results, retrieval_coverage = self._retriever.retrieve_papers(query, filters, k)
+        return PaperSearchResponse(
+            results=results, coverage=self._coverage(results, retrieval_coverage)
+        )
 
     def get_paper(self, paper_id: str) -> PaperSummaryView:
         """Precondition: `paper_id` is a stored paper; else `ContractError`. Postcondition:
@@ -76,17 +78,13 @@ class McpServer:
         return self._document_store.get_span(anchor)
 
     @staticmethod
-    def _coverage(results: list) -> Coverage:
-        # `Coverage.candidates` is documented (DATA-CONTRACTS.md §M8) as the pre-rerank/pre-top_k
-        # hybrid_search pool size. `Retriever.retrieve()`/`retrieve_papers()`'s frozen interface
-        # (ARCHITECTURE.md §M7) returns only the final `list[GroundedResult]`/
-        # `list[PaperSearchResult]` — it doesn't expose that pool size, by design (M8 stays thin
-        # and never reaches past the two `Retriever` methods, CONVENTIONS §1). So the only value
-        # this layer can honestly report is `len(results)` for both fields — `candidates >=
-        # returned` still holds (with equality). Surfacing the true pre-rerank count would need a
-        # `Retriever`/`contracts/` interface change, which is a T-F7 foundation-change decision,
-        # not a free write here.
-        return Coverage(returned=len(results), candidates=len(results))
+    def _coverage(results: list, retrieval_coverage: RetrievalCoverage) -> Coverage:
+        # T-DOC28: `Coverage.candidates` is the true pre-rerank/pre-top_k hybrid_search pool size
+        # (DATA-CONTRACTS.md §M8) that `Retriever.retrieve()`/`retrieve_papers()` now reports via
+        # `RetrievalCoverage` (contracts/retriever.py) alongside their results list — no longer a
+        # `len(results)` stand-in. `returned` is still `len(results)`: truncation to `k` only ever
+        # narrows the pool, so `candidates >= returned` remains the caller-facing invariant.
+        return Coverage(returned=len(results), candidates=retrieval_coverage.candidate_count)
 
     @staticmethod
     def _distinct_section_paths(blocks) -> list[str]:

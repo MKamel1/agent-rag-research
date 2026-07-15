@@ -425,6 +425,15 @@ class GroundedResult:
     metadata: dict = field(default_factory=dict)   # empty in V0; V1/V2 add status/conditions/confidence.
         # Populating this field is a `contracts/` shape change, not a free write by a downstream module —
         # it goes through the T-F7 foundation-change protocol (CONVENTIONS.md) like any other contracts/ edit.
+
+@dataclass(frozen=True)
+class RetrievalCoverage:
+    """T-DOC28: `retrieve()`/`retrieve_papers()` return this alongside their results list —
+    `(results, RetrievalCoverage)` — so `McpServer` can build a real `Coverage.candidates` (§M8)
+    instead of the `len(results)` stand-in it used before this fix. Never itself part of an MCP
+    tool's response."""
+    candidate_count: int   # len(Hit list) from VectorIndex.hybrid_search — the fused candidate
+                             # pool BEFORE rerank/top_k truncation to `k`.
 ```
 
 **Why the envelope now (forward-compat):** V1/V2 add evidence tiers, `status: superseded_by`, and
@@ -594,7 +603,9 @@ class PaperSearchResponse:
 `search_papers`/`semantic_search` carry a **`Coverage`** so the agent knows when it is seeing a sample, not
 the whole picture (PRD §8.5 anti-miss) — this is a real field on both response types now, not a prose promise;
 the McpServer test "coverage note present" (TEST-STRATEGY.md) asserts `response.coverage.candidates >=
-response.coverage.returned` for each.
+response.coverage.returned` for each, with `candidates` sourced from `Retriever`'s own
+`RetrievalCoverage.candidate_count` (T-DOC28, above) — not `len(results)` recomputed a second time, which
+would make the invariant hold trivially (`candidates == returned`) instead of meaningfully.
 
 ---
 
