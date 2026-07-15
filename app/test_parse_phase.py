@@ -1,7 +1,7 @@
 """Tests for `app.parse_phase` (T-DOC29) -- offline, no real subprocess/GPU/network.
 
 `_run_parse_phase` was pulled out of `__main__` (same pattern as `app/test_ingest.py`'s
-`_run_finish_phase` tests) specifically so these two real, previously-`os.environ`-backed
+`_run_finish_phase` tests) specifically so these two real, previously process-environment-backed
 branches can be driven directly:
 
 1. `cfg.db_path`/`cfg.blob_dir`/`cfg.collection` (now real `Config` fields) must reach
@@ -11,10 +11,9 @@ branches can be driven directly:
    query-driven `harvest()` -- and when unset, `harvest()` must still be used, unchanged.
 """
 
+from app.parse_phase import _run_parse_phase
 from contracts.config import Config
 from contracts.harvester import PaperRef
-
-from app.parse_phase import _run_parse_phase
 
 
 class FakeOrchestrator:
@@ -43,7 +42,7 @@ def _make_ref(paper_id: str) -> PaperRef:
 
 def test_run_parse_phase_wires_db_path_blob_dir_collection_from_config(monkeypatch, tmp_path):
     """`cfg.db_path`/`cfg.blob_dir`/`cfg.collection` (T-DOC29: real Config fields, not
-    `os.environ` reads) must be forwarded to `build_ingestion_orchestrator` exactly."""
+    process-environment reads) must be forwarded to `build_ingestion_orchestrator` exactly."""
     captured_kwargs = {}
     fake_orchestrator = FakeOrchestrator(refs_to_return=[])
 

@@ -42,11 +42,11 @@ class Config(FrozenModel):
     # Conservative default, not yet validated against real GPU/host-RAM headroom at N>4
     # (real-GPU spike still pending -- see that doc's "Still required" section).
     parse_batch_size: int = Field(default=4, gt=0)
-    # composition-root levers (T-DOC29): previously scattered `os.environ.get(...)` reads in
+    # composition-root levers (T-DOC29): previously scattered process-environment reads in
     # app/ingest.py, app/parse_phase.py, app/assembly.py, app/prefetch_pdfs.py -- moved onto
     # Config so CONVENTIONS.md §3 ("only Config reads env/files") actually holds for app/, not
-    # just rag/contracts/ (this module's own docstring). Defaults below match each old call site's
-    # `os.environ.get(name, default)` fallback exactly, so an unedited config.yaml reproduces the
+    # just rag/contracts/ (this module's own docstring). Defaults below match each old call
+    # site's env-var-with-fallback behavior exactly, so an unedited config.yaml reproduces the
     # old unset-env-var behavior byte for byte.
     db_path: str = "papers.db"
     blob_dir: str = "blobs"

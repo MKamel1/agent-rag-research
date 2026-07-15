@@ -483,7 +483,8 @@ def test_no_cache_dir_configured_skips_cache_check_entirely(monkeypatch):
 
 def test_build_ingestion_orchestrator_wires_pdf_cache_dir_config_field(monkeypatch, tmp_path):
     """`build_ingestion_orchestrator` must thread `config.pdf_cache_dir` into `_PdfDownloadParser`
-    (previously not wired at all -- T-DOC18; T-DOC29 moved this off `os.environ` onto `Config`).
+    (previously not wired at all -- T-DOC18; T-DOC29 moved this off the process environment onto
+    `Config`).
     When the field is set, the constructed parser's cache_dir must match it exactly (same
     convention as `app/prefetch_pdfs.py`'s own `config.pdf_cache_dir` read)."""
     monkeypatch.setattr("app.assembly.VectorIndex", lambda *a, **k: object())
@@ -511,7 +512,7 @@ def test_build_ingestion_orchestrator_default_matches_prefetch_pdfs_default(monk
     check/write-through a permanent, silent no-op -- the prefetcher's work was invisible to it.
     T-DOC29 makes this structurally impossible to drift again: both modules now read the SAME
     `Config.pdf_cache_dir` field, whose one default is declared once in `contracts/config.py`, so
-    there's no second `os.environ.get(..., default)` fallback left to disagree with it."""
+    there's no second env-var-with-fallback read left to disagree with it."""
     monkeypatch.setattr("app.assembly.VectorIndex", lambda *a, **k: object())
     monkeypatch.chdir(tmp_path)  # the default is a relative dir -- don't pollute the real cwd
 

@@ -15,9 +15,10 @@ Adapter paths are the *planned* locations (this repo's existing convention of mi
 `rag/config.py` next to `contracts/config.py`). None of M2/M4/M6's real adapters exist yet
 (Phase 0 hasn't landed); confirm/adjust `VENDOR_RULES` against the real path when each one does.
 
-Scoped to `rag/`/`contracts/` (`model.in_pipeline_scope`) — this is a rule about the RAG pipeline's
-own modules (CONVENTIONS §1), not the repo at large; without that scope this check would flag its
-own implementation (this file necessarily names every vendor token as data) the moment it's added.
+Scoped to `rag/`/`contracts/`/`app/` (`model.in_pipeline_scope`; `app/` added by T-DOC29) — this is
+a rule about the RAG pipeline's own modules (CONVENTIONS §1), not the repo at large; without that
+scope this check would flag its own implementation (this file necessarily names every vendor token
+as data) the moment it's added.
 """
 
 from __future__ import annotations
@@ -68,12 +69,16 @@ VENDOR_RULES: tuple[VendorRule, ...] = (
     # rag/test_summarizer.py, rag/test_embedder.py, and rag/test_reranker.py legitimately build
     # httpx.MockTransport/Client fixtures to exercise their adapters offline (zero network).
     #
-    # rag/test_prefetch_pdfs.py (app/prefetch_pdfs.py's test) builds the same kind of
-    # httpx.MockTransport/Client fixtures to exercise app/prefetch_pdfs.py's real arXiv-PDF
-    # download adapter offline (zero network) -- same pattern as the other adapter test files
-    # above. app/prefetch_pdfs.py itself isn't listed here: it lives under app/, which
-    # model.PIPELINE_SCOPE_PREFIXES (rag/, contracts/) already excludes from this check entirely,
-    # so it can't trip rule (a) regardless of this allowlist.
+    # app/test_prefetch_pdfs.py (app/prefetch_pdfs.py's test, moved from rag/test_prefetch_pdfs.py
+    # by T-DOC29 -- it tests an app/ module, so it belongs next to it, same-directory-sibling
+    # convention check (g) also relies on) builds the same kind of httpx.MockTransport/Client
+    # fixtures to exercise app/prefetch_pdfs.py's real arXiv-PDF download adapter offline (zero
+    # network) -- same pattern as the other adapter test files above. `PIPELINE_SCOPE_PREFIXES`
+    # gained `"app/"` in that same ticket (previously app/ was entirely excluded from rule (a), an
+    # accident of scope, not a designed exemption); app/prefetch_pdfs.py's `import httpx` line
+    # isn't listed below yet because no PR has actually touched/added it since scope widened -- add
+    # it here the moment one does (§12's "add the matching entry in the same PR" rule), rather than
+    # widening this allowlist speculatively for lines nothing has touched.
     VendorRule(
         "httpx",
         re.compile(r"httpx", re.I),
@@ -87,7 +92,7 @@ VENDOR_RULES: tuple[VendorRule, ...] = (
             "rag/parser.py",
             "rag/reranker.py",
             "rag/test_reranker.py",
-            "rag/test_prefetch_pdfs.py",
+            "app/test_prefetch_pdfs.py",
         ),
     ),
 )

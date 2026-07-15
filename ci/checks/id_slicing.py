@@ -25,8 +25,9 @@ One sanctioned exception, fenced by name+line-range, not by whole file: `rag/ret
 own line range within that one file — any OTHER function added to `rag/retriever.py` (or any other
 pipeline file) that parses `.id` the same way still trips this check.
 
-Scoped to `rag/`/`contracts/` (`model.in_pipeline_scope`) — the id-encoding secret this check
-protects belongs to the pipeline; this package's own fixtures/docs are allowed to talk about it.
+Scoped to `rag/`/`contracts/`/`app/` (`model.in_pipeline_scope`; `app/` added by T-DOC29) — the
+id-encoding secret this check protects belongs to the pipeline; this package's own fixtures/docs
+are allowed to talk about it.
 """
 
 from __future__ import annotations
