@@ -318,8 +318,9 @@ second source of truth). Remaining untracked item:
   Pass 2) was investigated but not acted on — current mitigations (TEI eviction T-DOC19, adaptive batch
   sizing T-DOC21, PDF cache/prefetch T-DOC18) close most of the gap without the bigger restructuring; revisit
   only if a real utilization regression reappears.
-- **T-DOC27 (in progress — PR #104 open, awaiting @MKamel1 review — validated on throwaway collection,
-  production Qdrant NOT yet re-indexed)** — the sparse/hybrid search channel doesn't do what ADR-01 (`PRD.md`) actually
+- **T-DOC27 (merged — PR #104; production Qdrant NOT yet re-indexed with the new IDF weighting, a
+  deliberate follow-up decision left for @MKamel1 after reviewing the throwaway-collection before/after
+  numbers in the PR)** — the sparse/hybrid search channel doesn't do what ADR-01 (`PRD.md`) actually
   decided. ADR-01 chose Qdrant specifically because *"Qdrant treats sparse vectors (BM25/SPLADE) as
   first-class beside dense"* — but `rag/vector_index.py`'s `_sparse_vector` never uses that; it hand-rolls a
   naive raw term-frequency hash with no IDF weighting, so common words carry as much weight as
@@ -328,7 +329,7 @@ second source of truth). Remaining untracked item:
   list (Tier A — a real V0 gap, not a new idea). Fix: either switch to Qdrant's native BM25/SPLADE sparse
   vector support, or add real IDF weighting to the existing hash-based approach; either way needs a
   before/after T-EVAL re-run to confirm it actually helps (not just assumed).
-- **T-DOC28 (in progress — PR #96 open, awaiting @MKamel1 review)** — `Coverage.candidates` is a no-op: `rag/mcp_server.py`'s `_coverage()` sets
+- **T-DOC28 (merged — PR #96)** — `Coverage.candidates` is a no-op: `rag/mcp_server.py`'s `_coverage()` sets
   `candidates=len(results)`, always identical to `returned`, defeating the field's whole documented purpose
   (DATA-CONTRACTS.md / PRD.md §8.5: the real fused candidate-pool size *before* rerank/top-k truncation, an
   "anti-miss" transparency signal so a caller can tell it's seeing a sample). The method's own comment admits
@@ -385,7 +386,7 @@ second source of truth). Remaining untracked item:
   one still needs to exist at all. A full corpus sweep for any other papers already affected (grep
   `chunks.paper_id` values that don't match any `papers.paper_id` row) is part of this ticket's cleanup,
   same shape as T-DOC23's orphaned-chunks sweep.
-- **T-DOC32 (in progress — PR #101 open, awaiting @MKamel1 review)** — the per-paper unexpected-exception
+- **T-DOC32 (merged — PR #101)** — the per-paper unexpected-exception
   safety net (PR #78) that wraps each paper's pipeline stages isn't itself safe on its own error path: the
   `quarantine()` write *inside* that guard is not crash-guarded, so a failure while writing the quarantine
   record (e.g. a missing table, a locked DB) can still crash the whole ingestion run instead of just that
@@ -402,7 +403,7 @@ second source of truth). Remaining untracked item:
   re-merged). What's actually on `main` is four narrower `TransientError`/`PermanentError`-specific
   retry-then-quarantine methods (T-DOC12/13) that all route through one shared write path,
   `SqliteIngestState.quarantine()` — that's what PR #101 crash-guards instead. **Merged.**
-- **T-DOC33 (verified — see `LESSONS-LEARNED.md`'s 2026-07-15 entry, PR #102, awaiting @MKamel1 review)** —
+- **T-DOC33 (verified, merged — see `LESSONS-LEARNED.md`'s 2026-07-15 entry, PR #102)** —
   highest priority of this batch, it's the literal V0 ship criterion. M5's own exit bar (`WORK-BREAKDOWN.md`
   Milestones table above: *"an agent answers a factual question about an ingested paper with a correct,
   verifiable citation at ~0 API cost — and you use it"*) had never been independently re-verified end-to-end
