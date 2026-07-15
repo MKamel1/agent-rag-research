@@ -66,6 +66,41 @@ def test_rerank_ties_break_by_original_index_ascending():
     assert [c.id for c in result] == ["a", "b"]
 
 
+def test_rerank_truncates_a_batch_over_the_max_before_calling_tei():
+    # T-DOC39 (mocked, zero-network): a caller-supplied batch over `_MAX_BATCH_SIZE` (e.g. a
+    # retriever pool built from `k > 32`, McpServer exposes `k` unclamped) must never reach TEI at
+    # its full size -- that's exactly the T-DOC24/25 422/0%-recall crash. Assert on what actually
+    # went over the wire (via the mock transport), not just the return value, so a fix that
+    # truncates the *response* instead of the *request* wouldn't slip this test.
+    import rag.reranker as reranker_module
+
+    sent_batch_sizes = []
+
+    def handler(request):
+        import json
+
+        body = json.loads(request.content)
+        sent_batch_sizes.append(len(body["texts"]))
+        return httpx.Response(
+            200, json=[{"index": i, "score": 1.0} for i in range(len(body["texts"]))]
+        )
+
+    client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
+    reranker = TeiReranker(client, FakeGpuLock())
+    oversized = _candidates(
+        *[(str(i), f"text {i}") for i in range(reranker_module._MAX_BATCH_SIZE + 5)]
+    )
+
+    result = reranker.rerank("q", oversized)
+
+    assert sent_batch_sizes == [reranker_module._MAX_BATCH_SIZE]
+    assert len(result) == reranker_module._MAX_BATCH_SIZE
+    # The candidates that DID get sent are the caller's first `_MAX_BATCH_SIZE`, not a random
+    # slice -- callers order their pool best-first (RRF/hybrid rank), so truncating from the front
+    # keeps the candidates most likely to matter.
+    assert {c.id for c in result} == {str(i) for i in range(reranker_module._MAX_BATCH_SIZE)}
+
+
 def test_rerank_empty_candidates_returns_empty_without_http_call():
     def handler(request):
         raise AssertionError("should not make an HTTP call for empty candidates")
@@ -163,19 +198,22 @@ def test_real_reranker_returns_a_valid_permutation_of_a_real_candidate_set():
 
 
 @pytest.mark.enable_socket
-def test_real_reranker_accepts_a_full_rerank_pool_sized_batch():
-    # T-DOC25 regression: T-DOC24 set rag.retriever._RERANK_POOL_SIZE=50, but the real deployed
-    # TEI reranker enforces a hard server-side max batch size of 32 -- every real rerank() call
-    # with the full pool 422'd ("batch size 50 > maximum allowed batch size 32"), breaking every
-    # single real retrieve() call in production. No fakes-only test could catch this (FakeReranker
-    # has no batch-size ceiling). Import the real constant, not a hardcoded number, so this stays
-    # in sync with whatever rag/retriever.py actually sends.
-    from rag.retriever import _RERANK_POOL_SIZE
+def test_real_reranker_accepts_a_full_max_batch_sized_batch():
+    # T-DOC25 regression, now pinned against the constant's real home: T-DOC24 originally set
+    # rag.retriever._RERANK_POOL_SIZE=50, but the real deployed TEI reranker enforces a hard
+    # server-side max batch size of 32 -- every real rerank() call with the full pool 422'd
+    # ("batch size 50 > maximum allowed batch size 32"), breaking every single real retrieve()
+    # call in production. No fakes-only test could catch this (FakeReranker has no batch-size
+    # ceiling). T-DOC39 moved the ceiling itself into this module (`_MAX_BATCH_SIZE`, this is now
+    # the vendor limit's one authoritative home, not a retriever-owned tuning number) -- import the
+    # real constant, not a hardcoded number, so this stays in sync with whatever rerank() actually
+    # enforces.
+    from rag.reranker import _MAX_BATCH_SIZE
 
     client = httpx.Client(base_url="http://localhost:8082", timeout=30.0)
     reranker = TeiReranker(client, FakeGpuLock())
     candidates = _candidates(
-        *[(str(i), f"filler passage number {i} about causal inference") for i in range(_RERANK_POOL_SIZE)]
+        *[(str(i), f"filler passage number {i} about causal inference") for i in range(_MAX_BATCH_SIZE)]
     )
     try:
         result = reranker.rerank("treatment effect estimation methods", candidates)
@@ -183,8 +221,40 @@ def test_real_reranker_accepts_a_full_rerank_pool_sized_batch():
         pytest.skip(f"no live reranker reachable at localhost:8082: {e}")
     except PermanentError as e:
         pytest.fail(
-            f"_RERANK_POOL_SIZE={_RERANK_POOL_SIZE} exceeds what the real reranker server "
-            f"accepts: {e}"
+            f"_MAX_BATCH_SIZE={_MAX_BATCH_SIZE} exceeds what the real reranker server accepts: {e}"
         )
 
-    assert len(result) == _RERANK_POOL_SIZE
+    assert len(result) == _MAX_BATCH_SIZE
+
+
+@pytest.mark.enable_socket
+def test_real_tei_endpoint_rejects_one_batch_item_over_the_max():
+    # T-DOC39: the test that would have caught T-DOC24 before it merged. Pins BOTH edges of the
+    # real boundary rather than trusting `_MAX_BATCH_SIZE` alone: the test above proves the real
+    # server accepts exactly `_MAX_BATCH_SIZE`; this one proves it genuinely rejects one more --
+    # so the constant isn't stale in either direction (too high risks a silent production 422
+    # again; too low leaves real batch headroom unused). Posts straight to TEI's `/rerank`
+    # endpoint, deliberately bypassing `TeiReranker.rerank()`'s own clamp (T-DOC39) -- that clamp
+    # is what protects production from ever sending an oversized batch, but going through it here
+    # would silently truncate the batch back down to `_MAX_BATCH_SIZE` and hide a stale assumption
+    # from this test instead of surfacing it.
+    from rag.reranker import _MAX_BATCH_SIZE
+
+    client = httpx.Client(base_url="http://localhost:8082", timeout=30.0)
+    texts = [
+        f"filler passage number {i} about causal inference" for i in range(_MAX_BATCH_SIZE + 1)
+    ]
+    try:
+        response = client.post(
+            "/rerank",
+            json={"query": "treatment effect estimation methods", "texts": texts},
+        )
+    except httpx.HTTPError as e:
+        pytest.skip(f"no live reranker reachable at localhost:8082: {e}")
+
+    assert response.status_code == 422, (
+        f"expected the real TEI server to reject a batch of {_MAX_BATCH_SIZE + 1} (one over "
+        f"_MAX_BATCH_SIZE={_MAX_BATCH_SIZE}) with a 422 -- got {response.status_code}. If TEI's "
+        f"real deployed limit has changed, update _MAX_BATCH_SIZE (rag/reranker.py) to match; "
+        f"don't just relax this test."
+    )
