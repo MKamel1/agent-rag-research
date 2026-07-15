@@ -171,6 +171,31 @@ class DocumentStore:
         os.replace(tmp_path, markdown_path)
 
     # ----------------------------------------------------------------------------------------
+    # delete — cascade removal by paper_id (T-DOC23)
+    # ----------------------------------------------------------------------------------------
+
+    def delete(self, paper_id: str) -> None:
+        """Removes `paper_id`'s rows from `chunks`/`blocks`/`summaries`/`papers` in one
+        transaction (same `with self._con:` atomicity as `put()`), plus a best-effort blob
+        removal. Deleting an unknown/already-gone `paper_id` is a safe no-op, not an error.
+
+        The three non-`papers` deletes run unconditionally -- NOT gated on a `papers` row
+        existing first. This is the one deliberate departure from mirroring `put()`: it's what
+        lets this method clean up a real orphan (chunks/blocks with no matching `papers` row,
+        the exact shape of the T-DOC23 bug -- an earlier cleanup pass ran a raw `DELETE FROM
+        papers` with no cascade, since SQLite doesn't enforce the declared foreign keys anywhere
+        in this codebase), not just support a normal future single-paper deletion.
+        """
+        with self._con:
+            self._con.execute("DELETE FROM chunks WHERE paper_id = ?", (paper_id,))
+            self._con.execute("DELETE FROM blocks WHERE paper_id = ?", (paper_id,))
+            self._con.execute("DELETE FROM summaries WHERE paper_id = ?", (paper_id,))
+            self._con.execute("DELETE FROM papers WHERE paper_id = ?", (paper_id,))
+        # Best-effort: a missing blob isn't a failure here (unlike the read path's
+        # ContractError) -- deleting something already-gone is fine, not an error.
+        (self._blob_dir / f"{paper_id}.md").unlink(missing_ok=True)
+
+    # ----------------------------------------------------------------------------------------
     # reads
     # ----------------------------------------------------------------------------------------
 
