@@ -326,3 +326,93 @@ def test_iter_papers_yields_all_stored_papers(store):
         )
     )
     assert {r.ref.paper_id for r in store.iter_papers()} == {PAPER_ID, other}
+
+
+# --------------------------------------------------------------------------------------------------
+# delete — cascade removal by paper_id (T-DOC23)
+# --------------------------------------------------------------------------------------------------
+
+
+def test_delete_removes_rows_from_all_four_tables_and_the_blob(tmp_path):
+    db_path = str(tmp_path / "store.db")
+    blob_dir = tmp_path / "blobs"
+    store = _mod.DocumentStore(db_path=db_path, blob_dir=str(blob_dir))
+    store.put(make_paper_record())
+    assert (blob_dir / f"{PAPER_ID}.md").exists()
+
+    store.delete(PAPER_ID)
+
+    assert store.get(PAPER_ID) is None
+    assert not (blob_dir / f"{PAPER_ID}.md").exists()
+    con = sqlite3.connect(db_path)
+    try:
+        for table in ("papers", "blocks", "chunks", "summaries"):
+            (count,) = con.execute(
+                f"SELECT count(*) FROM {table} WHERE paper_id = ?", (PAPER_ID,)
+            ).fetchone()
+            assert count == 0, f"{table} still holds rows for {PAPER_ID}: delete() left rows behind"
+    finally:
+        con.close()
+
+
+def test_delete_does_not_touch_another_papers_rows(store):
+    store.put(make_paper_record())
+    other = "2507.55555"
+    other_block = make_block(block_id=f"{other}:b0", paper_id=other)
+    other_anchor = make_anchor(paper_id=other, block_id=f"{other}:b0")
+    other_chunk = make_chunk(
+        chunk_id=f"{other}:c0", paper_id=other, parent_id=f"{other}:b0", anchor=other_anchor
+    )
+    store.put(
+        make_paper_record(
+            ref=make_paper_ref(paper_id=other),
+            parsed=make_parsed_doc(paper_id=other, blocks=[other_block]),
+            chunks=[other_chunk],
+            summary_id=f"{other}:summary",
+        )
+    )
+
+    store.delete(PAPER_ID)
+
+    assert store.get(PAPER_ID) is None
+    got_other = store.get(other)
+    assert got_other is not None
+    assert [c.chunk_id for c in got_other.chunks] == [f"{other}:c0"]
+
+
+def test_delete_unknown_paper_id_is_a_safe_no_op(store):
+    store.delete("9999.99999")  # must not raise
+
+
+def test_delete_cleans_up_chunks_and_blocks_with_no_matching_papers_row(tmp_path):
+    # The real T-DOC23 orphan shape: chunks/blocks rows exist with NO matching papers row (an
+    # earlier cleanup pass deleted the papers row directly, bypassing put()'s atomicity and
+    # leaving these behind -- SQLite doesn't enforce the declared foreign keys anywhere in this
+    # codebase). delete()'s three non-papers DELETEs must run unconditionally, not gated on a
+    # papers row existing first, or this exact case slips through.
+    db_path = str(tmp_path / "store.db")
+    store = _mod.DocumentStore(db_path=db_path, blob_dir=str(tmp_path / "blobs"))
+    orphan_id = "2508.00000"
+    store._con.execute(
+        "INSERT INTO blocks (block_id, paper_id, idx, type, text, page, bbox_json, section_path) "
+        "VALUES (?, ?, 0, 'prose', 'orphan text', 0, '[0,0,1,1]', '1. Intro')",
+        (f"{orphan_id}:b0", orphan_id),
+    )
+    store._con.execute(
+        "INSERT INTO chunks (chunk_id, paper_id, text, anchor_json, section_path, parent_id, "
+        "contextual_header) VALUES (?, ?, 'orphan chunk text', '{}', '1. Intro', ?, NULL)",
+        (f"{orphan_id}:c0", orphan_id, f"{orphan_id}:b0"),
+    )
+    store._con.commit()
+
+    store.delete(orphan_id)
+
+    con = sqlite3.connect(db_path)
+    try:
+        for table in ("blocks", "chunks"):
+            (count,) = con.execute(
+                f"SELECT count(*) FROM {table} WHERE paper_id = ?", (orphan_id,)
+            ).fetchone()
+            assert count == 0, f"{table} still holds orphaned rows for {orphan_id}"
+    finally:
+        con.close()
