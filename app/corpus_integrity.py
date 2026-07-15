@@ -47,14 +47,13 @@ def find_done_papers_without_chunks(conn: sqlite3.Connection) -> list[IntegrityO
 
 
 def main() -> None:
-    import os
+    # Config is the one env/file reader in this repo (CONVENTIONS §3, CI-enforced in app/ since
+    # T-DOC29) -- resolve db_path through it, same as app/ingest.py / app/parse_phase.py, rather
+    # than reading RAG_DB_PATH from the environment directly here.
+    from rag.config import load_config
 
-    db_path = os.environ.get("RAG_DB_PATH")
-    if not db_path:
-        print("usage: RAG_DB_PATH=<path/to/papers.db> python -m app.corpus_integrity", file=sys.stderr)
-        sys.exit(2)
-
-    conn = sqlite3.connect(db_path)
+    cfg = load_config()
+    conn = sqlite3.connect(cfg.db_path)
     try:
         offenders = find_done_papers_without_chunks(conn)
     finally:
