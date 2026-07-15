@@ -433,6 +433,39 @@ second source of truth). Remaining untracked item:
   "agent-as-reasoner, no server-side arbitration" — CONTEXT.md), or (b) if that proves insufficient in
   practice, revisit the "no server-side auto-rewrite" decision itself — but (b) would need a documented ADR
   change, not a silent behavior change, given ADR-11 explicitly decided against it once already.
+- **T-DOC35 (not started)** — **59 papers are `ingest_state='done'` with a `summary` row but zero `blocks`/
+  `chunks`** — surfaced during T-DOC31's production sweep (PR #103; count matches the 59 papers T-DOC23's
+  orphaned-chunks cleanup deleted rows *for*, strongly suggesting these are the same papers whose
+  chunk/block rows were removed as orphans but whose `papers`/`summaries`/`ingest_state='done'` rows were
+  left behind — so the orchestrator's resume guard now treats them as fully ingested and skips them, while
+  they contribute nothing to retrieval). Effect: these 59 papers are silently unretrievable — a real hole
+  in the 809-paper corpus, invisible to any check that only counts `ingest_state='done'`. Fix: (1) identify
+  the 59 via `SELECT p.paper_id FROM papers p LEFT JOIN chunks c ON c.paper_id=p.paper_id WHERE
+  c.paper_id IS NULL` (confirm against blocks too); (2) reset their `ingest_state` (and clear the stale
+  `summary` rows) so the orchestrator re-ingests them from `parsed` onward on the next run, OR run a
+  targeted re-ingest via `RAG_INGEST_PAPER_IDS` against the real pipeline (real GPU/GROBID/TEI/Ollama/
+  Qdrant, same infra T-DOC30/33 used); (3) back up `papers.db` first (T-DOC23/T-DOC31 precedent); (4) add a
+  corpus-integrity check (a `done` paper must have ≥1 chunk) so this class of silent hole is detectable
+  going forward — candidate for a standing diagnostic, not just a one-off. Also verify the matching Qdrant
+  `"papers"` collection ends up with vectors for these papers after re-ingest.
+- **T-DOC36 (not started) — evaluate Google's Gemini API File Search + Gemini Embedding 2 against the V0
+  stack (research/ADR task, not a code change yet).** Google shipped a fully-managed RAG system (Gemini API
+  **File Search Tool**, Nov 2025; made multimodal early 2026) that does chunking + embedding + vector
+  indexing + citation server-side, powered by the new **Gemini Embedding 2** model (all-modality, 100+
+  languages, native MRL, 3072-dim). Two distinct questions for V0/V1, both currently unanswered and worth a
+  written ADR before any adoption: (a) **as an embedding-model swap** — does Gemini Embedding 2 (or the
+  open on-device **EmbeddingGemma**) beat the Spike-2-locked Qwen3-Embedding-4B on *this* corpus's T-EVAL
+  set? The whole V0 design already treats the embedder as a swappable seam behind a fixed interface, and
+  T-DOC27's throwaway-collection harness is exactly the before/after rig to test this — but note the
+  **~0 API cost** V0 constraint (CONTEXT.md): a hosted Gemini embedder breaks the local-only, zero-API-cost
+  invariant, so this is a V1+ consideration or an explicitly-flagged constraint change, not a silent V0
+  swap. (b) **as a whole-pipeline alternative** — File Search would replace most of the self-hosted
+  ingest→parse→chunk→embed→retrieve stack; this contradicts V0's deliberate local-only/self-hosted/zero-API
+  posture and its provenance-anchor contract (block-bbox+snippet grounding — does File Search's page-level
+  citation meet CONTEXT.md's anchor requirement?), so it is almost certainly **not** a V0 move, but is worth
+  a documented decision (a new ADR in PRD.md §12) so a future session doesn't rediscover this question from
+  scratch. Deliverable: a short ADR + a before/after T-EVAL number for (a) if the API-cost constraint is
+  waived for a one-off benchmark run.
 
 **Key `.phase0-data/` docs for a new agent to read first** (all gitignored/local, not in git history):
 `teval-results.md` (T-EVAL methodology + full before/after numbers), `known-issue-orphaned-chunks.md`
