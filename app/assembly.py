@@ -388,7 +388,15 @@ def build_ingestion_orchestrator(
         # above frees ~24GB during Pass 1 that a fixed small batch size never used. `initial_size`
         # is still config.parse_batch_size -- the safe starting point/floor, unchanged if the VRAM
         # probe is ever unavailable.
-        batch_size_provider=AdaptiveBatchSizer(initial_size=config.parse_batch_size).next_size,
+        batch_size_provider=AdaptiveBatchSizer(
+            initial_size=config.parse_batch_size,
+            # Unset (the default) writes no file, matching AdaptiveBatchSizer's own
+            # decision_log_path=None default -- this is investigation tooling for a specific
+            # run (the user's "keep a close log of it to investigate later" request), not a
+            # default-on feature. Set RAG_BATCH_SIZE_LOG to a path to capture one CSV row per
+            # batch-size decision for that run.
+            decision_log_path=os.environ.get("RAG_BATCH_SIZE_LOG") or None,
+        ).next_size,
     )
 
 
