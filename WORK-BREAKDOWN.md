@@ -265,6 +265,71 @@ M1a, before this implementation existed") **plus** the specifics below.
 
 ---
 
+## Post-freeze status & handover (2026-07-15)
+
+This section is a snapshot for a new agent/session picking up the project — what's actually shipped, what's
+in flight, and what's known-broken right now. It does not replace `git log`/`gh pr list` as the source of
+truth for full history; it's a pointer into that history plus the currently-open items that need action.
+
+**T-SEED / corpus state:** the real production corpus (`papers.db` + `blobs/`, outside this repo at
+`research-system-rag-data/`) currently holds 809 papers plus a separate 100-paper T-EVAL-targeted set
+(`RAG_INGEST_PAPER_IDS`/`ArxivSource.fetch_by_ids()`, PR #89) built specifically to contain the 210-question
+eval set's source papers. Not yet at the 30k target above.
+
+**T-EVAL status:** real, end-to-end runs (not simulated) against the 210-question eval set. Two real bugs
+were found and fixed via this process — see `.phase0-data/teval-results.md` for the full writeup with
+before/after metric tables:
+1. `DocumentStore` stored a relative `markdown_path`, crashing 66% of retrieval calls from any process
+   whose cwd differed from ingest's (T-DOC22, PR #91, merged). Fixing it alone raised single-passage
+   Recall@10 from 0.30 → 0.60.
+2. `Retriever.retrieve()`/`retrieve_papers()` reranked only the caller's `k` candidates instead of a real
+   pool, so the reranker could never promote a passage the initial hybrid search ranked below `k` — every
+   one of 30 real misses fit this shape (T-DOC24, PR #92, merged; **then immediately regressed production
+   to 0% recall** because the real TEI reranker's hard max batch size (32) was never checked against the
+   chosen pool size (50) — see T-DOC25 below, PR #94, still open as of this writing).
+
+**Currently open PRs — need review/merge:**
+- **PR #93 (T-DOC23)** — adds `DocumentStore.delete(paper_id)`, a proper cascade-delete (chunks/blocks/
+  summaries/papers in one transaction), fixing the root cause of 59 orphaned papers (chunks/blocks with no
+  matching `papers` row — `.phase0-data/known-issue-orphaned-chunks.md`) that were silently crashing ~8% of
+  real queries to zero results. This is the code-only half; the data cleanup itself (59 papers' orphaned
+  rows + 1,780 Qdrant vectors) has **already been applied directly to the real production DB**, independent
+  of this PR merging — verified 0 orphans remain. Merging this PR just lands the reusable `delete()` method
+  so the bug can't silently recur from a future raw `DELETE FROM papers`.
+- **PR #94 (T-DOC25) — URGENT.** T-DOC24 (above) shipped `_RERANK_POOL_SIZE=50`, which exceeds the real
+  deployed TEI reranker's hard max batch size of 32 — confirmed live, every real `retrieve()`/
+  `retrieve_papers()` call has been failing outright (`PermanentError`, 422 from the reranker) since T-DOC24
+  merged. This PR caps the pool at 32 (the real measured limit) and adds a real-adapter test
+  (`enable_socket`-gated) that would have caught this before merge. **Main is currently broken for any real
+  retrieval until this merges.**
+
+**Real Recall@10 after all of the above (T-DOC22 + T-DOC23 data cleanup + T-DOC24 + T-DOC25), re-measured
+2026-07-15: single-passage primary gate = 0.96 (n=100, MRR 0.7215) — GATE MET (target was ≥ 0.85).**
+Zero retrieval errors across all 145 resolved questions (down from 96 errors pre-T-DOC22, then 12 post-T-DOC22/
+pre-T-DOC23, then 145-of-145 failing during the brief T-DOC24-without-T-DOC25 regression window). Full
+before/after numbers and methodology: `.phase0-data/teval-results.md` (not yet updated with this final run as
+of this doc's writing — do that alongside merging PR #94). Other splits from the same run: full_set 0.890
+(n=145), multi-paper lower-bound 0.733 (n=45), title-present 0.955 (n=89), title-absent 0.786 (n=56).
+
+**Known open issues, not yet fixed (no PR open):**
+- Task-tracker item (this session's own tracker, not in this repo): a per-paper unexpected-exception safety
+  net exists (PR #78), but the `quarantine()` write inside it isn't itself crash-guarded — a write failure
+  there can still crash the whole run. Real production crash already hit once this way (see PR #83/T-DOC17's
+  own history) and was fixed for that specific table-missing case; the general write-failure gap remains.
+- M5 ship check (a real MCP query returning a citation end-to-end against production data) has not been
+  independently re-verified since the T-DOC22/23/24/25 fixes above — worth doing once PR #94 merges.
+- Broader architecture question (queues/pipelining for more consistent GPU/CPU utilization across Pass 1/
+  Pass 2) was investigated but not acted on — current mitigations (TEI eviction T-DOC19, adaptive batch
+  sizing T-DOC21, PDF cache/prefetch T-DOC18) close most of the gap without the bigger restructuring; revisit
+  only if a real utilization regression reappears.
+
+**Key `.phase0-data/` docs for a new agent to read first** (all gitignored/local, not in git history):
+`teval-results.md` (T-EVAL methodology + full before/after numbers), `known-issue-orphaned-chunks.md`
+(the T-DOC23 bug), `known-issue-pass2-oom.md` (Pass 2 VRAM history), `pass1-gpu-underutilization.md` (the
+GPU-utilization investigation series behind T-DOC16/18/19/21).
+
+---
+
 ## T-DOC series — post-M1b real-run hardening fixes (2026-07-13/14)
 
 Found and fixed while running the real end-to-end pipeline against live infra (`.phase0-data/100-paper-run-stats.md`),
