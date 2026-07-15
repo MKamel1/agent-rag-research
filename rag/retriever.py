@@ -19,10 +19,13 @@ T-DOC28: both methods return `(results, RetrievalCoverage)` rather than a bare r
 `Coverage.candidates` instead of the `len(results)` stand-in it used to fall back on.
 """
 
-from contracts.errors import ContractError
+import logging
+
 from contracts.mcp_server import PaperSearchResult, PaperSummaryView
 from contracts.retriever import Citation, GroundedResult, RerankCandidate, RetrievalCoverage
 from contracts.vector_index import SearchFilters
+
+logger = logging.getLogger(__name__)
 
 _SUMMARY_ID_SUFFIX = ":summary"
 
@@ -98,13 +101,25 @@ class Retriever:
         results = []
         for candidate in self._reranker.rerank(query, candidates):
             chunk = chunks[candidate.id]
+            # T-DOC38: an orphaned/stale chunk (parent paper row deleted without cascading —
+            # ~8% of eval queries hit this against the real corpus, `.phase0-data/
+            # known-issue-orphaned-chunks.md`) must not zero out the whole query. Drop just this
+            # hit and keep going; the ingest side already quarantines bad papers instead of
+            # failing a whole run, and the read side should mirror that instead of raising.
+            record = self._document_store.get(chunk.paper_id)
+            if record is None:
+                logger.warning(
+                    "retrieve(): dropping unresolvable hit chunk_id=%r (paper_id=%r has no "
+                    "DocumentStore record -- orphaned/stale chunk, likely a deleted or "
+                    "quarantined paper); returning the remaining resolvable hits instead of "
+                    "failing the whole query",
+                    candidate.id, chunk.paper_id,
+                )
+                continue
             # Block.section_path is the AUTHORITATIVE copy (Chunk.section_path is a derived copy
             # taken at chunk-build time, DATA-CONTRACTS.md "Provenance & structure") — the
             # citation reads it from the source block, not the derived copy.
             block = self._document_store.get_block(chunk.anchor.block_id)
-            record = self._document_store.get(chunk.paper_id)
-            if record is None:
-                raise ContractError(f"DocumentStore has no record for paper_id={chunk.paper_id!r}")
             ref = record.ref
             citation = Citation(
                 paper_id=chunk.paper_id,
@@ -155,7 +170,16 @@ class Retriever:
             paper_id = _paper_id_from_summary_hit_id(candidate.id)
             record = self._document_store.get(paper_id)
             if record is None:
-                raise ContractError(f"DocumentStore has no record for paper_id={paper_id!r}")
+                # T-DOC38: same skip-and-continue fix as retrieve() above -- see that call site's
+                # comment for the full rationale.
+                logger.warning(
+                    "retrieve_papers(): dropping unresolvable hit summary_id=%r (paper_id=%r has "
+                    "no DocumentStore record -- orphaned/stale summary, likely a deleted or "
+                    "quarantined paper); returning the remaining resolvable hits instead of "
+                    "failing the whole query",
+                    candidate.id, paper_id,
+                )
+                continue
             section_paths = self._distinct_section_paths(record.parsed.blocks)
             view = PaperSummaryView(
                 paper_id=paper_id,
