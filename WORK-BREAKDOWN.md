@@ -467,6 +467,57 @@ second source of truth). Remaining untracked item:
   scratch. Deliverable: a short ADR + a before/after T-EVAL number for (a) if the API-cost constraint is
   waived for a one-off benchmark run.
 
+### T-DOC37–T-DOC42 — surfaced by the 2026-07-15 independent architecture + RAG-enhancement reviews
+
+Two independent reviews (an Opus architecture/plan-consistency review and an Opus RAG-enhancement + Google-eval
+review; full reports in the gitignored `reviews/` dir) converged on one theme: **the design is sound but the
+"V0 ship criterion met" claim rests on weak evidence.** The 0.96 Recall@10 is offline, measured on a 100-paper
+set built by `fetch_by_ids` *specifically to contain the gold papers* (`teval-results.md:38-44`), over a
+denominator that dropped 53/210 `no_match` questions (plausibly the hardest), with title-absent (0.786) and
+multi-paper (0.733) splits *below* the 0.85 gate — and the "real MCP works" proof (T-DOC33) was n=1. These
+tickets are the concrete follow-ups.
+
+- **T-DOC37 (not started) — BLOCKER, the one experiment that turns "we believe V0 ships" into "V0 ships."**
+  Re-run the full T-EVAL suite against the **real 809-paper production corpus through the real MCP path**
+  (`app/serve.py` + `app/mcp_verify_client.py`, T-DOC33), not the 100-paper convenience corpus, and report
+  **all** splits (single-passage, multi-paper, title-present/absent) honestly — then re-label the ship gate
+  in `teval-results.md`/`WORK-BREAKDOWN.md` to match reality. **Depends on T-DOC35** (else it measures the
+  59-paper hole) and benefits from the T-DOC27 prod-Qdrant reindex (below) landing first. Also fold in the
+  RAG-review's A5 (measure T-DOC34 summary-routing's effect on the multi-paper split) while the harness is up.
+- **T-DOC38 (not started) — BLOCKER, small, high-value read-path robustness.** `rag/retriever.py:106-107,
+  157-158` raise `ContractError` and zero the *entire* query when a single reranked hit can't be resolved
+  (e.g. an orphaned/stale candidate). The ingest side quarantines bad papers; the read side never mirrored
+  that invariant — already measured crashing ~8% of eval queries to zero results. Fix: **skip-and-continue**
+  (drop the unresolvable hit, log it, return the rest) instead of raising. Pure `rag/` code, no infra.
+- **T-DOC39 (not started)** — the rerank batch ceiling (32) leaks a vendor limit into the pure module and is
+  incompletely guarded: `retriever.py:91,143`'s `max(k, 32)` means **any caller passing `k>32` re-triggers
+  the same 0%-recall 422 crash T-DOC24/25 caused** (MCP exposes `k` unclamped). Fix: move the batch ceiling
+  into `TeiReranker` (where the vendor limit belongs), clamp `k` there, and add a real-adapter contract test
+  asserting the reranker's actual max batch size (the test that would have caught T-DOC24 pre-merge). Pure
+  code + one `enable_socket`-gated adapter test. **Touches `rag/retriever.py` — coordinate with T-DOC38
+  (same file); build them together or sequence T-DOC39 after T-DOC38.**
+- **T-DOC40 (not started)** — `DocumentStore.delete()` (T-DOC23) removes SQLite rows only, **not** the
+  matching Qdrant vectors, so a deleted paper's orphaned vectors still surface and crash `get_chunk` — the
+  same orphan-recurrence class T-DOC23 was meant to close, and the likely root cause of the T-DOC35 hole.
+  Fix: make delete atomic across SQLite **and** Qdrant, and turn on `PRAGMA foreign_keys=ON` (nothing in the
+  codebase enables it, so a stray raw `DELETE FROM papers` silently orphans children — `migrations/`, a
+  foundation path). Foundation-touching → PR left open for @MKamel1.
+- **T-DOC41 (not started) — highest-impact retrieval-quality lever, but a real design decision, not a blind
+  build.** Contextual Retrieval (prepend a local-LLM-generated 50–100-token document-context to each chunk
+  *before* embedding; Anthropic measured −49%/−67% retrieval failures) is the best fit for this corpus's hard
+  case — bare LaTeX/equation/algorithm blocks that lack situating context (recall correlates strongly with
+  chunk size: 0.90 smallest quartile vs 0.65–0.76 largest). Maps to `PRD.md` ADR-07. Requires a corpus
+  re-embed and a chunker change → **wants a design/brainstorm pass and an explicit go/no-go before
+  implementation, and a before/after T-EVAL** (via T-DOC37's harness) to prove it helps. V0-cost (local LLM)
+  or V1.
+- **T-DOC42 (not started) — eval-methodology fix; precondition for trusting the multi-paper number.** The
+  multi-paper split (0.733) is *partly a measurement artifact*: 2-paper questions carry a single gold label
+  (`fixtures/eval/`, TEST-STRATEGY.md), so a correct hit on the "other" gold paper scores as a miss. Fix:
+  add multi-gold labels to the ~59 multi-paper questions, and quantify the `no_match` denominator selection
+  bias (are the 53 dropped questions systematically the hard ones?), before treating 0.733 as a defect to
+  chase. Touches `fixtures/` (foundation) → PR left open for @MKamel1. Do this *before* over-investing in
+  T-DOC41-style quality work aimed at the multi-paper split.
+
 **Key `.phase0-data/` docs for a new agent to read first** (all gitignored/local, not in git history):
 `teval-results.md` (T-EVAL methodology + full before/after numbers), `known-issue-orphaned-chunks.md`
 (the T-DOC23 bug), `known-issue-pass2-oom.md` (Pass 2 VRAM history), `pass1-gpu-underutilization.md` (the
