@@ -369,7 +369,9 @@ second source of truth). Remaining untracked item:
   found incidentally (a parser paper_id-derivation fallback leaking into `DocumentStore`'s `chunks.paper_id`
   for a paper with no extractable arXiv self-citation) and flagged, not fixed — out of this ticket's scope,
   now covered by T-DOC31 (PR #103).
-- **T-DOC31 (not started)** — `rag/parser.py`'s `_derive_paper_id` (~line 415-423) falls back to a content
+- **T-DOC31 (in progress — PR #103 open, awaiting @MKamel1 review — production sweep already run
+  against papers.db, backed up first; found 0 rows to update, see LESSONS-LEARNED.md 2026-07-15 entry
+  for why and for the real gap it surfaced instead)** — `rag/parser.py`'s `_derive_paper_id` (~line 415-423) falls back to a content
   hash (`hashlib.sha256(raw).hexdigest()[:16]`, call sites ~line 154/193) when a PDF has no
   regex-matchable `arXiv:YYMM.NNNNN` watermark, even though the orchestrator already knows the real
   `paper_id` before it ever calls `Parser.parse(raw)` — the frozen `Parser` interface just has no id-hint
