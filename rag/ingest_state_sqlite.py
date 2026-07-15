@@ -138,6 +138,21 @@ class SqliteIngestState:
         `diagnostics_json` = `error`'s optional `.diagnostics` attribute if set -- see
         `contracts/errors.py`'s module docstring for the `.diagnostics` convention) with the same
         idempotent `ON CONFLICT DO NOTHING` semantics.
+
+        T-DOC32: the write itself is now guarded. A missing table, a locked database, or a
+        disk-full condition previously propagated straight out of this method -- turning a
+        *second*, unrelated failure (recording that paper_id was bad) into a crash of the entire
+        run for every other paper still queued (T-DOC17/PR #83 fixed one specific real cause of
+        this, a missing table, narrowly; this closes the general case: any `sqlite3.Error` from
+        the write). `sqlite3.Error` -- not a blind `except Exception` (CI's check (c),
+        `ci/checks/blind_except.py`, forbids that anyway) -- is the correct, narrow net here: every
+        cause named above is one of its subclasses, and this module already owns the sqlite3
+        vendor import (CONVENTIONS §1), so catching it doesn't leak sqlite into a caller that
+        treats `state` as an opaque interface. On failure, both the *original* `error` (why this
+        paper was being quarantined) and the write failure itself are logged via
+        `logger.critical` -- losing a quarantine row is real, if secondary, data loss, worth the
+        loudest level short of actually crashing -- and this method returns normally so the
+        caller's per-paper loop is never interrupted by a bookkeeping failure.
         """
 
         def _quarantine(conn: sqlite3.Connection) -> None:
@@ -169,7 +184,19 @@ class SqliteIngestState:
             conn.execute("DELETE FROM ingest_state WHERE paper_id = ?", (paper_id,))
             conn.execute("DELETE FROM ingest_checkpoint WHERE paper_id = ?", (paper_id,))
 
-        self._with_connection(_quarantine)
+        try:
+            self._with_connection(_quarantine)
+        except sqlite3.Error as write_error:
+            logger.critical(
+                "%s: quarantine() write itself failed at stage %r -- this paper is UNRECORDED "
+                "in the quarantine table, continuing to the next paper anyway. Original "
+                "failure being recorded: %r. Quarantine-write failure: %r",
+                paper_id,
+                stage,
+                error,
+                write_error,
+                exc_info=True,
+            )
 
     def stage_of(self, paper_id: str) -> str | None:
         checkpoint = self.get(paper_id)

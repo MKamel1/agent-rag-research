@@ -671,6 +671,10 @@ safe no-op (first reason wins, logged as a warning), not an error — `harvest()
 already-quarantined `paper_id`s (a killed-and-resumed run, or a later run entirely, can legitimately
 re-harvest and re-attempt one; this is intentional, not a bug — see `rag/orchestrator.py`'s `harvest`
 docstring for why), so re-quarantining the same paper is an expected, not exceptional, event.
+The write itself is also guarded (T-DOC32): a `sqlite3.Error` from the write (missing table, locked
+database, disk full) is logged via `logger.critical` alongside the original failure and swallowed,
+never propagated — a bookkeeping failure recording one bad paper must never crash the run for every
+other paper still queued.
 
 ---
 
