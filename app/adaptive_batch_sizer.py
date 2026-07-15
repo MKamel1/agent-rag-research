@@ -61,6 +61,11 @@ class AdaptiveBatchSizer:
         safe level); hold steady in between. A two-zone (shrink-or-grow) design has no stable
         resting point -- it would oscillate every call even in a perfectly steady state.
         """
+        if min_size < 1:
+            # Guards the real origin of a caller (`rag/orchestrator.py`'s parse_phase()) doing
+            # `i += size` with no floor -- a size of 0 would hang the loop forever. Loud and
+            # immediate here, not a silent max(size, 1) clamp downstream that would mask it.
+            raise ValueError(f"min_size={min_size} must be >= 1")
         if initial_size < min_size:
             raise ValueError(f"initial_size={initial_size} is below min_size={min_size}")
         if initial_size > max_size:
