@@ -94,9 +94,16 @@ _RE_HARVEST_INTERVAL_SECONDS = 3600.0
 _RETRYABLE_STATUSES = {429, 500, 502, 503, 504}
 _MAX_DOWNLOAD_RETRIES = 3
 
+# Single source of truth for the RAG_PDF_CACHE_DIR fallback -- app/assembly.py's
+# build_ingestion_orchestrator reads the SAME env var and must default to the SAME directory, or
+# an ingestion run launched without the var explicitly exported silently never reads/writes the
+# cache this script fills (T-DOC18 bug: two independently-guessed defaults, "pdf_cache" here and
+# None there).
+_DEFAULT_PDF_CACHE_DIR = "pdf_cache"
+
 
 def _cache_dir_from_env() -> Path:
-    d = Path(os.environ.get("RAG_PDF_CACHE_DIR", "pdf_cache"))
+    d = Path(os.environ.get("RAG_PDF_CACHE_DIR", _DEFAULT_PDF_CACHE_DIR))
     d.mkdir(parents=True, exist_ok=True)
     return d
 

@@ -16,8 +16,11 @@ Also covers T-DOC10: `build_ingestion_orchestrator` previously constructed `Harv
 """
 
 import logging
+import os
 import sqlite3
+import time
 from datetime import date
+from pathlib import Path
 
 import httpx
 import pytest
@@ -29,6 +32,7 @@ from app.assembly import (
     _sqlite_harvest_quarantine_sink,
     build_ingestion_orchestrator,
 )
+from app.prefetch_pdfs import _DEFAULT_PDF_CACHE_DIR
 from contracts.config import Config
 from contracts.errors import PermanentError, TransientError
 from contracts.harvester import PaperRef
@@ -48,12 +52,16 @@ def _make_ref(paper_id: str = "2504.09999") -> PaperRef:
     )
 
 
-def _make_parser(monkeypatch, handler, sleeps: list[float]) -> _PdfDownloadParser:
+def _make_parser(
+    monkeypatch, handler, sleeps: list[float], cache_dir=None,
+) -> _PdfDownloadParser:
     client = httpx.Client(transport=httpx.MockTransport(handler))
     # The real Parser (rag.parser.parse) needs an actual PDF/MinerU -- stub it so this test
     # exercises only the download+delay wiring, not the Parser module.
     monkeypatch.setattr("app.assembly.parse_pdf_bytes", lambda raw: raw)
-    return _PdfDownloadParser(client, sleep=lambda seconds: sleeps.append(seconds))
+    return _PdfDownloadParser(
+        client, sleep=lambda seconds: sleeps.append(seconds), cache_dir=cache_dir
+    )
 
 
 def test_sleeps_the_fixed_delay_after_each_download(monkeypatch):
@@ -142,6 +150,173 @@ def test_permanent_failure_is_not_retried(monkeypatch):
 
 
 # ================================================================================================
+# T-DOC18 Layer 2 — single-lookahead prefetch (`parse_batch` / `prefetch_next_batch`)
+# ================================================================================================
+
+
+def test_parse_batch_downloads_every_ref_and_returns_docs_in_order(monkeypatch):
+    """No prefetch involved -- proves `parse_batch()`'s own baseline behavior (T-DOC16) is
+    unchanged by the T-DOC18 refactor: every ref is downloaded, in order, and its bytes reach
+    `parse_pdf_bytes_batch` positionally matched to its ref."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        paper_id = request.url.path.rsplit("/", 1)[-1]
+        return httpx.Response(200, content=f"%PDF-{paper_id}".encode())
+
+    calls: list[list[bytes]] = []
+
+    def fake_parse_batch(contents: list[bytes]) -> list[str]:
+        calls.append(contents)
+        return [c.decode() for c in contents]
+
+    monkeypatch.setattr("app.assembly.parse_pdf_bytes_batch", fake_parse_batch)
+    sleeps: list[float] = []
+    parser = _make_parser(monkeypatch, handler, sleeps)
+    refs = [_make_ref("2504.00001"), _make_ref("2504.00002")]
+
+    result = parser.parse_batch(refs)
+
+    assert calls == [[b"%PDF-2504.00001", b"%PDF-2504.00002"]]
+    assert result == ["%PDF-2504.00001", "%PDF-2504.00002"]
+
+
+def test_prefetch_next_batch_downloads_overlap_the_current_batchs_gpu_call(monkeypatch):
+    """The one test that actually proves the overlap exists (not just 'the code doesn't crash'):
+    a fake slow download for the *next* batch's refs, and a fake slow `parse_pdf_bytes_batch`
+    (the GPU-bound call) for the *current* batch, both logging real wall-clock timestamps to a
+    shared event list. Asserts the next batch's download work is genuinely in flight *during* the
+    GPU call's active window, not merely kicked off before it and finished instantly."""
+
+    events: list[tuple[str, float]] = []
+    NEXT_REF_IDS = {"2504.10001", "2504.10002"}
+    DOWNLOAD_SLEEP = 0.05  # per next-batch ref; two refs -> ~0.1s of background download work
+    GPU_SLEEP = 0.3  # comfortably longer than the ~0.1s background download, to avoid flakiness
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        paper_id = request.url.path.rsplit("/", 1)[-1]
+        events.append((f"download_start:{paper_id}", time.monotonic()))
+        if paper_id in NEXT_REF_IDS:
+            time.sleep(DOWNLOAD_SLEEP)
+        events.append((f"download_end:{paper_id}", time.monotonic()))
+        return httpx.Response(200, content=f"%PDF-{paper_id}".encode())
+
+    def fake_parse_pdf_bytes_batch(contents: list[bytes]) -> list[str]:
+        events.append(("gpu_start", time.monotonic()))
+        time.sleep(GPU_SLEEP)
+        events.append(("gpu_end", time.monotonic()))
+        return [c.decode() for c in contents]
+
+    monkeypatch.setattr("app.assembly.parse_pdf_bytes_batch", fake_parse_pdf_bytes_batch)
+    sleeps: list[float] = []
+    parser = _make_parser(monkeypatch, handler, sleeps)
+
+    current_refs = [_make_ref("2504.00001"), _make_ref("2504.00002")]
+    next_refs = [_make_ref(pid) for pid in sorted(NEXT_REF_IDS)]
+
+    # Exactly how `rag/orchestrator.py`'s `_prepare_batch` calls this: prefetch the next batch,
+    # THEN call parse_batch() for the current one -- see its T-DOC18 docstring.
+    parser.prefetch_next_batch(next_refs)
+    result = parser.parse_batch(current_refs)
+
+    assert result == ["%PDF-2504.00001", "%PDF-2504.00002"], (
+        "the current batch's own (unrelated) result must be correct and unaffected"
+    )
+
+    by_label = dict(events)
+    gpu_start, gpu_end = by_label["gpu_start"], by_label["gpu_end"]
+    for paper_id in NEXT_REF_IDS:
+        download_start = by_label[f"download_start:{paper_id}"]
+        download_end = by_label[f"download_end:{paper_id}"]
+        assert download_start < gpu_end, (
+            f"{paper_id}'s prefetch download must start before the GPU call finishes"
+        )
+        assert gpu_start <= download_end <= gpu_end, (
+            f"{paper_id}'s prefetch download must complete WHILE the GPU call is still running "
+            f"(gpu window [{gpu_start}, {gpu_end}], download ended at {download_end}) -- proves "
+            "real overlap, not just an early-but-sequential kickoff"
+        )
+
+
+def test_prefetch_next_batch_is_reused_by_the_matching_parse_batch_call_not_redownloaded(
+    monkeypatch,
+):
+    """Once a batch has been prefetched, the later `parse_batch()` call for those exact refs must
+    reuse the prefetched bytes -- proven by counting real HTTP requests per paper_id (must be
+    exactly one, not two)."""
+
+    request_counts: dict[str, int] = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        paper_id = request.url.path.rsplit("/", 1)[-1]
+        request_counts[paper_id] = request_counts.get(paper_id, 0) + 1
+        return httpx.Response(200, content=f"%PDF-{paper_id}".encode())
+
+    monkeypatch.setattr(
+        "app.assembly.parse_pdf_bytes_batch", lambda contents: [c.decode() for c in contents]
+    )
+    sleeps: list[float] = []
+    parser = _make_parser(monkeypatch, handler, sleeps)
+
+    batch_0 = [_make_ref("2504.00001")]
+    batch_1 = [_make_ref("2504.00002"), _make_ref("2504.00003")]
+
+    parser.prefetch_next_batch(batch_1)
+    result_0 = parser.parse_batch(batch_0)
+    result_1 = parser.parse_batch(batch_1)  # must reuse the prefetch, not download again
+
+    assert result_0 == ["%PDF-2504.00001"]
+    assert result_1 == ["%PDF-2504.00002", "%PDF-2504.00003"], (
+        "results for the prefetched batch must still come back in the right order, correctly "
+        "attributed to their own refs"
+    )
+    assert request_counts == {"2504.00001": 1, "2504.00002": 1, "2504.00003": 1}, (
+        "every paper_id must be downloaded exactly once -- no ref's bytes duplicated or refetched"
+    )
+
+
+def test_prefetch_next_batch_is_a_noop_for_an_empty_list(monkeypatch):
+    """The last group of a run has no next batch (`parse_phase` slices past the end of `refs` to
+    `[]`) -- `prefetch_next_batch([])` must not submit any background work or raise."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=b"%PDF-fake")
+
+    sleeps: list[float] = []
+    parser = _make_parser(monkeypatch, handler, sleeps)
+
+    parser.prefetch_next_batch([])  # must not raise
+
+    assert parser._prefetched is None
+
+
+def test_parse_batch_falls_back_to_a_fresh_download_when_refs_dont_match_the_prefetch(
+    monkeypatch,
+):
+    """A stale/mismatched prefetch (refs the caller never actually asks `parse_batch()` for) must
+    not corrupt or be silently reused for a different batch -- `parse_batch()` downloads fresh
+    instead, and the stale prefetch is simply never consumed."""
+
+    request_counts: dict[str, int] = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        paper_id = request.url.path.rsplit("/", 1)[-1]
+        request_counts[paper_id] = request_counts.get(paper_id, 0) + 1
+        return httpx.Response(200, content=f"%PDF-{paper_id}".encode())
+
+    monkeypatch.setattr(
+        "app.assembly.parse_pdf_bytes_batch", lambda contents: [c.decode() for c in contents]
+    )
+    sleeps: list[float] = []
+    parser = _make_parser(monkeypatch, handler, sleeps)
+
+    parser.prefetch_next_batch([_make_ref("2504.00099")])  # never actually requested below
+    result = parser.parse_batch([_make_ref("2504.00001")])
+
+    assert result == ["%PDF-2504.00001"]
+    assert request_counts.get("2504.00001") == 1
+
+
+# ================================================================================================
 # T-DOC10 — harvest-level quarantine wiring
 # ================================================================================================
 
@@ -210,6 +385,337 @@ def test_quarantine_sink_logs_and_does_not_raise_when_the_write_itself_fails(cap
 
 
 # ================================================================================================
+# T-DOC18 — PDF cache (giggly-tumbling-globe.md Part 0 Layer 1): `_PdfDownloadParser` reads
+# `app/prefetch_pdfs.py`'s on-disk `<paper_id>.pdf` cache before doing any HTTP call, and
+# write-throughs a live download's bytes to that same cache afterward.
+# ================================================================================================
+
+
+def test_cache_hit_returns_cached_bytes_with_zero_http_calls(monkeypatch, tmp_path):
+    """A pre-placed `<paper_id>.pdf` in `cache_dir` (the prefetcher's own naming convention) must
+    be read directly -- no call reaches the injected `httpx.Client` at all."""
+    ref = _make_ref("2504.00001")
+    (tmp_path / f"{ref.paper_id}.pdf").write_bytes(b"%PDF-cached")
+
+    call_count = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        call_count["n"] += 1
+        return httpx.Response(200, content=b"%PDF-live")  # would prove the cache was skipped
+
+    sleeps: list[float] = []
+    parser = _make_parser(monkeypatch, handler, sleeps, cache_dir=tmp_path)
+
+    result = parser.parse(ref)
+
+    assert result == b"%PDF-cached", "must return the cached bytes, not live-download them"
+    assert call_count["n"] == 0, "a cache hit must make zero HTTP calls"
+
+
+def test_cache_miss_downloads_live_and_writes_through(monkeypatch, tmp_path):
+    """No file in `cache_dir` yet -- unchanged live-download behavior (one HTTP call, same
+    delay), PLUS the downloaded bytes get written to `cache_dir/<paper_id>.pdf` afterward so the
+    live pipeline also grows the prefetcher's cache."""
+    ref = _make_ref("2504.00002")
+
+    call_count = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        call_count["n"] += 1
+        return httpx.Response(200, content=b"%PDF-live")
+
+    sleeps: list[float] = []
+    parser = _make_parser(monkeypatch, handler, sleeps, cache_dir=tmp_path)
+
+    result = parser.parse(ref)
+
+    assert result == b"%PDF-live"
+    assert call_count["n"] == 1, "a cache miss must still make exactly one live HTTP call"
+    assert sleeps == [_PDF_DOWNLOAD_DELAY_SECONDS], "unchanged inter-request delay behavior"
+
+    cached_path = tmp_path / f"{ref.paper_id}.pdf"
+    assert cached_path.exists(), "a live download must be written through to the cache"
+    assert cached_path.read_bytes() == b"%PDF-live"
+    assert not (tmp_path / f"{ref.paper_id}.pdf.tmp").exists(), (
+        "the atomic tmp file must be renamed away, not left behind"
+    )
+
+
+def test_cache_miss_retry_path_still_writes_through_on_eventual_success(monkeypatch, tmp_path):
+    """Cache-miss + a transient failure that recovers on retry (existing retry/backoff behavior,
+    unchanged) must still write the eventually-successful bytes through to the cache."""
+    ref = _make_ref("2504.00003")
+    attempts = {"count": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        attempts["count"] += 1
+        if attempts["count"] == 1:
+            return httpx.Response(429)
+        return httpx.Response(200, content=b"%PDF-recovered")
+
+    sleeps: list[float] = []
+    parser = _make_parser(monkeypatch, handler, sleeps, cache_dir=tmp_path)
+
+    result = parser.parse(ref)
+
+    assert attempts["count"] == 2, "retry/backoff behavior must be unchanged by caching"
+    assert result == b"%PDF-recovered"
+    assert (tmp_path / f"{ref.paper_id}.pdf").read_bytes() == b"%PDF-recovered"
+
+
+def test_no_cache_dir_configured_skips_cache_check_entirely(monkeypatch):
+    """`cache_dir=None` (the default) must behave exactly like caching didn't exist -- always a
+    live HTTP call, no attempt to read or write any path."""
+    ref = _make_ref("2504.00004")
+    call_count = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        call_count["n"] += 1
+        return httpx.Response(200, content=b"%PDF-live")
+
+    sleeps: list[float] = []
+    parser = _make_parser(monkeypatch, handler, sleeps, cache_dir=None)
+
+    result = parser.parse(ref)
+
+    assert result == b"%PDF-live"
+    assert call_count["n"] == 1, "no cache_dir means every ref is a live download"
+
+
+def test_build_ingestion_orchestrator_wires_rag_pdf_cache_dir_env_var(monkeypatch, tmp_path):
+    """`build_ingestion_orchestrator` must thread `RAG_PDF_CACHE_DIR` into `_PdfDownloadParser`
+    (previously not wired at all -- T-DOC18). When the env var is set, the constructed parser's
+    cache_dir must match it exactly (same convention as `app/prefetch_pdfs.py`'s own env read)."""
+    monkeypatch.setattr("app.assembly.VectorIndex", lambda *a, **k: object())
+
+    cache_dir = tmp_path / "pdf_cache"
+    monkeypatch.setenv("RAG_PDF_CACHE_DIR", str(cache_dir))
+
+    db_path = str(tmp_path / "papers.db")
+    cfg = Config(focus_area_queries=["causal inference"], gpu_lock_path=str(tmp_path / ".gpu.lock"))
+
+    orchestrator = build_ingestion_orchestrator(
+        cfg, db_path=db_path, blob_dir=str(tmp_path / "blobs")
+    )
+
+    assert orchestrator._parser._cache_dir == cache_dir
+    assert cache_dir.is_dir(), "the composition root must ensure the configured dir exists"
+
+
+def test_build_ingestion_orchestrator_env_var_unset_defaults_to_same_dir_as_prefetch_pdfs(
+    monkeypatch, tmp_path
+):
+    """T-DOC18 bug fix: `app/prefetch_pdfs.py` defaults `RAG_PDF_CACHE_DIR` to `"pdf_cache"` and
+    fills that real directory continuously. `build_ingestion_orchestrator` previously had NO
+    default (`cache_dir=None` when unset), which made Layer 1's cache check/write-through a
+    permanent, silent no-op the moment anyone launched ingestion without explicitly exporting the
+    var -- the prefetcher's work was invisible to it. Both modules' effective defaults must match
+    exactly, asserted directly against each other (not just "each has some default")."""
+    monkeypatch.setattr("app.assembly.VectorIndex", lambda *a, **k: object())
+    monkeypatch.delenv("RAG_PDF_CACHE_DIR", raising=False)
+    monkeypatch.chdir(tmp_path)  # the default is a relative dir -- don't pollute the real cwd
+
+    db_path = str(tmp_path / "papers.db")
+    cfg = Config(focus_area_queries=["causal inference"], gpu_lock_path=str(tmp_path / ".gpu.lock"))
+
+    orchestrator = build_ingestion_orchestrator(
+        cfg, db_path=db_path, blob_dir=str(tmp_path / "blobs")
+    )
+
+    assert orchestrator._parser._cache_dir == Path(_DEFAULT_PDF_CACHE_DIR) == Path("pdf_cache"), (
+        "an unset RAG_PDF_CACHE_DIR must resolve to the exact same directory in both "
+        "build_ingestion_orchestrator and app.prefetch_pdfs._cache_dir_from_env"
+    )
+    assert orchestrator._parser._cache_dir.is_dir()
+
+
+def test_build_ingestion_orchestrator_env_var_empty_string_disables_cache_and_logs(
+    monkeypatch, tmp_path, caplog
+):
+    """The only way `cache_dir` should still end up `None` post-fix: someone explicitly sets
+    `RAG_PDF_CACHE_DIR=""`. That must stay visible (a log line), not silently disable Layer 1
+    the way an unset var used to (T-DOC18)."""
+    monkeypatch.setattr("app.assembly.VectorIndex", lambda *a, **k: object())
+    monkeypatch.setenv("RAG_PDF_CACHE_DIR", "")
+
+    db_path = str(tmp_path / "papers.db")
+    cfg = Config(focus_area_queries=["causal inference"], gpu_lock_path=str(tmp_path / ".gpu.lock"))
+
+    with caplog.at_level(logging.WARNING):
+        orchestrator = build_ingestion_orchestrator(
+            cfg, db_path=db_path, blob_dir=str(tmp_path / "blobs")
+        )
+
+    assert orchestrator._parser._cache_dir is None
+    assert "RAG_PDF_CACHE_DIR" in caplog.text and "disabled" in caplog.text.lower()
+
+
+# ================================================================================================
+# T-DOC18 bug fix -- unique per-writer tmp filename (was a fixed `<paper_id>.pdf.tmp` shared with
+# `app/prefetch_pdfs.py`'s own tmp convention, so the 24/7 prefetcher and this live pipeline could
+# race to write the same tmp path and interleave into one sticky-corrupt cache file).
+# ================================================================================================
+
+
+def test_write_cache_tmp_path_is_pid_qualified_not_the_old_shared_fixed_name(monkeypatch, tmp_path):
+    ref = _make_ref("2504.00005")
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=b"%PDF-live")
+
+    sleeps: list[float] = []
+    parser = _make_parser(monkeypatch, handler, sleeps, cache_dir=tmp_path)
+
+    captured: dict[str, str] = {}
+    real_write_bytes = Path.write_bytes
+
+    def spying_write_bytes(self: Path, data: bytes):
+        captured["tmp_name"] = self.name
+        return real_write_bytes(self, data)
+
+    monkeypatch.setattr(Path, "write_bytes", spying_write_bytes)
+    monkeypatch.setattr("app.assembly.os.getpid", lambda: 4242)
+
+    parser.parse(ref)
+
+    assert captured["tmp_name"] == f"{ref.paper_id}.pdf.4242.tmp"
+    assert captured["tmp_name"] != f"{ref.paper_id}.pdf.tmp", (
+        "must not reuse prefetch_pdfs.py's shared fixed tmp name -- that shared name is the "
+        "collision this fix removes"
+    )
+    assert not (tmp_path / f"{ref.paper_id}.pdf.tmp").exists(), (
+        "the old fixed-name tmp path (prefetch_pdfs.py's own convention) must never be created"
+    )
+    assert (tmp_path / f"{ref.paper_id}.pdf").read_bytes() == b"%PDF-live", (
+        "the pid-qualified tmp file must still be renamed into the normal final path"
+    )
+
+
+def test_write_cache_tmp_path_differs_across_two_writer_pids(monkeypatch, tmp_path):
+    """Direct proof two concurrent writers (e.g. this live pipeline and the standalone
+    `app/prefetch_pdfs.py` prefetcher, or two instances of this process) can't collide: the tmp
+    path generated for the SAME paper_id differs when the writer's pid differs."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=b"%PDF-live")
+
+    sleeps: list[float] = []
+    parser = _make_parser(monkeypatch, handler, sleeps, cache_dir=tmp_path)
+    ref = _make_ref("2504.00006")
+
+    tmp_names: list[str] = []
+    real_write_bytes = Path.write_bytes
+
+    def spying_write_bytes(self: Path, data: bytes):
+        tmp_names.append(self.name)
+        return real_write_bytes(self, data)
+
+    monkeypatch.setattr(Path, "write_bytes", spying_write_bytes)
+
+    monkeypatch.setattr("app.assembly.os.getpid", lambda: 111)
+    parser._write_cache(ref, b"%PDF-from-writer-111")
+    monkeypatch.setattr("app.assembly.os.getpid", lambda: 222)
+    parser._write_cache(ref, b"%PDF-from-writer-222")
+
+    assert len(tmp_names) == 2
+    assert tmp_names[0] != tmp_names[1], (
+        "two writers racing the same paper_id must generate two different tmp paths -- whichever "
+        "rename() lands last simply leaves one complete, valid file instead of a corrupt interleave"
+    )
+    assert tmp_names == [f"{ref.paper_id}.pdf.111.tmp", f"{ref.paper_id}.pdf.222.tmp"]
+
+
+# ================================================================================================
+# T-DOC18 bug fix -- the rate-limit-pacing sleep must not fire on a cache hit (zero HTTP calls
+# happened, so there's nothing to pace -- the old unconditional `finally: self._sleep(...)` in
+# both `parse()` and `_download_all()` undercut the whole point of the cache).
+# ================================================================================================
+
+
+def test_parse_cache_hit_makes_zero_sleep_calls(monkeypatch, tmp_path):
+    ref = _make_ref("2504.00012")
+    (tmp_path / f"{ref.paper_id}.pdf").write_bytes(b"%PDF-cached")
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise AssertionError("must not reach the network on a cache hit")
+
+    sleeps: list[float] = []
+    parser = _make_parser(monkeypatch, handler, sleeps, cache_dir=tmp_path)
+
+    result = parser.parse(ref)
+
+    assert result == b"%PDF-cached"
+    assert sleeps == [], "a cache hit made zero HTTP calls -- nothing to rate-limit-pace"
+
+
+def test_parse_live_download_still_sleeps_exactly_as_before(monkeypatch, tmp_path):
+    """Regression guard: fixing the cache-hit case must not silently break the live-download
+    case -- a genuine miss still sleeps the fixed inter-request delay exactly once."""
+    ref = _make_ref("2504.00013")
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=b"%PDF-live")
+
+    sleeps: list[float] = []
+    parser = _make_parser(monkeypatch, handler, sleeps, cache_dir=tmp_path)
+
+    parser.parse(ref)
+
+    assert sleeps == [_PDF_DOWNLOAD_DELAY_SECONDS]
+
+
+def test_download_all_makes_zero_sleeps_when_the_whole_batch_is_cached(monkeypatch, tmp_path):
+    """A fully-cached batch previously still slept `_PDF_DOWNLOAD_DELAY_SECONDS` per ref (pure
+    idle time, no HTTP call to pace) -- directly contradicts what T-DOC18 (PR #84's
+    WORK-BREAKDOWN.md entry) claims about this fix ("zero HTTP/rate-limit cost" on a hit)."""
+    refs = [_make_ref("2504.00010"), _make_ref("2504.00011")]
+    for ref in refs:
+        (tmp_path / f"{ref.paper_id}.pdf").write_bytes(f"%PDF-{ref.paper_id}".encode())
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise AssertionError("must not reach the network on an all-cache-hit batch")
+
+    monkeypatch.setattr(
+        "app.assembly.parse_pdf_bytes_batch", lambda contents: [c.decode() for c in contents]
+    )
+    sleeps: list[float] = []
+    parser = _make_parser(monkeypatch, handler, sleeps, cache_dir=tmp_path)
+
+    result = parser.parse_batch(refs)
+
+    assert result == [f"%PDF-{ref.paper_id}" for ref in refs]
+    assert sleeps == [], "a fully-cached batch must make zero rate-limit sleeps"
+
+
+def test_download_all_sleeps_only_for_the_live_ref_not_the_cached_one(monkeypatch, tmp_path):
+    """Mixed batch (one cache hit, one live miss) in the same `parse_batch()` call: exactly one
+    sleep, for the live ref -- proves the skip is per-ref, and that a genuine miss in the same
+    batch still sleeps exactly as before (regression guard alongside the all-cached case above)."""
+    cached_ref = _make_ref("2504.00008")
+    live_ref = _make_ref("2504.00009")
+    (tmp_path / f"{cached_ref.paper_id}.pdf").write_bytes(b"%PDF-cached")
+
+    call_count = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        call_count["n"] += 1
+        return httpx.Response(200, content=b"%PDF-live")
+
+    monkeypatch.setattr(
+        "app.assembly.parse_pdf_bytes_batch", lambda contents: [c.decode() for c in contents]
+    )
+    sleeps: list[float] = []
+    parser = _make_parser(monkeypatch, handler, sleeps, cache_dir=tmp_path)
+
+    result = parser.parse_batch([cached_ref, live_ref])
+
+    assert result == ["%PDF-cached", "%PDF-live"]
+    assert call_count["n"] == 1, "only the live ref should reach the network"
+    assert sleeps == [_PDF_DOWNLOAD_DELAY_SECONDS], (
+        "exactly one sleep -- for the live download -- the cache hit must contribute none"
+    )
+
+
 # T-DOC19 -- before_parse_phase/before_finish_phase hook wiring to app.tei_lifecycle
 # ================================================================================================
 #
