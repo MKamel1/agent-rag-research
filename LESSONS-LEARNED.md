@@ -153,3 +153,111 @@ structured pre-filtering) is recorded in `PRD.md` ADR-11's "Candidate mitigation
 decided or built, just there so the next session doesn't have to invent this list from scratch.
 **Revisit T-EVAL Recall@10 at each real corpus-size milestone** (the next being whatever T-SEED
 actually reaches) — don't assume 0.96 at 809 papers holds at 30,000; re-measure.
+
+---
+
+### 2026-07-15 — build-process — M5's ship criterion verified against a real MCP client for the first time (T-DOC33) — required building the MCP transport itself, which didn't exist
+
+M5's own exit bar — *"an agent answers a factual question about an ingested paper with a correct,
+verifiable citation at ~0 API cost — and you use it"* — had never actually been checked. Every
+existing recall number (Recall@10=0.96, etc.) came from the offline T-EVAL harness calling
+`Retriever` directly, and `rag/test_composition_e2e.py` calls `McpServer`'s Python methods
+in-process — neither one speaks the actual MCP protocol, so neither proves an MCP client can
+connect at all.
+
+**Real gap found, not just unverified: `app/serve.py` had no MCP transport.** Before this ticket
+it was `build_mcp_server(cfg); print(f"McpServer wired: {server}")` — its own `# ponytail` comment
+said outright: *"no transport loop yet ... add a real MCP transport loop when a client needs to
+connect to it."* The `mcp` SDK was listed in `environment.yml` (`# M8 McpServer — MCP protocol is
+decided, not a Phase-0 open question`) and installed in the conda env, but nothing in the repo
+imported it. Concretely: **no real MCP client of any kind — Claude Desktop, Claude Code, or a
+protocol-level script — could have connected to this system before this ticket.** This is exactly
+the gap M5's exit bar exists to catch, and it had gone unnoticed because every prior "it works"
+signal (T-EVAL, the composition e2e test) bypassed the protocol layer entirely.
+
+**Fix (in scope for this ticket — "write a minimal real-run script following [the composition
+root] exactly" is literally what T-DOC33 asked for, not a silent side-fix):** extended
+`app/serve.py` to wrap `build_mcp_server`'s four tools (`semantic_search`/`search_papers`/
+`get_paper`/`get_span`) in a `mcp.server.fastmcp.FastMCP` stdio server — no new wiring pattern, the
+`McpServer` construction itself is untouched, still built by `build_mcp_server` exactly as
+`rag/test_composition_e2e.py` already proves correct. Also added `RAG_DB_PATH`/`RAG_BLOB_DIR`/
+`RAG_COLLECTION` env-var overrides to `app/serve.py`'s `build_mcp_server` call — `app/ingest.py`
+and `app/parse_phase.py` already read these same three for the ingest-side composition root;
+`app/serve.py` was the one entrypoint that didn't, an inconsistency worth closing while touching
+this file for the first time. New reusable script: `app/mcp_verify_client.py` — a real MCP client
+using the official `mcp` SDK's `ClientSession`/`stdio_client` (not a bypass: real JSON-RPC over a
+real stdio child process), for repeating this check later (T-DOC27/31/34 will all want a re-run).
+
+**The real query → citation round trip, run against real production data** (`papers.db`/`blobs`
+at `research-system-rag-data/`, real Qdrant `"papers"` collection — 809 papers, live TEI
+embed/rerank services, live GPU):
+
+```
+RAG_DB_PATH=.../research-system-rag-data/papers.db RAG_BLOB_DIR=.../research-system-rag-data/blobs \
+    python -m app.mcp_verify_client \
+    "How long does it take to compute DML with dummies for one dataset in the baseline simulation with 500 units and 10 periods?" --k 5
+```
+
+Question picked from a real ingested paper (`2409.01266`, "Double Machine Learning meets Panel
+Data", found via `pdf_cache/`, confirmed present in `papers.db`'s `papers` table) — a specific
+numeric claim, not something the answer could plausibly come from a model's own training-data
+recall of this fairly obscure 2024 econometrics preprint.
+
+`semantic_search` (real MCP `tools/call`, real embed → Qdrant hybrid search → real TEI rerank)
+returned a typed `SearchResponse` (`results: list[GroundedResult]`, `coverage: Coverage`) — never
+bare text. Top hit's `passage_text` (verbatim, not summarized):
+
+> "...In our baseline simulation with 500 units and 10 periods, computing DML with dummies for one
+> dataset takes about 330 seconds, whereas the second slowest method (DML with CRE) is computed
+> within less than 8 seconds."
+
+A second returned passage (from the paper's Appendix A.2 table) corroborates with the precise
+figure: `DML (dummies) | N=500/T=10: 329.43` seconds. **Both numbers (verbatim quote and table
+value) match the source paper exactly** — confirmed independently by reading
+`research-system-rag-data/blobs/2409.01266.md` directly (not through the pipeline) and by querying
+`papers.db`'s `blocks` table directly by SQL (bypassing `DocumentStore`/`McpServer` entirely).
+
+**Citation resolves to real, non-hallucinated source text.** The top hit's `anchor` (`paper_id:
+"2409.01266"`, `block_id: "2409.01266:b63"`, `page: 15`, `section_path: "4 Simulations > 4.1
+Method implementations"`) was passed to a second real MCP `tools/call`, `get_span`. It returned
+`"4.1 Method implementations"` — the section heading, not the full passage. This is *correct*,
+documented behavior, not a bug: `contracts/provenance.py`'s multi-block anchoring rule points a
+multi-block `Chunk`'s `anchor` at its *first* block, and a direct SQL check of `papers.db`'s
+`blocks` table confirmed block `2409.01266:b63`'s own stored text is exactly that heading (the
+"330 seconds" sentence lives in the next block, `:b64`, correctly included in the chunk's
+`passage_text` already returned above) — and it exactly matches `anchor.snippet`, which is the
+re-grounding check `contracts/provenance.py` documents. `Citation.title`/`.authors`/`.arxiv_url`
+(`"Double Machine Learning meets Panel Data..."`, `["Jonathan Fuhr", "Dominik Papies"]`,
+`arxiv.org/abs/2409.01266`) match `papers.db`'s `papers` row exactly.
+
+**`Coverage.candidates` (T-DOC28) confirmed live and correct in this same run:** `returned: 5,
+candidates: 32` — genuinely different numbers (the real pre-rerank pool size vs. the truncated
+top-k), not the `len(results)` stand-in T-DOC28 flagged. Useful incidental confirmation that
+T-DOC28's fix (already on `main`, `rag/mcp_server.py`'s `_coverage()`) is live in a real MCP
+response, even though `WORK-BREAKDOWN.md` still shows that ticket as "in progress" — a doc-staleness
+note only, out of this ticket's scope to fix (T-DOC33 doesn't touch other tickets' lines).
+
+**Result: M5's exit bar is now genuinely verified — a real MCP client, over the real protocol,
+asked a real factual question about a real ingested paper, and got back a grounded, typed,
+citable answer whose citation resolves to real stored text and whose content is independently
+confirmed correct.** Ran cleanly and repeatably once the transport existed (`app/serve.py`) and
+the client pointed at the real data paths.
+
+**Aside, found and fixed before it ever shipped (own script, not the system under test):** an
+early draft of `app/mcp_verify_client.py` guessed the production data directory as "the repo
+root's sibling directory" via `__file__`— this breaks inside a nested git worktree (this session's
+own `.claude/worktrees/<id>/` checkout is 3 levels deep, not a sibling of
+`research-system-rag-data/`), silently pointing `RAG_DB_PATH` at a nonexistent path that `sqlite3`
+happily auto-creates as an empty file, which then fails deep inside the reranker step with an
+error `mcp`'s stdio transport surfaces as non-JSON tool-error text. Fixed by dropping the
+path-guessing entirely — the script now just passes through whatever `RAG_DB_PATH`/`RAG_BLOB_DIR`
+the caller already exported, same as `app/ingest.py`. Not a system bug, but a reminder that
+"sibling of the repo" is not a safe assumption for any script that might run from a worktree.
+
+**Why it matters / when to revisit:** re-run `app/mcp_verify_client.py` after T-DOC27 (sparse/BM25
+fix), T-DOC31 (parser paper_id fallback), and T-DOC34 (summary-level routing enforcement) land —
+each changes retrieval behavior in ways a real protocol-level check, not just T-EVAL, should
+re-confirm. If Claude Desktop or another interactive MCP host is ever set up on this workstation
+for daily use, that would be a stronger form of "and you use it" than this one-shot scripted
+client — worth doing once, but is a human/environment setup decision, not something to automate
+from inside a sandboxed session.
