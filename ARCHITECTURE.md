@@ -273,12 +273,31 @@ Full patterns + code-shape in `CONVENTIONS.md`; schemas in `DATA-CONTRACTS.md`.
    **peaks around ~13GB routinely, observed as high as ~23.7GB/24GB (96.4% of the card) during real
    production Pass 1 runs**; Embedder (TEI Qwen3-Embedding-4B) **~8.2GB**, Reranker (TEI
    BGE-reranker-v2-m3) **~1.4GB**, Summarizer (Ollama qwen3:14b) **~11.8GB** — higher than the original
-   ~7-8GB estimate. With Embedder+Reranker always resident (**~9.4GB**), Pass 1's real safety margin
-   against MinerU's typical peak is thin — **roughly ~1GB**, not the "fits comfortably" this section
-   previously claimed — and the worst observed spike leaves almost none. The combination that still
-   doesn't fit at all is **MinerU + Summarizer at the same time** (with Embedder+Reranker also resident,
-   ~28GB+). Embedder+Reranker are meant to be **always** resident — they serve live queries continuously
-   via `McpServer` — so MinerU and the Summarizer are the two that must never be loaded together.
+   ~7-8GB estimate. With Embedder+Reranker resident (**~9.4GB**) — as they were for every measurement
+   quoted above, all taken before the Pass-1 eviction exception described below existed — Pass 1's real
+   safety margin against MinerU's typical peak was thin — **roughly ~1GB**, not the "fits comfortably"
+   this section previously claimed — and the worst observed spike left almost none. The combination
+   that still doesn't fit at all is **MinerU + Summarizer at the same time** (with Embedder+Reranker
+   also resident, ~28GB+). **Embedder+Reranker are resident during Pass 2 (summarize+embed+store) and
+   during live serving, where they serve `McpServer` queries continuously — but are evicted for the
+   entire duration of Pass 1** (mechanism below); MinerU and the Summarizer remain the two that must
+   never be loaded together.
+   - **TEI (Embedder+Reranker) eviction during Pass 1 — a scoped exception, not a reversal of
+     always-resident.** Frees the ~9.4GB above as MinerU headroom for exactly the phase that needs it.
+     New module `app/tei_lifecycle.py` (`stop_tei_containers()`/`start_tei_containers()`, best-effort
+     `docker stop`/`docker start` over the two TEI containers) is wired to the same phase-boundary hook
+     mechanism the Summarizer eviction below already uses — `before_parse_phase` (composed alongside
+     `summarizer.unload`) stops both TEI containers before Pass 1's MinerU loads, and `before_finish_phase`
+     starts them again, polling their health endpoint until ready, before Pass 2's first summarize/embed
+     call. **This is safe only because the user has explicitly confirmed that ingestion and live querying
+     never overlap in practice for this deployment** — it is not a general claim that Embedder+Reranker
+     co-residency is unnecessary, and it must be reconsidered or reverted if concurrent live serving ever
+     becomes a real requirement. **The downtime window this creates is materially bigger than the
+     Summarizer's eviction below**: the Summarizer's unload/reload is brief (~2.5s) because Ollama exposes
+     a `keep_alive`/reload primitive; TEI has no equivalent per-call unload API, so the only lever is
+     stopping/starting its Docker containers — Embedder+Reranker are unavailable for the **entire Pass 1
+     duration**, potentially hours on a full corpus run, not a brief pause. Any live MCP query attempted
+     during Pass 1 would fail outright for the whole phase, not be briefly delayed.
    - **Open risk, not yet decided: Pass 1's ~1GB margin is thin enough that it needs a human call on
      footprint reduction or a guard** (WORK-BREAKDOWN.md's T-DOC series has the tracking note; this doc
      only flags it, it doesn't prescribe the fix).
