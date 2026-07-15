@@ -349,6 +349,42 @@ def test_retrieve_pool_size_lets_reranker_promote_a_passage_ranked_below_k():
     assert coverage.candidate_count > len(results)
 
 
+def test_retrieve_skips_unresolvable_hit_and_returns_remaining_results(caplog):
+    # T-DOC38 regression: an orphaned chunk (parent paper row deleted without cascading -- ~8% of
+    # real eval queries hit exactly this, `.phase0-data/known-issue-orphaned-chunks.md`) must not
+    # zero out the whole query. The unresolvable hit is dropped (and logged, not swallowed); the
+    # query's other, resolvable hits still come back.
+    store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
+    _seed_chunk(store, docstore, embedder, chunk_id="2506.00001:c0", paper_id="2506.00001",
+                block_id="2506.00001:b0", text="double machine learning orthogonal moment")
+    _seed_chunk(store, docstore, embedder, chunk_id="2506.00002:c0", paper_id="2506.00002",
+                block_id="2506.00002:b0", text="double machine learning debiased estimator")
+    del docstore._records["2506.00002"]  # simulate the orphan: chunk/block survive, papers row gone
+
+    with caplog.at_level("WARNING"):
+        results, _coverage = _make_retriever(store, docstore, FakeReranker(), embedder).retrieve(
+            "double machine learning", filters=None, k=10)
+
+    assert [res.paper_id for res in results] == ["2506.00001"]
+    assert any("2506.00002" in rec.message for rec in caplog.records)
+
+
+def test_retrieve_all_hits_unresolvable_returns_empty_not_error():
+    # Distinct from the "no hits at all" empty-corpus case: here hits exist (coverage reflects the
+    # real pool size) but none resolve -- still a valid, non-error empty result (CONVENTIONS §7
+    # "define errors out of existence where you can").
+    store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
+    _seed_chunk(store, docstore, embedder, chunk_id="2506.00001:c0", paper_id="2506.00001",
+                block_id="2506.00001:b0", text="double machine learning orthogonal moment")
+    del docstore._records["2506.00001"]
+
+    results, coverage = _make_retriever(store, docstore, FakeReranker(), embedder).retrieve(
+        "double machine learning", filters=None, k=10)
+
+    assert results == []
+    assert coverage.candidate_count == 1
+
+
 def test_retrieve_filters_is_searchfilters_not_dict():
     store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
     _seed_chunk(store, docstore, embedder, chunk_id="2506.00001:c0", paper_id="2506.00001",
@@ -460,6 +496,36 @@ def test_retrieve_papers_coverage_candidate_count_is_true_pool_not_returned_coun
     assert len(results) == 10
     assert coverage.candidate_count == 20
     assert coverage.candidate_count > len(results)
+
+
+def test_retrieve_papers_skips_unresolvable_hit_and_returns_remaining_results(caplog):
+    # T-DOC38 regression, mirroring retrieve()'s version above for the summary-level path.
+    store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
+    _seed_summary(store, docstore, embedder, paper_id="2506.00001", summary_id="2506.00001:summary",
+                  summary_text="double machine learning orthogonal moment")
+    _seed_summary(store, docstore, embedder, paper_id="2506.00002", summary_id="2506.00002:summary",
+                  summary_text="double machine learning debiased estimator")
+    del docstore._records["2506.00002"]  # simulate the orphan: summary survives, papers row gone
+
+    with caplog.at_level("WARNING"):
+        results, _coverage = _make_retriever(store, docstore, FakeReranker(), embedder).retrieve_papers(
+            "double machine learning", filters=None, k=10)
+
+    assert [res.view.paper_id for res in results] == ["2506.00001"]
+    assert any("2506.00002" in rec.message for rec in caplog.records)
+
+
+def test_retrieve_papers_all_hits_unresolvable_returns_empty_not_error():
+    store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
+    _seed_summary(store, docstore, embedder, paper_id="2506.00001", summary_id="2506.00001:summary",
+                  summary_text="double machine learning orthogonal moment")
+    del docstore._records["2506.00001"]
+
+    results, coverage = _make_retriever(store, docstore, FakeReranker(), embedder).retrieve_papers(
+        "double machine learning", filters=None, k=10)
+
+    assert results == []
+    assert coverage.candidate_count == 1
 
 
 def test_both_methods_use_the_same_injected_reranker():
