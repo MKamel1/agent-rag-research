@@ -540,7 +540,7 @@ tickets are the concrete follow-ups.
   skew. So 0.73 was never a retrieval defect to chase. Touches `fixtures/eval/` (foundation) → PR left OPEN
   for @MKamel1 with the `foundation-change` label. Full analysis + tables in `teval-results.md`.
 
-- **T-DOC51 (not started) — Pass-1 throughput: run N=3 concurrent parse workers (+63%, measured).** The
+- **T-DOC51 (implemented — PR #113, merged; `python -m app.ingest --parse-workers N`, default 1) — Pass-1 throughput: run N=3 concurrent parse workers (+63%, measured).** The
   Pass-1 GPU-underutilization problem (`.phase0-data/pass1-gpu-underutilization.md`, diagnosed 2026-07-14:
   27-38% avg GPU util, ~45% of samples at 0%) is **solved** — by parallelism, not by tuning MinerU. A
   rigorous serialized benchmark (2026-07-16; one GPU, verified clean before every run, TEI+Ollama evicted,
@@ -575,6 +575,24 @@ tickets are the concrete follow-ups.
   benchmark sidestepped it entirely with disjoint slices + throwaway output. Reusable benchmark scripts are
   in the session scratchpad (`pipeline_worker.py`, `run_pipeline_multi.py`, `evict_gpu.sh`,
   `compare_quality_pipeline.py`).
+  **Update (PR #113): the safety concern above resolved in favor of option (a).** Reading the code
+  confirmed `SqliteIngestState.checkpoint()`'s read-merge-write runs inside one implicit transaction, WAL is
+  on, and `sqlite3.connect`'s default 5s busy_timeout serializes cross-process writers — and, decisively,
+  disjoint `paper_id` shards mean no two workers ever touch the same row, so the race cannot occur by
+  construction. The implementation shards `refs[i::n]` (round-robin, provably disjoint-and-complete, unit
+  tested), spawns N `app.parse_phase` subprocesses, and **fails the whole run if any shard exits non-zero**
+  (a dead/OOM'd shard must never silently ship a partial corpus). `app/`-only, non-foundation.
+  **OPEN ACCEPTANCE CRITERION before a full 30k seed run (OG-19, `reviews/OPERATIONAL-GAPS.md`): the
+  "quality risk is nil" claim is true bit-for-bit only on 24/25 benchmarked papers.** One 56pp paper showed
+  a <0.03% (2/403 blocks) LaTeX-formula-boundary shift under *every* multi-worker config (never at 1 worker),
+  consistent with GPU batch-composition floating-point nondeterminism. It has **NOT** been verified that such
+  a boundary shift can never (a) corrupt a formula's extracted LaTeX or (b) move a block edge such that an
+  `Anchor`'s quotable snippet no longer round-trips against its source — which would breach CONTEXT.md's
+  "no anchor → the item is invalid" contract. **Required before N>1 is used for a real seed run:** parse a
+  math-heavy sample under N=1 vs N=3 and confirm every multi-worker block still yields a valid, round-trip-able
+  `Anchor` (or, if it can't be guaranteed, pin determinism — fixed batch composition / deterministic kernels,
+  at a throughput cost — or accept-and-document the risk explicitly). N=1 (the default) is unaffected and
+  needs no such check.
 
 **Key `.phase0-data/` docs for a new agent to read first** (all gitignored/local, not in git history):
 `teval-results.md` (T-EVAL methodology + full before/after numbers), `known-issue-orphaned-chunks.md`
