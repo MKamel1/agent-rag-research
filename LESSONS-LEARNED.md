@@ -513,3 +513,31 @@ fallback can fire again for any future ingest of a paper MinerU can't extract a 
 remaining 56 ran — unmeasured for those, but plausibly similar given they're the same historical
 cohort). `app/corpus_integrity.py` (this ticket's other deliverable) is the standing check that
 would catch a recurrence either way, but the parser-side fix is what stops it from happening at all.
+
+---
+
+### 2026-07-15 — build-process — the 0.96 ship-gate number held up under realistic distractor noise (T-DOC37/42)
+
+The V0 ship gate (single-passage Recall@10 ≥ 0.85) was originally cleared at 0.96 on a 100-paper corpus
+that `fetch_by_ids` had built *specifically to contain the gold papers* — no distractors. Two independent
+reviews flagged that this partly measures "find the answer in a haystack we pre-filtered to contain it,"
+not "find it among hundreds of relevant-but-wrong causal-methods papers." T-DOC37 re-ran all 210 questions
+against the real 809-paper production `"papers"` collection (gold papers among ~709 distractors,
+READ-ONLY) and, for a clean same-harness delta, against a throwaway gold-only copy of just the 100 gold
+papers. **Result: single-passage Recall@10 = 0.952 on both — the 709 distractors cost zero recall on every
+split** (deltas 0 to +0.02, within noise; only MRR dipped ≤0.008). Distractors occupied ~5% of top-10
+result slots (validated they really surface) but almost never displaced the correct gold passage. Lesson:
+for *this* retriever/corpus the pre-filtered-corpus worry turned out to be unfounded — but the only way to
+know was to run it against the real noise; a strong cross-encoder reranker over a discriminative 2560-dim
+embedder is what makes recall noise-robust here. Any future retrieval-quality regression test should run
+against the full `"papers"` collection, not a gold-only subset, or it won't see distractor pressure at all.
+
+Second lesson (T-DOC42 — denominator honesty): the multi-paper split's apparent weakness (0.73–0.76) was
+**mostly a scoring artifact**, not a retrieval defect. Multi-paper questions draw on 2+ papers but the
+fixture carried a single gold label, so a correct hit on the *other* co-source paper counted as a miss.
+Adding `additional_gold_paper_ids` (co-source arXiv IDs, recoverable from the ground-truth `section_path`)
+lifted multi-paper to 0.96. And the eval's dropped denominator (55/210 `no_match`, gold excerpt not found
+verbatim) is **not** biased toward hard questions (45% hard/expert vs 56% among scored) — it's an
+excerpt-normalization artifact concentrated in Method-Comprehension/equation text, orthogonal to retrieval
+difficulty. Takeaway: before chasing a weak-looking eval split as a quality defect, first rule out the
+label schema and the resolved-question denominator — the measurement was understating two splits at once.
