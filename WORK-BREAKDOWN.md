@@ -545,6 +545,95 @@ tickets are the concrete follow-ups.
 (the T-DOC23 bug), `known-issue-pass2-oom.md` (Pass 2 VRAM history), `pass1-gpu-underutilization.md` (the
 GPU-utilization investigation series behind T-DOC16/18/19/21).
 
+### T-DOC43–T-DOC50 — operational readiness gaps surfaced by the 2026-07-15 100-paper GPU-utilization run
+
+A real 100-paper end-to-end ingest run (full log in the gitignored `reviews/OPERATIONAL-GAPS.md`, OG-1..OG-11)
+converged on one theme: **the system is built to pass tests, not yet to be operated.** No preflight/doctor
+check, no auto-provisioned DB, no offline/cache-first ingest path (it re-hits arXiv for metadata even when
+the PDF is already local — which is what got this exact run 429'd and killed), no built-in GPU/perf
+telemetry, no run summary. 11 gaps, grouped into 8 tickets below where several gaps are genuinely one unit of
+work (OG-1 preflight + OG-8 service lifecycle share one "the run should own its own readiness" fix; OG-5
+telemetry + OG-6 run-events + OG-7 run-summary share one underlying counters/reporting layer), kept separate
+otherwise. **T-DOC48 (OG-9, offline/cache-first ingest) is the highest-value ticket in the batch** — it both
+blocks the ~1,700-PDF cached-corpus backlog from being processable at all, and directly caused the 429 that
+killed this run.
+
+- **T-DOC43 (not started) — 🔴 operational preflight/doctor + full service lifecycle (OG-1 + OG-8).** Before
+  launching, the operator had to manually check disk headroom (`df -h`), GPU/VRAM headroom (`nvidia-smi`),
+  the GPU lock not held (`.gpu.lock`), every required container up (`docker ps`: TEI-embed, TEI-reranker,
+  GROBID, Qdrant) and Ollama reachable (`curl localhost:11434/api/ps`) — none of which `app.ingest` checks
+  itself. Not hypothetical: `LESSONS-LEARNED.md` (T-DOC30) records a real run where GROBID's container was
+  silently down and quarantined all 5 papers before anyone noticed. The one piece of lifecycle code that
+  exists, `app/tei_lifecycle.py`, only manages the TEI containers around a run — GROBID, Qdrant, and Ollama
+  have no managed lifecycle at all, so the same "must already be up" assumption OG-1 works around is baked
+  into it. Fix: a `python -m app.doctor`/`--preflight` gate on `app.ingest` that health-pings every required
+  service (both TEIs, GROBID, Qdrant, Ollama) plus disk/VRAM/GPU-lock, refusing to start (or `--force`) with
+  one clear message naming what's missing instead of quarantining papers or crashing partway; extend
+  `app/tei_lifecycle.py`'s start/stop pattern to the other services (at minimum a health-gate, ideally
+  start-if-down for the ones safe to auto-start).
+- **T-DOC44 (not started) — 🔴 DB auto-provision (OG-2).** Pointing a run at a fresh `papers.db` crashes with
+  an opaque `no such table` — the `IngestionOrchestrator`/`DocumentStore` never creates or verifies schema —
+  so `migrations/migrate.py <db>` has to be run by hand first, and re-running `migrate` on an
+  already-migrated DB fails loudly by design (forcing an `rm -f db db-wal db-shm` workaround). Fix: detect an
+  absent/unmigrated DB on startup and either auto-migrate or fail with an actionable message ("database not
+  initialized — run `migrations/migrate.py <path>`"); add an idempotent `migrate --if-needed` mode to remove
+  the re-run foot-gun.
+- **T-DOC45 (not started) — 🟠 run-scoped corpus cap (OG-3).** `corpus_cap` is a foundation `Config` value
+  (30000) with no per-run override — no `--limit 100`/`RAG_CORPUS_CAP`. Capping a run at exactly 100 papers
+  required prefetching 100 PDFs, extracting their ids, and feeding them via `RAG_INGEST_PAPER_IDS` — the
+  only lever, and an indirect one. Fix: a run-scoped cap override (`RAG_CORPUS_CAP` env or
+  `app.ingest --limit N`) for test/benchmark/smoke runs.
+- **T-DOC46 (not started) — 🟠 scratch/benchmark run mode (OG-4).** Running without touching production
+  required hand-wiring four things: a throwaway `RAG_DB_PATH`, `RAG_BLOB_DIR`, a disposable `RAG_COLLECTION`
+  (e.g. `e2e_gpuutil_100`), and pointing the prefetcher's dedup at the **real** `papers.db` read-only — a
+  bespoke orchestration script, where getting any one wrong risks mutating production. Fix: a first-class
+  `--scratch`/bench mode that provisions an isolated DB + blob dir + uniquely-named Qdrant collection
+  automatically (and tears them down/lists them for cleanup), with production used read-only for dedup.
+- **T-DOC47 (not started) — 🔴 run instrumentation & reporting (OG-5 + OG-6 + OG-7).** The system cannot
+  answer "was the GPU well-utilized during this run" about itself — it emits no per-stage
+  GPU-util/timing/papers-per-hour telemetry, no structured run-start/stage/run-end events, and no
+  end-of-run summary. Confirming GPU utilization required wiring an **external** workstation-dashboard MCP
+  and hand-stamping `RUN_START`/`PREFETCH_*`/`INGEST_START`/`INGEST_END`/`RUN_END` timestamps to a
+  `timestamps.env` for post-hoc correlation; the production data dir already contains a hand-rolled
+  `gpu_cpu_sampler.sh` + `gpu_cpu_perf_log.csv` — evidence this is a recurring, previously-unmet need, not a
+  one-off. End-of-run outcome (done/quarantined/stuck) likewise has to be hand-queried
+  (`SELECT stage, count(*) FROM ingest_state GROUP BY stage`) — directly relevant given Pass 1 (MinerU) is
+  historically only ~44% GPU-utilized (`pass1-gpu-underutilization.md`). Fix: built-in per-run performance
+  telemetry (sample GPU util/VRAM/power on an interval, tag by pipeline stage), structured JSON-line run
+  events (run id, stage, timestamp, paper counts) external monitors can correlate against, and an
+  end-of-run summary (N done, N quarantined + reasons, wall-clock, papers/hour, SQLite↔Qdrant consistency
+  check) — three faces of one "the run can report on itself" capability, sharing the same underlying
+  counters, worth building together.
+- **T-DOC48 (not started) — 🔴 HIGHEST-VALUE, offline/cache-first ingest (OG-9).** There are 2,542 PDFs
+  already downloaded in `research-system-rag-data/pdf_cache` but only 809 processed — ~1,700 papers sit
+  downloaded-but-unprocessed — yet a run over them still failed, because the pipeline re-fetches each
+  paper's **metadata** from arXiv even when its PDF is already local. Root cause: `PaperRef`
+  (`contracts/harvester.py`) has 11 required fields (title/abstract/authors/categories/published/updated/
+  pdf_url/version); `app/prefetch_pdfs.py` writes only `<paper_id>.pdf` and discards the metadata it fetched
+  to decide the download, so nothing local carries the `PaperRef` — `app/parse_phase.py:39` and
+  `app/ingest.py` are therefore forced to call `ArxivSource().fetch_by_ids()` (network) before they can parse
+  a PDF already on disk. Consequence, observed: that forced re-fetch got HTTP 429 (arXiv refusing even a
+  single-id probe) and killed the whole run. Highest-value ticket in this batch — it both blocks the
+  ~1,700-PDF cached-corpus backlog from being processable at all AND directly caused the run-killing 429
+  (T-DOC49). Fix: persist harvested `PaperRef` metadata alongside each cached PDF (a `<paper_id>.json`
+  sidecar, or a local `refs` table) at download time, and make ingest cache-first — if the PDF *and* its
+  metadata are both local, process fully offline with zero arXiv calls.
+- **T-DOC49 (not started) — 🔴 arXiv 429 run-level backoff/resume (OG-10).** A single transient 429 from
+  arXiv (metadata fetch) raised `TransientError` and killed the entire `app.ingest` run (Pass 1 crashed →
+  `CalledProcessError` → exit); `ArxivSource` has per-call retry but no run-level "arXiv is throttling —
+  pause and resume" handling. Fix: treat arXiv 429 as a pause-and-resume condition at the run level (honor
+  `Retry-After`, back off, resume from `ingest_state` — resume already exists). Kept separate from T-DOC48:
+  cache-first removes the metadata re-fetch that triggered *this* 429 for the cached backlog, but this is
+  the general run-level resilience fix for any live arXiv call (harvest, non-cached papers) that gets
+  throttled.
+- **T-DOC50 (not started) — 🔴 prefetch stall visibility (OG-11).** With dedup pointed at production, only 4
+  genuinely-new papers were available; prefetch downloaded the 4 and logged "below target, sleeping 3600s
+  before re-harvesting" — it would have sat idle an hour making zero progress while looking healthy, caught
+  only because the operator noticed no GPU spike, not because any telemetry flagged it. Fix: surface
+  stalled/waiting state loudly (a "prefetch stalled: 4/100, only N new available, next attempt in 3600s"
+  status line / non-zero signal), a `--max-idle` bound, and a "target unreachable — only N papers available"
+  terminal message instead of an invisible hour-long sleep.
+
 ---
 
 ## T-DOC series — post-M1b real-run hardening fixes (2026-07-13/14)
