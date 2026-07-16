@@ -481,19 +481,31 @@ denominator that dropped 53/210 `no_match` questions (plausibly the hardest), wi
 multi-paper (0.733) splits *below* the 0.85 gate — and the "real MCP works" proof (T-DOC33) was n=1. These
 tickets are the concrete follow-ups.
 
-- **T-DOC37 (not started) — BLOCKER, the one experiment that turns "we believe V0 ships" into "V0 ships."**
-  Re-run the full T-EVAL suite against the **real 809-paper production corpus through the real MCP path**
-  (`app/serve.py` + `app/mcp_verify_client.py`, T-DOC33), not the 100-paper convenience corpus, and report
-  **all** splits (single-passage, multi-paper, title-present/absent) honestly — then re-label the ship gate
-  in `teval-results.md`/`WORK-BREAKDOWN.md` to match reality. **Depends on T-DOC35** (else it measures the
-  59-paper hole) and benefits from the T-DOC27 prod-Qdrant reindex (below) landing first. Also fold in the
-  RAG-review's A5 (measure T-DOC34 summary-routing's effect on the multi-paper split) while the harness is up.
-- **T-DOC38 (in progress — PR #106 open) — BLOCKER, small, high-value read-path robustness.** `rag/retriever.py:106-107,
+- **T-DOC37 (DONE — GATE MET UNDER REALISTIC NOISE; PR #109 for T-DOC37+42 open for @MKamel1).** Re-ran all 210
+  questions against the **real 809-paper production `"papers"` corpus** (READ-ONLY) — the gold papers now sit
+  among ~709 relevant-but-wrong causal-methods papers we never wrote questions for, and **those ~709 ARE the
+  distractors** (the distractor-noise methodology the human operator asked for: gold papers + the rest of 809
+  as noise, delta vs a gold-only corpus = the noise-robustness signal). For a clean same-harness delta, also
+  ran a throwaway gold-only 100-paper copy (`e2e_teval_goldonly`, READ-ONLY vector copy, no re-embed).
+  **Result: single-passage Recall@10 = 0.952 on the real 809 corpus, identical to 0.952 gold-only — the 709
+  distractors cost ZERO recall on every split** (deltas 0 to +0.02, within noise; MRR down ≤0.008). Validated
+  the search really ranges over 809 (19 distinct distractor papers surface, 5% of top-10 slots, 58/151
+  questions hit ≥1 distractor). Real MCP round-trip (`app/serve.py` + `app/mcp_verify_client.py`, T-DOC33)
+  spot-checked on 4 questions against the 809 corpus — all returned a gold paper as top hit + resolved span.
+  Under **multi-gold scoring (T-DOC42) every split clears 0.85** (single 0.952, multi-paper 0.957,
+  title-present 0.947, title-absent 0.965, full 0.954); under single-gold, multi-paper (0.761) and
+  title-absent (0.807) sit below 0.85 — precisely the two splits the single-gold scoring artifact depresses.
+  Gate relabelled in `teval-results.md` (new "distractor-noise robustness eval (2026-07-15)" section, the
+  full side-by-side split table + deltas). A5 (T-DOC34 summary-routing effect on multi-paper) not folded in —
+  the multi-paper split is now explained by the scoring artifact, not a routing gap, so it's deferred as
+  non-blocking. **Depended on T-DOC35** (satisfied: `chunks` has 809 distinct paper_ids = `papers` count, no
+  orphan hole).
+- **T-DOC38 (merged — PR #106) — BLOCKER, small, high-value read-path robustness.** `rag/retriever.py:106-107,
   157-158` raise `ContractError` and zero the *entire* query when a single reranked hit can't be resolved
   (e.g. an orphaned/stale candidate). The ingest side quarantines bad papers; the read side never mirrored
   that invariant — already measured crashing ~8% of eval queries to zero results. Fix: **skip-and-continue**
   (drop the unresolvable hit, log it, return the rest) instead of raising. Pure `rag/` code, no infra.
-- **T-DOC39 (in progress — PR #106 open)** — the rerank batch ceiling (32) leaks a vendor limit into the pure module and is
+- **T-DOC39 (merged — PR #106)** — the rerank batch ceiling (32) leaks a vendor limit into the pure module and is
   incompletely guarded: `retriever.py:91,143`'s `max(k, 32)` means **any caller passing `k>32` re-triggers
   the same 0%-recall 422 crash T-DOC24/25 caused** (MCP exposes `k` unclamped). Fix: move the batch ceiling
   into `TeiReranker` (where the vendor limit belongs), clamp `k` there, and add a real-adapter contract test
@@ -514,13 +526,19 @@ tickets are the concrete follow-ups.
   re-embed and a chunker change → **wants a design/brainstorm pass and an explicit go/no-go before
   implementation, and a before/after T-EVAL** (via T-DOC37's harness) to prove it helps. V0-cost (local LLM)
   or V1.
-- **T-DOC42 (not started) — eval-methodology fix; precondition for trusting the multi-paper number.** The
-  multi-paper split (0.733) is *partly a measurement artifact*: 2-paper questions carry a single gold label
-  (`fixtures/eval/`, TEST-STRATEGY.md), so a correct hit on the "other" gold paper scores as a miss. Fix:
-  add multi-gold labels to the ~59 multi-paper questions, and quantify the `no_match` denominator selection
-  bias (are the 53 dropped questions systematically the hard ones?), before treating 0.733 as a defect to
-  chase. Touches `fixtures/` (foundation) → PR left open for @MKamel1. Do this *before* over-investing in
-  T-DOC41-style quality work aimed at the multi-paper split.
+- **T-DOC42 (DONE — the multi-paper "weakness" was mostly a scoring artifact; PR for T-DOC37+42 open for
+  @MKamel1).** Confirmed: the multi-paper split *was* partly a measurement artifact. Added
+  `additional_gold_paper_ids` to all **60** multi-paper ground-truth records (**82 co-gold labels**),
+  sourced from each record's own `section_path`, which authoritatively names every co-source paper by arXiv
+  ID (more reliable + complete than parsing `question_text`). Single-paper records untouched (verified none
+  name a second paper), so the single-passage gate methodology is unchanged. **Effect: multi-paper jumps
+  0.739 → 0.935 (gold-only) / 0.761 → 0.957 (809); title-absent 0.807 → 0.965 (809)** — ~⅔ of the apparent
+  weakness was single-gold miscounting. **`no_match` denominator bias quantified: NOT hard-skewed** — 151/210
+  resolve (72%); the 55 `no_match` drops are 45% hard/expert vs 56% among scored, dominated by
+  Method-Comprehension (17/55) equation/LaTeX excerpts that fail verbatim substring-matching after NFKC
+  normalization — a fixture-normalization artifact orthogonal to retrieval difficulty, not an easy-survivor
+  skew. So 0.73 was never a retrieval defect to chase. Touches `fixtures/eval/` (foundation) → PR left OPEN
+  for @MKamel1 with the `foundation-change` label. Full analysis + tables in `teval-results.md`.
 
 **Key `.phase0-data/` docs for a new agent to read first** (all gitignored/local, not in git history):
 `teval-results.md` (T-EVAL methodology + full before/after numbers), `known-issue-orphaned-chunks.md`
