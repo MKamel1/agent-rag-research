@@ -670,6 +670,104 @@ killed this run.
   status line / non-zero signal), a `--max-idle` bound, and a "target unreachable — only N papers available"
   terminal message instead of an invisible hour-long sleep.
 
+### T-DOC52–T-DOC55 — remaining operational gaps from the 2026-07-15/16 100-paper run and Pass-1 benchmark (OG-12..OG-20)
+
+Continuation of the operational-gaps log (`reviews/OPERATIONAL-GAPS.md`, gitignored) started under
+T-DOC43–T-DOC50 (OG-1..OG-11, unmerged PR #110). This batch covers OG-12 through OG-20. OG-18 (the
+data-parallel-workers positive result) is already ticketed as **T-DOC51** (unmerged PR #111) and is not
+duplicated here. OG-19 (multi-worker formula-boundary nondeterminism) is not a standalone feature — it
+qualifies T-DOC51's "zero quality risk" claim and belongs in that ticket's acceptance criteria; **T-DOC51
+currently exists only on PR #111's branch, not on `main`, so it could not be amended in place from this
+branch** — see the PR body for the exact caveat text to fold in once #111 lands (or is rebased onto this
+work). OG-21 is explicitly an agent-workflow process lesson, not a system feature, and is intentionally not
+ticketed.
+
+- **T-DOC52 (not started) — 🟠 no container restart policy; a power event silently kills every dependency
+  (OG-12).** The workstation power-cycled (`uptime` showed 32 min since boot); all 4 required containers
+  (Qdrant, GROBID, TEI-embed, TEI-reranker) came back `Exited (255)`, none auto-restarted, and had to be
+  brought back up by hand (`docker start ...`). Production data itself survived intact (Qdrant's on-disk
+  segments and `papers.db` both verified post-recovery) — only the *services* needed a human to notice and
+  intervene. Same root cause as OG-1/OG-8 (T-DOC43), now with a second real incident (a hardware power
+  event, not just a forgotten container) as evidence. Fix: give the required containers
+  `restart: unless-stopped` in their compose/run config, or have the preflight/doctor check auto-start any
+  stopped required service instead of only health-checking it. **Belongs in T-DOC43's scope** (preflight +
+  service lifecycle) per the gap's own note, but T-DOC43 lives on unmerged PR #110's branch and can't be
+  amended from here — ticketed standalone; fold into T-DOC43 when #110 lands.
+- **T-DOC53 (not started) — 🔴 MinerU's `vlm` backend: investigated, unblocked, and rejected on measured
+  performance — negative-result record, not a feature (OG-13 + OG-14 + OG-15 + OG-17).** Four related
+  findings from validating `vlm` as a Pass-1 alternative to `pipeline`, kept as one ticket because the
+  action for all four is "don't repeat this, here's why":
+  1. *(OG-13)* The shared conda env had a pre-existing, silently broken `vllm==0.24.0` (unrelated origin,
+     `Required-by:` empty) that MinerU's `vlm-engine` backend auto-imports (`_select_linux_engine`,
+     `mineru/utils/engine_utils.py`), crashing on first use — its `transformers>=5.5.3` requirement
+     conflicted with MinerU's own `transformers<5.0.0` pin, and `vllm==0.24.0` was itself outside MinerU's
+     declared-supported range. Fixed by downgrading to `vllm<0.22.0,>=0.10.1.1` (resolver landed 0.21.0, no
+     torch/transformers change needed); `pipeline` backend re-verified correct post-downgrade. Side effect:
+     bumped `anthropic`/`openai`/`opencv-python*`/`starlette` and vllm-internal kernel packages, which now
+     flag conflicts against unused `marker-pdf`/`surya-ocr`/`gradio` leftovers — a `pip check` sweep is owed
+     before this env is next touched for an unrelated reason.
+  2. *(OG-14)* `do_parse`'s public/synchronous entry point hardcodes the synchronous `vllm.LLM` engine
+     (`mineru/cli/common.py`: `get_vlm_engine(inference_engine='auto', is_async=False)`), and that specific
+     path produces degenerate output (`content_list.json` with zero real blocks) on this vLLM 0.21.0 +
+     Qwen2VL-1.2B + RTX 3090 combination. The async path (`AsyncLLM` via `aio_doc_analyze`) on the identical
+     model/checkpoint is correct — the bug is narrowly scoped to the sync `vllm.LLM` wrapper, not vLLM or
+     the model in general — but `do_parse` cannot reach it.
+  3. *(OG-17)* Built the async wrapper OG-14 called for — simpler than expected, since
+     `mineru.cli.common.aio_do_parse` already exists (no hand-rolled `_process_output` replication needed,
+     ~25 lines: `asyncio.run(aio_do_parse(backend="vlm-engine", ...))`). A real, timed, quality-checked
+     25-paper/488-page `pipeline`-vs-`vlm` comparison confirmed the async path is correct (88.8% avg GPU
+     util vs `pipeline`'s 38.1%, materially equivalent output quality) but **~3.06x slower wall-clock**
+     (530.9s vs 173.3s) and **~7x more GPU-seconds** for the same pages — the 1.2B model's sequential
+     per-page token decoding is intrinsically more expensive than `pipeline`'s specialized narrower
+     sub-models, so better utilization of much costlier work is still a net loss. Also flags a reusable-code
+     gotcha: calling `asyncio.run(aio_do_parse(...))` twice in one process (warm-up then timed run) crashes
+     the second call (`RuntimeError: Future attached to a different loop`) because `AsyncLLM`'s
+     process-cached `ModelSingleton` binds to the event loop it was created in — fix is one `asyncio.run()`
+     wrapping both warm-up and the timed batch inside a single `async def main()`.
+  4. *(OG-15)* Separately, tripling `MINERU_PROCESSING_WINDOW_SIZE` (64→192) to test the "bigger window
+     amortizes render/infer handoff cost" theory produced only a ~3.2% wall-clock change — within
+     cross-run noise. Root cause: `doc_analyze_streaming`'s CPU render step is page-count-proportional, not
+     a fixed per-batch tax, so fewer/bigger batches barely move total render time.
+
+  **Recommendation (confirmed under clean re-testing by OG-18/T-DOC51, not a false negative from
+  confounds): do not adopt `vlm` for Pass-1 throughput on this hardware, and do not expect
+  `MINERU_PROCESSING_WINDOW_SIZE` alone to fix GPU underutilization.** Action: fold this record into
+  `pass1-gpu-underutilization.md`'s tuning-parameters guidance (already the plan per OG-15's own note) so a
+  future operator doesn't re-run either experiment from scratch; if `vlm` is ever revisited, do it via the
+  async path explicitly, with a `pip check`-clean env verified first, and re-measure on the actual target
+  hardware rather than extrapolate from this box.
+- **T-DOC54 (not started) — 🟠 `workstation-dashboard` MCP's retained history has silent internal gaps; not
+  trustworthy alone for post-hoc GPU analysis (OG-16).** `export_history(components="gpu")` for a 736s
+  Pass-1 window returned only 386 dense samples covering the *last* 217s — the earlier ~519s (including all
+  model-loading and the bulk of inference) had zero stored samples, with no error, warning, or row-count
+  hint from the tool itself. Cross-checked against `run.log`'s own timestamped lines and this run's
+  independent `nvidia-smi`-polling `monitor.sh` (no gap, since it's this run's own process) to confirm the
+  partial data was at least internally consistent before reporting it as explicitly lower-confidence. Not
+  this project's own bug (external MCP tool), but a second, independent argument for OG-5/OG-6's built-in
+  per-run GPU telemetry (T-DOC47): an external dashboard's retention/collection can have silent holes
+  exactly when a post-hoc analysis needs it most. Action: once T-DOC47 ships, treat the pipeline's own
+  telemetry as the source of truth for run analysis; until then, cross-check any `workstation-dashboard`
+  export against the run's own log timestamps (or an independent local poller, as this run did) before
+  trusting it.
+- **T-DOC55 (not started) — 🟠 no controlled benchmark harness; every perf measurement hand-builds its own
+  controls, and GPU benchmarks must be serialized (OG-20, new part only).** Answering "how do we raise
+  pages/min" required hand-building, from scratch, every control needed to trust the numbers: evict TEI
+  *and* Ollama, verify `nvidia-smi` at true baseline before each run, exclude model-init via a discarded
+  warm-up, hold the paper set fixed, poll GPU at 0.5s, normalize to pages/min, and treat any OOM'd worker as
+  invalidating its config — none of this exists in the repo; each benchmark reinvented it. Two real
+  near-misses this caused: the first `vlm` test was a false negative (default `gpu_memory_utilization=0.5`,
+  Ollama possibly still resident) and had to be redone from a clean GPU to be trusted; and a session nearly
+  dispatched three GPU benchmarks in parallel, which on one GPU would have contended and produced
+  confidently wrong numbers for all three — there is no lock preventing that. Fix (the genuinely new part —
+  overlaps but does not duplicate T-DOC46's scratch/isolated-storage mode or T-DOC47's built-in telemetry):
+  a `benchmark`/`perf` mode or harness owning evict-and-verify GPU baseline, warm-up-then-time convention,
+  fixed-corpus selection, OOM detection that invalidates a config, and — the part with no existing
+  analogue — **a GPU serialization lock so two benchmarks can never run concurrently** (the repo already has
+  a `.gpu.lock` file used to serialize production ingest runs against each other; extend that same
+  mechanism to cover benchmark runs rather than inventing a second lock). Cross-references T-DOC46
+  (scratch/benchmark run mode) and T-DOC47 (run instrumentation & reporting) for the rest of "the system can
+  measure itself honestly."
+
 ---
 
 ## T-DOC series — post-M1b real-run hardening fixes (2026-07-13/14)
