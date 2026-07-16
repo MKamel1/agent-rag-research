@@ -804,11 +804,18 @@ that choice, not ADR-07, which is the unrelated chunking/contextual-header decis
 `authors_json`/`categories_json`/`bbox_json`/`anchor_json` are JSON
 because they are read whole, never queried by inner field in V0.
 
-**V0 does not enforce foreign keys.** `PRAGMA foreign_keys` is off by default in SQLite, is
-per-connection and non-persistent, and the migration script does not set it — so the `REFERENCES
-papers(paper_id)` clauses above are documentation of intent, not enforced constraints, until whoever
-owns the long-lived connection (`DocumentStore`, Owner D/M5) deliberately turns the pragma on for that
-connection. This is the V0 decision, not an oversight to silently fix in the migration script.
+**Foreign keys are enforced as of T-DOC40.** `PRAGMA foreign_keys` is per-connection and
+non-persistent — nothing in the schema DDL itself turns it on — so both `DocumentStore.__init__`
+(`rag/document_store.py`, the long-lived connection that owns these tables) and
+`migrations/migrate.py` explicitly execute `PRAGMA foreign_keys=ON;`. The `REFERENCES
+papers(paper_id)` clauses above are therefore real, enforced constraints on those connections, not
+just documentation of intent: a raw `DELETE FROM papers` while `blocks`/`chunks`/`summaries` rows
+still reference that `paper_id` now fails loudly (`sqlite3.IntegrityError`, SQLite's default
+`ON DELETE NO ACTION`) instead of silently orphaning them — closing the T-DOC23/T-DOC35
+orphan-recurrence class at the schema level. `DocumentStore.delete()` is unaffected: it already
+deletes children before the parent row in one transaction, the order FK enforcement requires
+anyway. A connection this codebase doesn't control (e.g. an ad-hoc script opening the `.db` file
+directly) is **not** protected — enforcement is per-connection, not a file-level SQLite property.
 
 ---
 

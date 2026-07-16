@@ -198,6 +198,20 @@ class VectorIndex:
         }
         return [Hit(id=doc_id, kind=kind_by_id[doc_id], score=score) for doc_id, score in fused[:k]]
 
+    def delete(self, ids: list[str]) -> None:
+        """Removes the points for `ids` (chunk_ids/summary_ids) — T-DOC40, the vector-store half of
+        `DocumentStore.delete()`'s cross-store cleanup. Idempotent: deleting an id with no matching
+        point (already gone, or never upserted) is a safe no-op, matching Qdrant's own delete-by-id
+        semantics. `ids=[]` skips the network call entirely -- an empty selector is never sent.
+        """
+        if not ids:
+            return
+        self._call(
+            self._client.delete,
+            self._collection,
+            points_selector=models.PointIdsList(points=[_point_id(i) for i in ids]),
+        )
+
     def rebuild(self) -> None:
         """Drop and recreate the collection in place, re-upserting every point it already held —
         a defragment/reindex operation. This does NOT re-embed from `DocumentStore` (that needs

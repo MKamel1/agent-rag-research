@@ -332,6 +332,15 @@ class DocStoreDouble:
     def get(self, paper_id: str) -> PaperRecord | None:
         return self.records.get(paper_id)
 
+    def delete(self, paper_id: str) -> list[str]:
+        """Mirrors the real `DocumentStore.delete()` return contract (T-DOC40): the removed
+        record's chunk_ids + summary_id, `[]` for an unknown paper_id."""
+        record = self.records.pop(paper_id, None)
+        self._events.append(("delete", paper_id))
+        if record is None:
+            return []
+        return [c.chunk_id for c in record.chunks] + [record.summary_id]
+
 
 class RecordingVectorIndex:
     """Wraps a real FakeVectorStore, logging each `upsert` to the shared `events` and optionally
@@ -373,6 +382,10 @@ class RecordingVectorIndex:
         self._events.append(("upsert", paper_id))
         self.upserts.append(id)
         self._store.upsert(id, vector, payload)
+
+    def delete(self, ids: list[str]) -> None:
+        self._events.append(("delete", tuple(ids)))
+        self._store.delete(ids)
 
 
 class Rig:
@@ -1163,3 +1176,52 @@ def test_parse_phase_with_a_real_stateful_adaptive_sizer_grows_at_the_intended_r
     # to whatever's actually left in `refs` (12 total, 5 already consumed -> 7 remain).
     assert sizes == [5, 7]
     assert sum(sizes) == len(refs)
+
+
+# ================================================================================================
+# delete_paper — T-DOC40 cross-store delete coordination
+#
+# DocumentStore.delete() only ever touches SQLite (CONVENTIONS.md §1: it must not import the
+# vector-store vendor) -- IngestionOrchestrator.delete_paper() is the seam that also owns
+# VectorIndex, so it is where the two deletes get coordinated: document_store.delete(paper_id)
+# returns the removed chunk_ids/summary_id, which get handed straight to vector_index.delete().
+# ================================================================================================
+
+
+def test_delete_paper_removes_the_paper_from_both_stores():
+    rig = Rig()
+    orch = rig.ingest()
+    assert FIRST_ID in rig.document_store.records
+    record = rig.document_store.get(FIRST_ID)
+    vector_ids = [c.chunk_id for c in record.chunks] + [record.summary_id]
+    assert all(vid in rig.vector_store._store for vid in vector_ids)
+
+    orch.delete_paper(FIRST_ID)
+
+    assert FIRST_ID not in rig.document_store.records
+    assert not any(vid in rig.vector_store._store for vid in vector_ids)
+
+
+def test_delete_paper_does_not_touch_other_papers():
+    rig = Rig()
+    orch = rig.ingest()
+    other_ids = [pid for pid in PAPER_IDS if pid != FIRST_ID]
+
+    orch.delete_paper(FIRST_ID)
+
+    for pid in other_ids:
+        assert pid in rig.document_store.records
+        record = rig.document_store.get(pid)
+        assert record.summary_id in rig.vector_store._store
+        assert all(c.chunk_id in rig.vector_store._store for c in record.chunks)
+
+
+def test_delete_paper_of_unknown_paper_id_calls_vector_delete_with_no_ids():
+    # DocumentStore.delete() returns [] for an unknown paper_id -- delete_paper must still call
+    # vector_index.delete([]) (not skip it), and that call must be a safe no-op, not raise.
+    rig = Rig()
+    orch = rig.new_orchestrator()
+
+    orch.delete_paper("9999.99999")  # must not raise
+
+    assert ("delete", ()) in rig.events

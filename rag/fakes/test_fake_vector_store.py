@@ -145,6 +145,22 @@ def test_filters_restrict_by_kind():
     assert [h.id for h in hits] == ["summary1"]
 
 
+def test_delete_removes_the_point_and_leaves_others():
+    store = FakeVectorStore()
+    store.upsert("keep", [1.0, 0.0], _payload())
+    store.upsert("gone", [1.0, 0.0], _payload())
+
+    store.delete(["gone"])
+
+    hits = store.hybrid_search(qvec=[1.0, 0.0], qtext="doubly robust", filters=None, k=10)
+    assert [h.id for h in hits] == ["keep"]
+
+
+def test_delete_of_unknown_id_does_not_raise():
+    store = FakeVectorStore()
+    store.delete(["never-upserted"])  # must not raise
+
+
 def test_rebuild_does_not_crash():
     store = FakeVectorStore()
     store.upsert("a", [1.0, 0.0], _payload())
