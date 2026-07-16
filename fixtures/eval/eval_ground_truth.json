@@ -3,7 +3,8 @@
     "description": "Ground-truth answers and source references for evaluating reading comprehension, synthesis, and deep reasoning accuracy (210 items).",
     "structure": "Array of ground-truth records keyed by question_id containing answers, source paper IDs, passage excerpts, and metadata.",
     "total_items": 210,
-    "last_updated": "2026-07-11T02:59:58Z"
+    "last_updated": "2026-07-15T00:00:00Z",
+    "multi_gold_note": "Multi-paper questions (Multi-Paper-Reasoning/Synthesis) carry an `additional_gold_paper_ids` list: the co-source papers named in that record's `section_path` (authoritative arXiv IDs), minus the primary `source_paper_id`. A retrieval hit on ANY gold paper counts as correct for that question (T-DOC42). Single-paper records are unaffected."
   },
   "ground_truth": [
     {
@@ -1014,7 +1015,10 @@
       "section_path": "Paper 2410.00903 Sec 1 (Introduction); Paper 2604.23904 Sec 1 (Introduction)",
       "passage_excerpt": "the outcome-prediction loss decomposes into prognostic error plus an overlap-weighted treatment-effect error, with weight π(W ){1 − π(W )}. Thus, under imbalance or limited overlap, a model may reprod",
       "question_type": "Multi-Paper-Synthesis",
-      "difficulty": "hard"
+      "difficulty": "hard",
+      "additional_gold_paper_ids": [
+        "2410.00903"
+      ]
     },
     {
       "question_id": "Q-102",
@@ -1024,7 +1028,10 @@
       "section_path": "Paper 2605.24808 Sec I; Paper 2508.20259 Sec 1",
       "passage_excerpt": "Our key idea is to introduce latent variables only into the second stage of DML, enabling efficient estimation of causal effects, while keeping the overall computation tractable.",
       "question_type": "Multi-Paper-Synthesis",
-      "difficulty": "hard"
+      "difficulty": "hard",
+      "additional_gold_paper_ids": [
+        "2508.20259"
+      ]
     },
     {
       "question_id": "Q-103",
@@ -1034,7 +1041,10 @@
       "section_path": "Paper 2510.09684 Sec 1 & 2.5; Paper 2602.01711 Sec 1",
       "passage_excerpt": "First, it learns an offline causal reward model by applying Double Machine Learning (DML) to semantic embeddings of prompts and queries, isolating the causal effect of prompt variations from confoundi",
       "question_type": "Multi-Paper-Synthesis",
-      "difficulty": "hard"
+      "difficulty": "hard",
+      "additional_gold_paper_ids": [
+        "2510.09684"
+      ]
     },
     {
       "question_id": "Q-104",
@@ -1044,7 +1054,10 @@
       "section_path": "Paper 2506.14329 Abstract, Sec 1; Paper 2602.10370 Sec 1, Sec 3",
       "passage_excerpt": "We discuss critical challenges inherent to latent feature learning and downstream parameter estimation arising from the high dimensionality and non-identifiability of representations.",
       "question_type": "Multi-Paper-Synthesis",
-      "difficulty": "hard"
+      "difficulty": "hard",
+      "additional_gold_paper_ids": [
+        "2602.10370"
+      ]
     },
     {
       "question_id": "Q-105",
@@ -1054,7 +1067,10 @@
       "section_path": "2601.12120 Section 1 & Section 4; 2602.19703 Section 1",
       "passage_excerpt": "Proportional aggregation amounts roughly to the assumption that either each component variable has the same effect on the outcome, or, that the effect on the outcome is mediated by the aggregate treat",
       "question_type": "Multi-Paper-Synthesis",
-      "difficulty": "hard"
+      "difficulty": "hard",
+      "additional_gold_paper_ids": [
+        "2602.19703"
+      ]
     },
     {
       "question_id": "Q-106",
@@ -1064,7 +1080,10 @@
       "section_path": "2607.03351 Section 4; 2606.12892 Section 1",
       "passage_excerpt": "Their combined interpretation, in terms of improving the efficiency of the resulting AutoDML estimator, is that Z should be maximally predictive of the outcome but minimally predictive of the Riesz re",
       "question_type": "Multi-Paper-Synthesis",
-      "difficulty": "hard"
+      "difficulty": "hard",
+      "additional_gold_paper_ids": [
+        "2606.12892"
+      ]
     },
     {
       "question_id": "Q-107",
@@ -1074,7 +1093,10 @@
       "section_path": "2605.27474 Sec 1; 2605.27473 Sec 1",
       "passage_excerpt": "reading the tail off the model’s residuals — is circular: the inferred Generalised-Pareto shape ξb shifts from −0.42 (bounded) to +0.28 (heavy) on one dataset solely as a function of switching the cor",
       "question_type": "Multi-Paper-Synthesis",
-      "difficulty": "hard"
+      "difficulty": "hard",
+      "additional_gold_paper_ids": [
+        "2605.27473"
+      ]
     },
     {
       "question_id": "Q-108",
@@ -1084,7 +1106,10 @@
       "section_path": "Paper 2605.06386 Sec 1 (Introduction) & Sec 1.1; Paper 2508.20326 Sec 1 (Introduction - Contributions)",
       "passage_excerpt": "We find that θ(n) converges linearly to a neighborhood of θ⋆ —the optimum in the well-specified case—with a radius that has a fourth-power (resp. squared) dependence on ∥ĝ − g0 ∥G when Neyman orthogo",
       "question_type": "Multi-Paper-Synthesis",
-      "difficulty": "hard"
+      "difficulty": "hard",
+      "additional_gold_paper_ids": [
+        "2605.06386"
+      ]
     },
     {
       "question_id": "Q-109",
@@ -1094,7 +1119,10 @@
       "section_path": "Paper 2506.14950 Section 1 & Section 4.1; Paper 2507.12435 Section 1 & Section 2",
       "passage_excerpt": "We derive a novel, Neyman orthogonal, score function for CMR problems in Section 4.1, which does not rely on influence functions or the classical techniques in Chernozhukov et al. (2018)",
       "question_type": "Multi-Paper-Synthesis",
-      "difficulty": "hard"
+      "difficulty": "hard",
+      "additional_gold_paper_ids": [
+        "2507.12435"
+      ]
     },
     {
       "question_id": "Q-110",
@@ -1104,7 +1132,10 @@
       "section_path": "Paper 2606.21840 Sec 1 & 2; Paper 2606.09625 Sec 1 & 2",
       "passage_excerpt": "By leveraging optimal transport, we use the control group to estimate the untreated distributional drift from the pre- to post-treatment period and apply it to the treated group’s pre-treatment baseli",
       "question_type": "Multi-Paper-Synthesis",
-      "difficulty": "hard"
+      "difficulty": "hard",
+      "additional_gold_paper_ids": [
+        "2606.09625"
+      ]
     },
     {
       "question_id": "Q-111",
@@ -1614,7 +1645,10 @@
       "section_path": "Paper 2604.23904 Section 1 & Section 3; Paper 2410.00903 Section 1 & Section 3",
       "passage_excerpt": "Writing mπ (W ) = E[Y | W ] and τ (W ) = Q(1, W ) − Q(0, W ), the outcome-prediction loss decomposes into prognostic error plus an overlap-weighted treatment-effect error, with weight π(W ){1 − π(W )}",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2410.00903"
+      ]
     },
     {
       "question_id": "Q-162",
@@ -1624,7 +1658,10 @@
       "section_path": "Paper 2607.06412 Section 1 & Section 2; Paper 2605.16593 Section 1 & Section 3",
       "passage_excerpt": "The test provides a single global assessment of whether treatment effects exhibit systematic variation with respect to a chosen low-dimensional set of covariates, while allowing identification to",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2605.16593"
+      ]
     },
     {
       "question_id": "Q-163",
@@ -1634,7 +1671,11 @@
       "section_path": "Paper 2508.02183 Section 1 & Section 3; Paper 2501.10423 Section 1 & Section 2; Paper 2603.29261 Section 1 & Section 3",
       "passage_excerpt": "Existing causal methods primarily handle binary/discrete treatments and struggle with continuous, multi-dimensional settings.",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2501.10423",
+        "2603.29261"
+      ]
     },
     {
       "question_id": "Q-164",
@@ -1644,7 +1685,11 @@
       "section_path": "Paper 2605.21793 Section 1 & Section 2; Paper 2409.02332 Section 2; Paper 2503.00557 Section 2",
       "passage_excerpt": "Under causal and missing at random assumptions, our method produces an efficient, asymptotically linear estimator that provides flexible, data-driven confounding control",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2409.02332",
+        "2503.00557"
+      ]
     },
     {
       "question_id": "Q-165",
@@ -1654,7 +1699,11 @@
       "section_path": "Paper 2501.10423 Section 1 & Section 3; Paper 2409.02332 Section 3; Paper 2603.29261 Section 3",
       "passage_excerpt": "We build upon the state of the art by developing and applying a local partially linear double machine learning approach. Its application yields the first robust causal evidence on the distinct",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2409.02332",
+        "2603.29261"
+      ]
     },
     {
       "question_id": "Q-166",
@@ -1664,7 +1713,11 @@
       "section_path": "Paper 2605.19006 Sec 1, Theorem 3.3; Paper 2508.20259 Sec 3; Paper 2605.24808 Sec 3",
       "passage_excerpt": "It utilizes any collection of three or more proxies that are conditionally independent given the latent confounder.",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2508.20259",
+        "2605.24808"
+      ]
     },
     {
       "question_id": "Q-167",
@@ -1674,7 +1727,10 @@
       "section_path": "Paper 2606.29076 Sec 1.2, Sec 3; Paper 2503.06156 Sec 1, Sec 3",
       "passage_excerpt": "Our orthogonal learner is robust to nuisance functions because it is the solution to a single estimating equation, obtained by taking the directional derivative of a Neyman-orthogonal loss function",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2503.06156"
+      ]
     },
     {
       "question_id": "Q-168",
@@ -1684,7 +1740,10 @@
       "section_path": "Paper 2606.29691 Sec 1, Sec 3; Paper 2607.08324 Sec 1, Sec 2",
       "passage_excerpt": "In contrast, our framework models both potential outcomes within a factor structure and allows the treated units’ factor loadings to change after the intervention.",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2607.08324"
+      ]
     },
     {
       "question_id": "Q-169",
@@ -1694,7 +1753,11 @@
       "section_path": "Paper 2605.24808 Sec 1, Sec 4; Paper 2607.00512 Sec 3; Paper 2512.12605 Sec 4",
       "passage_excerpt": "First, a causal role disentanglement strategy decomposes covariates into confounders, treatment-specific factors, and outcomespecific factors for enabling reliable nuisance function estimation.",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2607.00512",
+        "2512.12605"
+      ]
     },
     {
       "question_id": "Q-170",
@@ -1704,7 +1767,11 @@
       "section_path": "Paper 2606.29076 Sec 1.2, Sec 4; Paper 2602.07478 Sec 3; Paper 2512.12605 Sec 3",
       "passage_excerpt": "First, we propose a novel doubly cross-fit doubly robust (DCDR) causal machine learner that targets conditional principal causal effects identified under an odds ratio sensitivity parameter",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2602.07478",
+        "2512.12605"
+      ]
     },
     {
       "question_id": "Q-171",
@@ -1714,7 +1781,11 @@
       "section_path": "Paper 2605.00176 Abstract & Sec 1-2; Paper 2411.14665 Abstract & Definition 1; Paper 2510.09684 Abstract & Sec 1",
       "passage_excerpt": "Double-machine-learning pipelines for the Average Dose-Response Function rely on kernel-weighted local-linear smoothers, which inherit unbounded functional influence",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2411.14665",
+        "2510.09684"
+      ]
     },
     {
       "question_id": "Q-172",
@@ -1724,7 +1795,11 @@
       "section_path": "Paper 2508.20335 Abstract & Sec 1; Paper 2602.16830 Abstract & Sec 2; Paper 2604.19066 Abstract",
       "passage_excerpt": "Accurately quantifying geo-level marketing lift in two-sided marketplaces is challenging: the Synthetic Control Method (SCM) often exhibits high power yet systematically under-estimates effect size",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2602.16830",
+        "2604.19066"
+      ]
     },
     {
       "question_id": "Q-173",
@@ -1734,7 +1809,10 @@
       "section_path": "Paper 2605.15115 Abstract & Sec 1; Paper 2603.02159 Abstract & Sec 1-2",
       "passage_excerpt": "Standard textbook treatments of IV methods assume a linear model with constant effects. At the same time, the influential local average treatment effect (LATE) framework of Imbens and Angrist (1994)",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2603.02159"
+      ]
     },
     {
       "question_id": "Q-174",
@@ -1744,7 +1822,10 @@
       "section_path": "Paper 2602.01711 Abstract & Sec 1; Paper 2606.03251 Abstract & Sec 1",
       "passage_excerpt": "Second, more dynamic approaches depend on offline reward models that are fundamentally correlational, confounding prompt effectiveness with query characteristics.",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2606.03251"
+      ]
     },
     {
       "question_id": "Q-175",
@@ -1754,7 +1835,11 @@
       "section_path": "Paper 2602.16830 Abstract & Sec 2; Paper 2604.19066 Abstract; Paper 2411.14665 Abstract & Sec 1",
       "passage_excerpt": "A major methodological contribution lies in the adaptation of DML to handle categorical treatments, specifically formation combinations, through a novel matrix-based residualization process",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2604.19066",
+        "2411.14665"
+      ]
     },
     {
       "question_id": "Q-176",
@@ -1764,7 +1849,11 @@
       "section_path": "Paper 2603.20464 Section 1 & 4; Paper 2506.14329 Section 3 & 4; Paper 2602.10370 Section 3",
       "passage_excerpt": "In the other cases, flexible adjustment makes the instruments weak, leading to substantially more cautious causal inference than conventional 2SLS.",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2506.14329",
+        "2602.10370"
+      ]
     },
     {
       "question_id": "Q-177",
@@ -1774,7 +1863,10 @@
       "section_path": "Paper 2606.06715 Section 1 & 5; Paper 2605.11365 Section 2 & 3",
       "passage_excerpt": "We interpret this as evidence of shortcut learning: fine-tuning on ideology-labeled data causes the model to internalise a spurious sentiment–ideology coupling not operative in human judgment",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2605.11365"
+      ]
     },
     {
       "question_id": "Q-178",
@@ -1784,7 +1876,10 @@
       "section_path": "Paper 2607.03364 Section 1 & 3; Paper 2607.05153 Section 2 & 3",
       "passage_excerpt": "Chung’s directed Laplacian provides a spectral embedding in which individuals close together share the same causal propagation pathways.",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2607.05153"
+      ]
     },
     {
       "question_id": "Q-179",
@@ -1794,7 +1889,10 @@
       "section_path": "Paper 2606.20889 Section 1 & 3; Paper 2605.04510 Section 1 & 4",
       "passage_excerpt": "a structured output module that jointly predicts null-effect probability, confounding strength, identifiability, mediation fraction, and causal regime for each treatment-outcome pair.",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2605.04510"
+      ]
     },
     {
       "question_id": "Q-180",
@@ -1804,7 +1902,10 @@
       "section_path": "Paper 2606.24181 Section 1 & 4; Paper 2607.03364 Section 1 & 3",
       "passage_excerpt": "When applying optimal policy learning (based on policy trees) to optimally target subgroups by one or the other treatment depending on relative effectiveness, plainclothes inspections are recommended",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2607.03364"
+      ]
     },
     {
       "question_id": "Q-181",
@@ -1814,7 +1915,10 @@
       "section_path": "Paper 2606.17977 Sec 1 & Theorem 4.4; Paper 2602.19703 Sec 1 & Sec 4",
       "passage_excerpt": "Formally, Parallel[p] requires only that the p-th order time difference of the untreated outcome gap is common across groups. Parallel[1] is the standard assumption: the gap must be flat.",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2602.19703"
+      ]
     },
     {
       "question_id": "Q-182",
@@ -1824,7 +1928,10 @@
       "section_path": "Paper 2601.12120 Sec 1 & Sec 4; Paper 2602.19703 Sec 1 & Sec 4",
       "passage_excerpt": "We show that the causal effect of an aggregate treatment is generally ambiguous, as it depends on how interventions on the aggregate are instantiated at the component level",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2602.19703"
+      ]
     },
     {
       "question_id": "Q-183",
@@ -1834,7 +1941,10 @@
       "section_path": "Paper 2607.01905 Sec 1; Paper 2606.17165 Sec 1 & Sec 3",
       "passage_excerpt": "Standard metrics like revenue and conversion are inherently short-sighted, biasing decisions toward immediate gains. We introduce Stock Lifetime Value (SLV)",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2606.17165"
+      ]
     },
     {
       "question_id": "Q-184",
@@ -1844,7 +1954,10 @@
       "section_path": "Paper 2604.25157 Sec 1 & Sec 2; Paper 2607.04527 Sec 1",
       "passage_excerpt": "By integrating future observations, which reveal the underlying causal mechanisms for retrospective state updates, the EnKBS is used for Bayesian-based inference of causal relationships",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2607.04527"
+      ]
     },
     {
       "question_id": "Q-185",
@@ -1854,7 +1967,10 @@
       "section_path": "Paper 2603.25397 Sec 1; Paper 2604.27307 Sec 1 & Sec 5",
       "passage_excerpt": "Unlike static or fixed-duration strategies, dynamic stopping strategies depend on the temporal evolution of continuously monitored covariates, increasing the complexity of their evaluation.",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2604.27307"
+      ]
     },
     {
       "question_id": "Q-186",
@@ -1864,7 +1980,10 @@
       "section_path": "Paper 2607.03351 Sec 3; Paper 2606.12892 Sec 2",
       "passage_excerpt": "We show that a shared representation of the covariates that preserves predictive power of the outcome while discarding information about the Riesz representer is asymptotically more efficient",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2606.12892"
+      ]
     },
     {
       "question_id": "Q-187",
@@ -1874,7 +1993,10 @@
       "section_path": "Paper 2606.21185 Sec 1 & 3; Paper 2605.30319 Sec 1 & 2",
       "passage_excerpt": "We show that many standard point estimates can be read as point summaries of multimodal distributions over the space of structural causal models. As such, estimators can jump discontinuously",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2605.30319"
+      ]
     },
     {
       "question_id": "Q-188",
@@ -1884,7 +2006,10 @@
       "section_path": "Paper 2606.17600 Sec 2 & 3; Paper 2606.18969 Sec 2 & 3",
       "passage_excerpt": "we leverage proximal causal inference to develop three novel identification strategies to address the challenge of identifying path-specific effects in the presence of unknown recanting witnesses.",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2606.18969"
+      ]
     },
     {
       "question_id": "Q-189",
@@ -1894,7 +2019,10 @@
       "section_path": "Paper 2606.19117 Sec 3 & 4; Paper 2606.17308 Sec 2 & 3",
       "passage_excerpt": "We establish statistical guarantees for the policy learning framework based on both Inverse Probability Weighting (IPW) and Doubly Robust (DR) estimators.",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2606.17308"
+      ]
     },
     {
       "question_id": "Q-190",
@@ -1904,7 +2032,10 @@
       "section_path": "Paper 2607.04957 Sec 3 & Theorem 1; Paper 2606.05797 Sec 3 & 4",
       "passage_excerpt": "This paper investigates the identification and bounding of the central moments of the ICE using only the marginal central moments of each potential outcome (PO).",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2606.05797"
+      ]
     },
     {
       "question_id": "Q-191",
@@ -1914,7 +2045,10 @@
       "section_path": "Paper 2605.27474 Sec 1; Paper 2605.10206 Sec 1",
       "passage_excerpt": "standard robust double machine learning (DML) deliberately suppresses the tail to stabilise the bulk average. Yet in exactly these high-stakes settings the tail is the target quantity",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2605.10206"
+      ]
     },
     {
       "question_id": "Q-192",
@@ -1924,7 +2058,10 @@
       "section_path": "Paper 2605.27473 Sec 1; Paper 2604.23107 Sec 1",
       "passage_excerpt": "These two failures look unrelated, but they share a single root cause: each attaches a variance to a point estimate of the hard placebo nuisance µ0",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2604.23107"
+      ]
     },
     {
       "question_id": "Q-193",
@@ -1934,7 +2071,11 @@
       "section_path": "Paper 2605.05993 Sec 1; Paper 2605.26413 Sec 1; Paper 2605.27281 Sec 1",
       "passage_excerpt": "Instrumental variables (IV) and control functions (CF) are powerful tools tackling unmeasured confounding in causal inference, but a majority of the IV literature has focused on mean effects",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2605.26413",
+        "2605.27281"
+      ]
     },
     {
       "question_id": "Q-194",
@@ -1944,7 +2085,10 @@
       "section_path": "Paper 2605.23537 Sec 1; Paper 2605.06608 Sec 1",
       "passage_excerpt": "it implicitly relies on homoscedasticity, meaning the variances of the exogenous noises in postulated structural equation models (SEMs) are identical across variables. Deviations from this assumption",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2605.06608"
+      ]
     },
     {
       "question_id": "Q-195",
@@ -1954,7 +2098,11 @@
       "section_path": "Paper 2605.24076 Sec 1; Paper 2605.27281 Sec 1; Paper 2604.23107 Sec 1",
       "passage_excerpt": "First, we establish a formal Statistical Necessity Theorem for Causal Generalization: any learning algorithm that achieves out-of-distribution generalization guarantees must implicitly encode",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2605.27281",
+        "2604.23107"
+      ]
     },
     {
       "question_id": "Q-196",
@@ -1964,7 +2112,10 @@
       "section_path": "Paper 2605.06386 Sec 1.1 & Sec 4; Paper 2508.20326 Sec 1 & Sec 2 (Definition 2)",
       "passage_excerpt": "Comparing the two cases, we can see that covariate balancing is more restrictive than regressor balancing from the viewpoint of error minimization for the true Neyman orthogonal scores.",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2508.20326"
+      ]
     },
     {
       "question_id": "Q-197",
@@ -1974,7 +2125,10 @@
       "section_path": "Paper 2606.24785 Sec 1 & Sec 3; Paper 2606.14506 Sec 1 & Sec 3",
       "passage_excerpt": "By construction, BGATT evaluates the average treatment effect for each group under a common target distribution of a subset of covariates W",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2606.14506"
+      ]
     },
     {
       "question_id": "Q-198",
@@ -1984,7 +2138,10 @@
       "section_path": "Paper 2603.23736 Sec 1 & Sec 4.2; Paper 2604.12992 Sec 1 & Sec 3",
       "passage_excerpt": "By replacing the vector subtraction of classic methods with geodesic parallel transport, we can provide counterfactual comparisons of distributional dynamics",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2604.12992"
+      ]
     },
     {
       "question_id": "Q-199",
@@ -1994,7 +2151,11 @@
       "section_path": "Paper 2604.14575 Sec 1 & Sec 4; Paper 2602.00774 Sec 3; Paper 2512.22290 Sec 3",
       "passage_excerpt": "Rather than treating AI representations as proxies for the outcome, we treat them as general auxiliary informative features that help predict the outcome.",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2602.00774",
+        "2512.22290"
+      ]
     },
     {
       "question_id": "Q-200",
@@ -2004,7 +2165,11 @@
       "section_path": "Paper 2604.20516 Sec 1 & Sec 2; Paper 2508.20326 Sec 1 & Sec 2; Paper 2605.06386 Sec 1",
       "passage_excerpt": "However, standard approaches based on Gröbner bases become computationally infeasible beyond small settings due to their doubly exponential complexity.",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2508.20326",
+        "2605.06386"
+      ]
     },
     {
       "question_id": "Q-201",
@@ -2014,7 +2179,11 @@
       "section_path": "Paper 2507.02275 Sec 1 & Sec 3.2; Paper 2506.14950 Sec 1 & Sec 2; Paper 2507.12435 Sec 1 & Sec 2",
       "passage_excerpt": "Meanwhile, for independent non-Gaussian treatment noise, we show that DML is always suboptimal by constructing new practical procedures with higher-order robustness to nuisance errors.",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2506.14950",
+        "2507.12435"
+      ]
     },
     {
       "question_id": "Q-202",
@@ -2024,7 +2193,11 @@
       "section_path": "Paper 2409.01266 Sec 1; Paper 2607.04567 Sec 1; Paper 2606.29009 Sec 1",
       "passage_excerpt": "However, we find that using predictive models based on the correlated random effects approach (Mundlak, 1978) within DML leads to accurate coefficient estimates across settings",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2607.04567",
+        "2606.29009"
+      ]
     },
     {
       "question_id": "Q-203",
@@ -2034,7 +2207,11 @@
       "section_path": "Paper 2504.08836 Sec 1 & Sec 2; Paper 2607.02385 Sec 1; Paper 2507.12435 Sec 2",
       "passage_excerpt": "Our key modeling assumption\nis that individuals’ potential outcomes are independent conditional on the shared state.",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2607.02385",
+        "2507.12435"
+      ]
     },
     {
       "question_id": "Q-204",
@@ -2044,7 +2221,10 @@
       "section_path": "Paper 2607.02898 Sec 1 & Sec 2; Paper 2606.28017 Sec 1 & Sec 2",
       "passage_excerpt": "The monotone-selection framework of Lee [2009] addresses this problem by assuming\nthat treatment can only increase selection.",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2606.28017"
+      ]
     },
     {
       "question_id": "Q-205",
@@ -2054,7 +2234,11 @@
       "section_path": "Paper 2507.12435 Sec 1 & Sec 2; Paper 2506.14950 Sec 1 & Sec 2; Paper 2507.02275 Sec 1 & Sec 4",
       "passage_excerpt": "This procedure yields plug-in estimates that remove first-order bias and produce\nasymptotically valid confidence intervals.",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2506.14950",
+        "2507.02275"
+      ]
     },
     {
       "question_id": "Q-206",
@@ -2064,7 +2248,10 @@
       "section_path": "Paper 2606.01706 Sec 1.1 & Theorem 3.1; Paper 2602.15916 Sec 3.2 & Theorem 3",
       "passage_excerpt": "no other simpler estimators are n−1/2 -consistent under\nthis minimal Hölder smoothness condition, despite years of research efforts.",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2602.15916"
+      ]
     },
     {
       "question_id": "Q-207",
@@ -2074,7 +2261,11 @@
       "section_path": "Paper 2605.07029 Sec 3.2; Paper 2602.15916 Sec 3.1 & Theorem 2; Paper 2606.09223 Sec 2 & Theorem 1",
       "passage_excerpt": "account for endogeneity, BGM-IV replaces the confounded outcome likelihood\nwith an IV-integrated pseudo-likelihood that averages over instrument-induced\ntreatment values within the latent model.",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2602.15916",
+        "2606.09223"
+      ]
     },
     {
       "question_id": "Q-208",
@@ -2084,7 +2275,11 @@
       "section_path": "Paper 2606.21840 Sec 2; Paper 2606.09625 Sec 2.2; Paper 2606.08474 Sec 2.1 & Theorem 1",
       "passage_excerpt": "By leveraging optimal\ntransport, we use the control group to estimate the untreated distributional drift from\nthe pre- to post-treatment period and apply it to the treated group’s pre-treatment",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2606.09625",
+        "2606.08474"
+      ]
     },
     {
       "question_id": "Q-209",
@@ -2094,7 +2289,11 @@
       "section_path": "Paper 2606.15002 Sec 2 & Theorem 1; Paper 2606.25688 Sec 2 & 3; Paper 2606.22255 Sec 3 & Theorem 2",
       "passage_excerpt": "The key difference is that, in the optimal procedure,\narchetype sets are obtained by weighted K-means clustering of the N heterogeneous policy\neffects, instead of relying on K equally-spaced quantiles",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2606.25688",
+        "2606.22255"
+      ]
     },
     {
       "question_id": "Q-210",
@@ -2104,7 +2303,11 @@
       "section_path": "Paper 2606.22255 Sec 3; Paper 2606.09223 Sec 2.2; Paper 2602.15916 Sec 3.1 & Theorem 2",
       "passage_excerpt": "This cutoff grows only linearly\nwith the numbers of mixture components in the treated and control groups, although the maximum\nadmissible number of latent types grows quadratically.",
       "question_type": "Multi-Paper-Reasoning",
-      "difficulty": "expert"
+      "difficulty": "expert",
+      "additional_gold_paper_ids": [
+        "2606.09223",
+        "2602.15916"
+      ]
     }
   ]
 }
