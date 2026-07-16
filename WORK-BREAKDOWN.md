@@ -500,7 +500,7 @@ tickets are the concrete follow-ups.
   asserting the reranker's actual max batch size (the test that would have caught T-DOC24 pre-merge). Pure
   code + one `enable_socket`-gated adapter test. **Touches `rag/retriever.py` — coordinate with T-DOC38
   (same file); build them together or sequence T-DOC39 after T-DOC38.**
-- **T-DOC40 (not started)** — `DocumentStore.delete()` (T-DOC23) removes SQLite rows only, **not** the
+- **T-DOC40 (in progress — PR #108 open, awaiting @MKamel1 review)** — `DocumentStore.delete()` (T-DOC23) removes SQLite rows only, **not** the
   matching Qdrant vectors, so a deleted paper's orphaned vectors still surface and crash `get_chunk` — the
   same orphan-recurrence class T-DOC23 was meant to close, and the likely root cause of the T-DOC35 hole.
   Fix: make delete atomic across SQLite **and** Qdrant, and turn on `PRAGMA foreign_keys=ON` (nothing in the
