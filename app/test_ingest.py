@@ -19,6 +19,8 @@ call made before TEI's "started" flag is observed true) so these tests can prove
 attempted -- an ordering bug a "both hooks fire eventually" test would miss entirely.
 """
 
+import pytest
+
 from contracts.config import Config
 from contracts.embedder import EmbedderInfo
 from contracts.errors import TransientError
@@ -145,3 +147,86 @@ def test_run_finish_phase_restarts_tei_before_the_topic_query_embed(monkeypatch,
     # because the ordering was correct, not because a retry happened to paper over a wrong order.
     assert call_log == ["tei_start", "embed_attempt_while_started"]
     assert retry_sleeps == [], "no retry should have been needed once the ordering is correct"
+
+
+# --- T-DOC51: sharded N-worker parallel Pass 1 ---------------------------------------------
+
+
+class FakePopen:
+    """Stand-in for `subprocess.Popen` -- records the argv it was launched with and returns a
+    pre-scripted exit code from `.wait()` instead of spawning a real `app.parse_phase`/MinerU/GPU
+    subprocess."""
+
+    _next_returncodes: list[int] = []
+    launches: list[list[str]] = []
+
+    def __init__(self, argv: list[str]):
+        FakePopen.launches.append(argv)
+        self._returncode = FakePopen._next_returncodes.pop(0)
+
+    def wait(self) -> int:
+        return self._returncode
+
+
+@pytest.fixture(autouse=True)
+def _reset_fake_popen():
+    FakePopen.launches = []
+    FakePopen._next_returncodes = []
+    yield
+
+
+def test_parse_workers_default_one_uses_original_subprocess_run(monkeypatch):
+    """`parse_workers=1` (the `--parse-workers` default) must be byte-for-byte the original
+    single `subprocess.run([sys.executable, "-m", "app.parse_phase"], check=True)` call -- no
+    `--shard-index`/`--shard-count` args, no `Popen`."""
+    run_calls = []
+    monkeypatch.setattr(
+        ingest_mod.subprocess, "run", lambda *a, **k: run_calls.append((a, k))
+    )
+    monkeypatch.setattr(ingest_mod.subprocess, "Popen", FakePopen)
+
+    ingest_mod._run_parse_phase_subprocesses(1)
+
+    assert run_calls == [
+        (([ingest_mod.sys.executable, "-m", "app.parse_phase"],), {"check": True})
+    ]
+    assert FakePopen.launches == [], "single-worker path must not use Popen"
+
+
+def test_parse_workers_n_spawns_n_shard_subprocesses(monkeypatch):
+    """`--parse-workers N` (N>1) must spawn exactly N `app.parse_phase` subprocesses, each with
+    its own disjoint `--shard-index i --shard-count N` -- verified via mocked `Popen`, no real
+    MinerU/GPU subprocess spawned."""
+    monkeypatch.setattr(ingest_mod.subprocess, "Popen", FakePopen)
+    FakePopen._next_returncodes = [0, 0, 0]
+
+    ingest_mod._run_parse_phase_subprocesses(3)
+
+    assert FakePopen.launches == [
+        [ingest_mod.sys.executable, "-m", "app.parse_phase",
+         "--shard-index", "0", "--shard-count", "3"],
+        [ingest_mod.sys.executable, "-m", "app.parse_phase",
+         "--shard-index", "1", "--shard-count", "3"],
+        [ingest_mod.sys.executable, "-m", "app.parse_phase",
+         "--shard-index", "2", "--shard-count", "3"],
+    ]
+
+
+def test_parse_workers_fails_the_run_if_any_worker_exits_nonzero(monkeypatch):
+    """A non-zero exit from ANY worker (e.g. an OOM'd shard) must fail the whole run, not
+    silently ship a partial corpus -- the exact benchmark pitfall the ticket calls out. All N
+    workers are still waited on (both wait() calls happen) before the failure is raised."""
+    monkeypatch.setattr(ingest_mod.subprocess, "Popen", FakePopen)
+    FakePopen._next_returncodes = [0, 1, 0]  # shard 1 "OOM'd"
+
+    with pytest.raises(RuntimeError, match=r"1/3 shard worker\(s\) failed"):
+        ingest_mod._run_parse_phase_subprocesses(3)
+
+    assert len(FakePopen.launches) == 3, "all 3 workers must have been launched"
+
+
+def test_parse_workers_all_succeed_returns_normally(monkeypatch):
+    monkeypatch.setattr(ingest_mod.subprocess, "Popen", FakePopen)
+    FakePopen._next_returncodes = [0, 0]
+
+    ingest_mod._run_parse_phase_subprocesses(2)  # must not raise
