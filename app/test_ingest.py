@@ -154,7 +154,7 @@ def test_run_finish_phase_restarts_tei_before_the_topic_query_embed(monkeypatch,
 
 class FakePopen:
     """Stand-in for `subprocess.Popen` -- records the argv it was launched with and returns a
-    pre-scripted exit code from `.wait()` instead of spawning a real `app.parse_phase`/MinerU/GPU
+    pre-scripted exit code from `.wait()` instead of spawning a real `app.parse_phase`/GPU
     subprocess."""
 
     _next_returncodes: list[int] = []
@@ -196,7 +196,7 @@ def test_parse_workers_default_one_uses_original_subprocess_run(monkeypatch):
 def test_parse_workers_n_spawns_n_shard_subprocesses(monkeypatch):
     """`--parse-workers N` (N>1) must spawn exactly N `app.parse_phase` subprocesses, each with
     its own disjoint `--shard-index i --shard-count N` -- verified via mocked `Popen`, no real
-    MinerU/GPU subprocess spawned."""
+    GPU subprocess spawned."""
     monkeypatch.setattr(ingest_mod.subprocess, "Popen", FakePopen)
     FakePopen._next_returncodes = [0, 0, 0]
 

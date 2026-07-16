@@ -8,9 +8,9 @@ have to share VRAM at the same instant.
 T-DOC51: `--parse-workers N` (default 1, i.e. today's exact behavior) runs Pass 1 as N concurrent
 `app.parse_phase` subprocesses instead of one, each parsing a disjoint shard of the same harvested
 corpus -- measured +63% parse throughput (3 workers, `.phase0-data/pass1-gpu-underutilization.md`)
-because MinerU renders each doc with exactly 1 CPU process while the GPU idles, and a second/third
-worker's GPU work fills that gap. Every worker still fully exits before Pass 2 starts (two-phase
-VRAM isolation, unchanged).
+because the parser renders each doc with exactly 1 CPU process while the GPU idles, and a
+second/third worker's GPU work fills that gap. Every worker still fully exits before Pass 2 starts
+(two-phase VRAM isolation, unchanged).
 """
 
 import argparse
@@ -49,8 +49,8 @@ def _run_finish_phase(cfg: Config) -> None:
 
 def _run_parse_phase_subprocesses(parse_workers: int) -> None:
     """Pass 1 -- pulled out of `__main__` (same pattern as `_run_finish_phase`) so a test can
-    drive it with a mocked `subprocess.Popen`/`subprocess.run` instead of spawning real MinerU
-    subprocesses.
+    drive it with a mocked `subprocess.Popen`/`subprocess.run` instead of spawning real
+    GPU-bound parse subprocesses.
 
     `parse_workers == 1` (default) is byte-for-byte the original single
     `subprocess.run(..., check=True)` call -- unchanged.
