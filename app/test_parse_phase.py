@@ -11,7 +11,7 @@ branches can be driven directly:
    query-driven `harvest()` -- and when unset, `harvest()` must still be used, unchanged.
 """
 
-from app.parse_phase import _run_parse_phase
+from app.parse_phase import _run_parse_phase, _shard
 from contracts.config import Config
 from contracts.harvester import PaperRef
 
@@ -116,3 +116,63 @@ def test_run_parse_phase_uses_fetch_by_ids_when_ingest_paper_ids_set(monkeypatch
     assert fetch_calls == [["2601.00099"]]
     assert fake_orchestrator.harvest_calls == [], "harvest() must not be called when ids are set"
     assert fake_orchestrator.parse_phase_calls == [[ref]]
+
+
+# --- T-DOC51: sharded N-worker parallel Pass 1 ---------------------------------------------
+
+
+def test_shard_default_reproduces_todays_single_worker_behavior():
+    """shard_index=0, shard_count=1 (the argparse defaults) must return every ref, unchanged --
+    `--parse-workers 1` (the `app.ingest` default) must be byte-for-byte today's behavior."""
+    refs = [_make_ref(f"2601.{i:05d}") for i in range(7)]
+    assert _shard(refs, 0, 1) == refs
+
+
+def test_shard_is_disjoint_and_complete():
+    """The property that makes N concurrent workers safe to share one `papers.db` (T-DOC51,
+    `rag/ingest_state_sqlite.py`'s "Cross-PROCESS safety" docstring): every ref lands in exactly
+    one shard. Union of all N shards must equal the original set; pairwise intersections must be
+    empty."""
+    refs = [_make_ref(f"2601.{i:05d}") for i in range(17)]  # prime-ish, doesn't divide evenly
+    shard_count = 4
+    shards = [_shard(refs, i, shard_count) for i in range(shard_count)]
+
+    union: list[PaperRef] = []
+    for shard in shards:
+        union.extend(shard)
+    assert sorted(r.paper_id for r in union) == sorted(r.paper_id for r in refs), (
+        "union of all shards must equal the original ref set (complete)"
+    )
+
+    ids_per_shard = [{r.paper_id for r in shard} for shard in shards]
+    for a in range(shard_count):
+        for b in range(a + 1, shard_count):
+            assert ids_per_shard[a].isdisjoint(ids_per_shard[b]), (
+                f"shard {a} and shard {b} overlap -- two workers would touch the same paper_id"
+            )
+
+
+def test_shard_round_robin_not_contiguous():
+    """Sharding is a stride slice (`refs[i::n]`), not a contiguous chunk -- balances page counts
+    better across workers than splitting the harvested list into N contiguous runs."""
+    refs = [_make_ref(f"2601.{i:05d}") for i in range(6)]
+    assert [r.paper_id for r in _shard(refs, 0, 3)] == ["2601.00000", "2601.00003"]
+    assert [r.paper_id for r in _shard(refs, 1, 3)] == ["2601.00001", "2601.00004"]
+    assert [r.paper_id for r in _shard(refs, 2, 3)] == ["2601.00002", "2601.00005"]
+
+
+def test_run_parse_phase_applies_shard_before_calling_parse_phase(monkeypatch):
+    """`_run_parse_phase`'s optional `shard_index`/`shard_count` kwargs must slice the harvested
+    refs before `orchestrator.parse_phase()` is called -- not pass the full list through."""
+    refs = [_make_ref(f"2601.{i:05d}") for i in range(4)]
+    fake_orchestrator = FakeOrchestrator(refs_to_return=refs)
+    monkeypatch.setattr(
+        "app.parse_phase.build_ingestion_orchestrator", lambda *a, **k: fake_orchestrator
+    )
+
+    cfg = Config(focus_area_queries=["causal inference"])
+    _run_parse_phase(cfg, shard_index=1, shard_count=2)
+
+    assert [r.paper_id for r in fake_orchestrator.parse_phase_calls[0]] == [
+        "2601.00001", "2601.00003",
+    ]
