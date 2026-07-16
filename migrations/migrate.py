@@ -46,6 +46,11 @@ def migrate(db_path: str) -> None:
     conn = sqlite3.connect(db_path)
     try:
         conn.execute("PRAGMA journal_mode=WAL;")
+        # T-DOC40: this connection only ever runs DDL (CREATE TABLE), so the pragma has no
+        # observable effect here -- set anyway for consistency with every other seam that opens a
+        # sqlite3 connection against this schema (DocumentStore, rag/document_store.py), so no
+        # future caller of this module can assume FK enforcement is off just because migrate() ran.
+        conn.execute("PRAGMA foreign_keys=ON;")
         for schema_file in _schema_files():
             conn.executescript(schema_file.read_text())
         conn.commit()

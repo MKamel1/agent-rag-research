@@ -63,6 +63,16 @@ class DocumentStore:
         self._con = sqlite3.connect(db_path)
         self._con.row_factory = sqlite3.Row
         self._con.execute("PRAGMA journal_mode=WAL;")
+        # T-DOC40: `PRAGMA foreign_keys` is per-connection and non-persistent (DATA-CONTRACTS.md
+        # "SQLite schema" -- previously off, by explicit V0 decision, everywhere in this codebase).
+        # Turning it on here makes the `REFERENCES papers(paper_id)` clauses declared on
+        # blocks/chunks/summaries (migrations/0001_init.sql) real, enforced constraints on this
+        # connection: a raw `DELETE FROM papers` while child rows still exist now raises
+        # `sqlite3.IntegrityError` (SQLite's default `ON DELETE NO ACTION`) instead of silently
+        # orphaning them -- the exact T-DOC23/T-DOC35 recurrence class this ticket closes.
+        # `delete()` below is unaffected: it already deletes children before the parent row in one
+        # transaction, which is the order FK enforcement requires anyway.
+        self._con.execute("PRAGMA foreign_keys=ON;")
 
     # ----------------------------------------------------------------------------------------
     # put — atomic upsert by paper_id (idempotent, reflects changed content on re-put)
@@ -174,18 +184,38 @@ class DocumentStore:
     # delete — cascade removal by paper_id (T-DOC23)
     # ----------------------------------------------------------------------------------------
 
-    def delete(self, paper_id: str) -> None:
+    def delete(self, paper_id: str) -> list[str]:
         """Removes `paper_id`'s rows from `chunks`/`blocks`/`summaries`/`papers` in one
         transaction (same `with self._con:` atomicity as `put()`), plus a best-effort blob
         removal. Deleting an unknown/already-gone `paper_id` is a safe no-op, not an error.
+
+        Returns the `chunk_id`s and `summary_id` (if any) that were removed -- the exact id set
+        that also needs deleting from the vector index to keep it in sync with SQLite (T-DOC40:
+        this method only ever touches SQLite, CONVENTIONS.md §1 -- `DocumentStore` must not import
+        the vector-store vendor; the caller, e.g. `IngestionOrchestrator.delete_paper`, is the one
+        that owns both `DocumentStore` and `VectorIndex` and does `vector_index.delete(ids)` with
+        this return value). Order matters: these ids are read BEFORE the delete transaction runs,
+        so a paper with no rows at all (already gone) simply returns `[]`.
 
         The three non-`papers` deletes run unconditionally -- NOT gated on a `papers` row
         existing first. This is the one deliberate departure from mirroring `put()`: it's what
         lets this method clean up a real orphan (chunks/blocks with no matching `papers` row,
         the exact shape of the T-DOC23 bug -- an earlier cleanup pass ran a raw `DELETE FROM
-        papers` with no cascade, since SQLite doesn't enforce the declared foreign keys anywhere
-        in this codebase), not just support a normal future single-paper deletion.
+        papers` with no cascade, back when nothing enforced the declared foreign keys). Deleting
+        children before the parent, in that order, is also what keeps this method compatible with
+        `PRAGMA foreign_keys=ON` (enabled in `__init__`, T-DOC40) without any special-casing.
         """
+        chunk_ids = [
+            row["chunk_id"]
+            for row in self._con.execute(
+                "SELECT chunk_id FROM chunks WHERE paper_id = ?", (paper_id,)
+            ).fetchall()
+        ]
+        summary_row = self._con.execute(
+            "SELECT summary_id FROM summaries WHERE paper_id = ?", (paper_id,)
+        ).fetchone()
+        vector_ids = chunk_ids + ([summary_row["summary_id"]] if summary_row else [])
+
         with self._con:
             self._con.execute("DELETE FROM chunks WHERE paper_id = ?", (paper_id,))
             self._con.execute("DELETE FROM blocks WHERE paper_id = ?", (paper_id,))
@@ -194,6 +224,7 @@ class DocumentStore:
         # Best-effort: a missing blob isn't a failure here (unlike the read path's
         # ContractError) -- deleting something already-gone is fine, not an error.
         (self._blob_dir / f"{paper_id}.md").unlink(missing_ok=True)
+        return vector_ids
 
     # ----------------------------------------------------------------------------------------
     # reads

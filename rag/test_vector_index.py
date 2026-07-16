@@ -233,6 +233,27 @@ def assert_rebuild_preserves_sparse_text_signal(adapter):
     assert hits[0].id == "zzz_right"
 
 
+def assert_delete_removes_points(adapter):
+    # T-DOC40: the vector-store half of DocumentStore.delete()'s cross-store cleanup -- a deleted
+    # id must stop appearing in search results, and an unrelated id must be untouched.
+    adapter.upsert("keep", [1.0, 0.0], _payload(text="method estimator"))
+    adapter.upsert("gone", [1.0, 0.0], _payload(text="method estimator"))
+
+    adapter.delete(["gone"])
+
+    hits = adapter.hybrid_search(qvec=[1.0, 0.0], qtext="method estimator", filters=None, k=10)
+    ids = [h.id for h in hits]
+    assert "gone" not in ids
+    assert "keep" in ids
+
+
+def assert_delete_of_unknown_id_is_a_safe_no_op(adapter):
+    adapter.upsert("keep", [1.0, 0.0], _payload(text="method estimator"))
+    adapter.delete(["never-upserted"])  # must not raise
+    hits = adapter.hybrid_search(qvec=[1.0, 0.0], qtext="method estimator", filters=None, k=10)
+    assert [h.id for h in hits] == ["keep"]
+
+
 CONTRACT = (
     assert_upsert_search_round_trips_id,
     assert_filters_by_category,
@@ -243,6 +264,8 @@ CONTRACT = (
     assert_sparse_channel_distinguishes_real_text,
     assert_summary_gets_real_sparse_signal_despite_empty_section_path,
     assert_rebuild_preserves_sparse_text_signal,
+    assert_delete_removes_points,
+    assert_delete_of_unknown_id_is_a_safe_no_op,
 )
 
 

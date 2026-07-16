@@ -191,6 +191,34 @@ class IngestionOrchestrator:
         self.parse_phase(refs)
         self.finish_phase(refs)
 
+    def delete_paper(self, paper_id: str) -> None:
+        """Removes `paper_id` from both stores this orchestrator already owns -- `DocumentStore`
+        (SQLite, source of truth) and `VectorIndex` (the derived vector-store index) -- so a
+        deleted paper's chunks/summary never resurface as orphaned vectors (T-DOC40: the
+        T-DOC23/T-DOC35 orphan-recurrence root cause -- `DocumentStore.delete()` alone only ever
+        removed the SQLite rows, leaving that paper's vectors searchable and liable to crash
+        `get_chunk` on a later hit). This is the coordinating seam: `DocumentStore` must not import
+        the vector-store vendor (CONVENTIONS.md §1), so it cannot call `VectorIndex.delete()`
+        itself -- this orchestrator already holds both collaborators (it wires
+        `document_store.put()` and `vector_index.upsert()` together in `_finish` the same way), so
+        it is the natural place to wire their deletes together too, rather than inventing a third
+        module for one two-line coordination.
+
+        # ponytail: true two-phase atomicity across the two stores isn't achievable here (no
+        # distributed transaction spans both). Ordering is deliberate, not incidental: SQLite
+        # commits FIRST (`document_store.delete()` is already one atomic transaction), THEN the
+        # vector index is cleaned up. If the process dies or `vector_index.delete()` raises
+        # between the two calls, the failure mode is a vector-store-side orphan (points with no
+        # matching SQLite row) -- the exact shape T-DOC23 already knows how to detect
+        # (`.phase0-data/known-issue-orphaned-chunks.md`) and clean up, never the worse shape
+        # (SQLite believing a paper still exists whose vectors are already gone). Upgrade path:
+        # re-call `delete_paper(paper_id)` if a partial failure is ever suspected -- safe to retry,
+        # since `document_store.delete()` no-ops on an already-gone `paper_id` and
+        # `vector_index.delete()` is idempotent by id.
+        """
+        vector_ids = self._document_store.delete(paper_id)
+        self._vector_index.delete(vector_ids)
+
     def harvest(self, focus_area: list[str], cap: int) -> list[PaperRef]:
         """Public so a two-process caller (`app/parse_phase.py`/`app/ingest.py`) can harvest once
         per process without reaching into `_harvester` directly -- each process re-harvests its

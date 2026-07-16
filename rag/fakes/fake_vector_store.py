@@ -40,6 +40,13 @@ class FakeVectorStore:
     def upsert(self, id: str, vector: Vector, payload: VectorPayload) -> None:
         self._store[id] = (vector, payload)
 
+    def delete(self, ids: list[str]) -> None:
+        """T-DOC40: mirrors the real adapter's by-id delete. Idempotent -- an id with no matching
+        entry (already gone, or never upserted) is silently skipped, same as `dict.pop(id, None)`.
+        """
+        for doc_id in ids:
+            self._store.pop(doc_id, None)
+
     def hybrid_search(
         self, qvec: Vector, qtext: str, filters: SearchFilters | None, k: int
     ) -> list[Hit]:

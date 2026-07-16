@@ -373,6 +373,22 @@ def test_delete_removes_rows_from_all_four_tables_and_the_blob(tmp_path):
         con.close()
 
 
+def test_delete_returns_the_chunk_and_summary_ids_removed(store):
+    # T-DOC40: the id set the caller (IngestionOrchestrator.delete_paper) hands to
+    # VectorIndex.delete() to clean up the matching vector-store points -- delete() only ever
+    # touches SQLite itself (CONVENTIONS.md §1: DocumentStore must not import the vector-store
+    # vendor), so this return value is the only way the caller learns which ids to remove.
+    store.put(make_paper_record())
+
+    deleted = store.delete(PAPER_ID)
+
+    assert sorted(deleted) == sorted([f"{PAPER_ID}:c0", f"{PAPER_ID}:summary"])
+
+
+def test_delete_of_unknown_paper_returns_empty_list(store):
+    assert store.delete("9999.99999") == []
+
+
 def test_delete_does_not_touch_another_papers_rows(store):
     store.put(make_paper_record())
     other = "2507.55555"
@@ -390,9 +406,10 @@ def test_delete_does_not_touch_another_papers_rows(store):
         )
     )
 
-    store.delete(PAPER_ID)
+    deleted = store.delete(PAPER_ID)
 
     assert store.get(PAPER_ID) is None
+    assert other not in deleted and f"{other}:c0" not in deleted
     got_other = store.get(other)
     assert got_other is not None
     assert [c.chunk_id for c in got_other.chunks] == [f"{other}:c0"]
@@ -405,12 +422,18 @@ def test_delete_unknown_paper_id_is_a_safe_no_op(store):
 def test_delete_cleans_up_chunks_and_blocks_with_no_matching_papers_row(tmp_path):
     # The real T-DOC23 orphan shape: chunks/blocks rows exist with NO matching papers row (an
     # earlier cleanup pass deleted the papers row directly, bypassing put()'s atomicity and
-    # leaving these behind -- SQLite doesn't enforce the declared foreign keys anywhere in this
-    # codebase). delete()'s three non-papers DELETEs must run unconditionally, not gated on a
+    # leaving these behind -- from back when nothing in this codebase enforced the declared
+    # foreign keys). delete()'s three non-papers DELETEs must run unconditionally, not gated on a
     # papers row existing first, or this exact case slips through.
     db_path = str(tmp_path / "store.db")
     store = _mod.DocumentStore(db_path=db_path, blob_dir=str(tmp_path / "blobs"))
     orphan_id = "2508.00000"
+    # T-DOC40: FK enforcement is ON for this connection now (see __init__), so inserting a child
+    # row with no matching `papers` row would itself raise `sqlite3.IntegrityError`. Turned off
+    # just for this fixture insert to model data that predates the fix (real production orphans,
+    # created back when nothing enforced the constraint) -- turned back on before delete() runs,
+    # proving cleanup of pre-existing orphans still works under the new enforcement regime.
+    store._con.execute("PRAGMA foreign_keys=OFF;")
     store._con.execute(
         "INSERT INTO blocks (block_id, paper_id, idx, type, text, page, bbox_json, section_path) "
         "VALUES (?, ?, 0, 'prose', 'orphan text', 0, '[0,0,1,1]', '1. Intro')",
@@ -422,9 +445,11 @@ def test_delete_cleans_up_chunks_and_blocks_with_no_matching_papers_row(tmp_path
         (f"{orphan_id}:c0", orphan_id, f"{orphan_id}:b0"),
     )
     store._con.commit()
+    store._con.execute("PRAGMA foreign_keys=ON;")
 
-    store.delete(orphan_id)
+    deleted = store.delete(orphan_id)
 
+    assert deleted == [f"{orphan_id}:c0"]
     con = sqlite3.connect(db_path)
     try:
         for table in ("blocks", "chunks"):
@@ -434,3 +459,29 @@ def test_delete_cleans_up_chunks_and_blocks_with_no_matching_papers_row(tmp_path
             assert count == 0, f"{table} still holds orphaned rows for {orphan_id}"
     finally:
         con.close()
+
+
+# --------------------------------------------------------------------------------------------------
+# PRAGMA foreign_keys=ON (T-DOC40) — prevents the T-DOC23/T-DOC35 orphan class at the schema level
+# --------------------------------------------------------------------------------------------------
+
+
+def test_foreign_keys_pragma_is_on_for_a_fresh_connection(store):
+    (value,) = store._con.execute("PRAGMA foreign_keys;").fetchone()
+    assert value == 1
+
+
+def test_raw_delete_from_papers_with_children_present_is_rejected_not_silently_orphaning(store):
+    # This is the exact T-DOC23/T-DOC35 bug reproduced directly: a raw DELETE against `papers`
+    # while `chunks`/`blocks`/`summaries` rows still reference that paper_id, run outside
+    # DocumentStore.delete()'s own cascading interface. Before T-DOC40 this silently succeeded and
+    # left orphans; with PRAGMA foreign_keys=ON it must now fail loudly instead (CONVENTIONS.md
+    # §4 "crash early") -- proving the pragma is not just set but actually enforced.
+    store.put(make_paper_record())
+
+    with pytest.raises(sqlite3.IntegrityError, match="FOREIGN KEY"):
+        store._con.execute("DELETE FROM papers WHERE paper_id = ?", (PAPER_ID,))
+
+    # The statement never committed (SQLite checks an immediate FK constraint at execute() time,
+    # before any commit) -- every row (parent AND children) is still exactly as put() left it.
+    assert store.get(PAPER_ID) is not None

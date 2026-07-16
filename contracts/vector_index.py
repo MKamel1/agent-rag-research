@@ -1,9 +1,15 @@
 """M6 VectorIndex (DATA-CONTRACTS.md "M6 VectorIndex").
 
-`VectorIndex`'s own interface (`hybrid_search`/`upsert`/`rebuild`) is the module's own interface
-(ARCHITECTURE.md, owned by Owner D) — not reproduced here; only the data shapes that cross the
-seam are. The RRF fusion formula and its `RRF_K` constant live in `contracts/fusion.py`, not
-here — see that module.
+`VectorIndex`'s own interface (`hybrid_search`/`upsert`/`rebuild`/`delete`) is the module's own
+interface (ARCHITECTURE.md, owned by Owner D) — not reproduced here; only the data shapes that
+cross the seam are. The RRF fusion formula and its `RRF_K` constant live in `contracts/fusion.py`,
+not here — see that module.
+
+`delete(ids: list[str]) -> None` (T-DOC40): removes the points for the given `chunk_id`/
+`summary_id`s. Idempotent — deleting an id that was never upserted (or already deleted) is a safe
+no-op, same as `upsert`'s own by-id semantics. This is the other half of `DocumentStore.delete()`'s
+cross-store cleanup (see that module's docstring) — a caller that deletes from SQLite alone and
+never calls this leaves exactly the orphaned-vector class T-DOC23/T-DOC40 exist to close.
 """
 
 from datetime import date
