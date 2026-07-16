@@ -540,6 +540,42 @@ tickets are the concrete follow-ups.
   skew. So 0.73 was never a retrieval defect to chase. Touches `fixtures/eval/` (foundation) → PR left OPEN
   for @MKamel1 with the `foundation-change` label. Full analysis + tables in `teval-results.md`.
 
+- **T-DOC51 (not started) — Pass-1 throughput: run N=3 concurrent parse workers (+63%, measured).** The
+  Pass-1 GPU-underutilization problem (`.phase0-data/pass1-gpu-underutilization.md`, diagnosed 2026-07-14:
+  27-38% avg GPU util, ~45% of samples at 0%) is **solved** — by parallelism, not by tuning MinerU. A
+  rigorous serialized benchmark (2026-07-16; one GPU, verified clean before every run, TEI+Ollama evicted,
+  warm-up excluded, fixed 25-paper/488-page set) measured: **1 worker = 171.9 pages/min (baseline,
+  confirmed) → 3 concurrent `pipeline` workers = 280.7 pages/min = 1.63x**, GPU idle collapsing 45.2% →
+  13.4%. Root cause it exploits: MinerU renders each doc with **exactly 1 process**
+  (`pdf_image_tools.py`: `MIN_PAGES_PER_RENDER_PROCESS=30`, `page_limited_threads = total_pages // 30` → any
+  paper <60pp → 1) while the GPU idles; a second/third worker's GPU work fills that CPU-render gap.
+  **Quality risk is nil in principle** — identical model, identical `pipeline` backend, identical settings;
+  the same code path run as N processes over disjoint `paper_id`s (empirically confirmed: block/text
+  identical except a <0.03% LaTeX-formula-boundary nondeterminism on one 56pp paper, consistent with GPU
+  batch-composition floating-point nondeterminism, not content loss — worth watching at 30k scale).
+  **All other levers were tested and lose** (do not retry — full numbers in the doc): window-size 64→192
+  null; `MINERU_VIRTUAL_VRAM_SIZE=32`/ratio16 **OOMs at both 2 and 3 workers** (batch activations dominate
+  VRAM and scale with page size — one 56pp paper spiked a single worker to 13.2GB); ratio4 halves
+  per-worker VRAM but its smaller batches cancel the extra overlap (4w=265.6, 6w=275.7 — both lose to
+  3w=280.7); tuned `vlm` backend is **4.75x slower** (its 92.7% util proves it was never KV-starved — a
+  1.2B model decoding every page is ~7x more compute than specialized single-pass CNNs, so PagedAttention/
+  continuous batching can't help); external parsers rejected on quality (`reviews/PARSER-ALTERNATIVES-EVAL.md`).
+  **Ceiling reached: GPU-seconds of real work are invariant (~84-91s) across every config** — the residual
+  13-16% idle is intra-GPU kernel gaps, not render starvation (proven: 6 workers gained nothing over 3).
+  Beyond ~281 pages/min needs a second GPU, not software.
+  **The actual work in this ticket is the integration, which is NOT trivial and is the reason this is a
+  ticket and not a config change:** `app/parse_phase.py` runs Pass 1 as a single subprocess today; N workers
+  sharing `papers.db` is unsafe as-is because `SqliteIngestState.checkpoint()` is a non-atomic
+  read-merge-write whose `threading.Lock` only serializes **within** one process (the same hazard
+  `app/prefetch_pdfs.py`'s docstring already documents for a second writer). Disjoint `paper_id` slices are
+  *probably* safe since each row is touched by exactly one worker, but that needs a real design decision —
+  options: (a) shard `refs` across N subprocesses with disjoint paper_ids and rely on row-disjointness,
+  (b) make `checkpoint()` an atomic UPSERT, (c) per-worker DBs merged post-run. Touches `app/parse_phase.py`
+  and possibly `rag/ingest_state_sqlite.py` → **foundation-adjacent, needs @MKamel1 sign-off**. The
+  benchmark sidestepped it entirely with disjoint slices + throwaway output. Reusable benchmark scripts are
+  in the session scratchpad (`pipeline_worker.py`, `run_pipeline_multi.py`, `evict_gpu.sh`,
+  `compare_quality_pipeline.py`).
+
 **Key `.phase0-data/` docs for a new agent to read first** (all gitignored/local, not in git history):
 `teval-results.md` (T-EVAL methodology + full before/after numbers), `known-issue-orphaned-chunks.md`
 (the T-DOC23 bug), `known-issue-pass2-oom.md` (Pass 2 VRAM history), `pass1-gpu-underutilization.md` (the
