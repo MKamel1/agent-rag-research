@@ -27,6 +27,9 @@ the caller's own id.
 """
 
 import hashlib
+import shutil
+import urllib.error
+import urllib.request
 import uuid
 
 from qdrant_client import QdrantClient, models
@@ -48,6 +51,10 @@ _FUSION_DEPTH_CAP = 10_000
 # Per-page size for rebuild()'s scroll through the collection. Paged (see rebuild()) so this is
 # just a page size, not a ceiling on how many points rebuild() can see.
 _SCROLL_PAGE_SIZE = 100_000
+# create_and_download_snapshot() streams a whole collection snapshot file over localhost -- large
+# but not slow (no WAN hop), so a generous fixed ceiling rather than a caller-tunable knob is
+# enough headroom without letting a wedged download hang the caller (app/snapshot.py) forever.
+_SNAPSHOT_DOWNLOAD_TIMEOUT_S = 900
 
 
 def _point_id(external_id: str) -> str:
@@ -116,6 +123,8 @@ class VectorIndex:
         # `qdrant_client` never has to be imported/named anywhere else, not even in this module's
         # own test file.
         self._client = QdrantClient(host=host, port=port, check_compatibility=False)
+        self._host = host
+        self._port = port
         self._collection = collection_name
         self._dim = dim
         self._hybrid_dense_weight = hybrid_dense_weight
@@ -244,6 +253,36 @@ class VectorIndex:
                     models.PointStruct(id=p.id, vector=p.vector, payload=p.payload) for p in points
                 ],
             )
+
+    def create_and_download_snapshot(self, dest_path: str) -> None:
+        """Backup half of the vendor boundary (`app/snapshot.py`'s job, T-DOC57): create a
+        server-side snapshot of this collection, then pull the resulting file out of the vector
+        store's own storage onto the host filesystem at `dest_path` -- a snapshot that only lives
+        inside the container is not a backup. `app/snapshot.py` itself never names or imports the
+        vendor client (CONVENTIONS.md §1); this is the one method that does both vendor-specific
+        steps on its behalf.
+
+        The typed client wraps snapshot *creation* (`create_snapshot`, a normal JSON-returning
+        call, routed through `_call` like every other vendor round-trip here), but its
+        generated *download* method tries to JSON-decode the raw snapshot bytes and breaks -- so
+        the download itself is a plain streamed GET against the same REST endpoint via `urllib`
+        (stdlib, not a second vendor dependency to allowlist).
+        """
+        description = self._call(self._client.create_snapshot, self._collection)
+        if description is None:
+            raise TransientError(
+                f"Qdrant returned no snapshot description for collection {self._collection!r}"
+            )
+        url = (
+            f"http://{self._host}:{self._port}/collections/{self._collection}"
+            f"/snapshots/{description.name}"
+        )
+        try:
+            with urllib.request.urlopen(url, timeout=_SNAPSHOT_DOWNLOAD_TIMEOUT_S) as response:
+                with open(dest_path, "wb") as out:
+                    shutil.copyfileobj(response, out)
+        except (urllib.error.URLError, OSError) as e:
+            raise TransientError(f"snapshot download failed for {url!r}: {e}") from e
 
     @staticmethod
     def _ranked_ids(hits: list) -> list[str]:
