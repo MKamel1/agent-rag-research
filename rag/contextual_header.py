@@ -9,7 +9,7 @@ This is a SPIKE module gathering before/after retrieval evidence, not a V0 inges
 PRD ADR-07) -- nothing here wires into `rag/orchestrator.py`. The only caller is
 `app/reembed_experiment.py`'s throwaway A/B re-embed script.
 
-Same seam as `rag/summarizer.py`'s `OllamaSummarizer` (injected `httpx.Client` -> a local
+Same seam as `rag/summarizer.py`'s real `Summarizer` adapter (injected `httpx.Client` -> a local
 `/api/generate`-style endpoint, an injected `GpuLock`, an injected model name) -- reused
 deliberately, not reinvented, since both adapters call the same local generation-LLM server.
 
@@ -91,7 +91,7 @@ def _clamp(header: str) -> str:
 class ContextualHeaderGenerator:
     """One local generation-LLM call per chunk, through an injected HTTP client pointed at a local
     `/api/generate`-style endpoint (or a compatible server) -- same construction as
-    `rag/summarizer.py`'s `OllamaSummarizer`.
+    `rag/summarizer.py`'s real `Summarizer` adapter.
 
     Preconditions: none beyond `summary_text`/`chunk_text` being strings. An empty or
     whitespace-only `summary_text` or `chunk_text` is not an error (a chunk can legitimately lack a
@@ -100,7 +100,7 @@ class ContextualHeaderGenerator:
     Postconditions: given non-empty input, returns a non-empty header string clamped to
     `_MAX_HEADER_WORDS` words (a safety backstop, not the primary length control -- the prompt
     itself asks for 50-100 tokens). A response that comes back genuinely empty is a
-    `PermanentError` (mirrors `OllamaSummarizer.summarize`'s same rule for an empty summary) -- the
+    `PermanentError` (mirrors `rag/summarizer.py`'s own rule for an empty summary) -- the
     caller skips that one chunk's header, it does not crash the whole re-embed run.
     Acquires `gpu_lock.acquire("header")` around the inference call only (CONVENTIONS.md §6) --
     never around the precondition check, so an empty-input call never queues behind the GPU lock.

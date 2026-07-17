@@ -79,6 +79,14 @@ VENDOR_RULES: tuple[VendorRule, ...] = (
     # isn't listed below yet because no PR has actually touched/added it since scope widened -- add
     # it here the moment one does (§12's "add the matching entry in the same PR" rule), rather than
     # widening this allowlist speculatively for lines nothing has touched.
+    #
+    # T-DOC41 (Contextual Retrieval spike): rag/contextual_header.py is a new real adapter over the
+    # same local generation-LLM server rag/summarizer.py already talks to, built the same way (an
+    # injected httpx.Client) -- rag/test_contextual_header.py exercises it offline with the same
+    # httpx.MockTransport pattern as rag/test_summarizer.py. app/reembed_experiment.py is the
+    # throwaway A/B re-embed script that constructs the real httpx-backed adapters (this ticket's
+    # own composition root, mirroring app/assembly.py) -- it names no vendor itself, only httpx as
+    # the shared HTTP client, same as every other composition-root/adapter entry in this list.
     VendorRule(
         "httpx",
         re.compile(r"httpx", re.I),
@@ -93,6 +101,9 @@ VENDOR_RULES: tuple[VendorRule, ...] = (
             "rag/reranker.py",
             "rag/test_reranker.py",
             "app/test_prefetch_pdfs.py",
+            "rag/contextual_header.py",
+            "rag/test_contextual_header.py",
+            "app/reembed_experiment.py",
         ),
     ),
 )
