@@ -540,7 +540,7 @@ tickets are the concrete follow-ups.
   skew. So 0.73 was never a retrieval defect to chase. Touches `fixtures/eval/` (foundation) → PR left OPEN
   for @MKamel1 with the `foundation-change` label. Full analysis + tables in `teval-results.md`.
 
-- **T-DOC51 (implemented — PR #113, merged; `python -m app.ingest --parse-workers N`, default 1) — Pass-1 throughput: run N=3 concurrent parse workers (+63%, measured).** The
+- **T-DOC51 (implemented — PR #113, merged; `python -m app.ingest --parse-workers N`, default 1) **[OG-19 determinism: RESOLVED 2026-07-17 — N>1 safe; anchor round-trip proven by construction + all 25,387 real anchors verified, see LESSONS-LEARNED]** — Pass-1 throughput: run N=3 concurrent parse workers (+63%, measured).** The
   Pass-1 GPU-underutilization problem (`.phase0-data/pass1-gpu-underutilization.md`, diagnosed 2026-07-14:
   27-38% avg GPU util, ~45% of samples at 0%) is **solved** — by parallelism, not by tuning MinerU. A
   rigorous serialized benchmark (2026-07-16; one GPU, verified clean before every run, TEI+Ollama evicted,
