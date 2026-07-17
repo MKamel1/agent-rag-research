@@ -26,11 +26,14 @@ import httpx
 import pytest
 
 from app.assembly import (
+    _METADATA_FETCH_BACKOFF_SECONDS,
+    _METADATA_FETCH_MAX_RETRIES,
     _PDF_DOWNLOAD_DELAY_SECONDS,
     _PDF_DOWNLOAD_RETRY_BACKOFF_SECONDS,
     _PdfDownloadParser,
     _sqlite_harvest_quarantine_sink,
     build_ingestion_orchestrator,
+    harvest_refs,
 )
 from contracts.config import Config
 from contracts.errors import PermanentError, TransientError
@@ -829,3 +832,191 @@ def test_batch_size_provider_is_wired_to_an_adaptive_batch_sizer(monkeypatch, tm
 
     assert isinstance(sizer, AdaptiveBatchSizer)
     assert sizer._current == Config(focus_area_queries=["x"]).parse_batch_size == 4
+
+
+# ================================================================================================
+# T-DOC48 (cache-first `harvest_refs`) + T-DOC49 (429 backoff/resume on the metadata fetch) --
+# `harvest_refs(config, orchestrator)`'s `config.ingest_paper_ids` branch used to call
+# `ArxivSource().fetch_by_ids(...)` unconditionally, even for a paper_id whose PDF (and now,
+# T-DOC48, its metadata sidecar) was already cached locally -- and that call had no retry, so a
+# single arXiv 429 crashed the whole run. Offline, no real network (`ArxivSource` monkeypatched
+# to a stub, same pattern `test_harvest_failure_is_written_to_the_quarantine_table` above uses).
+# ================================================================================================
+
+
+class _StubArxivSource:
+    """Records every `fetch_by_ids` call and returns canned refs / raises canned errors in
+    sequence -- stands in for the real `ArxivSource` the same way `_AlwaysTransientSource` does
+    above, so these tests exercise `harvest_refs`'s own retry/cache logic, not a fake pretending
+    to have it."""
+
+    def __init__(self, responses):
+        self._responses = list(responses)
+        self.calls: list[list[str]] = []
+
+    def fetch_by_ids(self, ids):
+        self.calls.append(list(ids))
+        response = self._responses.pop(0)
+        if isinstance(response, Exception):
+            raise response
+        return response
+
+
+class _StubOrchestrator:
+    """Stands in for `IngestionOrchestrator` on the query-driven (no `ingest_paper_ids`) path --
+    records the call so a test can prove that path is untouched by this ticket's changes."""
+
+    def __init__(self, refs):
+        self._refs = refs
+        self.calls: list[tuple[list[str], int]] = []
+
+    def harvest(self, focus_area, cap):
+        self.calls.append((focus_area, cap))
+        return self._refs
+
+
+def _write_cached_ref(cache_dir: Path, ref: PaperRef) -> None:
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    (cache_dir / f"{ref.paper_id}.pdf").write_bytes(b"%PDF-fake")
+    (cache_dir / f"{ref.paper_id}.json").write_text(ref.model_dump_json())
+
+
+def test_harvest_refs_cache_first_makes_zero_network_calls_when_both_files_are_cached(
+    monkeypatch, tmp_path,
+):
+    monkeypatch.setattr(
+        "app.assembly.ArxivSource",
+        lambda *a, **k: (_ for _ in ()).throw(
+            AssertionError("must not construct ArxivSource -- both refs were fully cached")
+        ),
+    )
+    cache_dir = tmp_path / "pdf_cache"
+    ref_1, ref_2 = _make_ref("2601.00001"), _make_ref("2601.00002")
+    _write_cached_ref(cache_dir, ref_1)
+    _write_cached_ref(cache_dir, ref_2)
+
+    cfg = Config(
+        focus_area_queries=["x"],
+        ingest_paper_ids=[ref_1.paper_id, ref_2.paper_id],
+        pdf_cache_dir=str(cache_dir),
+    )
+
+    refs = harvest_refs(cfg, orchestrator=None)
+
+    assert refs == [ref_1, ref_2], "order must follow config.ingest_paper_ids"
+
+
+def test_harvest_refs_falls_back_to_arxiv_for_a_pdf_only_cache_entry(monkeypatch, tmp_path):
+    """Backwards compatibility: the current 2,542-file cache is `.pdf`-only (no `.json` sidecar,
+    predates T-DOC48) -- that id must still resolve via a live `fetch_by_ids` call, exactly as
+    before this ticket, not be silently dropped or treated as an error."""
+    cache_dir = tmp_path / "pdf_cache"
+    cache_dir.mkdir()
+    pdf_only_id = "2601.00003"
+    (cache_dir / f"{pdf_only_id}.pdf").write_bytes(b"%PDF-fake")  # no matching .json
+
+    fetched_ref = _make_ref(pdf_only_id)
+    stub_source = _StubArxivSource([[fetched_ref]])
+    monkeypatch.setattr("app.assembly.ArxivSource", lambda *a, **k: stub_source)
+
+    cfg = Config(
+        focus_area_queries=["x"], ingest_paper_ids=[pdf_only_id], pdf_cache_dir=str(cache_dir),
+    )
+
+    refs = harvest_refs(cfg, orchestrator=None, sleep=lambda s: None)
+
+    assert refs == [fetched_ref]
+    assert stub_source.calls == [[pdf_only_id]]
+
+
+def test_harvest_refs_only_fetches_the_ids_missing_from_cache(monkeypatch, tmp_path):
+    cache_dir = tmp_path / "pdf_cache"
+    cached_ref = _make_ref("2601.00001")
+    _write_cached_ref(cache_dir, cached_ref)
+    missing_ref = _make_ref("2601.00002")
+
+    stub_source = _StubArxivSource([[missing_ref]])
+    monkeypatch.setattr("app.assembly.ArxivSource", lambda *a, **k: stub_source)
+
+    cfg = Config(
+        focus_area_queries=["x"],
+        ingest_paper_ids=[cached_ref.paper_id, missing_ref.paper_id],
+        pdf_cache_dir=str(cache_dir),
+    )
+
+    refs = harvest_refs(cfg, orchestrator=None, sleep=lambda s: None)
+
+    assert refs == [cached_ref, missing_ref]
+    assert stub_source.calls == [[missing_ref.paper_id]], (
+        "only the uncached id should ever reach the network"
+    )
+
+
+def test_harvest_refs_empty_pdf_cache_dir_disables_the_cache_check(monkeypatch, tmp_path):
+    """`config.pdf_cache_dir = ""` (T-DOC29's documented "explicitly disabled" sentinel, same one
+    `build_ingestion_orchestrator` handles) must skip the cache check entirely and always fetch --
+    matches how `_PdfDownloadParser`'s own cache_dir=None handling behaves."""
+    cache_dir = tmp_path / "pdf_cache"
+    ref = _make_ref("2601.00001")
+    _write_cached_ref(cache_dir, ref)  # cached, but pdf_cache_dir below doesn't point at it
+
+    stub_source = _StubArxivSource([[ref]])
+    monkeypatch.setattr("app.assembly.ArxivSource", lambda *a, **k: stub_source)
+
+    cfg = Config(focus_area_queries=["x"], ingest_paper_ids=[ref.paper_id], pdf_cache_dir="")
+
+    refs = harvest_refs(cfg, orchestrator=None, sleep=lambda s: None)
+
+    assert refs == [ref]
+    assert stub_source.calls == [[ref.paper_id]]
+
+
+def test_harvest_refs_query_driven_path_is_unaffected_when_ingest_paper_ids_is_unset(monkeypatch):
+    monkeypatch.setattr(
+        "app.assembly.ArxivSource",
+        lambda *a, **k: (_ for _ in ()).throw(
+            AssertionError("query-driven harvest must never construct ArxivSource directly")
+        ),
+    )
+    ref = _make_ref("2601.00001")
+    orchestrator = _StubOrchestrator([ref])
+    cfg = Config(focus_area_queries=["causal inference"], corpus_cap=5)
+
+    refs = harvest_refs(cfg, orchestrator)
+
+    assert refs == [ref]
+    assert orchestrator.calls == [(["causal inference"], 5)]
+
+
+def test_harvest_refs_retries_a_429_with_backoff_then_succeeds(monkeypatch, tmp_path):
+    ref = _make_ref("2601.00001")
+    stub_source = _StubArxivSource(
+        [TransientError("ArxivSource: arXiv API returned 429"), [ref]]
+    )
+    monkeypatch.setattr("app.assembly.ArxivSource", lambda *a, **k: stub_source)
+
+    cfg = Config(focus_area_queries=["x"], ingest_paper_ids=[ref.paper_id], pdf_cache_dir="")
+    sleeps: list[float] = []
+
+    refs = harvest_refs(cfg, orchestrator=None, sleep=sleeps.append)
+
+    assert refs == [ref]
+    assert len(stub_source.calls) == 2, "must have retried after the 429, not crashed"
+    assert sleeps == [_METADATA_FETCH_BACKOFF_SECONDS]
+
+
+def test_harvest_refs_raises_once_the_429_retry_budget_is_exhausted(monkeypatch):
+    """The retry is bounded, not infinite -- once genuinely exhausted this must still surface as a
+    `TransientError` to the caller (CONVENTIONS.md §4), not be silently swallowed."""
+    always_429 = [TransientError("429") for _ in range(_METADATA_FETCH_MAX_RETRIES + 1)]
+    stub_source = _StubArxivSource(always_429)
+    monkeypatch.setattr("app.assembly.ArxivSource", lambda *a, **k: stub_source)
+
+    cfg = Config(focus_area_queries=["x"], ingest_paper_ids=["2601.00001"], pdf_cache_dir="")
+    sleeps: list[float] = []
+
+    with pytest.raises(TransientError):
+        harvest_refs(cfg, orchestrator=None, sleep=sleeps.append)
+
+    assert len(stub_source.calls) == _METADATA_FETCH_MAX_RETRIES + 1
+    assert len(sleeps) == _METADATA_FETCH_MAX_RETRIES

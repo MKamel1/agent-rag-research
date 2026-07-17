@@ -71,8 +71,59 @@ _PDF_DOWNLOAD_RETRY_BACKOFF_SECONDS = 2.0
 # statuses (CONVENTIONS.md §4: those are `PermanentError`, no retry).
 _RETRYABLE_STATUSES = {429, 502, 503, 504}
 
+# T-DOC49: bounded exponential backoff around `ArxivSource.fetch_by_ids()` in `harvest_refs`
+# below. That call bypasses `Harvester` entirely (see `ArxivSource.fetch_by_ids`'s own docstring),
+# so unlike the query-driven `harvest()` path it has NO retry of its own -- a single arXiv 429
+# used to raise `TransientError` straight out of `harvest_refs`, through `parse_phase.py`'s
+# subprocess, killing the whole run (the exact failure WORK-BREAKDOWN.md's T-DOC49/OG-10
+# describes). `ArxivSource` doesn't surface the response's `Retry-After` header through
+# `TransientError` (rag/harvester.py -- outside this ticket's file territory), so this backs off
+# exponentially instead of honoring that header exactly; flagged as a follow-up below, not
+# silently treated as done.
+_METADATA_FETCH_MAX_RETRIES = 5
+_METADATA_FETCH_BACKOFF_SECONDS = 30.0
 
-def harvest_refs(config: Config, orchestrator: IngestionOrchestrator) -> list[PaperRef]:
+
+def _fetch_by_ids_with_backoff(
+    source: ArxivSource, ids: list[str], *, sleep: Callable[[float], None] = time.sleep,
+) -> list[PaperRef]:
+    """`source.fetch_by_ids(ids)`, retrying a `TransientError` (arXiv 429/5xx) with bounded
+    exponential backoff (30s, 60s, 120s, ... up to `_METADATA_FETCH_MAX_RETRIES` attempts) instead
+    of letting it propagate and crash the run -- see the module-level comment above. Raises
+    `TransientError` only once the retry budget is exhausted, matching `TransientError`'s existing
+    contract elsewhere in this codebase (CONVENTIONS.md §4: retry with backoff, then quarantine --
+    the caller here still has no per-paper quarantine sink for this path, so exhaustion surfaces
+    as a run failure exactly as before this fix, just after genuinely trying to ride out a
+    transient throttle first).
+    """
+    attempt = 0
+    while True:
+        try:
+            return source.fetch_by_ids(ids)
+        except TransientError:
+            attempt += 1
+            if attempt > _METADATA_FETCH_MAX_RETRIES:
+                raise
+            sleep(_METADATA_FETCH_BACKOFF_SECONDS * (2 ** (attempt - 1)))
+
+
+def _cached_ref(cache_dir: Path, paper_id: str) -> PaperRef | None:
+    """T-DOC48 cache-first read: reconstruct a `PaperRef` from its `<paper_id>.json` sidecar
+    (`app/prefetch_pdfs.py`'s `_write_sidecar`) iff BOTH it and the matching `<paper_id>.pdf` are
+    present -- a `.pdf` with no sidecar (every file the prefetcher wrote before T-DOC48, including
+    today's ~2,542-file cache) returns `None` so the caller falls back to the live arXiv fetch,
+    exactly as before this ticket."""
+    if (cache_dir / f"{paper_id}.pdf").exists() and (cache_dir / f"{paper_id}.json").exists():
+        return PaperRef.model_validate_json((cache_dir / f"{paper_id}.json").read_text())
+    return None
+
+
+def harvest_refs(
+    config: Config,
+    orchestrator: IngestionOrchestrator,
+    *,
+    sleep: Callable[[float], None] = time.sleep,
+) -> list[PaperRef]:
     """`config.ingest_paper_ids` (optional list of base arXiv ids, T-EVAL harvest-scoping
     override, PR #89): fetch exactly these known papers via `ArxivSource.fetch_by_ids()` instead
     of the query-driven `harvest()` below -- guarantees the 210-question eval set's 100 source
@@ -82,9 +133,36 @@ def harvest_refs(config: Config, orchestrator: IngestionOrchestrator) -> list[Pa
     Shared by `app/ingest.py` (Pass 2) and `app/parse_phase.py` (Pass 1, run as a subprocess) so
     both phases of one run agree on the same explicit paper set by construction -- one function,
     not two copies a docstring asks someone to "keep in sync" (T-DOC29).
+
+    T-DOC48 (cache-first): before calling `fetch_by_ids`, checks `config.pdf_cache_dir` for each
+    requested id's `<id>.pdf` + `<id>.json` sidecar pair (`_cached_ref`) and reconstructs those
+    `PaperRef`s locally with zero network calls -- only the ids that DON'T have both files cached
+    (a genuinely new paper, or one downloaded before T-DOC48) go through `fetch_by_ids` (itself now
+    429-resilient, T-DOC49 -- see `_fetch_by_ids_with_backoff`). `config.pdf_cache_dir` unset/empty
+    ("" -- see `build_ingestion_orchestrator`'s handling of the same field) skips the cache check
+    entirely and preserves today's always-fetch behavior. Order of the returned list follows
+    `config.ingest_paper_ids`, and an id that resolves to neither cache nor a live fetch is simply
+    absent (matches `fetch_by_ids`'s own documented "unknown id is silently omitted" contract).
     """
     if config.ingest_paper_ids:
-        return ArxivSource().fetch_by_ids(config.ingest_paper_ids)
+        cache_dir = Path(config.pdf_cache_dir) if config.pdf_cache_dir else None
+        cached: dict[str, PaperRef] = {}
+        if cache_dir is not None:
+            for paper_id in config.ingest_paper_ids:
+                ref = _cached_ref(cache_dir, paper_id)
+                if ref is not None:
+                    cached[paper_id] = ref
+
+        missing_ids = [pid for pid in config.ingest_paper_ids if pid not in cached]
+        fetched = (
+            _fetch_by_ids_with_backoff(ArxivSource(), missing_ids, sleep=sleep)
+            if missing_ids
+            else []
+        )
+        fetched_by_id = {ref.paper_id: ref for ref in fetched}
+
+        by_id = {**cached, **fetched_by_id}
+        return [by_id[pid] for pid in config.ingest_paper_ids if pid in by_id]
     return orchestrator.harvest(config.focus_area_queries, config.corpus_cap)
 
 
