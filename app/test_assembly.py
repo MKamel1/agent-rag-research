@@ -772,7 +772,7 @@ class FakeSummarizer:
         self.unload_calls += 1
 
 
-def _build_orchestrator_for_hook_test(monkeypatch, tmp_path):
+def _build_orchestrator_for_hook_test(monkeypatch, tmp_path, on_stage=None):
     """Same stubbing pattern as `test_harvest_failure_is_written_to_the_quarantine_table` above --
     real orchestrator through the real composition root, with only the collaborators that would
     otherwise need a live network/GPU (VectorIndex's real Qdrant connection, OllamaSummarizer's
@@ -785,7 +785,8 @@ def _build_orchestrator_for_hook_test(monkeypatch, tmp_path):
 
     cfg = Config(focus_area_queries=["causal inference"], gpu_lock_path=str(tmp_path / ".gpu.lock"))
     orchestrator = build_ingestion_orchestrator(
-        cfg, db_path=str(tmp_path / "papers.db"), blob_dir=str(tmp_path / "blobs")
+        cfg, db_path=str(tmp_path / "papers.db"), blob_dir=str(tmp_path / "blobs"),
+        on_stage=on_stage,
     )
     return orchestrator, fake_summarizer, fake_tei_lifecycle
 
@@ -827,17 +828,9 @@ def test_build_ingestion_orchestrator_wires_on_stage_when_given(monkeypatch, tmp
     `app/ingest.py`'s `_run_finish_phase` passes `run.set_stage` (app/telemetry.py) here so GPU
     telemetry can re-tag the summarize/embed/store split inside "finish" without this module or
     `rag/orchestrator.py` importing `app.telemetry` (see that module's `on_stage` docstring)."""
-    fake_summarizer = FakeSummarizer()
-    fake_tei_lifecycle = _FakeTeiLifecycle()
-    monkeypatch.setattr("app.assembly.OllamaSummarizer", lambda *a, **k: fake_summarizer)
-    monkeypatch.setattr("app.assembly.VectorIndex", lambda *a, **k: object())
-    monkeypatch.setattr("app.assembly.tei_lifecycle", fake_tei_lifecycle)
-
-    cfg = Config(focus_area_queries=["causal inference"], gpu_lock_path=str(tmp_path / ".gpu.lock"))
     stages_seen: list[str] = []
-    orchestrator = build_ingestion_orchestrator(
-        cfg, db_path=str(tmp_path / "papers.db"), blob_dir=str(tmp_path / "blobs"),
-        on_stage=stages_seen.append,
+    orchestrator, _, _ = _build_orchestrator_for_hook_test(
+        monkeypatch, tmp_path, on_stage=stages_seen.append
     )
 
     orchestrator._on_stage("summarize")
