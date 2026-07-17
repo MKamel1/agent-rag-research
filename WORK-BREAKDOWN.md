@@ -612,7 +612,7 @@ otherwise. **T-DOC48 (OG-9, offline/cache-first ingest) is the highest-value tic
 blocks the ~1,700-PDF cached-corpus backlog from being processable at all, and directly caused the 429 that
 killed this run.
 
-- **T-DOC43 (not started) — 🔴 operational preflight/doctor + full service lifecycle (OG-1 + OG-8).** Before
+- **T-DOC43 (implemented — PR #117, merged; `python -m app.doctor` + `run_preflight()` in `app.ingest`, `--no-preflight`/`--no-auto-start`) — 🔴 operational preflight/doctor + full service lifecycle (OG-1 + OG-8).** Before
   launching, the operator had to manually check disk headroom (`df -h`), GPU/VRAM headroom (`nvidia-smi`),
   the GPU lock not held (`.gpu.lock`), every required container up (`docker ps`: TEI-embed, TEI-reranker,
   GROBID, Qdrant) and Ollama reachable (`curl localhost:11434/api/ps`) — none of which `app.ingest` checks
@@ -625,19 +625,19 @@ killed this run.
   one clear message naming what's missing instead of quarantining papers or crashing partway; extend
   `app/tei_lifecycle.py`'s start/stop pattern to the other services (at minimum a health-gate, ideally
   start-if-down for the ones safe to auto-start).
-- **T-DOC44 (not started) — 🔴 DB auto-provision (OG-2).** Pointing a run at a fresh `papers.db` crashes with
+- **T-DOC44 (implemented — PR #117, merged) — 🔴 DB auto-provision (OG-2).** Pointing a run at a fresh `papers.db` crashes with
   an opaque `no such table` — the `IngestionOrchestrator`/`DocumentStore` never creates or verifies schema —
   so `migrations/migrate.py <db>` has to be run by hand first, and re-running `migrate` on an
   already-migrated DB fails loudly by design (forcing an `rm -f db db-wal db-shm` workaround). Fix: detect an
   absent/unmigrated DB on startup and either auto-migrate or fail with an actionable message ("database not
   initialized — run `migrations/migrate.py <path>`"); add an idempotent `migrate --if-needed` mode to remove
   the re-run foot-gun.
-- **T-DOC45 (not started) — 🟠 run-scoped corpus cap (OG-3).** `corpus_cap` is a foundation `Config` value
+- **T-DOC45 (implemented — PR #117, merged; CLI `--limit N`) — 🟠 run-scoped corpus cap (OG-3).** `corpus_cap` is a foundation `Config` value
   (30000) with no per-run override — no `--limit 100`/`RAG_CORPUS_CAP`. Capping a run at exactly 100 papers
   required prefetching 100 PDFs, extracting their ids, and feeding them via `RAG_INGEST_PAPER_IDS` — the
   only lever, and an indirect one. Fix: a run-scoped cap override (`RAG_CORPUS_CAP` env or
   `app.ingest --limit N`) for test/benchmark/smoke runs.
-- **T-DOC46 (not started) — 🟠 scratch/benchmark run mode (OG-4).** Running without touching production
+- **T-DOC46 (implemented — PR #117, merged; `--scratch`) — 🟠 scratch/benchmark run mode (OG-4).** Running without touching production
   required hand-wiring four things: a throwaway `RAG_DB_PATH`, `RAG_BLOB_DIR`, a disposable `RAG_COLLECTION`
   (e.g. `e2e_gpuutil_100`), and pointing the prefetcher's dedup at the **real** `papers.db` read-only — a
   bespoke orchestration script, where getting any one wrong risks mutating production. Fix: a first-class
@@ -658,7 +658,7 @@ killed this run.
   end-of-run summary (N done, N quarantined + reasons, wall-clock, papers/hour, SQLite↔Qdrant consistency
   check) — three faces of one "the run can report on itself" capability, sharing the same underlying
   counters, worth building together.
-- **T-DOC48 (not started) — 🔴 HIGHEST-VALUE, offline/cache-first ingest (OG-9).** There are 2,542 PDFs
+- **T-DOC48 (implemented — PR #115, merged; `<paper_id>.json` sidecars, cache-first `harvest_refs`) — 🔴 HIGHEST-VALUE, offline/cache-first ingest (OG-9).** There are 2,542 PDFs
   already downloaded in `research-system-rag-data/pdf_cache` but only 809 processed — ~1,700 papers sit
   downloaded-but-unprocessed — yet a run over them still failed, because the pipeline re-fetches each
   paper's **metadata** from arXiv even when its PDF is already local. Root cause: `PaperRef`
@@ -672,7 +672,7 @@ killed this run.
   (T-DOC49). Fix: persist harvested `PaperRef` metadata alongside each cached PDF (a `<paper_id>.json`
   sidecar, or a local `refs` table) at download time, and make ingest cache-first — if the PDF *and* its
   metadata are both local, process fully offline with zero arXiv calls.
-- **T-DOC49 (not started) — 🔴 arXiv 429 run-level backoff/resume (OG-10).** A single transient 429 from
+- **T-DOC49 (implemented — PR #115, merged; bounded exp. backoff around `fetch_by_ids`. Follow-up: honor `Retry-After` header needs `rag/harvester.py`) — 🔴 arXiv 429 run-level backoff/resume (OG-10).** A single transient 429 from
   arXiv (metadata fetch) raised `TransientError` and killed the entire `app.ingest` run (Pass 1 crashed →
   `CalledProcessError` → exit); `ArxivSource` has per-call retry but no run-level "arXiv is throttling —
   pause and resume" handling. Fix: treat arXiv 429 as a pause-and-resume condition at the run level (honor
@@ -680,7 +680,7 @@ killed this run.
   cache-first removes the metadata re-fetch that triggered *this* 429 for the cached backlog, but this is
   the general run-level resilience fix for any live arXiv call (harvest, non-cached papers) that gets
   throttled.
-- **T-DOC50 (not started) — 🔴 prefetch stall visibility (OG-11).** With dedup pointed at production, only 4
+- **T-DOC50 (implemented — PR #115, merged; `--max-idle N`) — 🔴 prefetch stall visibility (OG-11).** With dedup pointed at production, only 4
   genuinely-new papers were available; prefetch downloaded the 4 and logged "below target, sleeping 3600s
   before re-harvesting" — it would have sat idle an hour making zero progress while looking healthy, caught
   only because the operator noticed no GPU spike, not because any telemetry flagged it. Fix: surface
@@ -700,7 +700,7 @@ branch** — see the PR body for the exact caveat text to fold in once #111 land
 work). OG-21 is explicitly an agent-workflow process lesson, not a system feature, and is intentionally not
 ticketed.
 
-- **T-DOC52 (not started) — 🟠 no container restart policy; a power event silently kills every dependency
+- **T-DOC52 (implemented — PR #117, merged; folded into `app.doctor` — auto-starts a stopped TEI container via `tei_lifecycle.start_tei_containers()`, per this ticket's own "fold into T-DOC43" note) — 🟠 no container restart policy; a power event silently kills every dependency
   (OG-12).** The workstation power-cycled (`uptime` showed 32 min since boot); all 4 required containers
   (Qdrant, GROBID, TEI-embed, TEI-reranker) came back `Exited (255)`, none auto-restarted, and had to be
   brought back up by hand (`docker start ...`). Production data itself survived intact (Qdrant's on-disk
@@ -767,7 +767,7 @@ ticketed.
   telemetry as the source of truth for run analysis; until then, cross-check any `workstation-dashboard`
   export against the run's own log timestamps (or an independent local poller, as this run did) before
   trusting it.
-- **T-DOC55 (not started) — 🟠 no controlled benchmark harness; every perf measurement hand-builds its own
+- **T-DOC55 (implemented — PR #116, merged; `python -m app.benchmark`, reuses `FileGpuLock`) — 🟠 no controlled benchmark harness; every perf measurement hand-builds its own
   controls, and GPU benchmarks must be serialized (OG-20, new part only).** Answering "how do we raise
   pages/min" required hand-building, from scratch, every control needed to trust the numbers: evict TEI
   *and* Ollama, verify `nvidia-smi` at true baseline before each run, exclude model-init via a discarded
