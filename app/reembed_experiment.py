@@ -79,7 +79,7 @@ class ReembedError(RuntimeError):
     """
 
 
-class _Embedder(Protocol):
+class _EmbedderSeam(Protocol):
     @property
     def info(self) -> EmbedderInfo: ...
     def embed(self, texts: list[str]) -> list[Vector]: ...
@@ -100,7 +100,7 @@ class _HeaderGenerator(Protocol):
 def reembed(
     *,
     document_store: _DocumentStore,
-    embedder: _Embedder,
+    embedder: _EmbedderSeam,
     vector_index: _VectorStore,
     header_generator: _HeaderGenerator | None,
     paper_ids: list[str],

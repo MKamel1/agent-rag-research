@@ -1,7 +1,8 @@
 """T-DOC41 (Contextual Retrieval spike) — `app/reembed_experiment.py` test suite. Zero-GPU,
 zero-network (TEST-STRATEGY.md golden rule): drives the pure `reembed()` function with
 `rag.fakes.FakeEmbedder`/`FakeVectorStore` plus a small local fake header generator and fake
-document store over 2-3 synthetic papers -- no real HTTP client, no real Qdrant, no GPU.
+document store over 2-3 synthetic papers -- no real HTTP client, no real vector-store server, no
+GPU.
 
 `reembed()` (not `__main__`) is the unit under test: the real composition in `__main__` builds a
 real `VectorIndex`, which makes a live network call in its own constructor
