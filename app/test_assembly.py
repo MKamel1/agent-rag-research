@@ -1027,21 +1027,17 @@ def test_harvest_refs_raises_once_the_429_retry_budget_is_exhausted(monkeypatch)
 
 # ================================================================================================
 # T-DOC58/OG-24: the 429's `Retry-After` header, when present, is honored instead of the
-# exponential guess above. `_StubArxivSource.fetch_by_ids` does a bare `raise response` (not
-# `raise ... from ...`), so `_transient_429` below sets `__cause__` on the canned `TransientError`
-# by hand -- exactly matching the shape `raise TransientError(...) from error` produces at
-# `rag/harvester.py`'s real raise sites (`error.__cause__` is just a settable attribute either
-# way).
+# exponential guess above. `_transient_429` below sets `.diagnostics["retry_after"]` on a canned
+# `TransientError` by hand, matching exactly what `rag/harvester.py`'s `_fetch_by_id_list` sets on
+# the real raise site (`rag/test_harvester_arxiv_source.py` covers that raise site itself) --
+# `.diagnostics` is a plain settable attribute either way (contracts/errors.py's T-DOC17
+# convention), so this needs no real HTTP response to build.
 # ================================================================================================
 
 
-def _transient_429(retry_after: str | None = None) -> TransientError:
-    request = httpx.Request("GET", "https://export.arxiv.org/api/query")
-    headers = {"Retry-After": retry_after} if retry_after is not None else {}
-    response = httpx.Response(429, headers=headers, request=request)
-    cause = httpx.HTTPStatusError("429", request=request, response=response)
+def _transient_429(retry_after: str | None) -> TransientError:
     error = TransientError("ArxivSource: arXiv API returned 429")
-    error.__cause__ = cause
+    error.diagnostics = {"retry_after": retry_after}
     return error
 
 
