@@ -802,7 +802,7 @@ ticketed.
 - **T-DOC58 (implemented — PR #132, merged; `Retry-After` threaded via `TransientError.diagnostics`, parsed seconds/HTTP-date, clamped 300s, falls back to exponential; no `contracts/` edit) — 🟠 arXiv 429 backoff doesn't honor `Retry-After` (OG-24, T-DOC49 follow-up).**
   `ArxivSource.fetch_by_ids` doesn't surface the header through `TransientError`; thread it through and
   prefer it over the exponential schedule when present (`rag/harvester.py`).
-- **T-DOC59 (not started) — 🟡 per-run telemetry only tags the coarse parse/finish boundary (OG-25,
+- **T-DOC59 (implemented — PR #138, merged; `on_stage` hook on the orchestrator, wired to `set_stage` in `app/ingest.py`, no telemetry import in `rag/`) — 🟡 per-run telemetry only tags the coarse parse/finish boundary (OG-25,
   T-DOC47 follow-up).** `finish_phase()` runs summarize+embed+store as one call; add a stage-boundary hook
   inside `rag/orchestrator.py` so GPU time can be attributed to those three sub-stages.
 - **T-DOC60 (implemented — PR #133, merged; `python -m app.reindex_idf`) — 🟡 enable IDF sparse on an
@@ -964,10 +964,10 @@ safely. **Hard rule (ADR-12): claim-extraction quality bounds everything downstr
 build before Spike 3 clears its bar.**
 
 ### Remaining V0-era gaps (do now, parallel — no gate)
-- **T-DOC59 (not started) — 🟡 finer telemetry sub-stages (OG-25).** `finish_phase()` runs
+- **T-DOC59 (implemented — PR #138, merged) — 🟡 finer telemetry sub-stages (OG-25).** `finish_phase()` runs
   summarize+embed+store as one call; add a stage-boundary hook inside `rag/orchestrator.py` so GPU time
   attributes to those three sub-stages.
-- **T-DOC61 (not started) — 🟡 prefetch stdout logging (OG-29).** `app/prefetch_pdfs.py` is silent
+- **T-DOC61 (implemented — PR #137, merged; `logging.basicConfig` + harvest/rate-limited-progress/sleep lines, `--log-every`) — 🟡 prefetch stdout logging (OG-29).** `app/prefetch_pdfs.py` is silent
   during a days-long run; add `logging.basicConfig` + harvest/download/sleep lines so the cache build is
   observable. High value while the seed-cache build is underway.
 
@@ -988,7 +988,7 @@ build before Spike 3 clears its bar.**
   spiked+REJECTED (stay on TEI); this is the GEN side (summaries/claims), needed before claim extraction
   runs at 30k scale. **Re-validate the VRAM eviction-hook interaction** (ADR-09 caveat) before it lands.
   Can be built/spiked in parallel with the spikes.
-- **T-V1-OBSIDIAN (not started) — 🟢 Obsidian note-per-paper (generated view over SQLite; PRD §11 Q5 →
+- **T-V1-OBSIDIAN (implemented — PR #136, merged; `python -m app.obsidian_export`, keyed on paper_id, idempotent, `## Claims` deferred) — 🟢 Obsidian note-per-paper (generated view over SQLite; PRD §11 Q5 →
   generated, not hand-edited, SQLite is truth).** Renders V0 summaries now, extends to claims when they
   exist. Mostly independent (rendering layer) — can start early.
 
