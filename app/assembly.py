@@ -497,13 +497,26 @@ def build_ingestion_orchestrator(
     )
 
 
+def _resolve_store_paths(
+    config: Config, db_path: str | None, blob_dir: str | None
+) -> tuple[str, str]:
+    """An explicit caller arg (`--db-path`/`--blob-dir`) wins; otherwise fall back to the
+    `Config`'s own `db_path`/`blob_dir` -- NOT a hardcoded `"papers.db"`/`"blobs"`.
+
+    The old fallback ignored `config.db_path` entirely, so a caller that set it (e.g. an eval
+    pointed at the real data dir) was silently run against the EMPTY repo-root `papers.db` and got
+    a confident fake `Recall@10 = 0.000` (LESSONS-LEARNED 2026-07-17). Config's own defaults are
+    still `"papers.db"`/`"blobs"`, so behaviour is unchanged when `db_path` isn't overridden.
+    """
+    return db_path or config.db_path, blob_dir or config.blob_dir
+
+
 def build_mcp_server(
     config: Config, *, db_path: str | None = None, blob_dir: str | None = None,
     collection: str = "papers",
 ) -> McpServer:
     gpu_lock = FileGpuLock(Path(config.gpu_lock_path))  # same path as the ingest root -> same file
-    db_path = db_path or "papers.db"
-    blob_dir = blob_dir or "blobs"
+    db_path, blob_dir = _resolve_store_paths(config, db_path, blob_dir)
 
     embedder = TeiEmbedder(httpx.Client(base_url=_TEI_EMBED_URL, timeout=60.0), gpu_lock, _EMBEDDER_INFO)
     document_store = DocumentStore(db_path, blob_dir)

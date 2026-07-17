@@ -786,6 +786,26 @@ ticketed.
   (scratch/benchmark run mode) and T-DOC47 (run instrumentation & reporting) for the rest of "the system can
   measure itself honestly."
 
+### T-DOC56–T-DOC59 — gaps surfaced during the T-DOC41 spike + prior batches (OG-22..25)
+
+- **T-DOC56 (implemented — this fix; `app/assembly.py` `_resolve_store_paths`) — 🔴 `build_mcp_server`
+  silently ignored `config.db_path`/`config.blob_dir` (OG-22).** Took a `Config` but resolved
+  `db_path or "papers.db"` / `blob_dir or "blobs"`, never reading the Config's own fields — a caller that
+  set `config.db_path` (e.g. an eval pointed at the real data dir) ran against the **empty repo-root
+  `papers.db`** and got a confident fake `Recall@10 = 0.000` (hit for real 2026-07-17). Dormant in prod
+  (Config default coincides with the fallback; `app/serve.py` uses `RAG_DB_PATH`). Fixed +
+  unit-tested (`_resolve_store_paths`: explicit arg wins, else `config.db_path`/`config.blob_dir`;
+  backward-compatible).
+- **T-DOC57 (not started) — 🟡 `app/retrieval_eval.py` reports only aggregates, no per-question rows
+  (OG-23).** Blocks computing per-question deltas / listing regressions between two runs from the JSON
+  alone. Add an optional per-question array (qid, gold ids, hit rank per granularity).
+- **T-DOC58 (not started) — 🟠 arXiv 429 backoff doesn't honor `Retry-After` (OG-24, T-DOC49 follow-up).**
+  `ArxivSource.fetch_by_ids` doesn't surface the header through `TransientError`; thread it through and
+  prefer it over the exponential schedule when present (`rag/harvester.py`).
+- **T-DOC59 (not started) — 🟡 per-run telemetry only tags the coarse parse/finish boundary (OG-25,
+  T-DOC47 follow-up).** `finish_phase()` runs summarize+embed+store as one call; add a stage-boundary hook
+  inside `rag/orchestrator.py` so GPU time can be attributed to those three sub-stages.
+
 ---
 
 ## T-DOC series — post-M1b real-run hardening fixes (2026-07-13/14)
