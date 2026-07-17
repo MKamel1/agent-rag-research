@@ -80,15 +80,17 @@ _RETRYABLE_STATUSES = {429, 502, 503, 504}
 # subprocess, killing the whole run (the exact failure WORK-BREAKDOWN.md's T-DOC49/OG-10
 # describes).
 #
-# T-DOC58: the 429 response's `Retry-After` header states exactly how long the source wants
-# callers to wait -- better than guessing via the exponential schedule below. `TransientError`
-# itself (contracts/errors.py, frozen) carries no such field, so this reads the header off the
-# *source* HTTP error instead: `rag/harvester.py`'s raise sites use `raise TransientError(...)
-# from error`, which sets Python's standard `__cause__` chain -- `_retry_after_seconds` below
-# walks that chain looking for an `httpx.HTTPStatusError` with a `Retry-After` header, entirely
-# from this file, with no change to `contracts/` or `rag/harvester.py`. Falls back to the
-# exponential schedule when the header is absent, unparseable, or there's no such cause (e.g. the
-# older `_AlwaysTransientSource`-style stub tests below construct a bare `TransientError`).
+# T-DOC58: a 429's `Retry-After` header states exactly how long the source wants callers to
+# wait -- better than guessing via the exponential schedule below. `TransientError` itself
+# (contracts/errors.py, frozen) carries no such field, so this reads it off `TransientError`'s
+# existing, already-documented opportunistic `.diagnostics` dict (contracts/errors.py's T-DOC17
+# convention) instead: `rag/harvester.py`'s `_fetch_by_id_list` (the raise site `fetch_by_ids`
+# actually goes through) now sets `diagnostics["retry_after"]` to the response header's raw value
+# before raising. `_retry_after_seconds` below reads that key back, purely in terms of
+# `TransientError`'s own public surface -- no new field on the frozen contract, and no vendor
+# HTTP-client type named in this file. Falls back to the exponential schedule when `.diagnostics`
+# is absent, has no `"retry_after"` key, the source didn't send the header (`None`), or the value
+# present doesn't parse as either form `_parse_retry_after` understands.
 _METADATA_FETCH_MAX_RETRIES = 5
 _METADATA_FETCH_BACKOFF_SECONDS = 30.0
 # Upper bound on how long a single `Retry-After` wait is honored for -- a defensive clamp against
@@ -121,14 +123,14 @@ def _parse_retry_after(value: str | None) -> float | None:
 
 
 def _retry_after_seconds(error: TransientError) -> float | None:
-    """`error`'s originating HTTP response's `Retry-After` header, in seconds, if `error` was
-    raised (via `raise ... from cause`, as `rag/harvester.py`'s raise sites do) from an
-    `httpx.HTTPStatusError` that carries one -- `None` if there's no such cause, or its response
-    has no (or an unparseable) `Retry-After` header."""
-    cause = error.__cause__
-    if not isinstance(cause, httpx.HTTPStatusError):
+    """The retryable response's `Retry-After` header, in seconds, if the raise site opportunistically
+    attached it via `error.diagnostics["retry_after"]` (`rag/harvester.py`'s `_fetch_by_id_list`,
+    T-DOC58) -- `None` if `.diagnostics` is missing/empty, has no `"retry_after"` key, the source
+    didn't send the header (a present key whose value is `None`), or the value doesn't parse."""
+    diagnostics = getattr(error, "diagnostics", None)
+    if not diagnostics:
         return None
-    return _parse_retry_after(cause.response.headers.get("Retry-After"))
+    return _parse_retry_after(diagnostics.get("retry_after"))
 
 
 def _fetch_by_ids_with_backoff(

@@ -373,6 +373,28 @@ def test_fetch_by_ids_maps_retryable_status_to_transient_error():
         source.fetch_by_ids(["2504.09999"])
 
 
+def test_fetch_by_ids_429_diagnostics_carries_the_retry_after_header():
+    """T-DOC58: a caller with its own retry loop (app/assembly.py's `_fetch_by_ids_with_backoff`)
+    reads `Retry-After` off `TransientError.diagnostics["retry_after"]` -- the opportunistic
+    convention contracts/errors.py already documents (T-DOC17), not a new field on the frozen
+    taxonomy."""
+    client = httpx.Client(
+        transport=httpx.MockTransport(lambda r: httpx.Response(429, headers={"Retry-After": "42"}))
+    )
+    source = make_source(client=client)
+    with pytest.raises(TransientError) as excinfo:
+        source.fetch_by_ids(["2504.09999"])
+    assert excinfo.value.diagnostics == {"retry_after": "42"}
+
+
+def test_fetch_by_ids_429_diagnostics_retry_after_absent_is_none():
+    client = httpx.Client(transport=httpx.MockTransport(lambda r: httpx.Response(429)))
+    source = make_source(client=client)
+    with pytest.raises(TransientError) as excinfo:
+        source.fetch_by_ids(["2504.09999"])
+    assert excinfo.value.diagnostics == {"retry_after": None}
+
+
 def test_fetch_by_ids_maps_other_status_to_permanent_error():
     client = httpx.Client(transport=httpx.MockTransport(lambda r: httpx.Response(404)))
     source = make_source(client=client)

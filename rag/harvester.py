@@ -259,7 +259,16 @@ class ArxivSource:
         except httpx.HTTPStatusError as error:
             status = error.response.status_code
             if status in _RETRYABLE_STATUSES:
-                raise TransientError(f"ArxivSource: arXiv API returned {status}") from error
+                # T-DOC58: opportunistically surface the response's `Retry-After` header (RFC
+                # 9110 §10.2.3) via `TransientError`'s existing `.diagnostics` convention
+                # (contracts/errors.py, T-DOC17) -- lets a caller with its own retry loop
+                # (app/assembly.py's `_fetch_by_ids_with_backoff`) honor arXiv's own stated wait
+                # instead of guessing, without adding a field to the frozen error taxonomy.
+                # `.get(...)` is `None` (not a missing key) when arXiv didn't send the header, so
+                # the caller's own parse step sees an explicit "absent" rather than a KeyError.
+                transient = TransientError(f"ArxivSource: arXiv API returned {status}")
+                transient.diagnostics = {"retry_after": error.response.headers.get("Retry-After")}
+                raise transient from error
             raise PermanentError(f"ArxivSource: arXiv API returned {status}") from error
         except httpx.HTTPError as error:
             raise TransientError(f"ArxivSource: arXiv API request failed: {error}") from error
