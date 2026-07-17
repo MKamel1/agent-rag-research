@@ -953,3 +953,72 @@ junior humans who slowly build institutional memory. See CONVENTIONS §0 for why
   these, it's mis-scoped; check CONTEXT.md and flag it rather than building it "while in there."
 - **When two modules disagree at the seam**, the fix is in `contracts/` (shared, via T-F7) + this doc, moved
   together — never a private patch on one side that papers over the mismatch.
+
+---
+
+## V1 Roadmap + Remaining Gaps — ticketed for parallel/sequential execution (2026-07-17)
+
+V1 is **gated behind V0 shipping + Spikes 3/5 passing** (PRD §9, CONTEXT.md). This section tickets V1's
+deliverables plus the remaining V0-era gaps, with an explicit dependency graph so work parallelizes
+safely. **Hard rule (ADR-12): claim-extraction quality bounds everything downstream — no claim-layer
+build before Spike 3 clears its bar.**
+
+### Remaining V0-era gaps (do now, parallel — no gate)
+- **T-DOC59 (not started) — 🟡 finer telemetry sub-stages (OG-25).** `finish_phase()` runs
+  summarize+embed+store as one call; add a stage-boundary hook inside `rag/orchestrator.py` so GPU time
+  attributes to those three sub-stages.
+- **T-DOC61 (not started) — 🟡 prefetch stdout logging (OG-29).** `app/prefetch_pdfs.py` is silent
+  during a days-long run; add `logging.basicConfig` + harvest/download/sleep lines so the cache build is
+  observable. High value while the seed-cache build is underway.
+
+### V1 gating spikes (RUN FIRST — the whole V1 build waits on these)
+- **T-V1-S3 (not started) — 🔴 Spike 3: claim extraction + reconciliation feasibility (the long pole;
+  ADR-12, PRD §11 Q4).** Can the local LLM extract atomic claims with **structured conditions**
+  (method/task/dataset/metric/value/conditions) + artifact links at usable precision on THIS corpus?
+  What judge precision clears the bar for **auto-supersession vs. flag-only-forever**? Deliverable: a
+  measured go/no-go + the precision number. Gates T-V1-CLAIM-*, T-V1-DEDUP, T-V1-TIERS. GPU (local LLM)
+  — schedule around the V0 seed so they don't contend.
+- **T-V1-S5 (not started) — 🟠 Spike 5: LLM-consumption behavior (ADR-16/17).** Does the result-contract
+  scaffolding (evidence-tier envelope, `describe_capabilities`, epistemic envelope) measurably change how
+  the consuming agent composes/drives the system vs. a bare tool bag? Deliverable: a measured behavior
+  delta. Gates T-V1-MCP.
+
+### V1 infrastructure (parallelizable — limited spike dependency)
+- **T-V1-VLLM (not started) — 🟠 generation-side vLLM migration (ADR-09).** Embedder-side already
+  spiked+REJECTED (stay on TEI); this is the GEN side (summaries/claims), needed before claim extraction
+  runs at 30k scale. **Re-validate the VRAM eviction-hook interaction** (ADR-09 caveat) before it lands.
+  Can be built/spiked in parallel with the spikes.
+- **T-V1-OBSIDIAN (not started) — 🟢 Obsidian note-per-paper (generated view over SQLite; PRD §11 Q5 →
+  generated, not hand-edited, SQLite is truth).** Renders V0 summaries now, extends to claims when they
+  exist. Mostly independent (rendering layer) — can start early.
+
+### V1 claim layer (GATED on T-V1-S3 passing + V0 shipped)
+- **T-V1-CLAIM-SCHEMA (not started) — 🔴 claim data model (ADR-12).** Atomic Claim
+  (method/task/dataset/metric/value/conditions + type + confidence + embedding), bidirectional
+  Claim↔Artifact links, Claim-relation edges (duplicate/refines/supports/contradicts). Foundation
+  (`contracts/` + migration). DATA-CONTRACTS.md already carries a nullable stub (no migration surprise).
+- **T-V1-CLAIM-EXTRACT (not started) — claim extraction pipeline stage** (local LLM, per-paper, after
+  summarize). Depends on SCHEMA + S3 + (for scale) VLLM.
+- **T-V1-DEDUP (not started) — duplicate/near-duplicate claim detection** (Claim-relation `duplicate`
+  edges). Depends on claims existing.
+- **T-V1-TIERS (not started) — activate the evidence-tier envelope B/C/D** (currently hard-pinned to
+  `"A"` in `contracts/retriever.py`). Depends on claims + tier labels. ADR-16.
+
+### V1 MCP self-description (GATED on T-V1-S5)
+- **T-V1-MCP (not started) — 🟠 self-describing/orchestratable MCP (ADR-17):** `describe_capabilities`,
+  `corpus_stats`/`whats_covered`, + the MCP instructions/resources/prompts primitives. Depends on S5.
+
+### Gated on V0 30k + at-scale eval
+- **T-V1-HEADERS (not started) — contextual-retrieval headers (ADR-07).** Already spiked → HOLD
+  (`rag/contextual_header.py` + `app/reembed_experiment.py` built; ~18 GPU-days at 30k). Gate: run the
+  topic-absent equation eval (`fixtures/eval/eval_equation_slice_topic_absent.json`) at 30k scale; adopt
+  only if it clears. Re-embed is the cost.
+
+### Dependency graph / waves
+```
+WAVE A (now, || V0 seed/prefetch):  T-DOC59 · T-DOC61 · T-V1-S3 · T-V1-S5 · T-V1-VLLM · T-V1-OBSIDIAN
+     (gaps + spikes + independent infra; GPU-heavy ones scheduled around the seed run)
+WAVE B (after S3 + V0 ships):        T-V1-CLAIM-SCHEMA → T-V1-CLAIM-EXTRACT → { T-V1-DEDUP, T-V1-TIERS }
+WAVE C (after S5):                   T-V1-MCP
+WAVE D (after 30k + eval):           T-V1-HEADERS
+```
