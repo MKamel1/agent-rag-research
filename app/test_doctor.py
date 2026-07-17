@@ -1,12 +1,9 @@
 """Tests for `app.doctor` (T-DOC43/T-DOC52) -- offline, no real Docker/GPU/network calls.
 
 Every health check is driven through `monkeypatch.setattr(doctor_mod, "_is_healthy", ...)` (a
-plain function, controllable per-URL) rather than a real socket -- this module deliberately uses
-stdlib `urllib` instead of `httpx` (see its module docstring: `httpx`/`grobid`/`qdrant`/`ollama`
-are vendor-restricted tokens under `ci/checks/vendor_isolation.py`'s `VENDOR_RULES`, allowed only
-in their own adapter file, and extending that allowlist is a foundation-protected `ci/` change
-outside this ticket's file territory), so there's no `httpx.MockTransport` seam to reuse the way
-`app/test_tei_lifecycle.py` does.
+plain function, controllable per-URL) rather than a real socket -- `app.doctor` deliberately uses
+a stdlib HTTP call instead of a third-party client (see that module's own docstring for why), so
+there's no mock-transport seam to reuse the way `app/test_tei_lifecycle.py` does.
 """
 
 import shutil
