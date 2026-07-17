@@ -23,7 +23,7 @@ Three pieces, composed by `RunTelemetry` so they share one run id and one set of
 2. `RunEventLog` -- an append-only JSON Lines writer: one `{"event": ..., "run_id": ...,
    "ts": ..., ...}` object per line, so an external monitor can `tail -f`/replay it to correlate
    its own metrics against this run's boundaries. The path is a constructor arg / CLI flag
-   (`--events-path` on `app.ingest`), never `os.environ` (CONVENTIONS.md §3).
+   (`--events-path` on `app.ingest`), never read from the process environment (CONVENTIONS.md §3).
 3. `summarize_run` -- end-of-run report: N done / N quarantined (+ reasons, from the `quarantine`/
    `quarantine_diagnostics` tables), wall-clock, papers/hour, and a SQLite<->vector-store
    consistency check. The point count comes from the vector store's own REST API over stdlib
@@ -207,7 +207,7 @@ class RunEventLog:
     """Append-only JSON Lines event writer -- one `{"event", "run_id", "ts", ...}` object per
     line, so an external monitor can `tail -f`/replay it to correlate its own metrics against
     this run's boundaries (OG-6). `path` is a constructor arg (an `app.ingest --events-path` CLI
-    flag in practice), never read from `os.environ`.
+    flag in practice), never read from the process environment.
     """
 
     def __init__(self, path: str | Path, run_id: str):
