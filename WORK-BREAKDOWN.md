@@ -643,7 +643,7 @@ killed this run.
   bespoke orchestration script, where getting any one wrong risks mutating production. Fix: a first-class
   `--scratch`/bench mode that provisions an isolated DB + blob dir + uniquely-named Qdrant collection
   automatically (and tears them down/lists them for cleanup), with production used read-only for dedup.
-- **T-DOC47 (not started) — 🔴 run instrumentation & reporting (OG-5 + OG-6 + OG-7).** The system cannot
+- **T-DOC47 (implemented — PR #119, merged; `app/telemetry.py`: `GpuSampler` + `RunEventLog` (`--events-path`) + `summarize_run`. Follow-up: telemetry is tagged at the coarse Pass-1/finish-phase boundary; the finer summarize/embed/store split OG-5 names needs a stage hook inside `finish_phase()`) — 🔴 run instrumentation & reporting (OG-5 + OG-6 + OG-7).** The system cannot
   answer "was the GPU well-utilized during this run" about itself — it emits no per-stage
   GPU-util/timing/papers-per-hour telemetry, no structured run-start/stage/run-end events, and no
   end-of-run summary. Confirming GPU utilization required wiring an **external** workstation-dashboard MCP
@@ -754,7 +754,7 @@ ticketed.
   future operator doesn't re-run either experiment from scratch; if `vlm` is ever revisited, do it via the
   async path explicitly, with a `pip check`-clean env verified first, and re-measure on the actual target
   hardware rather than extrapolate from this box.
-- **T-DOC54 (not started) — 🟠 `workstation-dashboard` MCP's retained history has silent internal gaps; not
+- **T-DOC54 (implemented — PR #119, merged; resolved-by-T-DOC47 + note in `LESSONS-LEARNED.md` / `app/telemetry.py` docstring: pipeline's own telemetry is now source of truth, cross-check external dashboards only) — 🟠 `workstation-dashboard` MCP's retained history has silent internal gaps; not
   trustworthy alone for post-hoc GPU analysis (OG-16).** `export_history(components="gpu")` for a 736s
   Pass-1 window returned only 386 dense samples covering the *last* 217s — the earlier ~519s (including all
   model-loading and the bulk of inference) had zero stored samples, with no error, warning, or row-count
