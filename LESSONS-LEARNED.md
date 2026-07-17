@@ -649,3 +649,33 @@ artifacts across parses. This one does neither (parse-once, store-both-together,
 so `--parse-workers 3` (the +63% throughput lever) is cleared for the 30k seed. The determinism caveat
 remains true as a *reproducibility* footnote (two seed runs won't be byte-identical), which is immaterial to
 V0's correctness contract.
+
+---
+
+### 2026-07-17 — spike — Spike 3: claim extraction is feasible (GO), but the two alarming headline numbers were measurement artifacts (T-V1-S3)
+
+`qwen3:14b` extracted 139 structured atomic claims from 20 real corpus papers. Two headline numbers
+looked like a NO-GO and both were artifacts — caught only by interrogating them rather than trusting the
+aggregate:
+
+1. **"Grounding 57.6%"** → the grounding check required a VERBATIM substring match, but the model
+   *paraphrased* its evidence spans. 58 of 63 "ungrounded" spans had ≥80% of their content words present
+   in the paper (paraphrase, not fabrication); only ~5 were possibly-absent, and those were qualitative
+   assumption statements. **True supported-rate ≈ 99%.** Hallucination is low.
+2. **"Reconciliation groups: 0"** → the analysis grouped by EXACT `(metric, task_or_dataset)` string;
+   "IHDP" vs "IHDP dataset" split the same benchmark. Under normalization, **IHDP recurs across 5
+   papers.** Shared benchmarks exist and surface.
+
+**The real finding (survives both corrections):** even where 5 papers share IHDP, they report DIFFERENT
+metrics on it (ATE-bias, ATE, MSE, MAE, coverage), so there is almost no same-metric+dataset numeric
+surface to auto-compare — 0 alignable numeric pairs. That's substantially **corpus reality**, not
+extraction failure. Verdict: **GO to build the claim layer** (extraction is well-structured,
+~99%-supported, accurately conditioned — hand-audit confirmed a fully-correct E-value claim with method/
+dataset/metric/value/conditions/evidence/artifact-link), but **reconciliation stays flag-only, never
+auto-supersession** — which is exactly the PRD's own default ("surface evidence, not arbitrate truth").
+
+**Generalizable takeaway (again this session): interrogate an alarming aggregate before acting on it.**
+Both a verbatim-match grounding metric and an exact-string reconciliation grouping produced numbers that
+would have wrongly killed a feasible V1 — the same false-negative failure mode as the saturated-eval
+(T-DOC41) and the fake-0.000 (`build_mcp_server` db_path). Check whether a bad number is the world or the
+ruler before you decide.

@@ -972,7 +972,7 @@ build before Spike 3 clears its bar.**
   observable. High value while the seed-cache build is underway.
 
 ### V1 gating spikes (RUN FIRST — the whole V1 build waits on these)
-- **T-V1-S3 (not started) — 🔴 Spike 3: claim extraction + reconciliation feasibility (the long pole;
+- **T-V1-S3 (DONE 2026-07-17 — GO, flag-only; see `reviews/SPIKE3-CLAIM-EXTRACTION.md`. Extraction feasible: 139 claims/20 papers, ~99% supported (the 57.6% "grounding" was a verbatim-vs-paraphrase artifact), well-conditioned, hand-audited good. Mechanical numeric reconciliation NOT demonstrated (0 alignable cross-paper numeric pairs even on shared IHDP — papers report different metrics on the same benchmark; substantially corpus reality) → **auto-supersession bar NOT met, claims are flag-only, per the PRD default**. Wave B UNBLOCKED. Fixes folded into T-V1-CLAIM-EXTRACT: verbatim spans, numeric-value/results-section extraction, JSON-parse robustness) — 🔴 Spike 3: claim extraction + reconciliation feasibility (the long pole;
   ADR-12, PRD §11 Q4).** Can the local LLM extract atomic claims with **structured conditions**
   (method/task/dataset/metric/value/conditions) + artifact links at usable precision on THIS corpus?
   What judge precision clears the bar for **auto-supersession vs. flag-only-forever**? Deliverable: a
@@ -997,7 +997,7 @@ build before Spike 3 clears its bar.**
   (method/task/dataset/metric/value/conditions + type + confidence + embedding), bidirectional
   Claim↔Artifact links, Claim-relation edges (duplicate/refines/supports/contradicts). Foundation
   (`contracts/` + migration). DATA-CONTRACTS.md already carries a nullable stub (no migration surprise).
-- **T-V1-CLAIM-EXTRACT (not started) — claim extraction pipeline stage** (local LLM, per-paper, after
+- **T-V1-CLAIM-EXTRACT (not started; Spike-3 fixes REQUIRED: prompt for VERBATIM evidence spans, preserve results/tables sections + push for numeric `value`, add JSON-repair/retry — 2/20 papers failed raw-JSON parse) — claim extraction pipeline stage** (local LLM, per-paper, after
   summarize). Depends on SCHEMA + S3 + (for scale) VLLM.
 - **T-V1-DEDUP (not started) — duplicate/near-duplicate claim detection** (Claim-relation `duplicate`
   edges). Depends on claims existing.
