@@ -28,6 +28,16 @@ class McpServer:
         self._retriever = retriever
         self._document_store = document_store
 
+    @property
+    def retriever(self):
+        """Read-only access to the injected `Retriever`, for a caller that needs its raw
+        `retrieve()`/`retrieve_papers()` interface directly (e.g. `app/retrieval_eval.py`'s
+        offline recall/MRR harness) instead of this class's own typed tool wrappers. Construction
+        stays exclusively in `app/assembly.py`'s composition root (CONVENTIONS §2) -- this is a
+        getter, not a second way to inject one.
+        """
+        return self._retriever
+
     def semantic_search(
         self, query: str, filters: SearchFilters | None = None, k: int = 10
     ) -> SearchResponse:
