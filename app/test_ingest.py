@@ -19,16 +19,22 @@ call made before TEI's "started" flag is observed true) so these tests can prove
 attempted -- an ordering bug a "both hooks fire eventually" test would miss entirely.
 """
 
+import argparse
+import sqlite3
+
 import pytest
+import yaml
 
 from contracts.config import Config
 from contracts.embedder import EmbedderInfo
 from contracts.errors import TransientError
 from contracts.harvester import PaperRef
+from migrations.migrate import migrate as real_migrate
 from rag.fakes.fake_gpu_lock import FakeGpuLock
 from rag.fakes.fake_ingest_state import FakeIngestState
 from rag.orchestrator import IngestionOrchestrator
 
+import app.doctor as doctor_mod
 import app.ingest as ingest_mod
 
 
@@ -230,3 +236,235 @@ def test_parse_workers_all_succeed_returns_normally(monkeypatch):
     FakePopen._next_returncodes = [0, 0]
 
     ingest_mod._run_parse_phase_subprocesses(2)  # must not raise
+
+
+def test_parse_workers_default_one_with_cwd_passes_cwd_kwarg(monkeypatch):
+    """T-DOC45/T-DOC46: when a scratch config dir is in play, the single-worker path must pass
+    `cwd=` through to `subprocess.run` -- everything else about the call stays identical."""
+    run_calls = []
+    monkeypatch.setattr(ingest_mod.subprocess, "run", lambda *a, **k: run_calls.append((a, k)))
+
+    ingest_mod._run_parse_phase_subprocesses(1, cwd="/tmp/some-override-dir")
+
+    assert run_calls == [
+        (
+            ([ingest_mod.sys.executable, "-m", "app.parse_phase"],),
+            {"check": True, "cwd": "/tmp/some-override-dir"},
+        )
+    ]
+
+
+def test_parse_workers_n_with_cwd_passes_cwd_to_every_popen(monkeypatch):
+    calls = []
+
+    class _RecordingPopen:
+        def __init__(self, argv, **kwargs):
+            calls.append((argv, kwargs))
+            self._returncode = 0
+
+        def wait(self) -> int:
+            return self._returncode
+
+    monkeypatch.setattr(ingest_mod.subprocess, "Popen", _RecordingPopen)
+
+    ingest_mod._run_parse_phase_subprocesses(2, cwd="/tmp/some-override-dir")
+
+    assert len(calls) == 2
+    for _argv, kwargs in calls:
+        assert kwargs == {"cwd": "/tmp/some-override-dir"}
+
+
+# --- T-DOC44: DB auto-provision -------------------------------------------------------------
+
+
+def test_ensure_db_migrated_auto_provisions_a_fresh_db(tmp_path, monkeypatch):
+    """A brand-new db_path (no file at all) must be detected as unmigrated and auto-provisioned
+    via `migrations.migrate.migrate()` -- OG-2's "no such table" crash, fixed at startup."""
+    db_path = str(tmp_path / "fresh" / "papers.db")
+    calls = []
+    monkeypatch.setattr(ingest_mod, "migrate", lambda path: calls.append(path))
+
+    ingest_mod._ensure_db_migrated(db_path)
+
+    assert calls == [db_path]
+    assert (tmp_path / "fresh").is_dir(), "parent directory must be auto-created"
+
+
+def test_ensure_db_migrated_detects_unmigrated_db_via_missing_table(tmp_path, monkeypatch):
+    """A file that exists but was never migrated (no `ingest_state` table) must also trigger
+    auto-provisioning -- not just a wholly-absent file."""
+    db_path = str(tmp_path / "papers.db")
+    sqlite3.connect(db_path).close()  # file exists, zero tables
+    calls = []
+    monkeypatch.setattr(ingest_mod, "migrate", lambda path: calls.append(path))
+
+    ingest_mod._ensure_db_migrated(db_path)
+
+    assert calls == [db_path]
+
+
+def test_ensure_db_migrated_is_a_noop_on_an_already_migrated_db(tmp_path, monkeypatch):
+    """Calling this on every startup must never re-run `migrate()` against an already-migrated
+    DB -- `migrate()` itself fails loudly (by design) on a second run, so this guard is what
+    makes "call unconditionally every startup" safe."""
+    db_path = str(tmp_path / "papers.db")
+    real_migrate(db_path)  # real foundation-owned migrate() -- called, not edited
+    calls = []
+    monkeypatch.setattr(ingest_mod, "migrate", lambda path: calls.append(path))
+
+    ingest_mod._ensure_db_migrated(db_path)  # must not raise, must not call migrate()
+
+    assert calls == []
+
+
+# --- T-DOC43: startup preflight gate ---------------------------------------------------------
+
+
+def _cfg() -> Config:
+    return Config(focus_area_queries=["causal inference"])
+
+
+def test_preflight_gate_no_preflight_skips_the_check_entirely(monkeypatch):
+    def _boom(cfg):
+        raise AssertionError("run_preflight must not be called when --no-preflight is set")
+
+    monkeypatch.setattr(doctor_mod, "run_preflight", _boom)
+
+    ingest_mod._preflight_gate(_cfg(), no_preflight=True, force=False)  # must not raise
+
+
+def test_preflight_gate_passes_silently_when_no_issues(monkeypatch):
+    monkeypatch.setattr(doctor_mod, "run_preflight", lambda cfg: [])
+
+    ingest_mod._preflight_gate(_cfg(), no_preflight=False, force=False)  # must not raise/exit
+
+
+def test_preflight_gate_refuses_to_start_with_named_reason(monkeypatch, capsys):
+    """T-DOC43: refuse to start with ONE clear message naming what's missing."""
+    issue = doctor_mod.PreflightIssue("gpu", "only 100 MiB free VRAM (need >= 2000 MiB)")
+    monkeypatch.setattr(doctor_mod, "run_preflight", lambda cfg: [issue])
+
+    with pytest.raises(SystemExit) as exc_info:
+        ingest_mod._preflight_gate(_cfg(), no_preflight=False, force=False)
+
+    assert exc_info.value.code == 1
+    captured = capsys.readouterr()
+    assert "only 100 MiB free VRAM" in captured.err
+
+
+def test_preflight_gate_force_proceeds_despite_issues(monkeypatch, capsys):
+    issue = doctor_mod.PreflightIssue("gpu_lock", ".gpu.lock is held by another live process")
+    monkeypatch.setattr(doctor_mod, "run_preflight", lambda cfg: [issue])
+
+    ingest_mod._preflight_gate(_cfg(), no_preflight=False, force=True)  # must not raise/exit
+
+    captured = capsys.readouterr()
+    assert "is held by another live process" in captured.err
+
+
+# --- T-DOC45: --limit --------------------------------------------------------------------------
+
+
+def _args(*, limit=None, scratch=False):
+    return argparse.Namespace(limit=limit, scratch=scratch)
+
+
+def test_effective_config_no_flags_returns_the_identical_config():
+    cfg = _cfg()
+    assert ingest_mod._effective_config(cfg, _args()) is cfg
+
+
+def test_effective_config_limit_caps_corpus_cap():
+    cfg = Config(focus_area_queries=["x"], corpus_cap=30_000)
+
+    effective = ingest_mod._effective_config(cfg, _args(limit=100))
+
+    assert effective.corpus_cap == 100
+
+
+def test_effective_config_limit_never_raises_corpus_cap_above_the_configured_value():
+    cfg = Config(focus_area_queries=["x"], corpus_cap=50)
+
+    effective = ingest_mod._effective_config(cfg, _args(limit=99_999))
+
+    assert effective.corpus_cap == 50
+
+
+# --- T-DOC46: --scratch -------------------------------------------------------------------------
+
+
+def test_effective_config_scratch_provisions_isolated_paths(capsys):
+    cfg = _cfg()
+
+    effective = ingest_mod._effective_config(cfg, _args(scratch=True))
+
+    assert effective.db_path != cfg.db_path
+    assert effective.blob_dir != cfg.blob_dir
+    assert effective.collection != cfg.collection
+    assert effective.db_path.endswith("papers.db")
+    assert effective.collection.startswith("scratch_")
+    # printed prominently so the operator can find/clean it up (T-DOC46)
+    assert effective.db_path in capsys.readouterr().out
+
+
+def test_effective_config_scratch_is_unique_per_call():
+    cfg = _cfg()
+
+    first = ingest_mod._effective_config(cfg, _args(scratch=True))
+    second = ingest_mod._effective_config(cfg, _args(scratch=True))
+
+    assert first.db_path != second.db_path
+    assert first.collection != second.collection
+
+
+def test_effective_config_scratch_and_limit_combine():
+    cfg = Config(focus_area_queries=["x"], corpus_cap=30_000)
+
+    effective = ingest_mod._effective_config(cfg, _args(scratch=True, limit=7))
+
+    assert effective.db_path != cfg.db_path
+    assert effective.corpus_cap == 7
+
+
+# --- T-DOC45/T-DOC46: Pass-1 subprocess override channel -----------------------------------
+
+
+def test_write_override_config_dir_resolves_relative_paths_to_absolute():
+    cfg = Config(
+        focus_area_queries=["x"],
+        gpu_lock_path=".gpu.lock",
+        db_path="papers.db",
+        blob_dir="blobs",
+        pdf_cache_dir="pdf_cache",
+        batch_size_log_path="batch.csv",
+    )
+
+    tmpdir = ingest_mod._write_override_config_dir(cfg)
+    written = yaml.safe_load((tmpdir / "config.yaml").read_text())
+
+    for field in ("gpu_lock_path", "db_path", "blob_dir", "pdf_cache_dir", "batch_size_log_path"):
+        assert ingest_mod.Path(written[field]).is_absolute(), f"{field} must be absolute"
+
+
+def test_write_override_config_dir_leaves_falsy_path_fields_alone():
+    """An explicitly-disabled pdf cache ("") or an unset batch_size_log_path (None) must stay
+    exactly that, not get resolved into a bogus absolute path (app/assembly.py's own "" ==
+    disabled convention)."""
+    cfg = Config(focus_area_queries=["x"], pdf_cache_dir="", batch_size_log_path=None)
+
+    tmpdir = ingest_mod._write_override_config_dir(cfg)
+    written = yaml.safe_load((tmpdir / "config.yaml").read_text())
+
+    assert written["pdf_cache_dir"] == ""
+    assert written["batch_size_log_path"] is None
+
+
+def test_write_override_config_dir_preserves_non_path_fields():
+    cfg = Config(focus_area_queries=["x"], corpus_cap=42, collection="scratch_abc123")
+
+    tmpdir = ingest_mod._write_override_config_dir(cfg)
+    written = yaml.safe_load((tmpdir / "config.yaml").read_text())
+
+    assert written["corpus_cap"] == 42
+    assert written["collection"] == "scratch_abc123"
+    assert written["focus_area_queries"] == ["x"]
