@@ -541,3 +541,23 @@ verbatim) is **not** biased toward hard questions (45% hard/expert vs 56% among 
 excerpt-normalization artifact concentrated in Method-Comprehension/equation text, orthogonal to retrieval
 difficulty. Takeaway: before chasing a weak-looking eval split as a quality defect, first rule out the
 label schema and the resolved-question denominator — the measurement was understating two splits at once.
+
+---
+
+### 2026-07-16 — infra — the pipeline's own run telemetry (T-DOC47) is now the source of truth for run analysis, not the external workstation dashboard (T-DOC54)
+
+`workstation-dashboard` (an external MCP tool) turned out not to be trustworthy alone for post-hoc
+GPU analysis: `export_history(components="gpu")` for a 736s Pass-1 window silently returned only
+386 samples covering the *last* 217s — the earlier ~519s (all of the parser's model-loading and
+the bulk of its inference) had zero stored samples, with no error, warning, or row-count hint from
+the tool itself. Only caught because the run's own `run.log` timestamps and an independent local
+`nvidia-smi`-polling script were cross-checked by hand before trusting the export (OG-16).
+
+Now that `app/telemetry.py` ships (T-DOC47: `python -m app.ingest`'s own per-stage GPU util/VRAM/
+power sampling, JSON-line `RUN_START`/`STAGE_START`/`STAGE_END`/`RUN_END` events written to
+`--events-path`, and the printed end-of-run summary), **treat that built-in telemetry as the
+source of truth for analyzing any given run** — it is produced by the run itself, so it cannot
+have the kind of silent retention gap an external tool's collection/storage layer can. Still cross-
+check `workstation-dashboard` (or any other external dashboard) against the run's own JSON-line
+events/summary before trusting it for anything post-hoc; never trust an external dashboard's
+export alone the way OG-16 almost did.

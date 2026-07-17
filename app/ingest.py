@@ -34,6 +34,14 @@ its directory to the Pass-1 subprocess as `cwd=` -- see that function's docstrin
 flag changes anything when unset: `_effective_config` returns `cfg` unchanged, and
 `_run_parse_phase_subprocesses`'s subprocess calls carry no `cwd` kwarg at all (byte-for-byte the
 original calls), so today's exact default behavior is preserved.
+
+T-DOC47 (`--events-path`, `--telemetry-poll-interval`): built-in run instrumentation, all owned by
+`app/telemetry.py` (OG-5/OG-6/OG-7) -- this module only marks the stage boundaries it already has
+(`_run_parse_phase_subprocesses` = "parse", `_run_finish_phase` = "finish") via
+`telemetry.RunTelemetry.stage_start`/`stage_end`, and prints the end-of-run summary from a
+`finally` block so a mid-run failure still reports partial progress instead of nothing. Telemetry
+starts only after `_preflight_gate`/`_ensure_db_migrated` succeed, so its own SQLite reads never
+race an unmigrated/absent database.
 """
 
 import argparse
@@ -47,7 +55,7 @@ from pathlib import Path
 
 import yaml
 
-from app import doctor, tei_lifecycle
+from app import doctor, tei_lifecycle, telemetry
 from app.assembly import build_ingestion_orchestrator, harvest_refs
 from contracts.config import Config
 from migrations.migrate import migrate
@@ -281,6 +289,14 @@ def _parse_args() -> argparse.Namespace:
         "--force", action="store_true",
         help="T-DOC43: run the startup readiness check but never refuse to start on a failure",
     )
+    parser.add_argument(
+        "--events-path", default="ingest_events.jsonl",
+        help="T-DOC47: append JSON-line run events (run id, stage, timestamps, paper counts) here",
+    )
+    parser.add_argument(
+        "--telemetry-poll-interval", type=float, default=telemetry.DEFAULT_GPU_POLL_INTERVAL_SECONDS,
+        help="T-DOC47: seconds between GPU util/VRAM/power samples during the run",
+    )
     return parser.parse_args()
 
 
@@ -299,16 +315,37 @@ if __name__ == "__main__":
         str(_write_override_config_dir(cfg)) if (args.scratch or args.limit is not None) else None
     )
 
-    # ponytail: no retry/backoff if a Pass-1 subprocess fails (e.g. external GPU pressure beyond
-    # what eviction can clear) -- letting it raise stops the run; a re-run resumes from
-    # ingest_state checkpoints. Add a poll-and-backoff `_ensure_vram` here if this ever proves to
-    # be a real problem in practice (ARCHITECTURE.md §3).
-    # No explicit env/cwd handoff needed for the DEFAULT path (T-DOC29): every subprocess inherits
-    # this process's cwd by default and calls the same `load_config()` (see
-    # app/parse_phase.py's `__main__`), so all of them read the identical config.yaml -- every
-    # phase/shard agrees on db_path/blob_dir/collection/etc. by construction, not by propagating
-    # env vars across process boundaries. The `--limit`/`--scratch` path above is the one
-    # deliberate exception (`subprocess_cwd`), and only when one of those flags is actually set.
-    _run_parse_phase_subprocesses(args.parse_workers, cwd=subprocess_cwd)
+    # T-DOC47: telemetry starts only once the DB is confirmed migrated (above) -- its own
+    # end-of-run SQLite reads (app/telemetry.py::summarize_run) must never race an unmigrated or
+    # absent database.
+    run = telemetry.RunTelemetry.start(
+        events_path=args.events_path,
+        poll_interval_s=args.telemetry_poll_interval,
+        requested_paper_count=(
+            len(cfg.ingest_paper_ids) if cfg.ingest_paper_ids else cfg.corpus_cap
+        ),
+    )
+    try:
+        # ponytail: no retry/backoff if a Pass-1 subprocess fails (e.g. external GPU pressure
+        # beyond what eviction can clear) -- letting it raise stops the run; a re-run resumes
+        # from ingest_state checkpoints. Add a poll-and-backoff `_ensure_vram` here if this ever
+        # proves to be a real problem in practice (ARCHITECTURE.md §3).
+        # No explicit env/cwd handoff needed for the DEFAULT path (T-DOC29): every subprocess
+        # inherits this process's cwd by default and calls the same `load_config()` (see
+        # app/parse_phase.py's `__main__`), so all of them read the identical config.yaml --
+        # every phase/shard agrees on db_path/blob_dir/collection/etc. by construction, not by
+        # propagating env vars across process boundaries. The `--limit`/`--scratch` path above is
+        # the one deliberate exception (`subprocess_cwd`), and only when one of those flags is
+        # actually set.
+        run.stage_start("parse")
+        _run_parse_phase_subprocesses(args.parse_workers, cwd=subprocess_cwd)
+        run.stage_end("parse")
 
-    _run_finish_phase(cfg)
+        run.stage_start("finish")
+        _run_finish_phase(cfg)
+        run.stage_end("finish")
+    finally:
+        # T-DOC47/OG-7: prints the end-of-run summary (done/quarantined/wall-clock/papers-per-hour
+        # + SQLite<->vector-store consistency check) even on a mid-run failure, so a crashed run
+        # still reports partial progress instead of nothing.
+        run.finish(db_path=cfg.db_path, collection=cfg.collection)
