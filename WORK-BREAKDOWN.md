@@ -339,7 +339,7 @@ second source of truth). Remaining untracked item:
   size a real, tuned, incident-prone number (32, vs. ≤10 typically returned) — exactly the gap this field
   exists to expose, currently invisible to every caller. `rag/test_mcp_server.py`'s existing coverage test
   only asserts `candidates >= returned`, trivially true when they're always equal — doesn't catch this.
-- **T-DOC29 (in progress — PR #97 open, awaiting @MKamel1 review)** — `app/` (the real composition-root/entrypoint code: `ingest.py`, `parse_phase.py`,
+- **T-DOC29 (implemented — PR #97, merged)** — `app/` (the real composition-root/entrypoint code: `ingest.py`, `parse_phase.py`,
   `assembly.py`, `prefetch_pdfs.py`) has 8 real `os.environ.get(...)` calls outside `Config`, directly
   violating the documented "only `Config` reads env/files, no other module" invariant (CONVENTIONS.md §3,
   restated verbatim in `rag/config.py`'s own docstring: *"this repo has no env-var config path"*). The CI
@@ -352,7 +352,7 @@ second source of truth). Remaining untracked item:
   usage as an intentional, narrower exception to CONVENTIONS §3 (composition-root/entrypoint code, not
   `rag/`'s pipeline modules) and update the doc to say so explicitly, or (b) actually route these through
   `Config` and widen `env_leak.py`'s scope to include `app/` for real.
-- **T-DOC30 (verified — see LESSONS-LEARNED.md's 2026-07-15 entry, PR #98, awaiting @MKamel1 review)** —
+- **T-DOC30 (verified — see LESSONS-LEARNED.md's 2026-07-15 entry, PR #98, merged)** —
   T-INT2's acceptance bar ("idempotency, resume-after-kill, and quarantine... verified on real data") was
   unproven: no test, no `LESSONS-LEARNED.md` entry, no doc reference beyond the ticket's own promise text, and
   the one candidate real-run evidence (`.phase0-data/100-paper-run-stats.md`) turned out on inspection to be
@@ -369,7 +369,7 @@ second source of truth). Remaining untracked item:
   found incidentally (a parser paper_id-derivation fallback leaking into `DocumentStore`'s `chunks.paper_id`
   for a paper with no extractable arXiv self-citation) and flagged, not fixed — out of this ticket's scope,
   now covered by T-DOC31 (PR #103).
-- **T-DOC31 (in progress — PR #103 open, awaiting @MKamel1 review — production sweep already run
+- **T-DOC31 (implemented — PR #103, merged — production sweep already run
   against papers.db, backed up first; found 0 rows to update, see LESSONS-LEARNED.md 2026-07-15 entry
   for why and for the real gap it surfaced instead)** — `rag/parser.py`'s `_derive_paper_id` (~line 415-423) falls back to a content
   hash (`hashlib.sha256(raw).hexdigest()[:16]`, call sites ~line 154/193) when a PDF has no
@@ -435,7 +435,7 @@ second source of truth). Remaining untracked item:
   "agent-as-reasoner, no server-side arbitration" — CONTEXT.md), or (b) if that proves insufficient in
   practice, revisit the "no server-side auto-rewrite" decision itself — but (b) would need a documented ADR
   change, not a silent behavior change, given ADR-11 explicitly decided against it once already.
-- **T-DOC35 (in progress — PR #107 open, awaiting @MKamel1 review — all 59 papers re-ingested and verified;
+- **T-DOC35 (implemented — PR #107, merged — all 59 papers re-ingested and verified;
   depends on T-DOC31/PR #103, still open, merging before/alongside this one)** — **59 papers are
   `ingest_state='done'` with a `summary` row but zero `blocks`/
   `chunks`** — surfaced during T-DOC31's production sweep (PR #103; count matches the 59 papers T-DOC23's
@@ -481,7 +481,7 @@ denominator that dropped 53/210 `no_match` questions (plausibly the hardest), wi
 multi-paper (0.733) splits *below* the 0.85 gate — and the "real MCP works" proof (T-DOC33) was n=1. These
 tickets are the concrete follow-ups.
 
-- **T-DOC37 (DONE — GATE MET UNDER REALISTIC NOISE; PR #109 for T-DOC37+42 open for @MKamel1).** Re-ran all 210
+- **T-DOC37 (DONE — GATE MET UNDER REALISTIC NOISE; PR #109 for T-DOC37+42 merged).** Re-ran all 210
   questions against the **real 809-paper production `"papers"` corpus** (READ-ONLY) — the gold papers now sit
   among ~709 relevant-but-wrong causal-methods papers we never wrote questions for, and **those ~709 ARE the
   distractors** (the distractor-noise methodology the human operator asked for: gold papers + the rest of 809
@@ -512,7 +512,7 @@ tickets are the concrete follow-ups.
   asserting the reranker's actual max batch size (the test that would have caught T-DOC24 pre-merge). Pure
   code + one `enable_socket`-gated adapter test. **Touches `rag/retriever.py` — coordinate with T-DOC38
   (same file); build them together or sequence T-DOC39 after T-DOC38.**
-- **T-DOC40 (in progress — PR #108 open, awaiting @MKamel1 review)** — `DocumentStore.delete()` (T-DOC23) removes SQLite rows only, **not** the
+- **T-DOC40 (implemented — PR #108, merged)** — `DocumentStore.delete()` (T-DOC23) removes SQLite rows only, **not** the
   matching Qdrant vectors, so a deleted paper's orphaned vectors still surface and crash `get_chunk` — the
   same orphan-recurrence class T-DOC23 was meant to close, and the likely root cause of the T-DOC35 hole.
   Fix: make delete atomic across SQLite **and** Qdrant, and turn on `PRAGMA foreign_keys=ON` (nothing in the
@@ -526,7 +526,7 @@ tickets are the concrete follow-ups.
   re-embed and a chunker change → **wants a design/brainstorm pass and an explicit go/no-go before
   implementation, and a before/after T-EVAL** (via T-DOC37's harness) to prove it helps. V0-cost (local LLM)
   or V1.
-- **T-DOC42 (DONE — the multi-paper "weakness" was mostly a scoring artifact; PR for T-DOC37+42 open for
+- **T-DOC42 (DONE — the multi-paper "weakness" was mostly a scoring artifact; PR #109 for T-DOC37+42 merged;
   @MKamel1).** Confirmed: the multi-paper split *was* partly a measurement artifact. Added
   `additional_gold_paper_ids` to all **60** multi-paper ground-truth records (**82 co-gold labels**),
   sourced from each record's own `section_path`, which authoritatively names every co-source paper by arXiv
