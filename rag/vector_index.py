@@ -137,13 +137,26 @@ class VectorIndex:
         exists = self._call(self._client.collection_exists, self._collection)
         if exists:
             return
-        self._client.create_collection(
-            self._collection,
-            vectors_config={
-                _DENSE_VECTOR: models.VectorParams(size=self._dim, distance=models.Distance.COSINE)
-            },
-            sparse_vectors_config={_SPARSE_VECTOR: _sparse_vector_params()},
-        )
+        try:
+            self._client.create_collection(
+                self._collection,
+                vectors_config={
+                    _DENSE_VECTOR: models.VectorParams(
+                        size=self._dim, distance=models.Distance.COSINE
+                    )
+                },
+                sparse_vectors_config={_SPARSE_VECTOR: _sparse_vector_params()},
+            )
+        except ApiException as e:
+            # Concurrent creators race here: with `--parse-workers N` sharing ONE fresh collection,
+            # two workers can both pass the exists-check above and both call create_collection; the
+            # loser gets a 409 "already exists". Re-check existence rather than parse the vendor's
+            # error string -- if the collection is now present, a peer created it with the same schema
+            # this call would have, so we're done. Any other failure (collection still absent) is a
+            # real error, classified as TransientError like every other round-trip in this adapter.
+            if self._call(self._client.collection_exists, self._collection):
+                return
+            raise TransientError(f"Qdrant call failed: {e}") from e
 
     @staticmethod
     def _call(fn, *args, **kwargs):
