@@ -1020,3 +1020,22 @@ def test_harvest_refs_raises_once_the_429_retry_budget_is_exhausted(monkeypatch)
 
     assert len(stub_source.calls) == _METADATA_FETCH_MAX_RETRIES + 1
     assert len(sleeps) == _METADATA_FETCH_MAX_RETRIES
+
+
+def test_resolve_store_paths_falls_back_to_config_not_hardcoded_papers_db():
+    """`build_mcp_server` must honor `config.db_path`/`config.blob_dir` when no explicit arg is
+    given -- the old hardcoded `"papers.db"`/`"blobs"` fallback silently ignored a configured
+    real data dir and produced a fake `Recall@10 = 0.000` (LESSONS-LEARNED 2026-07-17)."""
+    from app.assembly import _resolve_store_paths
+
+    cfg = Config(
+        focus_area_queries=["x"], db_path="/data/real.db", blob_dir="/data/real_blobs"
+    )
+    # No explicit arg -> the Config's own paths win, NOT "papers.db"/"blobs".
+    assert _resolve_store_paths(cfg, None, None) == ("/data/real.db", "/data/real_blobs")
+    # An explicit caller arg still overrides the Config.
+    assert _resolve_store_paths(cfg, "/x.db", "/y") == ("/x.db", "/y")
+    # Default Config keeps the historical behaviour (unchanged for un-overridden callers).
+    assert _resolve_store_paths(Config(focus_area_queries=["x"]), None, None) == (
+        "papers.db", "blobs",
+    )
