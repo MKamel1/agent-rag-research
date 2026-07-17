@@ -16,10 +16,18 @@ Real sqlite schema (`migrations.migrate`), no real network (`httpx.MockTransport
 """
 
 from datetime import date
+from pathlib import Path
 
 import httpx
 
-from app.prefetch_pdfs import _cached_count, _skip_marker_path, run
+from app.prefetch_pdfs import (
+    _RE_HARVEST_INTERVAL_SECONDS,
+    _cached_count,
+    _parse_args,
+    _skip_marker_path,
+    prefetch_loop,
+    run,
+)
 from contracts.config import Config
 from contracts.harvester import PaperRef
 from migrations.migrate import migrate
@@ -271,6 +279,51 @@ def test_permanent_download_failure_writes_a_local_marker_and_does_not_stop_the_
     assert SqliteIngestState(db_path).get(refs[0].paper_id) is None  # shared db never touched
 
 
+def test_sidecar_is_written_alongside_a_successful_download(tmp_path):
+    """T-DOC48: the `PaperRef` this script already fetched to decide the download must be
+    persisted next to the `.pdf`, not discarded -- see `app/prefetch_pdfs.py`'s `_write_sidecar`
+    and `app/assembly.py`'s `harvest_refs`, the cache-first reader this unlocks."""
+    db_path = str(tmp_path / "test.sqlite")
+    migrate(db_path)
+    cache_dir = tmp_path / "cache"
+    cache_dir.mkdir()
+
+    ref = _make_ref(0)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=b"%PDF-fake-bytes")
+
+    new = run(
+        _cfg(), db_path, cache_dir, target=10,
+        harvester=StubHarvester([ref]), client=_mock_client(handler), sleep=_no_sleep,
+    )
+
+    assert new == 1
+    sidecar_path = cache_dir / f"{ref.paper_id}.json"
+    assert sidecar_path.exists()
+    assert PaperRef.model_validate_json(sidecar_path.read_text()) == ref
+
+
+def test_no_sidecar_is_written_when_the_download_permanently_fails(tmp_path):
+    db_path = str(tmp_path / "test.sqlite")
+    migrate(db_path)
+    cache_dir = tmp_path / "cache"
+    cache_dir.mkdir()
+
+    ref = _make_ref(0)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(404)
+
+    new = run(
+        _cfg(), db_path, cache_dir, target=10,
+        harvester=StubHarvester([ref]), client=_mock_client(handler), sleep=_no_sleep,
+    )
+
+    assert new == 0
+    assert not (cache_dir / f"{ref.paper_id}.json").exists()
+
+
 def test_permanently_failed_paper_is_skipped_on_a_later_pass_without_a_request(tmp_path):
     db_path = str(tmp_path / "test.sqlite")
     migrate(db_path)
@@ -339,3 +392,117 @@ def test_all_known_paper_ids_includes_both_ingest_state_and_quarantine_rows(tmp_
 
     ids = state.all_known_paper_ids()
     assert ids == {"2601.00001", "2601.00002", "2601.00003"}
+
+
+# ================================================================================================
+# T-DOC50 — prefetch stall visibility: a loud "prefetch stalled"/"target unreachable" status line
+# instead of an invisible indefinite sleep, and a `--max-idle` CLI bound on it. `prefetch_loop`
+# takes an injectable `run`/`cached_count`/`sleep` (same pattern as `run()` itself) so these tests
+# drive several passes without a real 3600s wait or real filesystem downloads.
+# ================================================================================================
+
+
+def _loop_cfg() -> Config:
+    return Config(focus_area_queries=["causal inference"], corpus_cap=10)
+
+
+def test_prefetch_loop_reports_a_loud_stall_line_and_sleeps_before_the_next_pass(capsys):
+    def fake_run(cfg, db_path, cache_dir, target):
+        return 0  # no new papers found this pass
+
+    def fake_cached_count(cache_dir):
+        return 3
+
+    sleeps: list[float] = []
+
+    prefetch_loop(
+        _loop_cfg(), "db", Path("cache"), target=10,
+        max_idle=2, run=fake_run, cached_count=fake_cached_count, sleep=sleeps.append,
+    )
+
+    out = capsys.readouterr().out
+    assert "prefetch stalled: 3/10 cached, only 0 new available" in out
+    assert f"next attempt in {_RE_HARVEST_INTERVAL_SECONDS:.0f}s" in out
+    assert sleeps == [_RE_HARVEST_INTERVAL_SECONDS]  # exactly one sleep before the max_idle stop
+
+
+def test_prefetch_loop_stops_with_a_terminal_message_after_max_idle_passes(capsys):
+    passes = {"n": 0}
+
+    def fake_run(cfg, db_path, cache_dir, target):
+        passes["n"] += 1
+        return 0  # permanently stalled -- never finds a new paper
+
+    def fake_cached_count(cache_dir):
+        return 3
+
+    prefetch_loop(
+        _loop_cfg(), "db", Path("cache"), target=10,
+        max_idle=2, run=fake_run, cached_count=fake_cached_count, sleep=lambda s: None,
+    )
+
+    out = capsys.readouterr().out
+    assert "target unreachable -- only 3/10 papers available" in out
+    assert "--max-idle=2" in out
+    assert passes["n"] == 2, "must stop exactly after max_idle consecutive zero-new passes"
+
+
+def test_prefetch_loop_idle_counter_resets_on_any_pass_with_progress():
+    """A pass that finds new papers, even if the corpus is still below target afterward, must
+    reset the idle-pass counter -- only CONSECUTIVE zero-new passes count as a stall."""
+    new_per_pass = [0, 3, 0, 0]  # idle, progress (resets), idle, idle (2nd consecutive -> stop)
+    state = {"total": 0}
+    calls = {"n": 0}
+
+    def fake_run(cfg, db_path, cache_dir, target):
+        new = new_per_pass[calls["n"]]
+        calls["n"] += 1
+        state["total"] += new
+        return new
+
+    def fake_cached_count(cache_dir):
+        return state["total"]
+
+    prefetch_loop(
+        _loop_cfg(), "db", Path("cache"), target=100,
+        max_idle=2, run=fake_run, cached_count=fake_cached_count, sleep=lambda s: None,
+    )
+
+    assert calls["n"] == 4, "the reset after pass 2's progress must delay the stop to pass 4"
+
+
+def test_prefetch_loop_default_max_idle_is_unbounded_matching_pre_t_doc50_behavior(capsys):
+    """`max_idle=None` (the default -- `--max-idle` absent) must never stop the loop on its own,
+    same as before T-DOC50: it only ever exits by reaching target."""
+    new_sequence = [0, 0, 0, 50]  # three idle passes, then finally reaches target
+    state = {"total": 0}
+    calls = {"n": 0}
+    sleeps: list[float] = []
+
+    def fake_run(cfg, db_path, cache_dir, target):
+        new = new_sequence[calls["n"]]
+        calls["n"] += 1
+        state["total"] += new
+        return new
+
+    def fake_cached_count(cache_dir):
+        return state["total"]
+
+    prefetch_loop(
+        _loop_cfg(), "db", Path("cache"), target=10,
+        run=fake_run, cached_count=fake_cached_count, sleep=sleeps.append,
+    )
+
+    assert calls["n"] == 4
+    assert len(sleeps) == 3, "slept after each idle pass instead of giving up"
+    out = capsys.readouterr().out
+    assert "target unreachable" not in out
+    assert "target of 10 reached, exiting." in out
+
+
+def test_max_idle_cli_flag_parses_to_an_int():
+    assert _parse_args(["--max-idle", "5"]).max_idle == 5
+
+
+def test_max_idle_cli_flag_defaults_to_none_when_absent():
+    assert _parse_args([]).max_idle is None

@@ -7,6 +7,15 @@ This script downloads PDFs on their own, continuously, with no MinerU/GPU involv
 local `<paper_id>.pdf` cache the future MinerU-batching fix can read from later. It does not parse,
 chunk, summarize, or embed anything, and never touches `blobs/` (the real pipeline's own store).
 
+**T-DOC48 — `<paper_id>.json` metadata sidecar.** Every successful download also writes the
+harvested `PaperRef` (already fetched to decide the download -- previously discarded once the
+`.pdf` was written) as a `<paper_id>.json` sidecar next to it (`_write_sidecar`). This is what
+lets `app/assembly.py`'s `harvest_refs` process an already-cached paper fully offline (both files
+present -> reconstruct `PaperRef` from the sidecar, zero arXiv calls) instead of being forced to
+re-fetch metadata for a PDF that's already local -- see that function's docstring. Optional by
+construction: a `.pdf` with no sidecar (every file downloaded before this fix) just falls back to
+the old live-metadata-fetch behavior, unchanged.
+
 **Coordinating with the live pipeline instead of duplicating its traffic (the actual design
 problem here):**
 
@@ -71,6 +80,7 @@ problem here):**
 
 from __future__ import annotations
 
+import argparse
 import time
 from pathlib import Path
 
@@ -111,6 +121,24 @@ def _target_from_config(cfg: Config) -> int:
 
 def _pdf_path(cache_dir: Path, paper_id: str) -> Path:
     return cache_dir / f"{paper_id}.pdf"
+
+
+def _sidecar_path(cache_dir: Path, paper_id: str) -> Path:
+    # T-DOC48: the `PaperRef` metadata this script already fetched to decide the download,
+    # persisted alongside the PDF so a later offline ingest run (app/assembly.py's `harvest_refs`)
+    # can reconstruct it without an arXiv metadata call. Same `<paper_id>.<ext>` convention as
+    # `_pdf_path` -- a cache-first reader just checks both paths for the same paper_id.
+    return cache_dir / f"{paper_id}.json"
+
+
+def _write_sidecar(cache_dir: Path, ref: PaperRef) -> None:
+    """Persist `ref` as `<paper_id>.json`, same atomic tmp-then-rename discipline as the PDF
+    write in `_download_one` -- a crash mid-write must never leave a partial/corrupt sidecar that
+    a later cache-first read would choke on."""
+    final_path = _sidecar_path(cache_dir, ref.paper_id)
+    tmp_path = cache_dir / f"{ref.paper_id}.json.tmp"
+    tmp_path.write_text(ref.model_dump_json())
+    tmp_path.rename(final_path)
 
 
 def _skip_marker_path(cache_dir: Path, paper_id: str) -> Path:
@@ -157,6 +185,10 @@ def _download_one(client: httpx.Client, ref: PaperRef, cache_dir: Path) -> None:
 
     tmp_path.write_bytes(resp.content)
     tmp_path.rename(final_path)
+    # T-DOC48: capture the `PaperRef` this call already had in hand instead of discarding it --
+    # see `_write_sidecar`. Written after the PDF is durably in place, not before: a later
+    # cache-first reader (app/assembly.py) only trusts a sidecar once its matching `.pdf` exists.
+    _write_sidecar(cache_dir, ref)
 
 
 def _download_with_retry(
@@ -242,28 +274,85 @@ def run(
     return new_downloads
 
 
-def main() -> None:
-    cfg = load_config()
-    db_path = cfg.db_path
-    cache_dir = _cache_dir_from_config(cfg)
-    target = _target_from_config(cfg)
+def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--max-idle",
+        type=int,
+        default=None,
+        metavar="N",
+        help=(
+            "T-DOC50: stop after N consecutive passes each download zero new PDFs (a "
+            "stall/target-unreachable bound), instead of sleeping and re-harvesting forever. "
+            "Default: unbounded -- unchanged pre-T-DOC50 behavior."
+        ),
+    )
+    return parser.parse_args(argv)
 
-    while _cached_count(cache_dir) < target:
+
+def prefetch_loop(
+    cfg: Config,
+    db_path: str,
+    cache_dir: Path,
+    target: int,
+    *,
+    max_idle: int | None = None,
+    run=run,
+    cached_count=_cached_count,
+    sleep=time.sleep,
+) -> None:
+    """The harvest-then-download-then-maybe-sleep loop `main()` runs forever. Pulled out of
+    `main()` (same reason `run()` above takes injectable `harvester`/`client`) so a test can drive
+    several passes with a fake `run`/`cached_count` and a recording `sleep` instead of a real
+    3600s wait -- see `app/test_prefetch_pdfs.py`.
+
+    T-DOC50: previously this printed "below target, sleeping 3600s" and slept unconditionally --
+    indistinguishable from healthy progress unless someone was watching the process, and it could
+    run for an hour making zero progress with no way to bound it. Now every below-target pass
+    prints an explicit "prefetch stalled" status line naming both the current/target counts and
+    how many new PDFs THIS pass found, and `max_idle` (wired to `--max-idle`, no env var --
+    CONVENTIONS.md §3) stops the loop with a "target unreachable" message after that many
+    consecutive zero-new passes instead of sleeping indefinitely. `max_idle=None` (the default,
+    when `--max-idle` is absent) preserves the old unbounded-sleep behavior exactly.
+    """
+    idle_passes = 0
+    while cached_count(cache_dir) < target:
         new = run(cfg, db_path, cache_dir, target)
-        total = _cached_count(cache_dir)
+        total = cached_count(cache_dir)
         print(
             f"prefetch_pdfs: pass complete, +{new} this pass, {total}/{target} cached", flush=True
         )
         if total >= target:
             break
+
+        idle_passes = idle_passes + 1 if new == 0 else 0
+        if max_idle is not None and idle_passes >= max_idle:
+            print(
+                f"prefetch_pdfs: target unreachable -- only {total}/{target} papers available, "
+                f"stopping after {idle_passes} consecutive idle pass(es) with no new downloads "
+                f"(--max-idle={max_idle})",
+                flush=True,
+            )
+            return
+
         print(
-            f"prefetch_pdfs: below target, sleeping {_RE_HARVEST_INTERVAL_SECONDS:.0f}s "
-            "before re-harvesting (avoids re-querying arXiv for an unchanged result set)",
+            f"prefetch_pdfs: prefetch stalled: {total}/{target} cached, only {new} new available, "
+            f"next attempt in {_RE_HARVEST_INTERVAL_SECONDS:.0f}s",
             flush=True,
         )
-        time.sleep(_RE_HARVEST_INTERVAL_SECONDS)
+        sleep(_RE_HARVEST_INTERVAL_SECONDS)
 
     print(f"prefetch_pdfs: target of {target} reached, exiting.", flush=True)
+
+
+def main() -> None:
+    args = _parse_args()
+    cfg = load_config()
+    db_path = cfg.db_path
+    cache_dir = _cache_dir_from_config(cfg)
+    target = _target_from_config(cfg)
+
+    prefetch_loop(cfg, db_path, cache_dir, target, max_idle=args.max_idle)
 
 
 if __name__ == "__main__":
