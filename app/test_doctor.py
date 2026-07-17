@@ -12,8 +12,6 @@ from pathlib import Path
 
 import filelock
 
-from contracts.config import Config
-
 import app.doctor as doctor_mod
 from app.doctor import (
     PreflightIssue,
@@ -24,7 +22,7 @@ from app.doctor import (
     format_issues,
     run_preflight,
 )
-
+from contracts.config import Config
 
 # ---------------------------------------------------------------------------
 # check_disk_headroom
@@ -283,4 +281,4 @@ def test_health_only_services_never_shell_out_to_docker(monkeypatch):
 
     check_services(auto_start=True)
 
-    assert calls == [], "doctor must never shell out to docker directly for the health-only services"
+    assert calls == [], "doctor must never shell out to docker for the health-only services"
