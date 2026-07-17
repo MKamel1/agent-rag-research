@@ -561,3 +561,60 @@ have the kind of silent retention gap an external tool's collection/storage laye
 check `workstation-dashboard` (or any other external dashboard) against the run's own JSON-line
 events/summary before trusting it for anything post-hoc; never trust an external dashboard's
 export alone the way OG-16 almost did.
+
+---
+
+### 2026-07-17 — measurement — the contextual-retrieval A/B produced a null because the eval was **saturated**, not because headers don't work (T-DOC41)
+
+Approach A (summary-conditioned contextual headers, prepended before embedding) was measured against
+full-corpus distractor density: baseline = the real 26,196-point `papers` collection; treatment = a full
+copy with only the 38 gold papers re-embedded with headers. Result: passage-level Recall@10 **1.000 →
+1.000**, MRR **0.841 → 0.838** (−0.003, noise). No detectable effect.
+
+The number that actually matters is the **baseline**: 1.000. The system already retrieved the correct
+equation chunk in the top-10 for **40/40** questions, and the correct paper at rank 1 for 40/40 —
+Recall@10 was pinned at ceiling *before* the intervention, so it was **mathematically incapable of
+improving**. The null is **inconclusive, not a refutation**. Root cause of the saturation: the slice's
+questions name the paper's topic ("In the *Balanced Twins causal-inference* method, what loss
+function…"), which is precisely the global context a summary-conditioned header would have supplied —
+the question already gave away the answer to the disambiguation problem the header exists to solve.
+
+Two controls make this a clean read rather than a guess: the generated headers were **high quality**
+(textbook "this paper does X / this passage contributes Y" form), so "iterate the prompt" is *not* the
+next lever; and validity was pinned (embedder-drift equivalence cosine 0.9999975, overwrite-not-append
+verified at 26,196 == 26,196 points, no OOM at peak 20,489 MiB, 38/38 papers complete).
+
+Measured cost, which decides it: 1,604 headers in 44.5 min = **~11.7 GPU-hours at 809 papers, ~18.1
+GPU-DAYS at the 30k target**. Paying ~2.5 weeks of GPU for a benefit the instrument cannot detect is
+not defensible. **Decision: HOLD** — not "headers don't work", but "no evidence of a problem they'd
+solve, and no instrument able to detect one". Prerequisite for any future go/no-go: a **topic/title-
+absent** equation eval with real headroom (the main T-EVAL already shows that regime is harder —
+title-absent 0.807 vs 0.952 — so headroom is known to exist there). Full write-up:
+`reviews/T-DOC41-CONTEXTUAL-RETRIEVAL-SPIKE.md`.
+
+**Generalizable takeaway: check the baseline for headroom BEFORE running an A/B.** A saturated metric
+cannot show improvement, so it converts every result into a null regardless of whether the treatment
+works. Confirm the metric can move — and that the questions don't already hand over the very signal the
+treatment adds — before spending GPU on the comparison.
+
+### 2026-07-17 — build-process — `build_mcp_server` silently ignores `config.db_path`, and produced a confident, completely fake `Recall@10 = 0.000`
+
+The first T-DOC41 scoring run reported **0.000 across all 40 questions** — a catastrophic-looking
+retrieval failure that was pure artifact. `app/assembly.py`'s `build_mcp_server` does:
+
+```python
+db_path = db_path or "papers.db"   # falls back to the EMPTY repo-root db, NOT config.db_path
+blob_dir = blob_dir or "blobs"
+```
+
+It never reads `config.db_path`/`config.blob_dir`, so a config with a correct absolute `db_path` (which
+the run *did* have) was silently ignored and the eval ran against the empty repo-root `papers.db` (0
+chunks). `app/retrieval_eval.py` must be passed `--db-path`/`--blob-dir` **explicitly**. Caught only
+because 0.000 was implausible on its face and every question logged `unknown chunk_id` — a subtler
+partial failure would have been believed.
+
+Takeaway: **a config field the composition root silently ignores is a trap** — the config looks
+authoritative, is version-controlled, and is wrong-by-omission at runtime. Prefer defaulting to the
+config value over a hardcoded relative path; where a fallback must exist, fail loudly if the resolved
+store is empty rather than returning zeros. Candidate follow-up: make `build_mcp_server` default to
+`config.db_path`/`config.blob_dir`.
