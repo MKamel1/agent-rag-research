@@ -509,3 +509,86 @@ def test_ensure_collection_reraises_when_create_fails_and_collection_still_absen
     adapter._dim = 2560
     with pytest.raises(TransientError):
         adapter._ensure_collection()
+
+
+# ==================================================================================================
+# OG-27 (T-DOC27 follow-up) -- point_count() / has_idf_modifier(), the two read-only checks
+# app/reindex_idf.py needs around rebuild(): the before/after point-count invariant and the
+# "did the fix actually land" post-check. Offline: a fake `_client.get_collection` stands in for
+# the real vendor call (no live service needed to prove this adapter reads the right fields off
+# `CollectionInfo`).
+# ==================================================================================================
+
+
+class _FakeInfoClient:
+    def __init__(self, *, points_count, sparse_vectors):
+        self._points_count = points_count
+        self._sparse_vectors = sparse_vectors
+
+    def get_collection(self, collection_name):
+        return SimpleNamespace(
+            points_count=self._points_count,
+            config=SimpleNamespace(
+                params=SimpleNamespace(sparse_vectors=self._sparse_vectors)
+            ),
+        )
+
+
+def test_point_count_reads_points_count_off_collection_info():
+    real = pytest.importorskip("rag.vector_index")
+    client = _FakeInfoClient(points_count=42, sparse_vectors={})
+    adapter = _bare_adapter(real, client=client)
+    assert adapter.point_count() == 42
+
+
+def test_has_idf_modifier_true_when_sparse_field_has_the_idf_modifier():
+    real = pytest.importorskip("rag.vector_index")
+    client = _FakeInfoClient(
+        points_count=1,
+        sparse_vectors={real._SPARSE_VECTOR: SimpleNamespace(modifier=real.models.Modifier.IDF)},
+    )
+    adapter = _bare_adapter(real, client=client)
+    assert adapter.has_idf_modifier() is True
+
+
+def test_has_idf_modifier_false_when_modifier_unset():
+    # The exact pre-T-DOC27 production shape: the sparse field exists but its modifier is None.
+    real = pytest.importorskip("rag.vector_index")
+    client = _FakeInfoClient(
+        points_count=1,
+        sparse_vectors={real._SPARSE_VECTOR: SimpleNamespace(modifier=None)},
+    )
+    adapter = _bare_adapter(real, client=client)
+    assert adapter.has_idf_modifier() is False
+
+
+def test_has_idf_modifier_false_when_sparse_config_missing_entirely():
+    real = pytest.importorskip("rag.vector_index")
+    client = _FakeInfoClient(points_count=1, sparse_vectors=None)
+    adapter = _bare_adapter(real, client=client)
+    assert adapter.has_idf_modifier() is False
+
+
+@pytest.mark.enable_socket
+def test_real_adapter_point_count_and_idf_modifier_reflect_live_collection():
+    # A fresh collection is always created WITH the IDF modifier now (_ensure_collection ->
+    # _sparse_vector_params()), so this doubles as a regression guard on that invariant.
+    real = pytest.importorskip("rag.vector_index")
+
+    collection = "m1a_point_count_and_idf"
+    try:
+        adapter = real.VectorIndex(
+            host="localhost", port=6333, collection_name=collection, dim=2, hybrid_dense_weight=0.5
+        )
+    except TransientError as e:
+        pytest.skip(f"no live vector-store service reachable at localhost:6333: {e}")
+
+    try:
+        assert adapter.point_count() == 0
+        assert adapter.has_idf_modifier() is True
+
+        adapter.upsert("a", [1.0, 0.0], _payload(text="method estimator"))
+        adapter.upsert("b", [0.0, 1.0], _payload(text="unrelated"))
+        assert adapter.point_count() == 2
+    finally:
+        adapter._client.delete_collection(collection)
