@@ -620,3 +620,32 @@ authoritative, is version-controlled, and is wrong-by-omission at runtime. Prefe
 config value over a hardcoded relative path; where a fallback must exist, fail loudly if the resolved
 store is empty rather than returning zeros. Candidate follow-up: make `build_mcp_server` default to
 `config.db_path`/`config.blob_dir`.
+
+---
+
+### 2026-07-17 — correctness — multi-worker parse nondeterminism (OG-19) cannot invalidate an Anchor round-trip; N>1 is safe for the seed run (T-DOC51 acceptance criterion closed)
+
+The open pre-seed-run gate — "verify the <0.03% LaTeX formula-boundary nondeterminism under
+`--parse-workers>1` can't invalidate an Anchor snippet at scale" — is resolved, by construction **and**
+empirically, with no GPU experiment needed.
+
+**Construction proof.** A paper is parsed exactly once per run (round-robin shard → one worker → one
+`parser.parse()` call). From that single `ParsedDoc`, `orchestrator._parse` (`rag/orchestrator.py:424-430`)
+derives BOTH the blocks (`block.text`) and the chunks' anchors (`snippet = _snippet(first.text)`,
+`rag/chunker.py:166`) and persists them together (`CheckpointArtifacts(parsed, chunks)` → `document_store.put`).
+At query time `get_span(anchor)` reads the STORED block text by `block_id` (`rag/document_store.py:320`,
+"the FULL text of `anchor.block_id`") and **never re-parses**. So `snippet ⊆ block.text` holds because both
+come from the same parse. Parse nondeterminism is *run-to-run* (a different worker count → a different
+`batch_ratio` → <0.03% of formulas segmented differently between two separate runs); within any single run
+each paper's blocks and anchors are mutually consistent by construction. The only way to break the invariant
+would be storing a snippet from parse-A against block text from parse-B — which a re-parse can't cause because
+resume/re-ingest replaces a paper's artifacts atomically (delete-then-put, T-DOC40).
+
+**Empirical confirmation.** Checked all **25,387** stored anchors on the real 809-paper corpus: every
+`anchor.snippet` is a genuine substring of its `block_id`'s stored text — **0 round-trip failures.**
+
+**Takeaway:** a "nondeterministic parser" is only a data-integrity risk if the pipeline re-parses or mixes
+artifacts across parses. This one does neither (parse-once, store-both-together, read-stored-text-at-query),
+so `--parse-workers 3` (the +63% throughput lever) is cleared for the 30k seed. The determinism caveat
+remains true as a *reproducibility* footnote (two seed runs won't be byte-identical), which is immaterial to
+V0's correctness contract.
