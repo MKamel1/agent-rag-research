@@ -462,3 +462,49 @@ def test_create_and_download_snapshot_raises_transient_error_on_download_failure
     with pytest.raises(TransientError, match="snapshot download failed"):
         adapter.create_and_download_snapshot(str(dest))
     assert not dest.exists()
+
+
+def test_ensure_collection_tolerates_concurrent_create_race(monkeypatch):
+    """`--parse-workers N` sharing one fresh collection: two workers both pass the exists-check and
+    both call create_collection; the loser gets a 409 ApiException. `_ensure_collection` must treat
+    that as success (the collection now exists), not crash the worker (OG-28 / smoke-test finding)."""
+    real = pytest.importorskip("rag.vector_index")
+    from qdrant_client.http.exceptions import UnexpectedResponse
+
+    exists_calls = []
+
+    class _RacingClient:
+        def collection_exists(self, name):
+            # First check: absent (this worker will try to create). After the failed create
+            # (a peer won the race), the re-check sees it present.
+            exists_calls.append(name)
+            return len(exists_calls) > 1
+
+        def create_collection(self, *a, **k):
+            raise UnexpectedResponse(409, "Conflict", b'{"error":"already exists"}', {})
+
+    adapter = _bare_adapter(real, client=_RacingClient())
+    adapter._dim = 2560
+    # Must NOT raise -- the peer's collection is accepted.
+    adapter._ensure_collection()
+    assert len(exists_calls) == 2  # initial check (absent) + post-conflict re-check (present)
+
+
+def test_ensure_collection_reraises_when_create_fails_and_collection_still_absent(monkeypatch):
+    """A create failure where the collection is genuinely still absent is a REAL error and must
+    propagate as TransientError, not be swallowed by the concurrent-race tolerance above."""
+    real = pytest.importorskip("rag.vector_index")
+    from contracts.errors import TransientError
+    from qdrant_client.http.exceptions import UnexpectedResponse
+
+    class _BrokenClient:
+        def collection_exists(self, name):
+            return False  # never exists, even after the failed create
+
+        def create_collection(self, *a, **k):
+            raise UnexpectedResponse(500, "Internal Error", b'{"error":"boom"}', {})
+
+    adapter = _bare_adapter(real, client=_BrokenClient())
+    adapter._dim = 2560
+    with pytest.raises(TransientError):
+        adapter._ensure_collection()
