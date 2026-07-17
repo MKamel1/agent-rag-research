@@ -267,6 +267,24 @@ class VectorIndex:
                 ],
             )
 
+    def point_count(self) -> int:
+        """Current number of points in the collection -- `app/reindex_idf.py`'s (OG-27) before/
+        after invariant check reads this on both sides of `rebuild()` and refuses to declare
+        success if they differ (the same OG-28-style "don't silently lose data" posture as
+        `app/snapshot.py`'s own artifact checks)."""
+        info = self._call(self._client.get_collection, self._collection)
+        return info.points_count
+
+    def has_idf_modifier(self) -> bool:
+        """Whether the sparse vector field is currently configured with the native IDF modifier
+        (`_sparse_vector_params()`) -- `app/reindex_idf.py`'s pre-flight (skip a needless
+        rebuild if already set) and post-rebuild (confirm T-DOC27's fix actually landed) check.
+        """
+        info = self._call(self._client.get_collection, self._collection)
+        sparse_config = info.config.params.sparse_vectors or {}
+        params = sparse_config.get(_SPARSE_VECTOR)
+        return params is not None and params.modifier == models.Modifier.IDF
+
     def create_and_download_snapshot(self, dest_path: str) -> None:
         """Backup half of the vendor boundary (`app/snapshot.py`'s job, T-DOC57): create a
         server-side snapshot of this collection, then pull the resulting file out of the vector
