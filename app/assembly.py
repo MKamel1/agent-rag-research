@@ -12,6 +12,8 @@ import os
 import time
 from collections.abc import Callable
 from concurrent.futures import Future, ThreadPoolExecutor
+from datetime import UTC, datetime
+from email.utils import parsedate_to_datetime
 from pathlib import Path
 
 import httpx
@@ -76,35 +78,85 @@ _RETRYABLE_STATUSES = {429, 502, 503, 504}
 # so unlike the query-driven `harvest()` path it has NO retry of its own -- a single arXiv 429
 # used to raise `TransientError` straight out of `harvest_refs`, through `parse_phase.py`'s
 # subprocess, killing the whole run (the exact failure WORK-BREAKDOWN.md's T-DOC49/OG-10
-# describes). `ArxivSource` doesn't surface the response's `Retry-After` header through
-# `TransientError` (rag/harvester.py -- outside this ticket's file territory), so this backs off
-# exponentially instead of honoring that header exactly; flagged as a follow-up below, not
-# silently treated as done.
+# describes).
+#
+# T-DOC58: the 429 response's `Retry-After` header states exactly how long the source wants
+# callers to wait -- better than guessing via the exponential schedule below. `TransientError`
+# itself (contracts/errors.py, frozen) carries no such field, so this reads the header off the
+# *source* HTTP error instead: `rag/harvester.py`'s raise sites use `raise TransientError(...)
+# from error`, which sets Python's standard `__cause__` chain -- `_retry_after_seconds` below
+# walks that chain looking for an `httpx.HTTPStatusError` with a `Retry-After` header, entirely
+# from this file, with no change to `contracts/` or `rag/harvester.py`. Falls back to the
+# exponential schedule when the header is absent, unparseable, or there's no such cause (e.g. the
+# older `_AlwaysTransientSource`-style stub tests below construct a bare `TransientError`).
 _METADATA_FETCH_MAX_RETRIES = 5
 _METADATA_FETCH_BACKOFF_SECONDS = 30.0
+# Upper bound on how long a single `Retry-After` wait is honored for -- a defensive clamp against
+# a server sending an absurd or hostile value; a few minutes is generous for a 429 backoff without
+# risking a near-infinite stall.
+_RETRY_AFTER_MAX_SECONDS = 300.0
+
+
+def _parse_retry_after(value: str | None) -> float | None:
+    """Parse an HTTP `Retry-After` header value (RFC 9110 §10.2.3) into seconds-from-now.
+
+    Handles both forms the spec allows: an integer (or float) seconds count, and an HTTP-date.
+    Returns `None` for a missing/empty value or one that matches neither form -- callers fall back
+    to their own backoff schedule in that case. Never returns negative (a past HTTP-date floors to
+    `0.0`: wait no longer, not "wait a negative amount").
+    """
+    if not value:
+        return None
+    try:
+        return max(0.0, float(value))
+    except ValueError:
+        pass
+    try:
+        when = parsedate_to_datetime(value)
+    except (TypeError, ValueError, IndexError):
+        return None
+    if when.tzinfo is None:
+        when = when.replace(tzinfo=UTC)  # RFC 9110 HTTP-dates are always GMT
+    return max(0.0, (when - datetime.now(UTC)).total_seconds())
+
+
+def _retry_after_seconds(error: TransientError) -> float | None:
+    """`error`'s originating HTTP response's `Retry-After` header, in seconds, if `error` was
+    raised (via `raise ... from cause`, as `rag/harvester.py`'s raise sites do) from an
+    `httpx.HTTPStatusError` that carries one -- `None` if there's no such cause, or its response
+    has no (or an unparseable) `Retry-After` header."""
+    cause = error.__cause__
+    if not isinstance(cause, httpx.HTTPStatusError):
+        return None
+    return _parse_retry_after(cause.response.headers.get("Retry-After"))
 
 
 def _fetch_by_ids_with_backoff(
     source: ArxivSource, ids: list[str], *, sleep: Callable[[float], None] = time.sleep,
 ) -> list[PaperRef]:
-    """`source.fetch_by_ids(ids)`, retrying a `TransientError` (arXiv 429/5xx) with bounded
-    exponential backoff (30s, 60s, 120s, ... up to `_METADATA_FETCH_MAX_RETRIES` attempts) instead
-    of letting it propagate and crash the run -- see the module-level comment above. Raises
-    `TransientError` only once the retry budget is exhausted, matching `TransientError`'s existing
-    contract elsewhere in this codebase (CONVENTIONS.md §4: retry with backoff, then quarantine --
-    the caller here still has no per-paper quarantine sink for this path, so exhaustion surfaces
-    as a run failure exactly as before this fix, just after genuinely trying to ride out a
-    transient throttle first).
+    """`source.fetch_by_ids(ids)`, retrying a `TransientError` (arXiv 429/5xx) with bounded backoff
+    instead of letting it propagate and crash the run -- see the module-level comment above.
+    Prefers the source's own `Retry-After` header (`_retry_after_seconds`, clamped to
+    `_RETRY_AFTER_MAX_SECONDS`) when present; otherwise falls back to exponential backoff (30s,
+    60s, 120s, ... up to `_METADATA_FETCH_MAX_RETRIES` attempts). Raises `TransientError` only once
+    the retry budget is exhausted, matching `TransientError`'s existing contract elsewhere in this
+    codebase (CONVENTIONS.md §4: retry with backoff, then quarantine -- the caller here still has
+    no per-paper quarantine sink for this path, so exhaustion surfaces as a run failure exactly as
+    before this fix, just after genuinely trying to ride out a transient throttle first).
     """
     attempt = 0
     while True:
         try:
             return source.fetch_by_ids(ids)
-        except TransientError:
+        except TransientError as error:
             attempt += 1
             if attempt > _METADATA_FETCH_MAX_RETRIES:
                 raise
-            sleep(_METADATA_FETCH_BACKOFF_SECONDS * (2 ** (attempt - 1)))
+            retry_after = _retry_after_seconds(error)
+            if retry_after is not None:
+                sleep(min(retry_after, _RETRY_AFTER_MAX_SECONDS))
+            else:
+                sleep(_METADATA_FETCH_BACKOFF_SECONDS * (2 ** (attempt - 1)))
 
 
 def _cached_ref(cache_dir: Path, paper_id: str) -> PaperRef | None:

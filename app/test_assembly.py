@@ -19,7 +19,8 @@ import logging
 import os
 import sqlite3
 import time
-from datetime import date
+from datetime import UTC, date, datetime, timedelta
+from email.utils import format_datetime
 from pathlib import Path
 
 import httpx
@@ -30,6 +31,8 @@ from app.assembly import (
     _METADATA_FETCH_MAX_RETRIES,
     _PDF_DOWNLOAD_DELAY_SECONDS,
     _PDF_DOWNLOAD_RETRY_BACKOFF_SECONDS,
+    _RETRY_AFTER_MAX_SECONDS,
+    _parse_retry_after,
     _PdfDownloadParser,
     _sqlite_harvest_quarantine_sink,
     build_ingestion_orchestrator,
@@ -1020,6 +1023,124 @@ def test_harvest_refs_raises_once_the_429_retry_budget_is_exhausted(monkeypatch)
 
     assert len(stub_source.calls) == _METADATA_FETCH_MAX_RETRIES + 1
     assert len(sleeps) == _METADATA_FETCH_MAX_RETRIES
+
+
+# ================================================================================================
+# T-DOC58/OG-24: the 429's `Retry-After` header, when present, is honored instead of the
+# exponential guess above. `_StubArxivSource.fetch_by_ids` does a bare `raise response` (not
+# `raise ... from ...`), so `_transient_429` below sets `__cause__` on the canned `TransientError`
+# by hand -- exactly matching the shape `raise TransientError(...) from error` produces at
+# `rag/harvester.py`'s real raise sites (`error.__cause__` is just a settable attribute either
+# way).
+# ================================================================================================
+
+
+def _transient_429(retry_after: str | None = None) -> TransientError:
+    request = httpx.Request("GET", "https://export.arxiv.org/api/query")
+    headers = {"Retry-After": retry_after} if retry_after is not None else {}
+    response = httpx.Response(429, headers=headers, request=request)
+    cause = httpx.HTTPStatusError("429", request=request, response=response)
+    error = TransientError("ArxivSource: arXiv API returned 429")
+    error.__cause__ = cause
+    return error
+
+
+def test_fetch_by_ids_backoff_honors_retry_after_seconds_form(monkeypatch):
+    ref = _make_ref("2601.00001")
+    stub_source = _StubArxivSource([_transient_429("42"), [ref]])
+    monkeypatch.setattr("app.assembly.ArxivSource", lambda *a, **k: stub_source)
+
+    cfg = Config(focus_area_queries=["x"], ingest_paper_ids=[ref.paper_id], pdf_cache_dir="")
+    sleeps: list[float] = []
+
+    refs = harvest_refs(cfg, orchestrator=None, sleep=sleeps.append)
+
+    assert refs == [ref]
+    assert sleeps == [42.0], "must honor the server's Retry-After, not the exponential schedule"
+
+
+def test_fetch_by_ids_backoff_honors_retry_after_http_date_form(monkeypatch):
+    ref = _make_ref("2601.00001")
+    target = datetime.now(UTC) + timedelta(seconds=42)
+    stub_source = _StubArxivSource([_transient_429(format_datetime(target, usegmt=True)), [ref]])
+    monkeypatch.setattr("app.assembly.ArxivSource", lambda *a, **k: stub_source)
+
+    cfg = Config(focus_area_queries=["x"], ingest_paper_ids=[ref.paper_id], pdf_cache_dir="")
+    sleeps: list[float] = []
+
+    refs = harvest_refs(cfg, orchestrator=None, sleep=sleeps.append)
+
+    assert refs == [ref]
+    assert len(sleeps) == 1
+    assert abs(sleeps[0] - 42.0) < 2.0, "HTTP-date form must resolve to ~seconds-from-now"
+
+
+def test_fetch_by_ids_backoff_falls_back_to_exponential_when_retry_after_absent(monkeypatch):
+    ref = _make_ref("2601.00001")
+    stub_source = _StubArxivSource([_transient_429(None), [ref]])
+    monkeypatch.setattr("app.assembly.ArxivSource", lambda *a, **k: stub_source)
+
+    cfg = Config(focus_area_queries=["x"], ingest_paper_ids=[ref.paper_id], pdf_cache_dir="")
+    sleeps: list[float] = []
+
+    refs = harvest_refs(cfg, orchestrator=None, sleep=sleeps.append)
+
+    assert refs == [ref]
+    assert sleeps == [_METADATA_FETCH_BACKOFF_SECONDS]
+
+
+def test_fetch_by_ids_backoff_falls_back_to_exponential_when_retry_after_unparseable(monkeypatch):
+    ref = _make_ref("2601.00001")
+    stub_source = _StubArxivSource([_transient_429("not-a-valid-value"), [ref]])
+    monkeypatch.setattr("app.assembly.ArxivSource", lambda *a, **k: stub_source)
+
+    cfg = Config(focus_area_queries=["x"], ingest_paper_ids=[ref.paper_id], pdf_cache_dir="")
+    sleeps: list[float] = []
+
+    refs = harvest_refs(cfg, orchestrator=None, sleep=sleeps.append)
+
+    assert refs == [ref]
+    assert sleeps == [_METADATA_FETCH_BACKOFF_SECONDS]
+
+
+def test_fetch_by_ids_backoff_clamps_an_excessive_retry_after(monkeypatch):
+    ref = _make_ref("2601.00001")
+    stub_source = _StubArxivSource([_transient_429("99999"), [ref]])
+    monkeypatch.setattr("app.assembly.ArxivSource", lambda *a, **k: stub_source)
+
+    cfg = Config(focus_area_queries=["x"], ingest_paper_ids=[ref.paper_id], pdf_cache_dir="")
+    sleeps: list[float] = []
+
+    refs = harvest_refs(cfg, orchestrator=None, sleep=sleeps.append)
+
+    assert refs == [ref]
+    assert sleeps == [_RETRY_AFTER_MAX_SECONDS]
+
+
+@pytest.mark.parametrize(
+    "value,expected",
+    [
+        (None, None),
+        ("", None),
+        ("42", 42.0),
+        ("0", 0.0),
+        ("not-a-valid-value", None),
+    ],
+)
+def test_parse_retry_after_seconds_and_absent_and_unparseable_forms(value, expected):
+    assert _parse_retry_after(value) == expected
+
+
+def test_parse_retry_after_http_date_form():
+    target = datetime.now(UTC) + timedelta(seconds=42)
+    parsed = _parse_retry_after(format_datetime(target, usegmt=True))
+    assert parsed is not None
+    assert abs(parsed - 42.0) < 2.0
+
+
+def test_parse_retry_after_past_http_date_floors_to_zero():
+    target = datetime.now(UTC) - timedelta(seconds=42)
+    assert _parse_retry_after(format_datetime(target, usegmt=True)) == 0.0
 
 
 def test_resolve_store_paths_falls_back_to_config_not_hardcoded_papers_db():
