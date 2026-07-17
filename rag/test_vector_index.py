@@ -469,8 +469,10 @@ def test_ensure_collection_tolerates_concurrent_create_race(monkeypatch):
     both call create_collection; the loser gets a 409 ApiException. `_ensure_collection` must treat
     that as success (the collection now exists), not crash the worker (OG-28 / smoke-test finding)."""
     real = pytest.importorskip("rag.vector_index")
-    from qdrant_client.http.exceptions import UnexpectedResponse
-
+    # Raise the adapter's own already-imported vendor exception type (real.ApiException) rather than
+    # importing the vendor name here -- the vendor-isolation check forbids naming it outside the
+    # adapter file (rag/vector_index.py). The real 409 is an ApiException subclass; the base is enough
+    # to exercise the except-clause.
     exists_calls = []
 
     class _RacingClient:
@@ -481,7 +483,7 @@ def test_ensure_collection_tolerates_concurrent_create_race(monkeypatch):
             return len(exists_calls) > 1
 
         def create_collection(self, *a, **k):
-            raise UnexpectedResponse(409, "Conflict", b'{"error":"already exists"}', {})
+            raise real.ApiException("simulated 409 already exists")
 
     adapter = _bare_adapter(real, client=_RacingClient())
     adapter._dim = 2560
@@ -495,14 +497,13 @@ def test_ensure_collection_reraises_when_create_fails_and_collection_still_absen
     propagate as TransientError, not be swallowed by the concurrent-race tolerance above."""
     real = pytest.importorskip("rag.vector_index")
     from contracts.errors import TransientError
-    from qdrant_client.http.exceptions import UnexpectedResponse
 
     class _BrokenClient:
         def collection_exists(self, name):
             return False  # never exists, even after the failed create
 
         def create_collection(self, *a, **k):
-            raise UnexpectedResponse(500, "Internal Error", b'{"error":"boom"}', {})
+            raise real.ApiException("simulated create failure")
 
     adapter = _bare_adapter(real, client=_BrokenClient())
     adapter._dim = 2560
