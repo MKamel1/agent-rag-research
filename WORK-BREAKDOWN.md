@@ -452,7 +452,7 @@ second source of truth). Remaining untracked item:
   corpus-integrity check (a `done` paper must have ≥1 chunk) so this class of silent hole is detectable
   going forward — candidate for a standing diagnostic, not just a one-off. Also verify the matching Qdrant
   `"papers"` collection ends up with vectors for these papers after re-ingest.
-- **T-DOC36 (not started) — evaluate Google's Gemini API File Search + Gemini Embedding 2 against the V0
+- **T-DOC36 (WON'T DO — deferred by @MKamel1 2026-07-16: a hosted Google embedder breaks the V0 ~$0-API-cost, local-only invariant; revisit only as an explicit V1+ constraint change) — evaluate Google's Gemini API File Search + Gemini Embedding 2 against the V0
   stack (research/ADR task, not a code change yet).** Google shipped a fully-managed RAG system (Gemini API
   **File Search Tool**, Nov 2025; made multimodal early 2026) that does chunking + embedding + vector
   indexing + citation server-side, powered by the new **Gemini Embedding 2** model (all-modality, 100+
@@ -518,7 +518,7 @@ tickets are the concrete follow-ups.
   Fix: make delete atomic across SQLite **and** Qdrant, and turn on `PRAGMA foreign_keys=ON` (nothing in the
   codebase enables it, so a stray raw `DELETE FROM papers` silently orphans children — `migrations/`, a
   foundation path). Foundation-touching → PR left open for @MKamel1.
-- **T-DOC41 (not started) — highest-impact retrieval-quality lever, but a real design decision, not a blind
+- **T-DOC41 (SPIKE RUN 2026-07-17 — measured, HOLD; see `reviews/T-DOC41-CONTEXTUAL-RETRIEVAL-SPIKE.md`. Approach A (summary-conditioned headers) measured against full-corpus distractors: passage Recall@10 1.000 -> 1.000, MRR 0.841 -> 0.838 (noise). **The eval is SATURATED — baseline already retrieves the gold equation chunk top-10 for 40/40, so Recall@10 cannot improve; the null is INCONCLUSIVE, not a refutation.** Headers were high quality (prompt is not the limiter). Cost measured: ~11.7 GPU-hours at 809 papers, ~18.1 GPU-DAYS at the 30k target. Blocker is the eval, not the header path (which is built + merged: `rag/contextual_header.py`, `app/reembed_experiment.py`, re-runnable in ~45min). **Prerequisite for any future go/no-go: a topic/title-absent equation eval with real headroom.** Approach B NOT justified — costs strictly more than A, whose benefit is currently unmeasurable) — highest-impact retrieval-quality lever, but a real design decision, not a blind
   build.** Contextual Retrieval (prepend a local-LLM-generated 50–100-token document-context to each chunk
   *before* embedding; Anthropic measured −49%/−67% retrieval failures) is the best fit for this corpus's hard
   case — bare LaTeX/equation/algorithm blocks that lack situating context (recall correlates strongly with
