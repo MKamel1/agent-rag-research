@@ -796,15 +796,24 @@ ticketed.
   (Config default coincides with the fallback; `app/serve.py` uses `RAG_DB_PATH`). Fixed +
   unit-tested (`_resolve_store_paths`: explicit arg wins, else `config.db_path`/`config.blob_dir`;
   backward-compatible).
-- **T-DOC57 (not started) — 🟡 `app/retrieval_eval.py` reports only aggregates, no per-question rows
+- **T-DOC57 (implemented — PR #131, merged; report now has a `questions` array with paper/passage hit+rank per question, `--no-per-question` to suppress, error-vs-miss distinguished) — 🟡 `app/retrieval_eval.py` reports only aggregates, no per-question rows
   (OG-23).** Blocks computing per-question deltas / listing regressions between two runs from the JSON
   alone. Add an optional per-question array (qid, gold ids, hit rank per granularity).
-- **T-DOC58 (not started) — 🟠 arXiv 429 backoff doesn't honor `Retry-After` (OG-24, T-DOC49 follow-up).**
+- **T-DOC58 (implemented — PR #132, merged; `Retry-After` threaded via `TransientError.diagnostics`, parsed seconds/HTTP-date, clamped 300s, falls back to exponential; no `contracts/` edit) — 🟠 arXiv 429 backoff doesn't honor `Retry-After` (OG-24, T-DOC49 follow-up).**
   `ArxivSource.fetch_by_ids` doesn't surface the header through `TransientError`; thread it through and
   prefer it over the exponential schedule when present (`rag/harvester.py`).
 - **T-DOC59 (not started) — 🟡 per-run telemetry only tags the coarse parse/finish boundary (OG-25,
   T-DOC47 follow-up).** `finish_phase()` runs summarize+embed+store as one call; add a stage-boundary hook
   inside `rag/orchestrator.py` so GPU time can be attributed to those three sub-stages.
+- **T-DOC60 (implemented — PR #133, merged; `python -m app.reindex_idf`) — 🟡 enable IDF sparse on an
+  existing collection (OG-27).** `VectorIndex.rebuild()` had no CLI; now wired with snapshot-first safety
+  (verifies a real backup exists, since `rebuild()` is destructive-in-place), a before/after point-count
+  invariant, an IDF-modifier post-check, `--dry-run`, and an already-has-IDF no-op. Post-seed enhancement
+  (V0 gate met without IDF); run it once after the seed to enable IDF weighting.
+- **OG-28 (fixed — PR #130, merged) — 🔴 `_ensure_collection` raced under `--parse-workers N` into a fresh
+  collection (409 Conflict, killed 2/3 workers).** Caught by the seed-command smoke test. Now idempotent
+  (catch `ApiException` on create, re-check existence). Didn't affect the existing-collection seed, but
+  cleared the fresh-collection N>1 path.
 
 ---
 
