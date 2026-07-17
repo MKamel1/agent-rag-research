@@ -155,9 +155,11 @@ def check_services(*, auto_start: bool = True) -> list[PreflightIssue]:
         tei_healthy = _is_healthy(_TEI_EMBED_HEALTH_URL) and _is_healthy(_TEI_RERANK_HEALTH_URL)
     if not tei_healthy:
         if not _is_healthy(_TEI_EMBED_HEALTH_URL):
-            issues.append(PreflightIssue("TEI embedder", f"unreachable at {_TEI_EMBED_HEALTH_URL}"))
+            detail = f"unreachable at {_TEI_EMBED_HEALTH_URL}"
+            issues.append(PreflightIssue("TEI embedder", detail))
         if not _is_healthy(_TEI_RERANK_HEALTH_URL):
-            issues.append(PreflightIssue("TEI reranker", f"unreachable at {_TEI_RERANK_HEALTH_URL}"))
+            detail = f"unreachable at {_TEI_RERANK_HEALTH_URL}"
+            issues.append(PreflightIssue("TEI reranker", detail))
 
     for service in _HEALTH_ONLY_SERVICES:
         if not _is_healthy(service.health_url):
@@ -171,11 +173,12 @@ def run_preflight(cfg: Config, *, auto_start: bool = True) -> list[PreflightIssu
     service (auto-starting a stopped-but-startable TEI container first). Returns the full list
     of unresolved issues; empty means the environment is ready.
     """
-    issues = [
-        issue
-        for issue in (check_disk_headroom(), check_gpu_headroom(), check_gpu_lock_free(cfg.gpu_lock_path))
-        if issue is not None
-    ]
+    basic_checks = (
+        check_disk_headroom(),
+        check_gpu_headroom(),
+        check_gpu_lock_free(cfg.gpu_lock_path),
+    )
+    issues = [issue for issue in basic_checks if issue is not None]
     issues.extend(check_services(auto_start=auto_start))
     return issues
 

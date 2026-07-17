@@ -25,6 +25,8 @@ import sqlite3
 import pytest
 import yaml
 
+import app.doctor as doctor_mod
+import app.ingest as ingest_mod
 from contracts.config import Config
 from contracts.embedder import EmbedderInfo
 from contracts.errors import TransientError
@@ -33,9 +35,6 @@ from migrations.migrate import migrate as real_migrate
 from rag.fakes.fake_gpu_lock import FakeGpuLock
 from rag.fakes.fake_ingest_state import FakeIngestState
 from rag.orchestrator import IngestionOrchestrator
-
-import app.doctor as doctor_mod
-import app.ingest as ingest_mod
 
 
 class FakeTeiLifecycle:
