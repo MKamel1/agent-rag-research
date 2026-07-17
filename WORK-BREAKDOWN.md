@@ -1022,3 +1022,40 @@ WAVE B (after S3 + V0 ships):        T-V1-CLAIM-SCHEMA → T-V1-CLAIM-EXTRACT �
 WAVE C (after S5):                   T-V1-MCP
 WAVE D (after 30k + eval):           T-V1-HEADERS
 ```
+
+---
+
+## Dogfooding + turn-on tickets (2026-07-17 — first real use of V0 at 809 papers)
+
+Found by actually using the system (a method-research session) and bringing it online. **All point at
+retrieval quality + operability, not the claim layer** — reinforcing the "use it first" decision.
+
+### Retrieval quality (from the first real method-research session, OG-30)
+- **T-DOC62 (not started) — 🟡 chunker: de-duplicate the leading section header (OG-30 #1). ⚠️ FIX
+  BEFORE THE 30k SEED.** Stored chunk text is `title\nsection_path\n\n<body>` and the body's first
+  block is usually the same heading → the section header appears twice (verified: `"…1. Introduction
+  \n\n1. Introduction\n\n…"`). Wastes the embedded text and the displayed passage. **This is a
+  chunker change = a re-embed trigger** (chunk text feeds the embedding), so it must land BEFORE the
+  seed builds the corpus, or we pay a full re-embed to fix it. Small change in `rag/chunker.py`
+  `_build_chunk` (skip the prefix when `body[0]` already equals `section_path`).
+- **T-DOC63 (not started) — 🟡 retrieval: diversify-by-paper option (OG-30 #2).** A survey-style
+  method query returned 3 chunks of the SAME paper in the top 5; for "what are my options?" 5
+  distinct papers is far more useful. Add an optional max-chunks-per-paper / MMR-style diversification
+  to `Retriever.retrieve`.
+- **T-DOC64 (not started) — 🟢 HIGHEST-VALUE retrieval enhancement for the owner's uses:
+  section-aware retrieval (OG-30 #3).** Retrieval finds the right paper but often lands on the
+  Introduction/Related-Work block, not the "we propose X which does Y" method sentence. Boost/filter
+  by `section_path` type (favor Method/Results for method questions, Limitations for gap questions).
+  Directly serves method-research + why-this-method + gap-finding. Candidate first real enhancement
+  after dogfooding. (Also absorbs the minor topic-drift seen — a causal-flavored LLM-prompt paper
+  surfaced on 2 treatment-effect queries.)
+
+### Turn-on / operability
+- **T-DOC65 (not started) — 🟡 production config generation (OG-31).** Document or script creating the
+  data-dir `config.yaml` (repo config + absolute paths) so bringing the system up isn't tribal
+  knowledge.
+- **T-DOC66 (not started) — 🟡 MCP deploy runbook + connectivity doctor-check (OG-32).** Capture the
+  `--no-capture-output` / `PYTHONPATH` / `cwd` requirements, and add a check that the MCP server
+  launches and answers `list_tools` before the user relies on it.
+- **T-DOC67 (not started) — 🟢 delete the stray repo-root `papers.db` + gitignore `papers.db*`
+  (OG-33).** Remove the near-empty file that caused the fake `Recall@10=0.000` trap; prevent recreation.
