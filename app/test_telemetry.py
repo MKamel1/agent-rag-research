@@ -429,3 +429,42 @@ def test_run_telemetry_stops_the_sampler_on_finish(tmp_path):
     assert "parse" in summary.gpu_by_stage
     assert summary.gpu_by_stage["parse"].n_samples >= 1
     assert summary.gpu_by_stage["parse"].avg_util_pct == pytest.approx(77.0)
+
+
+def test_run_telemetry_set_stage_retags_the_sampler_without_an_event(tmp_path):
+    """T-DOC59 (OG-25): `set_stage` re-tags the running GPU sampler for a finer sub-stage boundary
+    INSIDE an already-started coarse stage -- this is what `app/ingest.py` wires
+    `rag/orchestrator.py`'s per-paper `on_stage` hook to, so "finish" splits into "summarize"/
+    "embed"/"store" in the end-of-run per-stage GPU report. Unlike `stage_start`/`stage_end`, it
+    must NOT emit a STAGE_START/STAGE_END event pair -- that would flood the event log with one
+    pair per paper for no benefit the existing coarse "finish" pair doesn't already give.
+    """
+    db_path = str(tmp_path / "papers.db")
+    _seed_db(db_path)
+    events_path = tmp_path / "events.jsonl"
+    reading = telemetry.GpuReading(util_pct=42, mem_used_mib=2000, power_draw_w=None)
+
+    run = telemetry.RunTelemetry.start(
+        events_path=str(events_path), poll_interval_s=0.01, query_gpu=lambda: reading,
+    )
+    run.stage_start("finish")
+    run.set_stage("summarize")
+    time.sleep(0.05)
+    run.set_stage("embed")
+    time.sleep(0.05)
+    run.stage_end("finish")
+    summary = run.finish(
+        db_path=db_path, collection="papers",
+        query_point_count=lambda host, port, collection: None,
+    )
+
+    events = [json.loads(line) for line in events_path.read_text().splitlines()]
+    event_names = [e["event"] for e in events]
+    assert event_names == ["RUN_START", "STAGE_START", "STAGE_END", "RUN_END"], (
+        "set_stage() must not add STAGE_START/STAGE_END events of its own"
+    )
+    assert "summarize" in summary.gpu_by_stage
+    assert "embed" in summary.gpu_by_stage
+    assert "finish" not in summary.gpu_by_stage, (
+        "every sample after the first set_stage() call must carry the finer tag, not \"finish\""
+    )

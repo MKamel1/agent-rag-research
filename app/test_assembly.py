@@ -822,6 +822,37 @@ def test_before_finish_phase_is_left_as_the_default_noop(monkeypatch, tmp_path):
     assert fake_summarizer.unload_calls == 0, "before_finish_phase must not touch the summarizer"
 
 
+def test_build_ingestion_orchestrator_wires_on_stage_when_given(monkeypatch, tmp_path):
+    """T-DOC59 (OG-25): `on_stage=` is forwarded to `IngestionOrchestrator` unmodified --
+    `app/ingest.py`'s `_run_finish_phase` passes `run.set_stage` (app/telemetry.py) here so GPU
+    telemetry can re-tag the summarize/embed/store split inside "finish" without this module or
+    `rag/orchestrator.py` importing `app.telemetry` (see that module's `on_stage` docstring)."""
+    fake_summarizer = FakeSummarizer()
+    fake_tei_lifecycle = _FakeTeiLifecycle()
+    monkeypatch.setattr("app.assembly.OllamaSummarizer", lambda *a, **k: fake_summarizer)
+    monkeypatch.setattr("app.assembly.VectorIndex", lambda *a, **k: object())
+    monkeypatch.setattr("app.assembly.tei_lifecycle", fake_tei_lifecycle)
+
+    cfg = Config(focus_area_queries=["causal inference"], gpu_lock_path=str(tmp_path / ".gpu.lock"))
+    stages_seen: list[str] = []
+    orchestrator = build_ingestion_orchestrator(
+        cfg, db_path=str(tmp_path / "papers.db"), blob_dir=str(tmp_path / "blobs"),
+        on_stage=stages_seen.append,
+    )
+
+    orchestrator._on_stage("summarize")
+    assert stages_seen == ["summarize"]
+
+
+def test_build_ingestion_orchestrator_on_stage_defaults_to_the_orchestrators_own_noop(
+    monkeypatch, tmp_path
+):
+    """Today's exact default behavior: a caller that doesn't pass `on_stage` (every other test in
+    this file) gets `IngestionOrchestrator`'s own no-op default, unchanged."""
+    orchestrator, _, _ = _build_orchestrator_for_hook_test(monkeypatch, tmp_path)
+    orchestrator._on_stage("summarize")  # must not raise
+
+
 def test_batch_size_provider_is_wired_to_an_adaptive_batch_sizer(monkeypatch, tmp_path):
     """T-DOC21: `build_ingestion_orchestrator` wires `batch_size_provider` to a real
     `AdaptiveBatchSizer.next_size`, seeded with `config.parse_batch_size` as the starting point --
