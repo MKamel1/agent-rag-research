@@ -15,6 +15,7 @@ Real sqlite schema (`migrations.migrate`), no real network (`httpx.MockTransport
 `rag/test_harvester_arxiv_source.py` and `rag/test_ingest_state_sqlite.py` already use.
 """
 
+import logging
 from datetime import date
 from pathlib import Path
 
@@ -399,6 +400,9 @@ def test_all_known_paper_ids_includes_both_ingest_state_and_quarantine_rows(tmp_
 # instead of an invisible indefinite sleep, and a `--max-idle` CLI bound on it. `prefetch_loop`
 # takes an injectable `run`/`cached_count`/`sleep` (same pattern as `run()` itself) so these tests
 # drive several passes without a real 3600s wait or real filesystem downloads.
+#
+# T-DOC61: these status lines go through `logging` now, not `print` -- captured here with
+# `caplog` instead of `capsys`.
 # ================================================================================================
 
 
@@ -406,8 +410,8 @@ def _loop_cfg() -> Config:
     return Config(focus_area_queries=["causal inference"], corpus_cap=10)
 
 
-def test_prefetch_loop_reports_a_loud_stall_line_and_sleeps_before_the_next_pass(capsys):
-    def fake_run(cfg, db_path, cache_dir, target):
+def test_prefetch_loop_reports_a_loud_stall_line_and_sleeps_before_the_next_pass(caplog):
+    def fake_run(cfg, db_path, cache_dir, target, **kwargs):
         return 0  # no new papers found this pass
 
     def fake_cached_count(cache_dir):
@@ -415,35 +419,35 @@ def test_prefetch_loop_reports_a_loud_stall_line_and_sleeps_before_the_next_pass
 
     sleeps: list[float] = []
 
-    prefetch_loop(
-        _loop_cfg(), "db", Path("cache"), target=10,
-        max_idle=2, run=fake_run, cached_count=fake_cached_count, sleep=sleeps.append,
-    )
+    with caplog.at_level(logging.INFO):
+        prefetch_loop(
+            _loop_cfg(), "db", Path("cache"), target=10,
+            max_idle=2, run=fake_run, cached_count=fake_cached_count, sleep=sleeps.append,
+        )
 
-    out = capsys.readouterr().out
-    assert "prefetch stalled: 3/10 cached, only 0 new available" in out
-    assert f"next attempt in {_RE_HARVEST_INTERVAL_SECONDS:.0f}s" in out
+    assert "prefetch stalled: 3/10 cached, only 0 new available" in caplog.text
+    assert f"next attempt in {_RE_HARVEST_INTERVAL_SECONDS:.0f}s" in caplog.text
     assert sleeps == [_RE_HARVEST_INTERVAL_SECONDS]  # exactly one sleep before the max_idle stop
 
 
-def test_prefetch_loop_stops_with_a_terminal_message_after_max_idle_passes(capsys):
+def test_prefetch_loop_stops_with_a_terminal_message_after_max_idle_passes(caplog):
     passes = {"n": 0}
 
-    def fake_run(cfg, db_path, cache_dir, target):
+    def fake_run(cfg, db_path, cache_dir, target, **kwargs):
         passes["n"] += 1
         return 0  # permanently stalled -- never finds a new paper
 
     def fake_cached_count(cache_dir):
         return 3
 
-    prefetch_loop(
-        _loop_cfg(), "db", Path("cache"), target=10,
-        max_idle=2, run=fake_run, cached_count=fake_cached_count, sleep=lambda s: None,
-    )
+    with caplog.at_level(logging.INFO):
+        prefetch_loop(
+            _loop_cfg(), "db", Path("cache"), target=10,
+            max_idle=2, run=fake_run, cached_count=fake_cached_count, sleep=lambda s: None,
+        )
 
-    out = capsys.readouterr().out
-    assert "target unreachable -- only 3/10 papers available" in out
-    assert "--max-idle=2" in out
+    assert "target unreachable -- only 3/10 papers available" in caplog.text
+    assert "--max-idle=2" in caplog.text
     assert passes["n"] == 2, "must stop exactly after max_idle consecutive zero-new passes"
 
 
@@ -454,7 +458,7 @@ def test_prefetch_loop_idle_counter_resets_on_any_pass_with_progress():
     state = {"total": 0}
     calls = {"n": 0}
 
-    def fake_run(cfg, db_path, cache_dir, target):
+    def fake_run(cfg, db_path, cache_dir, target, **kwargs):
         new = new_per_pass[calls["n"]]
         calls["n"] += 1
         state["total"] += new
@@ -471,7 +475,7 @@ def test_prefetch_loop_idle_counter_resets_on_any_pass_with_progress():
     assert calls["n"] == 4, "the reset after pass 2's progress must delay the stop to pass 4"
 
 
-def test_prefetch_loop_default_max_idle_is_unbounded_matching_pre_t_doc50_behavior(capsys):
+def test_prefetch_loop_default_max_idle_is_unbounded_matching_pre_t_doc50_behavior(caplog):
     """`max_idle=None` (the default -- `--max-idle` absent) must never stop the loop on its own,
     same as before T-DOC50: it only ever exits by reaching target."""
     new_sequence = [0, 0, 0, 50]  # three idle passes, then finally reaches target
@@ -479,7 +483,7 @@ def test_prefetch_loop_default_max_idle_is_unbounded_matching_pre_t_doc50_behavi
     calls = {"n": 0}
     sleeps: list[float] = []
 
-    def fake_run(cfg, db_path, cache_dir, target):
+    def fake_run(cfg, db_path, cache_dir, target, **kwargs):
         new = new_sequence[calls["n"]]
         calls["n"] += 1
         state["total"] += new
@@ -488,16 +492,16 @@ def test_prefetch_loop_default_max_idle_is_unbounded_matching_pre_t_doc50_behavi
     def fake_cached_count(cache_dir):
         return state["total"]
 
-    prefetch_loop(
-        _loop_cfg(), "db", Path("cache"), target=10,
-        run=fake_run, cached_count=fake_cached_count, sleep=sleeps.append,
-    )
+    with caplog.at_level(logging.INFO):
+        prefetch_loop(
+            _loop_cfg(), "db", Path("cache"), target=10,
+            run=fake_run, cached_count=fake_cached_count, sleep=sleeps.append,
+        )
 
     assert calls["n"] == 4
     assert len(sleeps) == 3, "slept after each idle pass instead of giving up"
-    out = capsys.readouterr().out
-    assert "target unreachable" not in out
-    assert "target of 10 reached, exiting." in out
+    assert "target unreachable" not in caplog.text
+    assert "target of 10 reached, exiting." in caplog.text
 
 
 def test_max_idle_cli_flag_parses_to_an_int():
@@ -506,3 +510,142 @@ def test_max_idle_cli_flag_parses_to_an_int():
 
 def test_max_idle_cli_flag_defaults_to_none_when_absent():
     assert _parse_args([]).max_idle is None
+
+
+# ================================================================================================
+# T-DOC61 — observability: `prefetch_pdfs.py` used `print`/never called `logging.basicConfig`, so
+# a days-long unattended run produced an empty log. Now harvest phase start/result, rate-limited
+# download progress, and individual download failures all go through `logging` (INFO/WARNING).
+# ================================================================================================
+
+
+def test_run_logs_harvest_phase_start_and_result(tmp_path, caplog):
+    db_path = str(tmp_path / "test.sqlite")
+    migrate(db_path)
+    cache_dir = tmp_path / "cache"
+    cache_dir.mkdir()
+
+    refs = [_make_ref(0), _make_ref(1), _make_ref(2)]
+    state = SqliteIngestState(db_path)
+    state.checkpoint(refs[0].paper_id, "parsed")  # live pipeline already has paper 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=b"%PDF-fake-bytes")
+
+    with caplog.at_level(logging.INFO):
+        new = run(
+            _cfg(), db_path, cache_dir, target=10,
+            harvester=StubHarvester(refs), client=_mock_client(handler), sleep=_no_sleep,
+        )
+
+    assert new == 2
+    assert "harvest phase start: 1 focus query, harvest cap 10" in caplog.text
+    assert (
+        "harvest phase complete: 3 candidate papers found, 1 already cached/claimed, 2 to "
+        "download" in caplog.text
+    )
+
+
+def test_run_logs_a_progress_line_every_log_every_downloads_and_no_more(tmp_path, caplog):
+    """10 downloads at `log_every=3` must log exactly 3 progress lines (at 3, 6, 9) -- not one
+    per download (the whole point of rate-limiting) and not a line for the 10th (incomplete
+    multiple)."""
+    db_path = str(tmp_path / "test.sqlite")
+    migrate(db_path)
+    cache_dir = tmp_path / "cache"
+    cache_dir.mkdir()
+
+    refs = [_make_ref(i) for i in range(10)]
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=b"%PDF-fake-bytes")
+
+    with caplog.at_level(logging.INFO):
+        new = run(
+            _cfg(), db_path, cache_dir, target=10,
+            harvester=StubHarvester(refs), client=_mock_client(handler), sleep=_no_sleep,
+            log_every=3,
+        )
+
+    assert new == 10
+    progress_lines = [
+        r for r in caplog.records if "downloaded" in r.message and "/ target" in r.message
+    ]
+    assert [r.message for r in progress_lines] == [
+        "prefetch_pdfs: downloaded 3 / target 10 (cache now 3)",
+        "prefetch_pdfs: downloaded 6 / target 10 (cache now 6)",
+        "prefetch_pdfs: downloaded 9 / target 10 (cache now 9)",
+    ]
+
+
+def test_run_default_log_every_is_25(tmp_path, caplog):
+    """24 downloads at the default `log_every` must log zero progress lines -- confirms the
+    default is 25, not something small enough to spam a real 30k-paper run."""
+    db_path = str(tmp_path / "test.sqlite")
+    migrate(db_path)
+    cache_dir = tmp_path / "cache"
+    cache_dir.mkdir()
+
+    refs = [_make_ref(i) for i in range(24)]
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=b"%PDF-fake-bytes")
+
+    with caplog.at_level(logging.INFO):
+        new = run(
+            _cfg(), db_path, cache_dir, target=100,
+            harvester=StubHarvester(refs), client=_mock_client(handler), sleep=_no_sleep,
+        )
+
+    assert new == 24
+    progress_lines = [
+        r for r in caplog.records if "downloaded" in r.message and "/ target" in r.message
+    ]
+    assert progress_lines == []
+
+
+def test_permanent_download_failure_is_logged_as_a_warning(tmp_path, caplog):
+    db_path = str(tmp_path / "test.sqlite")
+    migrate(db_path)
+    cache_dir = tmp_path / "cache"
+    cache_dir.mkdir()
+
+    ref = _make_ref(0)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(404)
+
+    with caplog.at_level(logging.INFO):
+        new = run(
+            _cfg(), db_path, cache_dir, target=10,
+            harvester=StubHarvester([ref]), client=_mock_client(handler), sleep=_no_sleep,
+        )
+
+    assert new == 0
+    warnings = [r for r in caplog.records if r.levelno == logging.WARNING]
+    assert any(ref.paper_id in r.message and "quarantined locally" in r.message for r in warnings)
+
+
+def test_target_reached_line_is_logged_via_prefetch_loop(caplog):
+    def fake_run(cfg, db_path, cache_dir, target, **kwargs):
+        return 10
+
+    def fake_cached_count(cache_dir):
+        return 10
+
+    with caplog.at_level(logging.INFO):
+        prefetch_loop(
+            _loop_cfg(), "db", Path("cache"), target=10,
+            run=fake_run, cached_count=fake_cached_count, sleep=lambda s: None,
+        )
+
+    assert "prefetch_pdfs: target of 10 reached, exiting." in caplog.text
+
+
+def test_log_every_cli_flag_parses_to_an_int():
+    assert _parse_args(["--log-every", "5"]).log_every == 5
+
+
+def test_log_every_cli_flag_defaults_to_25_when_absent():
+    assert _parse_args([]).log_every == 25
+

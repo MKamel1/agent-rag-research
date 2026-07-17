@@ -81,6 +81,7 @@ problem here):**
 from __future__ import annotations
 
 import argparse
+import logging
 import time
 from pathlib import Path
 
@@ -93,6 +94,8 @@ from rag.config import load_config
 from rag.harvester import ArxivSource, Harvester
 from rag.ingest_state_sqlite import SqliteIngestState
 
+logger = logging.getLogger(__name__)
+
 # See module docstring point 3 — arXiv robots.txt's documented default Crawl-delay.
 _PDF_DOWNLOAD_DELAY_SECONDS = 15.0
 
@@ -102,6 +105,10 @@ _RE_HARVEST_INTERVAL_SECONDS = 3600.0
 
 _RETRYABLE_STATUSES = {429, 500, 502, 503, 504}
 _MAX_DOWNLOAD_RETRIES = 3
+
+# T-DOC61: how often the download loop logs a progress line -- a 30k-paper run would spew 30k INFO
+# lines at N=1, so this is rate-limited. Wired to `--log-every`, no env var (CONVENTIONS.md §3).
+_DEFAULT_LOG_EVERY = 25
 
 
 def _cache_dir_from_config(cfg: Config) -> Path:
@@ -207,11 +214,20 @@ def _download_with_retry(
             _download_one(client, ref, cache_dir)
             return True
         except PermanentError as error:
+            logger.warning(
+                "prefetch_pdfs: paper_id=%s permanently failed, quarantined locally: %s",
+                ref.paper_id, error,
+            )
             _skip_marker_path(cache_dir, ref.paper_id).write_text(str(error))
             return False
-        except TransientError:
+        except TransientError as error:
             attempt += 1
             if attempt > _MAX_DOWNLOAD_RETRIES:
+                logger.warning(
+                    "prefetch_pdfs: paper_id=%s gave up after %d retries (will retry on a later "
+                    "pass): %s",
+                    ref.paper_id, _MAX_DOWNLOAD_RETRIES, error,
+                )
                 return False
             sleep(max(_PDF_DOWNLOAD_DELAY_SECONDS, float(2**attempt)))
 
@@ -225,6 +241,7 @@ def run(
     harvester=None,
     client: httpx.Client | None = None,
     sleep=time.sleep,
+    log_every: int = _DEFAULT_LOG_EVERY,
 ) -> int:
     """One harvest-then-download pass. Returns how many NEW files this call downloaded.
 
@@ -245,7 +262,28 @@ def run(
 
     handled = state.all_known_paper_ids()  # one bulk READ query, not one per paper_id
     harvest_cap = max(cfg.corpus_cap, target)
-    refs = harvester.harvest(cfg.focus_area_queries, harvest_cap, cfg.ordering)
+    logger.info(
+        "prefetch_pdfs: harvest phase start: %d focus quer%s, harvest cap %d",
+        len(cfg.focus_area_queries), "y" if len(cfg.focus_area_queries) == 1 else "ies",
+        harvest_cap,
+    )
+    # T-DOC61: `Harvester.harvest()` is a generator, but every version of it (real and the test
+    # `StubHarvester`) does all its fetching before the first item is yielded (see
+    # `rag/harvester.py`) -- materializing here doesn't change when network calls happen, it just
+    # lets the harvest-result line below report a real count instead of "unknown until drained".
+    refs = list(harvester.harvest(cfg.focus_area_queries, harvest_cap, cfg.ordering))
+    already_have = sum(
+        1
+        for r in refs
+        if r.paper_id in handled
+        or _pdf_path(cache_dir, r.paper_id).exists()
+        or _skip_marker_path(cache_dir, r.paper_id).exists()
+    )
+    logger.info(
+        "prefetch_pdfs: harvest phase complete: %d candidate papers found, %d already "
+        "cached/claimed, %d to download",
+        len(refs), already_have, len(refs) - already_have,
+    )
 
     new_downloads = 0
     first_request = True
@@ -267,6 +305,11 @@ def run(
             if _download_with_retry(client, ref, cache_dir, sleep):
                 new_downloads += 1
                 total_cached += 1
+                if new_downloads % log_every == 0:
+                    logger.info(
+                        "prefetch_pdfs: downloaded %d / target %d (cache now %d)",
+                        new_downloads, target, total_cached,
+                    )
     finally:
         if owned_client:
             client.close()
@@ -287,6 +330,16 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             "Default: unbounded -- unchanged pre-T-DOC50 behavior."
         ),
     )
+    parser.add_argument(
+        "--log-every",
+        type=int,
+        default=_DEFAULT_LOG_EVERY,
+        metavar="N",
+        help=(
+            "T-DOC61: log a download-progress line every N successful downloads, so a days-long "
+            f"run doesn't spew one line per PDF. Default: {_DEFAULT_LOG_EVERY}."
+        ),
+    )
     return parser.parse_args(argv)
 
 
@@ -300,6 +353,7 @@ def prefetch_loop(
     run=run,
     cached_count=_cached_count,
     sleep=time.sleep,
+    log_every: int = _DEFAULT_LOG_EVERY,
 ) -> None:
     """The harvest-then-download-then-maybe-sleep loop `main()` runs forever. Pulled out of
     `main()` (same reason `run()` above takes injectable `harvester`/`client`) so a test can drive
@@ -309,50 +363,56 @@ def prefetch_loop(
     T-DOC50: previously this printed "below target, sleeping 3600s" and slept unconditionally --
     indistinguishable from healthy progress unless someone was watching the process, and it could
     run for an hour making zero progress with no way to bound it. Now every below-target pass
-    prints an explicit "prefetch stalled" status line naming both the current/target counts and
+    logs an explicit "prefetch stalled" status line naming both the current/target counts and
     how many new PDFs THIS pass found, and `max_idle` (wired to `--max-idle`, no env var --
     CONVENTIONS.md §3) stops the loop with a "target unreachable" message after that many
     consecutive zero-new passes instead of sleeping indefinitely. `max_idle=None` (the default,
     when `--max-idle` is absent) preserves the old unbounded-sleep behavior exactly.
+
+    T-DOC61: all status lines below go through `logging` (INFO), not `print` -- see module
+    `__main__`'s `logging.basicConfig` call, which is what actually makes a days-long unattended
+    run's progress show up anywhere.
     """
     idle_passes = 0
     while cached_count(cache_dir) < target:
-        new = run(cfg, db_path, cache_dir, target)
+        new = run(cfg, db_path, cache_dir, target, log_every=log_every)
         total = cached_count(cache_dir)
-        print(
-            f"prefetch_pdfs: pass complete, +{new} this pass, {total}/{target} cached", flush=True
-        )
+        logger.info("prefetch_pdfs: pass complete, +%d this pass, %d/%d cached", new, total, target)
         if total >= target:
             break
 
         idle_passes = idle_passes + 1 if new == 0 else 0
         if max_idle is not None and idle_passes >= max_idle:
-            print(
-                f"prefetch_pdfs: target unreachable -- only {total}/{target} papers available, "
-                f"stopping after {idle_passes} consecutive idle pass(es) with no new downloads "
-                f"(--max-idle={max_idle})",
-                flush=True,
+            logger.info(
+                "prefetch_pdfs: target unreachable -- only %d/%d papers available, stopping "
+                "after %d consecutive idle pass(es) with no new downloads (--max-idle=%d)",
+                total, target, idle_passes, max_idle,
             )
             return
 
-        print(
-            f"prefetch_pdfs: prefetch stalled: {total}/{target} cached, only {new} new available, "
-            f"next attempt in {_RE_HARVEST_INTERVAL_SECONDS:.0f}s",
-            flush=True,
+        logger.info(
+            "prefetch_pdfs: prefetch stalled: %d/%d cached, only %d new available, next attempt "
+            "in %.0fs",
+            total, target, new, _RE_HARVEST_INTERVAL_SECONDS,
         )
         sleep(_RE_HARVEST_INTERVAL_SECONDS)
 
-    print(f"prefetch_pdfs: target of {target} reached, exiting.", flush=True)
+    logger.info("prefetch_pdfs: target of %d reached, exiting.", target)
 
 
 def main() -> None:
+    # T-DOC61: without this, every `logger.*` call above (and any future one) is a no-op -- a
+    # days-long unattended cache-build produced an empty log because nothing ever configured a
+    # handler. Matches the sibling `app/` entrypoints' own `__main__` convention (e.g.
+    # `app/retrieval_eval.py`, `app/benchmark.py`).
+    logging.basicConfig(level=logging.INFO)
     args = _parse_args()
     cfg = load_config()
     db_path = cfg.db_path
     cache_dir = _cache_dir_from_config(cfg)
     target = _target_from_config(cfg)
 
-    prefetch_loop(cfg, db_path, cache_dir, target, max_idle=args.max_idle)
+    prefetch_loop(cfg, db_path, cache_dir, target, max_idle=args.max_idle, log_every=args.log_every)
 
 
 if __name__ == "__main__":
