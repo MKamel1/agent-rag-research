@@ -22,7 +22,9 @@ found unachievable):
    (not fails) if it can't reach one.
 """
 
+import io
 from datetime import date
+from types import SimpleNamespace
 
 import pytest
 
@@ -369,3 +371,94 @@ def test_real_adapter_sparse_channel_weights_rare_terms_over_common_ones():
         assert hits[0].id == "zzz_rare_wins"
     finally:
         adapter._client.delete_collection(collection)
+
+
+# ==================================================================================================
+# T-DOC57 — create_and_download_snapshot (app/snapshot.py's vendor-boundary half). Offline: a fake
+# `_client` stands in for the real one (no live service needed to prove the create->download wiring
+# and error mapping), same "construct via __new__, skip __init__'s network round-trip" trick as
+# every other offline test here that needs a VectorIndex instance without a live collection.
+# ==================================================================================================
+
+
+def _bare_adapter(real, *, client):
+    """A `VectorIndex` with just enough attributes set for `create_and_download_snapshot` to run,
+    without going through `__init__` (a real network round-trip via `_ensure_collection`)."""
+    adapter = real.VectorIndex.__new__(real.VectorIndex)
+    adapter._client = client
+    adapter._host = "localhost"
+    adapter._port = 6333
+    adapter._collection = "papers"
+    return adapter
+
+
+def test_create_and_download_snapshot_downloads_the_created_snapshot(tmp_path, monkeypatch):
+    real = pytest.importorskip("rag.vector_index")
+
+    calls = []
+
+    class _FakeSnapshotClient:
+        def create_snapshot(self, collection_name):
+            calls.append(collection_name)
+            return SimpleNamespace(name="papers-2026-07-17.snapshot")
+
+    adapter = _bare_adapter(real, client=_FakeSnapshotClient())
+
+    requested_urls = []
+
+    class _FakeResponse:
+        def __enter__(self):
+            return io.BytesIO(b"fake snapshot bytes")
+
+        def __exit__(self, *exc_info):
+            return False
+
+    def fake_urlopen(url, timeout=None):
+        requested_urls.append(url)
+        return _FakeResponse()
+
+    monkeypatch.setattr(real.urllib.request, "urlopen", fake_urlopen)
+
+    dest = tmp_path / "papers.snapshot"
+    adapter.create_and_download_snapshot(str(dest))
+
+    assert calls == ["papers"]
+    assert requested_urls == [
+        "http://localhost:6333/collections/papers/snapshots/papers-2026-07-17.snapshot"
+    ]
+    assert dest.read_bytes() == b"fake snapshot bytes"
+
+
+def test_create_and_download_snapshot_raises_transient_error_when_no_description_returned(tmp_path):
+    real = pytest.importorskip("rag.vector_index")
+
+    class _FakeSnapshotClient:
+        def create_snapshot(self, collection_name):
+            return None
+
+    adapter = _bare_adapter(real, client=_FakeSnapshotClient())
+
+    with pytest.raises(TransientError, match="no snapshot description"):
+        adapter.create_and_download_snapshot(str(tmp_path / "papers.snapshot"))
+
+
+def test_create_and_download_snapshot_raises_transient_error_on_download_failure(
+    tmp_path, monkeypatch
+):
+    real = pytest.importorskip("rag.vector_index")
+
+    class _FakeSnapshotClient:
+        def create_snapshot(self, collection_name):
+            return SimpleNamespace(name="papers-2026-07-17.snapshot")
+
+    adapter = _bare_adapter(real, client=_FakeSnapshotClient())
+
+    def fake_urlopen(url, timeout=None):
+        raise OSError("connection refused")
+
+    monkeypatch.setattr(real.urllib.request, "urlopen", fake_urlopen)
+
+    dest = tmp_path / "papers.snapshot"
+    with pytest.raises(TransientError, match="snapshot download failed"):
+        adapter.create_and_download_snapshot(str(dest))
+    assert not dest.exists()
