@@ -679,3 +679,23 @@ Both a verbatim-match grounding metric and an exact-string reconciliation groupi
 would have wrongly killed a feasible V1 — the same false-negative failure mode as the saturated-eval
 (T-DOC41) and the fake-0.000 (`build_mcp_server` db_path). Check whether a bad number is the world or the
 ruler before you decide.
+
+---
+
+### 2026-07-17 — design — anchor-mapping design-it-twice: two independent mechanisms tied at 73% and failed the SAME way, so the fix was a verification gate, not a mechanism choice (T-V1-CLAIM-SCHEMA)
+
+The V1 claim extractor must anchor each claim to its true source block (verifiable provenance, G5).
+Ran a MEASURED design-it-twice against the real Spike-3 data: (A) post-hoc lexical mapping of the
+paraphrased evidence span to blocks, vs (B) in-loop — the LLM cites `source_block_id` during
+extraction. **Both hit 11/15 (73%) hand-audit precision, and both failed by anchoring to the paper's
+Abstract block** — A because lexical similarity drifts to the abstract's broad vocabulary, B because
+it falls back to the abstract when the true block is windowed out of a long paper's context. Two
+unrelated mechanisms, one shared failure attractor.
+
+Takeaway: when independent approaches converge on the same precision AND the same failure mode, the
+lever isn't "pick the better mechanism" — it's to **address the shared failure and add a gate that
+verifies the result.** The adopted design is a precision-gated hybrid ("cite → verify the cited block
+actually contains the claim's value/terms → repair via full-corpus lexical if it fails → else DROP
+the claim"), which turns ~73%-hoped provenance into verified provenance: ungroundable claims are
+dropped, never cited wrongly. A wrong anchor (real id, wrong block — passes a naive validity check) is
+worse than no anchor: false confidence. Full design: `docs/DESIGN-claim-layer-v1.md` Module 3.
