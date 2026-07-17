@@ -465,7 +465,7 @@ def _sqlite_harvest_quarantine_sink(state: SqliteIngestState) -> QuarantineSink:
 
 def build_ingestion_orchestrator(
     config: Config, *, db_path: str | None = None, blob_dir: str | None = None,
-    collection: str = "papers",
+    collection: str = "papers", on_stage=None,
 ) -> IngestionOrchestrator:
     gpu_lock = FileGpuLock(Path(config.gpu_lock_path))
     db_path = db_path or "papers.db"
@@ -534,6 +534,12 @@ def build_ingestion_orchestrator(
         # cost for the next paper's summarize call: ~2.5s, negligible against a ~15-20s real
         # summarize call.
         before_embed=summarizer.unload,
+        # T-DOC59 (OG-25): re-tags GPU telemetry to the finer summarize/embed/store split inside
+        # "finish" -- `None` (the default, e.g. every fake-based orchestrator test) leaves
+        # `IngestionOrchestrator`'s own no-op default in place. `app/ingest.py`'s `_run_finish_phase`
+        # passes `run.set_stage` (app/telemetry.py) as this build's `on_stage`; this module never
+        # imports app.telemetry itself, only accepts the callable from its caller.
+        on_stage=on_stage,
         # T-DOC21 (.claude/plans/giggly-tumbling-globe.md): grow/shrink Pass-1 batches to real,
         # currently-free VRAM instead of the static parse_batch_size every time -- TEI eviction
         # above frees ~24GB during Pass 1 that a fixed small batch size never used. `initial_size`

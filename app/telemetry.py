@@ -32,12 +32,15 @@ Three pieces, composed by `RunTelemetry` so they share one run id and one set of
    here: `ci/checks/vendor_isolation.py`'s `VENDOR_RULES` allows it only inside its own adapter
    file, `rag/vector_index.py`, which is outside this ticket's file territory to extend).
 
-`app/ingest.py`'s only stage boundaries are `_run_parse_phase_subprocesses` (Pass 1, "parse") and
-`_run_finish_phase` ("finish" -- summarize+embed+store run as one in-process
-`orchestrator.finish_phase()` call with no further boundary this module can instrument without
-editing `rag/orchestrator.py`, also outside this ticket's file territory). GPU samples and events
-are tagged/labelled "parse"/"finish" accordingly, not the finer parse/summarize/embed/store split
-OG-5's wording names -- the finer split needs a stage-boundary hook inside `finish_phase()` itself.
+`app/ingest.py`'s two coarse stage boundaries are `_run_parse_phase_subprocesses` (Pass 1, "parse")
+and `_run_finish_phase` ("finish" -- summarize+embed+store run as one in-process
+`orchestrator.finish_phase()` call). T-DOC59 (OG-25) added the finer split `RunTelemetry.set_stage`
+(above) exists for: `rag/orchestrator.py`'s `IngestionOrchestrator` now accepts an injected
+`on_stage(stage_name)` hook (default no-op, same pattern as its `before_embed`/`before_parse_phase`
+hooks) that fires inside `_finish` right before that paper's summarize/embed/store work.
+`app/ingest.py` wires `on_stage=run.set_stage` when building the orchestrator, so GPU samples
+during "finish" are further tagged "summarize"/"embed"/"store" instead of one lumped "finish" --
+`rag/orchestrator.py` itself never imports this module; it only calls the hook it was given.
 """
 
 from __future__ import annotations
@@ -392,6 +395,16 @@ class RunTelemetry:
 
     def stage_end(self, stage: str) -> None:
         self._events.emit("STAGE_END", stage=stage)
+
+    def set_stage(self, stage: str) -> None:
+        """Re-tags the running GPU sampler only -- no STAGE_START/STAGE_END event. For a finer
+        sub-stage boundary INSIDE an already-started coarse stage (T-DOC59/OG-25: `rag/
+        orchestrator.py`'s injected `on_stage` hook re-tagging "finish" to "summarize"/"embed"/
+        "store" as `_finish` moves through each). `app/ingest.py` wires
+        `on_stage=run.set_stage` at `build_ingestion_orchestrator` composition time -- this module
+        never imports `rag.orchestrator`, same one-way dependency direction as everywhere else
+        here (this module only exposes hooks; the composition root does the wiring)."""
+        self._sampler.set_stage(stage)
 
     def finish(
         self,

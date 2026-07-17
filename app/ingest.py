@@ -42,6 +42,14 @@ T-DOC47 (`--events-path`, `--telemetry-poll-interval`): built-in run instrumenta
 `finally` block so a mid-run failure still reports partial progress instead of nothing. Telemetry
 starts only after `_preflight_gate`/`_ensure_db_migrated` succeed, so its own SQLite reads never
 race an unmigrated/absent database.
+
+T-DOC59 (OG-25): "finish" alone lumps summarize+embed+store into one GPU-telemetry bucket, hiding
+which of the three actually drives GPU time. `_run_finish_phase`'s `on_stage=run.set_stage` wires
+`rag/orchestrator.py`'s new per-paper `on_stage` hook (fired inside `_finish`, see that module's
+docstring) straight to `RunTelemetry.set_stage` -- re-tagging the running GPU sampler to
+"summarize"/"embed"/"store" without an extra STAGE_START/STAGE_END event pair per paper (this is a
+sub-stage re-tag, not a new phase boundary). The coarse "parse"/"finish" `stage_start`/`stage_end`
+calls below are unchanged.
 """
 
 import argparse
@@ -71,7 +79,7 @@ _PATH_FIELDS = ("gpu_lock_path", "db_path", "blob_dir", "pdf_cache_dir", "batch_
 _SCHEMA_MARKER_TABLE = "ingest_state"
 
 
-def _run_finish_phase(cfg: Config) -> None:
+def _run_finish_phase(cfg: Config, *, on_stage=None) -> None:
     """Pass 2 setup + run -- pulled out of `__main__` so a test can drive it without spawning the
     real Pass 1 subprocess.
 
@@ -83,9 +91,16 @@ def _run_finish_phase(cfg: Config) -> None:
     Pass-1-subprocess boundary) is still in effect when that embed call fires, and it fails.
     Calling `start_tei_containers()` explicitly out here, before `finish_phase()` is invoked at
     all, closes that gap -- see `app/assembly.py` (no longer wires `before_finish_phase` for this).
+
+    `on_stage` (T-DOC59/OG-25, default `None`): forwarded to `build_ingestion_orchestrator` as its
+    `on_stage=` hook, so `finish_phase()`'s per-paper summarize/embed/store work re-tags whatever
+    telemetry `__main__` wired here (`run.set_stage`, `app/telemetry.py`). `None` leaves
+    `IngestionOrchestrator`'s own no-op default in place -- today's exact behavior for any caller
+    (e.g. this module's own tests) that doesn't pass one.
     """
     orchestrator = build_ingestion_orchestrator(
         cfg, db_path=cfg.db_path, blob_dir=cfg.blob_dir, collection=cfg.collection,
+        on_stage=on_stage,
     )
     # harvest_refs (app/assembly.py): shared with app/parse_phase.py's identical call so both
     # phases of one run agree on the same explicit paper set (cfg.ingest_paper_ids, if set)
@@ -342,7 +357,7 @@ if __name__ == "__main__":
         run.stage_end("parse")
 
         run.stage_start("finish")
-        _run_finish_phase(cfg)
+        _run_finish_phase(cfg, on_stage=run.set_stage)
         run.stage_end("finish")
     finally:
         # T-DOC47/OG-7: prints the end-of-run summary (done/quarantined/wall-clock/papers-per-hour

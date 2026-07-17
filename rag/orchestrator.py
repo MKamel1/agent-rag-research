@@ -25,6 +25,17 @@ for the Pass-1 boundary) -- real reload cost measured at ~2.5s, negligible again
 summarize call (~15-20s). See `.phase0-data/known-issue-pass2-oom.md`'s 2026-07-13 entries for the
 full real-measurement trail (why batch size and individual chunk length were ruled out first).
 
+T-DOC59 (OG-25): a fourth hook, `on_stage(stage_name)` (also default no-op, same "constructor arg,
+composition root wires it" pattern as the three above), fires inside `_finish` right before that
+paper's `summarizer.summarize`/`embedder.embed`/store-and-upsert work, with `stage_name` one of
+`"summarize"`/`"embed"`/`"store"`. `finish_phase()`'s in-process summarize+embed+store run as one
+coarse unit as far as anything OUTSIDE this module can see (`app/ingest.py` only tags GPU telemetry
+`"parse"`/`"finish"`) -- this hook is the boundary that lets a composition root re-tag telemetry to
+the finer split without this module importing `app.telemetry` itself (`app/ingest.py` wires
+`on_stage=run.set_stage`). Unlike `before_embed`, `on_stage` takes an argument: one callable
+covering three boundaries, not three separate no-arg hooks, since all three exist for the same
+reason (re-tag an external observer, not evict a model).
+
 This orchestrator acquires the injected `GpuLock` around no work of its own -- the stage adapters
 (Summarizer/Embedder) acquire it themselves around their own inference calls; the Orchestrator
 only wires the same `GpuLock` instance through (accepted as a constructor argument, stored, never
@@ -142,6 +153,7 @@ class IngestionOrchestrator:
         before_parse_phase=None,
         before_finish_phase=None,
         before_embed=None,
+        on_stage=None,
         batch_size_provider: Callable[[], int] | None = None,
         max_retries: int = 2,
         retry_sleep: RetrySleep | None = None,
@@ -178,6 +190,9 @@ class IngestionOrchestrator:
         self._before_parse_phase = before_parse_phase or (lambda: None)
         self._before_finish_phase = before_finish_phase or (lambda: None)
         self._before_embed = before_embed or (lambda: None)
+        # T-DOC59 (OG-25): finer summarize/embed/store sub-stage boundary, fired inside _finish --
+        # see module docstring. No-op by default, same as the three hooks above.
+        self._on_stage = on_stage or (lambda stage: None)
         # T-DOC21: an optional callable returning the next Pass-1 batch size, called once per
         # batch in `parse_phase()` below. `None` (the default) keeps today's exact fixed-size
         # behavior (`config.parse_batch_size` every time) -- every fake/test caller that doesn't
@@ -490,12 +505,14 @@ class IngestionOrchestrator:
             # safely overwrites this record rather than duplicating or orphaning it.
             record = self._document_store.get(paper_id)
             self._before_embed()
+            self._on_stage("embed")
             embedded = self._embed_with_retry(
                 paper_id, [record.summary_text] + [c.text for c in record.chunks]
             )
             if embedded is None:
                 return  # quarantined inside _embed_with_retry
             summary_vec, *chunk_vecs = embedded
+            self._on_stage("store")
             if not self._upsert_with_retry(paper_id, record, summary_vec, chunk_vecs):
                 return  # quarantined inside _upsert_with_retry
             self._state.checkpoint(paper_id, "done")
@@ -507,6 +524,7 @@ class IngestionOrchestrator:
         if _at_least(stage, "summarized"):
             summary_text = artifacts.summary_text
         else:
+            self._on_stage("summarize")
             summary_text = self._summarize_with_retry(paper_id, parsed)
             if summary_text is None:
                 return  # quarantined inside _summarize_with_retry
@@ -523,6 +541,7 @@ class IngestionOrchestrator:
         # hoist above is the only other embed() call in a run, giving the N+1 total ARCHITECTURE
         # requires, never 2N).
         self._before_embed()
+        self._on_stage("embed")
         embedded = self._embed_with_retry(paper_id, [summary_text] + [c.text for c in chunks])
         if embedded is None:
             return  # quarantined inside _embed_with_retry
@@ -547,6 +566,7 @@ class IngestionOrchestrator:
             summary_id=f"{paper_id}:summary",
             relevance_score=relevance_score,
         )
+        self._on_stage("store")
         self._document_store.put(record)  # source of truth, written before the derived index
         self._state.checkpoint(paper_id, "stored")
 

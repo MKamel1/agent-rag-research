@@ -413,7 +413,7 @@ class Rig:
 
     def new_orchestrator(
         self, embedder=None, vector_index=None, before_parse_phase=None, before_finish_phase=None,
-        before_embed=None, max_retries=2,
+        before_embed=None, on_stage=None, max_retries=2,
     ):
         return IngestionOrchestrator(
             harvester=self.harvester,
@@ -429,6 +429,7 @@ class Rig:
             before_parse_phase=before_parse_phase,
             before_finish_phase=before_finish_phase,
             before_embed=before_embed,
+            on_stage=on_stage,
             max_retries=max_retries,
             retry_sleep=self.retry_sleeps.append,
         )
@@ -841,6 +842,51 @@ def test_before_embed_hook_fires_once_per_paper_right_before_that_papers_embed_c
     # before each paper's own embed() call, in lockstep with the call count at that moment.
     assert fire_counts_by_call_index == list(range(1, len(PAPER_IDS) + 1))
     assert embedder.call_count == len(PAPER_IDS) + 1  # topic_query_vec hoist + one per paper
+
+
+# ================================================================================================
+# T-DOC59 (OG-25): finer summarize/embed/store sub-stage hook -- lets a composition root (app/
+# ingest.py) re-tag GPU telemetry inside "finish" instead of one lumped bucket. Same
+# constructor-injected, default-no-op pattern as the three hooks above; `on_stage(stage_name)` is
+# one callable covering all three boundaries rather than three separate no-arg hooks.
+# ================================================================================================
+
+def test_on_stage_hook_fires_summarize_then_embed_then_store_in_order_per_paper():
+    rig = Rig()
+    stages_fired: list[str] = []
+
+    rig.ingest(orch=rig.new_orchestrator(on_stage=stages_fired.append))
+
+    # One (summarize, embed, store) triple per paper, in ref order -- the once-per-run
+    # topic_query_vec embed (finish_phase()'s own hoisted call, not _finish's) never fires this
+    # hook, so it doesn't show up as an extra leading "embed".
+    assert stages_fired == ["summarize", "embed", "store"] * len(PAPER_IDS)
+    assert done_ids(rig) == set(PAPER_IDS)  # the hook is purely observational; the run still completes
+
+
+def test_on_stage_hook_on_the_resume_path_fires_embed_then_store_without_summarize():
+    """A paper resumed from `stored` (`test_resume_after_stored_reruns_upsert_and_reaches_done`'s
+    same scenario) re-runs only embed+upsert -- `summarizer.summarize` and `document_store.put`
+    never run again for it, so `on_stage("summarize")` must not fire either; `on_stage("store")`
+    still fires right before the resumed upsert."""
+    rig = Rig()
+    failing_index = RecordingVectorIndex(rig.vector_store, rig.events, fail_paper_ids={FIRST_ID})
+    with pytest.raises(RuntimeError):
+        rig.ingest(embedder=EmbedderSpy(), vector_index=failing_index)
+    assert rig.state.stage_of(FIRST_ID) == "stored"
+
+    stages_fired: list[str] = []
+    healthy_index = RecordingVectorIndex(rig.vector_store, rig.events)
+    rig.ingest(
+        orch=rig.new_orchestrator(
+            embedder=EmbedderSpy(), vector_index=healthy_index, on_stage=stages_fired.append,
+        )
+    )
+
+    assert stages_fired[0] == "embed"
+    assert stages_fired[1] == "store"
+    assert "summarize" not in stages_fired[:2]  # FIRST_ID's resumed pair, no re-summarize
+    assert rig.state.stage_of(FIRST_ID) == DONE
 
 
 # ================================================================================================

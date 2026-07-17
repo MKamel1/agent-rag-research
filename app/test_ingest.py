@@ -154,6 +154,55 @@ def test_run_finish_phase_restarts_tei_before_the_topic_query_embed(monkeypatch,
     assert retry_sleeps == [], "no retry should have been needed once the ordering is correct"
 
 
+# --- T-DOC59 (OG-25): on_stage forwarded to build_ingestion_orchestrator -------------------
+
+
+def test_run_finish_phase_forwards_on_stage_to_build_ingestion_orchestrator(monkeypatch):
+    """`_run_finish_phase`'s `on_stage=` kwarg must reach `build_ingestion_orchestrator`
+    unmodified -- the seam `__main__` uses to wire `run.set_stage` (app/telemetry.py) through to
+    `rag/orchestrator.py`'s per-paper summarize/embed/store hook."""
+    call_log: list[str] = []
+    tei = FakeTeiLifecycle(call_log)
+    embedder = FakeFlakyEmbedder(tei, call_log)
+    orchestrator = _make_orchestrator(embedder, max_retries=0, retry_sleeps=[])
+    captured_kwargs = {}
+
+    def _fake_build(*args, **kwargs):
+        captured_kwargs.update(kwargs)
+        return orchestrator
+
+    monkeypatch.setattr(ingest_mod, "build_ingestion_orchestrator", _fake_build)
+    monkeypatch.setattr(ingest_mod, "tei_lifecycle", tei)
+
+    cfg = Config(focus_area_queries=["causal inference"])
+    sentinel_on_stage = lambda stage: None  # noqa: E731 -- identity-checked below, not called
+    ingest_mod._run_finish_phase(cfg, on_stage=sentinel_on_stage)
+
+    assert captured_kwargs["on_stage"] is sentinel_on_stage
+
+
+def test_run_finish_phase_default_on_stage_is_none(monkeypatch):
+    """No caller-supplied `on_stage` (every pre-T-DOC59 call site) forwards `None` -- today's
+    exact default behavior, `build_ingestion_orchestrator`/`IngestionOrchestrator`'s own no-op."""
+    call_log: list[str] = []
+    tei = FakeTeiLifecycle(call_log)
+    embedder = FakeFlakyEmbedder(tei, call_log)
+    orchestrator = _make_orchestrator(embedder, max_retries=0, retry_sleeps=[])
+    captured_kwargs = {}
+
+    def _fake_build(*args, **kwargs):
+        captured_kwargs.update(kwargs)
+        return orchestrator
+
+    monkeypatch.setattr(ingest_mod, "build_ingestion_orchestrator", _fake_build)
+    monkeypatch.setattr(ingest_mod, "tei_lifecycle", tei)
+
+    cfg = Config(focus_area_queries=["causal inference"])
+    ingest_mod._run_finish_phase(cfg)
+
+    assert captured_kwargs["on_stage"] is None
+
+
 # --- T-DOC51: sharded N-worker parallel Pass 1 ---------------------------------------------
 
 
