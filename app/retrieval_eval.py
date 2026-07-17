@@ -55,6 +55,10 @@ class QuestionResult:
     passage_rank: int | None  # 1-indexed rank of the first passage-level hit, else None
     passage_scored: bool  # whether this question had a gold_block_id to score against
     error: str | None = None
+    # Carried through from Question so build_report's per-question breakdown (T-DOC57) can emit
+    # gold ids without a second questions-by-id lookup at report time.
+    gold_paper_ids: frozenset[str] = frozenset()
+    gold_block_id: str | None = None
 
 
 def load_questions(ground_truth_path: Path) -> list[Question]:
@@ -122,6 +126,8 @@ def score_question(question: Question, results: list, k: int) -> QuestionResult:
         paper_rank=paper_rank,
         passage_rank=passage_rank,
         passage_scored=passage_scored,
+        gold_paper_ids=question.gold_paper_ids,
+        gold_block_id=question.gold_block_id,
     )
 
 
@@ -145,6 +151,8 @@ def run(questions: list[Question], retriever, k: int) -> list[QuestionResult]:
                     passage_rank=None,
                     passage_scored=question.gold_block_id is not None,
                     error=str(e),
+                    gold_paper_ids=question.gold_paper_ids,
+                    gold_block_id=question.gold_block_id,
                 )
             )
             continue
@@ -163,11 +171,32 @@ def _recall_mrr(ranks: list[int | None]) -> dict:
     return {"recall_at_k": hits / n, "mrr": rr_sum / n, "n": n}
 
 
-def build_report(results: list[QuestionResult], k: int) -> dict:
+def _question_row(r: QuestionResult) -> dict:
+    """One `results` entry as a before/after-diffable dict: gold ids plus hit/rank at both
+    granularities. `error` is carried at the top so a question that errored in one run but
+    scored in another is visible without inferring it from `null` ranks (a null rank alone is
+    ambiguous between "errored" and "ran clean but missed").
+    """
+    return {
+        "question_id": r.question_id,
+        "question_type": r.question_type,
+        "gold_paper_ids": sorted(r.gold_paper_ids),
+        "gold_block_id": r.gold_block_id,
+        "error": r.error,
+        "paper_level": {"hit": r.paper_rank is not None, "rank": r.paper_rank},
+        "passage_level": {
+            "scored": r.passage_scored,
+            "hit": r.passage_rank is not None,
+            "rank": r.passage_rank,
+        },
+    }
+
+
+def build_report(results: list[QuestionResult], k: int, *, include_per_question: bool = True) -> dict:
     question_types = sorted({r.question_type for r in results})
     passage_eligible = [r for r in results if r.passage_scored]
 
-    return {
+    report = {
         "k": k,
         "n_questions": len(results),
         "n_errors": sum(1 for r in results if r.error),
@@ -189,6 +218,11 @@ def build_report(results: list[QuestionResult], k: int) -> dict:
             },
         },
     }
+    if include_per_question:
+        # T-DOC57: lets a before/after diff (e.g. the T-EVAL re-measure) be computed from two
+        # report JSONs alone -- no re-running the eval to find which questions moved.
+        report["questions"] = [_question_row(r) for r in results]
+    return report
 
 
 def _print_summary(report: dict) -> None:
@@ -232,6 +266,11 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--limit", type=int, default=None, help="score only the first N questions (smoke test)"
     )
+    parser.add_argument(
+        "--no-per-question", action="store_true",
+        help="omit the report's per-question array (present by default) -- use if it bloats the "
+             "report and only the aggregates are needed",
+    )
     return parser.parse_args()
 
 
@@ -260,7 +299,7 @@ def main() -> None:
         questions = questions[: args.limit]
 
     results = run(questions, server.retriever, args.k)
-    report = build_report(results, args.k)
+    report = build_report(results, args.k, include_per_question=not args.no_per_question)
     _print_summary(report)
 
     if args.report_path:

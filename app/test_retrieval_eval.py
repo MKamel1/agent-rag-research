@@ -316,3 +316,73 @@ def test_build_report_handles_no_passage_scorable_questions():
 
     assert report["passage_level"]["n_scored"] == 0
     assert report["passage_level"]["overall"] == {"recall_at_k": None, "mrr": None, "n": 0}
+
+
+# --- build_report: per-question breakdown (T-DOC57) -----------------------------------------
+
+
+def test_build_report_per_question_array_default_on_via_full_pipeline():
+    """End-to-end through run()+build_report() (not hand-built QuestionResults) so the array is
+    exercised against exactly what a real eval run produces: one entry per question, right
+    hit/rank at both granularities, and the paper-hit/passage-miss case the ticket calls out.
+    """
+    questions = [
+        Question("Q1", "query one", "Equation-Retrieval", frozenset({"P1"}), gold_block_id="P1:b5"),
+        Question("Q2", "query two", "Equation-Retrieval", frozenset({"P1"}), gold_block_id="P1:b5"),
+        Question("Q3", "query three", "Result-Comprehension", frozenset({"P3"}), gold_block_id=None),
+    ]
+    retriever = FakeRetriever({
+        "query one": [_hit("P1", "P1:b5")],  # paper hit + passage hit, rank 1
+        "query two": [_hit("P1", "P1:b99"), _hit("P9", "P9:b1")],  # right paper, wrong block
+        "query three": [_hit("P3", "P3:b1")],  # no gold_block_id -- not passage-scored
+    })
+
+    results = run(questions, retriever, k=10)
+    report = build_report(results, k=10)
+
+    assert "questions" in report  # default ON, no flag needed
+    rows = {row["question_id"]: row for row in report["questions"]}
+    assert len(rows) == 3
+
+    assert rows["Q1"]["paper_level"] == {"hit": True, "rank": 1}
+    assert rows["Q1"]["passage_level"] == {"scored": True, "hit": True, "rank": 1}
+    assert rows["Q1"]["gold_paper_ids"] == ["P1"]
+    assert rows["Q1"]["gold_block_id"] == "P1:b5"
+    assert rows["Q1"]["error"] is None
+
+    # the ticket's explicit case: paper hit=true, passage hit=false, with correct ranks at each
+    assert rows["Q2"]["paper_level"] == {"hit": True, "rank": 1}
+    assert rows["Q2"]["passage_level"] == {"scored": True, "hit": False, "rank": None}
+
+    # no gold_block_id -- passage_level.scored is False, not a miss
+    assert rows["Q3"]["paper_level"] == {"hit": True, "rank": 1}
+    assert rows["Q3"]["passage_level"] == {"scored": False, "hit": False, "rank": None}
+
+
+def test_build_report_per_question_array_marks_errors():
+    questions = [
+        Question("Q1", "boom", "Equation-Retrieval", frozenset({"P1"}), gold_block_id="P1:b5"),
+    ]
+    retriever = FakeRetriever({})  # "boom" has no canned entry -> retrieve() raises
+
+    results = run(questions, retriever, k=10)
+    report = build_report(results, k=10)
+
+    row = report["questions"][0]
+    assert row["error"] is not None
+    assert row["paper_level"] == {"hit": False, "rank": None}
+    assert row["passage_level"] == {"scored": True, "hit": False, "rank": None}
+
+
+def test_build_report_per_question_array_omitted_when_disabled():
+    from app.retrieval_eval import QuestionResult
+
+    results = [
+        QuestionResult("Q1", "Equation-Retrieval", paper_rank=1, passage_rank=1, passage_scored=True),
+    ]
+
+    report = build_report(results, k=10, include_per_question=False)
+
+    assert "questions" not in report
+    # aggregates are unaffected by the flag
+    assert report["paper_level"]["overall"]["n"] == 1
