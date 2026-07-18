@@ -6,6 +6,8 @@ dependency), so no vendor SDK import is needed — same pattern as `rag/summariz
 """
 
 import logging
+import time
+from collections.abc import Callable
 
 import httpx
 
@@ -18,6 +20,19 @@ logger = logging.getLogger(__name__)
 # Same taxonomy split as rag/summarizer.py: a rate-limited or momentarily-unhealthy server is
 # transient (retry); any other 4xx is this request's fault (not retryable).
 _RETRYABLE_STATUSES = {429, 500, 502, 503, 504}
+
+# Reliability-audit gap: unlike the ingest side (rag/harvester.py's Harvester, rag/orchestrator.py's
+# IngestionOrchestrator), the query path used to raise on the FIRST transient failure — one TEI
+# hiccup (429/502/503/504/timeout) failed a user's whole search. Bounded retry-with-backoff below,
+# same shape (`max_retries`, injected `retry_sleep`, `2 ** (attempt - 1)` backoff) as those two
+# ingest call sites, so this codebase has one retry idiom, not two. `PermanentError` is never
+# retried.
+RetrySleep = Callable[[float], None]
+
+
+def _default_retry_sleep(seconds: float) -> None:
+    time.sleep(seconds)
+
 
 # T-DOC39: this vendor batch-size ceiling used to live in `rag/retriever.py` as
 # `_RERANK_POOL_SIZE`'s hardcoded value -- wrong module, since it's a TEI deployment fact, not a
@@ -40,11 +55,27 @@ class TeiReranker:
     never around the empty-candidates short-circuit, so an empty query never queues behind the
     GPU lock. Returns the same `RerankCandidate` objects reordered by score descending — never
     fabricates new ones, per DATA-CONTRACTS.md "Reranker".
+
+    A `TransientError` from the `/rerank` HTTP call gets a bounded, backed-off retry
+    (`max_retries`, `retry_sleep` — same shape as `rag/harvester.py`'s `Harvester`); a
+    `PermanentError` (a non-retryable status, or a malformed/out-of-range response body) is never
+    retried. Unlike the ingest-side retry sites, there is no quarantine outcome here — a
+    query-path caller has no "skip this paper and continue" fallback, so once the retry budget is
+    exhausted the (still-classified) error simply propagates.
     """
 
-    def __init__(self, client: httpx.Client, gpu_lock: GpuLock):
+    def __init__(
+        self,
+        client: httpx.Client,
+        gpu_lock: GpuLock,
+        *,
+        max_retries: int = 2,
+        retry_sleep: RetrySleep | None = None,
+    ):
         self._client = client
         self._gpu_lock = gpu_lock
+        self._max_retries = max_retries
+        self._retry_sleep = retry_sleep or _default_retry_sleep
 
     def rerank(
         self, query: str, candidates: list[RerankCandidate]
@@ -68,22 +99,9 @@ class TeiReranker:
             candidates = candidates[:_MAX_BATCH_SIZE]
 
         with self._gpu_lock.acquire("rerank"):
+            body = self._post_with_retry(query, candidates)
             try:
-                response = self._client.post(
-                    "/rerank",
-                    json={"query": query, "texts": [c.text for c in candidates]},
-                )
-                response.raise_for_status()
-            except httpx.HTTPStatusError as error:
-                status = error.response.status_code
-                if status in _RETRYABLE_STATUSES:
-                    raise TransientError(f"reranker server returned {status}") from error
-                raise PermanentError(f"reranker server returned {status}") from error
-            except httpx.HTTPError as error:
-                raise TransientError(f"reranker request failed: {error}") from error
-
-            try:
-                scored = [(item["index"], item["score"]) for item in response.json()]
+                scored = [(item["index"], item["score"]) for item in body]
             except (KeyError, TypeError, ValueError) as error:
                 raise PermanentError(
                     f"reranker response malformed (expected [{{'index', 'score'}}, ...]): {error}"
@@ -96,3 +114,39 @@ class TeiReranker:
             return [candidates[index] for index, _score in scored]
         except IndexError as error:
             raise PermanentError(f"reranker response index out of range: {error}") from error
+
+    def _post_with_retry(self, query: str, candidates: list[RerankCandidate]) -> list:
+        """The `/rerank` HTTP call, retried up to `_max_retries` times on `TransientError`
+        (429/502/503/504, timeout, connection failure) with exponential backoff between attempts —
+        same two-outcome shape as `rag/embedder.py`'s `_post_batch_with_retry`. A non-retryable
+        status raises `PermanentError` immediately, same as before this method existed.
+        """
+        attempt = 0
+        while True:
+            try:
+                response = self._client.post(
+                    "/rerank",
+                    json={"query": query, "texts": [c.text for c in candidates]},
+                )
+                response.raise_for_status()
+                return response.json()
+            except httpx.HTTPStatusError as error:
+                status = error.response.status_code
+                if status not in _RETRYABLE_STATUSES:
+                    raise PermanentError(f"reranker server returned {status}") from error
+                attempt += 1
+                if attempt > self._max_retries:
+                    raise TransientError(f"reranker server returned {status}") from error
+            except httpx.HTTPError as error:
+                attempt += 1
+                if attempt > self._max_retries:
+                    raise TransientError(f"reranker request failed: {error}") from error
+            self._retry_sleep(self._backoff(attempt))
+
+    @staticmethod
+    def _backoff(attempt: int) -> float:
+        # Same exponential curve (1s, 2s, 4s, ...) as rag/harvester.py's Harvester._backoff /
+        # rag/orchestrator.py's IngestionOrchestrator._backoff / rag/embedder.py's
+        # TeiEmbedder._backoff — not shared code across files (one line), just the same documented
+        # shape (CONVENTIONS.md §4).
+        return float(2 ** (attempt - 1))

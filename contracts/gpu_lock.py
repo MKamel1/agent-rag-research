@@ -20,9 +20,17 @@ from typing import Protocol, runtime_checkable
 
 @runtime_checkable
 class GpuLock(Protocol):
-    def acquire(self, stage: str) -> AbstractContextManager[None]:
+    def acquire(
+        self, stage: str, *, timeout: float | None = None
+    ) -> AbstractContextManager[None]:
         """Blocks until the single GPU slot is free, then yields; releases on exit (incl. on
         exception). `stage` is a label ("embed" | "rerank" | "summarize") used only for
         logging/timeout messages.
+
+        Reliability-audit gap (FOUNDATION, minimal diff): `timeout` (seconds, keyword-only) bounds
+        how long to wait for a wedged/crashed holder before giving up. `None` (the default)
+        preserves today's behavior exactly — block forever — so every existing caller/adapter is
+        unaffected. A finite `timeout` that elapses before the lock is free raises `TransientError`
+        (a caller can retry/surface it) instead of hanging the process forever.
         """
         ...
