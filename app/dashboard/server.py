@@ -141,10 +141,10 @@ def _status_dict(data_dir: Path, status_module, controller_module) -> dict:
 
 class _LazyMcpServer:
     """Builds the real retrieval stack (`app.assembly.build_mcp_server`) on the FIRST search
-    request, not at dashboard startup -- construction touches a real `GpuLock`, a live Qdrant
-    connection, and TEI HTTP clients (T-DOC24/25's vendor infra), none of which this process
-    should reach for just to serve `/api/status` polls. Reused for every search after that (one
-    build, not one per request).
+    request, not at dashboard startup -- construction touches a real `GpuLock`, a live vector
+    store connection, and TEI HTTP clients (T-DOC24/25's vendor infra), none of which this
+    process should reach for just to serve `/api/status` polls. Reused for every search after
+    that (one build, not one per request).
 
     `db_path`/`blob_dir` follow the same `<data_dir>/papers.db` / `<data_dir>/blobs` convention
     `app/dashboard/status.py::read_corpus` already reads for this exact `data_dir`; `collection`
@@ -215,7 +215,7 @@ def make_handler(
     (the real, lazily-built retrieval stack); a test passes an object with its own
     `semantic_search(query, filters, k)` (e.g. an `McpServer` built over `FakeVectorStore`/
     `FakeReranker`/`FakeEmbedder`) instead -- see `rag/fakes` -- so this route never has to touch
-    a real GPU lock or Qdrant just to prove the route itself works.
+    a real GPU lock or vector store just to prove the route itself works.
     """
     static_body = _STATIC_INDEX.read_bytes()
     mcp_server = mcp_server_factory if mcp_server_factory is not None else _LazyMcpServer(data_dir)
@@ -242,11 +242,11 @@ def make_handler(
             try:
                 response = mcp_server.semantic_search(query, filters, k)
             except (TransientError, PermanentError, ContractError) as e:
-                # A real search reaches live infra (GpuLock/TEI/Qdrant, T-DOC24/25) -- degrade to
-                # a clean error response, same as `/api/control`'s dispatch below, never a crashed
-                # request thread (ThreadingHTTPServer runs each request on its own thread, so one
-                # failed search must not affect the `/api/status` poll or any other in-flight
-                # request either).
+                # A real search reaches live infra (GpuLock/TEI/the vector store, T-DOC24/25) --
+                # degrade to a clean error response, same as `/api/control`'s dispatch below,
+                # never a crashed request thread (ThreadingHTTPServer runs each request on its
+                # own thread, so one failed search must not affect the `/api/status` poll or any
+                # other in-flight request either).
                 logger.warning("search failed for query=%r: %s", query, e)
                 self._json(502, {"ok": False, "message": str(e)})
                 return

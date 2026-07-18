@@ -1190,10 +1190,10 @@ def test_resolve_store_paths_falls_back_to_config_not_hardcoded_papers_db():
 # real vendor batch-size ceiling (`rag/reranker.py`'s `_MAX_BATCH_SIZE=32`), since a hybrid-search
 # pool bigger than that would just be silently truncated by TEI's `/rerank` endpoint anyway
 # (T-DOC39). `VectorIndex` is stubbed the same way every other `build_mcp_server`-adjacent test in
-# this file stubs it (its real constructor makes an eager Qdrant network call) -- nothing else
-# `build_mcp_server` constructs makes a network call at construction time (TeiEmbedder/TeiReranker
-# just store an `httpx.Client`; `FileGpuLock` just wraps `filelock.FileLock`), so this stays fully
-# offline.
+# this file stubs it (its real constructor makes an eager vector-store network call) -- nothing
+# else `build_mcp_server` constructs makes a network call at construction time (TeiEmbedder/
+# TeiReranker just store an HTTP client; `FileGpuLock` just wraps a file lock), so this stays
+# fully offline.
 # ================================================================================================
 
 

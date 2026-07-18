@@ -173,8 +173,8 @@
       Runs a real grounded search against the finished corpus (<code>GET /api/search</code>),
       reusing the same <code>app.assembly.build_mcp_server</code> retrieval pipeline
       <code>app.serve</code>'s <code>semantic_search</code> tool uses -- not a mock. The first
-      search after the dashboard starts builds the retrieval stack (GPU lock, Qdrant, TEI), so it
-      may take a moment; later searches reuse it.
+      search after the dashboard starts builds the retrieval stack (GPU lock, vector store, TEI),
+      so it may take a moment; later searches reuse it.
     </div>
     <div class="controls">
       <div class="field" style="flex: 1 1 100%;">
