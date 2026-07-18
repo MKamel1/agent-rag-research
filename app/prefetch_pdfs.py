@@ -91,7 +91,7 @@ from contracts.config import Config
 from contracts.errors import PermanentError, TransientError
 from contracts.harvester import PaperRef
 from rag.config import load_config
-from rag.harvester import ArxivSource, Harvester
+from rag.harvester import ArxivSource, Harvester, arxiv_http_client
 from rag.ingest_state_sqlite import SqliteIngestState
 
 logger = logging.getLogger(__name__)
@@ -254,7 +254,7 @@ def run(
     state = SqliteIngestState(db_path)  # read-only here: only `all_known_paper_ids()` is called.
     harvester = harvester or Harvester(ArxivSource())
     owned_client = client is None
-    client = client or httpx.Client(timeout=60.0)
+    client = client or arxiv_http_client(60.0)
 
     total_cached = _cached_count(cache_dir)
     if total_cached >= target:
