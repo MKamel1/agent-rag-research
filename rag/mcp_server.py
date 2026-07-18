@@ -22,11 +22,17 @@ from contracts.vector_index import SearchFilters
 class McpServer:
     """Constructor-injected collaborators only (CONVENTIONS §2): `retriever`, `document_store`.
     Never constructs a vendor client or the retrieval pipeline itself.
+
+    `default_k` is not a collaborator, just the fallback result count `semantic_search`/
+    `search_papers` use when a caller doesn't pass its own `k` (2026-07-18: wires the previously-
+    dead `Config.top_k` through `app/assembly.py::build_mcp_server` -- a caller-supplied `k` still
+    always overrides it).
     """
 
-    def __init__(self, retriever, document_store):
+    def __init__(self, retriever, document_store, default_k: int = 10):
         self._retriever = retriever
         self._document_store = document_store
+        self._default_k = default_k
 
     @property
     def retriever(self):
@@ -39,7 +45,7 @@ class McpServer:
         return self._retriever
 
     def semantic_search(
-        self, query: str, filters: SearchFilters | None = None, k: int = 10
+        self, query: str, filters: SearchFilters | None = None, k: int | None = None
     ) -> SearchResponse:
         """Passage-level search, delegated whole to `Retriever.retrieve()`. Always searches the
         full chunk index across the whole corpus — `filters` (`SearchFilters`) can narrow by
@@ -53,12 +59,17 @@ class McpServer:
         PRD.md §11A) puts that sequencing decision on the calling agent; this server never
         auto-rewrites or narrows a query on its own. Postcondition: on an empty corpus/no hits,
         `results == []` — empty is a valid answer, not an error.
+
+        `k=None` (a caller that omits it entirely) resolves to `self._default_k` (`Config.top_k`,
+        wired via `app/assembly.py::build_mcp_server`); an explicit `k` always overrides it.
         """
-        results, retrieval_coverage = self._retriever.retrieve(query, filters, k)
+        results, retrieval_coverage = self._retriever.retrieve(
+            query, filters, self._default_k if k is None else k
+        )
         return SearchResponse(results=results, coverage=self._coverage(results, retrieval_coverage))
 
     def search_papers(
-        self, query: str, filters: SearchFilters | None = None, k: int = 10
+        self, query: str, filters: SearchFilters | None = None, k: int | None = None
     ) -> PaperSearchResponse:
         """Whole-paper/summary-level search, delegated whole to `Retriever.retrieve_papers()`. This
         is the right first call when a query is scoped to a specific paper or a handful of papers:
@@ -66,8 +77,12 @@ class McpServer:
         reranking runs — so you can confirm which paper(s) actually matter, or find that a
         confirmed match's `get_paper` summary already answers the question without needing a
         broader `semantic_search` chunk search at all. Postcondition: on no hits, `results == []`.
+
+        `k=None` resolves to `self._default_k`, same as `semantic_search` — see its docstring.
         """
-        results, retrieval_coverage = self._retriever.retrieve_papers(query, filters, k)
+        results, retrieval_coverage = self._retriever.retrieve_papers(
+            query, filters, self._default_k if k is None else k
+        )
         return PaperSearchResponse(
             results=results, coverage=self._coverage(results, retrieval_coverage)
         )

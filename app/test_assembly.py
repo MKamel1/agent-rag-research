@@ -36,6 +36,7 @@ from app.assembly import (
     _PdfDownloadParser,
     _sqlite_harvest_quarantine_sink,
     build_ingestion_orchestrator,
+    build_mcp_server,
     harvest_refs,
 )
 from contracts.config import Config
@@ -1180,3 +1181,72 @@ def test_resolve_store_paths_falls_back_to_config_not_hardcoded_papers_db():
     assert _resolve_store_paths(Config(focus_area_queries=["x"]), None, None) == (
         "papers.db", "blobs",
     )
+
+
+# ================================================================================================
+# 2026-07-18: `Config.top_k`/`Config.rerank_depth` were declared-but-dead fields (a code sweep
+# found no code path that read either). `build_mcp_server` now threads them into
+# `McpServer.default_k` / `Retriever.rerank_pool_size` -- the latter CLAMPED to the reranker's
+# real vendor batch-size ceiling (`rag/reranker.py`'s `_MAX_BATCH_SIZE=32`), since a hybrid-search
+# pool bigger than that would just be silently truncated by TEI's `/rerank` endpoint anyway
+# (T-DOC39). `VectorIndex` is stubbed the same way every other `build_mcp_server`-adjacent test in
+# this file stubs it (its real constructor makes an eager Qdrant network call) -- nothing else
+# `build_mcp_server` constructs makes a network call at construction time (TeiEmbedder/TeiReranker
+# just store an `httpx.Client`; `FileGpuLock` just wraps `filelock.FileLock`), so this stays fully
+# offline.
+# ================================================================================================
+
+
+def test_build_mcp_server_clamps_rerank_pool_size_to_the_rerankers_max_batch_size(
+    monkeypatch, tmp_path,
+):
+    monkeypatch.setattr("app.assembly.VectorIndex", lambda *a, **k: object())
+
+    cfg = Config(
+        focus_area_queries=["x"], gpu_lock_path=str(tmp_path / ".gpu.lock"),
+        rerank_depth=50,  # > _RERANKER_MAX_BATCH_SIZE=32 -- must clamp down, not pass through raw
+    )
+    server = build_mcp_server(
+        cfg, db_path=str(tmp_path / "papers.db"), blob_dir=str(tmp_path / "blobs")
+    )
+
+    assert server._retriever._rerank_pool_size == 32
+
+
+def test_build_mcp_server_rerank_pool_size_below_the_cap_passes_through_unclamped(
+    monkeypatch, tmp_path,
+):
+    monkeypatch.setattr("app.assembly.VectorIndex", lambda *a, **k: object())
+
+    cfg = Config(
+        focus_area_queries=["x"], gpu_lock_path=str(tmp_path / ".gpu.lock"), rerank_depth=10,
+    )
+    server = build_mcp_server(
+        cfg, db_path=str(tmp_path / "papers.db"), blob_dir=str(tmp_path / "blobs")
+    )
+
+    assert server._retriever._rerank_pool_size == 10
+
+
+def test_build_mcp_server_wires_default_k_from_configs_top_k(monkeypatch, tmp_path):
+    monkeypatch.setattr("app.assembly.VectorIndex", lambda *a, **k: object())
+
+    cfg = Config(
+        focus_area_queries=["x"], gpu_lock_path=str(tmp_path / ".gpu.lock"), top_k=7,
+    )
+    server = build_mcp_server(
+        cfg, db_path=str(tmp_path / "papers.db"), blob_dir=str(tmp_path / "blobs")
+    )
+
+    assert server._default_k == 7
+
+
+def test_build_mcp_server_default_k_matches_configs_own_default_top_k(monkeypatch, tmp_path):
+    monkeypatch.setattr("app.assembly.VectorIndex", lambda *a, **k: object())
+
+    cfg = Config(focus_area_queries=["x"], gpu_lock_path=str(tmp_path / ".gpu.lock"))
+    server = build_mcp_server(
+        cfg, db_path=str(tmp_path / "papers.db"), blob_dir=str(tmp_path / "blobs")
+    )
+
+    assert server._default_k == 10  # Config.top_k's own default

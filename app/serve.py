@@ -35,18 +35,20 @@ mcp = FastMCP("research-system-rag")
 
 @mcp.tool()
 def semantic_search(
-    query: str, filters: SearchFilters | None = None, k: int = 10
+    query: str, filters: SearchFilters | None = None, k: int | None = None
 ) -> SearchResponse:
     """Passage-level search over the ingested corpus. Returns cited, grounded passages
-    (`GroundedResult`s) plus a `Coverage` note — never bare text."""
+    (`GroundedResult`s) plus a `Coverage` note — never bare text. `k` left unset uses the
+    server's configured default (`Config.top_k`, `_cfg` above); pass it explicitly to override."""
     return _server.semantic_search(query, filters, k)
 
 
 @mcp.tool()
 def search_papers(
-    query: str, filters: SearchFilters | None = None, k: int = 10
+    query: str, filters: SearchFilters | None = None, k: int | None = None
 ) -> PaperSearchResponse:
-    """Whole-paper/summary-level search over the ingested corpus."""
+    """Whole-paper/summary-level search over the ingested corpus. `k` left unset uses the
+    server's configured default (`Config.top_k`); pass it explicitly to override."""
     return _server.search_papers(query, filters, k)
 
 

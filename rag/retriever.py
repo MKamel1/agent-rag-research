@@ -42,6 +42,14 @@ _SUMMARY_ID_SUFFIX = ":summary"
 # the reranker's own vendor batch-size ceiling belongs (T-DOC39 moved that into `TeiReranker`
 # itself, `rag/reranker.py`'s `_MAX_BATCH_SIZE` -- the retriever shouldn't hardcode a vendor's
 # batch limit, and the reranker defends its own limit regardless of how large a pool this fetches).
+#
+# 2026-07-18: this is now only the CONSTRUCTOR DEFAULT (`Retriever.__init__`'s `rerank_pool_size`
+# param below) -- a caller that doesn't pass one still gets this same 32, unchanged. The live
+# value is `Config.rerank_depth`, threaded in by the composition root
+# (`app/assembly.py::build_mcp_server`), which -- per the T-DOC39 reasoning just above -- is also
+# where it gets clamped to `rag/reranker.py`'s `_MAX_BATCH_SIZE=32` (a pool bigger than that is
+# silently truncated by TEI anyway); this module still never imports or hardcodes that vendor
+# constant itself.
 _RERANK_POOL_SIZE = 32
 
 
@@ -63,13 +71,19 @@ class Retriever:
     """Constructor-injected collaborators only (CONVENTIONS §2): `embedder`, `vector_store`,
     `document_store`, `reranker`. Never constructs a vendor client itself — that stays inside
     each collaborator's own adapter (CONVENTIONS §1).
+
+    `rerank_pool_size` is not a collaborator, just a plain tuning knob (defaults to
+    `_RERANK_POOL_SIZE`, this module's own docstring on that constant explains where the live
+    value -- `Config.rerank_depth` -- gets threaded in from).
     """
 
-    def __init__(self, embedder, vector_store, document_store, reranker):
+    def __init__(self, embedder, vector_store, document_store, reranker,
+                 rerank_pool_size: int = _RERANK_POOL_SIZE):
         self._embedder = embedder
         self._vector_store = vector_store
         self._document_store = document_store
         self._reranker = reranker
+        self._rerank_pool_size = rerank_pool_size
 
     def retrieve(
         self, query: str, filters: SearchFilters | None, k: int
@@ -85,7 +99,7 @@ class Retriever:
         build the real `Coverage.candidates` (contracts/mcp_server.py) instead of the `len(results)`
         stand-in it used to fall back on.
         """
-        hits = self._hybrid_hits(query, filters, max(k, _RERANK_POOL_SIZE), kind="chunk")
+        hits = self._hybrid_hits(query, filters, max(k, self._rerank_pool_size), kind="chunk")
         if not hits:
             return [], RetrievalCoverage(candidate_count=0)
         scores = {hit.id: hit.score for hit in hits}
@@ -149,7 +163,7 @@ class Retriever:
 
         Returns `(results, coverage)` — see `retrieve()`'s docstring for what `coverage` carries.
         """
-        hits = self._hybrid_hits(query, filters, max(k, _RERANK_POOL_SIZE), kind="summary")
+        hits = self._hybrid_hits(query, filters, max(k, self._rerank_pool_size), kind="summary")
         if not hits:
             return [], RetrievalCoverage(candidate_count=0)
         scores = {hit.id: hit.score for hit in hits}

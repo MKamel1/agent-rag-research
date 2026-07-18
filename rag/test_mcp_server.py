@@ -250,6 +250,47 @@ def test_citation_resolves_via_get_span():
     assert result.anchor.snippet in span
 
 
+# ===========================================================================
+# default_k (2026-07-18): `Config.top_k` wired via the `default_k` constructor arg -- a caller's
+# `k=None` (both tools' new default) resolves to it; an explicit `k` still overrides.
+# ===========================================================================
+def test_semantic_search_uses_default_k_when_caller_omits_it():
+    spy = SpyRetriever(results=[_grounded()])
+    server = _mod.McpServer(retriever=spy, document_store=RecordingDocStore(), default_k=7)
+    server.semantic_search("estimator", filters=None, k=None)
+    assert spy.retrieve_calls == [("estimator", None, 7)]
+
+
+def test_semantic_search_explicit_k_overrides_default_k():
+    spy = SpyRetriever(results=[_grounded()])
+    server = _mod.McpServer(retriever=spy, document_store=RecordingDocStore(), default_k=7)
+    server.semantic_search("estimator", filters=None, k=3)
+    assert spy.retrieve_calls == [("estimator", None, 3)]
+
+
+def test_search_papers_uses_default_k_when_caller_omits_it():
+    spy = SpyRetriever(paper_results=[_paper_result()])
+    server = _mod.McpServer(retriever=spy, document_store=RecordingDocStore(), default_k=7)
+    server.search_papers("estimator", filters=None, k=None)
+    assert spy.retrieve_papers_calls == [("estimator", None, 7)]
+
+
+def test_search_papers_explicit_k_overrides_default_k():
+    spy = SpyRetriever(paper_results=[_paper_result()])
+    server = _mod.McpServer(retriever=spy, document_store=RecordingDocStore(), default_k=7)
+    server.search_papers("estimator", filters=None, k=3)
+    assert spy.retrieve_papers_calls == [("estimator", None, 3)]
+
+
+def test_default_k_itself_defaults_to_10_when_not_passed():
+    # A caller that doesn't pass `default_k` (every other test in this file) must keep today's
+    # historical behavior: k=None resolves to 10.
+    spy = SpyRetriever(results=[_grounded()])
+    server = _mod.McpServer(retriever=spy, document_store=RecordingDocStore())
+    server.semantic_search("estimator", filters=None, k=None)
+    assert spy.retrieve_calls == [("estimator", None, 10)]
+
+
 def test_server_needs_only_retriever_and_document_store():
     # Structural proof of "acceptably thin": construction requires nothing from the pipeline layer.
     server = _mod.McpServer(retriever=SpyRetriever(), document_store=RecordingDocStore())
