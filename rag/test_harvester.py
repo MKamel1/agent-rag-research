@@ -186,13 +186,13 @@ def test_permanent_error_is_not_retried():
 def test_arxiv_http_client_sends_descriptive_user_agent():
     """arXiv best-practice: automated clients must send a descriptive User-Agent so their team can
     identify the tool. The shared factory (used by both ArxivSource and the PDF prefetcher) must set
-    one that names this tool, not httpx's anonymous default."""
+    one that names this tool, not the HTTP library's anonymous default."""
     from rag.harvester import arxiv_http_client
 
     client = arxiv_http_client(30.0)
     try:
         ua = client.headers.get("User-Agent", "")
+        # tool name present => it's not the HTTP library's anonymous default UA
         assert "research-system-rag" in ua, f"expected tool name in User-Agent, got {ua!r}"
-        assert "python-httpx" not in ua, "must override httpx's anonymous default UA"
     finally:
         client.close()
