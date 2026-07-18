@@ -122,7 +122,9 @@ def test_5xx_response_maps_to_transient_error():
         return httpx.Response(503)
 
     client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
-    reranker = TeiReranker(client, FakeGpuLock())
+    # No-op retry_sleep: this test now exercises the (exhausted) retry loop below -- assert on the
+    # eventual error, not the real wall-clock backoff delay.
+    reranker = TeiReranker(client, FakeGpuLock(), retry_sleep=lambda seconds: None)
 
     with pytest.raises(TransientError):
         reranker.rerank("q", _candidates(("a", "text a")))
@@ -144,10 +146,75 @@ def test_connection_failure_maps_to_transient_error():
         raise httpx.ConnectError("connection refused")
 
     client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
-    reranker = TeiReranker(client, FakeGpuLock())
+    reranker = TeiReranker(client, FakeGpuLock(), retry_sleep=lambda seconds: None)
 
     with pytest.raises(TransientError):
         reranker.rerank("q", _candidates(("a", "text a")))
+
+
+# ---------------------------------------------------------------------------
+# Query-path retry-with-backoff (reliability-audit gap): a transient TEI hiccup (429/502/503/504,
+# timeout, connection failure) used to fail the whole `rerank()` call on the FIRST failure --
+# unlike rag/harvester.py's Harvester / rag/orchestrator.py's IngestionOrchestrator, which already
+# retry-with-backoff on the ingest side. Same shape here: bounded `max_retries`, injected
+# `retry_sleep` (never really sleeps in tests), `PermanentError` never retried.
+# ---------------------------------------------------------------------------
+
+
+def test_transient_then_success_is_recovered_with_backoff():
+    attempts = {"n": 0}
+
+    def handler(request):
+        attempts["n"] += 1
+        if attempts["n"] == 1:
+            return httpx.Response(503)
+        return httpx.Response(200, json=[{"index": 0, "score": 1.0}])
+
+    client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
+    sleeps: list[float] = []
+    reranker = TeiReranker(client, FakeGpuLock(), retry_sleep=sleeps.append)
+
+    result = reranker.rerank("q", _candidates(("a", "text a")))
+
+    assert attempts["n"] == 2  # first attempt 503, second succeeds -- no third attempt
+    assert sleeps == [1.0]  # exactly one backoff, between attempt 1 and 2
+    assert [c.id for c in result] == ["a"]
+
+
+def test_permanent_error_is_never_retried():
+    attempts = {"n": 0}
+
+    def handler(request):
+        attempts["n"] += 1
+        return httpx.Response(400)
+
+    client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
+    sleeps: list[float] = []
+    reranker = TeiReranker(client, FakeGpuLock(), retry_sleep=sleeps.append)
+
+    with pytest.raises(PermanentError):
+        reranker.rerank("q", _candidates(("a", "text a")))
+
+    assert attempts["n"] == 1  # no retry at all
+    assert sleeps == []
+
+
+def test_retries_exhausted_still_raises_transient_error():
+    attempts = {"n": 0}
+
+    def handler(request):
+        attempts["n"] += 1
+        return httpx.Response(503)  # always transient -- retry budget must exhaust
+
+    client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
+    sleeps: list[float] = []
+    reranker = TeiReranker(client, FakeGpuLock(), max_retries=2, retry_sleep=sleeps.append)
+
+    with pytest.raises(TransientError):
+        reranker.rerank("q", _candidates(("a", "text a")))
+
+    assert attempts["n"] == 3  # initial attempt + 2 retries
+    assert sleeps == [1.0, 2.0]  # exponential backoff between each of the 2 retries
 
 
 def test_malformed_response_body_maps_to_permanent_error():

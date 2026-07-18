@@ -4,6 +4,7 @@ local temp files (contracts/gpu_lock.py's Protocol; DATA-CONTRACTS.md "GpuLock")
 import filelock
 import pytest
 
+from contracts.errors import TransientError
 from rag.gpu_lock import FileGpuLock
 
 
@@ -51,3 +52,45 @@ def test_different_paths_do_not_contend(tmp_path):
     with a.acquire("embed"):
         with b.acquire("summarize"):  # different file -- must not raise
             pass
+
+
+# ---------------------------------------------------------------------------
+# Reliability-audit gap (FOUNDATION, contracts/gpu_lock.py): unbounded `acquire()` hangs forever if
+# a process crashes/wedges holding the lock. `timeout` (seconds, keyword-only) bounds the wait and
+# raises `TransientError` instead. No real GPU/live lock involved -- a temp lock file held by this
+# test process itself stands in for the "stale holder" (HARD GUARDRAILS: never touch the real
+# `.gpu.lock` in the production data dir).
+# ---------------------------------------------------------------------------
+
+
+def test_acquire_with_timeout_raises_transient_error_when_lock_is_held(tmp_path):
+    lock_path = tmp_path / "held.lock"
+    holder = FileGpuLock(lock_path)
+    contender = FileGpuLock(lock_path)
+
+    with holder.acquire("embed"):
+        with pytest.raises(TransientError):
+            with contender.acquire("rerank", timeout=0.05):
+                pass  # never reached -- the holder still has the lock
+
+
+def test_acquire_with_timeout_succeeds_when_lock_is_free(tmp_path):
+    lock = FileGpuLock(tmp_path / "free.lock")
+    with lock.acquire("embed", timeout=1.0):
+        pass  # entering and exiting without error is the whole assertion
+
+
+def test_acquire_without_timeout_still_blocks_forever_by_default(tmp_path):
+    """`timeout=None` (the default, unchanged) must still hand back the raw, block-forever
+    `FileLock` -- byte-identical to pre-timeout behavior -- not a new always-bounded wrapper.
+    Same proof shape as test_two_instances_on_the_same_path_are_mutually_exclusive: a SEPARATE
+    instance's zero-timeout probe must still see the lock as held, meaning `acquire()` (no
+    `timeout` kwarg) did not silently start enforcing some default bound of its own.
+    """
+    lock_path = tmp_path / "default.lock"
+    holder = FileGpuLock(lock_path)
+    contender = FileGpuLock(lock_path)
+    with holder.acquire("embed"):
+        with pytest.raises(filelock.Timeout):
+            with contender.acquire("rerank").acquire(timeout=0):
+                pass

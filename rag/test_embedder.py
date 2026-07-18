@@ -270,9 +270,13 @@ def test_embed_sub_batches_over_the_tei_limit_and_preserves_order():
 # ---------------------------------------------------------------------------
 
 
-def _build_real_embedder(client, gpu_lock):
+def _build_real_embedder(client, gpu_lock, **kwargs):
     info = EmbedderInfo(model_id="test-model", dim=8, version="v1")
-    return _real_embedder_cls()(client=client, gpu_lock=gpu_lock, info=info)
+    # `retry_sleep` defaults to a no-op here (not real `time.sleep`) so these tests -- which now
+    # exercise the retry loop below -- never really sleep; a caller that wants to assert on the
+    # sleep calls themselves overrides it via **kwargs.
+    kwargs.setdefault("retry_sleep", lambda seconds: None)
+    return _real_embedder_cls()(client=client, gpu_lock=gpu_lock, info=info, **kwargs)
 
 
 def test_5xx_response_maps_to_transient_error():
@@ -303,3 +307,72 @@ def test_connection_failure_maps_to_transient_error():
     adapter = _build_real_embedder(client, FakeGpuLock())
     with pytest.raises(TransientError):
         adapter.embed(["a passage to embed"])
+
+
+# ---------------------------------------------------------------------------
+# Query-path retry-with-backoff (reliability-audit gap): a transient TEI hiccup (429/502/503/504,
+# timeout, connection failure) on the query path used to fail the whole `embed()` call on the
+# FIRST failure -- unlike rag/harvester.py's Harvester / rag/orchestrator.py's
+# IngestionOrchestrator, which already retry-with-backoff on the ingest side. Same shape here:
+# bounded `max_retries`, injected `retry_sleep` (never really sleeps in tests, mirroring
+# rag/test_orchestrator.py's `self.retry_sleeps.append` pattern), `PermanentError` never retried.
+# ---------------------------------------------------------------------------
+
+
+def test_transient_then_success_is_recovered_with_backoff():
+    dim = 8
+    attempts = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        attempts["n"] += 1
+        if attempts["n"] == 1:
+            return httpx.Response(503)
+        return httpx.Response(200, json=[_hash_to_raw_vector("a passage to embed", dim)])
+
+    client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
+    sleeps: list[float] = []
+    adapter = _build_real_embedder(client, FakeGpuLock(), retry_sleep=sleeps.append)
+
+    vectors = adapter.embed(["a passage to embed"])
+
+    assert attempts["n"] == 2  # first attempt 503, second succeeds -- no third attempt
+    assert sleeps == [1.0]  # exactly one backoff, between attempt 1 and 2
+    assert len(vectors) == 1
+
+
+def test_permanent_error_is_never_retried():
+    attempts = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        attempts["n"] += 1
+        return httpx.Response(400)
+
+    client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
+    sleeps: list[float] = []
+    adapter = _build_real_embedder(client, FakeGpuLock(), retry_sleep=sleeps.append)
+
+    with pytest.raises(PermanentError):
+        adapter.embed(["a passage to embed"])
+
+    assert attempts["n"] == 1  # no retry at all
+    assert sleeps == []
+
+
+def test_retries_exhausted_still_raises_transient_error():
+    attempts = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        attempts["n"] += 1
+        return httpx.Response(503)  # always transient -- retry budget must exhaust
+
+    client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
+    sleeps: list[float] = []
+    adapter = _build_real_embedder(
+        client, FakeGpuLock(), max_retries=2, retry_sleep=sleeps.append
+    )
+
+    with pytest.raises(TransientError):
+        adapter.embed(["a passage to embed"])
+
+    assert attempts["n"] == 3  # initial attempt + 2 retries
+    assert sleeps == [1.0, 2.0]  # exponential backoff between each of the 2 retries

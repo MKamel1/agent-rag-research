@@ -14,6 +14,8 @@ HTTP (`httpx`, already a core dependency), so no vendor SDK import is needed.
 """
 
 import math
+import time
+from collections.abc import Callable
 
 import httpx
 
@@ -31,6 +33,18 @@ _MAX_BATCH_SIZE = 32
 # long-tail paper) is transient (retry, then quarantine); any other 4xx is this request's fault.
 _RETRYABLE_STATUSES = {429, 500, 502, 503, 504}
 
+# Reliability-audit gap: unlike the ingest side (rag/harvester.py's Harvester, rag/orchestrator.py's
+# IngestionOrchestrator), the query path used to raise on the FIRST transient failure — one TEI
+# hiccup (429/502/503/504/timeout) failed a user's whole search. Bounded retry-with-backoff below,
+# same shape (`max_retries`, injected `retry_sleep`, `2 ** (attempt - 1)` backoff) as those two
+# ingest call sites, so this codebase has one retry idiom, not two. `PermanentError` is never
+# retried.
+RetrySleep = Callable[[float], None]
+
+
+def _default_retry_sleep(seconds: float) -> None:
+    time.sleep(seconds)
+
 
 class TeiEmbedder:
     """Real `Embedder` adapter: one or more batched HTTP calls per `embed()` invocation — split
@@ -47,12 +61,28 @@ class TeiEmbedder:
     broken invariant, not a per-paper failure — CONVENTIONS.md §4).
     Acquires `gpu_lock.acquire("embed")` once around all sub-batches (CONVENTIONS.md §6): from the
     caller's side `embed()` is still a single call, so the lock scope matches that.
+
+    A `TransientError` from any one sub-batch's HTTP call gets a bounded, backed-off retry
+    (`max_retries`, `retry_sleep` — same shape as `rag/harvester.py`'s `Harvester`); a
+    `PermanentError` is never retried. Unlike the ingest-side retry sites, there is no quarantine
+    outcome here — a query-path caller has no "skip this paper and continue" fallback, so once the
+    retry budget is exhausted the (still-classified) error simply propagates.
     """
 
-    def __init__(self, client: httpx.Client, gpu_lock: GpuLock, info: EmbedderInfo):
+    def __init__(
+        self,
+        client: httpx.Client,
+        gpu_lock: GpuLock,
+        info: EmbedderInfo,
+        *,
+        max_retries: int = 2,
+        retry_sleep: RetrySleep | None = None,
+    ):
         self._client = client
         self._gpu_lock = gpu_lock
         self._info = info
+        self._max_retries = max_retries
+        self._retry_sleep = retry_sleep or _default_retry_sleep
 
     @property
     def info(self) -> EmbedderInfo:
@@ -66,23 +96,46 @@ class TeiEmbedder:
             raw_vectors = []
             for start in range(0, len(texts), _MAX_BATCH_SIZE):
                 batch = texts[start : start + _MAX_BATCH_SIZE]
-                try:
-                    response = self._client.post("/embed", json={"inputs": batch})
-                    response.raise_for_status()
-                except httpx.HTTPStatusError as error:
-                    status = error.response.status_code
-                    if status in _RETRYABLE_STATUSES:
-                        raise TransientError(f"embedding server returned {status}") from error
-                    raise PermanentError(f"embedding server returned {status}") from error
-                except httpx.HTTPError as error:
-                    raise TransientError(f"embedding request failed: {error}") from error
-                raw_vectors.extend(response.json())
+                raw_vectors.extend(self._post_batch_with_retry(batch))
 
         if len(raw_vectors) != len(texts):
             raise ContractError(
                 f"embedding server returned {len(raw_vectors)} vectors for {len(texts)} inputs"
             )
         return [self._normalize(v) for v in raw_vectors]
+
+    def _post_batch_with_retry(self, batch: list[str]) -> list:
+        """One sub-batch's `/embed` call, retried up to `_max_retries` times on `TransientError`
+        (429/502/503/504, timeout, connection failure) with exponential backoff between attempts —
+        same two-outcome shape as `rag/orchestrator.py`'s `_embed_with_retry`, minus the
+        quarantine (no per-paper fallback exists on the query path). A non-retryable status raises
+        `PermanentError` immediately, same as before this method existed.
+        """
+        attempt = 0
+        while True:
+            try:
+                response = self._client.post("/embed", json={"inputs": batch})
+                response.raise_for_status()
+                return response.json()
+            except httpx.HTTPStatusError as error:
+                status = error.response.status_code
+                if status not in _RETRYABLE_STATUSES:
+                    raise PermanentError(f"embedding server returned {status}") from error
+                attempt += 1
+                if attempt > self._max_retries:
+                    raise TransientError(f"embedding server returned {status}") from error
+            except httpx.HTTPError as error:
+                attempt += 1
+                if attempt > self._max_retries:
+                    raise TransientError(f"embedding request failed: {error}") from error
+            self._retry_sleep(self._backoff(attempt))
+
+    @staticmethod
+    def _backoff(attempt: int) -> float:
+        # Same exponential curve (1s, 2s, 4s, ...) as rag/harvester.py's Harvester._backoff /
+        # rag/orchestrator.py's IngestionOrchestrator._backoff — not shared code across files (one
+        # line), just the same documented shape (CONVENTIONS.md §4).
+        return float(2 ** (attempt - 1))
 
     def _normalize(self, vector: list[float]) -> Vector:
         if len(vector) != self._info.dim:
