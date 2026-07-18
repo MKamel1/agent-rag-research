@@ -151,6 +151,14 @@ _RETRYABLE_STATUSES = {429, 500, 502, 503, 504}
 # plausible URL-length ceiling rather than testing the edge live against a real service.
 _ID_LIST_CHUNK_SIZE = 50
 
+# OG-46: `Config.ordering` -> arXiv's own `sortBy`/`sortOrder` query params. "relevance" reuses
+# arXiv's own relevance ranking for the current focus-area term (no embeddings -- OG-36 is the
+# later, deferred upgrade). `fetch()`'s ordering precondition is exactly "a key of this dict".
+_SORT_PARAMS: dict[str, dict[str, str]] = {
+    "freshest_first": {"sortBy": "submittedDate", "sortOrder": "descending"},
+    "relevance": {"sortBy": "relevance", "sortOrder": "descending"},
+}
+
 # arXiv best-practices ask every automated client to send a DESCRIPTIVE User-Agent so their team can
 # identify the tool (and reach the operator rather than silently block it). Applied to BOTH arXiv
 # HTTP clients -- the metadata API here and the PDF-download client in app/prefetch_pdfs.py -- via
@@ -180,14 +188,44 @@ class ArxivSource:
         *,
         sleep: Callable[[float], None] = time.sleep,
         page_size: int = _DEFAULT_PAGE_SIZE,
+        categories: list[str] | None = None,
+        date_from: str | None = None,
+        date_to: str | None = None,
     ):
+        """`categories`/`date_from`/`date_to` (OG-45, `Config.arxiv_categories`/
+        `arxiv_date_from`/`arxiv_date_to`): DOWNLOAD-side filters folded into every `search_query`
+        this source builds (`_build_query`). All `None` (the default) reproduces the exact query
+        string this class built before OG-45 -- no behavior change for an unfiltered caller."""
         self._client = client or arxiv_http_client(30.0)
         self._sleep = sleep
         self._page_size = page_size
+        self._categories = categories
+        self._date_from = date_from
+        self._date_to = date_to
+
+    def _build_query(self, term: str) -> str:
+        """One focus-area term -> the full `search_query` value: the existing quoted `all:"..."`
+        clause, AND-combined with a `cat:` OR-clause when `categories` is set and/or a
+        `submittedDate:[...]` range when either date bound is set. Omitting both filters yields
+        exactly `all:"<term>"`, byte-identical to pre-OG-45 behavior.
+
+        Date bounds accept ISO `YYYY-MM-DD` or arXiv's own `YYYYMMDD` (dashes are simply
+        stripped); an unset bound becomes `*` (open-ended), Lucene range syntax arXiv's search
+        backend already understands -- avoids inventing a fake earliest/latest date constant.
+        """
+        query = f'all:"{term}"'
+        if self._categories:
+            cats = " OR ".join(f"cat:{c}" for c in self._categories)
+            query += f" AND ({cats})"
+        if self._date_from or self._date_to:
+            lo = f"{self._date_from.replace('-', '')}0000" if self._date_from else "*"
+            hi = f"{self._date_to.replace('-', '')}2359" if self._date_to else "*"
+            query += f" AND submittedDate:[{lo} TO {hi}]"
+        return query
 
     def fetch(self, focus_area: list[str], cap: int, ordering: str) -> Iterator[PaperRef]:
-        """Precondition: `ordering == "freshest_first"` (V0's only supported ordering,
-        DATA-CONTRACTS.md §Config) -> anything else is a caller bug, `PermanentError`.
+        """Precondition: `ordering` is `"freshest_first"` or `"relevance"` (DATA-CONTRACTS.md
+        §Config's `Config.ordering`) -> anything else is a caller bug, `PermanentError`.
 
         Issues one paginated request **per `focus_area` entry** rather than combining all of
         them into a single `" OR "`-joined query — see the real numbers below. `cap` is one
@@ -207,7 +245,7 @@ class ArxivSource:
         when not caught by that same rate limiter. The giant combined query is the actual
         problem; a bigger timeout has nothing to wait out.
         """
-        if ordering != "freshest_first":
+        if ordering not in _SORT_PARAMS:
             raise PermanentError(f"ArxivSource: unsupported ordering={ordering!r}")
 
         yielded = 0
@@ -220,7 +258,7 @@ class ArxivSource:
             # hyphenated single-token term like `all:difference-in-differences` gets split too
             # (verified live). Always quoting sidesteps needing to model arXiv's tokenizer at all;
             # quoting a single plain word is a documented no-op on arXiv's side.
-            query = f'all:"{term}"'
+            query = self._build_query(term)
             start = 0
             while yielded < cap:
                 if not first_request:
@@ -228,7 +266,7 @@ class ArxivSource:
                 first_request = False
 
                 page_cap = min(self._page_size, cap - yielded)
-                entries = self._fetch_page(query, start, page_cap)
+                entries = self._fetch_page(query, start, page_cap, ordering)
                 if not entries:
                     break  # this term is exhausted -> move to the next focus_area entry
                 for ref in entries:
@@ -287,13 +325,12 @@ class ArxivSource:
             raise TransientError(f"ArxivSource: arXiv API request failed: {error}") from error
         return self._parse_entries(response.text)
 
-    def _fetch_page(self, query: str, start: int, page_cap: int) -> list[PaperRef]:
+    def _fetch_page(self, query: str, start: int, page_cap: int, ordering: str) -> list[PaperRef]:
         params = {
             "search_query": query,
             "start": start,
             "max_results": page_cap,
-            "sortBy": "submittedDate",
-            "sortOrder": "descending",
+            **_SORT_PARAMS[ordering],
         }
         try:
             response = self._client.get(_API_URL, params=params)

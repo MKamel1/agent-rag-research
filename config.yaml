@@ -57,11 +57,16 @@ focus_area_queries:
 
 # scope levers (CONTEXT.md registry) — V0 defaults, DATA-CONTRACTS.md §Config
 corpus_cap: 30000
-ordering: "freshest_first"
+ordering: "freshest_first"  # OG-46: or "relevance" -- arXiv's own sortBy=relevance ranking
 ingestion_mode: "one_shot_seed"
 sources:
   - "arxiv"
 relevance_filter: "off"
+
+# OG-45: DOWNLOAD-side arXiv subject/date filters -- null/empty = no filter (today's behavior).
+arxiv_categories: null  # e.g. ["stat.ME", "econ.EM", "cs.LG"]
+arxiv_date_from: null   # ISO YYYY-MM-DD or arXiv's YYYYMMDD; unset = open lower bound
+arxiv_date_to: null     # same format; unset = open upper bound
 
 # retrieval knobs — V0 defaults. Spike 2 (PR #46, phase0-results.md) locked the embedder
 # (Qwen3-Embedding-4B) and reranker (BGE-reranker-v2-m3) choices themselves, served over TEI as

@@ -21,10 +21,22 @@ class Config(FrozenModel):
     # scope levers (CONTEXT.md registry) — the knobs that must never be buried constants
     focus_area_queries: list[str]  # arXiv search queries defining the topic
     corpus_cap: int = Field(default=15_000, gt=0)
-    ordering: Literal["freshest_first"] = "freshest_first"
+    # OG-46: "relevance" -> arXiv's own `sortBy=relevance` (rag/harvester.py `ArxivSource`),
+    # instead of freshest-first. Default unchanged; a dashboard-launched run may opt in per-run
+    # (app/dashboard/controller.py's override-config mechanism).
+    ordering: Literal["freshest_first", "relevance"] = "freshest_first"
     ingestion_mode: Literal["one_shot_seed"] = "one_shot_seed"
     sources: list[str] = Field(default_factory=lambda: ["arxiv"])
     relevance_filter: Literal["off", "embedding"] = "off"
+    # OG-45: DOWNLOAD/discovery-side arXiv filters (distinct from the already-wired query-time
+    # SearchFilters.categories/published_after/before) -- `None` (default) = today's behavior,
+    # no filter. `arxiv_categories` OR-joins into `rag/harvester.py`'s `cat:` clause; unset means
+    # every category. Values are arXiv subject codes, e.g. "stat.ME", "econ.EM", "cs.LG".
+    arxiv_categories: list[str] | None = None
+    # Submitted-date range, ISO `YYYY-MM-DD` or arXiv's own `YYYYMMDD`; either bound may be unset
+    # (open-ended). Both `None` (default) = no date filter.
+    arxiv_date_from: str | None = None
+    arxiv_date_to: str | None = None
     # retrieval knobs (tuned in Spike 2)
     # NOTE: no `contextual_header` toggle — it's not built in V0 (PRD ADR-07).
     child_parent_expansion: bool = True

@@ -402,6 +402,124 @@ def test_fetch_by_ids_maps_other_status_to_permanent_error():
         source.fetch_by_ids(["2504.09999"])
 
 
+# --- OG-45: category/date DOWNLOAD filters folded into the search_query ------------------------
+
+
+def test_query_with_neither_categories_nor_dates_is_unchanged():
+    queries_seen = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        queries_seen.append(request.url.params["search_query"])
+        return httpx.Response(200, text=_EMPTY_FEED)
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    source = make_source(client=client, page_size=10)
+    list(source.fetch(["causal inference"], cap=100, ordering="freshest_first"))
+    assert queries_seen == ['all:"causal inference"']
+
+
+def test_query_with_categories_only_adds_an_or_joined_cat_clause():
+    queries_seen = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        queries_seen.append(request.url.params["search_query"])
+        return httpx.Response(200, text=_EMPTY_FEED)
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    source = make_source(client=client, page_size=10, categories=["stat.ME", "econ.EM"])
+    list(source.fetch(["causal inference"], cap=100, ordering="freshest_first"))
+    assert queries_seen == ['all:"causal inference" AND (cat:stat.ME OR cat:econ.EM)']
+
+
+def test_query_with_dates_only_adds_a_submitted_date_range():
+    queries_seen = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        queries_seen.append(request.url.params["search_query"])
+        return httpx.Response(200, text=_EMPTY_FEED)
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    source = make_source(client=client, page_size=10, date_from="2018-01-01", date_to="20200101")
+    list(source.fetch(["causal inference"], cap=100, ordering="freshest_first"))
+    assert queries_seen == [
+        'all:"causal inference" AND submittedDate:[201801010000 TO 202001012359]'
+    ]
+
+
+def test_query_with_categories_and_dates_combines_both_clauses():
+    queries_seen = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        queries_seen.append(request.url.params["search_query"])
+        return httpx.Response(200, text=_EMPTY_FEED)
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    source = make_source(
+        client=client, page_size=10, categories=["cs.LG"], date_from="2018-01-01", date_to="2020-01-01",
+    )
+    list(source.fetch(["causal inference"], cap=100, ordering="freshest_first"))
+    assert queries_seen == [
+        'all:"causal inference" AND (cat:cs.LG) AND submittedDate:[201801010000 TO 202001012359]'
+    ]
+
+
+def test_query_with_an_open_ended_date_bound_uses_a_wildcard():
+    queries_seen = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        queries_seen.append(request.url.params["search_query"])
+        return httpx.Response(200, text=_EMPTY_FEED)
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    source = make_source(client=client, page_size=10, date_from="2018-01-01")
+    list(source.fetch(["causal inference"], cap=100, ordering="freshest_first"))
+    assert queries_seen == ['all:"causal inference" AND submittedDate:[201801010000 TO *]']
+
+
+# --- OG-46: ordering="relevance" -> sortBy=relevance --------------------------------------------
+
+
+def test_freshest_first_ordering_sorts_by_submitted_date_descending():
+    params_seen = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        params_seen.append(dict(request.url.params))
+        return httpx.Response(200, text=_EMPTY_FEED)
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    source = make_source(client=client, page_size=10)
+    list(source.fetch(["causal inference"], cap=100, ordering="freshest_first"))
+    assert params_seen[0]["sortBy"] == "submittedDate"
+    assert params_seen[0]["sortOrder"] == "descending"
+
+
+def test_relevance_ordering_sorts_by_relevance():
+    params_seen = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        params_seen.append(dict(request.url.params))
+        return httpx.Response(200, text=_EMPTY_FEED)
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    source = make_source(client=client, page_size=10)
+    list(source.fetch(["causal inference"], cap=100, ordering="relevance"))
+    assert params_seen[0]["sortBy"] == "relevance"
+
+
+def test_relevance_ordering_also_gets_the_category_date_query_clauses():
+    """The OG-45 filters and the OG-46 ordering are independent knobs -- both apply together."""
+    queries_seen = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        queries_seen.append(request.url.params["search_query"])
+        return httpx.Response(200, text=_EMPTY_FEED)
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    source = make_source(client=client, page_size=10, categories=["stat.ME"])
+    list(source.fetch(["causal inference"], cap=100, ordering="relevance"))
+    assert queries_seen == ['all:"causal inference" AND (cat:stat.ME)']
+
+
 @pytest.mark.real_adapter  # hits the real export.arxiv.org API — never run by default
 def test_real_arxiv_api_fetch_by_ids_returns_the_exact_requested_papers():
     time.sleep(3)  # space out from other real-adapter tests in this file
