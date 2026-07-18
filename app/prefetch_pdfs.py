@@ -19,9 +19,9 @@ the old live-metadata-fetch behavior, unchanged.
 **Coordinating with the live pipeline instead of duplicating its traffic (the actual design
 problem here):**
 
-1. *Dedup.* Both processes independently harvest from the SAME `focus_area_queries` +
-   `freshest_first` ordering (DATA-CONTRACTS.md §Config), so a naive second harvester would
-   re-walk nearly the same paper list. Before downloading paper X, this script checks the SHARED
+1. *Dedup.* Both processes independently harvest from the SAME `focus_area_queries` + `cfg.ordering`
+   (DATA-CONTRACTS.md §Config -- `"freshest_first"` or, OG-46, `"relevance"`), so a naive second
+   harvester would re-walk nearly the same paper list. Before downloading paper X, this script checks the SHARED
    `ingest_state` table (`rag/ingest_state_sqlite.py`'s `SqliteIngestState`, same real `papers.db`
    the live run writes) via `all_known_paper_ids()` — a single bulk, **read-only** `SELECT`. Any
    paper_id with an existing row (any stage) means the live pipeline already has it, so this
@@ -252,7 +252,13 @@ def run(
     `rag/test_prefetch_pdfs.py`.
     """
     state = SqliteIngestState(db_path)  # read-only here: only `all_known_paper_ids()` is called.
-    harvester = harvester or Harvester(ArxivSource())
+    # OG-45: same DOWNLOAD-side filters app/assembly.py's build_ingestion_orchestrator wires --
+    # both processes harvest the identical filtered candidate set (module docstring point 1).
+    harvester = harvester or Harvester(
+        ArxivSource(
+            categories=cfg.arxiv_categories, date_from=cfg.arxiv_date_from, date_to=cfg.arxiv_date_to,
+        )
+    )
     owned_client = client is None
     client = client or arxiv_http_client(60.0)
 

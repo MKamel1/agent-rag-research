@@ -156,7 +156,8 @@ def test_status_route_shape_matches_api_contract(running_server):
     }
     assert set(body["run"].keys()) == {
         "run_id", "status", "target", "parse_workers", "focus_queries", "started_at", "params",
-        "paper_ids_file", "parse_batch_size",
+        "paper_ids_file", "parse_batch_size", "arxiv_categories", "arxiv_date_from",
+        "arxiv_date_to", "ordering",
     }
     assert set(body["telemetry"].keys()) == {
         "stage", "papers_per_hour", "gpu_util_pct", "vram_mib", "power_w", "wall_clock_s", "eta_s",
@@ -253,6 +254,33 @@ def test_control_start_forwards_og43_editable_params(running_server):
 def test_control_start_omits_unset_og43_params(running_server):
     url, fake_controller = running_server
     _post(url, "/api/control", {"action": "start", "target": 500, "parse_workers": 2, "keywords": []})
+    assert fake_controller.calls == [("start", 500, 2, {})]
+
+
+def test_control_start_forwards_og45_og46_editable_params(running_server):
+    """OG-45/OG-46: arxiv_categories/arxiv_date_from/arxiv_date_to/ordering in the POST body reach
+    `controller.start` as kwargs -- an absent field must not show up as an explicit None/[]."""
+    url, fake_controller = running_server
+    status, body = _post(url, "/api/control", {
+        "action": "start", "target": 500, "parse_workers": 2,
+        "arxiv_categories": ["stat.ME", "econ.EM"], "arxiv_date_from": "2018-01-01",
+        "arxiv_date_to": "2020-01-01", "ordering": "relevance",
+    })
+    assert status == 200
+    assert fake_controller.calls == [(
+        "start", 500, 2,
+        {
+            "arxiv_categories": ["stat.ME", "econ.EM"], "arxiv_date_from": "2018-01-01",
+            "arxiv_date_to": "2020-01-01", "ordering": "relevance",
+        },
+    )]
+
+
+def test_control_start_omits_unset_og45_og46_params(running_server):
+    url, fake_controller = running_server
+    _post(url, "/api/control", {
+        "action": "start", "target": 500, "parse_workers": 2, "arxiv_categories": [],
+    })
     assert fake_controller.calls == [("start", 500, 2, {})]
 
 

@@ -282,13 +282,19 @@ def _write_override_config_dir(cfg: Config) -> Path:
 
 
 def _maybe_build_override(
-    cfg: Config, keywords: list[str] | None, parse_batch_size: int | None,
+    cfg: Config, keywords: list[str] | None, parse_batch_size: int | None, *,
+    arxiv_categories: list[str] | None = None,
+    arxiv_date_from: str | None = None,
+    arxiv_date_to: str | None = None,
+    ordering: str | None = None,
 ) -> tuple[Config, Path | None]:
     """Builds a run-scoped override `Config` + scratch `config.yaml` dir when `keywords` (AUGMENTED
     onto `focus_area_queries` -- owner decision: an edit adds topics to the one library, it never
-    replaces it) or `parse_batch_size` actually change anything relative to the base config.
-    Returns `(cfg, None)` unchanged when neither edit does -- a run that edits nothing launches
-    exactly the old way (`cwd=data_dir`, no override dir, no scratch files)."""
+    replaces it), `parse_batch_size`, the OG-45 arXiv DOWNLOAD filters
+    (`arxiv_categories`/`arxiv_date_from`/`arxiv_date_to`), or the OG-46 `ordering` actually change
+    anything relative to the base config. Returns `(cfg, None)` unchanged when nothing edits --
+    a run that edits nothing launches exactly the old way (`cwd=data_dir`, no override dir, no
+    scratch files)."""
     updates: dict = {}
     if keywords:
         merged = cfg.focus_area_queries + [k for k in keywords if k not in cfg.focus_area_queries]
@@ -296,6 +302,14 @@ def _maybe_build_override(
             updates["focus_area_queries"] = merged
     if parse_batch_size is not None and parse_batch_size != cfg.parse_batch_size:
         updates["parse_batch_size"] = parse_batch_size
+    if arxiv_categories is not None and arxiv_categories != cfg.arxiv_categories:
+        updates["arxiv_categories"] = arxiv_categories
+    if arxiv_date_from is not None and arxiv_date_from != cfg.arxiv_date_from:
+        updates["arxiv_date_from"] = arxiv_date_from
+    if arxiv_date_to is not None and arxiv_date_to != cfg.arxiv_date_to:
+        updates["arxiv_date_to"] = arxiv_date_to
+    if ordering is not None and ordering != cfg.ordering:
+        updates["ordering"] = ordering
     if not updates:
         return cfg, None
     effective = cfg.model_copy(update=updates)
@@ -396,6 +410,14 @@ def _build_manifest(
         # `app.build_corpus`'s own child, actually wrote it).
         "run_cwd": str(run_cwd),
         "parse_batch_size": effective_cfg.parse_batch_size,
+        # OG-46: dashboard run-panel ordering-mode indicator ("relevance" vs "freshest_first").
+        "ordering": effective_cfg.ordering,
+        # OG-45: DOWNLOAD-side arXiv filters actually in effect for this run (unedited base config
+        # value when the run didn't override them) -- same "show what's actually active" role
+        # `focus_queries` already plays for keyword edits.
+        "arxiv_categories": effective_cfg.arxiv_categories,
+        "arxiv_date_from": effective_cfg.arxiv_date_from,
+        "arxiv_date_to": effective_cfg.arxiv_date_to,
         "params": {
             "parse_workers": parse_workers, "limit": target,
             "telemetry_poll_interval": telemetry_poll_interval, "batch_size": batch_size,
@@ -410,6 +432,9 @@ def start(data_dir: str | Path, target: int, parse_workers: int = 3, *,
           paper_ids_file: str | Path | None = None,
           telemetry_poll_interval: float | None = None, batch_size: int | None = None,
           keywords: list[str] | None = None, parse_batch_size: int | None = None,
+          arxiv_categories: list[str] | None = None,
+          arxiv_date_from: str | None = None, arxiv_date_to: str | None = None,
+          ordering: str | None = None,
           spawn: SpawnFn = _spawn) -> dict:
     """Fresh run with a new target. Refuses if a run is already live (`running`/`pausing`/
     `stopping`) -- pause or stop it first.
@@ -421,11 +446,15 @@ def start(data_dir: str | Path, target: int, parse_workers: int = 3, *,
     `telemetry_poll_interval`/`batch_size` (OG-43): plain pass-through CLI flags, forwarded to
     `app.build_corpus` as-is -- no config involved.
 
-    `keywords`/`parse_batch_size` (OG-43): config-DERIVED edits -- reaching them requires a
-    run-scoped override `config.yaml` (`_maybe_build_override`/`_write_override_config_dir`),
-    since `app.build_corpus` and its `app.prefetch_pdfs`/`app.ingest` children each `load_config()`
-    fresh from their own cwd rather than receiving this process's in-memory `Config`. `keywords`
-    AUGMENTS `focus_area_queries` (adds topics, never replaces -- owner decision)."""
+    `keywords`/`parse_batch_size`/`arxiv_categories`/`arxiv_date_from`/`arxiv_date_to`/`ordering`
+    (OG-43/OG-45/OG-46): config-DERIVED edits -- reaching them requires a run-scoped override
+    `config.yaml` (`_maybe_build_override`/`_write_override_config_dir`), since `app.build_corpus`
+    and its `app.prefetch_pdfs`/`app.ingest` children each `load_config()` fresh from their own
+    cwd rather than receiving this process's in-memory `Config`. `keywords` AUGMENTS
+    `focus_area_queries` (adds topics, never replaces -- owner decision). `arxiv_categories`/
+    `arxiv_date_from`/`arxiv_date_to` (OG-45) REPLACE the base config's DOWNLOAD-side filters for
+    this run (unlike keywords, there is no "augment a filter" semantics). `ordering` (OG-46) is
+    `"freshest_first"` or `"relevance"`."""
     data_dir = Path(data_dir)
     manifest = reconcile(data_dir)
     if manifest is not None and manifest.get("status") in _LIVE_STATUSES:
@@ -441,7 +470,11 @@ def start(data_dir: str | Path, target: int, parse_workers: int = 3, *,
     db_path = data_dir / "papers.db"
 
     base_cfg = load_config(_REPO_ROOT / "config.yaml")
-    effective_cfg, override_dir = _maybe_build_override(base_cfg, keywords, parse_batch_size)
+    effective_cfg, override_dir = _maybe_build_override(
+        base_cfg, keywords, parse_batch_size,
+        arxiv_categories=arxiv_categories, arxiv_date_from=arxiv_date_from,
+        arxiv_date_to=arxiv_date_to, ordering=ordering,
+    )
     run_cwd = override_dir if override_dir is not None else data_dir
 
     pid = _call_spawn(
@@ -547,6 +580,9 @@ def retarget(data_dir: str | Path, target: int, parse_workers: int = 3, *,
              paper_ids_file: str | Path | None = None,
              telemetry_poll_interval: float | None = None, batch_size: int | None = None,
              keywords: list[str] | None = None, parse_batch_size: int | None = None,
+             arxiv_categories: list[str] | None = None,
+             arxiv_date_from: str | None = None, arxiv_date_to: str | None = None,
+             ordering: str | None = None,
              spawn: SpawnFn = _spawn) -> dict:
     """"Start a fresh run with a new target": stop the current run if one is live, then start.
     OG-43: this is now the "Apply new settings while a run is live" path -- `server.py` exposes it
@@ -562,5 +598,7 @@ def retarget(data_dir: str | Path, target: int, parse_workers: int = 3, *,
     return start(
         data_dir, target, parse_workers, paper_ids_file=paper_ids_file,
         telemetry_poll_interval=telemetry_poll_interval, batch_size=batch_size,
-        keywords=keywords, parse_batch_size=parse_batch_size, spawn=spawn,
+        keywords=keywords, parse_batch_size=parse_batch_size,
+        arxiv_categories=arxiv_categories, arxiv_date_from=arxiv_date_from,
+        arxiv_date_to=arxiv_date_to, ordering=ordering, spawn=spawn,
     )

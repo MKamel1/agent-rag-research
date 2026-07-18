@@ -36,9 +36,12 @@ _STATIC_INDEX = Path(__file__).parent / "static" / "index.html"
 # the value, it just never reached the API payload.
 # OG-43: `paper_ids_file` added -- the frontend's "mode: cache-first" indicator needs it to note
 # an explicit id-scoped run.
+# OG-45/OG-46: `arxiv_categories`/`arxiv_date_from`/`arxiv_date_to`/`ordering` -- the DOWNLOAD
+# filters and ordering mode actually in effect for the current/last run (manifest carries the
+# unedited base-config value even when a run didn't override them, see `controller._build_manifest`).
 _RUN_FIELDS = (
     "run_id", "status", "target", "parse_workers", "focus_queries", "started_at", "params",
-    "paper_ids_file",
+    "paper_ids_file", "arxiv_categories", "arxiv_date_from", "arxiv_date_to", "ordering",
 )
 
 # `parse_batch_size`: OG-43 adds a per-run override (`start(..., parse_batch_size=...)` ->
@@ -80,6 +83,17 @@ def _control_kwargs(body: dict) -> dict:
     keywords = body.get("keywords")
     if keywords:
         kwargs["keywords"] = [str(k) for k in keywords]
+    # OG-45: arXiv DOWNLOAD-side filters -- REPLACE (not augment) the base config's value.
+    categories = body.get("arxiv_categories")
+    if categories:
+        kwargs["arxiv_categories"] = [str(c) for c in categories]
+    if body.get("arxiv_date_from"):
+        kwargs["arxiv_date_from"] = str(body["arxiv_date_from"])
+    if body.get("arxiv_date_to"):
+        kwargs["arxiv_date_to"] = str(body["arxiv_date_to"])
+    # OG-46: relevance-priority ordering.
+    if body.get("ordering"):
+        kwargs["ordering"] = str(body["ordering"])
     return kwargs
 
 

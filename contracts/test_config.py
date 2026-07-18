@@ -31,11 +31,36 @@ def test_constructs_with_only_the_one_required_field_and_documented_v0_defaults(
     assert config.batch_size_log_path is None
     assert config.prefetch_target == 30_000
     assert config.ingest_paper_ids is None
+    assert config.arxiv_categories is None
+    assert config.arxiv_date_from is None
+    assert config.arxiv_date_to is None
 
 
 def test_ingest_paper_ids_accepts_an_explicit_list():
     config = Config(focus_area_queries=["x"], ingest_paper_ids=["2601.00001", "2601.00002"])
     assert config.ingest_paper_ids == ["2601.00001", "2601.00002"]
+
+
+def test_ordering_accepts_relevance():
+    config = Config(focus_area_queries=["x"], ordering="relevance")
+    assert config.ordering == "relevance"
+
+
+def test_ordering_rejects_unknown_value():
+    with pytest.raises(ValidationError):
+        Config(focus_area_queries=["x"], ordering="oldest_first")
+
+
+def test_arxiv_filters_accept_explicit_values():
+    config = Config(
+        focus_area_queries=["x"],
+        arxiv_categories=["stat.ME", "econ.EM"],
+        arxiv_date_from="2018-01-01",
+        arxiv_date_to="20200101",
+    )
+    assert config.arxiv_categories == ["stat.ME", "econ.EM"]
+    assert config.arxiv_date_from == "2018-01-01"
+    assert config.arxiv_date_to == "20200101"
 
 
 def test_pdf_cache_dir_accepts_empty_string_to_disable_the_cache():

@@ -214,6 +214,35 @@
     <div class="tags" id="pendingKeywordTags" style="margin-top:.4rem;"></div>
 
     <div class="controls" style="margin-top: .75rem; border-top: 1px solid var(--border); padding-top: .75rem;">
+      <div class="field" style="flex: 1 1 100%;">
+        <label for="newSubject">arXiv subject / category (OG-45, replaces current filter — comma-separated, e.g. stat.ME, econ.EM)</label>
+        <div style="display:flex; gap:.4rem;">
+          <input id="newSubject" type="text" placeholder="e.g. stat.ME, econ.EM" style="width: 18rem;">
+          <button id="btnAddSubject" class="secondary" type="button">Add</button>
+        </div>
+      </div>
+    </div>
+    <div class="tags" id="pendingSubjectTags" style="margin-top:.4rem;"></div>
+
+    <div class="controls" style="margin-top: .5rem;">
+      <div class="field">
+        <label for="newDateFrom">submitted date from (OG-45, blank = open)</label>
+        <input id="newDateFrom" type="date" style="width: 10rem;">
+      </div>
+      <div class="field">
+        <label for="newDateTo">submitted date to (OG-45, blank = open)</label>
+        <input id="newDateTo" type="date" style="width: 10rem;">
+      </div>
+      <div class="field">
+        <label for="newOrdering">processing order (OG-46)</label>
+        <select id="newOrdering">
+          <option value="freshest_first" selected>freshest first</option>
+          <option value="relevance">relevance (arXiv ranking)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="controls" style="margin-top: .75rem; border-top: 1px solid var(--border); padding-top: .75rem;">
       <button id="btnApply">Apply (start fresh run)</button>
       <span class="note" id="applyHint" style="margin:0;"></span>
     </div>
@@ -234,6 +263,9 @@ const TUNING = [
   ["telemetry_poll_interval", s => s.run.params && s.run.params.telemetry_poll_interval, "5s", "5s", "GPU sampling cadence. Editable below."],
   ["build --batch-size", s => s.run.params && s.run.params.batch_size, "whole cache each iteration", "whole cache", "Caps cached-not-done ids fed to one app.ingest batch. Editable below."],
   ["focus_queries (keywords)", s => (s.run.focus_queries || []).length + " active", "33 causal queries (config.yaml)", "augment, don't replace", "Edit below (add/remove tags) -- edits AUGMENT the library, never replace it (owner decision)."],
+  ["ordering (OG-46)", s => s.run.ordering, "freshest_first", "relevance for a focused sprint", "arXiv's own sortBy=relevance ranking prioritizes build_corpus's processing order toward the current focus. Editable below."],
+  ["arXiv categories (OG-45)", s => (s.run.arxiv_categories || []).join(", ") || "none", "none (config.yaml)", "e.g. stat.ME, econ.EM", "DOWNLOAD-side filter -- replaces (not augments) the base filter. Editable below."],
+  ["arXiv date range (OG-45)", s => `${s.run.arxiv_date_from || "*"} .. ${s.run.arxiv_date_to || "*"}`, "* .. * (no filter)", "e.g. 2018-01-01 .. now", "DOWNLOAD-side submittedDate filter. Editable below."],
   ["MINERU_VIRTUAL_VRAM_SIZE", () => null, "auto (shell env var, unplumbed)", "ratio8 @ 24GB (measured best)", "NOT yet controllable here -- vendored mineru reads this from the shell env before Python starts; no app code reads or forwards it into the parse subprocess (2026-07-18 sweep). Not a live dial."],
   ["relevance_filter", () => null, "off", "off", "Currently dead code (OG-36) -- display-only."],
 ];
@@ -300,9 +332,12 @@ function render(snap) {
 
   // Cache-first mode indicator (OG-43): every dashboard-launched run goes through
   // app.build_corpus, which is cache-first by construction (OG-40/OG-41) -- note an explicit id
-  // list too, when the manifest carries one.
+  // list too, when the manifest carries one. OG-46: also surface the processing-order mode
+  // (relevance vs freshest) actually in effect for this run.
+  const orderingLabel = snap.run.ordering === "relevance" ? "relevance" : "freshest";
   document.getElementById("modeIndicator").textContent = snap.run.run_id
     ? "mode: cache-first" + (snap.run.paper_ids_file ? " (explicit id list)" : "")
+      + " · order: " + orderingLabel
     : "";
 
   renderFunnel(snap.funnel);
@@ -379,6 +414,7 @@ function render(snap) {
     if (snap.run.parse_batch_size) document.getElementById("newParseBatchSize").value = snap.run.parse_batch_size;
     const tpi = snap.run.params && snap.run.params.telemetry_poll_interval;
     if (tpi) document.getElementById("newTelemetryPoll").value = tpi;
+    if (snap.run.ordering) document.getElementById("newOrdering").value = snap.run.ordering;
     fieldsInitialized = true;
   }
 }
@@ -447,6 +483,38 @@ document.getElementById("newKeyword").addEventListener("keydown", e => {
 });
 renderPendingKeywords();
 
+// --- OG-45: arXiv subject/category tags -- REPLACES (not augments) the current filter on Apply --
+
+let pendingSubjects = [];
+
+function renderPendingSubjects() {
+  const el = document.getElementById("pendingSubjectTags");
+  el.innerHTML = pendingSubjects.length
+    ? pendingSubjects.map((c, i) =>
+        `<span class="tag pending">${c} <a href="#" class="tag-remove" data-i="${i}">&times;</a></span>`
+      ).join("")
+    : `<span class="stat-label">no category filter set (blank = every category)</span>`;
+  el.querySelectorAll(".tag-remove").forEach(a => a.addEventListener("click", e => {
+    e.preventDefault();
+    pendingSubjects.splice(parseInt(a.dataset.i, 10), 1);
+    renderPendingSubjects();
+  }));
+}
+
+document.getElementById("btnAddSubject").addEventListener("click", () => {
+  const input = document.getElementById("newSubject");
+  // comma-separated paste (e.g. "stat.ME, econ.EM") splits into individual tags in one go.
+  input.value.split(",").map(s => s.trim()).filter(Boolean).forEach(c => {
+    if (!pendingSubjects.includes(c)) pendingSubjects.push(c);
+  });
+  input.value = "";
+  renderPendingSubjects();
+});
+document.getElementById("newSubject").addEventListener("keydown", e => {
+  if (e.key === "Enter") { e.preventDefault(); document.getElementById("btnAddSubject").click(); }
+});
+renderPendingSubjects();
+
 // --- control actions -----------------------------------------------------------------------
 
 document.getElementById("btnPause").addEventListener("click", () => control("pause"));
@@ -465,6 +533,18 @@ function buildApplyPayload() {
   const bbs = document.getElementById("newBuildBatchSize").value;
   if (bbs) body.batch_size = parseInt(bbs, 10);
   if (pendingKeywords.length) body.keywords = pendingKeywords.slice();
+  // OG-45: subject/date filters REPLACE the current filter on Apply (unlike keywords, which
+  // augment) -- only sent when the user actually set one, so leaving them blank never clobbers
+  // an existing run-scoped filter via retarget.
+  if (pendingSubjects.length) body.arxiv_categories = pendingSubjects.slice();
+  const dateFrom = document.getElementById("newDateFrom").value;
+  if (dateFrom) body.arxiv_date_from = dateFrom;
+  const dateTo = document.getElementById("newDateTo").value;
+  if (dateTo) body.arxiv_date_to = dateTo;
+  // OG-46: only sent when changed from the default -- "freshest_first" is already the base config
+  // default, so leaving the selector untouched never forces an unnecessary override.
+  const ordering = document.getElementById("newOrdering").value;
+  if (ordering && ordering !== "freshest_first") body.ordering = ordering;
   return body;
 }
 

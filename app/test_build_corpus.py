@@ -17,6 +17,7 @@ from pathlib import Path
 from app.build_corpus import (
     _DEFAULT_MAX_IDLE,
     _is_live_prefetch,
+    _order_by_relevance,
     _prefetch_pid_path,
     build_to_target,
     cached_not_done,
@@ -445,3 +446,131 @@ def test_run_ingest_appends_telemetry_poll_interval_flag_only_when_set(tmp_path,
     assert "--telemetry-poll-interval" not in captured[0]
     assert "--telemetry-poll-interval" in captured[1]
     assert captured[1][captured[1].index("--telemetry-poll-interval") + 1] == "3.0"
+
+
+# ================================================================================================
+# OG-46: relevance-priority processing queue -- _order_by_relevance + build_to_target(ordering=...)
+# ================================================================================================
+
+
+def test_order_by_relevance_puts_ranked_ids_first_in_rank_order():
+    ranked = ["b", "a", "c"]  # arXiv relevance order for the current focus
+    ids = ["a", "b", "z", "y"]  # cached-not-done batch: "b" and "a" are ranked, "z"/"y" are not
+    assert _order_by_relevance(ids, ranked) == ["b", "a", "y", "z"]
+
+
+def test_order_by_relevance_is_a_reordering_not_a_filter():
+    """Every id in the input batch is still present exactly once -- OG-46: an ORDER, not a filter."""
+    ids = ["x1", "x2", "x3"]
+    result = _order_by_relevance(ids, ranked_ids=["x3"])
+    assert sorted(result) == sorted(ids)
+    assert result[0] == "x3"
+
+
+def test_order_by_relevance_ignores_ranked_ids_not_in_the_batch():
+    # "q" is ranked but isn't in `ids` (already done, or not cached yet) -- must not appear.
+    assert _order_by_relevance(["a", "b"], ranked_ids=["q", "b", "a"]) == ["b", "a"]
+
+
+def test_order_by_relevance_with_no_ranked_ids_falls_back_to_sorted():
+    assert _order_by_relevance(["c", "a", "b"], ranked_ids=[]) == ["a", "b", "c"]
+
+
+def test_build_to_target_default_ordering_never_calls_relevance_rank(tmp_path):
+    """Default (freshest_first) must not touch `relevance_rank` at all -- zero behavior change for
+    every existing (unordered) caller."""
+    def fail_rank(focus_area_queries):
+        raise AssertionError("relevance_rank must not be called under freshest_first ordering")
+
+    build_to_target(
+        tmp_path, "db", Path("cache"), target=1, parse_workers=1, events_path=Path("events"),
+        ensure_prefetch=_fake_ensure_prefetch(alive=True),
+        run_ingest=lambda batch_file, parse_workers, events_path, data_dir: None,
+        cached_not_done=lambda cache_dir, db_path: ["a"],
+        done_count=lambda db_path: 1,
+        relevance_rank=fail_rank,
+        sleep=lambda s: None,
+    )
+
+
+def test_build_to_target_relevance_ordering_reorders_each_batch(tmp_path):
+    """cached_not_done keeps returning the same 4 ids across 2 iterations (2 processed per batch)
+    -- the ranked ones must always come first, in rank order, even once the earlier-ranked ids
+    are already done and gone from the pool."""
+    all_ids = {"p1", "p2", "p3", "p4"}
+    done: set[str] = set()
+    batches_run = []
+
+    def fake_cached_not_done(cache_dir, db_path):
+        return sorted(all_ids - done)  # unordered-by-relevance input, same as the real function
+
+    def fake_run_ingest(batch_file, parse_workers, events_path, data_dir):
+        ids = [line for line in batch_file.read_text().splitlines() if line]
+        batches_run.append(ids)
+        done.update(ids)
+
+    build_to_target(
+        tmp_path, "db", Path("cache"), target=4, parse_workers=1, events_path=Path("events"),
+        batch_size=2,
+        ordering="relevance",
+        focus_area_queries=["causal inference"],
+        ensure_prefetch=_fake_ensure_prefetch(alive=True),
+        run_ingest=fake_run_ingest,
+        cached_not_done=fake_cached_not_done,
+        done_count=lambda db_path: len(done),
+        relevance_rank=lambda focus: ["p3", "p1", "p4", "p2"],
+        sleep=lambda s: None,
+    )
+    assert batches_run == [["p3", "p1"], ["p4", "p2"]]
+
+
+def test_build_to_target_relevance_rank_is_computed_once_and_memoized(tmp_path):
+    """The ranking harvest is a real (rate-limited) arXiv round trip -- must happen at most once
+    per `build_to_target` call, not once per loop iteration."""
+    all_ids = {"p1", "p2"}
+    done: set[str] = set()
+    rank_calls = []
+
+    def fake_cached_not_done(cache_dir, db_path):
+        return sorted(all_ids - done)
+
+    def fake_run_ingest(batch_file, parse_workers, events_path, data_dir):
+        ids = [line for line in batch_file.read_text().splitlines() if line]
+        done.update(ids)
+
+    def relevance_rank(focus):
+        rank_calls.append(focus)
+        return ["p2", "p1"]
+
+    build_to_target(
+        tmp_path, "db", Path("cache"), target=2, parse_workers=1, events_path=Path("events"),
+        batch_size=1,
+        ordering="relevance",
+        focus_area_queries=["causal inference"],
+        ensure_prefetch=_fake_ensure_prefetch(alive=True),
+        run_ingest=fake_run_ingest,
+        cached_not_done=fake_cached_not_done,
+        done_count=lambda db_path: len(done),
+        relevance_rank=relevance_rank,
+        sleep=lambda s: None,
+    )
+    assert rank_calls == [["causal inference"]]  # exactly one harvest for the whole run
+
+
+def test_build_to_target_relevance_ordering_with_empty_cache_never_ranks(tmp_path):
+    """No cached-not-done ids yet (cold start) -- nothing to reorder, so the ranking harvest
+    (a real network round trip in production) must not fire needlessly."""
+    def fail_rank(focus_area_queries):
+        raise AssertionError("must not rank when there is nothing cached yet")
+
+    build_to_target(
+        tmp_path, "db", Path("cache"), target=100, parse_workers=1, events_path=Path("events"),
+        ordering="relevance",
+        focus_area_queries=["causal inference"],
+        ensure_prefetch=_fake_ensure_prefetch(alive=False),
+        run_ingest=lambda *a, **k: (_ for _ in ()).throw(AssertionError("no ingest expected")),
+        cached_not_done=lambda cache_dir, db_path: [],
+        done_count=lambda db_path: 0,
+        relevance_rank=fail_rank,
+        sleep=lambda s: None,
+    )

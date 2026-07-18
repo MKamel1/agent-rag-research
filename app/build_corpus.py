@@ -51,6 +51,7 @@ from pathlib import Path
 from typing import Callable
 
 from rag.config import load_config
+from rag.harvester import ArxivSource, Harvester
 
 logger = logging.getLogger(__name__)
 
@@ -234,6 +235,45 @@ def _call_run_ingest(
         )
 
 
+# --- relevance ordering (OG-46: "new keyword jumps the queue") --------------------------------
+
+# Cap on the metadata-only ranking harvest below -- big enough to usually cover one iteration's
+# `cached_not_done` batch, small enough that the rate-limited (3s/page, `rag.harvester`) arXiv
+# metadata fetch doesn't stall the loop for long.
+_RELEVANCE_RANK_CAP = 500
+
+
+def _relevance_rank(focus_area_queries: list[str]) -> list[str]:
+    """One metadata-only `ordering="relevance"` harvest for `focus_area_queries` -- arXiv's own
+    `sortBy=relevance` (rag/harvester.py), NO PDF download (`Harvester`/`ArxivSource` only hit the
+    Atom metadata API). Returns base paper_ids, best match first.
+
+    ponytail: built directly from `rag.harvester` rather than routing through `app.assembly`'s
+    `harvest_refs`/`IngestionOrchestrator` -- the latter's composition root pulls in TEI/Ollama/
+    Qdrant clients this supervisor has no other use for, just to reach one `.harvest()` call.
+    Also ignores `arxiv_categories`/`arxiv_date_from`/`arxiv_date_to`: the ranked list only
+    REORDERS an already-filtered `cached_not_done` batch (`_order_by_relevance` below), so a
+    wider/narrower candidate set here just weakens the priority signal -- it never changes what
+    gets processed. Add categories/date passthrough if that signal turns out to matter in
+    practice.
+    """
+    source = Harvester(ArxivSource())
+    refs = source.harvest(focus_area_queries, _RELEVANCE_RANK_CAP, "relevance")
+    return [ref.paper_id for ref in refs]
+
+
+def _order_by_relevance(ids: list[str], ranked_ids: list[str]) -> list[str]:
+    """`ids` (a `cached_not_done` batch), reordered so whichever ones also appear in
+    `ranked_ids` (arXiv's own relevance order for the current focus, best first) come first, in
+    that rank order; every other id keeps following, sorted, same as the un-reordered default.
+    Pure reordering -- every id in `ids` is still present in the result, once (an ORDER, not a
+    filter, per OG-46's spec)."""
+    ids_set = set(ids)
+    ranked_present = [pid for pid in ranked_ids if pid in ids_set]
+    remaining = sorted(ids_set - set(ranked_present))
+    return ranked_present + remaining
+
+
 # --- the loop -------------------------------------------------------------------------------------
 
 
@@ -247,10 +287,13 @@ def build_to_target(
     *,
     batch_size: int | None = None,
     telemetry_poll_interval: float | None = None,
+    ordering: str = "freshest_first",
+    focus_area_queries: list[str] | None = None,
     ensure_prefetch=ensure_prefetch_running,
     run_ingest=_run_ingest,
     cached_not_done=cached_not_done,
     done_count=done_count,
+    relevance_rank=_relevance_rank,
     sleep=time.sleep,
     poll_interval_s: float = _DEFAULT_POLL_INTERVAL_S,
     max_idle: int = _DEFAULT_MAX_IDLE,
@@ -261,12 +304,28 @@ def build_to_target(
     caught-up-and-waited cycles pass with nothing new (stalled).
 
     Every external effect -- `ensure_prefetch`, `run_ingest`, `cached_not_done`, `done_count`,
-    `sleep` -- is an injectable seam (same style as `app/prefetch_pdfs.py::prefetch_loop` and
-    `app/dashboard/controller.py::_spawn`), so a test drives this against fakes instead of a real
-    GPU/network/subprocess.
+    `relevance_rank`, `sleep` -- is an injectable seam (same style as
+    `app/prefetch_pdfs.py::prefetch_loop` and `app/dashboard/controller.py::_spawn`), so a test
+    drives this against fakes instead of a real GPU/network/subprocess.
+
+    `ordering="relevance"` (OG-46, `Config.ordering`): each iteration's `cached_not_done` batch is
+    reordered so the papers most relevant to `focus_area_queries` (arXiv's own ranking,
+    `relevance_rank`) come first -- see `_order_by_relevance`. The rank is computed once, lazily,
+    and memoized for this call's whole run: `focus_area_queries` is fixed for one `build_corpus`
+    process's lifetime by construction (a dashboard keyword edit relaunches a brand-new process
+    via `app/dashboard/controller.py::retarget`, it never mutates a live one), so there is no
+    "focus changed mid-run" case here to invalidate against -- "cache within a run" degenerates to
+    "compute once." Left as a `ponytail:` simplification: re-computing every iteration would add a
+    real, rate-limited arXiv round trip to the hot loop, which would violate the "GPU never waits"
+    invariant this module exists to protect; a later run's newly-downloaded papers just fall into
+    the unranked "remaining" bucket if they weren't covered by the one ranking harvest's cap
+    (`_RELEVANCE_RANK_CAP`) -- still processed (an ORDER, not a filter), just without a priority
+    boost. Upgrade path if that's ever a real problem: re-rank when `cached_not_done` runs out of
+    ranked ids, not every iteration.
     """
     prefetch_alive = ensure_prefetch(data_dir)
     idle_passes = 0
+    ranked_ids: list[str] | None = None
 
     while True:
         n_done = done_count(db_path)
@@ -275,6 +334,10 @@ def build_to_target(
             return
 
         ids = cached_not_done(cache_dir, db_path)
+        if ordering == "relevance" and ids:
+            if ranked_ids is None:
+                ranked_ids = relevance_rank(focus_area_queries or [])
+            ids = _order_by_relevance(ids, ranked_ids)
         if batch_size is not None:
             ids = ids[:batch_size]
 
@@ -356,6 +419,10 @@ def main() -> None:
         data_dir, cfg.db_path, Path(cfg.pdf_cache_dir), args.target, args.parse_workers,
         Path(args.events_path), batch_size=args.batch_size,
         telemetry_poll_interval=args.telemetry_poll_interval,
+        # OG-46: no CLI flag -- `ordering`/`focus_area_queries` are Config-derived, same channel
+        # a dashboard-launched run's keyword/ordering edits already reach this process through
+        # (app/dashboard/controller.py's run-scoped override config.yaml).
+        ordering=cfg.ordering, focus_area_queries=cfg.focus_area_queries,
     )
 
 

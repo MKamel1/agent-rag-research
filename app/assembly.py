@@ -472,7 +472,16 @@ def build_ingestion_orchestrator(
     blob_dir = blob_dir or "blobs"
 
     state = SqliteIngestState(db_path)
-    harvester = Harvester(ArxivSource(), quarantine=_sqlite_harvest_quarantine_sink(state))
+    # OG-45: DOWNLOAD-side arXiv filters -- `None`/unset fields reproduce the exact pre-OG-45
+    # ArxivSource() call, so an unfiltered config.yaml changes nothing here.
+    harvester = Harvester(
+        ArxivSource(
+            categories=config.arxiv_categories,
+            date_from=config.arxiv_date_from,
+            date_to=config.arxiv_date_to,
+        ),
+        quarantine=_sqlite_harvest_quarantine_sink(state),
+    )
     # Same Config field (T-DOC29: `config.pdf_cache_dir`, one default declared once in
     # contracts/config.py) app/prefetch_pdfs.py also reads -- both processes agree on the same
     # `./pdf_cache` default by construction now, closing off the T-DOC18 bug this used to guard

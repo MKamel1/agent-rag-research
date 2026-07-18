@@ -506,6 +506,81 @@ def test_start_with_parse_batch_size_writes_override_config_with_absolute_paths(
         _cleanup(manifest)
 
 
+def test_start_with_arxiv_categories_writes_override_config(tmp_path):
+    """OG-45: unlike keywords, category/date filters REPLACE the base config's value for this
+    run (no "augment a filter" semantics)."""
+    calls = []
+    manifest = controller_mod.start(
+        tmp_path, target=100, arxiv_categories=["stat.ME", "econ.EM"], spawn=_kwargs_spawn(calls),
+    )
+    try:
+        override_dir = calls[0]["cwd"]
+        assert override_dir != tmp_path
+        assert manifest["arxiv_categories"] == ["stat.ME", "econ.EM"]
+        written_cfg = controller_mod.load_config(override_dir / "config.yaml")
+        assert written_cfg.arxiv_categories == ["stat.ME", "econ.EM"]
+    finally:
+        _cleanup(manifest)
+
+
+def test_start_with_arxiv_date_range_writes_override_config(tmp_path):
+    calls = []
+    manifest = controller_mod.start(
+        tmp_path, target=100, arxiv_date_from="2018-01-01", arxiv_date_to="2020-01-01",
+        spawn=_kwargs_spawn(calls),
+    )
+    try:
+        override_dir = calls[0]["cwd"]
+        assert manifest["arxiv_date_from"] == "2018-01-01"
+        assert manifest["arxiv_date_to"] == "2020-01-01"
+        written_cfg = controller_mod.load_config(override_dir / "config.yaml")
+        assert written_cfg.arxiv_date_from == "2018-01-01"
+        assert written_cfg.arxiv_date_to == "2020-01-01"
+    finally:
+        _cleanup(manifest)
+
+
+def test_start_with_ordering_relevance_writes_override_config(tmp_path):
+    """OG-46: dashboard-launched runs may opt into arXiv-relevance ordering."""
+    calls = []
+    manifest = controller_mod.start(
+        tmp_path, target=100, ordering="relevance", spawn=_kwargs_spawn(calls),
+    )
+    try:
+        override_dir = calls[0]["cwd"]
+        assert manifest["ordering"] == "relevance"
+        written_cfg = controller_mod.load_config(override_dir / "config.yaml")
+        assert written_cfg.ordering == "relevance"
+    finally:
+        _cleanup(manifest)
+
+
+def test_start_with_no_edits_reports_the_base_config_ordering_and_filters(tmp_path):
+    """An unedited run's manifest still carries the (unedited) ordering/filter values -- the
+    dashboard's run-panel indicator has something to read regardless of whether this run edited
+    anything."""
+    calls = []
+    base_cfg = controller_mod.load_config(controller_mod._REPO_ROOT / "config.yaml")
+    manifest = controller_mod.start(tmp_path, target=100, spawn=_kwargs_spawn(calls))
+    try:
+        assert calls[0]["cwd"] == tmp_path  # no override -- nothing actually changed
+        assert manifest["ordering"] == base_cfg.ordering
+        assert manifest["arxiv_categories"] == base_cfg.arxiv_categories
+    finally:
+        _cleanup(manifest)
+
+
+def test_start_with_ordering_matching_the_base_config_is_a_no_op_override(tmp_path):
+    calls = []
+    manifest = controller_mod.start(
+        tmp_path, target=100, ordering="freshest_first", spawn=_kwargs_spawn(calls),
+    )
+    try:
+        assert calls[0]["cwd"] == tmp_path  # "freshest_first" already matches the base default
+    finally:
+        _cleanup(manifest)
+
+
 def test_resume_reuses_the_same_run_cwd_and_pass_through_params(tmp_path):
     """A paused edited run must come back with the SAME override dir (and pass-through params) --
     not silently revert to config.yaml's unedited defaults."""
@@ -536,5 +611,21 @@ def test_retarget_wires_og43_params_through(tmp_path):
         assert retargeted["parse_batch_size"] == 8
         assert retargeted["params"]["batch_size"] == 25
         assert calls[-1]["kwargs"]["batch_size"] == 25
+    finally:
+        _cleanup(retargeted)
+
+
+def test_retarget_wires_og45_og46_params_through(tmp_path):
+    calls = []
+    controller_mod.start(tmp_path, target=100, spawn=_kwargs_spawn(calls))
+    try:
+        retargeted = controller_mod.retarget(
+            tmp_path, target=500,
+            arxiv_categories=["cs.LG"], arxiv_date_from="2019-01-01", ordering="relevance",
+            spawn=_kwargs_spawn(calls),
+        )
+        assert retargeted["arxiv_categories"] == ["cs.LG"]
+        assert retargeted["arxiv_date_from"] == "2019-01-01"
+        assert retargeted["ordering"] == "relevance"
     finally:
         _cleanup(retargeted)
