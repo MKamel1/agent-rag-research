@@ -1,0 +1,217 @@
+"""Smoke tests for `app.dashboard.server`'s HTTP routes -- a real `ThreadingHTTPServer` bound to
+127.0.0.1:0 (an ephemeral port) driven with real `urllib` requests, but `status_module`/
+`controller_module` are FAKES (no real DB, manifest, or subprocess) -- proves the routes exist,
+parse bodies correctly, and return the exact API-contract shape, without touching anything real.
+"""
+
+import json
+import threading
+import urllib.error
+import urllib.request
+
+import pytest
+
+from app.dashboard.controller import DoubleRunError, NoRunError
+from app.dashboard.server import build_server
+
+# These tests bind a real loopback (127.0.0.1) socket -- no external network, no vendor -- so they
+# opt out of the suite's default `--disable-socket` (pytest.ini) the same way
+# `rag/test_vector_index.py` does for its own real-transport tests, but WITHOUT `real_adapter`
+# (that marker is for tests needing real external vendor infra; a loopback HTTP round-trip against
+# fakes belongs in the default suite `pytest app/dashboard/ -q` runs).
+pytestmark = pytest.mark.enable_socket
+
+_TOKEN = "secret-token"
+
+
+class _FakeStatus:
+    """Fixed, known snapshot pieces -- `_status_dict` in server.py composes these into the full
+    `/api/status` shape."""
+
+    def read_corpus(self, data_dir):
+        return {
+            "funnel": {
+                "harvested": 10, "parsed": 9, "chunked": 8, "summarized": 7,
+                "embedded": 6, "stored": 5, "done": 5, "quarantined": 1,
+            },
+            "quarantine_reasons": [{"reason": "TransientError", "count": 1}],
+        }
+
+    def read_telemetry(self, events_path, done_count):
+        return {
+            "stage": "finish", "papers_per_hour": 12.5, "wall_clock_s": 300.0,
+            "gpu_util_pct": 80.0, "vram_mib": 9000, "power_w": 200.0,
+        }
+
+    def read_downloads(self, data_dir, target):
+        return {"cached_pdfs": 20, "sidecars": 15, "target": target}
+
+    def read_consistency(self, done_count, collection):
+        return {"sqlite_done": done_count, "vector_points": 500}
+
+
+class _FakeController:
+    def __init__(self):
+        self.calls = []
+
+    def liveness(self, data_dir):
+        return {
+            "run_id": "run-fake", "status": "running", "target": 100, "parse_workers": 3,
+            "focus_queries": ["causal inference"], "started_at": "2026-01-01T00:00:00",
+            "events_path": "events.jsonl", "collection": "papers",
+        }
+
+    def start(self, data_dir, target, parse_workers=3):
+        self.calls.append(("start", target, parse_workers))
+
+    def pause(self, data_dir):
+        self.calls.append(("pause",))
+
+    def resume(self, data_dir):
+        self.calls.append(("resume",))
+
+    def stop(self, data_dir):
+        raise NoRunError("no running run to stop")
+
+    DoubleRunError = DoubleRunError
+    NoRunError = NoRunError
+
+
+@pytest.fixture
+def running_server(tmp_path):
+    fake_status = _FakeStatus()
+    fake_controller = _FakeController()
+    httpd = build_server(
+        tmp_path, _TOKEN, port=0, host="127.0.0.1",
+        status_module=fake_status, controller_module=fake_controller,
+    )
+    thread = threading.Thread(target=httpd.serve_forever, daemon=True)
+    thread.start()
+    port = httpd.server_address[1]
+    try:
+        yield f"http://127.0.0.1:{port}", fake_controller
+    finally:
+        httpd.shutdown()
+        httpd.server_close()
+        thread.join(timeout=5.0)
+
+
+def _get(url, path):
+    with urllib.request.urlopen(url + path, timeout=5.0) as resp:
+        return resp.status, json.loads(resp.read())
+
+
+def _get_raw(url, path):
+    with urllib.request.urlopen(url + path, timeout=5.0) as resp:
+        return resp.status, resp.read()
+
+
+def _post(url, path, body, token=_TOKEN):
+    req = urllib.request.Request(
+        url + path, data=json.dumps(body).encode(), method="POST",
+        headers={"Content-Type": "application/json", "X-Dashboard-Token": token},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=5.0) as resp:
+            return resp.status, json.loads(resp.read())
+    except urllib.error.HTTPError as e:
+        return e.code, json.loads(e.read())
+
+
+# --- GET / -------------------------------------------------------------------------------------
+
+
+def test_root_serves_html(running_server):
+    url, _ = running_server
+    status, body = _get_raw(url, "/")
+    assert status == 200
+    assert b"Corpus Dashboard" in body
+
+
+# --- GET /api/status: exact API-contract shape --------------------------------------------------
+
+
+def test_status_route_shape_matches_api_contract(running_server):
+    url, _ = running_server
+    status, body = _get(url, "/api/status")
+    assert status == 200
+    assert set(body.keys()) == {
+        "funnel", "run", "telemetry", "downloads", "consistency", "quarantine_reasons",
+    }
+    assert set(body["funnel"].keys()) == {
+        "harvested", "parsed", "chunked", "summarized", "embedded", "stored", "done", "quarantined",
+    }
+    assert set(body["run"].keys()) == {
+        "run_id", "status", "target", "parse_workers", "focus_queries", "started_at",
+    }
+    assert set(body["telemetry"].keys()) == {
+        "stage", "papers_per_hour", "gpu_util_pct", "vram_mib", "power_w", "wall_clock_s",
+    }
+    assert set(body["downloads"].keys()) == {"cached_pdfs", "sidecars", "target"}
+    assert set(body["consistency"].keys()) == {"sqlite_done", "vector_points"}
+    assert body["run"]["run_id"] == "run-fake"
+    assert body["funnel"]["done"] == 5
+    assert body["quarantine_reasons"] == [{"reason": "TransientError", "count": 1}]
+
+
+# --- POST /api/control: token gate + dispatch + shapes -------------------------------------
+
+
+def test_control_without_token_is_rejected(running_server):
+    url, fake_controller = running_server
+    status, body = _post(url, "/api/control", {"action": "pause"}, token="wrong")
+    assert status == 401
+    assert body["ok"] is False
+    assert fake_controller.calls == []
+
+
+def test_control_pause_dispatches_and_returns_ok(running_server):
+    url, fake_controller = running_server
+    status, body = _post(url, "/api/control", {"action": "pause"})
+    assert status == 200
+    assert body == {"ok": True, "message": "pause ok"}
+    assert fake_controller.calls == [("pause",)]
+
+
+def test_control_start_forwards_target_and_parse_workers(running_server):
+    url, fake_controller = running_server
+    status, body = _post(url, "/api/control", {"action": "start", "target": 500, "parse_workers": 2})
+    assert status == 200
+    assert fake_controller.calls == [("start", 500, 2)]
+
+
+def test_control_unknown_action_is_a_client_error(running_server):
+    url, _ = running_server
+    status, body = _post(url, "/api/control", {"action": "bogus"})
+    assert status == 409
+    assert body["ok"] is False
+
+
+def test_control_stop_with_no_run_reports_conflict_not_crash(running_server):
+    url, _ = running_server
+    status, body = _post(url, "/api/control", {"action": "stop"})
+    assert status == 409
+    assert body["ok"] is False
+    assert "no running run" in body["message"]
+
+
+def test_control_invalid_json_body_is_a_client_error(running_server):
+    url, _ = running_server
+    req = urllib.request.Request(
+        url + "/api/control", data=b"not json", method="POST",
+        headers={"Content-Type": "application/json", "X-Dashboard-Token": _TOKEN},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=5.0) as resp:
+            status, body = resp.status, json.loads(resp.read())
+    except urllib.error.HTTPError as e:
+        status, body = e.code, json.loads(e.read())
+    assert status == 400
+    assert body["ok"] is False
+
+
+def test_unknown_route_is_404(running_server):
+    url, _ = running_server
+    with pytest.raises(urllib.error.HTTPError) as exc_info:
+        urllib.request.urlopen(url + "/nope", timeout=5.0)
+    assert exc_info.value.code == 404
