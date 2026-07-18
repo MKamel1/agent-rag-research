@@ -249,8 +249,9 @@ def _relevance_rank(focus_area_queries: list[str]) -> list[str]:
     Atom metadata API). Returns base paper_ids, best match first.
 
     ponytail: built directly from `rag.harvester` rather than routing through `app.assembly`'s
-    `harvest_refs`/`IngestionOrchestrator` -- the latter's composition root pulls in TEI/Ollama/
-    Qdrant clients this supervisor has no other use for, just to reach one `.harvest()` call.
+    `harvest_refs`/`IngestionOrchestrator` -- the latter's composition root pulls in every other
+    real adapter's heavy client (embedder, summarizer, vector store) this supervisor has no other
+    use for, just to reach one `.harvest()` call.
     Also ignores `arxiv_categories`/`arxiv_date_from`/`arxiv_date_to`: the ranked list only
     REORDERS an already-filtered `cached_not_done` batch (`_order_by_relevance` below), so a
     wider/narrower candidate set here just weakens the priority signal -- it never changes what
