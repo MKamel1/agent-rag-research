@@ -55,6 +55,22 @@ def _extract_title(markdown: str) -> str:
     return ""
 
 
+def _strip_duplicate_heading(text: str, section_path: str) -> str:
+    """Drop `text`'s leading line if it duplicates `section_path` (whitespace-normalized).
+
+    `_build_chunk` already prefixes every chunk with `title\\n{section_path}` as deliberate
+    embedding context (do not remove that prefix). But a group's first block is usually the
+    section heading itself, so without this the heading text would also open `body` -- appearing
+    twice in the embedded/displayed text. Only an exact (whitespace-normalized) match on the
+    first line is stripped; real prose that happens to start a block is left untouched, and a
+    first block that isn't a heading is unaffected.
+    """
+    first_line, _, rest = text.partition("\n")
+    if " ".join(first_line.split()) == " ".join(section_path.split()):
+        return rest.lstrip("\n")
+    return text
+
+
 def _snippet(text: str) -> str:
     """First ~200 chars of `text`, truncated at the nearest preceding word boundary, verbatim
     (DATA-CONTRACTS.md "Provenance & structure" — the `Anchor.snippet` definition).
@@ -155,7 +171,13 @@ class Chunker:
         # `_split_oversized`) is prepended into the body text only -- it never becomes `first`,
         # so anchor/parent_id/section_path stay pinned to this chunk's own true start.
         first = group[0]
-        body_blocks = ([overlap.text] if overlap else []) + [b.text for b in group]
+        # Only the group's own first block can carry the duplicate heading (see
+        # `_strip_duplicate_heading`) -- `overlap` and later blocks in `group` are never a
+        # section's opening heading, so they're joined in unchanged. `first.text` itself (used
+        # for `anchor.snippet` below) is untouched -- this only affects what goes into `body`.
+        group_texts = [_strip_duplicate_heading(first.text, first.section_path)]
+        group_texts += [b.text for b in group[1:]]
+        body_blocks = ([overlap.text] if overlap else []) + [t for t in group_texts if t]
         body = "\n\n".join(body_blocks)
         text = f"{title}\n{first.section_path}\n\n{body}"
         anchor = Anchor(

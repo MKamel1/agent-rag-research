@@ -274,6 +274,43 @@ def test_single_block_bigger_than_the_cap_is_still_emitted_whole():
     assert len(chunks[0].text.split()) >= 5000
 
 
+# ---------------------------------------------------------------------------
+# T-DOC62: a group's first block is often the section heading itself -- `text` must not embed
+# it twice (once as the deliberate title+section_path prefix, once again as the body's own
+# opening line).
+# ---------------------------------------------------------------------------
+
+
+def test_heading_first_block_is_not_duplicated_in_chunk_text():
+    heading_path = "1. Introduction"
+    body_text = "Large language models are now widely deployed in production systems."
+    blocks = [
+        _block(0, heading_path, "prose", heading_path),  # the heading IS block 0's own text
+        _block(1, body_text, "prose", heading_path),
+    ]
+    chunks = _chunk(_parsed_doc(blocks=blocks))
+    assert len(chunks) == 1
+    c = chunks[0]
+    # The prefix (title + section_path) still carries the heading exactly once...
+    assert c.text.count(heading_path) == 1
+    # ...and the real prose body survives untouched.
+    assert body_text in c.text
+    # Provenance is unaffected by the dedup.
+    assert c.anchor.block_id == blocks[0].block_id
+    assert c.parent_id == blocks[0].block_id
+    assert c.section_path == heading_path
+
+
+def test_prose_first_block_chunk_text_is_unchanged_by_heading_dedup():
+    doc = _parsed_doc()  # b0's text is PROSE_TEXT, not METHOD_PATH -- no duplication to strip
+    chunks = _chunk(doc)
+    c = next(c for c in chunks if PROSE_TEXT in c.text)
+    assert c.text == f"{TITLE}\n{METHOD_PATH}\n\n{PROSE_TEXT}\n\n{EQUATION_LATEX}"
+    assert c.anchor.block_id == doc.blocks[0].block_id
+    assert c.parent_id == doc.blocks[0].block_id
+    assert c.section_path == METHOD_PATH
+
+
 def test_chunks_are_emitted_and_ids_are_unique():
     chunks = _chunk()
     assert chunks, "a non-empty ParsedDoc must yield at least one chunk"
