@@ -271,3 +271,100 @@ def test_retarget_with_nothing_running_just_starts(tmp_path):
         assert started["target"] == 500
     finally:
         _cleanup(started)
+
+
+# --- OG-41: the real _spawn launches app.build_corpus, not app.ingest ----------------------------
+
+
+def test_real_spawn_launches_build_corpus_not_ingest(tmp_path, monkeypatch):
+    """OG-41: the dashboard's real launch command must be `python -m app.build_corpus --target N
+    --parse-workers K --events-path <path>` -- not the old direct `app.ingest --limit`/
+    `--paper-ids-file` invocation. build_corpus is the group leader that in turn keeps
+    app.prefetch_pdfs running and repeatedly launches app.ingest batches itself."""
+    captured = {}
+
+    class _FakePopen:
+        def __init__(self, cmd, **kwargs):
+            captured["cmd"] = cmd
+            captured["kwargs"] = kwargs
+            self.pid = 999999
+
+    monkeypatch.setattr(controller_mod.subprocess, "Popen", _FakePopen)
+    events_path = tmp_path / "events.jsonl"
+    log_path = tmp_path / "run.log"
+
+    pid = controller_mod._spawn(tmp_path, 500, 4, events_path, log_path)
+
+    assert pid == 999999
+    cmd = captured["cmd"]
+    assert "app.build_corpus" in cmd
+    assert "app.ingest" not in cmd
+    assert "--target" in cmd and cmd[cmd.index("--target") + 1] == "500"
+    assert "--parse-workers" in cmd and cmd[cmd.index("--parse-workers") + 1] == "4"
+    assert "--events-path" in cmd and cmd[cmd.index("--events-path") + 1] == str(events_path)
+    assert "--limit" not in cmd
+    assert "--paper-ids-file" not in cmd
+    assert captured["kwargs"]["cwd"] == str(tmp_path)
+    assert captured["kwargs"]["start_new_session"] is True
+
+
+def test_real_spawn_ignores_paper_ids_file_kwarg_without_erroring(tmp_path, monkeypatch):
+    """`paper_ids_file` is still accepted (so `_call_spawn`'s uniform calling convention and the
+    manifest's own OG-40 threading don't need special-casing) but build_corpus has no matching
+    flag -- it must not appear on the command line."""
+    captured = {}
+
+    class _FakePopen:
+        def __init__(self, cmd, **kwargs):
+            captured["cmd"] = cmd
+            self.pid = 999998
+
+    monkeypatch.setattr(controller_mod.subprocess, "Popen", _FakePopen)
+    ids_file = tmp_path / "ids.txt"
+    ids_file.write_text("2601.00001\n")
+
+    controller_mod._spawn(
+        tmp_path, 500, 4, tmp_path / "events.jsonl", tmp_path / "run.log",
+        paper_ids_file=ids_file,
+    )
+
+    assert "--paper-ids-file" not in captured["cmd"]
+    assert str(ids_file) not in captured["cmd"]
+
+
+# --- OG-40: cache-first paper_ids_file threading -------------------------------------------------
+
+
+def test_paper_ids_file_recorded_in_manifest_and_repassed_on_resume(tmp_path):
+    """OG-40: a cache-first run stores `paper_ids_file` in the manifest, hands it to `spawn`, and
+    `resume` re-passes the SAME file -- a paused cache-first run must not silently revert to the
+    query-driven (809-ceiling) harvest."""
+    ids_file = tmp_path / "ids.txt"
+    ids_file.write_text("2403.19606\n2404.00207\n")
+    seen = []
+
+    def spawn(data_dir, target, parse_workers, events_path, log_path, *, paper_ids_file=None):
+        seen.append(paper_ids_file)
+        return subprocess.Popen(["sleep", "100"], start_new_session=True).pid
+
+    manifest = controller_mod.start(tmp_path, target=2, paper_ids_file=ids_file, spawn=spawn)
+    try:
+        assert manifest["paper_ids_file"] == str(ids_file)
+        assert seen[-1] == ids_file  # start handed the file to spawn (not None, not dropped)
+
+        controller_mod.pause(tmp_path)
+        resumed = controller_mod.resume(tmp_path, spawn=spawn)
+        assert seen[-1] == ids_file  # resume re-passed it, still cache-first
+        assert resumed["paper_ids_file"] == str(ids_file)
+    finally:
+        _cleanup(controller_mod._read_manifest(tmp_path))
+
+
+def test_default_run_has_null_paper_ids_file_and_no_kwarg_to_fake_spawn(tmp_path):
+    """A normal (query-driven) run passes NO paper_ids_file kwarg -- so the 5-positional test fake
+    keeps working -- and records `paper_ids_file: null`."""
+    manifest = controller_mod.start(tmp_path, target=100, spawn=_fake_spawn)
+    try:
+        assert manifest["paper_ids_file"] is None
+    finally:
+        _cleanup(manifest)

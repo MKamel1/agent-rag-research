@@ -277,6 +277,14 @@ def _effective_config(cfg: Config, args: argparse.Namespace) -> Config:
         updates.update(_scratch_overrides())
     if args.limit is not None:
         updates["corpus_cap"] = min(cfg.corpus_cap, args.limit)
+    if args.paper_ids_file is not None:
+        # OG-40: one base arXiv id per line -> cfg.ingest_paper_ids, which routes harvest_refs
+        # (app/assembly.py) through the cache-first `fetch_by_ids` path instead of query harvest.
+        updates["ingest_paper_ids"] = [
+            line.strip()
+            for line in Path(args.paper_ids_file).read_text().splitlines()
+            if line.strip()
+        ]
     return cfg.model_copy(update=updates) if updates else cfg
 
 
@@ -318,6 +326,13 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--scratch", action="store_true",
         help="T-DOC46: auto-provision isolated throwaway db/blob/collection storage for this run",
+    )
+    parser.add_argument(
+        "--paper-ids-file", default=None,
+        help="OG-40: ingest exactly the base arXiv ids listed in this file (one per line) via the "
+             "cache-first path -- reconstructs each from pdf_cache/<id>.{pdf,json} with no network, "
+             "only sidecar-less ids fetch metadata. Feed the cached PDF basenames to ingest every "
+             "already-downloaded paper instead of re-discovering via the query API.",
     )
     parser.add_argument(
         "--no-preflight", action="store_true",
@@ -366,7 +381,9 @@ if __name__ == "__main__":
         # T-DOC45/T-DOC46: only pay for a scratch config.yaml + a different Pass-1 subprocess cwd
         # when an override is actually in effect -- the default (neither flag set) path is untouched.
         subprocess_cwd = (
-            str(_write_override_config_dir(cfg)) if (args.scratch or args.limit is not None) else None
+            str(_write_override_config_dir(cfg))
+            if (args.scratch or args.limit is not None or args.paper_ids_file is not None)
+            else None
         )
 
         # T-DOC47: telemetry starts only once the DB is confirmed migrated (above) -- its own
