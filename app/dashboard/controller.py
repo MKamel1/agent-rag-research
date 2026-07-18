@@ -59,15 +59,28 @@ import os
 import signal
 import subprocess
 import sys
+import tempfile
 import time
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Callable
 
+import yaml
+
+from contracts.config import Config
 from rag.config import load_config
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _MANIFEST_NAME = "run_manifest.json"
+
+# Same path-valued Config fields as `app/ingest.py::_PATH_FIELDS` (T-DOC45/46's override
+# mechanism, OG-43 reuses the same shape) -- duplicated rather than imported (`status.py`'s "own
+# your own copies" convention, this module docstring's own precedent) so this lightweight,
+# network-facing dashboard control process never pulls in `app.ingest`'s much heavier transitive
+# import graph (`app.assembly` -> `rag.parser`/`rag.embedder`/...) just to reuse one pure helper.
+_OVERRIDE_PATH_FIELDS = (
+    "gpu_lock_path", "db_path", "blob_dir", "pdf_cache_dir", "batch_size_log_path",
+)
 
 # How long pause/stop/resume wait for a signaled process to actually exit before giving up and
 # leaving status "pausing"/"stopping" (pause/stop) or refusing (resume) -- generous enough for a
@@ -240,11 +253,61 @@ def liveness(data_dir: str | Path) -> dict | None:
     return reconcile(data_dir)
 
 
+# --- run-scoped config override (OG-43: edited keywords/parse_batch_size) ------------------------
+#
+# Mirrors `app/ingest.py::_write_override_config_dir` (T-DOC45/46): writes an already-overridden
+# `Config` to a scratch `<tmpdir>/config.yaml`, resolving every relative-path field absolute first
+# (the subprocess launched into this dir has a DIFFERENT cwd than this process) -- `data_dir` runs
+# `PYTHONPATH=<repo> python -m app.build_corpus` with `cwd=<tmpdir>`, so IT and every child it
+# launches in turn (`app.prefetch_pdfs`, each `app.ingest` batch) all `load_config()` this exact
+# file: none of them receive this process's in-memory `Config` object directly, `config.yaml`
+# itself is the only channel every one of them reads unconditionally.
+
+
+def _write_override_config_dir(cfg: Config) -> Path:
+    path_updates = {
+        field: str(Path(value).resolve())
+        for field in _OVERRIDE_PATH_FIELDS
+        if (value := getattr(cfg, field))
+    }
+    resolved = cfg.model_copy(update=path_updates) if path_updates else cfg
+
+    # ponytail: this scratch dir, like app/ingest.py's own `--scratch`/`--limit` override dirs, is
+    # never cleaned up -- matches that module's existing (already-accepted) behavior rather than
+    # inventing new cleanup machinery here. Add a reaper if scratch-dir accumulation ever becomes
+    # a real problem in practice.
+    tmpdir = Path(tempfile.mkdtemp(prefix="dashboard_override_"))
+    (tmpdir / "config.yaml").write_text(yaml.safe_dump(resolved.model_dump()))
+    return tmpdir
+
+
+def _maybe_build_override(
+    cfg: Config, keywords: list[str] | None, parse_batch_size: int | None,
+) -> tuple[Config, Path | None]:
+    """Builds a run-scoped override `Config` + scratch `config.yaml` dir when `keywords` (AUGMENTED
+    onto `focus_area_queries` -- owner decision: an edit adds topics to the one library, it never
+    replaces it) or `parse_batch_size` actually change anything relative to the base config.
+    Returns `(cfg, None)` unchanged when neither edit does -- a run that edits nothing launches
+    exactly the old way (`cwd=data_dir`, no override dir, no scratch files)."""
+    updates: dict = {}
+    if keywords:
+        merged = cfg.focus_area_queries + [k for k in keywords if k not in cfg.focus_area_queries]
+        if merged != cfg.focus_area_queries:
+            updates["focus_area_queries"] = merged
+    if parse_batch_size is not None and parse_batch_size != cfg.parse_batch_size:
+        updates["parse_batch_size"] = parse_batch_size
+    if not updates:
+        return cfg, None
+    effective = cfg.model_copy(update=updates)
+    return effective, _write_override_config_dir(effective)
+
+
 # --- spawning ------------------------------------------------------------------------------------
 
 
 def _spawn(data_dir: Path, target: int, parse_workers: int, events_path: Path, log_path: Path,
-           *, paper_ids_file: Path | None = None) -> int:
+           *, paper_ids_file: Path | None = None,
+           telemetry_poll_interval: float | None = None, batch_size: int | None = None) -> int:
     """The real launch, literally: `env PYTHONPATH=<repo> python -m app.build_corpus --target
     TARGET --parse-workers N --events-path <path>`, `cwd=<data_dir>`, as its own process-group
     leader (see `_signal_group`). The `env` *command* -- not a Python-level env-dict read -- sets
@@ -258,7 +321,14 @@ def _spawn(data_dir: Path, target: int, parse_workers: int, events_path: Path, l
     special-casing -- but is NOT forwarded to the command line: `app.build_corpus` has no matching
     flag (OG-41: it computes its own cache-first id list every iteration from
     `pdf_cache/*.pdf` minus `ingest_state`). An explicit id-scoped run still works by invoking
-    `app.ingest --paper-ids-file` directly outside the dashboard."""
+    `app.ingest --paper-ids-file` directly outside the dashboard.
+
+    `telemetry_poll_interval`/`batch_size` (OG-43): forwarded as `--telemetry-poll-interval`/
+    `--batch-size` only when set -- both are plain pass-through CLI flags `app.build_corpus`
+    already accepts, no config override needed. `data_dir` here is really "the cwd to launch
+    `app.build_corpus` in" -- ordinarily the real data dir, but `start`/`resume` pass a run-scoped
+    override-config scratch dir instead whenever `keywords`/`parse_batch_size` were edited (see
+    `_maybe_build_override`)."""
     cmd = [
         "env", f"PYTHONPATH={_REPO_ROOT}",
         sys.executable, "-m", "app.build_corpus",
@@ -266,6 +336,10 @@ def _spawn(data_dir: Path, target: int, parse_workers: int, events_path: Path, l
         "--parse-workers", str(parse_workers),
         "--events-path", str(events_path),
     ]
+    if telemetry_poll_interval is not None:
+        cmd += ["--telemetry-poll-interval", str(telemetry_poll_interval)]
+    if batch_size is not None:
+        cmd += ["--batch-size", str(batch_size)]
     log_f = log_path.open("a")
     proc = subprocess.Popen(
         cmd, cwd=str(data_dir), stdout=log_f, stderr=subprocess.STDOUT, start_new_session=True,
@@ -273,20 +347,30 @@ def _spawn(data_dir: Path, target: int, parse_workers: int, events_path: Path, l
     return proc.pid
 
 
-def _call_spawn(spawn: SpawnFn, data_dir: Path, target: int, parse_workers: int,
-                events_path: Path, log_path: Path, paper_ids_file: Path | None) -> int:
-    """Passes `paper_ids_file` to `spawn` only when set -- so the injected test fake (whose
-    signature is the 5-positional `SpawnFn`) is never handed a kwarg it doesn't accept, while the
-    real `_spawn` gets it on the OG-40 cache-first path."""
-    if paper_ids_file is None:
-        return spawn(data_dir, target, parse_workers, events_path, log_path)
-    return spawn(data_dir, target, parse_workers, events_path, log_path, paper_ids_file=paper_ids_file)
+def _call_spawn(
+    spawn: SpawnFn, data_dir: Path, target: int, parse_workers: int, events_path: Path,
+    log_path: Path, paper_ids_file: Path | None, *,
+    telemetry_poll_interval: float | None = None, batch_size: int | None = None,
+) -> int:
+    """Passes each of `paper_ids_file`/`telemetry_poll_interval`/`batch_size` to `spawn` only when
+    set -- so the injected test fake (whose signature may be the bare 5-positional `SpawnFn`) is
+    never handed a kwarg it doesn't accept, while the real `_spawn` gets whichever ones apply."""
+    kwargs: dict = {}
+    if paper_ids_file is not None:
+        kwargs["paper_ids_file"] = paper_ids_file
+    if telemetry_poll_interval is not None:
+        kwargs["telemetry_poll_interval"] = telemetry_poll_interval
+    if batch_size is not None:
+        kwargs["batch_size"] = batch_size
+    return spawn(data_dir, target, parse_workers, events_path, log_path, **kwargs)
 
 
-def _build_manifest(run_id: str, pid: int, target: int, parse_workers: int,
-                     events_path: Path, log_path: Path, db_path: Path,
-                     paper_ids_file: Path | None = None) -> dict:
-    cfg = load_config(_REPO_ROOT / "config.yaml")
+def _build_manifest(
+    run_id: str, pid: int, target: int, parse_workers: int, events_path: Path, log_path: Path,
+    db_path: Path, paper_ids_file: Path | None = None, *,
+    run_cwd: Path, effective_cfg: Config,
+    telemetry_poll_interval: float | None = None, batch_size: int | None = None,
+) -> dict:
     starttime, cmdline = _capture_identity(pid)
     return {
         "run_id": run_id,
@@ -299,12 +383,23 @@ def _build_manifest(run_id: str, pid: int, target: int, parse_workers: int,
         "events_path": str(events_path),
         "log_path": str(log_path),
         "db_path": str(db_path),
-        "collection": cfg.collection,
+        "collection": effective_cfg.collection,
         "started_at": datetime.now(UTC).isoformat(),
-        "focus_queries": cfg.focus_area_queries,
+        "focus_queries": effective_cfg.focus_area_queries,
         # OG-40: persisted so `resume` re-launches cache-first instead of reverting to query harvest.
         "paper_ids_file": str(paper_ids_file) if paper_ids_file is not None else None,
-        "params": {"parse_workers": parse_workers, "limit": target, "telemetry_poll_interval": None},
+        # OG-43: the directory `app.build_corpus` was actually launched with as `cwd` -- the real
+        # data dir for an unedited run, or a run-scoped override `config.yaml` scratch dir when
+        # `keywords`/`parse_batch_size` were edited (`_maybe_build_override`). `resume` reuses this
+        # verbatim so a paused edited run comes back with the SAME edits, and `status.py`'s
+        # downloader check reads `<run_cwd>/prefetch.pid` (matching wherever `app.prefetch_pdfs`,
+        # `app.build_corpus`'s own child, actually wrote it).
+        "run_cwd": str(run_cwd),
+        "parse_batch_size": effective_cfg.parse_batch_size,
+        "params": {
+            "parse_workers": parse_workers, "limit": target,
+            "telemetry_poll_interval": telemetry_poll_interval, "batch_size": batch_size,
+        },
     }
 
 
@@ -312,13 +407,25 @@ def _build_manifest(run_id: str, pid: int, target: int, parse_workers: int,
 
 
 def start(data_dir: str | Path, target: int, parse_workers: int = 3, *,
-          paper_ids_file: str | Path | None = None, spawn: SpawnFn = _spawn) -> dict:
+          paper_ids_file: str | Path | None = None,
+          telemetry_poll_interval: float | None = None, batch_size: int | None = None,
+          keywords: list[str] | None = None, parse_batch_size: int | None = None,
+          spawn: SpawnFn = _spawn) -> dict:
     """Fresh run with a new target. Refuses if a run is already live (`running`/`pausing`/
     `stopping`) -- pause or stop it first.
 
     `paper_ids_file` (OG-40): ingest exactly the cached papers whose base ids are listed in that
     file (cache-first), instead of query-driven discovery. `target` is then just the progress-bar
-    denominator (use the id count)."""
+    denominator (use the id count).
+
+    `telemetry_poll_interval`/`batch_size` (OG-43): plain pass-through CLI flags, forwarded to
+    `app.build_corpus` as-is -- no config involved.
+
+    `keywords`/`parse_batch_size` (OG-43): config-DERIVED edits -- reaching them requires a
+    run-scoped override `config.yaml` (`_maybe_build_override`/`_write_override_config_dir`),
+    since `app.build_corpus` and its `app.prefetch_pdfs`/`app.ingest` children each `load_config()`
+    fresh from their own cwd rather than receiving this process's in-memory `Config`. `keywords`
+    AUGMENTS `focus_area_queries` (adds topics, never replaces -- owner decision)."""
     data_dir = Path(data_dir)
     manifest = reconcile(data_dir)
     if manifest is not None and manifest.get("status") in _LIVE_STATUSES:
@@ -332,9 +439,19 @@ def start(data_dir: str | Path, target: int, parse_workers: int = 3, *,
     events_path = data_dir / f"ingest_events_{run_id}.jsonl"
     log_path = data_dir / f"ingest_{run_id}.log"
     db_path = data_dir / "papers.db"
-    pid = _call_spawn(spawn, data_dir, target, parse_workers, events_path, log_path, paper_ids_file)
+
+    base_cfg = load_config(_REPO_ROOT / "config.yaml")
+    effective_cfg, override_dir = _maybe_build_override(base_cfg, keywords, parse_batch_size)
+    run_cwd = override_dir if override_dir is not None else data_dir
+
+    pid = _call_spawn(
+        spawn, run_cwd, target, parse_workers, events_path, log_path, paper_ids_file,
+        telemetry_poll_interval=telemetry_poll_interval, batch_size=batch_size,
+    )
     manifest = _build_manifest(
-        run_id, pid, target, parse_workers, events_path, log_path, db_path, paper_ids_file
+        run_id, pid, target, parse_workers, events_path, log_path, db_path, paper_ids_file,
+        run_cwd=run_cwd, effective_cfg=effective_cfg,
+        telemetry_poll_interval=telemetry_poll_interval, batch_size=batch_size,
     )
     _write_manifest(data_dir, manifest)
     return manifest
@@ -387,9 +504,17 @@ def resume(data_dir: str | Path, *, spawn: SpawnFn = _spawn) -> dict:
     log_path = Path(manifest["log_path"])
     stored_ids_file = manifest.get("paper_ids_file")  # OG-40: keep a cache-first run cache-first
     paper_ids_file = Path(stored_ids_file) if stored_ids_file else None
+    # OG-43: reuse the SAME cwd (real data_dir, or a keywords/parse_batch_size override scratch
+    # dir) and the SAME pass-through params the original run launched with -- a resumed edited run
+    # must come back with its edits intact, not silently revert to config.yaml's unedited defaults.
+    stored_run_cwd = manifest.get("run_cwd")
+    run_cwd = Path(stored_run_cwd) if stored_run_cwd else data_dir
+    params = manifest.get("params") or {}
     pid = _call_spawn(
-        spawn, data_dir, manifest["target"], manifest["parse_workers"],
+        spawn, run_cwd, manifest["target"], manifest["parse_workers"],
         events_path, log_path, paper_ids_file,
+        telemetry_poll_interval=params.get("telemetry_poll_interval"),
+        batch_size=params.get("batch_size"),
     )
     starttime, cmdline = _capture_identity(pid)
     manifest["pid"] = pid
@@ -418,14 +543,24 @@ def stop(data_dir: str | Path) -> dict:
     return manifest
 
 
-def retarget(data_dir: str | Path, target: int, parse_workers: int = 3, *, spawn: SpawnFn = _spawn) -> dict:
+def retarget(data_dir: str | Path, target: int, parse_workers: int = 3, *,
+             paper_ids_file: str | Path | None = None,
+             telemetry_poll_interval: float | None = None, batch_size: int | None = None,
+             keywords: list[str] | None = None, parse_batch_size: int | None = None,
+             spawn: SpawnFn = _spawn) -> dict:
     """"Start a fresh run with a new target": stop the current run if one is live, then start.
-    Not exposed over the API directly (the frontend only offers "start" when nothing is live, per
-    the double-run guard) -- kept for parity with the design's controller method list and for any
-    caller that explicitly wants stop-then-start as one step."""
+    OG-43: this is now the "Apply new settings while a run is live" path -- `server.py` exposes it
+    over `POST /api/control` (action `"retarget"`) alongside plain `"start"` (which still refuses
+    via the ordinary double-run guard when something's live), so the frontend's single "Apply"
+    button can call whichever fits the current state without the user pausing/stopping by hand
+    first."""
     data_dir = Path(data_dir)
     try:
         stop(data_dir)
     except NoRunError:
         pass
-    return start(data_dir, target, parse_workers, spawn=spawn)
+    return start(
+        data_dir, target, parse_workers, paper_ids_file=paper_ids_file,
+        telemetry_poll_interval=telemetry_poll_interval, batch_size=batch_size,
+        keywords=keywords, parse_batch_size=parse_batch_size, spawn=spawn,
+    )

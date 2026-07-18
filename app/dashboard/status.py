@@ -26,6 +26,9 @@ from __future__ import annotations
 
 import glob
 import json
+import os
+import re
+import shutil
 import sqlite3
 import subprocess
 import time
@@ -304,6 +307,101 @@ def read_downloads(data_dir: str | Path, target: int | None) -> dict:
         "cached_pdfs": len(glob.glob(str(cache_dir / "*.pdf"))),
         "sidecars": len(glob.glob(str(cache_dir / "*.json"))),
         "target": target,
+    }
+
+
+# --- downloader liveness + pace (app.prefetch_pdfs, OG-43) --------------------------------------
+
+# Same name `app/build_corpus.py::_PREFETCH_PID_NAME` writes -- duplicated (this file's own "own
+# your own copies" convention, see module docstring) rather than imported, so this lightweight
+# reader never pulls in `app.build_corpus`'s subprocess-launch machinery.
+_PREFETCH_PID_NAME = "prefetch.pid"
+
+# app/prefetch_pdfs.py's own progress line: "prefetch_pdfs: downloaded %d / target %d (cache now
+# %d)". `app.build_corpus` launches `app.prefetch_pdfs` as its own child with no separate stdout
+# redirect (`_spawn_prefetch`), so this line lands in the SAME log file the dashboard already
+# tracks for the whole run (`run_manifest.json`'s `log_path`) -- no second log to locate.
+_DOWNLOAD_PACE_RE = re.compile(r"downloaded (\d+) / target (\d+)")
+
+# How far back to seek before tailing a run log for the latest pace line -- these logs can grow to
+# multi-MB over a multi-hour run (observed: several MB), and this is read on every ~4s status
+# poll, so reading the whole file every time would be real, needless I/O.
+_LOG_TAIL_BYTES = 65_536
+
+
+def read_downloader(run_cwd: str | Path | None, log_path: str | Path | None) -> dict:
+    """Is `app.prefetch_pdfs` alive, and its download pace -- `run_cwd` is the directory
+    `app.build_corpus` (its parent) was actually launched with as `cwd` (`run_manifest.json`'s
+    `run_cwd`, OG-43): ordinarily the real data dir, but a run-scoped override-config scratch dir
+    when `keywords`/`parse_batch_size` were edited for this run -- `app.prefetch_pdfs`'s own
+    `<that dir>/prefetch.pid` moves with it, so this must match wherever it actually landed rather
+    than assuming the fixed data dir."""
+    pid = _read_prefetch_pid(run_cwd) if run_cwd else None
+    downloaded, target = _tail_download_pace(log_path) if log_path else (None, None)
+    return {
+        "prefetch_alive": _is_live_prefetch(pid) if pid is not None else None,
+        "downloaded": downloaded,
+        "prefetch_target": target,
+    }
+
+
+def _read_prefetch_pid(run_cwd: str | Path) -> int | None:
+    try:
+        return int((Path(run_cwd) / _PREFETCH_PID_NAME).read_text().strip())
+    except (OSError, ValueError):
+        return None
+
+
+def _is_live_prefetch(pid: int) -> bool:
+    """pid+cmdline identity check -- same pattern as `app/build_corpus.py::_is_live_prefetch`
+    (mirrored, not imported, for the same reason `_PREFETCH_PID_NAME` above is): alive AND its
+    `/proc/<pid>/cmdline` actually names `app.prefetch_pdfs`, guarding against a stale pid file
+    whose PID has since been recycled onto an unrelated process."""
+    try:
+        cmdline = Path(f"/proc/{pid}/cmdline").read_text()
+    except OSError:
+        return False
+    if "app.prefetch_pdfs" not in cmdline:
+        return False
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        pass
+    return True
+
+
+def _tail_download_pace(log_path: str | Path) -> tuple[int | None, int | None]:
+    try:
+        path = Path(log_path)
+        size = path.stat().st_size
+        with path.open("rb") as f:
+            f.seek(max(0, size - _LOG_TAIL_BYTES))
+            tail = f.read().decode(errors="replace")
+    except OSError:
+        return None, None
+    matches = list(_DOWNLOAD_PACE_RE.finditer(tail))
+    if not matches:
+        return None, None
+    match = matches[-1]  # the LAST match in the tail window -- the most recent pace line
+    return int(match.group(1)), int(match.group(2))
+
+
+# --- disk headroom (OG-43) -----------------------------------------------------------------------
+
+
+def read_disk(data_dir: str | Path) -> dict:
+    """`shutil.disk_usage(data_dir)` -- one cheap stdlib call. Degrades to nulls if `data_dir`
+    doesn't exist yet (a fresh dashboard pointed at a not-yet-created data dir)."""
+    try:
+        usage = shutil.disk_usage(data_dir)
+    except OSError:
+        return {"free_gb": None, "total_gb": None, "used_pct": None}
+    return {
+        "free_gb": usage.free / 1e9,
+        "total_gb": usage.total / 1e9,
+        "used_pct": (usage.used / usage.total * 100) if usage.total else None,
     }
 
 
