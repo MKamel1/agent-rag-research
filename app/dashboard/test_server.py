@@ -12,7 +12,7 @@ import urllib.request
 import pytest
 
 from app.dashboard.controller import DoubleRunError, NoRunError
-from app.dashboard.server import build_server
+from app.dashboard.server import _status_dict, build_server
 
 # These tests bind a real loopback (127.0.0.1) socket -- no external network, no vendor -- so they
 # opt out of the suite's default `--disable-socket` (pytest.ini) the same way
@@ -37,9 +37,9 @@ class _FakeStatus:
             "quarantine_reasons": [{"reason": "TransientError", "count": 1}],
         }
 
-    def read_telemetry(self, events_path, done_count):
+    def read_telemetry(self, events_path, total_done, *, data_dir=None, started_at=None, target=None):
         return {
-            "stage": "finish", "papers_per_hour": 12.5, "wall_clock_s": 300.0,
+            "stage": "finish", "papers_per_hour": 12.5, "wall_clock_s": 300.0, "eta_s": 900.0,
             "gpu_util_pct": 80.0, "vram_mib": 9000, "power_w": 200.0,
         }
 
@@ -47,7 +47,7 @@ class _FakeStatus:
         return {"cached_pdfs": 20, "sidecars": 15, "target": target}
 
     def read_consistency(self, done_count, collection):
-        return {"sqlite_done": done_count, "vector_points": 500}
+        return {"sqlite_done": done_count, "vector_points": 500, "consistent": True}
 
 
 class _FakeController:
@@ -59,6 +59,7 @@ class _FakeController:
             "run_id": "run-fake", "status": "running", "target": 100, "parse_workers": 3,
             "focus_queries": ["causal inference"], "started_at": "2026-01-01T00:00:00",
             "events_path": "events.jsonl", "collection": "papers",
+            "params": {"parse_workers": 3, "limit": 100, "telemetry_poll_interval": None},
         }
 
     def start(self, data_dir, target, parse_workers=3):
@@ -142,19 +143,52 @@ def test_status_route_shape_matches_api_contract(running_server):
         "harvested", "parsed", "chunked", "summarized", "embedded", "stored", "done", "quarantined",
     }
     assert set(body["run"].keys()) == {
-        "run_id", "status", "target", "parse_workers", "focus_queries", "started_at",
+        "run_id", "status", "target", "parse_workers", "focus_queries", "started_at", "params",
+        "parse_batch_size",
     }
     assert set(body["telemetry"].keys()) == {
-        "stage", "papers_per_hour", "gpu_util_pct", "vram_mib", "power_w", "wall_clock_s",
+        "stage", "papers_per_hour", "gpu_util_pct", "vram_mib", "power_w", "wall_clock_s", "eta_s",
     }
     assert set(body["downloads"].keys()) == {"cached_pdfs", "sidecars", "target"}
-    assert set(body["consistency"].keys()) == {"sqlite_done", "vector_points"}
+    assert set(body["consistency"].keys()) == {"sqlite_done", "vector_points", "consistent"}
     assert body["run"]["run_id"] == "run-fake"
+    assert body["run"]["params"]["telemetry_poll_interval"] is None
+    assert body["run"]["parse_batch_size"] == 4  # config.yaml's real default -- not hard-coded null
     assert body["funnel"]["done"] == 5
     assert body["quarantine_reasons"] == [{"reason": "TransientError", "count": 1}]
 
 
 # --- POST /api/control: token gate + dispatch + shapes -------------------------------------
+
+
+# --- _status_dict: threads started_at/target into read_telemetry (OG-44) -----------------------
+
+
+def test_status_dict_threads_started_at_and_target_into_read_telemetry(tmp_path):
+    """`_status_dict` must pass `data_dir`, the manifest's `started_at`, and `target` through to
+    `status.read_telemetry` -- without these, the per-run rate/ETA fix (status.py) has nothing to
+    anchor on."""
+    calls = []
+
+    class SpyStatus(_FakeStatus):
+        def read_telemetry(self, events_path, total_done, *, data_dir=None, started_at=None, target=None):
+            calls.append(
+                {
+                    "events_path": events_path, "total_done": total_done,
+                    "data_dir": data_dir, "started_at": started_at, "target": target,
+                }
+            )
+            return super().read_telemetry(events_path, total_done)
+
+    _status_dict(tmp_path, SpyStatus(), _FakeController())
+
+    assert len(calls) == 1
+    call = calls[0]
+    assert call["events_path"] == "events.jsonl"
+    assert call["total_done"] == 5  # corpus["funnel"]["done"]
+    assert call["data_dir"] == tmp_path
+    assert call["started_at"] == "2026-01-01T00:00:00"
+    assert call["target"] == 100
 
 
 def test_control_without_token_is_rejected(running_server):
