@@ -68,6 +68,11 @@
   #controlMsg { margin-top: .6rem; font-size: .8rem; color: var(--muted); min-height: 1.2em; }
   .quarantine-empty { color: var(--muted); font-size: .8rem; }
   code { background: #0f1216; padding: .1rem .3rem; border-radius: 4px; }
+  .search-result { border-bottom: 1px solid var(--border); padding: .6rem 0; }
+  .search-result:last-child { border-bottom: none; }
+  .search-result .title { font-weight: 600; }
+  .search-result .meta { color: var(--muted); font-size: .75rem; margin: .15rem 0 .35rem; }
+  .search-result .snippet { font-size: .85rem; line-height: 1.45; white-space: pre-wrap; }
 </style>
 </head>
 <body>
@@ -160,6 +165,47 @@
       <thead><tr><th>param</th><th>current default</th><th>note</th></tr></thead>
       <tbody id="searchParamsTable"></tbody>
     </table>
+  </div>
+
+  <div class="panel" style="grid-column: 1 / -1;">
+    <h2>Try a search</h2>
+    <div class="note">
+      Runs a real grounded search against the finished corpus (<code>GET /api/search</code>),
+      reusing the same <code>app.assembly.build_mcp_server</code> retrieval pipeline
+      <code>app.serve</code>'s <code>semantic_search</code> tool uses -- not a mock. The first
+      search after the dashboard starts builds the retrieval stack (GPU lock, Qdrant, TEI), so it
+      may take a moment; later searches reuse it.
+    </div>
+    <div class="controls">
+      <div class="field" style="flex: 1 1 100%;">
+        <label for="searchQuery">query</label>
+        <input id="searchQuery" type="text" placeholder="e.g. difference-in-differences estimator" style="width: 100%;">
+      </div>
+    </div>
+    <div class="controls" style="margin-top: .5rem;">
+      <div class="field">
+        <label for="searchK">top-k (blank = server default)</label>
+        <input id="searchK" type="number" min="1" placeholder="top_k" style="width: 8rem;">
+      </div>
+      <div class="field">
+        <label for="searchCategories">subject category (comma-separated, blank = all)</label>
+        <input id="searchCategories" type="text" placeholder="e.g. stat.ME, econ.EM" style="width: 16rem;">
+      </div>
+      <div class="field">
+        <label for="searchDateFrom">published from</label>
+        <input id="searchDateFrom" type="date" style="width: 10rem;">
+      </div>
+      <div class="field">
+        <label for="searchDateTo">published to</label>
+        <input id="searchDateTo" type="date" style="width: 10rem;">
+      </div>
+      <div class="field">
+        <label>&nbsp;</label>
+        <button id="btnSearch" type="button">Search</button>
+      </div>
+    </div>
+    <div id="searchMsg" class="note" style="margin: .6rem 0 0;"></div>
+    <div id="searchResults"></div>
   </div>
 
   <div class="panel" style="grid-column: 1 / -1;">
@@ -269,16 +315,17 @@ const TUNING = [
   ["MINERU_VIRTUAL_VRAM_SIZE", () => null, "auto (shell env var, unplumbed)", "ratio8 @ 24GB (measured best)", "NOT yet controllable here -- vendored mineru reads this from the shell env before Python starts; no app code reads or forwards it into the parse subprocess (2026-07-18 sweep). Not a live dial."],
   ["relevance_filter", () => null, "off", "off", "Currently dead code (OG-36) -- display-only."],
 ];
-// Display-only -- see server.py's `_SEARCH_DISPLAY`/`_status_dict` for why these come from the
-// API instead of being hardcoded here: Config.top_k/Config.rerank_depth are DEAD fields (a
-// 2026-07-18 sweep found nothing reads them), so this UI must never bind to them.
+// Display-only -- see server.py's `_search_display`/`_status_dict` for where these come from.
+// 2026-07-18: Config.top_k/Config.rerank_depth are now genuinely wired (build_mcp_server threads
+// them into McpServer.default_k / Retriever.rerank_pool_size) -- both rows below reflect the real
+// live values, not a hardcoded stand-in.
 function renderSearchParams(snap) {
   const s = snap.search || {};
   const rows = [
-    ["top-k (per-query default)", fmt(s.top_k_default), "app/serve.py semantic_search/search_papers k=10 -- NOT Config.top_k (dead field)."],
-    ["hybrid_dense_weight", fmt(s.hybrid_dense_weight), "The one genuinely-wired quality dial (Config.hybrid_dense_weight, range [0,1])."],
-    ["rerank pool size", fmt(s.rerank_pool_size), "rag/retriever.py _RERANK_POOL_SIZE, capped by rag/reranker.py _MAX_BATCH_SIZE=32."],
-    ["search filters (subject / date)", "wired", "SearchFilters.categories / published_after / published_before -- already end-to-end in app.serve; no UI here."],
+    ["top-k (per-query default)", fmt(s.top_k_default), "Config.top_k -- McpServer's fallback k when a caller (or the search panel below) leaves top-k blank; an explicit k always overrides it."],
+    ["hybrid_dense_weight", fmt(s.hybrid_dense_weight), "Config.hybrid_dense_weight, range [0,1]."],
+    ["rerank pool size", fmt(s.rerank_pool_size), "min(Config.rerank_depth, rag/reranker.py _MAX_BATCH_SIZE=32) -- clamped since TEI silently truncates a bigger batch anyway."],
+    ["search filters (subject / date)", "wired", "SearchFilters.categories / published_after / published_before -- try them in the search panel below."],
   ];
   document.getElementById("searchParamsTable").innerHTML = rows
     .map(([name, cur, note]) => `<tr><td>${name}</td><td>${cur}</td><td>${note}</td></tr>`).join("");
@@ -418,6 +465,62 @@ function render(snap) {
     fieldsInitialized = true;
   }
 }
+
+// --- "Try a search" panel: GET /api/search, the live UI for the SEARCH-side controls -----------
+
+function escapeHtml(s) {
+  const div = document.createElement("div");
+  div.textContent = s === null || s === undefined ? "" : String(s);
+  return div.innerHTML;
+}
+
+async function runSearch() {
+  const query = document.getElementById("searchQuery").value.trim();
+  const msg = document.getElementById("searchMsg");
+  const resultsEl = document.getElementById("searchResults");
+  if (!query) {
+    msg.textContent = "enter a query";
+    return;
+  }
+
+  const params = new URLSearchParams({ q: query });
+  const k = document.getElementById("searchK").value;
+  if (k) params.set("k", k);
+  const categories = document.getElementById("searchCategories").value.trim();
+  if (categories) params.set("categories", categories);
+  const dateFrom = document.getElementById("searchDateFrom").value;
+  if (dateFrom) params.set("published_after", dateFrom);
+  const dateTo = document.getElementById("searchDateTo").value;
+  if (dateTo) params.set("published_before", dateTo);
+
+  msg.textContent = "searching... (the first search after startup also builds the retrieval stack)";
+  resultsEl.innerHTML = "";
+  try {
+    const resp = await fetch("/api/search?" + params.toString());
+    const body = await resp.json();
+    if (!resp.ok || !body.ok) {
+      msg.textContent = "ERROR: " + (body.message || resp.statusText);
+      return;
+    }
+    msg.textContent = `${body.results.length} result(s) shown -- ${body.coverage.candidates} candidates considered pre-rerank`;
+    resultsEl.innerHTML = body.results.length
+      ? body.results.map(r => `
+          <div class="search-result">
+            <div class="title">${escapeHtml(r.title)} <span class="stat-label">(${escapeHtml(r.paper_id)})</span></div>
+            <div class="meta">${escapeHtml(r.section_path || "-")} &middot; score ${fmt(r.score, 3)}</div>
+            <div class="snippet">${escapeHtml(r.snippet)}</div>
+          </div>
+        `).join("")
+      : `<div class="quarantine-empty">no results</div>`;
+  } catch (e) {
+    msg.textContent = "request failed: " + e;
+  }
+}
+
+document.getElementById("btnSearch").addEventListener("click", runSearch);
+document.getElementById("searchQuery").addEventListener("keydown", e => {
+  if (e.key === "Enter") { e.preventDefault(); runSearch(); }
+});
 
 async function poll() {
   try {

@@ -407,6 +407,47 @@ def test_retrieve_pool_size_grows_past_32_when_k_exceeds_it():
     assert len(results) == 40
 
 
+def test_retrieve_pool_size_honors_a_custom_rerank_pool_size_constructor_arg():
+    # 2026-07-18: `rerank_pool_size` is now a constructor arg (defaults to `_RERANK_POOL_SIZE=32`,
+    # see that constant's own docstring) -- the composition root threads `Config.rerank_depth`
+    # through it. A caller-supplied pool smaller than 32 must actually shrink the fetched pool
+    # (`max(k, rerank_pool_size)`), not silently stay pinned to the old hardcoded 32.
+    store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
+    query = "double machine learning orthogonal moment estimator"
+    for i in range(20):
+        _seed_chunk(store, docstore, embedder, chunk_id=f"2506.{i:05d}:c0",
+                    paper_id=f"2506.{i:05d}", block_id=f"2506.{i:05d}:b0",
+                    text=f"unrelated filler content about topic number {i}",
+                    section_path=f"{i}. Section")
+
+    r = _mod.Retriever(embedder=embedder, vector_store=store, document_store=docstore,
+                       reranker=FakeReranker(), rerank_pool_size=5)
+    results, coverage = r.retrieve(query, filters=None, k=3)
+
+    # max(k=3, rerank_pool_size=5) == 5 -- not the old hardcoded 32 (there are only 20 candidates
+    # seeded anyway, so a stuck-at-32 default would still have returned all 20; 5 is the only pool
+    # size that proves the constructor arg is actually being read).
+    assert coverage.candidate_count == 5
+    assert len(results) == 3
+
+
+def test_retrieve_pool_size_default_is_unchanged_when_not_passed():
+    # Regression guard: a caller (e.g. every other test in this file) that doesn't pass
+    # `rerank_pool_size` must keep getting the historical default of 32.
+    store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
+    query = "double machine learning orthogonal moment estimator"
+    for i in range(40):
+        _seed_chunk(store, docstore, embedder, chunk_id=f"2506.{i:05d}:c0",
+                    paper_id=f"2506.{i:05d}", block_id=f"2506.{i:05d}:b0",
+                    text=f"unrelated filler content about topic number {i}",
+                    section_path=f"{i}. Section")
+
+    r = _mod.Retriever(embedder=embedder, vector_store=store, document_store=docstore,
+                       reranker=FakeReranker())
+    _results, coverage = r.retrieve(query, filters=None, k=10)
+    assert coverage.candidate_count == 32
+
+
 def test_retrieve_filters_is_searchfilters_not_dict():
     store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
     _seed_chunk(store, docstore, embedder, chunk_id="2506.00001:c0", paper_id="2506.00001",

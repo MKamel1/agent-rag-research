@@ -7,12 +7,20 @@ parse bodies correctly, and return the exact API-contract shape, without touchin
 import json
 import threading
 import urllib.error
+import urllib.parse
 import urllib.request
+from contextlib import contextmanager
+from datetime import date
 
 import pytest
 
 from app.dashboard.controller import DoubleRunError, NoRunError
 from app.dashboard.server import _status_dict, build_server
+from contracts.errors import TransientError
+from contracts.mcp_server import Coverage, SearchResponse
+from contracts.provenance import Anchor
+from contracts.retriever import Citation, GroundedResult
+from contracts.vector_index import SearchFilters
 
 # These tests bind a real loopback (127.0.0.1) socket -- no external network, no vendor -- so they
 # opt out of the suite's default `--disable-socket` (pytest.ini) the same way
@@ -330,3 +338,134 @@ def test_unknown_route_is_404(running_server):
     with pytest.raises(urllib.error.HTTPError) as exc_info:
         urllib.request.urlopen(url + "/nope", timeout=5.0)
     assert exc_info.value.code == 404
+
+
+# --- GET /api/search: the "Try a search" panel's backend --------------------------------------
+#
+# HARD GUARDRAIL: every test below injects a FAKE `mcp_server_factory` -- never the real default
+# (`_LazyMcpServer`, which would build a real `GpuLock`/Qdrant connection/TEI clients on first
+# use). That keeps this suite offline and clear of the shared GPU lock, same as every other fake
+# in this file.
+
+_BBOX = (0.0, 0.0, 100.0, 200.0)
+
+
+def _grounded_result(
+    paper_id="2506.01234", title="A Causal Method", section_path="3. Method",
+    text="The estimator is defined as the sample analogue.", score=0.9,
+):
+    citation = Citation(paper_id=paper_id, title=title, authors=["A. Author"],
+                        arxiv_url=f"https://arxiv.org/abs/{paper_id}", section_path=section_path)
+    anchor = Anchor(paper_id=paper_id, block_id=f"{paper_id}:b0", page=0, bbox=_BBOX,
+                    snippet=text[:16], section_path=section_path)
+    return GroundedResult(passage_text=text, anchor=anchor, paper_id=paper_id, score=score,
+                          citation=citation)
+
+
+class _FakeMcpServer:
+    """Stands in for `_LazyMcpServer` (or the real `McpServer`) -- records every
+    `semantic_search` call and returns a canned `SearchResponse`, or raises a canned error."""
+
+    def __init__(self, results=(), coverage=None, error=None):
+        self.calls: list[tuple] = []
+        self._results = list(results)
+        self._coverage = coverage or Coverage(
+            returned=len(self._results), candidates=len(self._results)
+        )
+        self._error = error
+
+    def semantic_search(self, query, filters, k):
+        self.calls.append((query, filters, k))
+        if self._error is not None:
+            raise self._error
+        return SearchResponse(results=self._results, coverage=self._coverage)
+
+
+def _get_allow_error(url, path):
+    """Same as `_get`, but doesn't let a non-2xx response raise -- `/api/search` returns 400/502
+    on a client/backend error (same convention `_post` already uses for `/api/control`)."""
+    try:
+        with urllib.request.urlopen(url + path, timeout=5.0) as resp:
+            return resp.status, json.loads(resp.read())
+    except urllib.error.HTTPError as e:
+        return e.code, json.loads(e.read())
+
+
+@contextmanager
+def _search_server(tmp_path, fake_mcp):
+    httpd = build_server(
+        tmp_path, _TOKEN, port=0, host="127.0.0.1",
+        status_module=_FakeStatus(), controller_module=_FakeController(),
+        mcp_server_factory=fake_mcp,
+    )
+    thread = threading.Thread(target=httpd.serve_forever, daemon=True)
+    thread.start()
+    port = httpd.server_address[1]
+    try:
+        yield f"http://127.0.0.1:{port}"
+    finally:
+        httpd.shutdown()
+        httpd.server_close()
+        thread.join(timeout=5.0)
+
+
+def test_search_route_returns_results_and_coverage_shape(tmp_path):
+    result = _grounded_result()
+    fake_mcp = _FakeMcpServer(results=[result], coverage=Coverage(returned=1, candidates=5))
+
+    with _search_server(tmp_path, fake_mcp) as url:
+        status, body = _get(url, "/api/search?q=estimator")
+
+    assert status == 200
+    assert body["ok"] is True
+    assert body["coverage"] == {"returned": 1, "candidates": 5}
+    assert body["results"] == [{
+        "paper_id": "2506.01234", "title": "A Causal Method", "section_path": "3. Method",
+        "snippet": result.passage_text, "score": 0.9,
+    }]
+    # No k/filters given -> both flow through as None, letting McpServer's own default_k
+    # (Config.top_k) and "no restriction" apply -- this route never invents a default of its own.
+    assert fake_mcp.calls == [("estimator", None, None)]
+
+
+def test_search_route_parses_k_and_subject_date_filters(tmp_path):
+    fake_mcp = _FakeMcpServer(results=[])
+    qs = urllib.parse.urlencode({
+        "q": "estimator", "k": "5", "categories": "stat.ME, econ.EM",
+        "published_after": "2020-01-01", "published_before": "2021-01-01",
+    })
+
+    with _search_server(tmp_path, fake_mcp) as url:
+        status, _body = _get(url, f"/api/search?{qs}")
+
+    assert status == 200
+    [(query, filters, k)] = fake_mcp.calls
+    assert query == "estimator"
+    assert k == 5
+    assert filters == SearchFilters(
+        categories=["stat.ME", "econ.EM"],
+        published_after=date(2020, 1, 1),
+        published_before=date(2021, 1, 1),
+    )
+
+
+def test_search_route_missing_query_is_a_client_error_and_never_calls_the_backend(tmp_path):
+    fake_mcp = _FakeMcpServer()
+
+    with _search_server(tmp_path, fake_mcp) as url:
+        status, body = _get_allow_error(url, "/api/search")
+
+    assert status == 400
+    assert body["ok"] is False
+    assert fake_mcp.calls == []
+
+
+def test_search_route_backend_failure_degrades_to_502_not_a_crash(tmp_path):
+    fake_mcp = _FakeMcpServer(error=TransientError("TEI reranker unreachable"))
+
+    with _search_server(tmp_path, fake_mcp) as url:
+        status, body = _get_allow_error(url, "/api/search?q=estimator")
+
+    assert status == 502
+    assert body["ok"] is False
+    assert "TEI reranker unreachable" in body["message"]

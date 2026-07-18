@@ -35,6 +35,7 @@ from rag.mcp_server import McpServer
 from rag.orchestrator import IngestionOrchestrator
 from rag.parser import parse as parse_pdf_bytes
 from rag.parser import parse_batch as parse_pdf_bytes_batch
+from rag.reranker import _MAX_BATCH_SIZE as _RERANKER_MAX_BATCH_SIZE
 from rag.reranker import TeiReranker
 from rag.retriever import Retriever
 from rag.summarizer import OllamaSummarizer
@@ -593,6 +594,15 @@ def build_mcp_server(
         _QDRANT_HOST, _QDRANT_PORT, collection, _EMBEDDER_INFO.dim, config.hybrid_dense_weight
     )
     reranker = TeiReranker(httpx.Client(base_url=_TEI_RERANK_URL, timeout=60.0), gpu_lock)
-    retriever = Retriever(embedder, vector_index, document_store, reranker)
+    # 2026-07-18: `Config.rerank_depth`/`Config.top_k` were dead fields (declared, never read) --
+    # wired here, the one composition root that knows both the Config lever and the reranker's
+    # real vendor batch-size ceiling. `rerank_pool_size` is clamped to `_RERANKER_MAX_BATCH_SIZE`
+    # (32) here, not inside `Retriever` itself (T-DOC39/rag/retriever.py's own `_RERANK_POOL_SIZE`
+    # docstring: the retriever deliberately never hardcodes a vendor batch limit) -- a pool bigger
+    # than 32 would just be silently truncated by TEI's `/rerank` endpoint anyway
+    # (`rag/reranker.py`'s `TeiReranker.rerank()`), so clamping here avoids fetching a bigger
+    # hybrid-search pool than reranking could ever actually use.
+    rerank_pool_size = min(config.rerank_depth, _RERANKER_MAX_BATCH_SIZE)
+    retriever = Retriever(embedder, vector_index, document_store, reranker, rerank_pool_size)
 
-    return McpServer(retriever, document_store)
+    return McpServer(retriever, document_store, default_k=config.top_k)
