@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Corpus Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #0f1216; --panel: #171b21; --border: #2a2f38; --text: #e6e9ef; --muted: #9aa4b2;
+    --accent: #5b9dff; --good: #3ecf8e; --warn: #e0a93e; --bad: #e0645e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 1.5rem; background: var(--bg); color: var(--text);
+    font: 14px/1.4 -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  h1 { font-size: 1.3rem; margin: 0 0 .25rem; }
+  .sub { color: var(--muted); margin-bottom: 1.25rem; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
+  .panel {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 1rem 1.1rem;
+  }
+  .panel h2 { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 0 0 .75rem; }
+  .stat { font-size: 1.6rem; font-weight: 600; }
+  .stat-label { color: var(--muted); font-size: .75rem; }
+  .row { display: flex; justify-content: space-between; align-items: baseline; padding: .2rem 0; }
+  .funnel-row { display: grid; grid-template-columns: 6.5rem 1fr 3rem; gap: .5rem; align-items: center; padding: .15rem 0; }
+  .bar-track { height: 8px; background: #232833; border-radius: 4px; overflow: hidden; }
+  .bar-fill { height: 100%; background: var(--accent); border-radius: 4px; }
+  .bar-fill.quarantine { background: var(--bad); }
+  .progress-wrap { margin-top: .5rem; }
+  .progress-track { height: 14px; background: #232833; border-radius: 7px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--good); transition: width .3s; }
+  .tags { display: flex; flex-wrap: wrap; gap: .35rem; max-height: 9rem; overflow-y: auto; }
+  .tag { background: #202632; border: 1px solid var(--border); border-radius: 999px; padding: .2rem .65rem; font-size: .75rem; color: var(--muted); }
+  .pill { display: inline-block; padding: .15rem .55rem; border-radius: 999px; font-size: .75rem; font-weight: 600; }
+  .pill.running { background: #1c3a2c; color: var(--good); }
+  .pill.paused, .pill.pausing { background: #3a2f14; color: var(--warn); }
+  .pill.stopping, .pill.done { background: #2a2f38; color: var(--muted); }
+  .pill.failed { background: #3a1e1e; color: var(--bad); }
+  .pill.unknown { background: #2a2f38; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: .8rem; }
+  td, th { text-align: left; padding: .2rem 0; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 500; }
+  button {
+    background: var(--accent); color: #08111f; border: none; border-radius: 6px;
+    padding: .5rem .9rem; font-weight: 600; cursor: pointer; font-size: .8rem;
+  }
+  button.secondary { background: #232833; color: var(--text); }
+  button.danger { background: var(--bad); color: #200; }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+  input, select {
+    background: #0f1216; border: 1px solid var(--border); color: var(--text);
+    border-radius: 6px; padding: .4rem .5rem; font-size: .8rem;
+  }
+  .controls { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-top: .5rem; }
+  .field { display: flex; flex-direction: column; gap: .2rem; }
+  .field label { font-size: .7rem; color: var(--muted); }
+  #controlMsg { margin-top: .6rem; font-size: .8rem; color: var(--muted); min-height: 1.2em; }
+  .quarantine-empty { color: var(--muted); font-size: .8rem; }
+  code { background: #0f1216; padding: .1rem .3rem; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<h1>Corpus Dashboard</h1>
+<div class="sub">
+  run <code id="runId">-</code>
+  <span id="runStatus" class="pill unknown">unknown</span>
+  &middot; last updated <span id="lastUpdated">-</span>
+</div>
+
+<div class="grid">
+
+  <div class="panel" style="grid-column: 1 / -1;">
+    <h2>Stage funnel</h2>
+    <div id="funnel"></div>
+    <div class="progress-wrap">
+      <div class="row"><span class="stat-label">done / target</span><span class="stat-label" id="progressLabel">- / -</span></div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Throughput</h2>
+    <div class="row"><span class="stat-label">papers / hour</span><span class="stat" id="papersPerHour">-</span></div>
+    <div class="row"><span class="stat-label">wall clock</span><span id="wallClock">-</span></div>
+    <div class="row"><span class="stat-label">ETA to target</span><span id="eta">-</span></div>
+    <div class="row"><span class="stat-label">current stage</span><span id="currentStage">-</span></div>
+  </div>
+
+  <div class="panel">
+    <h2>GPU</h2>
+    <div class="row"><span class="stat-label">utilization</span><span class="stat" id="gpuUtil">-</span></div>
+    <div class="row"><span class="stat-label">VRAM</span><span id="gpuVram">-</span></div>
+    <div class="row"><span class="stat-label">power</span><span id="gpuPower">-</span></div>
+  </div>
+
+  <div class="panel">
+    <h2>Downloads</h2>
+    <div class="row"><span class="stat-label">cached PDFs</span><span class="stat" id="cachedPdfs">-</span></div>
+    <div class="row"><span class="stat-label">sidecars</span><span id="sidecars">-</span></div>
+    <div class="row"><span class="stat-label">target</span><span id="downloadTarget">-</span></div>
+  </div>
+
+  <div class="panel">
+    <h2>Consistency</h2>
+    <div class="row"><span class="stat-label">SQLite done</span><span id="sqliteDone">-</span></div>
+    <div class="row"><span class="stat-label">vector-store points</span><span id="vectorPoints">-</span></div>
+  </div>
+
+  <div class="panel">
+    <h2>Quarantine</h2>
+    <div class="row"><span class="stat-label">count</span><span class="stat" id="quarantineCount">-</span></div>
+    <table id="quarantineTable"><tbody></tbody></table>
+    <div id="quarantineEmpty" class="quarantine-empty" style="display:none;">none</div>
+  </div>
+
+  <div class="panel" style="grid-column: 1 / -1;">
+    <h2>Keyword search tags (focus_queries)</h2>
+    <div class="tags" id="focusQueries"></div>
+  </div>
+
+  <div class="panel" style="grid-column: 1 / -1;">
+    <h2>Tuning parameters</h2>
+    <table>
+      <thead><tr><th>param</th><th>current</th><th>default</th><th>recommended</th><th>note</th></tr></thead>
+      <tbody id="tuningTable"></tbody>
+    </table>
+  </div>
+
+  <div class="panel" style="grid-column: 1 / -1;">
+    <h2>Control</h2>
+    <div class="field">
+      <label for="token">Dashboard token (X-Dashboard-Token)</label>
+      <input id="token" type="password" placeholder="paste --token value" style="max-width: 22rem;">
+    </div>
+    <div class="controls">
+      <button id="btnPause" class="secondary">Pause</button>
+      <button id="btnResume" class="secondary">Resume</button>
+      <button id="btnStop" class="danger">Stop</button>
+    </div>
+    <div class="controls" style="margin-top: .75rem; border-top: 1px solid var(--border); padding-top: .75rem;">
+      <div class="field">
+        <label for="newTarget">Start fresh run: target papers</label>
+        <input id="newTarget" type="number" min="1" value="3000" style="width: 8rem;">
+      </div>
+      <div class="field">
+        <label for="newWorkers">parse_workers</label>
+        <select id="newWorkers">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3" selected>3 (recommended)</option>
+          <option value="4">4</option>
+        </select>
+      </div>
+      <button id="btnStart">Start fresh run</button>
+    </div>
+    <div id="controlMsg"></div>
+  </div>
+
+</div>
+
+<script>
+const STAGES = ["harvested", "parsed", "chunked", "summarized", "embedded", "stored", "done"];
+const TUNING = [
+  ["target (--limit)", s => s.run.target, "none (=corpus_cap 30000)", "set per run", "The paper-count goal."],
+  ["parse_workers", s => s.run.parse_workers, "1", "3", "+63% Pass-1 throughput, proven safe (T-DOC51/OG-19)."],
+  ["parse_batch_size", () => null, "4", "4", "Papers per MinerU batch; smaller = less at-risk per crash."],
+  ["telemetry_poll_interval", s => s.telemetry ? null : null, "5s", "5s", "GPU sampling cadence."],
+  ["relevance_filter", () => null, "off", "off", "Currently dead code (OG-36) -- display-only."],
+];
+
+function fmt(n, digits) {
+  if (n === null || n === undefined) return "-";
+  if (typeof n !== "number") return String(n);
+  return digits === undefined ? n.toLocaleString() : n.toFixed(digits);
+}
+
+function renderFunnel(funnel) {
+  const el = document.getElementById("funnel");
+  const total = funnel.harvested || 1;
+  el.innerHTML = STAGES.map(stage => {
+    const n = funnel[stage];
+    const pct = n === null || n === undefined ? 0 : Math.min(100, (n / total) * 100);
+    return `<div class="funnel-row">
+      <span class="stat-label">${stage}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+      <span>${fmt(n)}</span>
+    </div>`;
+  }).join("") + `<div class="funnel-row">
+      <span class="stat-label">quarantined</span>
+      <div class="bar-track"><div class="bar-fill quarantine" style="width:${funnel.quarantined ? Math.min(100, (funnel.quarantined/total)*100) : 0}%"></div></div>
+      <span>${fmt(funnel.quarantined)}</span>
+    </div>`;
+}
+
+function renderTuning(snap) {
+  document.getElementById("tuningTable").innerHTML = TUNING.map(([name, currentFn, def, rec, note]) => {
+    const current = currentFn(snap);
+    return `<tr><td>${name}</td><td>${fmt(current)}</td><td>${def}</td><td>${rec}</td><td>${note}</td></tr>`;
+  }).join("");
+}
+
+function statusPillClass(status) {
+  return ["running", "paused", "pausing", "stopping", "done", "failed"].includes(status) ? status : "unknown";
+}
+
+function render(snap) {
+  document.getElementById("lastUpdated").textContent = new Date().toLocaleTimeString();
+  document.getElementById("runId").textContent = snap.run.run_id || "-";
+  const statusEl = document.getElementById("runStatus");
+  const st = snap.run.status || "unknown";
+  statusEl.textContent = st;
+  statusEl.className = "pill " + statusPillClass(st);
+
+  renderFunnel(snap.funnel);
+
+  const done = snap.funnel.done || 0;
+  const target = snap.run.target;
+  document.getElementById("progressLabel").textContent = `${fmt(done)} / ${fmt(target)}`;
+  document.getElementById("progressFill").style.width = target ? Math.min(100, (done / target) * 100) + "%" : "0%";
+
+  document.getElementById("papersPerHour").textContent = fmt(snap.telemetry.papers_per_hour, 1);
+  document.getElementById("currentStage").textContent = snap.telemetry.stage || "-";
+  const wc = snap.telemetry.wall_clock_s;
+  document.getElementById("wallClock").textContent = wc === null || wc === undefined ? "-" : `${(wc/60).toFixed(1)} min`;
+  const pph = snap.telemetry.papers_per_hour;
+  if (pph && target && done < target) {
+    const remaining = target - done;
+    document.getElementById("eta").textContent = `${(remaining / pph * 60).toFixed(0)} min`;
+  } else {
+    document.getElementById("eta").textContent = "-";
+  }
+
+  document.getElementById("gpuUtil").textContent = snap.telemetry.gpu_util_pct === null ? "-" : `${fmt(snap.telemetry.gpu_util_pct, 0)}%`;
+  document.getElementById("gpuVram").textContent = snap.telemetry.vram_mib === null ? "-" : `${fmt(snap.telemetry.vram_mib)} MiB`;
+  document.getElementById("gpuPower").textContent = snap.telemetry.power_w === null ? "-" : `${fmt(snap.telemetry.power_w, 1)} W`;
+
+  document.getElementById("cachedPdfs").textContent = fmt(snap.downloads.cached_pdfs);
+  document.getElementById("sidecars").textContent = fmt(snap.downloads.sidecars);
+  document.getElementById("downloadTarget").textContent = fmt(snap.downloads.target);
+
+  document.getElementById("sqliteDone").textContent = fmt(snap.consistency.sqlite_done);
+  document.getElementById("vectorPoints").textContent = fmt(snap.consistency.vector_points);
+
+  document.getElementById("quarantineCount").textContent = fmt(snap.funnel.quarantined);
+  const reasons = snap.quarantine_reasons || [];
+  document.getElementById("quarantineEmpty").style.display = reasons.length ? "none" : "block";
+  document.querySelector("#quarantineTable tbody").innerHTML = reasons
+    .map(r => `<tr><td>${r.reason}</td><td>${fmt(r.count)}</td></tr>`).join("");
+
+  const tags = snap.run.focus_queries || [];
+  document.getElementById("focusQueries").innerHTML = tags.length
+    ? tags.map(q => `<span class="tag">${q}</span>`).join("")
+    : `<span class="stat-label">-</span>`;
+
+  renderTuning(snap);
+
+  const isLive = ["running", "pausing", "stopping"].includes(st);
+  document.getElementById("btnPause").disabled = st !== "running";
+  document.getElementById("btnResume").disabled = !["paused", "done", "failed"].includes(st) && st !== "unknown";
+  document.getElementById("btnStop").disabled = st !== "running";
+  document.getElementById("btnStart").disabled = isLive;
+}
+
+async function poll() {
+  try {
+    const resp = await fetch("/api/status");
+    render(await resp.json());
+  } catch (e) {
+    document.getElementById("lastUpdated").textContent = "fetch failed: " + e;
+  }
+}
+
+async function control(action, extra) {
+  const token = document.getElementById("token").value;
+  const msg = document.getElementById("controlMsg");
+  msg.textContent = "sending " + action + "...";
+  try {
+    const resp = await fetch("/api/control", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Dashboard-Token": token },
+      body: JSON.stringify({ action, ...extra }),
+    });
+    const body = await resp.json();
+    msg.textContent = (body.ok ? "OK: " : "ERROR: ") + body.message;
+  } catch (e) {
+    msg.textContent = "request failed: " + e;
+  }
+  poll();
+}
+
+document.getElementById("btnPause").addEventListener("click", () => control("pause"));
+document.getElementById("btnResume").addEventListener("click", () => control("resume"));
+document.getElementById("btnStop").addEventListener("click", () => control("stop"));
+document.getElementById("btnStart").addEventListener("click", () => control("start", {
+  target: parseInt(document.getElementById("newTarget").value, 10),
+  parse_workers: parseInt(document.getElementById("newWorkers").value, 10),
+}));
+
+poll();
+setInterval(poll, 4000);
+</script>
+</body>
+</html>

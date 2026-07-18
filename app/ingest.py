@@ -50,6 +50,22 @@ docstring) straight to `RunTelemetry.set_stage` -- re-tagging the running GPU sa
 "summarize"/"embed"/"store" without an extra STAGE_START/STAGE_END event pair per paper (this is a
 sub-stage re-tag, not a new phase boundary). The coarse "parse"/"finish" `stage_start`/`stage_end`
 calls below are unchanged.
+
+Whole-run lock (`.ingest.lock`, `app/dashboard/` control-plane review): `--parse-workers`'s
+`.gpu.lock` only serializes the GPU-bound half of a run (`Config.gpu_lock_path`, acquired deep
+inside the embed step) -- nothing stopped two whole `app.ingest` invocations (one manual, one
+dashboard-launched, or two manual ones) from both running Pass 1 at once, each writing
+`ingest_state` for an overlapping paper set. `filelock.FileLock(_INGEST_LOCK_PATH)` is acquired,
+non-blocking, as the very first action below -- before even `load_config()` -- and held for the
+entire run (parse + finish); a second invocation in the same directory refuses to start instead of
+racing the first. This is the real double-run guard; `app/dashboard/controller.py`'s own
+manifest-PID guard is a fast, friendly error message on top of it, not a substitute for it -- a
+manual `python -m app.ingest` (which never touches the manifest) is caught here regardless. Note:
+the lock is released the instant this process exits, cleanly or via SIGTERM/SIGKILL (the OS reclaims
+an `flock` on process exit), so a paused/stopped run's lock is free again as soon as its PID is
+actually gone -- no separate cleanup step needed. Runs launched before this lock existed (e.g. an
+already-live run started prior to this change landing) are not holding it and are not protected by
+it until they're restarted.
 """
 
 import argparse
@@ -61,6 +77,7 @@ import time
 import uuid
 from pathlib import Path
 
+import filelock
 import yaml
 
 from app import doctor, tei_lifecycle, telemetry
@@ -68,6 +85,12 @@ from app.assembly import build_ingestion_orchestrator, harvest_refs
 from contracts.config import Config
 from migrations.migrate import migrate
 from rag.config import load_config
+
+# Whole-run mutual-exclusion lock -- see module docstring "Whole-run lock". Relative to cwd, same
+# convention as `Config.gpu_lock_path`'s own default (".gpu.lock") -- both the dashboard's
+# subprocess launch and a manual `cd <data_dir> && python -m app.ingest` run with the data dir as
+# cwd, so both resolve to the same file.
+_INGEST_LOCK_PATH = ".ingest.lock"
 
 # Config fields that hold a filesystem path -- resolved to absolute before being written into a
 # scratch config.yaml for the Pass-1 subprocess (see _write_override_config_dir). Curated, not
@@ -316,51 +339,69 @@ def _parse_args() -> argparse.Namespace:
 
 
 if __name__ == "__main__":
-    cfg = load_config()
-    args = _parse_args()
-
-    cfg = _effective_config(cfg, args)
-
-    _preflight_gate(cfg, no_preflight=args.no_preflight, force=args.force)
-    _ensure_db_migrated(cfg.db_path)
-
-    # T-DOC45/T-DOC46: only pay for a scratch config.yaml + a different Pass-1 subprocess cwd
-    # when an override is actually in effect -- the default (neither flag set) path is untouched.
-    subprocess_cwd = (
-        str(_write_override_config_dir(cfg)) if (args.scratch or args.limit is not None) else None
-    )
-
-    # T-DOC47: telemetry starts only once the DB is confirmed migrated (above) -- its own
-    # end-of-run SQLite reads (app/telemetry.py::summarize_run) must never race an unmigrated or
-    # absent database.
-    run = telemetry.RunTelemetry.start(
-        events_path=args.events_path,
-        poll_interval_s=args.telemetry_poll_interval,
-        requested_paper_count=(
-            len(cfg.ingest_paper_ids) if cfg.ingest_paper_ids else cfg.corpus_cap
-        ),
-    )
+    # Whole-run lock -- see module docstring "Whole-run lock". Acquired non-blocking, as the very
+    # first action, before even `load_config()`: a second `app.ingest` in this directory (manual
+    # or dashboard-launched) refuses to start instead of racing this one for the GPU + ingest_state.
+    _ingest_lock = filelock.FileLock(_INGEST_LOCK_PATH)
     try:
-        # ponytail: no retry/backoff if a Pass-1 subprocess fails (e.g. external GPU pressure
-        # beyond what eviction can clear) -- letting it raise stops the run; a re-run resumes
-        # from ingest_state checkpoints. Add a poll-and-backoff `_ensure_vram` here if this ever
-        # proves to be a real problem in practice (ARCHITECTURE.md §3).
-        # No explicit env/cwd handoff needed for the DEFAULT path (T-DOC29): every subprocess
-        # inherits this process's cwd by default and calls the same `load_config()` (see
-        # app/parse_phase.py's `__main__`), so all of them read the identical config.yaml --
-        # every phase/shard agrees on db_path/blob_dir/collection/etc. by construction, not by
-        # propagating env vars across process boundaries. The `--limit`/`--scratch` path above is
-        # the one deliberate exception (`subprocess_cwd`), and only when one of those flags is
-        # actually set.
-        run.stage_start("parse")
-        _run_parse_phase_subprocesses(args.parse_workers, cwd=subprocess_cwd)
-        run.stage_end("parse")
+        _ingest_lock.acquire(timeout=0)
+    except filelock.Timeout:
+        print(
+            f"app.ingest: another app.ingest run already holds {_INGEST_LOCK_PATH!r} in this "
+            "directory -- refusing to start a second one (two runs would contend for the GPU "
+            "and corrupt ingest_state). Wait for it to finish, or pause/stop it first.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
-        run.stage_start("finish")
-        _run_finish_phase(cfg, on_stage=run.set_stage)
-        run.stage_end("finish")
+    try:
+        cfg = load_config()
+        args = _parse_args()
+
+        cfg = _effective_config(cfg, args)
+
+        _preflight_gate(cfg, no_preflight=args.no_preflight, force=args.force)
+        _ensure_db_migrated(cfg.db_path)
+
+        # T-DOC45/T-DOC46: only pay for a scratch config.yaml + a different Pass-1 subprocess cwd
+        # when an override is actually in effect -- the default (neither flag set) path is untouched.
+        subprocess_cwd = (
+            str(_write_override_config_dir(cfg)) if (args.scratch or args.limit is not None) else None
+        )
+
+        # T-DOC47: telemetry starts only once the DB is confirmed migrated (above) -- its own
+        # end-of-run SQLite reads (app/telemetry.py::summarize_run) must never race an unmigrated or
+        # absent database.
+        run = telemetry.RunTelemetry.start(
+            events_path=args.events_path,
+            poll_interval_s=args.telemetry_poll_interval,
+            requested_paper_count=(
+                len(cfg.ingest_paper_ids) if cfg.ingest_paper_ids else cfg.corpus_cap
+            ),
+        )
+        try:
+            # ponytail: no retry/backoff if a Pass-1 subprocess fails (e.g. external GPU pressure
+            # beyond what eviction can clear) -- letting it raise stops the run; a re-run resumes
+            # from ingest_state checkpoints. Add a poll-and-backoff `_ensure_vram` here if this ever
+            # proves to be a real problem in practice (ARCHITECTURE.md §3).
+            # No explicit env/cwd handoff needed for the DEFAULT path (T-DOC29): every subprocess
+            # inherits this process's cwd by default and calls the same `load_config()` (see
+            # app/parse_phase.py's `__main__`), so all of them read the identical config.yaml --
+            # every phase/shard agrees on db_path/blob_dir/collection/etc. by construction, not by
+            # propagating env vars across process boundaries. The `--limit`/`--scratch` path above is
+            # the one deliberate exception (`subprocess_cwd`), and only when one of those flags is
+            # actually set.
+            run.stage_start("parse")
+            _run_parse_phase_subprocesses(args.parse_workers, cwd=subprocess_cwd)
+            run.stage_end("parse")
+
+            run.stage_start("finish")
+            _run_finish_phase(cfg, on_stage=run.set_stage)
+            run.stage_end("finish")
+        finally:
+            # T-DOC47/OG-7: prints the end-of-run summary (done/quarantined/wall-clock/papers-per-hour
+            # + SQLite<->vector-store consistency check) even on a mid-run failure, so a crashed run
+            # still reports partial progress instead of nothing.
+            run.finish(db_path=cfg.db_path, collection=cfg.collection)
     finally:
-        # T-DOC47/OG-7: prints the end-of-run summary (done/quarantined/wall-clock/papers-per-hour
-        # + SQLite<->vector-store consistency check) even on a mid-run failure, so a crashed run
-        # still reports partial progress instead of nothing.
-        run.finish(db_path=cfg.db_path, collection=cfg.collection)
+        _ingest_lock.release()
