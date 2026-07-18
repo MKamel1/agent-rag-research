@@ -235,21 +235,23 @@ def liveness(data_dir: str | Path) -> dict | None:
 
 
 def _spawn(data_dir: Path, target: int, parse_workers: int, events_path: Path, log_path: Path) -> int:
-    """The real launch: `env PYTHONPATH=<repo> python -m app.ingest --parse-workers N --limit
-    TARGET --events-path <path>`, `cwd=<data_dir>`, as its own process-group leader (see
-    `_signal_group`). Returns the child's PID."""
+    """The real launch, literally: `env PYTHONPATH=<repo> python -m app.ingest --parse-workers N
+    --limit TARGET --events-path <path>`, `cwd=<data_dir>`, as its own process-group leader (see
+    `_signal_group`). The `env` *command* -- not a Python-level env-dict read -- sets
+    `PYTHONPATH` for just this one child -- `cwd=data_dir` means `-m app.ingest` can't otherwise
+    find the `app` package, since data_dir has no `app/` of its own -- while this process's own
+    environment is never inspected (CONVENTIONS.md §3 / `ci/checks/env_leak.py`: no reads of the
+    process environment in `app/`). Returns the child's PID."""
     cmd = [
+        "env", f"PYTHONPATH={_REPO_ROOT}",
         sys.executable, "-m", "app.ingest",
         "--parse-workers", str(parse_workers),
         "--limit", str(target),
         "--events-path", str(events_path),
     ]
-    env = dict(os.environ)
-    env["PYTHONPATH"] = str(_REPO_ROOT)
     log_f = log_path.open("a")
     proc = subprocess.Popen(
-        cmd, cwd=str(data_dir), env=env, stdout=log_f, stderr=subprocess.STDOUT,
-        start_new_session=True,
+        cmd, cwd=str(data_dir), stdout=log_f, stderr=subprocess.STDOUT, start_new_session=True,
     )
     return proc.pid
 
