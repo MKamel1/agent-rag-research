@@ -27,11 +27,23 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 from app.dashboard import controller, status
+from rag.config import load_config
 
 logger = logging.getLogger(__name__)
 
 _STATIC_INDEX = Path(__file__).parent / "static" / "index.html"
-_RUN_FIELDS = ("run_id", "status", "target", "parse_workers", "focus_queries", "started_at")
+# OG-42: `params` (which carries `telemetry_poll_interval`) was missing here -- the manifest had
+# the value, it just never reached the API payload.
+_RUN_FIELDS = (
+    "run_id", "status", "target", "parse_workers", "focus_queries", "started_at", "params",
+)
+
+# `parse_batch_size` (OG-42) has no per-run override anywhere in the launch path (unlike
+# `target`/`parse_workers`, it is never threaded onto the `app.build_corpus`/`app.ingest` command
+# line) -- the value that actually governs every run IS the static `config.yaml` default, read
+# once at process start the same way `controller.py`'s own `_build_manifest` already loads it.
+_CONFIG_PATH = Path(__file__).resolve().parents[2] / "config.yaml"
+_STATIC_CONFIG = load_config(_CONFIG_PATH)
 
 
 def _status_dict(data_dir: Path, status_module, controller_module) -> dict:
@@ -42,8 +54,14 @@ def _status_dict(data_dir: Path, status_module, controller_module) -> dict:
     done = corpus["funnel"].get("done")
     return {
         "funnel": corpus["funnel"],
-        "run": {field: live.get(field) for field in _RUN_FIELDS},
-        "telemetry": status_module.read_telemetry(live.get("events_path"), done),
+        "run": {
+            **{field: live.get(field) for field in _RUN_FIELDS},
+            "parse_batch_size": _STATIC_CONFIG.parse_batch_size,
+        },
+        "telemetry": status_module.read_telemetry(
+            live.get("events_path"), done,
+            data_dir=data_dir, started_at=live.get("started_at"), target=live.get("target"),
+        ),
         "downloads": status_module.read_downloads(data_dir, live.get("target")),
         "consistency": status_module.read_consistency(done, live.get("collection")),
         "quarantine_reasons": corpus["quarantine_reasons"],

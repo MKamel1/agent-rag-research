@@ -41,6 +41,10 @@
   .pill.stopping, .pill.done { background: #2a2f38; color: var(--muted); }
   .pill.failed { background: #3a1e1e; color: var(--bad); }
   .pill.unknown { background: #2a2f38; color: var(--muted); }
+  .pill.stale { background: #3a2f14; color: var(--warn); }
+  .verdict.ok { color: var(--good); }
+  .verdict.drift { color: var(--bad); }
+  .verdict.unknown { color: var(--muted); }
   table { width: 100%; border-collapse: collapse; font-size: .8rem; }
   td, th { text-align: left; padding: .2rem 0; border-bottom: 1px solid var(--border); }
   th { color: var(--muted); font-weight: 500; }
@@ -70,6 +74,7 @@
   run <code id="runId">-</code>
   <span id="runStatus" class="pill unknown">unknown</span>
   &middot; last updated <span id="lastUpdated">-</span>
+  <span id="staleBadge" class="pill stale" style="display:none;">stale / reconnecting</span>
 </div>
 
 <div class="grid">
@@ -107,8 +112,9 @@
 
   <div class="panel">
     <h2>Consistency</h2>
-    <div class="row"><span class="stat-label">SQLite done</span><span id="sqliteDone">-</span></div>
-    <div class="row"><span class="stat-label">vector-store points</span><span id="vectorPoints">-</span></div>
+    <div class="row"><span class="stat-label">status</span><span class="stat verdict unknown" id="consistencyVerdict">-</span></div>
+    <div class="row"><span class="stat-label">SQLite done (papers)</span><span id="sqliteDone">-</span></div>
+    <div class="row"><span class="stat-label">vector-store points (chunks+summaries)</span><span id="vectorPoints">-</span></div>
   </div>
 
   <div class="panel">
@@ -168,8 +174,8 @@ const STAGES = ["harvested", "parsed", "chunked", "summarized", "embedded", "sto
 const TUNING = [
   ["target (--limit)", s => s.run.target, "none (=corpus_cap 30000)", "set per run", "The paper-count goal."],
   ["parse_workers", s => s.run.parse_workers, "1", "3", "+63% Pass-1 throughput, proven safe (T-DOC51/OG-19)."],
-  ["parse_batch_size", () => null, "4", "4", "Papers per MinerU batch; smaller = less at-risk per crash."],
-  ["telemetry_poll_interval", s => s.telemetry ? null : null, "5s", "5s", "GPU sampling cadence."],
+  ["parse_batch_size", s => s.run.parse_batch_size, "4", "4", "Papers per MinerU batch; smaller = less at-risk per crash."],
+  ["telemetry_poll_interval", s => s.run.params && s.run.params.telemetry_poll_interval, "5s", "5s", "GPU sampling cadence."],
   ["relevance_filter", () => null, "off", "off", "Currently dead code (OG-36) -- display-only."],
 ];
 
@@ -209,7 +215,6 @@ function statusPillClass(status) {
 }
 
 function render(snap) {
-  document.getElementById("lastUpdated").textContent = new Date().toLocaleTimeString();
   document.getElementById("runId").textContent = snap.run.run_id || "-";
   const statusEl = document.getElementById("runStatus");
   const st = snap.run.status || "unknown";
@@ -227,13 +232,10 @@ function render(snap) {
   document.getElementById("currentStage").textContent = snap.telemetry.stage || "-";
   const wc = snap.telemetry.wall_clock_s;
   document.getElementById("wallClock").textContent = wc === null || wc === undefined ? "-" : `${(wc/60).toFixed(1)} min`;
-  const pph = snap.telemetry.papers_per_hour;
-  if (pph && target && done < target) {
-    const remaining = target - done;
-    document.getElementById("eta").textContent = `${(remaining / pph * 60).toFixed(0)} min`;
-  } else {
-    document.getElementById("eta").textContent = "-";
-  }
+  // ETA is computed server-side (status.py::_eta_seconds), scoped to the CURRENT run's true rate
+  // -- never derived here from a papers_per_hour that might itself be fabricated (OG-44).
+  const etaS = snap.telemetry.eta_s;
+  document.getElementById("eta").textContent = etaS === null || etaS === undefined ? "-" : `${(etaS/60).toFixed(0)} min`;
 
   document.getElementById("gpuUtil").textContent = snap.telemetry.gpu_util_pct === null ? "-" : `${fmt(snap.telemetry.gpu_util_pct, 0)}%`;
   document.getElementById("gpuVram").textContent = snap.telemetry.vram_mib === null ? "-" : `${fmt(snap.telemetry.vram_mib)} MiB`;
@@ -245,6 +247,10 @@ function render(snap) {
 
   document.getElementById("sqliteDone").textContent = fmt(snap.consistency.sqlite_done);
   document.getElementById("vectorPoints").textContent = fmt(snap.consistency.vector_points);
+  const consistent = snap.consistency.consistent;
+  const verdictEl = document.getElementById("consistencyVerdict");
+  verdictEl.textContent = consistent === null || consistent === undefined ? "-" : (consistent ? "OK" : "DRIFT");
+  verdictEl.className = "stat verdict " + (consistent === null || consistent === undefined ? "unknown" : (consistent ? "ok" : "drift"));
 
   document.getElementById("quarantineCount").textContent = fmt(snap.funnel.quarantined);
   const reasons = snap.quarantine_reasons || [];
@@ -270,8 +276,13 @@ async function poll() {
   try {
     const resp = await fetch("/api/status");
     render(await resp.json());
+    // Only a SUCCESSFUL poll updates the "last known good" timestamp -- a failed poll must never
+    // clobber it (OG-42: that was destroying the one signal this field exists to provide).
+    document.getElementById("lastUpdated").textContent = new Date().toLocaleTimeString();
+    document.getElementById("staleBadge").style.display = "none";
   } catch (e) {
-    document.getElementById("lastUpdated").textContent = "fetch failed: " + e;
+    // Staleness/errors surface via a SEPARATE badge, not by overwriting lastUpdated.
+    document.getElementById("staleBadge").style.display = "inline-block";
   }
 }
 

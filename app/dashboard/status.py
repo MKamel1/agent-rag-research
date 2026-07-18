@@ -31,6 +31,7 @@ import subprocess
 import time
 import urllib.error
 import urllib.request
+from datetime import UTC, datetime
 from pathlib import Path
 
 _STAGES = ("harvested", "parsed", "chunked", "summarized", "embedded", "stored", "done")
@@ -60,9 +61,17 @@ def read_corpus(data_dir: str | Path) -> dict:
         stage_counts = dict(
             conn.execute("SELECT stage, count(*) FROM ingest_state GROUP BY stage").fetchall()
         )
-        quarantine_count = conn.execute("SELECT count(*) FROM quarantine").fetchone()[0]
+        # OG-44: `quarantine` is an append-only dead-letter log, never reconciled -- a paper that
+        # later SUCCEEDED on retry (now stage='done') stays in it forever, so a naive count
+        # overstates "truly stuck" by however many later recovered. Exclude paper_ids that have
+        # since reached 'done' from both the count and the reasons breakdown.
+        quarantine_count = conn.execute(
+            "SELECT count(*) FROM quarantine WHERE paper_id NOT IN "
+            "(SELECT paper_id FROM ingest_state WHERE stage = 'done')"
+        ).fetchone()[0]
         reason_rows = conn.execute(
             "SELECT error_type, count(*) AS n FROM quarantine_diagnostics "
+            "WHERE paper_id NOT IN (SELECT paper_id FROM ingest_state WHERE stage = 'done') "
             "GROUP BY error_type ORDER BY n DESC"
         ).fetchall()
     except sqlite3.Error:
@@ -105,12 +114,38 @@ def _funnel_from_stage_counts(stage_counts: dict[str, int]) -> dict[str, int]:
 # --- live telemetry (events JSONL + a live GPU sample) ------------------------------------------
 
 
-def read_telemetry(events_path: str | Path | None, done_count: int | None) -> dict:
-    """Current stage, papers/hour, wall-clock (from the run's telemetry JSONL at `events_path`,
-    or `None` if there is no active/known run) plus a live GPU util/VRAM/power sample
-    (independent of `events_path` -- always read fresh)."""
+_MIN_ELAPSED_S_FOR_RATE = 60.0  # a rate extrapolated from a few seconds of elapsed time is noise
+
+
+def read_telemetry(
+    events_path: str | Path | None,
+    total_done: int | None,
+    *,
+    data_dir: str | Path | None = None,
+    started_at: str | None = None,
+    target: int | None = None,
+) -> dict:
+    """Current stage, papers/hour, ETA, wall-clock (from the run's telemetry JSONL at
+    `events_path`, or `None` if there is no active/known run) plus a live GPU util/VRAM/power
+    sample (independent of `events_path` -- always read fresh).
+
+    `papers_per_hour` is a TRUE per-run rate (OG-44 fix): `app.build_corpus` (PR #149) is a
+    supervisor that runs MULTIPLE `app.ingest` RUN_START/RUN_END cycles per dashboard run, so this
+    process's own wall-clock no longer pairs meaningfully with `total_done` (the ALL-TIME
+    cumulative count, including papers finished by prior runs) -- dividing the two used to invent
+    a papers/hour and ETA even when the CURRENT run had completed zero papers. Anchored instead on
+    the manifest's `started_at`: the rate's numerator is `COUNT(ingest_state WHERE stage='done'
+    AND updated_at >= started_at)` (`_count_done_since`), its denominator is wall-clock elapsed
+    since `started_at` itself (`now - started_at`), not any single events-file RUN_START. Zero
+    completions since `started_at`, or too little elapsed time to be meaningful, yields `None` --
+    never a fabricated number. `eta_s` (`(target - total_done) / papers_per_hour`) is `None`
+    whenever `papers_per_hour` is `None` for the same reason, or `target`/`total_done` is unknown,
+    or the target has already been reached.
+    """
     gpu = _read_gpu()
-    null_telemetry = {"stage": None, "papers_per_hour": None, "wall_clock_s": None, **gpu}
+    null_telemetry = {
+        "stage": None, "papers_per_hour": None, "wall_clock_s": None, "eta_s": None, **gpu,
+    }
     if not events_path:
         return null_telemetry
 
@@ -119,16 +154,72 @@ def read_telemetry(events_path: str | Path | None, done_count: int | None) -> di
         return null_telemetry
 
     wall_clock_s = _wall_clock_seconds(events)
-    papers_per_hour = None
-    if wall_clock_s and wall_clock_s > 0 and done_count is not None:
-        papers_per_hour = done_count / (wall_clock_s / 3600.0)
+    papers_per_hour = _per_run_papers_per_hour(data_dir, started_at)
+    eta_s = _eta_seconds(papers_per_hour, total_done, target)
 
     return {
         "stage": _current_stage(events),
         "papers_per_hour": papers_per_hour,
         "wall_clock_s": wall_clock_s,
+        "eta_s": eta_s,
         **gpu,
     }
+
+
+def _per_run_papers_per_hour(
+    data_dir: str | Path | None, started_at: str | None
+) -> float | None:
+    if data_dir is None or not started_at:
+        return None
+    elapsed_s = _elapsed_seconds_since(started_at)
+    if elapsed_s is None or elapsed_s < _MIN_ELAPSED_S_FOR_RATE:
+        return None
+    per_run_done = _count_done_since(data_dir, started_at)
+    if not per_run_done:
+        return None
+    return per_run_done / (elapsed_s / 3600.0)
+
+
+def _elapsed_seconds_since(started_at: str) -> float | None:
+    try:
+        start = datetime.fromisoformat(started_at)
+    except (TypeError, ValueError):
+        return None
+    now = datetime.now(UTC) if start.tzinfo is not None else datetime.now()
+    return (now - start).total_seconds()
+
+
+def _count_done_since(data_dir: str | Path, started_at: str) -> int | None:
+    """COUNT(*) of `ingest_state` rows at `stage='done'` with `updated_at >= started_at` -- the
+    THIS-run completion count (OG-44), excluding every paper finished by a prior run. Both
+    timestamps are written via `datetime.now(UTC).isoformat()`
+    (`rag/ingest_state_sqlite.py::checkpoint`, `controller.py::_build_manifest`), so a plain
+    string comparison sorts correctly without parsing either side."""
+    db_path = Path(data_dir) / _DEFAULT_DB_NAME
+    conn = _ro_connect(db_path)
+    if conn is None:
+        return None
+    try:
+        row = conn.execute(
+            "SELECT count(*) FROM ingest_state WHERE stage = 'done' AND updated_at >= ?",
+            (started_at,),
+        ).fetchone()
+    except sqlite3.Error:
+        return None
+    finally:
+        conn.close()
+    return row[0] if row is not None else None
+
+
+def _eta_seconds(
+    papers_per_hour: float | None, total_done: int | None, target: int | None
+) -> float | None:
+    if not papers_per_hour or total_done is None or target is None:
+        return None
+    remaining = target - total_done
+    if remaining <= 0:
+        return None
+    return remaining / papers_per_hour * 3600.0
 
 
 def _read_latest_run_events(path: Path) -> list[dict]:
@@ -220,9 +311,21 @@ def read_downloads(data_dir: str | Path, target: int | None) -> dict:
 
 
 def read_consistency(done_count: int | None, collection: str | None) -> dict:
+    """`sqlite_done` (papers) vs `vector_points` (chunks+summaries -- one paper produces MANY
+    points, so these are expected to differ by design, never a 1:1 match) plus the `consistent`
+    verdict the design specifies (`app/telemetry.py::summarize_run`'s own `consistent = not
+    (n_done > 0 and point_count == 0)` -- the OG-16/T-DOC35 failure class this is meant to catch:
+    papers marked 'done' in SQLite with literally zero points in the vector store). `None` when
+    either input is unknown -- no verdict can be formed without both numbers."""
+    point_count = _query_vector_store_point_count(collection or "papers")
+    consistent = (
+        None if point_count is None or done_count is None
+        else not (done_count > 0 and point_count == 0)
+    )
     return {
         "sqlite_done": done_count,
-        "vector_points": _query_vector_store_point_count(collection or "papers"),
+        "vector_points": point_count,
+        "consistent": consistent,
     }
 
 
