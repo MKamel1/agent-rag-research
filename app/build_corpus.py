@@ -191,14 +191,21 @@ def _write_batch_ids(data_dir: Path, ids: list[str]) -> Path:
     return path
 
 
-def _run_ingest(batch_file: Path, parse_workers: int, events_path: Path, data_dir: Path) -> None:
+def _run_ingest(
+    batch_file: Path, parse_workers: int, events_path: Path, data_dir: Path, *,
+    telemetry_poll_interval: float | None = None,
+) -> None:
     """One `app.ingest --paper-ids-file <batch_file>` invocation, blocking until that batch's full
     two-pass parse+finish completes. Same `env PYTHONPATH=<repo>` / `cwd=data_dir` launch shape as
     `app/dashboard/controller.py::_spawn`. `check=True`: a non-zero exit raises
     `subprocess.CalledProcessError` and stops the build loop rather than looping forever on a batch
     that never got marked done -- `ingest_state`'s checkpoints make a later retry pick back up,
     same as any other `app.ingest` failure/restart (matches that module's own "let it raise" style,
-    see its `__main__`)."""
+    see its `__main__`).
+
+    `telemetry_poll_interval` (default `None`, matching `app.ingest`'s own CLI default): forwarded
+    as `--telemetry-poll-interval` only when set, so the default-flags call is byte-for-byte the
+    original command."""
     cmd = [
         "env", f"PYTHONPATH={_REPO_ROOT}",
         sys.executable, "-m", "app.ingest",
@@ -206,7 +213,25 @@ def _run_ingest(batch_file: Path, parse_workers: int, events_path: Path, data_di
         "--parse-workers", str(parse_workers),
         "--events-path", str(events_path),
     ]
+    if telemetry_poll_interval is not None:
+        cmd += ["--telemetry-poll-interval", str(telemetry_poll_interval)]
     subprocess.run(cmd, cwd=str(data_dir), check=True)
+
+
+def _call_run_ingest(
+    run_ingest, batch_file: Path, parse_workers: int, events_path: Path, data_dir: Path,
+    telemetry_poll_interval: float | None,
+) -> None:
+    """Passes `telemetry_poll_interval` to `run_ingest` only when set -- same "don't hand the
+    injected test fake a kwarg it doesn't accept" convention as
+    `app/dashboard/controller.py::_call_spawn`."""
+    if telemetry_poll_interval is None:
+        run_ingest(batch_file, parse_workers, events_path, data_dir)
+    else:
+        run_ingest(
+            batch_file, parse_workers, events_path, data_dir,
+            telemetry_poll_interval=telemetry_poll_interval,
+        )
 
 
 # --- the loop -------------------------------------------------------------------------------------
@@ -221,6 +246,7 @@ def build_to_target(
     events_path: Path,
     *,
     batch_size: int | None = None,
+    telemetry_poll_interval: float | None = None,
     ensure_prefetch=ensure_prefetch_running,
     run_ingest=_run_ingest,
     cached_not_done=cached_not_done,
@@ -282,7 +308,9 @@ def build_to_target(
             "build_corpus: ingesting a batch of %d cached-not-done paper(s) (%d/%d done so far)",
             len(ids), n_done, target,
         )
-        run_ingest(batch_file, parse_workers, events_path, data_dir)
+        _call_run_ingest(
+            run_ingest, batch_file, parse_workers, events_path, data_dir, telemetry_poll_interval,
+        )
 
 
 # --- CLI ------------------------------------------------------------------------------------------
@@ -307,6 +335,12 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
              "default processes the whole current cache each iteration (fewer, bigger batches -- "
              "better GPU batching, model-load/TEI-restart overhead amortized)",
     )
+    parser.add_argument(
+        "--telemetry-poll-interval", type=float, default=None,
+        help="forwarded to every app.ingest invocation this loop runs as its own "
+             "--telemetry-poll-interval; default (unset) omits the flag, so app.ingest's own "
+             "default (telemetry.DEFAULT_GPU_POLL_INTERVAL_SECONDS) applies unchanged",
+    )
     return parser.parse_args(argv)
 
 
@@ -321,6 +355,7 @@ def main() -> None:
     build_to_target(
         data_dir, cfg.db_path, Path(cfg.pdf_cache_dir), args.target, args.parse_workers,
         Path(args.events_path), batch_size=args.batch_size,
+        telemetry_poll_interval=args.telemetry_poll_interval,
     )
 
 

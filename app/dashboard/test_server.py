@@ -49,6 +49,12 @@ class _FakeStatus:
     def read_consistency(self, done_count, collection):
         return {"sqlite_done": done_count, "vector_points": 500, "consistent": True}
 
+    def read_downloader(self, run_cwd, log_path):
+        return {"prefetch_alive": True, "downloaded": 120, "prefetch_target": 30000}
+
+    def read_disk(self, data_dir):
+        return {"free_gb": 500.0, "total_gb": 1000.0, "used_pct": 50.0}
+
 
 class _FakeController:
     def __init__(self):
@@ -60,10 +66,15 @@ class _FakeController:
             "focus_queries": ["causal inference"], "started_at": "2026-01-01T00:00:00",
             "events_path": "events.jsonl", "collection": "papers",
             "params": {"parse_workers": 3, "limit": 100, "telemetry_poll_interval": None},
+            "paper_ids_file": None, "run_cwd": "data_dir", "log_path": "run.log",
+            "parse_batch_size": None,
         }
 
-    def start(self, data_dir, target, parse_workers=3):
-        self.calls.append(("start", target, parse_workers))
+    def start(self, data_dir, target, parse_workers=3, **kwargs):
+        self.calls.append(("start", target, parse_workers, kwargs))
+
+    def retarget(self, data_dir, target, parse_workers=3, **kwargs):
+        self.calls.append(("retarget", target, parse_workers, kwargs))
 
     def pause(self, data_dir):
         self.calls.append(("pause",))
@@ -137,20 +148,26 @@ def test_status_route_shape_matches_api_contract(running_server):
     status, body = _get(url, "/api/status")
     assert status == 200
     assert set(body.keys()) == {
-        "funnel", "run", "telemetry", "downloads", "consistency", "quarantine_reasons",
+        "funnel", "run", "telemetry", "downloads", "downloader", "disk", "consistency",
+        "quarantine_reasons", "search",
     }
     assert set(body["funnel"].keys()) == {
         "harvested", "parsed", "chunked", "summarized", "embedded", "stored", "done", "quarantined",
     }
     assert set(body["run"].keys()) == {
         "run_id", "status", "target", "parse_workers", "focus_queries", "started_at", "params",
-        "parse_batch_size",
+        "paper_ids_file", "parse_batch_size",
     }
     assert set(body["telemetry"].keys()) == {
         "stage", "papers_per_hour", "gpu_util_pct", "vram_mib", "power_w", "wall_clock_s", "eta_s",
     }
     assert set(body["downloads"].keys()) == {"cached_pdfs", "sidecars", "target"}
+    assert set(body["downloader"].keys()) == {"prefetch_alive", "downloaded", "prefetch_target"}
+    assert set(body["disk"].keys()) == {"free_gb", "total_gb", "used_pct"}
     assert set(body["consistency"].keys()) == {"sqlite_done", "vector_points", "consistent"}
+    assert set(body["search"].keys()) == {
+        "top_k_default", "rerank_pool_size", "hybrid_dense_weight",
+    }
     assert body["run"]["run_id"] == "run-fake"
     assert body["run"]["params"]["telemetry_poll_interval"] is None
     assert body["run"]["parse_batch_size"] == 4  # config.yaml's real default -- not hard-coded null
@@ -211,7 +228,43 @@ def test_control_start_forwards_target_and_parse_workers(running_server):
     url, fake_controller = running_server
     status, body = _post(url, "/api/control", {"action": "start", "target": 500, "parse_workers": 2})
     assert status == 200
-    assert fake_controller.calls == [("start", 500, 2)]
+    assert fake_controller.calls == [("start", 500, 2, {})]
+
+
+def test_control_start_forwards_og43_editable_params(running_server):
+    """OG-43: telemetry_poll_interval/batch_size/parse_batch_size/keywords in the POST body reach
+    `controller.start` as kwargs -- an absent field must NOT show up as an explicit None/[]."""
+    url, fake_controller = running_server
+    status, body = _post(url, "/api/control", {
+        "action": "start", "target": 500, "parse_workers": 2,
+        "telemetry_poll_interval": 2.5, "batch_size": 50, "parse_batch_size": 8,
+        "keywords": ["double machine learning", "synthetic control"],
+    })
+    assert status == 200
+    assert fake_controller.calls == [(
+        "start", 500, 2,
+        {
+            "telemetry_poll_interval": 2.5, "batch_size": 50, "parse_batch_size": 8,
+            "keywords": ["double machine learning", "synthetic control"],
+        },
+    )]
+
+
+def test_control_start_omits_unset_og43_params(running_server):
+    url, fake_controller = running_server
+    _post(url, "/api/control", {"action": "start", "target": 500, "parse_workers": 2, "keywords": []})
+    assert fake_controller.calls == [("start", 500, 2, {})]
+
+
+def test_control_retarget_dispatches_with_params(running_server):
+    """OG-43: "Apply new settings" while a run is live goes through `retarget` (stop-then-start),
+    not plain `start` (which would just hit the double-run guard)."""
+    url, fake_controller = running_server
+    status, body = _post(url, "/api/control", {
+        "action": "retarget", "target": 500, "parse_workers": 2, "parse_batch_size": 6,
+    })
+    assert status == 200
+    assert fake_controller.calls == [("retarget", 500, 2, {"parse_batch_size": 6})]
 
 
 def test_control_unknown_action_is_a_client_error(running_server):

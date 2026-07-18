@@ -9,6 +9,7 @@ import os
 import signal
 import subprocess
 import time
+from pathlib import Path
 
 import pytest
 
@@ -368,3 +369,172 @@ def test_default_run_has_null_paper_ids_file_and_no_kwarg_to_fake_spawn(tmp_path
         assert manifest["paper_ids_file"] is None
     finally:
         _cleanup(manifest)
+
+
+# --- OG-43: pass-through CLI params (telemetry_poll_interval, batch_size) -----------------------
+
+
+def _kwargs_spawn(calls):
+    """A spawn fake that accepts arbitrary kwargs (unlike the plain 5-positional `_fake_spawn`) and
+    records both the cwd it was launched with and every kwarg it received."""
+    def spawn(data_dir, target, parse_workers, events_path, log_path, **kwargs):
+        calls.append({"cwd": data_dir, "kwargs": kwargs})
+        proc = subprocess.Popen(["sleep", "100"], start_new_session=True)
+        return proc.pid
+    return spawn
+
+
+def test_start_forwards_telemetry_poll_interval_and_batch_size_as_plain_flags(tmp_path):
+    calls = []
+    manifest = controller_mod.start(
+        tmp_path, target=100, telemetry_poll_interval=2.5, batch_size=50,
+        spawn=_kwargs_spawn(calls),
+    )
+    try:
+        assert calls[0]["kwargs"] == {"telemetry_poll_interval": 2.5, "batch_size": 50}
+        # no config-derived edit requested -- cwd stays the real data_dir, no override dir
+        assert calls[0]["cwd"] == tmp_path
+        assert manifest["run_cwd"] == str(tmp_path)
+        assert manifest["params"]["telemetry_poll_interval"] == 2.5
+        assert manifest["params"]["batch_size"] == 50
+    finally:
+        _cleanup(manifest)
+
+
+def test_real_spawn_appends_telemetry_and_batch_size_flags_when_set(tmp_path, monkeypatch):
+    captured = {}
+
+    class _FakePopen:
+        def __init__(self, cmd, **kwargs):
+            captured["cmd"] = cmd
+            self.pid = 999997
+
+    monkeypatch.setattr(controller_mod.subprocess, "Popen", _FakePopen)
+    controller_mod._spawn(
+        tmp_path, 500, 4, tmp_path / "events.jsonl", tmp_path / "run.log",
+        telemetry_poll_interval=2.5, batch_size=50,
+    )
+    cmd = captured["cmd"]
+    assert "--telemetry-poll-interval" in cmd
+    assert cmd[cmd.index("--telemetry-poll-interval") + 1] == "2.5"
+    assert "--batch-size" in cmd
+    assert cmd[cmd.index("--batch-size") + 1] == "50"
+
+
+def test_real_spawn_omits_telemetry_and_batch_size_flags_when_unset(tmp_path, monkeypatch):
+    captured = {}
+
+    class _FakePopen:
+        def __init__(self, cmd, **kwargs):
+            captured["cmd"] = cmd
+            self.pid = 999996
+
+    monkeypatch.setattr(controller_mod.subprocess, "Popen", _FakePopen)
+    controller_mod._spawn(tmp_path, 500, 4, tmp_path / "events.jsonl", tmp_path / "run.log")
+    cmd = captured["cmd"]
+    assert "--telemetry-poll-interval" not in cmd
+    assert "--batch-size" not in cmd
+
+
+# --- OG-43: config-derived overrides (keywords augment, parse_batch_size) -----------------------
+
+
+def test_start_with_no_edits_launches_in_the_real_data_dir_no_override(tmp_path):
+    """A run that edits nothing must launch exactly the old way -- no override scratch dir, no
+    extra config.yaml written anywhere."""
+    calls = []
+    manifest = controller_mod.start(tmp_path, target=100, spawn=_kwargs_spawn(calls))
+    try:
+        assert calls[0]["cwd"] == tmp_path
+        assert manifest["run_cwd"] == str(tmp_path)
+    finally:
+        _cleanup(manifest)
+
+
+def test_start_with_keywords_augments_not_replaces_and_writes_override_config(tmp_path):
+    """OG-43 owner decision: editing keywords AUGMENTS focus_area_queries (adds topics), never
+    replaces the library. The override config.yaml must carry the merged list, and the run must
+    launch with cwd=<the scratch dir that holds it> so app.build_corpus/prefetch/ingest all pick
+    it up via their own load_config()."""
+    calls = []
+    base_cfg = controller_mod.load_config(controller_mod._REPO_ROOT / "config.yaml")
+    manifest = controller_mod.start(
+        tmp_path, target=100, keywords=["zzz-test-keyword"], spawn=_kwargs_spawn(calls),
+    )
+    try:
+        override_dir = calls[0]["cwd"]
+        assert override_dir != tmp_path  # launched in a scratch dir, not the real data_dir
+        assert manifest["run_cwd"] == str(override_dir)
+
+        written_cfg = controller_mod.load_config(override_dir / "config.yaml")
+        assert written_cfg.focus_area_queries == base_cfg.focus_area_queries + ["zzz-test-keyword"]
+        assert manifest["focus_queries"] == written_cfg.focus_area_queries
+    finally:
+        _cleanup(manifest)
+
+
+def test_start_with_keyword_already_in_base_config_is_a_no_op_override(tmp_path):
+    """Re-adding an already-present keyword changes nothing -- no override dir needed."""
+    calls = []
+    base_cfg = controller_mod.load_config(controller_mod._REPO_ROOT / "config.yaml")
+    manifest = controller_mod.start(
+        tmp_path, target=100, keywords=[base_cfg.focus_area_queries[0]], spawn=_kwargs_spawn(calls),
+    )
+    try:
+        assert calls[0]["cwd"] == tmp_path  # no override -- nothing actually changed
+        assert manifest["run_cwd"] == str(tmp_path)
+    finally:
+        _cleanup(manifest)
+
+
+def test_start_with_parse_batch_size_writes_override_config_with_absolute_paths(tmp_path):
+    """The override config.yaml's path-valued fields (db_path/blob_dir/pdf_cache_dir/...) must be
+    resolved ABSOLUTE -- the subprocess launched into the scratch dir has a different cwd than the
+    real data_dir, so an unresolved relative field would silently point somewhere else."""
+    calls = []
+    manifest = controller_mod.start(
+        tmp_path, target=100, parse_batch_size=8, spawn=_kwargs_spawn(calls),
+    )
+    try:
+        override_dir = calls[0]["cwd"]
+        assert manifest["parse_batch_size"] == 8
+        written_cfg = controller_mod.load_config(override_dir / "config.yaml")
+        assert written_cfg.parse_batch_size == 8
+        assert Path(written_cfg.db_path).is_absolute()
+        assert Path(written_cfg.pdf_cache_dir).is_absolute()
+    finally:
+        _cleanup(manifest)
+
+
+def test_resume_reuses_the_same_run_cwd_and_pass_through_params(tmp_path):
+    """A paused edited run must come back with the SAME override dir (and pass-through params) --
+    not silently revert to config.yaml's unedited defaults."""
+    calls = []
+    manifest = controller_mod.start(
+        tmp_path, target=100, keywords=["zzz-test-keyword"],
+        telemetry_poll_interval=2.5, spawn=_kwargs_spawn(calls),
+    )
+    try:
+        controller_mod.pause(tmp_path)
+        resumed = controller_mod.resume(tmp_path, spawn=_kwargs_spawn(calls))
+        assert resumed["run_cwd"] == manifest["run_cwd"]
+        assert calls[1]["cwd"] == calls[0]["cwd"]
+        assert calls[1]["kwargs"] == {"telemetry_poll_interval": 2.5}
+    finally:
+        _cleanup(resumed)
+
+
+def test_retarget_wires_og43_params_through(tmp_path):
+    """`retarget` (stop-then-start) is the "Apply new settings while live" path -- edits must
+    reach the fresh run exactly as they would via a plain `start`."""
+    calls = []
+    controller_mod.start(tmp_path, target=100, spawn=_kwargs_spawn(calls))
+    try:
+        retargeted = controller_mod.retarget(
+            tmp_path, target=500, parse_batch_size=8, batch_size=25, spawn=_kwargs_spawn(calls),
+        )
+        assert retargeted["parse_batch_size"] == 8
+        assert retargeted["params"]["batch_size"] == 25
+        assert calls[-1]["kwargs"]["batch_size"] == 25
+    finally:
+        _cleanup(retargeted)

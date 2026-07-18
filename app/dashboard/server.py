@@ -34,37 +34,84 @@ logger = logging.getLogger(__name__)
 _STATIC_INDEX = Path(__file__).parent / "static" / "index.html"
 # OG-42: `params` (which carries `telemetry_poll_interval`) was missing here -- the manifest had
 # the value, it just never reached the API payload.
+# OG-43: `paper_ids_file` added -- the frontend's "mode: cache-first" indicator needs it to note
+# an explicit id-scoped run.
 _RUN_FIELDS = (
     "run_id", "status", "target", "parse_workers", "focus_queries", "started_at", "params",
+    "paper_ids_file",
 )
 
-# `parse_batch_size` (OG-42) has no per-run override anywhere in the launch path (unlike
-# `target`/`parse_workers`, it is never threaded onto the `app.build_corpus`/`app.ingest` command
-# line) -- the value that actually governs every run IS the static `config.yaml` default, read
-# once at process start the same way `controller.py`'s own `_build_manifest` already loads it.
+# `parse_batch_size`: OG-43 adds a per-run override (`start(..., parse_batch_size=...)` ->
+# `run_manifest.json`'s own top-level `parse_batch_size` field, distinct from the STATIC default
+# below) -- `_status_dict` prefers the manifest's value when a run has one, and falls back to this
+# process-start-time `config.yaml` read (unchanged OG-42 behavior) otherwise.
 _CONFIG_PATH = Path(__file__).resolve().parents[2] / "config.yaml"
 _STATIC_CONFIG = load_config(_CONFIG_PATH)
+
+# Search-side (query-time) params, DISPLAY-ONLY here -- editing them is a separate step (the query
+# server, `app.serve`/`rag/retriever.py`, not this build-run control panel). Values are duplicated
+# as plain constants rather than imported from `app.serve`/`rag/retriever.py` (this dashboard
+# process stays lightweight -- `app.serve`'s own import graph pulls in `mcp`/`app.assembly`) --
+# see the module docstrings cited below for the real source of truth on each.
+#
+# `Config.top_k` (=10) and `Config.rerank_depth` (=50) are DEAD fields -- a 2026-07-18 code sweep
+# found no code path that reads either. The REAL knobs are `app/serve.py`'s per-query `k` default
+# (`semantic_search`/`search_papers`, k=10) and `rag/retriever.py`'s hardcoded
+# `_RERANK_POOL_SIZE=32` (itself capped by `rag/reranker.py`'s `_MAX_BATCH_SIZE=32`) -- displayed
+# below instead of binding this UI to the dead Config fields.
+_SEARCH_DISPLAY = {
+    "top_k_default": 10,  # app/serve.py semantic_search/search_papers k=10, NOT Config.top_k
+    "rerank_pool_size": 32,  # rag/retriever.py _RERANK_POOL_SIZE, reranker caps it at 32 too
+}
+
+
+def _control_kwargs(body: dict) -> dict:
+    """Pulls the OG-43 editable params out of a `POST /api/control` body for `start`/`retarget`,
+    omitting any field the request didn't set -- `controller.start`'s own kwargs already default
+    each of these to "unedited" (`None`/no keywords), so an absent field must stay absent here
+    too, not turn into an explicit `None`/`[]` that could shadow a stored value on `retarget`."""
+    kwargs: dict = {}
+    if body.get("telemetry_poll_interval") is not None:
+        kwargs["telemetry_poll_interval"] = float(body["telemetry_poll_interval"])
+    if body.get("batch_size") is not None:
+        kwargs["batch_size"] = int(body["batch_size"])
+    if body.get("parse_batch_size") is not None:
+        kwargs["parse_batch_size"] = int(body["parse_batch_size"])
+    keywords = body.get("keywords")
+    if keywords:
+        kwargs["keywords"] = [str(k) for k in keywords]
+    return kwargs
 
 
 def _status_dict(data_dir: Path, status_module, controller_module) -> dict:
     """Merges `controller.liveness()` (run identity) with `status.py`'s pure reads (funnel,
-    telemetry, downloads, consistency) into the exact `/api/status` JSON shape."""
+    telemetry, downloads, downloader, disk, consistency) into the exact `/api/status` JSON shape."""
     live = controller_module.liveness(data_dir) or {}
     corpus = status_module.read_corpus(data_dir)
     done = corpus["funnel"].get("done")
+    manifest_parse_batch_size = live.get("parse_batch_size")
     return {
         "funnel": corpus["funnel"],
         "run": {
             **{field: live.get(field) for field in _RUN_FIELDS},
-            "parse_batch_size": _STATIC_CONFIG.parse_batch_size,
+            "parse_batch_size": (
+                manifest_parse_batch_size if manifest_parse_batch_size is not None
+                else _STATIC_CONFIG.parse_batch_size
+            ),
         },
         "telemetry": status_module.read_telemetry(
             live.get("events_path"), done,
             data_dir=data_dir, started_at=live.get("started_at"), target=live.get("target"),
         ),
         "downloads": status_module.read_downloads(data_dir, live.get("target")),
+        "downloader": status_module.read_downloader(live.get("run_cwd"), live.get("log_path")),
+        "disk": status_module.read_disk(data_dir),
         "consistency": status_module.read_consistency(done, live.get("collection")),
         "quarantine_reasons": corpus["quarantine_reasons"],
+        "search": {
+            **_SEARCH_DISPLAY,
+            "hybrid_dense_weight": _STATIC_CONFIG.hybrid_dense_weight,
+        },
     }
 
 
@@ -109,10 +156,16 @@ def make_handler(
             self._json(200, {"ok": True, "message": f"{action} ok"})
 
         def _dispatch(self, action: str | None, body: dict) -> None:
-            if action == "start":
-                controller_module.start(
-                    data_dir, int(body["target"]), int(body.get("parse_workers", 3))
-                )
+            if action in ("start", "retarget"):
+                target = int(body["target"])
+                parse_workers = int(body.get("parse_workers", 3))
+                kwargs = _control_kwargs(body)
+                if action == "start":
+                    controller_module.start(data_dir, target, parse_workers, **kwargs)
+                else:
+                    # OG-43: "Apply new settings" while a run is already live -- stop-then-start
+                    # with the edited params, instead of making the user pause/stop by hand first.
+                    controller_module.retarget(data_dir, target, parse_workers, **kwargs)
             elif action == "pause":
                 controller_module.pause(data_dir)
             elif action == "resume":

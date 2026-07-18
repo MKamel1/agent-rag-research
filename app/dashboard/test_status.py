@@ -3,8 +3,9 @@ exercised against a temp migrated DB + synthetic events JSONL, asserting gracefu
 `null`s when a source is missing/unreachable (never an exception)."""
 
 import json
-import subprocess
+import os
 import sqlite3
+import subprocess
 
 import app.dashboard.status as status_mod
 from migrations.migrate import migrate
@@ -382,3 +383,79 @@ def test_read_consistency_verdict_none_when_done_count_unknown(monkeypatch):
     monkeypatch.setattr(status_mod, "_query_vector_store_point_count", lambda collection: 999)
     result = status_mod.read_consistency(done_count=None, collection="papers")
     assert result["consistent"] is None
+
+
+# --- read_downloader (OG-43) -------------------------------------------------------------------
+
+
+def test_read_downloader_degrades_to_nulls_when_no_run_cwd_or_log(tmp_path):
+    result = status_mod.read_downloader(None, None)
+    assert result == {"prefetch_alive": None, "downloaded": None, "prefetch_target": None}
+
+
+def test_read_downloader_reports_dead_when_pid_file_missing(tmp_path):
+    result = status_mod.read_downloader(tmp_path, None)
+    assert result["prefetch_alive"] is None  # no prefetch.pid at all -- distinct from "dead"
+
+
+def test_read_downloader_reports_dead_for_a_stale_pid(tmp_path):
+    (tmp_path / "prefetch.pid").write_text("999999999")
+    result = status_mod.read_downloader(tmp_path, None)
+    assert result["prefetch_alive"] is False
+
+
+def test_read_downloader_reports_alive_for_a_real_prefetch_pdfs_process(tmp_path, monkeypatch):
+    (tmp_path / "prefetch.pid").write_text("4242")
+    monkeypatch.setattr(status_mod, "_is_live_prefetch", lambda pid: pid == 4242)
+    result = status_mod.read_downloader(tmp_path, None)
+    assert result["prefetch_alive"] is True
+
+
+def test_read_downloader_tails_the_log_for_the_latest_pace_line(tmp_path):
+    log = tmp_path / "run.log"
+    log.write_text(
+        "some other line\n"
+        "prefetch_pdfs: downloaded 10 / target 30000 (cache now 10)\n"
+        "more noise\n"
+        "prefetch_pdfs: downloaded 25 / target 30000 (cache now 25)\n"
+    )
+    result = status_mod.read_downloader(None, log)
+    assert result["downloaded"] == 25
+    assert result["prefetch_target"] == 30000
+
+
+def test_read_downloader_pace_degrades_when_log_missing(tmp_path):
+    result = status_mod.read_downloader(None, tmp_path / "nope.log")
+    assert result["downloaded"] is None
+    assert result["prefetch_target"] is None
+
+
+def test_read_downloader_pace_degrades_when_no_pace_line_yet(tmp_path):
+    log = tmp_path / "run.log"
+    log.write_text("nothing relevant here\n")
+    result = status_mod.read_downloader(None, log)
+    assert result["downloaded"] is None
+
+
+def test_is_live_prefetch_false_for_non_prefetch_cmdline():
+    # this test process's own cmdline, not app.prefetch_pdfs
+    assert status_mod._is_live_prefetch(os.getpid()) is False
+
+
+def test_is_live_prefetch_false_for_a_dead_pid():
+    assert status_mod._is_live_prefetch(999999999) is False
+
+
+# --- read_disk (OG-43) --------------------------------------------------------------------------
+
+
+def test_read_disk_reports_usage(tmp_path):
+    result = status_mod.read_disk(tmp_path)
+    assert result["free_gb"] > 0
+    assert result["total_gb"] > 0
+    assert 0 <= result["used_pct"] <= 100
+
+
+def test_read_disk_degrades_to_nulls_when_path_missing():
+    result = status_mod.read_disk("/no/such/path/at/all")
+    assert result == {"free_gb": None, "total_gb": None, "used_pct": None}

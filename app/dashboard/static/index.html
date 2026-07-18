@@ -35,6 +35,9 @@
   .progress-fill { height: 100%; background: var(--good); transition: width .3s; }
   .tags { display: flex; flex-wrap: wrap; gap: .35rem; max-height: 9rem; overflow-y: auto; }
   .tag { background: #202632; border: 1px solid var(--border); border-radius: 999px; padding: .2rem .65rem; font-size: .75rem; color: var(--muted); }
+  .tag.pending { color: var(--text); border-color: var(--accent); }
+  .tag-remove { color: var(--bad); text-decoration: none; margin-left: .35rem; font-weight: 700; }
+  .note { color: var(--muted); font-size: .75rem; margin-bottom: .5rem; }
   .pill { display: inline-block; padding: .15rem .55rem; border-radius: 999px; font-size: .75rem; font-weight: 600; }
   .pill.running { background: #1c3a2c; color: var(--good); }
   .pill.paused, .pill.pausing { background: #3a2f14; color: var(--warn); }
@@ -73,6 +76,7 @@
 <div class="sub">
   run <code id="runId">-</code>
   <span id="runStatus" class="pill unknown">unknown</span>
+  &middot; <span id="modeIndicator" class="stat-label"></span>
   &middot; last updated <span id="lastUpdated">-</span>
   <span id="staleBadge" class="pill stale" style="display:none;">stale / reconnecting</span>
 </div>
@@ -108,6 +112,14 @@
     <div class="row"><span class="stat-label">cached PDFs</span><span class="stat" id="cachedPdfs">-</span></div>
     <div class="row"><span class="stat-label">sidecars</span><span id="sidecars">-</span></div>
     <div class="row"><span class="stat-label">target</span><span id="downloadTarget">-</span></div>
+    <div class="row"><span class="stat-label">app.prefetch_pdfs alive</span><span id="prefetchAlive">-</span></div>
+    <div class="row"><span class="stat-label">download pace</span><span id="prefetchPace">-</span></div>
+  </div>
+
+  <div class="panel">
+    <h2>Disk headroom</h2>
+    <div class="row"><span class="stat-label">free / total</span><span id="diskFree">-</span></div>
+    <div class="row"><span class="stat-label">used</span><span id="diskUsedPct">-</span></div>
   </div>
 
   <div class="panel">
@@ -138,6 +150,19 @@
   </div>
 
   <div class="panel" style="grid-column: 1 / -1;">
+    <h2>Search (query-time — separate from this build run)</h2>
+    <div class="note">
+      These govern how <code>app.serve</code> answers a query against the FINISHED corpus, not this
+      build run — editing them is a separate step (the query server), not built into this control
+      panel. Display-only.
+    </div>
+    <table>
+      <thead><tr><th>param</th><th>current default</th><th>note</th></tr></thead>
+      <tbody id="searchParamsTable"></tbody>
+    </table>
+  </div>
+
+  <div class="panel" style="grid-column: 1 / -1;">
     <h2>Control</h2>
     <div class="field">
       <label for="token">Dashboard token (X-Dashboard-Token)</label>
@@ -148,9 +173,10 @@
       <button id="btnResume" class="secondary">Resume</button>
       <button id="btnStop" class="danger">Stop</button>
     </div>
+
     <div class="controls" style="margin-top: .75rem; border-top: 1px solid var(--border); padding-top: .75rem;">
       <div class="field">
-        <label for="newTarget">Start fresh run: target papers</label>
+        <label for="newTarget">target papers</label>
         <input id="newTarget" type="number" min="1" value="3000" style="width: 8rem;">
       </div>
       <div class="field">
@@ -162,7 +188,34 @@
           <option value="4">4</option>
         </select>
       </div>
-      <button id="btnStart">Start fresh run</button>
+      <div class="field">
+        <label for="newParseBatchSize">parse_batch_size (blank = default)</label>
+        <input id="newParseBatchSize" type="number" min="1" placeholder="4" style="width: 8rem;">
+      </div>
+      <div class="field">
+        <label for="newTelemetryPoll">telemetry_poll_interval s (blank = default)</label>
+        <input id="newTelemetryPoll" type="number" min="0.1" step="0.1" placeholder="5" style="width: 10rem;">
+      </div>
+      <div class="field">
+        <label for="newBuildBatchSize">build --batch-size (blank = whole cache)</label>
+        <input id="newBuildBatchSize" type="number" min="1" placeholder="whole cache" style="width: 10rem;">
+      </div>
+    </div>
+
+    <div class="controls" style="margin-top: .75rem;">
+      <div class="field" style="flex: 1 1 100%;">
+        <label for="newKeyword">add keyword (augments focus_area_queries — never replaces it)</label>
+        <div style="display:flex; gap:.4rem;">
+          <input id="newKeyword" type="text" placeholder="e.g. double machine learning" style="width: 18rem;">
+          <button id="btnAddKeyword" class="secondary" type="button">Add</button>
+        </div>
+      </div>
+    </div>
+    <div class="tags" id="pendingKeywordTags" style="margin-top:.4rem;"></div>
+
+    <div class="controls" style="margin-top: .75rem; border-top: 1px solid var(--border); padding-top: .75rem;">
+      <button id="btnApply">Apply (start fresh run)</button>
+      <span class="note" id="applyHint" style="margin:0;"></span>
     </div>
     <div id="controlMsg"></div>
   </div>
@@ -171,13 +224,33 @@
 
 <script>
 const STAGES = ["harvested", "parsed", "chunked", "summarized", "embedded", "stored", "done"];
+// Own visible element for the Pass 1 / Pass 2 distinction (telemetry.stage is the raw
+// app.ingest stage name "parse"/"finish" -- these are the human labels for it).
+const STAGE_LABELS = { parse: "Pass 1 (parse)", finish: "Pass 2 (embed/store)", done: "done" };
 const TUNING = [
-  ["target (--limit)", s => s.run.target, "none (=corpus_cap 30000)", "set per run", "The paper-count goal."],
-  ["parse_workers", s => s.run.parse_workers, "1", "3", "+63% Pass-1 throughput, proven safe (T-DOC51/OG-19)."],
-  ["parse_batch_size", s => s.run.parse_batch_size, "4", "4", "Papers per MinerU batch; smaller = less at-risk per crash."],
-  ["telemetry_poll_interval", s => s.run.params && s.run.params.telemetry_poll_interval, "5s", "5s", "GPU sampling cadence."],
+  ["target (--limit)", s => s.run.target, "none (=corpus_cap 30000)", "set per run", "The paper-count goal. Editable below."],
+  ["parse_workers", s => s.run.parse_workers, "1", "3", "+63% Pass-1 throughput, proven safe (T-DOC51/OG-19). Editable below."],
+  ["parse_batch_size", s => s.run.parse_batch_size, "4", "4", "Papers per MinerU batch (FLOOR only -- AdaptiveBatchSizer grows it at runtime, unexposed). Editable below (run-scoped config override)."],
+  ["telemetry_poll_interval", s => s.run.params && s.run.params.telemetry_poll_interval, "5s", "5s", "GPU sampling cadence. Editable below."],
+  ["build --batch-size", s => s.run.params && s.run.params.batch_size, "whole cache each iteration", "whole cache", "Caps cached-not-done ids fed to one app.ingest batch. Editable below."],
+  ["focus_queries (keywords)", s => (s.run.focus_queries || []).length + " active", "33 causal queries (config.yaml)", "augment, don't replace", "Edit below (add/remove tags) -- edits AUGMENT the library, never replace it (owner decision)."],
+  ["MINERU_VIRTUAL_VRAM_SIZE", () => null, "auto (shell env var, unplumbed)", "ratio8 @ 24GB (measured best)", "NOT yet controllable here -- vendored mineru reads this from the shell env before Python starts; no app code reads or forwards it into the parse subprocess (2026-07-18 sweep). Not a live dial."],
   ["relevance_filter", () => null, "off", "off", "Currently dead code (OG-36) -- display-only."],
 ];
+// Display-only -- see server.py's `_SEARCH_DISPLAY`/`_status_dict` for why these come from the
+// API instead of being hardcoded here: Config.top_k/Config.rerank_depth are DEAD fields (a
+// 2026-07-18 sweep found nothing reads them), so this UI must never bind to them.
+function renderSearchParams(snap) {
+  const s = snap.search || {};
+  const rows = [
+    ["top-k (per-query default)", fmt(s.top_k_default), "app/serve.py semantic_search/search_papers k=10 -- NOT Config.top_k (dead field)."],
+    ["hybrid_dense_weight", fmt(s.hybrid_dense_weight), "The one genuinely-wired quality dial (Config.hybrid_dense_weight, range [0,1])."],
+    ["rerank pool size", fmt(s.rerank_pool_size), "rag/retriever.py _RERANK_POOL_SIZE, capped by rag/reranker.py _MAX_BATCH_SIZE=32."],
+    ["search filters (subject / date)", "wired", "SearchFilters.categories / published_after / published_before -- already end-to-end in app.serve; no UI here."],
+  ];
+  document.getElementById("searchParamsTable").innerHTML = rows
+    .map(([name, cur, note]) => `<tr><td>${name}</td><td>${cur}</td><td>${note}</td></tr>`).join("");
+}
 
 function fmt(n, digits) {
   if (n === null || n === undefined) return "-";
@@ -214,12 +287,23 @@ function statusPillClass(status) {
   return ["running", "paused", "pausing", "stopping", "done", "failed"].includes(status) ? status : "unknown";
 }
 
+let currentIsLive = false;   // read by the Apply button to pick "start" vs "retarget"
+let fieldsInitialized = false;  // pre-fill the edit fields once from the first snapshot, then
+                                 // leave them alone so the ~4s poll never clobbers an in-progress edit
+
 function render(snap) {
   document.getElementById("runId").textContent = snap.run.run_id || "-";
   const statusEl = document.getElementById("runStatus");
   const st = snap.run.status || "unknown";
   statusEl.textContent = st;
   statusEl.className = "pill " + statusPillClass(st);
+
+  // Cache-first mode indicator (OG-43): every dashboard-launched run goes through
+  // app.build_corpus, which is cache-first by construction (OG-40/OG-41) -- note an explicit id
+  // list too, when the manifest carries one.
+  document.getElementById("modeIndicator").textContent = snap.run.run_id
+    ? "mode: cache-first" + (snap.run.paper_ids_file ? " (explicit id list)" : "")
+    : "";
 
   renderFunnel(snap.funnel);
 
@@ -229,7 +313,7 @@ function render(snap) {
   document.getElementById("progressFill").style.width = target ? Math.min(100, (done / target) * 100) + "%" : "0%";
 
   document.getElementById("papersPerHour").textContent = fmt(snap.telemetry.papers_per_hour, 1);
-  document.getElementById("currentStage").textContent = snap.telemetry.stage || "-";
+  document.getElementById("currentStage").textContent = STAGE_LABELS[snap.telemetry.stage] || snap.telemetry.stage || "-";
   const wc = snap.telemetry.wall_clock_s;
   document.getElementById("wallClock").textContent = wc === null || wc === undefined ? "-" : `${(wc/60).toFixed(1)} min`;
   // ETA is computed server-side (status.py::_eta_seconds), scoped to the CURRENT run's true rate
@@ -244,6 +328,18 @@ function render(snap) {
   document.getElementById("cachedPdfs").textContent = fmt(snap.downloads.cached_pdfs);
   document.getElementById("sidecars").textContent = fmt(snap.downloads.sidecars);
   document.getElementById("downloadTarget").textContent = fmt(snap.downloads.target);
+
+  const dl = snap.downloader || {};
+  document.getElementById("prefetchAlive").textContent =
+    dl.prefetch_alive === null || dl.prefetch_alive === undefined ? "-" : (dl.prefetch_alive ? "yes" : "no");
+  document.getElementById("prefetchPace").textContent =
+    dl.downloaded === null || dl.downloaded === undefined ? "-" : `${fmt(dl.downloaded)} / ${fmt(dl.prefetch_target)} cached`;
+
+  const disk = snap.disk || {};
+  document.getElementById("diskFree").textContent =
+    disk.free_gb === null || disk.free_gb === undefined ? "-" : `${disk.free_gb.toFixed(1)} GB / ${fmt(disk.total_gb ? disk.total_gb.toFixed(1) : null)} GB`;
+  document.getElementById("diskUsedPct").textContent =
+    disk.used_pct === null || disk.used_pct === undefined ? "-" : `${disk.used_pct.toFixed(1)}%`;
 
   document.getElementById("sqliteDone").textContent = fmt(snap.consistency.sqlite_done);
   document.getElementById("vectorPoints").textContent = fmt(snap.consistency.vector_points);
@@ -264,12 +360,27 @@ function render(snap) {
     : `<span class="stat-label">-</span>`;
 
   renderTuning(snap);
+  renderSearchParams(snap);
 
   const isLive = ["running", "pausing", "stopping"].includes(st);
+  currentIsLive = isLive;
   document.getElementById("btnPause").disabled = st !== "running";
   document.getElementById("btnResume").disabled = !["paused", "done", "failed"].includes(st) && st !== "unknown";
   document.getElementById("btnStop").disabled = st !== "running";
-  document.getElementById("btnStart").disabled = isLive;
+  // Apply is always enabled: "start" (nothing live) or "retarget" (stop-then-start, OG-43) --
+  // never blocked by the double-run guard the way the old plain "Start fresh run" button was.
+  document.getElementById("applyHint").textContent = isLive
+    ? "a run is live -- Apply will stop it, then start fresh with these settings"
+    : "nothing is live -- Apply starts a fresh run with these settings";
+
+  if (!fieldsInitialized && snap.run.run_id) {
+    if (target) document.getElementById("newTarget").value = target;
+    if (snap.run.parse_workers) document.getElementById("newWorkers").value = String(snap.run.parse_workers);
+    if (snap.run.parse_batch_size) document.getElementById("newParseBatchSize").value = snap.run.parse_batch_size;
+    const tpi = snap.run.params && snap.run.params.telemetry_poll_interval;
+    if (tpi) document.getElementById("newTelemetryPoll").value = tpi;
+    fieldsInitialized = true;
+  }
 }
 
 async function poll() {
@@ -304,13 +415,66 @@ async function control(action, extra) {
   poll();
 }
 
+// --- keyword tags: add/removable, augmented onto focus_area_queries on Apply (never replaces) --
+
+let pendingKeywords = [];
+
+function renderPendingKeywords() {
+  const el = document.getElementById("pendingKeywordTags");
+  el.innerHTML = pendingKeywords.length
+    ? pendingKeywords.map((k, i) =>
+        `<span class="tag pending">${k} <a href="#" class="tag-remove" data-i="${i}">&times;</a></span>`
+      ).join("")
+    : `<span class="stat-label">no new keywords added yet</span>`;
+  el.querySelectorAll(".tag-remove").forEach(a => a.addEventListener("click", e => {
+    e.preventDefault();
+    pendingKeywords.splice(parseInt(a.dataset.i, 10), 1);
+    renderPendingKeywords();
+  }));
+}
+
+document.getElementById("btnAddKeyword").addEventListener("click", () => {
+  const input = document.getElementById("newKeyword");
+  const v = input.value.trim();
+  if (v && !pendingKeywords.includes(v)) {
+    pendingKeywords.push(v);
+    input.value = "";
+    renderPendingKeywords();
+  }
+});
+document.getElementById("newKeyword").addEventListener("keydown", e => {
+  if (e.key === "Enter") { e.preventDefault(); document.getElementById("btnAddKeyword").click(); }
+});
+renderPendingKeywords();
+
+// --- control actions -----------------------------------------------------------------------
+
 document.getElementById("btnPause").addEventListener("click", () => control("pause"));
 document.getElementById("btnResume").addEventListener("click", () => control("resume"));
 document.getElementById("btnStop").addEventListener("click", () => control("stop"));
-document.getElementById("btnStart").addEventListener("click", () => control("start", {
-  target: parseInt(document.getElementById("newTarget").value, 10),
-  parse_workers: parseInt(document.getElementById("newWorkers").value, 10),
-}));
+
+function buildApplyPayload() {
+  const body = {
+    target: parseInt(document.getElementById("newTarget").value, 10),
+    parse_workers: parseInt(document.getElementById("newWorkers").value, 10),
+  };
+  const pbs = document.getElementById("newParseBatchSize").value;
+  if (pbs) body.parse_batch_size = parseInt(pbs, 10);
+  const tpi = document.getElementById("newTelemetryPoll").value;
+  if (tpi) body.telemetry_poll_interval = parseFloat(tpi);
+  const bbs = document.getElementById("newBuildBatchSize").value;
+  if (bbs) body.batch_size = parseInt(bbs, 10);
+  if (pendingKeywords.length) body.keywords = pendingKeywords.slice();
+  return body;
+}
+
+// "Apply" always works, live or not (OG-43): nothing live -> "start"; a run already live ->
+// "retarget" (stop-then-start with the edited params) -- see controller.retarget's docstring.
+document.getElementById("btnApply").addEventListener("click", () => {
+  control(currentIsLive ? "retarget" : "start", buildApplyPayload());
+  pendingKeywords = [];
+  renderPendingKeywords();
+});
 
 poll();
 setInterval(poll, 4000);

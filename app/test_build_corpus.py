@@ -380,3 +380,68 @@ def test_build_to_target_calls_ensure_prefetch_exactly_once(tmp_path):
         max_idle=2,
     )
     assert calls["n"] == 1
+
+
+# ================================================================================================
+# OG-43: telemetry_poll_interval pass-through -- app.build_corpus --telemetry-poll-interval must
+# reach every app.ingest batch invocation it runs (`_run_ingest`'s --telemetry-poll-interval flag).
+# ================================================================================================
+
+
+def test_build_to_target_omits_telemetry_poll_interval_kwarg_when_unset(tmp_path):
+    """Default (unset) must call `run_ingest` with the plain 4-positional signature -- so an old
+    test fake with no **kwargs (like every other test in this file) keeps working unmodified."""
+    seen = []
+
+    def fake_run_ingest(batch_file, parse_workers, events_path, data_dir):
+        seen.append("called")
+
+    build_to_target(
+        tmp_path, "db", Path("cache"), target=1, parse_workers=1, events_path=Path("events"),
+        ensure_prefetch=_fake_ensure_prefetch(alive=True),
+        run_ingest=fake_run_ingest,
+        cached_not_done=lambda cache_dir, db_path: (["a"] if not seen else []),
+        done_count=lambda db_path: (1 if seen else 0),
+        sleep=lambda s: None,
+    )
+    assert seen == ["called"]
+
+
+def test_build_to_target_forwards_telemetry_poll_interval_when_set(tmp_path):
+    seen = []
+
+    def fake_run_ingest(
+        batch_file, parse_workers, events_path, data_dir, *, telemetry_poll_interval=None,
+    ):
+        seen.append(telemetry_poll_interval)
+
+    build_to_target(
+        tmp_path, "db", Path("cache"), target=1, parse_workers=1, events_path=Path("events"),
+        telemetry_poll_interval=2.5,
+        ensure_prefetch=_fake_ensure_prefetch(alive=True),
+        run_ingest=fake_run_ingest,
+        cached_not_done=lambda cache_dir, db_path: (["a"] if not seen else []),
+        done_count=lambda db_path: (1 if seen else 0),
+        sleep=lambda s: None,
+    )
+    assert seen == [2.5]
+
+
+def test_run_ingest_appends_telemetry_poll_interval_flag_only_when_set(tmp_path, monkeypatch):
+    captured = []
+
+    def fake_run(cmd, **kwargs):
+        captured.append(cmd)
+
+    monkeypatch.setattr("app.build_corpus.subprocess.run", fake_run)
+    batch_file = tmp_path / "batch.ids"
+    batch_file.write_text("2601.00001\n")
+
+    from app.build_corpus import _run_ingest
+
+    _run_ingest(batch_file, 1, Path("events.jsonl"), tmp_path)
+    _run_ingest(batch_file, 1, Path("events.jsonl"), tmp_path, telemetry_poll_interval=3.0)
+
+    assert "--telemetry-poll-interval" not in captured[0]
+    assert "--telemetry-poll-interval" in captured[1]
+    assert captured[1][captured[1].index("--telemetry-poll-interval") + 1] == "3.0"
