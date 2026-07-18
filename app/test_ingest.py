@@ -413,8 +413,8 @@ def test_preflight_gate_force_proceeds_despite_issues(monkeypatch, capsys):
 # --- T-DOC45: --limit --------------------------------------------------------------------------
 
 
-def _args(*, limit=None, scratch=False):
-    return argparse.Namespace(limit=limit, scratch=scratch)
+def _args(*, limit=None, scratch=False, paper_ids_file=None):
+    return argparse.Namespace(limit=limit, scratch=scratch, paper_ids_file=paper_ids_file)
 
 
 def test_effective_config_no_flags_returns_the_identical_config():

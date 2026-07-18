@@ -5,10 +5,17 @@ launcher already writes (`docs/DESIGN-corpus-dashboard.md`, "The coordination co
 The **sole reader and writer** of `run_manifest.json` (principal-design-review finding #6):
 `status.py` never opens this file -- `server.py` composes the final `/api/status` response from
 `controller.liveness()` (run identity + config) plus `status.py`'s pure telemetry/`ingest_state`
-reads. This module never touches `papers.db` -- only the manifest and the `app.ingest` subprocess.
+reads. This module never touches `papers.db` -- only the manifest and the `app.build_corpus`
+subprocess (OG-41 -- see below; it was `app.ingest` directly before this).
 
-The launch invocation matches the live 3K run exactly: `env PYTHONPATH=<repo> python -m
-app.ingest --parse-workers N --limit TARGET --events-path <path>`, `cwd=<data_dir>`.
+**OG-41 — launches `app.build_corpus`, not `app.ingest`, directly.** `_spawn`'s command is `env
+PYTHONPATH=<repo> python -m app.build_corpus --target TARGET --parse-workers N --events-path
+<path>`, `cwd=<data_dir>`. `app.build_corpus` is a thin supervisor (see its own module docstring)
+that keeps `app.prefetch_pdfs` running as ITS OWN child and repeatedly hands `app.ingest` a
+cache-first batch (`--paper-ids-file`, OG-40) until `target` is reached -- so this controller still
+launches exactly one process, but that process's process group now also holds a downloader and
+however many ingest/parse-phase subprocesses are currently active, and `os.killpg` below reaches
+all of them by construction (see "Process-group signaling").
 
 **The real double-run guard is `app/ingest.py`'s own `.ingest.lock`** (`filelock`, acquired
 non-blocking as that module's first action, held for the whole run) -- it catches a manual
@@ -24,12 +31,14 @@ signal is preceded by `_verified_pid`, which refuses to signal unless *both* sti
 process currently living at that PID. A mismatch is treated as "that process is already gone" --
 never signaled, never trusted as still running.
 
-**Process-group signaling** (finding #3b): `_spawn` launches `app.ingest` with
-`start_new_session=True`, making it the leader of a fresh process group (pgid == pid). Its own
-Pass-1 `subprocess.Popen` calls for `app.parse_phase` workers (`app/ingest.py`,
-`_run_parse_phase_subprocesses`) never set their own session, so they inherit that same group.
-Signaling the group (`os.killpg`) reaches the parse workers too -- a plain `os.kill(pid, ...)`
-would only hit the leader, leaving workers to reparent to init and keep burning GPU while the
+**Process-group signaling** (finding #3b): `_spawn` launches `app.build_corpus` with
+`start_new_session=True`, making it the leader of a fresh process group (pgid == pid). Every
+process it launches in turn -- `app.prefetch_pdfs` (`app/build_corpus.py::_spawn_prefetch`), each
+`app.ingest` batch it runs, and THAT process's own Pass-1 `subprocess.Popen` calls for
+`app.parse_phase` workers (`app/ingest.py::_run_parse_phase_subprocesses`) -- never sets its own
+session, so all of them inherit that same group. Signaling the group (`os.killpg`) reaches every
+one of them -- downloader, ingest batch, and parse workers alike -- a plain `os.kill(pid, ...)`
+would only hit the leader, leaving the rest to reparent to init and keep running while the
 manifest says paused.
 
 **Transitional states** (finding #5): `pause`/`stop` set `status` to `"pausing"`/`"stopping"`
@@ -68,8 +77,8 @@ _DEATH_POLL_S = 0.2
 
 _LIVE_STATUSES = ("running", "pausing", "stopping")
 
-# Injectable seam for tests: production always launches the real `app.ingest`; a test passes a
-# fake (e.g. `sleep`) so a controller test never starts a real GPU-bound ingest (`spawn` accepts a
+# Injectable seam for tests: production always launches the real `app.build_corpus`; a test passes
+# a fake (e.g. `sleep`) so a controller test never starts a real GPU-bound build (`spawn` accepts a
 # dependency instead of constructing one -- codebase-design's testability principle #1).
 SpawnFn = Callable[[Path, int, int, Path, Path], int]
 
@@ -234,19 +243,27 @@ def liveness(data_dir: str | Path) -> dict | None:
 # --- spawning ------------------------------------------------------------------------------------
 
 
-def _spawn(data_dir: Path, target: int, parse_workers: int, events_path: Path, log_path: Path) -> int:
-    """The real launch, literally: `env PYTHONPATH=<repo> python -m app.ingest --parse-workers N
-    --limit TARGET --events-path <path>`, `cwd=<data_dir>`, as its own process-group leader (see
-    `_signal_group`). The `env` *command* -- not a Python-level env-dict read -- sets
-    `PYTHONPATH` for just this one child -- `cwd=data_dir` means `-m app.ingest` can't otherwise
-    find the `app` package, since data_dir has no `app/` of its own -- while this process's own
-    environment is never inspected (CONVENTIONS.md §3 / `ci/checks/env_leak.py`: no reads of the
-    process environment in `app/`). Returns the child's PID."""
+def _spawn(data_dir: Path, target: int, parse_workers: int, events_path: Path, log_path: Path,
+           *, paper_ids_file: Path | None = None) -> int:
+    """The real launch, literally: `env PYTHONPATH=<repo> python -m app.build_corpus --target
+    TARGET --parse-workers N --events-path <path>`, `cwd=<data_dir>`, as its own process-group
+    leader (see `_signal_group`). The `env` *command* -- not a Python-level env-dict read -- sets
+    `PYTHONPATH` for just this one child -- `cwd=data_dir` means `-m app.build_corpus` can't
+    otherwise find the `app` package, since data_dir has no `app/` of its own -- while this
+    process's own environment is never inspected (CONVENTIONS.md §3 / `ci/checks/env_leak.py`: no
+    reads of the process environment in `app/`). Returns the child's PID.
+
+    `paper_ids_file` (OG-40) is still accepted here -- kept so `_call_spawn`'s uniform calling
+    convention and the manifest's own threading (`start`/`resume` below) don't need
+    special-casing -- but is NOT forwarded to the command line: `app.build_corpus` has no matching
+    flag (OG-41: it computes its own cache-first id list every iteration from
+    `pdf_cache/*.pdf` minus `ingest_state`). An explicit id-scoped run still works by invoking
+    `app.ingest --paper-ids-file` directly outside the dashboard."""
     cmd = [
         "env", f"PYTHONPATH={_REPO_ROOT}",
-        sys.executable, "-m", "app.ingest",
+        sys.executable, "-m", "app.build_corpus",
+        "--target", str(target),
         "--parse-workers", str(parse_workers),
-        "--limit", str(target),
         "--events-path", str(events_path),
     ]
     log_f = log_path.open("a")
@@ -256,8 +273,19 @@ def _spawn(data_dir: Path, target: int, parse_workers: int, events_path: Path, l
     return proc.pid
 
 
+def _call_spawn(spawn: SpawnFn, data_dir: Path, target: int, parse_workers: int,
+                events_path: Path, log_path: Path, paper_ids_file: Path | None) -> int:
+    """Passes `paper_ids_file` to `spawn` only when set -- so the injected test fake (whose
+    signature is the 5-positional `SpawnFn`) is never handed a kwarg it doesn't accept, while the
+    real `_spawn` gets it on the OG-40 cache-first path."""
+    if paper_ids_file is None:
+        return spawn(data_dir, target, parse_workers, events_path, log_path)
+    return spawn(data_dir, target, parse_workers, events_path, log_path, paper_ids_file=paper_ids_file)
+
+
 def _build_manifest(run_id: str, pid: int, target: int, parse_workers: int,
-                     events_path: Path, log_path: Path, db_path: Path) -> dict:
+                     events_path: Path, log_path: Path, db_path: Path,
+                     paper_ids_file: Path | None = None) -> dict:
     cfg = load_config(_REPO_ROOT / "config.yaml")
     starttime, cmdline = _capture_identity(pid)
     return {
@@ -274,6 +302,8 @@ def _build_manifest(run_id: str, pid: int, target: int, parse_workers: int,
         "collection": cfg.collection,
         "started_at": datetime.now(UTC).isoformat(),
         "focus_queries": cfg.focus_area_queries,
+        # OG-40: persisted so `resume` re-launches cache-first instead of reverting to query harvest.
+        "paper_ids_file": str(paper_ids_file) if paper_ids_file is not None else None,
         "params": {"parse_workers": parse_workers, "limit": target, "telemetry_poll_interval": None},
     }
 
@@ -281,9 +311,14 @@ def _build_manifest(run_id: str, pid: int, target: int, parse_workers: int,
 # --- public control surface -----------------------------------------------------------------
 
 
-def start(data_dir: str | Path, target: int, parse_workers: int = 3, *, spawn: SpawnFn = _spawn) -> dict:
+def start(data_dir: str | Path, target: int, parse_workers: int = 3, *,
+          paper_ids_file: str | Path | None = None, spawn: SpawnFn = _spawn) -> dict:
     """Fresh run with a new target. Refuses if a run is already live (`running`/`pausing`/
-    `stopping`) -- pause or stop it first."""
+    `stopping`) -- pause or stop it first.
+
+    `paper_ids_file` (OG-40): ingest exactly the cached papers whose base ids are listed in that
+    file (cache-first), instead of query-driven discovery. `target` is then just the progress-bar
+    denominator (use the id count)."""
     data_dir = Path(data_dir)
     manifest = reconcile(data_dir)
     if manifest is not None and manifest.get("status") in _LIVE_STATUSES:
@@ -292,12 +327,15 @@ def start(data_dir: str | Path, target: int, parse_workers: int = 3, *, spawn: S
             "pause or stop it before starting a fresh run"
         )
 
+    paper_ids_file = Path(paper_ids_file) if paper_ids_file is not None else None
     run_id = f"run-{target}-{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}"
     events_path = data_dir / f"ingest_events_{run_id}.jsonl"
     log_path = data_dir / f"ingest_{run_id}.log"
     db_path = data_dir / "papers.db"
-    pid = spawn(data_dir, target, parse_workers, events_path, log_path)
-    manifest = _build_manifest(run_id, pid, target, parse_workers, events_path, log_path, db_path)
+    pid = _call_spawn(spawn, data_dir, target, parse_workers, events_path, log_path, paper_ids_file)
+    manifest = _build_manifest(
+        run_id, pid, target, parse_workers, events_path, log_path, db_path, paper_ids_file
+    )
     _write_manifest(data_dir, manifest)
     return manifest
 
@@ -321,9 +359,10 @@ def pause(data_dir: str | Path) -> dict:
 
 
 def resume(data_dir: str | Path, *, spawn: SpawnFn = _spawn) -> dict:
-    """Relaunch `app.ingest` with the SAME params as the existing manifest -- checkpoints make
-    this safe, it picks up where it left off. Refuses (`DoubleRunError`) if the prior run is
-    still `running`, or if a `pausing`/`stopping` run's process hasn't yet been confirmed dead --
+    """Relaunch `app.build_corpus` with the SAME params as the existing manifest -- checkpoints
+    make this safe, it picks up where it left off (build_corpus/ingest are idempotent/resumable via
+    `ingest_state`). Refuses (`DoubleRunError`) if the prior run is still `running`, or if a
+    `pausing`/`stopping` run's process hasn't yet been confirmed dead --
     SIGTERM is a request, not a guarantee, and relaunching before the old process actually exits
     would duplicate the GPU work it's still mid-way through."""
     data_dir = Path(data_dir)
@@ -346,7 +385,12 @@ def resume(data_dir: str | Path, *, spawn: SpawnFn = _spawn) -> dict:
 
     events_path = Path(manifest["events_path"])
     log_path = Path(manifest["log_path"])
-    pid = spawn(data_dir, manifest["target"], manifest["parse_workers"], events_path, log_path)
+    stored_ids_file = manifest.get("paper_ids_file")  # OG-40: keep a cache-first run cache-first
+    paper_ids_file = Path(stored_ids_file) if stored_ids_file else None
+    pid = _call_spawn(
+        spawn, data_dir, manifest["target"], manifest["parse_workers"],
+        events_path, log_path, paper_ids_file,
+    )
     starttime, cmdline = _capture_identity(pid)
     manifest["pid"] = pid
     manifest["pid_starttime"] = starttime
