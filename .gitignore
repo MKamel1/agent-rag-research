@@ -2,3 +2,18 @@ __pycache__/
 *.pyc
 .phase0-data/
 reviews/
+
+# Local data cruft — the REAL store lives in the sibling research-system-rag-data/ dir.
+# A relative-path run can create empty/partial copies of these at the repo root (OG-33) — the
+# empty papers.db is the exact file build_mcp_server used to fall back to (the fake Recall@10=0.000
+# trap, fixed in T-DOC56). Never track them here.
+papers.db
+papers.db-shm
+papers.db-wal
+pdf_cache/
+blobs/
+
+# Agent worktrees / local Claude state — never track.
+.claude/
+.worktrees/
+.gpu.lock
