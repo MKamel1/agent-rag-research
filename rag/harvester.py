@@ -151,6 +151,19 @@ _RETRYABLE_STATUSES = {429, 500, 502, 503, 504}
 # plausible URL-length ceiling rather than testing the edge live against a real service.
 _ID_LIST_CHUNK_SIZE = 50
 
+# arXiv best-practices ask every automated client to send a DESCRIPTIVE User-Agent so their team can
+# identify the tool (and reach the operator rather than silently block it). Applied to BOTH arXiv
+# HTTP clients -- the metadata API here and the PDF-download client in app/prefetch_pdfs.py -- via
+# the shared factory below, so there is one place to keep it accurate.
+_USER_AGENT = "research-system-rag/0.1 (+https://github.com/MKamel1/agent-rag-research)"
+
+
+def arxiv_http_client(timeout: float) -> httpx.Client:
+    """A real `httpx.Client` for arXiv traffic, carrying the descriptive `_USER_AGENT`. Both the
+    metadata `ArxivSource` and the PDF prefetcher build their fallback client through here so the
+    User-Agent can't drift out of sync between the two arXiv-touching call sites."""
+    return httpx.Client(timeout=timeout, headers={"User-Agent": _USER_AGENT})
+
 
 class ArxivSource:
     """Real `Source`: paginates https://export.arxiv.org/api/query (Atom feed) via `httpx`.
@@ -168,7 +181,7 @@ class ArxivSource:
         sleep: Callable[[float], None] = time.sleep,
         page_size: int = _DEFAULT_PAGE_SIZE,
     ):
-        self._client = client or httpx.Client(timeout=30.0)
+        self._client = client or arxiv_http_client(30.0)
         self._sleep = sleep
         self._page_size = page_size
 
