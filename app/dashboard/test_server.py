@@ -343,9 +343,9 @@ def test_unknown_route_is_404(running_server):
 # --- GET /api/search: the "Try a search" panel's backend --------------------------------------
 #
 # HARD GUARDRAIL: every test below injects a FAKE `mcp_server_factory` -- never the real default
-# (`_LazyMcpServer`, which would build a real `GpuLock`/Qdrant connection/TEI clients on first
-# use). That keeps this suite offline and clear of the shared GPU lock, same as every other fake
-# in this file.
+# (`_LazyMcpServer`, which would build a real `GpuLock`/vector-store connection/TEI clients on
+# first use). That keeps this suite offline and clear of the shared GPU lock, same as every other
+# fake in this file.
 
 _BBOX = (0.0, 0.0, 100.0, 200.0)
 
