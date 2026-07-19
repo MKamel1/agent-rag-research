@@ -507,15 +507,23 @@ wired to `OllamaSummarizer.unload()`) around the phases/calls that don't need it
 measured VRAM figures, and the real-run validation evidence: ARCHITECTURE.md "Operational invariants"
 §3 (authoritative; not re-derived here).
 
-**V0 fairness/timeout stance:** `acquire()` has no priority and no timeout — a query simply queues behind
-an in-flight ingest inference call until it releases. This is an accepted V0 simplification, not an
-oversight; revisit only if it proves to be a real problem in practice.
+**V0 fairness/timeout stance:** `acquire()` has no priority — a query simply queues behind an in-flight
+ingest inference call until it releases. This is an accepted V0 simplification, not an oversight; revisit
+only if it proves to be a real problem in practice. **Timeout (reliability-audit hardening, OG-48):**
+`acquire()` takes an optional keyword-only `timeout` (seconds); `None` (the default) preserves the
+original block-forever behavior byte for byte, so every pre-existing caller is unaffected. A caller that
+passes a finite `timeout` bounds how long it waits for a wedged/crashed holder before giving up — the
+lock raises `TransientError` instead of hanging the process forever if it elapses.
 
 ```python
 class GpuLock(Protocol):
-    def acquire(self, stage: str) -> AbstractContextManager[None]:
+    def acquire(
+        self, stage: str, *, timeout: float | None = None
+    ) -> AbstractContextManager[None]:
         """Blocks until the single GPU slot is free, then yields; releases on exit (incl. on exception).
-        `stage` is a label ("embed" | "rerank" | "summarize") used only for logging/timeout messages."""
+        `stage` is a label ("embed" | "rerank" | "summarize") used only for logging/timeout messages.
+        `timeout=None` (default) blocks forever; a finite `timeout` raises `TransientError` if it elapses
+        before the lock is free."""
 ```
 
 - **Real adapter — `FileGpuLock(lock_path: Path)`:** wraps `filelock.FileLock(lock_path)`, so any process
@@ -617,10 +625,18 @@ class Config:
     # scope levers (CONTEXT.md registry) — the knobs that must never be buried constants
     focus_area_queries: list[str]      # arXiv search queries defining the topic
     corpus_cap: int = 15_000
-    ordering: Literal["freshest_first"] = "freshest_first"
+    ordering: Literal["freshest_first", "relevance"] = "freshest_first"  # OG-46: "relevance" -> arXiv's
+        # own sortBy=relevance (rag/harvester.py ArxivSource), instead of freshest-first.
     ingestion_mode: Literal["one_shot_seed"] = "one_shot_seed"
     sources: list[str] = field(default_factory=lambda: ["arxiv"])
     relevance_filter: Literal["off", "embedding"] = "off"
+    # OG-45: DOWNLOAD-side arXiv subject/date filters (distinct from the query-time
+    # SearchFilters.categories/published_after/before, §M6 below) -- None (default) = no filter, today's
+    # behavior. `arxiv_categories` OR-joins into rag/harvester.py's `cat:` clause; dates accept ISO
+    # YYYY-MM-DD or arXiv's own YYYYMMDD, either bound may be unset (open-ended).
+    arxiv_categories: list[str] | None = None
+    arxiv_date_from: str | None = None
+    arxiv_date_to: str | None = None
     # retrieval knobs (tuned in Spike 2)
     # NOTE: no `contextual_header` toggle — it's not built in V0 (PRD ADR-07).
     child_parent_expansion: bool = True

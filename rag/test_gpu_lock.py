@@ -5,7 +5,16 @@ import filelock
 import pytest
 
 from contracts.errors import TransientError
+from contracts.gpu_lock import GpuLock
 from rag.gpu_lock import FileGpuLock
+
+
+def test_file_gpu_lock_satisfies_the_gpu_lock_protocol(tmp_path):
+    """Protocol conformance (DATA-CONTRACTS.md "GpuLock"): the real adapter must structurally
+    satisfy `GpuLock` (it's `@runtime_checkable`) -- same check `rag/fakes/test_fake_gpu_lock.py`
+    already runs for `FakeGpuLock`. Both sides of the fake/real pair need this; only the fake one
+    existed before this test."""
+    assert isinstance(FileGpuLock(tmp_path / "x.lock"), GpuLock)
 
 
 def test_basic_enter_and_exit_is_clean(tmp_path):
