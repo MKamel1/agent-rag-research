@@ -58,7 +58,7 @@ class _FakeStatus:
     def read_consistency(self, done_count, collection):
         return {"sqlite_done": done_count, "vector_points": 500, "consistent": True}
 
-    def read_downloader(self, run_cwd, log_path):
+    def read_downloader(self, run_cwd):
         return {"prefetch_alive": True, "downloaded": 120, "prefetch_target": 30000}
 
     def read_disk(self, data_dir):

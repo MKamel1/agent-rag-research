@@ -14,6 +14,7 @@ import os
 import signal
 import sqlite3
 import subprocess
+import time
 from pathlib import Path
 
 import pytest
@@ -25,6 +26,7 @@ from app.build_corpus import (
     _order_by_relevance,
     _parse_args,
     _prefetch_pid_path,
+    _spawn_prefetch,
     _validate_cli_args,
     build_to_target,
     cached_not_done,
@@ -265,6 +267,32 @@ def _alive_ignoring_cmdline(pid: int) -> bool:
     except OSError:
         return False
     return True
+
+
+# --- _spawn_prefetch: the real launch (not the fakes used elsewhere in this file) --------------
+
+
+def test_spawn_prefetch_redirects_stdout_and_stderr_to_a_dedicated_log(tmp_path):
+    """T-DOC<n>: `app/dashboard/status.py::read_downloader` used to tail the SHARED build_corpus
+    run log for prefetch's own "downloaded X / target Y" pace line -- far more verbose
+    parse-progress logging sharing that same file could push the real pace line tens of MB
+    further back than the tail window ever reached, permanently blanking the dashboard's
+    downloader fields even while prefetch was alive and working. `_spawn_prefetch` now redirects
+    to its OWN dedicated `<data_dir>/prefetch.log` -- this test drives the REAL function (not a
+    fake spawn) against a `tmp_path` with no `config.yaml`, so the real `app.prefetch_pdfs`
+    fails fast on startup; that's fine, this only cares that whatever it prints on the way out
+    lands in the dedicated log file rather than vanishing into this test process's own stdout."""
+    pid = _spawn_prefetch(tmp_path)
+    try:
+        for _ in range(100):
+            if not _alive_ignoring_cmdline(pid):
+                break
+            time.sleep(0.05)
+        log_path = tmp_path / "prefetch.log"
+        assert log_path.exists()
+        assert log_path.read_text().strip() != ""
+    finally:
+        _cleanup_pid(pid)
 
 
 def test_ensure_prefetch_running_launches_when_absent(tmp_path, monkeypatch):
