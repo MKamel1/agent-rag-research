@@ -8,6 +8,7 @@ tests against a real (temp) sqlite db (`migrations.migrate`), same pattern as
 real (but harmless) OS process, same pattern as `app/dashboard/test_controller.py`.
 """
 
+import json
 import logging
 import os
 import signal
@@ -34,17 +35,20 @@ from migrations.migrate import migrate
 from rag.ingest_state_sqlite import SqliteIngestState
 
 
-def _insert_paper(conn: sqlite3.Connection, paper_id: str, published: str) -> None:
+def _insert_paper(
+    conn: sqlite3.Connection, paper_id: str, published: str, categories: list[str] | None = None,
+) -> None:
     """Minimal `papers` row -- same pattern as `app/test_corpus_integrity.py::_insert_paper`,
-    trimmed to just the column this file's date-filter tests need."""
+    trimmed to just the columns this file's date/category-filter tests need. `categories`
+    defaults to `[]`, matching every pre-existing call site that doesn't care about it."""
     conn.execute(
         """
         INSERT INTO papers
             (paper_id, version, title, abstract, authors_json, categories_json,
              published, updated, pdf_path, markdown_path, relevance_score)
-        VALUES (?, 'v1', 't', 'a', '[]', '[]', ?, ?, 'p', 'm.md', 0.5)
+        VALUES (?, 'v1', 't', 'a', '[]', ?, ?, ?, 'p', 'm.md', 0.5)
         """,
-        (paper_id, published, published),
+        (paper_id, json.dumps(categories or []), published, published),
     )
     conn.commit()
 
@@ -167,6 +171,75 @@ def test_done_count_date_filter_excludes_not_yet_done_papers(tmp_path):
 
 def test_done_count_date_filter_of_missing_db_is_zero(tmp_path):
     assert done_count(str(tmp_path / "no_such.db"), date_from="2026-01-01") == 0
+
+
+# --- category scoping: T-DOC71's identically-shaped date gap, extended to arxiv_categories -------
+
+
+def test_done_count_category_filter_is_an_or_match_like_the_harvester(tmp_path):
+    """Same semantics as `rag/harvester.py::ArxivSource`'s own `cat:` OR-clause: a paper counts
+    if ANY of its categories is in the requested list, not all of them."""
+    db_path = str(tmp_path / "papers.db")
+    migrate(db_path)
+    conn = sqlite3.connect(db_path)
+    _insert_paper(conn, "2601.00001", "2026-01-01", categories=["stat.ME"])
+    _insert_paper(conn, "2601.00002", "2026-01-01", categories=["cs.LG", "stat.ML"])
+    _insert_paper(conn, "2601.00003", "2026-01-01", categories=["econ.EM"])
+    conn.close()
+    state = SqliteIngestState(db_path)
+    state.checkpoint("2601.00001", "done")
+    state.checkpoint("2601.00002", "done")
+    state.checkpoint("2601.00003", "done")
+
+    assert done_count(db_path, categories=["stat.ME"]) == 1
+    assert done_count(db_path, categories=["stat.ML"]) == 1  # matches via the 2nd category entry
+    assert done_count(db_path, categories=["stat.ME", "econ.EM"]) == 2
+    assert done_count(db_path, categories=["cs.CL"]) == 0  # no paper has this category
+    assert done_count(db_path) == 3  # no filter -- unscoped, byte-for-byte the old behavior
+
+
+def test_done_count_category_filter_excludes_not_yet_done_papers(tmp_path):
+    db_path = str(tmp_path / "papers.db")
+    migrate(db_path)
+    conn = sqlite3.connect(db_path)
+    _insert_paper(conn, "2601.00001", "2026-01-01", categories=["stat.ME"])
+    conn.close()
+    state = SqliteIngestState(db_path)
+    state.checkpoint("2601.00001", "parsed")
+
+    assert done_count(db_path, categories=["stat.ME"]) == 0
+
+
+def test_done_count_combined_date_and_category_filter_requires_both(tmp_path):
+    db_path = str(tmp_path / "papers.db")
+    migrate(db_path)
+    conn = sqlite3.connect(db_path)
+    _insert_paper(conn, "2601.00001", "2026-01-15", categories=["stat.ME"])  # matches both
+    _insert_paper(conn, "2601.00002", "2025-12-01", categories=["stat.ME"])  # wrong date
+    _insert_paper(conn, "2601.00003", "2026-01-15", categories=["cs.LG"])  # wrong category
+    conn.close()
+    state = SqliteIngestState(db_path)
+    for paper_id in ("2601.00001", "2601.00002", "2601.00003"):
+        state.checkpoint(paper_id, "done")
+
+    assert done_count(db_path, date_from="2026-01-01", categories=["stat.ME"]) == 1
+
+
+def test_done_count_empty_categories_list_is_treated_as_no_filter(tmp_path):
+    """Matches `rag/harvester.py::ArxivSource`'s own truthy `if self._categories:` check --
+    `Config.arxiv_categories=[]` means "every category," same as `None`, not "match nothing"."""
+    db_path = str(tmp_path / "papers.db")
+    migrate(db_path)
+    conn = sqlite3.connect(db_path)
+    _insert_paper(conn, "2601.00001", "2026-01-01", categories=["stat.ME"])
+    conn.close()
+    SqliteIngestState(db_path).checkpoint("2601.00001", "done")
+
+    assert done_count(db_path, categories=[]) == 1
+
+
+def test_done_count_category_filter_of_missing_db_is_zero(tmp_path):
+    assert done_count(str(tmp_path / "no_such.db"), categories=["stat.ME"]) == 0
 
 
 # ================================================================================================
@@ -615,7 +688,7 @@ def test_build_to_target_date_filter_keeps_going_past_a_stale_global_done_count(
     def fake_cached_not_done(cache_dir, db_path):
         return sorted(set(all_ids) - scoped_done)
 
-    def fake_done_count(db_path, *, date_from=None, date_to=None):
+    def fake_done_count(db_path, *, date_from=None, date_to=None, categories=None):
         seen_filters.append((date_from, date_to))
         return len(scoped_done)  # NOT the corpus-wide total, which a real corpus already exceeds
 
@@ -641,6 +714,66 @@ def test_build_to_target_without_date_filter_calls_done_count_with_plain_signatu
     """Default (no date filter, matching every other test in this file) must call
     `done_count(db_path)` with no kwargs -- so an old test fake that takes only `db_path` (no
     **kwargs) keeps working unmodified, and a real unscoped run's SQL is unchanged."""
+    seen = []
+
+    def fake_done_count(db_path):
+        seen.append("called")
+        return 1
+
+    build_to_target(
+        tmp_path, "db", Path("cache"), target=1, parse_workers=1, events_path=Path("events"),
+        ensure_prefetch=_fake_ensure_prefetch(alive=True),
+        run_ingest=lambda *a, **k: (_ for _ in ()).throw(AssertionError("no ingest expected")),
+        cached_not_done=lambda cache_dir, db_path: [],
+        done_count=fake_done_count,
+        sleep=lambda s: None,
+    )
+    assert seen == ["called"]
+
+
+# ================================================================================================
+# category scoping -- T-DOC71's identically-shaped date gap, extended to arxiv_categories:
+# build_to_target(categories=...) must check the SCOPED done count against `target` too.
+# ================================================================================================
+
+
+def test_build_to_target_category_filter_keeps_going_past_a_stale_global_done_count(tmp_path):
+    """Same reproduction as the date-filter version above, but for `categories`: a corpus that
+    already exceeds `target` overall, with zero papers done in the requested subject(s), must not
+    "reach target" without ingesting anything matching that subject."""
+    scoped_done: set[str] = set()
+    all_ids = ["2601.00001", "2601.00002"]
+    seen_filters = []
+
+    def fake_cached_not_done(cache_dir, db_path):
+        return sorted(set(all_ids) - scoped_done)
+
+    def fake_done_count(db_path, *, date_from=None, date_to=None, categories=None):
+        seen_filters.append(categories)
+        return len(scoped_done)  # NOT the corpus-wide total, which a real corpus already exceeds
+
+    def fake_run_ingest(batch_file, parse_workers, events_path, data_dir):
+        ids = [line for line in batch_file.read_text().splitlines() if line]
+        scoped_done.update(ids)
+
+    build_to_target(
+        tmp_path, "db", Path("cache"), target=2, parse_workers=1, events_path=Path("events"),
+        categories=["stat.ME", "econ.EM"],
+        ensure_prefetch=_fake_ensure_prefetch(alive=True),
+        run_ingest=fake_run_ingest,
+        cached_not_done=fake_cached_not_done,
+        done_count=fake_done_count,
+        sleep=lambda s: None,
+    )
+
+    assert len(scoped_done) == 2
+    assert seen_filters and all(f == ["stat.ME", "econ.EM"] for f in seen_filters)
+
+
+def test_build_to_target_without_category_filter_calls_done_count_with_plain_signature(tmp_path):
+    """Default (no filters at all) must still call `done_count(db_path)` with no kwargs -- an old
+    test fake with no **kwargs keeps working unmodified, and a real unfiltered run's SQL is
+    unchanged."""
     seen = []
 
     def fake_done_count(db_path):
