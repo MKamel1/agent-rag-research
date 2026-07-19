@@ -206,13 +206,29 @@ def _is_live_prefetch(pid: int) -> bool:
     return True
 
 
+# Same name `app/dashboard/status.py` reads pace lines from -- duplicated (that module's own
+# "own your own copies" convention) rather than imported, matching `_PREFETCH_PID_NAME` above.
+_PREFETCH_LOG_NAME = "prefetch.log"
+
+
 def _spawn_prefetch(data_dir: Path) -> int:
     """Launches `app.prefetch_pdfs` as a child in THIS process's group -- no `start_new_session`,
     so it inherits build_corpus's group and `os.killpg` (dashboard controller pause/stop) reaches
     it too. Same `env PYTHONPATH=<repo>` / `cwd=data_dir` launch shape as
-    `app/dashboard/controller.py::_spawn`."""
+    `app/dashboard/controller.py::_spawn`.
+
+    `stdout`/`stderr` go to their OWN dedicated `<data_dir>/prefetch.log`, not inherited from this
+    process (which, under a dashboard-launched run, is itself redirected into the shared
+    `run_manifest.json` `log_path` -- the SAME file every `app.ingest` batch's own, far more
+    verbose, parse-progress logging also lands in). A real incident: `app/dashboard/status.py`'s
+    `read_downloader` tails only the last ~64KB of that shared log for prefetch's own "downloaded
+    X / target Y" line -- one MinerU batch's progress-bar spam is enough to push the last real
+    pace line tens of MB further back than that window ever reaches, permanently blanking the
+    dashboard's downloader pace fields even while prefetch is alive and working. A dedicated log
+    (this process's ONLY writer) fixes that at the root instead of guessing at a bigger window."""
     cmd = ["env", f"PYTHONPATH={_REPO_ROOT}", sys.executable, "-m", "app.prefetch_pdfs"]
-    proc = subprocess.Popen(cmd, cwd=str(data_dir))
+    log_f = (data_dir / _PREFETCH_LOG_NAME).open("a")
+    proc = subprocess.Popen(cmd, cwd=str(data_dir), stdout=log_f, stderr=subprocess.STDOUT)
     return proc.pid
 
 

@@ -82,6 +82,47 @@ def test_read_corpus_quarantine_reasons_grouped_and_sorted(tmp_path):
     assert {"reason": "PermanentError", "count": 1} in result["quarantine_reasons"]
 
 
+def test_read_corpus_quarantine_reasons_surfaces_an_unknown_bucket_for_pre_diagnostics_rows(
+    tmp_path,
+):
+    """`quarantine_diagnostics` (T-DOC17/PR #83) postdates `quarantine` itself -- a paper
+    quarantined before that landed has a `quarantine` row but no matching `quarantine_diagnostics`
+    one. Observed live: funnel said 32 quarantined, the reasons breakdown alone summed to only 22,
+    a silent, confusing gap. `reason_rows` must not just under-report -- the difference is
+    surfaced as an explicit "unknown" bucket so the two numbers always reconcile."""
+    db_path = tmp_path / "papers.db"
+    _seed(
+        db_path, {"done": 1},
+        quarantine=[("q1", "TransientError"), ("q2", "PermanentError")],
+    )
+    # A legacy row: `quarantine` only, no `quarantine_diagnostics` -- unlike `_seed`'s own
+    # quarantine entries, which always write both together.
+    conn = sqlite3.connect(str(db_path))
+    conn.execute(
+        "INSERT INTO quarantine (paper_id, stage, error, ts) VALUES ('q3', 'parsed', 'boom', ?)",
+        ("2026-01-01T00:00:00",),
+    )
+    conn.commit()
+    conn.close()
+
+    result = status_mod.read_corpus(tmp_path)
+    assert result["funnel"]["quarantined"] == 3
+    reasons_total = sum(r["count"] for r in result["quarantine_reasons"])
+    assert reasons_total == 3  # now reconciles with funnel["quarantined"]
+    assert {"reason": "unknown (quarantined before diagnostics were recorded)", "count": 1} in (
+        result["quarantine_reasons"]
+    )
+
+
+def test_read_corpus_quarantine_reasons_omits_unknown_bucket_when_fully_diagnosed(tmp_path):
+    """The common case (every quarantine row has a matching diagnostics row, as `_seed` always
+    writes) must not grow a spurious "unknown, count 0" entry."""
+    _seed(tmp_path / "papers.db", {"done": 1}, quarantine=[("q1", "TransientError")])
+    result = status_mod.read_corpus(tmp_path)
+    assert all(r["reason"] != "unknown (quarantined before diagnostics were recorded)" for r in
+               result["quarantine_reasons"])
+
+
 def test_read_corpus_excludes_quarantined_papers_that_later_succeeded(tmp_path):
     """OG-44: `quarantine` is an append-only dead-letter log, never reconciled -- a paper that was
     quarantined and later succeeded on retry (now `stage='done'`) must not still count as
@@ -388,52 +429,53 @@ def test_read_consistency_verdict_none_when_done_count_unknown(monkeypatch):
 # --- read_downloader (OG-43) -------------------------------------------------------------------
 
 
-def test_read_downloader_degrades_to_nulls_when_no_run_cwd_or_log(tmp_path):
-    result = status_mod.read_downloader(None, None)
+def test_read_downloader_degrades_to_nulls_when_no_run_cwd(tmp_path):
+    result = status_mod.read_downloader(None)
     assert result == {"prefetch_alive": None, "downloaded": None, "prefetch_target": None}
 
 
 def test_read_downloader_reports_dead_when_pid_file_missing(tmp_path):
-    result = status_mod.read_downloader(tmp_path, None)
+    result = status_mod.read_downloader(tmp_path)
     assert result["prefetch_alive"] is None  # no prefetch.pid at all -- distinct from "dead"
 
 
 def test_read_downloader_reports_dead_for_a_stale_pid(tmp_path):
     (tmp_path / "prefetch.pid").write_text("999999999")
-    result = status_mod.read_downloader(tmp_path, None)
+    result = status_mod.read_downloader(tmp_path)
     assert result["prefetch_alive"] is False
 
 
 def test_read_downloader_reports_alive_for_a_real_prefetch_pdfs_process(tmp_path, monkeypatch):
     (tmp_path / "prefetch.pid").write_text("4242")
     monkeypatch.setattr(status_mod, "_is_live_prefetch", lambda pid: pid == 4242)
-    result = status_mod.read_downloader(tmp_path, None)
+    result = status_mod.read_downloader(tmp_path)
     assert result["prefetch_alive"] is True
 
 
-def test_read_downloader_tails_the_log_for_the_latest_pace_line(tmp_path):
-    log = tmp_path / "run.log"
-    log.write_text(
+def test_read_downloader_tails_its_own_dedicated_log_for_the_latest_pace_line(tmp_path):
+    """`_PREFETCH_LOG_NAME` (`prefetch.log`), not the shared run log -- T-DOC<n>: a shared log
+    also written by far more verbose parse-progress logging could push the real pace line outside
+    `_LOG_TAIL_BYTES`'s window; a dedicated, single-writer log can't have that problem."""
+    (tmp_path / "prefetch.log").write_text(
         "some other line\n"
         "prefetch_pdfs: downloaded 10 / target 30000 (cache now 10)\n"
         "more noise\n"
         "prefetch_pdfs: downloaded 25 / target 30000 (cache now 25)\n"
     )
-    result = status_mod.read_downloader(None, log)
+    result = status_mod.read_downloader(tmp_path)
     assert result["downloaded"] == 25
     assert result["prefetch_target"] == 30000
 
 
 def test_read_downloader_pace_degrades_when_log_missing(tmp_path):
-    result = status_mod.read_downloader(None, tmp_path / "nope.log")
+    result = status_mod.read_downloader(tmp_path)
     assert result["downloaded"] is None
     assert result["prefetch_target"] is None
 
 
 def test_read_downloader_pace_degrades_when_no_pace_line_yet(tmp_path):
-    log = tmp_path / "run.log"
-    log.write_text("nothing relevant here\n")
-    result = status_mod.read_downloader(None, log)
+    (tmp_path / "prefetch.log").write_text("nothing relevant here\n")
+    result = status_mod.read_downloader(tmp_path)
     assert result["downloaded"] is None
 
 

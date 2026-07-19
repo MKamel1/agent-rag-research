@@ -184,7 +184,7 @@ def _status_dict(data_dir: Path, status_module, controller_module) -> dict:
             data_dir=data_dir, started_at=live.get("started_at"), target=live.get("target"),
         ),
         "downloads": status_module.read_downloads(data_dir, live.get("target")),
-        "downloader": status_module.read_downloader(live.get("run_cwd"), live.get("log_path")),
+        "downloader": status_module.read_downloader(live.get("run_cwd")),
         "disk": status_module.read_disk(data_dir),
         "consistency": status_module.read_consistency(done, live.get("collection")),
         "quarantine_reasons": corpus["quarantine_reasons"],

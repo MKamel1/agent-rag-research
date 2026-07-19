@@ -85,6 +85,18 @@ def read_corpus(data_dir: str | Path) -> dict:
     funnel = _funnel_from_stage_counts(stage_counts)
     funnel["quarantined"] = quarantine_count
     quarantine_reasons = [{"reason": reason, "count": count} for reason, count in reason_rows]
+    # `quarantine_diagnostics` was added after `quarantine` already had live rows (T-DOC17/PR #83
+    # predates it) -- a paper quarantined before that landed has a `quarantine` row but no
+    # matching `quarantine_diagnostics` one, so `reason_rows` alone silently undercounts relative
+    # to `quarantine_count` with no indication anything is missing (observed live: funnel said 32
+    # quarantined, the reasons breakdown summed to 22, a confusing gap with no explanation).
+    # Surface the gap explicitly instead of letting the two numbers quietly disagree.
+    diagnosed = sum(count for _, count in reason_rows)
+    if diagnosed < quarantine_count:
+        quarantine_reasons.append(
+            {"reason": "unknown (quarantined before diagnostics were recorded)",
+             "count": quarantine_count - diagnosed}
+        )
     return {"funnel": funnel, "quarantine_reasons": quarantine_reasons}
 
 
@@ -312,32 +324,37 @@ def read_downloads(data_dir: str | Path, target: int | None) -> dict:
 
 # --- downloader liveness + pace (app.prefetch_pdfs, OG-43) --------------------------------------
 
-# Same name `app/build_corpus.py::_PREFETCH_PID_NAME` writes -- duplicated (this file's own "own
-# your own copies" convention, see module docstring) rather than imported, so this lightweight
-# reader never pulls in `app.build_corpus`'s subprocess-launch machinery.
+# Same names `app/build_corpus.py::_PREFETCH_PID_NAME`/`_PREFETCH_LOG_NAME` write -- duplicated
+# (this file's own "own your own copies" convention, see module docstring) rather than imported,
+# so this lightweight reader never pulls in `app.build_corpus`'s subprocess-launch machinery.
 _PREFETCH_PID_NAME = "prefetch.pid"
+_PREFETCH_LOG_NAME = "prefetch.log"
 
 # app/prefetch_pdfs.py's own progress line: "prefetch_pdfs: downloaded %d / target %d (cache now
-# %d)". `app.build_corpus` launches `app.prefetch_pdfs` as its own child with no separate stdout
-# redirect (`_spawn_prefetch`), so this line lands in the SAME log file the dashboard already
-# tracks for the whole run (`run_manifest.json`'s `log_path`) -- no second log to locate.
+# %d)". `_spawn_prefetch` gives it a DEDICATED `<run_cwd>/prefetch.log` (this process's only
+# writer) -- a real incident had this tail an OLDER shared log build_corpus/app.ingest also wrote
+# their own, far more verbose, parse-progress logging into: one MinerU batch's spam pushed the
+# last real pace line tens of MB further back than `_LOG_TAIL_BYTES` ever reached, permanently
+# blanking these fields even while prefetch was alive and working.
 _DOWNLOAD_PACE_RE = re.compile(r"downloaded (\d+) / target (\d+)")
 
-# How far back to seek before tailing a run log for the latest pace line -- these logs can grow to
-# multi-MB over a multi-hour run (observed: several MB), and this is read on every ~4s status
-# poll, so reading the whole file every time would be real, needless I/O.
+# How far back to seek before tailing the prefetch log for the latest pace line -- a dedicated,
+# single-writer log stays small, but this still bounds I/O for a many-day-long run, and this is
+# read on every ~4s status poll.
 _LOG_TAIL_BYTES = 65_536
 
 
-def read_downloader(run_cwd: str | Path | None, log_path: str | Path | None) -> dict:
+def read_downloader(run_cwd: str | Path | None) -> dict:
     """Is `app.prefetch_pdfs` alive, and its download pace -- `run_cwd` is the directory
     `app.build_corpus` (its parent) was actually launched with as `cwd` (`run_manifest.json`'s
     `run_cwd`, OG-43): ordinarily the real data dir, but a run-scoped override-config scratch dir
     when `keywords`/`parse_batch_size` were edited for this run -- `app.prefetch_pdfs`'s own
-    `<that dir>/prefetch.pid` moves with it, so this must match wherever it actually landed rather
-    than assuming the fixed data dir."""
+    `<that dir>/prefetch.pid`/`prefetch.log` both move with it, so this must match wherever it
+    actually landed rather than assuming the fixed data dir."""
     pid = _read_prefetch_pid(run_cwd) if run_cwd else None
-    downloaded, target = _tail_download_pace(log_path) if log_path else (None, None)
+    downloaded, target = (
+        _tail_download_pace(Path(run_cwd) / _PREFETCH_LOG_NAME) if run_cwd else (None, None)
+    )
     return {
         "prefetch_alive": _is_live_prefetch(pid) if pid is not None else None,
         "downloaded": downloaded,
