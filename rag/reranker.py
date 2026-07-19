@@ -29,6 +29,10 @@ _RETRYABLE_STATUSES = {429, 500, 502, 503, 504}
 # retried.
 RetrySleep = Callable[[float], None]
 
+# OG-48#4: how long `rerank()` waits for a wedged/crashed GpuLock holder before giving up (raises
+# TransientError instead of hanging forever) — see `rag/embedder.py`'s identical constant/rationale.
+_DEFAULT_GPU_LOCK_TIMEOUT_S = 300.0
+
 
 def _default_retry_sleep(seconds: float) -> None:
     time.sleep(seconds)
@@ -62,6 +66,11 @@ class TeiReranker:
     retried. Unlike the ingest-side retry sites, there is no quarantine outcome here — a
     query-path caller has no "skip this paper and continue" fallback, so once the retry budget is
     exhausted the (still-classified) error simply propagates.
+
+    OG-48#3: `gpu_lock.acquire("rerank")` is held only around a SINGLE HTTP attempt — never across
+    the retry/backoff loop (see `rag/embedder.py`'s identical fix/rationale). OG-48#4: a bounded
+    `gpu_lock_timeout` (ctor param, default `_DEFAULT_GPU_LOCK_TIMEOUT_S`) is threaded into every
+    acquire, so waiting for a wedged/crashed holder raises `TransientError` instead of hanging.
     """
 
     def __init__(
@@ -71,11 +80,13 @@ class TeiReranker:
         *,
         max_retries: int = 2,
         retry_sleep: RetrySleep | None = None,
+        gpu_lock_timeout: float | None = _DEFAULT_GPU_LOCK_TIMEOUT_S,
     ):
         self._client = client
         self._gpu_lock = gpu_lock
         self._max_retries = max_retries
         self._retry_sleep = retry_sleep or _default_retry_sleep
+        self._gpu_lock_timeout = gpu_lock_timeout
 
     def rerank(
         self, query: str, candidates: list[RerankCandidate]
@@ -98,14 +109,13 @@ class TeiReranker:
             )
             candidates = candidates[:_MAX_BATCH_SIZE]
 
-        with self._gpu_lock.acquire("rerank"):
-            body = self._post_with_retry(query, candidates)
-            try:
-                scored = [(item["index"], item["score"]) for item in body]
-            except (KeyError, TypeError, ValueError) as error:
-                raise PermanentError(
-                    f"reranker response malformed (expected [{{'index', 'score'}}, ...]): {error}"
-                ) from error
+        body = self._post_with_retry(query, candidates)
+        try:
+            scored = [(item["index"], item["score"]) for item in body]
+        except (KeyError, TypeError, ValueError) as error:
+            raise PermanentError(
+                f"reranker response malformed (expected [{{'index', 'score'}}, ...]): {error}"
+            ) from error
 
         # Sort by score descending ourselves (tie-broken by original index, ascending) rather than
         # trusting TEI's response ordering — a vendor detail this project doesn't control.
@@ -120,16 +130,20 @@ class TeiReranker:
         (429/502/503/504, timeout, connection failure) with exponential backoff between attempts —
         same two-outcome shape as `rag/embedder.py`'s `_post_batch_with_retry`. A non-retryable
         status raises `PermanentError` immediately, same as before this method existed.
+
+        `gpu_lock.acquire("rerank", timeout=...)` wraps only the single HTTP attempt inside the
+        `try` below (OG-48#3) — released before `self._retry_sleep(...)` at the bottom ever runs.
         """
         attempt = 0
         while True:
             try:
-                response = self._client.post(
-                    "/rerank",
-                    json={"query": query, "texts": [c.text for c in candidates]},
-                )
-                response.raise_for_status()
-                return response.json()
+                with self._gpu_lock.acquire("rerank", timeout=self._gpu_lock_timeout):
+                    response = self._client.post(
+                        "/rerank",
+                        json={"query": query, "texts": [c.text for c in candidates]},
+                    )
+                    response.raise_for_status()
+                    return response.json()
             except httpx.HTTPStatusError as error:
                 status = error.response.status_code
                 if status not in _RETRYABLE_STATUSES:

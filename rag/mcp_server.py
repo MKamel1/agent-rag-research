@@ -18,6 +18,15 @@ from contracts.provenance import Anchor
 from contracts.retriever import Citation, RetrievalCoverage
 from contracts.vector_index import SearchFilters
 
+# OG-48#5: an unbounded/negative `k` reaches the retriever unclamped -- `?k=-1` makes `results[:k]`
+# drop the LAST element (wrong-but-plausible, no error); a huge `k` fans out to thousands of
+# per-hit SQLite point-queries from one caller. Clamped here (the one place both `semantic_search`
+# and `search_papers` funnel `k` through) so every McpServer caller -- MCP tool calls AND
+# app/dashboard/server.py's `/api/search` (which clamps the same way independently, since it may
+# call a caller that isn't even this class, e.g. a test fake) -- gets a sane, bounded pool.
+_MIN_K = 1
+_MAX_K = 100
+
 
 class McpServer:
     """Constructor-injected collaborators only (CONVENTIONS §2): `retriever`, `document_store`.
@@ -62,9 +71,11 @@ class McpServer:
 
         `k=None` (a caller that omits it entirely) resolves to `self._default_k` (`Config.top_k`,
         wired via `app/assembly.py::build_mcp_server`); an explicit `k` always overrides it.
+        Whichever value results is then clamped to `[_MIN_K, _MAX_K]` (OG-48#5) before it ever
+        reaches the retriever.
         """
         results, retrieval_coverage = self._retriever.retrieve(
-            query, filters, self._default_k if k is None else k
+            query, filters, self._resolve_k(k)
         )
         return SearchResponse(results=results, coverage=self._coverage(results, retrieval_coverage))
 
@@ -78,10 +89,11 @@ class McpServer:
         confirmed match's `get_paper` summary already answers the question without needing a
         broader `semantic_search` chunk search at all. Postcondition: on no hits, `results == []`.
 
-        `k=None` resolves to `self._default_k`, same as `semantic_search` — see its docstring.
+        `k=None` resolves to `self._default_k`, same as `semantic_search` — see its docstring
+        (including the `[_MIN_K, _MAX_K]` clamp, OG-48#5).
         """
         results, retrieval_coverage = self._retriever.retrieve_papers(
-            query, filters, self._default_k if k is None else k
+            query, filters, self._resolve_k(k)
         )
         return PaperSearchResponse(
             results=results, coverage=self._coverage(results, retrieval_coverage)
@@ -115,6 +127,12 @@ class McpServer:
         anchor is a grounding bug, not a normal "not found").
         """
         return self._document_store.get_span(anchor)
+
+    def _resolve_k(self, k: int | None) -> int:
+        """`k=None` -> `self._default_k`; either way, clamp to `[_MIN_K, _MAX_K]` (OG-48#5) before
+        it ever reaches the retriever."""
+        resolved = self._default_k if k is None else k
+        return max(_MIN_K, min(resolved, _MAX_K))
 
     @staticmethod
     def _coverage(results: list, retrieval_coverage: RetrievalCoverage) -> Coverage:

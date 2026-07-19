@@ -295,3 +295,46 @@ def test_server_needs_only_retriever_and_document_store():
     # Structural proof of "acceptably thin": construction requires nothing from the pipeline layer.
     server = _mod.McpServer(retriever=SpyRetriever(), document_store=RecordingDocStore())
     assert server is not None
+
+
+# ===========================================================================
+# OG-48#5: k is clamped to [_MIN_K, _MAX_K] before it ever reaches the retriever -- a negative k
+# (results[:-1] silently drops the last element) or a huge k (thousands of per-hit SQLite queries
+# from one unauth caller) must never pass through unclamped.
+# ===========================================================================
+def test_semantic_search_clamps_negative_k_to_min():
+    spy = SpyRetriever(results=[_grounded()])
+    server = _mod.McpServer(retriever=spy, document_store=RecordingDocStore())
+    server.semantic_search("estimator", filters=None, k=-1)
+    assert spy.retrieve_calls == [("estimator", None, _mod._MIN_K)]
+
+
+def test_semantic_search_clamps_zero_k_to_min():
+    spy = SpyRetriever(results=[_grounded()])
+    server = _mod.McpServer(retriever=spy, document_store=RecordingDocStore())
+    server.semantic_search("estimator", filters=None, k=0)
+    assert spy.retrieve_calls == [("estimator", None, _mod._MIN_K)]
+
+
+def test_semantic_search_clamps_huge_k_to_max():
+    spy = SpyRetriever(results=[_grounded()])
+    server = _mod.McpServer(retriever=spy, document_store=RecordingDocStore())
+    server.semantic_search("estimator", filters=None, k=99999)
+    assert spy.retrieve_calls == [("estimator", None, _mod._MAX_K)]
+
+
+def test_search_papers_clamps_negative_and_huge_k():
+    spy = SpyRetriever(paper_results=[_paper_result()])
+    server = _mod.McpServer(retriever=spy, document_store=RecordingDocStore())
+    server.search_papers("estimator", filters=None, k=-1)
+    server.search_papers("estimator", filters=None, k=99999)
+    assert spy.retrieve_papers_calls == [
+        ("estimator", None, _mod._MIN_K), ("estimator", None, _mod._MAX_K),
+    ]
+
+
+def test_semantic_search_in_range_k_is_unaffected():
+    spy = SpyRetriever(results=[_grounded()])
+    server = _mod.McpServer(retriever=spy, document_store=RecordingDocStore())
+    server.semantic_search("estimator", filters=None, k=42)
+    assert spy.retrieve_calls == [("estimator", None, 42)]

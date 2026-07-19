@@ -5,8 +5,11 @@ launcher already writes (`docs/DESIGN-corpus-dashboard.md`, "The coordination co
 The **sole reader and writer** of `run_manifest.json` (principal-design-review finding #6):
 `status.py` never opens this file -- `server.py` composes the final `/api/status` response from
 `controller.liveness()` (run identity + config) plus `status.py`'s pure telemetry/`ingest_state`
-reads. This module never touches `papers.db` -- only the manifest and the `app.build_corpus`
-subprocess (OG-41 -- see below; it was `app.ingest` directly before this).
+reads. This module otherwise never touches `papers.db` -- only the manifest and the
+`app.build_corpus` subprocess (OG-41 -- see below; it was `app.ingest` directly before this) --
+with ONE narrow, deliberate exception: `reconcile()`'s `_done_count` (OG-47#2) does a single
+read-only `count(*) FROM ingest_state` so a crash mid-run (pid gone, done < target) can be told
+apart from a clean finish, which the manifest alone can't answer.
 
 **OG-41 — launches `app.build_corpus`, not `app.ingest`, directly.** `_spawn`'s command is `env
 PYTHONPATH=<repo> python -m app.build_corpus --target TARGET --parse-workers N --events-path
@@ -57,6 +60,7 @@ from __future__ import annotations
 import json
 import os
 import signal
+import sqlite3
 import subprocess
 import sys
 import tempfile
@@ -65,13 +69,19 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Callable
 
+import filelock
 import yaml
+from pydantic import ValidationError
 
 from contracts.config import Config
 from rag.config import load_config
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _MANIFEST_NAME = "run_manifest.json"
+# OG-47#1: every control op (start/pause/resume/stop/retarget) is serialized under this ONE
+# filelock, spanning the whole check-then-act (reconcile -> decide -> spawn/signal ->
+# _write_manifest) -- see "control-op serialization" further down.
+_CONTROL_LOCK_NAME = ".control.lock"
 
 # Same path-valued Config fields as `app/ingest.py::_PATH_FIELDS` (T-DOC45/46's override
 # mechanism, OG-43 reuses the same shape) -- duplicated rather than imported (`status.py`'s "own
@@ -103,6 +113,15 @@ class DoubleRunError(RuntimeError):
 
 class NoRunError(RuntimeError):
     """Raised when pause/resume/stop is asked to act on a run that doesn't exist."""
+
+
+class InvalidOverrideError(ValueError):
+    """Raised when a config-derived override (`_maybe_build_override`) produces an invalid
+    `Config` (OG-49#6/M8): `cfg.model_copy(update=...)` does NOT re-run pydantic validation, so a
+    bad `ordering`/`parse_batch_size` from a `POST /api/control` body would otherwise reach a
+    spawned subprocess only to crash post-spawn, after the manifest already says "running".
+    Re-validating via `Config.model_validate(cfg.model_dump())` and raising this instead rejects
+    it pre-spawn -- `server.py` maps it to a clean 400."""
 
 
 # --- manifest I/O (atomic) ----------------------------------------------------------------------
@@ -225,23 +244,89 @@ def _signal_group(pid: int, sig: int) -> None:
         os.kill(pid, sig)  # fallback: at least reach the leader we can signal
 
 
+# OG-49#5: how long to wait after a RESEND of SIGTERM, and after the final SIGKILL, before giving
+# up on escalation entirely -- shorter than the initial `_DEATH_TIMEOUT_S` wait since these are
+# last resorts, not the normal graceful-shutdown window.
+_ESCALATION_RESEND_TIMEOUT_S = 3.0
+_ESCALATION_KILL_TIMEOUT_S = 3.0
+
+
+def _terminate_with_escalation(pid: int) -> bool:
+    """SIGTERM the process group and wait; if it's not confirmed dead within `_DEATH_TIMEOUT_S`,
+    resend SIGTERM once more (some processes only act on a second delivery mid-syscall) and wait
+    again; if STILL alive, escalate to SIGKILL before giving up. OG-49#5: a GPU process wedged in
+    a blocking parse/generation/rerank call to one of its backing services could otherwise sit
+    forever in "pausing"/"stopping" with no way out but a manual `kill -9` -- this is the one
+    SIGTERM pause()/stop() used to send, now with a bounded escalation ladder instead of a single
+    shot. Returns whether the process is confirmed dead by the end of this call.
+
+    References `_DEATH_TIMEOUT_S`/`_ESCALATION_RESEND_TIMEOUT_S`/`_ESCALATION_KILL_TIMEOUT_S` as
+    module globals (not as bound default-parameter values) so a test can `monkeypatch` them to
+    shrink this function's total wall-clock without changing the escalation logic itself.
+    """
+    _signal_group(pid, signal.SIGTERM)
+    if _wait_for_death(pid, timeout_s=_DEATH_TIMEOUT_S):
+        return True
+    _signal_group(pid, signal.SIGTERM)
+    if _wait_for_death(pid, timeout_s=_ESCALATION_RESEND_TIMEOUT_S):
+        return True
+    _signal_group(pid, signal.SIGKILL)
+    return _wait_for_death(pid, timeout_s=_ESCALATION_KILL_TIMEOUT_S)
+
+
 # --- reconciliation (the sole manifest read/write authority) ------------------------------------
+
+
+def _done_count(db_path: str) -> int:
+    """Read-only `count(*) FROM ingest_state WHERE stage='done'` -- the one narrow, deliberate
+    exception to this module's "never touches papers.db" rule (module docstring), needed so
+    `reconcile()` can tell a genuine crash (pid gone, target not yet reached) from a clean finish
+    (OG-47#2). Same `mode=ro` URI guarantee `app/dashboard/status.py`/`app/build_corpus.py` already
+    use for the identical query; degrades to `0` on any read failure (missing/unmigrated/locked db)
+    rather than raising -- reconcile() must never fail a status poll over this."""
+    try:
+        conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True, timeout=2.0)
+    except sqlite3.Error:
+        return 0
+    try:
+        row = conn.execute("SELECT count(*) FROM ingest_state WHERE stage='done'").fetchone()
+        return row[0] if row is not None else 0
+    except sqlite3.Error:
+        return 0
+    finally:
+        conn.close()
+
+
+def _crashed_before_target(manifest: dict) -> bool:
+    """True iff this `running` manifest's own recorded `target` and `db_path` show fewer than
+    `target` papers actually done -- the OG-47#2 crash signal. Missing/unusable fields (a manifest
+    written before either existed) degrade to `False` (the old, conservative "done" behavior)."""
+    target = manifest.get("target")
+    db_path = manifest.get("db_path")
+    if target is None or not db_path:
+        return False
+    return _done_count(db_path) < target
 
 
 def reconcile(data_dir: str | Path) -> dict | None:
     """If the manifest is in a live-looking status (`running`/`pausing`/`stopping`) but its PID
     is no longer confirmed to be our process, downgrade the persisted status to the matching
-    terminal state (`running`->`done`, `pausing`->`paused`, `stopping`->`done`) -- there is no
-    separate "crashed" signal available from outside the process, a dead/reused PID with nothing
-    to inspect reads the same as "it finished." Idempotent and cheap enough to call on every
-    status poll (`server.py` does, before every `GET /api/status`)."""
+    terminal state -- there is no separate "crashed" signal available from outside the process
+    other than what the manifest+db already tell us. `pausing`->`paused`, `stopping`->`done`
+    (a user-initiated stop is final either way); `running`->`failed` when `done_count < target`
+    (OG-47#2: a crash mid-run, pid gone before reaching its own target -- previously collapsed
+    into `done`, indistinguishable from a clean finish), else `running`->`done`. Idempotent and
+    cheap enough to call on every status poll (`server.py` does, before every `GET /api/status`)."""
     data_dir = Path(data_dir)
     manifest = _read_manifest(data_dir)
     if manifest is None:
         return None
     status = manifest.get("status")
     if status in _LIVE_STATUSES and _verified_pid(manifest) is None:
-        manifest["status"] = {"running": "done", "pausing": "paused", "stopping": "done"}[status]
+        if status == "running":
+            manifest["status"] = "failed" if _crashed_before_target(manifest) else "done"
+        else:
+            manifest["status"] = {"pausing": "paused", "stopping": "done"}[status]
         _write_manifest(data_dir, manifest)
     return manifest
 
@@ -264,9 +349,29 @@ def liveness(data_dir: str | Path) -> dict | None:
 # itself is the only channel every one of them reads unconditionally.
 
 
-def _write_override_config_dir(cfg: Config) -> Path:
+def _load_base_config(data_dir: Path) -> Config:
+    """OG-49#1: the run's BASE config, loaded from `<data_dir>/config.yaml` -- the real data
+    directory's own config -- so an overridden run's `db_path`/`blob_dir`/`pdf_cache_dir`/
+    `collection` resolve against the real corpus location. Falls back to the repo-root
+    `config.yaml` only when `data_dir` has none of its own (e.g. a fresh/test data dir): before
+    this fix, `start`/`retarget` always loaded `_REPO_ROOT/config.yaml` regardless of `data_dir`,
+    so `_write_override_config_dir`'s path resolution (below) resolved relative fields against the
+    DASHBOARD SERVER PROCESS's own cwd -- not the corpus's actual data dir -- misdirecting every
+    edited run's `papers.db`/`blobs` while it kept upserting into the real, shared vector-store
+    collection (orphan vector points with no matching row in the misdirected db)."""
+    data_dir_config = data_dir / "config.yaml"
+    if data_dir_config.exists():
+        return load_config(data_dir_config)
+    return load_config(_REPO_ROOT / "config.yaml")
+
+
+def _write_override_config_dir(cfg: Config, data_dir: Path) -> Path:
+    """`data_dir` (OG-49#1): every relative-path field is resolved absolute against the REAL data
+    dir, not `Path.resolve()`'s implicit `os.getcwd()` (the dashboard SERVER process's own cwd,
+    unrelated to any run) -- `Path(base) / value` is a no-op when `value` is already absolute, so
+    this is safe for both a relative default (e.g. `"papers.db"`) and an already-absolute value."""
     path_updates = {
-        field: str(Path(value).resolve())
+        field: str((data_dir / value).resolve())
         for field in _OVERRIDE_PATH_FIELDS
         if (value := getattr(cfg, field))
     }
@@ -283,6 +388,7 @@ def _write_override_config_dir(cfg: Config) -> Path:
 
 def _maybe_build_override(
     cfg: Config, keywords: list[str] | None, parse_batch_size: int | None, *,
+    data_dir: Path,
     arxiv_categories: list[str] | None = None,
     arxiv_date_from: str | None = None,
     arxiv_date_to: str | None = None,
@@ -294,7 +400,15 @@ def _maybe_build_override(
     (`arxiv_categories`/`arxiv_date_from`/`arxiv_date_to`), or the OG-46 `ordering` actually change
     anything relative to the base config. Returns `(cfg, None)` unchanged when nothing edits --
     a run that edits nothing launches exactly the old way (`cwd=data_dir`, no override dir, no
-    scratch files)."""
+    scratch files).
+
+    OG-49#6/M8: `cfg.model_copy(update=updates)` does NOT re-run pydantic validation (it's a plain
+    field copy) -- a bad `parse_batch_size`/`ordering` from a `POST /api/control` body would
+    otherwise silently build an invalid `Config`, write it to the override `config.yaml`, and only
+    fail once the spawned subprocess loads it and crashes (after the manifest already says
+    "running"). `Config.model_validate(...)` re-validates before that ever happens; a failure
+    raises `InvalidOverrideError` here, pre-spawn.
+    """
     updates: dict = {}
     if keywords:
         merged = cfg.focus_area_queries + [k for k in keywords if k not in cfg.focus_area_queries]
@@ -312,8 +426,14 @@ def _maybe_build_override(
         updates["ordering"] = ordering
     if not updates:
         return cfg, None
-    effective = cfg.model_copy(update=updates)
-    return effective, _write_override_config_dir(effective)
+    unvalidated = cfg.model_copy(update=updates)
+    try:
+        effective = Config.model_validate(unvalidated.model_dump())
+    except ValidationError as error:
+        raise InvalidOverrideError(
+            f"invalid config override: {error}"
+        ) from error
+    return effective, _write_override_config_dir(effective, data_dir)
 
 
 # --- spawning ------------------------------------------------------------------------------------
@@ -425,6 +545,24 @@ def _build_manifest(
     }
 
 
+# --- control-op serialization (OG-47#1) -----------------------------------------------------
+#
+# Each control verb was check-then-act (reconcile -> decide -> spawn/signal -> _write_manifest)
+# with no lock spanning it, and `ThreadingHTTPServer` runs every `POST /api/control` on its own
+# thread -- two concurrent `start`s could both pass the double-run guard, both spawn, and the
+# second `_write_manifest` would overwrite the first's pid (the first `app.build_corpus` orphaned
+# from the manifest, unreachable by a later pause/stop). Every public control function below
+# acquires ONE `<data_dir>/.control.lock` (`filelock`, cross-thread AND cross-process) around its
+# entire body -- reusing the exact filelock dependency `app/ingest.py`'s `.ingest.lock` already
+# uses, no new machinery. `retarget` (stop-then-start) acquires the lock ONCE for both halves via
+# the `_locked` variants directly (never re-entering through the public `stop`/`start`, which would
+# self-deadlock trying to acquire the same lock twice from one thread).
+
+
+def _control_lock(data_dir: Path) -> filelock.FileLock:
+    return filelock.FileLock(str(data_dir / _CONTROL_LOCK_NAME))
+
+
 # --- public control surface -----------------------------------------------------------------
 
 
@@ -456,6 +594,26 @@ def start(data_dir: str | Path, target: int, parse_workers: int = 3, *,
     this run (unlike keywords, there is no "augment a filter" semantics). `ordering` (OG-46) is
     `"freshest_first"` or `"relevance"`."""
     data_dir = Path(data_dir)
+    with _control_lock(data_dir):
+        return _start_locked(
+            data_dir, target, parse_workers, paper_ids_file=paper_ids_file,
+            telemetry_poll_interval=telemetry_poll_interval, batch_size=batch_size,
+            keywords=keywords, parse_batch_size=parse_batch_size,
+            arxiv_categories=arxiv_categories, arxiv_date_from=arxiv_date_from,
+            arxiv_date_to=arxiv_date_to, ordering=ordering, spawn=spawn,
+        )
+
+
+def _start_locked(data_dir: Path, target: int, parse_workers: int = 3, *,
+                   paper_ids_file: str | Path | None = None,
+                   telemetry_poll_interval: float | None = None, batch_size: int | None = None,
+                   keywords: list[str] | None = None, parse_batch_size: int | None = None,
+                   arxiv_categories: list[str] | None = None,
+                   arxiv_date_from: str | None = None, arxiv_date_to: str | None = None,
+                   ordering: str | None = None,
+                   spawn: SpawnFn = _spawn) -> dict:
+    """`start`'s actual body -- called with `_control_lock(data_dir)` already held (by `start`
+    itself, or by `retarget` wrapping both halves in one acquisition)."""
     manifest = reconcile(data_dir)
     if manifest is not None and manifest.get("status") in _LIVE_STATUSES:
         raise DoubleRunError(
@@ -469,9 +627,9 @@ def start(data_dir: str | Path, target: int, parse_workers: int = 3, *,
     log_path = data_dir / f"ingest_{run_id}.log"
     db_path = data_dir / "papers.db"
 
-    base_cfg = load_config(_REPO_ROOT / "config.yaml")
+    base_cfg = _load_base_config(data_dir)
     effective_cfg, override_dir = _maybe_build_override(
-        base_cfg, keywords, parse_batch_size,
+        base_cfg, keywords, parse_batch_size, data_dir=data_dir,
         arxiv_categories=arxiv_categories, arxiv_date_from=arxiv_date_from,
         arxiv_date_to=arxiv_date_to, ordering=ordering,
     )
@@ -491,19 +649,24 @@ def start(data_dir: str | Path, target: int, parse_workers: int = 3, *,
 
 
 def pause(data_dir: str | Path) -> dict:
-    """SIGTERM the running process group and mark `status: "paused"` once its death is confirmed
-    (`status: "pausing"` in between). Safe by construction: ingestion is checkpointed
-    (`ingest_state`/`ingest_checkpoint`), so a paused run loses at most the in-flight parse batch,
-    which re-does on resume."""
+    """SIGTERM (escalating to a resend, then SIGKILL -- OG-49#5, `_terminate_with_escalation`) the
+    running process group and mark `status: "paused"` once its death is confirmed (`status:
+    "pausing"` in between). Safe by construction: ingestion is checkpointed (`ingest_state`/
+    `ingest_checkpoint`), so a paused run loses at most the in-flight parse batch, which re-does on
+    resume."""
     data_dir = Path(data_dir)
+    with _control_lock(data_dir):
+        return _pause_locked(data_dir)
+
+
+def _pause_locked(data_dir: Path) -> dict:
     manifest = reconcile(data_dir)
     if manifest is None or manifest.get("status") != "running":
         raise NoRunError("no running run to pause")
     pid = manifest["pid"]
     manifest["status"] = "pausing"
     _write_manifest(data_dir, manifest)
-    _signal_group(pid, signal.SIGTERM)
-    manifest["status"] = "paused" if _wait_for_death(pid) else "pausing"
+    manifest["status"] = "paused" if _terminate_with_escalation(pid) else "pausing"
     _write_manifest(data_dir, manifest)
     return manifest
 
@@ -516,6 +679,11 @@ def resume(data_dir: str | Path, *, spawn: SpawnFn = _spawn) -> dict:
     SIGTERM is a request, not a guarantee, and relaunching before the old process actually exits
     would duplicate the GPU work it's still mid-way through."""
     data_dir = Path(data_dir)
+    with _control_lock(data_dir):
+        return _resume_locked(data_dir, spawn=spawn)
+
+
+def _resume_locked(data_dir: Path, *, spawn: SpawnFn = _spawn) -> dict:
     manifest = reconcile(data_dir)
     if manifest is None:
         raise NoRunError("no run to resume")
@@ -559,19 +727,24 @@ def resume(data_dir: str | Path, *, spawn: SpawnFn = _spawn) -> dict:
 
 
 def stop(data_dir: str | Path) -> dict:
-    """SIGTERM the running process group and mark the run `status: "done"` once its death is
-    confirmed (`status: "stopping"` in between) -- a user-initiated stop is final (unlike
-    `pause`, which expects a later `resume`); the checkpoints it leaves behind are still there if
-    a later `start` happens to re-cover the same papers, but that's a fresh run's business."""
+    """SIGTERM (escalating to a resend, then SIGKILL -- OG-49#5) the running process group and mark
+    the run `status: "done"` once its death is confirmed (`status: "stopping"` in between) -- a
+    user-initiated stop is final (unlike `pause`, which expects a later `resume`); the checkpoints
+    it leaves behind are still there if a later `start` happens to re-cover the same papers, but
+    that's a fresh run's business."""
     data_dir = Path(data_dir)
+    with _control_lock(data_dir):
+        return _stop_locked(data_dir)
+
+
+def _stop_locked(data_dir: Path) -> dict:
     manifest = reconcile(data_dir)
     if manifest is None or manifest.get("status") != "running":
         raise NoRunError("no running run to stop")
     pid = manifest["pid"]
     manifest["status"] = "stopping"
     _write_manifest(data_dir, manifest)
-    _signal_group(pid, signal.SIGTERM)
-    manifest["status"] = "done" if _wait_for_death(pid) else "stopping"
+    manifest["status"] = "done" if _terminate_with_escalation(pid) else "stopping"
     _write_manifest(data_dir, manifest)
     return manifest
 
@@ -589,16 +762,23 @@ def retarget(data_dir: str | Path, target: int, parse_workers: int = 3, *,
     over `POST /api/control` (action `"retarget"`) alongside plain `"start"` (which still refuses
     via the ordinary double-run guard when something's live), so the frontend's single "Apply"
     button can call whichever fits the current state without the user pausing/stopping by hand
-    first."""
+    first.
+
+    OG-47#1: both halves run under ONE `_control_lock` acquisition (via the `_locked` variants
+    directly, never the public `stop`/`start`) -- stop-then-start has no atomicity/crash-safety
+    otherwise: a death between the two under the OLD unserialized code could leave the run stopped
+    with no replacement, or race a concurrent `start`/`retarget` the same way OG-47#1's `start`
+    fix addresses."""
     data_dir = Path(data_dir)
-    try:
-        stop(data_dir)
-    except NoRunError:
-        pass
-    return start(
-        data_dir, target, parse_workers, paper_ids_file=paper_ids_file,
-        telemetry_poll_interval=telemetry_poll_interval, batch_size=batch_size,
-        keywords=keywords, parse_batch_size=parse_batch_size,
-        arxiv_categories=arxiv_categories, arxiv_date_from=arxiv_date_from,
-        arxiv_date_to=arxiv_date_to, ordering=ordering, spawn=spawn,
-    )
+    with _control_lock(data_dir):
+        try:
+            _stop_locked(data_dir)
+        except NoRunError:
+            pass
+        return _start_locked(
+            data_dir, target, parse_workers, paper_ids_file=paper_ids_file,
+            telemetry_poll_interval=telemetry_poll_interval, batch_size=batch_size,
+            keywords=keywords, parse_batch_size=parse_batch_size,
+            arxiv_categories=arxiv_categories, arxiv_date_from=arxiv_date_from,
+            arxiv_date_to=arxiv_date_to, ordering=ordering, spawn=spawn,
+        )

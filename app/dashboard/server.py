@@ -29,6 +29,7 @@ import argparse
 import hmac
 import json
 import logging
+import re
 import urllib.parse
 from datetime import date
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -36,12 +37,66 @@ from pathlib import Path
 
 from app.assembly import build_mcp_server
 from app.dashboard import controller, status
+from app.dashboard.controller import InvalidOverrideError
 from contracts.errors import ContractError, PermanentError, TransientError
 from contracts.vector_index import SearchFilters
 from rag.config import load_config
+from rag.mcp_server import _MAX_K as _SEARCH_MAX_K
+from rag.mcp_server import _MIN_K as _SEARCH_MIN_K
 from rag.reranker import _MAX_BATCH_SIZE as _RERANKER_MAX_BATCH_SIZE
 
 logger = logging.getLogger(__name__)
+
+
+class ControlValidationError(ValueError):
+    """Raised when a `POST /api/control` body fails boundary validation (OG-49#3/#6) --
+    `parse_workers`/`batch_size` out of range, or an arXiv keyword/category/date that would break
+    the query it eventually builds. Mapped to a 400, never reaching `controller.start`/`retarget`
+    (never spawning a subprocess that would just crash later, "running")."""
+
+
+# OG-49#3: parse_workers=0 spawns zero Pass-1 workers -- app.ingest reports "success" having
+# parsed nothing, and build_corpus.build_to_target resubmits the same non-empty cached-not-done
+# batch forever with no sleep (an infinite no-op loop that leaks build_batch_*.ids files). Rejected
+# here before ever reaching controller.start/retarget.
+_MIN_PARSE_WORKERS = 1
+# OG-49#6/M7: same charset/format rules as rag/harvester.py's ArxivSource._build_query -- kept in
+# sync by naming, not import, since this boundary check exists so a bad value 400s BEFORE a
+# subprocess is even spawned (the harvester's own check is defense-in-depth for every other, non-
+# dashboard caller, e.g. a hand-edited config.yaml).
+_UNSAFE_KEYWORD_CHARS_RE = re.compile(r'["\\]')
+_CATEGORY_RE = re.compile(r"^[A-Za-z0-9.\-]+$")
+_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$|^\d{8}$")
+
+
+def _validate_control_kwargs(parse_workers: int, kwargs: dict) -> None:
+    """Raises `ControlValidationError` on the first bad field found in a `start`/`retarget`
+    request. Called before `controller.start`/`retarget` -- a bad value 400s the request instead
+    of spawning a subprocess that would crash later (OG-49#3/#6)."""
+    if parse_workers < _MIN_PARSE_WORKERS:
+        raise ControlValidationError(
+            f"parse_workers must be >= {_MIN_PARSE_WORKERS}, got {parse_workers}"
+        )
+    batch_size = kwargs.get("batch_size")
+    if batch_size is not None and batch_size < 1:
+        raise ControlValidationError(f"batch_size must be >= 1 (or unset), got {batch_size}")
+    for keyword in kwargs.get("keywords") or []:
+        if _UNSAFE_KEYWORD_CHARS_RE.search(keyword):
+            raise ControlValidationError(
+                f"keyword {keyword!r} contains a '\"' or '\\\\', which would break the arXiv "
+                "query it's added to"
+            )
+    for category in kwargs.get("arxiv_categories") or []:
+        if not _CATEGORY_RE.match(category):
+            raise ControlValidationError(
+                f"arxiv_categories entry {category!r} is not a valid arXiv subject code "
+                "(letters/digits/dot/dash only)"
+            )
+    for field in ("arxiv_date_from", "arxiv_date_to"):
+        value = kwargs.get(field)
+        if value is not None and not _DATE_RE.match(value):
+            raise ControlValidationError(f"{field} {value!r} is not YYYY-MM-DD or YYYYMMDD")
+
 
 _STATIC_INDEX = Path(__file__).parent / "static" / "index.html"
 # OG-42: `params` (which carries `telemetry_poll_interval`) was missing here -- the manifest had
@@ -224,20 +279,44 @@ def make_handler(
         def do_GET(self) -> None:
             parsed = urllib.parse.urlsplit(self.path)
             if parsed.path in ("/", "/index.html"):
+                # "/" stays open (OG-48#1/OG-49#4) -- it's just the static frontend shell, no
+                # corpus content or GPU work; the page itself supplies the token on every API call
+                # it makes, same as `POST /api/control` already requires.
                 self._respond(200, static_body, content_type="text/html; charset=utf-8")
             elif parsed.path == "/api/status":
+                if not self._token_ok():
+                    return
                 self._json(200, _status_dict(data_dir, status_module, controller_module))
             elif parsed.path == "/api/search":
+                if not self._token_ok():
+                    return
                 self._handle_search(urllib.parse.parse_qs(parsed.query))
             else:
                 self.send_error(404)
+
+        def _token_ok(self) -> bool:
+            # OG-48#1/OG-49#4: GET /api/status and /api/search had NO auth at all -- /api/search
+            # does REAL GPU work (embed -> hybrid -> rerank) and returns corpus content, /api/status
+            # leaks run config/focus_queries, both reachable by any tailnet host on 0.0.0.0. Same
+            # constant-time check `POST /api/control` already uses, read from the same header (not
+            # a query string, which would land in access logs/browser history).
+            if hmac.compare_digest(self.headers.get("X-Dashboard-Token", ""), token):
+                return True
+            self._json(401, {"ok": False, "message": "invalid or missing X-Dashboard-Token"})
+            return False
 
         def _handle_search(self, params: dict[str, list[str]]) -> None:
             query = (params.get("q") or [""])[0].strip()
             if not query:
                 self._json(400, {"ok": False, "message": "missing required query param 'q'"})
                 return
+            # OG-48#5: clamp here too, before `k` ever reaches `mcp_server.semantic_search` --
+            # `_LazyMcpServer`/a test fake's `semantic_search` may not be the real `McpServer`
+            # (which clamps independently, rag/mcp_server.py), so this route defends the same
+            # bound itself rather than trusting every possible backend to.
             k = _parse_int(params.get("k"))
+            if k is not None:
+                k = max(_SEARCH_MIN_K, min(k, _SEARCH_MAX_K))
             filters = _search_filters_from_params(params)
             try:
                 response = mcp_server.semantic_search(query, filters, k)
@@ -272,8 +351,7 @@ def make_handler(
             if self.path != "/api/control":
                 self.send_error(404)
                 return
-            if not hmac.compare_digest(self.headers.get("X-Dashboard-Token", ""), token):
-                self._json(401, {"ok": False, "message": "invalid or missing X-Dashboard-Token"})
+            if not self._token_ok():
                 return
 
             length = int(self.headers.get("Content-Length", 0) or 0)
@@ -286,6 +364,11 @@ def make_handler(
             action = body.get("action")
             try:
                 self._dispatch(action, body)
+            except (ControlValidationError, InvalidOverrideError) as e:
+                # OG-49#3/#6/#11: boundary validation / a re-validated bad override -- reject
+                # BEFORE controller.start/retarget ever spawns a subprocess.
+                self._json(400, {"ok": False, "message": str(e)})
+                return
             except (controller_module.DoubleRunError, controller_module.NoRunError,
                     KeyError, TypeError) as e:
                 self._json(409, {"ok": False, "message": str(e)})
@@ -297,6 +380,7 @@ def make_handler(
                 target = int(body["target"])
                 parse_workers = int(body.get("parse_workers", 3))
                 kwargs = _control_kwargs(body)
+                _validate_control_kwargs(parse_workers, kwargs)
                 if action == "start":
                     controller_module.start(data_dir, target, parse_workers, **kwargs)
                 else:

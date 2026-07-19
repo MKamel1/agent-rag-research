@@ -19,6 +19,10 @@ class FakeGpuLock:
     def __init__(self):
         self.acquired: list[str] = []
 
-    def acquire(self, stage: str) -> AbstractContextManager[None]:
+    def acquire(self, stage: str, *, timeout: float | None = None) -> AbstractContextManager[None]:
+        # `timeout` accepted (matching the real `GpuLock` Protocol, contracts/gpu_lock.py) but
+        # ignored -- this fake never blocks, so there is nothing to time out against. Needed since
+        # OG-48#4 threads a bounded timeout through TeiEmbedder/TeiReranker's real `.acquire()`
+        # calls; without this param every test constructing them with a FakeGpuLock would TypeError.
         self.acquired.append(stage)
         return nullcontext()

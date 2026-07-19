@@ -376,3 +376,82 @@ def test_retries_exhausted_still_raises_transient_error():
 
     assert attempts["n"] == 3  # initial attempt + 2 retries
     assert sleeps == [1.0, 2.0]  # exponential backoff between each of the 2 retries
+
+
+# ---------------------------------------------------------------------------
+# OG-48#3/#4: the GPU lock is held only around a single HTTP attempt (never across a backoff
+# sleep), and a wedged/crashed holder times out instead of hanging forever.
+# ---------------------------------------------------------------------------
+
+
+class _SpyGpuLock:
+    """Records whether the lock is currently held (entered but not yet exited) -- proves a
+    backoff sleep happens with the lock ALREADY RELEASED, not while still holding it."""
+
+    def __init__(self):
+        self.held = False
+        self.acquired: list[str] = []
+
+    def acquire(self, stage: str, *, timeout: float | None = None):
+        self.acquired.append(stage)
+        return self._ctx()
+
+    @contextlib.contextmanager
+    def _ctx(self):
+        self.held = True
+        try:
+            yield
+        finally:
+            self.held = False
+
+
+def test_backoff_sleep_happens_with_the_gpu_lock_already_released():
+    dim = 8
+    attempts = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        attempts["n"] += 1
+        if attempts["n"] == 1:
+            return httpx.Response(503)
+        return httpx.Response(200, json=[_hash_to_raw_vector("a passage to embed", dim)])
+
+    client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
+    lock = _SpyGpuLock()
+    held_during_sleep = []
+    adapter = _build_real_embedder(
+        client, lock, retry_sleep=lambda s: held_during_sleep.append(lock.held)
+    )
+
+    adapter.embed(["a passage to embed"])
+
+    assert attempts["n"] == 2  # one retry happened, so the sleep actually ran
+    assert held_during_sleep == [False]  # lock was free during the ONE backoff sleep
+
+
+def test_embed_raises_transient_error_when_gpu_lock_is_wedged(tmp_path):
+    # OG-48#4: a bounded gpu_lock_timeout means waiting for a crashed/wedged holder gives up
+    # instead of hanging forever. Real FileGpuLock, real temp lock file -- no GPU, no network.
+    from rag.gpu_lock import FileGpuLock
+
+    lock_path = tmp_path / "wedged.lock"
+    holder = FileGpuLock(lock_path)
+    contender = FileGpuLock(lock_path)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise AssertionError("must never reach the HTTP call -- the lock itself must time out")
+
+    client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
+    adapter = _build_real_embedder(client, contender, gpu_lock_timeout=0.05)
+
+    with holder.acquire("embed"):
+        with pytest.raises(TransientError):
+            adapter.embed(["a passage to embed"])
+
+
+def test_embed_default_gpu_lock_timeout_is_generous_not_none():
+    # Regression guard: a caller that doesn't override gpu_lock_timeout must still get a bounded
+    # default (OG-48#4's whole point -- "dead in practice" was every real caller defaulting to
+    # timeout=None), not silently fall back to block-forever.
+    adapter = _build_real_embedder(httpx.Client(base_url="http://tei.local"), FakeGpuLock())
+    assert adapter._gpu_lock_timeout == _mod._DEFAULT_GPU_LOCK_TIMEOUT_S
+    assert _mod._DEFAULT_GPU_LOCK_TIMEOUT_S is not None

@@ -516,3 +516,76 @@ def test_write_override_config_dir_preserves_non_path_fields():
     assert written["corpus_cap"] == 42
     assert written["collection"] == "scratch_abc123"
     assert written["focus_area_queries"] == ["x"]
+
+
+# --- OG-49#2: whole-run lock resolves absolute against db_path's own directory -------------------
+
+
+def test_ingest_lock_path_is_absolute_and_shared_across_configs_with_the_same_db_path(tmp_path):
+    """OG-49#2: two independently-built effective Configs that both resolve to the SAME db_path
+    (e.g. a dashboard override run's scratch-cwd config vs. another run's config) must compute the
+    IDENTICAL absolute lock path -- not one relative to whatever cwd each process happens to
+    launch with. The exact bug: every overridden run used to get its own throwaway `.ingest.lock`
+    in its own scratch cwd, silently bypassing the double-run guard."""
+    db_path = tmp_path / "data" / "papers.db"
+    cfg_a = Config(focus_area_queries=["x"], db_path=str(db_path))
+    # cfg_b: a differently-built Config, but the SAME db_path.
+    cfg_b = Config(focus_area_queries=["x"], db_path=str(db_path), corpus_cap=99)
+
+    lock_a = ingest_mod._ingest_lock_path(cfg_a)
+    lock_b = ingest_mod._ingest_lock_path(cfg_b)
+
+    assert lock_a == lock_b
+    assert lock_a.is_absolute()
+    assert lock_a == db_path.resolve().parent / ".ingest.lock"
+
+
+def test_ingest_lock_path_resolves_a_relative_db_path_against_cwd(tmp_path, monkeypatch):
+    """The common (unedited) case: `db_path` is relative ("papers.db", the Config default) --
+    resolves the same way `sqlite3.connect(db_path)` itself would (against the process's cwd),
+    consistent with where the DB actually ends up."""
+    monkeypatch.chdir(tmp_path)
+    cfg = Config(focus_area_queries=["x"])  # db_path default: "papers.db"
+
+    lock_path = ingest_mod._ingest_lock_path(cfg)
+
+    assert lock_path == tmp_path / ".ingest.lock"
+
+
+def test_ingest_lock_path_differs_for_different_db_paths():
+    """A --scratch run (its own unique db_path every time) must NOT share a lock with anything
+    else -- it never shares a corpus, so it must never contend for someone else's lock either."""
+    cfg_a = Config(focus_area_queries=["x"], db_path="/tmp/scratch-a/papers.db")
+    cfg_b = Config(focus_area_queries=["x"], db_path="/tmp/scratch-b/papers.db")
+
+    assert ingest_mod._ingest_lock_path(cfg_a) != ingest_mod._ingest_lock_path(cfg_b)
+
+
+# --- OG-49#3: --parse-workers < 1 rejected before the lock is even considered --------------------
+
+
+def test_validate_parse_workers_zero_exits_with_error(capsys):
+    with pytest.raises(SystemExit) as exc_info:
+        ingest_mod._validate_parse_workers(0)
+    assert exc_info.value.code == 1
+    assert "--parse-workers must be >= 1" in capsys.readouterr().err
+
+
+def test_validate_parse_workers_negative_exits_with_error():
+    with pytest.raises(SystemExit):
+        ingest_mod._validate_parse_workers(-5)
+
+
+def test_validate_parse_workers_one_is_accepted():
+    ingest_mod._validate_parse_workers(1)  # must not raise/exit
+
+
+def test_effective_config_re_validates_and_rejects_a_bad_override():
+    # OG-49#6/M8: _effective_config's own model_copy(update=...) must be re-validated -- a
+    # corpus_cap <= 0 (contracts/config.py: `Field(gt=0)`) must raise, not silently build an
+    # invalid Config that only fails later, deep in the pipeline.
+    cfg = Config(focus_area_queries=["x"], corpus_cap=30_000)
+    bad_args = _args(limit=0)  # min(30_000, 0) -> corpus_cap=0, violates gt=0
+
+    with pytest.raises(Exception):  # pydantic.ValidationError
+        ingest_mod._effective_config(cfg, bad_args)

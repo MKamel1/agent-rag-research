@@ -116,8 +116,13 @@ def running_server(tmp_path):
         thread.join(timeout=5.0)
 
 
-def _get(url, path):
-    with urllib.request.urlopen(url + path, timeout=5.0) as resp:
+def _get(url, path, token=_TOKEN):
+    # OG-48#1/OG-49#4: GET /api/status and /api/search are now token-gated, same header
+    # `POST /api/control` already required -- every test that expects a successful GET must send
+    # it. `token=None` omits the header entirely (the 401-without-token tests use this).
+    headers = {} if token is None else {"X-Dashboard-Token": token}
+    req = urllib.request.Request(url + path, headers=headers)
+    with urllib.request.urlopen(req, timeout=5.0) as resp:
         return resp.status, json.loads(resp.read())
 
 
@@ -146,6 +151,36 @@ def test_root_serves_html(running_server):
     status, body = _get_raw(url, "/")
     assert status == 200
     assert b"Corpus Dashboard" in body
+
+
+def test_root_is_reachable_without_a_token(running_server):
+    # "/" stays open (OG-48#1/OG-49#4) -- only the static frontend shell, no corpus content.
+    url, _ = running_server
+    status, _body = _get_raw(url, "/")
+    assert status == 200
+
+
+# --- OG-48#1/OG-49#4: GET /api/status and GET /api/search are now token-gated ------------------
+
+
+def test_status_route_without_token_is_401(running_server):
+    url, _ = running_server
+    status, body = _get_allow_error(url, "/api/status", token=None)
+    assert status == 401
+    assert body["ok"] is False
+
+
+def test_status_route_with_wrong_token_is_401(running_server):
+    url, _ = running_server
+    status, body = _get_allow_error(url, "/api/status", token="wrong-token")
+    assert status == 401
+    assert body["ok"] is False
+
+
+def test_status_route_with_valid_token_is_200(running_server):
+    url, _ = running_server
+    status, _body = _get(url, "/api/status", token=_TOKEN)
+    assert status == 200
 
 
 # --- GET /api/status: exact API-contract shape --------------------------------------------------
@@ -257,6 +292,86 @@ def test_control_start_forwards_og43_editable_params(running_server):
             "keywords": ["double machine learning", "synthetic control"],
         },
     )]
+
+
+# --- OG-49#3/#6: boundary validation -- rejected with 400, never reaching controller.start -----
+
+
+def test_control_start_rejects_parse_workers_zero(running_server):
+    url, fake_controller = running_server
+    status, body = _post(
+        url, "/api/control", {"action": "start", "target": 500, "parse_workers": 0}
+    )
+    assert status == 400
+    assert body["ok"] is False
+    assert fake_controller.calls == []
+
+
+def test_control_start_rejects_negative_parse_workers(running_server):
+    url, fake_controller = running_server
+    status, body = _post(
+        url, "/api/control", {"action": "start", "target": 500, "parse_workers": -1}
+    )
+    assert status == 400
+    assert fake_controller.calls == []
+
+
+def test_control_start_rejects_batch_size_zero(running_server):
+    url, fake_controller = running_server
+    status, body = _post(url, "/api/control", {
+        "action": "start", "target": 500, "parse_workers": 2, "batch_size": 0,
+    })
+    assert status == 400
+    assert fake_controller.calls == []
+
+
+def test_control_retarget_also_rejects_parse_workers_zero(running_server):
+    url, fake_controller = running_server
+    status, body = _post(url, "/api/control", {
+        "action": "retarget", "target": 500, "parse_workers": 0,
+    })
+    assert status == 400
+    assert fake_controller.calls == []
+
+
+def test_control_start_rejects_a_quote_injection_keyword(running_server):
+    url, fake_controller = running_server
+    status, body = _post(url, "/api/control", {
+        "action": "start", "target": 500, "parse_workers": 2,
+        "keywords": ['causal inference" OR cat:econ.EM'],
+    })
+    assert status == 400
+    assert body["ok"] is False
+    assert fake_controller.calls == []
+
+
+def test_control_start_rejects_an_invalid_arxiv_category(running_server):
+    url, fake_controller = running_server
+    status, body = _post(url, "/api/control", {
+        "action": "start", "target": 500, "parse_workers": 2,
+        "arxiv_categories": ["stat.ME OR cs.LG"],
+    })
+    assert status == 400
+    assert fake_controller.calls == []
+
+
+def test_control_start_rejects_a_malformed_arxiv_date(running_server):
+    url, fake_controller = running_server
+    status, body = _post(url, "/api/control", {
+        "action": "start", "target": 500, "parse_workers": 2,
+        "arxiv_date_from": "not-a-date",
+    })
+    assert status == 400
+    assert fake_controller.calls == []
+
+
+def test_control_start_accepts_valid_parse_workers_and_batch_size(running_server):
+    url, fake_controller = running_server
+    status, body = _post(url, "/api/control", {
+        "action": "start", "target": 500, "parse_workers": 3, "batch_size": 25,
+    })
+    assert status == 200
+    assert fake_controller.calls == [("start", 500, 3, {"batch_size": 25})]
 
 
 def test_control_start_omits_unset_og43_params(running_server):
@@ -381,11 +496,13 @@ class _FakeMcpServer:
         return SearchResponse(results=self._results, coverage=self._coverage)
 
 
-def _get_allow_error(url, path):
+def _get_allow_error(url, path, token=_TOKEN):
     """Same as `_get`, but doesn't let a non-2xx response raise -- `/api/search` returns 400/502
     on a client/backend error (same convention `_post` already uses for `/api/control`)."""
+    headers = {} if token is None else {"X-Dashboard-Token": token}
+    req = urllib.request.Request(url + path, headers=headers)
     try:
-        with urllib.request.urlopen(url + path, timeout=5.0) as resp:
+        with urllib.request.urlopen(req, timeout=5.0) as resp:
             return resp.status, json.loads(resp.read())
     except urllib.error.HTTPError as e:
         return e.code, json.loads(e.read())
@@ -409,6 +526,22 @@ def _search_server(tmp_path, fake_mcp):
         thread.join(timeout=5.0)
 
 
+def test_search_route_without_token_is_401_and_never_calls_the_backend(tmp_path):
+    fake_mcp = _FakeMcpServer(results=[])
+    with _search_server(tmp_path, fake_mcp) as url:
+        status, body = _get_allow_error(url, "/api/search?q=estimator", token=None)
+    assert status == 401
+    assert body["ok"] is False
+    assert fake_mcp.calls == []
+
+
+def test_search_route_with_valid_token_is_200(tmp_path):
+    fake_mcp = _FakeMcpServer(results=[])
+    with _search_server(tmp_path, fake_mcp) as url:
+        status, _body = _get(url, "/api/search?q=estimator", token=_TOKEN)
+    assert status == 200
+
+
 def test_search_route_returns_results_and_coverage_shape(tmp_path):
     result = _grounded_result()
     fake_mcp = _FakeMcpServer(results=[result], coverage=Coverage(returned=1, candidates=5))
@@ -426,6 +559,21 @@ def test_search_route_returns_results_and_coverage_shape(tmp_path):
     # No k/filters given -> both flow through as None, letting McpServer's own default_k
     # (Config.top_k) and "no restriction" apply -- this route never invents a default of its own.
     assert fake_mcp.calls == [("estimator", None, None)]
+
+
+def test_search_route_clamps_k_to_bounds(tmp_path):
+    # OG-48#5: k=-1, 0, and a huge k must all be clamped before reaching the backend -- never
+    # passed through raw (results[:-1] silently drops the last element; a huge k fans out to
+    # thousands of per-hit SQLite queries from one unauth GET).
+    from app.dashboard.server import _SEARCH_MAX_K, _SEARCH_MIN_K
+
+    fake_mcp = _FakeMcpServer(results=[])
+    with _search_server(tmp_path, fake_mcp) as url:
+        _get(url, "/api/search?q=estimator&k=-1")
+        _get(url, "/api/search?q=estimator&k=0")
+        _get(url, "/api/search?q=estimator&k=99999")
+
+    assert [k for (_q, _f, k) in fake_mcp.calls] == [_SEARCH_MIN_K, _SEARCH_MIN_K, _SEARCH_MAX_K]
 
 
 def test_search_route_parses_k_and_subject_date_filters(tmp_path):

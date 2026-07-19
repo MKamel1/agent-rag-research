@@ -366,7 +366,6 @@ def build_to_target(
             sleep(poll_interval_s)
             continue
 
-        idle_passes = 0
         batch_file = _write_batch_ids(data_dir, ids)
         logger.info(
             "build_corpus: ingesting a batch of %d cached-not-done paper(s) (%d/%d done so far)",
@@ -375,6 +374,32 @@ def build_to_target(
         _call_run_ingest(
             run_ingest, batch_file, parse_workers, events_path, data_dir, telemetry_poll_interval,
         )
+
+        # OG-49#3/#4: a batch that ran but made ZERO net done_count progress (e.g.
+        # `parse_workers=0` silently "succeeds" having parsed nothing, or a config bug re-submits
+        # the identical cached_not_done batch every time) is a stall too, not just an empty
+        # cached_not_done list -- without this, the loop would resubmit the same non-empty batch
+        # forever with NO sleep between attempts, leaking a fresh `build_batch_*.ids` file per
+        # iteration. Reuses the same `idle_passes`/`max_idle` guard as the empty-cache stall above.
+        n_done_after = done_count(db_path)
+        if n_done_after <= n_done:
+            idle_passes += 1
+            if idle_passes >= max_idle:
+                logger.info(
+                    "build_corpus: stalled -- a batch of %d ran but made zero net progress "
+                    "(%d/%d done) after %d consecutive idle pass(es) (max_idle=%d), giving up -- "
+                    "check parse_workers/parse_batch_size aren't misconfigured",
+                    len(ids), n_done_after, target, idle_passes, max_idle,
+                )
+                return
+            logger.info(
+                "build_corpus: batch of %d ran but made zero net progress (%d/%d done, idle "
+                "pass %d/%d) -- waiting %.0fs before retrying",
+                len(ids), n_done_after, target, idle_passes, max_idle, poll_interval_s,
+            )
+            sleep(poll_interval_s)
+        else:
+            idle_passes = 0
 
 
 # --- CLI ------------------------------------------------------------------------------------------
@@ -408,9 +433,29 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
+def _validate_cli_args(args: argparse.Namespace) -> None:
+    """OG-49#3: defensive boundary check, mirroring `app.ingest`'s own `_validate_parse_workers`
+    and `app/dashboard/server.py`'s `/api/control` validation -- `--parse-workers 0`/a negative
+    `--batch-size` reaching THIS process (e.g. a manual invocation, bypassing the dashboard's own
+    boundary check) must be rejected here too, not silently produce an infinite no-op loop."""
+    if args.parse_workers < 1:
+        print(
+            f"app.build_corpus: --parse-workers must be >= 1, got {args.parse_workers}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    if args.batch_size is not None and args.batch_size < 1:
+        print(
+            f"app.build_corpus: --batch-size must be >= 1 (or unset), got {args.batch_size}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+
 def main() -> None:
     logging.basicConfig(level=logging.INFO)
     args = _parse_args()
+    _validate_cli_args(args)
     cfg = load_config()
     # Matches `app.ingest`'s own convention: no explicit --data-dir flag, the process's cwd IS the
     # data dir (the dashboard controller launches both this way, `cwd=str(data_dir)`).

@@ -474,6 +474,14 @@ function escapeHtml(s) {
   return div.innerHTML;
 }
 
+// OG-48#1/OG-49#4: GET /api/status and GET /api/search are now token-gated (same
+// X-Dashboard-Token header POST /api/control already required) -- every fetch to either route
+// must send it, read fresh from the #token field each call (so editing it takes effect on the
+// very next poll/search, no page reload needed).
+function authHeaders() {
+  return { "X-Dashboard-Token": document.getElementById("token").value };
+}
+
 async function runSearch() {
   const query = document.getElementById("searchQuery").value.trim();
   const msg = document.getElementById("searchMsg");
@@ -496,7 +504,7 @@ async function runSearch() {
   msg.textContent = "searching... (the first search after startup also builds the retrieval stack)";
   resultsEl.innerHTML = "";
   try {
-    const resp = await fetch("/api/search?" + params.toString());
+    const resp = await fetch("/api/search?" + params.toString(), { headers: authHeaders() });
     const body = await resp.json();
     if (!resp.ok || !body.ok) {
       msg.textContent = "ERROR: " + (body.message || resp.statusText);
@@ -524,7 +532,7 @@ document.getElementById("searchQuery").addEventListener("keydown", e => {
 
 async function poll() {
   try {
-    const resp = await fetch("/api/status");
+    const resp = await fetch("/api/status", { headers: authHeaders() });
     render(await resp.json());
     // Only a SUCCESSFUL poll updates the "last known good" timestamp -- a failed poll must never
     // clobber it (OG-42: that was destroying the one signal this field exists to provide).
