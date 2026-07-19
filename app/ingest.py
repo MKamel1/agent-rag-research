@@ -76,6 +76,7 @@ it until they're restarted.
 """
 
 import argparse
+import shutil
 import sqlite3
 import subprocess
 import sys
@@ -347,6 +348,14 @@ def _write_override_config_dir(cfg: Config) -> Path:
     and this process must contend for the identical lock file, and an unresolved `pdf_cache_dir`
     would silently stop hitting the real, shared PDF cache). Returns the tmpdir -- the caller
     passes it as the Pass-1 subprocess's `cwd=`.
+
+    OG-49 M10: the caller (`__main__`) removes this directory once every phase of THIS run has
+    completed (its own `finally`, after `run.finish()`) -- never here and never right after Pass 1
+    returns, since the returned path is a blocking `subprocess.run`/`Popen.wait()` cwd that must
+    still exist for the whole of Pass 1. Not cleaned up on `_ensure_db_migrated`/preflight failure
+    (this function isn't even called yet at that point) or on exceptions raised in between -- those
+    paths only ever exist for a run that got at least as far as Pass 1, and `__main__`'s `finally`
+    covers exactly that span unconditionally, success or failure.
     """
     path_updates = {
         field: str(Path(value).resolve())
@@ -358,6 +367,18 @@ def _write_override_config_dir(cfg: Config) -> Path:
     tmpdir = Path(tempfile.mkdtemp(prefix="app_ingest_override_"))
     (tmpdir / "config.yaml").write_text(yaml.safe_dump(resolved.model_dump()))
     return tmpdir
+
+
+def _cleanup_scratch_dir(path: str | None) -> None:
+    """OG-49 M10: removes the scratch `config.yaml` dir `_write_override_config_dir` wrote (if
+    any) -- `__main__` calls this from its outer `finally`, only after every phase of the run
+    (parse + finish) has completed, so it never races Pass 1's subprocess still reading
+    `<path>/config.yaml` from that directory as its cwd. A no-op for `None` (no override was ever
+    written this run). `ignore_errors=True`: a dir a human already cleaned up by hand, or one that
+    was never fully created, must never make cleanup itself the thing that fails.
+    """
+    if path is not None:
+        shutil.rmtree(path, ignore_errors=True)
 
 
 def _parse_args() -> argparse.Namespace:
@@ -424,6 +445,10 @@ if __name__ == "__main__":
         )
         sys.exit(1)
 
+    # OG-49 M10: `None` until (if ever) `_write_override_config_dir` actually creates one below --
+    # the `finally` at the bottom of this block only removes it when it's still set to a real path,
+    # so a run that never reaches that line (e.g. preflight/migration failure) has nothing to clean.
+    subprocess_cwd = None
     try:
         _preflight_gate(cfg, no_preflight=args.no_preflight, force=args.force)
         _ensure_db_migrated(cfg.db_path)
@@ -470,5 +495,8 @@ if __name__ == "__main__":
             # + SQLite<->vector-store consistency check) even on a mid-run failure, so a crashed run
             # still reports partial progress instead of nothing.
             run.finish(db_path=cfg.db_path, collection=cfg.collection)
+            # OG-49 M10: Pass 1's subprocess.run/Popen.wait() calls above have already returned by
+            # this point, so nothing still has this cwd open -- safe to remove now.
+            _cleanup_scratch_dir(subprocess_cwd)
     finally:
         _ingest_lock.release()

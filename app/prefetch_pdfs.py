@@ -82,6 +82,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import time
 from pathlib import Path
 
@@ -130,6 +131,13 @@ def _pdf_path(cache_dir: Path, paper_id: str) -> Path:
     return cache_dir / f"{paper_id}.pdf"
 
 
+def _tmp_pdf_path(cache_dir: Path, paper_id: str) -> Path:
+    # OG-49 M12: pid-qualified so two concurrent prefetchers (or this script racing the live
+    # pipeline's own `app/assembly.py::_PdfDownloadParser._write_cache`, same pattern) downloading
+    # the SAME paper_id at once never share a tmp path -- see `_download_one`'s docstring.
+    return cache_dir / f"{paper_id}.pdf.{os.getpid()}.tmp"
+
+
 def _sidecar_path(cache_dir: Path, paper_id: str) -> Path:
     # T-DOC48: the `PaperRef` metadata this script already fetched to decide the download,
     # persisted alongside the PDF so a later offline ingest run (app/assembly.py's `harvest_refs`)
@@ -170,9 +178,18 @@ def _download_one(client: httpx.Client, ref: PaperRef, cache_dir: Path) -> None:
     `TransientError` for a retryable failure (network error, 429/5xx — same taxonomy
     `rag/harvester.py`'s `ArxivSource` already uses) or `PermanentError` for anything else (e.g. a
     withdrawn paper's 404).
+
+    OG-49 M12: the tmp name is pid-qualified (`<paper_id>.pdf.<pid>.tmp`), same convention
+    `app/assembly.py`'s `_PdfDownloadParser._write_cache` already uses for the identical reason —
+    two concurrent prefetchers (or a prefetcher racing the live pipeline's own download-and-parse
+    step) can independently decide to fetch the SAME newest paper_id around the same time; a fixed
+    tmp name would let their writes interleave into one corrupted file that then gets renamed into
+    place as a permanently-poisoned "valid" cache entry (T-DOC18's bug shape). A pid-qualified name
+    can never collide with another process's tmp write, so whichever atomic rename() lands last
+    simply leaves one complete, valid file.
     """
     final_path = _pdf_path(cache_dir, ref.paper_id)
-    tmp_path = cache_dir / f"{ref.paper_id}.pdf.tmp"
+    tmp_path = _tmp_pdf_path(cache_dir, ref.paper_id)
     try:
         resp = client.get(ref.pdf_url)
         resp.raise_for_status()

@@ -16,6 +16,7 @@ Real sqlite schema (`migrations.migrate`), no real network (`httpx.MockTransport
 """
 
 import logging
+import os
 from datetime import date
 from pathlib import Path
 
@@ -26,6 +27,7 @@ from app.prefetch_pdfs import (
     _cached_count,
     _parse_args,
     _skip_marker_path,
+    _tmp_pdf_path,
     prefetch_loop,
     run,
 )
@@ -648,4 +650,24 @@ def test_log_every_cli_flag_parses_to_an_int():
 
 def test_log_every_cli_flag_defaults_to_25_when_absent():
     assert _parse_args([]).log_every == 25
+
+
+# ================================================================================================
+# OG-49 M12: the download tmp path is pid-qualified -- two concurrent prefetchers (or this script
+# racing the live pipeline's own downloader) must never share one tmp path for the same paper_id.
+# ================================================================================================
+
+
+def test_tmp_pdf_path_is_qualified_by_this_process_pid():
+    path = _tmp_pdf_path(Path("cache"), "2601.00001")
+    assert path.name == f"2601.00001.pdf.{os.getpid()}.tmp"
+
+
+def test_tmp_pdf_path_differs_from_a_different_pids_tmp_path():
+    # Simulates what a second, concurrent prefetcher process would compute for the SAME paper_id --
+    # a different pid must never produce the same tmp path.
+    ours = _tmp_pdf_path(Path("cache"), "2601.00001")
+    other_pid = os.getpid() + 1
+    theirs = Path("cache") / f"2601.00001.pdf.{other_pid}.tmp"
+    assert ours != theirs
 

@@ -15,6 +15,7 @@ feed shape; only `ArxivSource` does.
 
 from __future__ import annotations
 
+import logging
 import re
 import time
 import xml.etree.ElementTree as ET
@@ -25,6 +26,8 @@ import httpx
 
 from contracts.errors import PermanentError, TransientError
 from contracts.harvester import PaperRef
+
+logger = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------------------------------
 # Harvester — dedup / resume / retry, source-agnostic.
@@ -103,6 +106,16 @@ class Harvester:
                 # This paper is unusable — quarantine it and stop; whatever was collected before
                 # it (earlier refs already merged into `latest`) is still delivered below.
                 self._quarantine(_paper_id_from_error(error), error)
+                # OG-49 L11: harvest()'s "never raises" postcondition means a caller sees this as a
+                # clean, ordinary return -- a short-of-cap corpus is otherwise silently
+                # indistinguishable from "the source genuinely only had this many". Log it loudly
+                # (WARNING, not a raise) so it's visible in a run's logs without changing the
+                # contract.
+                logger.warning(
+                    "harvest(): truncated early -- got %d distinct paper(s), cap was %d, "
+                    "stopped by a PermanentError on paper_id=%r: %s",
+                    len(latest), cap, _paper_id_from_error(error), error,
+                )
                 break
             except TransientError as error:
                 # ceiling: this retry/quarantine model is per-paper by contract (it recovers
@@ -119,6 +132,14 @@ class Harvester:
                 retry_counts[paper_id] = retry_counts.get(paper_id, 0) + 1
                 if retry_counts[paper_id] > self._max_retries:
                     self._quarantine(paper_id, error)
+                    # OG-49 L11: same truncation-visibility gap as the PermanentError branch above
+                    # -- retries exhausted quarantines and ends the harvest early, short of `cap`,
+                    # with nothing in the returned refs to say so.
+                    logger.warning(
+                        "harvest(): truncated early -- got %d distinct paper(s), cap was %d, "
+                        "retries exhausted (max_retries=%d) on paper_id=%r: %s",
+                        len(latest), cap, self._max_retries, paper_id, error,
+                    )
                     break
                 self._retry_sleep(self._backoff(retry_counts[paper_id]))
                 continue  # re-call source.fetch() from scratch (its own retry contract)

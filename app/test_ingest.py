@@ -518,6 +518,31 @@ def test_write_override_config_dir_preserves_non_path_fields():
     assert written["focus_area_queries"] == ["x"]
 
 
+# --- OG-49 M10: scratch override dir is cleaned up once a run completes --------------------------
+
+
+def test_cleanup_scratch_dir_removes_a_completed_runs_override_dir(tmp_path):
+    scratch = tmp_path / "app_ingest_override_abc123"
+    scratch.mkdir()
+    (scratch / "config.yaml").write_text("db_path: papers.db\n")
+
+    ingest_mod._cleanup_scratch_dir(str(scratch))
+
+    assert not scratch.exists()
+
+
+def test_cleanup_scratch_dir_is_a_noop_for_none():
+    # An unedited run (no --scratch/--limit/--paper-ids-file) never creates an override dir --
+    # __main__'s subprocess_cwd stays None, and cleanup must not raise on that.
+    ingest_mod._cleanup_scratch_dir(None)
+
+
+def test_cleanup_scratch_dir_tolerates_an_already_removed_dir(tmp_path):
+    scratch = tmp_path / "already_gone"
+    # Never created -- e.g. a human already cleaned it up by hand between runs.
+    ingest_mod._cleanup_scratch_dir(str(scratch))
+
+
 # --- OG-49#2: whole-run lock resolves absolute against db_path's own directory -------------------
 
 

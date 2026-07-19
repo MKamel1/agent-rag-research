@@ -59,6 +59,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import signal
 import sqlite3
 import subprocess
@@ -328,6 +329,10 @@ def reconcile(data_dir: str | Path) -> dict | None:
         else:
             manifest["status"] = {"pausing": "paused", "stopping": "done"}[status]
         _write_manifest(data_dir, manifest)
+        # OG-49 M10: only "done"/"failed" are genuinely terminal here -- "paused" (from "pausing")
+        # expects a later resume() that reuses run_cwd, so it must NOT be cleaned up.
+        if manifest["status"] in ("done", "failed"):
+            _cleanup_run_cwd(data_dir, manifest)
     return manifest
 
 
@@ -377,13 +382,31 @@ def _write_override_config_dir(cfg: Config, data_dir: Path) -> Path:
     }
     resolved = cfg.model_copy(update=path_updates) if path_updates else cfg
 
-    # ponytail: this scratch dir, like app/ingest.py's own `--scratch`/`--limit` override dirs, is
-    # never cleaned up -- matches that module's existing (already-accepted) behavior rather than
-    # inventing new cleanup machinery here. Add a reaper if scratch-dir accumulation ever becomes
-    # a real problem in practice.
+    # OG-49 M10: unlike app/ingest.py's own override dir (torn down the instant its one-shot run
+    # ends), THIS dir is a `run_cwd` a `pause`d run's later `resume()` reuses verbatim (see
+    # `_resume_locked`) -- it must survive across pause/resume for the SAME run_id. `_cleanup_run_cwd`
+    # below is the other half: it removes this dir once the run reaches a genuinely terminal state
+    # ("done"/"failed") that will never `resume()` again, never on a merely "paused" one.
     tmpdir = Path(tempfile.mkdtemp(prefix="dashboard_override_"))
     (tmpdir / "config.yaml").write_text(yaml.safe_dump(resolved.model_dump()))
     return tmpdir
+
+
+def _cleanup_run_cwd(data_dir: Path, manifest: dict) -> None:
+    """OG-49 M10: removes a run's override `config.yaml` scratch dir (`_write_override_config_dir`)
+    once its manifest has settled into a genuinely terminal status ("done"/"failed") -- called only
+    from call sites that just set one of those, never from `pause` (`"paused"` expects a later
+    `resume()`, which reuses `run_cwd` verbatim -- deleting it there would break resume).
+
+    A no-op when this run never had an override (`run_cwd == data_dir`, an unedited run launched
+    directly in the real data dir -- never a scratch dir, must never be removed) or when the dir is
+    already gone (`ignore_errors=True` -- e.g. `stop()` and a later `reconcile()` both observing the
+    same terminal transition must not make the second cleanup call fail on the first's work).
+    """
+    run_cwd = manifest.get("run_cwd")
+    if not run_cwd or Path(run_cwd) == data_dir:
+        return
+    shutil.rmtree(run_cwd, ignore_errors=True)
 
 
 def _maybe_build_override(
@@ -746,6 +769,10 @@ def _stop_locked(data_dir: Path) -> dict:
     _write_manifest(data_dir, manifest)
     manifest["status"] = "done" if _terminate_with_escalation(pid) else "stopping"
     _write_manifest(data_dir, manifest)
+    if manifest["status"] == "done":
+        # OG-49 M10: a user-initiated stop is final (module docstring) -- no later resume() will
+        # ever reuse this run's run_cwd, so its override scratch dir (if any) is safe to remove now.
+        _cleanup_run_cwd(data_dir, manifest)
     return manifest
 
 

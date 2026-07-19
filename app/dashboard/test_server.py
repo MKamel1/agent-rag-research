@@ -14,8 +14,9 @@ from datetime import date
 
 import pytest
 
+import app.dashboard.server as server_mod
 from app.dashboard.controller import DoubleRunError, NoRunError
-from app.dashboard.server import _status_dict, build_server
+from app.dashboard.server import _LazyMcpServer, _status_dict, build_server
 from contracts.errors import TransientError
 from contracts.mcp_server import Coverage, SearchResponse
 from contracts.provenance import Anchor
@@ -526,6 +527,46 @@ def _search_server(tmp_path, fake_mcp):
         thread.join(timeout=5.0)
 
 
+# --- OG-48#7: _LazyMcpServer's first build is guarded, never duplicated under concurrency -------
+
+
+def test_lazy_mcp_server_builds_only_once_under_concurrent_first_calls(tmp_path, monkeypatch):
+    build_calls = []
+    build_started = threading.Event()
+    release_build = threading.Event()
+
+    class _StubServer:
+        def semantic_search(self, query, filters, k):
+            return SearchResponse(results=[], coverage=Coverage(returned=0, candidates=0))
+
+    def slow_build(*args, **kwargs):
+        # Simulates the real build's real cost (GpuLock/Qdrant/TEI client construction) taking
+        # long enough for a second concurrent first-request to arrive mid-build.
+        build_calls.append(1)
+        build_started.set()
+        assert release_build.wait(timeout=5.0), "test setup: build was never released"
+        return _StubServer()
+
+    monkeypatch.setattr(server_mod, "build_mcp_server", slow_build)
+    lazy = _LazyMcpServer(tmp_path)
+    results = []
+
+    def call():
+        results.append(lazy.semantic_search("q", None, None))
+
+    t1 = threading.Thread(target=call)
+    t2 = threading.Thread(target=call)
+    t1.start()
+    assert build_started.wait(timeout=5.0), "first build never started"
+    t2.start()  # arrives while the first build is still in flight, sees self._server is None too
+    release_build.set()
+    t1.join(timeout=5.0)
+    t2.join(timeout=5.0)
+
+    assert len(build_calls) == 1, "both concurrent first-searches must share ONE build"
+    assert len(results) == 2
+
+
 def test_search_route_without_token_is_401_and_never_calls_the_backend(tmp_path):
     fake_mcp = _FakeMcpServer(results=[])
     with _search_server(tmp_path, fake_mcp) as url:
@@ -616,4 +657,49 @@ def test_search_route_backend_failure_degrades_to_502_not_a_crash(tmp_path):
 
     assert status == 502
     assert body["ok"] is False
-    assert "TEI reranker unreachable" in body["message"]
+    # OG-48#8: the client (any authenticated tailnet host, not necessarily a trusted operator)
+    # must never see the raw backend exception text -- it can carry lock paths/vendor strings.
+    assert "TEI reranker unreachable" not in body["message"]
+    assert "TEI" not in body["message"]
+
+
+def test_search_route_backend_failure_logs_full_detail_server_side(tmp_path, caplog):
+    fake_mcp = _FakeMcpServer(error=TransientError("TEI reranker unreachable at /tmp/.gpu.lock"))
+
+    with caplog.at_level("WARNING", logger="app.dashboard.server"):
+        with _search_server(tmp_path, fake_mcp) as url:
+            _get_allow_error(url, "/api/search?q=estimator")
+
+    assert "TEI reranker unreachable at /tmp/.gpu.lock" in caplog.text
+
+
+# --- OG-48#9: reversed published_after/published_before range is a clear 400 -------------------
+
+
+def test_search_route_reversed_date_range_is_a_clean_400_not_silent_zero_results(tmp_path):
+    fake_mcp = _FakeMcpServer(results=[])
+    qs = urllib.parse.urlencode({
+        "q": "estimator", "published_after": "2021-01-01", "published_before": "2020-01-01",
+    })
+
+    with _search_server(tmp_path, fake_mcp) as url:
+        status, body = _get_allow_error(url, f"/api/search?{qs}")
+
+    assert status == 400
+    assert body["ok"] is False
+    assert "published_after" in body["message"]
+    assert fake_mcp.calls == []  # rejected before ever reaching the backend
+
+
+def test_search_route_equal_date_range_is_allowed(tmp_path):
+    # A single-day range (after == before) is valid, not "reversed" -- must not be rejected.
+    fake_mcp = _FakeMcpServer(results=[])
+    qs = urllib.parse.urlencode({
+        "q": "estimator", "published_after": "2020-01-01", "published_before": "2020-01-01",
+    })
+
+    with _search_server(tmp_path, fake_mcp) as url:
+        status, _body = _get(url, f"/api/search?{qs}")
+
+    assert status == 200
+    assert len(fake_mcp.calls) == 1

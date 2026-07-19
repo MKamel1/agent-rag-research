@@ -73,6 +73,13 @@ class McpServer:
         wired via `app/assembly.py::build_mcp_server`); an explicit `k` always overrides it.
         Whichever value results is then clamped to `[_MIN_K, _MAX_K]` (OG-48#5) before it ever
         reaches the retriever.
+
+        OG-48#6: `k` can be as large as `_MAX_K` (100), but `Coverage.returned` is separately
+        capped at 32 regardless -- `app/assembly.py::build_mcp_server` clamps the rerank candidate
+        pool to `rag/reranker.py`'s TEI `/rerank` vendor batch limit (`_MAX_BATCH_SIZE=32`), and a
+        result can only come from that pool. A `k=60` request returning 32 results is this ceiling,
+        not a sparse corpus -- check `Coverage.candidates` (the true pre-rerank pool size) to tell
+        the two apart.
         """
         results, retrieval_coverage = self._retriever.retrieve(
             query, filters, self._resolve_k(k)
@@ -90,7 +97,8 @@ class McpServer:
         broader `semantic_search` chunk search at all. Postcondition: on no hits, `results == []`.
 
         `k=None` resolves to `self._default_k`, same as `semantic_search` — see its docstring
-        (including the `[_MIN_K, _MAX_K]` clamp, OG-48#5).
+        (including the `[_MIN_K, _MAX_K]` clamp, OG-48#5, and the separate 32-result reranker
+        ceiling, OG-48#6).
         """
         results, retrieval_coverage = self._retriever.retrieve_papers(
             query, filters, self._resolve_k(k)
