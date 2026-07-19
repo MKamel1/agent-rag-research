@@ -74,6 +74,11 @@ _PDF_DOWNLOAD_RETRY_BACKOFF_SECONDS = 2.0
 # statuses (CONVENTIONS.md §4: those are `PermanentError`, no retry).
 _RETRYABLE_STATUSES = {429, 502, 503, 504}
 
+# OG-48#4: TeiEmbedder/TeiReranker (rag/embedder.py, rag/reranker.py) both default their
+# `gpu_lock_timeout` ctor param to a bounded value already -- every real construction here (both
+# below) gets that default automatically, so a wedged/crashed lock holder raises TransientError
+# instead of hanging forever, with no explicit override needed at this composition root.
+
 # T-DOC49: bounded exponential backoff around `ArxivSource.fetch_by_ids()` in `harvest_refs`
 # below. That call bypasses `Harvester` entirely (see `ArxivSource.fetch_by_ids`'s own docstring),
 # so unlike the query-driven `harvest()` path it has NO retry of its own -- a single arXiv 429

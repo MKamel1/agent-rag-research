@@ -14,11 +14,15 @@ import signal
 import subprocess
 from pathlib import Path
 
+import pytest
+
 from app.build_corpus import (
     _DEFAULT_MAX_IDLE,
     _is_live_prefetch,
     _order_by_relevance,
+    _parse_args,
     _prefetch_pid_path,
+    _validate_cli_args,
     build_to_target,
     cached_not_done,
     done_count,
@@ -336,6 +340,74 @@ def test_build_to_target_default_max_idle_matches_module_constant():
     assert _DEFAULT_MAX_IDLE > 0  # sanity: the default guard is actually bounded, not unbounded
 
 
+# --- OG-49#3/#4: a batch that runs but makes ZERO net done_count progress is a stall too ---------
+
+
+def test_build_to_target_zero_net_progress_batch_counts_as_a_stall(caplog, tmp_path):
+    """The exact parse_workers=0 shape: cached_not_done keeps returning the SAME non-empty batch
+    every iteration (nothing ever gets marked done) -- must trip the idle guard and stop, with a
+    real sleep between attempts, not spin forever with zero sleep leaking batch-ids files."""
+    written_batches = []
+
+    def fake_cached_not_done(cache_dir, db_path):
+        return ["2601.00001", "2601.00002"]  # never shrinks -- nothing ever completes
+
+    def fake_run_ingest(batch_file, parse_workers, events_path, data_dir):
+        written_batches.append(batch_file)
+        # "succeeds" (app.ingest --parse-workers 0 exits 0 having parsed nothing) -- done_count
+        # never advances.
+
+    sleeps = []
+    with caplog.at_level(logging.INFO):
+        build_to_target(
+            tmp_path, "db", Path("cache"), target=100, parse_workers=1, events_path=Path("events"),
+            ensure_prefetch=_fake_ensure_prefetch(alive=True),
+            run_ingest=fake_run_ingest,
+            cached_not_done=fake_cached_not_done,
+            done_count=lambda db_path: 0,
+            sleep=sleeps.append,
+            max_idle=3,
+        )
+
+    assert len(written_batches) == 3  # one ingest attempt per idle pass, not an infinite tight loop
+    # 2 sleeps: between attempts 1->2 and 2->3 -- the 3rd (max_idle-th) stops immediately, no sleep.
+    assert len(sleeps) == 2
+    assert "stalled" in caplog.text
+    assert "zero net progress" in caplog.text
+
+
+def test_build_to_target_progress_resets_the_idle_counter(tmp_path):
+    """A batch that DOES make progress must reset idle_passes -- a single earlier zero-progress
+    batch must not accumulate toward the stall threshold once real progress resumes."""
+    done: set[str] = set()
+    all_ids = ["2601.00001", "2601.00002"]
+    call_count = {"n": 0}
+
+    def fake_cached_not_done(cache_dir, db_path):
+        return sorted(set(all_ids) - done)
+
+    def fake_done_count(db_path):
+        return len(done)
+
+    def fake_run_ingest(batch_file, parse_workers, events_path, data_dir):
+        call_count["n"] += 1
+        if call_count["n"] == 1:
+            return  # first batch: zero progress (simulates a transient hiccup)
+        done.update(all_ids)  # second batch: real progress -- reaches target
+
+    build_to_target(
+        tmp_path, "db", Path("cache"), target=2, parse_workers=1, events_path=Path("events"),
+        ensure_prefetch=_fake_ensure_prefetch(alive=True),
+        run_ingest=fake_run_ingest,
+        cached_not_done=fake_cached_not_done,
+        done_count=fake_done_count,
+        sleep=lambda s: None,
+        max_idle=2,
+    )
+
+    assert call_count["n"] == 2  # reached target on the 2nd batch -- never hit the idle guard
+
+
 def test_build_to_target_batch_size_caps_ids_per_iteration(tmp_path):
     seen = []
     state = {"ingested": False}
@@ -574,3 +646,31 @@ def test_build_to_target_relevance_ordering_with_empty_cache_never_ranks(tmp_pat
         relevance_rank=fail_rank,
         sleep=lambda s: None,
     )
+
+
+# --- OG-49#3: CLI-boundary validation (defense-in-depth for a manual/non-dashboard invocation) ---
+
+
+def test_validate_cli_args_rejects_parse_workers_zero(capsys):
+    args = _parse_args(["--target", "10", "--parse-workers", "0"])
+    with pytest.raises(SystemExit) as exc_info:
+        _validate_cli_args(args)
+    assert exc_info.value.code == 1
+    assert "--parse-workers must be >= 1" in capsys.readouterr().err
+
+
+def test_validate_cli_args_rejects_negative_batch_size(capsys):
+    args = _parse_args(["--target", "10", "--batch-size", "-5"])
+    with pytest.raises(SystemExit):
+        _validate_cli_args(args)
+    assert "--batch-size must be >= 1" in capsys.readouterr().err
+
+
+def test_validate_cli_args_accepts_defaults():
+    args = _parse_args(["--target", "10"])
+    _validate_cli_args(args)  # must not raise/exit
+
+
+def test_validate_cli_args_accepts_unset_batch_size():
+    args = _parse_args(["--target", "10", "--parse-workers", "3"])
+    _validate_cli_args(args)  # must not raise/exit

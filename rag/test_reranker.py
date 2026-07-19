@@ -7,9 +7,12 @@ skips cleanly if TEI's reranker isn't reachable, mirroring rag/test_vector_index
 isolated real-adapter test, not a fake-vs-real contract/agreement pair (V0 has only one reranker).
 """
 
+import contextlib
+
 import httpx
 import pytest
 
+import rag.reranker as _mod
 from contracts.errors import PermanentError, TransientError
 from contracts.retriever import RerankCandidate
 from rag.fakes.fake_gpu_lock import FakeGpuLock
@@ -215,6 +218,71 @@ def test_retries_exhausted_still_raises_transient_error():
 
     assert attempts["n"] == 3  # initial attempt + 2 retries
     assert sleeps == [1.0, 2.0]  # exponential backoff between each of the 2 retries
+
+
+class _SpyGpuLock:
+    """Records whether the lock is currently held -- proves a backoff sleep happens with the lock
+    ALREADY RELEASED, not while still holding it (OG-48#3, mirrors rag/test_embedder.py's spy)."""
+
+    def __init__(self):
+        self.held = False
+
+    def acquire(self, stage: str, *, timeout: float | None = None):
+        return self._ctx()
+
+    @contextlib.contextmanager
+    def _ctx(self):
+        self.held = True
+        try:
+            yield
+        finally:
+            self.held = False
+
+
+def test_backoff_sleep_happens_with_the_gpu_lock_already_released():
+    attempts = {"n": 0}
+
+    def handler(request):
+        attempts["n"] += 1
+        if attempts["n"] == 1:
+            return httpx.Response(503)
+        return httpx.Response(200, json=[{"index": 0, "score": 1.0}])
+
+    client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
+    lock = _SpyGpuLock()
+    held_during_sleep = []
+    reranker = TeiReranker(client, lock, retry_sleep=lambda s: held_during_sleep.append(lock.held))
+
+    reranker.rerank("q", _candidates(("a", "text a")))
+
+    assert attempts["n"] == 2  # one retry happened, so the sleep actually ran
+    assert held_during_sleep == [False]  # lock was free during the ONE backoff sleep
+
+
+def test_rerank_raises_transient_error_when_gpu_lock_is_wedged(tmp_path):
+    # OG-48#4: a bounded gpu_lock_timeout means waiting for a crashed/wedged holder gives up
+    # instead of hanging forever. Real FileGpuLock, real temp lock file -- no GPU, no network.
+    from rag.gpu_lock import FileGpuLock
+
+    lock_path = tmp_path / "wedged.lock"
+    holder = FileGpuLock(lock_path)
+    contender = FileGpuLock(lock_path)
+
+    def handler(request):
+        raise AssertionError("must never reach the HTTP call -- the lock itself must time out")
+
+    client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
+    reranker = TeiReranker(client, contender, gpu_lock_timeout=0.05)
+
+    with holder.acquire("rerank"):
+        with pytest.raises(TransientError):
+            reranker.rerank("q", _candidates(("a", "text a")))
+
+
+def test_rerank_default_gpu_lock_timeout_is_generous_not_none():
+    reranker = TeiReranker(httpx.Client(base_url="http://tei.local"), FakeGpuLock())
+    assert reranker._gpu_lock_timeout == _mod._DEFAULT_GPU_LOCK_TIMEOUT_S
+    assert _mod._DEFAULT_GPU_LOCK_TIMEOUT_S is not None
 
 
 def test_malformed_response_body_maps_to_permanent_error():

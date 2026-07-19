@@ -55,10 +55,17 @@ Whole-run lock (`.ingest.lock`, `app/dashboard/` control-plane review): `--parse
 `.gpu.lock` only serializes the GPU-bound half of a run (`Config.gpu_lock_path`, acquired deep
 inside the embed step) -- nothing stopped two whole `app.ingest` invocations (one manual, one
 dashboard-launched, or two manual ones) from both running Pass 1 at once, each writing
-`ingest_state` for an overlapping paper set. `filelock.FileLock(_INGEST_LOCK_PATH)` is acquired,
-non-blocking, as the very first action below -- before even `load_config()` -- and held for the
-entire run (parse + finish); a second invocation in the same directory refuses to start instead of
-racing the first. This is the real double-run guard; `app/dashboard/controller.py`'s own
+`ingest_state` for an overlapping paper set. `filelock.FileLock(_ingest_lock_path(cfg))` is
+acquired, non-blocking, as the first action once `cfg` (the EFFECTIVE, post-override config) is
+known -- and held for the entire run (parse + finish); a second invocation whose effective
+`db_path` resolves to the SAME directory refuses to start instead of racing the first. OG-49#2:
+the lock path is now resolved ABSOLUTE against `db_path`'s own directory (`_ingest_lock_path`),
+not a bare relative literal in whatever the process's cwd happens to be -- every overridden
+dashboard run (a scratch `config.yaml` dir) and every `build_corpus --paper-ids-file` batch used
+to get its OWN throwaway `.ingest.lock`, silently bypassing this guard (two runs could write the
+same `papers.db` concurrently, the exact corruption the lock exists to prevent); a `--scratch` run
+(its own unique `db_path` every time) still correctly gets its own lock, since it never shares a
+corpus with anything else. This is the real double-run guard; `app/dashboard/controller.py`'s own
 manifest-PID guard is a fast, friendly error message on top of it, not a substitute for it -- a
 manual `python -m app.ingest` (which never touches the manifest) is caught here regardless. Note:
 the lock is released the instant this process exits, cleanly or via SIGTERM/SIGKILL (the OS reclaims
@@ -86,11 +93,11 @@ from contracts.config import Config
 from migrations.migrate import migrate
 from rag.config import load_config
 
-# Whole-run mutual-exclusion lock -- see module docstring "Whole-run lock". Relative to cwd, same
-# convention as `Config.gpu_lock_path`'s own default (".gpu.lock") -- both the dashboard's
-# subprocess launch and a manual `cd <data_dir> && python -m app.ingest` run with the data dir as
-# cwd, so both resolve to the same file.
-_INGEST_LOCK_PATH = ".ingest.lock"
+# Whole-run mutual-exclusion lock -- see module docstring "Whole-run lock". OG-49#2: the lock
+# FILE NAME stays this same short literal, but the path it's resolved against is now `db_path`'s
+# own directory (`_ingest_lock_path` below), not a bare relative literal in whatever the process's
+# cwd happens to be -- see that function's docstring for why.
+_INGEST_LOCK_NAME = ".ingest.lock"
 
 # Config fields that hold a filesystem path -- resolved to absolute before being written into a
 # scratch config.yaml for the Pass-1 subprocess (see _write_override_config_dir). Curated, not
@@ -215,6 +222,34 @@ def _ensure_db_migrated(db_path: str) -> None:
     migrate(db_path)
 
 
+def _ingest_lock_path(cfg: Config) -> Path:
+    """OG-49#2: resolves the whole-run lock ABSOLUTE against `cfg.db_path`'s own directory -- not
+    a bare relative literal (`.ingest.lock`) in whatever the process's cwd happens to be. Every
+    overridden dashboard run (a scratch `config.yaml` dir, `app/dashboard/controller.py`) and every
+    `build_corpus --paper-ids-file` batch used to get its OWN throwaway `.ingest.lock` in its own
+    scratch cwd -- the double-run guard was bypassed by construction, since two runs targeting the
+    identical `db_path` never contended for the same lock file. Deriving the lock path from
+    `db_path`'s directory (non-foundation) means every run whose EFFECTIVE `db_path` resolves to
+    the same directory shares the identical lock regardless of cwd -- a `--scratch` run (its own
+    unique `db_path` every time) still gets its own lock, correctly, since it never shares a corpus
+    with anything else."""
+    return Path(cfg.db_path).resolve().parent / _INGEST_LOCK_NAME
+
+
+def _validate_parse_workers(parse_workers: int) -> None:
+    """OG-49#3: `--parse-workers 0` spawns ZERO Pass-1 subprocesses (`range(0)` in
+    `_run_parse_phase_subprocesses`), so Pass 1 "succeeds" having parsed nothing; a caller looping
+    batches on top of this (`app.build_corpus.build_to_target`) would resubmit the same non-empty
+    batch forever with no progress -- an infinite no-op loop. Exits with one clear message instead
+    of silently wedging the caller. Defensive here (not just the dashboard's own `/api/control`
+    boundary, `app/dashboard/server.py::_validate_control_kwargs`) so a manual
+    `python -m app.ingest --parse-workers 0` is rejected the same way.
+    """
+    if parse_workers < 1:
+        print(f"app.ingest: --parse-workers must be >= 1, got {parse_workers}", file=sys.stderr)
+        sys.exit(1)
+
+
 def _preflight_gate(cfg: Config, *, no_preflight: bool, force: bool) -> None:
     """T-DOC43: refuse to start with one clear message naming every missing prerequisite instead
     of quarantining papers or crashing partway through a multi-hour run. `--no-preflight` skips
@@ -271,6 +306,13 @@ def _effective_config(cfg: Config, args: argparse.Namespace) -> Config:
     CONVENTIONS.md §3 / this ticket's own constraint) rather than threaded through as separate
     parameters everywhere downstream. Returns `cfg` unchanged if neither flag is set -- today's
     exact default behavior.
+
+    OG-49#6/M8: `cfg.model_copy(update=updates)` does not re-run pydantic validation on its own --
+    re-validated via `Config.model_validate(...)` before being returned (defense-in-depth
+    mirroring `app/dashboard/controller.py::_maybe_build_override`'s identical fix; every value
+    built here today is already well-typed by construction -- argparse `int`/a plain string list --
+    so this is a backstop against a future caller passing something looser, not a currently
+    reachable bug).
     """
     updates: dict = {}
     if args.scratch:
@@ -285,7 +327,9 @@ def _effective_config(cfg: Config, args: argparse.Namespace) -> Config:
             for line in Path(args.paper_ids_file).read_text().splitlines()
             if line.strip()
         ]
-    return cfg.model_copy(update=updates) if updates else cfg
+    if not updates:
+        return cfg
+    return Config.model_validate(cfg.model_copy(update=updates).model_dump())
 
 
 def _write_override_config_dir(cfg: Config) -> Path:
@@ -354,27 +398,33 @@ def _parse_args() -> argparse.Namespace:
 
 
 if __name__ == "__main__":
-    # Whole-run lock -- see module docstring "Whole-run lock". Acquired non-blocking, as the very
-    # first action, before even `load_config()`: a second `app.ingest` in this directory (manual
-    # or dashboard-launched) refuses to start instead of racing this one for the GPU + ingest_state.
-    _ingest_lock = filelock.FileLock(_INGEST_LOCK_PATH)
+    cfg = load_config()
+    args = _parse_args()
+    _validate_parse_workers(args.parse_workers)
+
+    cfg = _effective_config(cfg, args)
+
+    # Whole-run lock -- see module docstring "Whole-run lock" and `_ingest_lock_path`'s own
+    # docstring (OG-49#2: resolved absolute against the EFFECTIVE db_path's directory, not a bare
+    # relative literal in whatever cwd happens to be -- needs the post-override `cfg`, hence this
+    # runs after `_effective_config` above, not before `load_config()` as it used to). Acquired
+    # non-blocking, before any real work starts: a second `app.ingest` targeting the SAME corpus
+    # (manual or dashboard-launched, unedited or overridden) refuses to start instead of racing
+    # this one for the GPU + ingest_state.
+    _lock_path = _ingest_lock_path(cfg)
+    _ingest_lock = filelock.FileLock(str(_lock_path))
     try:
         _ingest_lock.acquire(timeout=0)
     except filelock.Timeout:
         print(
-            f"app.ingest: another app.ingest run already holds {_INGEST_LOCK_PATH!r} in this "
-            "directory -- refusing to start a second one (two runs would contend for the GPU "
+            f"app.ingest: another app.ingest run already holds {str(_lock_path)!r} for this "
+            "corpus -- refusing to start a second one (two runs would contend for the GPU "
             "and corrupt ingest_state). Wait for it to finish, or pause/stop it first.",
             file=sys.stderr,
         )
         sys.exit(1)
 
     try:
-        cfg = load_config()
-        args = _parse_args()
-
-        cfg = _effective_config(cfg, args)
-
         _preflight_gate(cfg, no_preflight=args.no_preflight, force=args.force)
         _ensure_db_migrated(cfg.db_path)
 

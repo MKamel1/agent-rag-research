@@ -41,6 +41,14 @@ _RETRYABLE_STATUSES = {429, 500, 502, 503, 504}
 # retried.
 RetrySleep = Callable[[float], None]
 
+# OG-48#4: how long `embed()` waits for a wedged/crashed GpuLock holder before giving up (raises
+# TransientError instead of hanging forever) -- see `contracts/gpu_lock.py`'s `timeout` param.
+# Generous enough that a legitimate long ingest batch holding the lock doesn't trip it, bounded
+# enough that a query never hangs indefinitely behind a dead holder. `app/assembly.py` is the one
+# composition root that could override this per-caller; nothing does today (both build sites use
+# the default), so this constant is that default, not a hardcoded-everywhere value.
+_DEFAULT_GPU_LOCK_TIMEOUT_S = 300.0
+
 
 def _default_retry_sleep(seconds: float) -> None:
     time.sleep(seconds)
@@ -67,6 +75,16 @@ class TeiEmbedder:
     `PermanentError` is never retried. Unlike the ingest-side retry sites, there is no quarantine
     outcome here — a query-path caller has no "skip this paper and continue" fallback, so once the
     retry budget is exhausted the (still-classified) error simply propagates.
+
+    OG-48#3: `gpu_lock.acquire("embed")` is held only around a SINGLE HTTP attempt (one sub-batch,
+    one try) — never across the retry/backoff loop. Before this fix the lock was held for the
+    whole `embed()` call, including every backoff sleep between retries; a flaky TEI call on the
+    query path could hold the cross-process `FileGpuLock` for minutes while sleeping, blocking a
+    concurrent ingest's GPU stage the entire time (ingest acquires the same lock with no timeout).
+    Re-acquiring per attempt means the lock is free during every backoff sleep, and — OG-48#4 — a
+    bounded `gpu_lock_timeout` (ctor param, default `_DEFAULT_GPU_LOCK_TIMEOUT_S`) is threaded into
+    every acquire, so waiting for a wedged/crashed holder raises `TransientError` instead of
+    blocking forever.
     """
 
     def __init__(
@@ -77,12 +95,14 @@ class TeiEmbedder:
         *,
         max_retries: int = 2,
         retry_sleep: RetrySleep | None = None,
+        gpu_lock_timeout: float | None = _DEFAULT_GPU_LOCK_TIMEOUT_S,
     ):
         self._client = client
         self._gpu_lock = gpu_lock
         self._info = info
         self._max_retries = max_retries
         self._retry_sleep = retry_sleep or _default_retry_sleep
+        self._gpu_lock_timeout = gpu_lock_timeout
 
     @property
     def info(self) -> EmbedderInfo:
@@ -92,11 +112,10 @@ class TeiEmbedder:
         if not texts:
             return []
 
-        with self._gpu_lock.acquire("embed"):
-            raw_vectors = []
-            for start in range(0, len(texts), _MAX_BATCH_SIZE):
-                batch = texts[start : start + _MAX_BATCH_SIZE]
-                raw_vectors.extend(self._post_batch_with_retry(batch))
+        raw_vectors = []
+        for start in range(0, len(texts), _MAX_BATCH_SIZE):
+            batch = texts[start : start + _MAX_BATCH_SIZE]
+            raw_vectors.extend(self._post_batch_with_retry(batch))
 
         if len(raw_vectors) != len(texts):
             raise ContractError(
@@ -110,13 +129,19 @@ class TeiEmbedder:
         same two-outcome shape as `rag/orchestrator.py`'s `_embed_with_retry`, minus the
         quarantine (no per-paper fallback exists on the query path). A non-retryable status raises
         `PermanentError` immediately, same as before this method existed.
+
+        `gpu_lock.acquire("embed", timeout=...)` wraps only the single HTTP attempt inside the
+        `try` below (OG-48#3) — the `with` block is exited (lock released) before the `except`
+        clauses even run, so `self._retry_sleep(...)` at the bottom always sleeps with the lock
+        already free.
         """
         attempt = 0
         while True:
             try:
-                response = self._client.post("/embed", json={"inputs": batch})
-                response.raise_for_status()
-                return response.json()
+                with self._gpu_lock.acquire("embed", timeout=self._gpu_lock_timeout):
+                    response = self._client.post("/embed", json={"inputs": batch})
+                    response.raise_for_status()
+                    return response.json()
             except httpx.HTTPStatusError as error:
                 status = error.response.status_code
                 if status not in _RETRYABLE_STATUSES:

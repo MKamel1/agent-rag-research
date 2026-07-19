@@ -29,6 +29,7 @@ _mod = pytest.importorskip("rag.retriever")
 
 from contracts.chunker import Chunk
 from contracts.document_store import PaperRecord
+from contracts.errors import ContractError
 from contracts.harvester import PaperRef
 from contracts.parser import ParsedDoc
 from contracts.provenance import Anchor, Block
@@ -60,7 +61,12 @@ class RecordingDocStore:
 
     def get_chunk(self, chunk_id: str) -> Chunk:
         self.calls.append(("get_chunk", chunk_id))
-        return self._chunks[chunk_id]
+        # Real DocumentStore.get_chunk raises ContractError on an unknown id (rag/document_store.py)
+        # -- match that here so a test can simulate a genuinely orphaned vector point (OG-48#2).
+        try:
+            return self._chunks[chunk_id]
+        except KeyError:
+            raise ContractError(f"unknown chunk_id: {chunk_id!r}") from None
 
     def get_block(self, block_id: str) -> Block:
         self.calls.append(("get_block", block_id))
@@ -68,7 +74,10 @@ class RecordingDocStore:
 
     def get_summary(self, summary_id: str) -> str:
         self.calls.append(("get_summary", summary_id))
-        return self._summaries[summary_id]
+        try:
+            return self._summaries[summary_id]
+        except KeyError:
+            raise ContractError(f"unknown summary_id: {summary_id!r}") from None
 
     def get(self, paper_id: str) -> PaperRecord | None:
         self.calls.append(("get", paper_id))
@@ -347,6 +356,57 @@ def test_retrieve_pool_size_lets_reranker_promote_a_passage_ranked_below_k():
     # `len(results)` (10) again -- this is the exact regression `Coverage.candidates` used to hide.
     assert coverage.candidate_count == 20
     assert coverage.candidate_count > len(results)
+
+
+def _seed_orphan_chunk_vector_point(store, embedder, *, chunk_id, paper_id, text,
+                                    section_path="1. Intro", categories=("cs.LG",)):
+    """A vector-store hit with NO backing DocumentStore chunk row AT ALL -- the OG-48#2 orphan:
+    unlike `del docstore._records[paper_id]` below (chunk/block survive, only the papers row is
+    gone), here `get_chunk(chunk_id)` itself raises `ContractError` (e.g. a stale vector-store
+    point left over after a delete/quarantine race, or a chunk row purged without its point)."""
+    store.upsert(chunk_id, embedder.embed([text])[0],
+                 _payload(paper_id, "chunk", section_path, categories, embedder, text))
+
+
+def _seed_orphan_summary_vector_point(store, embedder, *, summary_id, paper_id, text,
+                                      section_path="Abstract", categories=("cs.LG",)):
+    store.upsert(summary_id, embedder.embed([text])[0],
+                 _payload(paper_id, "summary", section_path, categories, embedder, text))
+
+
+def test_retrieve_skips_hit_with_no_backing_chunk_row_at_all(caplog):
+    # OG-48#2: get_chunk() raising ContractError for a genuinely orphaned vector point (not just a
+    # deleted parent record, see the get()-based orphan test below) must not crash the whole query.
+    store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
+    _seed_chunk(store, docstore, embedder, chunk_id="2506.00001:c0", paper_id="2506.00001",
+                block_id="2506.00001:b0", text="double machine learning orthogonal moment")
+    _seed_orphan_chunk_vector_point(
+        store, embedder, chunk_id="2506.00099:c0", paper_id="2506.00099",
+        text="double machine learning stale vector point",
+    )
+
+    with caplog.at_level("WARNING"):
+        results, _coverage = _make_retriever(store, docstore, FakeReranker(), embedder).retrieve(
+            "double machine learning", filters=None, k=10)
+
+    assert [res.paper_id for res in results] == ["2506.00001"]
+    assert any("2506.00099:c0" in rec.message for rec in caplog.records)
+
+
+def test_retrieve_papers_skips_hit_with_no_backing_summary_row_at_all(caplog):
+    store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
+    _seed_summary(store, docstore, embedder, paper_id="2506.00001", summary_id="2506.00001:summary",
+                  summary_text="double machine learning orthogonal moment")
+    _seed_orphan_summary_vector_point(store, embedder, summary_id="2506.00099:summary",
+                                      paper_id="2506.00099",
+                                      text="double machine learning stale vector point")
+
+    with caplog.at_level("WARNING"):
+        retriever = _make_retriever(store, docstore, FakeReranker(), embedder)
+        results, _coverage = retriever.retrieve_papers("double machine learning", filters=None, k=10)
+
+    assert [res.view.paper_id for res in results] == ["2506.00001"]
+    assert any("2506.00099:summary" in rec.message for rec in caplog.records)
 
 
 def test_retrieve_skips_unresolvable_hit_and_returns_remaining_results(caplog):

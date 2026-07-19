@@ -140,6 +140,21 @@ class Harvester:
 # (CONVENTIONS.md §1) / to know the arXiv Atom feed shape.
 # --------------------------------------------------------------------------------------------
 
+# OG-49#6/M7: `_build_query` interpolates `term`/`categories`/dates straight into a Lucene-syntax
+# `search_query` string with no escaping -- a focus-area keyword (dashboard-editable, OG-43)
+# containing `"` breaks out of the quoted `all:"..."` clause and can inject arbitrary query syntax
+# (e.g. bypass a category/date filter). Rejected outright (not escaped): the term is always wrapped
+# in double quotes below, so a literal `"` or `\` in it is never a legitimate need, just an
+# injection vector.
+_UNSAFE_QUERY_CHARS_RE = re.compile(r'["\\]')
+# arXiv subject codes are letters/digits/dot/dash only (e.g. "stat.ME", "econ.EM", "cs.LG") --
+# `categories` is interpolated UNQUOTED as `cat:<c>`, so anything outside this charset (a space, a
+# paren, a boolean operator) could inject query syntax the same way.
+_CATEGORY_RE = re.compile(r"^[A-Za-z0-9.\-]+$")
+# ISO `YYYY-MM-DD` or arXiv's own `YYYYMMDD` -- validated BEFORE building the `submittedDate:[...]`
+# range clause (was previously just `.replace('-', '')`'d with no format check at all).
+_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$|^\d{8}$")
+
 _ATOM_NS = "{http://www.w3.org/2005/Atom}"
 _API_URL = "https://export.arxiv.org/api/query"
 _DEFAULT_PAGE_SIZE = 100
@@ -209,19 +224,43 @@ class ArxivSource:
         `submittedDate:[...]` range when either date bound is set. Omitting both filters yields
         exactly `all:"<term>"`, byte-identical to pre-OG-45 behavior.
 
-        Date bounds accept ISO `YYYY-MM-DD` or arXiv's own `YYYYMMDD` (dashes are simply
-        stripped); an unset bound becomes `*` (open-ended), Lucene range syntax arXiv's search
-        backend already understands -- avoids inventing a fake earliest/latest date constant.
+        OG-49#6/M7: `term`/`categories`/dates are validated BEFORE being interpolated into the
+        Lucene-syntax query string -- a `"`/`\\` in `term` (would break out of the quoted clause),
+        a `categories` entry outside the arXiv-subject-code charset, or a date bound that isn't
+        `YYYY-MM-DD`/`YYYYMMDD` all raise `PermanentError` instead of silently building an
+        injected or nonsense query. Date bounds accept ISO `YYYY-MM-DD` or arXiv's own `YYYYMMDD`
+        (dashes are simply stripped); an unset bound becomes `*` (open-ended), Lucene range syntax
+        arXiv's search backend already understands -- avoids inventing a fake earliest/latest date
+        constant.
         """
+        if _UNSAFE_QUERY_CHARS_RE.search(term):
+            raise PermanentError(
+                f"ArxivSource: focus-area term {term!r} contains a '\"' or '\\\\' -- rejected "
+                "rather than risk breaking out of the quoted arXiv query"
+            )
         query = f'all:"{term}"'
         if self._categories:
+            for category in self._categories:
+                if not _CATEGORY_RE.match(category):
+                    raise PermanentError(
+                        f"ArxivSource: arxiv_categories entry {category!r} is not a valid arXiv "
+                        "subject code (letters/digits/dot/dash only)"
+                    )
             cats = " OR ".join(f"cat:{c}" for c in self._categories)
             query += f" AND ({cats})"
         if self._date_from or self._date_to:
-            lo = f"{self._date_from.replace('-', '')}0000" if self._date_from else "*"
-            hi = f"{self._date_to.replace('-', '')}2359" if self._date_to else "*"
+            lo = f"{self._validated_date(self._date_from)}0000" if self._date_from else "*"
+            hi = f"{self._validated_date(self._date_to)}2359" if self._date_to else "*"
             query += f" AND submittedDate:[{lo} TO {hi}]"
         return query
+
+    @staticmethod
+    def _validated_date(value: str) -> str:
+        if not _DATE_RE.match(value):
+            raise PermanentError(
+                f"ArxivSource: date filter {value!r} is not YYYY-MM-DD or YYYYMMDD"
+            )
+        return value.replace("-", "")
 
     def fetch(self, focus_area: list[str], cap: int, ordering: str) -> Iterator[PaperRef]:
         """Precondition: `ordering` is `"freshest_first"` or `"relevance"` (DATA-CONTRACTS.md

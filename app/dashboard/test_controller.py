@@ -8,13 +8,14 @@ import json
 import os
 import signal
 import subprocess
+import threading
 import time
 from pathlib import Path
 
 import pytest
 
 import app.dashboard.controller as controller_mod
-from app.dashboard.controller import DoubleRunError, NoRunError
+from app.dashboard.controller import DoubleRunError, InvalidOverrideError, NoRunError
 
 
 def _fake_spawn(data_dir, target, parse_workers, events_path, log_path):
@@ -198,13 +199,42 @@ def test_resume_refuses_while_pausing_has_not_yet_confirmed_dead(tmp_path, monke
 def test_guard_sees_through_a_stale_running_status_once_pid_is_dead(tmp_path):
     """The real failure mode this whole mechanism defends against: a manifest says `running`
     with a PID that has actually exited (matches the live 3K-run manifest observed in
-    production) -- reconcile()/the guard must not treat that as still running."""
+    production) -- reconcile()/the guard must not treat that as still running.
+
+    OG-47#2: this exact scenario (pid gone, no papers.db at all -> 0 done < target=100) is a
+    CRASH, not a clean finish -- the terminal state must be `failed`, not `done` (which used to
+    collapse the two indistinguishably). See `test_reconcile_marks_clean_finish_as_done_when_
+    target_reached` below for the "actually reached target" contrast case."""
     manifest = controller_mod.start(tmp_path, target=100, spawn=_fake_spawn)
     os.killpg(manifest["pid"], signal.SIGKILL)
     for _ in range(50):
         if not controller_mod._pid_running(manifest["pid"]):
             break
         time.sleep(0.05)
+    live = controller_mod.liveness(tmp_path)
+    assert live["status"] == "failed"
+
+
+def test_reconcile_marks_clean_finish_as_done_when_target_reached(tmp_path):
+    """Contrast case for the fix above: when `ingest_state` shows done_count >= target, a dead pid
+    reads as a clean finish (`done`), not a crash."""
+    import sqlite3
+
+    manifest = controller_mod.start(tmp_path, target=2, spawn=_fake_spawn)
+    db_path = Path(manifest["db_path"])
+    conn = sqlite3.connect(db_path)
+    conn.execute("CREATE TABLE ingest_state (paper_id TEXT PRIMARY KEY, stage TEXT)")
+    conn.execute("INSERT INTO ingest_state VALUES ('a', 'done')")
+    conn.execute("INSERT INTO ingest_state VALUES ('b', 'done')")
+    conn.commit()
+    conn.close()
+
+    os.killpg(manifest["pid"], signal.SIGKILL)
+    for _ in range(50):
+        if not controller_mod._pid_running(manifest["pid"]):
+            break
+        time.sleep(0.05)
+
     live = controller_mod.liveness(tmp_path)
     assert live["status"] == "done"
 
@@ -629,3 +659,172 @@ def test_retarget_wires_og45_og46_params_through(tmp_path):
         assert retargeted["ordering"] == "relevance"
     finally:
         _cleanup(retargeted)
+
+
+# --- OG-49#1: base config loads from data_dir, not the dashboard process's own cwd ---------------
+
+
+def test_override_run_resolves_db_path_under_data_dir_not_repo_root(tmp_path):
+    """OG-49#1: an overridden run must load its BASE config from data_dir/config.yaml (falling
+    back to the repo-root config only when data_dir has none of its own) and resolve every
+    relative path field absolute against data_dir -- never against the dashboard SERVER process's
+    own cwd (which could be the repo root, the exact live-dangerous bug)."""
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    (data_dir / "config.yaml").write_text(
+        "focus_area_queries: ['test query']\n"
+        "db_path: papers.db\n"
+        "blob_dir: blobs\n"
+        "pdf_cache_dir: pdf_cache\n"
+    )
+    calls = []
+    manifest = controller_mod.start(
+        data_dir, target=100, keywords=["zzz-extra-keyword"], spawn=_kwargs_spawn(calls),
+    )
+    try:
+        override_dir = calls[0]["cwd"]
+        assert override_dir != data_dir  # an edit -- real override scratch dir
+        written_cfg = controller_mod.load_config(override_dir / "config.yaml")
+        assert Path(written_cfg.db_path).is_absolute()
+        assert Path(written_cfg.db_path).is_relative_to(data_dir), (
+            f"db_path {written_cfg.db_path!r} must resolve under data_dir={data_dir}, not "
+            "wherever the dashboard process's own cwd happens to be"
+        )
+        assert Path(written_cfg.blob_dir).is_relative_to(data_dir)
+        assert Path(written_cfg.pdf_cache_dir).is_relative_to(data_dir)
+        assert written_cfg.db_path == str(data_dir / "papers.db")
+    finally:
+        _cleanup(manifest)
+
+
+def test_start_falls_back_to_repo_root_config_when_data_dir_has_none(tmp_path):
+    """No data_dir/config.yaml (e.g. a fresh/test data dir) -- must fall back to the repo-root
+    config, same as every other existing test in this file relies on implicitly."""
+    calls = []
+    base_cfg = controller_mod.load_config(controller_mod._REPO_ROOT / "config.yaml")
+    manifest = controller_mod.start(
+        tmp_path, target=100, keywords=["zzz-fallback-test"], spawn=_kwargs_spawn(calls),
+    )
+    try:
+        override_dir = calls[0]["cwd"]
+        written_cfg = controller_mod.load_config(override_dir / "config.yaml")
+        assert written_cfg.focus_area_queries == base_cfg.focus_area_queries + ["zzz-fallback-test"]
+    finally:
+        _cleanup(manifest)
+
+
+# --- OG-49#6/M8: model_copy(update=) bypasses validation -- re-validated pre-spawn ---------------
+
+
+def test_start_rejects_an_invalid_override_before_spawning(tmp_path):
+    """A bad override value (parse_batch_size must be > 0, contracts/config.py) must be rejected
+    by `Config.model_validate` BEFORE any subprocess is spawned -- not accepted by `model_copy`
+    and left to crash the subprocess later, after the manifest already says 'running'."""
+    calls = []
+    with pytest.raises(InvalidOverrideError):
+        controller_mod.start(
+            tmp_path, target=100, parse_batch_size=-1, spawn=_kwargs_spawn(calls),
+        )
+    assert calls == [], "must never reach spawn -- rejected pre-spawn"
+    assert not (tmp_path / "run_manifest.json").exists()
+
+
+# --- OG-49#5: pause/stop escalate past a single SIGTERM ------------------------------------------
+
+
+def test_pause_escalates_to_sigkill_when_process_ignores_sigterm(tmp_path, monkeypatch):
+    """A process wedged in a blocking call that swallows SIGTERM (e.g. mid-syscall in a parse/
+    generation/rerank request to one of its backing services) must still get killed -- resend
+    SIGTERM, then SIGKILL the process group, before giving up. Shrink the escalation timeouts so
+    this test doesn't take ~14s wall-clock."""
+    monkeypatch.setattr(controller_mod, "_DEATH_TIMEOUT_S", 0.3)
+    monkeypatch.setattr(controller_mod, "_ESCALATION_RESEND_TIMEOUT_S", 0.3)
+    monkeypatch.setattr(controller_mod, "_ESCALATION_KILL_TIMEOUT_S", 0.3)
+
+    def spawn(data_dir, target, parse_workers, events_path, log_path):
+        # The leader (bash) ignores SIGTERM forever; individual `sleep 0.1`s inside the loop each
+        # die to the group SIGTERM independently but the loop just spawns another -- the leader
+        # pid itself only ever dies to SIGKILL.
+        proc = subprocess.Popen(
+            ["bash", "-c", "trap '' TERM; while true; do sleep 0.1; done"],
+            start_new_session=True,
+        )
+        return proc.pid
+
+    manifest = controller_mod.start(tmp_path, target=100, spawn=spawn)
+    try:
+        paused = controller_mod.pause(tmp_path)
+        assert paused["status"] == "paused"
+        assert not controller_mod._pid_running(manifest["pid"])
+    finally:
+        _cleanup(manifest)
+
+
+def test_stop_escalates_to_sigkill_when_process_ignores_sigterm(tmp_path, monkeypatch):
+    monkeypatch.setattr(controller_mod, "_DEATH_TIMEOUT_S", 0.3)
+    monkeypatch.setattr(controller_mod, "_ESCALATION_RESEND_TIMEOUT_S", 0.3)
+    monkeypatch.setattr(controller_mod, "_ESCALATION_KILL_TIMEOUT_S", 0.3)
+
+    def spawn(data_dir, target, parse_workers, events_path, log_path):
+        proc = subprocess.Popen(
+            ["bash", "-c", "trap '' TERM; while true; do sleep 0.1; done"],
+            start_new_session=True,
+        )
+        return proc.pid
+
+    manifest = controller_mod.start(tmp_path, target=100, spawn=spawn)
+    try:
+        stopped = controller_mod.stop(tmp_path)
+        assert stopped["status"] == "done"
+        assert not controller_mod._pid_running(manifest["pid"])
+    finally:
+        _cleanup(manifest)
+
+
+# --- OG-47#1: ALL control ops serialized under one data_dir/.control.lock ------------------------
+
+
+def test_control_lock_is_mutually_exclusive(tmp_path):
+    lock_a = controller_mod._control_lock(tmp_path)
+    with lock_a:
+        lock_b = controller_mod._control_lock(tmp_path)
+        with pytest.raises(controller_mod.filelock.Timeout):
+            with lock_b.acquire(timeout=0.1):
+                pass
+
+
+def test_concurrent_starts_are_serialized_exactly_one_run(tmp_path):
+    """OG-47#1: two concurrent POST /api/control starts must not both pass the double-run guard.
+    A slow fake spawn widens the race window the OLD (unlocked) code would fall into -- without
+    the control lock, both threads' `reconcile()` would see no manifest yet (the first is still
+    mid-spawn) and both would proceed to spawn + write, giving 2 successes/0 errors. With the
+    lock, exactly one succeeds and the other deterministically sees the first's manifest."""
+    results = []
+    errors = []
+
+    def slow_spawn(data_dir, target, parse_workers, events_path, log_path):
+        time.sleep(0.3)
+        return _fake_spawn(data_dir, target, parse_workers, events_path, log_path)
+
+    def worker(target, delay):
+        time.sleep(delay)
+        try:
+            results.append(controller_mod.start(tmp_path, target=target, spawn=slow_spawn))
+        except DoubleRunError as e:
+            errors.append(e)
+
+    t1 = threading.Thread(target=worker, args=(100, 0.0))
+    t2 = threading.Thread(target=worker, args=(200, 0.05))
+    t1.start()
+    t2.start()
+    t1.join(timeout=10)
+    t2.join(timeout=10)
+
+    try:
+        assert len(results) == 1, f"expected exactly one successful start, got {len(results)}"
+        assert len(errors) == 1, f"expected exactly one DoubleRunError, got {len(errors)}"
+        manifest = controller_mod._read_manifest(tmp_path)
+        assert manifest["status"] == "running"
+        assert manifest["pid"] == results[0]["pid"]
+    finally:
+        _cleanup(controller_mod._read_manifest(tmp_path))

@@ -21,6 +21,7 @@ T-DOC28: both methods return `(results, RetrievalCoverage)` rather than a bare r
 
 import logging
 
+from contracts.errors import ContractError
 from contracts.mcp_server import PaperSearchResult, PaperSummaryView
 from contracts.retriever import Citation, GroundedResult, RerankCandidate, RetrievalCoverage
 from contracts.vector_index import SearchFilters
@@ -103,8 +104,24 @@ class Retriever:
         if not hits:
             return [], RetrievalCoverage(candidate_count=0)
         scores = {hit.id: hit.score for hit in hits}
-        chunks = {hit.id: self._document_store.get_chunk(hit.id) for hit in hits}
-        candidates = [RerankCandidate(id=hit.id, text=chunks[hit.id].text) for hit in hits]
+        # OG-48#2: a vector-store hit whose chunk_id has NO backing DocumentStore row at all (a
+        # genuinely stale/orphaned point -- distinct from the parent-paper-deleted case caught
+        # below) must be dropped, not crash the whole query. `get_chunk` raises `ContractError` on
+        # an unknown id; per-hit try/except mirrors the parent-paper orphan-skip further down.
+        chunks = {}
+        for hit in hits:
+            try:
+                chunks[hit.id] = self._document_store.get_chunk(hit.id)
+            except ContractError:
+                logger.warning(
+                    "retrieve(): dropping unresolvable hit chunk_id=%r (no matching Chunk row -- "
+                    "orphaned/stale vector point); returning the remaining resolvable hits "
+                    "instead of failing the whole query",
+                    hit.id,
+                )
+        candidates = [
+            RerankCandidate(id=chunk_id, text=chunk.text) for chunk_id, chunk in chunks.items()
+        ]
 
         results = []
         for candidate in self._reranker.rerank(query, candidates):
@@ -167,8 +184,22 @@ class Retriever:
         if not hits:
             return [], RetrievalCoverage(candidate_count=0)
         scores = {hit.id: hit.score for hit in hits}
-        texts = {hit.id: self._document_store.get_summary(hit.id) for hit in hits}
-        candidates = [RerankCandidate(id=hit.id, text=texts[hit.id]) for hit in hits]
+        # OG-48#2: same per-hit orphan-skip as retrieve() above, for a summary_id with no backing
+        # DocumentStore row at all.
+        texts = {}
+        for hit in hits:
+            try:
+                texts[hit.id] = self._document_store.get_summary(hit.id)
+            except ContractError:
+                logger.warning(
+                    "retrieve_papers(): dropping unresolvable hit summary_id=%r (no matching "
+                    "summary row -- orphaned/stale vector point); returning the remaining "
+                    "resolvable hits instead of failing the whole query",
+                    hit.id,
+                )
+        candidates = [
+            RerankCandidate(id=summary_id, text=text) for summary_id, text in texts.items()
+        ]
 
         results = []
         for candidate in self._reranker.rerank(query, candidates):

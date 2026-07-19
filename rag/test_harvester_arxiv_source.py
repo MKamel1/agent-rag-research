@@ -476,6 +476,57 @@ def test_query_with_an_open_ended_date_bound_uses_a_wildcard():
     assert queries_seen == ['all:"causal inference" AND submittedDate:[201801010000 TO *]']
 
 
+# --- OG-49#6/M7: query injection + unvalidated dates rejected before building search_query ------
+
+
+def test_term_containing_a_quote_is_rejected_not_injected():
+    # A `"` in a focus-area keyword (dashboard-editable, OG-43) would otherwise break out of the
+    # quoted `all:"..."` clause and let the rest of the string be interpreted as query syntax.
+    client = httpx.Client(transport=httpx.MockTransport(
+        lambda r: pytest.fail("must never reach the network -- rejected before the request")
+    ))
+    source = make_source(client=client, page_size=10)
+    with pytest.raises(PermanentError, match=r'quote|"'):
+        list(source.fetch(['causal inference" OR cat:econ.EM'], cap=100, ordering="freshest_first"))
+
+
+def test_term_containing_a_backslash_is_rejected():
+    client = httpx.Client(transport=httpx.MockTransport(
+        lambda r: pytest.fail("must never reach the network -- rejected before the request")
+    ))
+    source = make_source(client=client, page_size=10)
+    with pytest.raises(PermanentError):
+        list(source.fetch(["causal\\inference"], cap=100, ordering="freshest_first"))
+
+
+def test_category_with_invalid_characters_is_rejected():
+    client = httpx.Client(transport=httpx.MockTransport(
+        lambda r: pytest.fail("must never reach the network -- rejected before the request")
+    ))
+    source = make_source(client=client, page_size=10, categories=["stat.ME OR cs.LG"])
+    with pytest.raises(PermanentError):
+        list(source.fetch(["causal inference"], cap=100, ordering="freshest_first"))
+
+
+@pytest.mark.parametrize("bad_date", ["not-a-date", "2020/01/01", "2020-1-1", "20200"])
+def test_malformed_date_from_is_rejected(bad_date):
+    client = httpx.Client(transport=httpx.MockTransport(
+        lambda r: pytest.fail("must never reach the network -- rejected before the request")
+    ))
+    source = make_source(client=client, page_size=10, date_from=bad_date)
+    with pytest.raises(PermanentError, match="date filter"):
+        list(source.fetch(["causal inference"], cap=100, ordering="freshest_first"))
+
+
+def test_malformed_date_to_is_rejected():
+    client = httpx.Client(transport=httpx.MockTransport(
+        lambda r: pytest.fail("must never reach the network -- rejected before the request")
+    ))
+    source = make_source(client=client, page_size=10, date_to="12/31/2020")
+    with pytest.raises(PermanentError, match="date filter"):
+        list(source.fetch(["causal inference"], cap=100, ordering="freshest_first"))
+
+
 # --- OG-46: ordering="relevance" -> sortBy=relevance --------------------------------------------
 
 
