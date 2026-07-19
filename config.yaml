@@ -87,3 +87,14 @@ gpu_lock_path: ".gpu.lock"
 # .phase0-data/pass1-gpu-underutilization.md). Conservative default -- real-GPU/host-RAM
 # validation at this N is still pending, see that doc.
 parse_batch_size: 4
+
+# composition-root levers (T-DOC29, contracts/config.py) -- V0 defaults, kept as portable relative
+# paths (resolved against whatever cwd/--data-dir a composition root uses); never hardcode an
+# absolute corpus location here.
+db_path: "papers.db"
+blob_dir: "blobs"
+collection: "papers"
+pdf_cache_dir: "pdf_cache"  # "" explicitly disables the PDF cache -- see contracts/config.py
+batch_size_log_path: null   # unset writes no CSV -- investigation tooling for one run, not default-on
+prefetch_target: 30000      # app/prefetch_pdfs.py's standalone PDF-backlog target
+ingest_paper_ids: null      # T-EVAL harvest-scoping override (PR #89) -- unset = normal query harvest
