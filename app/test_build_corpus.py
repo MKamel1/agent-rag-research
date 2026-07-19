@@ -11,6 +11,7 @@ real (but harmless) OS process, same pattern as `app/dashboard/test_controller.p
 import logging
 import os
 import signal
+import sqlite3
 import subprocess
 from pathlib import Path
 
@@ -19,6 +20,7 @@ import pytest
 from app.build_corpus import (
     _DEFAULT_MAX_IDLE,
     _is_live_prefetch,
+    _normalize_date,
     _order_by_relevance,
     _parse_args,
     _prefetch_pid_path,
@@ -30,6 +32,21 @@ from app.build_corpus import (
 )
 from migrations.migrate import migrate
 from rag.ingest_state_sqlite import SqliteIngestState
+
+
+def _insert_paper(conn: sqlite3.Connection, paper_id: str, published: str) -> None:
+    """Minimal `papers` row -- same pattern as `app/test_corpus_integrity.py::_insert_paper`,
+    trimmed to just the column this file's date-filter tests need."""
+    conn.execute(
+        """
+        INSERT INTO papers
+            (paper_id, version, title, abstract, authors_json, categories_json,
+             published, updated, pdf_path, markdown_path, relevance_score)
+        VALUES (?, 'v1', 't', 'a', '[]', '[]', ?, ?, 'p', 'm.md', 0.5)
+        """,
+        (paper_id, published, published),
+    )
+    conn.commit()
 
 # ================================================================================================
 # cached_not_done / done_count -- cache-first to-do list = pdf_cache/*.pdf minus stage='done'.
@@ -91,6 +108,65 @@ def test_done_count_counts_only_done_stage(tmp_path):
 
 def test_done_count_of_missing_db_is_zero(tmp_path):
     assert done_count(str(tmp_path / "no_such.db")) == 0
+
+
+# --- date-range scoping: `target` means "done papers IN the date filter", not "done total" -------
+
+
+def test_normalize_date_passes_through_iso():
+    assert _normalize_date("2026-01-15") == "2026-01-15"
+
+
+def test_normalize_date_converts_compact_yyyymmdd():
+    assert _normalize_date("20260115") == "2026-01-15"
+
+
+def test_done_count_date_filter_counts_only_papers_published_in_range(tmp_path):
+    db_path = str(tmp_path / "papers.db")
+    migrate(db_path)
+    conn = sqlite3.connect(db_path)
+    _insert_paper(conn, "2601.00001", "2026-01-15")
+    _insert_paper(conn, "2601.00002", "2026-03-01")
+    _insert_paper(conn, "2601.00003", "2025-12-31")
+    conn.close()
+    state = SqliteIngestState(db_path)
+    state.checkpoint("2601.00001", "done")
+    state.checkpoint("2601.00002", "done")
+    state.checkpoint("2601.00003", "done")
+
+    assert done_count(db_path, date_from="2026-01-01", date_to="2026-01-31") == 1
+    assert done_count(db_path, date_from="2026-01-01") == 2
+    assert done_count(db_path, date_to="2026-01-31") == 2
+    assert done_count(db_path) == 3  # no filter -- unscoped, byte-for-byte the old behavior
+
+
+def test_done_count_date_filter_accepts_compact_yyyymmdd(tmp_path):
+    db_path = str(tmp_path / "papers.db")
+    migrate(db_path)
+    conn = sqlite3.connect(db_path)
+    _insert_paper(conn, "2601.00001", "2026-01-15")
+    conn.close()
+    state = SqliteIngestState(db_path)
+    state.checkpoint("2601.00001", "done")
+
+    assert done_count(db_path, date_from="20260101", date_to="20260131") == 1
+    assert done_count(db_path, date_from="20260201") == 0
+
+
+def test_done_count_date_filter_excludes_not_yet_done_papers(tmp_path):
+    db_path = str(tmp_path / "papers.db")
+    migrate(db_path)
+    conn = sqlite3.connect(db_path)
+    _insert_paper(conn, "2601.00001", "2026-01-15")
+    conn.close()
+    state = SqliteIngestState(db_path)
+    state.checkpoint("2601.00001", "parsed")
+
+    assert done_count(db_path, date_from="2026-01-01") == 0
+
+
+def test_done_count_date_filter_of_missing_db_is_zero(tmp_path):
+    assert done_count(str(tmp_path / "no_such.db"), date_from="2026-01-01") == 0
 
 
 # ================================================================================================
@@ -518,6 +594,68 @@ def test_run_ingest_appends_telemetry_poll_interval_flag_only_when_set(tmp_path,
     assert "--telemetry-poll-interval" not in captured[0]
     assert "--telemetry-poll-interval" in captured[1]
     assert captured[1][captured[1].index("--telemetry-poll-interval") + 1] == "3.0"
+
+
+# ================================================================================================
+# date-range scoping (fix for the dashboard "retarget with a new date range silently no-ops"
+# gap): build_to_target(date_from=..., date_to=...) must check the SCOPED done count against
+# `target`, not the corpus-wide total -- and must not break old callers/fakes that don't filter.
+# ================================================================================================
+
+
+def test_build_to_target_date_filter_keeps_going_past_a_stale_global_done_count(tmp_path):
+    """Reproduces the exact gap: `done_count`'s fake tracks only papers done WITHIN the active
+    date filter (as the real SQL-joined version now does) and deliberately ignores a much larger
+    "global total" -- the loop must keep fetching/ingesting until the SCOPED count reaches
+    target, not stop instantly the way it would if it read the unscoped total instead."""
+    scoped_done: set[str] = set()
+    all_ids = ["2601.00001", "2601.00002"]
+    seen_filters = []
+
+    def fake_cached_not_done(cache_dir, db_path):
+        return sorted(set(all_ids) - scoped_done)
+
+    def fake_done_count(db_path, *, date_from=None, date_to=None):
+        seen_filters.append((date_from, date_to))
+        return len(scoped_done)  # NOT the corpus-wide total, which a real corpus already exceeds
+
+    def fake_run_ingest(batch_file, parse_workers, events_path, data_dir):
+        ids = [line for line in batch_file.read_text().splitlines() if line]
+        scoped_done.update(ids)
+
+    build_to_target(
+        tmp_path, "db", Path("cache"), target=2, parse_workers=1, events_path=Path("events"),
+        date_from="2026-01-01", date_to="2026-01-31",
+        ensure_prefetch=_fake_ensure_prefetch(alive=True),
+        run_ingest=fake_run_ingest,
+        cached_not_done=fake_cached_not_done,
+        done_count=fake_done_count,
+        sleep=lambda s: None,
+    )
+
+    assert len(scoped_done) == 2
+    assert seen_filters and all(f == ("2026-01-01", "2026-01-31") for f in seen_filters)
+
+
+def test_build_to_target_without_date_filter_calls_done_count_with_plain_signature(tmp_path):
+    """Default (no date filter, matching every other test in this file) must call
+    `done_count(db_path)` with no kwargs -- so an old test fake that takes only `db_path` (no
+    **kwargs) keeps working unmodified, and a real unscoped run's SQL is unchanged."""
+    seen = []
+
+    def fake_done_count(db_path):
+        seen.append("called")
+        return 1
+
+    build_to_target(
+        tmp_path, "db", Path("cache"), target=1, parse_workers=1, events_path=Path("events"),
+        ensure_prefetch=_fake_ensure_prefetch(alive=True),
+        run_ingest=lambda *a, **k: (_ for _ in ()).throw(AssertionError("no ingest expected")),
+        cached_not_done=lambda cache_dir, db_path: [],
+        done_count=fake_done_count,
+        sleep=lambda s: None,
+    )
+    assert seen == ["called"]
 
 
 # ================================================================================================

@@ -97,15 +97,49 @@ def _done_ids(db_path: str) -> set[str]:
         conn.close()
 
 
-def done_count(db_path: str) -> int:
+def _normalize_date(value: str) -> str:
+    """`Config.arxiv_date_from`/`arxiv_date_to` accept ISO `YYYY-MM-DD` or arXiv's compact
+    `YYYYMMDD` (same two formats `rag/harvester.py::ArxivSource._validated_date` accepts) --
+    `papers.published` is always stored ISO (`date.isoformat()`, DATA-CONTRACTS.md's SQLite
+    schema), so a compact value must be reformatted before it can be compared against that
+    column with a plain string `>=`/`<=`."""
+    return value if "-" in value else f"{value[0:4]}-{value[4:6]}-{value[6:8]}"
+
+
+def done_count(
+    db_path: str, *, date_from: str | None = None, date_to: str | None = None,
+) -> int:
     """How many papers `ingest_state` currently has at stage='done' -- the loop's own stop
     condition (`>= target`), read fresh on every iteration so a concurrent `app.ingest` batch's
-    progress is always seen."""
+    progress is always seen.
+
+    `date_from`/`date_to` (optional, `Config.arxiv_date_from`/`arxiv_date_to`): when either is
+    set, joins onto `papers` and only counts 'done' papers whose `published` falls in that range.
+    Without this, a run scoped to a date window would stop the instant the corpus's TOTAL
+    done-count (papers outside the window included) already exceeds `target`, even though zero
+    papers *in the requested window* had actually been ingested -- exactly the "reached target"
+    no-op a retarget to a new date range would otherwise silently hit.
+    """
     conn = _ro_connect(db_path)
     if conn is None:
         return 0
     try:
-        return conn.execute("SELECT count(*) FROM ingest_state WHERE stage='done'").fetchone()[0]
+        if date_from is None and date_to is None:
+            return conn.execute(
+                "SELECT count(*) FROM ingest_state WHERE stage='done'"
+            ).fetchone()[0]
+        query = (
+            "SELECT count(*) FROM ingest_state s JOIN papers p ON p.paper_id = s.paper_id "
+            "WHERE s.stage='done'"
+        )
+        params: list[str] = []
+        if date_from is not None:
+            query += " AND p.published >= ?"
+            params.append(_normalize_date(date_from))
+        if date_to is not None:
+            query += " AND p.published <= ?"
+            params.append(_normalize_date(date_to))
+        return conn.execute(query, params).fetchone()[0]
     finally:
         conn.close()
 
@@ -219,6 +253,18 @@ def _run_ingest(
     subprocess.run(cmd, cwd=str(data_dir), check=True)
 
 
+def _call_done_count(
+    done_count, db_path: str, date_from: str | None, date_to: str | None,
+) -> int:
+    """Passes `date_from`/`date_to` to `done_count` only when at least one is set -- same "don't
+    hand the injected test fake a kwarg it doesn't accept" convention as `_call_run_ingest`/
+    `app/dashboard/controller.py::_call_spawn`: every existing test's `done_count` fake takes a
+    single positional `db_path` and must keep working unmodified when no date filter is active."""
+    if date_from is None and date_to is None:
+        return done_count(db_path)
+    return done_count(db_path, date_from=date_from, date_to=date_to)
+
+
 def _call_run_ingest(
     run_ingest, batch_file: Path, parse_workers: int, events_path: Path, data_dir: Path,
     telemetry_poll_interval: float | None,
@@ -290,6 +336,8 @@ def build_to_target(
     telemetry_poll_interval: float | None = None,
     ordering: str = "freshest_first",
     focus_area_queries: list[str] | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
     ensure_prefetch=ensure_prefetch_running,
     run_ingest=_run_ingest,
     cached_not_done=cached_not_done,
@@ -323,13 +371,19 @@ def build_to_target(
     (`_RELEVANCE_RANK_CAP`) -- still processed (an ORDER, not a filter), just without a priority
     boost. Upgrade path if that's ever a real problem: re-rank when `cached_not_done` runs out of
     ranked ids, not every iteration.
+
+    `date_from`/`date_to` (`Config.arxiv_date_from`/`arxiv_date_to`): when set, `target` means
+    "done papers published in this range," not "done papers total" -- see `done_count`'s
+    docstring. Unset (default) is byte-for-byte the old unscoped behavior. Deliberately NOT
+    extended to `arxiv_categories` here -- same-shaped gap, left for a follow-up rather than
+    bundled into this fix.
     """
     prefetch_alive = ensure_prefetch(data_dir)
     idle_passes = 0
     ranked_ids: list[str] | None = None
 
     while True:
-        n_done = done_count(db_path)
+        n_done = _call_done_count(done_count, db_path, date_from, date_to)
         if n_done >= target:
             logger.info("build_corpus: reached target -- %d/%d done", n_done, target)
             return
@@ -381,7 +435,7 @@ def build_to_target(
         # cached_not_done list -- without this, the loop would resubmit the same non-empty batch
         # forever with NO sleep between attempts, leaking a fresh `build_batch_*.ids` file per
         # iteration. Reuses the same `idle_passes`/`max_idle` guard as the empty-cache stall above.
-        n_done_after = done_count(db_path)
+        n_done_after = _call_done_count(done_count, db_path, date_from, date_to)
         if n_done_after <= n_done:
             idle_passes += 1
             if idle_passes >= max_idle:
@@ -469,6 +523,10 @@ def main() -> None:
         # a dashboard-launched run's keyword/ordering edits already reach this process through
         # (app/dashboard/controller.py's run-scoped override config.yaml).
         ordering=cfg.ordering, focus_area_queries=cfg.focus_area_queries,
+        # Same channel: a dashboard retarget's arxiv_date_from/date_to (OG-45) land in this same
+        # override config.yaml -- previously read here only for the downloader, never for the
+        # target check itself (done_count's docstring).
+        date_from=cfg.arxiv_date_from, date_to=cfg.arxiv_date_to,
     )
 
 
