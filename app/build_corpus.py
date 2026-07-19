@@ -222,8 +222,8 @@ def _spawn_prefetch(data_dir: Path) -> int:
     `run_manifest.json` `log_path` -- the SAME file every `app.ingest` batch's own, far more
     verbose, parse-progress logging also lands in). A real incident: `app/dashboard/status.py`'s
     `read_downloader` tails only the last ~64KB of that shared log for prefetch's own "downloaded
-    X / target Y" line -- one MinerU batch's progress-bar spam is enough to push the last real
-    pace line tens of MB further back than that window ever reaches, permanently blanking the
+    X / target Y" line -- one Pass-1 parse batch's progress-bar spam is enough to push the last
+    real pace line tens of MB further back than that window ever reaches, permanently blanking the
     dashboard's downloader pace fields even while prefetch is alive and working. A dedicated log
     (this process's ONLY writer) fixes that at the root instead of guessing at a bigger window."""
     cmd = ["env", f"PYTHONPATH={_REPO_ROOT}", sys.executable, "-m", "app.prefetch_pdfs"]

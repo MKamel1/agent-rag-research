@@ -333,8 +333,8 @@ _PREFETCH_LOG_NAME = "prefetch.log"
 # app/prefetch_pdfs.py's own progress line: "prefetch_pdfs: downloaded %d / target %d (cache now
 # %d)". `_spawn_prefetch` gives it a DEDICATED `<run_cwd>/prefetch.log` (this process's only
 # writer) -- a real incident had this tail an OLDER shared log build_corpus/app.ingest also wrote
-# their own, far more verbose, parse-progress logging into: one MinerU batch's spam pushed the
-# last real pace line tens of MB further back than `_LOG_TAIL_BYTES` ever reached, permanently
+# their own, far more verbose, parse-progress logging into: one Pass-1 parse batch's spam pushed
+# the last real pace line tens of MB further back than `_LOG_TAIL_BYTES` ever reached, permanently
 # blanking these fields even while prefetch was alive and working.
 _DOWNLOAD_PACE_RE = re.compile(r"downloaded (\d+) / target (\d+)")
 
