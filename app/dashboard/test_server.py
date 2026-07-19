@@ -161,6 +161,19 @@ def test_root_is_reachable_without_a_token(running_server):
     assert status == 200
 
 
+def test_root_html_persists_token_and_distinguishes_auth_errors_from_staleness(running_server):
+    """Regression guard for the "dashboard shows stale/reconnecting on every page load" bug: the
+    #token field had no persistence (every reload started empty -> first poll() 401'd -> the old
+    poll() crashed rendering the {ok:false} body -> generic 'stale / reconnecting'). The fix
+    persists the token via localStorage and makes poll() check `resp.ok` before calling render(),
+    so a reachable-but-unauthorized response shows the real message instead."""
+    url, _ = running_server
+    status, body = _get_raw(url, "/")
+    assert status == 200
+    assert b"localStorage" in body
+    assert b"resp.ok" in body
+
+
 # --- OG-48#1/OG-49#4: GET /api/status and GET /api/search are now token-gated ------------------
 
 

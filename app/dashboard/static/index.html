@@ -482,6 +482,17 @@ function authHeaders() {
   return { "X-Dashboard-Token": document.getElementById("token").value };
 }
 
+// The token field had no persistence -- every page load/reload started EMPTY, so the very first
+// poll() 401'd and (pre-fix, see poll() above) that read as "stale / reconnecting" even though
+// the server was up and reachable the whole time. localStorage survives reloads (this is a
+// single-operator dashboard on a private tailnet, not a shared/multi-user login).
+const _TOKEN_STORAGE_KEY = "dashboardToken";
+const tokenField = document.getElementById("token");
+tokenField.value = localStorage.getItem(_TOKEN_STORAGE_KEY) || "";
+tokenField.addEventListener("input", () => {
+  localStorage.setItem(_TOKEN_STORAGE_KEY, tokenField.value);
+});
+
 async function runSearch() {
   const query = document.getElementById("searchQuery").value.trim();
   const msg = document.getElementById("searchMsg");
@@ -531,16 +542,30 @@ document.getElementById("searchQuery").addEventListener("keydown", e => {
 });
 
 async function poll() {
+  const staleBadge = document.getElementById("staleBadge");
   try {
     const resp = await fetch("/api/status", { headers: authHeaders() });
-    render(await resp.json());
+    const body = await resp.json();
+    if (!resp.ok) {
+      // Reached the server fine (e.g. a 401 on an empty/wrong token) -- NOT a connectivity
+      // problem, so don't show the misleading "stale / reconnecting" text for it. render()
+      // itself also expects the full success shape (snap.run.*, snap.funnel.*, ...) and would
+      // throw on an {ok:false} error body, which used to land in the catch block below and get
+      // mislabeled as staleness too.
+      staleBadge.textContent = body.message || `error ${resp.status}`;
+      staleBadge.style.display = "inline-block";
+      return;
+    }
+    render(body);
     // Only a SUCCESSFUL poll updates the "last known good" timestamp -- a failed poll must never
     // clobber it (OG-42: that was destroying the one signal this field exists to provide).
     document.getElementById("lastUpdated").textContent = new Date().toLocaleTimeString();
-    document.getElementById("staleBadge").style.display = "none";
+    staleBadge.style.display = "none";
   } catch (e) {
-    // Staleness/errors surface via a SEPARATE badge, not by overwriting lastUpdated.
-    document.getElementById("staleBadge").style.display = "inline-block";
+    // A REAL connectivity failure (network unreachable, server down, ...) -- restore the badge's
+    // default text in case a previous poll left it showing an error message instead.
+    staleBadge.textContent = "stale / reconnecting";
+    staleBadge.style.display = "inline-block";
   }
 }
 
