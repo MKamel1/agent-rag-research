@@ -11,6 +11,7 @@ import pytest
 import yaml
 from pydantic import ValidationError
 
+from contracts.config import Config
 from contracts.errors import ContractError
 from rag.config import load_config
 
@@ -85,3 +86,42 @@ def test_top_level_list_raises_contract_error(tmp_path):
     path.write_text(yaml.dump(["causal inference", "treatment effects"]))
     with pytest.raises(ContractError):
         load_config(path)
+
+
+# --- Config <-> config.yaml <-> contracts parity -------------------------------------------------
+# `Config(**data)`'s `extra="forbid"` (contracts/_base.py) already proves the REVERSE direction --
+# every config.yaml key names a real Config field, or test_loads_real_repo_config above would raise
+# ValidationError. What's untested is the FORWARD direction: a future field added to
+# contracts/config.py that nobody remembers to also add to config.yaml -- it wouldn't crash (pydantic
+# silently falls back to the class default), so the omission would never surface on its own.
+
+
+def test_every_contracts_config_field_has_a_config_yaml_key():
+    """Locks the parity contracts/config.py assumes: every declared field should have a real
+    config.yaml key, not a silent fallback to the class default. Currently xfails -- the audit that
+    added this test found 7 real contracts/config.py fields (all documented in DATA-CONTRACTS.md's
+    Config block) missing from config.yaml today: the 5 T-DOC29 "composition-root levers"
+    (`db_path`/`blob_dir`/`collection`/`pdf_cache_dir`/`batch_size_log_path`) plus `prefetch_target`/
+    `ingest_paper_ids`. All 7 are harmless in practice (pydantic silently falls back to each field's
+    documented class default, and every default matches what config.yaml would set anyway) but that's
+    exactly the silent-skip this test exists to catch once the gap is closed. config.yaml is
+    foundation-protected (out of scope for that audit's PR) -- once a follow-up adds the missing keys,
+    this test should XPASS and the xfail marker below should be deleted.
+    """
+    yaml_keys = set(yaml.safe_load(REAL_CONFIG_PATH.read_text()))
+    contract_fields = set(Config.model_fields)
+    missing = contract_fields - yaml_keys
+    known_gap = {
+        "db_path", "blob_dir", "collection", "pdf_cache_dir", "batch_size_log_path",
+        "prefetch_target", "ingest_paper_ids",
+    }
+    if missing == known_gap:
+        pytest.xfail(f"config.yaml missing known fields (see audit): {sorted(missing)}")
+    assert not missing, f"contracts/config.py field(s) missing from config.yaml: {sorted(missing)}"
+
+
+def test_config_yaml_has_no_keys_outside_contracts_config_fields():
+    yaml_keys = set(yaml.safe_load(REAL_CONFIG_PATH.read_text()))
+    contract_fields = set(Config.model_fields)
+    extra = yaml_keys - contract_fields
+    assert not extra, f"config.yaml key(s) not in contracts/config.py: {sorted(extra)}"

@@ -250,6 +250,20 @@ Ten modules, each independently ownable (owners A–F) and testable through its 
   stage; no other module changes.
 - **Test:** run end-to-end with all fakes; assert idempotency (re-run = no dupes) and resume-after-crash.
 
+### Operational tooling built on top of M1–M9 (not new pipeline modules)
+Two OG-40/41/42/43/44 additions supervise/observe `IngestionOrchestrator` runs from outside the pipeline
+seam — neither changes M1–M9's interfaces, both launch/read the existing composition roots as subprocesses
+or read their on-disk state, same as any other operator tool:
+- **`app/build_corpus.py`** — the continuous cache-first corpus builder: a thin supervisor that keeps
+  `app/prefetch_pdfs.py` running and repeatedly hands `app.ingest` a batch of cached-but-not-yet-done paper
+  ids (`--paper-ids-file`) until `--target` done papers is reached, exhausted, or stalled — closes the gap
+  where `app.ingest` invoked directly re-runs query *discovery* and caps well below what the downloader has
+  already cached (`docs/DESIGN-continuous-cache-first-build.md`).
+- **`app/dashboard/`** (`controller.py` + `status.py` + `server.py`) — the Corpus Dashboard: observes and
+  controls an `app.build_corpus` run over Tailscale (start/pause/resume/stop/retarget via
+  `run_manifest.json` + OS signals, plus a read-only `/api/status` snapshot and a `/api/search` panel over
+  `McpServer`). `status.py` and `controller.py` share no import between them, only the on-disk manifest.
+
 ---
 
 ## Operational invariants (the three things juniors get wrong — specify, don't assume)
@@ -383,7 +397,11 @@ Full patterns + code-shape in `CONVENTIONS.md`; schemas in `DATA-CONTRACTS.md`.
      across that process boundary so two GPU-bound calls never execute at the same instant, backed by a
      cross-process file lock keyed off `Config.gpu_lock_path`. It does not manage residency or eviction —
      that's the job of the phase-boundary hooks above, a separate concern. In V0, a query simply queues
-     behind an in-flight ingest call: no priority, no timeout — accepted V0 simplification, unchanged.
+     behind an in-flight ingest call: no priority — accepted V0 simplification, unchanged. **Timeout
+     (OG-48 reliability hardening):** `acquire()` takes an optional keyword-only `timeout` (seconds);
+     `None` (default) still blocks forever, unchanged for every caller that doesn't pass one — a caller
+     that does gets `TransientError` if a wedged/crashed holder doesn't release in time, instead of
+     hanging forever (DATA-CONTRACTS.md "GpuLock").
      `McpServer` never references either eviction hook and is unaffected by an ingest run.
    - **If external GPU pressure means eviction still isn't enough** (something other than this system is
      also on the GPU): no scheduler, no retry loop for V0 — a failure surfaces loud (`PermanentError`

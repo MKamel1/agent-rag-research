@@ -92,13 +92,25 @@ Concretely, for this build:
 | the embedding client (TEI/vLLM HTTP) | the `Embedder` adapter (M4) |
 | MinerU / Marker / Docling / GROBID | `Parser` adapters (M2) |
 | the arXiv API client | the `Source` adapter (M1) |
-| `sqlite3` | the `DocumentStore` (M5) and `migrations/` — separate seams (applying the schema vs. querying it) that both legitimately touch SQLite directly |
+| `sqlite3` | the `DocumentStore` (M5), `migrations/`, and `rag/ingest_state_sqlite.py` (M9's `IngestState` adapter — a third seam, its own table in the same DB, applying/querying/checkpointing being three legitimately separate concerns) for **read-write** pipeline access |
 | the cross-encoder client (BGE-reranker-v2-m3 or the Spike-2 choice, ADR-10) | the `Reranker` adapter (used by M7) |
 | the local generation-LLM client (Qwen tier, ADR-08; Ollama/vLLM per ADR-09) | the `Summarizer` adapter (M3B) |
 
 If you find yourself typing `import qdrant` in the Retriever, stop — you are dissolving the seam that makes the
 database swappable. Go through the interface. The test: **grep the codebase for the vendor name; it must appear
 in exactly one module.**
+
+**Read-only diagnostic/operator tooling is a documented exception to the `sqlite3` row above.** A standing
+pattern (OG-33/35/40/42/47, `app/build_corpus.py`, `app/corpus_integrity.py`, `app/snapshot.py`,
+`app/ingest.py`'s migration-guard, `app/telemetry.py`, `app/dashboard/controller.py`, `app/dashboard/status.py`)
+opens its own **read-only** `sqlite3` connection (`sqlite3.connect(f"file:{db_path}?mode=ro", uri=True, ...)`
+where the query is ad hoc, or a single narrow guard query otherwise) directly against the same DB file instead
+of routing through `DocumentStore`'s write-oriented Protocol — these are standalone CLI/HTTP tools doing
+one-off counts/health-checks/backups, not pipeline stages, and adding a `DocumentStore` method per one-off
+diagnostic would bloat that Protocol past its purpose (module-design "hide the secret" cuts the other way for
+a report generator). Not mechanically enforced (`ci/checks/vendor_isolation.py`'s `VENDOR_RULES` table has no
+`sqlite3` entry) — this note exists so the exception is a documented, intentional convention rather than
+undocumented drift the next reader has to rediscover.
 
 **Dependency direction:** modules depend *downward* on interfaces (`Retriever` → `VectorStore` interface →
 Qdrant adapter). Never upward, never sideways into a peer's internals. No import cycles — if two modules import
@@ -218,9 +230,12 @@ run concurrently (a multi-day ingest next to an always-on query server), so an i
 inference call** — callers (`IngestionOrchestrator`, `Retriever`) call `embed()`/`summarize()`/`rerank()`
 exactly as they would with no lock at all. `GpuLock` still does not manage residency or eviction itself
 — that's the job of the phase-boundary/`before_embed` hooks above, a separate concern (ARCHITECTURE.md
-§3). **V0 fairness/timeout stance:** `acquire()` has no priority and no timeout — a query simply queues
-behind an in-flight ingest inference call. This is an accepted V0 simplification, not an oversight;
-revisit only if it proves to be a real problem in practice.
+§3). **V0 fairness stance:** `acquire()` has no priority — a query simply queues behind an in-flight
+ingest inference call. This is an accepted V0 simplification, not an oversight; revisit only if it
+proves to be a real problem in practice. **Timeout (OG-48 reliability hardening):** `acquire()` also
+takes an optional keyword-only `timeout` (seconds) — `None` (default) still blocks forever, unchanged
+for every caller that doesn't pass one; a finite `timeout` raises `TransientError` if a wedged/crashed
+holder hasn't released by then (DATA-CONTRACTS.md "GpuLock").
 
 A real 250-paper end-to-end ingest run (`.phase0-data/100-paper-run-stats.md`) completed with zero
 OOM-caused quarantines, evidence the eviction fix above holds at real-ingest scale — see

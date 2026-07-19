@@ -121,3 +121,51 @@ def test_get_span_delegates_to_the_server(serve_module):
 
     assert span == "verbatim source text"
     assert fake_server.get_span_calls == ["some-anchor"]
+
+
+# --- CONVENTIONS.md §3 conformance ("No module calls os.getenv... outside" rag/config.py) --------
+# Sibling composition roots app/ingest.py and app/parse_phase.py pass `cfg.db_path`/`cfg.blob_dir`/
+# `cfg.collection` (T-DOC29) instead of reading RAG_DB_PATH/RAG_BLOB_DIR/RAG_COLLECTION from the
+# process environment. app/serve.py (built later, T-DOC33) was missed by that migration -- it still
+# reads `os.environ.get(...)` directly at import time for all three. Pinned below as a red/xfail
+# test recording the CORRECT canonical behavior; not fixed here -- app/mcp_verify_client.py's
+# docstring and app/run_prefetch_loop.sh's comments still describe the env-var path as current
+# usage, so the real fix needs to touch more than app/serve.py alone (see the audit report's
+# follow-up-PR recommendation).
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="app/serve.py reads RAG_DB_PATH/RAG_BLOB_DIR/RAG_COLLECTION via os.environ.get(...) "
+    "instead of the loaded Config's own db_path/blob_dir/collection fields -- CONVENTIONS.md §3 "
+    "violation, see audit finding (app/serve.py missed by the T-DOC29 env-read migration).",
+)
+def test_build_mcp_server_receives_config_values_not_os_environ(monkeypatch):
+    captured: dict = {}
+
+    def fake_build_mcp_server(config, **kwargs):
+        captured["kwargs"] = kwargs
+        return _FakeMcpServer()
+
+    monkeypatch.setattr(
+        rag.config,
+        "load_config",
+        lambda *a, **k: Config(
+            focus_area_queries=["x"], db_path="cfg.db", blob_dir="cfg-blobs", collection="cfg-col"
+        ),
+    )
+    monkeypatch.setattr(app.assembly, "build_mcp_server", fake_build_mcp_server)
+    monkeypatch.setenv("RAG_DB_PATH", "/env/should-not-win.db")
+    monkeypatch.setenv("RAG_BLOB_DIR", "/env/should-not-win-blobs")
+    monkeypatch.setenv("RAG_COLLECTION", "env-should-not-win")
+
+    if "app.serve" in sys.modules:
+        importlib.reload(sys.modules["app.serve"])
+    else:
+        importlib.import_module("app.serve")
+
+    # Correct canonical behavior: the loaded Config's own fields win, never an os.environ override
+    # app/serve.py invents on its own (no other composition root has one).
+    assert captured["kwargs"].get("db_path") == "cfg.db"
+    assert captured["kwargs"].get("blob_dir") == "cfg-blobs"
+    assert captured["kwargs"].get("collection") == "cfg-col"
