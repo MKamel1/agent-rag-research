@@ -107,24 +107,30 @@ def _normalize_date(value: str) -> str:
 
 
 def done_count(
-    db_path: str, *, date_from: str | None = None, date_to: str | None = None,
+    db_path: str, *,
+    date_from: str | None = None, date_to: str | None = None,
+    categories: list[str] | None = None,
 ) -> int:
     """How many papers `ingest_state` currently has at stage='done' -- the loop's own stop
     condition (`>= target`), read fresh on every iteration so a concurrent `app.ingest` batch's
     progress is always seen.
 
-    `date_from`/`date_to` (optional, `Config.arxiv_date_from`/`arxiv_date_to`): when either is
-    set, joins onto `papers` and only counts 'done' papers whose `published` falls in that range.
-    Without this, a run scoped to a date window would stop the instant the corpus's TOTAL
-    done-count (papers outside the window included) already exceeds `target`, even though zero
-    papers *in the requested window* had actually been ingested -- exactly the "reached target"
-    no-op a retarget to a new date range would otherwise silently hit.
+    `date_from`/`date_to` (optional, `Config.arxiv_date_from`/`arxiv_date_to`) and `categories`
+    (optional, `Config.arxiv_categories`, OR-matched -- same semantics as
+    `rag/harvester.py::ArxivSource`'s own `cat:` clause: a paper counts if ANY of its
+    `categories_json` entries is in the requested list): when any is set, joins onto `papers` and
+    only counts 'done' papers matching every active filter. Without this, a run scoped to a date
+    window and/or a subject filter would stop the instant the corpus's TOTAL done-count (papers
+    outside the filter included) already exceeds `target`, even though zero matching papers had
+    actually been ingested -- the "reached target" no-op a retarget to a new date range or
+    category set would otherwise silently hit (T-DOC71 fixed the date half; this extends it to
+    categories, the identically-shaped gap called out in that PR).
     """
     conn = _ro_connect(db_path)
     if conn is None:
         return 0
     try:
-        if date_from is None and date_to is None:
+        if date_from is None and date_to is None and not categories:
             return conn.execute(
                 "SELECT count(*) FROM ingest_state WHERE stage='done'"
             ).fetchone()[0]
@@ -139,6 +145,13 @@ def done_count(
         if date_to is not None:
             query += " AND p.published <= ?"
             params.append(_normalize_date(date_to))
+        if categories:
+            placeholders = ", ".join("?" * len(categories))
+            query += (
+                f" AND EXISTS (SELECT 1 FROM json_each(p.categories_json) c "
+                f"WHERE c.value IN ({placeholders}))"
+            )
+            params.extend(categories)
         return conn.execute(query, params).fetchone()[0]
     finally:
         conn.close()
@@ -255,14 +268,16 @@ def _run_ingest(
 
 def _call_done_count(
     done_count, db_path: str, date_from: str | None, date_to: str | None,
+    categories: list[str] | None,
 ) -> int:
-    """Passes `date_from`/`date_to` to `done_count` only when at least one is set -- same "don't
-    hand the injected test fake a kwarg it doesn't accept" convention as `_call_run_ingest`/
-    `app/dashboard/controller.py::_call_spawn`: every existing test's `done_count` fake takes a
-    single positional `db_path` and must keep working unmodified when no date filter is active."""
-    if date_from is None and date_to is None:
+    """Passes `date_from`/`date_to`/`categories` to `done_count` only when at least one is set --
+    same "don't hand the injected test fake a kwarg it doesn't accept" convention as
+    `_call_run_ingest`/`app/dashboard/controller.py::_call_spawn`: every existing test's
+    `done_count` fake takes a single positional `db_path` and must keep working unmodified when
+    no filter is active."""
+    if date_from is None and date_to is None and not categories:
         return done_count(db_path)
-    return done_count(db_path, date_from=date_from, date_to=date_to)
+    return done_count(db_path, date_from=date_from, date_to=date_to, categories=categories)
 
 
 def _call_run_ingest(
@@ -338,6 +353,7 @@ def build_to_target(
     focus_area_queries: list[str] | None = None,
     date_from: str | None = None,
     date_to: str | None = None,
+    categories: list[str] | None = None,
     ensure_prefetch=ensure_prefetch_running,
     run_ingest=_run_ingest,
     cached_not_done=cached_not_done,
@@ -372,18 +388,17 @@ def build_to_target(
     boost. Upgrade path if that's ever a real problem: re-rank when `cached_not_done` runs out of
     ranked ids, not every iteration.
 
-    `date_from`/`date_to` (`Config.arxiv_date_from`/`arxiv_date_to`): when set, `target` means
-    "done papers published in this range," not "done papers total" -- see `done_count`'s
-    docstring. Unset (default) is byte-for-byte the old unscoped behavior. Deliberately NOT
-    extended to `arxiv_categories` here -- same-shaped gap, left for a follow-up rather than
-    bundled into this fix.
+    `date_from`/`date_to`/`categories` (`Config.arxiv_date_from`/`arxiv_date_to`/
+    `arxiv_categories`): when any is set, `target` means "done papers matching this filter," not
+    "done papers total" -- see `done_count`'s docstring. All unset (default) is byte-for-byte the
+    old unscoped behavior.
     """
     prefetch_alive = ensure_prefetch(data_dir)
     idle_passes = 0
     ranked_ids: list[str] | None = None
 
     while True:
-        n_done = _call_done_count(done_count, db_path, date_from, date_to)
+        n_done = _call_done_count(done_count, db_path, date_from, date_to, categories)
         if n_done >= target:
             logger.info("build_corpus: reached target -- %d/%d done", n_done, target)
             return
@@ -435,7 +450,7 @@ def build_to_target(
         # cached_not_done list -- without this, the loop would resubmit the same non-empty batch
         # forever with NO sleep between attempts, leaking a fresh `build_batch_*.ids` file per
         # iteration. Reuses the same `idle_passes`/`max_idle` guard as the empty-cache stall above.
-        n_done_after = _call_done_count(done_count, db_path, date_from, date_to)
+        n_done_after = _call_done_count(done_count, db_path, date_from, date_to, categories)
         if n_done_after <= n_done:
             idle_passes += 1
             if idle_passes >= max_idle:
@@ -523,10 +538,11 @@ def main() -> None:
         # a dashboard-launched run's keyword/ordering edits already reach this process through
         # (app/dashboard/controller.py's run-scoped override config.yaml).
         ordering=cfg.ordering, focus_area_queries=cfg.focus_area_queries,
-        # Same channel: a dashboard retarget's arxiv_date_from/date_to (OG-45) land in this same
-        # override config.yaml -- previously read here only for the downloader, never for the
-        # target check itself (done_count's docstring).
+        # Same channel: a dashboard retarget's arxiv_date_from/date_to/arxiv_categories (OG-45)
+        # land in this same override config.yaml -- previously read here only for the downloader,
+        # never for the target check itself (done_count's docstring).
         date_from=cfg.arxiv_date_from, date_to=cfg.arxiv_date_to,
+        categories=cfg.arxiv_categories,
     )
 
 
