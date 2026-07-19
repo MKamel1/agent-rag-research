@@ -209,8 +209,9 @@ class _LazyMcpServer:
 
     OG-48#7: `ThreadingHTTPServer` runs every request on its own thread, so two concurrent FIRST
     searches could both see `self._server is None` and both call `build_mcp_server` -- wasteful
-    duplicate GpuLock/Qdrant/TEI clients, one of them just discarded. Guarded with a double-checked
-    `threading.Lock`: the common case (already built) still never takes the lock at all.
+    duplicate GpuLock/vector-store/TEI clients, one of them just discarded. Guarded with a
+    double-checked `threading.Lock`: the common case (already built) still never takes the lock at
+    all.
     """
 
     def __init__(self, data_dir: Path):
