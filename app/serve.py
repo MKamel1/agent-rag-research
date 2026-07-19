@@ -39,7 +39,11 @@ def semantic_search(
 ) -> SearchResponse:
     """Passage-level search over the ingested corpus. Returns cited, grounded passages
     (`GroundedResult`s) plus a `Coverage` note — never bare text. `k` left unset uses the
-    server's configured default (`Config.top_k`, `_cfg` above); pass it explicitly to override."""
+    server's configured default (`Config.top_k`, `_cfg` above); pass it explicitly to override.
+
+    Note: `k` is accepted up to 100, but at most 32 results are ever returned (a TEI reranker
+    vendor batch-size limit) — `Coverage.returned <= 32` with a larger `Coverage.candidates` means
+    this ceiling, not a sparse corpus."""
     return _server.semantic_search(query, filters, k)
 
 
@@ -48,7 +52,9 @@ def search_papers(
     query: str, filters: SearchFilters | None = None, k: int | None = None
 ) -> PaperSearchResponse:
     """Whole-paper/summary-level search over the ingested corpus. `k` left unset uses the
-    server's configured default (`Config.top_k`); pass it explicitly to override."""
+    server's configured default (`Config.top_k`); pass it explicitly to override.
+
+    Note: same 32-result ceiling as `semantic_search` — see its docstring."""
     return _server.search_papers(query, filters, k)
 
 

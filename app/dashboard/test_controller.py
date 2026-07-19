@@ -629,6 +629,72 @@ def test_resume_reuses_the_same_run_cwd_and_pass_through_params(tmp_path):
         _cleanup(resumed)
 
 
+# --- OG-49 M10: override scratch dir lifecycle -----------------------------------------------
+
+
+def test_pause_does_not_remove_the_override_dir(tmp_path):
+    """`resume()` reuses `run_cwd` verbatim (see the test above) -- `pause` must leave the
+    override scratch dir on disk, not delete the very thing a later resume needs."""
+    calls = []
+    manifest = controller_mod.start(
+        tmp_path, target=100, keywords=["zzz-test-keyword"], spawn=_kwargs_spawn(calls),
+    )
+    override_dir = Path(manifest["run_cwd"])
+    try:
+        assert override_dir != tmp_path
+        assert override_dir.is_dir()
+        controller_mod.pause(tmp_path)
+        assert override_dir.is_dir(), "pause must not remove a dir resume() will reuse"
+    finally:
+        _cleanup(manifest)
+
+
+def test_stop_removes_an_edited_runs_override_dir(tmp_path):
+    """A user-initiated stop is final (module docstring, no later resume) -- its override scratch
+    dir is safe to remove once death is confirmed."""
+    calls = []
+    manifest = controller_mod.start(
+        tmp_path, target=100, keywords=["zzz-test-keyword"], spawn=_kwargs_spawn(calls),
+    )
+    override_dir = Path(manifest["run_cwd"])
+    assert override_dir.is_dir()
+    stopped = controller_mod.stop(tmp_path)
+    assert stopped["status"] == "done"
+    assert not override_dir.exists()
+
+
+def test_stop_with_no_override_never_touches_the_real_data_dir(tmp_path):
+    """An unedited run's `run_cwd` IS the real data dir -- `stop`'s cleanup must never rmtree it,
+    even though it's the same "terminal, no resume expected" case as the override-dir test above."""
+    manifest = controller_mod.start(tmp_path, target=100, spawn=_fake_spawn)
+    assert manifest["run_cwd"] == str(tmp_path)
+    controller_mod.stop(tmp_path)
+    assert tmp_path.is_dir()
+    assert (tmp_path / "run_manifest.json").exists()
+
+
+def test_reconcile_removes_override_dir_once_a_crashed_run_self_heals(tmp_path):
+    """A run whose process dies WITHOUT going through pause/stop (a crash) is caught by
+    `reconcile()`'s own identity check, which downgrades it to `done`/`failed` -- that transition
+    must clean up the override dir too, the same as an explicit `stop()` does."""
+    calls = []
+    manifest = controller_mod.start(
+        tmp_path, target=100, keywords=["zzz-test-keyword"], spawn=_kwargs_spawn(calls),
+    )
+    override_dir = Path(manifest["run_cwd"])
+    assert override_dir.is_dir()
+    os.killpg(manifest["pid"], signal.SIGKILL)
+    for _ in range(50):
+        if not controller_mod._pid_running(manifest["pid"]):
+            break
+        time.sleep(0.05)
+
+    reconciled = controller_mod.liveness(tmp_path)
+
+    assert reconciled["status"] in ("done", "failed")
+    assert not override_dir.exists()
+
+
 def test_retarget_wires_og43_params_through(tmp_path):
     """`retarget` (stop-then-start) is the "Apply new settings while live" path -- edits must
     reach the fresh run exactly as they would via a plain `start`."""

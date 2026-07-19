@@ -412,15 +412,14 @@ class _PdfDownloadParser:
             return
         # Atomic write -- tmp-then-rename, same convention as `prefetch_pdfs._download_one` --
         # so a crash mid-write never leaves a partial `.pdf` that a later cache-hit check would
-        # mistake for complete. Unlike `prefetch_pdfs._download_one`'s fixed `<paper_id>.pdf.tmp`
-        # name, this tmp path includes this process's pid: the 24/7 standalone prefetcher and
-        # this live pipeline are structurally likely to grab the same newest paper_id around the
-        # same time, and two processes writing the SAME tmp path can interleave into one
-        # corrupted file that then gets renamed into place as a permanently-poisoned "valid"
-        # cache entry (T-DOC18 bug -- sticky corruption, invisible to `exists()`). A pid-qualified
-        # name can never collide with `prefetch_pdfs`'s tmp name (different pattern entirely) or
-        # with another process's pid, so whichever process's atomic rename() lands last simply
-        # leaves one complete, valid file.
+        # mistake for complete. Both this path and `prefetch_pdfs._download_one`'s (OG-49 M12)
+        # pid-qualify their tmp name: the 24/7 standalone prefetcher and this live pipeline are
+        # structurally likely to grab the same newest paper_id around the same time, and two
+        # processes writing the SAME tmp path can interleave into one corrupted file that then
+        # gets renamed into place as a permanently-poisoned "valid" cache entry (T-DOC18 bug --
+        # sticky corruption, invisible to `exists()`). Both this module and `prefetch_pdfs` use the
+        # identical `<name>.<pid>.tmp` pattern, and no two live processes ever share a pid, so
+        # whichever process's atomic rename() lands last simply leaves one complete, valid file.
         tmp_path = path.with_name(f"{path.name}.{os.getpid()}.tmp")
         tmp_path.write_bytes(content)
         tmp_path.rename(path)

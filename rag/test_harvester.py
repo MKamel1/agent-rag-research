@@ -45,6 +45,8 @@ TEST-STRATEGY case, none is speculative.
 --------------------------------------------------------------------------------------------------
 """
 
+import logging
+
 import pytest
 
 from contracts.errors import PermanentError, TransientError
@@ -167,6 +169,40 @@ def test_permanent_error_is_quarantined_and_run_continues():
     assert set(r.paper_id for r in refs) == {DUP_ID, MIDDLE_ID}
     assert quarantine.paper_ids == [LAST_ID]
     assert isinstance(quarantine.calls[0][1], PermanentError)
+
+
+# --- OG-49 L11: a truncated harvest logs a WARNING, still never raises -----------------------
+
+
+def test_transient_exhausted_logs_a_truncation_warning(caplog):
+    source = FakeSource(errors={LAST_ID: (TransientError, 99)})
+    with caplog.at_level("WARNING", logger="rag.harvester"):
+        refs = harvest_all(
+            make_harvester(source, quarantine=QuarantineSink(), max_retries=1), cap=100
+        )
+    assert set(r.paper_id for r in refs) == {DUP_ID, MIDDLE_ID}  # never raises -- contract intact
+    warnings = [r for r in caplog.records if r.levelno == logging.WARNING]
+    assert len(warnings) == 1
+    assert "truncated early" in warnings[0].message
+    assert "cap was 100" in warnings[0].message
+    assert LAST_ID in warnings[0].message
+
+
+def test_permanent_error_logs_a_truncation_warning(caplog):
+    source = FakeSource(errors={LAST_ID: PermanentError})
+    with caplog.at_level("WARNING", logger="rag.harvester"):
+        harvest_all(make_harvester(source, quarantine=QuarantineSink()), cap=50)
+    warnings = [r for r in caplog.records if r.levelno == logging.WARNING]
+    assert len(warnings) == 1
+    assert "truncated early" in warnings[0].message
+    assert "cap was 50" in warnings[0].message
+    assert LAST_ID in warnings[0].message
+
+
+def test_no_truncation_warning_when_harvest_completes_cleanly(caplog):
+    with caplog.at_level("WARNING", logger="rag.harvester"):
+        harvest_all(make_harvester(FakeSource()))
+    assert [r for r in caplog.records if r.levelno == logging.WARNING] == []
 
 
 def test_permanent_error_is_not_retried():

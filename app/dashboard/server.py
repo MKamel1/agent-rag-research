@@ -30,6 +30,7 @@ import hmac
 import json
 import logging
 import re
+import threading
 import urllib.parse
 from datetime import date
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -205,20 +206,28 @@ class _LazyMcpServer:
     `app/dashboard/status.py::read_corpus` already reads for this exact `data_dir`; `collection`
     is `_STATIC_CONFIG.collection` (the base `config.yaml`, same source `_status_dict`'s other
     static fields already read from).
+
+    OG-48#7: `ThreadingHTTPServer` runs every request on its own thread, so two concurrent FIRST
+    searches could both see `self._server is None` and both call `build_mcp_server` -- wasteful
+    duplicate GpuLock/Qdrant/TEI clients, one of them just discarded. Guarded with a double-checked
+    `threading.Lock`: the common case (already built) still never takes the lock at all.
     """
 
     def __init__(self, data_dir: Path):
         self._data_dir = data_dir
         self._server = None
+        self._build_lock = threading.Lock()
 
     def semantic_search(self, query: str, filters: SearchFilters | None, k: int | None):
         if self._server is None:
-            self._server = build_mcp_server(
-                _STATIC_CONFIG,
-                db_path=str(self._data_dir / "papers.db"),
-                blob_dir=str(self._data_dir / "blobs"),
-                collection=_STATIC_CONFIG.collection,
-            )
+            with self._build_lock:
+                if self._server is None:  # re-check: another thread may have built it while we waited
+                    self._server = build_mcp_server(
+                        _STATIC_CONFIG,
+                        db_path=str(self._data_dir / "papers.db"),
+                        blob_dir=str(self._data_dir / "blobs"),
+                        collection=_STATIC_CONFIG.collection,
+                    )
         return self._server.semantic_search(query, filters, k)
 
 
@@ -318,6 +327,25 @@ def make_handler(
             if k is not None:
                 k = max(_SEARCH_MIN_K, min(k, _SEARCH_MAX_K))
             filters = _search_filters_from_params(params)
+            # OG-48#9: a reversed date range (published_after > published_before) matches nothing
+            # in VectorIndex -- indistinguishable from "no results for this query" unless caught
+            # here, at the boundary where the raw request params are still in hand. contracts/
+            # vector_index.py's SearchFilters itself is left unvalidated (foundation territory);
+            # this is the caller-facing boundary check instead.
+            if (
+                filters is not None
+                and filters.published_after is not None
+                and filters.published_before is not None
+                and filters.published_after > filters.published_before
+            ):
+                self._json(400, {
+                    "ok": False,
+                    "message": (
+                        f"published_after ({filters.published_after.isoformat()}) must be on or "
+                        f"before published_before ({filters.published_before.isoformat()})"
+                    ),
+                })
+                return
             try:
                 response = mcp_server.semantic_search(query, filters, k)
             except (TransientError, PermanentError, ContractError) as e:
@@ -326,8 +354,12 @@ def make_handler(
                 # never a crashed request thread (ThreadingHTTPServer runs each request on its
                 # own thread, so one failed search must not affect the `/api/status` poll or any
                 # other in-flight request either).
+                # OG-48#8: `str(e)` here can carry internal detail (GpuLock file paths, TEI/vendor
+                # URLs and status text) -- logged in full server-side, but the CLIENT gets a
+                # generic message; every tailnet host that can reach this route is now an
+                # authenticated one (OG-48#1/OG-49#4), not a trusted one.
                 logger.warning("search failed for query=%r: %s", query, e)
-                self._json(502, {"ok": False, "message": str(e)})
+                self._json(502, {"ok": False, "message": "search failed; see server logs"})
                 return
             self._json(200, {
                 "ok": True,
