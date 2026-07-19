@@ -540,8 +540,8 @@ def test_lazy_mcp_server_builds_only_once_under_concurrent_first_calls(tmp_path,
             return SearchResponse(results=[], coverage=Coverage(returned=0, candidates=0))
 
     def slow_build(*args, **kwargs):
-        # Simulates the real build's real cost (GpuLock/Qdrant/TEI client construction) taking
-        # long enough for a second concurrent first-request to arrive mid-build.
+        # Simulates the real build's real cost (GpuLock/vector-store/TEI client construction)
+        # taking long enough for a second concurrent first-request to arrive mid-build.
         build_calls.append(1)
         build_started.set()
         assert release_build.wait(timeout=5.0), "test setup: build was never released"
