@@ -269,6 +269,84 @@ def test_verified_pid_rejects_manifest_with_no_stored_identity(tmp_path):
     assert controller_mod._verified_pid(manifest) is None
 
 
+# --- `_capture_identity` must not permanently record `env`'s own transitional cmdline ------------
+#
+# Real incident: `_spawn` launches via `env PYTHONPATH=<repo> python -m app.build_corpus ...` --
+# `env` execve()s itself away into the real program WITHIN THE SAME PID almost immediately, but
+# not instantly. `_capture_identity` won that race once, permanently storing `env`'s own argv as
+# the run's "identity"; `/proc/<pid>/cmdline` never showed that again once the exec completed, so
+# every later `_verified_pid` check mismatched forever -- a healthy, actively-progressing run got
+# downgraded to "failed" (queuing its scratch config dir for deletion) out from under it.
+
+
+def test_capture_identity_retries_past_the_env_wrappers_transitional_cmdline(monkeypatch):
+    calls = {"n": 0}
+
+    def fake_process_identity(pid):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            return (100.0, "env\x00PYTHONPATH=/repo\x00python\x00-m\x00app.build_corpus\x00")
+        return (100.0, "python\x00-m\x00app.build_corpus\x00")
+
+    monkeypatch.setattr(controller_mod, "_process_identity", fake_process_identity)
+    monkeypatch.setattr(controller_mod.time, "sleep", lambda s: None)
+
+    starttime, cmdline = controller_mod._capture_identity(12345)
+    assert cmdline == "python\x00-m\x00app.build_corpus\x00"
+    assert calls["n"] == 2  # the 1st (env-wrapper) read must not have been accepted as final
+
+
+def test_capture_identity_still_retries_through_proc_not_ready_yet(monkeypatch):
+    """Existing behavior preserved: `/proc` not yet populated (`_process_identity` -> None)
+    still retries, same as before this fix -- only the "must not be the env wrapper" condition
+    is new."""
+    calls = {"n": 0}
+
+    def fake_process_identity(pid):
+        calls["n"] += 1
+        if calls["n"] < 3:
+            return None
+        return (100.0, "python\x00-m\x00app.build_corpus\x00")
+
+    monkeypatch.setattr(controller_mod, "_process_identity", fake_process_identity)
+    monkeypatch.setattr(controller_mod.time, "sleep", lambda s: None)
+
+    starttime, cmdline = controller_mod._capture_identity(12345)
+    assert cmdline == "python\x00-m\x00app.build_corpus\x00"
+    assert calls["n"] == 3
+
+
+def test_capture_identity_falls_back_to_env_cmdline_if_it_never_resolves(monkeypatch):
+    """Best-effort fallback matching this function's existing contract: if every retry still
+    shows the transitional `env` wrapper (should never happen in practice -- `env` execve()s
+    near-instantly), return the last-observed identity rather than `(None, None)`."""
+    monkeypatch.setattr(
+        controller_mod, "_process_identity",
+        lambda pid: (100.0, "env\x00PYTHONPATH=/repo\x00python\x00"),
+    )
+    monkeypatch.setattr(controller_mod.time, "sleep", lambda s: None)
+
+    starttime, cmdline = controller_mod._capture_identity(12345)
+    assert starttime == 100.0
+    assert cmdline == "env\x00PYTHONPATH=/repo\x00python\x00"
+
+
+def test_capture_identity_accepts_a_cmdline_that_never_went_through_env(monkeypatch):
+    """The common/simple case (no wrapper at all, e.g. a test's own fake spawn) must still work
+    unchanged -- first successful read wins immediately."""
+    calls = {"n": 0}
+
+    def fake_process_identity(pid):
+        calls["n"] += 1
+        return (100.0, "sleep\x00100\x00")
+
+    monkeypatch.setattr(controller_mod, "_process_identity", fake_process_identity)
+
+    starttime, cmdline = controller_mod._capture_identity(12345)
+    assert cmdline == "sleep\x00100\x00"
+    assert calls["n"] == 1
+
+
 # --- atomic writes ---------------------------------------------------------------------------
 
 

@@ -170,15 +170,32 @@ def _process_identity(pid: int) -> tuple[float, str] | None:
     return starttime, cmdline
 
 
+# `_spawn`'s launch command's own argv[0] (see its docstring: `env PYTHONPATH=<repo> python -m
+# app.build_corpus ...`) -- `env` execve()s itself away into the real long-lived program WITHIN
+# THE SAME PID almost immediately. `_capture_identity` below must not let a read that lands in
+# that brief transitional window permanently record `env`'s own argv as the run's "identity".
+_ENV_WRAPPER_CMDLINE_PREFIX = "env\x00"
+
+
 def _capture_identity(pid: int) -> tuple[float | None, str | None]:
     """Best-effort identity capture right after spawn. A few quick retries: `/proc/<pid>/*` can
-    lag a hair behind `Popen()` returning."""
+    lag a hair behind `Popen()` returning -- AND `_spawn`'s `env`-wrapper transition (see
+    `_ENV_WRAPPER_CMDLINE_PREFIX`) can too: a real incident had this function win that race,
+    permanently capturing `env`'s own (transitional) cmdline, which `/proc/<pid>/cmdline` never
+    shows again once the exec into the real program completes. Every later `_verified_pid` check
+    then mismatched forever -- an exact, healthy, actively-progressing run got downgraded to
+    "failed" (and its scratch config dir queued for deletion, `_cleanup_run_cwd`) out from under
+    it. Keeps retrying while the observed cmdline still IS that transitional wrapper, not just
+    while `/proc` is unreadable; falls back to whatever was last observed (matching this
+    function's existing best-effort contract) if every retry still shows the wrapper -- should
+    never happen in practice, `env` execve()s near-instantly."""
+    identity = None
     for _ in range(5):
         identity = _process_identity(pid)
-        if identity is not None:
+        if identity is not None and not identity[1].startswith(_ENV_WRAPPER_CMDLINE_PREFIX):
             return identity
         time.sleep(0.02)
-    return None, None
+    return identity if identity is not None else (None, None)
 
 
 def _verified_pid(manifest: dict) -> int | None:
