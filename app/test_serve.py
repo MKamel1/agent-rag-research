@@ -126,21 +126,11 @@ def test_get_span_delegates_to_the_server(serve_module):
 # --- CONVENTIONS.md §3 conformance (only rag/config.py may read the process environment) ---------
 # Sibling composition roots app/ingest.py and app/parse_phase.py pass `cfg.db_path`/`cfg.blob_dir`/
 # `cfg.collection` (T-DOC29) instead of reading RAG_DB_PATH/RAG_BLOB_DIR/RAG_COLLECTION from the
-# process environment. app/serve.py (built later, T-DOC33) was missed by that migration -- it still
-# reads those three process-environment variables directly at import time. Pinned below as a
-# red/xfail test recording the CORRECT canonical behavior; not fixed here -- app/mcp_verify_client.py's
-# docstring and app/run_prefetch_loop.sh's comments still describe the env-var path as current
-# usage, so the real fix needs to touch more than app/serve.py alone (see the audit report's
-# follow-up-PR recommendation).
+# process environment. app/serve.py (built later, T-DOC33) was missed by that migration -- fixed
+# here: it now passes the loaded Config's own db_path/blob_dir/collection fields (optionally
+# resolved against --data-dir, see the tests below), never a process-environment read.
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="app/serve.py reads RAG_DB_PATH/RAG_BLOB_DIR/RAG_COLLECTION from the process "
-    "environment instead of the loaded Config's own db_path/blob_dir/collection fields -- "
-    "CONVENTIONS.md §3 violation, see audit finding (app/serve.py missed by the T-DOC29 "
-    "process-environment-read migration).",
-)
 def test_build_mcp_server_receives_config_values_not_os_environ(monkeypatch):
     captured: dict = {}
 
@@ -170,3 +160,49 @@ def test_build_mcp_server_receives_config_values_not_os_environ(monkeypatch):
     assert captured["kwargs"].get("db_path") == "cfg.db"
     assert captured["kwargs"].get("blob_dir") == "cfg-blobs"
     assert captured["kwargs"].get("collection") == "cfg-col"
+
+
+def test_data_dir_resolves_db_path_and_blob_dir_under_it(tmp_path, monkeypatch):
+    """`--data-dir DIR`: config.yaml is loaded from DIR, and db_path/blob_dir resolve absolute
+    against DIR (not cwd) -- the deployment path the real MCP registration uses."""
+    (tmp_path / "config.yaml").write_text(
+        "focus_area_queries: ['x']\n"
+        "db_path: papers.db\n"
+        "blob_dir: blobs\n"
+        "collection: real-collection\n"
+    )
+    (tmp_path / "papers.db").touch()  # exists -> the loud-fail check below must not trip
+
+    captured: dict = {}
+
+    def fake_build_mcp_server(config, **kwargs):
+        captured["kwargs"] = kwargs
+        return _FakeMcpServer()
+
+    monkeypatch.setattr(app.assembly, "build_mcp_server", fake_build_mcp_server)
+    monkeypatch.setattr(sys, "argv", ["app.serve", "--data-dir", str(tmp_path)])
+
+    if "app.serve" in sys.modules:
+        importlib.reload(sys.modules["app.serve"])
+    else:
+        importlib.import_module("app.serve")
+
+    assert captured["kwargs"]["db_path"] == str((tmp_path / "papers.db").resolve())
+    assert captured["kwargs"]["blob_dir"] == str((tmp_path / "blobs").resolve())
+    assert captured["kwargs"]["collection"] == "real-collection"
+
+
+def test_data_dir_with_missing_db_fails_loudly(tmp_path, monkeypatch):
+    """No papers.db under --data-dir -> a clear SystemExit, not a silently-created empty database
+    (the "confident fake-empty results" failure mode this check exists to prevent)."""
+    (tmp_path / "config.yaml").write_text("focus_area_queries: ['x']\n")
+    # deliberately no papers.db written here
+
+    monkeypatch.setattr(app.assembly, "build_mcp_server", lambda *a, **k: _FakeMcpServer())
+    monkeypatch.setattr(sys, "argv", ["app.serve", "--data-dir", str(tmp_path)])
+
+    with pytest.raises(SystemExit, match="does not exist"):
+        if "app.serve" in sys.modules:
+            importlib.reload(sys.modules["app.serve"])
+        else:
+            importlib.import_module("app.serve")

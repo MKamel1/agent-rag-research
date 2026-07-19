@@ -9,6 +9,15 @@ never meant to reach into this repo's own CI tooling, which legitimately reads `
 `os.environ.get(...)` reads had silently accumulated there while this check was scoped to only
 `rag/`/`contracts/` — see `contracts/config.py`'s "composition-root levers" fields, which is where
 those reads now live instead.
+
+Note this check is diff-based (`f.added_lines` below), not a full-repo scan (`ci/run_enforcement.py`
+module docstring: a full-repo scan would re-flag pre-existing content forever). That means a
+violation that lands in scope BEFORE it's ever touched by a scanned diff is invisible until someone
+edits those exact lines again — `app/serve.py`'s `RAG_DB_PATH`/`RAG_BLOB_DIR`/`RAG_COLLECTION` reads
+(added by T-DOC33, after T-DOC29's migration above) were exactly this: already in `app/` scope, but
+never re-flagged because no later diff touched them. Fixed at the source (those reads are gone from
+`app/serve.py` now) rather than papered over here — there is no separate allowlist in this file to
+carve them out of; scope has always been `app/` in full. No check_d logic changed by that fix.
 """
 
 from __future__ import annotations

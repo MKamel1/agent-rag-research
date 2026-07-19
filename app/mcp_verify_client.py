@@ -4,16 +4,21 @@ in-process the way `rag/test_composition_e2e.py` and the T-EVAL harness do. This
 M5's exit bar ("an agent answers a factual question... and you use it") needs someone to have
 actually run — see `LESSONS-LEARNED.md`'s T-DOC33 entry for the transcript this produced.
 
-Usage — export RAG_DB_PATH/RAG_BLOB_DIR (same env vars `app/ingest.py`/`app/parse_phase.py` read)
-to point at real production data before running, same as any other real run against that data;
-unset falls back to `build_mcp_server`'s own cwd-relative defaults (`"papers.db"`/`"blobs"`):
+Usage:
 
-    RAG_DB_PATH=/path/to/papers.db RAG_BLOB_DIR=/path/to/blobs \
-        python -m app.mcp_verify_client "your factual query" [--k N]
+    python -m app.mcp_verify_client "your factual query" [--k N]
 
-Spawns `python -m app.serve` as a real child process over stdio, calls `semantic_search`, then
-calls `get_span` on the top hit's anchor to prove the citation resolves back to real stored text
-— the full query -> citation round trip, over the wire.
+Spawns `python -m app.serve` as a real child process over stdio (`cwd=_REPO_ROOT`, fixed below), so
+the child resolves `config.yaml` from THIS repo's root via `app.serve`'s plain `load_config()`
+fallback, then calls `semantic_search`, then calls `get_span` on the top hit's anchor to prove the
+citation resolves back to real stored text — the full query -> citation round trip, over the wire.
+
+The RAG_DB_PATH/RAG_BLOB_DIR/RAG_COLLECTION env vars this docstring used to tell you to export no
+longer do anything -- `app.serve` doesn't read the process environment at all now (CONVENTIONS.md
+§3; see its own docstring for the `--data-dir` flag that replaced them). This script always spawns
+against the repo-root config.yaml; it has no `--data-dir` passthrough of its own today, so pointing
+it at a different corpus means adding one (append `["--data-dir", data_dir]` to the spawn `args`
+below) -- not done here since no current manual-verification run needs it.
 """
 
 import asyncio

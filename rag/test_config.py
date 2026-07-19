@@ -98,25 +98,17 @@ def test_top_level_list_raises_contract_error(tmp_path):
 
 def test_every_contracts_config_field_has_a_config_yaml_key():
     """Locks the parity contracts/config.py assumes: every declared field should have a real
-    config.yaml key, not a silent fallback to the class default. Currently xfails -- the audit that
-    added this test found 7 real contracts/config.py fields (all documented in DATA-CONTRACTS.md's
-    Config block) missing from config.yaml today: the 5 T-DOC29 "composition-root levers"
-    (`db_path`/`blob_dir`/`collection`/`pdf_cache_dir`/`batch_size_log_path`) plus `prefetch_target`/
-    `ingest_paper_ids`. All 7 are harmless in practice (pydantic silently falls back to each field's
-    documented class default, and every default matches what config.yaml would set anyway) but that's
-    exactly the silent-skip this test exists to catch once the gap is closed. config.yaml is
-    foundation-protected (out of scope for that audit's PR) -- once a follow-up adds the missing keys,
-    this test should XPASS and the xfail marker below should be deleted.
+    config.yaml key, not a silent fallback to the class default. A prior audit found 7 real
+    contracts/config.py fields missing from config.yaml (the 5 T-DOC29 "composition-root levers"
+    plus `prefetch_target`/`ingest_paper_ids`) -- harmless in practice (pydantic silently falls back
+    to each field's documented class default) but exactly the silent-skip this test exists to catch.
+    config.yaml now carries all of them (byte-identical to their class defaults), so this is a hard
+    guard: a future field added to contracts/config.py without a matching config.yaml key fails here
+    immediately instead of silently falling back.
     """
     yaml_keys = set(yaml.safe_load(REAL_CONFIG_PATH.read_text()))
     contract_fields = set(Config.model_fields)
     missing = contract_fields - yaml_keys
-    known_gap = {
-        "db_path", "blob_dir", "collection", "pdf_cache_dir", "batch_size_log_path",
-        "prefetch_target", "ingest_paper_ids",
-    }
-    if missing == known_gap:
-        pytest.xfail(f"config.yaml missing known fields (see audit): {sorted(missing)}")
     assert not missing, f"contracts/config.py field(s) missing from config.yaml: {sorted(missing)}"
 
 
