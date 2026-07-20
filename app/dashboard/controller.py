@@ -433,6 +433,7 @@ def _maybe_build_override(
     arxiv_date_from: str | None = None,
     arxiv_date_to: str | None = None,
     ordering: str | None = None,
+    stranded_policy: str | None = None,
 ) -> tuple[Config, Path | None]:
     """Builds a run-scoped override `Config` + scratch `config.yaml` dir when `keywords` (AUGMENTED
     onto `focus_area_queries` -- owner decision: an edit adds topics to the one library, it never
@@ -464,6 +465,8 @@ def _maybe_build_override(
         updates["arxiv_date_to"] = arxiv_date_to
     if ordering is not None and ordering != cfg.ordering:
         updates["ordering"] = ordering
+    if stranded_policy is not None and stranded_policy != cfg.stranded_policy:
+        updates["stranded_policy"] = stranded_policy
     if not updates:
         return cfg, None
     unvalidated = cfg.model_copy(update=updates)
@@ -572,6 +575,8 @@ def _build_manifest(
         "parse_batch_size": effective_cfg.parse_batch_size,
         # OG-46: dashboard run-panel ordering-mode indicator ("relevance" vs "freshest_first").
         "ordering": effective_cfg.ordering,
+        # The stranded-paper policy actually in effect for this run.
+        "stranded_policy": effective_cfg.stranded_policy,
         # OG-45: DOWNLOAD-side arXiv filters actually in effect for this run (unedited base config
         # value when the run didn't override them) -- same "show what's actually active" role
         # `focus_queries` already plays for keyword edits.
@@ -613,6 +618,7 @@ def start(data_dir: str | Path, target: int, parse_workers: int = 3, *,
           arxiv_categories: list[str] | None = None,
           arxiv_date_from: str | None = None, arxiv_date_to: str | None = None,
           ordering: str | None = None,
+          stranded_policy: str | None = None,
           spawn: SpawnFn = _spawn) -> dict:
     """Fresh run with a new target. Refuses if a run is already live (`running`/`pausing`/
     `stopping`) -- pause or stop it first.
@@ -640,7 +646,8 @@ def start(data_dir: str | Path, target: int, parse_workers: int = 3, *,
             telemetry_poll_interval=telemetry_poll_interval, batch_size=batch_size,
             keywords=keywords, parse_batch_size=parse_batch_size,
             arxiv_categories=arxiv_categories, arxiv_date_from=arxiv_date_from,
-            arxiv_date_to=arxiv_date_to, ordering=ordering, spawn=spawn,
+            arxiv_date_to=arxiv_date_to, ordering=ordering, stranded_policy=stranded_policy,
+            spawn=spawn,
         )
 
 
@@ -651,6 +658,7 @@ def _start_locked(data_dir: Path, target: int, parse_workers: int = 3, *,
                    arxiv_categories: list[str] | None = None,
                    arxiv_date_from: str | None = None, arxiv_date_to: str | None = None,
                    ordering: str | None = None,
+          stranded_policy: str | None = None,
                    spawn: SpawnFn = _spawn) -> dict:
     """`start`'s actual body -- called with `_control_lock(data_dir)` already held (by `start`
     itself, or by `retarget` wrapping both halves in one acquisition)."""
@@ -671,7 +679,7 @@ def _start_locked(data_dir: Path, target: int, parse_workers: int = 3, *,
     effective_cfg, override_dir = _maybe_build_override(
         base_cfg, keywords, parse_batch_size, data_dir=data_dir,
         arxiv_categories=arxiv_categories, arxiv_date_from=arxiv_date_from,
-        arxiv_date_to=arxiv_date_to, ordering=ordering,
+        arxiv_date_to=arxiv_date_to, ordering=ordering, stranded_policy=stranded_policy,
     )
     run_cwd = override_dir if override_dir is not None else data_dir
 
@@ -800,6 +808,7 @@ def retarget(data_dir: str | Path, target: int, parse_workers: int = 3, *,
              arxiv_categories: list[str] | None = None,
              arxiv_date_from: str | None = None, arxiv_date_to: str | None = None,
              ordering: str | None = None,
+          stranded_policy: str | None = None,
              spawn: SpawnFn = _spawn) -> dict:
     """"Start a fresh run with a new target": stop the current run if one is live, then start.
     OG-43: this is now the "Apply new settings while a run is live" path -- `server.py` exposes it
@@ -824,5 +833,6 @@ def retarget(data_dir: str | Path, target: int, parse_workers: int = 3, *,
             telemetry_poll_interval=telemetry_poll_interval, batch_size=batch_size,
             keywords=keywords, parse_batch_size=parse_batch_size,
             arxiv_categories=arxiv_categories, arxiv_date_from=arxiv_date_from,
-            arxiv_date_to=arxiv_date_to, ordering=ordering, spawn=spawn,
+            arxiv_date_to=arxiv_date_to, ordering=ordering, stranded_policy=stranded_policy,
+            spawn=spawn,
         )

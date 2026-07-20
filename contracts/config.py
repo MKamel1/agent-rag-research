@@ -25,6 +25,13 @@ class Config(FrozenModel):
     # instead of freshest-first. Default unchanged; a dashboard-launched run may opt in per-run
     # (app/dashboard/controller.py's override-config mechanism).
     ordering: Literal["freshest_first", "relevance"] = "freshest_first"
+    # How `app/build_corpus.py` treats papers left at a Pass-1-complete stage ('parsed'..'stored')
+    # by an earlier pause/crash -- ARCHITECTURE.md §3's two-pass VRAM isolation means a pause
+    # mid-Pass-2 always leaves some behind. "finish_first" (default) drains them before starting
+    # Pass 1 on fresh papers: such a batch skips Pass 1 entirely, so it is cheap and makes already-
+    # parsed work searchable soonest. "ignore" leaves them banked in the DB and ingests only fresh
+    # papers. Neither discards anything -- see `_apply_stranded_policy`.
+    stranded_policy: Literal["finish_first", "ignore"] = "finish_first"
     ingestion_mode: Literal["one_shot_seed"] = "one_shot_seed"
     sources: list[str] = Field(default_factory=lambda: ["arxiv"])
     relevance_filter: Literal["off", "embedding"] = "off"

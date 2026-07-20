@@ -157,14 +157,47 @@ def done_count(
         conn.close()
 
 
+def _permanently_failed_ids(db_path: str) -> set[str]:
+    """paper_ids quarantined with a `PermanentError` -- a failure that re-running cannot fix (a
+    404'd/withdrawn PDF, a structurally unparseable file).
+
+    Why this exclusion exists: `quarantine` is an append-only dead-letter log that deliberately does
+    NOT stop a paper being retried (`rag/ingest_state_sqlite.py::quarantine`'s docstring: "harvest
+    doesn't exclude quarantined papers ... so a re-run can legitimately hit the same bad paper
+    again"). That is right for a `TransientError` -- a network blip should be retried. It is wrong
+    for a `PermanentError`: with the PDF still sitting in `pdf_cache`, `cached_not_done` re-selected
+    those papers on EVERY run forever (measured on the live corpus: 22 of 33 quarantined papers had
+    a cached PDF and were being re-attempted every single run). Harmless when a batch was the whole
+    cache; with a bounded batch (`_MAX_BATCH`) they would permanently occupy real batch slots.
+
+    `TransientError` and un-diagnosed rows are deliberately NOT excluded -- retrying those is the
+    behavior the dead-letter design intends, and an un-diagnosed row (quarantined before
+    `quarantine_diagnostics` existed) is unknown, not known-permanent."""
+    conn = _ro_connect(db_path)
+    if conn is None:
+        return set()
+    try:
+        rows = conn.execute(
+            "SELECT paper_id FROM quarantine_diagnostics WHERE error_type = 'PermanentError'"
+        ).fetchall()
+        return {r[0] for r in rows}
+    except sqlite3.Error:
+        # No `quarantine_diagnostics` table yet (a corpus predating it) -- excluding nothing is the
+        # conservative degradation, matching this module's other read helpers.
+        return set()
+    finally:
+        conn.close()
+
+
 def cached_not_done(cache_dir: Path, db_path: str) -> list[str]:
     """The cache-first to-do list: basenames of `cache_dir/*.pdf` (same naming as
-    `app/prefetch_pdfs.py::_pdf_path`) minus ids `ingest_state` already has at stage='done'.
-    Sorted, so repeated calls against an unchanged cache/db return a stable batch."""
+    `app/prefetch_pdfs.py::_pdf_path`) minus ids `ingest_state` already has at stage='done', minus
+    ids quarantined as permanently failed (`_permanently_failed_ids`). Sorted, so repeated calls
+    against an unchanged cache/db return a stable batch."""
     cached = {p.stem for p in cache_dir.glob("*.pdf")}
     if not cached:
         return []
-    return sorted(cached - _done_ids(db_path))
+    return sorted(cached - _done_ids(db_path) - _permanently_failed_ids(db_path))
 
 
 # --- ensure_prefetch_running: reuse a live downloader, never launch a duplicate ------------------
@@ -314,10 +347,33 @@ def _call_run_ingest(
 
 # --- relevance ordering (OG-46: "new keyword jumps the queue") --------------------------------
 
-# Cap on the metadata-only ranking harvest below -- big enough to usually cover one iteration's
-# `cached_not_done` batch, small enough that the rate-limited (3s/page, `rag.harvester`) arXiv
-# metadata fetch doesn't stall the loop for long.
-_RELEVANCE_RANK_CAP = 500
+# --- the one number that bounds a batch ---------------------------------------------------------
+#
+# `_MAX_BATCH` and `_RELEVANCE_RANK_CAP` are ONE decision, so they are ONE constant. They were
+# previously two independent 500s whose relationship lived only in a comment ("big enough to
+# usually cover one iteration's `cached_not_done` batch") -- and that relationship silently broke:
+# `cached_not_done` returns the whole cache, and once prefetch (`prefetch_target: 30000`) outgrew a
+# run's target the real batch reached 6,300 while the ranking cap stayed 500, so only 8% of a batch
+# was ever relevance-ordered and the other 92% was processed in arbitrary paper_id order. Deriving
+# one from the other makes that drift unrepresentable rather than merely discouraged (a test in
+# `app/test_build_corpus.py` also asserts the tie, so splitting them fails CI).
+#
+# Why 500 specifically -- measured on the live corpus (Pass 1 ~538 papers/hr, Pass 2 ~248/hr):
+#   * time to FIRST searchable paper: ~1h at 500, vs a measured 11.7h at 6,300 (Pass 1 must finish
+#     the whole batch before Pass 2 starts on any of it -- ARCHITECTURE.md §3's VRAM isolation);
+#   * papers stranded at 'chunked' by a pause is bounded by exactly one batch;
+#   * the whole batch gets relevance-ordered, which is what the ranking harvest is for;
+#   * cost is ~12 extra Pass1<->Pass2 boundaries per 6,300 papers (~0.6% overhead) -- each boundary
+#     is a TEI container stop/start + health poll (`app/tei_lifecycle.py`), not free but cheap
+#     against an 11.7h serialization.
+# Raising it trades first-result latency and strand size for fewer boundaries; both caps move
+# together automatically.
+_MAX_BATCH = 500
+
+# Cap on the metadata-only ranking harvest -- exactly one batch's worth, so every paper in a batch
+# carries a relevance rank. Small enough that the rate-limited (3s/page, `rag.harvester`) arXiv
+# metadata fetch doesn't stall the loop; it is memoized per process, so this is paid once per run.
+_RELEVANCE_RANK_CAP = _MAX_BATCH
 
 
 def _relevance_rank(focus_area_queries: list[str]) -> list[str]:
@@ -338,6 +394,56 @@ def _relevance_rank(focus_area_queries: list[str]) -> list[str]:
     source = Harvester(ArxivSource())
     refs = source.harvest(focus_area_queries, _RELEVANCE_RANK_CAP, "relevance")
     return [ref.paper_id for ref in refs]
+
+
+# --- stranded papers: finished Pass 1, never finished Pass 2 ------------------------------------
+
+# `ingest_state` stages that mean "Pass 1 is already done for this paper" -- it will skip parsing
+# and resume mid-Pass-2 (`rag/orchestrator.py`'s `_at_least` resume guards). Mirrors that module's
+# `_STAGES` vocabulary minus the endpoints: 'harvested' still needs Pass 1, 'done' is finished.
+_STRANDED_STAGES = ("parsed", "chunked", "summarized", "embedded", "stored")
+
+
+def stranded_ids(db_path: str) -> set[str]:
+    """paper_ids that completed Pass 1 (parse) but never completed Pass 2 (summarize/embed/store).
+
+    A pause/crash mid-Pass-2 leaves exactly these behind -- their expensive GPU parse work is
+    already banked in `chunks`/`blocks`, so re-ingesting them skips Pass 1 entirely and runs at
+    Pass 2 speed. Nothing is lost; they are simply not searchable until Pass 2 finishes them."""
+    conn = _ro_connect(db_path)
+    if conn is None:
+        return set()
+    try:
+        placeholders = ",".join("?" for _ in _STRANDED_STAGES)
+        rows = conn.execute(
+            f"SELECT paper_id FROM ingest_state WHERE stage IN ({placeholders})", _STRANDED_STAGES
+        ).fetchall()
+        return {r[0] for r in rows}
+    except sqlite3.Error:
+        return set()
+    finally:
+        conn.close()
+
+
+def _apply_stranded_policy(ids: list[str], stranded: set[str], policy: str) -> list[str]:
+    """How a batch treats papers left at a Pass-1-complete stage by an earlier pause/crash
+    (`Config.stranded_policy`):
+
+    * `"finish_first"` (default) -- while ANY stranded paper is still outstanding, a batch is built
+      from stranded papers ONLY. Such a batch skips Pass 1 outright (every paper is already
+      parsed), so it costs no parser-model load and no TEI eviction, and drains the backlog at
+      Pass 2 speed (~248 papers/hr measured) instead of dribbling them through behind fresh ones.
+      Once none are left, batches go back to fresh papers.
+    * `"ignore"` -- stranded papers are excluded from every batch; only fresh papers are ingested.
+      Their parse work stays banked in the DB, so switching back to `"finish_first"` later picks
+      them up exactly where they were -- nothing is discarded, it is purely a priority choice.
+
+    Order within the returned list is preserved from `ids` (the caller has already applied
+    relevance ordering), so this only ever filters -- it never reorders."""
+    if policy == "ignore":
+        return [i for i in ids if i not in stranded]
+    outstanding = [i for i in ids if i in stranded]
+    return outstanding if outstanding else [i for i in ids if i not in stranded]
 
 
 def _order_by_relevance(ids: list[str], ranked_ids: list[str]) -> list[str]:
@@ -370,11 +476,13 @@ def build_to_target(
     date_from: str | None = None,
     date_to: str | None = None,
     categories: list[str] | None = None,
+    stranded_policy: str = "finish_first",
     ensure_prefetch=ensure_prefetch_running,
     run_ingest=_run_ingest,
     cached_not_done=cached_not_done,
     done_count=done_count,
     relevance_rank=_relevance_rank,
+    stranded_lookup=stranded_ids,
     sleep=time.sleep,
     poll_interval_s: float = _DEFAULT_POLL_INTERVAL_S,
     max_idle: int = _DEFAULT_MAX_IDLE,
@@ -420,12 +528,21 @@ def build_to_target(
             return
 
         ids = cached_not_done(cache_dir, db_path)
+        # Stranded-first/ignore BEFORE ordering and truncation: it decides WHICH papers are
+        # eligible this iteration, so ordering then ranks the actual candidates and the batch cap
+        # counts only papers that will really be ingested.
+        stranded = stranded_lookup(db_path) if ids else set()
+        n_stranded_before = len(stranded)
+        ids = _apply_stranded_policy(ids, stranded, stranded_policy)
+        draining_stranded = bool(ids) and all(i in stranded for i in ids)
         if ordering == "relevance" and ids:
             if ranked_ids is None:
                 ranked_ids = relevance_rank(focus_area_queries or [])
             ids = _order_by_relevance(ids, ranked_ids)
-        if batch_size is not None:
-            ids = ids[:batch_size]
+        # `batch_size` (explicit `--batch-size`) still wins; otherwise every batch is bounded by
+        # `_MAX_BATCH`. Previously an unset `--batch-size` meant NO cap at all, so a batch was the
+        # entire cache -- the measured 11.7h-to-first-result / 3,881-paper-strand behavior.
+        ids = ids[: batch_size if batch_size is not None else _MAX_BATCH]
 
         if not ids:
             if not prefetch_alive():
@@ -453,8 +570,12 @@ def build_to_target(
 
         batch_file = _write_batch_ids(data_dir, ids)
         logger.info(
-            "build_corpus: ingesting a batch of %d cached-not-done paper(s) (%d/%d done so far)",
+            "build_corpus: ingesting a batch of %d cached-not-done paper(s) (%d/%d done so far)%s",
             len(ids), n_done, target,
+            # A stranded-drain batch skips Pass 1 entirely, so it behaves very differently (fast,
+            # no parser-model/TEI cycling) -- worth being able to tell the two apart in the run log.
+            f" -- draining {n_stranded_before} stranded (Pass-1-complete) paper(s), Pass 1 is a "
+            f"no-op for this batch" if draining_stranded else "",
         )
         _call_run_ingest(
             run_ingest, batch_file, parse_workers, events_path, data_dir, telemetry_poll_interval,
@@ -559,6 +680,8 @@ def main() -> None:
         # never for the target check itself (done_count's docstring).
         date_from=cfg.arxiv_date_from, date_to=cfg.arxiv_date_to,
         categories=cfg.arxiv_categories,
+        # Same Config-derived channel again: the dashboard's stranded-paper toggle.
+        stranded_policy=cfg.stranded_policy,
     )
 
 

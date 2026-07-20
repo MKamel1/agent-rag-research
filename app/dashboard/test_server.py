@@ -214,7 +214,7 @@ def test_status_route_shape_matches_api_contract(running_server):
     assert set(body["run"].keys()) == {
         "run_id", "status", "target", "parse_workers", "focus_queries", "started_at", "params",
         "paper_ids_file", "parse_batch_size", "arxiv_categories", "arxiv_date_from",
-        "arxiv_date_to", "ordering",
+        "arxiv_date_to", "ordering", "stranded_policy",
     }
     assert set(body["telemetry"].keys()) == {
         "stage", "papers_per_hour", "gpu_util_pct", "vram_mib", "power_w", "wall_clock_s", "eta_s",

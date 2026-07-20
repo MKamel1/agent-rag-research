@@ -58,6 +58,8 @@ focus_area_queries:
 # scope levers (CONTEXT.md registry) — V0 defaults, DATA-CONTRACTS.md §Config
 corpus_cap: 30000
 ordering: "freshest_first"  # OG-46: or "relevance" -- arXiv's own sortBy=relevance ranking
+stranded_policy: "finish_first"  # or "ignore" -- how to treat papers a pause left
+                                 # parsed-but-unfinished (Pass 1 done, Pass 2 not)
 ingestion_mode: "one_shot_seed"
 sources:
   - "arxiv"

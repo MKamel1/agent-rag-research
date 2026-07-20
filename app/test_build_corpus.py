@@ -21,6 +21,9 @@ import pytest
 
 from app.build_corpus import (
     _DEFAULT_MAX_IDLE,
+    _MAX_BATCH,
+    _RELEVANCE_RANK_CAP,
+    _apply_stranded_policy,
     _is_live_prefetch,
     _normalize_date,
     _order_by_relevance,
@@ -32,6 +35,7 @@ from app.build_corpus import (
     cached_not_done,
     done_count,
     ensure_prefetch_running,
+    stranded_ids,
 )
 from migrations.migrate import migrate
 from rag.ingest_state_sqlite import SqliteIngestState
@@ -973,3 +977,199 @@ def test_validate_cli_args_accepts_defaults():
 def test_validate_cli_args_accepts_unset_batch_size():
     args = _parse_args(["--target", "10", "--parse-workers", "3"])
     _validate_cli_args(args)  # must not raise/exit
+
+
+# --- the batch cap, and the tie that stops it drifting from the relevance cap -------------------
+
+
+def test_max_batch_and_relevance_rank_cap_are_the_same_number():
+    """The anti-drift guard. These were two independent 500s related only by a comment, and the
+    relationship silently broke: `cached_not_done` returns the whole cache, so once prefetch
+    outgrew a run's target the real batch hit 6,300 while the ranking cap stayed 500 -- only 8% of
+    a batch was relevance-ordered. `_RELEVANCE_RANK_CAP` is now derived from `_MAX_BATCH`; this
+    test fails if anyone splits them back into independent literals."""
+    assert _RELEVANCE_RANK_CAP == _MAX_BATCH
+
+
+def test_build_to_target_caps_an_unbounded_batch_at_max_batch(tmp_path):
+    """The regression that cost 11.7h-to-first-result: an unset `--batch-size` used to mean NO cap,
+    so one batch was the entire cache."""
+    all_ids = [f"2601.{i:05d}" for i in range(_MAX_BATCH * 3)]
+    done: set[str] = set()
+    sizes = []
+
+    def fake_run_ingest(batch_file, parse_workers, events_path, data_dir):
+        ids = [line for line in batch_file.read_text().splitlines() if line]
+        sizes.append(len(ids))
+        done.update(ids)
+
+    build_to_target(
+        tmp_path, "db", Path("cache"), target=_MAX_BATCH * 3, parse_workers=2,
+        events_path=Path("events"),
+        ensure_prefetch=_fake_ensure_prefetch(alive=True),
+        run_ingest=fake_run_ingest,
+        cached_not_done=lambda c, d: sorted(set(all_ids) - done),
+        done_count=lambda d: len(done),
+        sleep=lambda s: None,
+    )
+
+    assert sizes == [_MAX_BATCH, _MAX_BATCH, _MAX_BATCH]  # never one 1500-paper gulp
+
+
+def test_build_to_target_explicit_batch_size_still_overrides_the_cap(tmp_path):
+    """`--batch-size` remains the explicit lever -- the cap is only the default."""
+    all_ids = [f"2601.{i:05d}" for i in range(20)]
+    done: set[str] = set()
+    sizes = []
+
+    def fake_run_ingest(batch_file, parse_workers, events_path, data_dir):
+        ids = [line for line in batch_file.read_text().splitlines() if line]
+        sizes.append(len(ids))
+        done.update(ids)
+
+    build_to_target(
+        tmp_path, "db", Path("cache"), target=20, parse_workers=2, events_path=Path("events"),
+        batch_size=7,
+        ensure_prefetch=_fake_ensure_prefetch(alive=True),
+        run_ingest=fake_run_ingest,
+        cached_not_done=lambda c, d: sorted(set(all_ids) - done),
+        done_count=lambda d: len(done),
+        sleep=lambda s: None,
+    )
+
+    assert sizes == [7, 7, 6]
+
+
+# --- permanently-failed papers must stop eating a batch slot every run --------------------------
+
+
+def _quarantine(db_path: str, paper_id: str, error_type: str) -> None:
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        "INSERT INTO quarantine (paper_id, stage, error, ts) VALUES (?, 'parsed', 'boom', ?)",
+        (paper_id, "2026-01-01T00:00:00"),
+    )
+    conn.execute(
+        "INSERT INTO quarantine_diagnostics (paper_id, error_type, diagnostics_json) "
+        "VALUES (?, ?, '{}')",
+        (paper_id, error_type),
+    )
+    conn.commit()
+    conn.close()
+
+
+def test_cached_not_done_excludes_permanently_failed_papers(tmp_path):
+    """Measured on the live corpus: 22 of 33 quarantined papers still had a cached PDF, so they
+    were re-selected and re-attempted on EVERY run forever. Harmless when a batch was the whole
+    cache; with a bounded batch they would permanently occupy real slots."""
+    db_path = str(tmp_path / "papers.db")
+    migrate(db_path)
+    cache_dir = tmp_path / "pdf_cache"
+    cache_dir.mkdir()
+    for paper_id in ("2601.00001", "2601.00002"):
+        (cache_dir / f"{paper_id}.pdf").write_bytes(b"%PDF-fake")
+    _quarantine(db_path, "2601.00002", "PermanentError")
+
+    assert cached_not_done(cache_dir, db_path) == ["2601.00001"]
+
+
+def test_cached_not_done_still_retries_transient_failures(tmp_path):
+    """A network blip must NOT permanently exclude a paper -- retrying transients is exactly what
+    the append-only dead-letter design intends."""
+    db_path = str(tmp_path / "papers.db")
+    migrate(db_path)
+    cache_dir = tmp_path / "pdf_cache"
+    cache_dir.mkdir()
+    for paper_id in ("2601.00001", "2601.00002"):
+        (cache_dir / f"{paper_id}.pdf").write_bytes(b"%PDF-fake")
+    _quarantine(db_path, "2601.00002", "TransientError")
+
+    assert cached_not_done(cache_dir, db_path) == ["2601.00001", "2601.00002"]
+
+
+def test_cached_not_done_retries_undiagnosed_quarantine_rows(tmp_path):
+    """A row quarantined before `quarantine_diagnostics` existed is UNKNOWN, not known-permanent --
+    excluding it would silently drop papers on nothing more than missing metadata."""
+    db_path = str(tmp_path / "papers.db")
+    migrate(db_path)
+    cache_dir = tmp_path / "pdf_cache"
+    cache_dir.mkdir()
+    (cache_dir / "2601.00002.pdf").write_bytes(b"%PDF-fake")
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        "INSERT INTO quarantine (paper_id, stage, error, ts) VALUES ('2601.00002','parsed','x',?)",
+        ("2026-01-01T00:00:00",),
+    )
+    conn.commit()
+    conn.close()
+
+    assert cached_not_done(cache_dir, db_path) == ["2601.00002"]
+
+
+# --- stranded papers (Pass 1 complete, Pass 2 never finished) -----------------------------------
+
+
+def test_stranded_ids_finds_pass1_complete_papers_only(tmp_path):
+    db_path = str(tmp_path / "papers.db")
+    migrate(db_path)
+    state = SqliteIngestState(db_path)
+    state.checkpoint("a", "harvested")   # Pass 1 NOT done yet
+    state.checkpoint("b", "chunked")     # stranded
+    state.checkpoint("c", "stored")      # stranded
+    state.checkpoint("d", "done")        # finished
+
+    assert stranded_ids(db_path) == {"b", "c"}
+
+
+def test_stranded_ids_of_missing_db_is_empty(tmp_path):
+    assert stranded_ids(str(tmp_path / "nope.db")) == set()
+
+
+def test_finish_first_builds_a_batch_from_stranded_papers_only():
+    """A stranded-only batch skips Pass 1 entirely (every paper is already parsed), so it costs no
+    parser-model load and no TEI eviction -- that is the whole point of draining them first."""
+    ids = ["fresh1", "strand1", "fresh2", "strand2"]
+    result = _apply_stranded_policy(ids, {"strand1", "strand2"}, "finish_first")
+    assert result == ["strand1", "strand2"]
+
+
+def test_finish_first_falls_back_to_fresh_papers_once_none_are_stranded():
+    ids = ["fresh1", "fresh2"]
+    assert _apply_stranded_policy(ids, set(), "finish_first") == ["fresh1", "fresh2"]
+
+
+def test_ignore_policy_excludes_stranded_papers_from_every_batch():
+    ids = ["fresh1", "strand1", "fresh2"]
+    assert _apply_stranded_policy(ids, {"strand1"}, "ignore") == ["fresh1", "fresh2"]
+
+
+def test_stranded_policy_preserves_incoming_order_never_reorders():
+    """Relevance ordering runs AFTER this, so the policy must only ever filter."""
+    ids = ["s3", "s1", "s2"]
+    assert _apply_stranded_policy(ids, {"s1", "s2", "s3"}, "finish_first") == ["s3", "s1", "s2"]
+
+
+def test_build_to_target_finish_first_drains_stranded_before_touching_fresh(tmp_path):
+    all_ids = ["fresh1", "fresh2", "strand1", "strand2"]
+    stranded = {"strand1", "strand2"}
+    done: set[str] = set()
+    batches = []
+
+    def fake_run_ingest(batch_file, parse_workers, events_path, data_dir):
+        ids = [line for line in batch_file.read_text().splitlines() if line]
+        batches.append(ids)
+        done.update(ids)
+
+    build_to_target(
+        tmp_path, "db", Path("cache"), target=4, parse_workers=2, events_path=Path("events"),
+        stranded_policy="finish_first",
+        ensure_prefetch=_fake_ensure_prefetch(alive=True),
+        run_ingest=fake_run_ingest,
+        cached_not_done=lambda c, d: sorted(set(all_ids) - done),
+        done_count=lambda d: len(done),
+        stranded_lookup=lambda d: stranded - done,
+        sleep=lambda s: None,
+    )
+
+    assert batches[0] == ["strand1", "strand2"]   # stranded drained FIRST, alone
+    assert sorted(batches[1]) == ["fresh1", "fresh2"]

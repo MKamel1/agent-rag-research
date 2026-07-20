@@ -110,6 +110,7 @@ _STATIC_INDEX = Path(__file__).parent / "static" / "index.html"
 _RUN_FIELDS = (
     "run_id", "status", "target", "parse_workers", "focus_queries", "started_at", "params",
     "paper_ids_file", "arxiv_categories", "arxiv_date_from", "arxiv_date_to", "ordering",
+    "stranded_policy",
 )
 
 # `parse_batch_size`: OG-43 adds a per-run override (`start(..., parse_batch_size=...)` ->
@@ -160,6 +161,9 @@ def _control_kwargs(body: dict) -> dict:
     # OG-46: relevance-priority ordering.
     if body.get("ordering"):
         kwargs["ordering"] = str(body["ordering"])
+    # How to treat papers left Pass-1-complete by an earlier pause (`Config.stranded_policy`).
+    if body.get("stranded_policy"):
+        kwargs["stranded_policy"] = str(body["stranded_policy"])
     return kwargs
 
 
