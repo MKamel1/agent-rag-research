@@ -10,6 +10,14 @@ on:
     branches: ["**"]
   pull_request:
     branches: [main]
+    # `labeled`/`unlabeled` are NOT in GitHub's default set for `pull_request`
+    # (`opened`/`synchronize`/`reopened`), and check (e) -- the foundation-change label gate,
+    # `ci/checks/foundation_label.py` -- is decided entirely by the PR's labels. Without these two
+    # types, the one action the failure message tells you to take (add the label) re-runs nothing:
+    # the check stays red until someone happens to know they must push another commit or re-run the
+    # job by hand. Observed on PR #166. Adding the label now re-evaluates the gate on its own, and
+    # REMOVING it re-runs too, so a foundation change can't be un-labelled into a stale green.
+    types: [opened, synchronize, reopened, labeled, unlabeled]
 
 jobs:
   unit-tests:
