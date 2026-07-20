@@ -34,6 +34,16 @@ Two files at repo root are **background only, not authoritative** — don't buil
 `Technical Design & Annotated Survey...md` (literature survey that informed the ADRs; the ADRs
 themselves in PRD.md §12 are the decision, this file is just the research behind them).
 
+## Codebase map for navigation (dev tooling — optional, not product scope)
+
+A **Graphify** knowledge graph of this repo's source + design docs lives in `graphify-out/graph.json`
+(local artifact, git-ignored; the `.graphifyignore` corpus filter is tracked). It is a navigation aid,
+**not** part of the V0–V3 product — unrelated to the paper-corpus Obsidian view on the roadmap. To
+locate code or trace dependencies, prefer it over blind grep: `graphify query "<question>"`,
+`graphify path "A" "B"`, `graphify explain "<node>"` (or `/graphify` in Claude Code). Rebuilt for free
+by the post-commit hook; if `graphify-out/` is absent, run `graphify extract . --code-only` (no API key).
+A human-browsable Obsidian vault + `graph.html` are generated from the same graph.
+
 ## The weak-communication thesis (CONVENTIONS.md §0 — read the full section, this is the 3-line version)
 
 You are one session in a build team of AI agents and junior developers with **no memory across
