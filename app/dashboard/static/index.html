@@ -286,6 +286,16 @@
           <option value="relevance">relevance (arXiv ranking)</option>
         </select>
       </div>
+      <div class="field">
+        <label for="newStrandedPolicy"
+               title="Papers a previous pause left parsed-but-unfinished. &quot;Finish first&quot; drains them before parsing anything new -- those batches skip Pass 1 entirely, so they are fast and make already-parsed work searchable soonest. &quot;Ignore&quot; leaves them banked in the database and ingests only fresh papers; nothing is discarded either way.">
+          half-finished papers
+        </label>
+        <select id="newStrandedPolicy">
+          <option value="finish_first" selected>finish them first</option>
+          <option value="ignore">ignore (fresh papers only)</option>
+        </select>
+      </div>
     </div>
 
     <div class="controls" style="margin-top: .75rem; border-top: 1px solid var(--border); padding-top: .75rem;">
@@ -310,6 +320,7 @@ const TUNING = [
   ["build --batch-size", s => s.run.params && s.run.params.batch_size, "whole cache each iteration", "whole cache", "Caps cached-not-done ids fed to one app.ingest batch. Editable below."],
   ["focus_queries (keywords)", s => (s.run.focus_queries || []).length + " active", "33 causal queries (config.yaml)", "augment, don't replace", "Edit below (add/remove tags) -- edits AUGMENT the library, never replace it (owner decision)."],
   ["ordering (OG-46)", s => s.run.ordering, "freshest_first", "relevance for a focused sprint", "arXiv's own sortBy=relevance ranking prioritizes build_corpus's processing order toward the current focus. Editable below."],
+  ["half-finished papers", s => s.run.stranded_policy, "finish_first", "finish_first unless you deliberately want fresh papers only", "How papers a previous pause left parsed-but-unfinished are treated. finish_first drains them before parsing anything new (those batches skip Pass 1, so they are fast); ignore leaves them banked and ingests only fresh papers. Nothing is discarded either way. Editable below."],
   ["arXiv categories (OG-45)", s => (s.run.arxiv_categories || []).join(", ") || "none", "none (config.yaml)", "e.g. stat.ME, econ.EM", "DOWNLOAD-side filter -- replaces (not augments) the base filter. Editable below."],
   ["arXiv date range (OG-45)", s => `${s.run.arxiv_date_from || "*"} .. ${s.run.arxiv_date_to || "*"}`, "* .. * (no filter)", "e.g. 2018-01-01 .. now", "DOWNLOAD-side submittedDate filter. Editable below."],
   ["MINERU_VIRTUAL_VRAM_SIZE", () => null, "auto (shell env var, unplumbed)", "ratio8 @ 24GB (measured best)", "NOT yet controllable here -- vendored mineru reads this from the shell env before Python starts; no app code reads or forwards it into the parse subprocess (2026-07-18 sweep). Not a live dial."],
@@ -462,6 +473,7 @@ function render(snap) {
     const tpi = snap.run.params && snap.run.params.telemetry_poll_interval;
     if (tpi) document.getElementById("newTelemetryPoll").value = tpi;
     if (snap.run.ordering) document.getElementById("newOrdering").value = snap.run.ordering;
+    if (snap.run.stranded_policy) document.getElementById("newStrandedPolicy").value = snap.run.stranded_policy;
     fieldsInitialized = true;
   }
 }
@@ -681,6 +693,10 @@ function buildApplyPayload() {
   // default, so leaving the selector untouched never forces an unnecessary override.
   const ordering = document.getElementById("newOrdering").value;
   if (ordering && ordering !== "freshest_first") body.ordering = ordering;
+  // Same rule: "finish_first" is the base-config default, so an untouched selector never forces
+  // an unnecessary run-scoped override.
+  const strandedPolicy = document.getElementById("newStrandedPolicy").value;
+  if (strandedPolicy && strandedPolicy !== "finish_first") body.stranded_policy = strandedPolicy;
   return body;
 }
 
