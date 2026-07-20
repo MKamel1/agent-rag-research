@@ -42,7 +42,8 @@ A **Graphify** knowledge graph of this repo's source + design docs lives in `gra
 locate code or trace dependencies, prefer it over blind grep: `graphify query "<question>"`,
 `graphify path "A" "B"`, `graphify explain "<node>"` (or `/graphify` in Claude Code). Rebuilt for free
 by the post-commit hook; if `graphify-out/` is absent, run `graphify extract . --code-only` (no API key).
-A human-browsable Obsidian vault + `graph.html` are generated from the same graph.
+A human-browsable Obsidian vault + `graph.html` are generated from the same graph. **Full setup, rebuild,
+and usage: `docs/GRAPHIFY.md`.**
 
 ## The weak-communication thesis (CONVENTIONS.md §0 — read the full section, this is the 3-line version)
 
