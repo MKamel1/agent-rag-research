@@ -1,0 +1,22 @@
+# Graphify corpus filter — build the graph from SOURCE + the design docs you wrote only.
+# gitignore-style patterns. Everything here is EXCLUDED from the knowledge graph.
+#
+# The #1 trap: .claude/worktrees/ holds ~74 full copies of this repo. Parsing them would
+# multiply every node ~75x and produce a meaningless graph. Exclude data, caches, and worktrees.
+# (.gitignore already excludes most of these; this file is the explicit, tool-owned guarantee
+#  and also excludes fixtures/, which IS git-tracked but is sample data, not code to reason about.)
+
+.claude/
+.worktrees/
+pdf_cache/
+blobs/
+fixtures/
+papers.db
+papers.db-shm
+papers.db-wal
+.phase0-data/
+reviews/
+__pycache__/
+*.pyc
+.git/
+graphify-out/

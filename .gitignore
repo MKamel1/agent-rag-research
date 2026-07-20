@@ -17,3 +17,9 @@ blobs/
 .claude/
 .worktrees/
 .gpu.lock
+
+# Graphify knowledge-graph output — a local, regenerated artifact (4MB+ graph.json + HTML,
+# rebuilt free by the post-commit hook / `graphify update .`). The `.graphifyignore` corpus
+# filter IS tracked; the generated graph is not. Flip this line off to version the graph across
+# worktrees (a union merge-driver is already registered in .gitattributes for that case).
+graphify-out/
