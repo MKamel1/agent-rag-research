@@ -14,6 +14,13 @@ Read-only guarantee on `papers.db`: every connection opens `mode=ro` over a `fil
 (`_ro_connect`) -- a mechanical guarantee, not just a convention, that this reader can never write
 to the live ingest's database even by accident.
 
+This module has no internal-project imports today (pure stdlib) and must stay that way:
+`app/telemetry.py` now imports `quarantine_summary` from here (T-DOC78), so anything this module
+imports back from the rest of the project risks a future circular import -- e.g. if someone later
+shares an event-name constant from `app/telemetry.py` into `status.py`, since `status.py`'s
+`read_telemetry` already reads telemetry's JSONL event format and would be a plausible place to
+reach for one.
+
 `ingest_state.stage` holds each paper's CURRENT stage only (one upserted row per `paper_id`,
 `rag/ingest_state_sqlite.py::checkpoint`), not a per-stage-transition log. `rag/orchestrator.py`'s
 `_STAGES` ordering (harvested -> parsed -> chunked -> summarized -> embedded -> stored -> done) is
@@ -66,21 +73,26 @@ def quarantine_summary(conn: sqlite3.Connection) -> tuple[int, list[tuple[str, i
     `"PermanentError @ parsed"`) -- `stage` comes from `quarantine` itself (always present);
     `error_type` comes from `quarantine_diagnostics` via a LEFT JOIN, since that table (T-DOC17/PR
     #83) postdates `quarantine` -- a pre-existing row has no diagnostics match and is labelled
-    `_UNDIAGNOSED_REASON` rather than silently dropped. Grouping by stage too (not just
-    error_type) means the reason breakdown ALWAYS sums to `count` by construction -- no separate
-    "top up the gap" step needed, unlike the previous single-column GROUP BY. Sorted by count,
-    descending. Takes an already-open connection (a `mode=ro` URI connection in `read_corpus`
+    `_UNDIAGNOSED_REASON` rather than silently dropped. Safe because `quarantine_diagnostics.paper_id`
+    is a PRIMARY KEY (`migrations/0003_quarantine_diagnostics.sql`) -- at most one diagnostics row
+    per quarantined paper, so the join can never fan out and inflate the breakdown past `count`.
+    Grouping by stage too (not just error_type) means the reason breakdown ALWAYS sums to `count` by
+    construction -- no separate "top up the gap" step needed, unlike the previous single-column
+    GROUP BY. Sorted by count descending, with stage/error_type as a tiebreak (SQLite doesn't
+    guarantee row order among ties, and grouping by stage now produces many more of them) so results
+    are deterministic. Takes an already-open connection (a `mode=ro` URI connection in `read_corpus`
     below, a plain read-write one in `app/telemetry.py`) rather than opening its own, so either
     caller's connection semantics apply."""
     count = conn.execute(
-        "SELECT count(*) FROM quarantine WHERE paper_id NOT IN "
-        "(SELECT paper_id FROM ingest_state WHERE stage = 'done')"
+        "SELECT count(*) FROM quarantine q WHERE NOT EXISTS "
+        "(SELECT 1 FROM ingest_state s WHERE s.paper_id = q.paper_id AND s.stage = 'done')"
     ).fetchone()[0]
     rows = conn.execute(
         "SELECT q.stage, COALESCE(qd.error_type, ?) AS error_type, count(*) AS n "
         "FROM quarantine q LEFT JOIN quarantine_diagnostics qd ON qd.paper_id = q.paper_id "
-        "WHERE q.paper_id NOT IN (SELECT paper_id FROM ingest_state WHERE stage = 'done') "
-        "GROUP BY q.stage, error_type ORDER BY n DESC",
+        "WHERE NOT EXISTS "
+        "(SELECT 1 FROM ingest_state s WHERE s.paper_id = q.paper_id AND s.stage = 'done') "
+        "GROUP BY q.stage, error_type ORDER BY n DESC, q.stage, error_type",
         (_UNDIAGNOSED_REASON,),
     ).fetchall()
     return count, [(f"{error_type} @ {stage}", n) for stage, error_type, n in rows]
