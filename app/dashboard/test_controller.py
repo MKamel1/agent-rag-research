@@ -283,6 +283,61 @@ def test_resume_relaunches_with_same_params(tmp_path):
         _cleanup(resumed)
 
 
+def test_resume_relaunches_download_only_run_as_download_not_full(tmp_path, monkeypatch):
+    """A paused download-only run's resume() must pick `_spawn_download` (resolved from the
+    manifest's own stored mode) when the caller doesn't inject a test fake -- production's real
+    call shape (`server.py` never passes `spawn=`) -- not silently fall back to launching a full
+    `app.build_corpus` run."""
+    calls = []
+
+    def spy_download(data_dir, target, parse_workers, events_path, log_path):
+        calls.append("download")
+        return subprocess.Popen(["sleep", "100"], start_new_session=True).pid
+
+    def spy_full(data_dir, target, parse_workers, events_path, log_path):
+        calls.append("full")
+        return subprocess.Popen(["sleep", "100"], start_new_session=True).pid
+
+    manifest = controller_mod.start(
+        tmp_path, target=30000, parse_workers=1, mode="download", spawn=_fake_spawn,
+    )
+    try:
+        controller_mod.pause(tmp_path)
+        monkeypatch.setattr(controller_mod, "_spawn_download", spy_download)
+        monkeypatch.setattr(controller_mod, "_spawn", spy_full)
+        resumed = controller_mod.resume(tmp_path)  # no spawn injected -- production default path
+        assert resumed["mode"] == "download"
+        assert calls == ["download"]
+    finally:
+        _cleanup(controller_mod._read_manifest(tmp_path))
+
+
+def test_resume_relaunches_full_run_as_full_when_no_spawn_injected(tmp_path, monkeypatch):
+    """The mode="full" (default) mirror of the test above -- resume()'s own default must still
+    pick the real `_spawn` (app.build_corpus), today's exact behavior, for a manifest with no
+    stored mode or `mode="full"`."""
+    calls = []
+
+    def spy_download(data_dir, target, parse_workers, events_path, log_path):
+        calls.append("download")
+        return subprocess.Popen(["sleep", "100"], start_new_session=True).pid
+
+    def spy_full(data_dir, target, parse_workers, events_path, log_path):
+        calls.append("full")
+        return subprocess.Popen(["sleep", "100"], start_new_session=True).pid
+
+    manifest = controller_mod.start(tmp_path, target=100, spawn=_fake_spawn)
+    try:
+        controller_mod.pause(tmp_path)
+        monkeypatch.setattr(controller_mod, "_spawn_download", spy_download)
+        monkeypatch.setattr(controller_mod, "_spawn", spy_full)
+        resumed = controller_mod.resume(tmp_path)
+        assert resumed["mode"] == "full"
+        assert calls == ["full"]
+    finally:
+        _cleanup(controller_mod._read_manifest(tmp_path))
+
+
 def test_resume_refuses_while_run_is_still_running(tmp_path):
     manifest = controller_mod.start(tmp_path, target=100, spawn=_fake_spawn)
     try:
