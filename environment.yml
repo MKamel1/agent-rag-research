@@ -64,3 +64,9 @@ dependencies:
 # ADR-02 "Revisit if"):
 #   pip install sentence-transformers
 #   pip install FlagEmbedding    # BGE-M3 / BGE-reranker-v2-m3 baseline comparison
+#
+# Playwright -- local dev tool only, browser-driving the dashboard's static/JS UI (smoke-testing
+# that app/dashboard/static/index.html renders, screenshots) -- shipped app code never imports it,
+# so it stays out of Core. Install temporarily only when doing that kind of dashboard UI check:
+#   pip install playwright
+#   playwright install chromium   # just chromium -- no need for firefox/webkit here
