@@ -10,6 +10,7 @@ itself (the one function whose own internals are worth a direct test).
 from __future__ import annotations
 
 import json
+import sqlite3
 import subprocess
 import time
 from types import SimpleNamespace
@@ -288,8 +289,35 @@ def test_summarize_run_counts_done_and_quarantined_with_reasons(tmp_path):
 
     assert summary.n_done == 3
     assert summary.n_quarantined == 3
-    assert summary.quarantine_reasons == {"PermanentError": 2, "TransientError": 1}
+    assert summary.quarantine_reasons == {
+        "PermanentError @ parsed": 2, "TransientError @ parsed": 1,
+    }
     assert summary.papers_per_hour == pytest.approx(3.0)
+
+
+def test_summarize_run_excludes_quarantined_papers_that_later_succeeded(tmp_path):
+    """OG-44 regression, now applied here too: `quarantine` is an append-only dead-letter log,
+    never reconciled -- a paper quarantined and later succeeded on retry (now stage='done') must
+    not still count as quarantined in the end-of-run summary. Before T-DOC78, this module computed
+    its own un-fixed `SELECT count(*) FROM quarantine` with no such exclusion, so it could disagree
+    with `app/dashboard/status.py::read_corpus`'s (already-fixed) live count for the exact same
+    database -- this is the regression test for that disagreement."""
+    db_path = str(tmp_path / "papers.db")
+    _seed_db(db_path, quarantined=[("d", "PermanentError"), ("e", "PermanentError")])
+    conn = sqlite3.connect(db_path)
+    conn.execute(
+        "INSERT INTO ingest_state (paper_id, stage, updated_at) VALUES ('d', 'done', '2026-01-01')"
+    )
+    conn.commit()
+    conn.close()
+
+    summary = telemetry.summarize_run(
+        db_path, wall_clock_s=10.0, collection="papers", gpu_samples=[],
+        query_point_count=lambda host, port, collection: 10,
+    )
+
+    assert summary.n_quarantined == 1
+    assert summary.quarantine_reasons == {"PermanentError @ parsed": 1}
 
 
 def test_summarize_run_zero_wall_clock_never_divides_by_zero(tmp_path):
@@ -370,7 +398,7 @@ def test_run_summary_format_includes_key_fields(tmp_path):
     assert "run-xyz" in text
     assert "done: 1" in text
     assert "quarantined: 1" in text
-    assert "PermanentError=1" in text
+    assert "PermanentError @ parsed=1" in text
     assert "papers/hour: 1.0" in text
     assert "OK" in text
     assert "[parse]" in text

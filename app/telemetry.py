@@ -59,6 +59,8 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
+from app.dashboard.status import quarantine_summary
+
 logger = logging.getLogger(__name__)
 
 # Coarser than app/benchmark.py's 0.5s -- that harness times a few-minute controlled run; a
@@ -316,10 +318,7 @@ def summarize_run(
             n_done = conn.execute(
                 "SELECT count(*) FROM ingest_state WHERE stage = 'done'"
             ).fetchone()[0]
-            n_quarantined = conn.execute("SELECT count(*) FROM quarantine").fetchone()[0]
-            reason_rows = conn.execute(
-                "SELECT error_type, count(*) FROM quarantine_diagnostics GROUP BY error_type"
-            ).fetchall()
+            n_quarantined, reason_pairs = quarantine_summary(conn)
         finally:
             conn.close()
     except sqlite3.Error as e:
@@ -327,7 +326,7 @@ def summarize_run(
             "telemetry.summarize_run: could not read %r for the end-of-run summary: %s",
             db_path, e, exc_info=True,
         )
-        n_done, n_quarantined, reason_rows = 0, 0, []
+        n_done, n_quarantined, reason_pairs = 0, 0, []
 
     papers_per_hour = (n_done / (wall_clock_s / 3600.0)) if wall_clock_s > 0 else 0.0
     point_count = query_point_count(vector_store_host, vector_store_port, collection)
@@ -341,7 +340,7 @@ def summarize_run(
         run_id=run_id,
         n_done=n_done,
         n_quarantined=n_quarantined,
-        quarantine_reasons=dict(reason_rows),
+        quarantine_reasons=dict(reason_pairs),
         wall_clock_s=wall_clock_s,
         papers_per_hour=papers_per_hour,
         vector_store_point_count=point_count,
