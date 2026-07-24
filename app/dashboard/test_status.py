@@ -297,25 +297,125 @@ def test_read_telemetry_rate_is_none_when_elapsed_too_small(tmp_path, monkeypatc
     assert result["papers_per_hour"] is None
 
 
+# --- read_telemetry: sliding-window rate, not a cumulative average (cold-start fix) ------------
+#
+# The OG-44 fix above scoped the rate to THIS run via `started_at`, but still divided
+# `count(done since started_at)` by the FULL elapsed time since `started_at` -- a cumulative
+# average. This pipeline's cold start (hours of downloading + Pass-1 parsing before the first
+# paper reaches `stage='done'`) sits in that denominator forever: measured on a real run, 11.7h of
+# warm-up made the dashboard show 3.5 papers/h at the 12h mark when the true trailing rate was
+# already 168/h -- 48x wrong, and it never converges. These tests pin the fix: a trailing
+# `_RATE_WINDOW_S` (900s) window, clamped so it can never reach back before `started_at`.
+
+
+def test_read_telemetry_rate_reflects_recent_pace_not_the_cold_start_average(tmp_path, monkeypatch):
+    """The regression this fix exists for: a run started 12h ago (all of it cold-start warm-up,
+    zero completions) with 3 completions only in the last few minutes. The OLD cumulative
+    implementation would compute 3 / 12h = 0.25/h -- this must instead report the true recent
+    rate, off by roughly 3-4 orders of magnitude. This assertion fails against the old
+    `per_run_done / (elapsed_s / 3600.0)` implementation."""
+    monkeypatch.setattr(status_mod, "_read_gpu", lambda: {"gpu_util_pct": None, "vram_mib": None, "power_w": None})
+    monkeypatch.setattr(status_mod, "_elapsed_seconds_since", lambda started_at: 12 * 3600.0)
+    db_path = tmp_path / "papers.db"
+    started_at = "2026-07-19T08:06:00+00:00"
+    _seed(db_path, {}, updated_at=started_at)
+    # window_start = started_at + (12h - 900s) = 19:51:00 -- land these just inside it.
+    _mark_done(db_path, "p1", updated_at="2026-07-19T19:53:00+00:00")
+    _mark_done(db_path, "p2", updated_at="2026-07-19T19:56:00+00:00")
+    _mark_done(db_path, "p3", updated_at="2026-07-19T19:59:00+00:00")
+    events_path = tmp_path / "events.jsonl"
+    _events_with_run_start(events_path)
+
+    result = status_mod.read_telemetry(events_path, 3, data_dir=tmp_path, started_at=started_at)
+    old_cumulative_rate = 3 / 12.0  # what the buggy implementation would have reported
+    assert result["papers_per_hour"] > old_cumulative_rate * 10  # right order of magnitude
+
+
+def test_read_telemetry_rate_window_clamps_to_elapsed_for_a_young_run(tmp_path, monkeypatch):
+    """A run only 5 min old must have its rate timed over its true 5-min age, not stretched to the
+    full 15-min window -- clamping the denominator down (not up) to the shorter, real elapsed
+    time."""
+    monkeypatch.setattr(status_mod, "_read_gpu", lambda: {"gpu_util_pct": None, "vram_mib": None, "power_w": None})
+    monkeypatch.setattr(status_mod, "_elapsed_seconds_since", lambda started_at: 300.0)  # 5 min
+    db_path = tmp_path / "papers.db"
+    started_at = "2026-07-18T03:00:00+00:00"
+    _seed(db_path, {}, updated_at=started_at)
+    _mark_done(db_path, "p1", updated_at="2026-07-18T03:02:00+00:00")
+    _mark_done(db_path, "p2", updated_at="2026-07-18T03:04:00+00:00")
+    events_path = tmp_path / "events.jsonl"
+    _events_with_run_start(events_path)
+
+    result = status_mod.read_telemetry(events_path, 2, data_dir=tmp_path, started_at=started_at)
+    # 2 done / 5 real minutes -- NOT 2 / 15 min, which is what an unclamped fixed window would give.
+    assert result["papers_per_hour"] == 2 / (300.0 / 3600.0)
+
+
+def test_read_telemetry_rate_never_counts_a_prior_runs_papers_even_inside_the_wall_clock_window(
+    tmp_path, monkeypatch,
+):
+    """A paper finished by a PRIOR run just before `started_at` falls inside a naive trailing
+    wall-clock window (this run is only 5 min old, well under the 15-min window width) but must
+    still never be counted -- the `started_at` floor holds regardless of window width."""
+    monkeypatch.setattr(status_mod, "_read_gpu", lambda: {"gpu_util_pct": None, "vram_mib": None, "power_w": None})
+    monkeypatch.setattr(status_mod, "_elapsed_seconds_since", lambda started_at: 300.0)  # 5 min
+    db_path = tmp_path / "papers.db"
+    started_at = "2026-07-18T03:00:00+00:00"
+    # Prior run's paper, 2 min before this run's started_at -- inside a naive 15-min wall-clock
+    # window, but must be excluded because it predates started_at.
+    _seed(db_path, {"done": 1}, updated_at="2026-07-18T02:58:00+00:00")
+    _mark_done(db_path, "this-run-1", updated_at="2026-07-18T03:02:00+00:00")
+    events_path = tmp_path / "events.jsonl"
+    _events_with_run_start(events_path)
+
+    result = status_mod.read_telemetry(events_path, 2, data_dir=tmp_path, started_at=started_at)
+    # Only the 1 this-run completion counts -- if the prior-run paper leaked in, this would be
+    # 2 / (300/3600) instead.
+    assert result["papers_per_hour"] == 1 / (300.0 / 3600.0)
+
+
+def test_read_telemetry_rate_and_eta_are_none_together_when_window_has_zero_completions(
+    tmp_path, monkeypatch,
+):
+    """Zero completions in the trailing window (even with plenty of elapsed time and an all-time
+    done count) must yield `papers_per_hour is None`, and `eta_s` follows it to `None` too --
+    `_eta_seconds` never fabricates an ETA from a missing rate."""
+    monkeypatch.setattr(status_mod, "_read_gpu", lambda: {"gpu_util_pct": None, "vram_mib": None, "power_w": None})
+    monkeypatch.setattr(status_mod, "_elapsed_seconds_since", lambda started_at: 3600.0)  # 1 hour
+    db_path = tmp_path / "papers.db"
+    started_at = "2026-07-18T03:00:00+00:00"
+    _seed(db_path, {"done": 500}, updated_at="2026-01-01T00:00:00+00:00")  # all prior-run, all-time
+    events_path = tmp_path / "events.jsonl"
+    _events_with_run_start(events_path)
+
+    result = status_mod.read_telemetry(
+        events_path, 500, data_dir=tmp_path, started_at=started_at, target=1000,
+    )
+    assert result["papers_per_hour"] is None
+    assert result["eta_s"] is None
+
+
 def test_read_telemetry_eta_scopes_rate_per_run_but_remaining_off_total_done(tmp_path, monkeypatch):
     """ETA = (target - TOTAL done) / the per-run rate -- the remaining-papers count still counts
-    every paper ever finished (the corpus target is global), only the RATE is per-run-scoped."""
+    every paper ever finished (the corpus target is global); only the RATE is scoped, now to the
+    trailing 15-min window rather than the full per-run elapsed time (the cold-start fix), so the
+    3 "this-run" completions must sit inside the last 15 min of the mocked 1h-elapsed run."""
     monkeypatch.setattr(status_mod, "_read_gpu", lambda: {"gpu_util_pct": None, "vram_mib": None, "power_w": None})
     monkeypatch.setattr(status_mod, "_elapsed_seconds_since", lambda started_at: 3600.0)  # 1 hour
     db_path = tmp_path / "papers.db"
     started_at = "2026-07-18T03:00:00+00:00"
     _seed(db_path, {"done": 800}, updated_at="2026-01-01T00:00:00+00:00")
-    _mark_done(db_path, "this-run-1", updated_at="2026-07-18T03:10:00+00:00")
-    _mark_done(db_path, "this-run-2", updated_at="2026-07-18T03:20:00+00:00")
-    _mark_done(db_path, "this-run-3", updated_at="2026-07-18T03:30:00+00:00")
+    # window_start = started_at + (3600 - 900)s = 03:45:00 -- these must land at/after that.
+    _mark_done(db_path, "this-run-1", updated_at="2026-07-18T03:47:00+00:00")
+    _mark_done(db_path, "this-run-2", updated_at="2026-07-18T03:52:00+00:00")
+    _mark_done(db_path, "this-run-3", updated_at="2026-07-18T03:57:00+00:00")
     events_path = tmp_path / "events.jsonl"
     _events_with_run_start(events_path)
 
     result = status_mod.read_telemetry(
         events_path, 803, data_dir=tmp_path, started_at=started_at, target=806,
     )
-    assert result["papers_per_hour"] == 3.0
-    assert result["eta_s"] == (806 - 803) / 3.0 * 3600.0
+    assert result["papers_per_hour"] == 3 / (900.0 / 3600.0)  # 3 done / 15-min window
+    assert result["eta_s"] == (806 - 803) / result["papers_per_hour"] * 3600.0
 
 
 def test_read_telemetry_eta_is_none_when_target_already_reached(tmp_path, monkeypatch):
@@ -324,7 +424,7 @@ def test_read_telemetry_eta_is_none_when_target_already_reached(tmp_path, monkey
     db_path = tmp_path / "papers.db"
     started_at = "2026-07-18T03:00:00+00:00"
     _seed(db_path, {})
-    _mark_done(db_path, "this-run-1", updated_at="2026-07-18T03:10:00+00:00")
+    _mark_done(db_path, "this-run-1", updated_at="2026-07-18T03:50:00+00:00")  # inside the window
     events_path = tmp_path / "events.jsonl"
     _events_with_run_start(events_path)
 
