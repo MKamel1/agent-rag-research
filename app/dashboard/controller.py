@@ -177,22 +177,48 @@ def _process_identity(pid: int) -> tuple[float, str] | None:
 _ENV_WRAPPER_CMDLINE_PREFIX = "env\x00"
 
 
+def _is_transitional_cmdline(cmdline: str) -> bool:
+    """True for a `/proc/<pid>/cmdline` read caught mid-`execve()` rather than the process's real,
+    settled argv -- `_capture_identity` must retry past either shape below, never accept one as
+    final:
+
+    - `_ENV_WRAPPER_CMDLINE_PREFIX` (T-DOC74): `_spawn`'s own `env PYTHONPATH=... python ...`
+      wrapper execve()s itself away into the real long-lived program within the same PID; a read
+      landing in that window sees `env`'s own (transitional) argv.
+    - The empty string: found the hard way, chasing an intermittent flake in this very test suite
+      (a *different* `app/dashboard` test failed every run, always the same family --
+      `reconcile()` had downgraded a still-live `sleep 100`/`bash` test process to
+      `"failed"`/`"paused"`/`"done"`). Instrumenting `_verified_pid` showed the stored cmdline was
+      `""` while a fresh read of the SAME live pid came back correctly populated
+      (`"sleep\\x00100\\x00"`, ...) -- `_capture_identity`'s first `/proc/<pid>/cmdline` read had
+      landed in the kernel's brief "old argv cleared, new one not yet installed" window that
+      exists around EVERY `execve()`, not just `_spawn`'s `env` wrapper -- so a plain `sleep 100`
+      spawned with no wrapper at all can still be caught here under enough host load. Once that
+      empty string is accepted as "the identity" and written to the manifest, it can never again
+      match a later, correctly-populated read -- the exact permanent-mismatch failure mode
+      T-DOC74 fixed for the `env`-wrapper case, one exec earlier and without the wrapper as a
+      precondition.
+    """
+    return cmdline == "" or cmdline.startswith(_ENV_WRAPPER_CMDLINE_PREFIX)
+
+
 def _capture_identity(pid: int) -> tuple[float | None, str | None]:
     """Best-effort identity capture right after spawn. A few quick retries: `/proc/<pid>/*` can
-    lag a hair behind `Popen()` returning -- AND `_spawn`'s `env`-wrapper transition (see
-    `_ENV_WRAPPER_CMDLINE_PREFIX`) can too: a real incident had this function win that race,
-    permanently capturing `env`'s own (transitional) cmdline, which `/proc/<pid>/cmdline` never
-    shows again once the exec into the real program completes. Every later `_verified_pid` check
-    then mismatched forever -- an exact, healthy, actively-progressing run got downgraded to
+    lag a hair behind `Popen()` returning -- AND the transitional cmdline shapes `execve()` can
+    briefly produce (see `_is_transitional_cmdline`) can too: a real incident had this function
+    win that race, permanently capturing a transitional (wrapper or empty) cmdline that
+    `/proc/<pid>/cmdline` never shows again once the exec settles. Every later `_verified_pid`
+    check then mismatched forever -- an exact, healthy, actively-progressing run got downgraded to
     "failed" (and its scratch config dir queued for deletion, `_cleanup_run_cwd`) out from under
-    it. Keeps retrying while the observed cmdline still IS that transitional wrapper, not just
-    while `/proc` is unreadable; falls back to whatever was last observed (matching this
-    function's existing best-effort contract) if every retry still shows the wrapper -- should
-    never happen in practice, `env` execve()s near-instantly."""
+    it. Keeps retrying while the observed cmdline is still transitional, not just while `/proc` is
+    unreadable; falls back to whatever was last observed (matching this function's existing
+    best-effort contract) if every retry still shows a transitional cmdline -- should be rare in
+    practice, `execve()` settles near-instantly, but not so rare it can be assumed away (see
+    `_is_transitional_cmdline`'s empty-string case)."""
     identity = None
     for _ in range(5):
         identity = _process_identity(pid)
-        if identity is not None and not identity[1].startswith(_ENV_WRAPPER_CMDLINE_PREFIX):
+        if identity is not None and not _is_transitional_cmdline(identity[1]):
             return identity
         time.sleep(0.02)
     return identity if identity is not None else (None, None)
