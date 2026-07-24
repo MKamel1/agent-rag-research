@@ -414,6 +414,22 @@ def test_reconcile_marks_clean_finish_as_done_when_target_reached(tmp_path):
     assert live["status"] == "done"
 
 
+def test_reconcile_marks_clean_download_finish_as_done_even_though_done_count_never_moved(tmp_path):
+    """T-DOC78: a `mode="download"` run's `target` is a PDF-cache count (e.g. prefetch_target),
+    not a done-count -- `app.prefetch_pdfs` never writes `ingest_state` at all, so `done_count`
+    stays 0 (nowhere near `target`) even on a totally clean exit. Before the `_crashed_before_
+    target` mode guard, this made every clean download-mode finish misreport as "failed"."""
+    manifest = controller_mod.start(tmp_path, target=30000, mode="download", spawn=_fake_spawn)
+    os.killpg(manifest["pid"], signal.SIGKILL)
+    for _ in range(50):
+        if not controller_mod._pid_running(manifest["pid"]):
+            break
+        time.sleep(0.05)
+
+    live = controller_mod.liveness(tmp_path)
+    assert live["status"] == "done"
+
+
 def test_pause_refuses_to_signal_a_pid_reused_by_an_unrelated_process(tmp_path, monkeypatch):
     """Simulates PID reuse: after the real spawned process exits, some other live process now
     happens to occupy the same PID number. `_verified_pid` must reject it (different identity),

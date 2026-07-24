@@ -376,7 +376,16 @@ def _done_count(db_path: str) -> int:
 def _crashed_before_target(manifest: dict) -> bool:
     """True iff this `running` manifest's own recorded `target` and `db_path` show fewer than
     `target` papers actually done -- the OG-47#2 crash signal. Missing/unusable fields (a manifest
-    written before either existed) degrade to `False` (the old, conservative "done" behavior)."""
+    written before either existed) degrade to `False` (the old, conservative "done" behavior).
+
+    T-DOC78: a `mode="download"` manifest's `target` is `prefetch_target`, a PDF-cache count --
+    not a done-count -- and `app.prefetch_pdfs` never advances `ingest_state` at all, so
+    `_done_count < target` would ALWAYS read true and every clean downloader exit would be
+    misreported as a crash. This function has no meaningful crashed-vs-clean signal for that mode,
+    so it degrades the same way as the missing-fields case above: treat every download-mode exit
+    as clean."""
+    if manifest.get("mode") == "download":
+        return False
     target = manifest.get("target")
     db_path = manifest.get("db_path")
     if target is None or not db_path:

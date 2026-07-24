@@ -94,6 +94,15 @@ alive/pace fields (`#prefetchAlive`/`#prefetchPace`) already render correctly fo
   cache-first logic), not that the download process itself survives the handoff.
 - No separate progress/target UI for download-only beyond the existing downloader pace fields —
   `config.prefetch_target` is the one target that already exists and is already displayed.
+- No guard against "Download Now" clobbering a **paused full run**'s staged edits. `_start_locked`'s
+  existing "abandon a non-live prior run" branch (`_cleanup_run_cwd`) already deletes a paused run's
+  override scratch dir — its staged keywords/categories/dates `config.yaml` — the moment a fresh
+  `start()` is called; this is pre-existing, intentional behavior for "Apply" replacing a paused run.
+  "Download Now" reuses the same `start()` path and therefore hits the same branch: clicking it
+  silently discards a paused full run's staged edits too, same as Apply already does today, not new
+  logic. Left as-is deliberately (no new blocking logic) — but it's a more surprising trade for
+  "Download Now" than for Apply, given the button's "no GPU" framing suggests it's unrelated to a
+  paused full run.
 
 ## Part 2 — Quarantine count + reason fixes
 
