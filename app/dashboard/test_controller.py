@@ -269,7 +269,7 @@ def test_verified_pid_rejects_manifest_with_no_stored_identity(tmp_path):
     assert controller_mod._verified_pid(manifest) is None
 
 
-# --- `_capture_identity` must not permanently record `env`'s own transitional cmdline ------------
+# --- `_capture_identity` must not permanently record a transitional (mid-execve) cmdline --------
 #
 # Real incident: `_spawn` launches via `env PYTHONPATH=<repo> python -m app.build_corpus ...` --
 # `env` execve()s itself away into the real program WITHIN THE SAME PID almost immediately, but
@@ -277,6 +277,14 @@ def test_verified_pid_rejects_manifest_with_no_stored_identity(tmp_path):
 # the run's "identity"; `/proc/<pid>/cmdline` never showed that again once the exec completed, so
 # every later `_verified_pid` check mismatched forever -- a healthy, actively-progressing run got
 # downgraded to "failed" (queuing its scratch config dir for deletion) out from under it.
+#
+# Second incident, found chasing a `pytest app/dashboard -q` flake that failed a DIFFERENT test
+# each run (always the same family: a live `sleep 100`/`bash` test process downgraded to
+# "failed"/"paused"/"done" mid-test): `/proc/<pid>/cmdline` also reads back EMPTY for a brief
+# window around every `execve()` -- not just `_spawn`'s `env` wrapper's -- so even a plain
+# `sleep 100` with no wrapper at all could be caught here under enough host load.
+# `_is_transitional_cmdline` covers both shapes now; the tests below cover the empty-string one
+# specifically (the `env`-wrapper tests above already cover the other).
 
 
 def test_capture_identity_retries_past_the_env_wrappers_transitional_cmdline(monkeypatch):
@@ -345,6 +353,59 @@ def test_capture_identity_accepts_a_cmdline_that_never_went_through_env(monkeypa
     starttime, cmdline = controller_mod._capture_identity(12345)
     assert cmdline == "sleep\x00100\x00"
     assert calls["n"] == 1
+
+
+def test_capture_identity_retries_past_a_transient_empty_cmdline_read(monkeypatch):
+    """The flake's actual mechanism: the FIRST `/proc/<pid>/cmdline` read lands in the kernel's
+    brief "old argv cleared, new one not yet installed" window around `execve()` and comes back
+    `""` -- not `None` (no exception, `_process_identity` succeeds) and not the `env`-wrapper
+    prefix, so the pre-fix code accepted it as final on the first try and stored it permanently.
+    Must retry past an empty cmdline exactly like the env-wrapper one."""
+    calls = {"n": 0}
+
+    def fake_process_identity(pid):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            return (100.0, "")
+        return (100.0, "sleep\x00100\x00")
+
+    monkeypatch.setattr(controller_mod, "_process_identity", fake_process_identity)
+    monkeypatch.setattr(controller_mod.time, "sleep", lambda s: None)
+
+    starttime, cmdline = controller_mod._capture_identity(12345)
+    assert cmdline == "sleep\x00100\x00"
+    assert calls["n"] == 2  # the 1st (empty, transitional) read must not have been accepted
+
+
+def test_capture_identity_falls_back_to_empty_cmdline_if_it_never_resolves(monkeypatch):
+    """Best-effort fallback matching this function's existing contract: if every retry still
+    reads empty (should be rare -- `execve()` settles near-instantly), return the last-observed
+    identity rather than `(None, None)`."""
+    monkeypatch.setattr(controller_mod, "_process_identity", lambda pid: (100.0, ""))
+    monkeypatch.setattr(controller_mod.time, "sleep", lambda s: None)
+
+    starttime, cmdline = controller_mod._capture_identity(12345)
+    assert starttime == 100.0
+    assert cmdline == ""
+
+
+def test_reconcile_does_not_downgrade_a_live_run_whose_capture_raced_an_empty_cmdline(tmp_path):
+    """End-to-end regression for the actual observed flake: even if `_capture_identity`'s retry
+    loop is defeated entirely (every read transient), a run that's still genuinely alive must not
+    be silently, permanently downgraded the moment `reconcile()` next runs. This exercises the
+    real `start()` -> `_verified_pid()` path against a real, live process -- unlike the two tests
+    above (which test `_capture_identity` in isolation), this confirms the fix actually closes the
+    reconcile()-time symptom (`NoRunError` from `pause`/`stop`/`resume` immediately after start)."""
+    manifest = controller_mod.start(tmp_path, target=100, spawn=_fake_spawn)
+    try:
+        # capture_identity already retried past any real transitional read by the time start()
+        # returns (the fix under test) -- confirm the stored cmdline is the real, settled one, not
+        # empty, so every later reconcile() call verifies this live process correctly.
+        assert manifest["pid_cmdline"], "must not have captured an empty/transitional cmdline"
+        live = controller_mod.liveness(tmp_path)
+        assert live["status"] == "running"
+    finally:
+        _cleanup(manifest)
 
 
 # --- atomic writes ---------------------------------------------------------------------------
