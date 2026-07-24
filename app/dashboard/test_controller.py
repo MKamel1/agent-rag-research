@@ -87,6 +87,125 @@ def test_start_allowed_again_once_prior_run_confirmed_dead(tmp_path):
         _cleanup(second)
 
 
+# --- T-DOC78: mode="download" -- a bare-downloader run sharing the same manifest/lock ----------
+
+
+def test_start_default_mode_is_full_and_recorded_in_manifest(tmp_path):
+    """Every existing caller/test omits `mode` -- must resolve to `"full"`, today's exact
+    behavior, not silently become download-only."""
+    manifest = controller_mod.start(tmp_path, target=100, spawn=_fake_spawn)
+    try:
+        assert manifest["mode"] == "full"
+    finally:
+        _cleanup(manifest)
+
+
+def test_start_with_mode_download_records_mode_in_manifest(tmp_path):
+    manifest = controller_mod.start(
+        tmp_path, target=30000, parse_workers=1, mode="download", spawn=_fake_spawn,
+    )
+    try:
+        assert manifest["mode"] == "download"
+        assert manifest["status"] == "running"
+    finally:
+        _cleanup(manifest)
+
+
+def test_start_download_refused_while_a_full_run_is_live(tmp_path):
+    """Mutual exclusion is the EXISTING double-run guard, mode-agnostic -- no new locking code."""
+    full = controller_mod.start(tmp_path, target=100, spawn=_fake_spawn)
+    try:
+        with pytest.raises(DoubleRunError):
+            controller_mod.start(
+                tmp_path, target=30000, parse_workers=1, mode="download", spawn=_fake_spawn,
+            )
+    finally:
+        _cleanup(full)
+
+
+def test_start_full_refused_while_a_download_only_run_is_live(tmp_path):
+    download = controller_mod.start(
+        tmp_path, target=30000, parse_workers=1, mode="download", spawn=_fake_spawn,
+    )
+    try:
+        with pytest.raises(DoubleRunError):
+            controller_mod.start(tmp_path, target=100, spawn=_fake_spawn)
+    finally:
+        _cleanup(download)
+
+
+def test_start_download_writes_prefetch_log_at_run_cwd_not_ingest_log(tmp_path):
+    """`app/dashboard/status.py::read_downloader` hardcodes the log filename `prefetch.log` -- a
+    download-only run's manifest must point at that exact name, not the usual
+    `ingest_<run_id>.log`, or the dashboard's downloader-pace display goes blank."""
+    manifest = controller_mod.start(
+        tmp_path, target=30000, parse_workers=1, mode="download", spawn=_fake_spawn,
+    )
+    try:
+        assert manifest["log_path"] == str(tmp_path / "prefetch.log")
+    finally:
+        _cleanup(manifest)
+
+
+def test_start_full_still_writes_ingest_log_unchanged(tmp_path):
+    manifest = controller_mod.start(tmp_path, target=100, spawn=_fake_spawn)
+    try:
+        assert manifest["log_path"] == str(tmp_path / f"ingest_{manifest['run_id']}.log")
+    finally:
+        _cleanup(manifest)
+
+
+def test_start_download_reuses_keywords_override_same_as_a_full_run(tmp_path):
+    """T-DOC78: "download now" must use the same keywords staged in the Apply panel --
+    `_maybe_build_override` is mode-agnostic; this proves `mode="download"` reaches it too, via
+    the same override path `test_start_with_keywords_augments_not_replaces_and_writes_override_config`
+    already proves for a full run."""
+    calls = []
+    base_cfg = controller_mod.load_config(controller_mod._REPO_ROOT / "config.yaml")
+    manifest = controller_mod.start(
+        tmp_path, target=30000, parse_workers=1, mode="download",
+        keywords=["zzz-test-keyword"], spawn=_kwargs_spawn(calls),
+    )
+    try:
+        override_dir = calls[0]["cwd"]
+        assert override_dir != tmp_path  # launched in a scratch dir, not the real data_dir
+        assert manifest["run_cwd"] == str(override_dir)
+        written_cfg = controller_mod.load_config(Path(override_dir) / "config.yaml")
+        assert written_cfg.focus_area_queries == base_cfg.focus_area_queries + ["zzz-test-keyword"]
+        assert manifest["mode"] == "download"
+    finally:
+        _cleanup(manifest)
+
+
+def test_real_spawn_download_launches_prefetch_pdfs_not_build_corpus(tmp_path, monkeypatch):
+    """T-DOC78: `mode="download"`'s real launch command must be `python -m app.prefetch_pdfs` --
+    no --target/--parse-workers/--events-path flags (it has none), no GPU, no pass1/pass2. Also
+    writes `<data_dir>/prefetch.pid` -- the SAME filename `app/build_corpus.py::_spawn_prefetch`
+    already writes, so `app/dashboard/status.py::read_downloader` and
+    `app/build_corpus.py::ensure_prefetch_running` need zero changes to find it."""
+    captured = {}
+
+    class _FakePopen:
+        def __init__(self, cmd, **kwargs):
+            captured["cmd"] = cmd
+            captured["kwargs"] = kwargs
+            self.pid = 999997
+
+    monkeypatch.setattr(controller_mod.subprocess, "Popen", _FakePopen)
+    log_path = tmp_path / "prefetch.log"
+
+    pid = controller_mod._spawn_download(tmp_path, 30000, 1, tmp_path / "events.jsonl", log_path)
+
+    assert pid == 999997
+    cmd = captured["cmd"]
+    assert "app.prefetch_pdfs" in cmd
+    assert "app.build_corpus" not in cmd
+    assert "--target" not in cmd
+    assert captured["kwargs"]["cwd"] == str(tmp_path)
+    assert captured["kwargs"]["start_new_session"] is True
+    assert (tmp_path / "prefetch.pid").read_text() == "999997"
+
+
 # --- pause / stop: process-group signaling + transitional states --------------------------
 
 
