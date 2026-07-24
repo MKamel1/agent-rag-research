@@ -64,7 +64,6 @@ import signal
 import sqlite3
 import subprocess
 import sys
-import tempfile
 import time
 from datetime import UTC, datetime
 from pathlib import Path
@@ -79,6 +78,11 @@ from rag.config import load_config
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _MANIFEST_NAME = "run_manifest.json"
+# Where a run-scoped config override (`_write_override_config_dir`) lives: <data_dir>/.run_overrides/
+# <run_id>/config.yaml -- NOT /tmp (the old `tempfile.mkdtemp` location). /tmp doesn't survive a
+# reboot; a multi-day corpus build must. Keyed by run_id so pause/resume of the SAME run reuses
+# the SAME dir, same lifetime contract the old tempdir had, just durable now.
+_RUN_OVERRIDES_DIRNAME = ".run_overrides"
 # OG-47#1: every control op (start/pause/resume/stop/retarget) is serialized under this ONE
 # filelock, spanning the whole check-then-act (reconcile -> decide -> spawn/signal ->
 # _write_manifest) -- see "control-op serialization" further down.
@@ -372,9 +376,18 @@ def reconcile(data_dir: str | Path) -> dict | None:
         else:
             manifest["status"] = {"pausing": "paused", "stopping": "done"}[status]
         _write_manifest(data_dir, manifest)
-        # OG-49 M10: only "done"/"failed" are genuinely terminal here -- "paused" (from "pausing")
-        # expects a later resume() that reuses run_cwd, so it must NOT be cleaned up.
-        if manifest["status"] in ("done", "failed"):
+        # Only "done" is cleaned up here. "paused" (from "pausing") expects a later resume() that
+        # reuses run_cwd, so it must NOT be cleaned up -- unchanged (OG-49 M10). "failed" USED to
+        # be cleaned up alongside "done" here, but that's exactly backwards: a crashed run is
+        # precisely the one the user will resume (that's the whole point of `reconcile()` telling
+        # a crash apart from a clean finish, OG-47#2) -- deleting its run_cwd out from under it
+        # guaranteed `resume()`'s later `subprocess.Popen(cwd=<deleted dir>)` a `FileNotFoundError`
+        # for every run that had edited keywords/filters/ordering (an override run_cwd, never the
+        # real data_dir). `_resume_locked` below now rebuilds a missing run_cwd from the manifest's
+        # own recorded params instead, so a "failed" run's scratch dir is left alone here; only a
+        # final, user-initiated `stop()` (never resumed) or a later abandoning `start()`
+        # (`_start_locked`'s own cleanup) removes it.
+        if manifest["status"] == "done":
             _cleanup_run_cwd(data_dir, manifest)
     return manifest
 
@@ -413,26 +426,73 @@ def _load_base_config(data_dir: Path) -> Config:
     return load_config(_REPO_ROOT / "config.yaml")
 
 
-def _write_override_config_dir(cfg: Config, data_dir: Path) -> Path:
+def _resolve_override_config(cfg: Config, data_dir: Path) -> Config:
     """`data_dir` (OG-49#1): every relative-path field is resolved absolute against the REAL data
     dir, not `Path.resolve()`'s implicit `os.getcwd()` (the dashboard SERVER process's own cwd,
     unrelated to any run) -- `Path(base) / value` is a no-op when `value` is already absolute, so
-    this is safe for both a relative default (e.g. `"papers.db"`) and an already-absolute value."""
+    this is safe for both a relative default (e.g. `"papers.db"`) and an already-absolute value.
+
+    Shared by a fresh override write (`_write_override_config_dir`) and a rebuild-from-manifest
+    when a run's `run_cwd` has gone missing (`_rebuild_missing_run_cwd`) -- both need the exact
+    same path resolution, only the resulting `Config`'s edited fields differ."""
     path_updates = {
         field: str((data_dir / value).resolve())
         for field in _OVERRIDE_PATH_FIELDS
         if (value := getattr(cfg, field))
     }
-    resolved = cfg.model_copy(update=path_updates) if path_updates else cfg
+    return cfg.model_copy(update=path_updates) if path_updates else cfg
 
-    # OG-49 M10: unlike app/ingest.py's own override dir (torn down the instant its one-shot run
-    # ends), THIS dir is a `run_cwd` a `pause`d run's later `resume()` reuses verbatim (see
-    # `_resume_locked`) -- it must survive across pause/resume for the SAME run_id. `_cleanup_run_cwd`
-    # below is the other half: it removes this dir once the run reaches a genuinely terminal state
-    # ("done"/"failed") that will never `resume()` again, never on a merely "paused" one.
-    tmpdir = Path(tempfile.mkdtemp(prefix="dashboard_override_"))
-    (tmpdir / "config.yaml").write_text(yaml.safe_dump(resolved.model_dump()))
-    return tmpdir
+
+def _write_config_yaml(cfg: Config, target_dir: Path) -> None:
+    target_dir.mkdir(parents=True, exist_ok=True)
+    (target_dir / "config.yaml").write_text(yaml.safe_dump(cfg.model_dump()))
+
+
+def _write_override_config_dir(cfg: Config, data_dir: Path, run_id: str) -> Path:
+    """Writes `cfg` (already resolved absolute -- see `_resolve_override_config`) to
+    `<data_dir>/.run_overrides/<run_id>/config.yaml` and returns that directory.
+
+    This dir is a `run_cwd` a `pause`d run's later `resume()` reuses verbatim (see
+    `_resume_locked`) -- it must survive across pause/resume for the SAME run_id, and now across a
+    reboot too (durable under `data_dir`, not `/tmp` -- see `_RUN_OVERRIDES_DIRNAME`).
+    `_cleanup_run_cwd` is the other half: it removes this dir once the run reaches a genuinely
+    terminal state that will never `resume()` again."""
+    resolved = _resolve_override_config(cfg, data_dir)
+    target_dir = data_dir / _RUN_OVERRIDES_DIRNAME / run_id
+    _write_config_yaml(resolved, target_dir)
+    return target_dir
+
+
+def _rebuild_missing_run_cwd(data_dir: Path, manifest: dict, run_cwd: Path) -> None:
+    """Reconstructs a resumed run's override `config.yaml` when its `run_cwd` no longer exists on
+    disk (a reboot wiped the old `/tmp` location pre-dating the durable-dir fix above, or the
+    directory was otherwise lost) -- rebuilt from the manifest's OWN recorded effective params
+    (`focus_queries`/`parse_batch_size`/`ordering`/`arxiv_categories`/`arxiv_date_from`/
+    `arxiv_date_to`, all persisted by `_build_manifest`), never from the unedited base config.
+
+    This must NEVER silently fall back to `data_dir`'s defaults -- that would resurrect the run
+    with the WRONG settings, exactly what this module's other docstrings warn a resumed edited run
+    must not do. Re-validates through `Config.model_validate` the same way `_maybe_build_override`
+    does, since these values came from a JSON manifest, not fresh pydantic construction, and
+    `model_copy(update=...)` doesn't re-check invariants."""
+    base_cfg = _load_base_config(data_dir)
+    updates = {
+        "focus_area_queries": manifest["focus_queries"],
+        "parse_batch_size": manifest["parse_batch_size"],
+        "ordering": manifest["ordering"],
+        "arxiv_categories": manifest["arxiv_categories"],
+        "arxiv_date_from": manifest["arxiv_date_from"],
+        "arxiv_date_to": manifest["arxiv_date_to"],
+    }
+    unvalidated = base_cfg.model_copy(update=updates)
+    try:
+        effective = Config.model_validate(unvalidated.model_dump())
+    except ValidationError as error:
+        raise InvalidOverrideError(
+            f"cannot rebuild run {manifest.get('run_id')!r}'s missing run_cwd: {error}"
+        ) from error
+    resolved = _resolve_override_config(effective, data_dir)
+    _write_config_yaml(resolved, run_cwd)
 
 
 def _cleanup_run_cwd(data_dir: Path, manifest: dict) -> None:
@@ -454,7 +514,8 @@ def _cleanup_run_cwd(data_dir: Path, manifest: dict) -> None:
 
 def _maybe_build_override(
     cfg: Config, keywords: list[str] | None, parse_batch_size: int | None, *,
-    data_dir: Path,
+    data_dir: Path, run_id: str,
+    remove_keywords: list[str] | None = None,
     arxiv_categories: list[str] | None = None,
     arxiv_date_from: str | None = None,
     arxiv_date_to: str | None = None,
@@ -463,11 +524,23 @@ def _maybe_build_override(
 ) -> tuple[Config, Path | None]:
     """Builds a run-scoped override `Config` + scratch `config.yaml` dir when `keywords` (AUGMENTED
     onto `focus_area_queries` -- owner decision: an edit adds topics to the one library, it never
-    replaces it), `parse_batch_size`, the OG-45 arXiv DOWNLOAD filters
-    (`arxiv_categories`/`arxiv_date_from`/`arxiv_date_to`), or the OG-46 `ordering` actually change
-    anything relative to the base config. Returns `(cfg, None)` unchanged when nothing edits --
-    a run that edits nothing launches exactly the old way (`cwd=data_dir`, no override dir, no
+    replaces it), `remove_keywords` (removes topics -- applied AFTER the augment merge, so add+
+    remove in one request is well-defined; a superseding owner decision for removal specifically,
+    the augment-only rule stands for `keywords`), `parse_batch_size`, the OG-45 arXiv DOWNLOAD
+    filters (`arxiv_categories`/`arxiv_date_from`/`arxiv_date_to`), or the OG-46 `ordering` actually
+    change anything relative to the base config. Returns `(cfg, None)` unchanged when nothing edits
+    -- a run that edits nothing launches exactly the old way (`cwd=data_dir`, no override dir, no
     scratch files).
+
+    Removing a keyword that isn't present is a harmless no-op. Removing every keyword is refused
+    (`InvalidOverrideError`) -- an empty `focus_area_queries` leaves the downloader with nothing to
+    search; `contracts/config.py` doesn't constrain the field's length, so this explicit guard is
+    the only thing standing between a `remove_keywords` request and a dead run. This works on the
+    base config.yaml's own queries too, not just ones added via `keywords` in this same request --
+    the override always writes the resulting list wholesale.
+
+    Removing a keyword only stops FUTURE downloads matching it; papers already ingested stay in
+    the corpus -- deleting corpus content is a separate, out-of-scope, destructive action.
 
     OG-49#6/M8: `cfg.model_copy(update=updates)` does NOT re-run pydantic validation (it's a plain
     field copy) -- a bad `parse_batch_size`/`ordering` from a `POST /api/control` body would
@@ -477,8 +550,15 @@ def _maybe_build_override(
     raises `InvalidOverrideError` here, pre-spawn.
     """
     updates: dict = {}
-    if keywords:
-        merged = cfg.focus_area_queries + [k for k in keywords if k not in cfg.focus_area_queries]
+    if keywords or remove_keywords:
+        merged = cfg.focus_area_queries + [k for k in (keywords or []) if k not in cfg.focus_area_queries]
+        if remove_keywords:
+            merged = [q for q in merged if q not in remove_keywords]
+            if not merged:
+                raise InvalidOverrideError(
+                    "remove_keywords would remove every focus_area_queries entry -- refusing, "
+                    "the downloader would have nothing left to search"
+                )
         if merged != cfg.focus_area_queries:
             updates["focus_area_queries"] = merged
     if parse_batch_size is not None and parse_batch_size != cfg.parse_batch_size:
@@ -502,7 +582,7 @@ def _maybe_build_override(
         raise InvalidOverrideError(
             f"invalid config override: {error}"
         ) from error
-    return effective, _write_override_config_dir(effective, data_dir)
+    return effective, _write_override_config_dir(effective, data_dir, run_id)
 
 
 # --- spawning ------------------------------------------------------------------------------------
@@ -640,7 +720,8 @@ def _control_lock(data_dir: Path) -> filelock.FileLock:
 def start(data_dir: str | Path, target: int, parse_workers: int = 3, *,
           paper_ids_file: str | Path | None = None,
           telemetry_poll_interval: float | None = None, batch_size: int | None = None,
-          keywords: list[str] | None = None, parse_batch_size: int | None = None,
+          keywords: list[str] | None = None, remove_keywords: list[str] | None = None,
+          parse_batch_size: int | None = None,
           arxiv_categories: list[str] | None = None,
           arxiv_date_from: str | None = None, arxiv_date_to: str | None = None,
           ordering: str | None = None,
@@ -656,21 +737,23 @@ def start(data_dir: str | Path, target: int, parse_workers: int = 3, *,
     `telemetry_poll_interval`/`batch_size` (OG-43): plain pass-through CLI flags, forwarded to
     `app.build_corpus` as-is -- no config involved.
 
-    `keywords`/`parse_batch_size`/`arxiv_categories`/`arxiv_date_from`/`arxiv_date_to`/`ordering`
-    (OG-43/OG-45/OG-46): config-DERIVED edits -- reaching them requires a run-scoped override
-    `config.yaml` (`_maybe_build_override`/`_write_override_config_dir`), since `app.build_corpus`
-    and its `app.prefetch_pdfs`/`app.ingest` children each `load_config()` fresh from their own
-    cwd rather than receiving this process's in-memory `Config`. `keywords` AUGMENTS
-    `focus_area_queries` (adds topics, never replaces -- owner decision). `arxiv_categories`/
-    `arxiv_date_from`/`arxiv_date_to` (OG-45) REPLACE the base config's DOWNLOAD-side filters for
-    this run (unlike keywords, there is no "augment a filter" semantics). `ordering` (OG-46) is
-    `"freshest_first"` or `"relevance"`."""
+    `keywords`/`remove_keywords`/`parse_batch_size`/`arxiv_categories`/`arxiv_date_from`/
+    `arxiv_date_to`/`ordering` (OG-43/OG-45/OG-46): config-DERIVED edits -- reaching them requires
+    a run-scoped override `config.yaml` (`_maybe_build_override`/`_write_override_config_dir`),
+    since `app.build_corpus` and its `app.prefetch_pdfs`/`app.ingest` children each `load_config()`
+    fresh from their own cwd rather than receiving this process's in-memory `Config`. `keywords`
+    AUGMENTS `focus_area_queries` (adds topics, never replaces -- owner decision); `remove_keywords`
+    removes topics, applied AFTER that augment merge (a superseding owner decision for removal
+    specifically -- see `_maybe_build_override`). `arxiv_categories`/`arxiv_date_from`/
+    `arxiv_date_to` (OG-45) REPLACE the base config's DOWNLOAD-side filters for this run (unlike
+    keywords, there is no "augment a filter" semantics). `ordering` (OG-46) is `"freshest_first"`
+    or `"relevance"`."""
     data_dir = Path(data_dir)
     with _control_lock(data_dir):
         return _start_locked(
             data_dir, target, parse_workers, paper_ids_file=paper_ids_file,
             telemetry_poll_interval=telemetry_poll_interval, batch_size=batch_size,
-            keywords=keywords, parse_batch_size=parse_batch_size,
+            keywords=keywords, remove_keywords=remove_keywords, parse_batch_size=parse_batch_size,
             arxiv_categories=arxiv_categories, arxiv_date_from=arxiv_date_from,
             arxiv_date_to=arxiv_date_to, ordering=ordering, stranded_policy=stranded_policy,
             spawn=spawn,
@@ -680,7 +763,8 @@ def start(data_dir: str | Path, target: int, parse_workers: int = 3, *,
 def _start_locked(data_dir: Path, target: int, parse_workers: int = 3, *,
                    paper_ids_file: str | Path | None = None,
                    telemetry_poll_interval: float | None = None, batch_size: int | None = None,
-                   keywords: list[str] | None = None, parse_batch_size: int | None = None,
+                   keywords: list[str] | None = None, remove_keywords: list[str] | None = None,
+                   parse_batch_size: int | None = None,
                    arxiv_categories: list[str] | None = None,
                    arxiv_date_from: str | None = None, arxiv_date_to: str | None = None,
                    ordering: str | None = None,
@@ -694,6 +778,15 @@ def _start_locked(data_dir: Path, target: int, parse_workers: int = 3, *,
             f"run {manifest['run_id']!r} is still live (status={manifest['status']!r}) -- "
             "pause or stop it before starting a fresh run"
         )
+    if manifest is not None:
+        # Abandoning a non-live prior run (most commonly "paused" -- pause an edited run, then hit
+        # Apply for a fresh one instead of resuming it) for good: its override run_cwd (if any) is
+        # never coming back. "paused" was never cleaned up by `reconcile()` (a later `resume()`
+        # expects it); "failed" no longer is either (see `reconcile()`'s own comment -- a crash is
+        # exactly the thing `resume()` should still be able to rebuild from); "done" was already
+        # cleaned up, so this is a no-op for it. This is the one place left that can catch all
+        # three before the scratch dir leaks forever -- `_cleanup_run_cwd` is a no-op besides.
+        _cleanup_run_cwd(data_dir, manifest)
 
     paper_ids_file = Path(paper_ids_file) if paper_ids_file is not None else None
     run_id = f"run-{target}-{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}"
@@ -703,7 +796,8 @@ def _start_locked(data_dir: Path, target: int, parse_workers: int = 3, *,
 
     base_cfg = _load_base_config(data_dir)
     effective_cfg, override_dir = _maybe_build_override(
-        base_cfg, keywords, parse_batch_size, data_dir=data_dir,
+        base_cfg, keywords, parse_batch_size, data_dir=data_dir, run_id=run_id,
+        remove_keywords=remove_keywords,
         arxiv_categories=arxiv_categories, arxiv_date_from=arxiv_date_from,
         arxiv_date_to=arxiv_date_to, ordering=ordering, stranded_policy=stranded_policy,
     )
@@ -784,6 +878,13 @@ def _resume_locked(data_dir: Path, *, spawn: SpawnFn = _spawn) -> dict:
     # must come back with its edits intact, not silently revert to config.yaml's unedited defaults.
     stored_run_cwd = manifest.get("run_cwd")
     run_cwd = Path(stored_run_cwd) if stored_run_cwd else data_dir
+    if run_cwd != data_dir and not run_cwd.exists():
+        # The override scratch dir is gone (a reboot wiped the old /tmp location, or it was
+        # otherwise lost) -- rebuild it from the manifest's OWN recorded effective params rather
+        # than let `_call_spawn` below hit `subprocess.Popen(cwd=<missing dir>)` ->
+        # `FileNotFoundError`. NEVER falls back to `data_dir`/unedited defaults -- see
+        # `_rebuild_missing_run_cwd`'s own docstring for why that would be worse than the crash.
+        _rebuild_missing_run_cwd(data_dir, manifest, run_cwd)
     params = manifest.get("params") or {}
     pid = _call_spawn(
         spawn, run_cwd, manifest["target"], manifest["parse_workers"],
@@ -830,7 +931,8 @@ def _stop_locked(data_dir: Path) -> dict:
 def retarget(data_dir: str | Path, target: int, parse_workers: int = 3, *,
              paper_ids_file: str | Path | None = None,
              telemetry_poll_interval: float | None = None, batch_size: int | None = None,
-             keywords: list[str] | None = None, parse_batch_size: int | None = None,
+             keywords: list[str] | None = None, remove_keywords: list[str] | None = None,
+             parse_batch_size: int | None = None,
              arxiv_categories: list[str] | None = None,
              arxiv_date_from: str | None = None, arxiv_date_to: str | None = None,
              ordering: str | None = None,
@@ -857,7 +959,7 @@ def retarget(data_dir: str | Path, target: int, parse_workers: int = 3, *,
         return _start_locked(
             data_dir, target, parse_workers, paper_ids_file=paper_ids_file,
             telemetry_poll_interval=telemetry_poll_interval, batch_size=batch_size,
-            keywords=keywords, parse_batch_size=parse_batch_size,
+            keywords=keywords, remove_keywords=remove_keywords, parse_batch_size=parse_batch_size,
             arxiv_categories=arxiv_categories, arxiv_date_from=arxiv_date_from,
             arxiv_date_to=arxiv_date_to, ordering=ordering, stranded_policy=stranded_policy,
             spawn=spawn,

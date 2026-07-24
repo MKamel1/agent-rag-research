@@ -6,6 +6,7 @@ verification machinery against a real (but harmless) OS process without ever tou
 
 import json
 import os
+import shutil
 import signal
 import subprocess
 import threading
@@ -656,6 +657,108 @@ def test_start_with_keyword_already_in_base_config_is_a_no_op_override(tmp_path)
         _cleanup(manifest)
 
 
+# --- Task 3: keyword REMOVAL (owner-requested; supersedes "augment, never replace" for removal) --
+
+
+def test_start_with_remove_keywords_removes_a_base_config_query(tmp_path):
+    """Removal works on the 33 base config.yaml queries too, not just ones added in this same
+    request -- the override writes the resulting list wholesale."""
+    calls = []
+    base_cfg = controller_mod.load_config(controller_mod._REPO_ROOT / "config.yaml")
+    removed = base_cfg.focus_area_queries[0]
+    manifest = controller_mod.start(
+        tmp_path, target=100, remove_keywords=[removed], spawn=_kwargs_spawn(calls),
+    )
+    try:
+        override_dir = calls[0]["cwd"]
+        assert override_dir != tmp_path
+        written_cfg = controller_mod.load_config(override_dir / "config.yaml")
+        assert removed not in written_cfg.focus_area_queries
+        assert len(written_cfg.focus_area_queries) == len(base_cfg.focus_area_queries) - 1
+        assert manifest["focus_queries"] == written_cfg.focus_area_queries
+    finally:
+        _cleanup(manifest)
+
+
+def test_start_with_remove_keywords_not_present_is_a_harmless_no_op(tmp_path):
+    """Removing a keyword that isn't present must not error -- and since nothing actually changed,
+    no override is needed at all."""
+    calls = []
+    manifest = controller_mod.start(
+        tmp_path, target=100, remove_keywords=["not-a-real-keyword-at-all"],
+        spawn=_kwargs_spawn(calls),
+    )
+    try:
+        assert calls[0]["cwd"] == tmp_path  # no override -- nothing actually changed
+        assert manifest["run_cwd"] == str(tmp_path)
+    finally:
+        _cleanup(manifest)
+
+
+def test_start_with_keywords_and_remove_keywords_together_applies_remove_after_augment(tmp_path):
+    """Semantics: remove_keywords applies AFTER the keywords augment merge -- add+remove in one
+    request is well-defined (e.g. adding then immediately removing the same term is a no-op add)."""
+    calls = []
+    base_cfg = controller_mod.load_config(controller_mod._REPO_ROOT / "config.yaml")
+    to_remove = base_cfg.focus_area_queries[0]
+    manifest = controller_mod.start(
+        tmp_path, target=100, keywords=["zzz-added-keyword"], remove_keywords=[to_remove],
+        spawn=_kwargs_spawn(calls),
+    )
+    try:
+        override_dir = calls[0]["cwd"]
+        written_cfg = controller_mod.load_config(override_dir / "config.yaml")
+        assert "zzz-added-keyword" in written_cfg.focus_area_queries
+        assert to_remove not in written_cfg.focus_area_queries
+    finally:
+        _cleanup(manifest)
+
+
+def test_start_with_remove_keywords_matching_the_just_added_keyword_is_a_no_op(tmp_path):
+    """Adding a keyword and removing that SAME keyword in one request nets out to the unedited
+    base config -- no override needed."""
+    calls = []
+    manifest = controller_mod.start(
+        tmp_path, target=100, keywords=["zzz-added-then-removed"],
+        remove_keywords=["zzz-added-then-removed"], spawn=_kwargs_spawn(calls),
+    )
+    try:
+        assert calls[0]["cwd"] == tmp_path
+        assert manifest["run_cwd"] == str(tmp_path)
+    finally:
+        _cleanup(manifest)
+
+
+def test_start_with_remove_keywords_removing_everything_is_refused(tmp_path):
+    """Guard: refuse to remove every keyword -- an empty focus_area_queries leaves the downloader
+    with nothing to search. contracts/config.py's `focus_area_queries` is a bare `list[str]` with
+    no min-length, so this explicit guard is the only thing standing between the request and a
+    dead run."""
+    calls = []
+    base_cfg = controller_mod.load_config(controller_mod._REPO_ROOT / "config.yaml")
+    with pytest.raises(InvalidOverrideError):
+        controller_mod.start(
+            tmp_path, target=100, remove_keywords=list(base_cfg.focus_area_queries),
+            spawn=_kwargs_spawn(calls),
+        )
+    assert calls == [], "must never reach spawn -- rejected pre-spawn"
+    assert not (tmp_path / "run_manifest.json").exists()
+
+
+def test_retarget_wires_remove_keywords_through(tmp_path):
+    calls = []
+    controller_mod.start(tmp_path, target=100, spawn=_kwargs_spawn(calls))
+    base_cfg = controller_mod.load_config(controller_mod._REPO_ROOT / "config.yaml")
+    removed = base_cfg.focus_area_queries[0]
+    try:
+        retargeted = controller_mod.retarget(
+            tmp_path, target=500, remove_keywords=[removed], spawn=_kwargs_spawn(calls),
+        )
+        assert removed not in retargeted["focus_queries"]
+    finally:
+        _cleanup(retargeted)
+
+
 def test_start_with_parse_batch_size_writes_override_config_with_absolute_paths(tmp_path):
     """The override config.yaml's path-valued fields (db_path/blob_dir/pdf_cache_dir/...) must be
     resolved ABSOLUTE -- the subprocess launched into the scratch dir has a different cwd than the
@@ -812,10 +915,43 @@ def test_stop_with_no_override_never_touches_the_real_data_dir(tmp_path):
     assert (tmp_path / "run_manifest.json").exists()
 
 
-def test_reconcile_removes_override_dir_once_a_crashed_run_self_heals(tmp_path):
-    """A run whose process dies WITHOUT going through pause/stop (a crash) is caught by
-    `reconcile()`'s own identity check, which downgrades it to `done`/`failed` -- that transition
-    must clean up the override dir too, the same as an explicit `stop()` does."""
+def test_reconcile_removes_override_dir_once_a_crashed_run_self_heals_to_done(tmp_path):
+    """A run whose process dies WITHOUT going through pause/stop, but had actually REACHED its
+    target (a clean finish reconcile() just never got to record) is caught by reconcile()'s own
+    identity check and downgraded to `done` -- that transition must clean up the override dir too,
+    the same as an explicit `stop()` does."""
+    import sqlite3
+
+    calls = []
+    manifest = controller_mod.start(
+        tmp_path, target=2, keywords=["zzz-test-keyword"], spawn=_kwargs_spawn(calls),
+    )
+    override_dir = Path(manifest["run_cwd"])
+    assert override_dir.is_dir()
+    conn = sqlite3.connect(manifest["db_path"])
+    conn.execute("CREATE TABLE ingest_state (paper_id TEXT PRIMARY KEY, stage TEXT)")
+    conn.execute("INSERT INTO ingest_state VALUES ('a', 'done')")
+    conn.execute("INSERT INTO ingest_state VALUES ('b', 'done')")
+    conn.commit()
+    conn.close()
+    os.killpg(manifest["pid"], signal.SIGKILL)
+    for _ in range(50):
+        if not controller_mod._pid_running(manifest["pid"]):
+            break
+        time.sleep(0.05)
+
+    reconciled = controller_mod.liveness(tmp_path)
+
+    assert reconciled["status"] == "done"
+    assert not override_dir.exists()
+
+
+def test_reconcile_preserves_override_dir_for_a_genuine_crash_so_resume_can_use_it(tmp_path):
+    """OG-49 M10 vs. resume-from-failed: a run whose process dies mid-way (target NOT reached) is
+    downgraded to `failed`, not `done` -- and `reconcile()` must leave its override dir alone, the
+    exact opposite of the `done` case above. A crashed run is precisely the one the user will
+    resume; deleting run_cwd here is what made every edited run's resume-from-failed
+    unconditionally raise `FileNotFoundError` (the bug this fix closes)."""
     calls = []
     manifest = controller_mod.start(
         tmp_path, target=100, keywords=["zzz-test-keyword"], spawn=_kwargs_spawn(calls),
@@ -830,8 +966,145 @@ def test_reconcile_removes_override_dir_once_a_crashed_run_self_heals(tmp_path):
 
     reconciled = controller_mod.liveness(tmp_path)
 
-    assert reconciled["status"] in ("done", "failed")
+    assert reconciled["status"] == "failed"
+    assert override_dir.is_dir(), "a crashed run's run_cwd must survive for a later resume()"
+
+
+# --- resume is broken for any run that used a config override (the durable-override-dir fix) ----
+#
+# Confirmed repro: reconcile() marks a crashed run "failed" -> the OLD reconcile() deleted that
+# run's run_cwd -> a later resume() calls _call_spawn(..., run_cwd) -> subprocess.Popen(cwd=<
+# deleted dir>) -> FileNotFoundError, uncaught by server.py's _dispatch. Resume worked fine for an
+# UNEDITED run (run_cwd == data_dir, never deleted) -- broken for every run that edited keywords/
+# filters/ordering/parse_batch_size. Four parts: (1) durable dir under data_dir, not /tmp; (2)
+# reconcile() no longer deletes on "failed" (see the test above); (3) resume rebuilds a missing
+# run_cwd from the manifest; (4) start() cleans up an abandoned prior run's run_cwd so it doesn't
+# leak forever when the user never resumes it.
+
+
+def test_override_dir_lives_under_data_dir_not_tmp(tmp_path):
+    """Part 1: the scratch config.yaml dir must be durable (survive a reboot) -- under
+    data_dir/.run_overrides/<run_id>, never /tmp (the old `tempfile.mkdtemp` location, which does
+    NOT survive a reboot and leaked 328 dirs over time)."""
+    calls = []
+    manifest = controller_mod.start(
+        tmp_path, target=100, keywords=["zzz-test-keyword"], spawn=_kwargs_spawn(calls),
+    )
+    try:
+        override_dir = Path(manifest["run_cwd"])
+        assert override_dir.is_relative_to(tmp_path)
+        assert override_dir == tmp_path / ".run_overrides" / manifest["run_id"]
+        assert "/tmp" not in str(override_dir) or str(override_dir).startswith(str(tmp_path))
+    finally:
+        _cleanup(manifest)
+
+
+def test_resume_rebuilds_a_missing_run_cwd_from_the_manifests_own_recorded_params(tmp_path):
+    """Part 3, the actual repro from the owner's stuck manifest: a "failed" run's run_cwd is gone
+    (simulating a reboot that wiped it, or any other loss) -- resume() must rebuild the override
+    config.yaml from the manifest's OWN persisted effective params, not raise FileNotFoundError
+    and not silently fall back to the unedited base config (which would resurrect the run with the
+    WRONG settings)."""
+    calls = []
+    manifest = controller_mod.start(
+        tmp_path, target=100, keywords=["zzz-rebuild-keyword"], parse_batch_size=7,
+        ordering="relevance", arxiv_categories=["stat.ME"], arxiv_date_from="2019-01-01",
+        spawn=_kwargs_spawn(calls),
+    )
+    override_dir = Path(manifest["run_cwd"])
+    assert override_dir.is_dir()
+    os.killpg(manifest["pid"], signal.SIGKILL)
+    for _ in range(50):
+        if not controller_mod._pid_running(manifest["pid"]):
+            break
+        time.sleep(0.05)
+    assert controller_mod.liveness(tmp_path)["status"] == "failed"
+
+    # Simulate the loss: the dir is gone, but the manifest (and its recorded effective params)
+    # survives -- exactly the owner's real stuck-manifest scenario.
+    shutil.rmtree(override_dir)
     assert not override_dir.exists()
+
+    resumed = controller_mod.resume(tmp_path, spawn=_kwargs_spawn(calls))
+    try:
+        assert resumed["status"] == "running"
+        assert override_dir.is_dir(), "resume must rebuild the missing run_cwd, not skip it"
+        rebuilt_cfg = controller_mod.load_config(override_dir / "config.yaml")
+        assert "zzz-rebuild-keyword" in rebuilt_cfg.focus_area_queries
+        assert rebuilt_cfg.parse_batch_size == 7
+        assert rebuilt_cfg.ordering == "relevance"
+        assert rebuilt_cfg.arxiv_categories == ["stat.ME"]
+        assert rebuilt_cfg.arxiv_date_from == "2019-01-01"
+        # rebuilt paths must still resolve absolute under data_dir, same as a fresh override write.
+        assert Path(rebuilt_cfg.db_path).is_absolute()
+        assert calls[-1]["cwd"] == override_dir
+    finally:
+        _cleanup(resumed)
+
+
+def test_resume_with_intact_run_cwd_never_rebuilds(tmp_path):
+    """The rebuild path must be a fallback ONLY -- an intact run_cwd (the common case) is reused
+    verbatim, never rewritten (which could needlessly touch or race a config.yaml the paused
+    process's own downloader/ingest children might still reference)."""
+    calls = []
+    manifest = controller_mod.start(
+        tmp_path, target=100, keywords=["zzz-keep-keyword"], spawn=_kwargs_spawn(calls),
+    )
+    override_dir = Path(manifest["run_cwd"])
+    controller_mod.pause(tmp_path)
+    before = (override_dir / "config.yaml").read_text()
+
+    resumed = controller_mod.resume(tmp_path, spawn=_kwargs_spawn(calls))
+    try:
+        assert (override_dir / "config.yaml").read_text() == before
+    finally:
+        _cleanup(resumed)
+
+
+def test_start_cleans_up_a_paused_runs_override_dir_when_abandoning_it(tmp_path):
+    """Part 4 (the abandon leak an audit found): pausing an edited run and then hitting Apply for
+    a FRESH run (never resuming the paused one) must not leak the old scratch dir forever --
+    `reconcile()` never cleans up "paused" (a later resume() might still want it), so this is its
+    only remaining chance."""
+    calls = []
+    first = controller_mod.start(
+        tmp_path, target=100, keywords=["zzz-abandoned-keyword"], spawn=_kwargs_spawn(calls),
+    )
+    old_override_dir = Path(first["run_cwd"])
+    controller_mod.pause(tmp_path)
+    assert old_override_dir.is_dir()
+
+    second = controller_mod.start(tmp_path, target=200, spawn=_kwargs_spawn(calls))
+    try:
+        assert not old_override_dir.exists(), "abandoned paused run's scratch dir must be cleaned up"
+        assert second["target"] == 200
+    finally:
+        _cleanup(second)
+
+
+def test_start_cleans_up_a_failed_runs_override_dir_when_abandoning_it(tmp_path):
+    """Same leak, the "failed" side: now that reconcile() no longer auto-cleans a "failed" run's
+    run_cwd (it might be resumed), abandoning it for a fresh start instead is the only other place
+    left that can reclaim the scratch dir."""
+    calls = []
+    first = controller_mod.start(
+        tmp_path, target=100, keywords=["zzz-abandoned-failed-keyword"], spawn=_kwargs_spawn(calls),
+    )
+    old_override_dir = Path(first["run_cwd"])
+    os.killpg(first["pid"], signal.SIGKILL)
+    for _ in range(50):
+        if not controller_mod._pid_running(first["pid"]):
+            break
+        time.sleep(0.05)
+    assert controller_mod.liveness(tmp_path)["status"] == "failed"
+    assert old_override_dir.is_dir()
+
+    second = controller_mod.start(tmp_path, target=200, spawn=_kwargs_spawn(calls))
+    try:
+        assert not old_override_dir.exists()
+        assert second["target"] == 200
+    finally:
+        _cleanup(second)
 
 
 def test_retarget_wires_og43_params_through(tmp_path):
