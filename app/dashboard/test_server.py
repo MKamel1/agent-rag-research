@@ -844,3 +844,58 @@ def test_search_route_equal_date_range_is_allowed(tmp_path):
 
     assert status == 200
     assert len(fake_mcp.calls) == 1
+
+
+# --- T-DOC78: _load_or_create_token -- the dashboard manages its own token file -----------------
+
+
+def test_load_or_create_token_generates_and_persists_a_new_token_at_mode_0600(tmp_path):
+    token = server_mod._load_or_create_token(tmp_path)
+
+    token_path = tmp_path / ".dashboard_token"
+    assert token_path.exists()
+    assert token_path.read_text().strip() == token
+    assert len(token) == 32, "secrets.token_hex(16) -- 16 bytes as hex"
+    assert oct(token_path.stat().st_mode)[-3:] == "600"
+
+
+def test_load_or_create_token_reads_an_existing_token_without_regenerating_it(tmp_path):
+    token_path = tmp_path / ".dashboard_token"
+    token_path.write_text("existing-operator-token")
+    token_path.chmod(0o600)
+
+    token = server_mod._load_or_create_token(tmp_path)
+
+    assert token == "existing-operator-token"
+
+
+def test_load_or_create_token_never_chmods_an_existing_file(tmp_path):
+    """An operator's existing token file might carry different permissions (this codebase's own
+    convention is 0600, but this function must not be the one enforcing that on a file it didn't
+    create) -- only a freshly-created file gets chmod'd."""
+    token_path = tmp_path / ".dashboard_token"
+    token_path.write_text("existing-operator-token")
+    token_path.chmod(0o644)  # deliberately NOT 0600, to prove this function leaves it alone
+
+    server_mod._load_or_create_token(tmp_path)
+
+    assert oct(token_path.stat().st_mode)[-3:] == "644"
+
+
+def test_load_or_create_token_never_prints_the_token_value(tmp_path, capsys):
+    token = server_mod._load_or_create_token(tmp_path)
+
+    captured = capsys.readouterr()
+    assert token not in captured.out
+    assert str(tmp_path / ".dashboard_token") in captured.out
+
+
+def test_parse_args_token_defaults_to_none_so_main_falls_back_to_the_token_file(monkeypatch):
+    """An explicit `--token` still wins (main() only calls `_load_or_create_token` when
+    `args.token is None`) -- this just proves the CLI default itself is None, not a required
+    string, now that T-DOC78 makes `--token` optional."""
+    monkeypatch.setattr(
+        "sys.argv", ["dashboard", "--data-dir", "/tmp/whatever"]
+    )
+    args = server_mod._parse_args()
+    assert args.token is None
