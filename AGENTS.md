@@ -25,6 +25,7 @@ No claims, no reconciliation, no evidence tiers beyond a pinned `"A"`, no Obsidi
 | **WORK-BREAKDOWN.md** | Milestones, ticket IDs (T-A1, T-F1, …), Definition of Done, dependency graph. |
 | **TEST-STRATEGY.md** | Fakes, golden fixtures, contract tests, the retrieval eval set. |
 | **PHASE0-RUNBOOK.md** | The de-risking spikes (S0 bring-up, Spike 1 parser, Spike 2 retrieval) that must run before certain tickets can start. |
+| **docs/RUNBOOK.md** | Operator bring-up after a reboot: `nvidia-smi` → `python -m app.doctor` → `scripts/dashboard.sh start`, where the dashboard token lives, reaching it over Tailscale. Not to be confused with PHASE0-RUNBOOK.md above (Phase-0 spikes, a different thing). |
 | **GIT-WORKFLOW.md** | Branch naming, PR flow, CI gating, the foundation-freeze mechanism. **Read before your first commit.** |
 | **EXECUTION-READINESS-REVIEW.md** | Historical principal design review; its fixes are already applied to the docs above. Reference only. |
 | **owners/OWNER-\<X>.md** | **Your actual task brief. Start there, not here.** |
