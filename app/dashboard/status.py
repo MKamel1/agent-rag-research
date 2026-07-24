@@ -34,7 +34,7 @@ import subprocess
 import time
 import urllib.error
 import urllib.request
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 _STAGES = ("harvested", "parsed", "chunked", "summarized", "embedded", "stored", "done")
@@ -131,6 +131,13 @@ def _funnel_from_stage_counts(stage_counts: dict[str, int]) -> dict[str, int]:
 
 _MIN_ELAPSED_S_FOR_RATE = 60.0  # a rate extrapolated from a few seconds of elapsed time is noise
 
+# Trailing window for `_per_run_papers_per_hour` (cold-start fix, see `read_telemetry`'s
+# docstring). 15 min: checked live against `papers.db` (`SELECT substr(updated_at,1,16),
+# count(*) FROM ingest_state WHERE stage='done' GROUP BY 1`) -- this pipeline runs a steady
+# ~3-5 done/min once warm, so a 15-min window holds ~60 completions and moves smoothly
+# minute-to-minute rather than swinging on a lumpy few-sample average.
+_RATE_WINDOW_S = 900.0
+
 
 def read_telemetry(
     events_path: str | Path | None,
@@ -144,18 +151,34 @@ def read_telemetry(
     `events_path`, or `None` if there is no active/known run) plus a live GPU util/VRAM/power
     sample (independent of `events_path` -- always read fresh).
 
-    `papers_per_hour` is a TRUE per-run rate (OG-44 fix): `app.build_corpus` (PR #149) is a
-    supervisor that runs MULTIPLE `app.ingest` RUN_START/RUN_END cycles per dashboard run, so this
-    process's own wall-clock no longer pairs meaningfully with `total_done` (the ALL-TIME
-    cumulative count, including papers finished by prior runs) -- dividing the two used to invent
-    a papers/hour and ETA even when the CURRENT run had completed zero papers. Anchored instead on
-    the manifest's `started_at`: the rate's numerator is `COUNT(ingest_state WHERE stage='done'
-    AND updated_at >= started_at)` (`_count_done_since`), its denominator is wall-clock elapsed
-    since `started_at` itself (`now - started_at`), not any single events-file RUN_START. Zero
-    completions since `started_at`, or too little elapsed time to be meaningful, yields `None` --
-    never a fabricated number. `eta_s` (`(target - total_done) / papers_per_hour`) is `None`
-    whenever `papers_per_hour` is `None` for the same reason, or `target`/`total_done` is unknown,
-    or the target has already been reached.
+    `papers_per_hour` is a TRUE per-run rate, scoped to a trailing **sliding window**
+    (`_RATE_WINDOW_S`), not a cumulative average since the run started: `app.build_corpus`
+    (PR #149) is a supervisor that runs MULTIPLE `app.ingest` RUN_START/RUN_END cycles per
+    dashboard run, so this process's own wall-clock no longer pairs meaningfully with
+    `total_done` (the ALL-TIME cumulative count, including papers finished by prior runs) --
+    dividing the two used to invent a papers/hour and ETA even when the CURRENT run had
+    completed zero papers (OG-44). Anchoring the rate on `started_at` fixed that, but a first pass
+    divided `COUNT(done since started_at)` by the FULL elapsed time since `started_at`, which is a
+    cumulative average, not a current rate -- and this pipeline's cold start (downloading +
+    Pass-1 parsing runs for hours before the first paper reaches `stage='done'`) means those
+    warm-up hours sit in the denominator forever. Measured on a real run: 11.7h of warm-up before
+    the first completion made the dashboard show 3.5 papers/h (ETA 32 days) at the 12h mark when
+    the true trailing rate was already 168/h (ETA 0.67 days) -- 48x wrong, and it never fully
+    recovers because the cold-start hours never leave the average. The same defect re-inflates
+    the rate after any pause, since `controller.resume()` intentionally reuses the existing
+    manifest's `started_at` rather than resetting it (a resumed run is the same run, not a new
+    one) -- so paused wall-clock time would otherwise also sit in the denominator forever.
+
+    The fix: `papers_per_hour` is `COUNT(ingest_state WHERE stage='done' AND updated_at >=
+    window_start)` (`_count_done_since`) divided by the window's own width, where `window_start`
+    is `min(_RATE_WINDOW_S, elapsed_since(started_at))` seconds before now -- clamped so the
+    window can never reach back before `started_at` itself (a prior run's completions can never
+    be counted, same guarantee the cumulative version had) and so a run younger than the window
+    is timed over its own true elapsed age, not artificially stretched to the window width. Zero
+    completions in the window, or too little elapsed time to be meaningful
+    (`_MIN_ELAPSED_S_FOR_RATE`), yields `None` -- never a fabricated number. `eta_s`
+    (`(target - total_done) / papers_per_hour`) is `None` whenever `papers_per_hour` is `None` for
+    the same reason, or `target`/`total_done` is unknown, or the target has already been reached.
     """
     gpu = _read_gpu()
     null_telemetry = {
@@ -187,12 +210,20 @@ def _per_run_papers_per_hour(
     if data_dir is None or not started_at:
         return None
     elapsed_s = _elapsed_seconds_since(started_at)
-    if elapsed_s is None or elapsed_s < _MIN_ELAPSED_S_FOR_RATE:
+    if elapsed_s is None:
         return None
-    per_run_done = _count_done_since(data_dir, started_at)
-    if not per_run_done:
+    # Clamp to elapsed_s so a run younger than the window is timed over its own true age (a
+    # 5-min-old run reports a rate over 5 min, not artificially stretched to 15) -- and so
+    # `window_start` below can never land before `started_at`, the same "never count a prior
+    # run's papers" guarantee the old cumulative version had.
+    window_s = min(_RATE_WINDOW_S, elapsed_s)
+    if window_s < _MIN_ELAPSED_S_FOR_RATE:
         return None
-    return per_run_done / (elapsed_s / 3600.0)
+    window_start = _iso_offset(started_at, elapsed_s - window_s)
+    done_in_window = _count_done_since(data_dir, window_start)
+    if not done_in_window:
+        return None
+    return done_in_window / (window_s / 3600.0)
 
 
 def _elapsed_seconds_since(started_at: str) -> float | None:
@@ -204,12 +235,24 @@ def _elapsed_seconds_since(started_at: str) -> float | None:
     return (now - start).total_seconds()
 
 
-def _count_done_since(data_dir: str | Path, started_at: str) -> int | None:
-    """COUNT(*) of `ingest_state` rows at `stage='done'` with `updated_at >= started_at` -- the
-    THIS-run completion count (OG-44), excluding every paper finished by a prior run. Both
-    timestamps are written via `datetime.now(UTC).isoformat()`
-    (`rag/ingest_state_sqlite.py::checkpoint`, `controller.py::_build_manifest`), so a plain
-    string comparison sorts correctly without parsing either side."""
+def _iso_offset(started_at: str, offset_s: float) -> str:
+    """`started_at` shifted forward by `offset_s` seconds and re-serialized the same way
+    (`datetime.now(UTC).isoformat()`), so `_count_done_since`'s plain string comparison against
+    `ingest_state.updated_at` keeps working without parsing that side. Only ever called with
+    `offset_s = elapsed_s - window_s >= 0` (`_per_run_papers_per_hour`), so the result can never
+    sort before `started_at` itself."""
+    start = datetime.fromisoformat(started_at)
+    return (start + timedelta(seconds=offset_s)).isoformat()
+
+
+def _count_done_since(data_dir: str | Path, since: str) -> int | None:
+    """COUNT(*) of `ingest_state` rows at `stage='done'` with `updated_at >= since` -- `since` is
+    either `started_at` itself or a later sliding-window start (`_iso_offset`), so this always
+    excludes every paper finished by a prior run (OG-44) and, once the window clamp kicks in,
+    everything from earlier in THIS run too. Both timestamps being compared are written via
+    `datetime.now(UTC).isoformat()` (`rag/ingest_state_sqlite.py::checkpoint`,
+    `controller.py::_build_manifest`), so a plain string comparison sorts correctly without
+    parsing either side."""
     db_path = Path(data_dir) / _DEFAULT_DB_NAME
     conn = _ro_connect(db_path)
     if conn is None:
@@ -217,7 +260,7 @@ def _count_done_since(data_dir: str | Path, started_at: str) -> int | None:
     try:
         row = conn.execute(
             "SELECT count(*) FROM ingest_state WHERE stage = 'done' AND updated_at >= ?",
-            (started_at,),
+            (since,),
         ).fetchone()
     except sqlite3.Error:
         return None
