@@ -78,8 +78,8 @@ def test_read_corpus_quarantine_reasons_grouped_and_sorted(tmp_path):
     )
     result = status_mod.read_corpus(tmp_path)
     assert result["funnel"]["quarantined"] == 3
-    assert result["quarantine_reasons"][0] == {"reason": "TransientError", "count": 2}
-    assert {"reason": "PermanentError", "count": 1} in result["quarantine_reasons"]
+    assert result["quarantine_reasons"][0] == {"reason": "TransientError @ parsed", "count": 2}
+    assert {"reason": "PermanentError @ parsed", "count": 1} in result["quarantine_reasons"]
 
 
 def test_read_corpus_quarantine_reasons_surfaces_an_unknown_bucket_for_pre_diagnostics_rows(
@@ -88,8 +88,9 @@ def test_read_corpus_quarantine_reasons_surfaces_an_unknown_bucket_for_pre_diagn
     """`quarantine_diagnostics` (T-DOC17/PR #83) postdates `quarantine` itself -- a paper
     quarantined before that landed has a `quarantine` row but no matching `quarantine_diagnostics`
     one. Observed live: funnel said 32 quarantined, the reasons breakdown alone summed to only 22,
-    a silent, confusing gap. `reason_rows` must not just under-report -- the difference is
-    surfaced as an explicit "unknown" bucket so the two numbers always reconcile."""
+    a silent, confusing gap. The reason breakdown must not just under-report -- the difference is
+    surfaced as its own "unknown" bucket (still with a real stage, from `quarantine` itself) so the
+    two numbers always reconcile."""
     db_path = tmp_path / "papers.db"
     _seed(
         db_path, {"done": 1},
@@ -109,9 +110,9 @@ def test_read_corpus_quarantine_reasons_surfaces_an_unknown_bucket_for_pre_diagn
     assert result["funnel"]["quarantined"] == 3
     reasons_total = sum(r["count"] for r in result["quarantine_reasons"])
     assert reasons_total == 3  # now reconciles with funnel["quarantined"]
-    assert {"reason": "unknown (quarantined before diagnostics were recorded)", "count": 1} in (
-        result["quarantine_reasons"]
-    )
+    assert {
+        "reason": "unknown (quarantined before diagnostics were recorded) @ parsed", "count": 1,
+    } in result["quarantine_reasons"]
 
 
 def test_read_corpus_quarantine_reasons_omits_unknown_bucket_when_fully_diagnosed(tmp_path):
@@ -119,8 +120,10 @@ def test_read_corpus_quarantine_reasons_omits_unknown_bucket_when_fully_diagnose
     writes) must not grow a spurious "unknown, count 0" entry."""
     _seed(tmp_path / "papers.db", {"done": 1}, quarantine=[("q1", "TransientError")])
     result = status_mod.read_corpus(tmp_path)
-    assert all(r["reason"] != "unknown (quarantined before diagnostics were recorded)" for r in
-               result["quarantine_reasons"])
+    assert all(
+        "unknown (quarantined before diagnostics were recorded)" not in r["reason"]
+        for r in result["quarantine_reasons"]
+    )
 
 
 def test_read_corpus_excludes_quarantined_papers_that_later_succeeded(tmp_path):
@@ -136,7 +139,33 @@ def test_read_corpus_excludes_quarantined_papers_that_later_succeeded(tmp_path):
     _mark_done(db_path, "q2")
     result = status_mod.read_corpus(tmp_path)
     assert result["funnel"]["quarantined"] == 1
-    assert result["quarantine_reasons"] == [{"reason": "PermanentError", "count": 1}]
+    assert result["quarantine_reasons"] == [{"reason": "PermanentError @ parsed", "count": 1}]
+
+
+def test_read_corpus_quarantine_reasons_group_by_stage_not_just_error_type(tmp_path):
+    """T-DOC78: two papers with the SAME error_type but DIFFERENT pipeline stages must NOT be
+    collapsed into one reason -- "PermanentError @ parsed" and "PermanentError @ embedded" answer
+    a genuinely different "why" (a bad PDF vs. a broken embedding call)."""
+    db_path = tmp_path / "papers.db"
+    _seed(db_path, {"done": 1})
+    conn = sqlite3.connect(str(db_path))
+    for paper_id, stage in (("q1", "parsed"), ("q2", "embedded")):
+        conn.execute(
+            "INSERT INTO quarantine (paper_id, stage, error, ts) VALUES (?, ?, 'boom', ?)",
+            (paper_id, stage, "2026-01-01T00:00:00"),
+        )
+        conn.execute(
+            "INSERT INTO quarantine_diagnostics (paper_id, error_type, diagnostics_json) "
+            "VALUES (?, 'PermanentError', '{}')",
+            (paper_id,),
+        )
+    conn.commit()
+    conn.close()
+
+    result = status_mod.read_corpus(tmp_path)
+    assert result["funnel"]["quarantined"] == 2
+    assert {"reason": "PermanentError @ parsed", "count": 1} in result["quarantine_reasons"]
+    assert {"reason": "PermanentError @ embedded", "count": 1} in result["quarantine_reasons"]
 
 
 def test_read_corpus_degrades_to_nulls_when_db_missing(tmp_path):

@@ -51,6 +51,41 @@ _DEFAULT_DB_NAME = "papers.db"
 # --- ingest_state / quarantine (pure: data_dir only, no manifest) -------------------------------
 
 
+# T-DOC78: shared with `app/telemetry.py::summarize_run` -- both need "how many quarantined, and
+# why" against an open connection. Previously computed with two independently-drifting queries:
+# telemetry's own copy never got the OG-44 "exclude papers that later succeeded" fix this one has,
+# so the dashboard's live count and the end-of-run printed summary could legitimately disagree.
+_UNDIAGNOSED_REASON = "unknown (quarantined before diagnostics were recorded)"
+
+
+def quarantine_summary(conn: sqlite3.Connection) -> tuple[int, list[tuple[str, int]]]:
+    """`(count, [(reason, count), ...])` -- total quarantined and a reason breakdown, BOTH
+    excluding any paper_id that has since reached `stage='done'` (OG-44: `quarantine` is an
+    append-only dead-letter log, never reconciled, so a paper that later succeeded on retry must
+    not still count as stuck). `reason` is `"<error_type> @ <stage>"` (e.g.
+    `"PermanentError @ parsed"`) -- `stage` comes from `quarantine` itself (always present);
+    `error_type` comes from `quarantine_diagnostics` via a LEFT JOIN, since that table (T-DOC17/PR
+    #83) postdates `quarantine` -- a pre-existing row has no diagnostics match and is labelled
+    `_UNDIAGNOSED_REASON` rather than silently dropped. Grouping by stage too (not just
+    error_type) means the reason breakdown ALWAYS sums to `count` by construction -- no separate
+    "top up the gap" step needed, unlike the previous single-column GROUP BY. Sorted by count,
+    descending. Takes an already-open connection (a `mode=ro` URI connection in `read_corpus`
+    below, a plain read-write one in `app/telemetry.py`) rather than opening its own, so either
+    caller's connection semantics apply."""
+    count = conn.execute(
+        "SELECT count(*) FROM quarantine WHERE paper_id NOT IN "
+        "(SELECT paper_id FROM ingest_state WHERE stage = 'done')"
+    ).fetchone()[0]
+    rows = conn.execute(
+        "SELECT q.stage, COALESCE(qd.error_type, ?) AS error_type, count(*) AS n "
+        "FROM quarantine q LEFT JOIN quarantine_diagnostics qd ON qd.paper_id = q.paper_id "
+        "WHERE q.paper_id NOT IN (SELECT paper_id FROM ingest_state WHERE stage = 'done') "
+        "GROUP BY q.stage, error_type ORDER BY n DESC",
+        (_UNDIAGNOSED_REASON,),
+    ).fetchall()
+    return count, [(f"{error_type} @ {stage}", n) for stage, error_type, n in rows]
+
+
 def read_corpus(data_dir: str | Path) -> dict:
     """Stage funnel (+ quarantine count) and top quarantine reasons, from `<data_dir>/papers.db`
     -- always the same fixed path (matches the HARD CONSTRAINT that this reader never touches
@@ -64,19 +99,7 @@ def read_corpus(data_dir: str | Path) -> dict:
         stage_counts = dict(
             conn.execute("SELECT stage, count(*) FROM ingest_state GROUP BY stage").fetchall()
         )
-        # OG-44: `quarantine` is an append-only dead-letter log, never reconciled -- a paper that
-        # later SUCCEEDED on retry (now stage='done') stays in it forever, so a naive count
-        # overstates "truly stuck" by however many later recovered. Exclude paper_ids that have
-        # since reached 'done' from both the count and the reasons breakdown.
-        quarantine_count = conn.execute(
-            "SELECT count(*) FROM quarantine WHERE paper_id NOT IN "
-            "(SELECT paper_id FROM ingest_state WHERE stage = 'done')"
-        ).fetchone()[0]
-        reason_rows = conn.execute(
-            "SELECT error_type, count(*) AS n FROM quarantine_diagnostics "
-            "WHERE paper_id NOT IN (SELECT paper_id FROM ingest_state WHERE stage = 'done') "
-            "GROUP BY error_type ORDER BY n DESC"
-        ).fetchall()
+        quarantine_count, reason_pairs = quarantine_summary(conn)
     except sqlite3.Error:
         return {"funnel": _null_funnel(), "quarantine_reasons": []}
     finally:
@@ -84,19 +107,7 @@ def read_corpus(data_dir: str | Path) -> dict:
 
     funnel = _funnel_from_stage_counts(stage_counts)
     funnel["quarantined"] = quarantine_count
-    quarantine_reasons = [{"reason": reason, "count": count} for reason, count in reason_rows]
-    # `quarantine_diagnostics` was added after `quarantine` already had live rows (T-DOC17/PR #83
-    # predates it) -- a paper quarantined before that landed has a `quarantine` row but no
-    # matching `quarantine_diagnostics` one, so `reason_rows` alone silently undercounts relative
-    # to `quarantine_count` with no indication anything is missing (observed live: funnel said 32
-    # quarantined, the reasons breakdown summed to 22, a confusing gap with no explanation).
-    # Surface the gap explicitly instead of letting the two numbers quietly disagree.
-    diagnosed = sum(count for _, count in reason_rows)
-    if diagnosed < quarantine_count:
-        quarantine_reasons.append(
-            {"reason": "unknown (quarantined before diagnostics were recorded)",
-             "count": quarantine_count - diagnosed}
-        )
+    quarantine_reasons = [{"reason": reason, "count": count} for reason, count in reason_pairs]
     return {"funnel": funnel, "quarantine_reasons": quarantine_reasons}
 
 
