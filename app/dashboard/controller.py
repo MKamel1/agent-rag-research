@@ -890,19 +890,22 @@ def _pause_locked(data_dir: Path) -> dict:
     return manifest
 
 
-def resume(data_dir: str | Path, *, spawn: SpawnFn = _spawn) -> dict:
-    """Relaunch `app.build_corpus` with the SAME params as the existing manifest -- checkpoints
-    make this safe, it picks up where it left off (build_corpus/ingest are idempotent/resumable via
-    `ingest_state`). Refuses (`DoubleRunError`) if the prior run is still `running`, or if a
-    `pausing`/`stopping` run's process hasn't yet been confirmed dead --
-    SIGTERM is a request, not a guarantee, and relaunching before the old process actually exits
-    would duplicate the GPU work it's still mid-way through."""
+def resume(data_dir: str | Path, *, spawn: SpawnFn | None = None) -> dict:
+    """Relaunch the run's spawn command with the SAME params as the existing manifest --
+    checkpoints make this safe, it picks up where it left off. Refuses (`DoubleRunError`) if the
+    prior run is still `running`, or if a `pausing`/`stopping` run's process hasn't yet been
+    confirmed dead -- SIGTERM is a request, not a guarantee, and relaunching before the old
+    process actually exits would duplicate the work it's still mid-way through.
+
+    T-DOC78: `spawn`'s default (`None`) is resolved from the manifest's own stored `"mode"` --
+    `_spawn_download` for a download-only run, `_spawn` (`app.build_corpus`) otherwise -- so a
+    paused download-only run resumes as a downloader, not a full pass1/pass2 run."""
     data_dir = Path(data_dir)
     with _control_lock(data_dir):
         return _resume_locked(data_dir, spawn=spawn)
 
 
-def _resume_locked(data_dir: Path, *, spawn: SpawnFn = _spawn) -> dict:
+def _resume_locked(data_dir: Path, *, spawn: SpawnFn | None = None) -> dict:
     manifest = reconcile(data_dir)
     if manifest is None:
         raise NoRunError("no run to resume")
@@ -937,6 +940,9 @@ def _resume_locked(data_dir: Path, *, spawn: SpawnFn = _spawn) -> dict:
         # `_rebuild_missing_run_cwd`'s own docstring for why that would be worse than the crash.
         _rebuild_missing_run_cwd(data_dir, manifest, run_cwd)
     params = manifest.get("params") or {}
+    # T-DOC78: resolved from the manifest's own recorded mode when the caller (production: always)
+    # doesn't inject a spawn fake -- see `resume`'s docstring.
+    spawn = spawn or (_spawn_download if manifest.get("mode") == "download" else _spawn)
     pid = _call_spawn(
         spawn, run_cwd, manifest["target"], manifest["parse_workers"],
         events_path, log_path, paper_ids_file,
