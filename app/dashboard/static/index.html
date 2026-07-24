@@ -227,7 +227,7 @@
 
     <div class="controls" style="margin-top: .5rem;">
       <button id="btnDownloadOnly" class="secondary" type="button">Download Now (no GPU)</button>
-      <span class="note" style="margin:0;">Downloads PDFs using the keywords/categories/dates staged below, without running pass1/pass2 -- start the full run later once the GPU is free. Refused while a run is already live (shown below via Control message).</span>
+      <span class="note" style="margin:0;">Downloads PDFs using the keywords/categories/dates staged below, without running pass1/pass2 -- start the full run later once the GPU is free. Refused while a run is already live (shown below via Control message). Starting a download also replaces any PAUSED run, discarding its staged edits -- same as Apply does today.</span>
     </div>
 
     <div class="controls" style="margin-top: .75rem; border-top: 1px solid var(--border); padding-top: .75rem;">
@@ -800,6 +800,9 @@ function buildDownloadPayload() {
 // in #controlMsg exactly like a rejected "start" does today, no separate client-side guard needed.
 document.getElementById("btnDownloadOnly").addEventListener("click", () => {
   control("download", buildDownloadPayload());
+  // Same reasoning as btnApply's handler above: the download request already consumed the staged
+  // filters, and the server carries nothing forward from a prior run's override -- nothing forces
+  // clearing them differently here than Apply does.
   pendingKeywords = [];
   renderPendingKeywords();
   pendingRemovals = [];
