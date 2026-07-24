@@ -1,13 +1,15 @@
-"""Tests for `app.doctor` (T-DOC43/T-DOC52) -- offline, no real Docker/GPU/network calls.
+"""Tests for `app.doctor` (T-DOC43/T-DOC52/T-DOC78) -- offline, no real Docker/GPU/network calls.
 
 Every health check is driven through `monkeypatch.setattr(doctor_mod, "_is_healthy", ...)` (a
 plain function, controllable per-URL) rather than a real socket -- `app.doctor` deliberately uses
 a stdlib HTTP call instead of a third-party client (see that module's own docstring for why), so
-there's no mock-transport seam to reuse the way `app/test_tei_lifecycle.py` does.
+there's no mock-transport seam to reuse the way `app/test_tei_lifecycle.py` does. The two
+health-only services' recovery paths (T-DOC78) are stubbed via `monkeypatch.setattr` on
+`doctor_mod._parser_adapter`/`doctor_mod._vector_index_adapter` -- never a real `docker`/network
+call, same reasoning `app/test_tei_lifecycle.py` gives for faking `subprocess.run`.
 """
 
 import shutil
-import subprocess
 from pathlib import Path
 
 import filelock
@@ -122,6 +124,17 @@ def test_check_services_passes_when_everything_healthy(monkeypatch):
     assert check_services() == []
 
 
+def _stub_health_only_starts(monkeypatch):
+    """The two containerized health-only services (parser reference-resolution, vector store)
+    now carry a real recovery path (T-DOC78) -- any test that leaves them down with
+    `auto_start=True` (the default) must stub both adapters' start functions, or `check_services`
+    will try to actually shell out to `docker`."""
+    monkeypatch.setattr(
+        doctor_mod._parser_adapter, "start_reference_resolution_container", lambda: None
+    )
+    monkeypatch.setattr(doctor_mod._vector_index_adapter, "start_container", lambda: None)
+
+
 def test_check_services_fails_with_named_reason_when_a_service_is_down(monkeypatch):
     """T-DOC43: a down service must be named, not just "something failed"."""
     down_url = doctor_mod._HEALTH_ONLY_SERVICES[0].health_url
@@ -131,6 +144,7 @@ def test_check_services_fails_with_named_reason_when_a_service_is_down(monkeypat
 
     monkeypatch.setattr(doctor_mod, "_is_healthy", fake_is_healthy)
     monkeypatch.setattr(doctor_mod.tei_lifecycle, "start_tei_containers", lambda: None)
+    _stub_health_only_starts(monkeypatch)
 
     issues = check_services()
 
@@ -150,6 +164,7 @@ def test_check_services_reports_multiple_down_services_in_one_pass(monkeypatch):
 
     monkeypatch.setattr(doctor_mod, "_is_healthy", fake_is_healthy)
     monkeypatch.setattr(doctor_mod.tei_lifecycle, "start_tei_containers", lambda: None)
+    _stub_health_only_starts(monkeypatch)
 
     issues = check_services()
 
@@ -190,6 +205,7 @@ def test_check_services_reports_tei_as_down_if_auto_start_does_not_fix_it(monkey
     monkeypatch.setattr(
         doctor_mod.tei_lifecycle, "start_tei_containers", lambda: calls.append("start")
     )
+    _stub_health_only_starts(monkeypatch)
 
     issues = check_services(auto_start=True)
 
@@ -238,6 +254,7 @@ def test_run_preflight_fails_with_named_reason_when_a_service_is_down(monkeypatc
         return url != down_url
 
     monkeypatch.setattr(doctor_mod, "_is_healthy", fake_is_healthy)
+    _stub_health_only_starts(monkeypatch)
 
     issues = run_preflight(_cfg(tmp_path))
 
@@ -266,19 +283,113 @@ def test_run_preflight_reports_every_kind_of_issue_at_once(monkeypatch, tmp_path
 
 
 # ---------------------------------------------------------------------------
-# T-DOC52: docker-start pattern reused for TEI, but NOT reimplemented for the two other
-# containerized services (see module docstring for why -- vendor-restricted container names)
+# T-DOC78: the parser reference-resolution service and vector store now get the same one-shot
+# recovery attempt as TEI, routed through their own adapter's `start_...` helper (never through a
+# vendor name/container this module names itself -- see module docstring for why).
 # ---------------------------------------------------------------------------
 
 
-def test_health_only_services_never_shell_out_to_docker(monkeypatch):
-    """The two containerized health-only services must never trigger a `docker start` -- doctor
-    has no container name for them at all (by design, see module docstring)."""
+def test_check_services_auto_starts_a_down_reference_resolution_service(monkeypatch):
+    """A down parser reference-resolution endpoint gets one recovery attempt through
+    `rag.parser.start_reference_resolution_container` before being reported -- if the (mocked)
+    restart "fixes" the endpoint, no issue is reported."""
+    down_url = doctor_mod._HEALTH_ONLY_SERVICES[0].health_url
+    healthy = {"down": False}
     calls = []
-    monkeypatch.setattr(subprocess, "run", lambda *a, **k: calls.append((a, k)))
+
+    def fake_is_healthy(url: str) -> bool:
+        if url == down_url:
+            return healthy["down"]
+        return True
+
+    def fake_start() -> None:
+        calls.append("start_reference_resolution_container")
+        healthy["down"] = True
+
+    monkeypatch.setattr(doctor_mod, "_is_healthy", fake_is_healthy)
+    monkeypatch.setattr(
+        doctor_mod._parser_adapter, "start_reference_resolution_container", fake_start
+    )
+    monkeypatch.setattr(doctor_mod._vector_index_adapter, "start_container", lambda: None)
+
+    issues = check_services(auto_start=True)
+
+    assert calls == ["start_reference_resolution_container"]
+    assert issues == []
+
+
+def test_check_services_auto_starts_a_down_vector_store(monkeypatch):
+    """Same recovery path, for the vector store, through `rag.vector_index.start_container`."""
+    down_url = doctor_mod._HEALTH_ONLY_SERVICES[1].health_url
+    healthy = {"down": False}
+    calls = []
+
+    def fake_is_healthy(url: str) -> bool:
+        if url == down_url:
+            return healthy["down"]
+        return True
+
+    def fake_start() -> None:
+        calls.append("start_container")
+        healthy["down"] = True
+
+    monkeypatch.setattr(doctor_mod, "_is_healthy", fake_is_healthy)
+    monkeypatch.setattr(
+        doctor_mod._parser_adapter, "start_reference_resolution_container", lambda: None
+    )
+    monkeypatch.setattr(doctor_mod._vector_index_adapter, "start_container", fake_start)
+
+    issues = check_services(auto_start=True)
+
+    assert calls == ["start_container"]
+    assert issues == []
+
+
+def test_check_services_reports_health_only_service_still_down_if_start_does_not_fix_it(
+    monkeypatch,
+):
+    """If the (mocked) restart doesn't bring the endpoint up, it's still reported as an issue --
+    same "attempt once, then report if still broken" contract as TEI."""
     monkeypatch.setattr(doctor_mod, "_is_healthy", lambda url: False)
     monkeypatch.setattr(doctor_mod.tei_lifecycle, "start_tei_containers", lambda: None)
+    calls = []
+    monkeypatch.setattr(
+        doctor_mod._parser_adapter,
+        "start_reference_resolution_container",
+        lambda: calls.append("parser"),
+    )
+    monkeypatch.setattr(
+        doctor_mod._vector_index_adapter, "start_container", lambda: calls.append("vector_index")
+    )
 
-    check_services(auto_start=True)
+    issues = check_services(auto_start=True)
 
-    assert calls == [], "doctor must never shell out to docker for the health-only services"
+    assert calls == ["parser", "vector_index"], "must still attempt recovery exactly once each"
+    checks = {issue.check for issue in issues}
+    assert doctor_mod._HEALTH_ONLY_SERVICES[0].name in checks
+    assert doctor_mod._HEALTH_ONLY_SERVICES[1].name in checks
+
+
+def test_check_services_never_auto_starts_the_summarizer_host_service(monkeypatch):
+    """The summarizer's model-serving endpoint has no recovery path (`start=None`) -- it's a host
+    service, not a container, T-DOC43's original scope note, unaffected by T-DOC78."""
+    assert doctor_mod._HEALTH_ONLY_SERVICES[2].start is None
+
+
+def test_check_services_no_auto_start_never_attempts_health_only_recovery(monkeypatch):
+    """`auto_start=False` must skip the parser/vector-store recovery attempt too, not just TEI's."""
+    monkeypatch.setattr(doctor_mod, "_is_healthy", lambda url: False)
+    monkeypatch.setattr(doctor_mod.tei_lifecycle, "start_tei_containers", lambda: None)
+    calls = []
+    monkeypatch.setattr(
+        doctor_mod._parser_adapter,
+        "start_reference_resolution_container",
+        lambda: calls.append("parser"),
+    )
+    monkeypatch.setattr(
+        doctor_mod._vector_index_adapter, "start_container", lambda: calls.append("vector_index")
+    )
+
+    check_services(auto_start=False)
+
+    assert calls == [], "auto_start=False must never attempt a health-only-service restart"

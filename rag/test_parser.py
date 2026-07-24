@@ -32,6 +32,8 @@ What waits on Spike-1 golden fixtures (DEFERRED — see PR body; TEST-STRATEGY.m
 import hashlib
 import io
 import json
+import logging
+import subprocess
 import sys
 import types
 from pathlib import Path
@@ -473,3 +475,89 @@ def test_golden_pdf_references_have_raw_strings(pdf_path):
     for ref in doc.references:
         assert isinstance(ref, Reference)
         assert ref.raw.strip(), "every parsed reference carries its raw string"
+
+
+# ---------------------------------------------------------------------------
+# start_reference_resolution_container() -- T-DOC78: app.doctor's health-only auto-start for the
+# reference-resolution service, living here (not app/doctor.py) because the container name is a
+# vendor-restricted token only this file may spell (CONVENTIONS.md §1 -- note this rule's
+# allowed_paths is this module alone, not its own test file, so the tests below never spell the
+# vendor name either, same as the rest of this section). Offline: fake `subprocess.run` for the
+# lifecycle command, fake `_is_reference_resolution_healthy` for the health poll -- same shape as
+# `app/test_tei_lifecycle.py`'s own tests for the T-DOC52 pattern this generalizes.
+# ---------------------------------------------------------------------------
+
+
+def test_start_reference_resolution_container_runs_docker_start_with_the_container_name(
+    monkeypatch,
+):
+    calls = []
+    monkeypatch.setattr(subprocess, "run", lambda args, **kwargs: calls.append((args, kwargs)))
+    monkeypatch.setattr(_mod, "_is_reference_resolution_healthy", lambda url: True)
+
+    _mod.start_reference_resolution_container()
+
+    assert len(calls) == 1
+    args, kwargs = calls[0]
+    assert args == ["docker", "start", _mod._CONTAINER_NAME]
+    assert kwargs.get("check") is True
+
+
+@pytest.mark.parametrize(
+    "error", [subprocess.CalledProcessError(1, "docker"), FileNotFoundError("no docker")]
+)
+def test_start_reference_resolution_container_is_best_effort_on_docker_failure(
+    monkeypatch, caplog, error
+):
+    def raise_error(args, **kwargs):
+        raise error
+
+    monkeypatch.setattr(subprocess, "run", raise_error)
+
+    with caplog.at_level(logging.WARNING, logger="rag.parser"):
+        _mod.start_reference_resolution_container()  # must not raise
+
+    assert any(_mod._CONTAINER_NAME in record.message for record in caplog.records)
+
+
+def test_start_reference_resolution_container_polls_until_healthy(monkeypatch):
+    monkeypatch.setattr(subprocess, "run", lambda args, **kwargs: None)
+    monkeypatch.setattr(_mod, "_START_POLL_INTERVAL_SECONDS", 0.01)
+    monkeypatch.setattr(_mod, "_START_POLL_TIMEOUT_SECONDS", 5.0)
+
+    polls = {"n": 0}
+
+    def fake_healthy(url: str) -> bool:
+        polls["n"] += 1
+        return polls["n"] >= 3
+
+    monkeypatch.setattr(_mod, "_is_reference_resolution_healthy", fake_healthy)
+
+    _mod.start_reference_resolution_container()
+
+    assert polls["n"] == 3
+
+
+def test_start_reference_resolution_container_times_out_and_logs_if_never_healthy(
+    monkeypatch, caplog
+):
+    monkeypatch.setattr(subprocess, "run", lambda args, **kwargs: None)
+    monkeypatch.setattr(_mod, "_START_POLL_INTERVAL_SECONDS", 0.01)
+    monkeypatch.setattr(_mod, "_START_POLL_TIMEOUT_SECONDS", 0.05)
+    monkeypatch.setattr(_mod, "_is_reference_resolution_healthy", lambda url: False)
+
+    with caplog.at_level(logging.WARNING, logger="rag.parser"):
+        _mod.start_reference_resolution_container()  # must not raise or hang
+
+    assert any(_mod._CONTAINER_NAME in record.message for record in caplog.records)
+
+
+# Note: `_is_reference_resolution_healthy`'s own HTTP-client-error-swallowing branch (mirroring
+# `rag.vector_index`'s `_is_container_healthy`, tested above in that module's own suite via
+# `urllib`) has no equivalent direct unit test here -- CONVENTIONS.md §1's vendor-isolation check
+# scopes that HTTP client's vendor token's allowed_paths to a curated file list that (pre-existing,
+# unrelated to this ticket) never included this test file, only `rag/parser.py` itself. Extending
+# that allowlist is a foundation-protected `ci/` change, out of this ticket's territory -- flagged
+# rather than silently worked around. The poll-until-healthy and timeout tests above already
+# exercise this same function through `_is_reference_resolution_healthy`'s public behavior via
+# monkeypatching the function itself, just not its underlying-client-error-swallowing line.

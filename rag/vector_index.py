@@ -27,7 +27,10 @@ the caller's own id.
 """
 
 import hashlib
+import logging
 import shutil
+import subprocess
+import time
 import urllib.error
 import urllib.request
 import uuid
@@ -38,6 +41,8 @@ from qdrant_client.http.exceptions import ApiException
 from contracts.errors import TransientError
 from contracts.fusion import rrf_fuse
 from contracts.vector_index import Hit, SearchFilters, VectorPayload
+
+logger = logging.getLogger(__name__)
 
 _ID_NAMESPACE = uuid.UUID("a3f7e6b0-4b8b-4c1a-9c9a-2b6a2f9b7d10")  # fixed, arbitrary, stable
 _EXT_ID_KEY = "_ext_id"  # private payload key carrying the caller's original string id
@@ -55,6 +60,17 @@ _SCROLL_PAGE_SIZE = 100_000
 # but not slow (no WAN hop), so a generous fixed ceiling rather than a caller-tunable knob is
 # enough headroom without letting a wedged download hang the caller (app/snapshot.py) forever.
 _SNAPSHOT_DOWNLOAD_TIMEOUT_S = 900
+
+# start_container()'s target -- confirmed via a live `docker ps` this session, same "no
+# docker-compose file exists to read this from" situation as `app/tei_lifecycle.py`'s own
+# container names (T-DOC78). Health URL matches `app/doctor.py`'s own copy of this same endpoint
+# (that module owns a copy rather than importing this constant, same convention its docstring
+# already follows for the TEI URLs).
+_CONTAINER_NAME = "rag-qdrant"
+_HEALTH_URL = "http://localhost:6333/collections"
+_START_POLL_INTERVAL_SECONDS = 0.25  # matches app/tei_lifecycle.py's own constant
+_START_POLL_TIMEOUT_SECONDS = 30.0  # Qdrant has no model to reload -- restarts fast; TEI's 60s
+# floor was sized for VRAM reload, this one is conservative-but-shorter for a plain DB restart.
 
 
 def _point_id(external_id: str) -> str:
@@ -322,3 +338,50 @@ class VectorIndex:
         # order Qdrant happens to return them in.
         ordered = sorted(hits, key=lambda p: (-p.score, p.payload[_EXT_ID_KEY]))
         return [p.payload[_EXT_ID_KEY] for p in ordered]
+
+
+def start_container() -> None:
+    """Best-effort `docker start` for this collection's container, then a bounded poll of its
+    health endpoint before returning (T-DOC78: `app.doctor` auto-starting a stopped-but-startable
+    health-only service, generalizing the T-DOC52 TEI pattern). Same "issue command -> poll a
+    status endpoint -> bounded timeout -> best-effort continue" shape as
+    `app/tei_lifecycle.py`'s `start_tei_containers()` -- duplicated rather than shared because the
+    container name is a vendor-restricted token (CONVENTIONS.md §1) only this file may spell,
+    the same reason `create_and_download_snapshot()` above does its vendor-specific step on
+    `app/snapshot.py`'s behalf instead of `app/snapshot.py` naming the vendor itself. `app.doctor`
+    calls this without ever naming the vendor or the container.
+
+    Never raises: a failed `docker start` or an unconfirmed health check after the timeout both
+    just log a warning and return -- the caller (`app.doctor`) treats "still unhealthy after
+    calling this" as an issue to report, not this function's problem to escalate.
+    """
+    try:
+        subprocess.run(["docker", "start", _CONTAINER_NAME], check=True)
+    except (subprocess.CalledProcessError, FileNotFoundError) as error:
+        logger.warning(
+            "could not start container %s -- best-effort, not blocking the caller: %s",
+            _CONTAINER_NAME,
+            error,
+        )
+        return
+
+    deadline = time.monotonic() + _START_POLL_TIMEOUT_SECONDS
+    while time.monotonic() < deadline:
+        if _is_container_healthy():
+            return
+        time.sleep(_START_POLL_INTERVAL_SECONDS)
+
+    logger.warning(
+        "could not confirm container %s was healthy within %.1fs -- proceeding anyway "
+        "(best-effort; caller is not blocked)",
+        _CONTAINER_NAME,
+        _START_POLL_TIMEOUT_SECONDS,
+    )
+
+
+def _is_container_healthy() -> bool:
+    try:
+        with urllib.request.urlopen(_HEALTH_URL, timeout=5.0) as resp:
+            return 200 <= resp.status < 300
+    except (urllib.error.URLError, OSError, ValueError):
+        return False

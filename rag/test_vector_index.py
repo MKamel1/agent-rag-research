@@ -23,6 +23,8 @@ found unachievable):
 """
 
 import io
+import logging
+import subprocess
 from datetime import date
 from types import SimpleNamespace
 
@@ -592,3 +594,90 @@ def test_real_adapter_point_count_and_idf_modifier_reflect_live_collection():
         assert adapter.point_count() == 2
     finally:
         adapter._client.delete_collection(collection)
+
+
+# ---------------------------------------------------------------------------
+# start_container() -- T-DOC78: app.doctor's health-only auto-start for the vector store, living
+# here (not app/doctor.py) because the container name is a vendor-restricted token only this file
+# may spell (CONVENTIONS.md §1 -- note this test file itself is NOT in that rule's allowed_paths,
+# so this section, like the rest of this file below the module docstring, never spells the vendor
+# name either). Offline: fake `subprocess.run` for the lifecycle command, fake
+# `_is_container_healthy` for the health poll -- same shape as `app/test_tei_lifecycle.py`'s own
+# tests for the T-DOC52 pattern this generalizes.
+# ---------------------------------------------------------------------------
+
+
+def test_start_container_runs_docker_start_with_the_container_name(monkeypatch):
+    real = pytest.importorskip("rag.vector_index")
+    calls = []
+    monkeypatch.setattr(subprocess, "run", lambda args, **kwargs: calls.append((args, kwargs)))
+    monkeypatch.setattr(real, "_is_container_healthy", lambda: True)
+
+    real.start_container()
+
+    assert len(calls) == 1
+    args, kwargs = calls[0]
+    assert args == ["docker", "start", real._CONTAINER_NAME]
+    assert kwargs.get("check") is True
+
+
+@pytest.mark.parametrize(
+    "error", [subprocess.CalledProcessError(1, "docker"), FileNotFoundError("no docker")]
+)
+def test_start_container_is_best_effort_on_docker_failure(monkeypatch, caplog, error):
+    real = pytest.importorskip("rag.vector_index")
+
+    def raise_error(args, **kwargs):
+        raise error
+
+    monkeypatch.setattr(subprocess, "run", raise_error)
+
+    with caplog.at_level(logging.WARNING, logger="rag.vector_index"):
+        real.start_container()  # must not raise
+
+    assert any(real._CONTAINER_NAME in record.message for record in caplog.records)
+
+
+def test_start_container_polls_until_healthy(monkeypatch):
+    real = pytest.importorskip("rag.vector_index")
+    monkeypatch.setattr(subprocess, "run", lambda args, **kwargs: None)
+    monkeypatch.setattr(real, "_START_POLL_INTERVAL_SECONDS", 0.01)
+    monkeypatch.setattr(real, "_START_POLL_TIMEOUT_SECONDS", 5.0)
+
+    polls = {"n": 0}
+
+    def fake_healthy():
+        polls["n"] += 1
+        return polls["n"] >= 3
+
+    monkeypatch.setattr(real, "_is_container_healthy", fake_healthy)
+
+    real.start_container()
+
+    assert polls["n"] == 3
+
+
+def test_start_container_times_out_and_logs_if_never_healthy(monkeypatch, caplog):
+    real = pytest.importorskip("rag.vector_index")
+    monkeypatch.setattr(subprocess, "run", lambda args, **kwargs: None)
+    monkeypatch.setattr(real, "_START_POLL_INTERVAL_SECONDS", 0.01)
+    monkeypatch.setattr(real, "_START_POLL_TIMEOUT_SECONDS", 0.05)
+    monkeypatch.setattr(real, "_is_container_healthy", lambda: False)
+
+    with caplog.at_level(logging.WARNING, logger="rag.vector_index"):
+        real.start_container()  # must not raise or hang
+
+    assert any(real._CONTAINER_NAME in record.message for record in caplog.records)
+
+
+def test_is_container_healthy_treats_url_error_as_unhealthy(monkeypatch):
+    """A connection error (the container not listening yet) must count as "not ready", not
+    propagate."""
+    real = pytest.importorskip("rag.vector_index")
+
+    def raise_error(url, timeout=None):
+        raise OSError("connection refused")
+
+    monkeypatch.setattr(real.urllib.request, "urlopen", raise_error)
+
+    assert real._is_container_healthy() is False
