@@ -174,6 +174,21 @@ def test_root_html_persists_token_and_distinguishes_auth_errors_from_staleness(r
     assert b"resp.ok" in body
 
 
+def test_root_html_has_download_now_button_wired_to_the_download_action(running_server):
+    url, _ = running_server
+    status, body = _get_raw(url, "/")
+    assert status == 200
+    assert b'id="btnDownloadOnly"' in body
+    assert b'"download"' in body
+
+
+def test_root_html_mode_indicator_branches_on_download_mode(running_server):
+    url, _ = running_server
+    status, body = _get_raw(url, "/")
+    assert status == 200
+    assert b"download-only" in body
+
+
 # --- OG-48#1/OG-49#4: GET /api/status and GET /api/search are now token-gated ------------------
 
 

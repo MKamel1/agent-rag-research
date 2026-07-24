@@ -225,6 +225,11 @@
       <button id="btnStop" class="danger">Stop</button>
     </div>
 
+    <div class="controls" style="margin-top: .5rem;">
+      <button id="btnDownloadOnly" class="secondary" type="button">Download Now (no GPU)</button>
+      <span class="note" style="margin:0;">Downloads PDFs using the keywords/categories/dates staged below, without running pass1/pass2 -- start the full run later once the GPU is free. Refused while a run is already live (shown below via Control message).</span>
+    </div>
+
     <div class="controls" style="margin-top: .75rem; border-top: 1px solid var(--border); padding-top: .75rem;">
       <div class="field">
         <label for="newTarget">target papers</label>
@@ -432,15 +437,17 @@ function render(snap) {
   statusEl.textContent = st;
   statusEl.className = "pill " + statusPillClass(st);
 
-  // Cache-first mode indicator (OG-43): every dashboard-launched run goes through
+  // Cache-first mode indicator (OG-43): every dashboard-launched full run goes through
   // app.build_corpus, which is cache-first by construction (OG-40/OG-41) -- note an explicit id
   // list too, when the manifest carries one. OG-46: also surface the processing-order mode
-  // (relevance vs freshest) actually in effect for this run.
+  // (relevance vs freshest) actually in effect for this run. T-DOC78: a download-only run has
+  // neither pass1/pass2 nor an ordering, so it gets its own label instead.
   const orderingLabel = snap.run.ordering === "relevance" ? "relevance" : "freshest";
-  document.getElementById("modeIndicator").textContent = snap.run.run_id
-    ? "mode: cache-first" + (snap.run.paper_ids_file ? " (explicit id list)" : "")
-      + " · order: " + orderingLabel
-    : "";
+  document.getElementById("modeIndicator").textContent = !snap.run.run_id ? "" :
+    snap.run.mode === "download"
+      ? "mode: download-only (no GPU, no pass1/pass2)"
+      : "mode: cache-first" + (snap.run.paper_ids_file ? " (explicit id list)" : "")
+        + " · order: " + orderingLabel;
 
   renderFunnel(snap.funnel);
 
@@ -772,6 +779,35 @@ document.getElementById("btnApply").addEventListener("click", () => {
   document.getElementById("newDateFrom").value = "";
   document.getElementById("newDateTo").value = "";
   document.getElementById("newOrdering").value = "freshest_first";
+});
+
+function buildDownloadPayload() {
+  const body = {};
+  if (pendingKeywords.length) body.keywords = pendingKeywords.slice();
+  if (pendingRemovals.length) body.remove_keywords = pendingRemovals.slice();
+  if (pendingSubjects.length) body.arxiv_categories = pendingSubjects.slice();
+  const dateFrom = document.getElementById("newDateFrom").value;
+  if (dateFrom) body.arxiv_date_from = dateFrom;
+  const dateTo = document.getElementById("newDateTo").value;
+  if (dateTo) body.arxiv_date_to = dateTo;
+  return body;
+}
+
+// T-DOC78: download PDFs now, without committing GPU time to pass1/pass2 -- reuses the same
+// staged keywords/categories/dates as Apply, but never target/parse_workers/ordering (not
+// meaningful for a bare downloader). Mutual exclusion with a full run is enforced server-side
+// (controller.start's existing double-run guard applies regardless of mode) -- a refusal shows up
+// in #controlMsg exactly like a rejected "start" does today, no separate client-side guard needed.
+document.getElementById("btnDownloadOnly").addEventListener("click", () => {
+  control("download", buildDownloadPayload());
+  pendingKeywords = [];
+  renderPendingKeywords();
+  pendingRemovals = [];
+  renderFocusQueries();
+  pendingSubjects = [];
+  renderPendingSubjects();
+  document.getElementById("newDateFrom").value = "";
+  document.getElementById("newDateTo").value = "";
 });
 
 poll();
