@@ -110,6 +110,34 @@ _LIVE_STATUSES = ("running", "pausing", "stopping")
 # dependency instead of constructing one -- codebase-design's testability principle #1).
 SpawnFn = Callable[[Path, int, int, Path, Path], int]
 
+# Same filename `app/build_corpus.py::_spawn_prefetch`/`_write_prefetch_pid` already write --
+# duplicated rather than imported (this module's own "own your own copies" convention, e.g.
+# `_OVERRIDE_PATH_FIELDS` above) so `app/dashboard/status.py::read_downloader` and
+# `app/build_corpus.py::ensure_prefetch_running` (which only check "is a live app.prefetch_pdfs at
+# this path," never who launched it) keep working against a download-only run with zero changes.
+_PREFETCH_PID_NAME = "prefetch.pid"
+
+
+def _spawn_download(data_dir: Path, target: int, parse_workers: int, events_path: Path,
+                     log_path: Path) -> int:
+    """T-DOC78: launches `app.prefetch_pdfs` directly -- no MinerU/GPU, no pass1/pass2 -- instead
+    of `app.build_corpus`. Matches `SpawnFn`'s shape so `_call_spawn`/`resume` need no changes;
+    `target`/`parse_workers`/`events_path` don't apply to a bare downloader and are ignored
+    (`app.prefetch_pdfs` reads its own stopping point from `config.prefetch_target`, unaffected by
+    this run's `target`). `log_path` is expected to already be `<run_cwd>/prefetch.log` --
+    `_start_locked` computes that when `mode == "download"` -- so
+    `status.py::read_downloader`'s hardcoded log name keeps finding real pace lines.
+
+    Same launch shape as `_spawn`: `env PYTHONPATH=<repo>`, `cwd=data_dir`, its own process group
+    (`start_new_session=True`) so pause/stop's `os.killpg` reaches it."""
+    cmd = ["env", f"PYTHONPATH={_REPO_ROOT}", sys.executable, "-m", "app.prefetch_pdfs"]
+    log_f = log_path.open("a")
+    proc = subprocess.Popen(
+        cmd, cwd=str(data_dir), stdout=log_f, stderr=subprocess.STDOUT, start_new_session=True,
+    )
+    (data_dir / _PREFETCH_PID_NAME).write_text(str(proc.pid))
+    return proc.pid
+
 
 class DoubleRunError(RuntimeError):
     """Raised when start/resume is refused because a run is already live (or not yet confirmed
@@ -653,6 +681,7 @@ def _build_manifest(
     db_path: Path, paper_ids_file: Path | None = None, *,
     run_cwd: Path, effective_cfg: Config,
     telemetry_poll_interval: float | None = None, batch_size: int | None = None,
+    mode: str = "full",
 ) -> dict:
     starttime, cmdline = _capture_identity(pid)
     return {
@@ -661,6 +690,7 @@ def _build_manifest(
         "pid_starttime": starttime,
         "pid_cmdline": cmdline,
         "status": "running",
+        "mode": mode,
         "target": target,
         "parse_workers": parse_workers,
         "events_path": str(events_path),
@@ -726,7 +756,8 @@ def start(data_dir: str | Path, target: int, parse_workers: int = 3, *,
           arxiv_date_from: str | None = None, arxiv_date_to: str | None = None,
           ordering: str | None = None,
           stranded_policy: str | None = None,
-          spawn: SpawnFn = _spawn) -> dict:
+          mode: str = "full",
+          spawn: SpawnFn | None = None) -> dict:
     """Fresh run with a new target. Refuses if a run is already live (`running`/`pausing`/
     `stopping`) -- pause or stop it first.
 
@@ -747,7 +778,11 @@ def start(data_dir: str | Path, target: int, parse_workers: int = 3, *,
     specifically -- see `_maybe_build_override`). `arxiv_categories`/`arxiv_date_from`/
     `arxiv_date_to` (OG-45) REPLACE the base config's DOWNLOAD-side filters for this run (unlike
     keywords, there is no "augment a filter" semantics). `ordering` (OG-46) is `"freshest_first"`
-    or `"relevance"`."""
+    or `"relevance"`.
+
+    `mode` (T-DOC78): `"full"` (default) launches `app.build_corpus` (pass1/pass2, needs the GPU);
+    `"download"` launches `app.prefetch_pdfs` alone -- no GPU, no pass1/pass2 -- so an operator can
+    build up the PDF cache while the GPU is busy with something else."""
     data_dir = Path(data_dir)
     with _control_lock(data_dir):
         return _start_locked(
@@ -756,6 +791,7 @@ def start(data_dir: str | Path, target: int, parse_workers: int = 3, *,
             keywords=keywords, remove_keywords=remove_keywords, parse_batch_size=parse_batch_size,
             arxiv_categories=arxiv_categories, arxiv_date_from=arxiv_date_from,
             arxiv_date_to=arxiv_date_to, ordering=ordering, stranded_policy=stranded_policy,
+            mode=mode,
             spawn=spawn,
         )
 
@@ -768,10 +804,17 @@ def _start_locked(data_dir: Path, target: int, parse_workers: int = 3, *,
                    arxiv_categories: list[str] | None = None,
                    arxiv_date_from: str | None = None, arxiv_date_to: str | None = None,
                    ordering: str | None = None,
-          stranded_policy: str | None = None,
-                   spawn: SpawnFn = _spawn) -> dict:
+                   stranded_policy: str | None = None,
+                   mode: str = "full",
+                   spawn: SpawnFn | None = None) -> dict:
     """`start`'s actual body -- called with `_control_lock(data_dir)` already held (by `start`
-    itself, or by `retarget` wrapping both halves in one acquisition)."""
+    itself, or by `retarget` wrapping both halves in one acquisition).
+
+    T-DOC78: `mode="download"` launches `app.prefetch_pdfs` (`_spawn_download`) instead of
+    `app.build_corpus` (`_spawn`) -- no GPU, no pass1/pass2. `spawn`'s default is resolved HERE
+    (not bound as a default parameter value) so a production caller that never passes `spawn`
+    still gets the real `_spawn`/`_spawn_download` picked by `mode`; a test that injects a fake
+    `spawn` bypasses this resolution entirely, unaffected by `mode`."""
     manifest = reconcile(data_dir)
     if manifest is not None and manifest.get("status") in _LIVE_STATUSES:
         raise DoubleRunError(
@@ -791,7 +834,6 @@ def _start_locked(data_dir: Path, target: int, parse_workers: int = 3, *,
     paper_ids_file = Path(paper_ids_file) if paper_ids_file is not None else None
     run_id = f"run-{target}-{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}"
     events_path = data_dir / f"ingest_events_{run_id}.jsonl"
-    log_path = data_dir / f"ingest_{run_id}.log"
     db_path = data_dir / "papers.db"
 
     base_cfg = _load_base_config(data_dir)
@@ -803,6 +845,14 @@ def _start_locked(data_dir: Path, target: int, parse_workers: int = 3, *,
     )
     run_cwd = override_dir if override_dir is not None else data_dir
 
+    # T-DOC78: a download-only run's log MUST be named exactly "prefetch.log" in run_cwd --
+    # status.py::read_downloader tails that hardcoded filename for pace, regardless of who
+    # launched it. A full run keeps its usual per-run ingest log name, unchanged.
+    log_path = (
+        run_cwd / "prefetch.log" if mode == "download" else data_dir / f"ingest_{run_id}.log"
+    )
+    spawn = spawn or (_spawn_download if mode == "download" else _spawn)
+
     pid = _call_spawn(
         spawn, run_cwd, target, parse_workers, events_path, log_path, paper_ids_file,
         telemetry_poll_interval=telemetry_poll_interval, batch_size=batch_size,
@@ -811,6 +861,7 @@ def _start_locked(data_dir: Path, target: int, parse_workers: int = 3, *,
         run_id, pid, target, parse_workers, events_path, log_path, db_path, paper_ids_file,
         run_cwd=run_cwd, effective_cfg=effective_cfg,
         telemetry_poll_interval=telemetry_poll_interval, batch_size=batch_size,
+        mode=mode,
     )
     _write_manifest(data_dir, manifest)
     return manifest
