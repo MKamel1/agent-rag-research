@@ -421,6 +421,134 @@ def test_control_start_omits_unset_og45_og46_params(running_server):
     assert fake_controller.calls == [("start", 500, 2, {})]
 
 
+# --- keyword REMOVAL: `remove_keywords` on start/retarget --------------------------------------
+
+
+def test_control_start_forwards_remove_keywords(running_server):
+    """The API contract: POST /api/control body field "remove_keywords": [...], valid for
+    "start"/"retarget", reaches controller.start/retarget as a kwarg."""
+    url, fake_controller = running_server
+    status, body = _post(url, "/api/control", {
+        "action": "start", "target": 500, "parse_workers": 2,
+        "remove_keywords": ["obsolete topic"],
+    })
+    assert status == 200
+    assert fake_controller.calls == [("start", 500, 2, {"remove_keywords": ["obsolete topic"]})]
+
+
+def test_control_retarget_forwards_keywords_and_remove_keywords_together(running_server):
+    """Add+remove in one request is well-defined -- both reach controller.retarget alongside each
+    other, unmangled."""
+    url, fake_controller = running_server
+    status, body = _post(url, "/api/control", {
+        "action": "retarget", "target": 500, "parse_workers": 2,
+        "keywords": ["new topic"], "remove_keywords": ["old topic"],
+    })
+    assert status == 200
+    assert fake_controller.calls == [(
+        "retarget", 500, 2, {"keywords": ["new topic"], "remove_keywords": ["old topic"]},
+    )]
+
+
+def test_control_start_omits_unset_remove_keywords(running_server):
+    """Omitted entirely when nothing is being removed -- same "absent, not []" convention every
+    other OG-43/45/46 editable param already follows, so retarget never clobbers a stored value."""
+    url, fake_controller = running_server
+    _post(url, "/api/control", {
+        "action": "start", "target": 500, "parse_workers": 2, "remove_keywords": [],
+    })
+    assert fake_controller.calls == [("start", 500, 2, {})]
+
+
+def test_control_start_rejects_a_quote_injection_remove_keyword(running_server):
+    """Same `_UNSAFE_KEYWORD_CHARS_RE` boundary check `keywords` already gets -- a bad
+    remove_keywords entry must 400 before ever reaching controller.start too."""
+    url, fake_controller = running_server
+    status, body = _post(url, "/api/control", {
+        "action": "start", "target": 500, "parse_workers": 2,
+        "remove_keywords": ['causal inference" OR cat:econ.EM'],
+    })
+    assert status == 400
+    assert fake_controller.calls == []
+
+
+# --- boundary hardening: target / telemetry_poll_interval, and no more dropped connections ------
+
+
+def test_control_start_rejects_target_zero(running_server):
+    url, fake_controller = running_server
+    status, body = _post(url, "/api/control", {"action": "start", "target": 0, "parse_workers": 2})
+    assert status == 400
+    assert fake_controller.calls == []
+
+
+def test_control_start_rejects_a_negative_target(running_server):
+    url, fake_controller = running_server
+    status, body = _post(url, "/api/control", {"action": "start", "target": -5, "parse_workers": 2})
+    assert status == 400
+    assert fake_controller.calls == []
+
+
+def test_control_start_rejects_a_negative_telemetry_poll_interval(running_server):
+    """`<input min="0.1">` is decorative -- a browser doesn't block an out-of-range TYPED value,
+    and telemetry_poll_interval had no server-side check at all before this fix."""
+    url, fake_controller = running_server
+    status, body = _post(url, "/api/control", {
+        "action": "start", "target": 500, "parse_workers": 2, "telemetry_poll_interval": -5,
+    })
+    assert status == 400
+    assert fake_controller.calls == []
+
+
+def test_control_start_rejects_a_zero_telemetry_poll_interval(running_server):
+    url, fake_controller = running_server
+    status, body = _post(url, "/api/control", {
+        "action": "start", "target": 500, "parse_workers": 2, "telemetry_poll_interval": 0,
+    })
+    assert status == 400
+    assert fake_controller.calls == []
+
+
+def test_control_start_with_non_numeric_target_is_a_clean_error_not_a_dropped_connection(running_server):
+    """`int(body["target"])` on `{"target": "not-a-number"}` used to raise a bare `ValueError`,
+    which do_POST's except tuple did not catch -- an uncaught exception, dropped connection, no
+    response body. Must now be a clean status+message like any other rejected request."""
+    url, fake_controller = running_server
+    status, body = _post(url, "/api/control", {"action": "start", "target": "not-a-number"})
+    assert status == 409
+    assert body["ok"] is False
+    assert fake_controller.calls == []
+
+
+class _SpawnFailureController(_FakeController):
+    """Simulates Task 2's resume-from-a-crashed-run failure mode: `subprocess.Popen(cwd=<deleted
+    dir>)` raises `FileNotFoundError` (an `OSError`), which do_POST's except tuple did not catch
+    either -- same uncaught-exception, dropped-connection, no-response-body failure mode as the
+    non-numeric target above."""
+
+    def start(self, data_dir, target, parse_workers=3, **kwargs):
+        raise FileNotFoundError(2, "No such file or directory", "/some/deleted/run_cwd")
+
+
+def test_control_start_spawn_failure_is_a_clean_error_not_a_dropped_connection(tmp_path):
+    httpd = build_server(
+        tmp_path, _TOKEN, port=0, host="127.0.0.1",
+        status_module=_FakeStatus(), controller_module=_SpawnFailureController(),
+    )
+    thread = threading.Thread(target=httpd.serve_forever, daemon=True)
+    thread.start()
+    port = httpd.server_address[1]
+    try:
+        url = f"http://127.0.0.1:{port}"
+        status, body = _post(url, "/api/control", {"action": "start", "target": 500})
+        assert status == 409
+        assert body["ok"] is False
+    finally:
+        httpd.shutdown()
+        httpd.server_close()
+        thread.join(timeout=5.0)
+
+
 def test_control_retarget_dispatches_with_params(running_server):
     """OG-43: "Apply new settings" while a run is live goes through `retarget` (stop-then-start),
     not plain `start` (which would just hit the double-run guard)."""

@@ -70,10 +70,14 @@ _CATEGORY_RE = re.compile(r"^[A-Za-z0-9.\-]+$")
 _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$|^\d{8}$")
 
 
-def _validate_control_kwargs(parse_workers: int, kwargs: dict) -> None:
+def _validate_control_kwargs(target: int, parse_workers: int, kwargs: dict) -> None:
     """Raises `ControlValidationError` on the first bad field found in a `start`/`retarget`
     request. Called before `controller.start`/`retarget` -- a bad value 400s the request instead
     of spawning a subprocess that would crash later (OG-49#3/#6)."""
+    if target < 1:
+        # Otherwise `build_to_target`'s `n_done >= target` is trivially true for any target <= 0
+        # (including a negative one) -- a silent, instant, "successful" empty run.
+        raise ControlValidationError(f"target must be >= 1, got {target}")
     if parse_workers < _MIN_PARSE_WORKERS:
         raise ControlValidationError(
             f"parse_workers must be >= {_MIN_PARSE_WORKERS}, got {parse_workers}"
@@ -81,11 +85,16 @@ def _validate_control_kwargs(parse_workers: int, kwargs: dict) -> None:
     batch_size = kwargs.get("batch_size")
     if batch_size is not None and batch_size < 1:
         raise ControlValidationError(f"batch_size must be >= 1 (or unset), got {batch_size}")
-    for keyword in kwargs.get("keywords") or []:
+    telemetry_poll_interval = kwargs.get("telemetry_poll_interval")
+    if telemetry_poll_interval is not None and telemetry_poll_interval <= 0:
+        raise ControlValidationError(
+            f"telemetry_poll_interval must be > 0, got {telemetry_poll_interval}"
+        )
+    for keyword in (kwargs.get("keywords") or []) + (kwargs.get("remove_keywords") or []):
         if _UNSAFE_KEYWORD_CHARS_RE.search(keyword):
             raise ControlValidationError(
                 f"keyword {keyword!r} contains a '\"' or '\\\\', which would break the arXiv "
-                "query it's added to"
+                "query it's added to or removed from"
             )
     for category in kwargs.get("arxiv_categories") or []:
         if not _CATEGORY_RE.match(category):
@@ -150,6 +159,14 @@ def _control_kwargs(body: dict) -> dict:
     keywords = body.get("keywords")
     if keywords:
         kwargs["keywords"] = [str(k) for k in keywords]
+    # Removal (owner-requested, supersedes "edits augment, never replace" for removal
+    # specifically -- see docs/DESIGN-dashboard-control-panel.md and controller._maybe_build_
+    # override): applied AFTER the augment merge above, so add+remove in one request is
+    # well-defined. Omitted entirely when nothing's being removed -- same "absent, not []"
+    # convention as `keywords` (retarget must never clobber a stored value with an explicit []).
+    remove_keywords = body.get("remove_keywords")
+    if remove_keywords:
+        kwargs["remove_keywords"] = [str(k) for k in remove_keywords]
     # OG-45: arXiv DOWNLOAD-side filters -- REPLACE (not augment) the base config's value.
     categories = body.get("arxiv_categories")
     if categories:
@@ -407,7 +424,12 @@ def make_handler(
                 self._json(400, {"ok": False, "message": str(e)})
                 return
             except (controller_module.DoubleRunError, controller_module.NoRunError,
-                    KeyError, TypeError) as e:
+                    KeyError, TypeError, ValueError, OSError) as e:
+                # ValueError: e.g. `int(body["target"])` on a non-numeric `"target"` -- previously
+                # uncaught, dropping the connection with no response body at all. OSError: e.g.
+                # Task 2's resume-from-a-crashed-run spawn failure (subprocess.Popen(cwd=<missing
+                # dir>) -> FileNotFoundError) -- same "uncaught, dropped connection" failure mode,
+                # now a clean response instead.
                 self._json(409, {"ok": False, "message": str(e)})
                 return
             self._json(200, {"ok": True, "message": f"{action} ok"})
@@ -417,7 +439,7 @@ def make_handler(
                 target = int(body["target"])
                 parse_workers = int(body.get("parse_workers", 3))
                 kwargs = _control_kwargs(body)
-                _validate_control_kwargs(parse_workers, kwargs)
+                _validate_control_kwargs(target, parse_workers, kwargs)
                 if action == "start":
                     controller_module.start(data_dir, target, parse_workers, **kwargs)
                 else:
