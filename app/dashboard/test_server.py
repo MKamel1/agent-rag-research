@@ -43,7 +43,7 @@ class _FakeStatus:
                 "harvested": 10, "parsed": 9, "chunked": 8, "summarized": 7,
                 "embedded": 6, "stored": 5, "done": 5, "quarantined": 1,
             },
-            "quarantine_reasons": [{"reason": "TransientError", "count": 1}],
+            "quarantine_reasons": [{"reason": "TransientError @ parsed", "count": 1}],
         }
 
     def read_telemetry(self, events_path, total_done, *, data_dir=None, started_at=None, target=None):
@@ -230,7 +230,7 @@ def test_status_route_shape_matches_api_contract(running_server):
     assert body["run"]["params"]["telemetry_poll_interval"] is None
     assert body["run"]["parse_batch_size"] == 4  # config.yaml's real default -- not hard-coded null
     assert body["funnel"]["done"] == 5
-    assert body["quarantine_reasons"] == [{"reason": "TransientError", "count": 1}]
+    assert body["quarantine_reasons"] == [{"reason": "TransientError @ parsed", "count": 1}]
 
 
 # --- POST /api/control: token gate + dispatch + shapes -------------------------------------

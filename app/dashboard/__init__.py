@@ -8,5 +8,7 @@ Three modules, one seam each (`docs/DESIGN-corpus-dashboard.md`):
 
 Neither `status.py` nor `controller.py` imports the other -- `run_manifest.json` on disk is their
 only shared secret, same as the real `app.ingest` launcher and this dashboard never importing one
-another (design doc, "The coordination contract").
+another (design doc, "The coordination contract"). `app/telemetry.py` (outside this package) does
+import `status.quarantine_summary` (T-DOC78) -- an inbound edge only, so `status.py` still has no
+internal-project imports of its own to worry about cycling back.
 """

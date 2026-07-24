@@ -110,8 +110,10 @@ Extract a single function, owned by `status.py` (the module that already has the
 review-derived query):
 
 ```python
-def quarantine_summary(conn: sqlite3.Connection) -> tuple[int, list[tuple[str, str, int]]]:
-    """(count, [(stage, error_type, count), ...]) excluding paper_ids that reached 'done'."""
+def quarantine_summary(conn: sqlite3.Connection) -> tuple[int, list[tuple[str, int]]]:
+    """(count, [(reason, count), ...]) excluding paper_ids that reached 'done'. `reason` is
+    already formatted as f"{error_type} @ {stage}" -- callers get an opaque display string, not
+    a triple to reassemble themselves."""
 ```
 
 - `read_corpus` calls it against its own `mode=ro` connection (unchanged behavior, just routed
@@ -131,13 +133,20 @@ browsable list. The query becomes a `LEFT JOIN` (so an undiagnosed row — quara
 before diagnostics were recorded)"` error_type):
 
 ```sql
-SELECT q.stage, COALESCE(qd.error_type, 'unknown (quarantined before diagnostics were recorded)'), count(*)
+SELECT q.stage, COALESCE(qd.error_type, :undiagnosed) AS error_type, count(*) AS n
 FROM quarantine q
 LEFT JOIN quarantine_diagnostics qd ON qd.paper_id = q.paper_id
-WHERE q.paper_id NOT IN (SELECT paper_id FROM ingest_state WHERE stage = 'done')
-GROUP BY q.stage, COALESCE(qd.error_type, '__undiagnosed__')
-ORDER BY count(*) DESC
+WHERE NOT EXISTS (SELECT 1 FROM ingest_state s WHERE s.paper_id = q.paper_id AND s.stage = 'done')
+GROUP BY q.stage, error_type
+ORDER BY n DESC, q.stage, error_type
 ```
+
+`:undiagnosed` is the single `_UNDIAGNOSED_REASON` constant, bound once and reused as both the
+`COALESCE` default and the `GROUP BY`/display value -- one string, not two spellings of "no
+diagnostics yet". (The `NOT EXISTS` form, not `NOT IN`, because `NOT IN` against a subquery
+silently returns zero rows if the subquery ever produces a NULL; `NOT EXISTS` doesn't have that
+trap.) The `ORDER BY` tiebreak on `q.stage, error_type` exists because SQLite doesn't guarantee
+row order among equal-`n` ties, and grouping by stage now produces many more of them.
 
 Formatted as a single reason string `f"{error_type} @ {stage}"` (e.g. `"PermanentError @ parsed"`,
 `"TransientError @ embedded"`) — the existing `{"reason": str, "count": int}` shape (status.py) and
