@@ -36,6 +36,7 @@
   .tags { display: flex; flex-wrap: wrap; gap: .35rem; max-height: 9rem; overflow-y: auto; }
   .tag { background: #202632; border: 1px solid var(--border); border-radius: 999px; padding: .2rem .65rem; font-size: .75rem; color: var(--muted); }
   .tag.pending { color: var(--text); border-color: var(--accent); }
+  .tag.tag-removing { color: var(--bad); border-color: var(--bad); text-decoration: line-through; opacity: .7; }
   .tag-remove { color: var(--bad); text-decoration: none; margin-left: .35rem; font-weight: 700; }
   .note { color: var(--muted); font-size: .75rem; margin-bottom: .5rem; }
   .pill { display: inline-block; padding: .15rem .55rem; border-radius: 999px; font-size: .75rem; font-weight: 600; }
@@ -143,6 +144,10 @@
 
   <div class="panel" style="grid-column: 1 / -1;">
     <h2>Keyword search tags (focus_queries)</h2>
+    <div class="note">
+      Click &times; to stage a tag for removal on the next Apply -- removal only stops FUTURE
+      downloads matching it, papers already in the corpus stay. Click again to unstage.
+    </div>
     <div class="tags" id="focusQueries"></div>
   </div>
 
@@ -250,7 +255,7 @@
 
     <div class="controls" style="margin-top: .75rem;">
       <div class="field" style="flex: 1 1 100%;">
-        <label for="newKeyword">add keyword (augments focus_area_queries — never replaces it)</label>
+        <label for="newKeyword">add keyword (augments focus_area_queries — never replaces it; to remove one, click &times; on its tag above)</label>
         <div style="display:flex; gap:.4rem;">
           <input id="newKeyword" type="text" placeholder="e.g. double machine learning" style="width: 18rem;">
           <button id="btnAddKeyword" class="secondary" type="button">Add</button>
@@ -301,6 +306,7 @@
     <div class="controls" style="margin-top: .75rem; border-top: 1px solid var(--border); padding-top: .75rem;">
       <button id="btnApply">Apply (start fresh run)</button>
       <span class="note" id="applyHint" style="margin:0;"></span>
+      <span class="note" id="targetCapWarning" style="margin:0; color: var(--warn);"></span>
     </div>
     <div id="controlMsg"></div>
   </div>
@@ -318,7 +324,7 @@ const TUNING = [
   ["parse_batch_size", s => s.run.parse_batch_size, "4", "4", "Papers per MinerU batch (FLOOR only -- AdaptiveBatchSizer grows it at runtime, unexposed). Editable below (run-scoped config override)."],
   ["telemetry_poll_interval", s => s.run.params && s.run.params.telemetry_poll_interval, "5s", "5s", "GPU sampling cadence. Editable below."],
   ["build --batch-size", s => s.run.params && s.run.params.batch_size, "whole cache each iteration", "whole cache", "Caps cached-not-done ids fed to one app.ingest batch. Editable below."],
-  ["focus_queries (keywords)", s => (s.run.focus_queries || []).length + " active", "33 causal queries (config.yaml)", "augment, don't replace", "Edit below (add/remove tags) -- edits AUGMENT the library, never replace it (owner decision)."],
+  ["focus_queries (keywords)", s => (s.run.focus_queries || []).length + " active", "33 causal queries (config.yaml)", "augment, don't replace", "Edit below -- adding a keyword AUGMENTS the library (never replaces it, owner decision); clicking &times; on an active tag STAGES it for removal, which only stops future downloads matching it (existing papers stay)."],
   ["ordering (OG-46)", s => s.run.ordering, "freshest_first", "relevance for a focused sprint", "arXiv's own sortBy=relevance ranking prioritizes build_corpus's processing order toward the current focus. Editable below."],
   ["half-finished papers", s => s.run.stranded_policy, "finish_first", "finish_first unless you deliberately want fresh papers only", "How papers a previous pause left parsed-but-unfinished are treated. finish_first drains them before parsing anything new (those batches skip Pass 1, so they are fast); ignore leaves them banked and ingests only fresh papers. Nothing is discarded either way. Editable below."],
   ["arXiv categories (OG-45)", s => (s.run.arxiv_categories || []).join(", ") || "none", "none (config.yaml)", "e.g. stat.ME, econ.EM", "DOWNLOAD-side filter -- replaces (not augments) the base filter. Editable below."],
@@ -380,6 +386,44 @@ function statusPillClass(status) {
 let currentIsLive = false;   // read by the Apply button to pick "start" vs "retarget"
 let fieldsInitialized = false;  // pre-fill the edit fields once from the first snapshot, then
                                  // leave them alone so the ~4s poll never clobbers an in-progress edit
+
+// --- active focus_queries tags: click a tag's x to STAGE it for removal (not a live request) ----
+
+let lastFocusQueries = [];   // most recent snap.run.focus_queries, cached so a stage/unstage click
+                              // can re-render without waiting on the next poll
+let pendingRemovals = [];    // keywords staged for removal, sent as remove_keywords on Apply
+
+function renderFocusQueries() {
+  const el = document.getElementById("focusQueries");
+  el.innerHTML = lastFocusQueries.length
+    ? lastFocusQueries.map(q => {
+        const staged = pendingRemovals.includes(q);
+        return `<span class="tag${staged ? " tag-removing" : ""}">${q} <a href="#" class="tag-remove" data-q="${q}">&times;</a></span>`;
+      }).join("")
+    : `<span class="stat-label">-</span>`;
+  el.querySelectorAll(".tag-remove").forEach(a => a.addEventListener("click", e => {
+    e.preventDefault();
+    const q = a.dataset.q;
+    const i = pendingRemovals.indexOf(q);
+    if (i === -1) pendingRemovals.push(q); else pendingRemovals.splice(i, 1);
+    renderFocusQueries();
+  }));
+}
+
+// --- target vs download cap (docs/DESIGN-dashboard-control-panel.md "TRAPS to honor"): the build
+// silently stalls past prefetch_target -- a client-side warning only, never a hard block, since the
+// user may genuinely intend to raise the cap elsewhere first. ----------------------------------
+
+let downloadCap = 30000; // fallback if a snapshot hasn't reported downloader.prefetch_target yet
+
+function updateTargetCapWarning() {
+  const val = parseInt(document.getElementById("newTarget").value, 10);
+  document.getElementById("targetCapWarning").textContent =
+    val && val > downloadCap
+      ? `target exceeds the ${fmt(downloadCap)}-paper download cap -- the build will stop short there`
+      : "";
+}
+document.getElementById("newTarget").addEventListener("input", updateTargetCapWarning);
 
 function render(snap) {
   document.getElementById("runId").textContent = snap.run.run_id || "-";
@@ -447,10 +491,13 @@ function render(snap) {
   document.querySelector("#quarantineTable tbody").innerHTML = reasons
     .map(r => `<tr><td>${r.reason}</td><td>${fmt(r.count)}</td></tr>`).join("");
 
-  const tags = snap.run.focus_queries || [];
-  document.getElementById("focusQueries").innerHTML = tags.length
-    ? tags.map(q => `<span class="tag">${q}</span>`).join("")
-    : `<span class="stat-label">-</span>`;
+  lastFocusQueries = snap.run.focus_queries || [];
+  renderFocusQueries();
+
+  // OG-download-cap: the build silently stops short past prefetch_target (docs/DESIGN-dashboard-
+  // control-panel.md "TRAPS to honor"). Prefer the live value the poll exposes over the hardcoded
+  // fallback so the two never drift apart.
+  if (snap.downloader && snap.downloader.prefetch_target) downloadCap = snap.downloader.prefetch_target;
 
   renderTuning(snap);
   renderSearchParams(snap);
@@ -476,6 +523,9 @@ function render(snap) {
     if (snap.run.stranded_policy) document.getElementById("newStrandedPolicy").value = snap.run.stranded_policy;
     fieldsInitialized = true;
   }
+  // After the (possibly just-ran) pre-fill above, so the very first render reflects newTarget's
+  // real starting value instead of lagging one poll cycle behind the hardcoded default.
+  updateTargetCapWarning();
 }
 
 // --- "Try a search" panel: GET /api/search, the live UI for the SEARCH-side controls -----------
@@ -681,6 +731,10 @@ function buildApplyPayload() {
   const bbs = document.getElementById("newBuildBatchSize").value;
   if (bbs) body.batch_size = parseInt(bbs, 10);
   if (pendingKeywords.length) body.keywords = pendingKeywords.slice();
+  // Staged tag removals -- omit the field entirely (never send [] or null) when nothing is staged.
+  // The server rejects removing every keyword (a downloader needs at least one query); that check
+  // isn't duplicated here, control()'s existing error surfacing shows it if it happens.
+  if (pendingRemovals.length) body.remove_keywords = pendingRemovals.slice();
   // OG-45: subject/date filters REPLACE the current filter on Apply (unlike keywords, which
   // augment) -- only sent when the user actually set one, so leaving them blank never clobbers
   // an existing run-scoped filter via retarget.
@@ -704,8 +758,20 @@ function buildApplyPayload() {
 // "retarget" (stop-then-start with the edited params) -- see controller.retarget's docstring.
 document.getElementById("btnApply").addEventListener("click", () => {
   control(currentIsLive ? "retarget" : "start", buildApplyPayload());
+  // Clear every staged edit the same way pendingKeywords already was -- the server re-reads a
+  // pristine config.yaml on every start/retarget and carries nothing forward from a prior run's
+  // override, so leftover state here (not the server) is the only reason a stale filter/date/
+  // ordering would reappear on a LATER Apply. Left uncleared before this fix, a subject filter or
+  // date range could never actually be removed short of hand-clearing every field.
   pendingKeywords = [];
   renderPendingKeywords();
+  pendingRemovals = [];
+  renderFocusQueries();
+  pendingSubjects = [];
+  renderPendingSubjects();
+  document.getElementById("newDateFrom").value = "";
+  document.getElementById("newDateTo").value = "";
+  document.getElementById("newOrdering").value = "freshest_first";
 });
 
 poll();
