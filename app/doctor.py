@@ -18,17 +18,23 @@ recovery attempt via the already-tested `app.tei_lifecycle.start_tei_containers(
 "extend the same docker start pattern", reusing it rather than duplicating its docker-start +
 health-poll logic here) before being reported as still down.
 
-**Why the other two containerized services (reference-resolution, vector store) are
-health-check-only, never auto-started, here:** their real container names are vendor-restricted
-tokens under CONVENTIONS.md §1 -- `ci/checks/vendor_isolation.py`'s `VENDOR_RULES` allows each
-vendor's product name to appear only inside its own adapter file (`rag/parser.py`,
-`rag/vector_index.py`). Extending that allowlist to cover this module is a foundation-protected
-`ci/` change, outside this ticket's file territory -- so this module deliberately never spells
-either vendor's product name or container name, and never shells out to start their containers
-directly. `docker start <that container>` still works fine by hand (`reviews/OPERATIONAL-GAPS.md`
-OG-12) -- only the auto-recovery half is unavailable here for these two. The summarizer's
-model-serving endpoint is a host service per T-DOC43's own scope note either way -- health-check
-only, never auto-started, regardless of this constraint.
+**T-DOC78: the other two containerized services (reference-resolution, vector store) now get the
+same one-shot recovery attempt.** Originally these were health-check-only -- their real container
+names are vendor-restricted tokens under CONVENTIONS.md §1 (`ci/checks/vendor_isolation.py`'s
+`VENDOR_RULES` allows each vendor's product name to appear only inside its own adapter file,
+`rag/vector_index.py`/`rag/parser.py` respectively, and that check is scoped to
+`rag/`+`contracts/`+`app/` alike, so this module could never spell either name itself without a
+foundation-protected `ci/` change). The fix isn't a `ci/` change: `rag/vector_index.py`'s
+`start_container()` and `rag/parser.py`'s `start_reference_resolution_container()` each do their
+own vendor-specific `docker start` + bounded health poll (same shape as `app.tei_lifecycle`, just
+living inside the one file each is allowed to name its own container in -- the same reasoning
+`rag/vector_index.py`'s `create_and_download_snapshot()` already uses for `app/snapshot.py`'s
+backup step). This module calls those two functions through the `_Service.start` field below
+without ever naming a vendor or a container itself -- `check_services` doesn't know or care that
+one recovery path shells into `app.tei_lifecycle` and the other two shell into their own adapter
+modules; it just calls whatever `start` each `_Service` carries. The summarizer's model-serving
+endpoint is a host service per T-DOC43's own scope note -- `start=None`, health-check only, never
+auto-started, regardless of this fix.
 
 `app.ingest` calls `run_preflight()` at startup (default on, `--no-preflight`/`--force` to skip
 or downgrade to a warning) and refuses to start with every issue named in one message, instead of
@@ -40,12 +46,15 @@ import shutil
 import sys
 import urllib.error
 import urllib.request
+from collections.abc import Callable
 from dataclasses import dataclass
 
 import filelock
 
 from app import gpu_headroom, tei_lifecycle
 from contracts.config import Config
+from rag import parser as _parser_adapter
+from rag import vector_index as _vector_index_adapter
 
 # Same URLs app/tei_lifecycle.py health-polls -- this module owns its own copies rather than
 # importing that module's private constants (same "own your own copies" convention that
@@ -58,16 +67,37 @@ _TEI_RERANK_HEALTH_URL = "http://localhost:8082/health"
 class _Service:
     name: str
     health_url: str
+    # T-DOC78: best-effort recovery attempt if unhealthy, re-checked before being reported as an
+    # issue -- same one-shot-recovery shape `check_services` already gives the two TEI endpoints
+    # below via `app.tei_lifecycle`. `None` means health-check only, no recovery path exists (the
+    # summarizer's host-service endpoint, by design -- see module docstring).
+    start: Callable[[], None] | None = None
 
 
 # Confirmed real ports via a live health probe this session -- see each URL's owning adapter
 # module for the vendor/product this port belongs to (not named here -- see module docstring).
+# `start` points at each adapter's own vendor-specific `docker start` + health-poll helper
+# (T-DOC78) -- this module calls it without ever knowing or naming the vendor/container itself.
+# Wrapped in a lambda (rather than bound directly, e.g. `start=_parser_adapter.start_...`) so a
+# test's `monkeypatch.setattr(doctor_mod._parser_adapter, "start_...", fake)` is looked up at call
+# time and actually takes effect -- a directly-bound reference would freeze in the real function
+# at import time, before any test gets a chance to patch it.
 _HEALTH_ONLY_SERVICES = (
-    _Service("parser reference-resolution service (rag/parser.py)", "http://localhost:8070/api/isalive"),
-    _Service("vector store (rag/vector_index.py)", "http://localhost:6333/collections"),
+    _Service(
+        "parser reference-resolution service (rag/parser.py)",
+        "http://localhost:8070/api/isalive",
+        start=lambda: _parser_adapter.start_reference_resolution_container(),
+    ),
+    _Service(
+        "vector store (rag/vector_index.py)",
+        "http://localhost:6333/collections",
+        start=lambda: _vector_index_adapter.start_container(),
+    ),
     _Service(
         "summarizer model-serving endpoint (rag/summarizer.py, host service)",
         "http://localhost:11434/api/ps",
+        # start=None: a host service, not a container -- health-check only, never auto-started
+        # (T-DOC43's original scope note, unaffected by this ticket's fix for the other two).
     ),
 )
 
@@ -140,12 +170,14 @@ def _is_healthy(url: str) -> bool:
 
 
 def check_services(*, auto_start: bool = True) -> list[PreflightIssue]:
-    """Health-ping every required service. T-DOC52: if either TEI endpoint is unhealthy, one
-    recovery attempt goes through the already-tested `app.tei_lifecycle.start_tei_containers()`
-    (docker start + bounded health poll) before being reported as an issue -- a stopped-but-
-    startable TEI container (the OG-12 power-cycle case) is fixed automatically instead of just
-    being named as broken. The other three required services are health-check-only here (see
-    module docstring for why); `auto_start=False` skips even the TEI recovery attempt.
+    """Health-ping every required service. T-DOC52/T-DOC78: if a service is unhealthy and carries
+    a recovery path, one attempt goes through it (docker start + bounded health poll) before being
+    reported as an issue -- a stopped-but-startable container (the OG-12 power-cycle case) is
+    fixed automatically instead of just being named as broken. TEI goes through the already-tested
+    `app.tei_lifecycle.start_tei_containers()`; the reference-resolution service and vector store
+    go through their own adapter's `start` (T-DOC78 -- see module docstring for why that recovery
+    code lives there, not here). The summarizer's host-service endpoint has no recovery path
+    (`start=None`) and stays health-check only. `auto_start=False` skips every recovery attempt.
     """
     issues = []
 
@@ -162,16 +194,20 @@ def check_services(*, auto_start: bool = True) -> list[PreflightIssue]:
             issues.append(PreflightIssue("TEI reranker", detail))
 
     for service in _HEALTH_ONLY_SERVICES:
-        if not _is_healthy(service.health_url):
+        healthy = _is_healthy(service.health_url)
+        if not healthy and auto_start and service.start is not None:
+            service.start()
+            healthy = _is_healthy(service.health_url)
+        if not healthy:
             issues.append(PreflightIssue(service.name, f"unreachable at {service.health_url}"))
 
     return issues
 
 
 def run_preflight(cfg: Config, *, auto_start: bool = True) -> list[PreflightIssue]:
-    """Every T-DOC43/T-DOC52 check in one call -- disk, GPU/VRAM, `.gpu.lock`, every required
-    service (auto-starting a stopped-but-startable TEI container first). Returns the full list
-    of unresolved issues; empty means the environment is ready.
+    """Every T-DOC43/T-DOC52/T-DOC78 check in one call -- disk, GPU/VRAM, `.gpu.lock`, every
+    required service (auto-starting each stopped-but-startable container first). Returns the full
+    list of unresolved issues; empty means the environment is ready.
     """
     basic_checks = (
         check_disk_headroom(),
@@ -194,7 +230,8 @@ def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--no-auto-start", action="store_true",
-        help="health-check only; never attempt to start a stopped TEI container",
+        help="health-check only; never attempt to start a stopped TEI/vector-store/"
+        "reference-resolution container",
     )
     return parser.parse_args()
 

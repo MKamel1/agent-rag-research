@@ -95,8 +95,11 @@ from __future__ import annotations
 import hashlib
 import importlib.metadata
 import json
+import logging
 import re
+import subprocess
 import tempfile
+import time
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
@@ -110,9 +113,21 @@ from contracts.errors import ContractError, PermanentError, TransientError
 from contracts.parser import Figure, ParsedDoc, Reference, TableItem
 from contracts.provenance import Bbox, Block
 
+logger = logging.getLogger(__name__)
+
 _DEFAULT_GROBID_URL = "http://localhost:8070"
 _GROBID_TIMEOUT = 60.0
 _TEI_NS = {"tei": "http://www.tei-c.org/ns/1.0"}
+
+# start_reference_resolution_container()'s target -- same "confirmed via a live docker ps, no
+# docker-compose file to read it from" situation as `_DEFAULT_GROBID_URL` above and
+# `app/tei_lifecycle.py`'s own container names (T-DOC78).
+_CONTAINER_NAME = "rag-grobid"
+_START_POLL_INTERVAL_SECONDS = 0.25  # matches app/tei_lifecycle.py's own constant
+# This container loads CRF/deep-learning models on startup (real, not instant like a plain
+# database container's restart) -- generous but still bounded, same reasoning as
+# app/tei_lifecycle.py's 60s floor.
+_START_POLL_TIMEOUT_SECONDS = 60.0
 
 _ARXIV_ID_RE = re.compile(r"\barxiv:\s*(\d{4}\.\d{4,5})(?:v\d+)?\b", re.IGNORECASE)
 _DOI_RE = re.compile(r'\b10\.\d{4,9}/[^\s"<>]+\b')
@@ -649,3 +664,47 @@ def _extract_title(struct: ET.Element) -> str | None:
 def _extract_idno(struct: ET.Element, idno_type: str) -> str | None:
     idno = struct.find(f".//tei:idno[@type='{idno_type}']", _TEI_NS)
     return idno.text.strip() if idno is not None and idno.text else None
+
+
+def start_reference_resolution_container(*, grobid_url: str = _DEFAULT_GROBID_URL) -> None:
+    """Best-effort `docker start` for the reference-resolution container, then a bounded poll of
+    its `/api/isalive` endpoint before returning (T-DOC78: `app.doctor` auto-starting a
+    stopped-but-startable health-only service, generalizing the T-DOC52 TEI pattern). Same "issue
+    command -> poll a status endpoint -> bounded timeout -> best-effort continue" shape as
+    `app/tei_lifecycle.py`'s `start_tei_containers()` -- duplicated rather than shared because the
+    container name is a vendor-restricted token (CONVENTIONS.md §1) only this file may spell.
+    `app.doctor` calls this without ever naming the vendor or the container.
+
+    Never raises: a failed `docker start` or an unconfirmed health check after the timeout both
+    just log a warning and return -- the caller (`app.doctor`) treats "still unhealthy after
+    calling this" as an issue to report, not this function's problem to escalate.
+    """
+    try:
+        subprocess.run(["docker", "start", _CONTAINER_NAME], check=True)
+    except (subprocess.CalledProcessError, FileNotFoundError) as error:
+        logger.warning(
+            "could not start container %s -- best-effort, not blocking the caller: %s",
+            _CONTAINER_NAME,
+            error,
+        )
+        return
+
+    deadline = time.monotonic() + _START_POLL_TIMEOUT_SECONDS
+    while time.monotonic() < deadline:
+        if _is_reference_resolution_healthy(grobid_url):
+            return
+        time.sleep(_START_POLL_INTERVAL_SECONDS)
+
+    logger.warning(
+        "could not confirm container %s was healthy within %.1fs -- proceeding anyway "
+        "(best-effort; caller is not blocked)",
+        _CONTAINER_NAME,
+        _START_POLL_TIMEOUT_SECONDS,
+    )
+
+
+def _is_reference_resolution_healthy(grobid_url: str) -> bool:
+    try:
+        return httpx.get(f"{grobid_url}/api/isalive", timeout=5.0).is_success
+    except httpx.HTTPError:
+        return False
