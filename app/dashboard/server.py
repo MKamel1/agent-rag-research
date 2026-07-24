@@ -1,7 +1,15 @@
-"""`python -m app.dashboard.server --port 8700 --data-dir <dir> --token <tok>` -- the Corpus
+"""`python -m app.dashboard.server --port 8700 --data-dir <dir> [--token <tok>]` -- the Corpus
 Dashboard's composition root: a stdlib `http.server` binding a network interface (Tailscale
 reachability, not just localhost) that serves the static frontend, `GET /api/status`,
 `GET /api/search`, and token-gated `POST /api/control`.
+
+**`--token` is optional (T-DOC78).** Omit it and the server reads `<data-dir>/.dashboard_token`,
+generating one (`secrets.token_hex(16)`, written at mode `0600`) the first time none exists --
+`_load_or_create_token` below. An explicit `--token` still wins, for anyone scripting this. Beyond
+just removing a hand-managed file convention nothing in the repo previously created or read, this
+also gets the token out of `ps`/`/proc/<pid>/cmdline` output in the normal (no-`--token`) path --
+any other local user could previously read a live dashboard's control token straight off the
+process list.
 
 `ThreadingHTTPServer` (finding #7): each request runs on its own thread, so a `POST /api/control`
 (which may block for seconds inside `controller.pause`/`stop`/`resume` waiting for a process to
@@ -30,6 +38,7 @@ import hmac
 import json
 import logging
 import re
+import secrets
 import threading
 import urllib.parse
 from datetime import date
@@ -482,11 +491,48 @@ def build_server(
     return ThreadingHTTPServer((host, port), handler)
 
 
+# T-DOC78: the operator's token convention, formalized -- previously a pure hand convention
+# (nothing in the repo created or read this file; the operator kept a token here and passed it as
+# `--token $(cat .dashboard_token)` from memory every restart).
+_TOKEN_FILENAME = ".dashboard_token"
+
+
+def _load_or_create_token(data_dir: Path) -> str:
+    """Read `<data_dir>/.dashboard_token`, or generate and persist a new one if it doesn't exist
+    yet (T-DOC78). Never regenerates or re-chmods an EXISTING file -- an operator-managed token
+    must survive restarts unchanged, and this function has no business tightening or loosening
+    permissions it didn't set. A freshly-created file is `chmod 0600` (owner read/write only)
+    BEFORE its content is written, so the token is never briefly readable by another local user;
+    an existing file's permissions (already `0600` for the operator's real one) are left alone.
+
+    Never logs/prints the token value itself -- only where it was written, so the operator can
+    find it (`cat <path>`) without the value passing through any log line.
+    """
+    token_path = data_dir / _TOKEN_FILENAME
+    if token_path.exists():
+        return token_path.read_text().strip()
+
+    token_path.touch()
+    token_path.chmod(0o600)
+    token_path.write_text(token := secrets.token_hex(16))
+    print(f"dashboard: generated a new token at {token_path}")
+    return token
+
+
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--port", type=int, default=8700)
+    # No sensible default across different corpora/environments (the operator's real corpus vs. a
+    # scratch/test one) the way app/serve.py's `--data-dir` has one (that flag falls back to a
+    # cwd-relative config.yaml -- a different meaning entirely: this one is where papers.db/blobs/
+    # the token file/run_manifest.json all live, and guessing wrong would point the dashboard at
+    # the wrong corpus silently) -- left required rather than invented.
     parser.add_argument("--data-dir", required=True)
-    parser.add_argument("--token", required=True, help="required in X-Dashboard-Token for POST /api/control")
+    parser.add_argument(
+        "--token", default=None,
+        help="X-Dashboard-Token required for POST /api/control. Omit to read/generate "
+             "<data-dir>/.dashboard_token instead (T-DOC78) -- an explicit value here always wins.",
+    )
     parser.add_argument(
         "--host", default="0.0.0.0",
         help="bind interface -- default 0.0.0.0 so a Tailscale IP can reach it; pass the "
@@ -498,7 +544,8 @@ def _parse_args() -> argparse.Namespace:
 def main() -> None:
     args = _parse_args()
     data_dir = Path(args.data_dir)
-    httpd = build_server(data_dir, args.token, args.port, host=args.host)
+    token = args.token if args.token is not None else _load_or_create_token(data_dir)
+    httpd = build_server(data_dir, token, args.port, host=args.host)
     print(f"Corpus dashboard: http://{args.host}:{args.port} (data_dir={data_dir})")
     try:
         httpd.serve_forever()
