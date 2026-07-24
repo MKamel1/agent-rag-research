@@ -70,6 +70,29 @@ _CATEGORY_RE = re.compile(r"^[A-Za-z0-9.\-]+$")
 _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$|^\d{8}$")
 
 
+def _validate_editable_kwargs(kwargs: dict) -> None:
+    """The DOWNLOAD-side query filters shared by every action that can launch a downloader
+    (`"start"`/`"retarget"`'s full run, and T-DOC78's `"download"` action) -- pulled out of
+    `_validate_control_kwargs` so `"download"` can validate just this subset without a
+    target/parse_workers it never has."""
+    for keyword in (kwargs.get("keywords") or []) + (kwargs.get("remove_keywords") or []):
+        if _UNSAFE_KEYWORD_CHARS_RE.search(keyword):
+            raise ControlValidationError(
+                f"keyword {keyword!r} contains a '\"' or '\\\\', which would break the arXiv "
+                "query it's added to or removed from"
+            )
+    for category in kwargs.get("arxiv_categories") or []:
+        if not _CATEGORY_RE.match(category):
+            raise ControlValidationError(
+                f"arxiv_categories entry {category!r} is not a valid arXiv subject code "
+                "(letters/digits/dot/dash only)"
+            )
+    for field in ("arxiv_date_from", "arxiv_date_to"):
+        value = kwargs.get(field)
+        if value is not None and not _DATE_RE.match(value):
+            raise ControlValidationError(f"{field} {value!r} is not YYYY-MM-DD or YYYYMMDD")
+
+
 def _validate_control_kwargs(target: int, parse_workers: int, kwargs: dict) -> None:
     """Raises `ControlValidationError` on the first bad field found in a `start`/`retarget`
     request. Called before `controller.start`/`retarget` -- a bad value 400s the request instead
@@ -90,22 +113,7 @@ def _validate_control_kwargs(target: int, parse_workers: int, kwargs: dict) -> N
         raise ControlValidationError(
             f"telemetry_poll_interval must be > 0, got {telemetry_poll_interval}"
         )
-    for keyword in (kwargs.get("keywords") or []) + (kwargs.get("remove_keywords") or []):
-        if _UNSAFE_KEYWORD_CHARS_RE.search(keyword):
-            raise ControlValidationError(
-                f"keyword {keyword!r} contains a '\"' or '\\\\', which would break the arXiv "
-                "query it's added to or removed from"
-            )
-    for category in kwargs.get("arxiv_categories") or []:
-        if not _CATEGORY_RE.match(category):
-            raise ControlValidationError(
-                f"arxiv_categories entry {category!r} is not a valid arXiv subject code "
-                "(letters/digits/dot/dash only)"
-            )
-    for field in ("arxiv_date_from", "arxiv_date_to"):
-        value = kwargs.get(field)
-        if value is not None and not _DATE_RE.match(value):
-            raise ControlValidationError(f"{field} {value!r} is not YYYY-MM-DD or YYYYMMDD")
+    _validate_editable_kwargs(kwargs)
 
 
 _STATIC_INDEX = Path(__file__).parent / "static" / "index.html"
@@ -119,7 +127,7 @@ _STATIC_INDEX = Path(__file__).parent / "static" / "index.html"
 _RUN_FIELDS = (
     "run_id", "status", "target", "parse_workers", "focus_queries", "started_at", "params",
     "paper_ids_file", "arxiv_categories", "arxiv_date_from", "arxiv_date_to", "ordering",
-    "stranded_policy",
+    "stranded_policy", "mode",
 )
 
 # `parse_batch_size`: OG-43 adds a per-run override (`start(..., parse_batch_size=...)` ->
@@ -144,30 +152,18 @@ def _search_display() -> dict:
     }
 
 
-def _control_kwargs(body: dict) -> dict:
-    """Pulls the OG-43 editable params out of a `POST /api/control` body for `start`/`retarget`,
-    omitting any field the request didn't set -- `controller.start`'s own kwargs already default
-    each of these to "unedited" (`None`/no keywords), so an absent field must stay absent here
-    too, not turn into an explicit `None`/`[]` that could shadow a stored value on `retarget`."""
+def _editable_query_kwargs(body: dict) -> dict:
+    """keywords/remove_keywords/arxiv_categories/arxiv_date_from/arxiv_date_to -- the DOWNLOAD-side
+    filters shared by `"start"`/`"retarget"`'s full run and T-DOC78's `"download"` action, omitting
+    any field the request didn't set (see `_control_kwargs`'s own docstring for why absence, not an
+    explicit `None`/`[]`, matters on `retarget`)."""
     kwargs: dict = {}
-    if body.get("telemetry_poll_interval") is not None:
-        kwargs["telemetry_poll_interval"] = float(body["telemetry_poll_interval"])
-    if body.get("batch_size") is not None:
-        kwargs["batch_size"] = int(body["batch_size"])
-    if body.get("parse_batch_size") is not None:
-        kwargs["parse_batch_size"] = int(body["parse_batch_size"])
     keywords = body.get("keywords")
     if keywords:
         kwargs["keywords"] = [str(k) for k in keywords]
-    # Removal (owner-requested, supersedes "edits augment, never replace" for removal
-    # specifically -- see docs/DESIGN-dashboard-control-panel.md and controller._maybe_build_
-    # override): applied AFTER the augment merge above, so add+remove in one request is
-    # well-defined. Omitted entirely when nothing's being removed -- same "absent, not []"
-    # convention as `keywords` (retarget must never clobber a stored value with an explicit []).
     remove_keywords = body.get("remove_keywords")
     if remove_keywords:
         kwargs["remove_keywords"] = [str(k) for k in remove_keywords]
-    # OG-45: arXiv DOWNLOAD-side filters -- REPLACE (not augment) the base config's value.
     categories = body.get("arxiv_categories")
     if categories:
         kwargs["arxiv_categories"] = [str(c) for c in categories]
@@ -175,6 +171,21 @@ def _control_kwargs(body: dict) -> dict:
         kwargs["arxiv_date_from"] = str(body["arxiv_date_from"])
     if body.get("arxiv_date_to"):
         kwargs["arxiv_date_to"] = str(body["arxiv_date_to"])
+    return kwargs
+
+
+def _control_kwargs(body: dict) -> dict:
+    """Pulls the OG-43 editable params out of a `POST /api/control` body for `start`/`retarget`,
+    omitting any field the request didn't set -- `controller.start`'s own kwargs already default
+    each of these to "unedited" (`None`/no keywords), so an absent field must stay absent here
+    too, not turn into an explicit `None`/`[]` that could shadow a stored value on `retarget`."""
+    kwargs = _editable_query_kwargs(body)
+    if body.get("telemetry_poll_interval") is not None:
+        kwargs["telemetry_poll_interval"] = float(body["telemetry_poll_interval"])
+    if body.get("batch_size") is not None:
+        kwargs["batch_size"] = int(body["batch_size"])
+    if body.get("parse_batch_size") is not None:
+        kwargs["parse_batch_size"] = int(body["parse_batch_size"])
     # OG-46: relevance-priority ordering.
     if body.get("ordering"):
         kwargs["ordering"] = str(body["ordering"])
@@ -446,6 +457,16 @@ def make_handler(
                     # OG-43: "Apply new settings" while a run is already live -- stop-then-start
                     # with the edited params, instead of making the user pause/stop by hand first.
                     controller_module.retarget(data_dir, target, parse_workers, **kwargs)
+            elif action == "download":
+                # T-DOC78: download PDFs only -- no GPU, no pass1/pass2. Reuses the same
+                # keywords/categories/dates the Apply panel already stages (mode-agnostic
+                # override machinery, controller._maybe_build_override); mutual exclusion with a
+                # live full run is the SAME double-run guard `"start"` already gets, for free.
+                kwargs = _editable_query_kwargs(body)
+                _validate_editable_kwargs(kwargs)
+                controller_module.start(
+                    data_dir, _STATIC_CONFIG.prefetch_target, 1, mode="download", **kwargs,
+                )
             elif action == "pause":
                 controller_module.pause(data_dir)
             elif action == "resume":

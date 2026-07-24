@@ -214,7 +214,7 @@ def test_status_route_shape_matches_api_contract(running_server):
     assert set(body["run"].keys()) == {
         "run_id", "status", "target", "parse_workers", "focus_queries", "started_at", "params",
         "paper_ids_file", "parse_batch_size", "arxiv_categories", "arxiv_date_from",
-        "arxiv_date_to", "ordering", "stranded_policy",
+        "arxiv_date_to", "ordering", "stranded_policy", "mode",
     }
     assert set(body["telemetry"].keys()) == {
         "stage", "papers_per_hour", "gpu_util_pct", "vram_mib", "power_w", "wall_clock_s", "eta_s",
@@ -411,6 +411,74 @@ def test_control_start_forwards_og45_og46_editable_params(running_server):
             "arxiv_date_to": "2020-01-01", "ordering": "relevance",
         },
     )]
+
+
+# --- T-DOC78: POST /api/control {"action": "download"} -----------------------------------------
+
+
+def test_control_download_dispatches_start_with_mode_and_prefetch_target(running_server):
+    url, fake_controller = running_server
+    status, body = _post(url, "/api/control", {"action": "download"})
+    assert status == 200
+    assert body["ok"] is True
+    call = fake_controller.calls[-1]
+    assert call[0] == "start"
+    _, target, parse_workers, kwargs = call
+    assert target == server_mod._STATIC_CONFIG.prefetch_target
+    assert parse_workers == 1
+    assert kwargs["mode"] == "download"
+
+
+def test_control_download_forwards_keywords_and_arxiv_filters(running_server):
+    url, fake_controller = running_server
+    body = {
+        "action": "download",
+        "keywords": ["double machine learning"],
+        "arxiv_categories": ["stat.ME"],
+        "arxiv_date_from": "2024-01-01",
+    }
+    status, _ = _post(url, "/api/control", body)
+    assert status == 200
+    _, _, _, kwargs = fake_controller.calls[-1]
+    assert kwargs["keywords"] == ["double machine learning"]
+    assert kwargs["arxiv_categories"] == ["stat.ME"]
+    assert kwargs["arxiv_date_from"] == "2024-01-01"
+    # Full-run-only fields must never reach a download-only start, even if present in the body.
+    assert "ordering" not in kwargs
+    assert "stranded_policy" not in kwargs
+    assert "parse_batch_size" not in kwargs
+    assert "batch_size" not in kwargs
+    assert "telemetry_poll_interval" not in kwargs
+
+
+def test_control_download_rejects_a_quote_injection_keyword(running_server):
+    url, _ = running_server
+    status, body = _post(url, "/api/control", {"action": "download", "keywords": ['bad"keyword']})
+    assert status == 400
+    assert body["ok"] is False
+
+
+def test_control_download_rejects_an_invalid_arxiv_category(running_server):
+    url, _ = running_server
+    status, body = _post(
+        url, "/api/control", {"action": "download", "arxiv_categories": ["not a category!"]}
+    )
+    assert status == 400
+
+
+def test_control_download_rejects_a_malformed_arxiv_date(running_server):
+    url, _ = running_server
+    status, body = _post(
+        url, "/api/control", {"action": "download", "arxiv_date_from": "not-a-date"}
+    )
+    assert status == 400
+
+
+def test_status_route_shape_includes_run_mode(running_server):
+    url, _ = running_server
+    status, body = _get(url, "/api/status")
+    assert status == 200
+    assert "mode" in body["run"]
 
 
 def test_control_start_omits_unset_og45_og46_params(running_server):
