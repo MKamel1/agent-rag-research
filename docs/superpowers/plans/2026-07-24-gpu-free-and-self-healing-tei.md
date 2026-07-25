@@ -982,6 +982,576 @@ git commit -m "T-DOC78: dashboard Free GPU / Load for MCP buttons + live TEI sta
 
 ---
 
+---
+
+### Task 7: Final-review fixes — CI allowlist, Pass-1 OOM guard, `_LIVE_STATUSES`
+
+*Added after the final whole-branch review. The review found: (1) a Critical CI failure — the
+mechanical vendor-isolation check (`ci/checks/vendor_isolation.py`, the same one that broke PR #170
+on an unrelated "MinerU" docstring) flags 16 new `httpx`-token occurrences this plan introduced in
+`app/tei_lifecycle.py`/`app/test_tei_lifecycle.py`/`app/assembly.py` (files not in that rule's
+`allowed_paths`) plus one false-positive in a `status.py` comment; (2) an Important safety gap —
+`ensure_ready` (Task 2/3) can now reload TEI's ~9.4GB mid-Pass-1, when the documented safety margin
+against MinerU's peak VRAM is only ~1GB (the exact condition a prior real CUDA OOM happened under,
+ARCHITECTURE.md/CONVENTIONS.md §6) — owner decision: add a real guard, not just documentation;
+(3) a related latency concern — the query path's `ensure_ready` inherits a 60s health-poll timeout
+sized for a phase transition, meaning a query with TEI genuinely unreachable blocks up to a full
+minute; (4) a Minor — `free_gpu`'s liveness guard checks `status == "running"` but the live-status
+set is `_LIVE_STATUSES = ("running", "pausing", "stopping")`, so a full run that's mid-escalation
+(SIGTERM sent, not yet confirmed dead) isn't guarded.*
+
+**Files:**
+- Modify: `ci/checks/vendor_isolation.py` (the `httpx` `VendorRule`'s `allowed_paths`)
+- Modify: `app/dashboard/status.py` (one comment, no code change)
+- Modify: `app/tei_lifecycle.py` (new `pass1_is_active`; `ensure_tei_running`/`start_tei_containers`
+  gain optional params)
+- Modify: `app/ingest.py` (new `.pass1.lock`, held for Pass 1's exact duration)
+- Modify: `app/assembly.py` (`build_mcp_server`'s hook wiring)
+- Modify: `app/dashboard/controller.py` (`free_gpu`'s guard condition)
+- Test: `app/test_tei_lifecycle.py`, `app/test_ingest.py`, `app/test_assembly.py`,
+  `app/dashboard/test_controller.py`
+
+**Interfaces:**
+- Consumes: everything from Tasks 1-6 (this task modifies several of their signatures).
+- Produces: `tei_lifecycle.pass1_is_active(lock_path: Path) -> bool`;
+  `ensure_tei_running(client=None, *, lock_path: Path | None = None, poll_timeout_s: float | None =
+  None) -> None`; `start_tei_containers(client=None, *, poll_timeout_s: float | None = None) ->
+  None`; `app.ingest._pass1_lock_path(cfg: Config) -> Path`.
+
+- [ ] **Step 1: Fix the CI vendor-isolation allowlist**
+
+In `ci/checks/vendor_isolation.py`, find the `httpx` `VendorRule` (search for `"httpx"`) and add
+three paths to its `allowed_paths` tuple:
+
+```python
+    VendorRule(
+        "httpx",
+        re.compile(r"httpx", re.I),
+        (
+            "rag/harvester.py",
+            "rag/test_harvester_arxiv_source.py",
+            "rag/embedder.py",
+            "rag/test_embedder.py",
+            "rag/summarizer.py",
+            "rag/test_summarizer.py",
+            "rag/parser.py",
+            "rag/reranker.py",
+            "rag/test_reranker.py",
+            "app/test_prefetch_pdfs.py",
+            "rag/contextual_header.py",
+            "rag/test_contextual_header.py",
+            "app/reembed_experiment.py",
+            "app/tei_lifecycle.py",
+            "app/test_tei_lifecycle.py",
+            "app/assembly.py",
+        ),
+    ),
+```
+
+(Only the three new entries at the end are added — every existing path stays exactly as-is, same
+order.) Add one line to the comment block directly above `VENDOR_RULES` (search for "T-DOC41
+(Contextual Retrieval spike)" to find the end of the existing httpx-rule comment) explaining the
+addition:
+
+```python
+    # T-DOC78: app/tei_lifecycle.py talks to the TEI containers' health endpoints over the same
+    # httpx client; app/test_tei_lifecycle.py exercises it offline via httpx.MockTransport, same
+    # pattern as every other adapter test above. app/assembly.py is this rule's composition root
+    # (already allowlisted implicitly by not being scanned before -- now explicit since its
+    # TeiEmbedder/TeiReranker construction lines were reformatted by an unrelated diff and now
+    # register as "added" lines containing "httpx").
+```
+
+In `app/dashboard/status.py`, find the comment at the `_TEI_EMBED_HEALTH_URL`/`_TEI_RERANK_HEALTH_URL`
+constants (search for `"deliberately stdlib urllib rather than httpx"`) and reword it to avoid the
+literal substring "httpx" (this file doesn't use it at all — the mechanical check has no way to
+know a comment is explaining an ABSENCE, not a usage):
+
+```python
+# T-DOC78: same host/port app/tei_lifecycle.py already uses for its own health poll -- duplicated
+# rather than imported (this module's own "own your own copies" convention, e.g. _PREFETCH_PID_NAME
+# above), and deliberately stdlib urllib, not a third-party HTTP client library, matching this
+# module's existing vendor-neutral live-probe style (_query_vector_store_point_count above).
+```
+
+Run `python -m ci.run_enforcement` (or, if that needs a specific diff-range env var locally, check
+`ci/run_enforcement.py`'s own `__main__` for how to invoke it against the working tree — e.g.
+`GITHUB_EVENT_NAME=push python -m ci.run_enforcement` matches what a prior session used
+successfully for this exact check) and confirm it now reports zero violations for check (a) on this
+branch's diff. If you genuinely cannot get it to run locally in a way that matches CI's diff range,
+fall back to a case-insensitive grep for "httpx" across every file this whole plan touched (`git
+diff --name-only $(git merge-base main HEAD) HEAD`) and confirm every hit is in an allowlisted path.
+
+- [ ] **Step 2: `app/tei_lifecycle.py` — `pass1_is_active` + threaded `poll_timeout_s`**
+
+Add near the top of `app/tei_lifecycle.py`, after the existing imports:
+
+```python
+from pathlib import Path
+
+import filelock
+```
+
+Add `pass1_is_active` after `ensure_tei_running` (before `_is_healthy`):
+
+```python
+def pass1_is_active(lock_path: Path) -> bool:
+    """Non-blocking check: True iff `app.ingest` currently holds the Pass-1 lock at `lock_path`
+    (`app.ingest._pass1_lock_path`) -- i.e. MinerU is actively parsing right now. A zero-timeout
+    acquire attempt: succeeds (and is immediately released) when Pass 1 is NOT running, times out
+    when it is. Best-effort like every other function in this module: a missing lock FILE (no
+    ingest has ever run yet) is treated as "not active" -- the lock can still be acquired -- never
+    an error."""
+    lock = filelock.FileLock(str(lock_path))
+    try:
+        lock.acquire(timeout=0)
+    except filelock.Timeout:
+        return True
+    lock.release()
+    return False
+```
+
+Modify `ensure_tei_running`'s signature and body:
+
+```python
+def ensure_tei_running(
+    client: httpx.Client | None = None, *,
+    lock_path: Path | None = None, poll_timeout_s: float | None = None,
+) -> None:
+    """Best-effort, never raises (same contract as `stop_tei_containers`/`start_tei_containers`).
+    If both containers are ALREADY healthy, this is two fast `GET /health` calls and nothing else
+    -- no `docker` command. Otherwise falls through to `start_tei_containers` (docker start + the
+    same bounded health poll that function already does).
+
+    `client` is injectable for tests, same as `start_tei_containers`. When `None`, builds one
+    short-lived `httpx.Client` and reuses it for both the health check here and (if needed) the
+    poll inside `start_tei_containers`, rather than constructing two.
+
+    T-DOC78: `lock_path` (default `None` -- existing callers unaffected), when given, is checked
+    FIRST via `pass1_is_active` -- if Pass 1 is actively running, this returns immediately WITHOUT
+    reloading TEI, even if unhealthy: reloading ~9.4GB mid-Pass-1 risks the exact CUDA OOM TEI
+    eviction exists to prevent (ARCHITECTURE.md/CONVENTIONS.md Sec 6 -- Pass 1's real safety margin
+    against MinerU's peak is ~1GB). The caller's subsequent real HTTP call fails exactly as
+    documented ("a live MCP query during Pass 1 fails outright, not delayed") instead of silently
+    reintroducing the OOM risk.
+
+    `poll_timeout_s` (default `None` -- falls back to `start_tei_containers`'s own
+    `_TEI_START_POLL_TIMEOUT_SECONDS`): overrides the health-poll deadline forwarded to
+    `start_tei_containers` on the fallthrough path -- the query path uses a much shorter one (see
+    `app/assembly.py::build_mcp_server`) so a query with TEI genuinely unreachable fails in seconds,
+    not up to a full minute; phase-transition callers (Pass 2's own explicit `start_tei_containers()`
+    call) keep the original, more patient default by never passing this."""
+    if lock_path is not None and pass1_is_active(lock_path):
+        return
+
+    if client is None:
+        client = httpx.Client(timeout=5.0)
+
+    urls = (_TEI_EMBED_HEALTH_URL, _TEI_RERANK_HEALTH_URL)
+    if all(_is_healthy(client, url) for url in urls):
+        return
+
+    start_tei_containers(client=client, poll_timeout_s=poll_timeout_s)
+```
+
+Modify `start_tei_containers`'s signature and its poll loop (everything else in the function is
+unchanged):
+
+```python
+def start_tei_containers(
+    client: httpx.Client | None = None, *, poll_timeout_s: float | None = None,
+) -> None:
+    """... (keep the existing docstring, add this paragraph at the end) ...
+
+    `poll_timeout_s` (default `None`): overrides `_TEI_START_POLL_TIMEOUT_SECONDS` for this call
+    only (T-DOC78) -- lets `ensure_tei_running`'s query-path caller use a shorter deadline than the
+    phase-transition default, without changing that default for every other caller."""
+    try:
+        subprocess.run(["docker", "start", *_TEI_CONTAINERS], check=True)
+    except (subprocess.CalledProcessError, FileNotFoundError) as error:
+        logger.warning(
+            "could not start TEI containers %s -- best-effort, not blocking the caller's phase "
+            "transition: %s",
+            _TEI_CONTAINERS,
+            error,
+        )
+
+    if client is None:
+        client = httpx.Client(timeout=5.0)
+
+    timeout_s = poll_timeout_s if poll_timeout_s is not None else _TEI_START_POLL_TIMEOUT_SECONDS
+    urls = (_TEI_EMBED_HEALTH_URL, _TEI_RERANK_HEALTH_URL)
+    deadline = time.monotonic() + timeout_s
+    while time.monotonic() < deadline:
+        if all(_is_healthy(client, url) for url in urls):
+            return
+        time.sleep(_TEI_START_POLL_INTERVAL_SECONDS)
+
+    logger.warning(
+        "could not confirm TEI containers %s were healthy within %.1fs -- proceeding anyway "
+        "(best-effort; caller's phase transition is not blocked)",
+        _TEI_CONTAINERS,
+        timeout_s,
+    )
+```
+
+(This changes two lines inside the existing poll loop: `deadline = time.monotonic() +
+_TEI_START_POLL_TIMEOUT_SECONDS` becomes `... + timeout_s`, and the final warning's `%.1fs` arg
+`_TEI_START_POLL_TIMEOUT_SECONDS` becomes `timeout_s` — every existing test that doesn't pass
+`poll_timeout_s` still exercises the exact same `_TEI_START_POLL_TIMEOUT_SECONDS`-driven behavior,
+since `timeout_s` resolves to that same module constant when `poll_timeout_s` is `None`.)
+
+Add tests to `app/test_tei_lifecycle.py`:
+
+```python
+# ---------------------------------------------------------------------------
+# pass1_is_active() / T-DOC78 Pass-1 guard
+# ---------------------------------------------------------------------------
+
+
+def test_pass1_is_active_false_when_lock_is_free(tmp_path):
+    from app.tei_lifecycle import pass1_is_active
+
+    assert pass1_is_active(tmp_path / ".pass1.lock") is False
+
+
+def test_pass1_is_active_true_when_lock_is_held(tmp_path):
+    from app.tei_lifecycle import pass1_is_active
+
+    lock_path = tmp_path / ".pass1.lock"
+    holder = filelock.FileLock(str(lock_path))
+    holder.acquire()
+    try:
+        assert pass1_is_active(lock_path) is True
+    finally:
+        holder.release()
+
+
+def test_pass1_is_active_releases_its_own_probe_lock(tmp_path):
+    """A probe that finds the lock free must not itself leave it held -- two consecutive checks
+    must both see it as free."""
+    from app.tei_lifecycle import pass1_is_active
+
+    lock_path = tmp_path / ".pass1.lock"
+    assert pass1_is_active(lock_path) is False
+    assert pass1_is_active(lock_path) is False  # would be True if the first check leaked the lock
+
+
+def test_ensure_tei_running_skips_reload_when_pass1_is_active(monkeypatch, tmp_path):
+    """The whole point of the guard: even with TEI unhealthy, must NOT call docker start while
+    Pass 1 holds the lock -- reloading ~9.4GB mid-Pass-1 risks the OOM eviction exists to prevent."""
+    docker_calls = []
+    monkeypatch.setattr(
+        subprocess, "run", lambda args, **kwargs: docker_calls.append((args, kwargs))
+    )
+
+    lock_path = tmp_path / ".pass1.lock"
+    holder = filelock.FileLock(str(lock_path))
+    holder.acquire()
+    try:
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(503)  # unhealthy -- would normally trigger a reload
+
+        client = httpx.Client(transport=httpx.MockTransport(handler))
+
+        from app.tei_lifecycle import ensure_tei_running
+
+        ensure_tei_running(client=client, lock_path=lock_path)
+
+        assert docker_calls == [], "must never reload TEI while Pass 1 is active, even if unhealthy"
+    finally:
+        holder.release()
+
+
+def test_ensure_tei_running_reloads_normally_once_pass1_is_no_longer_active(monkeypatch, tmp_path):
+    """Sanity check: the guard is specific to an ACTIVELY held lock, not to lock_path merely being
+    set -- once Pass 1 finishes (lock released), reload behaves exactly as it did before this
+    guard existed."""
+    docker_calls = []
+    monkeypatch.setattr(
+        subprocess, "run", lambda args, **kwargs: docker_calls.append((args, kwargs))
+    )
+    lock_path = tmp_path / ".pass1.lock"  # never acquired -- Pass 1 is not active
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200)
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+
+    from app.tei_lifecycle import ensure_tei_running
+
+    ensure_tei_running(client=client, lock_path=lock_path)
+
+    assert docker_calls == [], "already-healthy must still skip docker start regardless of lock_path"
+
+
+def test_start_tei_containers_poll_timeout_s_overrides_the_module_default(monkeypatch):
+    """A caller-supplied poll_timeout_s must actually change the deadline, not just be ignored."""
+    monkeypatch.setattr(subprocess, "run", lambda args, **kwargs: None)
+    monkeypatch.setattr(_mod, "_TEI_START_POLL_INTERVAL_SECONDS", 0.01)
+    # Module default left large/unmonkeypatched -- if poll_timeout_s were ignored, this test would
+    # hang for the module default's full duration instead of the short override below.
+    monkeypatch.setattr(_mod, "_TEI_START_POLL_TIMEOUT_SECONDS", 30.0)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(503)  # never healthy -- forces the loop to run until ITS OWN timeout
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+
+    start_tei_containers(client=client, poll_timeout_s=0.05)  # must return quickly, not after 30s
+```
+
+You will need `import subprocess` and `import filelock` already present or added at the top of
+`app/test_tei_lifecycle.py` (check what's already imported — `subprocess`/`httpx`/`pytest` are;
+`filelock` likely needs adding).
+
+- [ ] **Step 3: `app/ingest.py` — hold `.pass1.lock` for Pass 1's exact duration**
+
+Add near the other lock-name constant (search for `_INGEST_LOCK_NAME`):
+
+```python
+# T-DOC78: marks "Pass 1 (MinerU) is actively running" for the query path's self-healing hook
+# (app/assembly.py::build_mcp_server's ensure_ready, via app/tei_lifecycle.py's pass1_is_active) to
+# check before reloading TEI mid-Pass-1 -- see ensure_tei_running's own docstring for the OOM risk
+# this exists to prevent. A DIFFERENT lock than _INGEST_LOCK_NAME: that one guards against two
+# concurrent app.ingest runs; this one just marks "Pass 1 specifically is in flight right now,"
+# checked from a completely different process (a live MCP query, possibly app.serve.py).
+_PASS1_LOCK_NAME = ".pass1.lock"
+```
+
+Add a helper near `_ingest_lock_path` (same resolution convention — absolute against `db_path`'s
+own directory, not cwd):
+
+```python
+def _pass1_lock_path(cfg: Config) -> Path:
+    return Path(cfg.db_path).resolve().parent / _PASS1_LOCK_NAME
+```
+
+In `__main__`, find the block:
+
+```python
+            run.stage_start("parse")
+            _run_parse_phase_subprocesses(args.parse_workers, cwd=subprocess_cwd)
+            run.stage_end("parse")
+```
+
+Replace it with (same indentation level, still inside the existing outer `try` this block already
+sits in):
+
+```python
+            _pass1_lock = filelock.FileLock(str(_pass1_lock_path(cfg)))
+            _pass1_lock.acquire()
+            try:
+                run.stage_start("parse")
+                _run_parse_phase_subprocesses(args.parse_workers, cwd=subprocess_cwd)
+                run.stage_end("parse")
+            finally:
+                _pass1_lock.release()
+```
+
+(The lock is scoped to ONLY this block — acquired right before `stage_start("parse")`, released in
+a `finally` right after `stage_end("parse")` or on any exception `_run_parse_phase_subprocesses`
+raises, so it's never held during Pass 2 or during any preflight/setup work. `filelock` is already
+imported in this file.)
+
+Add a test to `app/test_ingest.py`. First find how existing tests in that file drive
+`_run_parse_phase_subprocesses`/the `__main__` flow (search for existing tests that monkeypatch
+`subprocess.run` or call into the module's `__main__`-adjacent functions) and match that pattern.
+If `__main__` itself isn't easily testable in isolation in this file's existing style, instead add
+a focused unit test directly on the new pieces:
+
+```python
+def test_pass1_lock_path_resolves_absolute_against_db_path_directory(tmp_path):
+    from app.ingest import _pass1_lock_path
+    from contracts.config import Config
+
+    cfg = Config(
+        focus_area_queries=["x"], db_path=str(tmp_path / "sub" / "papers.db"),
+        gpu_lock_path=str(tmp_path / ".gpu.lock"),
+    )
+
+    result = _pass1_lock_path(cfg)
+
+    assert result == (tmp_path / "sub").resolve() / ".pass1.lock"
+```
+
+(This proves the path-resolution helper is correct in isolation; the acquire/release-around-Pass-1
+wiring itself is exercised end-to-end by Task 7's own `test_ensure_tei_running_skips_reload_when_pass1_is_active`
+test in `app/test_tei_lifecycle.py`, which directly proves the CONSUMER side of the contract — a
+held lock at this path blocks reload — without needing a real Pass-1 subprocess in this test.)
+
+- [ ] **Step 4: `app/assembly.py` — wire the guard into the query path**
+
+Find `build_mcp_server` (the function Task 3 already modified) and change the embedder/reranker
+construction to route through a local closure instead of the bare `tei_lifecycle.ensure_tei_running`
+reference (same pattern `build_ingestion_orchestrator`'s own `_before_parse_phase` already uses — a
+local function closing over this call's own config):
+
+```python
+def build_mcp_server(
+    config: Config, *, db_path: str | None = None, blob_dir: str | None = None,
+    collection: str = "papers",
+) -> McpServer:
+    gpu_lock = FileGpuLock(Path(config.gpu_lock_path))  # same path as the ingest root -> same file
+    db_path, blob_dir = _resolve_store_paths(config, db_path, blob_dir)
+
+    # T-DOC78: the query path's readiness hook must refuse to reload TEI while Pass 1 is actively
+    # running (app/tei_lifecycle.py's ensure_tei_running docstring explains the OOM risk) and
+    # should fail fast rather than block up to a minute -- both need config-derived state
+    # (db_path, for the same Pass-1 lock app/ingest.py writes) this composition root has and
+    # tei_lifecycle.py itself does not, so this is a local closure, same pattern
+    # build_ingestion_orchestrator's own _before_parse_phase hook already uses.
+    _pass1_lock_path = Path(config.db_path).resolve().parent / ".pass1.lock"
+    _QUERY_PATH_TEI_POLL_TIMEOUT_S = 15.0
+
+    def _ensure_query_tei_ready() -> None:
+        tei_lifecycle.ensure_tei_running(
+            lock_path=_pass1_lock_path, poll_timeout_s=_QUERY_PATH_TEI_POLL_TIMEOUT_S,
+        )
+
+    embedder = TeiEmbedder(
+        httpx.Client(base_url=_TEI_EMBED_URL, timeout=60.0), gpu_lock, _EMBEDDER_INFO,
+        ensure_ready=_ensure_query_tei_ready,
+    )
+    document_store = DocumentStore(db_path, blob_dir)
+    vector_index = VectorIndex(
+        _QDRANT_HOST, _QDRANT_PORT, collection, _EMBEDDER_INFO.dim, config.hybrid_dense_weight
+    )
+    reranker = TeiReranker(
+        httpx.Client(base_url=_TEI_RERANK_URL, timeout=60.0), gpu_lock,
+        ensure_ready=_ensure_query_tei_ready,
+    )
+    rerank_pool_size = min(config.rerank_depth, _RERANKER_MAX_BATCH_SIZE)
+    retriever = Retriever(embedder, vector_index, document_store, reranker, rerank_pool_size)
+
+    return McpServer(retriever, document_store, default_k=config.top_k)
+```
+
+(Everything else in the function — the `rerank_pool_size` comment block, `DocumentStore`/
+`VectorIndex` construction, the final `Retriever`/`McpServer` lines — is unchanged; only the
+embedder/reranker construction and the new closure above them change.)
+
+Update the EXISTING test `test_build_mcp_server_wires_ensure_ready_into_embedder_and_reranker` in
+`app/test_assembly.py` — its current `==` bound-method comparison (`embedder._ensure_ready ==
+fake_tei_lifecycle.ensure_tei_running`) no longer holds, since `_ensure_ready` is now a fresh local
+closure, not `tei_lifecycle.ensure_tei_running` itself. Replace the test body with a behavior-based
+check, and extend `_FakeTeiLifecycle` (in the same file, search for `class _FakeTeiLifecycle`) to
+accept and record the new kwargs:
+
+```python
+class _FakeTeiLifecycle:
+    def __init__(self):
+        self.stop_calls = 0
+        self.start_calls = 0
+        self.ensure_calls = 0
+        self.ensure_kwargs = None
+
+    def stop_tei_containers(self) -> None:
+        self.stop_calls += 1
+
+    def start_tei_containers(self) -> None:
+        self.start_calls += 1
+
+    def ensure_tei_running(self, **kwargs) -> None:
+        self.ensure_calls += 1
+        self.ensure_kwargs = kwargs
+```
+
+```python
+def test_build_mcp_server_wires_ensure_ready_into_embedder_and_reranker(monkeypatch, tmp_path):
+    """T-DOC78: the query-path composition (unlike build_ingestion_orchestrator) wires a readiness
+    hook that calls tei_lifecycle.ensure_tei_running with this run's own Pass-1 lock path and a
+    short query-path poll timeout, so a query right after TEI gets evicted (Free GPU, or Pass 1)
+    self-heals instead of erroring -- and refuses to do so while Pass 1 is actually active."""
+    fake_tei_lifecycle = _FakeTeiLifecycle()
+    monkeypatch.setattr("app.assembly.tei_lifecycle", fake_tei_lifecycle)
+    monkeypatch.setattr("app.assembly.VectorIndex", lambda *a, **k: object())
+
+    db_path = str(tmp_path / "papers.db")
+    cfg = Config(
+        focus_area_queries=["causal inference"], gpu_lock_path=str(tmp_path / ".gpu.lock"),
+        db_path=db_path,
+    )
+    server = build_mcp_server(cfg, db_path=db_path, blob_dir=str(tmp_path / "blobs"), collection="papers")
+
+    embedder = server._retriever._embedder
+    reranker = server._retriever._reranker
+
+    embedder._ensure_ready()
+    reranker._ensure_ready()
+
+    assert fake_tei_lifecycle.ensure_calls == 2
+    assert fake_tei_lifecycle.ensure_kwargs == {
+        "lock_path": Path(db_path).resolve().parent / ".pass1.lock",
+        "poll_timeout_s": 15.0,
+    }
+```
+
+(`db_path` must be passed to BOTH `Config(...)` and `build_mcp_server(...)` as the same value here
+-- the closure derives the lock path from `config.db_path`, so the test's expected path must be
+derived the same way, not from `tmp_path / "papers.db"` typed out separately, which could silently
+diverge from what `Config`'s own default/validation does to the value.)
+
+- [ ] **Step 5: `app/dashboard/controller.py` — `free_gpu`'s guard uses `_LIVE_STATUSES`**
+
+Find `free_gpu` (added by Task 4) and change one condition:
+
+```python
+        if (
+            manifest is not None
+            and manifest.get("status") in _LIVE_STATUSES
+            and manifest.get("mode", "full") == "full"
+        ):
+```
+
+(Was `manifest.get("status") == "running"` — now matches the same `_LIVE_STATUSES = ("running",
+"pausing", "stopping")` tuple already defined earlier in this file and already used by
+`_start_locked`'s own double-run guard, so a full run that's mid-SIGTERM-escalation, not yet
+confirmed dead, is guarded too.) Update the docstring's second sentence to say "actively running or
+mid-pause/stop" instead of just "running".
+
+Add a test to `app/dashboard/test_controller.py` near the existing `free_gpu` tests:
+
+```python
+def test_free_gpu_refused_while_a_full_run_is_pausing_not_yet_confirmed_dead(tmp_path, monkeypatch):
+    """SIGTERM sent (status: "pausing") but the process hasn't confirmed dead yet -- still
+    potentially mid-Pass-2 embed/rerank, same risk as "running"."""
+    manifest = controller_mod.start(tmp_path, target=100, spawn=_fake_spawn)
+    try:
+        manifest["status"] = "pausing"
+        (tmp_path / "run_manifest.json").write_text(json.dumps(manifest))
+        monkeypatch.setattr(controller_mod, "_wait_for_death", lambda pid, timeout_s=None: False)
+        calls = []
+        with pytest.raises(DoubleRunError):
+            controller_mod.free_gpu(tmp_path, stop_tei=lambda: calls.append("stopped"))
+        assert calls == []
+    finally:
+        _cleanup(manifest)
+```
+
+(This mirrors the existing `test_resume_refuses_while_pausing_has_not_yet_confirmed_dead` test's
+pattern in the same file — reuse that exact style: manually set `status` to `"pausing"` in the
+manifest, monkeypatch `_wait_for_death` to keep `reconcile()` from self-healing it away, since the
+process really is a `sleep 100` that's still alive and unsignaled in this test.)
+
+- [ ] **Step 6: Run every affected test suite**
+
+Run: `python -m ci.run_enforcement` (or the env-var form from Step 1) — expect zero violations.
+Run: `pytest app/test_tei_lifecycle.py app/test_ingest.py app/test_assembly.py -v` — expect all pass.
+Run: `pytest app/dashboard/test_controller.py -v` — expect all pass.
+Run (conda env activated): `pytest app/dashboard/ -v` and `pytest rag/ -v` — expect all pass (confirm
+nothing in Tasks 1-6's already-shipped code broke from this task's signature changes).
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add ci/checks/vendor_isolation.py app/dashboard/status.py app/tei_lifecycle.py app/test_tei_lifecycle.py app/ingest.py app/test_ingest.py app/assembly.py app/test_assembly.py app/dashboard/controller.py app/dashboard/test_controller.py
+git commit -m "T-DOC78: fix CI vendor-isolation allowlist; guard TEI self-heal against Pass-1 OOM risk"
+```
+
+---
+
 ## Self-Review Notes
 
 - **Spec coverage:** Task 1 = Piece 1 (`ensure_tei_running`); Task 2+3 = Piece 2 (self-healing hook,
