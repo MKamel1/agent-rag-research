@@ -120,9 +120,9 @@ _PREFETCH_PID_NAME = "prefetch.pid"
 
 def _spawn_download(data_dir: Path, target: int, parse_workers: int, events_path: Path,
                      log_path: Path) -> int:
-    """T-DOC78: launches `app.prefetch_pdfs` directly -- no MinerU/GPU, no pass1/pass2 -- instead
-    of `app.build_corpus`. Matches `SpawnFn`'s shape so `_call_spawn`/`resume` need no changes;
-    `target`/`parse_workers`/`events_path` don't apply to a bare downloader and are ignored
+    """T-DOC78: launches `app.prefetch_pdfs` directly -- no GPU-bound parser, no pass1/pass2 --
+    instead of `app.build_corpus`. Matches `SpawnFn`'s shape so `_call_spawn`/`resume` need no
+    changes; `target`/`parse_workers`/`events_path` don't apply to a bare downloader and are ignored
     (`app.prefetch_pdfs` reads its own stopping point from `config.prefetch_target`, unaffected by
     this run's `target`). `log_path` is expected to already be `<run_cwd>/prefetch.log` --
     `_start_locked` computes that when `mode == "download"` -- so
