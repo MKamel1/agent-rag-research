@@ -233,6 +233,7 @@ def _status_dict(data_dir: Path, status_module, controller_module) -> dict:
             **_search_display(),
             "hybrid_dense_weight": _STATIC_CONFIG.hybrid_dense_weight,
         },
+        "tei": status_module.read_tei_status(),
     }
 
 
@@ -482,6 +483,10 @@ def make_handler(
                 controller_module.resume(data_dir)
             elif action == "stop":
                 controller_module.stop(data_dir)
+            elif action == "free_gpu":
+                controller_module.free_gpu(data_dir)
+            elif action == "load_for_mcp":
+                controller_module.load_for_mcp(data_dir)
             else:
                 raise KeyError(f"unknown action {action!r}")
 
