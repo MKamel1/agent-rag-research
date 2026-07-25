@@ -765,6 +765,13 @@ class _FakeTeiLifecycle:
         self.ensure_calls += 1
         self.ensure_kwargs = kwargs
 
+    def pass1_lock_path(self, db_path: str) -> Path:
+        # T-DOC78 (fix round 3): pure path derivation, same shape as the real
+        # app.tei_lifecycle.pass1_lock_path -- build_mcp_server calls this at composition time
+        # (not just a spy target like the other methods above), so the fake needs a real
+        # implementation, not just a call counter.
+        return Path(db_path).resolve().parent / ".pass1.lock"
+
 
 class FakeSummarizer:
     """Named without a leading underscore (unlike this file's other test-local fakes) so

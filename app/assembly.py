@@ -598,7 +598,7 @@ def build_mcp_server(
     # (db_path, for the same Pass-1 lock app/ingest.py writes) this composition root has and
     # tei_lifecycle.py itself does not, so this is a local closure, same pattern
     # build_ingestion_orchestrator's own _before_parse_phase hook already uses.
-    _pass1_lock_path = Path(db_path).resolve().parent / ".pass1.lock"
+    _pass1_lock_path = tei_lifecycle.pass1_lock_path(db_path)
     _QUERY_PATH_TEI_POLL_TIMEOUT_S = 15.0
 
     def _ensure_query_tei_ready() -> None:

@@ -586,21 +586,10 @@ def test_ingest_lock_path_differs_for_different_db_paths():
     assert ingest_mod._ingest_lock_path(cfg_a) != ingest_mod._ingest_lock_path(cfg_b)
 
 
-# --- T-DOC78: Pass-1 lock path (query path's self-healing hook checks this via pass1_is_active) --
-
-
-def test_pass1_lock_path_resolves_absolute_against_db_path_directory(tmp_path):
-    from app.ingest import _pass1_lock_path
-    from contracts.config import Config
-
-    cfg = Config(
-        focus_area_queries=["x"], db_path=str(tmp_path / "sub" / "papers.db"),
-        gpu_lock_path=str(tmp_path / ".gpu.lock"),
-    )
-
-    result = _pass1_lock_path(cfg)
-
-    assert result == (tmp_path / "sub").resolve() / ".pass1.lock"
+# T-DOC78 (fix round 3): the Pass-1 lock path is no longer computed by a function local to this
+# module -- app/ingest.py now calls the single shared `tei_lifecycle.pass1_lock_path(cfg.db_path)`
+# helper (also used by app/assembly.py and app/dashboard/controller.py), tested directly in
+# app/test_tei_lifecycle.py. See that module's `test_pass1_lock_path_resolves_absolute_against_db_path_directory`.
 
 
 # --- OG-49#3: --parse-workers < 1 rejected before the lock is even considered --------------------

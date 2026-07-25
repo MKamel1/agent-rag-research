@@ -100,14 +100,6 @@ from rag.config import load_config
 # cwd happens to be -- see that function's docstring for why.
 _INGEST_LOCK_NAME = ".ingest.lock"
 
-# T-DOC78: marks "Pass 1 (the parse phase) is actively running" for the query path's self-healing hook
-# (app/assembly.py::build_mcp_server's ensure_ready, via app/tei_lifecycle.py's pass1_is_active) to
-# check before reloading TEI mid-Pass-1 -- see ensure_tei_running's own docstring for the OOM risk
-# this exists to prevent. A DIFFERENT lock than _INGEST_LOCK_NAME: that one guards against two
-# concurrent app.ingest runs; this one just marks "Pass 1 specifically is in flight right now,"
-# checked from a completely different process (a live MCP query, possibly app.serve.py).
-_PASS1_LOCK_NAME = ".pass1.lock"
-
 # Config fields that hold a filesystem path -- resolved to absolute before being written into a
 # scratch config.yaml for the Pass-1 subprocess (see _write_override_config_dir). Curated, not
 # derived: every path-valued field contracts/config.py currently declares.
@@ -243,10 +235,6 @@ def _ingest_lock_path(cfg: Config) -> Path:
     unique `db_path` every time) still gets its own lock, correctly, since it never shares a corpus
     with anything else."""
     return Path(cfg.db_path).resolve().parent / _INGEST_LOCK_NAME
-
-
-def _pass1_lock_path(cfg: Config) -> Path:
-    return Path(cfg.db_path).resolve().parent / _PASS1_LOCK_NAME
 
 
 def _validate_parse_workers(parse_workers: int) -> None:
@@ -495,7 +483,7 @@ if __name__ == "__main__":
             # propagating env vars across process boundaries. The `--limit`/`--scratch` path above is
             # the one deliberate exception (`subprocess_cwd`), and only when one of those flags is
             # actually set.
-            _pass1_lock = filelock.FileLock(str(_pass1_lock_path(cfg)))
+            _pass1_lock = filelock.FileLock(str(tei_lifecycle.pass1_lock_path(cfg.db_path)))
             _pass1_lock.acquire()
             try:
                 run.stage_start("parse")

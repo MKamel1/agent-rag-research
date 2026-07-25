@@ -13,6 +13,7 @@ import threading
 import time
 from pathlib import Path
 
+import filelock
 import pytest
 
 import app.dashboard.controller as controller_mod
@@ -1573,6 +1574,34 @@ def test_load_for_mcp_always_allowed_even_while_a_full_run_is_running(tmp_path):
 
 
 def test_load_for_mcp_with_no_run_at_all(tmp_path):
+    calls = []
+    result = controller_mod.load_for_mcp(tmp_path, start_tei=lambda: calls.append("started"))
+    assert calls == ["started"]
+    assert result == {"tei_started": True}
+
+
+def test_load_for_mcp_refused_while_pass1_is_actively_running(tmp_path):
+    """T-DOC78 (fix round 3): load_for_mcp had NO guard at all against the same OOM risk free_gpu
+    already guards against, via a different entry point -- clicking "Load for MCP" during Pass 1
+    (e.g. because the dashboard's own "TEI embed: down" indicator, which is exactly what an
+    operator sees during Pass 1, invites the click) must not reload TEI's ~9.4GB against the parse
+    phase's ~1GB safety margin."""
+    lock_path = controller_mod.tei_lifecycle.pass1_lock_path(str(tmp_path / "papers.db"))
+    holder = filelock.FileLock(str(lock_path))
+    holder.acquire()
+    try:
+        calls = []
+        with pytest.raises(DoubleRunError):
+            controller_mod.load_for_mcp(tmp_path, start_tei=lambda: calls.append("started"))
+        assert calls == [], "must refuse BEFORE calling start_tei, not race it"
+    finally:
+        holder.release()
+
+
+def test_load_for_mcp_allowed_when_pass1_is_not_active(tmp_path):
+    """Sanity check: the guard is specific to an ACTIVELY held Pass-1 lock, not to a lock file
+    merely existing at that path -- with no Pass 1 in flight (the common case), load_for_mcp
+    behaves exactly as it did before this guard existed."""
     calls = []
     result = controller_mod.load_for_mcp(tmp_path, start_tei=lambda: calls.append("started"))
     assert calls == ["started"]
