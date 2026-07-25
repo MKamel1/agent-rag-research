@@ -9,6 +9,7 @@ timeout tests run fast without a fake clock.
 import logging
 import subprocess
 
+import filelock
 import httpx
 import pytest
 
@@ -247,3 +248,101 @@ def test_ensure_tei_running_default_client_is_none_and_still_works(monkeypatch):
     from app.tei_lifecycle import ensure_tei_running
 
     ensure_tei_running()  # must not raise -- health checks fail, docker start fails, but still returns
+
+
+# ---------------------------------------------------------------------------
+# pass1_is_active() / T-DOC78 Pass-1 guard
+# ---------------------------------------------------------------------------
+
+
+def test_pass1_is_active_false_when_lock_is_free(tmp_path):
+    from app.tei_lifecycle import pass1_is_active
+
+    assert pass1_is_active(tmp_path / ".pass1.lock") is False
+
+
+def test_pass1_is_active_true_when_lock_is_held(tmp_path):
+    from app.tei_lifecycle import pass1_is_active
+
+    lock_path = tmp_path / ".pass1.lock"
+    holder = filelock.FileLock(str(lock_path))
+    holder.acquire()
+    try:
+        assert pass1_is_active(lock_path) is True
+    finally:
+        holder.release()
+
+
+def test_pass1_is_active_releases_its_own_probe_lock(tmp_path):
+    """A probe that finds the lock free must not itself leave it held -- two consecutive checks
+    must both see it as free."""
+    from app.tei_lifecycle import pass1_is_active
+
+    lock_path = tmp_path / ".pass1.lock"
+    assert pass1_is_active(lock_path) is False
+    assert pass1_is_active(lock_path) is False  # would be True if the first check leaked the lock
+
+
+def test_ensure_tei_running_skips_reload_when_pass1_is_active(monkeypatch, tmp_path):
+    """The whole point of the guard: even with TEI unhealthy, must NOT call docker start while
+    Pass 1 holds the lock -- reloading ~9.4GB mid-Pass-1 risks the OOM eviction exists to prevent."""
+    docker_calls = []
+    monkeypatch.setattr(
+        subprocess, "run", lambda args, **kwargs: docker_calls.append((args, kwargs))
+    )
+
+    lock_path = tmp_path / ".pass1.lock"
+    holder = filelock.FileLock(str(lock_path))
+    holder.acquire()
+    try:
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(503)  # unhealthy -- would normally trigger a reload
+
+        client = httpx.Client(transport=httpx.MockTransport(handler))
+
+        from app.tei_lifecycle import ensure_tei_running
+
+        ensure_tei_running(client=client, lock_path=lock_path)
+
+        assert docker_calls == [], "must never reload TEI while Pass 1 is active, even if unhealthy"
+    finally:
+        holder.release()
+
+
+def test_ensure_tei_running_reloads_normally_once_pass1_is_no_longer_active(monkeypatch, tmp_path):
+    """Sanity check: the guard is specific to an ACTIVELY held lock, not to lock_path merely being
+    set -- once Pass 1 finishes (lock released), reload behaves exactly as it did before this
+    guard existed."""
+    docker_calls = []
+    monkeypatch.setattr(
+        subprocess, "run", lambda args, **kwargs: docker_calls.append((args, kwargs))
+    )
+    lock_path = tmp_path / ".pass1.lock"  # never acquired -- Pass 1 is not active
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200)
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+
+    from app.tei_lifecycle import ensure_tei_running
+
+    ensure_tei_running(client=client, lock_path=lock_path)
+
+    assert docker_calls == [], "already-healthy must still skip docker start regardless of lock_path"
+
+
+def test_start_tei_containers_poll_timeout_s_overrides_the_module_default(monkeypatch):
+    """A caller-supplied poll_timeout_s must actually change the deadline, not just be ignored."""
+    monkeypatch.setattr(subprocess, "run", lambda args, **kwargs: None)
+    monkeypatch.setattr(_mod, "_TEI_START_POLL_INTERVAL_SECONDS", 0.01)
+    # Module default left large/unmonkeypatched -- if poll_timeout_s were ignored, this test would
+    # hang for the module default's full duration instead of the short override below.
+    monkeypatch.setattr(_mod, "_TEI_START_POLL_TIMEOUT_SECONDS", 30.0)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(503)  # never healthy -- forces the loop to run until ITS OWN timeout
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+
+    start_tei_containers(client=client, poll_timeout_s=0.05)  # must return quickly, not after 30s

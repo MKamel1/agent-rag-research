@@ -1038,16 +1038,16 @@ def free_gpu(
 ) -> dict:
     """T-DOC78: stops the TEI containers (embedder+reranker, ~9.4GB) on demand -- independent of
     pause/resume/stop, which deliberately leave TEI running (CONVENTIONS.md §6: live MCP search
-    stays available except during Pass 1). Refuses while a FULL-mode run is actively `running` --
-    freeing TEI out from under an in-flight Pass-2 embed/rerank call would fail real papers'
-    retries and wrongly quarantine them. Safe anytime nothing is live, a run is paused/stopped, or
-    a download-only run is live/paused (that mode never touches TEI at all)."""
+    stays available except during Pass 1). Refuses while a FULL-mode run is actively running or
+    mid-pause/stop -- freeing TEI out from under an in-flight Pass-2 embed/rerank call would fail
+    real papers' retries and wrongly quarantine them. Safe anytime nothing is live, a run is
+    paused/stopped, or a download-only run is live/paused (that mode never touches TEI at all)."""
     data_dir = Path(data_dir)
     with _control_lock(data_dir):
         manifest = reconcile(data_dir)
         if (
             manifest is not None
-            and manifest.get("status") == "running"
+            and manifest.get("status") in _LIVE_STATUSES
             and manifest.get("mode", "full") == "full"
         ):
             raise DoubleRunError(

@@ -1512,6 +1512,22 @@ def test_free_gpu_refused_while_a_full_run_is_running(tmp_path):
         _cleanup(manifest)
 
 
+def test_free_gpu_refused_while_a_full_run_is_pausing_not_yet_confirmed_dead(tmp_path, monkeypatch):
+    """SIGTERM sent (status: "pausing") but the process hasn't confirmed dead yet -- still
+    potentially mid-Pass-2 embed/rerank, same risk as "running"."""
+    manifest = controller_mod.start(tmp_path, target=100, spawn=_fake_spawn)
+    try:
+        manifest["status"] = "pausing"
+        (tmp_path / "run_manifest.json").write_text(json.dumps(manifest))
+        monkeypatch.setattr(controller_mod, "_wait_for_death", lambda pid, timeout_s=None: False)
+        calls = []
+        with pytest.raises(DoubleRunError):
+            controller_mod.free_gpu(tmp_path, stop_tei=lambda: calls.append("stopped"))
+        assert calls == []
+    finally:
+        _cleanup(manifest)
+
+
 def test_free_gpu_allowed_while_a_full_run_is_paused(tmp_path):
     manifest = controller_mod.start(tmp_path, target=100, spawn=_fake_spawn)
     try:

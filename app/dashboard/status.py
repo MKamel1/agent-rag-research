@@ -528,8 +528,8 @@ def _query_vector_store_point_count(collection: str) -> int | None:
 
 # T-DOC78: same host/port app/tei_lifecycle.py already uses for its own health poll -- duplicated
 # rather than imported (this module's own "own your own copies" convention, e.g. _PREFETCH_PID_NAME
-# above), and deliberately stdlib urllib rather than httpx, matching this module's existing
-# vendor-neutral live-probe style (_query_vector_store_point_count above).
+# above), and deliberately stdlib urllib, not a third-party HTTP client library, matching this
+# module's existing vendor-neutral live-probe style (_query_vector_store_point_count above).
 _TEI_EMBED_HEALTH_URL = "http://localhost:8080/health"
 _TEI_RERANK_HEALTH_URL = "http://localhost:8082/health"
 
