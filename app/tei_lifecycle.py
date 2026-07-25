@@ -121,11 +121,18 @@ def pass1_is_active(lock_path: Path) -> bool:
     acquire attempt: succeeds (and is immediately released) when Pass 1 is NOT running, times out
     when it is. Best-effort like every other function in this module: a missing lock FILE (no
     ingest has ever run yet) is treated as "not active" -- the lock can still be acquired -- never
-    an error."""
+    an error.
+
+    T-DOC78: this sits directly in a live query's call path (via `ensure_tei_running`), so an
+    unhandled exception here would crash a real search, not just fail best-effort like the rest of
+    this module. `OSError` (e.g. `PermissionError` on an unwritable/unreadable lock directory) is
+    caught alongside `filelock.Timeout` -- but unlike every other "can't tell, so proceed anyway"
+    case in this module, this is a SAFETY guard: when the probe itself can't be trusted, fail SAFE
+    (assume Pass 1 might be active, refuse to reload) rather than fail open."""
     lock = filelock.FileLock(str(lock_path))
     try:
         lock.acquire(timeout=0)
-    except filelock.Timeout:
+    except (filelock.Timeout, OSError):
         return True
     lock.release()
     return False

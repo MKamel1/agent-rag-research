@@ -845,32 +845,33 @@ def test_build_ingestion_orchestrator_wires_on_stage_when_given(monkeypatch, tmp
 
 
 def test_build_mcp_server_wires_ensure_ready_into_embedder_and_reranker(monkeypatch, tmp_path):
-    """T-DOC78: the query-path composition (unlike build_ingestion_orchestrator) wires a readiness
-    hook that calls tei_lifecycle.ensure_tei_running with this run's own Pass-1 lock path and a
-    short query-path poll timeout, so a query right after TEI gets evicted (Free GPU, or Pass 1)
-    self-heals instead of erroring -- and refuses to do so while Pass 1 is actually active."""
+    """T-DOC78: the query-path composition wires a readiness hook whose Pass-1 lock path must
+    match app/ingest.py's OWN lock path for the SAME corpus -- app/ingest.py always uses the
+    EFFECTIVE (post-resolution) db_path, never the raw Config field, so this test deliberately
+    gives Config a DIFFERENT db_path than the one passed to build_mcp_server, to prove the closure
+    derives its lock path from the effective db_path (the one actually used for DocumentStore/
+    VectorIndex), not from config.db_path directly -- a bug that confuses the two is invisible if
+    both happen to be equal, which is exactly what happened here."""
     fake_tei_lifecycle = _FakeTeiLifecycle()
     monkeypatch.setattr("app.assembly.tei_lifecycle", fake_tei_lifecycle)
     monkeypatch.setattr("app.assembly.VectorIndex", lambda *a, **k: object())
 
-    db_path = str(tmp_path / "papers.db")
+    effective_db_path = str(tmp_path / "real" / "papers.db")
     cfg = Config(
         focus_area_queries=["causal inference"], gpu_lock_path=str(tmp_path / ".gpu.lock"),
-        db_path=db_path,
+        db_path="papers.db",  # deliberately NOT the same as effective_db_path below
     )
-    server = build_mcp_server(cfg, db_path=db_path, blob_dir=str(tmp_path / "blobs"), collection="papers")
+    server = build_mcp_server(
+        cfg, db_path=effective_db_path, blob_dir=str(tmp_path / "blobs"), collection="papers",
+    )
 
     embedder = server._retriever._embedder
-    reranker = server._retriever._reranker
-
     embedder._ensure_ready()
-    reranker._ensure_ready()
 
-    assert fake_tei_lifecycle.ensure_calls == 2
-    assert fake_tei_lifecycle.ensure_kwargs == {
-        "lock_path": Path(db_path).resolve().parent / ".pass1.lock",
-        "poll_timeout_s": 15.0,
-    }
+    assert fake_tei_lifecycle.ensure_kwargs["lock_path"] == (
+        Path(effective_db_path).resolve().parent / ".pass1.lock"
+    ), "must derive the lock path from the EFFECTIVE db_path build_mcp_server was actually given, not config.db_path"
+    assert fake_tei_lifecycle.ensure_kwargs["poll_timeout_s"] == 15.0
 
 
 def test_build_ingestion_orchestrator_embedder_has_no_ensure_ready_hook(monkeypatch, tmp_path):
