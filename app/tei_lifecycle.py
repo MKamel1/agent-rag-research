@@ -107,6 +107,25 @@ def start_tei_containers(client: httpx.Client | None = None) -> None:
     )
 
 
+def ensure_tei_running(client: httpx.Client | None = None) -> None:
+    """Best-effort, never raises (same contract as `stop_tei_containers`/`start_tei_containers`).
+    If both containers are ALREADY healthy, this is two fast `GET /health` calls and nothing else
+    -- no `docker` command. Otherwise falls through to `start_tei_containers` (docker start + the
+    same bounded health poll that function already does).
+
+    `client` is injectable for tests, same as `start_tei_containers`. When `None`, builds one
+    short-lived `httpx.Client` and reuses it for both the health check here and (if needed) the
+    poll inside `start_tei_containers`, rather than constructing two."""
+    if client is None:
+        client = httpx.Client(timeout=5.0)
+
+    urls = (_TEI_EMBED_HEALTH_URL, _TEI_RERANK_HEALTH_URL)
+    if all(_is_healthy(client, url) for url in urls):
+        return
+
+    start_tei_containers(client=client)
+
+
 def _is_healthy(client: httpx.Client, url: str) -> bool:
     try:
         return client.get(url).is_success

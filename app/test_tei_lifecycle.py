@@ -163,3 +163,87 @@ def test_start_tei_containers_swallows_a_connection_error_as_unhealthy(monkeypat
     start_tei_containers(client=client)  # must not raise
 
     assert attempts["n"] >= 4
+
+
+# ---------------------------------------------------------------------------
+# ensure_tei_running()
+# ---------------------------------------------------------------------------
+
+
+def test_ensure_tei_running_is_a_pure_health_check_when_already_healthy(monkeypatch):
+    """The common case: both containers already up -- must NOT call `docker start` at all, just
+    the two health GETs."""
+    docker_calls = []
+    monkeypatch.setattr(
+        subprocess, "run", lambda args, **kwargs: docker_calls.append((args, kwargs))
+    )
+
+    from app.tei_lifecycle import ensure_tei_running
+
+    ensure_tei_running(client=_healthy_client())
+
+    assert docker_calls == [], "already-healthy must never shell out to docker"
+
+
+def test_ensure_tei_running_falls_through_to_start_when_not_healthy(monkeypatch):
+    """Either endpoint unhealthy -- must fall through to the real start_tei_containers() behavior
+    (docker start + poll), proven by the same docker-call assertion start_tei_containers()'s own
+    tests already use."""
+    docker_calls = []
+    monkeypatch.setattr(
+        subprocess, "run", lambda args, **kwargs: docker_calls.append((args, kwargs))
+    )
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(503)  # initially unhealthy -- proves the fallthrough path
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+
+    from app.tei_lifecycle import ensure_tei_running
+
+    ensure_tei_running(client=client)
+
+    assert len(docker_calls) == 1
+    args, kwargs = docker_calls[0]
+    assert args == ["docker", "start", *_TEI_CONTAINERS]
+
+
+def test_ensure_tei_running_checks_both_endpoints_not_just_the_first(monkeypatch):
+    """One endpoint healthy, the other not -- must still fall through to start (both must be
+    healthy to skip it), not short-circuit on the first check alone."""
+    docker_calls = []
+    monkeypatch.setattr(
+        subprocess, "run", lambda args, **kwargs: docker_calls.append((args, kwargs))
+    )
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        # Embedder (8080) healthy, reranker (8082) not -- both must be checked.
+        return httpx.Response(200 if "8080" in str(request.url) else 503)
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+
+    from app.tei_lifecycle import ensure_tei_running
+
+    ensure_tei_running(client=client)
+
+    assert len(docker_calls) == 1, "must fall through to start when EITHER endpoint is unhealthy"
+
+
+def test_ensure_tei_running_default_client_is_none_and_still_works(monkeypatch):
+    """No client injected -- must build its own (matching start_tei_containers()'s own default
+    behavior) rather than raising on a missing argument."""
+    monkeypatch.setattr(subprocess, "run", lambda args, **kwargs: None)
+    monkeypatch.setattr(_mod, "_TEI_START_POLL_INTERVAL_SECONDS", 0.01)
+    monkeypatch.setattr(_mod, "_TEI_START_POLL_TIMEOUT_SECONDS", 0.05)
+
+    # Mock httpx.Client to avoid real network calls; returns unhealthy to test fallthrough behavior
+    original_client = httpx.Client
+
+    def mock_client(*args, **kwargs):
+        return original_client(transport=httpx.MockTransport(lambda request: httpx.Response(503)))
+
+    monkeypatch.setattr(httpx, "Client", mock_client)
+
+    from app.tei_lifecycle import ensure_tei_running
+
+    ensure_tei_running()  # must not raise -- health checks fail, docker start fails, but still returns
