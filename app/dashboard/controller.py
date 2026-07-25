@@ -73,6 +73,7 @@ import filelock
 import yaml
 from pydantic import ValidationError
 
+from app import tei_lifecycle
 from contracts.config import Config
 from rag.config import load_config
 
@@ -1030,3 +1031,43 @@ def retarget(data_dir: str | Path, target: int, parse_workers: int = 3, *,
             arxiv_date_to=arxiv_date_to, ordering=ordering, stranded_policy=stranded_policy,
             spawn=spawn,
         )
+
+
+def free_gpu(
+    data_dir: str | Path, *, stop_tei=tei_lifecycle.stop_tei_containers,
+) -> dict:
+    """T-DOC78: stops the TEI containers (embedder+reranker, ~9.4GB) on demand -- independent of
+    pause/resume/stop, which deliberately leave TEI running (CONVENTIONS.md §6: live MCP search
+    stays available except during Pass 1). Refuses while a FULL-mode run is actively `running` --
+    freeing TEI out from under an in-flight Pass-2 embed/rerank call would fail real papers'
+    retries and wrongly quarantine them. Safe anytime nothing is live, a run is paused/stopped, or
+    a download-only run is live/paused (that mode never touches TEI at all)."""
+    data_dir = Path(data_dir)
+    with _control_lock(data_dir):
+        manifest = reconcile(data_dir)
+        if (
+            manifest is not None
+            and manifest.get("status") == "running"
+            and manifest.get("mode", "full") == "full"
+        ):
+            raise DoubleRunError(
+                f"run {manifest['run_id']!r} is a full run actively running -- pause or stop it "
+                "before freeing the GPU (freeing TEI mid-Pass-2 would fail in-flight embed/rerank "
+                "calls and wrongly quarantine real papers)"
+            )
+        stop_tei()
+        return {"tei_stopped": True}
+
+
+def load_for_mcp(
+    data_dir: str | Path, *, start_tei=tei_lifecycle.start_tei_containers,
+) -> dict:
+    """T-DOC78: starts the TEI containers back up and waits for them to report healthy -- the
+    explicit counterpart to `free_gpu`, for restoring live MCP search immediately instead of
+    waiting for the next query to pay the reload cost inline (the query path also self-heals on
+    its own via `ensure_ready`, `rag/embedder.py`/`rag/reranker.py` -- this is just the eager
+    version). Always safe: starting an already-started container is a no-op."""
+    data_dir = Path(data_dir)
+    with _control_lock(data_dir):
+        start_tei()
+        return {"tei_started": True}

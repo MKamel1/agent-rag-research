@@ -1496,3 +1496,68 @@ def test_concurrent_starts_are_serialized_exactly_one_run(tmp_path):
         assert manifest["pid"] == results[0]["pid"]
     finally:
         _cleanup(controller_mod._read_manifest(tmp_path))
+
+
+# --- T-DOC78: free_gpu() / load_for_mcp() -- explicit, on-demand TEI eviction/reload -----------
+
+
+def test_free_gpu_refused_while_a_full_run_is_running(tmp_path):
+    manifest = controller_mod.start(tmp_path, target=100, spawn=_fake_spawn)
+    try:
+        calls = []
+        with pytest.raises(DoubleRunError):
+            controller_mod.free_gpu(tmp_path, stop_tei=lambda: calls.append("stopped"))
+        assert calls == [], "must refuse BEFORE calling stop_tei, not race it"
+    finally:
+        _cleanup(manifest)
+
+
+def test_free_gpu_allowed_while_a_full_run_is_paused(tmp_path):
+    manifest = controller_mod.start(tmp_path, target=100, spawn=_fake_spawn)
+    try:
+        controller_mod.pause(tmp_path)
+        calls = []
+        result = controller_mod.free_gpu(tmp_path, stop_tei=lambda: calls.append("stopped"))
+        assert calls == ["stopped"]
+        assert result == {"tei_stopped": True}
+    finally:
+        _cleanup(controller_mod._read_manifest(tmp_path))
+
+
+def test_free_gpu_allowed_while_a_download_only_run_is_running(tmp_path):
+    """Download-only mode never touches TEI -- freeing the GPU while it's live is always safe."""
+    manifest = controller_mod.start(
+        tmp_path, target=30000, parse_workers=1, mode="download", spawn=_fake_spawn,
+    )
+    try:
+        calls = []
+        result = controller_mod.free_gpu(tmp_path, stop_tei=lambda: calls.append("stopped"))
+        assert calls == ["stopped"]
+        assert result == {"tei_stopped": True}
+    finally:
+        _cleanup(manifest)
+
+
+def test_free_gpu_allowed_with_no_run_at_all(tmp_path):
+    calls = []
+    result = controller_mod.free_gpu(tmp_path, stop_tei=lambda: calls.append("stopped"))
+    assert calls == ["stopped"]
+    assert result == {"tei_stopped": True}
+
+
+def test_load_for_mcp_always_allowed_even_while_a_full_run_is_running(tmp_path):
+    manifest = controller_mod.start(tmp_path, target=100, spawn=_fake_spawn)
+    try:
+        calls = []
+        result = controller_mod.load_for_mcp(tmp_path, start_tei=lambda: calls.append("started"))
+        assert calls == ["started"]
+        assert result == {"tei_started": True}
+    finally:
+        _cleanup(manifest)
+
+
+def test_load_for_mcp_with_no_run_at_all(tmp_path):
+    calls = []
+    result = controller_mod.load_for_mcp(tmp_path, start_tei=lambda: calls.append("started"))
+    assert calls == ["started"]
+    assert result == {"tei_started": True}
