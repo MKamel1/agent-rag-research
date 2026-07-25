@@ -273,6 +273,22 @@ def test_pass1_is_active_true_when_lock_is_held(tmp_path):
         holder.release()
 
 
+def test_pass1_is_active_fails_safe_on_an_unreadable_lock_probe(monkeypatch, tmp_path):
+    """T-DOC78 hardening: this sits directly in a live query's call path, so an unhandled
+    exception here (e.g. PermissionError on an unwritable lock directory) would crash a real
+    search -- must be caught, not propagate. And because this is a SAFETY guard (not a liveness
+    convenience like the rest of this module), "couldn't tell" must fail SAFE: assume Pass 1 might
+    be active (True), not silently allow a reload."""
+    from app.tei_lifecycle import pass1_is_active
+
+    def raise_permission_error(self, timeout=None):
+        raise PermissionError("lock directory is not writable")
+
+    monkeypatch.setattr(filelock.FileLock, "acquire", raise_permission_error)
+
+    assert pass1_is_active(tmp_path / ".pass1.lock") is True
+
+
 def test_pass1_is_active_releases_its_own_probe_lock(tmp_path):
     """A probe that finds the lock free must not itself leave it held -- two consecutive checks
     must both see it as free."""
@@ -312,8 +328,11 @@ def test_ensure_tei_running_skips_reload_when_pass1_is_active(monkeypatch, tmp_p
 
 def test_ensure_tei_running_reloads_normally_once_pass1_is_no_longer_active(monkeypatch, tmp_path):
     """Sanity check: the guard is specific to an ACTIVELY held lock, not to lock_path merely being
-    set -- once Pass 1 finishes (lock released), reload behaves exactly as it did before this
-    guard existed."""
+    set -- once Pass 1 finishes (lock released), an UNHEALTHY TEI still falls through to a real
+    reload, same as with no lock_path at all. Unhealthy (503), not the already-healthy
+    short-circuit: a healthy mock would pass even if the guard were broken (e.g. `if lock_path is
+    not None` instead of `pass1_is_active(lock_path)`, permanently disabling reload), since the
+    already-healthy return happens before the guard result is ever used for anything."""
     docker_calls = []
     monkeypatch.setattr(
         subprocess, "run", lambda args, **kwargs: docker_calls.append((args, kwargs))
@@ -321,7 +340,7 @@ def test_ensure_tei_running_reloads_normally_once_pass1_is_no_longer_active(monk
     lock_path = tmp_path / ".pass1.lock"  # never acquired -- Pass 1 is not active
 
     def handler(request: httpx.Request) -> httpx.Response:
-        return httpx.Response(200)
+        return httpx.Response(503)  # unhealthy -- forces the fallthrough-to-reload path
 
     client = httpx.Client(transport=httpx.MockTransport(handler))
 
@@ -329,7 +348,9 @@ def test_ensure_tei_running_reloads_normally_once_pass1_is_no_longer_active(monk
 
     ensure_tei_running(client=client, lock_path=lock_path)
 
-    assert docker_calls == [], "already-healthy must still skip docker start regardless of lock_path"
+    assert len(docker_calls) == 1, "unhealthy TEI must reload once Pass 1 is no longer active"
+    args, kwargs = docker_calls[0]
+    assert args == ["docker", "start", *_TEI_CONTAINERS]
 
 
 def test_start_tei_containers_poll_timeout_s_overrides_the_module_default(monkeypatch):
