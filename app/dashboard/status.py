@@ -522,3 +522,35 @@ def _query_vector_store_point_count(collection: str) -> int | None:
         return int(body["result"]["points_count"])
     except (urllib.error.URLError, OSError, ValueError, KeyError, TypeError):
         return None
+
+
+# --- TEI live health probe ------------------------------------------------------------------
+
+# T-DOC78: same host/port app/tei_lifecycle.py already uses for its own health poll -- duplicated
+# rather than imported (this module's own "own your own copies" convention, e.g. _PREFETCH_PID_NAME
+# above), and deliberately stdlib urllib rather than httpx, matching this module's existing
+# vendor-neutral live-probe style (_query_vector_store_point_count above).
+_TEI_EMBED_HEALTH_URL = "http://localhost:8080/health"
+_TEI_RERANK_HEALTH_URL = "http://localhost:8082/health"
+
+
+def read_tei_status() -> dict:
+    """Live health probe for both TEI containers -- `{"embed_healthy": bool, "rerank_healthy":
+    bool}`. Each endpoint checked independently (one can be up while the other isn't). Best-effort:
+    a connection failure/timeout means `False` (not healthy), never raises."""
+    return {
+        "embed_healthy": _probe_tei_health(_TEI_EMBED_HEALTH_URL),
+        "rerank_healthy": _probe_tei_health(_TEI_RERANK_HEALTH_URL),
+    }
+
+
+def _probe_tei_health(url: str) -> bool:
+    # A non-2xx response makes urlopen() itself raise urllib.error.HTTPError (a URLError
+    # subclass) rather than returning -- so simply not raising already means "healthy", no
+    # `.status` check needed (same pattern _query_vector_store_point_count above relies on
+    # implicitly by only ever reading the body on the non-raising path).
+    try:
+        with urllib.request.urlopen(url, timeout=3.0):
+            return True
+    except (urllib.error.URLError, OSError):
+        return False

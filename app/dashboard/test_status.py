@@ -630,3 +630,45 @@ def test_read_disk_reports_usage(tmp_path):
 def test_read_disk_degrades_to_nulls_when_path_missing():
     result = status_mod.read_disk("/no/such/path/at/all")
     assert result == {"free_gb": None, "total_gb": None, "used_pct": None}
+
+
+# --- T-DOC78: read_tei_status() -- live TEI health probe (mirrors read_consistency's vector-store
+# point-count probe: a live HTTP call, best-effort, never raises) -------------------------------
+
+
+def test_read_tei_status_reports_healthy_when_both_endpoints_respond_ok(monkeypatch):
+    def fake_urlopen(url, timeout=None):
+        import io
+        return io.BytesIO(b"")  # health endpoints return an empty 200 body, not JSON
+
+    monkeypatch.setattr(status_mod.urllib.request, "urlopen", fake_urlopen)
+
+    result = status_mod.read_tei_status()
+
+    assert result == {"embed_healthy": True, "rerank_healthy": True}
+
+
+def test_read_tei_status_reports_unhealthy_on_connection_error(monkeypatch):
+    def fake_urlopen(url, timeout=None):
+        raise status_mod.urllib.error.URLError("connection refused")
+
+    monkeypatch.setattr(status_mod.urllib.request, "urlopen", fake_urlopen)
+
+    result = status_mod.read_tei_status()
+
+    assert result == {"embed_healthy": False, "rerank_healthy": False}
+
+
+def test_read_tei_status_checks_each_endpoint_independently(monkeypatch):
+    """One up, one down -- must report each independently, not collapse to a single verdict."""
+    def fake_urlopen(url, timeout=None):
+        import io
+        if "8080" in url:
+            return io.BytesIO(b"")
+        raise status_mod.urllib.error.URLError("connection refused")
+
+    monkeypatch.setattr(status_mod.urllib.request, "urlopen", fake_urlopen)
+
+    result = status_mod.read_tei_status()
+
+    assert result == {"embed_healthy": True, "rerank_healthy": False}

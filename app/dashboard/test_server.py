@@ -64,6 +64,9 @@ class _FakeStatus:
     def read_disk(self, data_dir):
         return {"free_gb": 500.0, "total_gb": 1000.0, "used_pct": 50.0}
 
+    def read_tei_status(self):
+        return {"embed_healthy": True, "rerank_healthy": True}
+
 
 class _FakeController:
     def __init__(self):
@@ -93,6 +96,12 @@ class _FakeController:
 
     def stop(self, data_dir):
         raise NoRunError("no running run to stop")
+
+    def free_gpu(self, data_dir):
+        self.calls.append(("free_gpu",))
+
+    def load_for_mcp(self, data_dir):
+        self.calls.append(("load_for_mcp",))
 
     DoubleRunError = DoubleRunError
     NoRunError = NoRunError
@@ -221,7 +230,7 @@ def test_status_route_shape_matches_api_contract(running_server):
     assert status == 200
     assert set(body.keys()) == {
         "funnel", "run", "telemetry", "downloads", "downloader", "disk", "consistency",
-        "quarantine_reasons", "search",
+        "quarantine_reasons", "search", "tei",
     }
     assert set(body["funnel"].keys()) == {
         "harvested", "parsed", "chunked", "summarized", "embedded", "stored", "done", "quarantined",
@@ -295,6 +304,40 @@ def test_control_pause_dispatches_and_returns_ok(running_server):
     assert status == 200
     assert body == {"ok": True, "message": "pause ok"}
     assert fake_controller.calls == [("pause",)]
+
+
+def test_control_free_gpu_dispatches(running_server):
+    url, fake_controller = running_server
+    status, body = _post(url, "/api/control", {"action": "free_gpu"})
+    assert status == 200
+    assert body["ok"] is True
+    assert fake_controller.calls[-1] == ("free_gpu",)
+
+
+def test_control_load_for_mcp_dispatches(running_server):
+    url, fake_controller = running_server
+    status, body = _post(url, "/api/control", {"action": "load_for_mcp"})
+    assert status == 200
+    assert fake_controller.calls[-1] == ("load_for_mcp",)
+
+
+def test_control_free_gpu_refused_while_running_returns_409(running_server):
+    url, fake_controller = running_server
+
+    def raise_double_run(data_dir):
+        raise DoubleRunError("a full run is actively running")
+
+    fake_controller.free_gpu = raise_double_run
+    status, body = _post(url, "/api/control", {"action": "free_gpu"})
+    assert status == 409
+    assert body["ok"] is False
+
+
+def test_status_route_includes_tei_block(running_server):
+    url, _ = running_server
+    status, body = _get(url, "/api/status")
+    assert status == 200
+    assert body["tei"] == {"embed_healthy": True, "rerank_healthy": True}
 
 
 def test_control_start_forwards_target_and_parse_workers(running_server):
