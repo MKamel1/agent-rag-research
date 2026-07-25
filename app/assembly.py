@@ -592,12 +592,18 @@ def build_mcp_server(
     gpu_lock = FileGpuLock(Path(config.gpu_lock_path))  # same path as the ingest root -> same file
     db_path, blob_dir = _resolve_store_paths(config, db_path, blob_dir)
 
-    embedder = TeiEmbedder(httpx.Client(base_url=_TEI_EMBED_URL, timeout=60.0), gpu_lock, _EMBEDDER_INFO)
+    embedder = TeiEmbedder(
+        httpx.Client(base_url=_TEI_EMBED_URL, timeout=60.0), gpu_lock, _EMBEDDER_INFO,
+        ensure_ready=tei_lifecycle.ensure_tei_running,
+    )
     document_store = DocumentStore(db_path, blob_dir)
     vector_index = VectorIndex(
         _QDRANT_HOST, _QDRANT_PORT, collection, _EMBEDDER_INFO.dim, config.hybrid_dense_weight
     )
-    reranker = TeiReranker(httpx.Client(base_url=_TEI_RERANK_URL, timeout=60.0), gpu_lock)
+    reranker = TeiReranker(
+        httpx.Client(base_url=_TEI_RERANK_URL, timeout=60.0), gpu_lock,
+        ensure_ready=tei_lifecycle.ensure_tei_running,
+    )
     # 2026-07-18: `Config.rerank_depth`/`Config.top_k` were dead fields (declared, never read) --
     # wired here, the one composition root that knows both the Config lever and the reranker's
     # real vendor batch-size ceiling. `rerank_pool_size` is clamped to `_RERANKER_MAX_BATCH_SIZE`
