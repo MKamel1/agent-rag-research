@@ -126,7 +126,7 @@
       <button id="btnFreeGpu" class="secondary" type="button">Free GPU</button>
       <button id="btnLoadForMcp" class="secondary" type="button">Load for MCP</button>
     </div>
-    <span class="note" style="margin:0;">Free GPU stops the TEI embedder/reranker containers (~9.4GB VRAM) on demand -- independent of Pause/Resume/Stop, which deliberately leave them running for live search. Refused while a full run is actively running. Live search self-heals on its own on the next query either way; Load for MCP just restores it immediately instead of waiting.</span>
+    <span class="note" style="margin:0;">Free GPU stops the TEI embedder/reranker containers (~9.4GB VRAM) on demand -- independent of Pause/Resume/Stop, which deliberately leave them running for live search. Refused while a full run is actively running. Live search self-heals on its own on the next query either way; Load for MCP just restores it immediately instead of waiting -- also refused while Pass 1 (parsing) is actively running, since reloading TEI mid-Pass-1 risks the same GPU-memory conflict Free GPU's own refusal guards against.</span>
   </div>
 
   <div class="panel">

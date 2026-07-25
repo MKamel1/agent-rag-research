@@ -80,10 +80,15 @@ Explicit, on-demand, independent of the run manifest/lifecycle (unlike T-DOC78's
   Safe anytime nothing is live, a run is paused, or a download-only run is live/paused (download
   mode never touches TEI at all, so no guard needed there). Otherwise calls
   `tei_lifecycle.stop_tei_containers()`.
-- `controller.load_for_mcp(data_dir)` — the explicit counterpart, always safe (starting an
-  already-started container is a no-op), calls `tei_lifecycle.start_tei_containers()`. Exists so an
-  operator can restore live search immediately instead of waiting for the next query to pay the
-  reload cost inline via Piece 2's self-healing hook.
+- `controller.load_for_mcp(data_dir)` — the explicit counterpart, calls
+  `tei_lifecycle.start_tei_containers()`. Exists so an operator can restore live search immediately
+  instead of waiting for the next query to pay the reload cost inline via Piece 2's self-healing
+  hook. **Not unconditionally safe** (T-DOC78 fix round 3): refuses (`DoubleRunError`) while Pass 1
+  is actively running (`tei_lifecycle.pass1_is_active`, the same `.pass1.lock` the query path's
+  self-healing hook checks) -- reloading TEI's ~9.4GB mid-Pass-1 risks the exact CUDA OOM eviction
+  exists to prevent, and the dashboard's own live "TEI embed: down" indicator (Piece 3 below) is
+  exactly what an operator sees during Pass 1, directly inviting the click. Safe at every other
+  time -- starting an already-started container is a no-op.
 - Both serialize under the existing `_control_lock` (same "every control op serialized" convention,
   OG-47#1), for consistency with every other control action — even though neither touches the
   manifest.
@@ -119,7 +124,8 @@ Explicit, on-demand, independent of the run manifest/lifecycle (unlike T-DOC78's
   `embed()`/`rerank()` call (not once per sub-batch), never called on the empty-input short-circuit,
   a `None` hook (the default) behaves byte-for-byte like today.
 - `app/dashboard/test_controller.py`: `free_gpu` refused while a full-mode run is `running`, allowed
-  while paused/stopped/absent/download-mode-running; `load_for_mcp` always allowed.
+  while paused/stopped/absent/download-mode-running; `load_for_mcp` refused while Pass 1 is
+  actively running (`.pass1.lock` held), allowed otherwise.
 - `app/dashboard/test_server.py`: `POST /api/control` action wiring, `/api/status`'s new `tei` block
   shape.
 - `app/dashboard/static/index.html`: HTML-substring tests matching this repo's existing convention

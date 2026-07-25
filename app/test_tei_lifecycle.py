@@ -194,6 +194,8 @@ def test_ensure_tei_running_falls_through_to_start_when_not_healthy(monkeypatch)
     monkeypatch.setattr(
         subprocess, "run", lambda args, **kwargs: docker_calls.append((args, kwargs))
     )
+    monkeypatch.setattr(_mod, "_TEI_START_POLL_INTERVAL_SECONDS", 0.01)
+    monkeypatch.setattr(_mod, "_TEI_START_POLL_TIMEOUT_SECONDS", 0.05)
 
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(503)  # initially unhealthy -- proves the fallthrough path
@@ -216,6 +218,8 @@ def test_ensure_tei_running_checks_both_endpoints_not_just_the_first(monkeypatch
     monkeypatch.setattr(
         subprocess, "run", lambda args, **kwargs: docker_calls.append((args, kwargs))
     )
+    monkeypatch.setattr(_mod, "_TEI_START_POLL_INTERVAL_SECONDS", 0.01)
+    monkeypatch.setattr(_mod, "_TEI_START_POLL_TIMEOUT_SECONDS", 0.05)
 
     def handler(request: httpx.Request) -> httpx.Response:
         # Embedder (8080) healthy, reranker (8082) not -- both must be checked.
@@ -248,6 +252,21 @@ def test_ensure_tei_running_default_client_is_none_and_still_works(monkeypatch):
     from app.tei_lifecycle import ensure_tei_running
 
     ensure_tei_running()  # must not raise -- health checks fail, docker start fails, but still returns
+
+
+# ---------------------------------------------------------------------------
+# pass1_lock_path() / T-DOC78 (fix round 3): the ONE shared derivation, used by app/ingest.py,
+# app/assembly.py, and app/dashboard/controller.py -- round 1's Critical bug was exactly two of
+# these independently drifting apart.
+# ---------------------------------------------------------------------------
+
+
+def test_pass1_lock_path_resolves_absolute_against_db_path_directory(tmp_path):
+    from app.tei_lifecycle import pass1_lock_path
+
+    result = pass1_lock_path(str(tmp_path / "sub" / "papers.db"))
+
+    assert result == (tmp_path / "sub").resolve() / ".pass1.lock"
 
 
 # ---------------------------------------------------------------------------

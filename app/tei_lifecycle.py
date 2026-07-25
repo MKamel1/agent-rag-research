@@ -5,9 +5,10 @@ Pass 2 (finish: summarize+embed+store) needs them (ARCHITECTURE.md §3's two-pas
 This is process/container orchestration, not domain logic gated by `rag/`'s vendor-isolation scan
 (CONVENTIONS.md §1) -- it belongs in `app/` alongside `app/ingest.py`/`app/parse_phase.py`, which
 already shell out to run Pass 1 as its own subprocess. Uses stdlib `subprocess` (not the `docker`
-SDK) to talk to the Docker CLI directly, matching that existing precedent -- no new vendor-isolation
-rule is needed either way, since `app/` is outside `ci/checks/vendor_isolation.py`'s scanned scope
-(`rag/`, `contracts/` only).
+SDK) to talk to the Docker CLI directly, matching that existing precedent. `app/` IS in
+`ci/checks/vendor_isolation.py`'s scanned scope (T-DOC29 added it) -- this module has its own
+explicit entry in the `httpx` `VendorRule`'s `allowed_paths` (T-DOC78) for the same reason every
+other real adapter does: it's the one place that talks to `httpx` for this module's own purpose.
 
 Same "issue lifecycle command -> poll a status endpoint until confirmed -> bounded timeout ->
 best-effort continue" shape as `rag/summarizer.py`'s `OllamaSummarizer.unload()`: a failure here
@@ -115,6 +116,24 @@ def start_tei_containers(
     )
 
 
+# T-DOC78 (fix round 3): the round-1 Critical bug was two independent derivations of this same
+# path (app/ingest.py's own _pass1_lock_path, app/assembly.py's hardcoded ".pass1.lock" literal)
+# silently drifting apart. One shared helper, used by every caller (app/ingest.py holds it for
+# Pass 1's duration; app/assembly.py's build_mcp_server and app/dashboard/controller.py's
+# load_for_mcp both check it before reloading TEI) -- both already import this module, so no
+# circular-import risk.
+_PASS1_LOCK_NAME = ".pass1.lock"
+
+
+def pass1_lock_path(db_path: str) -> Path:
+    """The `.pass1.lock` path for a given corpus's db_path -- shared by app/ingest.py (which holds
+    it for Pass 1's exact duration), app/assembly.py's build_mcp_server (the query path's
+    self-healing hook), and app/dashboard/controller.py's load_for_mcp (this same guard). Always
+    derive from the EFFECTIVE db_path (already resolved by the caller), never a raw Config field
+    directly -- see the T-DOC78 round-1 fix history in this repo for why that distinction matters."""
+    return Path(db_path).resolve().parent / _PASS1_LOCK_NAME
+
+
 def pass1_is_active(lock_path: Path) -> bool:
     """Non-blocking check: True iff `app.ingest` currently holds the Pass-1 lock at `lock_path`
     (`app.ingest._pass1_lock_path`) -- i.e. Pass 1's parser is actively running right now. A zero-timeout
@@ -167,7 +186,7 @@ def ensure_tei_running(
     FIRST via `pass1_is_active` -- if Pass 1 is actively running, this returns immediately WITHOUT
     reloading TEI, even if unhealthy: reloading ~9.4GB mid-Pass-1 risks the exact CUDA OOM TEI
     eviction exists to prevent (ARCHITECTURE.md/CONVENTIONS.md Sec 6 -- Pass 1's real safety margin
-    against Pass 1's peak VRAM usage is ~1GB). The caller's subsequent real HTTP call fails exactly as
+    against the parse phase's peak VRAM usage is ~1GB). The caller's subsequent real HTTP call fails exactly as
     documented ("a live MCP query during Pass 1 fails outright, not delayed") instead of silently
     reintroducing the OOM risk.
 

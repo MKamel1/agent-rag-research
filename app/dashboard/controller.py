@@ -1066,8 +1066,22 @@ def load_for_mcp(
     explicit counterpart to `free_gpu`, for restoring live MCP search immediately instead of
     waiting for the next query to pay the reload cost inline (the query path also self-heals on
     its own via `ensure_ready`, `rag/embedder.py`/`rag/reranker.py` -- this is just the eager
-    version). Always safe: starting an already-started container is a no-op."""
+    version).
+
+    T-DOC78 (fix round 3): refuses (`DoubleRunError`) while Pass 1 is actively running
+    (`app.tei_lifecycle`'s `.pass1.lock`, the same signal the query path's self-healing hook
+    checks) -- reloading TEI's ~9.4GB mid-Pass-1 risks the exact CUDA OOM eviction exists to
+    prevent (same reasoning as `free_gpu`'s guard, just checked via the lock instead of the run
+    manifest, since `load_for_mcp` has no run-mode concept to key off). Safe at every other time --
+    starting an already-started container is a no-op."""
     data_dir = Path(data_dir)
     with _control_lock(data_dir):
+        lock_path = tei_lifecycle.pass1_lock_path(str(data_dir / "papers.db"))
+        if tei_lifecycle.pass1_is_active(lock_path):
+            raise DoubleRunError(
+                "Pass 1 (parsing) is actively running -- reloading TEI now risks the exact CUDA "
+                "OOM eviction exists to prevent; wait for Pass 1 to finish or for it to be paused/"
+                "stopped first"
+            )
         start_tei()
         return {"tei_started": True}
