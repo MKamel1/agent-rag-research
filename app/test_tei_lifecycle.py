@@ -273,7 +273,7 @@ def test_pass1_is_active_true_when_lock_is_held(tmp_path):
         holder.release()
 
 
-def test_pass1_is_active_fails_safe_on_an_unreadable_lock_probe(monkeypatch, tmp_path):
+def test_pass1_is_active_fails_safe_on_an_unreadable_lock_probe(monkeypatch, tmp_path, caplog):
     """T-DOC78 hardening: this sits directly in a live query's call path, so an unhandled
     exception here (e.g. PermissionError on an unwritable lock directory) would crash a real
     search -- must be caught, not propagate. And because this is a SAFETY guard (not a liveness
@@ -286,7 +286,14 @@ def test_pass1_is_active_fails_safe_on_an_unreadable_lock_probe(monkeypatch, tmp
 
     monkeypatch.setattr(filelock.FileLock, "acquire", raise_permission_error)
 
-    assert pass1_is_active(tmp_path / ".pass1.lock") is True
+    lock_path = tmp_path / ".pass1.lock"
+    with caplog.at_level(logging.WARNING, logger="app.tei_lifecycle"):
+        assert pass1_is_active(lock_path) is True
+
+    assert any(str(lock_path) in record.message for record in caplog.records), (
+        "an unreadable probe must log a warning, not fail silently -- a permanent condition here "
+        "would otherwise silently disable query-path self-healing forever with zero signal"
+    )
 
 
 def test_pass1_is_active_releases_its_own_probe_lock(tmp_path):
@@ -337,6 +344,8 @@ def test_ensure_tei_running_reloads_normally_once_pass1_is_no_longer_active(monk
     monkeypatch.setattr(
         subprocess, "run", lambda args, **kwargs: docker_calls.append((args, kwargs))
     )
+    monkeypatch.setattr(_mod, "_TEI_START_POLL_INTERVAL_SECONDS", 0.01)
+    monkeypatch.setattr(_mod, "_TEI_START_POLL_TIMEOUT_SECONDS", 0.05)
     lock_path = tmp_path / ".pass1.lock"  # never acquired -- Pass 1 is not active
 
     def handler(request: httpx.Request) -> httpx.Response:
