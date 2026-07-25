@@ -866,8 +866,12 @@ def test_build_mcp_server_wires_ensure_ready_into_embedder_and_reranker(monkeypa
     )
 
     embedder = server._retriever._embedder
-    embedder._ensure_ready()
+    reranker = server._retriever._reranker
 
+    embedder._ensure_ready()
+    reranker._ensure_ready()
+
+    assert fake_tei_lifecycle.ensure_calls == 2
     assert fake_tei_lifecycle.ensure_kwargs["lock_path"] == (
         Path(effective_db_path).resolve().parent / ".pass1.lock"
     ), "must derive the lock path from the EFFECTIVE db_path build_mcp_server was actually given, not config.db_path"

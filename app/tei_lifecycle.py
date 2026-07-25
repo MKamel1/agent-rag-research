@@ -128,11 +128,23 @@ def pass1_is_active(lock_path: Path) -> bool:
     this module. `OSError` (e.g. `PermissionError` on an unwritable/unreadable lock directory) is
     caught alongside `filelock.Timeout` -- but unlike every other "can't tell, so proceed anyway"
     case in this module, this is a SAFETY guard: when the probe itself can't be trusted, fail SAFE
-    (assume Pass 1 might be active, refuse to reload) rather than fail open."""
+    (assume Pass 1 might be active, refuse to reload) rather than fail open. Only the `OSError`
+    branch logs -- `filelock.Timeout` (Pass 1 genuinely, routinely active) is the expected common
+    case on a real query hot path and would spam the log every query during every Pass 1; an
+    `OSError` (a broken/unwritable lock dir) is not routine and would otherwise silently disable
+    query-path self-healing forever with zero operator-visible signal."""
     lock = filelock.FileLock(str(lock_path))
     try:
         lock.acquire(timeout=0)
-    except (filelock.Timeout, OSError):
+    except filelock.Timeout:
+        return True
+    except OSError as error:
+        logger.warning(
+            "could not determine whether Pass 1 is active via lock %s -- conservatively skipping "
+            "TEI self-heal (failing safe) rather than risking a reload mid-Pass-1: %s",
+            lock_path,
+            error,
+        )
         return True
     lock.release()
     return False
