@@ -85,6 +85,11 @@ class TeiEmbedder:
     bounded `gpu_lock_timeout` (ctor param, default `_DEFAULT_GPU_LOCK_TIMEOUT_S`) is threaded into
     every acquire, so waiting for a wedged/crashed holder raises `TransientError` instead of
     blocking forever.
+
+    `ensure_ready` (optional, default `None`): called once per `embed()` call, before any HTTP
+    work, if the caller wants a readiness check/side effect run first — this adapter never
+    interprets what it does or catches anything it raises; a caller that wants best-effort
+    semantics must make its own hook best-effort.
     """
 
     def __init__(
@@ -96,6 +101,7 @@ class TeiEmbedder:
         max_retries: int = 2,
         retry_sleep: RetrySleep | None = None,
         gpu_lock_timeout: float | None = _DEFAULT_GPU_LOCK_TIMEOUT_S,
+        ensure_ready: Callable[[], None] | None = None,
     ):
         self._client = client
         self._gpu_lock = gpu_lock
@@ -103,6 +109,7 @@ class TeiEmbedder:
         self._max_retries = max_retries
         self._retry_sleep = retry_sleep or _default_retry_sleep
         self._gpu_lock_timeout = gpu_lock_timeout
+        self._ensure_ready = ensure_ready
 
     @property
     def info(self) -> EmbedderInfo:
@@ -111,6 +118,9 @@ class TeiEmbedder:
     def embed(self, texts: list[str]) -> list[Vector]:
         if not texts:
             return []
+
+        if self._ensure_ready is not None:
+            self._ensure_ready()
 
         raw_vectors = []
         for start in range(0, len(texts), _MAX_BATCH_SIZE):
