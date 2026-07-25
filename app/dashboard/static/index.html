@@ -120,6 +120,13 @@
     <div class="row"><span class="stat-label">target</span><span id="downloadTarget">-</span></div>
     <div class="row"><span class="stat-label">app.prefetch_pdfs alive</span><span id="prefetchAlive">-</span></div>
     <div class="row"><span class="stat-label">download pace</span><span id="prefetchPace">-</span></div>
+    <div class="row"><span class="stat-label">TEI embed</span><span id="teiEmbedHealthy">-</span></div>
+    <div class="row"><span class="stat-label">TEI rerank</span><span id="teiRerankHealthy">-</span></div>
+    <div class="controls" style="margin-top: .5rem;">
+      <button id="btnFreeGpu" class="secondary" type="button">Free GPU</button>
+      <button id="btnLoadForMcp" class="secondary" type="button">Load for MCP</button>
+    </div>
+    <span class="note" style="margin:0;">Free GPU stops the TEI embedder/reranker containers (~9.4GB VRAM) on demand -- independent of Pause/Resume/Stop, which deliberately leave them running for live search. Refused while a full run is actively running. Live search self-heals on its own on the next query either way; Load for MCP just restores it immediately instead of waiting.</span>
   </div>
 
   <div class="panel">
@@ -479,6 +486,12 @@ function render(snap) {
   document.getElementById("prefetchPace").textContent =
     dl.downloaded === null || dl.downloaded === undefined ? "-" : `${fmt(dl.downloaded)} / ${fmt(dl.prefetch_target)} cached`;
 
+  const tei = snap.tei || {};
+  document.getElementById("teiEmbedHealthy").textContent =
+    tei.embed_healthy === null || tei.embed_healthy === undefined ? "-" : (tei.embed_healthy ? "up" : "down");
+  document.getElementById("teiRerankHealthy").textContent =
+    tei.rerank_healthy === null || tei.rerank_healthy === undefined ? "-" : (tei.rerank_healthy ? "up" : "down");
+
   const disk = snap.disk || {};
   document.getElementById("diskFree").textContent =
     disk.free_gb === null || disk.free_gb === undefined ? "-" : `${disk.free_gb.toFixed(1)} GB / ${fmt(disk.total_gb ? disk.total_gb.toFixed(1) : null)} GB`;
@@ -812,6 +825,9 @@ document.getElementById("btnDownloadOnly").addEventListener("click", () => {
   document.getElementById("newDateFrom").value = "";
   document.getElementById("newDateTo").value = "";
 });
+
+document.getElementById("btnFreeGpu").addEventListener("click", () => control("free_gpu"));
+document.getElementById("btnLoadForMcp").addEventListener("click", () => control("load_for_mcp"));
 
 poll();
 setInterval(poll, 4000);
