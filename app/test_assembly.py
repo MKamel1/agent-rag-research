@@ -752,12 +752,16 @@ class _FakeTeiLifecycle:
     def __init__(self):
         self.stop_calls = 0
         self.start_calls = 0
+        self.ensure_calls = 0
 
     def stop_tei_containers(self) -> None:
         self.stop_calls += 1
 
     def start_tei_containers(self) -> None:
         self.start_calls += 1
+
+    def ensure_tei_running(self) -> None:
+        self.ensure_calls += 1
 
 
 class FakeSummarizer:
@@ -836,6 +840,43 @@ def test_build_ingestion_orchestrator_wires_on_stage_when_given(monkeypatch, tmp
 
     orchestrator._on_stage("summarize")
     assert stages_seen == ["summarize"]
+
+
+def test_build_mcp_server_wires_ensure_ready_into_embedder_and_reranker(monkeypatch, tmp_path):
+    """T-DOC78: the query-path composition (unlike build_ingestion_orchestrator) wires
+    tei_lifecycle.ensure_tei_running as the embedder/reranker's readiness hook, so a query right
+    after TEI gets evicted (Free GPU, or Pass 1) self-heals instead of erroring."""
+    fake_tei_lifecycle = _FakeTeiLifecycle()
+    monkeypatch.setattr("app.assembly.tei_lifecycle", fake_tei_lifecycle)
+    monkeypatch.setattr("app.assembly.VectorIndex", lambda *a, **k: object())
+
+    cfg = Config(focus_area_queries=["causal inference"], gpu_lock_path=str(tmp_path / ".gpu.lock"))
+    server = build_mcp_server(
+        cfg, db_path=str(tmp_path / "papers.db"), blob_dir=str(tmp_path / "blobs"),
+        collection="papers",
+    )
+
+    embedder = server._retriever._embedder
+    reranker = server._retriever._reranker
+
+    # `==`, not `is`: each attribute access on a bound method (`fake_tei_lifecycle.ensure_tei_running`)
+    # makes a fresh MethodType wrapper object, so two separate accesses of the "same" bound method
+    # are never identical, only equal (same __self__ and __func__) -- see CPython's `instancemethod`
+    # semantics.
+    assert embedder._ensure_ready == fake_tei_lifecycle.ensure_tei_running
+    assert reranker._ensure_ready == fake_tei_lifecycle.ensure_tei_running
+
+
+def test_build_ingestion_orchestrator_embedder_has_no_ensure_ready_hook(monkeypatch, tmp_path):
+    """The ingest-side composition must NOT get this hook -- Pass 2 already guarantees TEI health
+    via its own explicit start_tei_containers() call before finish_phase() begins (T-DOC19); a
+    per-call health-check hook there would just be a redundant HTTP round-trip on every one of
+    thousands of ingest embed calls."""
+    orchestrator, _fake_summarizer, _fake_tei_lifecycle = _build_orchestrator_for_hook_test(
+        monkeypatch, tmp_path
+    )
+
+    assert orchestrator._embedder._ensure_ready is None
 
 
 def test_build_ingestion_orchestrator_on_stage_defaults_to_the_orchestrators_own_noop(
