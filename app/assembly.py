@@ -592,9 +592,23 @@ def build_mcp_server(
     gpu_lock = FileGpuLock(Path(config.gpu_lock_path))  # same path as the ingest root -> same file
     db_path, blob_dir = _resolve_store_paths(config, db_path, blob_dir)
 
+    # T-DOC78: the query path's readiness hook must refuse to reload TEI while Pass 1 is actively
+    # running (app/tei_lifecycle.py's ensure_tei_running docstring explains the OOM risk) and
+    # should fail fast rather than block up to a minute -- both need config-derived state
+    # (db_path, for the same Pass-1 lock app/ingest.py writes) this composition root has and
+    # tei_lifecycle.py itself does not, so this is a local closure, same pattern
+    # build_ingestion_orchestrator's own _before_parse_phase hook already uses.
+    _pass1_lock_path = Path(config.db_path).resolve().parent / ".pass1.lock"
+    _QUERY_PATH_TEI_POLL_TIMEOUT_S = 15.0
+
+    def _ensure_query_tei_ready() -> None:
+        tei_lifecycle.ensure_tei_running(
+            lock_path=_pass1_lock_path, poll_timeout_s=_QUERY_PATH_TEI_POLL_TIMEOUT_S,
+        )
+
     embedder = TeiEmbedder(
         httpx.Client(base_url=_TEI_EMBED_URL, timeout=60.0), gpu_lock, _EMBEDDER_INFO,
-        ensure_ready=tei_lifecycle.ensure_tei_running,
+        ensure_ready=_ensure_query_tei_ready,
     )
     document_store = DocumentStore(db_path, blob_dir)
     vector_index = VectorIndex(
@@ -602,7 +616,7 @@ def build_mcp_server(
     )
     reranker = TeiReranker(
         httpx.Client(base_url=_TEI_RERANK_URL, timeout=60.0), gpu_lock,
-        ensure_ready=tei_lifecycle.ensure_tei_running,
+        ensure_ready=_ensure_query_tei_ready,
     )
     # 2026-07-18: `Config.rerank_depth`/`Config.top_k` were dead fields (declared, never read) --
     # wired here, the one composition root that knows both the Config lever and the reranker's

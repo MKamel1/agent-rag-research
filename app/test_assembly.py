@@ -753,6 +753,7 @@ class _FakeTeiLifecycle:
         self.stop_calls = 0
         self.start_calls = 0
         self.ensure_calls = 0
+        self.ensure_kwargs = None
 
     def stop_tei_containers(self) -> None:
         self.stop_calls += 1
@@ -760,8 +761,9 @@ class _FakeTeiLifecycle:
     def start_tei_containers(self) -> None:
         self.start_calls += 1
 
-    def ensure_tei_running(self) -> None:
+    def ensure_tei_running(self, **kwargs) -> None:
         self.ensure_calls += 1
+        self.ensure_kwargs = kwargs
 
 
 class FakeSummarizer:
@@ -843,28 +845,32 @@ def test_build_ingestion_orchestrator_wires_on_stage_when_given(monkeypatch, tmp
 
 
 def test_build_mcp_server_wires_ensure_ready_into_embedder_and_reranker(monkeypatch, tmp_path):
-    """T-DOC78: the query-path composition (unlike build_ingestion_orchestrator) wires
-    tei_lifecycle.ensure_tei_running as the embedder/reranker's readiness hook, so a query right
-    after TEI gets evicted (Free GPU, or Pass 1) self-heals instead of erroring."""
+    """T-DOC78: the query-path composition (unlike build_ingestion_orchestrator) wires a readiness
+    hook that calls tei_lifecycle.ensure_tei_running with this run's own Pass-1 lock path and a
+    short query-path poll timeout, so a query right after TEI gets evicted (Free GPU, or Pass 1)
+    self-heals instead of erroring -- and refuses to do so while Pass 1 is actually active."""
     fake_tei_lifecycle = _FakeTeiLifecycle()
     monkeypatch.setattr("app.assembly.tei_lifecycle", fake_tei_lifecycle)
     monkeypatch.setattr("app.assembly.VectorIndex", lambda *a, **k: object())
 
-    cfg = Config(focus_area_queries=["causal inference"], gpu_lock_path=str(tmp_path / ".gpu.lock"))
-    server = build_mcp_server(
-        cfg, db_path=str(tmp_path / "papers.db"), blob_dir=str(tmp_path / "blobs"),
-        collection="papers",
+    db_path = str(tmp_path / "papers.db")
+    cfg = Config(
+        focus_area_queries=["causal inference"], gpu_lock_path=str(tmp_path / ".gpu.lock"),
+        db_path=db_path,
     )
+    server = build_mcp_server(cfg, db_path=db_path, blob_dir=str(tmp_path / "blobs"), collection="papers")
 
     embedder = server._retriever._embedder
     reranker = server._retriever._reranker
 
-    # `==`, not `is`: each attribute access on a bound method (`fake_tei_lifecycle.ensure_tei_running`)
-    # makes a fresh MethodType wrapper object, so two separate accesses of the "same" bound method
-    # are never identical, only equal (same __self__ and __func__) -- see CPython's `instancemethod`
-    # semantics.
-    assert embedder._ensure_ready == fake_tei_lifecycle.ensure_tei_running
-    assert reranker._ensure_ready == fake_tei_lifecycle.ensure_tei_running
+    embedder._ensure_ready()
+    reranker._ensure_ready()
+
+    assert fake_tei_lifecycle.ensure_calls == 2
+    assert fake_tei_lifecycle.ensure_kwargs == {
+        "lock_path": Path(db_path).resolve().parent / ".pass1.lock",
+        "poll_timeout_s": 15.0,
+    }
 
 
 def test_build_ingestion_orchestrator_embedder_has_no_ensure_ready_hook(monkeypatch, tmp_path):

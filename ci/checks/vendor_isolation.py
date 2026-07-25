@@ -87,6 +87,13 @@ VENDOR_RULES: tuple[VendorRule, ...] = (
     # throwaway A/B re-embed script that constructs the real httpx-backed adapters (this ticket's
     # own composition root, mirroring app/assembly.py) -- it names no vendor itself, only httpx as
     # the shared HTTP client, same as every other composition-root/adapter entry in this list.
+    #
+    # T-DOC78: app/tei_lifecycle.py talks to the TEI containers' health endpoints over the same
+    # httpx client; app/test_tei_lifecycle.py exercises it offline via httpx.MockTransport, same
+    # pattern as every other adapter test above. app/assembly.py is this rule's composition root
+    # (already allowlisted implicitly by not being scanned before -- now explicit since its
+    # TeiEmbedder/TeiReranker construction lines were reformatted by an unrelated diff and now
+    # register as "added" lines containing "httpx").
     VendorRule(
         "httpx",
         re.compile(r"httpx", re.I),
@@ -104,6 +111,9 @@ VENDOR_RULES: tuple[VendorRule, ...] = (
             "rag/contextual_header.py",
             "rag/test_contextual_header.py",
             "app/reembed_experiment.py",
+            "app/tei_lifecycle.py",
+            "app/test_tei_lifecycle.py",
+            "app/assembly.py",
         ),
     ),
 )

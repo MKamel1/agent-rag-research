@@ -17,7 +17,9 @@ isn't a reason to fail the caller's phase transition.
 import logging
 import subprocess
 import time
+from pathlib import Path
 
+import filelock
 import httpx
 
 logger = logging.getLogger(__name__)
@@ -66,7 +68,9 @@ def stop_tei_containers() -> None:
     )
 
 
-def start_tei_containers(client: httpx.Client | None = None) -> None:
+def start_tei_containers(
+    client: httpx.Client | None = None, *, poll_timeout_s: float | None = None,
+) -> None:
     """Best-effort: start both TEI containers back up, then block (bounded by
     `_TEI_START_POLL_TIMEOUT_SECONDS`) until both respond healthy -- "block until TEI is ready
     before Pass 2 needs it." `docker start` only launches the container; it says nothing about
@@ -78,7 +82,10 @@ def start_tei_containers(client: httpx.Client | None = None) -> None:
 
     `client` is injectable (defaults to a real `httpx.Client`) so tests can fake the health check
     without a real network call.
-    """
+
+    `poll_timeout_s` (default `None`): overrides `_TEI_START_POLL_TIMEOUT_SECONDS` for this call
+    only (T-DOC78) -- lets `ensure_tei_running`'s query-path caller use a shorter deadline than the
+    phase-transition default, without changing that default for every other caller."""
     try:
         subprocess.run(["docker", "start", *_TEI_CONTAINERS], check=True)
     except (subprocess.CalledProcessError, FileNotFoundError) as error:
@@ -92,8 +99,9 @@ def start_tei_containers(client: httpx.Client | None = None) -> None:
     if client is None:
         client = httpx.Client(timeout=5.0)
 
+    timeout_s = poll_timeout_s if poll_timeout_s is not None else _TEI_START_POLL_TIMEOUT_SECONDS
     urls = (_TEI_EMBED_HEALTH_URL, _TEI_RERANK_HEALTH_URL)
-    deadline = time.monotonic() + _TEI_START_POLL_TIMEOUT_SECONDS
+    deadline = time.monotonic() + timeout_s
     while time.monotonic() < deadline:
         if all(_is_healthy(client, url) for url in urls):
             return
@@ -103,11 +111,30 @@ def start_tei_containers(client: httpx.Client | None = None) -> None:
         "could not confirm TEI containers %s were healthy within %.1fs -- proceeding anyway "
         "(best-effort; caller's phase transition is not blocked)",
         _TEI_CONTAINERS,
-        _TEI_START_POLL_TIMEOUT_SECONDS,
+        timeout_s,
     )
 
 
-def ensure_tei_running(client: httpx.Client | None = None) -> None:
+def pass1_is_active(lock_path: Path) -> bool:
+    """Non-blocking check: True iff `app.ingest` currently holds the Pass-1 lock at `lock_path`
+    (`app.ingest._pass1_lock_path`) -- i.e. Pass 1's parser is actively running right now. A zero-timeout
+    acquire attempt: succeeds (and is immediately released) when Pass 1 is NOT running, times out
+    when it is. Best-effort like every other function in this module: a missing lock FILE (no
+    ingest has ever run yet) is treated as "not active" -- the lock can still be acquired -- never
+    an error."""
+    lock = filelock.FileLock(str(lock_path))
+    try:
+        lock.acquire(timeout=0)
+    except filelock.Timeout:
+        return True
+    lock.release()
+    return False
+
+
+def ensure_tei_running(
+    client: httpx.Client | None = None, *,
+    lock_path: Path | None = None, poll_timeout_s: float | None = None,
+) -> None:
     """Best-effort, never raises (same contract as `stop_tei_containers`/`start_tei_containers`).
     If both containers are ALREADY healthy, this is two fast `GET /health` calls and nothing else
     -- no `docker` command. Otherwise falls through to `start_tei_containers` (docker start + the
@@ -115,7 +142,25 @@ def ensure_tei_running(client: httpx.Client | None = None) -> None:
 
     `client` is injectable for tests, same as `start_tei_containers`. When `None`, builds one
     short-lived `httpx.Client` and reuses it for both the health check here and (if needed) the
-    poll inside `start_tei_containers`, rather than constructing two."""
+    poll inside `start_tei_containers`, rather than constructing two.
+
+    T-DOC78: `lock_path` (default `None` -- existing callers unaffected), when given, is checked
+    FIRST via `pass1_is_active` -- if Pass 1 is actively running, this returns immediately WITHOUT
+    reloading TEI, even if unhealthy: reloading ~9.4GB mid-Pass-1 risks the exact CUDA OOM TEI
+    eviction exists to prevent (ARCHITECTURE.md/CONVENTIONS.md Sec 6 -- Pass 1's real safety margin
+    against Pass 1's peak VRAM usage is ~1GB). The caller's subsequent real HTTP call fails exactly as
+    documented ("a live MCP query during Pass 1 fails outright, not delayed") instead of silently
+    reintroducing the OOM risk.
+
+    `poll_timeout_s` (default `None` -- falls back to `start_tei_containers`'s own
+    `_TEI_START_POLL_TIMEOUT_SECONDS`): overrides the health-poll deadline forwarded to
+    `start_tei_containers` on the fallthrough path -- the query path uses a much shorter one (see
+    `app/assembly.py::build_mcp_server`) so a query with TEI genuinely unreachable fails in seconds,
+    not up to a full minute; phase-transition callers (Pass 2's own explicit `start_tei_containers()`
+    call) keep the original, more patient default by never passing this."""
+    if lock_path is not None and pass1_is_active(lock_path):
+        return
+
     if client is None:
         client = httpx.Client(timeout=5.0)
 
@@ -123,7 +168,7 @@ def ensure_tei_running(client: httpx.Client | None = None) -> None:
     if all(_is_healthy(client, url) for url in urls):
         return
 
-    start_tei_containers(client=client)
+    start_tei_containers(client=client, poll_timeout_s=poll_timeout_s)
 
 
 def _is_healthy(client: httpx.Client, url: str) -> bool:
