@@ -191,6 +191,16 @@ def test_root_html_has_download_now_button_wired_to_the_download_action(running_
     assert b'"download"' in body
 
 
+def test_root_html_has_free_gpu_and_load_for_mcp_buttons(running_server):
+    url, _ = running_server
+    status, body = _get_raw(url, "/")
+    assert status == 200
+    assert b'id="btnFreeGpu"' in body
+    assert b'"free_gpu"' in body
+    assert b'id="btnLoadForMcp"' in body
+    assert b'"load_for_mcp"' in body
+
+
 def test_root_html_mode_indicator_branches_on_download_mode(running_server):
     url, _ = running_server
     status, body = _get_raw(url, "/")
