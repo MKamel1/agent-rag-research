@@ -36,6 +36,49 @@ def test_rerank_acquires_the_rerank_gpu_lock():
     assert lock.acquired == ["rerank"]
 
 
+# ---------------------------------------------------------------------------
+# ensure_ready hook: an optional, injected readiness check/side effect, fired once per rerank()
+# call, before any HTTP work, and skipped entirely on the empty-candidates short-circuit.
+# ---------------------------------------------------------------------------
+
+
+def test_ensure_ready_hook_called_once_before_the_http_call():
+    calls = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=[{"index": 0, "score": 0.9}])
+
+    client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
+    reranker = TeiReranker(client, FakeGpuLock(), ensure_ready=lambda: calls.append("ready"))
+
+    reranker.rerank("query", _candidates(("a", "text a")))
+
+    assert calls == ["ready"]
+
+
+def test_ensure_ready_hook_not_called_on_empty_candidates():
+    calls = []
+    client = httpx.Client(base_url="http://tei.local")
+    reranker = TeiReranker(client, FakeGpuLock(), ensure_ready=lambda: calls.append("ready"))
+
+    result = reranker.rerank("query", [])
+
+    assert result == []
+    assert calls == [], "an empty candidate list is a zero-cost no-op"
+
+
+def test_no_ensure_ready_hook_is_the_unchanged_default():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=[{"index": 0, "score": 0.9}])
+
+    client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
+    reranker = TeiReranker(client, FakeGpuLock())  # no ensure_ready kwarg at all
+
+    result = reranker.rerank("query", _candidates(("a", "text a")))
+
+    assert len(result) == 1
+
+
 def test_rerank_reorders_by_score_and_fabricates_nothing():
     def handler(request):
         # Candidate at index 1 ("b") scores higher than index 0 ("a").

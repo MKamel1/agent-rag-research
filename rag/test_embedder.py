@@ -263,6 +263,57 @@ def test_embed_sub_batches_over_the_tei_limit_and_preserves_order():
 
 
 # ---------------------------------------------------------------------------
+# ensure_ready hook: an optional, injected readiness check/side effect, fired once per embed()
+# call (never per sub-batch), before any HTTP work, and skipped entirely on the empty-input
+# short-circuit.
+# ---------------------------------------------------------------------------
+
+
+def test_ensure_ready_hook_called_once_before_the_http_call():
+    calls = []
+    client = _FakeTeiClient(8)
+    adapter = _build_real_embedder(client, FakeGpuLock(), ensure_ready=lambda: calls.append("ready"))
+
+    adapter.embed(["one text"])
+
+    assert calls == ["ready"]
+
+
+def test_ensure_ready_hook_called_once_even_with_multiple_sub_batches():
+    """Proves the hook fires once per embed() call, not once per _MAX_BATCH_SIZE sub-batch."""
+    calls = []
+    client = _FakeTeiClient(8)
+    adapter = _build_real_embedder(client, FakeGpuLock(), ensure_ready=lambda: calls.append("ready"))
+
+    adapter.embed([f"text {i}" for i in range(45)])  # > _MAX_BATCH_SIZE (32) -- forces 2 sub-batches
+
+    assert calls == ["ready"], "must fire once per embed() call, not once per sub-batch"
+    assert len(client.batch_sizes) > 1  # sanity check: this really did multi-batch
+
+
+def test_ensure_ready_hook_not_called_on_empty_input():
+    calls = []
+    client = _FakeTeiClient(8)
+    adapter = _build_real_embedder(client, FakeGpuLock(), ensure_ready=lambda: calls.append("ready"))
+
+    result = adapter.embed([])
+
+    assert result == []
+    assert calls == [], "an empty call is a zero-cost no-op -- must not pay for a readiness check"
+
+
+def test_no_ensure_ready_hook_is_the_unchanged_default():
+    """Every existing caller/test omits ensure_ready -- must behave exactly as before this
+    feature existed (no AttributeError, no behavior change)."""
+    client = _FakeTeiClient(8)
+    adapter = _build_real_embedder(client, FakeGpuLock())  # no ensure_ready kwarg at all
+
+    result = adapter.embed(["one text"])
+
+    assert len(result) == 1
+
+
+# ---------------------------------------------------------------------------
 # Error taxonomy — TransientError/PermanentError, never a bare httpx exception (CONVENTIONS §4).
 # Found missing during a real end-to-end run this session: a real CUDA OOM in the TEI server
 # surfaced as a raw, unhandled httpx.HTTPStatusError and crashed the whole ingestion run instead
