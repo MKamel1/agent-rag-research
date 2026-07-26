@@ -17,6 +17,7 @@ from contracts.mcp_server import Coverage, PaperSearchResponse, PaperSummaryView
 from contracts.provenance import Anchor
 from contracts.retriever import Citation, RetrievalCoverage
 from contracts.vector_index import SearchFilters
+from rag.retriever import source_url
 
 # OG-48#5: an unbounded/negative `k` reaches the retriever unclamped -- `?k=-1` makes `results[:k]`
 # drop the LAST element (wrong-but-plausible, no error); a huge `k` fans out to thousands of
@@ -125,8 +126,9 @@ class McpServer:
                 paper_id=paper_id,
                 title=record.ref.title,
                 authors=record.ref.authors,
-                arxiv_url=f"https://arxiv.org/abs/{paper_id}",
+                arxiv_url=source_url(paper_id, record.ref.pdf_url),
                 section_path="",  # whole-paper citation — no single section it's "at"
+                doc_type=record.ref.doc_type,
             ),
         )
 

@@ -64,8 +64,19 @@ def _paper_id_from_summary_hit_id(hit_id: str) -> str:
     around this exact function by name; if a second call site ever needs this, that need is the
     signal to promote `paper_id` to a first-class field on `Hit` instead of adding a second ad-hoc
     parse site.
+
+    Handles both `{paper_id}:summary` and the book-chapter form `{paper_id}:summary:ch{n}`
+    (T-DOC80). Split on the first ':summary' — paper_ids (arXiv `2506.01234` or
+    `local:<hex12>`) can never contain that substring.
     """
-    return hit_id.removesuffix(_SUMMARY_ID_SUFFIX)
+    return hit_id.split(_SUMMARY_ID_SUFFIX, 1)[0]
+
+
+def source_url(paper_id: str, pdf_url: str) -> str:
+    """Citation URL: local drop-ins have no arXiv page — cite the original filename we recorded
+    in `pdf_url` at staging time (app/ingest_local.py) instead of fabricating a dead arXiv link.
+    """
+    return pdf_url if paper_id.startswith("local:") else f"https://arxiv.org/abs/{paper_id}"
 
 
 class Retriever:
@@ -150,8 +161,9 @@ class Retriever:
                 paper_id=chunk.paper_id,
                 title=ref.title,
                 authors=ref.authors,
-                arxiv_url=f"https://arxiv.org/abs/{chunk.paper_id}",
+                arxiv_url=source_url(chunk.paper_id, ref.pdf_url),
                 section_path=block.section_path,
+                doc_type=ref.doc_type,
             )
             results.append(
                 GroundedResult(
@@ -230,11 +242,19 @@ class Retriever:
                     paper_id=paper_id,
                     title=record.ref.title,
                     authors=record.ref.authors,
-                    arxiv_url=f"https://arxiv.org/abs/{paper_id}",
+                    arxiv_url=source_url(paper_id, record.ref.pdf_url),
                     section_path="",  # unanchored — no single section a whole-paper match is "at"
+                    doc_type=record.ref.doc_type,
                 ),
             )
-            results.append(PaperSearchResult(view=view, score=scores[candidate.id]))
+            # A hit whose id isn't the whole-document summary id is a book-chapter hit (T-DOC80);
+            # look up that chapter's title on the record DocumentStore already returned above (no
+            # second parse of `candidate.id` -- the chapter form is opaque past the paper_id split).
+            chapter = None
+            if candidate.id != f"{paper_id}{_SUMMARY_ID_SUFFIX}":
+                cs = next((c for c in record.chapter_summaries if c.summary_id == candidate.id), None)
+                chapter = cs.title if cs is not None else None
+            results.append(PaperSearchResult(view=view, score=scores[candidate.id], chapter=chapter))
         # See the matching comment in `retrieve()` -- truncate to `k` only after reranking (T-DOC24).
         return results[:k], RetrievalCoverage(candidate_count=len(hits))
 
