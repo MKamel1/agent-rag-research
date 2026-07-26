@@ -73,6 +73,7 @@ class Config(FrozenModel):
     # "" (empty string) explicitly disables the PDF cache (app/assembly.py logs this, doesn't
     # crash) -- same meaning an explicitly-empty `RAG_PDF_CACHE_DIR=""` used to have.
     pdf_cache_dir: str = "pdf_cache"
+    drop_in_dir: str = "drop_in"  # app/ingest_local.py scan root (papers/, books/ subfolders)
     # Unset (None) writes no CSV -- investigation tooling for one run, not a default-on feature
     # (app/assembly.py's AdaptiveBatchSizer wiring).
     batch_size_log_path: str | None = None

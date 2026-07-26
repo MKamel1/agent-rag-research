@@ -34,6 +34,7 @@ class SearchFilters(FrozenModel):
     published_after: date | None = None  # inclusive
     published_before: date | None = None  # inclusive
     kind: Literal["chunk", "summary"] | None = None  # restrict to VectorPayload.kind
+    doc_type: Literal["paper", "book"] | None = None  # restrict to VectorPayload.doc_type
 
 
 class VectorPayload(TypedDict):
@@ -57,3 +58,4 @@ class VectorPayload(TypedDict):
     categories: list[str]  # for metadata filtering
     published: str  # ISO date, for date-range filters
     embedding_version: str  # must match the collection's model version
+    doc_type: str  # "paper" | "book" — mirrors PaperRef.doc_type

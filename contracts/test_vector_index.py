@@ -33,6 +33,10 @@ def test_search_filters_all_fields_optional_and_default_to_none():
     assert filters.kind is None
 
 
+def test_search_filters_doc_type_default_none():
+    assert SearchFilters().doc_type is None
+
+
 def test_search_filters_constructs_with_explicit_values():
     filters = SearchFilters(
         categories=["cs.LG", "stat.ME"],

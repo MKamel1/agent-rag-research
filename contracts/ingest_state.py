@@ -16,6 +16,7 @@ additive `ingest_checkpoint` table (`migrations/0002_ingest_checkpoint.sql`) as
 
 from contracts._base import FrozenModel
 from contracts.chunker import Chunk
+from contracts.document_store import ChapterSummary
 from contracts.parser import ParsedDoc
 
 
@@ -31,6 +32,7 @@ class CheckpointArtifacts(FrozenModel):
     chunks: list[Chunk] | None = None
     summary_text: str | None = None
     relevance_score: float | None = None
+    chapter_summaries: list[ChapterSummary] | None = None  # books only; None until summarized
 
     def merge(self, update: "CheckpointArtifacts") -> "CheckpointArtifacts":
         """Overlay `update`'s non-`None` fields onto `self`, keeping every field `update` leaves

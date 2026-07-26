@@ -1,6 +1,7 @@
 """M1 Harvester output (DATA-CONTRACTS.md "M1 Harvester output")."""
 
 from datetime import date
+from typing import Literal
 
 from pydantic import Field
 
@@ -28,3 +29,7 @@ class PaperRef(FrozenModel):
     # arXiv e-print source, if available (enables the LaTeX ingest path)
     latex_url: str | None = None
     relevance_score: float | None = Field(default=None)
+    # "paper" (default, incl. every arXiv harvest) or "book" — set by app/ingest_local.py from
+    # the drop_in/ subfolder the file arrived in. Additive with default so pre-existing
+    # T-DOC48 sidecars (no doc_type key) parse unchanged.
+    doc_type: Literal["paper", "book"] = "paper"

@@ -97,6 +97,7 @@ db_path: "papers.db"
 blob_dir: "blobs"
 collection: "papers"
 pdf_cache_dir: "pdf_cache"  # "" explicitly disables the PDF cache -- see contracts/config.py
+drop_in_dir: "drop_in"      # app/ingest_local.py scan root (papers/, books/ subfolders)
 batch_size_log_path: null   # unset writes no CSV -- investigation tooling for one run, not default-on
 prefetch_target: 30000      # app/prefetch_pdfs.py's standalone PDF-backlog target
 ingest_paper_ids: null      # T-EVAL harvest-scoping override (PR #89) -- unset = normal query harvest
