@@ -16,6 +16,7 @@ silently drift from what `_cached_ref` expects.
 """
 
 import io
+import sys
 from datetime import date
 from pathlib import Path
 
@@ -25,10 +26,12 @@ import pytest
 from app.assembly import _cached_ref
 from app.ingest_local import (
     detect_arxiv_id,
+    main,
     mint_local_ref,
     scan_drop_dir,
     stage_file,
 )
+from contracts.config import Config
 from contracts.errors import TransientError
 from contracts.harvester import PaperRef
 
@@ -289,7 +292,82 @@ def test_restage_same_file_is_idempotent(tmp_path):
     assert reconstructed is not None and reconstructed.doc_type == "book"
 
 
-if __name__ == "__main__":
-    import sys
+# ---------------------------------------------------------------------------
+# main -- CLI entry point (T-DOC80 Task 8)
+# ---------------------------------------------------------------------------
 
+
+def _fake_config(tmp_path: Path) -> Config:
+    return Config(
+        focus_area_queries=["causal inference"],
+        drop_in_dir=str(tmp_path / "drop"),
+        pdf_cache_dir=str(tmp_path / "cache"),
+    )
+
+
+def _stage_one_synthetic_paper(tmp_path: Path) -> None:
+    """No arXiv id anywhere in this PDF (`_synthetic_pdf_bytes`), so staging it never calls
+    `fetch_by_ids` -- `main()`'s real fetcher (`ArxivSource` + backoff) is never exercised by
+    these tests, only its wiring (module docstring: `fetch_by_ids` is always injected/faked in
+    this test file)."""
+    papers_dir = tmp_path / "drop" / "papers"
+    papers_dir.mkdir(parents=True)
+    (papers_dir / "book.pdf").write_bytes(_synthetic_pdf_bytes())
+
+
+def test_main_stage_only_writes_manifest_and_skips_ingest(tmp_path, monkeypatch):
+    monkeypatch.setattr("app.ingest_local.load_config", lambda: _fake_config(tmp_path))
+    calls = []
+    monkeypatch.setattr("app.ingest_local.subprocess.run", lambda *a, **k: calls.append(a))
+    _stage_one_synthetic_paper(tmp_path)
+
+    exit_code = main(["--stage-only"])
+
+    assert exit_code == 0
+    assert calls == []
+    manifests = list((tmp_path / "drop").glob("manifest-*.txt"))
+    assert len(manifests) == 1
+    lines = [line for line in manifests[0].read_text().splitlines() if line]
+    assert len(lines) == 1
+    assert lines[0].startswith("local:")
+
+
+def test_main_invokes_ingest_with_manifest(tmp_path, monkeypatch):
+    monkeypatch.setattr("app.ingest_local.load_config", lambda: _fake_config(tmp_path))
+
+    class _Result:
+        returncode = 0
+
+    captured = []
+
+    def fake_run(argv, **kwargs):
+        captured.append(argv)
+        return _Result()
+
+    monkeypatch.setattr("app.ingest_local.subprocess.run", fake_run)
+    _stage_one_synthetic_paper(tmp_path)
+
+    exit_code = main([])
+
+    assert exit_code == 0
+    manifests = list((tmp_path / "drop").glob("manifest-*.txt"))
+    assert len(manifests) == 1
+    assert captured == [
+        [sys.executable, "-m", "app.ingest", "--paper-ids-file", str(manifests[0])]
+    ]
+
+
+def test_main_empty_drop_dir_exits_zero_without_ingest(tmp_path, monkeypatch):
+    monkeypatch.setattr("app.ingest_local.load_config", lambda: _fake_config(tmp_path))
+    calls = []
+    monkeypatch.setattr("app.ingest_local.subprocess.run", lambda *a, **k: calls.append(a))
+
+    exit_code = main([])
+
+    assert exit_code == 0
+    assert calls == []
+    assert list((tmp_path / "drop").glob("manifest-*.txt")) == []
+
+
+if __name__ == "__main__":
     sys.exit(pytest.main([__file__, "-v"]))
