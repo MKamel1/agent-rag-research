@@ -122,6 +122,27 @@ def test_render_note_frontmatter_and_summary_body():
     assert "claim-layer V1 ticket" in text  # claims explicitly deferred, not fabricated
 
 
+def test_render_note_local_id_has_no_dead_arxiv_link_or_misleading_arxiv_id():
+    """`local:`-prefixed ids (drop-in-folder papers/books, app/ingest_local.py) have no arXiv
+    page -- same rationale as rag/retriever.py::source_url, which this module now reuses. The
+    `arxiv_id` frontmatter field must not carry a `local:...` value either: nothing in this repo
+    consumes it (obsidian_export is a generated view, module docstring), so a field literally
+    named `arxiv_id` holding a non-arXiv id would be actively misleading to anyone who does read
+    the vault -- simplest correct behavior is to omit it for local: ids."""
+    record = make_paper_record(
+        "local:3f9a0c1e2b7d",
+        ref_overrides={"pdf_url": "my-book.pdf"},
+    )
+    text = render_note(record)
+
+    assert "https://arxiv.org/abs/local:3f9a0c1e2b7d" not in text
+    assert "my-book.pdf" in text
+
+    fm_text = text.split("---\n")[1]
+    frontmatter = yaml.safe_load(fm_text)
+    assert "arxiv_id" not in frontmatter
+
+
 def test_render_note_section_structure_deduped_in_order():
     paper_id = "2506.01234"
     blocks = [

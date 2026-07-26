@@ -24,6 +24,7 @@ import yaml
 from contracts.config import Config
 from contracts.document_store import PaperRecord
 from rag.config import load_config
+from rag.retriever import source_url
 
 INDEX_FILENAME = "_index.md"
 _STABLE_TAG = "paper"
@@ -77,12 +78,18 @@ def render_note(record: PaperRecord) -> str:
     ref = record.ref
     frontmatter = {
         "title": ref.title,
-        "arxiv_id": f"{ref.paper_id}{ref.version}",
         "authors": list(ref.authors),
         "categories": list(ref.categories),
         "published": ref.published.isoformat(),
         "tags": [_STABLE_TAG] + [_tag(c) for c in ref.categories],
     }
+    # `local:`-prefixed ids (drop-in-folder papers/books, app/ingest_local.py) have no arXiv id at
+    # all -- omit the field entirely rather than populate a field literally named `arxiv_id` with
+    # a non-arXiv value (misleading to anyone reading the vault). Nothing in this repo reads this
+    # frontmatter back (module docstring: generated view, no sync-back path), so omitting it for
+    # local: ids is not a breaking change to any consumer.
+    if not ref.paper_id.startswith("local:"):
+        frontmatter["arxiv_id"] = f"{ref.paper_id}{ref.version}"
     lines = ["---", yaml.safe_dump(frontmatter, sort_keys=False).rstrip(), "---", ""]
     lines.append(f"# {ref.title}")
     lines.append("")
@@ -90,7 +97,7 @@ def render_note(record: PaperRecord) -> str:
     lines.append(f"**Authors:** {authors_links}" if authors_links else "**Authors:** (none listed)")
     lines.append(f"**Published:** {ref.published.isoformat()}")
     lines.append(
-        f"**Source:** [PDF]({ref.pdf_url}) · [arXiv](https://arxiv.org/abs/{ref.paper_id})"
+        f"**Source:** [PDF]({ref.pdf_url}) · [Source]({source_url(ref.paper_id, ref.pdf_url)})"
     )
     lines.append("")
     lines.append("## Summary")
