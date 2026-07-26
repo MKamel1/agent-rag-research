@@ -301,6 +301,21 @@ def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO)
     args = _parse_args(argv)
     cfg = load_config()
+    if not cfg.pdf_cache_dir:
+        # contracts/config.py: "" is a supported, documented way to disable the PDF cache
+        # elsewhere in this codebase -- but this module's entire staging mechanism depends on it.
+        # Every staged file is a cache-first entry (module docstring); with the cache disabled,
+        # app.assembly.harvest_refs falls through to a live arXiv fetch for every id, including
+        # `local:`-prefixed ones arXiv can't resolve, and silently drops them from the returned
+        # corpus (harvest_refs' own documented contract) -- a real silent-data-loss footgun for
+        # exactly the scenario this feature exists to support. Refuse up front instead.
+        logger.error(
+            "ingest_local: cfg.pdf_cache_dir is empty (cache disabled) -- ingest_local requires "
+            "a working pdf_cache_dir, since staged files are cache-first entries that "
+            "app.assembly.harvest_refs would otherwise silently drop. Set pdf_cache_dir and "
+            "re-run."
+        )
+        return 1
     drop_dir = Path(args.drop_dir) if args.drop_dir is not None else Path(cfg.drop_in_dir)
     cache_dir = Path(cfg.pdf_cache_dir)
 
