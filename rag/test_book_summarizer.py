@@ -4,7 +4,7 @@ docs/superpowers/specs/2026-07-25-drop-in-folder-and-books-design.md).
 Tests-first: drives `summarize_book(parsed, summarizer) -> (book_summary_text,
 chapter_summaries)` entirely against `FakeSummarizer` (rag/fakes/fake_summarizer.py) --
 deterministic truncation of `ParsedDoc.markdown`, no GPU, no network. Never uses the real
-Ollama-backed Summarizer.
+GPU-backed production Summarizer.
 """
 
 from contracts.parser import ParsedDoc

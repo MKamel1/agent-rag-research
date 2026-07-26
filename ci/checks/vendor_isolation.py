@@ -38,7 +38,12 @@ class VendorRule:
 
 # Curated, not derived -- extend this when a new vendor SDK/adapter lands (see module docstring).
 VENDOR_RULES: tuple[VendorRule, ...] = (
-    VendorRule("qdrant", re.compile(r"qdrant", re.I), ("rag/vector_index.py",)),
+    # rag/test_vector_index.py (T-DOC80) legitimately names Qdrant in its `_qdrant_filter` unit
+    # tests -- they exercise the real Qdrant adapter's filter-building function directly, same
+    # reasoning as the mineru/ollama test-file exemptions below.
+    VendorRule(
+        "qdrant", re.compile(r"qdrant", re.I), ("rag/vector_index.py", "rag/test_vector_index.py")
+    ),
     # rag/test_parser.py (T-DOC16) legitimately injects a fake `mineru.cli.common` module into
     # `sys.modules` (by that exact dotted name -- `rag.parser`'s own lazy `from mineru.cli.common
     # import do_parse`) to exercise `Parser.parse`/`parse_batch`'s do_parse-calling plumbing
