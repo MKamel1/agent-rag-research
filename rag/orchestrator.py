@@ -300,7 +300,7 @@ class IngestionOrchestrator:
 
         T-DOC80: a `doc_type == "book"` ref is pulled out of the size-`parse_batch_size` grouping
         above and given its own solo `_prepare_batch([book], ...)` call instead -- a book's
-        markdown can run 10-50x a paper's, so one MinerU batch call mixing a book with even one
+        markdown can run 10-50x a paper's, so one parse-batch call mixing a book with even one
         other document (paper or book) is a real, measured VRAM-pressure case
         `parse_batch_size`/`batch_size_provider` never budgeted for (both size Pass 1 assuming
         paper-scale documents). Book batches run after every paper batch, in harvest order among
