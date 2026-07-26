@@ -41,10 +41,11 @@ references** (ADR-04). Never use random UUIDs or DB autoincrement for cross-seam
 
 | ID | Format | Example |
 |---|---|---|
-| `paper_id` | base arXiv id, no version suffix | `2506.01234` |
+| `paper_id` | base arXiv id, no version suffix — or `local:{sha256[:12]}` (12 hex chars of the PDF bytes' SHA-256) for a drop-in file with no detectable arXiv id (T-DOC80, `app/ingest_local.py`'s `mint_local_ref`) — same bytes always mint the same id, so re-dropping identical content is idempotent | `2506.01234` / `local:3f9a0c1e2b7d` |
 | `block_id` | `{paper_id}:b{index}` (index = reading order) | `2506.01234:b0` |
 | `chunk_id` | `{paper_id}:c{index}` | `2506.01234:c7` |
 | `summary_id` | `{paper_id}:summary` | `2506.01234:summary` |
+| `summary_id` (chapter) | `{paper_id}:summary:ch{index}` (index = 0-based chapter number; books only — `doc_type="book"`, T-DOC80) | `2506.01234:summary:ch0` |
 
 `version` (arXiv `v1`/`v2`) is stored as a **field**, not baked into `paper_id` — dedup keeps only the latest
 version per base id (ARCHITECTURE M1).
@@ -157,6 +158,10 @@ class PaperRef:
     relevance_score: float | None = None   # ALWAYS None from Harvester — the score needs summary_text,
         # which doesn't exist yet at harvest time. The authoritative value is `PaperRecord.relevance_score`
         # (§M5), computed by IngestionOrchestrator after Summarizer runs. Do not compute it here.
+    doc_type: Literal["paper", "book"] = "paper"   # T-DOC80: "book" set by app/ingest_local.py from
+        # the drop_in/ subfolder (papers/ vs books/) the file arrived in — the folder wins over
+        # whatever a fetched arXiv PaperRef's own default was, so a thesis dropped under books/ is
+        # still treated as a book. Every arXiv harvest defaults to "paper", unchanged.
 ```
 
 ## M2 Parser output
@@ -274,6 +279,17 @@ and Reranker. `FakeEmbedder` needs no lock (no GPU).
 
 ```python
 @dataclass(frozen=True)
+class ChapterSummary:
+    """T-DOC80: one chapter's map-step summary for a `doc_type="book"` record. Persisted in the
+    SAME `summaries` table as the whole-document summary (migration 0004 adds `title`), and
+    embedded as its own `kind="summary"` vector so `search_papers` can return individual chapters
+    as routing hits (`PaperSearchResult.chapter`, §M8)."""
+    summary_id: str   # f"{paper_id}:summary:ch{n}", n = 0-based chapter index (§IDs above)
+    title: str        # chapter heading (the chapter's top-level section_path); "" for the
+                       # windowed fallback used on flat/scanned books with no section structure
+    text: str          # non-empty chapter summary
+
+@dataclass(frozen=True)
 class PaperRecord:
     """The complete source-of-truth bundle for one paper. DocumentStore.put(PaperRecord) is atomic:
     either the whole paper is stored or none of it (so a crash never leaves half a paper)."""
@@ -286,6 +302,9 @@ class PaperRecord:
         # None). Computed by IngestionOrchestrator (M9) as cosine(embed(summary_text), topic_query_vec) —
         # full rule, incl. the "compute topic_query_vec exactly once per run" invariant: ARCHITECTURE.md
         # §M9. Persisted to papers.relevance_score (SQL schema below).
+    chapter_summaries: list[ChapterSummary] = field(default_factory=list)   # T-DOC80: non-empty ONLY
+        # for doc_type="book" records — produced by rag/book_summarizer.py's summarize_book(), never
+        # by the plain Summarizer. [] for every paper, unchanged.
     # blobs (PDF, figure PNGs, markdown) are written to the filesystem; their paths live on ref/parsed.
 
 # DocumentStore interface (all reads return the frozen types above):
@@ -305,6 +324,12 @@ class PaperRecord:
 #                                                # module ever needs this, that need is the signal to
 #                                                # promote paper_id to a first-class field on Hit
 #                                                # instead of allowing a second ad-hoc parse site.
+#                                                # T-DOC80: resolves a chapter summary_id
+#                                                # ({paper_id}:summary:ch{n}) exactly like a
+#                                                # whole-document one — both live in the same
+#                                                # `summaries` table, keyed by their own summary_id,
+#                                                # so this is a plain PK lookup either way; no
+#                                                # separate chapter-getter exists or is needed.
 #   get_span(anchor: Anchor) -> str             # resolves an anchor to the FULL text of anchor.block_id
 #                                                # (i.e. Block.text) — NOT the shorter Anchor.snippet.
 #                                                # snippet is already inline on the Anchor for quick
@@ -332,6 +357,7 @@ class SearchFilters:
     published_after: date | None = None        # inclusive
     published_before: date | None = None       # inclusive
     kind: Literal["chunk", "summary"] | None = None   # restrict to VectorPayload.kind
+    doc_type: Literal["paper", "book"] | None = None  # T-DOC80: restrict to VectorPayload.doc_type
 
 # hybrid_search(qvec: Vector, qtext: str, filters: SearchFilters | None, k: int) -> list[Hit]
 #   qvec -> dense side; qtext -> sparse/BM25 side; fused per the RRF formula below; top-k by fused score.
@@ -379,12 +405,22 @@ have no reason to agree past the top few results even when `rrf_fuse` itself is 
 class VectorPayload(TypedDict):
     paper_id: str
     kind: Literal["chunk", "summary"]
+    doc_type: str               # "paper" | "book" -- T-DOC80, mirrors PaperRef.doc_type
     section_path: str
     text: str                  # real chunk/summary passage text -- what the sparse channel indexes
     categories: list[str]      # for metadata filtering
     published: str             # ISO date, for date-range filters
     embedding_version: str     # must match the collection's model version
 ```
+
+**Legacy points count as papers (T-DOC80).** Every point upserted before `doc_type` existed has no
+`doc_type` key in its payload at all — not an empty string, an absent key. `filters.doc_type ==
+"paper"` must therefore match on **either** an explicit `"paper"` value **or** the key being
+missing/empty, not a plain equality check — both `FakeVectorStore` (`rag/fakes/fake_vector_store.py`)
+and the real Qdrant adapter's `_qdrant_filter` (`rag/vector_index.py`, a `should`-group: `MatchValue("paper")`
+OR `IsEmptyCondition`) implement this as a should/either-of match. `filters.doc_type == "book"`
+stays a plain equality match — no pre-existing point is a book, so there's no absent-key case to
+cover on that side.
 
 `text` carries the real passage content and is what the sparse/keyword channel tokenizes (previously
 the sparse channel had no real text available at this seam and hashed `section_path` — a heading
@@ -404,8 +440,12 @@ class Citation:
     paper_id: str
     title: str
     authors: list[str]
-    arxiv_url: str
+    arxiv_url: str              # populated by rag/retriever.py's source_url(paper_id, pdf_url)
+                                  # (T-DOC80): the real arXiv abstract page for an arXiv paper_id,
+                                  # or pdf_url verbatim (the original filename recorded at staging
+                                  # time) for a `local:`-prefixed paper_id, which has no arXiv page
     section_path: str
+    doc_type: Literal["paper", "book"] = "paper"   # T-DOC80
 
 @dataclass(frozen=True)
 class GroundedResult:
@@ -590,6 +630,9 @@ class PaperSearchResult:
     search adds, instead of duplicating its fields."""
     view: PaperSummaryView
     score: float
+    chapter: str | None = None   # T-DOC80: set to the chapter's title when this hit resolved from
+        # a chapter summary ({paper_id}:summary:ch{n}, books only); None for a whole-paper/
+        # whole-book hit. Callers wanting the anchored chapter text follow up with semantic_search.
 
 @dataclass(frozen=True)
 class PaperSearchResponse:
@@ -651,6 +694,9 @@ class Config:
     blob_dir: str = "blobs"
     collection: str = "papers"
     pdf_cache_dir: str = "pdf_cache"          # "" explicitly disables the PDF cache
+    drop_in_dir: str = "drop_in"              # T-DOC80: app/ingest_local.py's scan root
+                                                # (papers/ and books/ subfolders; done/ and
+                                                # failed/ created alongside them)
     batch_size_log_path: str | None = None    # unset writes no CSV -- investigation tooling
     prefetch_target: int = 30_000             # app/prefetch_pdfs.py's standalone backlog target
     ingest_paper_ids: list[str] | None = None # T-EVAL harvest-scoping override, unset in normal use
@@ -721,6 +767,9 @@ CREATE TABLE papers (
                                       -- NULL only if a row predates the paper reaching that stage. Unused
                                       -- by V0 filtering (relevance_filter="off"), but must not be silently
                                       -- left NULL after "done" — see TEST-STRATEGY Orchestrator test.
+  doc_type     TEXT NOT NULL DEFAULT 'paper'   -- 'paper' | 'book' (migrations/0004, T-DOC80);
+                                      -- mirrors PaperRef.doc_type. Defaulted so every pre-existing
+                                      -- row and every arXiv harvest is unaffected.
 );
 
 CREATE TABLE blocks (
@@ -752,7 +801,11 @@ CREATE INDEX idx_chunks_paper_id ON chunks(paper_id);
 CREATE TABLE summaries (
   summary_id   TEXT PRIMARY KEY,
   paper_id     TEXT NOT NULL REFERENCES papers(paper_id),
-  text         TEXT NOT NULL
+  text         TEXT NOT NULL,
+  title        TEXT               -- migrations/0004, T-DOC80: chapter heading for a
+                                    -- {paper_id}:summary:ch{n} row (ChapterSummary.title, §M5);
+                                    -- NULL for the existing whole-document {paper_id}:summary rows,
+                                    -- which have no title of their own
 );
 
 -- The idempotency spine (CONVENTIONS "operational invariants"):
@@ -814,6 +867,15 @@ CREATE TABLE quarantine_diagnostics (
   diagnostics_json TEXT             -- optional best-effort context, e.g. {"pdf_size_bytes": ...}
 );
 ```
+
+### doc_type + chapter titles (additive — `migrations/0004_doc_type_and_chapter_titles.sql`, T-DOC80 drop-in folder + book ingestion)
+
+Two `ALTER TABLE ADD COLUMN`s, no new tables — additive to `papers`/`summaries` above, same
+"never edit an already-applied migration file" rule the two migrations before it followed.
+`papers.doc_type` is `NOT NULL DEFAULT 'paper'` (every pre-existing row and every arXiv harvest is
+a paper, unaffected); `summaries.title` is nullable, unlike `doc_type` — there is no sensible
+default title for the existing whole-document `{paper_id}:summary` rows, so it stays `NULL` for
+them and is populated only for the new `{paper_id}:summary:ch{n}` chapter rows a book produces.
 
 Run SQLite in **WAL mode** (ADR-05 — the relational-store decision; WAL is an implementation detail of
 that choice, not ADR-07, which is the unrelated chunking/contextual-header decision).

@@ -114,6 +114,20 @@ Ten modules, each independently ownable (owners A–F) and testable through its 
   this to V1 by analogy with contextual headers; it's a different decision.
 - **Test:** `ParsedDoc` fixture → non-empty `summary_text`; the GPU-lock test asserts Summarizer and
   Embedder never hold the lock simultaneously (shared test with Embedder/Orchestrator).
+- **Books (T-DOC80): map-reduce, not a plain `summarize()` call.** A book's markdown runs 10-50x a
+  paper's — one call would silently truncate at the real adapter's context ceiling. `rag/book_summarizer.py`'s
+  `summarize_book(parsed, summarizer) -> tuple[str, list[ChapterSummary]]` takes any `Summarizer` as
+  a plain argument (the GPU lock, eviction hooks, and retry taxonomy all stay the injected
+  summarizer's own concern, unchanged) and: splits `ParsedDoc.blocks` into chapters (top-level
+  `section_path` groups, falling back to fixed-size block windows for a flat/scanned book with no
+  usable section structure), summarizes each chapter (map — windowed in two passes if a single
+  chapter still exceeds the context ceiling), then summarizes the joined chapter summaries into one
+  overview + table of contents (reduce). The `list[ChapterSummary]` it returns are not a side
+  artifact — `IngestionOrchestrator` (M9 below) persists AND embeds each one as its own
+  `kind="summary"` vector, exactly like the whole-document summary, so `search_papers` can return an
+  individual chapter as a routing hit (`PaperSearchResult.chapter`, DATA-CONTRACTS §M8) — the
+  chapter-level unit `search_papers`/`semantic_search` route on for a book, the way a whole-paper
+  summary is the unit for a paper.
 
 ### M4 · Embedder  *(owner C)* — the replaceability seam
 - **Interface:** `embed(texts:[str]) -> [Vector]`; property `{model_id, dim, version}`
@@ -248,6 +262,20 @@ Ten modules, each independently ownable (owners A–F) and testable through its 
 - **Hides (depth):** staging, checkpoints, resume, dedup, GPU queueing, relevance-score computation.
 - **Seam:** composes the stage modules. **V1 adds a `ClaimExtractor` stage** — the orchestrator gains a
   stage; no other module changes.
+- **Books get their own singleton parse batches (T-DOC80).** Inside `parse_phase()`, every
+  `doc_type == "book"` ref is pulled out of the normal `parse_batch_size`-sized grouping and given
+  its own solo `parse_batch([book])` call instead — never mixed with a paper or another book in the
+  same MinerU batch call. A book's markdown can run 10-50x a paper's, so batching it alongside even
+  one other document is a real, measured VRAM-pressure case the existing batch sizing (fixed or
+  adaptive, both tuned assuming paper-scale documents) never budgeted for. Book batches run after
+  every paper batch, in harvest order among themselves; `_prepare_batch` doesn't need to know why
+  its batch is size 1, so no new parameter or branch exists on it for this.
+- **One `embed()` call per paper/book, unchanged (T-DOC80).** A book's summary, every chapter
+  summary, and every chunk still embed together in exactly one `Embedder.embed()` call per
+  document — `chapter_summaries` is `[]` for a plain paper, so this is a no-op extension of the
+  pre-T-DOC80 shape, and the existing "N+1 total `embed()` calls per run" invariant (one
+  `topic_query_vec` embed once per run, plus one per-document embed call) is preserved rather than
+  becoming N+1 per chapter.
 - **Test:** run end-to-end with all fakes; assert idempotency (re-run = no dupes) and resume-after-crash.
 
 ### Operational tooling built on top of M1–M9 (not new pipeline modules)
@@ -263,6 +291,14 @@ or read their on-disk state, same as any other operator tool:
   controls an `app.build_corpus` run over Tailscale (start/pause/resume/stop/retarget via
   `run_manifest.json` + OS signals, plus a read-only `/api/status` snapshot and a `/api/search` panel over
   `McpServer`). `status.py` and `controller.py` share no import between them, only the on-disk manifest.
+- **`app/ingest_local.py`** (T-DOC80) — the drop-in folder staging tool: scans `Config.drop_in_dir`'s
+  `papers/`/`books/` subfolders, stages each PDF into the same `<paper_id>.pdf` + `.json` sidecar cache
+  format `app.assembly._cached_ref` already reads (reusing `app/prefetch_pdfs.py`'s sidecar writer and
+  `app/assembly.py`'s backoff-wrapped `fetch_by_ids`, not reimplementing either), and hands the staged
+  ids to `app.ingest` via a manifest file — the same `--paper-ids-file` mechanism `app/build_corpus.py`
+  already uses. A recognizable arXiv PDF gets its real metadata fetched; anything else (a real book, or
+  an arXiv fetch that fails or finds no match) mints a content-addressed `local:{sha256[:12]}` id instead
+  (§IDs, DATA-CONTRACTS.md) — never fails the file over a metadata miss.
 
 ---
 
