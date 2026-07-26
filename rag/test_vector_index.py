@@ -97,6 +97,40 @@ def test_non_positive_rrf_k_raises_contract_error():
 
 
 # ==================================================================================================
+# _qdrant_filter — doc_type (T-DOC80). Pure-function unit tests: no live service needed, same
+# `real = pytest.importorskip("rag.vector_index")` + `real.models` pattern this file already uses
+# for other pure functions in the vendor-isolated module (CONVENTIONS.md §1: qdrant_client is only
+# nameable inside rag/vector_index.py, not here).
+# ==================================================================================================
+
+
+def test_qdrant_filter_doc_type_book():
+    real = pytest.importorskip("rag.vector_index")
+    f = real._qdrant_filter(SearchFilters(doc_type="book"))
+    assert (
+        real.models.FieldCondition(key="doc_type", match=real.models.MatchValue(value="book"))
+        in f.must
+    )
+
+
+def test_qdrant_filter_doc_type_paper_includes_legacy_points():
+    real = pytest.importorskip("rag.vector_index")
+    f = real._qdrant_filter(SearchFilters(doc_type="paper"))
+    # Legacy (pre-T-DOC80) points have no doc_type payload key at all but are all papers -- the
+    # "paper" case must be a should-group matching either the explicit value or the key's absence,
+    # not a plain FieldCondition (which would exclude legacy points).
+    nested = next(c for c in f.must if isinstance(c, real.models.Filter))
+    assert (
+        real.models.FieldCondition(key="doc_type", match=real.models.MatchValue(value="paper"))
+        in nested.should
+    )
+    assert (
+        real.models.IsEmptyCondition(is_empty=real.models.PayloadField(key="doc_type"))
+        in nested.should
+    )
+
+
+# ==================================================================================================
 # Layer 2 — cross-adapter contract (the same assertions run against the fake now, real later)
 # ==================================================================================================
 
@@ -237,6 +271,28 @@ def assert_rebuild_preserves_sparse_text_signal(adapter):
     assert hits[0].id == "zzz_right"
 
 
+def assert_filters_by_doc_type(adapter):
+    adapter.upsert("p", [1.0, 0.0], _payload(doc_type="paper"))
+    adapter.upsert("b", [1.0, 0.0], _payload(doc_type="book"))
+    hits = adapter.hybrid_search(
+        qvec=[1.0, 0.0], qtext="method", filters=SearchFilters(doc_type="book"), k=10
+    )
+    assert [h.id for h in hits] == ["b"]
+
+
+def assert_legacy_payload_without_doc_type_counts_as_paper(adapter):
+    # T-DOC80: points upserted before doc_type existed have no doc_type payload key at all --
+    # both adapters must still treat them as "paper", not exclude them or match everything. This
+    # is the actual fake-vs-real symmetry proof (not just a comment) for that legacy behavior.
+    legacy_payload = _payload()
+    assert "doc_type" not in legacy_payload
+    adapter.upsert("legacy", [1.0, 0.0], legacy_payload)
+    hits = adapter.hybrid_search(
+        qvec=[1.0, 0.0], qtext="method", filters=SearchFilters(doc_type="paper"), k=10
+    )
+    assert [h.id for h in hits] == ["legacy"]
+
+
 def assert_delete_removes_points(adapter):
     # T-DOC40: the vector-store half of DocumentStore.delete()'s cross-store cleanup -- a deleted
     # id must stop appearing in search results, and an unrelated id must be untouched.
@@ -263,6 +319,8 @@ CONTRACT = (
     assert_filters_by_category,
     assert_filters_by_date_range,
     assert_filters_by_kind,
+    assert_filters_by_doc_type,
+    assert_legacy_payload_without_doc_type_counts_as_paper,
     assert_top1_is_the_dominant_document,
     assert_rebuild_reproduces_results,
     assert_sparse_channel_distinguishes_real_text,

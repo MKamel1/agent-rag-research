@@ -108,6 +108,19 @@ def _qdrant_filter(filters: SearchFilters | None) -> models.Filter | None:
         )
     if filters.kind is not None:
         must.append(models.FieldCondition(key="kind", match=models.MatchValue(value=filters.kind)))
+    if filters.doc_type == "book":
+        must.append(models.FieldCondition(key="doc_type", match=models.MatchValue(value="book")))
+    elif filters.doc_type == "paper":
+        # Legacy points (pre-T-DOC80) have no doc_type payload key but are all papers --
+        # match either the explicit value or the key's absence, mirroring the fake's .get default.
+        must.append(
+            models.Filter(
+                should=[
+                    models.FieldCondition(key="doc_type", match=models.MatchValue(value="paper")),
+                    models.IsEmptyCondition(is_empty=models.PayloadField(key="doc_type")),
+                ]
+            )
+        )
     if filters.published_after is not None or filters.published_before is not None:
         must.append(
             models.FieldCondition(
