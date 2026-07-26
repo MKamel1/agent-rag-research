@@ -30,6 +30,7 @@ source file moves to `failed/` with a sibling `.err` file, and `scan_drop_dir` c
 from __future__ import annotations
 
 import hashlib
+import logging
 import os
 import re
 from collections.abc import Callable
@@ -41,6 +42,8 @@ from pypdfium2._helpers.misc import PdfiumError
 
 from app.prefetch_pdfs import _pdf_path, _write_sidecar
 from contracts.harvester import PaperRef
+
+logger = logging.getLogger(__name__)
 
 # Matches a base arXiv id (new-style "YYMM.NNNNN", 4-5 digit suffix) with an optional "arXiv:"
 # prefix and/or "vN" version suffix -- the same shape whether it comes from a filename
@@ -93,6 +96,10 @@ def _pdf_title_author(pdf_bytes: bytes) -> tuple[str | None, str | None]:
         finally:
             pdf.close()
     except Exception:
+        # Metadata is optional garnish (module docstring) -- logged for visibility, never
+        # propagated. `stage_file` has already gated out genuinely unopenable PDFs before this
+        # point, so a failure here is an unexpected anomaly worth a trace, not routine noise.
+        logger.exception("ingest_local: could not read PDF metadata, continuing without it")
         return None, None
     return meta.get("Title"), meta.get("Author")
 
@@ -204,7 +211,12 @@ def stage_file(
             fetched = fetch_by_ids([arxiv_id])
         except Exception:
             # ANY fetch failure (network, rate limit, arXiv down) falls back to a local id below
-            # -- a metadata-fetch hiccup must never fail the whole file (module docstring).
+            # -- a metadata-fetch hiccup must never fail the whole file (module docstring). Logged
+            # (not silent) since it's a real, if non-fatal, degradation worth knowing about.
+            logger.exception(
+                "ingest_local: arXiv metadata fetch failed for id=%r, falling back to a local: id",
+                arxiv_id,
+            )
             fetched = []
         if fetched:
             # The drop folder's doc_type wins over the fetched ref's own (always "paper")
