@@ -218,10 +218,13 @@ class DocumentStore:
                 "SELECT chunk_id FROM chunks WHERE paper_id = ?", (paper_id,)
             ).fetchall()
         ]
-        summary_row = self._con.execute(
-            "SELECT summary_id FROM summaries WHERE paper_id = ?", (paper_id,)
-        ).fetchone()
-        vector_ids = chunk_ids + ([summary_row["summary_id"]] if summary_row else [])
+        summary_ids = [
+            row["summary_id"]
+            for row in self._con.execute(
+                "SELECT summary_id FROM summaries WHERE paper_id = ?", (paper_id,)
+            ).fetchall()
+        ]
+        vector_ids = chunk_ids + summary_ids
 
         with self._con:
             self._con.execute("DELETE FROM chunks WHERE paper_id = ?", (paper_id,))
