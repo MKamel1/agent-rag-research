@@ -24,7 +24,7 @@ import pytest
 _mod = pytest.importorskip("rag.document_store")
 
 from contracts.chunker import Chunk  # noqa: E402  (imports follow importorskip, per M1a convention)
-from contracts.document_store import PaperRecord  # noqa: E402
+from contracts.document_store import ChapterSummary, PaperRecord  # noqa: E402
 from contracts.errors import ContractError  # noqa: E402
 from contracts.harvester import PaperRef  # noqa: E402
 from contracts.parser import ParsedDoc  # noqa: E402
@@ -459,6 +459,76 @@ def test_delete_cleans_up_chunks_and_blocks_with_no_matching_papers_row(tmp_path
             assert count == 0, f"{table} still holds orphaned rows for {orphan_id}"
     finally:
         con.close()
+
+
+# --------------------------------------------------------------------------------------------------
+# doc_type + chapter_summaries (T-DOC80) — book ingestion round-trips through papers.doc_type and
+# one summaries row per chapter (migration 0004)
+# --------------------------------------------------------------------------------------------------
+
+
+def test_put_get_round_trips_doc_type_and_chapters(store):
+    chapters = [
+        ChapterSummary(summary_id=f"{PAPER_ID}:summary:ch0", title="Intro", text="ch0 summary"),
+        ChapterSummary(summary_id=f"{PAPER_ID}:summary:ch1", title="DAGs", text="ch1 summary"),
+    ]
+    record = make_paper_record(
+        ref=make_paper_ref(doc_type="book"), chapter_summaries=chapters
+    )
+    store.put(record)
+
+    got = store.get(PAPER_ID)
+
+    assert got.ref.doc_type == "book"
+    assert got.chapter_summaries == chapters
+
+
+def test_chapter_order_is_numeric_not_lexical(store):
+    # ch10 must come after ch2 — lexical ordering would break this at 10+ chapters.
+    chapters = [
+        ChapterSummary(summary_id=f"{PAPER_ID}:summary:ch{i}", title=f"C{i}", text="t")
+        for i in range(12)
+    ]
+    store.put(
+        make_paper_record(ref=make_paper_ref(doc_type="book"), chapter_summaries=chapters)
+    )
+
+    got = store.get(PAPER_ID)
+
+    assert [c.summary_id for c in got.chapter_summaries] == [c.summary_id for c in chapters]
+
+
+def test_get_summary_resolves_chapter_ids(store):
+    chapters = [
+        ChapterSummary(summary_id=f"{PAPER_ID}:summary:ch0", title="Intro", text="ch0 summary"),
+        ChapterSummary(summary_id=f"{PAPER_ID}:summary:ch1", title="DAGs", text="ch1 summary"),
+    ]
+    store.put(make_paper_record(ref=make_paper_ref(doc_type="book"), chapter_summaries=chapters))
+
+    assert store.get_summary(f"{PAPER_ID}:summary:ch1") == "ch1 summary"
+
+
+def test_paper_without_chapters_unchanged(store):
+    store.put(make_paper_record())  # plain paper, no chapter_summaries, default doc_type
+
+    got = store.get(PAPER_ID)
+
+    assert got.ref.doc_type == "paper"
+    assert got.chapter_summaries == []
+
+
+def test_delete_removes_chapter_rows(store):
+    chapters = [
+        ChapterSummary(summary_id=f"{PAPER_ID}:summary:ch0", title="Intro", text="ch0 summary"),
+    ]
+    store.put(make_paper_record(ref=make_paper_ref(doc_type="book"), chapter_summaries=chapters))
+
+    store.delete(PAPER_ID)
+
+    (count,) = store._con.execute(
+        "SELECT count(*) FROM summaries WHERE paper_id = ?", (PAPER_ID,)
+    ).fetchone()
+    assert count == 0
 
 
 # --------------------------------------------------------------------------------------------------
