@@ -29,19 +29,26 @@ source file moves to `failed/` with a sibling `.err` file, and `scan_drop_dir` c
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import logging
 import os
 import re
+import subprocess
+import sys
+import time
 from collections.abc import Callable
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 import pypdfium2 as pdfium
 from pypdfium2._helpers.misc import PdfiumError
 
+from app.assembly import _fetch_by_ids_with_backoff
 from app.prefetch_pdfs import _pdf_path, _write_sidecar
 from contracts.harvester import PaperRef
+from rag.config import load_config
+from rag.harvester import ArxivSource
 
 logger = logging.getLogger(__name__)
 
@@ -256,3 +263,66 @@ def scan_drop_dir(
             if paper_id is not None:
                 staged.append(paper_id)
     return staged
+
+
+def _fetch_by_ids(ids: list[str]) -> list[PaperRef]:
+    """Production `fetch_by_ids` for `main()` -- reuses `app.assembly`'s already 429-resilient
+    backoff wrapper (T-DOC49) instead of reimplementing arXiv retry logic here."""
+    return _fetch_by_ids_with_backoff(ArxivSource(), ids, sleep=time.sleep)
+
+
+def _write_manifest(drop_dir: Path, paper_ids: list[str]) -> Path:
+    """`drop_in/manifest-<UTC timestamp>.txt`, one paper_id per line -- the exact format
+    `app.ingest --paper-ids-file` already reads (`app/ingest.py::_effective_config`), also
+    already used by `app/build_corpus.py::_write_batch_ids`."""
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    manifest_path = drop_dir / f"manifest-{timestamp}.txt"
+    manifest_path.write_text("\n".join(paper_ids) + "\n")
+    return manifest_path
+
+
+def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--stage-only", action="store_true",
+        help="Stage drop_in/ files into pdf_cache and write the manifest, but don't invoke "
+             "app.ingest",
+    )
+    parser.add_argument(
+        "--drop-dir", default=None, metavar="PATH",
+        help="Override cfg.drop_in_dir for this run",
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None) -> int:
+    # Matches app/prefetch_pdfs.py::main's own __main__ convention -- without this, every
+    # logger.* call above is a no-op.
+    logging.basicConfig(level=logging.INFO)
+    args = _parse_args(argv)
+    cfg = load_config()
+    drop_dir = Path(args.drop_dir) if args.drop_dir is not None else Path(cfg.drop_in_dir)
+    cache_dir = Path(cfg.pdf_cache_dir)
+
+    staged = scan_drop_dir(drop_dir, cache_dir, fetch_by_ids=_fetch_by_ids)
+    if not staged:
+        logger.info("ingest_local: drop dir %s empty, nothing staged", drop_dir)
+        return 0
+
+    manifest_path = _write_manifest(drop_dir, staged)
+    logger.info(
+        "ingest_local: staged %d file(s), manifest written to %s", len(staged), manifest_path,
+    )
+
+    if args.stage_only:
+        return 0
+
+    result = subprocess.run(
+        [sys.executable, "-m", "app.ingest", "--paper-ids-file", str(manifest_path)],
+        check=False,
+    )
+    return result.returncode
+
+
+if __name__ == "__main__":
+    sys.exit(main())
