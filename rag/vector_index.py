@@ -101,7 +101,7 @@ def _sparse_vector_params() -> models.SparseVectorParams:
 def _qdrant_filter(filters: SearchFilters | None) -> models.Filter | None:
     if filters is None:
         return None
-    must: list[models.FieldCondition] = []
+    must: list[models.Condition] = []
     if filters.categories is not None:
         must.append(
             models.FieldCondition(key="categories", match=models.MatchAny(any=filters.categories))
