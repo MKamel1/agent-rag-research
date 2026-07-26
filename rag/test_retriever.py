@@ -28,7 +28,7 @@ import pytest
 _mod = pytest.importorskip("rag.retriever")
 
 from contracts.chunker import Chunk
-from contracts.document_store import PaperRecord
+from contracts.document_store import ChapterSummary, PaperRecord
 from contracts.errors import ContractError
 from contracts.harvester import PaperRef
 from contracts.parser import ParsedDoc
@@ -98,7 +98,7 @@ class RecordingDocStore:
         return [arg for name, arg in self.calls if name == method]
 
 
-def _make_ref(paper_id: str, categories=("cs.LG",)) -> PaperRef:
+def _make_ref(paper_id: str, categories=("cs.LG",), doc_type="paper") -> PaperRef:
     return PaperRef(
         paper_id=paper_id,
         version="v1",
@@ -109,6 +109,7 @@ def _make_ref(paper_id: str, categories=("cs.LG",)) -> PaperRef:
         published=date(2026, 6, 1),
         updated=date(2026, 6, 1),
         pdf_url=f"https://arxiv.org/pdf/{paper_id}v1",
+        doc_type=doc_type,
     )
 
 
@@ -125,7 +126,7 @@ def _payload(paper_id, kind, section_path, categories, embedder, text):
 
 
 def _seed_chunk(store, docstore, embedder, *, chunk_id, paper_id, block_id, text,
-                section_path="3. Method", categories=("cs.LG",), extra_blocks=()):
+                section_path="3. Method", categories=("cs.LG",), extra_blocks=(), doc_type="paper"):
     """Seed one chunk into both the vector store and the doc store. `extra_blocks` lets a chunk span
     multiple blocks (the multi-block anchoring case) — the chunk's `text` is the caller's business;
     the anchor always points at `block_id` (the first block)."""
@@ -141,7 +142,7 @@ def _seed_chunk(store, docstore, embedder, *, chunk_id, paper_id, block_id, text
                   section_path=section_path, parent_id=block_id)
     docstore._chunks[chunk_id] = chunk
     docstore._records[paper_id] = PaperRecord(
-        ref=_make_ref(paper_id, categories),
+        ref=_make_ref(paper_id, categories, doc_type=doc_type),
         parsed=ParsedDoc(paper_id=paper_id, markdown="# T", blocks=[], figures=[], tables=[],
                          references=[], parser_id="test-parser-1.x"),
         chunks=[chunk], summary_text="s", summary_id=f"{paper_id}:summary")
@@ -151,13 +152,15 @@ def _seed_chunk(store, docstore, embedder, *, chunk_id, paper_id, block_id, text
 
 
 def _seed_summary(store, docstore, embedder, *, paper_id, summary_id, summary_text,
-                  section_path="Abstract", categories=("cs.LG",)):
+                  section_path="Abstract", categories=("cs.LG",), doc_type="paper",
+                  chapter_summaries=()):
     docstore._summaries[summary_id] = summary_text
     docstore._records[paper_id] = PaperRecord(
-        ref=_make_ref(paper_id, categories),
+        ref=_make_ref(paper_id, categories, doc_type=doc_type),
         parsed=ParsedDoc(paper_id=paper_id, markdown="# T", blocks=[], figures=[], tables=[],
                          references=[], parser_id="test-parser-1.x"),
-        chunks=[], summary_text=summary_text, summary_id=summary_id)
+        chunks=[], summary_text=summary_text, summary_id=summary_id,
+        chapter_summaries=list(chapter_summaries))
     store.upsert(summary_id, embedder.embed([summary_text])[0],
                  _payload(paper_id, "summary", section_path, categories, embedder, summary_text))
 
@@ -508,6 +511,19 @@ def test_retrieve_pool_size_default_is_unchanged_when_not_passed():
     assert coverage.candidate_count == 32
 
 
+def test_retrieve_grounded_result_citation_doc_type_book():
+    # A chunk hit from a doc_type="book" record must carry that doc_type on its Citation, not the
+    # "paper" default.
+    store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
+    _seed_chunk(store, docstore, embedder, chunk_id="local:ab12cd34ef56:c0",
+                paper_id="local:ab12cd34ef56", block_id="local:ab12cd34ef56:b0",
+                text="directed acyclic graph d-separation", doc_type="book")
+    results, _coverage = _make_retriever(store, docstore, FakeReranker(), embedder).retrieve(
+        "directed acyclic graph", filters=None, k=10)
+    [result] = results
+    assert result.citation.doc_type == "book"
+
+
 def test_retrieve_filters_is_searchfilters_not_dict():
     store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
     _seed_chunk(store, docstore, embedder, chunk_id="2506.00001:c0", paper_id="2506.00001",
@@ -529,6 +545,20 @@ def test_paper_id_from_summary_hit_id_parses_frozen_format():
     # changes, this is the one place that depends on it, and it should break loudly here first
     # rather than silently parsing garbage at the call site.
     assert _mod._paper_id_from_summary_hit_id("2506.01234:summary") == "2506.01234"
+
+
+def test_summary_id_parser_handles_chapter_ids():
+    # T-DOC80: the book-chapter form "{paper_id}:summary:ch{n}" must still recover the paper_id --
+    # including a `local:` paper_id, which itself contains a colon.
+    assert _mod._paper_id_from_summary_hit_id("2506.01234:summary") == "2506.01234"
+    assert (_mod._paper_id_from_summary_hit_id("local:ab12cd34ef56:summary:ch3")
+            == "local:ab12cd34ef56")
+
+
+def test_source_url_local_vs_arxiv():
+    assert (_mod.source_url("2506.01234", "https://arxiv.org/pdf/2506.01234v1")
+            == "https://arxiv.org/abs/2506.01234")
+    assert _mod.source_url("local:ab12cd34ef56", "causality-pearl.pdf") == "causality-pearl.pdf"
 
 
 def test_retrieve_papers_empty_corpus_returns_empty_list():
@@ -665,6 +695,45 @@ def test_retrieve_papers_pool_size_grows_past_32_when_k_exceeds_it():
 
     assert coverage.candidate_count == 40  # not clamped to _RERANK_POOL_SIZE=32
     assert len(results) == 40
+
+
+def test_retrieve_papers_chapter_hit_sets_chapter_and_doc_type():
+    store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
+    paper_id = "local:ab12cd34ef56"
+    ch_summary_id = f"{paper_id}:summary:ch1"
+    _seed_summary(
+        store, docstore, embedder, paper_id=paper_id, summary_id=f"{paper_id}:summary",
+        summary_text="a whole-book summary about causal graphs", doc_type="book",
+        chapter_summaries=[ChapterSummary(summary_id=ch_summary_id, title="DAGs",
+                                          text="directed acyclic graphs and d-separation")],
+    )
+    # Seed the CHAPTER summary's own vector point + resolvable text (the whole-book summary_id
+    # above is a distinct point that isn't queried here).
+    docstore._summaries[ch_summary_id] = "directed acyclic graphs and d-separation"
+    store.upsert(ch_summary_id, embedder.embed(["directed acyclic graphs and d-separation"])[0],
+                 _payload(paper_id, "summary", "Ch. 1", ("cs.LG",), embedder,
+                          "directed acyclic graphs and d-separation"))
+
+    results, _coverage = _make_retriever(store, docstore, FakeReranker(), embedder).retrieve_papers(
+        "directed acyclic graphs", filters=None, k=10)
+
+    # Two hits share this paper_id: the whole-book summary and the ch1 chapter summary -- isolate
+    # the chapter hit specifically (by resolved summary_text, since that's what distinguishes them).
+    [result] = [r for r in results
+                if r.view.summary_text == "directed acyclic graphs and d-separation"]
+    assert result.chapter == "DAGs"
+    assert result.view.summary_text == "directed acyclic graphs and d-separation"
+    assert result.view.citation.doc_type == "book"
+
+
+def test_retrieve_papers_whole_paper_hit_chapter_is_none():
+    store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
+    _seed_summary(store, docstore, embedder, paper_id="2506.00001", summary_id="2506.00001:summary",
+                  summary_text="a paper about instrumental variables")
+    results, _coverage = _make_retriever(store, docstore, FakeReranker(), embedder).retrieve_papers(
+        "instrumental variables", filters=None, k=10)
+    [result] = results
+    assert result.chapter is None
 
 
 def test_both_methods_use_the_same_injected_reranker():

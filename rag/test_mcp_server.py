@@ -220,6 +220,32 @@ def test_get_paper_returns_paper_summary_view():
     assert view.summary_text == "A short summary."
     assert view.section_paths == ["1. Intro", "3. Method"]  # distinct block section_paths, reading order
     assert isinstance(view.citation, Citation)
+    assert view.citation.arxiv_url == f"https://arxiv.org/abs/{paper_id}"
+    assert view.citation.doc_type == "paper"
+
+
+def test_get_paper_local_id_cites_pdf_url_verbatim_with_book_doc_type():
+    # T-DOC80: a `local:` paper_id has no arXiv page -- get_paper's Citation must use source_url()
+    # (pdf_url verbatim) and carry the record's own doc_type, not the "paper" default.
+    docstore = RecordingDocStore()
+    from contracts.document_store import PaperRecord
+    from contracts.harvester import PaperRef
+    from contracts.parser import ParsedDoc
+    from datetime import date
+
+    paper_id = "local:ab12cd34ef56"
+    docstore._blocks_by_paper[paper_id] = []
+    ref = PaperRef(paper_id=paper_id, version="v1", title="Causality", abstract="...",
+                   authors=["J. Pearl"], categories=["stat.ME"], published=date(2026, 6, 1),
+                   updated=date(2026, 6, 1), pdf_url="causality-pearl.pdf", doc_type="book")
+    docstore._records[paper_id] = PaperRecord(
+        ref=ref, parsed=ParsedDoc(paper_id=paper_id, markdown="# T", blocks=[], figures=[], tables=[],
+                                  references=[], parser_id="test-parser-1.x"),
+        chunks=[], summary_text="A book summary.", summary_id=f"{paper_id}:summary")
+
+    view = _server(SpyRetriever(), docstore).get_paper(paper_id)
+    assert view.citation.arxiv_url == "causality-pearl.pdf"
+    assert view.citation.doc_type == "book"
 
 
 def test_get_span_returns_verbatim_source_text():
