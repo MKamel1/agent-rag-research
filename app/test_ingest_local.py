@@ -369,5 +369,40 @@ def test_main_empty_drop_dir_exits_zero_without_ingest(tmp_path, monkeypatch):
     assert list((tmp_path / "drop").glob("manifest-*.txt")) == []
 
 
+def _fake_config_with_disabled_cache(tmp_path: Path) -> Config:
+    """`pdf_cache_dir=""` is a documented, supported value elsewhere (contracts/config.py: ""
+    disables the cache) but this module's whole staging mechanism depends on a working cache dir
+    -- see test_main_disabled_pdf_cache_refuses_to_stage below."""
+    return Config(
+        focus_area_queries=["causal inference"],
+        drop_in_dir=str(tmp_path / "drop"),
+        pdf_cache_dir="",
+    )
+
+
+def test_main_disabled_pdf_cache_refuses_to_stage(tmp_path, monkeypatch):
+    """`pdf_cache_dir=""` means "cache disabled" (contracts/config.py). This module's staged files
+    are cache-first entries `app.assembly.harvest_refs` reads back -- with the cache disabled,
+    `harvest_refs` falls through to a live arXiv fetch for every id, including `local:`-prefixed
+    ones arXiv can't resolve, and silently drops them from the corpus (harvest_refs' own documented
+    contract). `main()` must refuse up front rather than stage files that then silently vanish."""
+    monkeypatch.setattr(
+        "app.ingest_local.load_config", lambda: _fake_config_with_disabled_cache(tmp_path)
+    )
+    scan_calls = []
+    monkeypatch.setattr(
+        "app.ingest_local.scan_drop_dir", lambda *a, **k: scan_calls.append((a, k))
+    )
+    _stage_one_synthetic_paper(tmp_path)
+
+    exit_code = main([])
+
+    assert exit_code != 0
+    assert scan_calls == []
+    assert list((tmp_path / "drop").glob("manifest-*.txt")) == []
+    # The source file must be untouched -- nothing "staged" into done/ either.
+    assert (tmp_path / "drop" / "papers" / "book.pdf").exists()
+
+
 if __name__ == "__main__":
     sys.exit(pytest.main([__file__, "-v"]))
