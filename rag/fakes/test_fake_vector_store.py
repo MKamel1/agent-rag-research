@@ -145,6 +145,37 @@ def test_filters_restrict_by_kind():
     assert [h.id for h in hits] == ["summary1"]
 
 
+def test_doc_type_filter_book_only():
+    store = FakeVectorStore()
+    store.upsert("p", [1.0, 0.0], _payload(doc_type="paper"))
+    store.upsert("b", [1.0, 0.0], _payload(doc_type="book"))
+    hits = store.hybrid_search(
+        qvec=[1.0, 0.0], qtext="x", filters=SearchFilters(doc_type="book"), k=10
+    )
+    assert [h.id for h in hits] == ["b"]
+
+
+def test_doc_type_filter_none_returns_both():
+    store = FakeVectorStore()
+    store.upsert("p", [1.0, 0.0], _payload(doc_type="paper"))
+    store.upsert("b", [1.0, 0.0], _payload(doc_type="book"))
+    hits = store.hybrid_search(qvec=[1.0, 0.0], qtext="x", filters=None, k=10)
+    assert {h.id for h in hits} == {"p", "b"}
+
+
+def test_legacy_payload_without_doc_type_counts_as_paper():
+    # Pre-T-DOC80 point: upserted before doc_type existed, so the payload dict has no doc_type
+    # key at all. It must still count as "paper", not be excluded or match everything.
+    store = FakeVectorStore()
+    legacy_payload = _payload()  # no doc_type override -- key genuinely absent
+    assert "doc_type" not in legacy_payload
+    store.upsert("legacy", [1.0, 0.0], legacy_payload)
+    hits = store.hybrid_search(
+        qvec=[1.0, 0.0], qtext="x", filters=SearchFilters(doc_type="paper"), k=10
+    )
+    assert [h.id for h in hits] == ["legacy"]
+
+
 def test_delete_removes_the_point_and_leaves_others():
     store = FakeVectorStore()
     store.upsert("keep", [1.0, 0.0], _payload())
