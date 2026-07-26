@@ -55,11 +55,12 @@ from dataclasses import dataclass
 
 from contracts.chunker import Chunk
 from contracts.config import Config
-from contracts.document_store import PaperRecord
+from contracts.document_store import ChapterSummary, PaperRecord
 from contracts.errors import ContractError, PermanentError, TransientError
 from contracts.harvester import PaperRef
 from contracts.ingest_state import CheckpointArtifacts
 from contracts.parser import ParsedDoc
+from rag.book_summarizer import summarize_book
 
 RetrySleep = Callable[[float], None]
 
@@ -296,8 +297,19 @@ class IngestionOrchestrator:
         time). Not a bug: `_prepare_batch`'s prefetch match is exact-ref-tuple equality, so a
         size-mismatched guess is simply a wasted prefetch for that one group, falling through to a
         fresh, correctness-safe download -- never broken, just occasionally not sped up.
+
+        T-DOC80: a `doc_type == "book"` ref is pulled out of the size-`parse_batch_size` grouping
+        above and given its own solo `_prepare_batch([book], ...)` call instead -- a book's
+        markdown can run 10-50x a paper's, so one MinerU batch call mixing a book with even one
+        other document (paper or book) is a real, measured VRAM-pressure case
+        `parse_batch_size`/`batch_size_provider` never budgeted for (both size Pass 1 assuming
+        paper-scale documents). Book batches run after every paper batch, in harvest order among
+        themselves, each one a `parse_batch()` call of exactly one ref -- `_prepare_batch` doesn't
+        need to know why its batch is size 1, so no new parameter or branch is added there.
         """
         self._before_parse_phase()
+        books = [ref for ref in refs if ref.doc_type == "book"]
+        refs = [ref for ref in refs if ref.doc_type != "book"]
         i = 0
         while i < len(refs):
             # Called exactly ONCE per real batch, not twice (review finding, T-DOC21): the
@@ -312,6 +324,9 @@ class IngestionOrchestrator:
             next_batch = refs[i + size : i + 2 * size]
             self._prepare_batch(batch, next_batch)
             i += size
+        for j, book in enumerate(books):
+            next_batch = [books[j + 1]] if j + 1 < len(books) else []
+            self._prepare_batch([book], next_batch)
 
     def _prepare_batch(self, batch: list[PaperRef], next_batch: list[PaperRef] | None = None) -> None:
         """One `parse_phase` group. Only refs that haven't reached `parsed` yet (a fresh paper, or
@@ -506,14 +521,19 @@ class IngestionOrchestrator:
             record = self._document_store.get(paper_id)
             self._before_embed()
             self._on_stage("embed")
-            embedded = self._embed_with_retry(
-                paper_id, [record.summary_text] + [c.text for c in record.chunks]
+            texts = (
+                [record.summary_text]
+                + [cs.text for cs in record.chapter_summaries]
+                + [c.text for c in record.chunks]
             )
+            embedded = self._embed_with_retry(paper_id, texts)
             if embedded is None:
                 return  # quarantined inside _embed_with_retry
-            summary_vec, *chunk_vecs = embedded
+            summary_vec = embedded[0]
+            chapter_vecs = embedded[1 : 1 + len(record.chapter_summaries)]
+            chunk_vecs = embedded[1 + len(record.chapter_summaries) :]
             self._on_stage("store")
-            if not self._upsert_with_retry(paper_id, record, summary_vec, chunk_vecs):
+            if not self._upsert_with_retry(paper_id, record, summary_vec, chapter_vecs, chunk_vecs):
                 return  # quarantined inside _upsert_with_retry
             self._state.checkpoint(paper_id, "done")
             return
@@ -523,29 +543,48 @@ class IngestionOrchestrator:
 
         if _at_least(stage, "summarized"):
             summary_text = artifacts.summary_text
+            chapter_summaries = artifacts.chapter_summaries or []
         else:
             self._on_stage("summarize")
-            summary_text = self._summarize_with_retry(paper_id, parsed)
-            if summary_text is None:
-                return  # quarantined inside _summarize_with_retry
+            if ref.doc_type == "book":
+                # T-DOC80: map-reduce summarize (rag/book_summarizer.py) instead of the plain
+                # summarize -- chapter_summaries are what gets embedded/upserted as their own
+                # kind="summary" routing units below, in the SAME batched embed() call as the
+                # book's own whole-document summary and chunks (never a second call).
+                pair = self._summarize_book_with_retry(paper_id, parsed)
+                if pair is None:
+                    return  # quarantined inside _summarize_book_with_retry
+                summary_text, chapter_summaries = pair
+            else:
+                summary_text = self._summarize_with_retry(paper_id, parsed)
+                if summary_text is None:
+                    return  # quarantined inside _summarize_with_retry
+                chapter_summaries = []
             self._state.checkpoint(
                 paper_id,
                 "summarized",
                 artifacts=CheckpointArtifacts(
-                    parsed=parsed, chunks=chunks, summary_text=summary_text
+                    parsed=parsed,
+                    chunks=chunks,
+                    summary_text=summary_text,
+                    chapter_summaries=chapter_summaries or None,
                 ),
             )
 
-        # One batched embed() call per paper (summary + every chunk together) -- not two separate
-        # calls -- so the per-paper embed cost stays at exactly one call (the `topic_query_vec`
-        # hoist above is the only other embed() call in a run, giving the N+1 total ARCHITECTURE
-        # requires, never 2N).
+        # One batched embed() call per paper (summary + every chapter + every chunk together) --
+        # not two/N+2 separate calls -- so the per-paper embed cost stays at exactly one call (the
+        # `topic_query_vec` hoist above is the only other embed() call in a run, giving the N+1
+        # total ARCHITECTURE requires, never 2N). `chapter_summaries` is `[]` for a plain paper, so
+        # this is exactly the pre-T-DOC80 `[summary_text] + [chunk texts]` batch for every paper.
+        texts = [summary_text] + [cs.text for cs in chapter_summaries] + [c.text for c in chunks]
         self._before_embed()
         self._on_stage("embed")
-        embedded = self._embed_with_retry(paper_id, [summary_text] + [c.text for c in chunks])
+        embedded = self._embed_with_retry(paper_id, texts)
         if embedded is None:
             return  # quarantined inside _embed_with_retry
-        summary_vec, *chunk_vecs = embedded
+        summary_vec = embedded[0]
+        chapter_vecs = embedded[1 : 1 + len(chapter_summaries)]
+        chunk_vecs = embedded[1 + len(chapter_summaries) :]
         relevance_score = _cosine(summary_vec, topic_query_vec)
         self._state.checkpoint(
             paper_id,
@@ -554,6 +593,7 @@ class IngestionOrchestrator:
                 parsed=parsed,
                 chunks=chunks,
                 summary_text=summary_text,
+                chapter_summaries=chapter_summaries or None,
                 relevance_score=relevance_score,
             ),
         )
@@ -565,12 +605,13 @@ class IngestionOrchestrator:
             summary_text=summary_text,
             summary_id=f"{paper_id}:summary",
             relevance_score=relevance_score,
+            chapter_summaries=chapter_summaries,
         )
         self._on_stage("store")
         self._document_store.put(record)  # source of truth, written before the derived index
         self._state.checkpoint(paper_id, "stored")
 
-        if not self._upsert_with_retry(paper_id, record, summary_vec, chunk_vecs):
+        if not self._upsert_with_retry(paper_id, record, summary_vec, chapter_vecs, chunk_vecs):
             return  # quarantined inside _upsert_with_retry
         self._state.checkpoint(paper_id, "done")
 
@@ -588,6 +629,34 @@ class IngestionOrchestrator:
         while True:
             try:
                 return self._summarizer.summarize(parsed)
+            except PermanentError as error:
+                self._state.quarantine(paper_id, "summarized", error)
+                return None
+            except TransientError as error:
+                attempt += 1
+                if attempt > self._max_retries:
+                    self._state.quarantine(paper_id, "summarized", error)
+                    return None
+                self._retry_sleep(self._backoff(attempt))
+
+    def _summarize_book_with_retry(
+        self, paper_id: str, parsed: ParsedDoc
+    ) -> tuple[str, list[ChapterSummary]] | None:
+        """The `doc_type == "book"` analog of `_summarize_with_retry` (T-DOC80): calls the
+        map-reduce `summarize_book` (rag/book_summarizer.py) instead of the plain
+        `summarizer.summarize`, but the identical retry/quarantine shape -- `summarize_book` makes
+        several `summarizer.summarize` calls internally (one per chapter, plus the reduce step),
+        any one of which can raise the same `TransientError`/`PermanentError` a plain paper's
+        single call can, and there is no partial-credit checkpoint mid-map-reduce to resume from,
+        so a `TransientError` retries the WHOLE map-reduce from the top, same as every other
+        bounded-retry call site in this class retries its whole call, not a partial attempt.
+        Returns `None` (already quarantined) on either exhausted `TransientError` or
+        `PermanentError`, same two-outcome shape as `_summarize_with_retry`.
+        """
+        attempt = 0
+        while True:
+            try:
+                return summarize_book(parsed, self._summarizer)
             except PermanentError as error:
                 self._state.quarantine(paper_id, "summarized", error)
                 return None
@@ -624,6 +693,7 @@ class IngestionOrchestrator:
         paper_id: str,
         record: PaperRecord,
         summary_vec: list[float],
+        chapter_vecs: list[list[float]],
         chunk_vecs: list[list[float]],
     ) -> bool:
         """Guards `_upsert_record`'s `vector_index.upsert` calls (T-DOC13) -- found while auditing
@@ -631,19 +701,21 @@ class IngestionOrchestrator:
         adapter classifies every vector-store failure as `TransientError` and never `PermanentError`
         (there is no "this vector is bad" case, only "the vector store is unreachable right now"), so only
         `TransientError` needs handling here -- unlike the other three T-DOC12/T-DOC13 call sites.
-        Retries the whole per-paper batch (summary + every chunk), not just the one call that
-        raised: `VectorIndex.upsert` is idempotent by id (a real vector-store upsert), so re-upserting a
-        point that already landed on an earlier attempt is a no-op in effect, not a duplicate.
-        Returns `True` on success, `False` (already quarantined) on an exhausted retry budget.
-        `chunk_vecs` is a concrete `list`, not the more permissive `Iterable` `_upsert_record`
-        itself accepts (review finding): a retry re-iterates it via `_upsert_record`'s internal
-        `zip(..., strict=True)` on every attempt, which a one-shot iterator would silently break
-        on the second attempt onward.
+        Retries the whole per-paper batch (summary + every chapter + every chunk), not just the
+        one call that raised: `VectorIndex.upsert` is idempotent by id (a real vector-store
+        upsert), so re-upserting a point that already landed on an earlier attempt is a no-op in
+        effect, not a duplicate. Returns `True` on success, `False` (already quarantined) on an
+        exhausted retry budget. `chapter_vecs`/`chunk_vecs` are concrete `list`s, not the more
+        permissive `Iterable` `_upsert_record` itself accepts for `chunk_vecs` (review finding): a
+        retry re-iterates them via `_upsert_record`'s internal `zip(..., strict=True)` on every
+        attempt, which a one-shot iterator would silently break on the second attempt onward.
+        `chapter_vecs` is `[]` for a plain paper (`record.chapter_summaries` is `[]`), so this is a
+        no-op extension of the pre-T-DOC80 call for every non-book paper.
         """
         attempt = 0
         while True:
             try:
-                self._upsert_record(record, summary_vec, chunk_vecs)
+                self._upsert_record(record, summary_vec, chapter_vecs, chunk_vecs)
                 return True
             except TransientError as error:
                 attempt += 1
@@ -653,19 +725,39 @@ class IngestionOrchestrator:
                 self._retry_sleep(self._backoff(attempt))
 
     def _upsert_record(
-        self, record: PaperRecord, summary_vec: list[float], chunk_vecs: Iterable[list[float]]
+        self,
+        record: PaperRecord,
+        summary_vec: list[float],
+        chapter_vecs: list[list[float]],
+        chunk_vecs: Iterable[list[float]],
     ) -> None:
         payload_common = {
             "paper_id": record.ref.paper_id,
             "categories": record.ref.categories,
             "published": record.ref.published.isoformat(),
             "embedding_version": self._embedder.info.version,
+            "doc_type": record.ref.doc_type,
         }
         self._vector_index.upsert(
             record.summary_id,
             summary_vec,
             {**payload_common, "kind": "summary", "section_path": "", "text": record.summary_text},
         )
+        # Chapter summaries (books only -- `record.chapter_summaries` is `[]` for a plain paper,
+        # so this loop never runs for one): each embedded/upserted as its own kind="summary" point
+        # under its own f"{paper_id}:summary:ch{n}" id, so search_papers can return an individual
+        # chapter as a routing hit (contracts/document_store.py's ChapterSummary docstring).
+        for chapter, vector in zip(record.chapter_summaries, chapter_vecs, strict=True):
+            self._vector_index.upsert(
+                chapter.summary_id,
+                vector,
+                {
+                    **payload_common,
+                    "kind": "summary",
+                    "section_path": chapter.title,
+                    "text": chapter.text,
+                },
+            )
         for chunk, vector in zip(record.chunks, chunk_vecs, strict=True):
             self._vector_index.upsert(
                 chunk.chunk_id,
