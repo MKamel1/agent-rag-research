@@ -72,6 +72,8 @@ documented choice; if M1b threads a separate byte-fetch step, `SpyParser` moves 
 --------------------------------------------------------------------------------------------------
 """
 
+from datetime import date
+
 import pytest
 
 from contracts.chunker import Chunk
@@ -1271,3 +1273,234 @@ def test_delete_paper_of_unknown_paper_id_calls_vector_delete_with_no_ids():
     orch.delete_paper("9999.99999")  # must not raise
 
     assert ("delete", ()) in rig.events
+
+
+# ================================================================================================
+# T-DOC80: doc_type="book" branch -- `_finish` calls `summarize_book`'s map-reduce (rag/
+# book_summarizer.py) instead of the plain `summarize`, checkpoints the resulting
+# `chapter_summaries`, embeds [summary] + [chapters...] + [chunks...] in ONE embed() call (the
+# same N+1-per-run invariant `test_embed_is_called_n_plus_one_times_not_two_n` locks in for
+# papers), and upserts each chapter as its own kind="summary" point. A dedicated `BookRig` (below)
+# mirrors `Rig` but scoped to a single book ref, since `Rig`'s 3-paper fixture corpus/spies have no
+# notion of multi-chapter documents.
+# ================================================================================================
+
+BOOK_REF = PaperRef(
+    paper_id="book.0001", version="v1", title="Causality: A Primer",
+    abstract="A book about causal inference.", authors=["J. Pearl"], categories=["cs.LG"],
+    published=date(2020, 1, 1), updated=date(2020, 1, 1),
+    pdf_url="https://example.org/causality.pdf", doc_type="book",
+)
+BOOK_CHAPTERS = ["1. Introduction", "2. Graphical Models"]
+
+
+def make_book_parsed(ref: PaperRef = BOOK_REF, chapters: list[str] = BOOK_CHAPTERS) -> ParsedDoc:
+    """A `ParsedDoc` with one block per chapter, each in its own top-level `section_path` --
+    exactly the shape `rag/book_summarizer.py`'s `_split_chapters` groups on."""
+    blocks = [
+        Block(
+            block_id=f"{ref.paper_id}:b{i}", paper_id=ref.paper_id,
+            text=f"{title} -- causal graphs, do-calculus, and identification assumptions.",
+            type="prose", page=i, bbox=(0.0, 0.0, 1.0, 1.0), section_path=title, index=i,
+        )
+        for i, title in enumerate(chapters)
+    ]
+    return ParsedDoc(
+        paper_id=ref.paper_id, markdown="# Causality: A Primer\n\nbook body",
+        blocks=blocks, figures=[], tables=[], references=[], parser_id="fake-parser",
+    )
+
+
+class BookSpyParser:
+    """Returns a canned multi-chapter `ParsedDoc` for one book paper_id; any other ref falls back
+    to the shared `make_parsed` helper (unused by these tests, kept so the double stays honest to
+    the real per-ref `.parse()` interface)."""
+
+    def __init__(self, book_parsed: ParsedDoc):
+        self.calls: list[str] = []
+        self._book_parsed = book_parsed
+
+    def parse(self, ref: PaperRef) -> ParsedDoc:
+        self.calls.append(ref.paper_id)
+        if ref.paper_id == self._book_parsed.paper_id:
+            return self._book_parsed
+        return make_parsed(ref)
+
+
+class BookRig:
+    """`Rig`'s book-scoped counterpart: one end-to-end fake wiring for a single doc_type="book"
+    ref, so the map-reduce summarize / chapter-embed / chapter-upsert path can be exercised without
+    dragging in `Rig`'s 3-paper fixture corpus. `document_store`/`vector_store`/`state` persist
+    across `new_orchestrator()` calls so a resume test can share them across two runs, same as
+    `Rig`.
+    """
+
+    def __init__(self, ref: PaperRef = BOOK_REF, parsed: ParsedDoc | None = None):
+        self.ref = ref
+        self.parsed = parsed or make_book_parsed(ref)
+        self.events: list = []
+        self.harvester = StubHarvester([ref])
+        self.parser = BookSpyParser(self.parsed)
+        self.chunker = SpyChunker()
+        self.summarizer = SummarizerSpy()
+        self.document_store = DocStoreDouble(self.events)
+        self.vector_store = FakeVectorStore()
+        self.state = FakeIngestState()
+        self.gpu_lock = FakeGpuLock()
+        self.config = Config(focus_area_queries=["causal inference"])
+
+    def new_orchestrator(self, embedder=None, vector_index=None) -> IngestionOrchestrator:
+        return IngestionOrchestrator(
+            harvester=self.harvester,
+            parser=self.parser,
+            chunker=self.chunker,
+            summarizer=self.summarizer,
+            embedder=embedder or EmbedderSpy(),
+            document_store=self.document_store,
+            vector_index=vector_index or RecordingVectorIndex(self.vector_store, self.events),
+            state=self.state,
+            gpu_lock=self.gpu_lock,
+            config=self.config,
+            retry_sleep=lambda seconds: None,
+        )
+
+    def ingest(self, embedder=None, vector_index=None) -> IngestionOrchestrator:
+        orch = self.new_orchestrator(embedder=embedder, vector_index=vector_index)
+        orch.ingest(self.config.focus_area_queries, self.config.corpus_cap)
+        return orch
+
+
+def test_book_finish_persists_and_upserts_chapters():
+    rig = BookRig()
+    rig.ingest()
+
+    record = rig.document_store.get(rig.ref.paper_id)
+    assert record.ref.doc_type == "book"
+    assert len(record.chapter_summaries) == len(BOOK_CHAPTERS)
+    assert {cs.summary_id for cs in record.chapter_summaries} == {
+        f"{rig.ref.paper_id}:summary:ch0", f"{rig.ref.paper_id}:summary:ch1",
+    }
+
+    expected_ids = {record.summary_id} | {cs.summary_id for cs in record.chapter_summaries}
+    assert expected_ids <= set(rig.vector_store._store)
+    for vector_id in expected_ids:
+        _, payload = rig.vector_store._store[vector_id]
+        assert payload["kind"] == "summary"
+        assert payload["doc_type"] == "book"
+    # every payload upserted for this book -- chunks included -- carries doc_type == "book"
+    for _, payload in rig.vector_store._store.values():
+        assert payload["doc_type"] == "book"
+
+
+def test_book_single_embed_call_per_paper():
+    # 1 topic_query_vec hoist + exactly 1 combined summary+chapters+chunks embed() call for the
+    # book -- the N+1 (never N+2 or 2N) invariant test_embed_is_called_n_plus_one_times_not_two_n
+    # locks in for papers must hold for a book too.
+    rig = BookRig()
+    embedder = EmbedderSpy()
+    rig.ingest(embedder=embedder)
+    assert embedder.call_count == 2
+
+
+def test_paper_flow_unchanged_no_chapter_vectors():
+    rig = Rig()
+    embedder = EmbedderSpy()
+    rig.ingest(embedder=embedder)
+
+    for paper_id in PAPER_IDS:
+        record = rig.document_store.get(paper_id)
+        assert record.ref.doc_type == "paper"
+        assert record.chapter_summaries == []
+    assert not any(":summary:ch" in vector_id for vector_id in rig.vector_store._store)
+    for _, payload in rig.vector_store._store.values():
+        assert payload["doc_type"] == "paper"
+    assert embedder.call_count == N + 1  # unchanged N+1 invariant, no extra chapter embed calls
+
+
+def test_resume_from_summarized_restores_chapters():
+    rig = BookRig()
+
+    # Run 1 crashes on the book's own embed call (call 1 = topic_query_vec, call 2 = the book's
+    # single combined summary+chapters+chunks call). The book is checkpointed at `summarized` with
+    # its chapter_summaries artifacts.
+    crashing = EmbedderSpy(fail_on_call=2)
+    with pytest.raises(RuntimeError):
+        rig.ingest(embedder=crashing)
+    assert rig.state.stage_of(rig.ref.paper_id) == "summarized"
+    checkpoint = rig.state.get(rig.ref.paper_id)
+    assert checkpoint.artifacts.chapter_summaries is not None
+    assert len(checkpoint.artifacts.chapter_summaries) == len(BOOK_CHAPTERS)
+    summarize_calls_after_run1 = rig.summarizer.calls.count(rig.ref.paper_id)
+    assert summarize_calls_after_run1 > 0
+
+    # Run 2 (clean embedder, same shared state/stores/spies) resumes -- summarize_book must NOT
+    # run again for this book.
+    rig.ingest(embedder=EmbedderSpy())
+
+    assert rig.summarizer.calls.count(rig.ref.paper_id) == summarize_calls_after_run1
+    assert rig.state.stage_of(rig.ref.paper_id) == DONE
+    record = rig.document_store.get(rig.ref.paper_id)
+    assert len(record.chapter_summaries) == len(BOOK_CHAPTERS)
+    expected_ids = {record.summary_id} | {cs.summary_id for cs in record.chapter_summaries}
+    assert expected_ids <= set(rig.vector_store._store)
+
+
+def test_resume_from_stored_reembeds_and_reupserts_chapters():
+    # The `stored`->`done` resume branch (ARCHITECTURE "Operational invariants" §1) has its own,
+    # structurally different embed()/upsert() call site from the main path above -- this proves a
+    # book's chapters are re-embedded and re-upserted there too, not just the summary and chunks.
+    rig = BookRig()
+
+    failing_index = RecordingVectorIndex(
+        rig.vector_store, rig.events, fail_paper_ids={rig.ref.paper_id}
+    )
+    with pytest.raises(RuntimeError):
+        rig.ingest(embedder=EmbedderSpy(), vector_index=failing_index)
+    assert rig.state.stage_of(rig.ref.paper_id) == "stored"
+    record = rig.document_store.get(rig.ref.paper_id)
+    assert len(record.chapter_summaries) == len(BOOK_CHAPTERS)  # source of truth already written
+    chapter_ids = {cs.summary_id for cs in record.chapter_summaries}
+    assert not (chapter_ids & set(rig.vector_store._store))  # but the index write never landed
+
+    healthy_index = RecordingVectorIndex(rig.vector_store, rig.events)
+    rig.ingest(embedder=EmbedderSpy(), vector_index=healthy_index)
+
+    assert rig.state.stage_of(rig.ref.paper_id) == DONE
+    assert chapter_ids <= set(rig.vector_store._store)
+    for chapter_id in chapter_ids:
+        _, payload = rig.vector_store._store[chapter_id]
+        assert payload["kind"] == "summary"
+        assert payload["doc_type"] == "book"
+
+
+# ================================================================================================
+# T-DOC80: parse_phase() puts each book in its own solo batch -- never mixed with papers or other
+# books in one parse_batch() call (a real, measured VRAM-risk mitigation: a book's markdown runs
+# 10-50x a paper's).
+# ================================================================================================
+
+
+def test_parse_phase_books_are_singleton_batches():
+    # parse_batch_size=4, refs = 5 papers + 2 books -> parse_batch() called with groups
+    # [4 papers], [1 paper], [1 book], [1 book] -- a book never shares a batch call with anything.
+    papers = [
+        REFS[0].model_copy(update={"paper_id": f"paper-{i}", "doc_type": "paper"})
+        for i in range(5)
+    ]
+    books = [
+        BOOK_REF.model_copy(update={"paper_id": f"book-{i}"}) for i in range(2)
+    ]
+    parser = SpyBatchParser()
+    state = FakeIngestState()
+    orch = _parse_phase_orchestrator(parser, state, parse_batch_size=4)
+
+    orch.parse_phase(papers + books)
+
+    assert parser.batch_calls == [
+        [r.paper_id for r in papers[:4]],
+        [r.paper_id for r in papers[4:]],
+        [books[0].paper_id],
+        [books[1].paper_id],
+    ]
+    for ref in papers + books:
+        assert state.get(ref.paper_id).stage == "chunked"
