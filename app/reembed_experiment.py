@@ -169,6 +169,7 @@ def reembed(
                     categories=list(record.ref.categories),
                     published=record.ref.published.isoformat(),
                     embedding_version=embedder.info.version,
+                    doc_type=record.ref.doc_type,
                 )
             )
 
