@@ -23,7 +23,7 @@ from datetime import date
 from pathlib import Path
 
 from contracts.chunker import Chunk
-from contracts.document_store import PaperRecord
+from contracts.document_store import ChapterSummary, PaperRecord
 from contracts.errors import ContractError
 from contracts.harvester import PaperRef
 from contracts.parser import ParsedDoc
@@ -111,14 +111,14 @@ class DocumentStore:
                     """
                     INSERT INTO papers
                         (paper_id, version, title, abstract, authors_json, categories_json,
-                         published, updated, pdf_path, markdown_path, relevance_score)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                         published, updated, pdf_path, markdown_path, relevance_score, doc_type)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ON CONFLICT(paper_id) DO UPDATE SET
                         version=excluded.version, title=excluded.title, abstract=excluded.abstract,
                         authors_json=excluded.authors_json, categories_json=excluded.categories_json,
                         published=excluded.published, updated=excluded.updated,
                         pdf_path=excluded.pdf_path, markdown_path=excluded.markdown_path,
-                        relevance_score=excluded.relevance_score
+                        relevance_score=excluded.relevance_score, doc_type=excluded.doc_type
                     """,
                     (
                         paper_id,
@@ -132,6 +132,7 @@ class DocumentStore:
                         ref.pdf_url,  # see module docstring: no local PDF-blob path to store instead
                         str(markdown_path),
                         record.relevance_score,
+                        ref.doc_type,
                     ),
                 )
                 for block in record.parsed.blocks:
@@ -171,9 +172,15 @@ class DocumentStore:
                         ),
                     )
                 self._con.execute(
-                    "INSERT INTO summaries (summary_id, paper_id, text) VALUES (?, ?, ?)",
-                    (record.summary_id, paper_id, record.summary_text),
+                    "INSERT INTO summaries (summary_id, paper_id, text, title) VALUES (?, ?, ?, ?)",
+                    (record.summary_id, paper_id, record.summary_text, None),
                 )
+                for chapter in record.chapter_summaries:
+                    self._con.execute(
+                        "INSERT INTO summaries (summary_id, paper_id, text, title) "
+                        "VALUES (?, ?, ?, ?)",
+                        (chapter.summary_id, paper_id, chapter.text, chapter.title),
+                    )
         except Exception:
             tmp_path.unlink(missing_ok=True)
             raise
@@ -248,6 +255,7 @@ class DocumentStore:
             updated=date.fromisoformat(row["updated"]),
             pdf_url=row["pdf_path"],
             # latex_url has no column (schema projection gap) — always None on read.
+            doc_type=row["doc_type"],
         )
         parsed = ParsedDoc(
             paper_id=paper_id,
@@ -264,17 +272,30 @@ class DocumentStore:
                 "SELECT * FROM chunks WHERE paper_id = ?", (paper_id,)
             ).fetchall()
         ]
-        summary_row = self._con.execute(
-            "SELECT summary_id, text FROM summaries WHERE paper_id = ?", (paper_id,)
-        ).fetchone()
+        summary_rows = self._con.execute(
+            "SELECT summary_id, text, title FROM summaries WHERE paper_id = ?", (paper_id,)
+        ).fetchall()
+        whole_doc_summary_id = f"{paper_id}:summary"
+        summary_row = next(
+            (r for r in summary_rows if r["summary_id"] == whole_doc_summary_id), None
+        )
+        chapter_rows = [r for r in summary_rows if r["summary_id"] != whole_doc_summary_id]
+        # Sort by the integer after the final "ch" (e.g. "...ch10" after "...ch2", not before it) —
+        # DocumentStore owns this ID-format knowledge per DATA-CONTRACTS.
+        chapter_rows.sort(key=lambda r: int(r["summary_id"].rsplit("ch", 1)[1]))
+        chapter_summaries = [
+            ChapterSummary(summary_id=r["summary_id"], title=r["title"], text=r["text"])
+            for r in chapter_rows
+        ]
 
         return PaperRecord(
             ref=ref,
             parsed=parsed,
             chunks=chunks,
             summary_text=summary_row["text"] if summary_row else "",
-            summary_id=summary_row["summary_id"] if summary_row else f"{paper_id}:summary",
+            summary_id=summary_row["summary_id"] if summary_row else whole_doc_summary_id,
             relevance_score=row["relevance_score"],
+            chapter_summaries=chapter_summaries,
         )
 
     @staticmethod
