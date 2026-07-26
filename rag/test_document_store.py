@@ -385,6 +385,23 @@ def test_delete_returns_the_chunk_and_summary_ids_removed(store):
     assert sorted(deleted) == sorted([f"{PAPER_ID}:c0", f"{PAPER_ID}:summary"])
 
 
+def test_delete_returns_every_chapter_summary_id_for_a_book(store):
+    # Regression: a book's paper_id has N+1 summaries rows (whole-doc + one per chapter). The old
+    # `.fetchone()` in delete() grabbed only one of them, silently orphaning the rest in the
+    # vector index. All of them must come back so the caller can clean up every vector.
+    chapters = [
+        ChapterSummary(summary_id=f"{PAPER_ID}:summary:ch0", title="Intro", text="ch0 summary"),
+        ChapterSummary(summary_id=f"{PAPER_ID}:summary:ch1", title="DAGs", text="ch1 summary"),
+    ]
+    store.put(make_paper_record(ref=make_paper_ref(doc_type="book"), chapter_summaries=chapters))
+
+    deleted = store.delete(PAPER_ID)
+
+    assert sorted(deleted) == sorted(
+        [f"{PAPER_ID}:c0", f"{PAPER_ID}:summary", f"{PAPER_ID}:summary:ch0", f"{PAPER_ID}:summary:ch1"]
+    )
+
+
 def test_delete_of_unknown_paper_returns_empty_list(store):
     assert store.delete("9999.99999") == []
 
@@ -484,18 +501,23 @@ def test_put_get_round_trips_doc_type_and_chapters(store):
 
 
 def test_chapter_order_is_numeric_not_lexical(store):
-    # ch10 must come after ch2 — lexical ordering would break this at 10+ chapters.
-    chapters = [
+    # ch10 must come after ch2 — lexical ordering would break this at 10+ chapters. Inserted
+    # out of numeric order (11 down to 0) so a missing/wrong sort in get() can't hide behind
+    # chapter_summaries already arriving pre-sorted.
+    chapters_out_of_order = [
         ChapterSummary(summary_id=f"{PAPER_ID}:summary:ch{i}", title=f"C{i}", text="t")
-        for i in range(12)
+        for i in range(11, -1, -1)
     ]
     store.put(
-        make_paper_record(ref=make_paper_ref(doc_type="book"), chapter_summaries=chapters)
+        make_paper_record(
+            ref=make_paper_ref(doc_type="book"), chapter_summaries=chapters_out_of_order
+        )
     )
 
     got = store.get(PAPER_ID)
 
-    assert [c.summary_id for c in got.chapter_summaries] == [c.summary_id for c in chapters]
+    expected_ascending = [f"{PAPER_ID}:summary:ch{i}" for i in range(12)]
+    assert [c.summary_id for c in got.chapter_summaries] == expected_ascending
 
 
 def test_get_summary_resolves_chapter_ids(store):
