@@ -773,9 +773,6 @@ CREATE TABLE papers (
                                       -- NULL only if a row predates the paper reaching that stage. Unused
                                       -- by V0 filtering (relevance_filter="off"), but must not be silently
                                       -- left NULL after "done" — see TEST-STRATEGY Orchestrator test.
-  doc_type     TEXT NOT NULL DEFAULT 'paper'   -- 'paper' | 'book' (migrations/0004, T-DOC80);
-                                      -- mirrors PaperRef.doc_type. Defaulted so every pre-existing
-                                      -- row and every arXiv harvest is unaffected.
 );
 
 CREATE TABLE blocks (
@@ -807,11 +804,7 @@ CREATE INDEX idx_chunks_paper_id ON chunks(paper_id);
 CREATE TABLE summaries (
   summary_id   TEXT PRIMARY KEY,
   paper_id     TEXT NOT NULL REFERENCES papers(paper_id),
-  text         TEXT NOT NULL,
-  title        TEXT               -- migrations/0004, T-DOC80: chapter heading for a
-                                    -- {paper_id}:summary:ch{n} row (ChapterSummary.title, §M5);
-                                    -- NULL for the existing whole-document {paper_id}:summary rows,
-                                    -- which have no title of their own
+  text         TEXT NOT NULL
 );
 
 -- The idempotency spine (CONVENTIONS "operational invariants"):
@@ -882,6 +875,11 @@ Two `ALTER TABLE ADD COLUMN`s, no new tables — additive to `papers`/`summaries
 a paper, unaffected); `summaries.title` is nullable, unlike `doc_type` — there is no sensible
 default title for the existing whole-document `{paper_id}:summary` rows, so it stays `NULL` for
 them and is populated only for the new `{paper_id}:summary:ch{n}` chapter rows a book produces.
+
+```sql
+ALTER TABLE papers ADD COLUMN doc_type TEXT NOT NULL DEFAULT 'paper';
+ALTER TABLE summaries ADD COLUMN title TEXT;
+```
 
 Run SQLite in **WAL mode** (ADR-05 — the relational-store decision; WAL is an implementation detail of
 that choice, not ADR-07, which is the unrelated chunking/contextual-header decision).
