@@ -1059,3 +1059,18 @@ retrieval quality + operability, not the claim layer** — reinforcing the "use 
   launches and answers `list_tools` before the user relies on it.
 - **T-DOC67 (not started) — 🟢 delete the stray repo-root `papers.db` + gitignore `papers.db*`
   (OG-33).** Remove the near-empty file that caused the fake `Recall@10=0.000` trap; prevent recreation.
+
+### T-DOC80 — drop-in folder ingestion + book support (2026-07-25)
+
+- **T-DOC80 (implemented — this branch, `feat/t-doc80-drop-in-and-books`, commits `ff461ae..b1d9d7a`;
+  spec: `docs/superpowers/specs/2026-07-25-drop-in-folder-and-books-design.md`; plan:
+  `docs/superpowers/plans/2026-07-25-drop-in-folder-and-books.md`) — drop-in folder ingestion (arXiv
+  PDFs, non-arXiv papers, and books dropped under `Config.drop_in_dir`'s `papers/`/`books/`
+  subfolders) plus book support end to end: map-reduce book summarization
+  (`rag/book_summarizer.py`), chapter summaries persisted and embedded as their own routing units,
+  `doc_type` filtering (`SearchFilters.doc_type`/`VectorPayload.doc_type`, legacy points still count
+  as papers), `local:{sha256[:12]}` ids for files with no arXiv id, and chapter-level `search_papers`
+  routing (`PaperSearchResult.chapter`).** New staging CLI: `python -m app.ingest_local
+  [--stage-only] [--drop-dir PATH]` (`app/ingest_local.py`). Full contract/module changes are
+  recorded in place in DATA-CONTRACTS.md (§IDs, §M1, §M5, §M6, §M7/§M8, SQL schema, §Config) and
+  ARCHITECTURE.md (§M3B, §M9, "Operational tooling") rather than restated here.
