@@ -35,6 +35,19 @@ from contracts.retriever import Citation, GroundedResult, RetrievalCoverage
 
 _BBOX = (0.0, 0.0, 100.0, 200.0)
 
+# T-DOC80 imports for `seeded_server` below — a real Retriever + fakes, not the SpyRetriever used
+# by every test above. These are only needed there, kept separate so the pre-existing spy-based
+# tests above stay untouched.
+from datetime import date
+
+from contracts.chunker import Chunk
+from contracts.document_store import ChapterSummary, PaperRecord
+from contracts.harvester import PaperRef
+from contracts.parser import ParsedDoc
+from contracts.vector_index import SearchFilters
+from rag.fakes import FakeEmbedder, FakeReranker, FakeVectorStore
+from rag.retriever import Retriever as RealRetriever
+
 
 # ---------------------------------------------------------------------------
 # A spy Retriever: records which method each tool calls and returns canned results. This is how
@@ -71,13 +84,19 @@ class SpyRetriever:
 
 
 class RecordingDocStore:
-    """Minimal DocumentStore stand-in (M5, owner D) with a call log — enough for get_paper/get_span."""
+    """Minimal DocumentStore stand-in (M5, owner D) with a call log — enough for get_paper/get_span,
+    plus (T-DOC80) `get_chunk`/`get_block`/`get_summary` so it also satisfies the REAL
+    `rag.retriever.Retriever`'s document_store dependency — see `seeded_server` below, which wires
+    a real Retriever (not SpyRetriever) through this store to prove `doc_type` filtering end-to-end.
+    """
 
     def __init__(self):
         self.calls: list[tuple[str, object]] = []
         self._blocks: dict[str, Block] = {}
         self._records: dict[str, object] = {}
         self._blocks_by_paper: dict[str, list[Block]] = {}
+        self._chunks: dict[str, object] = {}
+        self._summaries: dict[str, str] = {}
 
     def get(self, paper_id):
         self.calls.append(("get", paper_id))
@@ -90,6 +109,18 @@ class RecordingDocStore:
     def get_blocks(self, paper_id: str) -> list[Block]:
         self.calls.append(("get_blocks", paper_id))
         return self._blocks_by_paper.get(paper_id, [])
+
+    def get_chunk(self, chunk_id: str):
+        self.calls.append(("get_chunk", chunk_id))
+        return self._chunks[chunk_id]
+
+    def get_block(self, block_id: str) -> Block:
+        self.calls.append(("get_block", block_id))
+        return self._blocks[block_id]
+
+    def get_summary(self, summary_id: str) -> str:
+        self.calls.append(("get_summary", summary_id))
+        return self._summaries[summary_id]
 
     def method_names(self):
         return [name for name, _ in self.calls]
@@ -364,3 +395,135 @@ def test_semantic_search_in_range_k_is_unaffected():
     server = _mod.McpServer(retriever=spy, document_store=RecordingDocStore())
     server.semantic_search("estimator", filters=None, k=42)
     assert spy.retrieve_calls == [("estimator", None, 42)]
+
+
+# ===========================================================================
+# T-DOC80: doc_type passthrough end-to-end, through a REAL `rag.retriever.Retriever` (fakes
+# underneath: FakeVectorStore/FakeEmbedder/FakeReranker) — not the SpyRetriever every test above
+# uses. Tasks 1-6 already proved doc_type filtering and chapter hits work AT the Retriever layer
+# (rag/test_retriever.py); this proves the same thing survives unchanged through the McpServer
+# tool wrappers, which is the only thing this task is on the hook for.
+# ===========================================================================
+def _real_ref(paper_id: str, doc_type: str = "paper") -> PaperRef:
+    return PaperRef(
+        paper_id=paper_id, version="v1", title=f"Title {paper_id}", abstract="We propose...",
+        authors=["A. Author"], categories=["stat.ME"], published=date(2026, 6, 1),
+        updated=date(2026, 6, 1), pdf_url=f"https://arxiv.org/pdf/{paper_id}v1", doc_type=doc_type,
+    )
+
+
+def _real_payload(paper_id: str, kind: str, section_path: str, embedder, text: str,
+                  doc_type: str = "paper") -> dict:
+    # T-DOC80: mirrors rag/orchestrator.py::_upsert_record's real payload_common -- `doc_type` is a
+    # real payload key (not inferred from record), so it must be set here for FakeVectorStore's
+    # `SearchFilters(doc_type=...)` filtering to have anything to match against.
+    return {
+        "paper_id": paper_id, "kind": kind, "section_path": section_path, "text": text,
+        "categories": ["stat.ME"], "published": "2026-06-01",
+        "embedding_version": embedder.info.version, "doc_type": doc_type,
+    }
+
+
+def _seed_real_chunk(store, docstore, embedder, *, chunk_id, paper_id, text, doc_type="paper",
+                     section_path="3. Method"):
+    block_id = f"{paper_id}:b0"
+    anchor = Anchor(paper_id=paper_id, block_id=block_id, page=0, bbox=_BBOX, snippet=text[:40],
+                    section_path=section_path)
+    docstore._blocks[block_id] = Block(block_id=block_id, paper_id=paper_id, text=text[:40],
+                                       type="prose", page=0, bbox=_BBOX,
+                                       section_path=section_path, index=0)
+    chunk = Chunk(chunk_id=chunk_id, paper_id=paper_id, text=text, anchor=anchor,
+                 section_path=section_path, parent_id=block_id)
+    docstore._chunks[chunk_id] = chunk
+    docstore._records[paper_id] = PaperRecord(
+        ref=_real_ref(paper_id, doc_type=doc_type),
+        parsed=ParsedDoc(paper_id=paper_id, markdown="# T", blocks=[], figures=[], tables=[],
+                         references=[], parser_id="test-parser-1.x"),
+        chunks=[chunk], summary_text="s", summary_id=f"{paper_id}:summary")
+    store.upsert(chunk_id, embedder.embed([text])[0],
+                 _real_payload(paper_id, "chunk", section_path, embedder, text, doc_type=doc_type))
+
+
+def _seed_real_summary(store, docstore, embedder, *, paper_id, summary_text, doc_type="book",
+                       chapter_summaries=()):
+    summary_id = f"{paper_id}:summary"
+    docstore._summaries[summary_id] = summary_text
+    docstore._records[paper_id] = PaperRecord(
+        ref=_real_ref(paper_id, doc_type=doc_type),
+        parsed=ParsedDoc(paper_id=paper_id, markdown="# T", blocks=[], figures=[], tables=[],
+                         references=[], parser_id="test-parser-1.x"),
+        chunks=[], summary_text=summary_text, summary_id=summary_id,
+        chapter_summaries=list(chapter_summaries))
+    store.upsert(summary_id, embedder.embed([summary_text])[0],
+                 _real_payload(paper_id, "summary", "Abstract", embedder, summary_text,
+                               doc_type=doc_type))
+    for cs in chapter_summaries:
+        docstore._summaries[cs.summary_id] = cs.text
+        store.upsert(cs.summary_id, embedder.embed([cs.text])[0],
+                     _real_payload(paper_id, "summary", cs.title, embedder, cs.text,
+                                   doc_type=doc_type))
+
+
+@pytest.fixture
+def seeded_server():
+    """A real McpServer wired to a REAL `Retriever` (FakeVectorStore/FakeEmbedder/FakeReranker
+    underneath, no SpyRetriever) — the point is that `SearchFilters.doc_type` and the `chapter`
+    field survive the actual retrieval pipeline, not a canned fake return value. Seeded with:
+    one paper chunk, one book chunk (both share the phrase "causal estimator" so an unfiltered
+    query would match both — doc_type is the only thing that discriminates them), and a second
+    book with a whole-book summary + one chapter summary (for the chapter-hit test).
+    """
+    store, embedder, reranker = FakeVectorStore(), FakeEmbedder(), FakeReranker()
+    docstore = RecordingDocStore()
+    _seed_real_chunk(
+        store, docstore, embedder, chunk_id="2506.00001:c0", paper_id="2506.00001", doc_type="paper",
+        text="the causal estimator uses regression adjustment for measured confounding",
+    )
+    _seed_real_chunk(
+        store, docstore, embedder, chunk_id="local:causality-book:c0", paper_id="local:causality-book",
+        doc_type="book",
+        text="the causal estimator concept is foundational to structural causal models",
+    )
+    _seed_real_summary(
+        store, docstore, embedder, paper_id="local:stats-book", doc_type="book",
+        summary_text="a whole-book summary about probability foundations",
+        chapter_summaries=[
+            ChapterSummary(
+                summary_id="local:stats-book:summary:ch1", title="Confounding",
+                text="a chapter on the causal estimator and confounding adjustment",
+            ),
+        ],
+    )
+    retriever = RealRetriever(embedder=embedder, vector_store=store, document_store=docstore,
+                              reranker=reranker)
+    return _mod.McpServer(retriever=retriever, document_store=docstore)
+
+
+def test_semantic_search_doc_type_filter_passthrough(seeded_server):
+    resp = seeded_server.semantic_search(
+        "causal estimator", filters=SearchFilters(doc_type="book"), k=10)
+    # Non-empty is load-bearing here: an empty result would vacuously satisfy "all results are
+    # books" without proving the filter actually discriminated anything.
+    assert resp.results
+    assert all(r.citation.doc_type == "book" for r in resp.results)
+    assert all(r.paper_id == "local:causality-book" for r in resp.results)
+    # The paper chunk shares the exact same query phrase -- it must be excluded, not just absent
+    # by chance (proves doc_type, not the query, did the filtering).
+    assert all(r.paper_id != "2506.00001" for r in resp.results)
+
+
+def test_search_papers_returns_chapter_hits_with_chapter_field(seeded_server):
+    resp = seeded_server.search_papers(
+        "causal estimator confounding adjustment chapter", filters=None, k=10)
+    chapter_hits = [r for r in resp.results if r.chapter is not None]
+    assert chapter_hits, "expected at least one chapter-level routing hit"
+    assert any(r.chapter == "Confounding" for r in chapter_hits)
+    assert all(r.view.citation.doc_type == "book" for r in chapter_hits)
+    assert all(isinstance(r, PaperSearchResult) for r in chapter_hits)
+
+
+def test_tool_docstrings_carry_routing_guidance():
+    assert "books" in _mod.McpServer.semantic_search.__doc__
+    assert "doc_type" in _mod.McpServer.semantic_search.__doc__
+    assert "books" in _mod.McpServer.search_papers.__doc__
+    assert "doc_type" in _mod.McpServer.search_papers.__doc__

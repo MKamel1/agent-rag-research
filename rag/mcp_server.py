@@ -81,6 +81,14 @@ class McpServer:
         result can only come from that pool. A `k=60` request returning 32 results is this ceiling,
         not a sparse corpus -- check `Coverage.candidates` (the true pre-rerank pool size) to tell
         the two apart.
+
+        The corpus mixes research **papers** (latest methods/evidence) and **books** (foundational
+        definitions/concepts). For conceptual/definitional questions, pass
+        `filters={"doc_type": "book"}`; for state-of-the-art or empirical results, prefer
+        `{"doc_type": "paper"}` (optionally with `published_after`); when cross-checking a paper's
+        claim against textbook grounding, run both and cite each. `search_papers` returns individual
+        book **chapters** as routing hits (`chapter` field set) — follow up with `semantic_search`
+        for anchored passages.
         """
         results, retrieval_coverage = self._retriever.retrieve(
             query, filters, self._resolve_k(k)
@@ -100,6 +108,14 @@ class McpServer:
         `k=None` resolves to `self._default_k`, same as `semantic_search` — see its docstring
         (including the `[_MIN_K, _MAX_K]` clamp, OG-48#5, and the separate 32-result reranker
         ceiling, OG-48#6).
+
+        The corpus mixes research **papers** (latest methods/evidence) and **books** (foundational
+        definitions/concepts). For conceptual/definitional questions, pass
+        `filters={"doc_type": "book"}`; for state-of-the-art or empirical results, prefer
+        `{"doc_type": "paper"}` (optionally with `published_after`); when cross-checking a paper's
+        claim against textbook grounding, run both and cite each. `search_papers` returns individual
+        book **chapters** as routing hits (`chapter` field set) — follow up with `semantic_search`
+        for anchored passages.
         """
         results, retrieval_coverage = self._retriever.retrieve_papers(
             query, filters, self._resolve_k(k)
