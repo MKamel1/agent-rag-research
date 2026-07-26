@@ -24,6 +24,7 @@ class Citation(FrozenModel):
     authors: list[str]
     arxiv_url: str
     section_path: str
+    doc_type: Literal["paper", "book"] = "paper"
 
 
 class GroundedResult(FrozenModel):

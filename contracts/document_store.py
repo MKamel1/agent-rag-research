@@ -15,6 +15,16 @@ from contracts.harvester import PaperRef
 from contracts.parser import ParsedDoc
 
 
+class ChapterSummary(FrozenModel):
+    """One chapter's map-step summary for a doc_type="book" record. Persisted in the same
+    `summaries` table as the whole-document summary (migration 0004 adds `title`), embedded as its
+    own kind="summary" vector so search_papers can return individual chapters as routing hits."""
+
+    summary_id: str  # f"{paper_id}:summary:ch{n}", n = 0-based chapter index (DATA-CONTRACTS §IDs)
+    title: str       # chapter heading (top-level section_path); "" for the windowed fallback
+    text: str        # non-empty chapter summary
+
+
 class PaperRecord(FrozenModel):
     """The complete source-of-truth bundle for one paper. `DocumentStore.put(PaperRecord)` is
     atomic: either the whole paper is stored or none of it (so a crash never leaves half a
@@ -31,5 +41,6 @@ class PaperRecord(FrozenModel):
     summary_text: str
     summary_id: str
     relevance_score: float | None = Field(default=None)
+    chapter_summaries: list[ChapterSummary] = Field(default_factory=list)  # non-empty only for books
     # blobs (PDF, figure PNGs, markdown) are written to the filesystem; their paths live on
     # ref/parsed.

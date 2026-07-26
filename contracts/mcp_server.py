@@ -54,6 +54,9 @@ class PaperSearchResult(FrozenModel):
 
     view: PaperSummaryView
     score: float
+    # Set when this routing hit resolved from a chapter summary ({paper_id}:summary:ch{n}) —
+    # the chapter's title. None for whole-paper/whole-book hits.
+    chapter: str | None = None
 
 
 class PaperSearchResponse(FrozenModel):
