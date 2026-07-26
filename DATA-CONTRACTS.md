@@ -415,12 +415,18 @@ class VectorPayload(TypedDict):
 
 **Legacy points count as papers (T-DOC80).** Every point upserted before `doc_type` existed has no
 `doc_type` key in its payload at all — not an empty string, an absent key. `filters.doc_type ==
-"paper"` must therefore match on **either** an explicit `"paper"` value **or** the key being
-missing/empty, not a plain equality check — both `FakeVectorStore` (`rag/fakes/fake_vector_store.py`)
-and the real Qdrant adapter's `_qdrant_filter` (`rag/vector_index.py`, a `should`-group: `MatchValue("paper")`
-OR `IsEmptyCondition`) implement this as a should/either-of match. `filters.doc_type == "book"`
-stays a plain equality match — no pre-existing point is a book, so there's no absent-key case to
-cover on that side.
+"paper"` must therefore also match that absent-key case, not just an explicit `"paper"` value — but
+the two adapters reach that same externally-observable result through genuinely different
+mechanisms, not one shared trick: `FakeVectorStore._passes_filters`
+(`rag/fakes/fake_vector_store.py`) stays a **plain equality check**, just evaluated against a
+`.get`-defaulted read — `payload.get("doc_type", "paper") != filters.doc_type` — so a missing key
+reads as `"paper"` before the comparison ever runs. The real Qdrant adapter's `_qdrant_filter`
+(`rag/vector_index.py`) has no dict-`.get`-style default at the payload level, so it reaches the
+same result structurally instead, via an explicit `should`-group (`MatchValue("paper")` OR
+`IsEmptyCondition`) — an either-of match, not an equality check. Both are correct and produce
+identical filtering behavior; only their mechanism differs. `filters.doc_type == "book"` stays a
+plain equality match on both adapters — no pre-existing point is a book, so there's no absent-key
+case to cover on that side.
 
 `text` carries the real passage content and is what the sparse/keyword channel tokenizes (previously
 the sparse channel had no real text available at this seam and hashed `section_path` — a heading
