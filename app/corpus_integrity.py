@@ -26,19 +26,24 @@ class IntegrityOffender:
 
 
 _QUERY = """
-SELECT p.paper_id,
-       (SELECT count(*) FROM chunks c WHERE c.paper_id = p.paper_id) AS chunk_count,
-       (SELECT count(*) FROM blocks b WHERE b.paper_id = p.paper_id) AS block_count
+SELECT s.paper_id,
+       (SELECT count(*) FROM chunks c WHERE c.paper_id = s.paper_id) AS chunk_count,
+       (SELECT count(*) FROM blocks b WHERE b.paper_id = s.paper_id) AS block_count
 FROM ingest_state s
-JOIN papers p ON p.paper_id = s.paper_id
 WHERE s.stage = 'done' AND (chunk_count = 0 OR block_count = 0)
-ORDER BY p.paper_id
+ORDER BY s.paper_id
 """
 
 
 def find_done_papers_without_chunks(conn: sqlite3.Connection) -> list[IntegrityOffender]:
     """Every `ingest_state='done'` paper with zero `chunks` rows and/or zero `blocks` rows --
     silently unretrievable despite looking fully ingested. Empty list means the corpus is clean.
+
+    T-DOC84 dropped the original `JOIN papers`: a `done` state row whose `papers` row is also gone
+    is the exact orphan `IngestionOrchestrator.delete_paper()` leaves behind, and the inner join
+    dropped it from the result set -- the checker could not see the shape it most needed to catch.
+    Both shapes now report: paper-present-chunks-missing (T-DOC23/T-DOC35) and everything-gone-but-
+    state (T-DOC84).
     """
     return [
         IntegrityOffender(paper_id=row[0], chunk_count=row[1], block_count=row[2])

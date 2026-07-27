@@ -80,3 +80,18 @@ def test_flags_a_done_paper_with_blocks_but_no_chunks(tmp_path):
     offenders = find_done_papers_without_chunks(conn)
 
     assert offenders == [IntegrityOffender(paper_id="2411.14665", chunk_count=0, block_count=1)]
+
+
+def test_done_state_row_with_no_papers_row_is_reported(tmp_path):
+    # T-DOC84: this is the orphan shape delete_paper() creates -- state says 'done', every other
+    # row is gone. The original INNER JOIN on papers dropped it from the result set entirely.
+    conn = _db(tmp_path)
+    conn.execute(
+        "INSERT INTO ingest_state (paper_id, stage, updated_at) VALUES (?, 'done', '2026-01-01T00:00:00Z')",
+        ("local:f0929288d4f3",),
+    )
+    conn.commit()
+
+    offenders = find_done_papers_without_chunks(conn)
+
+    assert offenders == [IntegrityOffender(paper_id="local:f0929288d4f3", chunk_count=0, block_count=0)]
