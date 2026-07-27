@@ -67,6 +67,13 @@ def make_groups():
     return _make
 
 
+def _parsed_from_groups(groups: list[tuple[str, list[Block]]]) -> ParsedDoc:
+    """Flattens the `make_groups` shape back into blocks and builds a ParsedDoc from them --
+    `summarize_book` re-derives its own groups from `parsed.blocks`' section_paths (`_heading_
+    groups`), it does not take a groups list directly."""
+    return _parsed_doc([block for _, blocks in groups for block in blocks])
+
+
 def test_title_score_rejects_single_characters_and_short_fragments():
     assert _title_score("F") == 0
     assert _title_score("") == 0
@@ -242,7 +249,11 @@ def test_explicit_chapter_markers_are_used_when_plausible():
             blocks.append(_block(" ".join(["word"] * 100), title, len(blocks)))
     _, chapters = summarize_book(_parsed_doc(blocks), FakeSummarizer())
     titles = [c.title for c in chapters]
-    assert titles == ["", "Chapter 1 Intro", "Chapter 2 DAGs", "Chapter 3 Estimation"]
+    # T-DOC85 (Task 6): the pre-first-marker unit is titled "" by _split_by_markers itself (it
+    # isn't a real chapter heading) -- that's the same "no usable routing label" gap the LLM
+    # fallback closes, so it also picks up a title here rather than staying "".
+    assert titles[0] != ""
+    assert titles[1:] == ["Chapter 1 Intro", "Chapter 2 DAGs", "Chapter 3 Estimation"]
 
 
 def test_marker_variants_part_appendix_numbered():
@@ -357,5 +368,36 @@ def test_summarize_book_uses_book_kinds_not_paper():
     _, chapters = summarize_book(_parsed_doc(blocks), rec)
     assert "paper" not in rec.kinds, "book path must never use the paper prompt"
     assert rec.kinds.count("book_overview") == 1, "exactly one reduce call"
-    assert all(k == "book" for k in rec.kinds[:-1])
+    # T-DOC85 (Task 6): "H1".."H9" all score below _MIN_TITLE_SCORE, so the merged unit they fold
+    # into is titled "" and picks up one "book_title" fallback call -- everything else is "book".
+    assert all(k in ("book", "book_title") for k in rec.kinds[:-1])
+    assert rec.kinds.count("book_title") == 1
     assert len(rec.kinds) > len(chapters), "windowed branch must have actually executed"
+
+
+# ---------------------------------------------------------------------------
+# T-DOC85: a unit whose every merged heading is junk (_best_heading returns "") falls back to an
+# LLM-written title over the chapter's own already-computed summary, kind="book_title".
+# ---------------------------------------------------------------------------
+
+
+def test_unit_with_no_usable_heading_gets_an_llm_title(make_groups):
+    summarizer = _KindRecorder()
+    parsed = _parsed_from_groups(make_groups([("F", 3000), ("A.", 3000)]))
+
+    _, chapters = summarize_book(parsed, summarizer)
+
+    assert "book_title" in summarizer.kinds
+    assert chapters[0].title != ""
+
+
+def test_unit_with_a_usable_heading_makes_no_title_call(make_groups):
+    # The fallback must stay a fallback -- a book with good headings pays nothing for it. If the
+    # fallback fired unconditionally this would still leave a non-empty title (masking the bug),
+    # which is why the assertion is on the call log, not on the title text.
+    summarizer = _KindRecorder()
+    parsed = _parsed_from_groups(make_groups([("Regularized Regression", 3000)]))
+
+    summarize_book(parsed, summarizer)
+
+    assert "book_title" not in summarizer.kinds

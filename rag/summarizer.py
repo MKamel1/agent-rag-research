@@ -53,10 +53,22 @@ _BOOK_OVERVIEW_PROMPT = (
     "summaries say. Do not invent numbers, results, or findings.\n\n{paper}"
 )
 
+# T-DOC85: used only when a merged book unit contains no heading usable as a routing label
+# (rag/book_summarizer.py::_best_heading returned ""). Input is that unit's own already-grounded
+# section summary, not the raw chapter -- short, cheap, and anchored to text the anti-fabrication
+# prompt above already produced. Extractive wording is demanded for the same reason the section
+# prompt forbids invented numbers: this string is what an agent picks a chapter by.
+_BOOK_TITLE_PROMPT = (
+    "Write a short title, at most eight words, naming what this book section covers. Use only "
+    "wording that appears in the text below. Output the title alone -- no quotation marks, no "
+    "punctuation at the end, no explanation.\n\n{paper}"
+)
+
 _PROMPTS = {
     "paper": _SUMMARY_PROMPT,
     "book": _BOOK_SECTION_PROMPT,
     "book_overview": _BOOK_OVERVIEW_PROMPT,
+    "book_title": _BOOK_TITLE_PROMPT,
 }
 
 # Same taxonomy split as rag/harvester.py's ArxivSource (CONVENTIONS.md §4): a rate-limited or
@@ -143,7 +155,10 @@ class OllamaSummarizer:
         self._model = model
 
     def summarize(
-        self, parsed: ParsedDoc, *, kind: Literal["paper", "book", "book_overview"] = "paper"
+        self,
+        parsed: ParsedDoc,
+        *,
+        kind: Literal["paper", "book", "book_overview", "book_title"] = "paper",
     ) -> str:
         prompt_template = _PROMPTS.get(kind)
         if prompt_template is None:
