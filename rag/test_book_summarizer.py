@@ -432,7 +432,7 @@ def test_llm_title_fallback_is_rejected_when_it_fails_the_title_score(make_group
 
 class _EmptyChapterSummaryRecorder:
     """A `book`-kind summary that comes back empty -- `book_title` must never be called on it,
-    since the real `OllamaSummarizer.summarize`'s empty-prose guard would raise `PermanentError`
+    since the real Summarizer adapter's `summarize`'s empty-prose guard would raise `PermanentError`
     on an empty `book_title` input, quarantining the entire book over one degraded chapter."""
 
     def summarize(self, parsed, *, kind="paper"):

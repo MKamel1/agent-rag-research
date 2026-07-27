@@ -204,7 +204,7 @@ def summarize_book(parsed: ParsedDoc, summarizer) -> tuple[str, list[ChapterSumm
             # model occasionally returns a trailing newline.
             #
             # Guarded by `text` (skip the call entirely when the chapter summary came back empty):
-            # `OllamaSummarizer.summarize` raises `PermanentError` on empty prose, which would
+            # the real Summarizer adapter's `summarize` raises `PermanentError` on empty prose, which would
             # quarantine the WHOLE BOOK for a single chapter's degraded title -- before this
             # fallback existed that chapter simply carried "".
             #
