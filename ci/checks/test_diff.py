@@ -120,6 +120,26 @@ def test_compute_diff_base_push_uses_before_sha_when_present(tmp_path):
     assert compute_diff_base("push", event, repo) == before_sha
 
 
+def test_compute_diff_base_push_falls_back_when_before_sha_is_unreachable(tmp_path):
+    # After a force-push (routine here -- GIT-WORKFLOW.md's rebase-merge policy requires one on
+    # every rebased PR), GitHub's `before` is the branch's orphaned *previous* head: a real-looking
+    # 40-hex SHA this clone has no ref to. Trusting it blindly used to make the next
+    # `git diff before HEAD` crash with exit 128 (PR #174, `enforcement` job, 2026-07-27). It must
+    # fall back to the merge-base instead of raising.
+    repo = _init_repo(tmp_path)
+    (repo / "a.py").write_text("x = 1\n")
+    main_sha = _commit(repo, "on main")
+    _git(repo, "update-ref", "refs/remotes/origin/main", main_sha)
+
+    _git(repo, "checkout", "-q", "-b", "feature")
+    (repo / "b.py").write_text("y = 1\n")
+    _commit(repo, "on feature")
+
+    orphaned_before = "e8c552d" + "0" * 33  # well-formed 40-hex SHA, unreachable in this clone
+    event = {"before": orphaned_before, "repository": {"default_branch": "main"}}
+    assert compute_diff_base("push", event, repo) == main_sha
+
+
 def test_compute_diff_base_first_push_falls_back_to_merge_base_with_default_branch(tmp_path):
     # A brand-new branch's push event has an all-zeros "before" SHA -- there's no prior commit on
     # this branch to diff against. Diffing against the empty tree (the naive fallback) would list
@@ -139,6 +159,25 @@ def test_compute_diff_base_first_push_falls_back_to_merge_base_with_default_bran
 
     event = {"before": ZERO_SHA, "repository": {"default_branch": "main"}}
     assert compute_diff_base("push", event, repo) == main_sha
+
+
+def test_compute_diff_base_pull_request_uses_merge_base_of_base_and_head_unaffected_by_before_sha(
+    tmp_path,
+):
+    # The pull_request branch never reads event["before"] at all, so it was never susceptible to
+    # the force-push orphaned-SHA bug above -- this is why violations were never actually missed
+    # in practice: the pull_request-triggered run (unaffected) still caught them even while the
+    # push-triggered `enforcement` job crashed with exit 128.
+    repo = _init_repo(tmp_path)
+    (repo / "a.py").write_text("x = 1\n")
+    base_sha = _commit(repo, "base")
+
+    _git(repo, "checkout", "-q", "-b", "feature")
+    (repo / "b.py").write_text("y = 1\n")
+    head_sha = _commit(repo, "on feature")
+
+    event = {"pull_request": {"base": {"sha": base_sha}, "head": {"sha": head_sha}}}
+    assert compute_diff_base("pull_request", event, repo) == base_sha
 
 
 # --- _is_scannable ----------------------------------------------------------------------------
