@@ -1274,7 +1274,9 @@ retrieval quality + operability, not the claim layer** — reinforcing the "use 
   verified by eye.
   Note this is strictly a strategy-B problem. Strategy A (explicit `Chapter N`/`Part N`/`Appendix X`
   markers) already yields real chapter titles; B runs precisely when a book has no such markers,
-  which is the common case measured so far.
+  which is the common case measured so far. T-DOC87 covers the strategy-A path this ticket does
+  not reach: A's marker regex itself over-matches on some books, producing spurious unit boundaries
+  before titling even applies.
   **Fix — needs a design decision, not obvious:** candidate approaches are (i) pick the most
   title-like heading within the unit rather than the first — e.g. longest, or first exceeding some
   word count, filtering single-character and punctuation-only headings; (ii) have the map-step LLM
@@ -1311,3 +1313,54 @@ retrieval quality + operability, not the claim layer** — reinforcing the "use 
   `drop_in/excluded/`) is the fuller version but needs a threshold nobody has data to set yet, and
   would run only after the expensive stages have already happened — note it as the upgrade path, do
   not build it.
+
+### T-DOC87 — `_CHAPTER_MARKER` matches numbered list items, so Strategy A mis-splits books into non-chapters (2026-07-27)
+
+- **T-DOC87 (not started) — 🟡 strategy-A's numbered-heading alternative matches ordinary numbered
+  list items, not just chapter headings, producing spurious unit boundaries and titles.**
+  `rag/book_summarizer.py`'s `_CHAPTER_MARKER` (line 38) has two alternatives; the second,
+  `^\s*\d+\.\s+\S`, was meant to catch numbered chapter headings like `3. Estimation`. It also
+  matches **any numbered list item that the parser emitted as its own heading group** — ordered
+  lists in body text, procedure steps, reference lists.
+  **Measured, 2026-07-27, on two real books in the corpus:**
+  - `local:54d6ca71dda9` (*Causal Inference and Machine Learning in Economics, Social, and Health
+    Sciences*): 252 heading groups, **43 of which match `_CHAPTER_MARKER`**. Sample matches:
+    `2. Define Gini Index for a Node t`, `4. Choose Optimal Split Point for Each Variable`,
+    `1. Setup: Define the Problem and Data`, `2. Second Stage:`,
+    `1. https://freakonometrics.hypotheses.org/52776`, `4. Verify GPU availability:`. None is a
+    chapter.
+  - `local:dfe850b3281a` (*Causal Inference and Discovery in Python*): 530 heading groups, 6
+    matches — of which 3 are genuine (`Part 1: Causality – an Introduction`,
+    `Part 2: Causal Inference`, `Part 3: Causal Discovery`) and the rest are not, including
+    `3. Finally, let's examine the results in Table 3.1:`. The genuine `Part 2`/`Part 3` titles each
+    appear **twice**, producing duplicate chapter titles.
+  **Why the existing plausibility guards don't catch it.** `_split_by_markers` already rejects an
+  implausible split via `_MIN_MARKER_UNITS` (3), `_MAX_MARKER_UNITS` (60), and
+  `_MAX_UNIT_WORD_SHARE` (0.5). 43 units is comfortably inside the 3-60 band, so the split is
+  accepted. The guards were designed to catch a book that merely *mentions* "Chapter 3" once and
+  produces 2 lopsided units — they do not catch the opposite failure, dozens of plausible-looking
+  but spurious markers.
+  **Why this is a SPLITTING defect, not the labelling defect T-DOC85 fixed.** T-DOC85 added
+  `_title_score`/`_best_heading`, but those apply only inside `_merge_to_target` (strategy B).
+  Strategy A titles units by whatever matched the marker. The obvious-looking fix — gate marker
+  titles through `_title_score` and fall through to `""` when they score 0 — **was measured and
+  does not work**: only 2 of the 43 junk titles on `local:54d6ca71dda9` score 0. Most score *well*
+  (`4. Choose Optimal Split Point for Each Variable` scores 38, `1. Setup: Define the Problem and
+  Data` scores 28, `2. Define Gini Index for a Node t` scores 22) because they are well-formed
+  English. The titles are not the problem; the unit boundaries are.
+  **Consequence.** These books get chapter *summaries* whose boundaries are arbitrary mid-body
+  slices, and routing labels that read like procedure steps. Retrieval recall is unaffected —
+  `rag/orchestrator.py` embeds the chapter summary's `text`, never its title — so this degrades the
+  routing label and the summary boundaries, not whether content is findable.
+  **Fix — needs a design decision, do not pick one in this ticket.** Candidates: (i) require
+  numbered-heading markers to be *sequential from 1* across the document before accepting strategy
+  A, so a scattered set of list items is rejected; (ii) require a marker's unit to exceed a minimum
+  word count, so a one-paragraph list item can't be a chapter; (iii) drop the bare `^\d+\.`
+  alternative entirely and rely on the `chapter|part|appendix` alternative plus strategy B's size
+  merge, accepting that genuinely numbered-only chapter headings fall through to B; (iv) require
+  markers to be consistent in *form* — all `N.` or all `Chapter N`, not a mixture. Record the
+  options.
+  **Discovered by** the final whole-branch review of the T-DOC84/85/86 branch (PR #177), which
+  simulated the new splitter against every book's real `blocks` rows before the T-DOC85 rollout
+  rather than after. **T-DOC85 improves 3 of the 5 books in the corpus; these two take the
+  strategy-A path and are unaffected by it.**
