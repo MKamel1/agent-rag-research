@@ -417,7 +417,31 @@ def test_dry_run_stages_nothing_and_writes_no_manifest(tmp_path, monkeypatch, ca
     # scan_drop_dir was never called (early return), so done/ was never even created.
     assert not (drop_dir / "done").exists()
     assert "book.pdf" in caplog.text
+    # `_stage_one_synthetic_paper` writes "book.pdf" into `papers/` despite its name -- doc_type
+    # comes from the SUBFOLDER, not the filename, and must be reported so an operator can catch a
+    # book mistakenly dropped in papers/ (cross-task fix #5) before it costs GPU-hours.
+    assert "doc_type: paper" in caplog.text
     assert "1 file(s) would be staged" in caplog.text
+
+
+def test_dry_run_reports_doc_type_book_for_a_file_in_books(tmp_path, monkeypatch, caplog):
+    # Cross-task fix #5: doc_type is what selects summarize_book over the truncating paper path,
+    # so the dry-run preview must show it per file, sourced from the subfolder like scan_drop_dir.
+    monkeypatch.setattr("app.ingest_local.load_config", lambda: _fake_config(tmp_path))
+    books_dir = tmp_path / "drop" / "books"
+    books_dir.mkdir(parents=True)
+    (books_dir / "textbook.pdf").write_bytes(_synthetic_pdf_bytes())
+
+    with caplog.at_level("INFO", logger="app.ingest_local"):
+        exit_code = main(["--dry-run"])
+
+    assert exit_code == 0
+    assert "textbook.pdf" in caplog.text
+    assert "doc_type: book" in caplog.text
+    # mint_local_ref must have been called with the real "book" doc_type, not a hardcoded "paper"
+    # -- a local: id is content-addressed and doesn't itself encode doc_type, but a wrong doc_type
+    # passed in would still be a silent lie about what was previewed.
+    assert "id:      local:" in caplog.text
 
 
 def test_dry_run_skips_a_corrupt_pdf_and_continues(tmp_path, monkeypatch, caplog):
@@ -436,7 +460,10 @@ def test_dry_run_skips_a_corrupt_pdf_and_continues(tmp_path, monkeypatch, caplog
     assert list(cache_dir.glob("*.pdf")) == []
     assert not (drop_dir / "failed").exists()  # dry-run never quarantines
     assert "good.pdf" in caplog.text
-    assert "2 file(s) would be staged" in caplog.text  # bad.pdf still counted, just not previewed
+    # Cross-task fix #8: bad.pdf is skipped (never previewed, and stage_file would quarantine it
+    # to failed/, not stage it) -- the count must reflect files actually previewed, not every PDF
+    # found.
+    assert "1 file(s) would be staged" in caplog.text
 
 
 def test_main_disabled_pdf_cache_refuses_to_stage(tmp_path, monkeypatch):

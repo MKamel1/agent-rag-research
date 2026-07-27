@@ -21,7 +21,12 @@ class ChapterSummary(FrozenModel):
     own kind="summary" vector so search_papers can return individual chapters as routing hits."""
 
     summary_id: str  # f"{paper_id}:summary:ch{n}", n = 0-based chapter index (DATA-CONTRACTS §IDs)
-    title: str       # chapter heading (top-level section_path); "" for the windowed fallback
+    # Best-scoring top-level heading merged into this unit (T-DOC85's `_title_score`), NOT
+    # necessarily its first heading. "" only when no merged heading scored above the usability
+    # floor -- in that case the title may instead be MODEL-GENERATED (an LLM asked to title the
+    # chapter from its own summary, kind="book_title"), not extracted from the document at all;
+    # "" persists only if that fallback also failed to produce a usable title.
+    title: str
     text: str        # non-empty chapter summary
 
 

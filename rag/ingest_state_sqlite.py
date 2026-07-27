@@ -36,8 +36,12 @@ def _delete_state_rows(conn: sqlite3.Connection, paper_id: str) -> None:
     used by both `forget()` (T-DOC84) and `quarantine()` (which has always cleared these rows as
     part of dead-lettering). Module-level and connection-taking so `quarantine()` can call it
     inside its own already-open transaction."""
-    conn.execute("DELETE FROM ingest_state WHERE paper_id = ?", (paper_id,))
+    # ingest_checkpoint FIRST: migrations/0002_ingest_checkpoint.sql declares
+    # `ingest_checkpoint.paper_id REFERENCES ingest_state(paper_id)` with no `ON DELETE CASCADE`,
+    # so deleting the parent row first would violate that FK under `PRAGMA foreign_keys=ON`
+    # (this adapter doesn't set it, but DocumentStore.__init__ does -- correct under either).
     conn.execute("DELETE FROM ingest_checkpoint WHERE paper_id = ?", (paper_id,))
+    conn.execute("DELETE FROM ingest_state WHERE paper_id = ?", (paper_id,))
 
 
 class SqliteIngestState:

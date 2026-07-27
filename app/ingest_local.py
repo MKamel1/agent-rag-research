@@ -316,37 +316,47 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 def _report_dry_run(drop_dir: Path) -> int:
     """T-DOC86: print enough of each file for an operator to spot a wrong one, and stage nothing.
 
-    Scans `papers/` and `books/` the same way `scan_drop_dir` does -- a dropped file only ever
-    lands there (module docstring), never loose at the top of `drop_dir`.
+    Scans `papers/` and `books/` the same way `scan_drop_dir` does (same subfolder-then-filename
+    traversal order) -- a dropped file only ever lands there (module docstring), never loose at
+    the top of `drop_dir`. Also reports `doc_type`: it's what selects `summarize_book` over the
+    truncating paper path, so a book mistakenly dropped in `papers/` costs GPU-hours and produces
+    one truncated summary -- the exact mistake this preview exists to catch.
 
     Deliberately not a relevance *score*: thresholding a summary against `focus_area` needs a
     cutoff nobody has data to set, and would only run after parse+summarize have already been
     paid for. This costs one read and no model.
     """
-    pdfs = sorted(p for sub in ("papers", "books") for p in (drop_dir / sub).glob("*.pdf"))
-    if not pdfs:
+    files = [
+        (path, doc_type)
+        for sub, doc_type in (("papers", "paper"), ("books", "book"))
+        for path in sorted((drop_dir / sub).glob("*.pdf"))
+    ]
+    if not files:
         logger.info("ingest_local --dry-run: no PDFs in %s", drop_dir)
         return 0
-    for path in pdfs:
+    previewed = 0
+    for path, doc_type in files:
         raw = path.read_bytes()
         try:
             first_page_text = _first_page_text(raw)
         except PdfiumError as error:
             # Same gate stage_file uses for a genuinely unreadable PDF (module docstring) -- one
-            # bad file must not abort the preview of every other file.
+            # bad file must not abort the preview of every other file. Not counted below: it
+            # would never reach stage_file's actual quarantine-to-failed/ path either.
             logger.warning("ingest_local --dry-run: could not read %s (%s), skipping", path.name, error)
             continue
         arxiv_id = detect_arxiv_id(path.name, first_page_text)
         mtime = date.fromtimestamp(path.stat().st_mtime)
-        paper_id = arxiv_id or mint_local_ref(raw, path.name, "paper", mtime).paper_id
+        paper_id = arxiv_id or mint_local_ref(raw, path.name, doc_type, mtime).paper_id
         preview = first_page_text[:500].replace("\n", " ")
         logger.info(
-            "\n--- %s\n    id:      %s\n    preview: %s",
-            path.name, paper_id, preview,
+            "\n--- %s\n    doc_type: %s\n    id:      %s\n    preview: %s",
+            path.name, doc_type, paper_id, preview,
         )
+        previewed += 1
     logger.info(
         "ingest_local --dry-run: %d file(s) would be staged. Re-run without --dry-run to "
-        "proceed, or move unwanted files out of %s first.", len(pdfs), drop_dir,
+        "proceed, or move unwanted files out of %s first.", previewed, drop_dir,
     )
     return 0
 

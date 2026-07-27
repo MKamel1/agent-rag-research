@@ -297,11 +297,15 @@ class ChapterSummary:
     embedded as its own `kind="summary"` vector so `search_papers` can return individual chapters
     as routing hits (`PaperSearchResult.chapter`, §M8)."""
     summary_id: str   # f"{paper_id}:summary:ch{n}", n = 0-based chapter index (§IDs above)
-    title: str        # chapter heading -- the first heading of a size-merged unit, or the matched
-                       # marker heading for the marker strategy; "" only for the marker strategy's
-                       # front-matter unit (blocks before the first chapter marker). The windowed
-                       # fallback (flat/scanned books, no usable section structure) KEEPS the
-                       # single group's real title rather than "" (T-DOC82)
+    title: str        # T-DOC85: the best-scoring (`_title_score`) top-level heading merged into
+                       # this unit, NOT necessarily its first heading -- any strategy (marker,
+                       # size-merge, windowed fallback) can contribute the winning heading. When no
+                       # merged heading scores above the usability floor, title MAY INSTEAD BE
+                       # MODEL-GENERATED: an LLM writes a short title from the chapter's own
+                       # summary (kind="book_title"), itself gated through the same `_title_score`.
+                       # "" only when that fallback ALSO fails to produce a usable title (or the
+                       # chapter's own summary came back empty, in which case the fallback is
+                       # skipped rather than run).
     text: str          # non-empty chapter summary
 
 @dataclass(frozen=True)

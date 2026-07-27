@@ -250,9 +250,12 @@ def test_explicit_chapter_markers_are_used_when_plausible():
     _, chapters = summarize_book(_parsed_doc(blocks), FakeSummarizer())
     titles = [c.title for c in chapters]
     # T-DOC85 (Task 6): the pre-first-marker unit is titled "" by _split_by_markers itself (it
-    # isn't a real chapter heading) -- that's the same "no usable routing label" gap the LLM
-    # fallback closes, so it also picks up a title here rather than staying "".
-    assert titles[0] != ""
+    # isn't a real chapter heading), so it's eligible for the LLM `book_title` fallback -- but
+    # `FakeSummarizer` just echoes its (long) input back rather than writing a real short title,
+    # so the candidate correctly fails `_title_score`'s length ceiling (cross-task fix #2: the
+    # fallback response is gated through `_title_score`, not persisted unvalidated) and the unit
+    # stays "" rather than being labelled with 500 characters of raw chapter text.
+    assert titles[0] == ""
     assert titles[1:] == ["Chapter 1 Intro", "Chapter 2 DAGs", "Chapter 3 Estimation"]
 
 
@@ -401,3 +404,59 @@ def test_unit_with_a_usable_heading_makes_no_title_call(make_groups):
     summarize_book(parsed, summarizer)
 
     assert "book_title" not in summarizer.kinds
+
+
+class _ChattyTitleRecorder:
+    """Simulates an LLM `book_title` response that ignores the "one short title" instruction --
+    the exact failure mode of an unvalidated fallback: a chatty preamble lands verbatim as the
+    persisted, searched-on routing label."""
+
+    def summarize(self, parsed, *, kind="paper"):
+        if kind == "book_title":
+            return (
+                "Sure, here's a great title for this chapter that summarizes everything nicely "
+                "and thoroughly for the reader"
+            )
+        return "a normal chapter summary with enough real content to not be empty"
+
+
+def test_llm_title_fallback_is_rejected_when_it_fails_the_title_score(make_groups):
+    # Cross-task fix #2: the fallback must be gated through `_title_score`, same as every other
+    # title source in this module -- not just whitespace-collapsed and persisted verbatim.
+    parsed = _parsed_from_groups(make_groups([("F", 3000)]))
+
+    _, chapters = summarize_book(parsed, _ChattyTitleRecorder())
+
+    assert chapters[0].title == ""
+
+
+class _EmptyChapterSummaryRecorder:
+    """A `book`-kind summary that comes back empty -- `book_title` must never be called on it,
+    since the real `OllamaSummarizer.summarize`'s empty-prose guard would raise `PermanentError`
+    on an empty `book_title` input, quarantining the entire book over one degraded chapter."""
+
+    def summarize(self, parsed, *, kind="paper"):
+        if kind == "book_title":
+            raise PermanentError("must not be called: the chapter summary was empty")
+        return ""
+
+
+def test_empty_chapter_summary_skips_the_title_fallback(make_groups):
+    # Cross-task fix #3.
+    parsed = _parsed_from_groups(make_groups([("F", 3000)]))
+
+    _, chapters = summarize_book(parsed, _EmptyChapterSummaryRecorder())
+
+    assert chapters[0].title == ""
+
+
+def test_windowed_fallback_title_is_scored_not_kept_verbatim():
+    # Cross-task fix #9: the windowed/structureless path used to keep the single group's heading
+    # verbatim, unscored -- a junk heading (e.g. a scanned book's one OCR-garbled heading) would
+    # then label every window AND suppress the LLM title fallback (a junk-but-truthy title looks
+    # "usable" to summarize_book's `if not title`). Latent-only: no Task-8 book takes this path.
+    blocks = [_block("word " * 10, "F", i) for i in range(400)]
+
+    _, chapters = summarize_book(_parsed_doc(blocks), _KindRecorder())
+
+    assert all(c.title != "F" for c in chapters)
