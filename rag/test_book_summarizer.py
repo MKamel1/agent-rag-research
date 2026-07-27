@@ -203,3 +203,28 @@ def test_empty_parsed_doc_raises_permanent_error():
     """Deferred-minor fix: zero blocks previously produced an empty summary nobody quarantined."""
     with pytest.raises(PermanentError):
         summarize_book(_parsed_doc([]), FakeSummarizer())
+
+
+# ---------------------------------------------------------------------------
+# T-DOC82: summarize_book must never use the paper prompt (see rag/summarizer.py -- asked for a
+# paper's "effect size"/"sample size", the model invented them for a real book). Map calls use
+# "book", the single reduce call uses "book_overview".
+# ---------------------------------------------------------------------------
+
+
+class _RecordingSummarizer:
+    def __init__(self):
+        self.kinds = []
+
+    def summarize(self, parsed, *, kind="paper"):
+        self.kinds.append(kind)
+        return f"summary of {parsed.markdown[:20]}"
+
+
+def test_summarize_book_uses_book_kinds_not_paper():
+    blocks = [_block(" ".join(["word"] * 500), f"H{i}", i) for i in range(20)]
+    rec = _RecordingSummarizer()
+    summarize_book(_parsed_doc(blocks), rec)
+    assert "paper" not in rec.kinds, "book path must never use the paper prompt"
+    assert rec.kinds.count("book_overview") == 1, "exactly one reduce call"
+    assert all(k == "book" for k in rec.kinds[:-1])

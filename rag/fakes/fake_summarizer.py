@@ -23,7 +23,9 @@ class FakeSummarizer:
     def __init__(self, max_chars: int = 500):
         self._max_chars = max_chars
 
-    def summarize(self, parsed: ParsedDoc) -> str:
+    def summarize(self, parsed: ParsedDoc, *, kind: str = "paper") -> str:
+        # `kind` (T-DOC82) selects a prompt in the real adapter; this fake is a deterministic
+        # truncation with no prompt at all, so it accepts the argument and ignores it.
         text = parsed.markdown.strip()
         if not text:
             return f"[fake summary: {parsed.paper_id}]"
