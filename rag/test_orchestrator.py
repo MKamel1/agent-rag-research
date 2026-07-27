@@ -235,7 +235,7 @@ class SummarizerSpy:
         self._transient_budget = dict(transient or {})
         self._transient_calls_made: dict[str, int] = {}
 
-    def summarize(self, parsed: ParsedDoc) -> str:
+    def summarize(self, parsed: ParsedDoc, *, kind: str = "paper") -> str:
         self.calls.append(parsed.paper_id)
         if parsed.paper_id in self._poison:
             raise PermanentError(f"no usable prose to summarize: {parsed.paper_id}")
@@ -244,7 +244,7 @@ class SummarizerSpy:
         if made < budget:
             self._transient_calls_made[parsed.paper_id] = made + 1
             raise TransientError(f"generation LLM server returned 503: {parsed.paper_id}")
-        return self._inner.summarize(parsed)
+        return self._inner.summarize(parsed, kind=kind)
 
 
 def _expected_summary_by_paper_id(refs=REFS) -> dict[str, str]:

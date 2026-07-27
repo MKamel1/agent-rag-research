@@ -34,6 +34,30 @@ _SUMMARY_PROMPT = (
     "(e) any limitations the authors state. Do not copy the abstract verbatim.\n\n{paper}"
 )
 
+# T-DOC82: books are not papers. The paper prompt above asks for "effect size" / "dataset or
+# sample size", and asked those of a textbook the model INVENTS them -- a real stored book summary
+# claimed a "15% improvement measured by mean squared error on benchmark datasets" that appears
+# nowhere in the book. These two prompts drop every paper-shaped field and state the grounding
+# constraint explicitly.
+_BOOK_SECTION_PROMPT = (
+    "Summarize what this book section actually covers, in 4-6 sentences: its main topics, the "
+    "concepts or methods it explains, and how it fits into the book's subject matter. State only "
+    "what the text says. Do not invent numbers, results, effect sizes, datasets, or findings -- "
+    "if the text does not contain them, omit them entirely.\n\n{paper}"
+)
+
+_BOOK_OVERVIEW_PROMPT = (
+    "These are section summaries from a single book. Describe what the book as a whole covers in "
+    "4-6 sentences: its subject, scope, and the main topics it treats. State only what these "
+    "summaries say. Do not invent numbers, results, or findings.\n\n{paper}"
+)
+
+_PROMPTS = {
+    "paper": _SUMMARY_PROMPT,
+    "book": _BOOK_SECTION_PROMPT,
+    "book_overview": _BOOK_OVERVIEW_PROMPT,
+}
+
 # Same taxonomy split as rag/harvester.py's ArxivSource (CONVENTIONS.md §4): a rate-limited or
 # momentarily-unhealthy server is transient (retry, then quarantine); any other 4xx is this
 # server's/request's fault (quarantine the paper, don't retry).
@@ -117,7 +141,13 @@ class OllamaSummarizer:
         self._gpu_lock = gpu_lock
         self._model = model
 
-    def summarize(self, parsed: ParsedDoc) -> str:
+    def summarize(self, parsed: ParsedDoc, *, kind: str = "paper") -> str:
+        prompt_template = _PROMPTS.get(kind)
+        if prompt_template is None:
+            raise ValueError(
+                f"unknown summarize kind {kind!r}; expected one of {sorted(_PROMPTS)}"
+            )
+
         prose = parsed.markdown.strip()
         if not prose:
             raise PermanentError(
@@ -132,7 +162,7 @@ class OllamaSummarizer:
                     "/api/generate",
                     json={
                         "model": self._model,
-                        "prompt": _SUMMARY_PROMPT.format(paper=text),
+                        "prompt": prompt_template.format(paper=text),
                         "stream": False,
                         "think": False,
                         "options": {"num_ctx": num_ctx, "num_predict": _NUM_PREDICT},

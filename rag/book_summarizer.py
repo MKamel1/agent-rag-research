@@ -126,24 +126,24 @@ def _doc_from_text(parsed: ParsedDoc, text: str) -> ParsedDoc:
     return parsed.model_copy(update={"markdown": text})
 
 
-def _summarize_text(parsed: ParsedDoc, summarizer, text: str) -> str:
+def _summarize_text(parsed: ParsedDoc, summarizer, text: str, kind: str) -> str:
     words = text.split()
     if len(words) <= _MAX_CHAPTER_WORDS:
-        return summarizer.summarize(_doc_from_text(parsed, text))
+        return summarizer.summarize(_doc_from_text(parsed, text), kind=kind)
     # Bounded depth-2 windowing (spec): summarize fixed word-windows, then combine those.
     windows = [
         " ".join(words[i : i + _MAX_CHAPTER_WORDS])
         for i in range(0, len(words), _MAX_CHAPTER_WORDS)
     ]
-    partials = [summarizer.summarize(_doc_from_text(parsed, w)) for w in windows]
-    return summarizer.summarize(_doc_from_text(parsed, "\n\n".join(partials)))
+    partials = [summarizer.summarize(_doc_from_text(parsed, w), kind=kind) for w in windows]
+    return summarizer.summarize(_doc_from_text(parsed, "\n\n".join(partials)), kind=kind)
 
 
 def summarize_book(parsed: ParsedDoc, summarizer) -> tuple[str, list[ChapterSummary]]:
     chapters: list[ChapterSummary] = []
     for n, (title, blocks) in enumerate(_split_chapters(parsed)):
         chapter_text = "\n\n".join(b.text for b in blocks)
-        text = _summarize_text(parsed, summarizer, chapter_text)
+        text = _summarize_text(parsed, summarizer, chapter_text, "book")
         chapters.append(
             ChapterSummary(summary_id=f"{parsed.paper_id}:summary:ch{n}", title=title, text=text)
         )
@@ -155,7 +155,7 @@ def summarize_book(parsed: ParsedDoc, summarizer) -> tuple[str, list[ChapterSumm
             f"{parsed.paper_id}: no usable blocks to summarize (empty or figures-only parse)"
         )
     joined = "\n\n".join(f"{c.title}: {c.text}" if c.title else c.text for c in chapters)
-    overview = _summarize_text(parsed, summarizer, joined)
+    overview = _summarize_text(parsed, summarizer, joined, "book_overview")
     toc = "\n".join(f"{n + 1}. {c.title}" for n, c in enumerate(chapters) if c.title)
     summary_text = overview + ("\n\nContents:\n" + toc if toc else "")
     return summary_text, chapters

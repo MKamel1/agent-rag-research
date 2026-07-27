@@ -270,6 +270,61 @@ def test_summarize_request_disables_thinking_and_sets_context_options():
     assert "num_ctx" in body["options"] and "num_predict" in body["options"]
 
 
+def _capturing_client() -> tuple[httpx.Client, list[dict]]:
+    """A real httpx.Client wired to a MockTransport that always returns a canned 200 response,
+    recording every request body it receives -- same offline-fixture style as the HTTP-failure-
+    mapping tests above, factored out because the `kind`-prompt tests below all need it.
+    """
+    captured: list[dict] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured.append(json.loads(request.content))
+        return httpx.Response(200, json={"response": "A summary."})
+
+    client = httpx.Client(base_url="http://ollama.local", transport=httpx.MockTransport(handler))
+    return client, captured
+
+
+# ---------------------------------------------------------------------------
+# `kind` (T-DOC82): selects the prompt template. Default "paper" must stay byte-identical to
+# _SUMMARY_PROMPT (~11,000 production papers were summarized with that exact text); book kinds
+# drop every paper-shaped field and state the anti-fabrication constraint explicitly (see
+# rag/summarizer.py's _BOOK_SECTION_PROMPT/_BOOK_OVERVIEW_PROMPT comment for the real-corpus
+# grounding failure this fixes).
+# ---------------------------------------------------------------------------
+
+
+def test_paper_kind_sends_the_unchanged_paper_prompt():
+    client, captured = _capturing_client()
+    adapter = _build_summarizer_with_client(client, FakeGpuLock())
+    adapter.summarize(_prose_doc())
+    assert "academic paper's contribution" in captured[0]["prompt"]
+
+
+def test_book_kind_sends_the_book_prompt_and_forbids_invention():
+    client, captured = _capturing_client()
+    adapter = _build_summarizer_with_client(client, FakeGpuLock())
+    adapter.summarize(_prose_doc(), kind="book")
+    prompt = captured[0]["prompt"]
+    assert "book section" in prompt
+    assert "Do not invent" in prompt
+    assert "effect size" not in prompt.split("Do not invent")[0]
+
+
+def test_book_overview_kind_sends_the_overview_prompt():
+    client, captured = _capturing_client()
+    adapter = _build_summarizer_with_client(client, FakeGpuLock())
+    adapter.summarize(_prose_doc(), kind="book_overview")
+    assert "book as a whole" in captured[0]["prompt"]
+
+
+def test_unknown_kind_raises_value_error():
+    client, _ = _capturing_client()
+    adapter = _build_summarizer_with_client(client, FakeGpuLock())
+    with pytest.raises(ValueError, match="unknown summarize kind"):
+        adapter.summarize(_prose_doc(), kind="nonsense")
+
+
 def test_response_body_missing_response_field_maps_to_permanent_error():
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, json={"unexpected_shape": True})
