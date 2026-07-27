@@ -1126,3 +1126,34 @@ retrieval quality + operability, not the claim layer** — reinforcing the "use 
   test, however thorough, cannot exercise this path at all, and the next additive migration repeats
   this exact incident otherwise. High priority: this blocks every future additive migration and
   silently breaks all ingest (both existing and new paths) the moment one is added.
+
+### T-DOC83 — `enforcement` job crashes exit 128 on every force-push, `compute_diff_base` trusts an orphaned `before` SHA (2026-07-27)
+
+- **T-DOC83 (implemented — branch `fix/t-doc83-enforcement-force-push`) — 🔴 the `push`-triggered
+  `enforcement` job dies before running a single check, on *any* force-pushed branch.** Observed on
+  a real CI run on PR #174 (`push` event, head `58aba07`, after a rebase + force-push):
+  `ci/checks/changed_files.py::compute_diff_base` reads `event["before"]` and, whenever it's
+  present and non-zero, returns it unchecked; `ci/run_enforcement.py` then feeds it straight into
+  `list_changed_paths` → `git diff --name-only <before> HEAD`, which dies with
+  `subprocess.CalledProcessError: ... returned non-zero exit status 128`. Root cause: GitHub's
+  `push` event's `before` is the branch's *previous* head at the time of the push. A normal
+  (fast-forward) push keeps that commit reachable, so diffing against it is correct and cheap. A
+  **force-push** rewrites history out from under it — `before` still names a real-looking 40-hex
+  SHA, but this clone has no ref to it, and `git diff` against an object that isn't there is exit
+  128, not an empty diff. **Why this is systemic here, not a one-off:** GIT-WORKFLOW.md mandates
+  `gh pr merge --rebase`, and rebasing any already-pushed PR branch requires a force-push to update
+  it — so this triggers on every rebased PR, not an edge case. Re-running the job doesn't help
+  either: the replayed event payload carries the same orphaned `before` SHA. **Why no violation was
+  ever actually missed despite this:** the `pull_request`-triggered run of the same workflow never
+  reads `event["before"]` at all — it diffs `merge-base(pull_request.base.sha,
+  pull_request.head.sha)` instead — so it kept catching real violations throughout; the force-push
+  bug only produced a spurious red `enforcement` check context on an otherwise-clean push, never a
+  false-negative silently letting a violation through. **Fix:** added
+  `changed_files._rev_exists(repo_root, rev)` (`git cat-file -e <rev>^{commit}`, `check=False` —
+  a missing object is the expected case, not an error) and gated the `push` early-return on it:
+  `before` is only trusted if it actually resolves in this clone; otherwise `compute_diff_base`
+  falls through to the same merge-base-with-default-branch fallback already used for a branch's
+  first push. `pull_request` behavior is untouched. Tests added to `ci/checks/test_diff.py`: a
+  reachable `before` is still returned unchanged (no behavior change for a normal push), an
+  orphaned/unreachable `before` falls back to the merge-base instead of raising, and the
+  `pull_request` path is unaffected.

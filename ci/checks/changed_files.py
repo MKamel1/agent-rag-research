@@ -29,11 +29,31 @@ def compute_diff_base(event_name: str, event: dict, repo_root: Path) -> str:
         return _merge_base(repo_root, base_sha, head_sha)
     if event_name == "push":
         before = event.get("before", "")
-        if before and before != ZERO_SHA:
+        # A force-push (routine here -- GIT-WORKFLOW.md mandates `gh pr merge --rebase`, and
+        # rebasing an open branch requires one) makes GitHub's `before` the branch's *previous*
+        # head, which this clone no longer has any ref to. Blindly trusting it turns the next
+        # `git diff before HEAD` into an exit-128 crash instead of a diff. Only trust `before` if
+        # it actually resolves here; otherwise fall through to the same merge-base fallback used
+        # for a brand-new branch's first push.
+        if before and before != ZERO_SHA and _rev_exists(repo_root, before):
             return before
         default_branch = event.get("repository", {}).get("default_branch", "main")
         return _merge_base(repo_root, f"origin/{default_branch}", "HEAD")
     raise ValueError(f"compute_diff_base: unsupported event_name {event_name!r}")
+
+
+def _rev_exists(repo_root: Path, rev: str) -> bool:
+    """Whether `rev` resolves to a commit reachable in this clone. `check=False` is deliberate:
+    a missing object is the expected case here (an orphaned pre-force-push SHA), not an error.
+    """
+    result = subprocess.run(
+        ["git", "cat-file", "-e", f"{rev}^{{commit}}"],
+        cwd=repo_root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return result.returncode == 0
 
 
 def _merge_base(repo_root: Path, ref_a: str, ref_b: str) -> str:
