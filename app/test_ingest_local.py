@@ -400,6 +400,45 @@ def _fake_config_with_disabled_cache(tmp_path: Path) -> Config:
     )
 
 
+def test_dry_run_stages_nothing_and_writes_no_manifest(tmp_path, monkeypatch, caplog):
+    # T-DOC86: dropping a wrong file into a directory is a much easier mistake than writing a
+    # wrong arXiv query, and a book costs GPU-minutes to find out.
+    monkeypatch.setattr("app.ingest_local.load_config", lambda: _fake_config(tmp_path))
+    _stage_one_synthetic_paper(tmp_path)
+    drop_dir = tmp_path / "drop"
+    cache_dir = tmp_path / "cache"
+
+    with caplog.at_level("INFO", logger="app.ingest_local"):
+        exit_code = main(["--dry-run"])
+
+    assert exit_code == 0
+    assert list(cache_dir.glob("*.pdf")) == []
+    assert list(drop_dir.glob("manifest-*.txt")) == []
+    # scan_drop_dir was never called (early return), so done/ was never even created.
+    assert not (drop_dir / "done").exists()
+    assert "book.pdf" in caplog.text
+    assert "1 file(s) would be staged" in caplog.text
+
+
+def test_dry_run_skips_a_corrupt_pdf_and_continues(tmp_path, monkeypatch, caplog):
+    monkeypatch.setattr("app.ingest_local.load_config", lambda: _fake_config(tmp_path))
+    papers_dir = tmp_path / "drop" / "papers"
+    papers_dir.mkdir(parents=True)
+    (papers_dir / "good.pdf").write_bytes(_synthetic_pdf_bytes())
+    (papers_dir / "bad.pdf").write_bytes(b"not a pdf")
+    drop_dir = tmp_path / "drop"
+    cache_dir = tmp_path / "cache"
+
+    with caplog.at_level("INFO", logger="app.ingest_local"):
+        exit_code = main(["--dry-run"])
+
+    assert exit_code == 0
+    assert list(cache_dir.glob("*.pdf")) == []
+    assert not (drop_dir / "failed").exists()  # dry-run never quarantines
+    assert "good.pdf" in caplog.text
+    assert "2 file(s) would be staged" in caplog.text  # bad.pdf still counted, just not previewed
+
+
 def test_main_disabled_pdf_cache_refuses_to_stage(tmp_path, monkeypatch):
     """`pdf_cache_dir=""` means "cache disabled" (contracts/config.py). This module's staged files
     are cache-first entries `app.assembly.harvest_refs` reads back -- with the cache disabled,

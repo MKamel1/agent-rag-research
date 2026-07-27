@@ -305,7 +305,50 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--drop-dir", default=None, metavar="PATH",
         help="Override cfg.drop_in_dir for this run",
     )
+    parser.add_argument(
+        "--dry-run", action="store_true",
+        help="Report what WOULD be staged -- detected id and the first lines of extracted text "
+             "per file -- without staging anything or invoking app.ingest",
+    )
     return parser.parse_args(argv)
+
+
+def _report_dry_run(drop_dir: Path) -> int:
+    """T-DOC86: print enough of each file for an operator to spot a wrong one, and stage nothing.
+
+    Scans `papers/` and `books/` the same way `scan_drop_dir` does -- a dropped file only ever
+    lands there (module docstring), never loose at the top of `drop_dir`.
+
+    Deliberately not a relevance *score*: thresholding a summary against `focus_area` needs a
+    cutoff nobody has data to set, and would only run after parse+summarize have already been
+    paid for. This costs one read and no model.
+    """
+    pdfs = sorted(p for sub in ("papers", "books") for p in (drop_dir / sub).glob("*.pdf"))
+    if not pdfs:
+        logger.info("ingest_local --dry-run: no PDFs in %s", drop_dir)
+        return 0
+    for path in pdfs:
+        raw = path.read_bytes()
+        try:
+            first_page_text = _first_page_text(raw)
+        except PdfiumError as error:
+            # Same gate stage_file uses for a genuinely unreadable PDF (module docstring) -- one
+            # bad file must not abort the preview of every other file.
+            logger.warning("ingest_local --dry-run: could not read %s (%s), skipping", path.name, error)
+            continue
+        arxiv_id = detect_arxiv_id(path.name, first_page_text)
+        mtime = date.fromtimestamp(path.stat().st_mtime)
+        paper_id = arxiv_id or mint_local_ref(raw, path.name, "paper", mtime).paper_id
+        preview = first_page_text[:500].replace("\n", " ")
+        logger.info(
+            "\n--- %s\n    id:      %s\n    preview: %s",
+            path.name, paper_id, preview,
+        )
+    logger.info(
+        "ingest_local --dry-run: %d file(s) would be staged. Re-run without --dry-run to "
+        "proceed, or move unwanted files out of %s first.", len(pdfs), drop_dir,
+    )
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -331,6 +374,9 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     drop_dir = Path(args.drop_dir) if args.drop_dir is not None else Path(cfg.drop_in_dir)
     cache_dir = Path(cfg.pdf_cache_dir)
+
+    if args.dry_run:
+        return _report_dry_run(drop_dir)
 
     staged = scan_drop_dir(drop_dir, cache_dir, fetch_by_ids=_fetch_by_ids)
     if not staged:
