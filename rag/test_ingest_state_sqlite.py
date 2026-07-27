@@ -319,9 +319,9 @@ class SummarizerSpy:
         self.calls: list[str] = []
         self._inner = FakeSummarizer()
 
-    def summarize(self, parsed: ParsedDoc) -> str:
+    def summarize(self, parsed: ParsedDoc, *, kind: str = "paper") -> str:
         self.calls.append(parsed.paper_id)
-        return self._inner.summarize(parsed)
+        return self._inner.summarize(parsed, kind=kind)
 
 
 class EmbedderSpy:
