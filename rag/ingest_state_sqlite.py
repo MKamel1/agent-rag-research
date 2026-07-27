@@ -207,7 +207,9 @@ class SqliteIngestState:
             )
 
     def forget(self, paper_id: str) -> None:
-        """Drops `paper_id`'s ingest-state rows so a later ingest treats it as never-seen.
+        """Drops `paper_id`'s `ingest_state`/`ingest_checkpoint` rows -- what makes the resume
+        logic re-run every stage on the next ingest instead of seeing a stale `stage='done'` and
+        skipping.
 
         T-DOC84: `IngestionOrchestrator.delete_paper()` removes a document's `papers`/`chunks`/
         `summaries` rows and its vectors, but a leftover `ingest_state.stage = 'done'` row makes a
@@ -215,6 +217,14 @@ class SqliteIngestState:
         stage, so the document never comes back and nothing raises. This is the missing third
         delete. Idempotent by construction (DELETE of a nonexistent row affects 0 rows), so it is
         safe to call on an id that was never ingested and safe to re-run after a partial failure.
+
+        Deliberately does NOT touch `quarantine`/`quarantine_diagnostics`: that is a dead-letter
+        record with its own lifecycle, not resume state, and erasing it would destroy the
+        forensic history of why a paper failed. Consequence: an id that was previously quarantined
+        stays in `all_known_paper_ids()`'s union, so `app/prefetch_pdfs.py` still treats it as
+        spoken for after `forget()`. That's pre-existing behavior (harvest() doesn't exclude
+        quarantined ids either, by the same design -- see `rag/orchestrator.py`) and out of scope
+        for T-DOC84.
         """
 
         def _forget(conn: sqlite3.Connection) -> None:
