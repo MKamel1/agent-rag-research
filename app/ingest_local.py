@@ -52,18 +52,31 @@ from rag.harvester import ArxivSource
 
 logger = logging.getLogger(__name__)
 
-# Matches a base arXiv id (new-style "YYMM.NNNNN", 4-5 digit suffix) with an optional "arXiv:"
-# prefix and/or "vN" version suffix -- the same shape whether it comes from a filename
-# ("2409.01266v2.pdf") or a PDF's own first-page banner ("arXiv:2409.01266v1 [stat.ME]").
-_ARXIV_ID = re.compile(r"(?:arXiv[:\s/]*)?\b(\d{4}\.\d{4,5})(?:v\d+)?\b", re.IGNORECASE)
+# Matches a base arXiv id (new-style "YYMM.NNNNN", 4-5 digit suffix) explicitly flagged by an
+# "arXiv:" prefix, with an optional "vN" version suffix -- the shape a PDF's own first-page
+# banner uses ("arXiv:2409.01266v1 [stat.ME]").
+_ARXIV_ID_PREFIXED = re.compile(r"arxiv[:\s/]*(\d{4}\.\d{4,5})(?:v\d+)?\b", re.IGNORECASE)
+# Matches the SAME id shape standing alone as the entire filename stem -- how arXiv PDFs are
+# actually named ("2409.01266v2.pdf"). Deliberately NOT used against page text: a bare
+# `\d{4}\.\d{4,5}` anywhere in body prose false-positives on things like a table/equation number
+# ("Table 1234.5678") (T-DOC82) -- unlike a filename stem, page text has no "this whole string IS
+# the id" guarantee.
+_ARXIV_ID_BARE = re.compile(r"^(\d{4}\.\d{4,5})(?:v\d+)?$")
 _YEAR = re.compile(r"\b(19|20)\d{2}\b")
 
 
 def detect_arxiv_id(filename: str, first_page_text: str) -> str | None:
     """Filename checked before content -- cheaper, and a deliberately-named file
-    ("2409.01266v2.pdf") is a stronger signal than a substring match inside page text."""
+    ("2409.01266v2.pdf") is a stronger signal than a substring match inside page text.
+
+    An id must either carry an explicit "arXiv" prefix (filename or page text), or be the whole
+    filename stem -- a bare decimal number floating in body text (e.g. a table/equation number
+    like "1234.5678") is NOT enough (T-DOC82)."""
+    bare = _ARXIV_ID_BARE.match(Path(filename).stem)
+    if bare:
+        return bare.group(1)
     for source in (filename, first_page_text):
-        m = _ARXIV_ID.search(source)
+        m = _ARXIV_ID_PREFIXED.search(source)
         if m:
             return m.group(1)
     return None

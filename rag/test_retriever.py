@@ -736,6 +736,33 @@ def test_retrieve_papers_whole_paper_hit_chapter_is_none():
     assert result.chapter is None
 
 
+def test_mixed_hits_whole_book_sibling_has_chapter_none():
+    """Deferred minor: the chapter-hit test above never asserted the SIBLING whole-book hit's
+    chapter is None in the same result set -- both summary_ids share one FakeVectorStore corpus
+    here (same seeding as test_retrieve_papers_chapter_hit_sets_chapter_and_doc_type), and this
+    checks both ends of the chapter/non-chapter branch together."""
+    store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
+    paper_id = "local:ab12cd34ef56"
+    ch_summary_id = f"{paper_id}:summary:ch1"
+    _seed_summary(
+        store, docstore, embedder, paper_id=paper_id, summary_id=f"{paper_id}:summary",
+        summary_text="a whole-book summary about causal graphs", doc_type="book",
+        chapter_summaries=[ChapterSummary(summary_id=ch_summary_id, title="DAGs",
+                                          text="directed acyclic graphs and d-separation")],
+    )
+    docstore._summaries[ch_summary_id] = "directed acyclic graphs and d-separation"
+    store.upsert(ch_summary_id, embedder.embed(["directed acyclic graphs and d-separation"])[0],
+                 _payload(paper_id, "summary", "Ch. 1", ("cs.LG",), embedder,
+                          "directed acyclic graphs and d-separation"))
+
+    results, _coverage = _make_retriever(store, docstore, FakeReranker(), embedder).retrieve_papers(
+        "causal graphs", filters=None, k=10)
+
+    by_text = {r.view.summary_text: r for r in results}
+    assert by_text["a whole-book summary about causal graphs"].chapter is None
+    assert by_text["directed acyclic graphs and d-separation"].chapter == "DAGs"
+
+
 def test_both_methods_use_the_same_injected_reranker():
     # The Reranker is a constructor arg, never hardcoded: the instance we inject is the one exercised
     # by BOTH methods (its .calls accumulates across a retrieve() and a retrieve_papers()).

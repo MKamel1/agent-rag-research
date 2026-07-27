@@ -520,6 +520,21 @@ def test_chapter_order_is_numeric_not_lexical(store):
     assert [c.summary_id for c in got.chapter_summaries] == expected_ascending
 
 
+def test_malformed_chapter_summary_id_raises_contract_error(store):
+    """A summary row that is neither the whole-doc summary nor a parseable `:ch{n}` previously
+    raised a bare ValueError out of get() -- every other malformed-id condition in this module
+    raises the typed ContractError instead (see get_block/get_chunk/get_summary below)."""
+    store.put(make_paper_record(ref=make_paper_ref(doc_type="book")))
+    store._con.execute(
+        "INSERT INTO summaries (summary_id, paper_id, text, title) VALUES (?, ?, ?, ?)",
+        (f"{PAPER_ID}:summary:chXYZ", PAPER_ID, "t", "T"),
+    )
+    store._con.commit()
+
+    with pytest.raises(ContractError, match="chapter summary_id"):
+        store.get(PAPER_ID)
+
+
 def test_get_summary_resolves_chapter_ids(store):
     chapters = [
         ChapterSummary(summary_id=f"{PAPER_ID}:summary:ch0", title="Intro", text="ch0 summary"),

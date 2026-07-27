@@ -97,6 +97,16 @@ def test_detect_arxiv_id_none_for_plain_pdf():
     assert detect_arxiv_id("causality-pearl.pdf", "Causality: Models, Reasoning...") is None
 
 
+def test_bare_decimal_in_body_text_is_not_an_arxiv_id():
+    """A body-text decimal shaped like an arXiv id (4 digits, dot, 4-5 digits -- e.g. a table or
+    equation number) must not false-positive into the arXiv lookup path (T-DOC82) unless it
+    carries an explicit arXiv prefix or IS the whole filename stem. (The brief's literal example,
+    "Table 4.12345", doesn't actually reproduce the old bug -- "4" is only one digit before the
+    dot, so even the old \\d{4}\\.\\d{4,5} regex never matched it; this uses a number shaped to
+    actually trigger the old bare-anywhere match.)"""
+    assert detect_arxiv_id("causality-pearl.pdf", "See Table 1234.56789 for results") is None
+
+
 # ---------------------------------------------------------------------------
 # mint_local_ref
 # ---------------------------------------------------------------------------
