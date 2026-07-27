@@ -15,6 +15,7 @@ from contracts.provenance import Block
 from rag.book_summarizer import (
     _FALLBACK_WINDOW_BLOCKS,
     _MAX_CHAPTER_WORDS,
+    _MAX_MARKER_UNITS,
     _TARGET_CHAPTER_WORDS,
     _split_chapters,
     summarize_book,
@@ -176,6 +177,25 @@ def test_marker_split_rejected_when_one_unit_dominates():
     assert [t for t, _ in units] != ["Chapter 1 A", "Chapter 2 B", "Chapter 3 C"]
 
 
+def test_too_many_markers_falls_back_to_size_merge():
+    """>_MAX_MARKER_UNITS numbered headings is D1's shape wearing marker clothes.
+
+    The pass/fail bound is the fixed literal `n_headings` (80), not `_MAX_MARKER_UNITS`
+    itself -- comparing against the guard constant would be tautological (raising the guard
+    raises the assertion's bound right along with it, so the test would pass either way
+    without ever exercising the fallback). The precondition assert instead catches that
+    mutation directly: if the guard is loosened past `n_headings`, this fixture no longer
+    exceeds it and the test fails here rather than silently exercising the wrong path.
+    """
+    n_headings = 80
+    assert n_headings > _MAX_MARKER_UNITS, "fixture must exceed the guard to exercise it"
+    blocks = [
+        _block(" ".join(["word"] * 300), f"{i}. Section {i}", i) for i in range(n_headings)
+    ]
+    units = _split_chapters(_parsed_doc(blocks))
+    assert len(units) < n_headings, "expected size-merged units, not one unit per heading"
+
+
 def test_size_merge_targets_chapter_sized_units():
     blocks = [_block(" ".join(["word"] * 500), f"H{i}", i) for i in range(40)]  # 20k words
     units = _split_chapters(_parsed_doc(blocks))
@@ -222,9 +242,15 @@ class _KindRecorder:
 
 
 def test_summarize_book_uses_book_kinds_not_paper():
-    blocks = [_block(" ".join(["word"] * 500), f"H{i}", i) for i in range(20)]
+    # One chapter (~_MAX_CHAPTER_WORDS + 500 words) exceeds the per-chapter ceiling, so the
+    # windowed branch of `_summarize_text` (partials + combine, all three call sites) actually
+    # runs -- a fixture where every chapter stays under the ceiling would never exercise it,
+    # letting a missed `kind=kind` on that branch alone reintroduce paper-prompt fabrication.
+    blocks = [_block(" ".join(["word"] * (_MAX_CHAPTER_WORDS + 500)), "Big Chapter", 0)]
+    blocks += [_block(" ".join(["word"] * 500), f"H{i}", i + 1) for i in range(10)]
     rec = _KindRecorder()
-    summarize_book(_parsed_doc(blocks), rec)
+    _, chapters = summarize_book(_parsed_doc(blocks), rec)
     assert "paper" not in rec.kinds, "book path must never use the paper prompt"
     assert rec.kinds.count("book_overview") == 1, "exactly one reduce call"
     assert all(k == "book" for k in rec.kinds[:-1])
+    assert len(rec.kinds) > len(chapters), "windowed branch must have actually executed"
