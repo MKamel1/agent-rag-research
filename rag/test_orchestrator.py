@@ -84,6 +84,7 @@ from contracts.harvester import PaperRef
 from contracts.ingest_state import CheckpointArtifacts
 from contracts.parser import ParsedDoc
 from contracts.provenance import Anchor, Block
+from rag.book_summarizer import _TARGET_CHAPTER_WORDS
 from rag.fakes.fake_embedder import FakeEmbedder
 from rag.fakes.fake_gpu_lock import FakeGpuLock
 from rag.fakes.fake_ingest_state import FakeIngestState
@@ -1296,11 +1297,19 @@ BOOK_CHAPTERS = ["1. Introduction", "2. Graphical Models"]
 
 def make_book_parsed(ref: PaperRef = BOOK_REF, chapters: list[str] = BOOK_CHAPTERS) -> ParsedDoc:
     """A `ParsedDoc` with one block per chapter, each in its own top-level `section_path` --
-    exactly the shape `rag/book_summarizer.py`'s `_split_chapters` groups on."""
+    exactly the shape `rag/book_summarizer.py`'s `_split_chapters` groups on.
+
+    T-DOC82: each chapter's word count is padded past `_TARGET_CHAPTER_WORDS` so the size-merge
+    fallback (`_merge_to_target`) leaves these two real chapters standing on their own instead of
+    folding the second into the first for being "too small" -- these fixture chapters are
+    intentionally tiny content-wise, which is realistic for a section heading but not for a whole
+    chapter, so they need the padding to behave like real chapters under the new algorithm.
+    """
     blocks = [
         Block(
             block_id=f"{ref.paper_id}:b{i}", paper_id=ref.paper_id,
-            text=f"{title} -- causal graphs, do-calculus, and identification assumptions.",
+            text=f"{title} -- causal graphs, do-calculus, and identification assumptions. "
+            + " ".join(["word"] * _TARGET_CHAPTER_WORDS),
             type="prose", page=i, bbox=(0.0, 0.0, 1.0, 1.0), section_path=title, index=i,
         )
         for i, title in enumerate(chapters)
