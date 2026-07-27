@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 def _build():
     # Indirection exists so tests can substitute a recording double without standing up the real
-    # assembly (which would need a live Qdrant).
+    # assembly (which would need a live vector index).
     return build_ingestion_orchestrator(load_config())
 
 
