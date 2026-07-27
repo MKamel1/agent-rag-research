@@ -235,11 +235,19 @@ explicitly returns "grounded passages + summaries + citations", and `PaperRecord
 required (non-nullable) field, unlike `contextual_header`, which V0 deliberately leaves `None`.
 
 ```python
-# Summarizer.summarize(doc: ParsedDoc) -> str
-#   Returns summary_text for the paper. summary_id is NOT returned by this call — it is always
-#   derived deterministically as f"{paper_id}:summary" (see §IDs); Summarizer never invents it.
+# Summarizer.summarize(doc: ParsedDoc, *, kind: Literal["paper", "book", "book_overview"] = "paper") -> str
+#   Returns summary_text for the paper (or, T-DOC82, one book chapter/the book overview). summary_id
+#   is NOT returned by this call — it is always derived deterministically as f"{paper_id}:summary"
+#   (see §IDs); Summarizer never invents it.
 ```
 
+- **`kind` (T-DOC82):** selects which prompt is used — `"paper"` (default, byte-identical to the
+  original prompt) selects the paper prompt; `"book"` selects a per-chapter prompt; `"book_overview"`
+  selects the reduce-step prompt run once over the joined chapter summaries. Unlike the paper prompt,
+  the two book prompts omit paper-shaped fields (effect size, sample size, benchmark) and explicitly
+  instruct the model not to invent numbers — a real stored book summary had fabricated "approximately
+  15%... mean squared error on benchmark datasets" that appears nowhere in the book. An unrecognized
+  `kind` raises `ValueError` (`OllamaSummarizer.summarize`, `rag/summarizer.py`).
 - **Invariants:** non-empty string; the local generation LLM (Qwen tier, ADR-08; served via the stack
   chosen in ADR-09) is a **GPU-bound stage** — subject to the single-GPU lock (`GpuLock`, above; ARCHITECTURE
   "Operational invariants" §3) exactly like the Embedder and reranker. It **cannot** run concurrently with
@@ -252,6 +260,10 @@ required (non-nullable) field, unlike `contextual_header`, which V0 deliberately
   for the Embedder.
 - **Errors:** an empty/degenerate `ParsedDoc` (no prose blocks) is a `PermanentError` → quarantine, not a
   crash — some papers genuinely can't be summarized (e.g. a corrupted parse that produced only figures).
+  For books (T-DOC82), `rag/book_summarizer.py`'s `summarize_book` — not this call — raises the same
+  `PermanentError` when a `doc_type="book"` parse yields no usable blocks at all (empty/figures-only
+  parse), so `IngestionOrchestrator`'s existing quarantine path catches it; previously this case
+  silently produced an empty summary that nothing quarantined.
 - **Where it sits in the pipeline:** after `Chunker` (or in parallel with it — both consume `ParsedDoc`
   and neither depends on the other's output) and before `Embedder`, because `Embedder` must also embed
   `summary_text` (as a `kind="summary"` vector, §M6) before `DocumentStore.put` and `VectorIndex.upsert`

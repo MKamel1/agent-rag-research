@@ -1062,7 +1062,7 @@ retrieval quality + operability, not the claim layer** — reinforcing the "use 
 
 ### T-DOC80 — drop-in folder ingestion + book support (2026-07-25)
 
-- **T-DOC80 (implemented — this branch, `feat/t-doc80-drop-in-and-books`, commits `ff461ae..b1d9d7a`;
+- **T-DOC80 (implemented — this branch, `feat/t-doc80-drop-in-and-books`, commits `7372062..36d1b35`;
   spec: `docs/superpowers/specs/2026-07-25-drop-in-folder-and-books-design.md`; plan:
   `docs/superpowers/plans/2026-07-25-drop-in-folder-and-books.md`) — drop-in folder ingestion (arXiv
   PDFs, non-arXiv papers, and books dropped under `Config.drop_in_dir`'s `papers/`/`books/`
@@ -1126,6 +1126,51 @@ retrieval quality + operability, not the claim layer** — reinforcing the "use 
   test, however thorough, cannot exercise this path at all, and the next additive migration repeats
   this exact incident otherwise. High priority: this blocks every future additive migration and
   silently breaks all ingest (both existing and new paths) the moment one is added.
+
+### T-DOC82 — book chapter detection + book-appropriate summarization (2026-07-26)
+
+- **T-DOC82 (implemented — this branch, `feat/t-doc82-book-chapters-and-prompts`, commits
+  `36d1b35..7377af4`; spec: `docs/superpowers/specs/2026-07-26-book-chapter-and-summary-fixes-design.md`;
+  plan: `docs/superpowers/plans/2026-07-26-book-chapter-and-summary-fixes.md`) — fixes two defects
+  T-DOC80's own feature exposed on the **first live drop-in ingest against the real corpus**; both
+  were invisible to the unit suite because its fixtures are synthetic 3-block `ParsedDoc`s with a
+  real `" > "` hierarchy, summarized by `FakeSummarizer` (a truncation stub that cannot fabricate) —
+  only a real book through real MinerU and the real local LLM exposed either one.
+  - **D1 — chapter splitting degenerated to ~1 chapter per heading.** `_split_chapters` grouped
+    blocks by top-level `section_path`, which MinerU builds as a real hierarchy for arXiv papers
+    (113 `" > "`-bearing blocks on `0705.1270`) but emits FLAT for books (zero `" > "`-bearing
+    blocks, 306 distinct flat values, on the 2,520-block, ~144k-word *Causal Inference in Python*).
+    Grouping-by-`section_path` was therefore an identity function on books: 530 chapter summaries
+    for 535 chunks, with titles like `Contributors`, `About the author`, `Italic`, `Constant width`
+    — ~530 LLM calls per book instead of ~15-30, and chapter-level `search_papers` routing hits
+    polluted with front-matter/typographic-convention "chapters". Fixed with a two-strategy
+    `_split_chapters` (marker regex with a plausibility guard, falling back to accumulating heading
+    groups to a target word count; unchanged single-group windowing for flat/scanned docs) — full
+    behavior in ARCHITECTURE.md §M3B.
+  - **D2 — paper-shaped prompt fabricated numbers for books.** The one `_SUMMARY_PROMPT` asked for
+    "effect size"/"sample size"/"benchmark" results; asked of a textbook, the model invented them —
+    a real stored book summary claimed "a novel hybrid method... approximately 15%... mean squared
+    error on benchmark datasets", none of which the book states. Fixed by giving `Summarizer.summarize`
+    a `kind="paper"|"book"|"book_overview"` keyword (`rag/summarizer.py`; unknown `kind` raises
+    `ValueError`) selecting a book-specific prompt that drops paper-shaped fields and explicitly
+    forbids inventing numbers — full behavior in DATA-CONTRACTS.md §M3B. The paper path (`kind="paper"`,
+    the default) is byte-identical to the prompt before this change.
+  - **Also folded in — deferred-minor findings from T-DOC80's own reviews:** `document_store.py`
+    raises a typed `ContractError` (not a bare `ValueError`) for a malformed chapter `summary_id`;
+    `retriever.py` gained a comment documenting that its `chapter=None` fallback for an orphaned
+    chapter id is deliberate (logic unchanged); `obsidian_export.py` no longer renders the same URL
+    twice for a `local:` id's PDF/Source links; `ingest_local.py`'s `detect_arxiv_id` now requires
+    either an explicit `arXiv` prefix or the id being the whole filename stem — a bare
+    `\d{4}\.\d{4,5}` anywhere in body text (e.g. "Table 4.12345") used to false-positive into an
+    arXiv metadata lookup.
+  - **Also, `retrieve_papers()` gained a per-paper cap** (`_MAX_HITS_PER_PAPER = 3`,
+    `rag/retriever.py`) — a book contributes one vector per chapter, so a strong book match could
+    otherwise fill every slot of `k` with chapters of the same paper and crowd papers out of a
+    mixed-corpus query. Applied after rerank, before the `[:k]` truncation — full behavior in
+    ARCHITECTURE.md §M7.
+  - `summarize_book` also now raises `PermanentError` (same taxonomy `Summarizer` itself uses) when
+    a book parse has no usable blocks at all, so `IngestionOrchestrator`'s existing quarantine path
+    catches it — previously this produced an empty summary that nothing quarantined.
 
 ### T-DOC83 — `enforcement` job crashes exit 128 on every force-push, `compute_diff_base` trusts an orphaned `before` SHA (2026-07-27)
 
