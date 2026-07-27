@@ -1130,7 +1130,7 @@ retrieval quality + operability, not the claim layer** — reinforcing the "use 
 ### T-DOC82 — book chapter detection + book-appropriate summarization (2026-07-26)
 
 - **T-DOC82 (implemented — this branch, `feat/t-doc82-book-chapters-and-prompts`, commits
-  `36d1b35..7377af4`; spec: `docs/superpowers/specs/2026-07-26-book-chapter-and-summary-fixes-design.md`;
+  `36d1b35..HEAD`; spec: `docs/superpowers/specs/2026-07-26-book-chapter-and-summary-fixes-design.md`;
   plan: `docs/superpowers/plans/2026-07-26-book-chapter-and-summary-fixes.md`) — fixes two defects
   T-DOC80's own feature exposed on the **first live drop-in ingest against the real corpus**; both
   were invisible to the unit suite because its fixtures are synthetic 3-block `ParsedDoc`s with a

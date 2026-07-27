@@ -297,8 +297,11 @@ class ChapterSummary:
     embedded as its own `kind="summary"` vector so `search_papers` can return individual chapters
     as routing hits (`PaperSearchResult.chapter`, §M8)."""
     summary_id: str   # f"{paper_id}:summary:ch{n}", n = 0-based chapter index (§IDs above)
-    title: str        # chapter heading (the chapter's top-level section_path); "" for the
-                       # windowed fallback used on flat/scanned books with no section structure
+    title: str        # chapter heading -- the first heading of a size-merged unit, or the matched
+                       # marker heading for the marker strategy; "" only for the marker strategy's
+                       # front-matter unit (blocks before the first chapter marker). The windowed
+                       # fallback (flat/scanned books, no usable section structure) KEEPS the
+                       # single group's real title rather than "" (T-DOC82)
     text: str          # non-empty chapter summary
 
 @dataclass(frozen=True)
@@ -625,7 +628,9 @@ class Coverage:
     """How big was the haystack. Only meaningful for tools that return a top-k SAMPLE of a larger
     candidate set — get_paper/get_span each resolve one specific, fully-specified thing, so there is no
     'you're seeing part of it' concept for them and they are NOT wrapped in this envelope."""
-    returned: int      # len(results) — after rerank + top_k truncation
+    returned: int      # len(results) — after rerank + top_k truncation (semantic_search); for
+                        # search_papers, after rerank + per-paper cap (T-DOC82 `_cap_per_paper`,
+                        # rag/retriever.py) + top_k truncation
     candidates: int     # len(Hit list) returned by VectorIndex.hybrid_search, i.e. the fused candidate
                          # pool BEFORE rerank/top_k truncation — "how many were in the running"
 

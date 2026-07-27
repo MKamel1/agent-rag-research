@@ -11,6 +11,7 @@ several adapters), so no vendor SDK import is needed at all.
 import logging
 import re
 import time
+from typing import Literal
 
 import httpx
 
@@ -141,7 +142,9 @@ class OllamaSummarizer:
         self._gpu_lock = gpu_lock
         self._model = model
 
-    def summarize(self, parsed: ParsedDoc, *, kind: str = "paper") -> str:
+    def summarize(
+        self, parsed: ParsedDoc, *, kind: Literal["paper", "book", "book_overview"] = "paper"
+    ) -> str:
         prompt_template = _PROMPTS.get(kind)
         if prompt_template is None:
             raise ValueError(
