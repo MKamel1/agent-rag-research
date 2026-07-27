@@ -96,8 +96,11 @@ Ten modules, each independently ownable (owners A–F) and testable through its 
   `contextual_header is None` for every chunk.
 
 ### M3B · Summarizer  *(owner C)*
-- **Interface:** `summarize(ParsedDoc) -> str` (returns `summary_text`; `summary_id` is always the
-  deterministic `f"{paper_id}:summary"`, per DATA-CONTRACTS §IDs — never invented by this module).
+- **Interface:** `summarize(ParsedDoc, *, kind: Literal["paper","book","book_overview"] = "paper") -> str`
+  (returns `summary_text`; `summary_id` is always the deterministic `f"{paper_id}:summary"`, per
+  DATA-CONTRACTS §IDs — never invented by this module). `kind` selects which prompt is used —
+  `"paper"` (default, byte-identical to the original prompt) vs the two book prompts below
+  (T-DOC82); an unrecognized `kind` raises `ValueError` (DATA-CONTRACTS §M3B).
   - *Invariants:* non-empty output; **GPU-bound** — the local generation LLM (ADR-08, served per
     ADR-09) acquires the shared `GpuLock` around its inference call exactly like Embedder and the
     reranker (Operational invariants §3 below). Unlike Embedder/Reranker, it is **not** expected to
@@ -118,16 +121,40 @@ Ten modules, each independently ownable (owners A–F) and testable through its 
   paper's — one call would silently truncate at the real adapter's context ceiling. `rag/book_summarizer.py`'s
   `summarize_book(parsed, summarizer) -> tuple[str, list[ChapterSummary]]` takes any `Summarizer` as
   a plain argument (the GPU lock, eviction hooks, and retry taxonomy all stay the injected
-  summarizer's own concern, unchanged) and: splits `ParsedDoc.blocks` into chapters (top-level
-  `section_path` groups, falling back to fixed-size block windows for a flat/scanned book with no
-  usable section structure), summarizes each chapter (map — windowed in two passes if a single
-  chapter still exceeds the context ceiling), then summarizes the joined chapter summaries into one
-  overview + table of contents (reduce). The `list[ChapterSummary]` it returns are not a side
-  artifact — `IngestionOrchestrator` (M9 below) persists AND embeds each one as its own
-  `kind="summary"` vector, exactly like the whole-document summary, so `search_papers` can return an
-  individual chapter as a routing hit (`PaperSearchResult.chapter`, DATA-CONTRACTS §M8) — the
-  chapter-level unit `search_papers`/`semantic_search` route on for a book, the way a whole-paper
-  summary is the unit for a paper.
+  summarizer's own concern, unchanged).
+  - **Chapter split, two strategies (T-DOC82, rewritten from a plain top-level-`section_path` group-by):**
+    measured on the real corpus, MinerU emits a real book's headings as a FLAT list, not a hierarchy —
+    a 2,520-block, ~144k-word book had **zero** blocks whose `section_path` contained `" > "` (306
+    distinct flat values), against 113 such blocks on a comparable arXiv paper. Grouping by top-level
+    `section_path` is therefore an identity function on books: it produced one "chapter" per heading —
+    530 chapters for 535 chunks, many titled things like `Contributors` or `About the author`. Given a
+    document with more than one heading group, `_split_chapters` now tries, in order: (1) **marker
+    split** (`_split_by_markers`) — `_CHAPTER_MARKER` (a regex matching `Chapter N` / `Part II` /
+    `Appendix A` / `3. Numbered`) groups consecutive headings into chapters, accepted only if
+    plausible (`_MIN_MARKER_UNITS` ≤ unit count ≤ `_MAX_MARKER_UNITS`, and no single unit holds more
+    than `_MAX_UNIT_WORD_SHARE` of the book's words — the guard that stops a book merely *mentioning*
+    "Chapter 3" from producing two lopsided units); (2) **size-merge fallback** (`_merge_to_target`) —
+    accumulate consecutive heading groups until each reaches `_TARGET_CHAPTER_WORDS`, used whenever the
+    marker split isn't plausible, independent of heading text entirely. A document with at most one
+    heading group (flat/scanned, no usable structure at all) skips both strategies and windows over
+    fixed-size blocks (`_FALLBACK_WINDOW_BLOCKS`) instead, keeping that single group's title rather
+    than dropping it to `""` (T-DOC82 deferred-minor fix). If the split yields zero chapters at all
+    (empty/figures-only parse), `summarize_book` raises `PermanentError` — same taxonomy `Summarizer`
+    itself uses, so `IngestionOrchestrator`'s existing quarantine path catches it; previously this case
+    silently produced an empty summary that nothing quarantined.
+  - **Map/reduce calls, book-specific prompts (T-DOC82):** each chapter is summarized via
+    `summarizer.summarize(..., kind="book")` (map — windowed in two passes if a single chapter still
+    exceeds the context ceiling), then the joined chapter summaries are summarized once more via
+    `kind="book_overview"` (reduce) into one overview + table of contents. Unlike the paper prompt, the
+    two book prompts drop paper-shaped fields (effect size, sample size, benchmark) and explicitly
+    forbid inventing numbers — fixing a real fabrication: a stored book summary had claimed "a novel
+    hybrid method... approximately 15%... mean squared error on benchmark datasets", none of which the
+    book itself states.
+  - The `list[ChapterSummary]` `summarize_book` returns are not a side artifact — `IngestionOrchestrator`
+    (M9 below) persists AND embeds each one as its own `kind="summary"` vector, exactly like the
+    whole-document summary, so `search_papers` can return an individual chapter as a routing hit
+    (`PaperSearchResult.chapter`, DATA-CONTRACTS §M8) — the chapter-level unit `search_papers`/
+    `semantic_search` route on for a book, the way a whole-paper summary is the unit for a paper.
 
 ### M4 · Embedder  *(owner C)* — the replaceability seam
 - **Interface:** `embed(texts:[str]) -> [Vector]`; property `{model_id, dim, version}`
@@ -187,6 +214,12 @@ Ten modules, each independently ownable (owners A–F) and testable through its 
     truncated to `k`. `McpServer` uses it to build the real `Coverage.candidates` (§M8) instead of the
     `len(results)` stand-in it used before this fix. `RetrievalCoverage` itself is never part of an MCP
     tool's response — DATA-CONTRACTS §M7.
+  - **Per-paper cap (T-DOC82):** a book contributes one vector per chapter, so a strong book match could
+    otherwise fill every slot of `k` with chapters of the same `paper_id` and crowd papers out of a
+    mixed-corpus query. `retrieve_papers()` runs `_cap_per_paper` (`_MAX_HITS_PER_PAPER = 3`) after
+    rerank but before the `[:k]` truncation, so the cap keeps the best N per paper out of the reranked
+    order rather than an arbitrary N left over once `k` has already cut the list off. `retrieve()` is
+    untouched; `RetrievalCoverage.candidate_count` still reports the true pre-cap pool size.
 
   `GroundedResult`/`PaperSearchResult`/`SearchFilters` — authoritative shapes in `DATA-CONTRACTS.md`
   §M7/§M8/§M6; do not re-derive fields here. **Forward-compat:** `GroundedResult` is a *record with an
