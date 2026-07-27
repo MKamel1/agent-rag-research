@@ -96,9 +96,13 @@ def render_note(record: PaperRecord) -> str:
     authors_links = ", ".join(f"[[{a}]]" for a in ref.authors)
     lines.append(f"**Authors:** {authors_links}" if authors_links else "**Authors:** (none listed)")
     lines.append(f"**Published:** {ref.published.isoformat()}")
-    lines.append(
-        f"**Source:** [PDF]({ref.pdf_url}) · [Source]({source_url(ref.paper_id, ref.pdf_url)})"
-    )
+    source = source_url(ref.paper_id, ref.pdf_url)
+    links = f"[PDF]({ref.pdf_url})"
+    # For `local:` ids, source_url() returns pdf_url verbatim (no arXiv abs page to link to) --
+    # only add the second label when it points somewhere genuinely different.
+    if source != ref.pdf_url:
+        links += f" · [Source]({source})"
+    lines.append(f"**Source:** {links}")
     lines.append("")
     lines.append("## Summary")
     lines.append("")

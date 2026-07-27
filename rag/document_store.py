@@ -283,9 +283,21 @@ class DocumentStore:
             (r for r in summary_rows if r["summary_id"] == whole_doc_summary_id), None
         )
         chapter_rows = [r for r in summary_rows if r["summary_id"] != whole_doc_summary_id]
-        # Sort by the integer after the final "ch" (e.g. "...ch10" after "...ch2", not before it) —
-        # DocumentStore owns this ID-format knowledge per DATA-CONTRACTS.
-        chapter_rows.sort(key=lambda r: int(r["summary_id"].rsplit("ch", 1)[1]))
+
+        def _chapter_index(summary_id: str) -> int:
+            # Sort by the integer after the final "ch" (e.g. "...ch10" after "...ch2", not before
+            # it) — DocumentStore owns this ID-format knowledge per DATA-CONTRACTS. A row that
+            # isn't the whole-doc summary but also doesn't parse as ":ch{n}" is malformed data,
+            # not a caller error — surface it as the module's typed ContractError rather than a
+            # bare ValueError leaking out of get().
+            head, _, tail = summary_id.rpartition("ch")
+            if not head or not tail.isdigit():
+                raise ContractError(
+                    f"unparseable chapter summary_id {summary_id!r} for paper {paper_id!r}"
+                )
+            return int(tail)
+
+        chapter_rows.sort(key=lambda r: _chapter_index(r["summary_id"]))
         chapter_summaries = [
             ChapterSummary(summary_id=r["summary_id"], title=r["title"], text=r["text"])
             for r in chapter_rows

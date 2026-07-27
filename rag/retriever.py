@@ -253,6 +253,9 @@ class Retriever:
             chapter = None
             if candidate.id != f"{paper_id}{_SUMMARY_ID_SUFFIX}":
                 cs = next((c for c in record.chapter_summaries if c.summary_id == candidate.id), None)
+                # Deliberate (T-DOC82): a chapter-shaped id with no matching ChapterSummary means
+                # an orphaned/stale vector. Degrade to an unlabelled result rather than failing the
+                # whole query -- same skip-and-continue posture as the unresolvable-hit branch above.
                 chapter = cs.title if cs is not None else None
             results.append(PaperSearchResult(view=view, score=scores[candidate.id], chapter=chapter))
         # See the matching comment in `retrieve()` -- truncate to `k` only after reranking (T-DOC24).

@@ -143,6 +143,18 @@ def test_render_note_local_id_has_no_dead_arxiv_link_or_misleading_arxiv_id():
     assert "arxiv_id" not in frontmatter
 
 
+def test_local_id_note_does_not_duplicate_the_same_url_twice():
+    """`source_url()` returns `pdf_url` verbatim for `local:` ids (no arXiv abs page exists), so
+    the old unconditional two-label line rendered the SAME url twice: `[PDF](x) · [Source](x)`."""
+    record = make_paper_record(
+        "local:ab12cd34ef56",
+        ref_overrides={"pdf_url": "causality-pearl.pdf"},
+    )
+    text = render_note(record)
+
+    assert text.count("causality-pearl.pdf") == 1
+
+
 def test_render_note_section_structure_deduped_in_order():
     paper_id = "2506.01234"
     blocks = [
