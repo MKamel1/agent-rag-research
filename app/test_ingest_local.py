@@ -89,6 +89,16 @@ def test_detect_arxiv_id_from_filename():
     assert detect_arxiv_id("2409.01266v2.pdf", "") == "2409.01266"
 
 
+def test_detect_arxiv_id_from_filename_with_trailing_title():
+    """T-DOC82: the bare-id match must anchor at the START of the stem, not require an exact
+    full-stem match -- real drop-in files like "<id> - Title.pdf" must still resolve to real
+    arXiv metadata rather than silently minting a content-addressed `local:` id (which is
+    sticky: re-dropping the same bytes under a corrected filename mints the same id again)."""
+    assert (
+        detect_arxiv_id("2409.01266v2 - Causal Discovery.pdf", "") == "2409.01266"
+    )
+
+
 def test_detect_arxiv_id_from_first_page_text():
     assert detect_arxiv_id("pearl-book.pdf", "... arXiv:2409.01266v1 [stat.ME] ...") == "2409.01266"
 
