@@ -235,10 +235,18 @@ class IngestionOrchestrator:
         # T-DOC84: ingest state is cleared LAST, deliberately, for the same reason the two store
         # deletes are ordered as they are. If the process dies before `forget()`, the leftover
         # state row describes a document whose rows and vectors are already gone -- an operator
-        # re-running `delete_paper(paper_id)` fixes it, and the corpus-integrity check (widened in
-        # T-DOC84 to a LEFT JOIN) reports it. Clearing state FIRST would invert that: a crash
-        # would leave a document that ingest believes is unstarted but whose rows are still
-        # present, and the next ingest would re-`put()` over live rows.
+        # re-running `delete_paper(paper_id)` fixes it, and the corpus-integrity check will report
+        # it once T-DOC84 widens its INNER JOIN, which today hides exactly this shape. Clearing
+        # state FIRST would invert the risk, and not into a corruption risk -- `document_store.
+        # put()` is a documented atomic upsert and vector point ids are deterministic (`uuid5`), so
+        # a later re-`put()` over the same id is already relied on elsewhere in this file (see
+        # `_finish`'s own comment on a re-ingested quarantined paper safely overwriting its
+        # record). The real risk is silent resurrection: a crash between clearing state and the two
+        # store deletes would leave `harvest()`/the resume logic seeing a never-ingested id, and
+        # quietly re-ingest a document the operator deliberately deleted -- the deletion doesn't
+        # stick, nothing is corrupted, and nobody notices. Clearing state LAST means the id stays
+        # `done` through every crash window in this method, so nothing ever mistakes a half-deleted
+        # document for an unstarted one.
         """
         vector_ids = self._document_store.delete(paper_id)
         self._vector_index.delete(vector_ids)
