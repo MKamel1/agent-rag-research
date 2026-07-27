@@ -2,10 +2,14 @@
 docs/superpowers/specs/2026-07-25-drop-in-folder-and-books-design.md).
 
 A book's markdown is 10-50x a paper's and cannot go through one `summarize()` call (the real
-adapter's num_ctx ceiling truncates it to noise). Instead: split into chapters (top-level
-`section_path` groups), summarize each (map), then summarize the chapter summaries into one
-overview + table of contents (reduce). Chapter summaries are RETURNED, not discarded -- the
-orchestrator persists and embeds them as routing units (ARCHITECTURE §M7 search_papers).
+adapter's num_ctx ceiling truncates it to noise). `_split_chapters` detects chapters by trying
+explicit chapter/part/appendix markers first (accepted only if plausible per the count and
+word-share guards), falling back to size-based merging at `_TARGET_CHAPTER_WORDS` when markers
+aren't plausible, and windowing over fixed-size blocks only when the document parser leaves no
+usable heading structure at all. Each chapter is then summarized (map, `kind="book"`), and the
+joined chapter summaries are summarized once more (reduce, `kind="book_overview"`) into one
+overview + table of contents. Chapter summaries are RETURNED, not discarded -- the orchestrator
+persists and embeds them as routing units (ARCHITECTURE §M7 search_papers).
 
 Takes any `Summarizer` as an argument (accept-dependencies principle) -- the GPU lock, eviction
 hooks, retry taxonomy all stay the injected summarizer's concern, unchanged.
