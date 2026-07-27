@@ -48,6 +48,45 @@ _MIN_MARKER_UNITS = 3
 _MAX_MARKER_UNITS = 60
 _MAX_UNIT_WORD_SHARE = 0.5
 
+# T-DOC85: `_merge_to_target` used to title each unit by its FIRST heading group, which is
+# arbitrary with respect to the unit's content -- the verified re-ingest of a 144k-word book
+# produced "Assign", "See Also", "F", and "\* and : Operators" as chapter titles, and those
+# strings are what `search_papers` returns as the routing label an agent picks a chapter by. A
+# merged unit contains ~10 heading groups, so the fix is to rank them, not to invent a title.
+# Deliberately structural, with no word blocklist: the T-DOC82 spec rejected a front-matter
+# blocklist because heading names vary per publisher and the list would be endless. Scoring by
+# total content characters (not word count) is what ranks "Regularized Regression" over
+# "See Also" -- both are two words.
+_MIN_TITLE_SCORE = 8  # "See Also" scores 7 and is rejected outright when nothing better exists
+_MAX_TITLE_CHARS = 80  # longer than this is a misparsed paragraph, not a heading
+_MAX_TITLE_PUNCT_SHARE = 0.15
+_TITLE_WORD = re.compile(r"[A-Za-z][A-Za-z'-]{2,}")
+
+
+def _title_score(heading: str) -> int:
+    """Total content characters in a heading, or 0 if it is unusable as a routing label.
+
+    0 means "do not use this" -- callers treat it as a hard reject, not a low rank.
+    """
+    text = heading.strip()
+    if not text or len(text) > _MAX_TITLE_CHARS:
+        return 0
+    punct = sum(1 for c in text if not c.isalnum() and not c.isspace())
+    if punct / len(text) > _MAX_TITLE_PUNCT_SHARE:
+        return 0
+    score = sum(len(m.group()) for m in _TITLE_WORD.finditer(text))
+    return score if score >= _MIN_TITLE_SCORE else 0
+
+
+def _best_heading(headings: list[str]) -> str:
+    """The highest-scoring usable heading, earliest on a tie; "" when none is usable."""
+    best, best_score = "", 0
+    for heading in headings:
+        score = _title_score(heading)
+        if score > best_score:
+            best, best_score = heading.strip(), score
+    return best
+
 
 def _top_level(section_path: str) -> str:
     return section_path.split(" > ", 1)[0]  # separator per rag/parser.py's section-stack join
@@ -94,19 +133,24 @@ def _split_by_markers(
 def _merge_to_target(groups: list[tuple[str, list[Block]]]) -> list[tuple[str, list[Block]]]:
     """Strategy B: accumulate consecutive heading groups until ~_TARGET_CHAPTER_WORDS.
 
-    Title of a merged unit is its FIRST heading. Independent of heading text entirely, which is
-    why it is the safe general path for any book's formatting.
+    T-DOC85: the unit's title is the best-scoring of ALL headings merged into it (`_best_heading`),
+    not the first one -- see that function. Still independent of any particular book's formatting,
+    which is why B remains the safe general path.
     """
-    units: list[tuple[str, list[Block]]] = []
+    units: list[list[Block]] = []
+    headings: list[list[str]] = []
     for title, blocks in groups:
-        if units and _words(units[-1][1]) < _TARGET_CHAPTER_WORDS:
-            units[-1][1].extend(blocks)
+        if units and _words(units[-1]) < _TARGET_CHAPTER_WORDS:
+            units[-1].extend(blocks)
+            headings[-1].append(title)
         else:
-            units.append((title, list(blocks)))
-    if len(units) > 1 and _words(units[-1][1]) < _TARGET_CHAPTER_WORDS // 2:
-        _, tail = units.pop()
-        units[-1][1].extend(tail)
-    return units
+            units.append(list(blocks))
+            headings.append([title])
+    if len(units) > 1 and _words(units[-1]) < _TARGET_CHAPTER_WORDS // 2:
+        tail = units.pop()
+        units[-1].extend(tail)
+        headings[-1].extend(headings.pop())
+    return [(_best_heading(h), blocks) for h, blocks in zip(headings, units)]
 
 
 def _split_chapters(parsed: ParsedDoc) -> list[tuple[str, list[Block]]]:
