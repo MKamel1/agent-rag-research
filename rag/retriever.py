@@ -53,6 +53,30 @@ _SUMMARY_ID_SUFFIX = ":summary"
 # constant itself.
 _RERANK_POOL_SIZE = 32
 
+# T-DOC82: a book contributes one vector per chapter, so a strong book match could fill every
+# slot of `k` with chapters of the SAME paper_id and crowd papers out of a mixed-corpus query.
+# Applied after rerank, before top-k truncation, so the cap selects the best N per paper.
+_MAX_HITS_PER_PAPER = 3
+
+
+def _cap_per_paper(
+    results: list[PaperSearchResult], limit: int = _MAX_HITS_PER_PAPER
+) -> list[PaperSearchResult]:
+    """Filters an already-ranked `results` list in place order, keeping at most `limit` hits per
+    `paper_id`. Never re-sorts — the highest-scoring hits per paper are kept because the input is
+    already reranked (CONVENTIONS: this must run after rerank, before the caller's `results[:k]`).
+    """
+    seen: dict[str, int] = {}
+    capped: list[PaperSearchResult] = []
+    for result in results:
+        paper_id = result.view.paper_id
+        count = seen.get(paper_id, 0)
+        if count >= limit:
+            continue
+        seen[paper_id] = count + 1
+        capped.append(result)
+    return capped
+
 
 def _paper_id_from_summary_hit_id(hit_id: str) -> str:
     """Recovers `paper_id` from a `summary`-kind `Hit.id`/`RerankCandidate.id` string.
@@ -259,7 +283,9 @@ class Retriever:
                 chapter = cs.title if cs is not None else None
             results.append(PaperSearchResult(view=view, score=scores[candidate.id], chapter=chapter))
         # See the matching comment in `retrieve()` -- truncate to `k` only after reranking (T-DOC24).
-        return results[:k], RetrievalCoverage(candidate_count=len(hits))
+        # The per-paper cap (T-DOC82) runs first so it selects the best N per paper out of the
+        # reranked order, not an arbitrary N left over after `k` already cut the list off.
+        return _cap_per_paper(results)[:k], RetrievalCoverage(candidate_count=len(hits))
 
     def _hybrid_hits(self, query: str, filters: SearchFilters | None, k: int, *, kind: str):
         qvec = self._embedder.embed([query])[0]
