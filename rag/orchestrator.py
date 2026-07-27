@@ -231,9 +231,18 @@ class IngestionOrchestrator:
         # re-call `delete_paper(paper_id)` if a partial failure is ever suspected -- safe to retry,
         # since `document_store.delete()` no-ops on an already-gone `paper_id` and
         # `vector_index.delete()` is idempotent by id.
+        #
+        # T-DOC84: ingest state is cleared LAST, deliberately, for the same reason the two store
+        # deletes are ordered as they are. If the process dies before `forget()`, the leftover
+        # state row describes a document whose rows and vectors are already gone -- an operator
+        # re-running `delete_paper(paper_id)` fixes it, and the corpus-integrity check (widened in
+        # T-DOC84 to a LEFT JOIN) reports it. Clearing state FIRST would invert that: a crash
+        # would leave a document that ingest believes is unstarted but whose rows are still
+        # present, and the next ingest would re-`put()` over live rows.
         """
         vector_ids = self._document_store.delete(paper_id)
         self._vector_index.delete(vector_ids)
+        self._state.forget(paper_id)
 
     def harvest(self, focus_area: list[str], cap: int) -> list[PaperRef]:
         """Public so a two-process caller (`app/parse_phase.py`/`app/ingest.py`) can harvest once
