@@ -1202,3 +1202,112 @@ retrieval quality + operability, not the claim layer** — reinforcing the "use 
   reachable `before` is still returned unchanged (no behavior change for a normal push), an
   orphaned/unreachable `before` falls back to the merge-base instead of raising, and the
   `pull_request` path is unaffected.
+
+### T-DOC84 — `delete_paper()` leaves `ingest_state`/`ingest_checkpoint` behind, so re-ingest silently no-ops (2026-07-27)
+
+- **T-DOC84 (not started) — 🔴 `delete_paper()` deletes a document's rows and vectors but not its
+  ingest-state, so re-ingesting the same id is a silent no-op.** `rag/orchestrator.py:210
+  delete_paper(paper_id)` deletes from `DocumentStore` (SQLite rows) and `VectorIndex` (vectors)
+  only. It never touches `ingest_state` or `ingest_checkpoint`, even though `IngestionOrchestrator`
+  already holds `self._state` and wires it everywhere else in the ingest path.
+  **Observed live, 2026-07-27**, during the T-DOC82 rollout (spec
+  `docs/superpowers/specs/2026-07-26-book-chapter-and-summary-fixes-design.md` step 2, "delete ONE
+  book and re-ingest it"): deleting `local:f0929288d4f3` (*Causal Inference in Python*) through
+  `delete_paper()` correctly dropped it from `papers` (11026 → 11025) and removed all its
+  `chunks`/`summaries` rows and Qdrant points, correctly scoped to that one id — but `SELECT stage
+  FROM ingest_state WHERE paper_id='local:f0929288d4f3'` still returned `'done'`.
+  **Consequence:** a re-ingest of that id skips every stage — the orchestrator's resume logic treats
+  a `done` checkpoint as already-complete — so the document is never re-parsed, never re-embedded,
+  and never comes back. No error is raised and no quarantine row is written. The operator sees a
+  successful-looking run and a permanently missing document. The re-ingest only worked because the
+  stale row was deleted by hand first.
+  **The capability already exists but is not reachable:** `rag/ingest_state_sqlite.py:184-185`
+  deletes exactly these two rows (`DELETE FROM ingest_state ...` / `DELETE FROM ingest_checkpoint
+  ...`) — but only as a side effect *inside* `quarantine()`. There is no `forget()`/`delete()` on
+  the state adapter, so `delete_paper` has nothing to call. `SqliteIngestState`'s public surface is
+  `get`, `checkpoint`, `quarantine`, `stage_of`, `all_known_paper_ids`.
+  **The existing integrity checker is blind to this shape by construction.**
+  `app/corpus_integrity.py:32` reads `FROM ingest_state s JOIN papers p ON p.paper_id = s.paper_id
+  WHERE s.stage='done' AND (chunk_count=0 OR block_count=0)`. That is an INNER JOIN, so a `done`
+  state row whose `papers` row was deleted is dropped from the result set entirely — the one orphan
+  shape `delete_paper()` actually produces is the one shape `find_done_papers_without_chunks`
+  cannot see. It catches the T-DOC23/T-DOC35 shape (paper row present, chunks missing) but not this
+  one.
+  **Deletion has no operator entrypoint at all.** `delete_paper` has zero non-test callers
+  repo-wide (`rag/test_orchestrator.py:1240-1274` and the T-DOC82 plan's prose are the only
+  references). There is no `app/` CLI for it, unlike every other operator action
+  (`app/ingest.py`, `app/doctor.py`, `app/corpus_integrity.py`, `app/snapshot.py`, ...). Every
+  deletion today is throwaway Python plus hand-written SQL — which is precisely how the
+  stale-state trap gets hit, since an ad-hoc script has no reason to know about the third table.
+  **Fix (three parts):** (a) add a `forget(paper_id)` method to the ingest-state adapter that
+  removes the `ingest_state` and `ingest_checkpoint` rows in one transaction — the same two
+  statements `quarantine()` already runs, lifted into their own method and called from both
+  places; mirror it on `rag/fakes/fake_ingest_state.py`'s `FakeIngestState` so the zero-GPU suite
+  can assert it. (b) call it from `IngestionOrchestrator.delete_paper` *after* the two store
+  deletes, preserving the existing deliberate ordering rationale in that method's docstring
+  (SQLite first, then vectors) — state last, so a crash mid-delete leaves a re-runnable
+  `delete_paper`, never a resurrectable-looking document. (c) add an `app/delete_docs.py` operator
+  CLI taking one or more paper_ids, using the real assembly wiring, so no operator ever needs raw
+  SQL for this again. Optionally also widen `corpus_integrity`'s query to a LEFT JOIN so the
+  papers-row-missing shape is reported.
+  **Blocking note:** until this lands, each of the four remaining books queued for T-DOC82
+  re-ingest needs its `ingest_state`/`ingest_checkpoint` rows cleared by hand between the delete
+  and the re-ingest.
+
+### T-DOC85 — book chapter titles under the size-merge strategy are whichever heading happens to start the window (2026-07-27)
+
+- **T-DOC85 (not started) — 🟡 strategy-B chapter titles are the first heading in the merge window,
+  not the most representative one.** T-DOC82's `rag/book_summarizer.py::_merge_to_target`
+  (strategy B) titles each merged unit by its **first** heading group
+  (`units.append((title, list(blocks)))`, line ~104). That is deliberate and documented — B is
+  text-independent by design, which is what makes it the safe general fallback — but the resulting
+  label is arbitrary with respect to the unit's actual content.
+  **Observed on the verified re-ingest of `local:f0929288d4f3`** (2026-07-27, 26 units over ~144k
+  words, ~5.5k words each): the titles include real section names (`Why We Do Causal Inference`,
+  `Canonical Difference-in-Differences`, `Neutral Controls`, `Regularized Regression`, `Optimal
+  Switchback Design`) but also `Assign`, `See Also`, `F`, `\* and : Operators`, `PRACTICAL EXAMPLE`,
+  and `Violations` — mid-chapter or incidental headings that happened to land at a window boundary.
+  **Why it matters beyond cosmetics:** these strings are the routing labels. `summaries.title` is
+  what `search_papers` surfaces as `ChapterHit.chapter` (ARCHITECTURE §M7), so an agent choosing
+  which chapter to open sees `F` and gets no signal from it. The chapter *contents* are coherent —
+  this is a labelling defect, not a splitting defect; the 26-unit split itself is correct and was
+  verified by eye.
+  Note this is strictly a strategy-B problem. Strategy A (explicit `Chapter N`/`Part N`/`Appendix X`
+  markers) already yields real chapter titles; B runs precisely when a book has no such markers,
+  which is the common case measured so far.
+  **Fix — needs a design decision, not obvious:** candidate approaches are (i) pick the most
+  title-like heading within the unit rather than the first — e.g. longest, or first exceeding some
+  word count, filtering single-character and punctuation-only headings; (ii) have the map-step LLM
+  call emit a title line alongside the section summary, since it is already reading the full unit
+  text and `kind="book"` already has its own prompt (`rag/summarizer.py::_BOOK_SECTION_PROMPT`) —
+  costs no extra call, but makes the title model-generated and therefore subject to the same
+  grounding caution as the summary; (iii) title the unit by a page range or ordinal (`Section 14
+  (pp. 210-228)`) — always honest, never informative. Do not pick one in this ticket; record the
+  options.
+
+### T-DOC86 — the drop-in path has no topic-relevance signal, so an off-topic PDF ingests silently (2026-07-27)
+
+- **T-DOC86 (not started) — 🟢 the drop-in folder applies no topic-relevance check, so any PDF
+  placed there is ingested regardless of subject.** T-DOC80's drop-in folder
+  (`app/ingest_local.py`) stages any PDF placed in `drop_in/` into the same pipeline as the arXiv
+  corpus. Unlike the arXiv harvest path, which is inherently topic-scoped by its query
+  (`focus_area`), the drop-in path applies no relevance check whatsoever — parse, chunk, summarize,
+  embed, done.
+  **Observed 2026-07-25 on the first live drop-in run:** `not-murphys-law-e-book-final (1).pdf` — a
+  general-audience book unrelated to causal inference — was staged and ingested alongside the
+  intended papers and books. It was caught only because a human read the first page manually with
+  pypdfium2 after noticing its garbled extracted title; nothing in the pipeline flagged it. It has
+  since been moved to `drop_in/excluded/`.
+  **This is by design, not a regression** — the system has never had a topic gate, and the arXiv
+  path never needed one. The drop-in folder is what changes the risk profile: dropping a wrong file
+  into a directory is a much easier mistake than writing a wrong arXiv query, and the cost of a
+  book-sized mistake is high (the verified run took 349s of GPU time for one book; the pre-T-DOC82
+  run took 76 minutes).
+  **Fix — cheapest useful version first:** a `--dry-run` / confirm mode on `app/ingest_local.py`
+  that prints, per staged file, the detected title and the first ~500 characters of extracted text
+  and requires operator confirmation before staging. That is one operator read against a whole
+  book's ingest cost, needs no model, and no new dependency. A relevance *score* (embedding the
+  summary against the configured `focus_area` terms and routing below-threshold documents to
+  `drop_in/excluded/`) is the fuller version but needs a threshold nobody has data to set yet, and
+  would run only after the expensive stages have already happened — note it as the upgrade path, do
+  not build it.
