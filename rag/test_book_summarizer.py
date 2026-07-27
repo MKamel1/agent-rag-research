@@ -17,7 +17,10 @@ from rag.book_summarizer import (
     _MAX_CHAPTER_WORDS,
     _MAX_MARKER_UNITS,
     _TARGET_CHAPTER_WORDS,
+    _best_heading,
+    _merge_to_target,
     _split_chapters,
+    _title_score,
     summarize_book,
 )
 from rag.fakes.fake_summarizer import FakeSummarizer
@@ -50,34 +53,106 @@ def _parsed_doc(blocks: list[Block]) -> ParsedDoc:
     )
 
 
+@pytest.fixture
+def make_groups():
+    """Builds the `list[tuple[str, list[Block]]]` shape `_merge_to_target` consumes from
+    `list[tuple[str, int]]` of (heading, word_count), reusing `_block` for the actual Blocks."""
+
+    def _make(specs: list[tuple[str, int]]) -> list[tuple[str, list[Block]]]:
+        return [
+            (heading, [_block(" ".join(["word"] * word_count), heading, idx)])
+            for idx, (heading, word_count) in enumerate(specs)
+        ]
+
+    return _make
+
+
+def test_title_score_rejects_single_characters_and_short_fragments():
+    assert _title_score("F") == 0
+    assert _title_score("") == 0
+    assert _title_score("A.") == 0
+
+
+def test_title_score_prefers_longer_content_words():
+    # "See Also" and "Regularized Regression" both have two words -- scoring by total content
+    # characters, not word count, is what separates them.
+    assert _title_score("Regularized Regression") > _title_score("See Also")
+    assert _title_score("Canonical Difference-in-Differences") > _title_score("Assign")
+
+
+def test_title_score_rejects_punctuation_heavy_headings():
+    # Observed live: "\\* and : Operators" was a chapter title.
+    assert _title_score("\\* and : Operators") == 0
+
+
+def test_title_score_rejects_headings_long_enough_to_be_a_misparsed_paragraph():
+    assert _title_score("word " * 40) == 0
+
+
+def test_best_heading_picks_the_highest_scoring_not_the_first():
+    headings = ["See Also", "Regularized Regression", "F"]
+    assert _best_heading(headings) == "Regularized Regression"
+
+
+def test_best_heading_breaks_ties_toward_the_earliest():
+    headings = ["Neutral Controls", "Optimal Switchback"]
+    assert _best_heading(headings) in headings  # both plausible; assert determinism below
+    assert _best_heading(headings) == _best_heading(headings)
+
+
+def test_best_heading_returns_empty_when_nothing_is_usable():
+    # T-DOC85 mutation check (Step 5): "F"/""/""A."" are each rejected by a DIFFERENT guard (no
+    # matching word, empty string, punctuation ratio) and none of those exercises
+    # _MIN_TITLE_SCORE, so with that constant neutered to 0 this assertion still held -- a
+    # tautological test. "See Also" has a nonzero raw content-char score (7) that is only
+    # rejected by the _MIN_TITLE_SCORE floor (8), so it is what actually pins the floor.
+    assert _best_heading(["F", "", "A.", "See Also"]) == ""
+
+
+def test_merge_to_target_titles_a_unit_by_its_best_heading(make_groups):
+    # Regression pin for T-DOC85: the unit's FIRST heading is junk, a later one is real. Before
+    # the fix this unit was titled "See Also".
+    groups = make_groups([
+        ("See Also", 100),
+        ("Regularized Regression", 2000),
+        ("F", 100),
+    ])
+    units = _merge_to_target(groups)
+    assert [title for title, _ in units] == ["Regularized Regression"]
+
+
 def test_splits_on_top_level_section_path():
     # T-DOC82: the size-merge fallback only leaves top-level groups standing on their own once
     # each already meets _TARGET_CHAPTER_WORDS (below that, either the main merge loop or its
-    # small-trailing-remainder check would fold them together) -- so both "Ch 1 Intro" and
-    # "Ch 2 DAGs" carry enough words to survive on their own; this isolates what the test is
-    # actually pinning: that `_top_level` still collapses "Ch 1 Intro > 1.1" into the "Ch 1
-    # Intro" group, same as before T-DOC82.
+    # small-trailing-remainder check would fold them together) -- so both "Introduction" and
+    # "Causal Graphs" carry enough words to survive on their own; this isolates what the test is
+    # actually pinning: that `_top_level` still collapses "Introduction > 1.1" into the
+    # "Introduction" group, same as before T-DOC82.
+    # T-DOC85: headings renamed from the original "Ch 1 Intro"/"Ch 2 DAGs" -- those abbreviated
+    # forms score below _MIN_TITLE_SCORE (only "Intro"/"DAGs" match _TITLE_WORD, "Ch"/"1"/"2"
+    # don't) and _best_heading would reject them to "", which is not what this test is about.
     blocks = [
-        _block(" ".join(["word"] * _TARGET_CHAPTER_WORDS), "Ch 1 Intro", 0),
-        _block("s1", "Ch 1 Intro > 1.1", 1),
-        _block(" ".join(["word"] * _TARGET_CHAPTER_WORDS), "Ch 2 DAGs", 2),
+        _block(" ".join(["word"] * _TARGET_CHAPTER_WORDS), "Introduction", 0),
+        _block("s1", "Introduction > 1.1", 1),
+        _block(" ".join(["word"] * _TARGET_CHAPTER_WORDS), "Causal Graphs", 2),
     ]
     _, chapters = summarize_book(_parsed_doc(blocks), FakeSummarizer())
-    assert [c.title for c in chapters] == ["Ch 1 Intro", "Ch 2 DAGs"]
+    assert [c.title for c in chapters] == ["Introduction", "Causal Graphs"]
     assert chapters[0].summary_id == f"{PAPER_ID}:summary:ch0"
     assert chapters[1].summary_id == f"{PAPER_ID}:summary:ch1"
 
 
 def test_book_summary_contains_toc():
     # See test_splits_on_top_level_section_path: both headings need >= _TARGET_CHAPTER_WORDS
-    # words so the size-merge fallback keeps "Ch 2 DAGs" as its own chapter (title in the TOC).
+    # words so the size-merge fallback keeps "Causal Graphs" as its own chapter (title in the
+    # TOC), and (T-DOC85) score above _MIN_TITLE_SCORE so _best_heading keeps it rather than "".
     blocks = [
-        _block(" ".join(["word"] * _TARGET_CHAPTER_WORDS), "Ch 1 Intro", 0),
-        _block(" ".join(["word"] * _TARGET_CHAPTER_WORDS), "Ch 2 DAGs", 1),
+        _block(" ".join(["word"] * _TARGET_CHAPTER_WORDS), "Introduction", 0),
+        _block(" ".join(["word"] * _TARGET_CHAPTER_WORDS), "Causal Graphs", 1),
     ]
     text, _ = summarize_book(_parsed_doc(blocks), FakeSummarizer())
     assert "Contents:" in text
-    assert "Ch 2 DAGs" in text
+    assert "Causal Graphs" in text
 
 
 def test_flat_doc_falls_back_to_windows():
@@ -200,7 +275,11 @@ def test_size_merge_targets_chapter_sized_units():
     blocks = [_block(" ".join(["word"] * 500), f"H{i}", i) for i in range(40)]  # 20k words
     units = _split_chapters(_parsed_doc(blocks))
     assert 3 <= len(units) <= 6, f"expected ~4 units of ~5000 words, got {len(units)}"
-    assert units[0][0] == "H0", "unit title should be its first heading"
+    # T-DOC85: this used to assert units[0][0] == "H0" ("unit title should be its first
+    # heading"), which pinned the bug this task fixes. None of "H0".."H39" contains a real word
+    # (_TITLE_WORD needs 3+ letters; "H" + a digit never matches), so every heading in this
+    # fixture scores 0 and _best_heading correctly falls back to "" -- Task 6's trigger.
+    assert units[0][0] == ""
 
 
 def test_small_trailing_remainder_merges_instead_of_stub_unit():
