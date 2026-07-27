@@ -318,11 +318,29 @@ def test_book_overview_kind_sends_the_overview_prompt():
     assert "book as a whole" in captured[0]["prompt"]
 
 
+def test_book_title_kind_sends_its_own_prompt():
+    client, captured = _capturing_client()
+    adapter = _build_summarizer_with_client(client, FakeGpuLock())
+    adapter.summarize(_prose_doc(), kind="book_title")
+    prompt = captured[0]["prompt"]
+    assert "short title" in prompt
+    assert "4-6 sentences" not in prompt  # not a summary prompt
+
+
 def test_unknown_kind_raises_value_error():
     client, _ = _capturing_client()
     adapter = _build_summarizer_with_client(client, FakeGpuLock())
     with pytest.raises(ValueError, match="unknown summarize kind"):
         adapter.summarize(_prose_doc(), kind="nonsense")
+
+
+def test_unknown_kind_still_raises_with_book_title_registered():
+    # Regression guard: adding "book_title" to _PROMPTS must not accidentally widen the accepted
+    # set (e.g. a stray fallback default) -- an arbitrary unregistered kind still raises.
+    client, _ = _capturing_client()
+    adapter = _build_summarizer_with_client(client, FakeGpuLock())
+    with pytest.raises(ValueError):
+        adapter.summarize(_prose_doc(), kind="chapter")
 
 
 def test_response_body_missing_response_field_maps_to_permanent_error():

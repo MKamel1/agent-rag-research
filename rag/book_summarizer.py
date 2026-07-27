@@ -193,6 +193,14 @@ def summarize_book(parsed: ParsedDoc, summarizer) -> tuple[str, list[ChapterSumm
     for n, (title, blocks) in enumerate(_split_chapters(parsed)):
         chapter_text = "\n\n".join(b.text for b in blocks)
         text = _summarize_text(parsed, summarizer, chapter_text, "book")
+        if not title:
+            # T-DOC85: no heading in this unit was usable as a routing label. Title from the
+            # summary we just computed -- short input, one call, and it inherits that summary's
+            # grounding rather than the raw chapter's noise. Whitespace-collapsed because the
+            # model occasionally returns a trailing newline.
+            title = " ".join(
+                summarizer.summarize(_doc_from_text(parsed, text), kind="book_title").split()
+            )
         chapters.append(
             ChapterSummary(summary_id=f"{parsed.paper_id}:summary:ch{n}", title=title, text=text)
         )
