@@ -148,8 +148,9 @@ def _merge_to_target(groups: list[tuple[str, list[Block]]]) -> list[tuple[str, l
             headings.append([title])
     if len(units) > 1 and _words(units[-1]) < _TARGET_CHAPTER_WORDS // 2:
         tail = units.pop()
+        tail_headings = headings.pop()
         units[-1].extend(tail)
-        headings[-1].extend(headings.pop())
+        headings[-1].extend(tail_headings)
     return [(_best_heading(h), blocks) for h, blocks in zip(headings, units)]
 
 

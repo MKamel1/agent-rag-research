@@ -95,9 +95,12 @@ def test_best_heading_picks_the_highest_scoring_not_the_first():
 
 
 def test_best_heading_breaks_ties_toward_the_earliest():
-    headings = ["Neutral Controls", "Optimal Switchback"]
-    assert _best_heading(headings) in headings  # both plausible; assert determinism below
-    assert _best_heading(headings) == _best_heading(headings)
+    # T-DOC85 fix round 1: the original fixture ("Neutral Controls" vs "Optimal Switchback")
+    # scores 15 vs 17 -- not a tie, so it never exercised the tie-break branch and would have
+    # passed under a naive "always return headings[0]" regression too. These two score exactly
+    # 14 each (7 + 7 content chars), which pins `>` (not `>=`) keeping the earliest on a real tie.
+    assert _title_score("Neutral Impacts") == _title_score("Optimal Effects") == 14
+    assert _best_heading(["Neutral Impacts", "Optimal Effects"]) == "Neutral Impacts"
 
 
 def test_best_heading_returns_empty_when_nothing_is_usable():
@@ -116,6 +119,23 @@ def test_merge_to_target_titles_a_unit_by_its_best_heading(make_groups):
         ("See Also", 100),
         ("Regularized Regression", 2000),
         ("F", 100),
+    ])
+    units = _merge_to_target(groups)
+    assert [title for title, _ in units] == ["Regularized Regression"]
+
+
+def test_merge_to_target_keeps_folded_tail_headings(make_groups):
+    # Regression pin for T-DOC85 fix round 1: `headings[-1].extend(headings.pop())` evaluates
+    # `headings[-1]` (bound method target) before its argument `headings.pop()` -- both resolve
+    # to the SAME list, so this was `X.extend(X)` on an object immediately discarded by the pop,
+    # silently dropping every heading from the folded trailing remainder. "Assign" (100 words)
+    # falls under the small-trailing-remainder threshold and folds into the first unit, taking
+    # "F" and "Regularized Regression" with it -- if the fold drops those headings, only "Assign"
+    # (score 6, below the floor) remains and the unit is wrongly titled "".
+    groups = make_groups([
+        ("Assign", 5000),
+        ("F", 100),
+        ("Regularized Regression", 100),
     ])
     units = _merge_to_target(groups)
     assert [title for title, _ in units] == ["Regularized Regression"]
@@ -169,9 +189,15 @@ def test_flat_doc_falls_back_to_windows():
 
 def test_oversized_chapter_summarized_in_windows():
     # One chapter's word count exceeds _MAX_CHAPTER_WORDS -> internally windowed, but still
-    # exactly ONE ChapterSummary comes out for it.
+    # exactly ONE ChapterSummary comes out for it. The trailing 1-word "small" heading is below
+    # the small-trailing-remainder threshold, so it folds into "Big Chapter" -- both headings then
+    # compete in _best_heading over the merged unit (T-DOC85: intentional, ALL headings merged
+    # into a unit are candidates, not just the surviving accumulator's original one). Renamed
+    # from the original "Other Chapter" (score 12, beats "Big Chapter"'s 10 and became the title)
+    # to "See Also" (score 0, below the floor) so "Big Chapter" remains the unambiguous winner --
+    # this test is about windowing, not about which heading _best_heading should prefer.
     big_text = " ".join(f"word{i}" for i in range(_MAX_CHAPTER_WORDS + 1))
-    blocks = [_block(big_text, "Big Chapter", 0), _block("small", "Other Chapter", 1)]
+    blocks = [_block(big_text, "Big Chapter", 0), _block("small", "See Also", 1)]
     _, chapters = summarize_book(_parsed_doc(blocks), FakeSummarizer())
     big = [c for c in chapters if c.title == "Big Chapter"]
     assert len(big) == 1
