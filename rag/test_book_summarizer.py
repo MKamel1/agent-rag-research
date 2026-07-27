@@ -212,7 +212,7 @@ def test_empty_parsed_doc_raises_permanent_error():
 # ---------------------------------------------------------------------------
 
 
-class _RecordingSummarizer:
+class _KindRecorder:
     def __init__(self):
         self.kinds = []
 
@@ -223,7 +223,7 @@ class _RecordingSummarizer:
 
 def test_summarize_book_uses_book_kinds_not_paper():
     blocks = [_block(" ".join(["word"] * 500), f"H{i}", i) for i in range(20)]
-    rec = _RecordingSummarizer()
+    rec = _KindRecorder()
     summarize_book(_parsed_doc(blocks), rec)
     assert "paper" not in rec.kinds, "book path must never use the paper prompt"
     assert rec.kinds.count("book_overview") == 1, "exactly one reduce call"
