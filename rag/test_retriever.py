@@ -763,6 +763,45 @@ def test_mixed_hits_whole_book_sibling_has_chapter_none():
     assert by_text["directed acyclic graphs and d-separation"].chapter == "DAGs"
 
 
+def test_search_papers_caps_chapter_hits_per_paper():
+    """One book must not occupy every slot of k with its own chapters (T-DOC82)."""
+    store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
+    paper_id = "local:cap0000cap1"
+    chapter_summaries = [
+        ChapterSummary(summary_id=f"{paper_id}:summary:ch{i}", title=f"Chapter {i}",
+                       text=f"causal inference chapter {i} content")
+        for i in range(8)
+    ]
+    _seed_summary(store, docstore, embedder, paper_id=paper_id, summary_id=f"{paper_id}:summary",
+                  summary_text="causal inference book overview", doc_type="book",
+                  chapter_summaries=chapter_summaries)
+    for cs in chapter_summaries:
+        docstore._summaries[cs.summary_id] = cs.text
+        store.upsert(cs.summary_id, embedder.embed([cs.text])[0],
+                     _payload(paper_id, "summary", "Ch.", ("cs.LG",), embedder, cs.text))
+
+    results, _coverage = _make_retriever(store, docstore, FakeReranker(), embedder).retrieve_papers(
+        "causal", filters=None, k=8)
+
+    assert len(results) <= _mod._MAX_HITS_PER_PAPER
+    assert len({r.view.paper_id for r in results}) == 1
+
+
+def test_cap_does_not_reduce_results_across_distinct_papers():
+    """The per-paper cap must not drop hits belonging to DISTINCT papers."""
+    store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
+    for i in range(5):
+        _seed_summary(store, docstore, embedder, paper_id=f"2506.{i:05d}",
+                      summary_id=f"2506.{i:05d}:summary",
+                      summary_text=f"causal inference paper number {i}")
+
+    results, _coverage = _make_retriever(store, docstore, FakeReranker(), embedder).retrieve_papers(
+        "causal", filters=None, k=5)
+
+    assert len(results) == 5
+    assert len({r.view.paper_id for r in results}) == 5
+
+
 def test_both_methods_use_the_same_injected_reranker():
     # The Reranker is a constructor arg, never hardcoded: the instance we inject is the one exercised
     # by BOTH methods (its .calls accumulates across a retrieve() and a retrieve_papers()).
