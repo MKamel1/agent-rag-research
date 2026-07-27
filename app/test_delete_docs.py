@@ -42,3 +42,27 @@ def test_main_without_yes_refuses_and_deletes_nothing(monkeypatch):
 
     assert rc == 1
     assert orch.deleted == []
+
+
+class _FailingOrchestrator:
+    """Raises on one specific id, recording every id it was actually asked to delete."""
+
+    def __init__(self, failing_id: str):
+        self.failing_id = failing_id
+        self.attempted: list[str] = []
+
+    def delete_paper(self, paper_id: str) -> None:
+        self.attempted.append(paper_id)
+        if paper_id == self.failing_id:
+            raise RuntimeError("boom")
+
+
+def test_main_partial_failure_returns_2_and_stops_at_the_failing_id(monkeypatch):
+    orch = _FailingOrchestrator(failing_id="bad")
+    monkeypatch.setattr("app.delete_docs._build", lambda: orch)
+
+    rc = main(["--yes", "2401.00001", "bad", "2401.00002"])
+
+    assert rc == 2
+    # ids before the failure were attempted, the failing id was attempted, the id after was not.
+    assert orch.attempted == ["2401.00001", "bad"]

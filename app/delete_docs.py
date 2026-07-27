@@ -10,6 +10,13 @@ document, and it goes through `IngestionOrchestrator.delete_paper`, which owns a
 Deletion is irreversible -- there is no undo and no tombstone. `--yes` is required.
 
     python -m app.delete_docs --yes local:f0929288d4f3
+
+Exit codes:
+    0 -- every id was deleted.
+    1 -- refused: `--yes` was not passed. Nothing was deleted.
+    2 -- deletion failed partway through a multi-id run. The log line for this run states which
+         ids were already deleted (gone for good, and safe to pass again -- `delete_paper` is
+         idempotent), which id raised, and which ids were never attempted.
 """
 
 import argparse
@@ -47,8 +54,26 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 1
     orchestrator = _build()
-    for paper_id in args.paper_ids:
-        orchestrator.delete_paper(paper_id)
+    deleted: list[str] = []
+    for index, paper_id in enumerate(args.paper_ids):
+        try:
+            orchestrator.delete_paper(paper_id)
+        except Exception:
+            # Caught (not re-raised) so this function can report exit code 2 -- a distinct code
+            # from the uncaught-exception default of 1, which is also `--yes`-refusal's code.
+            # Without this split a caller can't tell "you forgot --yes, nothing happened" from
+            # "N documents are already gone and the next one blew up" (finding from Task 3 review).
+            not_attempted = args.paper_ids[index + 1:]
+            logger.exception(
+                "delete_docs: failed deleting %s (document %d of %d). %d document(s) already "
+                "deleted -- gone for good, and safe to pass again since delete_paper is "
+                "idempotent: %s. %d document(s) NOT attempted: %s.",
+                paper_id, index + 1, len(args.paper_ids),
+                len(deleted), ", ".join(deleted) or "(none)",
+                len(not_attempted), ", ".join(not_attempted) or "(none)",
+            )
+            return 2
+        deleted.append(paper_id)
         logger.info("delete_docs: deleted %s (rows, vectors, ingest state)", paper_id)
     logger.info("delete_docs: %d document(s) deleted", len(args.paper_ids))
     return 0
