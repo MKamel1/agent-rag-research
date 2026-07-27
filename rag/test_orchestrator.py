@@ -1276,6 +1276,30 @@ def test_delete_paper_of_unknown_paper_id_calls_vector_delete_with_no_ids():
     assert ("delete", ()) in rig.events
 
 
+def test_delete_paper_clears_ingest_state_so_a_reingest_is_not_a_no_op():
+    # T-DOC84 regression pin. The live failure: deleting local:f0929288d4f3 dropped its papers/
+    # chunks/summaries rows and its vectors, but left ingest_state.stage='done' -- so the
+    # re-ingest skipped every stage and the book stayed permanently missing, with no error.
+    rig = Rig()
+    orch = rig.ingest()
+    assert rig.state.stage_of(FIRST_ID) == DONE
+
+    orch.delete_paper(FIRST_ID)
+
+    assert rig.state.stage_of(FIRST_ID) is None
+
+
+def test_delete_paper_does_not_clear_other_papers_ingest_state():
+    rig = Rig()
+    orch = rig.ingest()
+    other_ids = [pid for pid in PAPER_IDS if pid != FIRST_ID]
+
+    orch.delete_paper(FIRST_ID)
+
+    for pid in other_ids:
+        assert rig.state.stage_of(pid) == DONE
+
+
 # ================================================================================================
 # T-DOC80: doc_type="book" branch -- `_finish` calls `summarize_book`'s map-reduce (rag/
 # book_summarizer.py) instead of the plain `summarize`, checkpoints the resulting
