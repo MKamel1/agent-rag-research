@@ -207,6 +207,48 @@ def test_quarantine_is_idempotent_for_an_already_quarantined_paper(tmp_path):
     assert state.get(ref.paper_id) is None
 
 
+def test_forget_removes_both_state_and_checkpoint_rows(tmp_path):
+    db_path = str(tmp_path / "test.sqlite")
+    migrate(db_path)
+    state = SqliteIngestState(db_path)
+
+    state.checkpoint("2401.00001", "parsed", CheckpointArtifacts())
+    assert state.stage_of("2401.00001") == "parsed"
+
+    state.forget("2401.00001")
+
+    assert state.stage_of("2401.00001") is None
+    assert state.get("2401.00001") is None
+
+
+def test_forget_is_idempotent_and_scoped_to_one_id(tmp_path):
+    db_path = str(tmp_path / "test.sqlite")
+    migrate(db_path)
+    state = SqliteIngestState(db_path)
+
+    state.checkpoint("2401.00001", "parsed", CheckpointArtifacts())
+    state.checkpoint("2401.00002", "parsed", CheckpointArtifacts())
+
+    state.forget("2401.00001")
+    state.forget("2401.00001")  # second call must not raise
+
+    assert state.stage_of("2401.00001") is None
+    assert state.stage_of("2401.00002") == "parsed"
+
+
+def test_quarantine_still_clears_state_after_the_refactor(tmp_path):
+    # Pins the behavior Task 1 refactors THROUGH forget(): quarantine has always removed the
+    # ingest_state/ingest_checkpoint rows as part of dead-lettering, and must keep doing so.
+    db_path = str(tmp_path / "test.sqlite")
+    migrate(db_path)
+    state = SqliteIngestState(db_path)
+
+    state.checkpoint("2401.00001", "parsed", CheckpointArtifacts())
+    state.quarantine("2401.00001", "parsed", PermanentError("boom"))
+
+    assert state.stage_of("2401.00001") is None
+
+
 # ================================================================================================
 # quarantine_diagnostics (T-DOC17 parse-failure-diagnostics fix, migrations/0003_*.sql)
 # ================================================================================================
