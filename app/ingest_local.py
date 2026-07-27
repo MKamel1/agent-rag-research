@@ -61,7 +61,7 @@ _ARXIV_ID_PREFIXED = re.compile(r"arxiv[:\s/]*(\d{4}\.\d{4,5})(?:v\d+)?\b", re.I
 # `\d{4}\.\d{4,5}` anywhere in body prose false-positives on things like a table/equation number
 # ("Table 1234.5678") (T-DOC82) -- unlike a filename stem, page text has no "this whole string IS
 # the id" guarantee.
-_ARXIV_ID_BARE = re.compile(r"^(\d{4}\.\d{4,5})(?:v\d+)?$")
+_ARXIV_ID_BARE = re.compile(r"^(\d{4}\.\d{4,5})(?:v\d+)?\b")
 _YEAR = re.compile(r"\b(19|20)\d{2}\b")
 
 
@@ -69,9 +69,9 @@ def detect_arxiv_id(filename: str, first_page_text: str) -> str | None:
     """Filename checked before content -- cheaper, and a deliberately-named file
     ("2409.01266v2.pdf") is a stronger signal than a substring match inside page text.
 
-    An id must either carry an explicit "arXiv" prefix (filename or page text), or be the whole
-    filename stem -- a bare decimal number floating in body text (e.g. a table/equation number
-    like "1234.5678") is NOT enough (T-DOC82)."""
+    An id must either carry an explicit "arXiv" prefix (filename or page text), or START the
+    filename stem (e.g. "2409.01266v2 - Causal Discovery.pdf") -- a bare decimal number floating
+    in body text (e.g. a table/equation number like "1234.5678") is NOT enough (T-DOC82)."""
     bare = _ARXIV_ID_BARE.match(Path(filename).stem)
     if bare:
         return bare.group(1)
