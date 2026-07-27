@@ -2,7 +2,8 @@
 
 import pytest
 
-from app.delete_docs import _parse_args, main
+from app.delete_docs import _build, _parse_args, main
+from contracts.config import Config
 
 
 class _RecordingOrchestrator:
@@ -11,6 +12,37 @@ class _RecordingOrchestrator:
 
     def delete_paper(self, paper_id: str) -> None:
         self.deleted.append(paper_id)
+
+
+def test_build_passes_configured_db_path_blob_dir_collection(monkeypatch):
+    # Regression: build_ingestion_orchestrator's own defaults ("papers.db"/"blobs"/"papers")
+    # resolve against the CURRENT WORKING DIRECTORY, not cfg -- _build must pass all three
+    # explicitly or an operator standing outside the corpus root silently opens the wrong db.
+    cfg = Config(
+        focus_area_queries=["causal inference"],
+        db_path="/configured/papers.db",
+        blob_dir="/configured/blobs",
+        collection="configured-collection",
+    )
+    monkeypatch.setattr("app.delete_docs.load_config", lambda: cfg)
+    captured = {}
+
+    def _fake_build(config, **kwargs):
+        captured["config"] = config
+        captured["kwargs"] = kwargs
+        return "orchestrator-sentinel"
+
+    monkeypatch.setattr("app.delete_docs.build_ingestion_orchestrator", _fake_build)
+
+    result = _build()
+
+    assert result == "orchestrator-sentinel"
+    assert captured["config"] is cfg
+    assert captured["kwargs"] == {
+        "db_path": "/configured/papers.db",
+        "blob_dir": "/configured/blobs",
+        "collection": "configured-collection",
+    }
 
 
 def test_parse_args_takes_one_or_more_paper_ids():

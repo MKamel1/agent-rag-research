@@ -158,8 +158,12 @@ def _split_chapters(parsed: ParsedDoc) -> list[tuple[str, list[Block]]]:
     groups = _heading_groups(parsed)
     if len(groups) <= 1:
         # No usable heading structure (flat/scanned). Window it, but keep the single group's
-        # title rather than dropping it to "" (T-DOC82 deferred-minor fix).
-        title = groups[0][0] if groups else ""
+        # title rather than dropping it to "" (T-DOC82 deferred-minor fix) -- gated through
+        # `_best_heading` same as every other strategy, so a junk single heading (e.g. a scanned
+        # book's one OCR-garbled heading) becomes "" and reaches the `summarize_book` LLM
+        # fallback instead of labelling every window with the junk (latent-only: no Task-8 book
+        # takes this path).
+        title = _best_heading([groups[0][0]]) if groups else ""
         blocks = parsed.blocks
         return [
             (title, list(blocks[i : i + _FALLBACK_WINDOW_BLOCKS]))
@@ -193,14 +197,24 @@ def summarize_book(parsed: ParsedDoc, summarizer) -> tuple[str, list[ChapterSumm
     for n, (title, blocks) in enumerate(_split_chapters(parsed)):
         chapter_text = "\n\n".join(b.text for b in blocks)
         text = _summarize_text(parsed, summarizer, chapter_text, "book")
-        if not title:
+        if not title and text:
             # T-DOC85: no heading in this unit was usable as a routing label. Title from the
             # summary we just computed -- short input, one call, and it inherits that summary's
             # grounding rather than the raw chapter's noise. Whitespace-collapsed because the
             # model occasionally returns a trailing newline.
-            title = " ".join(
+            #
+            # Guarded by `text` (skip the call entirely when the chapter summary came back empty):
+            # `OllamaSummarizer.summarize` raises `PermanentError` on empty prose, which would
+            # quarantine the WHOLE BOOK for a single chapter's degraded title -- before this
+            # fallback existed that chapter simply carried "".
+            #
+            # Gated through `_title_score`, same as every other title source in this module: an
+            # unvalidated model response (e.g. "Sure, here's a title: ...") would otherwise be
+            # persisted verbatim as a routing label.
+            candidate = " ".join(
                 summarizer.summarize(_doc_from_text(parsed, text), kind="book_title").split()
             )
+            title = candidate if _title_score(candidate) else ""
         chapters.append(
             ChapterSummary(summary_id=f"{parsed.paper_id}:summary:ch{n}", title=title, text=text)
         )

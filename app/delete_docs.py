@@ -13,7 +13,12 @@ Deletion is irreversible -- there is no undo and no tombstone. `--yes` is requir
 
 Exit codes:
     0 -- every id was deleted.
-    1 -- refused: `--yes` was not passed. Nothing was deleted.
+    1 -- refused: `--yes` was not passed. Nothing was deleted. Also the default for any other
+         uncaught exception (e.g. `_build()` failing because the vector store is down) -- that
+         happens before the try/except below, so it is NOT distinguished from a `--yes` refusal.
+         2 exists specifically to carve the one case (partial multi-id failure) that this module
+         itself can tell apart from "nothing happened yet"; anything else earlier still falls
+         back to Python's uncaught-exception default of 1.
     2 -- deletion failed partway through a multi-id run. The log line for this run states which
          ids were already deleted (gone for good, and safe to pass again -- `delete_paper` is
          idempotent), which id raised, and which ids were never attempted.
@@ -30,8 +35,19 @@ logger = logging.getLogger(__name__)
 
 def _build():
     # Indirection exists so tests can substitute a recording double without standing up the real
-    # assembly (which would need a live vector index).
-    return build_ingestion_orchestrator(load_config())
+    # assembly (which would need a live vector index). Must pass db_path/blob_dir/collection
+    # explicitly -- build_ingestion_orchestrator's own defaults ("papers.db"/"blobs"/"papers")
+    # resolve against the CURRENT WORKING DIRECTORY, not cfg, so an operator standing anywhere
+    # other than the corpus root would silently open/delete-from the wrong (or an empty) database
+    # while still touching the real, cwd-independent vector collection.
+    cfg = load_config()
+    logger.info(
+        "delete_docs: target db=%s blob_dir=%s collection=%s", cfg.db_path, cfg.blob_dir,
+        cfg.collection,
+    )
+    return build_ingestion_orchestrator(
+        cfg, db_path=cfg.db_path, blob_dir=cfg.blob_dir, collection=cfg.collection,
+    )
 
 
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
