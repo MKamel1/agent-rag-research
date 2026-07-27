@@ -31,6 +31,15 @@ logger = logging.getLogger(__name__)
 _T = TypeVar("_T")
 
 
+def _delete_state_rows(conn: sqlite3.Connection, paper_id: str) -> None:
+    """The two statements that constitute "this paper has no ingest state" -- one definition,
+    used by both `forget()` (T-DOC84) and `quarantine()` (which has always cleared these rows as
+    part of dead-lettering). Module-level and connection-taking so `quarantine()` can call it
+    inside its own already-open transaction."""
+    conn.execute("DELETE FROM ingest_state WHERE paper_id = ?", (paper_id,))
+    conn.execute("DELETE FROM ingest_checkpoint WHERE paper_id = ?", (paper_id,))
+
+
 class SqliteIngestState:
     """Precondition: `db_path` has already had `migrations/migrate.py`'s `migrate()` applied (so
     `ingest_state`/`ingest_checkpoint`/`quarantine` exist) -- this adapter contains no DDL of its
@@ -181,8 +190,7 @@ class SqliteIngestState:
                 "VALUES (?, ?, ?) ON CONFLICT(paper_id) DO NOTHING",
                 (paper_id, type(error).__name__, json.dumps(diagnostics) if diagnostics is not None else None),
             )
-            conn.execute("DELETE FROM ingest_state WHERE paper_id = ?", (paper_id,))
-            conn.execute("DELETE FROM ingest_checkpoint WHERE paper_id = ?", (paper_id,))
+            _delete_state_rows(conn, paper_id)
 
         try:
             self._with_connection(_quarantine)
@@ -197,6 +205,22 @@ class SqliteIngestState:
                 write_error,
                 exc_info=True,
             )
+
+    def forget(self, paper_id: str) -> None:
+        """Drops `paper_id`'s ingest-state rows so a later ingest treats it as never-seen.
+
+        T-DOC84: `IngestionOrchestrator.delete_paper()` removes a document's `papers`/`chunks`/
+        `summaries` rows and its vectors, but a leftover `ingest_state.stage = 'done'` row makes a
+        re-ingest of the same id a silent no-op -- the resume logic sees `done` and skips every
+        stage, so the document never comes back and nothing raises. This is the missing third
+        delete. Idempotent by construction (DELETE of a nonexistent row affects 0 rows), so it is
+        safe to call on an id that was never ingested and safe to re-run after a partial failure.
+        """
+
+        def _forget(conn: sqlite3.Connection) -> None:
+            _delete_state_rows(conn, paper_id)
+
+        self._with_connection(_forget)
 
     def stage_of(self, paper_id: str) -> str | None:
         checkpoint = self.get(paper_id)

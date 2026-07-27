@@ -62,3 +62,8 @@ class FakeIngestState:
     def stage_of(self, paper_id: str) -> str | None:
         row = self._rows.get(paper_id)
         return row.stage if row else None
+
+    def forget(self, paper_id: str) -> None:
+        """T-DOC84: mirrors SqliteIngestState.forget -- drops this id's state so a re-ingest
+        treats it as never-seen. Idempotent."""
+        self._rows.pop(paper_id, None)
