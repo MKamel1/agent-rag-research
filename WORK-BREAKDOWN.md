@@ -1031,13 +1031,16 @@ Found by actually using the system (a method-research session) and bringing it o
 retrieval quality + operability, not the claim layer** — reinforcing the "use it first" decision.
 
 ### Retrieval quality (from the first real method-research session, OG-30)
-- **T-DOC62 (not started) — 🟡 chunker: de-duplicate the leading section header (OG-30 #1). ⚠️ FIX
-  BEFORE THE 30k SEED.** Stored chunk text is `title\nsection_path\n\n<body>` and the body's first
-  block is usually the same heading → the section header appears twice (verified: `"…1. Introduction
-  \n\n1. Introduction\n\n…"`). Wastes the embedded text and the displayed passage. **This is a
-  chunker change = a re-embed trigger** (chunk text feeds the embedding), so it must land BEFORE the
-  seed builds the corpus, or we pay a full re-embed to fix it. Small change in `rag/chunker.py`
-  `_build_chunk` (skip the prefix when `body[0]` already equals `section_path`).
+- **T-DOC62 (code fix implemented; data gap closed by option B, `app/rechunk.py`) — 🟡 chunker:
+  de-duplicate the leading section header (OG-30 #1).** Status here was stale: the code fix landed
+  2026-07-17 as commit `157af4d` (`rag/chunker.py:58` `_strip_duplicate_heading`, applied at `:178`)
+  — everything ingested since is clean (measured: 0.01% duplication vs. 58.49% before). What
+  remained was stale *data* — 809 papers ingested before that date, ~14,850 chunks (4.1% of the
+  corpus) still carrying the duplicated header (`docs/DECISION-t-doc62-duplicate-chunk-headers.md`).
+  Closed by re-chunking those papers from their already-stored blocks (option B in that decision
+  doc) via the general, reusable `python -m app.rechunk` tool
+  (`docs/superpowers/specs/2026-07-28-rechunk-from-blocks-design.md`) — no re-parse, no full
+  re-embed.
 - **T-DOC63 (implemented — landed as part of T-DOC82, not this ticket directly: `rag/retriever.py:59`
   `_MAX_HITS_PER_PAPER = 3`, `:62` `_cap_per_paper(...)`, applied at `:289`
   `return _cap_per_paper(results)[:k], ...`) — 🟡 retrieval: diversify-by-paper option (OG-30 #2).** A
