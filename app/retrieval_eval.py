@@ -15,6 +15,23 @@ Only questions carrying a `gold_block_id` are scored at passage level -- the 210
 doesn't have one (see that fixture's schema), so pointing this runner at it degrades gracefully to
 paper-level-only reporting instead of crashing or silently scoring zero.
 
+A third granularity, book-only (docs/DESIGN-book-chapters-and-hierarchy.md Part 3 Step 1):
+
+  * chapter-level -- a hit only if `Retriever.retrieve_papers()` (what `search_papers` wraps)
+    returns a `PaperSearchResult` whose `paper_id` is gold AND whose `chapter` string equals the
+    question's `gold_chapter_title`. This is a DIFFERENT question from passage-level: passage-level
+    asks whether `semantic_search` finds the right span; chapter-level asks whether the chapter
+    *routing* step (what `ChapterSummary`/`book_summarizer.py` exist for) points an agent at the
+    right chapter at all. Only questions carrying a `gold_chapter_title` are scored here -- same
+    graceful-degrade posture as passage-level's `gold_block_id` gate, so pointing this runner at
+    the 210-question or equation-slice fixtures (neither carries book fields) still just reports
+    paper/passage level, chapter-level empty. `retrieve_papers()` is only called for questions that
+    need it -- an unscored (paper) question costs no extra retrieval call.
+  * `doc_type` ("paper" | "book", default "paper" for backward compatibility with the existing
+    fixtures) rides along on every `Question`/`QuestionResult` so `build_report`'s `by_doc_type`
+    breakdown can report books and papers separately from one mixed-fixture run, per the design
+    doc's "must be able to evaluate books separately from papers, and report them separately."
+
 Same real, production retrieval pipeline the 210-question eval already uses end to end
 (`app.assembly.build_mcp_server`) -- no simplified stand-in, and this module never talks to the
 vector store or LLM adapters directly (CONVENTIONS §1): it only ever imports the composition root.
@@ -45,6 +62,8 @@ class Question:
     question_type: str
     gold_paper_ids: frozenset[str]
     gold_block_id: str | None  # None -> not scorable at passage level (e.g. the 210-set today)
+    doc_type: str = "paper"  # "paper" | "book" -- default keeps every existing fixture unchanged
+    gold_chapter_title: str | None = None  # None -> not scorable at chapter level (papers today)
 
 
 @dataclass(frozen=True)
@@ -59,6 +78,10 @@ class QuestionResult:
     # gold ids without a second questions-by-id lookup at report time.
     gold_paper_ids: frozenset[str] = frozenset()
     gold_block_id: str | None = None
+    doc_type: str = "paper"
+    chapter_rank: int | None = None  # 1-indexed rank of the first chapter-routing hit, else None
+    chapter_scored: bool = False  # whether this question had a gold_chapter_title to score against
+    gold_chapter_title: str | None = None
 
 
 def load_questions(ground_truth_path: Path) -> list[Question]:
@@ -94,15 +117,24 @@ def load_questions(ground_truth_path: Path) -> list[Question]:
                 question_type=r["question_type"],
                 gold_paper_ids=frozenset(gold_papers),
                 gold_block_id=r.get("gold_block_id"),
+                doc_type=r.get("doc_type", "paper"),
+                gold_chapter_title=r.get("gold_chapter_title"),
             )
         )
     return questions
 
 
-def score_question(question: Question, results: list, k: int) -> QuestionResult:
+def score_question(
+    question: Question, results: list, k: int, chapter_results: list | None = None
+) -> QuestionResult:
     """`results` is the `list[GroundedResult]` a real (or fake) `Retriever.retrieve()` call
     returned -- already truncated to `k` by `Retriever` itself, but truncated again here so a
     test double that doesn't truncate still scores correctly.
+
+    `chapter_results` is the `list[PaperSearchResult]` a real (or fake) `Retriever.
+    retrieve_papers()` call returned, for `gold_chapter_title` questions only -- `run()` doesn't
+    make that call at all for a question that isn't chapter-scored, so this is `None` in that
+    case (never an empty list standing in for "not scored").
     """
     truncated = results[:k]
     paper_rank = next(
@@ -120,6 +152,18 @@ def score_question(question: Question, results: list, k: int) -> QuestionResult:
             ),
             None,
         )
+    chapter_scored = question.gold_chapter_title is not None
+    chapter_rank = None
+    if chapter_scored and chapter_results is not None:
+        chapter_rank = next(
+            (
+                i
+                for i, r in enumerate(chapter_results[:k], start=1)
+                if r.view.paper_id in question.gold_paper_ids
+                and r.chapter == question.gold_chapter_title
+            ),
+            None,
+        )
     return QuestionResult(
         question_id=question.question_id,
         question_type=question.question_type,
@@ -128,19 +172,37 @@ def score_question(question: Question, results: list, k: int) -> QuestionResult:
         passage_scored=passage_scored,
         gold_paper_ids=question.gold_paper_ids,
         gold_block_id=question.gold_block_id,
+        doc_type=question.doc_type,
+        chapter_rank=chapter_rank,
+        chapter_scored=chapter_scored,
+        gold_chapter_title=question.gold_chapter_title,
     )
 
 
 def run(questions: list[Question], retriever, k: int) -> list[QuestionResult]:
     """Calls the real (or fake) `retriever.retrieve(question_text, filters, k)` for every
-    question. A retrieval error for one question is recorded and skipped, not fatal to the whole
-    run (mirrors `Retriever`'s own "drop the bad hit, keep going" posture, T-DOC38) -- a single
-    orphaned/unresolvable corpus row shouldn't blank out every other question's score.
+    question -- plus `retriever.retrieve_papers(question_text, filters, k)` too, but only for a
+    question carrying a `gold_chapter_title` (a chapter-routing question doesn't get scored
+    without it, so there's no point spending the extra retrieval call on every other question --
+    in particular the existing 210-question/equation-slice fixtures, which carry no book fields
+    at all, cost exactly what they did before this metric existed).
+
+    A retrieval error for one question is recorded and skipped, not fatal to the whole run
+    (mirrors `Retriever`'s own "drop the bad hit, keep going" posture, T-DOC38) -- a single
+    orphaned/unresolvable corpus row shouldn't blank out every other question's score. Both calls
+    for one question share a single try/except: if `retrieve()` succeeds but the follow-up
+    `retrieve_papers()` then fails, the whole question is recorded as errored rather than
+    half-scored on a retrieval pipeline that just proved itself unreliable for this query.
     """
     results = []
     for i, question in enumerate(questions, start=1):
         try:
             hits, _coverage = retriever.retrieve(question.question_text, None, k)
+            chapter_hits = None
+            if question.gold_chapter_title is not None:
+                chapter_hits, _coverage2 = retriever.retrieve_papers(
+                    question.question_text, None, k
+                )
         except Exception as e:  # noqa: BLE001 -- deliberately broad, see docstring
             logger.warning("retrieve() failed for %s: %s", question.question_id, e)
             results.append(
@@ -153,10 +215,13 @@ def run(questions: list[Question], retriever, k: int) -> list[QuestionResult]:
                     error=str(e),
                     gold_paper_ids=question.gold_paper_ids,
                     gold_block_id=question.gold_block_id,
+                    doc_type=question.doc_type,
+                    chapter_scored=question.gold_chapter_title is not None,
+                    gold_chapter_title=question.gold_chapter_title,
                 )
             )
             continue
-        results.append(score_question(question, hits, k))
+        results.append(score_question(question, hits, k, chapter_hits))
         if i % 20 == 0:
             logger.info("scored %d/%d questions", i, len(questions))
     return results
@@ -180,8 +245,10 @@ def _question_row(r: QuestionResult) -> dict:
     return {
         "question_id": r.question_id,
         "question_type": r.question_type,
+        "doc_type": r.doc_type,
         "gold_paper_ids": sorted(r.gold_paper_ids),
         "gold_block_id": r.gold_block_id,
+        "gold_chapter_title": r.gold_chapter_title,
         "error": r.error,
         "paper_level": {"hit": r.paper_rank is not None, "rank": r.paper_rank},
         "passage_level": {
@@ -189,12 +256,19 @@ def _question_row(r: QuestionResult) -> dict:
             "hit": r.passage_rank is not None,
             "rank": r.passage_rank,
         },
+        "chapter_level": {
+            "scored": r.chapter_scored,
+            "hit": r.chapter_rank is not None,
+            "rank": r.chapter_rank,
+        },
     }
 
 
 def build_report(results: list[QuestionResult], k: int, *, include_per_question: bool = True) -> dict:
     question_types = sorted({r.question_type for r in results})
+    doc_types = sorted({r.doc_type for r in results})
     passage_eligible = [r for r in results if r.passage_scored]
+    chapter_eligible = [r for r in results if r.chapter_scored]
 
     report = {
         "k": k,
@@ -206,6 +280,13 @@ def build_report(results: list[QuestionResult], k: int, *, include_per_question:
                 t: _recall_mrr([r.paper_rank for r in results if r.question_type == t])
                 for t in question_types
             },
+            # T-DOC-BOOK-EVAL: lets one mixed paper+book fixture be scored in a single run and
+            # still reported separately -- "must be able to evaluate books separately from papers,
+            # and report them separately" (docs/DESIGN-book-chapters-and-hierarchy.md Part 3 Step 1).
+            "by_doc_type": {
+                dt: _recall_mrr([r.paper_rank for r in results if r.doc_type == dt])
+                for dt in doc_types
+            },
         },
         "passage_level": {
             "n_scored": len(passage_eligible),
@@ -215,6 +296,24 @@ def build_report(results: list[QuestionResult], k: int, *, include_per_question:
                     [r.passage_rank for r in passage_eligible if r.question_type == t]
                 )
                 for t in sorted({r.question_type for r in passage_eligible})
+            },
+            "by_doc_type": {
+                dt: _recall_mrr([r.passage_rank for r in passage_eligible if r.doc_type == dt])
+                for dt in sorted({r.doc_type for r in passage_eligible})
+            },
+        },
+        # Chapter-routing accuracy (search_papers) -- distinct from passage_level (semantic_search)
+        # per the design doc: "This is what chapter summaries exist for" vs. "whether chapter work
+        # affects retrieval at all, or only navigation." Empty/all-n=0 for any fixture with no
+        # gold_chapter_title (the 210-question and equation-slice sets today).
+        "chapter_level": {
+            "n_scored": len(chapter_eligible),
+            "overall": _recall_mrr([r.chapter_rank for r in chapter_eligible]),
+            "by_question_type": {
+                t: _recall_mrr(
+                    [r.chapter_rank for r in chapter_eligible if r.question_type == t]
+                )
+                for t in sorted({r.question_type for r in chapter_eligible})
             },
         },
     }
@@ -240,6 +339,13 @@ def _print_summary(report: dict) -> None:
     else:
         print("Passage-level: no question in this ground-truth file carries a gold_block_id "
               "-- nothing to score (this is expected for the 210-question set)")
+    cl = report["chapter_level"]
+    if cl["n_scored"]:
+        print(f"Chapter-level {_fmt(cl['overall'])}  [{cl['n_scored']}/{report['n_questions']} "
+              "questions carry a gold_chapter_title]")
+    else:
+        print("Chapter-level: no question in this ground-truth file carries a gold_chapter_title "
+              "-- nothing to score (this is expected for a papers-only fixture)")
 
     print("\nBy question_type (paper-level):")
     for t, m in sorted(report["paper_level"]["by_question_type"].items()):
@@ -247,6 +353,16 @@ def _print_summary(report: dict) -> None:
     if pl["n_scored"]:
         print("\nBy question_type (passage-level):")
         for t, m in sorted(pl["by_question_type"].items()):
+            print(f"  {t:30s} {_fmt(m)}")
+    if cl["n_scored"]:
+        print("\nBy question_type (chapter-level):")
+        for t, m in sorted(cl["by_question_type"].items()):
+            print(f"  {t:30s} {_fmt(m)}")
+
+    dt = report["paper_level"]["by_doc_type"]
+    if len(dt) > 1:
+        print("\nBy doc_type (paper-level):")
+        for t, m in sorted(dt.items()):
             print(f"  {t:30s} {_fmt(m)}")
 
 
