@@ -446,6 +446,26 @@ def test_overlap_carrying_the_section_heading_is_not_duplicated_in_the_next_sub_
     )
 
 
+def test_a_sub_groups_own_first_block_can_independently_duplicate_the_heading_too():
+    # A non-heading `overlap` (247 words, under the borrow threshold) sits ahead of a sub-group
+    # whose OWN first block happens to be a heading-duplicate (its text == section_path). Checking
+    # only whichever block sits at body's index 0 (i.e. `overlap`) would leave this `first.text`
+    # duplicate unchecked -- `overlap` and `first` must be deduped independently.
+    heading_path = "6 Numerical Simulations"  # exactly 3 words
+    blocks = [
+        _long_prose_block(0, 1251, heading_path),
+        _long_prose_block(1, 247, heading_path),  # short enough to become the next overlap
+        _block(2, heading_path, "prose", heading_path),  # duplicate heading, becomes sole `first`
+        _long_prose_block(3, 1600, heading_path),
+    ]
+    chunks = _chunk(_parsed_doc(blocks=blocks))
+    assert len(chunks) == 3, "sanity check: this fixture must actually trigger two splits"
+    assert chunks[1].text.count(heading_path) == 1, (
+        "the sub-group's own first block duplicated the section heading, unchecked because "
+        "overlap sat at body's index 0"
+    )
+
+
 def test_chunk_ids_stay_sequential_and_unique_with_overlap():
     blocks = [
         _sentinel_prose_block(0, 100, "ALPHA"),

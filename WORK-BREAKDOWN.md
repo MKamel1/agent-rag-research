@@ -1705,22 +1705,35 @@ retrieval quality + operability, not the claim layer** — reinforcing the "use 
 
 ### T-DOC93 — 🟢 LOW: `_strip_duplicate_heading` misses one chunk per document, cause unknown (2026-07-28)
 
-- **T-DOC93 (code fix implemented; re-chunk retrofit for the 34 affected papers still pending) —
-  🟢 `_strip_duplicate_heading` still leaves a duplicated heading in exactly one chunk per
-  affected document.** Cause found: `_build_chunk` (`rag/chunker.py:160`) ran the dedup check
-  against `first.text` unconditionally, but when a split's `overlap` block is present it is
-  prepended ahead of `first.text` in `body` — so `overlap.text`, not `first.text`, is the body's
-  true opening line. A split's first sub-group can end up containing nothing but the section
-  heading (a small heading block immediately followed by a single block so large it alone blows
-  `_MAX_CHUNK_WORDS`), and that heading-only block then becomes the *next* sub-chunk's borrowed
-  `overlap`, landing unchecked as body's real first line — duplicating the title+section_path
-  prefix. Fixed by running the dedup check against whichever block actually opens `body` (overlap
-  when present, else `first`), not unconditionally against `first.text`. Reproduced with a
-  synthetic fixture in `rag/test_chunker.py::test_overlap_carrying_the_section_heading_is_not_duplicated_in_the_next_sub_chunk`
-  (fails on prior `main`, passes after the fix) — no corpus data was touched to find or fix this.
-  This is a re-chunk trigger for the 34 affected papers; `app/rechunk.py` (T-DOC62 option B)
-  already exists to retrofit it and has not yet been run for this fix. All figures below were
-  measured read-only against the live corpus on 2026-07-28; they are not to be re-derived.
+- **T-DOC93 (code fix implemented; re-chunk retrofit for the 34+ affected papers still pending) —
+  🟢 `_strip_duplicate_heading` still leaves a duplicated heading in some chunks.** Cause found:
+  `_build_chunk` (`rag/chunker.py:160`) ran the dedup check against `first.text` unconditionally,
+  but when a split's `overlap` block is present it is prepended ahead of `first.text` in `body` —
+  so `overlap.text`, not `first.text`, is the body's true opening line. A split's first sub-group
+  can end up containing nothing but the section heading (a small heading block immediately
+  followed by a single block so large it alone blows `_MAX_CHUNK_WORDS`), and that heading-only
+  block then becomes the *next* sub-chunk's borrowed `overlap`, landing unchecked as body's real
+  first line — duplicating the title+section_path prefix. **First fix attempt was itself
+  incomplete**: checking only whichever block sits at `body`'s index 0 (`overlap` when present,
+  else `first`) stops checking `first.text` whenever `overlap` is present — `overlap` and
+  `first` can *independently* be heading-duplicate blocks (concrete counter-fixture: a
+  247-word non-duplicate `overlap` ahead of a 3-word sub-group whose own `first` block equals
+  `section_path`). Fixed by running the dedup check on `overlap.text` and `first.text`
+  independently, not only on whichever sits first. Reproduced with two synthetic fixtures in
+  `rag/test_chunker.py`:
+  `test_overlap_carrying_the_section_heading_is_not_duplicated_in_the_next_sub_chunk` and
+  `test_a_sub_groups_own_first_block_can_independently_duplicate_the_heading_too` (both fail
+  without the respective fix, pass with it) — no corpus data was touched to find or fix this.
+  **"Exactly one affected chunk per document" is an empirical fact about the live corpus, not an
+  algorithmic guarantee** — nothing in the mechanism prevents two different sections in the same
+  document from independently matching the "heading alone, then one oversized block" shape (or
+  either of the two sub-cases above) and producing two affected chunks; the corpus retrofit should
+  not assume damage is capped at one chunk per paper. Likewise "high chunk index" is an
+  observation, not a rule: sections large enough to split and shaped this way tend to be
+  `References`/`Contents`, which sit late in a paper. This is a re-chunk trigger for the affected
+  papers; `app/rechunk.py` (T-DOC62 option B) already exists to retrofit it and has not yet been
+  run for this fix. All figures below were measured read-only against the live corpus on
+  2026-07-28; they are not to be re-derived.
   T-DOC62's analysis measured duplicate-heading rates before and after the chunker fix
   (`rag/chunker.py::_strip_duplicate_heading`, commit `157af4d`, 2026-07-17): 58.49% of pre-fix
   chunks duplicated, **0.01% of post-fix chunks**. The fix works. But 0.01% should be 0.
@@ -1745,17 +1758,13 @@ retrieval quality + operability, not the claim layer** — reinforcing the "use 
     and line 3 (first body line) are **byte-identical** — verified with `repr()` on both, `L[1] ==
     L[3]` is `True`. So `_strip_duplicate_heading`'s comparison, which normalizes with `"
     ".join(x.split())`, should have matched and stripped.
-  **Cause unknown.** The comparison that should fire, doesn't, on exactly one chunk per document.
-  Investigation should start from `rag/chunker.py:178` —
-  `group_texts = [_strip_duplicate_heading(first.text, first.section_path)]` — and establish which
-  chunk in a document takes a path where `first` is not the block the stored text's line 3 came
-  from. Note that when the strip *does* work, the resulting chunk text has an empty line 3, so the
-  failing cases are distinguishable by that alone.
+  **Cause found — see the resolution paragraph above.** The `2410.15166` chunk's byte-identical
+  `section_path`/body-first-line was `overlap` carrying the section's own heading block forward
+  unchecked; `_build_chunk` (`rag/chunker.py:160`) is where the fix lives.
   **Impact is small but real:** ~0.01% of chunks carry a duplicated heading, wasting embedded tokens
   and showing the heading twice in a retrieved passage. Same symptom as T-DOC62, ~4000× rarer.
-  **Fix:** find the actual cause before changing anything — the byte-identical evidence means the
-  current hypothesis space is empty, and a speculative fix risks masking it. Once understood, the
-  repair is likely small and belongs in `rag/chunker.py`. Any fix is a **re-chunk trigger** for
+  **Fix:** landed in `rag/chunker.py:_build_chunk` — see the resolution paragraph above for what
+  changed and why the first attempt was itself incomplete. Any fix is a **re-chunk trigger** for
   affected papers, and `app/rechunk.py` (T-DOC62 option B) is the tool that retrofits it, so this
   can ride along with a future re-chunk rather than needing its own migration.
   **Discovered by** the T-DOC62 option B work (PR #185), while characterising the post-fix residue.
