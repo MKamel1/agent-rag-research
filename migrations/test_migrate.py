@@ -19,13 +19,23 @@ import re
 import sqlite3
 from pathlib import Path
 
-import pytest
-
 from migrations.migrate import migrate
 
 V0_TABLES = {"papers", "blocks", "chunks", "summaries", "ingest_state", "quarantine"}
 ALL_TABLES = V0_TABLES | {"ingest_checkpoint", "quarantine_diagnostics"}
+# T-DOC81: schema_version is created unconditionally by migrate() itself (the one legitimate
+# `CREATE TABLE IF NOT EXISTS` in this codebase) -- it exists in every database migrate() has
+# touched, fresh or adopted. Only tests that call migrate() should expect it; the DDL-parity tests
+# below build a schema by executing the raw `.sql` files directly and never see it, so they keep
+# comparing against plain ALL_TABLES.
+MIGRATED_TABLES = ALL_TABLES | {"schema_version"}
 V1_TABLES_NOT_CREATED = {"claims", "claim_relations", "citation_edges"}
+ALL_MIGRATION_FILENAMES = {
+    "0001_init.sql",
+    "0002_ingest_checkpoint.sql",
+    "0003_quarantine_diagnostics.sql",
+    "0004_doc_type_and_chapter_titles.sql",
+}
 
 REPO_ROOT = Path(__file__).parent.parent
 DATA_CONTRACTS = REPO_ROOT / "DATA-CONTRACTS.md"
@@ -40,6 +50,48 @@ def _table_names(conn: sqlite3.Connection) -> set[str]:
     return {r[0] for r in rows}
 
 
+def _applied_migrations(conn: sqlite3.Connection) -> set[str]:
+    rows = conn.execute("SELECT filename FROM schema_version;").fetchall()
+    return {r[0] for r in rows}
+
+
+def _raw_apply(conn: sqlite3.Connection, *schema_files: Path) -> None:
+    """Apply schema files directly with `executescript`, bypassing `migrate()` entirely -- this is
+    how every T-DOC81 test builds a database that predates (or partially has) the `schema_version`
+    table, i.e. the exact shape production was in before this ticket."""
+    for schema_file in schema_files:
+        conn.executescript(schema_file.read_text())
+    conn.commit()
+
+
+def _insert_minimal_paper(conn: sqlite3.Connection, paper_id: str, doc_type_column: bool) -> None:
+    """Insert one row into `papers` with just enough columns for the NOT NULL constraints 0001_init
+    declares, optionally including the 0004 `doc_type` column when the caller has already applied
+    that migration."""
+    columns = [
+        "paper_id", "version", "title", "abstract", "authors_json", "categories_json",
+        "published", "updated", "pdf_path", "markdown_path",
+    ]
+    values = [paper_id, "v1", "T", "A", "[]", "[]", "2020-01-01", "2020-01-01", "pdf", "md"]
+    if doc_type_column:
+        columns.append("doc_type")
+        values.append("paper")
+    placeholders = ", ".join("?" for _ in values)
+    conn.execute(
+        f"INSERT INTO papers ({', '.join(columns)}) VALUES ({placeholders})", values
+    )
+    conn.commit()
+
+
+def _insert_minimal_chunk(conn: sqlite3.Connection, chunk_id: str, paper_id: str) -> None:
+    conn.execute(
+        "INSERT INTO chunks (chunk_id, paper_id, text, anchor_json, section_path) "
+        "VALUES (?, ?, ?, ?, ?)",
+        (chunk_id, paper_id, "chunk text", "{}", "sec"),
+    )
+    conn.commit()
+
+
 def test_migrate_creates_exactly_the_v0_and_checkpoint_tables(tmp_path):
     db_path = str(tmp_path / "test.sqlite")
 
@@ -48,8 +100,11 @@ def test_migrate_creates_exactly_the_v0_and_checkpoint_tables(tmp_path):
     conn = sqlite3.connect(db_path)
     try:
         tables = _table_names(conn)
-        assert tables == ALL_TABLES
+        assert tables == MIGRATED_TABLES
         assert tables.isdisjoint(V1_TABLES_NOT_CREATED)
+        # T-DOC81 required test #4 (fresh DB): every migration file applies and is recorded --
+        # pins that the new schema_version machinery didn't break the original from-scratch path.
+        assert _applied_migrations(conn) == ALL_MIGRATION_FILENAMES
     finally:
         conn.close()
 
@@ -67,14 +122,152 @@ def test_migrate_sets_wal_journal_mode(tmp_path):
         conn.close()
 
 
-def test_migrate_on_already_migrated_db_fails_loudly_not_silently(tmp_path):
-    """Re-running the migration against an already-migrated database must raise, not silently
-    no-op — a migration that swallows 'table already exists' would mask a real double-apply bug."""
+def test_migrate_on_already_migrated_db_is_idempotent_not_a_failure(tmp_path):
+    """T-DOC81 REVERSES this test's former contract -- it used to be named
+    `..._fails_loudly_not_silently` and asserted `migrate()` raises `sqlite3.OperationalError` on
+    a second call. That was deliberate at the time ("re-running is a bug"), but it is exactly the
+    assumption that made the gap structural: with no idempotent path, an additive migration (0004)
+    had no supported way to reach a database that already had rows, so it never ran against
+    production and was applied by hand instead (WORK-BREAKDOWN.md T-DOC81). Re-running is now the
+    supported, expected path -- `schema_version` answers "did this migration run?" directly,
+    instead of that question being inferred from whether `migrate()` raised."""
     db_path = str(tmp_path / "test.sqlite")
     migrate(db_path)
 
-    with pytest.raises(sqlite3.OperationalError, match="already exists"):
-        migrate(db_path)
+    conn = sqlite3.connect(db_path)
+    try:
+        recorded_before = {
+            row for row in conn.execute("SELECT filename, applied_at FROM schema_version")
+        }
+    finally:
+        conn.close()
+
+    migrate(db_path)  # must NOT raise
+
+    conn = sqlite3.connect(db_path)
+    try:
+        recorded_after = {
+            row for row in conn.execute("SELECT filename, applied_at FROM schema_version")
+        }
+        # Same rows, same applied_at timestamps: the second call did not re-apply anything.
+        assert recorded_after == recorded_before
+    finally:
+        conn.close()
+
+
+def test_migrate_twice_in_a_row_is_a_noop_the_second_time(tmp_path):
+    """T-DOC81 required test #3 (idempotency): calling `migrate()` twice consecutively must not
+    raise and must not change what's recorded or applied."""
+    db_path = str(tmp_path / "test.sqlite")
+
+    migrate(db_path)
+    migrate(db_path)
+
+    conn = sqlite3.connect(db_path)
+    try:
+        assert _applied_migrations(conn) == ALL_MIGRATION_FILENAMES
+        assert _table_names(conn) == MIGRATED_TABLES
+    finally:
+        conn.close()
+
+
+def test_migrate_applies_additive_migration_to_populated_db_and_preserves_data(tmp_path):
+    """T-DOC81 required test #1 -- the test that would have caught the actual incident: a database
+    at an older schema version, with real rows, must pick up a later additive migration (0004)
+    without losing anything already in it. Every pre-T-DOC81 test starts from an empty `tmp_path`,
+    where 0001-0004 apply cleanly in order and this path is never exercised."""
+    db_path = str(tmp_path / "test.sqlite")
+    conn = sqlite3.connect(db_path)
+    try:
+        _raw_apply(
+            conn, SCHEMA_FILE, CHECKPOINT_SCHEMA_FILE, QUARANTINE_DIAGNOSTICS_SCHEMA_FILE
+        )
+        _insert_minimal_paper(conn, "p1", doc_type_column=False)
+        _insert_minimal_chunk(conn, "c1", "p1")
+    finally:
+        conn.close()
+
+    migrate(db_path)
+
+    conn = sqlite3.connect(db_path)
+    try:
+        assert _applied_migrations(conn) == ALL_MIGRATION_FILENAMES
+        cols = {row[1] for row in conn.execute("PRAGMA table_info(papers)")}
+        assert "doc_type" in cols
+        paper = conn.execute(
+            "SELECT paper_id, title, doc_type FROM papers WHERE paper_id = 'p1'"
+        ).fetchone()
+        assert paper == ("p1", "T", "paper")  # pre-existing row survived and got the new default
+        chunk = conn.execute(
+            "SELECT chunk_id FROM chunks WHERE paper_id = 'p1'"
+        ).fetchone()
+        assert chunk == ("c1",)
+    finally:
+        conn.close()
+
+
+def test_migrate_adopts_a_database_matching_productions_exact_shape(tmp_path):
+    """T-DOC81 required test #2 -- production's exact shape the day this ticket was opened: 0001
+    through 0004 already applied (0004 by hand, per WORK-BREAKDOWN.md), no `schema_version` table
+    at all. `migrate()` must adopt all four as already-applied, re-apply none of them, and leave
+    the existing data untouched."""
+    db_path = str(tmp_path / "test.sqlite")
+    conn = sqlite3.connect(db_path)
+    try:
+        _raw_apply(
+            conn,
+            SCHEMA_FILE,
+            CHECKPOINT_SCHEMA_FILE,
+            QUARANTINE_DIAGNOSTICS_SCHEMA_FILE,
+            DOC_TYPE_AND_TITLES_SCHEMA_FILE,
+        )
+        _insert_minimal_paper(conn, "p1", doc_type_column=True)
+        _insert_minimal_chunk(conn, "c1", "p1")
+    finally:
+        conn.close()
+
+    migrate(db_path)  # must NOT raise -- this is the exact re-run-against-existing-data path
+
+    conn = sqlite3.connect(db_path)
+    try:
+        assert _applied_migrations(conn) == ALL_MIGRATION_FILENAMES
+        assert _table_names(conn) == MIGRATED_TABLES
+        paper = conn.execute(
+            "SELECT paper_id FROM papers WHERE paper_id = 'p1'"
+        ).fetchone()
+        assert paper == ("p1",)
+        chunk = conn.execute("SELECT chunk_id FROM chunks WHERE paper_id = 'p1'").fetchone()
+        assert chunk == ("c1",)
+    finally:
+        conn.close()
+
+
+def test_migrate_partially_adopts_and_applies_the_rest(tmp_path):
+    """T-DOC81 required test #5: a database with only 0001-0002 applied by hand (no
+    `quarantine_diagnostics` table, no `doc_type` column) -- `migrate()` must adopt the two present
+    and apply the two missing, ending up fully up to date."""
+    db_path = str(tmp_path / "test.sqlite")
+    conn = sqlite3.connect(db_path)
+    try:
+        _raw_apply(conn, SCHEMA_FILE, CHECKPOINT_SCHEMA_FILE)
+        _insert_minimal_paper(conn, "p1", doc_type_column=False)
+    finally:
+        conn.close()
+
+    migrate(db_path)
+
+    conn = sqlite3.connect(db_path)
+    try:
+        assert _applied_migrations(conn) == ALL_MIGRATION_FILENAMES
+        assert _table_names(conn) == MIGRATED_TABLES
+        cols = {row[1] for row in conn.execute("PRAGMA table_info(papers)")}
+        assert "doc_type" in cols
+        paper = conn.execute(
+            "SELECT paper_id FROM papers WHERE paper_id = 'p1'"
+        ).fetchone()
+        assert paper == ("p1",)
+    finally:
+        conn.close()
 
 
 def _extract_schema_sql_block(markdown_text: str, heading: str) -> str:

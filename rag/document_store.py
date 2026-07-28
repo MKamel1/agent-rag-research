@@ -31,12 +31,35 @@ from contracts.provenance import Anchor, Block
 from migrations.migrate import migrate
 
 
+_REQUIRED_COLUMNS: dict[tuple[str, str], str] = {
+    ("papers", "doc_type"): "migrations/0004_doc_type_and_chapter_titles.sql",
+    ("summaries", "title"): "migrations/0004_doc_type_and_chapter_titles.sql",
+}
+
+
+def _verify_required_columns(con: sqlite3.Connection, db_path: str) -> None:
+    """T-DOC81 (c), complementary to `migrate()`'s own idempotency fix: `migrate()` should always
+    leave these columns in place, but if an old database's schema was ever misclassified by
+    adoption (see `migrations/migrate.py`'s `_ADOPTION_PROBES`), this turns that into a clear
+    startup failure naming exactly what's missing and where it comes from, instead of a confusing
+    `sqlite3.OperationalError` on the first `put()` mid-ingest."""
+    for (table, column), migration in _REQUIRED_COLUMNS.items():
+        cols = {row[1] for row in con.execute(f"PRAGMA table_info({table})")}
+        if column not in cols:
+            raise ContractError(
+                f"{db_path}: table {table!r} is missing column {column!r}, which "
+                f"{migration} adds. migrate() should have applied it -- this database may "
+                f"predate migrations/ or have been misclassified during adoption."
+            )
+
+
 class DocumentStore:
     """`DocumentStore(db_path, blob_dir)` — a SQLite file plus a filesystem root for blobs.
 
-    `db_path` is migrated (schema applied) automatically the first time it's opened; an
-    already-migrated path is just connected to (re-running the schema DDL against it is a bug,
-    per `migrations/migrate.py`'s own contract, not this module's to paper over).
+    `db_path` is migrated (schema applied) unconditionally on every open (T-DOC81: `migrate()` is
+    idempotent, so this is cheap and safe whether `db_path` is new, already up to date, or behind
+    the `migrations/` directory — the previous "only migrate if the file doesn't exist yet" guard
+    left no supported path for an additive migration to reach a populated database).
     """
 
     def __init__(self, db_path: str, blob_dir: str):
@@ -56,9 +79,8 @@ class DocumentStore:
         self._blob_dir.mkdir(parents=True, exist_ok=True)
 
         db_file = Path(db_path)
-        if not db_file.exists():
-            db_file.parent.mkdir(parents=True, exist_ok=True)
-            migrate(db_path)
+        db_file.parent.mkdir(parents=True, exist_ok=True)
+        migrate(db_path)
 
         self._con = sqlite3.connect(db_path)
         self._con.row_factory = sqlite3.Row
@@ -73,6 +95,8 @@ class DocumentStore:
         # `delete()` below is unaffected: it already deletes children before the parent row in one
         # transaction, which is the order FK enforcement requires anyway.
         self._con.execute("PRAGMA foreign_keys=ON;")
+
+        _verify_required_columns(self._con, db_path)
 
     # ----------------------------------------------------------------------------------------
     # put — atomic upsert by paper_id (idempotent, reflects changed content on re-put)
