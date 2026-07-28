@@ -131,6 +131,68 @@ def test_qdrant_filter_doc_type_paper_includes_legacy_points():
 
 
 # ==================================================================================================
+# T-DOC94 — the client's construction-time `timeout` was absent entirely, so the vendor library's
+# ~5s REST default applied to every call, including create_and_download_snapshot()'s
+# create_snapshot() (which has no per-call override): a live snapshot of the production collection
+# took 6.75s, marginally over that default, and `python -m app.snapshot` died mid-run. The defect
+# is an *absent* argument, invisible to any test that only exercises fast calls -- these two tests
+# inspect the actual kwargs a fake `QdrantClient` stand-in was constructed/called with, offline, no
+# live service needed (same "monkeypatch the module-level vendor name" trick this file already uses
+# for `subprocess.run` / `urllib.request.urlopen` above).
+# ==================================================================================================
+
+
+def test_client_is_constructed_with_an_explicit_generous_timeout(monkeypatch):
+    real = pytest.importorskip("rag.vector_index")
+
+    captured_kwargs = {}
+
+    class _FakeQdrantClient:
+        def __init__(self, **kwargs):
+            captured_kwargs.update(kwargs)
+
+        def collection_exists(self, name):
+            return True  # skip create_collection -- construction-timeout is all this test checks
+
+    monkeypatch.setattr(real, "QdrantClient", _FakeQdrantClient)
+
+    real.VectorIndex(host="localhost", port=6333, collection_name="papers", dim=2)
+
+    # An absent argument (the actual T-DOC94 bug) leaves "timeout" out of captured_kwargs entirely
+    # -- this must fail loudly, not silently pass with `captured_kwargs.get("timeout")`.
+    assert "timeout" in captured_kwargs
+    # Must be generous enough to cover a real bulk snapshot (measured at 6.75s against the
+    # production collection) with real headroom to spare -- not just "present but still tiny".
+    assert captured_kwargs["timeout"] >= 60
+
+
+def test_hybrid_search_pins_its_own_fail_fast_timeout_not_the_bulk_default(monkeypatch):
+    # The client's construction-time timeout above is generous (sized for bulk snapshot/rebuild
+    # calls) -- hybrid_search is the one call left on a live, synchronous, user-waiting path, so it
+    # must NOT silently inherit that generous ceiling; it pins its own short timeout explicitly.
+    real = pytest.importorskip("rag.vector_index")
+
+    calls = []
+
+    class _FakeSearchClient:
+        def query_points(self, *args, **kwargs):
+            calls.append(kwargs)
+            return SimpleNamespace(points=[])
+
+    adapter = real.VectorIndex.__new__(real.VectorIndex)
+    adapter._client = _FakeSearchClient()
+    adapter._collection = "papers"
+    adapter._hybrid_dense_weight = 0.5
+
+    adapter.hybrid_search(qvec=[1.0, 0.0], qtext="method", filters=None, k=10)
+
+    assert len(calls) == 2  # dense + sparse
+    for kwargs in calls:
+        assert kwargs.get("timeout") == real._SEARCH_TIMEOUT_S
+    assert real._SEARCH_TIMEOUT_S < real._CLIENT_TIMEOUT_S
+
+
+# ==================================================================================================
 # Layer 2 — cross-adapter contract (the same assertions run against the fake now, real later)
 # ==================================================================================================
 

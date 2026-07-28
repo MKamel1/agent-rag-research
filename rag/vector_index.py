@@ -60,6 +60,23 @@ _SCROLL_PAGE_SIZE = 100_000
 # but not slow (no WAN hop), so a generous fixed ceiling rather than a caller-tunable knob is
 # enough headroom without letting a wedged download hang the caller (app/snapshot.py) forever.
 _SNAPSHOT_DOWNLOAD_TIMEOUT_S = 900
+# T-DOC94: the client's own construction-time `timeout` had no explicit value, so the vendor
+# library's ~5s REST default applied to every call this adapter makes -- including
+# create_and_download_snapshot()'s create_snapshot() call below, which (unlike query_points/
+# upsert/delete/scroll) cannot receive a per-call timeout override -- the vendor client asserts its
+# kwargs are empty for that one method -- so the client's construction-time default is the only
+# lever it has. A live snapshot of the 372,741-point production collection measured 6.75s,
+# marginally over that ~5s default: not a hang, a bulk operation sharing a timeout sized for
+# ordinary search. Raised here to match _SNAPSHOT_DOWNLOAD_TIMEOUT_S's own headroom for the same
+# operation's other half (module constant, not Config -- see this module's `VectorIndex.__init__`
+# docstring for why).
+_CLIENT_TIMEOUT_S = 900
+# hybrid_search() is the one call in this adapter still on a live, synchronous, user-waiting path
+# (an MCP tool call) -- it keeps the pre-T-DOC94 ~5s fail-fast behavior explicitly instead of
+# silently inheriting _CLIENT_TIMEOUT_S's new generous ceiling, which is meant for the bulk
+# snapshot/rebuild calls. An outage should still surface to a live search caller in seconds, not
+# minutes.
+_SEARCH_TIMEOUT_S = 5
 
 # start_container()'s target -- confirmed via a live `docker ps` this session, same "no
 # docker-compose file exists to read this from" situation as `app/tei_lifecycle.py`'s own
@@ -137,6 +154,15 @@ class VectorIndex:
     """`VectorIndex(host, port, collection_name, dim, hybrid_dense_weight=0.5)` — connection
     params, not a pre-built client (keeps `qdrant_client` importable/nameable in exactly this one
     file, CONVENTIONS.md §1). `dim` is the dense vector size (`EmbedderInfo.dim` in production).
+
+    The client's own `timeout` is `_CLIENT_TIMEOUT_S`, not `Config` — T-DOC94 weighed the two:
+    `Config` (`contracts/config.py`) is CODEOWNERS-foundation, so a new field there needs the
+    `foundation-change` label and widens that file's blast radius; this value is an infra safety
+    ceiling (like `_SNAPSHOT_DOWNLOAD_TIMEOUT_S` right above it, already a module constant for the
+    same class of problem), not a scope/retrieval lever an operator tunes per run the way
+    `Config.top_k` or `Config.hybrid_dense_weight` are. It also has nowhere to land without a new
+    constructor parameter either way, since every caller already passes individual connection
+    params here rather than a `Config` instance.
     """
 
     def __init__(
@@ -151,7 +177,9 @@ class VectorIndex:
         # (including the composition root) pass connection params, never a pre-built client, so
         # `qdrant_client` never has to be imported/named anywhere else, not even in this module's
         # own test file.
-        self._client = QdrantClient(host=host, port=port, check_compatibility=False)
+        self._client = QdrantClient(
+            host=host, port=port, check_compatibility=False, timeout=_CLIENT_TIMEOUT_S
+        )
         self._host = host
         self._port = port
         self._collection = collection_name
@@ -229,6 +257,7 @@ class VectorIndex:
             query_filter=query_filter,
             limit=_FUSION_DEPTH_CAP,
             with_payload=True,
+            timeout=_SEARCH_TIMEOUT_S,
         ).points
         sparse_hits = self._call(
             self._client.query_points,
@@ -238,6 +267,7 @@ class VectorIndex:
             query_filter=query_filter,
             limit=_FUSION_DEPTH_CAP,
             with_payload=True,
+            timeout=_SEARCH_TIMEOUT_S,
         ).points
 
         dense_ranked_ids = self._ranked_ids(dense_hits)
@@ -327,6 +357,10 @@ class VectorIndex:
         generated *download* method tries to JSON-decode the raw snapshot bytes and breaks -- so
         the download itself is a plain streamed GET against the same REST endpoint via `urllib`
         (stdlib, not a second vendor dependency to allowlist).
+
+        `create_snapshot` itself has no per-call timeout parameter (T-DOC94) -- it relies entirely
+        on `self._client`'s own construction-time `_CLIENT_TIMEOUT_S`, which is sized for this
+        bulk operation, not the search-sized `_SEARCH_TIMEOUT_S` `hybrid_search` pins explicitly.
         """
         description = self._call(self._client.create_snapshot, self._collection)
         if description is None:
