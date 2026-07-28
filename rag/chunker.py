@@ -171,14 +171,18 @@ class Chunker:
         # `_split_oversized`) is prepended into the body text only -- it never becomes `first`,
         # so anchor/parent_id/section_path stay pinned to this chunk's own true start.
         first = group[0]
-        # Only the group's own first block can carry the duplicate heading (see
-        # `_strip_duplicate_heading`) -- `overlap` and later blocks in `group` are never a
-        # section's opening heading, so they're joined in unchanged. `first.text` itself (used
-        # for `anchor.snippet` below) is untouched -- this only affects what goes into `body`.
-        group_texts = [_strip_duplicate_heading(first.text, first.section_path)]
-        group_texts += [b.text for b in group[1:]]
-        body_blocks = ([overlap.text] if overlap else []) + [t for t in group_texts if t]
-        body = "\n\n".join(body_blocks)
+        # The duplicate-heading check (`_strip_duplicate_heading`) must run on whichever block
+        # actually opens `body` -- that's `overlap` when present (it's prepended below), NOT
+        # always `first`. A split's first sub-group can be the section heading alone (nothing
+        # else fit before the very next block blew the size cap); that heading-only block then
+        # becomes the *next* sub-chunk's `overlap`, carried forward as its own opening line. Only
+        # ever the one block that opens `body` is checked -- `first.text` itself (used for
+        # `anchor.snippet` below) is untouched either way.
+        raw_body_blocks = ([overlap.text] if overlap else []) + [first.text] + [
+            b.text for b in group[1:]
+        ]
+        raw_body_blocks[0] = _strip_duplicate_heading(raw_body_blocks[0], first.section_path)
+        body = "\n\n".join(t for t in raw_body_blocks if t)
         text = f"{title}\n{first.section_path}\n\n{body}"
         anchor = Anchor(
             paper_id=paper_id,

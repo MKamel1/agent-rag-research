@@ -415,6 +415,37 @@ def test_overlap_inert_under_expansion_off():
     assert "ALPHA" not in chunks[1].text
 
 
+# ---------------------------------------------------------------------------
+# T-DOC93: the heading-dedup fix (T-DOC62) only inspects `first.text` -- but when a split's
+# `overlap` block is present, the body's TRUE opening line is `overlap.text`, prepended ahead of
+# `first.text` in `_build_chunk`. A heading-only first sub-group (nothing else before the split)
+# becomes the borrowed `overlap` for the next sub-chunk, and its heading text -- byte-identical
+# to `section_path` -- lands as the body's real first line unchecked, duplicating the
+# title+section_path prefix. Reproduces the live-corpus residue (34 papers, 0.01% of chunks).
+# ---------------------------------------------------------------------------
+
+
+def test_overlap_carrying_the_section_heading_is_not_duplicated_in_the_next_sub_chunk():
+    heading_path = "6 Numerical Simulations"
+    blocks = [
+        # A heading-only block: text == section_path, and small enough alone to be borrowable
+        # overlap. Immediately followed by a single block so large that adding it to the heading
+        # already exceeds the cap -- forcing a split right after the heading, with nothing else
+        # in that first sub-group.
+        _block(0, heading_path, "prose", heading_path),
+        _long_prose_block(1, 1600, heading_path),
+    ]
+    chunks = _chunk(_parsed_doc(blocks=blocks))
+    assert len(chunks) == 2, "sanity check: this fixture must actually trigger a split"
+    # chunks[0] is the heading-only sub-chunk: correctly stripped down to no body.
+    # chunks[1] borrows chunks[0]'s only block (the heading) forward as overlap -- that borrowed
+    # heading must be deduped against the title+section_path prefix exactly like a real first
+    # block would be, not joined in raw.
+    assert chunks[1].text.count(heading_path) == 1, (
+        "the borrowed overlap block duplicated the section heading in the chunk body"
+    )
+
+
 def test_chunk_ids_stay_sequential_and_unique_with_overlap():
     blocks = [
         _sentinel_prose_block(0, 100, "ALPHA"),
