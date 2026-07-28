@@ -314,5 +314,5 @@ def test_main_logs_resolved_paths(tmp_path, monkeypatch, caplog):
     main()
 
     assert f"db_path={cfg.db_path}" in caplog.text
+    assert f"blob_dir={cfg.blob_dir}" in caplog.text
     assert f"collection={cfg.collection}" in caplog.text
-    assert f"drop_in_dir={cfg.drop_in_dir}" in caplog.text

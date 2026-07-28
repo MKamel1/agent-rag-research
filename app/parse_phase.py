@@ -15,11 +15,14 @@ measured +63% throughput fix this enables (`.phase0-data/pass1-gpu-underutilizat
 """
 
 import argparse
+import logging
 
 from app.assembly import build_ingestion_orchestrator, harvest_refs
 from contracts.config import Config
 from contracts.harvester import PaperRef
 from rag.config import load_config
+
+logger = logging.getLogger(__name__)
 
 
 def _shard(refs: list[PaperRef], shard_index: int, shard_count: int) -> list[PaperRef]:
@@ -51,6 +54,14 @@ def _run_parse_phase(cfg: Config, *, shard_index: int = 0, shard_count: int = 1)
     throwaway location by writing its own throwaway `config.yaml` and running from that directory
     (see `rag/test_composition_e2e.py`).
     """
+    # T-DOC89 §4: report what was resolved, same pattern as app/delete_docs.py -- `cfg` here is
+    # already this subprocess's own final, effective config (its own load_config() call in
+    # __main__, or the scratch override config app/ingest.py's --limit/--scratch path spawns it
+    # against via cwd -- either way, nothing downstream of this point changes it further).
+    logger.info(
+        "parse_phase: resolved db_path=%s blob_dir=%s collection=%s",
+        cfg.db_path, cfg.blob_dir, cfg.collection,
+    )
     orchestrator = build_ingestion_orchestrator(
         cfg, db_path=cfg.db_path, blob_dir=cfg.blob_dir, collection=cfg.collection,
     )
@@ -69,5 +80,6 @@ def _parse_args() -> argparse.Namespace:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     args = _parse_args()
     _run_parse_phase(load_config(), shard_index=args.shard_index, shard_count=args.shard_count)

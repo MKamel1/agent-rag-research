@@ -666,8 +666,8 @@ def main() -> None:
     # T-DOC89 §4: report what was resolved, same pattern as app/delete_docs.py -- an operator
     # standing in the wrong directory should see where this process actually pointed, not guess.
     logger.info(
-        "build_corpus: resolved db_path=%s collection=%s drop_in_dir=%s",
-        cfg.db_path, cfg.collection, cfg.drop_in_dir,
+        "build_corpus: resolved db_path=%s blob_dir=%s collection=%s",
+        cfg.db_path, cfg.blob_dir, cfg.collection,
     )
     # Matches `app.ingest`'s own convention: no explicit --data-dir flag, the process's cwd IS the
     # data dir (the dashboard controller launches both this way, `cwd=str(data_dir)`).

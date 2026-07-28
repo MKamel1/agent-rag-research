@@ -245,8 +245,8 @@ def main() -> None:
     # T-DOC89 §4: report what was resolved, same pattern as app/delete_docs.py -- an operator
     # standing in the wrong directory should see where this process actually pointed, not guess.
     logger.info(
-        "snapshot: resolved db_path=%s collection=%s drop_in_dir=%s",
-        cfg.db_path, cfg.collection, cfg.drop_in_dir,
+        "snapshot: resolved db_path=%s blob_dir=%s collection=%s",
+        cfg.db_path, cfg.blob_dir, cfg.collection,
     )
     backup_root = Path(args.backup_root) if args.backup_root else default_backup_root(cfg)
 

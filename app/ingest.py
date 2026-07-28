@@ -76,6 +76,7 @@ it until they're restarted.
 """
 
 import argparse
+import logging
 import shutil
 import sqlite3
 import subprocess
@@ -93,6 +94,8 @@ from app.assembly import build_ingestion_orchestrator, harvest_refs
 from contracts.config import Config
 from migrations.migrate import migrate
 from rag.config import load_config
+
+logger = logging.getLogger(__name__)
 
 # Whole-run mutual-exclusion lock -- see module docstring "Whole-run lock". OG-49#2: the lock
 # FILE NAME stays this same short literal, but the path it's resolved against is now `db_path`'s
@@ -333,6 +336,22 @@ def _effective_config(cfg: Config, args: argparse.Namespace) -> Config:
     return Config.model_validate(cfg.model_copy(update=updates).model_dump())
 
 
+def _log_resolved_paths(cfg: Config) -> None:
+    """T-DOC89 §4: reports the paths this run will actually touch. MUST be called with the
+    EFFECTIVE config (`_effective_config`'s return value), never the plain `load_config()` result
+    -- `--limit`/`--scratch`/`--paper-ids-file` and the dashboard's own per-run override
+    `config.yaml` can all redirect `db_path`, and logging the pre-override value would print a
+    database this run isn't actually going to touch, which is worse than not logging at all: it
+    would look like verification while being wrong. This is exactly the OG-49#1 incident (an
+    overridden dashboard run's `db_path` was silently redirected into the repo tree) that this
+    line exists to make visible -- but only against the effective value.
+    """
+    logger.info(
+        "ingest: resolved db_path=%s blob_dir=%s collection=%s",
+        cfg.db_path, cfg.blob_dir, cfg.collection,
+    )
+
+
 def _write_override_config_dir(cfg: Config) -> Path:
     """T-DOC45/T-DOC46: Pass 1 runs `python -m app.parse_phase` as a separate process (two-phase
     VRAM isolation, ARCHITECTURE.md §3) that loads its own `config.yaml` fresh from its cwd -- it
@@ -419,11 +438,13 @@ def _parse_args() -> argparse.Namespace:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     cfg = load_config()
     args = _parse_args()
     _validate_parse_workers(args.parse_workers)
 
     cfg = _effective_config(cfg, args)
+    _log_resolved_paths(cfg)
 
     # Whole-run lock -- see module docstring "Whole-run lock" and `_ingest_lock_path`'s own
     # docstring (OG-49#2: resolved absolute against the EFFECTIVE db_path's directory, not a bare

@@ -80,9 +80,23 @@ reviewer doesn't read it as a violation.
 
 ### 4. Always report what was resolved
 
-Every `app/` entrypoint logs its resolved absolute `db_path`, `collection`, and `drop_in_dir` at
+Every `app/` entrypoint logs its resolved absolute `db_path`, `blob_dir`, and `collection` at
 startup. `app/delete_docs.py` already does exactly this — added after a review caught it deleting
 from the wrong database — so this generalizes a proven pattern.
+
+**Correction (part 2 review):** this section originally said `db_path`/`collection`/`drop_in_dir`,
+which disagreed with its own cited example (`delete_docs.py` logs `db_path`/`blob_dir`/
+`collection`). Resolved in favor of the working precedent: `db_path`/`blob_dir`/`collection`
+everywhere, with `drop_in_dir` added ONLY in `app/ingest_local.py`, where it's the field that
+actually decides that module's behavior (the directory it scans).
+
+Also: "every `app/` entrypoint" means every entrypoint with real startup logic to log from,
+including ones with no `main()` function — `app/ingest.py`, `app/parse_phase.py`, and
+`app/serve.py` all do their real work directly in a bare `if __name__ == "__main__":` block (or,
+for `app/serve.py`, at module import time) rather than inside a `main()`, and are covered the same
+as every other entrypoint. `app/ingest.py` in particular must log the EFFECTIVE config (after
+`_effective_config`'s CLI/dashboard-override handling), not the plain `load_config()` result —
+logging the pre-override value would print a database the run isn't going to touch (OG-49#1).
 
 ### 5. T-DOC65 — a supported way to produce the real config
 

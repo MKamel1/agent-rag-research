@@ -474,6 +474,24 @@ def test_effective_config_scratch_and_limit_combine():
     assert effective.corpus_cap == 7
 
 
+def test_log_resolved_paths_logs_db_path_blob_dir_collection(caplog):
+    # T-DOC89 §4: __main__ must call this with the EFFECTIVE (post-_effective_config) config, not
+    # the plain load_config() result -- covered here by simply checking the function logs whatever
+    # Config it's handed; __main__ wiring itself is a one-line call, not separately unit-testable
+    # without executing the whole script.
+    cfg = Config(
+        focus_area_queries=["x"], db_path="/scratch/papers.db", blob_dir="/scratch/blobs",
+        collection="scratch-collection",
+    )
+    caplog.set_level("INFO")
+
+    ingest_mod._log_resolved_paths(cfg)
+
+    assert "db_path=/scratch/papers.db" in caplog.text
+    assert "blob_dir=/scratch/blobs" in caplog.text
+    assert "collection=scratch-collection" in caplog.text
+
+
 # --- T-DOC45/T-DOC46: Pass-1 subprocess override channel -----------------------------------
 
 

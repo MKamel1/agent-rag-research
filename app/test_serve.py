@@ -162,6 +162,32 @@ def test_build_mcp_server_receives_config_values_not_os_environ(monkeypatch):
     assert captured["kwargs"].get("collection") == "cfg-col"
 
 
+def test_module_level_logs_resolved_paths(monkeypatch, caplog):
+    # T-DOC89 §4: the log line fires at module IMPORT time (this module has no main() to hook a
+    # line into -- every real statement runs at the top level), so caplog's level must be set
+    # BEFORE triggering the reload below, not after -- setting it inside a shared serve_module
+    # fixture's body would be too late for THIS test (the fixture's own reload already ran).
+    monkeypatch.setattr(
+        rag.config,
+        "load_config",
+        lambda *a, **k: Config(
+            focus_area_queries=["x"], db_path="/data/papers.db", blob_dir="/data/blobs",
+            collection="papers",
+        ),
+    )
+    monkeypatch.setattr(app.assembly, "build_mcp_server", lambda *a, **k: _FakeMcpServer())
+    caplog.set_level("INFO")
+
+    if "app.serve" in sys.modules:
+        importlib.reload(sys.modules["app.serve"])
+    else:
+        importlib.import_module("app.serve")
+
+    assert "db_path=/data/papers.db" in caplog.text
+    assert "blob_dir=/data/blobs" in caplog.text
+    assert "collection=papers" in caplog.text
+
+
 def test_data_dir_resolves_db_path_and_blob_dir_under_it(tmp_path, monkeypatch):
     """`--data-dir DIR`: config.yaml is loaded from DIR, and db_path/blob_dir resolve absolute
     against DIR (not cwd) -- the deployment path the real MCP registration uses."""
