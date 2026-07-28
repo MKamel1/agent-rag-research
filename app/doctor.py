@@ -113,9 +113,9 @@ _MIN_FREE_DISK_GIB = 5.0
 _MIN_FREE_VRAM_MIB = 2000
 _HEALTH_CHECK_TIMEOUT_SECONDS = 5.0
 # T-DOC66: generous relative to the HTTP health-check timeout above -- this spawns a real `conda`/
-# `python` subprocess and imports app.serve's full composition root (httpx clients, TeiEmbedder,
-# etc.), not a single socket round trip. No network calls happen before list_tools responds, so
-# this is bounded by process/import startup, not by any downstream service being slow.
+# `python` subprocess and imports app.serve's full composition root (every client object its
+# query-path services need), not a single socket round trip. No network calls happen before
+# list_tools responds, so this is bounded by process/import startup, not a slow downstream service.
 _MCP_CHECK_TIMEOUT_SECONDS = 20.0
 
 
@@ -218,15 +218,17 @@ async def _launch_and_list_tools(*, cwd: str, timeout: float) -> list[str]:
     """Spawns `python -m app.serve` over real MCP stdio and returns the tool names it advertises.
 
     Same subprocess spelling as `app.mcp_verify_client`'s own manual-verification tool
-    (`command=sys.executable, args=["-m", "app.serve"]`), but NOT by importing that module's
-    params -- its own builder also forwards the full process environment (`env=dict(os.environ)`),
-    and re-exposing that here would mean spelling `os.environ` in a NEW `app/` line, which
-    `ci/checks/env_leak.py` check (d) flags wherever it lands, not just at its original site (see
-    that check's own module docstring). `env` is left unset here (the MCP SDK's own curated
-    safe-subset default) instead -- sufficient because `-m app.serve` resolves its own package
-    imports via `cwd` (Python's `-m` semantics add `cwd` to `sys.path[0]`), not via `PYTHONPATH`,
-    as long as `cwd` names a real checkout root. True for `check_mcp_server`'s default (the calling
-    process's own cwd, docs/RUNBOOK.md's documented "run from the repo root" convention).
+    (`command=sys.executable, args=["-m", "app.serve"]`), but built independently rather than
+    importing that module's params builder -- that builder also forwards the entire process
+    environment to the child, and copying that one piece of it here would repeat a
+    process-environment read outside `rag/config.py` (CONVENTIONS.md §3 / `ci/checks/env_leak.py`
+    check (d) flags that specific read wherever it lands in a diff, not just at its original site
+    -- see that check's own module docstring). This check leaves `env` unset instead (the MCP
+    SDK's own curated safe-subset default) -- sufficient because `-m app.serve` resolves its own
+    package imports via `cwd` (Python's `-m` semantics add `cwd` to `sys.path[0]`), not via
+    `PYTHONPATH`, as long as `cwd` names a real checkout root. True for `check_mcp_server`'s
+    default (the calling process's own cwd, docs/RUNBOOK.md's documented "run from the repo root"
+    convention).
     """
     from mcp import ClientSession, StdioServerParameters
     from mcp.client.stdio import stdio_client
@@ -264,7 +266,12 @@ def check_mcp_server(
     )
     try:
         tool_names = list_tools()
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 -- deliberately broad, see docstring
+        # A real subprocess+protocol round trip fails in too many shapes to enumerate (spawn
+        # OSError, asyncio.TimeoutError, an mcp protocol/handshake error, an import-time crash
+        # inside the child surfacing as anything) -- same "report it as an issue, don't crash
+        # doctor itself" reasoning every OTHER check in this module already gives a named issue
+        # for, just with a wider exception surface than an HTTP health ping has.
         return PreflightIssue("mcp server", f"failed to launch or answer list_tools: {exc!r}")
     if not tool_names:
         return PreflightIssue("mcp server", "launched but advertised zero tools")

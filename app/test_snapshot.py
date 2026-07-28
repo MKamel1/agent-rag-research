@@ -283,8 +283,8 @@ def test_default_backup_root_is_a_backups_dir_next_to_db_path(tmp_path):
 class _FakeVectorIndexClass:
     """Stands in for `rag.vector_index.VectorIndex` itself (not just an instance) -- `main()`
     imports and constructs the real class locally, so this needs the same constructor signature,
-    never a live Qdrant connection (the real `VectorIndex.__init__` calls `_ensure_collection()`,
-    a real network round trip)."""
+    never a live connection to the real vector store (the real `VectorIndex.__init__` calls
+    `_ensure_collection()`, a real network round trip)."""
 
     def __init__(self, host, port, collection_name, dim, hybrid_dense_weight=0.5):
         self.collection_name = collection_name
@@ -296,8 +296,8 @@ class _FakeVectorIndexClass:
 def test_main_logs_resolved_paths(tmp_path, monkeypatch, caplog):
     # T-DOC89 §4: an operator standing in the wrong directory should see where this process
     # actually pointed, not guess. VectorIndex is faked (see _FakeVectorIndexClass) so this never
-    # makes a real Qdrant connection; sqlite/blob backup steps run for real against scratch tmp
-    # paths only, never a real corpus.
+    # makes a real vector-store connection; sqlite/blob backup steps run for real against scratch
+    # tmp paths only, never a real corpus.
     db_path = tmp_path / "papers.db"
     migrate(str(db_path))
     blob_dir = tmp_path / "blobs"
