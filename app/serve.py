@@ -7,8 +7,9 @@ which is all `rag/test_composition_e2e.py` proves.
 (argparse, not an env var -- CONVENTIONS.md §3 reserves process-environment reads for
 `rag/config.py` alone; this composition root used to violate that with `RAG_DB_PATH`/
 `RAG_BLOB_DIR`/`RAG_COLLECTION` env-var reads, an audit finding fixed here). Omit `--data-dir` to
-fall back to plain `load_config()` (config.yaml resolved relative to cwd) -- the same default
-`app/ingest.py` uses. `collection` always comes from the loaded Config, never a separate override.
+fall back to plain `load_config()` (T-DOC89 §3 discovery: `RAG_CONFIG` -> `config.yaml` in cwd ->
+walk up) -- the same default `app/ingest.py` uses. `collection` always comes from the loaded
+Config, never a separate override.
 
 `--data-dir` also fails loudly (clear stderr message, nonzero exit) if the resolved `db_path` file
 doesn't exist, rather than silently opening/creating an empty database at the wrong path -- the
@@ -44,7 +45,7 @@ def _parse_args() -> argparse.Namespace:
         "--data-dir", default=None,
         help="Directory holding this corpus's config.yaml. db_path/blob_dir resolve absolute "
              "against it; collection comes from that config.yaml. Omit to use plain load_config() "
-             "(config.yaml resolved relative to cwd), same default app/ingest.py uses.",
+             "(T-DOC89 §3 discovery), same default app/ingest.py uses.",
     )
     # parse_known_args: this module also loads under pytest (app/test_serve.py reloads it
     # in-process), whose own argv (test paths, -q, ...) isn't --data-dir's to reject.

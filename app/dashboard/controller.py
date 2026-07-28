@@ -458,13 +458,24 @@ def _load_base_config(data_dir: Path) -> Config:
     (below) resolved relative fields against the DASHBOARD SERVER PROCESS's own cwd -- not the
     corpus's actual data dir -- misdirecting every edited run's `papers.db`/`blobs` while it kept
     upserting into the real, shared vector-store collection (orphan vector points with no matching
-    row in the misdirected db). T-DOC89 §2 additionally moved the hardcoded repo-root fallback off
-    the now-renamed tracked template (`config.example.yaml`) onto real discovery -- a hardcoded
-    `_REPO_ROOT / "config.yaml"` would only ever have found that template."""
+    row in the misdirected db).
+
+    T-DOC89 part-1-review Critical 1: §1 made `load_config()` always return ALREADY-ABSOLUTE path
+    fields, resolved against wherever the loaded file's own directory is. In the fallback branch
+    that "own directory" is whatever discovery happened to find (RAG_CONFIG / cwd / walk-up) --
+    some OTHER corpus's location, unrelated to `data_dir`. Handing those absolute paths to
+    `_resolve_override_config` below made its `(data_dir / value)` join a no-op (already absolute
+    -> passed through unchanged), silently reopening the exact OG-49#1 bug: an edited run's
+    `db_path` landing wherever discovery's fallback config lives, not under `data_dir`. Path
+    fields are reset back to the plain `Config` class defaults here so `_resolve_override_config`
+    can root them under `data_dir` as originally intended -- only the fallback's non-path levers
+    (`focus_area_queries`, `ordering`, etc.) are actually meant to carry over."""
     data_dir_config = data_dir / "config.yaml"
     if data_dir_config.exists():
         return load_config(data_dir_config)
-    return load_config()
+    cfg = load_config()
+    defaults = {field: Config.model_fields[field].default for field in _OVERRIDE_PATH_FIELDS}
+    return cfg.model_copy(update=defaults)
 
 
 def _resolve_override_config(cfg: Config, data_dir: Path) -> Config:

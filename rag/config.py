@@ -64,8 +64,14 @@ def _resolve_paths(data: dict, base_dir: Path) -> None:
 
 def find_config_path(explicit: str | Path | None = None) -> Path:
     """Discovery precedence (T-DOC89 §3): `explicit` -> `RAG_CONFIG` env var -> `config.yaml` in
-    the process cwd -> walk up parent directories -> `ContractError` naming every location tried
-    and both ways to fix it.
+    the process cwd -> walk up parent directories (stopping at the repo boundary, the first
+    ancestor containing `.git` -- part-1-review item 6: this workspace has sibling projects one
+    directory up, so walking past the repo root risks silently adopting an unrelated project's
+    config instead of raising) -> `ContractError` naming every location tried and both ways to fix
+    it. Every returned path is `.resolve()`d, including the cwd/walk-up rungs (part-1-review
+    Critical 3) -- a symlinked `config.yaml` must describe itself relative to its real target's
+    directory, not the symlink's, or §1's own path resolution silently re-roots into the wrong
+    place.
 
     `explicit`, when given, is trusted as-is (resolved to absolute, not existence-checked here) --
     `load_config`'s `open()` raises the natural `FileNotFoundError` for a bad explicit path, same
@@ -92,8 +98,24 @@ def find_config_path(explicit: str | Path | None = None) -> Path:
     for directory in (cwd, *cwd.parents):
         candidate = directory / _CONFIG_FILENAME
         if candidate.is_file():
-            return candidate
+            # T-DOC89 part-1-review Critical 3: `.resolve()` follows a symlink to its real target
+            # -- the design's own rollout mechanism (a gitignored repo-root config.yaml symlinked
+            # to the real data-dir config) is exactly this shape. Without it, §1's own path
+            # resolution (against `config_path.parent`) would use the SYMLINK's directory, not the
+            # real config's directory, silently re-rooting every relative path back into the repo
+            # tree -- the identical OG-33 failure this whole ticket exists to kill, just moved one
+            # level down. The explicit/RAG_CONFIG rungs above already `.resolve()`; this makes all
+            # three rungs agree.
+            return candidate.resolve()
         tried.append(str(candidate))
+        # T-DOC89 part-1-review item 6: stop at the repo boundary -- this workspace has sibling
+        # projects one directory up (`~/ai-projects/*`), each plausibly with its own config.yaml;
+        # walking past this repo's root would silently adopt an unrelated project's config
+        # instead of raising the loud "nowhere found" error. A directory actually inside a repo
+        # always has `.git` somewhere on its own walk-up before the filesystem root, so this only
+        # gives up the walk early when cwd isn't inside a git repo at all -- same as today.
+        if (directory / ".git").exists():
+            break
 
     tried_block = "\n".join(f"  - {t}" for t in tried)
     raise ContractError(

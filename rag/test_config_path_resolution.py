@@ -28,10 +28,14 @@ def _write_config(path: Path, **fields) -> Path:
 # --- §1: a config resolves against its own directory, not cwd -----------------------------------
 
 
-def test_same_config_file_loaded_from_two_cwds_yields_identical_absolute_paths(tmp_path, monkeypatch):
+def test_same_config_file_loaded_from_two_cwds_yields_identical_absolute_paths(
+    tmp_path, monkeypatch
+):
     config_dir = tmp_path / "somewhere"
     config_dir.mkdir()
-    config_path = _write_config(config_dir / "config.yaml", db_path="papers.db", drop_in_dir="drop_in")
+    config_path = _write_config(
+        config_dir / "config.yaml", db_path="papers.db", drop_in_dir="drop_in"
+    )
 
     other_cwd_a = tmp_path / "cwd_a"
     other_cwd_a.mkdir()
@@ -166,6 +170,52 @@ def test_walks_up_parent_directories_when_cwd_has_none(tmp_path, monkeypatch):
     assert found == ancestor_path.resolve()
 
 
+def test_walk_up_stops_at_the_repo_boundary_not_further(tmp_path, monkeypatch):
+    """part-1-review item 6: an unbounded walk-up risks silently adopting an unrelated ancestor
+    directory's config.yaml (this workspace has sibling projects one directory up) -- the walk
+    must stop at the first ancestor containing `.git`, even though that ancestor itself has no
+    config.yaml of its own."""
+    monkeypatch.delenv("RAG_CONFIG", raising=False)
+    # an unrelated config.yaml OUTSIDE the fake repo -- must never be found or even tried
+    _write_config(tmp_path / "config.yaml", db_path="unrelated.db")
+
+    fake_repo = tmp_path / "fake_repo"
+    (fake_repo / ".git").mkdir(parents=True)
+    deep_cwd = fake_repo / "a" / "b"
+    deep_cwd.mkdir(parents=True)
+    monkeypatch.chdir(deep_cwd)
+
+    with pytest.raises(ContractError) as exc_info:
+        find_config_path(None)
+
+    message = str(exc_info.value)
+    assert str(fake_repo.resolve() / "config.yaml") in message
+    assert str(tmp_path.resolve() / "config.yaml") not in message
+
+
+def test_symlinked_config_resolves_paths_against_its_real_target_directory(tmp_path, monkeypatch):
+    """T-DOC89 part-1-review Critical 3: the design's own rollout mechanism is a gitignored
+    repo-root config.yaml symlinked to the real data-dir config. Loading it via the cwd discovery
+    rung must resolve its OWN relative paths against the REAL target's directory, not the
+    symlink's -- otherwise §1 silently re-roots the corpus back into the repo tree (identical to
+    the explicit-path load of the real file, which is the ground truth here)."""
+    real_dir = tmp_path / "real_data_dir"
+    real_dir.mkdir()
+    real_config = _write_config(real_dir / "config.yaml", db_path="papers.db")
+
+    fake_repo_root = tmp_path / "fake_repo_root"
+    fake_repo_root.mkdir()
+    (fake_repo_root / "config.yaml").symlink_to(real_config)
+
+    monkeypatch.delenv("RAG_CONFIG", raising=False)
+    monkeypatch.chdir(fake_repo_root)
+
+    via_cwd_symlink = load_config()
+    via_explicit_real_path = load_config(real_config)
+
+    assert via_cwd_symlink.db_path == via_explicit_real_path.db_path == str(real_dir / "papers.db")
+
+
 def test_load_config_with_no_args_uses_discovery(tmp_path, monkeypatch):
     """End-to-end: load_config()'s default (no path) goes through find_config_path, not a bare
     cwd-relative open()."""
@@ -177,7 +227,9 @@ def test_load_config_with_no_args_uses_discovery(tmp_path, monkeypatch):
     assert cfg.db_path == str(tmp_path / "cwd.db")
 
 
-def test_no_config_anywhere_raises_contract_error_naming_every_location_tried(tmp_path, monkeypatch):
+def test_no_config_anywhere_raises_contract_error_naming_every_location_tried(
+    tmp_path, monkeypatch
+):
     monkeypatch.delenv("RAG_CONFIG", raising=False)
     deep_cwd = tmp_path / "isolated" / "nested"
     deep_cwd.mkdir(parents=True)

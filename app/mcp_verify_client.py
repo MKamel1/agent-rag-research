@@ -10,8 +10,10 @@ Usage:
 
 Spawns `python -m app.serve` as a real child process over stdio (`cwd=_REPO_ROOT`, fixed below), so
 the child resolves `config.yaml` from THIS repo's root via `app.serve`'s plain `load_config()`
-fallback, then calls `semantic_search`, then calls `get_span` on the top hit's anchor to prove the
-citation resolves back to real stored text — the full query -> citation round trip, over the wire.
+fallback (T-DOC89 §3 discovery: `RAG_CONFIG` -> `config.yaml` in `_REPO_ROOT` -> walk up -- an
+operator with `RAG_CONFIG` set gets that instead of the repo root), then calls `semantic_search`,
+then calls `get_span` on the top hit's anchor to prove the citation resolves back to real stored
+text — the full query -> citation round trip, over the wire.
 
 The RAG_DB_PATH/RAG_BLOB_DIR/RAG_COLLECTION env vars this docstring used to tell you to export no
 longer do anything -- `app.serve` doesn't read the process environment at all now (CONVENTIONS.md

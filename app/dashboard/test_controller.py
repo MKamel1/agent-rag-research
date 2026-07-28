@@ -1366,9 +1366,16 @@ def test_override_run_resolves_db_path_under_data_dir_not_repo_root(tmp_path):
         _cleanup(manifest)
 
 
-def test_start_falls_back_to_repo_root_config_when_data_dir_has_none(tmp_path):
-    """No data_dir/config.yaml (e.g. a fresh/test data dir) -- must fall back to the repo-root
-    config, same as every other existing test in this file relies on implicitly."""
+def test_start_falls_back_to_discovery_when_data_dir_has_none(tmp_path, monkeypatch):
+    """No data_dir/config.yaml (e.g. a fresh/test data dir) -- must fall back to discovery
+    (T-DOC89 §3), here pinned via an explicit RAG_CONFIG rather than relying on the ambient
+    conftest.py default (which only incidentally also points at config.example.yaml).
+
+    T-DOC89 part-1-review Critical 1: the fallback config's OWN path fields (already absolute,
+    T-DOC89 §1, resolved against RAG_CONFIG's directory -- NOT data_dir) must NOT leak into the
+    override -- every path field written to the override config.yaml must still resolve under
+    data_dir, never under wherever the fallback config happened to live."""
+    monkeypatch.setenv("RAG_CONFIG", str(controller_mod._REPO_ROOT / "config.example.yaml"))
     calls = []
     base_cfg = controller_mod.load_config(controller_mod._REPO_ROOT / "config.example.yaml")
     manifest = controller_mod.start(
@@ -1378,6 +1385,12 @@ def test_start_falls_back_to_repo_root_config_when_data_dir_has_none(tmp_path):
         override_dir = calls[0]["cwd"]
         written_cfg = controller_mod.load_config(override_dir / "config.yaml")
         assert written_cfg.focus_area_queries == base_cfg.focus_area_queries + ["zzz-fallback-test"]
+        assert Path(written_cfg.db_path).is_relative_to(tmp_path), (
+            f"db_path {written_cfg.db_path!r} must resolve under data_dir={tmp_path}, not "
+            "wherever the fallback (discovered) config happens to live"
+        )
+        assert Path(written_cfg.blob_dir).is_relative_to(tmp_path)
+        assert Path(written_cfg.pdf_cache_dir).is_relative_to(tmp_path)
     finally:
         _cleanup(manifest)
 

@@ -93,8 +93,8 @@ gpu_lock_path: ".gpu.lock"
 parse_batch_size: 4
 
 # composition-root levers (T-DOC29, contracts/config.py) -- V0 defaults, kept as portable relative
-# paths (resolved against whatever cwd/--data-dir a composition root uses); never hardcode an
-# absolute corpus location here.
+# paths (T-DOC89 §1: resolved against THIS FILE'S OWN DIRECTORY once copied to a real config.yaml
+# and loaded, never the process's cwd); never hardcode an absolute corpus location here.
 db_path: "papers.db"
 blob_dir: "blobs"
 collection: "papers"
