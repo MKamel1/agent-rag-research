@@ -8,8 +8,9 @@ AND against an already-migrated, populated database (see T-DOC81 note in `migrat
 Postcondition: the database at `path` has WAL journal mode active and contains exactly the tables
 defined across every `000N_*.sql` file in this directory (0001_init.sql's V0 tables — papers,
 blocks, chunks, summaries, ingest_state, quarantine — plus 0002_ingest_checkpoint.sql's
-`ingest_checkpoint`) — no V1+ tables (DATA-CONTRACTS.md "SQLite schema": V1 tables are named in a
-comment only, never created here) — plus the `schema_version` tracking table this file itself owns.
+`ingest_checkpoint` and 0003_quarantine_diagnostics.sql's `quarantine_diagnostics`) — no V1+ tables
+(DATA-CONTRACTS.md "SQLite schema": V1 tables are named in a comment only, never created here) —
+plus the `schema_version` tracking table this file itself owns.
 
 This script is intentionally a thin, literal executor of the numbered `.sql` files in this
 directory — it does not contain any DDL of its own, other than `schema_version` (see below). If a
@@ -140,7 +141,18 @@ def migrate(db_path: str) -> None:
         for schema_file in _schema_files():
             if schema_file.name in applied:
                 continue
-            conn.executescript(schema_file.read_text())
+            # T-DOC81 review fix: executescript() runs in autocommit -- each statement in the file
+            # commits as it goes, with NO transaction wrapping the whole script. A file with more
+            # than one statement (0004's two ALTERs) that fails partway through then leaves the
+            # earlier statements permanently committed while the file itself is never recorded --
+            # every later migrate() call dies on that already-applied prefix, forever (this is what
+            # actually happened to 0004 in production). Wrapping the script in an explicit
+            # BEGIN/COMMIT makes it one transaction: SQLite DDL is transactional, so a mid-script
+            # failure leaves the transaction open and unwound by the `finally: conn.close()` below
+            # (closing a connection with an open transaction rolls it back) -- the file ends up
+            # cleanly unapplied and unrecorded, exactly what "record after success" is supposed to
+            # mean. DO NOT remove this wrapper as redundant-looking noise.
+            conn.executescript(f"BEGIN;\n{schema_file.read_text()}\nCOMMIT;")
             _record_applied(conn, schema_file.name)
             conn.commit()
     finally:

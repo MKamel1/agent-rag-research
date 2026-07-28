@@ -18,6 +18,7 @@ is what "round-trips a whole PaperRecord" means against this schema.
 
 import sqlite3
 from datetime import date
+from pathlib import Path
 
 import pytest
 
@@ -32,6 +33,9 @@ from contracts.provenance import Anchor, Block  # noqa: E402
 
 PAPER_ID = "2506.01234"
 BBOX = (0.0, 0.0, 100.0, 200.0)
+# T-DOC81 review fixes below build DBs at older schema versions by applying the real migration
+# files directly with sqlite3 (bypassing migrate()) -- never a real database, always tmp_path.
+MIGRATIONS_DIR = Path(__file__).parent.parent / "migrations"
 
 
 # --- local factory helpers (contracts/conftest.py fixtures are scoped to contracts/, not rag/) ---
@@ -592,3 +596,65 @@ def test_raw_delete_from_papers_with_children_present_is_rejected_not_silently_o
     # The statement never committed (SQLite checks an immediate FK constraint at execute() time,
     # before any commit) -- every row (parent AND children) is still exactly as put() left it.
     assert store.get(PAPER_ID) is not None
+
+
+# --------------------------------------------------------------------------------------------------
+# T-DOC81 review fixes: DocumentStore's own unconditional migrate() call, and the (c) safety net
+# --------------------------------------------------------------------------------------------------
+
+
+def test_document_store_migrates_a_populated_pre_existing_db_on_open(tmp_path):
+    """T-DOC81 review fix (item 3): every T-DOC81 required test calls `migrate()` directly --
+    nothing pinned that `DocumentStore.__init__` itself calls it unconditionally. Restoring the old
+    `if not db_file.exists()` guard would break no test without this one. Build a DB at 0001-0003
+    (no `doc_type` column) with real rows, then construct `DocumentStore` straight against it and
+    `put()` a record -- `put()` unconditionally writes `papers.doc_type`, so this only succeeds if
+    `DocumentStore.__init__` itself applied 0004, not a test calling `migrate()` on its behalf."""
+    db_path = str(tmp_path / "store.db")
+    conn = sqlite3.connect(db_path)
+    try:
+        for name in (
+            "0001_init.sql",
+            "0002_ingest_checkpoint.sql",
+            "0003_quarantine_diagnostics.sql",
+        ):
+            conn.executescript((MIGRATIONS_DIR / name).read_text())
+        conn.commit()
+    finally:
+        conn.close()
+
+    store = _mod.DocumentStore(db_path=db_path, blob_dir=str(tmp_path / "blobs"))
+    store.put(make_paper_record())  # writes papers.doc_type -- raw OperationalError pre-fix
+
+    got = store.get(PAPER_ID)
+    assert got.ref.doc_type == "paper"
+
+
+def test_verify_required_columns_raises_when_adoption_misclassifies_partial_0004(tmp_path):
+    """T-DOC81 review fix (item 2): `_verify_required_columns` is design item (c), the mitigation
+    the design doc's own Risks section names for adoption mis-classification -- nothing exercised
+    it. Build the case the design predicts: `papers.doc_type` present (satisfies the 0004 adoption
+    probe) but `summaries.title` absent (0004's SECOND `ALTER` never ran, e.g. a hand-applied
+    partial migration) -- adoption records 0004 as fully applied from the doc_type probe alone, so
+    `DocumentStore` must still catch the missing column and raise a clear, actionable
+    `ContractError` naming it, instead of a bare `OperationalError` surfacing later mid-`put()`."""
+    db_path = str(tmp_path / "store.db")
+    conn = sqlite3.connect(db_path)
+    try:
+        for name in (
+            "0001_init.sql",
+            "0002_ingest_checkpoint.sql",
+            "0003_quarantine_diagnostics.sql",
+        ):
+            conn.executescript((MIGRATIONS_DIR / name).read_text())
+        # Only 0004's FIRST ALTER -- the adoption probe for 0004 checks papers.doc_type alone, so
+        # this alone is enough to make adoption (wrongly) mark 0004 as fully applied.
+        conn.execute("ALTER TABLE papers ADD COLUMN doc_type TEXT NOT NULL DEFAULT 'paper';")
+        conn.commit()
+    finally:
+        conn.close()
+
+    with pytest.raises(
+        ContractError, match=r"summaries.*title.*0004_doc_type_and_chapter_titles"
+    ):
+        _mod.DocumentStore(db_path=db_path, blob_dir=str(tmp_path / "blobs"))

@@ -31,6 +31,13 @@ from contracts.provenance import Anchor, Block
 from migrations.migrate import migrate
 
 
+# Spot-check, NOT a full schema audit: every (table, column) `put()` itself writes that was added
+# by a migration LATER than the table's own creation -- i.e. a column `migrate()` could plausibly
+# have skipped if an old database's adoption misclassified it (see `migrations/migrate.py`'s
+# `_ADOPTION_PROBES`). Unlike `_ADOPTION_PROBES`, extending this for a future migration is
+# optional, not required: it only matters for columns this module writes on the `put()` path, so a
+# 0005+ author should add an entry here only if `put()` starts writing a new additive column,
+# not for every schema change.
 _REQUIRED_COLUMNS: dict[tuple[str, str], str] = {
     ("papers", "doc_type"): "migrations/0004_doc_type_and_chapter_titles.sql",
     ("summaries", "title"): "migrations/0004_doc_type_and_chapter_titles.sql",
@@ -45,6 +52,12 @@ def _verify_required_columns(con: sqlite3.Connection, db_path: str) -> None:
     `sqlite3.OperationalError` on the first `put()` mid-ingest."""
     for (table, column), migration in _REQUIRED_COLUMNS.items():
         cols = {row[1] for row in con.execute(f"PRAGMA table_info({table})")}
+        if not cols:
+            raise ContractError(
+                f"{db_path}: table {table!r} does not exist. migrate() should have created it "
+                f"-- this database may predate migrations/ or have been misclassified during "
+                f"adoption."
+            )
         if column not in cols:
             raise ContractError(
                 f"{db_path}: table {table!r} is missing column {column!r}, which "

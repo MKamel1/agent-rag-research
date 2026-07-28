@@ -1,5 +1,7 @@
-"""Runnable check for migrations/migrate.py — not wired into the default pytest testpaths (that's
-T-F5/T-F6's CI-harness territory, out of this ticket's scope); invoke directly with
+"""Runnable check for migrations/migrate.py — collected by default (`pyproject.toml` testpaths,
+T-DOC81 review fix: `migrations/` previously had no `__init__.py`, so pytest's default import mode
+couldn't resolve `from migrations.migrate import migrate` without `PYTHONPATH` set by hand, and
+this suite silently never ran in CI). Can still be invoked directly with
 `pytest migrations/test_migrate.py`.
 
 Verifies T-F3's acceptance criteria (WORK-BREAKDOWN.md "M0"): the schema creates cleanly, WAL mode
@@ -19,6 +21,9 @@ import re
 import sqlite3
 from pathlib import Path
 
+import pytest
+
+from migrations import migrate as migrate_module
 from migrations.migrate import migrate
 
 V0_TABLES = {"papers", "blocks", "chunks", "summaries", "ingest_state", "quarantine"}
@@ -270,6 +275,55 @@ def test_migrate_partially_adopts_and_applies_the_rest(tmp_path):
             "SELECT paper_id FROM papers WHERE paper_id = 'p1'"
         ).fetchone()
         assert paper == ("p1",)
+    finally:
+        conn.close()
+
+
+def test_migrate_rolls_back_a_failed_migration_file_and_does_not_compound_on_retry(
+    tmp_path, monkeypatch
+):
+    """T-DOC81 review fix: `executescript()` runs in autocommit, not one transaction per file -- a
+    mid-file failure used to leave the file's earlier statements permanently committed while the
+    file itself went unrecorded, so every later `migrate()` call died on the already-applied
+    prefix forever (reproduced end to end against 0004's two ALTERs in review). `migrate()` now
+    wraps each file's script in BEGIN/COMMIT so a failure rolls back the whole file, leaving it
+    cleanly unapplied and unrecorded, and a retry fails the same clean way instead of compounding.
+
+    Uses a throwaway migrations directory under `tmp_path` (monkeypatching `MIGRATIONS_DIR`) --
+    never touches the real `migrations/` directory."""
+    fake_dir = tmp_path / "fake_migrations"
+    fake_dir.mkdir()
+    (fake_dir / "0001_init.sql").write_text("CREATE TABLE papers (paper_id TEXT PRIMARY KEY);")
+    # Second statement fails (references a table that doesn't exist) -- AFTER the first succeeds.
+    (fake_dir / "0002_broken.sql").write_text(
+        "CREATE TABLE ingest_checkpoint (paper_id TEXT PRIMARY KEY);\n"
+        "ALTER TABLE nonexistent_table ADD COLUMN x TEXT;"
+    )
+    monkeypatch.setattr(migrate_module, "MIGRATIONS_DIR", fake_dir)
+
+    db_path = str(tmp_path / "test.sqlite")
+
+    with pytest.raises(sqlite3.OperationalError, match="no such table"):
+        migrate(db_path)
+
+    conn = sqlite3.connect(db_path)
+    try:
+        # The whole 0002 file rolled back -- ingest_checkpoint must NOT exist, half-applied.
+        assert "ingest_checkpoint" not in _table_names(conn)
+        assert _applied_migrations(conn) == {"0001_init.sql"}
+    finally:
+        conn.close()
+
+    # Retry must fail the same clean way (0001 recorded and skipped, 0002 fails on its own broken
+    # ALTER again) -- NOT a compounded "table ingest_checkpoint already exists" from a half-applied
+    # prior attempt, which is what the un-wrapped executescript() used to produce.
+    with pytest.raises(sqlite3.OperationalError, match="no such table"):
+        migrate(db_path)
+
+    conn = sqlite3.connect(db_path)
+    try:
+        assert "ingest_checkpoint" not in _table_names(conn)
+        assert _applied_migrations(conn) == {"0001_init.sql"}
     finally:
         conn.close()
 

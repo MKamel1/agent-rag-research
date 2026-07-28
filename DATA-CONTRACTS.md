@@ -920,6 +920,24 @@ deletes children before the parent row in one transaction, the order FK enforcem
 anyway. A connection this codebase doesn't control (e.g. an ad-hoc script opening the `.db` file
 directly) is **not** protected — enforcement is per-connection, not a file-level SQLite property.
 
+### schema_version (migration bookkeeping — `migrations/migrate.py`, T-DOC81)
+
+```sql
+CREATE TABLE schema_version (
+    filename TEXT PRIMARY KEY,
+    applied_at TEXT NOT NULL
+);
+```
+
+Not application data — mechanism. `migrate()` creates and owns this table to track which numbered
+`migrations/000N_*.sql` files have been applied (and when), so it can apply only what's missing
+instead of re-running everything unconditionally (the T-DOC81 fix: additive migrations now have a
+supported path to a populated database). It is deliberately **outside** the 0001 parity block
+above and every other per-migration parity test in `migrations/test_migrate.py` — those check that
+a numbered `.sql` file matches its documented DDL here; `schema_version` isn't created by a
+numbered file at all (it's the one `CREATE TABLE IF NOT EXISTS` in this codebase, since it's the
+tracking mechanism and can't track itself), so there's no numbered-file/doc pair to keep in parity.
+
 ---
 
 ## What is NOT in V0 (so nobody builds it)
