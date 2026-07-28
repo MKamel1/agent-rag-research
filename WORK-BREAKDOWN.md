@@ -711,7 +711,7 @@ ticketed.
   stopped required service instead of only health-checking it. **Belongs in T-DOC43's scope** (preflight +
   service lifecycle) per the gap's own note, but T-DOC43 lives on unmerged PR #110's branch and can't be
   amended from here — ticketed standalone; fold into T-DOC43 when #110 lands.
-- **T-DOC53 (not started) — 🔴 MinerU's `vlm` backend: investigated, unblocked, and rejected on measured
+- **T-DOC53 (recorded — negative result, no action) — MinerU's `vlm` backend: investigated, unblocked, and rejected on measured
   performance — negative-result record, not a feature (OG-13 + OG-14 + OG-15 + OG-17).** Four related
   findings from validating `vlm` as a Pass-1 alternative to `pipeline`, kept as one ticket because the
   action for all four is "don't repeat this, here's why":
@@ -1038,10 +1038,16 @@ retrieval quality + operability, not the claim layer** — reinforcing the "use 
   chunker change = a re-embed trigger** (chunk text feeds the embedding), so it must land BEFORE the
   seed builds the corpus, or we pay a full re-embed to fix it. Small change in `rag/chunker.py`
   `_build_chunk` (skip the prefix when `body[0]` already equals `section_path`).
-- **T-DOC63 (not started) — 🟡 retrieval: diversify-by-paper option (OG-30 #2).** A survey-style
-  method query returned 3 chunks of the SAME paper in the top 5; for "what are my options?" 5
-  distinct papers is far more useful. Add an optional max-chunks-per-paper / MMR-style diversification
-  to `Retriever.retrieve`.
+- **T-DOC63 (implemented — landed as part of T-DOC82, not this ticket directly: `rag/retriever.py:59`
+  `_MAX_HITS_PER_PAPER = 3`, `:62` `_cap_per_paper(...)`, applied at `:289`
+  `return _cap_per_paper(results)[:k], ...`) — 🟡 retrieval: diversify-by-paper option (OG-30 #2).** A
+  survey-style method query returned 3 chunks of the SAME paper in the top 5; for "what are my
+  options?" 5 distinct papers is far more useful. **One substantive difference from the ticket as
+  written: this is a fixed cap, not an option.** `_MAX_HITS_PER_PAPER` is a module-level constant with
+  no per-call parameter to disable or tune it, and no MMR-style diversification. This resolves the
+  observed problem (one paper can no longer fill `k`) but leaves a remainder: nothing lets a caller
+  raise/lower the per-paper limit or turn it off for a query that genuinely wants many chunks from one
+  paper.
 - **T-DOC64 (not started) — 🟢 HIGHEST-VALUE retrieval enhancement for the owner's uses:
   section-aware retrieval (OG-30 #3).** Retrieval finds the right paper but often lands on the
   Introduction/Related-Work block, not the "we propose X which does Y" method sentence. Boost/filter
@@ -1205,7 +1211,7 @@ retrieval quality + operability, not the claim layer** — reinforcing the "use 
 
 ### T-DOC84 — `delete_paper()` leaves `ingest_state`/`ingest_checkpoint` behind, so re-ingest silently no-ops (2026-07-27)
 
-- **T-DOC84 (not started) — 🔴 `delete_paper()` deletes a document's rows and vectors but not its
+- **T-DOC84 (implemented — PR #177, merged 2026-07-28) — 🔴 `delete_paper()` deletes a document's rows and vectors but not its
   ingest-state, so re-ingesting the same id is a silent no-op.** `rag/orchestrator.py:210
   delete_paper(paper_id)` deletes from `DocumentStore` (SQLite rows) and `VectorIndex` (vectors)
   only. It never touches `ingest_state` or `ingest_checkpoint`, even though `IngestionOrchestrator`
@@ -1253,10 +1259,15 @@ retrieval quality + operability, not the claim layer** — reinforcing the "use 
   **Blocking note:** until this lands, each of the four remaining books queued for T-DOC82
   re-ingest needs its `ingest_state`/`ingest_checkpoint` rows cleared by hand between the delete
   and the re-ingest.
+  **Verified in production 2026-07-28:** `app/delete_docs.py` removed all five books' rows, vectors,
+  and ingest-state with no hand-written SQL. Post-delete verification showed
+  `papers`/`chunks`/`summaries`/`ingest_state`/`ingest_checkpoint` all zero for the five ids, and the
+  subsequent re-ingest genuinely re-ran — the previous rollout had needed manual SQL to clear stale
+  state.
 
 ### T-DOC85 — book chapter titles under the size-merge strategy are whichever heading happens to start the window (2026-07-27)
 
-- **T-DOC85 (not started) — 🟡 strategy-B chapter titles are the first heading in the merge window,
+- **T-DOC85 (implemented — PR #177, merged 2026-07-28) — 🟡 strategy-B chapter titles are the first heading in the merge window,
   not the most representative one.** T-DOC82's `rag/book_summarizer.py::_merge_to_target`
   (strategy B) titles each merged unit by its **first** heading group
   (`units.append((title, list(blocks)))`, line ~104). That is deliberate and documented — B is
@@ -1286,10 +1297,13 @@ retrieval quality + operability, not the claim layer** — reinforcing the "use 
   grounding caution as the summary; (iii) title the unit by a page range or ordinal (`Section 14
   (pp. 210-228)`) — always honest, never informative. Do not pick one in this ticket; record the
   options.
+  **Verified in production 2026-07-28:** the three strategy-B books produced 16, 26, and 8 chapters
+  with genuine section titles. The two strategy-A books remain broken — that gap is T-DOC87, and was
+  already known before this rollout, not a new regression it introduced.
 
 ### T-DOC86 — the drop-in path has no topic-relevance signal, so an off-topic PDF ingests silently (2026-07-27)
 
-- **T-DOC86 (not started) — 🟢 the drop-in folder applies no topic-relevance check, so any PDF
+- **T-DOC86 (implemented — PR #177, merged 2026-07-28) — 🟢 the drop-in folder applies no topic-relevance check, so any PDF
   placed there is ingested regardless of subject.** T-DOC80's drop-in folder
   (`app/ingest_local.py`) stages any PDF placed in `drop_in/` into the same pipeline as the arXiv
   corpus. Unlike the arXiv harvest path, which is inherently topic-scoped by its query
