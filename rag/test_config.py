@@ -70,8 +70,8 @@ def test_str_path_works(tmp_path):
 
 
 def test_default_path_uses_cwd(tmp_path, monkeypatch):
-    # T-DOC89 §3: cwd is one rung of discovery, below RAG_CONFIG -- isolate from the repo's
-    # session-wide RAG_CONFIG default (conftest.py) so this test proves the cwd rung specifically.
+    # T-DOC89 §3: cwd is one rung of discovery, below RAG_CONFIG -- clear any RAG_CONFIG already
+    # set in the environment so this test proves the cwd rung specifically, not an inherited value.
     monkeypatch.delenv("RAG_CONFIG", raising=False)
     path = tmp_path / "config.yaml"
     path.write_text(yaml.dump({"focus_area_queries": ["causal inference"]}))
