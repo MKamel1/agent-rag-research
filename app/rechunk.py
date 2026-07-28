@@ -84,7 +84,11 @@ class RechunkableVectorStore(Protocol):
     def upsert(self, id: str, vector: Vector, payload: VectorPayload) -> None: ...
 
 
-class RechunkableEmbedder(Protocol):
+# Named *Seam, not *Embedder (same convention app/reembed_experiment.py's `_EmbedderSeam` uses):
+# CI check (f) flags any class ending in "Embedder"/"Summarizer"/"Reranker" outside contracts/ or
+# rag/fakes/ as a real GPU-bound adapter missing its required `gpu_lock: GpuLock` parameter -- this
+# is a Protocol (an interface, not an adapter), so it must not end in one of those suffixes.
+class RechunkableEmbedderSeam(Protocol):
     @property
     def info(self) -> EmbedderInfo: ...
     def embed(self, texts: list[str]) -> list[Vector]: ...
@@ -136,7 +140,7 @@ def _chunk_payload(record: PaperRecord, embedding_version: str, chunk: Chunk) ->
 def run_rechunk(
     document_store: RechunkableDocumentStore,
     vector_index: RechunkableVectorStore,
-    embedder: RechunkableEmbedder,
+    embedder: RechunkableEmbedderSeam,
     chunker: RechunkableChunker,
     paper_ids: list[str],
     *,

@@ -99,6 +99,10 @@ VENDOR_RULES: tuple[VendorRule, ...] = (
     # (already allowlisted implicitly by not being scanned before -- now explicit since its
     # TeiEmbedder/TeiReranker construction lines were reformatted by an unrelated diff and now
     # register as "added" lines containing "httpx").
+    #
+    # T-DOC62: app/rechunk.py's `main()` is a composition root the same shape as
+    # app/reembed_experiment.py's -- it constructs the real httpx-backed TeiEmbedder to re-embed
+    # re-chunked papers, names no vendor itself.
     VendorRule(
         "httpx",
         re.compile(r"httpx", re.I),
@@ -119,6 +123,7 @@ VENDOR_RULES: tuple[VendorRule, ...] = (
             "app/tei_lifecycle.py",
             "app/test_tei_lifecycle.py",
             "app/assembly.py",
+            "app/rechunk.py",
         ),
     ),
 )

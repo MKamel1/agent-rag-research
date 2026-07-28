@@ -154,7 +154,7 @@ class _SpyVectorStore(FakeVectorStore):
         super().upsert(id, vector, payload)
 
 
-class _SpyEmbedder:
+class _EmbedderSpy:
     def __init__(self, inner: FakeEmbedder):
         self._inner = inner
         self.embed_calls = 0
@@ -184,8 +184,8 @@ def vector_store() -> _SpyVectorStore:
 
 
 @pytest.fixture
-def embedder() -> _SpyEmbedder:
-    return _SpyEmbedder(FakeEmbedder(dim=8))
+def embedder() -> _EmbedderSpy:
+    return _EmbedderSpy(FakeEmbedder(dim=8))
 
 
 # --------------------------------------------------------------------------------------------
