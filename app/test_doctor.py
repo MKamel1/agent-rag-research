@@ -10,6 +10,7 @@ call, same reasoning `app/test_tei_lifecycle.py` gives for faking `subprocess.ru
 """
 
 import shutil
+import sys
 from pathlib import Path
 
 import filelock
@@ -20,8 +21,10 @@ from app.doctor import (
     check_disk_headroom,
     check_gpu_headroom,
     check_gpu_lock_free,
+    check_mcp_server,
     check_services,
     format_issues,
+    main,
     run_preflight,
 )
 from contracts.config import Config
@@ -393,3 +396,57 @@ def test_check_services_no_auto_start_never_attempts_health_only_recovery(monkey
     check_services(auto_start=False)
 
     assert calls == [], "auto_start=False must never attempt a health-only-service restart"
+
+
+# ---------------------------------------------------------------------------
+# check_mcp_server (T-DOC66) -- always driven through the `_list_tools` injection seam; never
+# spawns a real `python -m app.serve` subprocess here (TEST-STRATEGY: zero-GPU, zero-network).
+# ---------------------------------------------------------------------------
+
+
+def test_check_mcp_server_passes_when_tools_are_advertised():
+    issue = check_mcp_server(_list_tools=lambda: ["semantic_search", "search_papers"])
+
+    assert issue is None
+
+
+def test_check_mcp_server_fails_informatively_when_launch_raises():
+    def _raise():
+        raise RuntimeError("boom: no such file or directory: python")
+
+    issue = check_mcp_server(_list_tools=_raise)
+
+    assert issue is not None
+    assert issue.check == "mcp server"
+    assert "boom" in issue.detail
+
+
+def test_check_mcp_server_fails_when_zero_tools_advertised():
+    issue = check_mcp_server(_list_tools=lambda: [])
+
+    assert issue is not None
+    assert "zero tools" in issue.detail
+
+
+def test_main_logs_resolved_paths(tmp_path, monkeypatch, caplog):
+    # T-DOC89 §4: an operator standing in the wrong directory should see where this process
+    # actually pointed, not guess -- run_preflight faked, so this never touches real GPU/disk/
+    # Docker/network health checks.
+    cfg = _cfg(tmp_path)
+    monkeypatch.setattr("rag.config.load_config", lambda: cfg)
+    monkeypatch.setattr(doctor_mod, "run_preflight", lambda cfg, auto_start=True: [])
+    monkeypatch.setattr(sys, "argv", ["doctor"])
+    caplog.set_level("INFO")
+
+    main()
+
+    assert f"db_path={cfg.db_path}" in caplog.text
+    assert f"collection={cfg.collection}" in caplog.text
+    assert f"drop_in_dir={cfg.drop_in_dir}" in caplog.text
+
+
+# Not tested: the real `_list_tools=None` default path (asyncio.run(_launch_and_list_tools(...)))
+# -- that spawns a real `python -m app.serve` subprocess over MCP stdio, which both TEST-STRATEGY
+# (zero-GPU, zero-network) and this ticket's own instructions ("do not launch the real MCP server
+# against the real corpus in a test") rule out. `cwd or os.getcwd()`'s defaulting is a one-line,
+# self-evident expression -- manual verification only, same as `app/mcp_verify_client.py` itself.
