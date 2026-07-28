@@ -16,6 +16,7 @@ from app.retrieval_eval import (
     run,
     score_question,
 )
+from contracts.mcp_server import PaperSearchResult, PaperSummaryView
 from contracts.provenance import Anchor
 from contracts.retriever import Citation, GroundedResult
 
@@ -38,17 +39,44 @@ def _hit(paper_id: str, block_id: str) -> GroundedResult:
     )
 
 
+def _chapter_hit(paper_id: str, chapter: str | None) -> PaperSearchResult:
+    """A `search_papers`-shaped hit -- what `Retriever.retrieve_papers()` returns for a book
+    chapter routing match (`chapter=None` is what a whole-paper/non-chapter hit looks like)."""
+    return PaperSearchResult(
+        view=PaperSummaryView(
+            paper_id=paper_id, title="A Book", authors=["A. Author"], summary_text="summary",
+            section_paths=[],
+            citation=Citation(
+                paper_id=paper_id, title="A Book", authors=["A. Author"],
+                arxiv_url=f"https://example/{paper_id}", section_path="", doc_type="book",
+            ),
+        ),
+        score=1.0,
+        chapter=chapter,
+    )
+
+
 class FakeRetriever:
     """`.retrieve(query, filters, k) -> (list[GroundedResult], None)`, the same shape
     `Retriever.retrieve()` returns (the coverage element is unused by the runner, so a fake needn't
     build a real `RetrievalCoverage`). Canned per-query results, keyed by exact query text; a query
     with no entry raises (simulates a real retrieval error) unless `default=[]` is set.
+
+    `chapter_responses` is the same shape for `.retrieve_papers()` (what `search_papers` wraps) --
+    a separate canned dict since a real chapter-routing question's `retrieve()` and
+    `retrieve_papers()` calls return different result TYPES (`GroundedResult` vs.
+    `PaperSearchResult`) for the same query text.
     """
 
-    def __init__(self, responses: dict[str, list[GroundedResult]], *, default=None):
+    def __init__(
+        self, responses: dict[str, list[GroundedResult]], *, default=None,
+        chapter_responses: dict[str, list[PaperSearchResult]] | None = None,
+    ):
         self._responses = responses
         self._default = default
+        self._chapter_responses = chapter_responses or {}
         self.calls: list[str] = []
+        self.chapter_calls: list[str] = []
 
     def retrieve(self, query: str, filters, k: int):
         self.calls.append(query)
@@ -57,6 +85,14 @@ class FakeRetriever:
                 return self._default, None
             raise RuntimeError(f"FakeRetriever: no canned response for query {query!r}")
         return self._responses[query][:k], None
+
+    def retrieve_papers(self, query: str, filters, k: int):
+        self.chapter_calls.append(query)
+        if query not in self._chapter_responses:
+            raise RuntimeError(
+                f"FakeRetriever: no canned chapter response for query {query!r}"
+            )
+        return self._chapter_responses[query][:k], None
 
 
 # --- load_questions ---------------------------------------------------------------------------
@@ -135,6 +171,41 @@ def test_load_questions_multi_gold_paper_ids(tmp_path):
     questions = load_questions(gt_path)
 
     assert questions[0].gold_paper_ids == frozenset({"P1", "P2"})
+
+
+def test_load_questions_book_fields(tmp_path):
+    """A book question carries `doc_type` and `gold_chapter_title` -- a plain paper record (no
+    such keys) must still default to `doc_type="paper"`/`gold_chapter_title=None` so every
+    existing fixture (210-set, equation slice) parses unchanged."""
+    gt_path = tmp_path / "eval_ground_truth.json"
+    gt_path.write_text(json.dumps({
+        "_metadata": {},
+        "ground_truth": [
+            {
+                "question_id": "QB-001",
+                "question_text": "What does Twyman's Law say?",
+                "source_paper_id": "local:14b7e283bdcd",
+                "question_type": "Book-Chapter-Recall",
+                "doc_type": "book",
+                "gold_chapter_title": "Hypothesis Testing: Establishing Statistical Significance",
+                "gold_block_id": "local:14b7e283bdcd:b359",
+            },
+            {
+                "question_id": "Q-001",
+                "question_text": "unrelated",
+                "source_paper_id": "P1",
+                "question_type": "X",
+            },
+        ],
+    }))
+
+    questions = load_questions(gt_path)
+    book_q, paper_q = questions
+
+    assert book_q.doc_type == "book"
+    assert book_q.gold_chapter_title == "Hypothesis Testing: Establishing Statistical Significance"
+    assert paper_q.doc_type == "paper"
+    assert paper_q.gold_chapter_title is None
 
 
 def test_load_questions_missing_text_raises(tmp_path):
@@ -241,6 +312,58 @@ def test_score_question_respects_k_truncation():
     assert r.passage_rank is None
 
 
+def test_score_question_chapter_hit_at_rank_1():
+    q = Question(
+        "QB1", "text", "Book-Chapter-Recall", frozenset({"B1"}), gold_block_id=None,
+        doc_type="book", gold_chapter_title="Chapter Three",
+    )
+    chapter_results = [_chapter_hit("B1", "Chapter Three"), _chapter_hit("B2", "Other")]
+
+    r = score_question(q, results=[], k=10, chapter_results=chapter_results)
+
+    assert r.chapter_scored is True
+    assert r.chapter_rank == 1
+
+
+def test_score_question_right_paper_wrong_chapter_is_a_chapter_miss():
+    """Same paper, wrong chapter -- must not count as a chapter-routing hit (mirrors the
+    paper-hit/passage-miss distinction score_question already makes at the passage granularity)."""
+    q = Question(
+        "QB1", "text", "Book-Chapter-Recall", frozenset({"B1"}), gold_block_id=None,
+        doc_type="book", gold_chapter_title="Chapter Three",
+    )
+    chapter_results = [_chapter_hit("B1", "Chapter One")]
+
+    r = score_question(q, results=[], k=10, chapter_results=chapter_results)
+
+    assert r.chapter_rank is None
+
+
+def test_score_question_no_gold_chapter_title_is_not_chapter_scored():
+    """A plain paper question (no gold_chapter_title) must not be chapter-scored even if a
+    chapter_results list happens to be passed -- mirrors passage_scored's gold_block_id gate."""
+    q = Question("Q1", "text", "Result-Comprehension", frozenset({"P1"}), gold_block_id=None)
+
+    r = score_question(q, results=[_hit("P1", "P1:b1")], k=10, chapter_results=[])
+
+    assert r.chapter_scored is False
+    assert r.chapter_rank is None
+
+
+def test_score_question_chapter_scored_but_no_chapter_results_is_a_miss_not_a_crash():
+    """`run()` only omits `chapter_results` (leaves it `None`) when `retrieve_papers()` itself
+    errored -- `score_question` must degrade to an unscored-but-flagged miss, not raise."""
+    q = Question(
+        "QB1", "text", "Book-Chapter-Recall", frozenset({"B1"}), gold_block_id=None,
+        doc_type="book", gold_chapter_title="Chapter Three",
+    )
+
+    r = score_question(q, results=[], k=10, chapter_results=None)
+
+    assert r.chapter_scored is True
+    assert r.chapter_rank is None
+
+
 # --- run ------------------------------------------------------------------------------------
 
 
@@ -275,6 +398,48 @@ def test_run_records_retrieval_error_without_aborting_the_whole_run():
     # the second question still gets scored -- one bad question doesn't blank the whole run
     assert results[1].paper_rank == 1
     assert results[1].error is None
+
+
+def test_run_calls_retrieve_papers_only_for_chapter_scored_questions():
+    """The extra `retrieve_papers()` call must fire for a book question carrying
+    `gold_chapter_title` and must NOT fire for a plain paper question -- an unscored question
+    costs no extra retrieval call (module docstring)."""
+    questions = [
+        Question("Q1", "paper query", "Result-Comprehension", frozenset({"P1"}), gold_block_id=None),
+        Question(
+            "QB1", "book query", "Book-Chapter-Recall", frozenset({"B1"}), gold_block_id=None,
+            doc_type="book", gold_chapter_title="Chapter Three",
+        ),
+    ]
+    retriever = FakeRetriever(
+        {"paper query": [_hit("P1", "P1:b1")], "book query": []},
+        chapter_responses={"book query": [_chapter_hit("B1", "Chapter Three")]},
+    )
+
+    results = run(questions, retriever, k=10)
+
+    assert retriever.chapter_calls == ["book query"]  # not called for "paper query"
+    assert results[0].chapter_scored is False
+    assert results[1].chapter_scored is True
+    assert results[1].chapter_rank == 1
+
+
+def test_run_records_error_when_retrieve_papers_fails():
+    """`retrieve()` succeeding but the follow-up `retrieve_papers()` failing must record the
+    WHOLE question as errored, not half-score it on paper/passage level alone."""
+    questions = [
+        Question(
+            "QB1", "book query", "Book-Chapter-Recall", frozenset({"B1"}), gold_block_id=None,
+            doc_type="book", gold_chapter_title="Chapter Three",
+        ),
+    ]
+    retriever = FakeRetriever({"book query": [_hit("B1", "B1:ch2")]})  # no chapter_responses entry
+
+    results = run(questions, retriever, k=10)
+
+    assert results[0].error is not None
+    assert results[0].paper_rank is None
+    assert results[0].chapter_rank is None
 
 
 # --- build_report -----------------------------------------------------------------------------
@@ -316,6 +481,56 @@ def test_build_report_handles_no_passage_scorable_questions():
 
     assert report["passage_level"]["n_scored"] == 0
     assert report["passage_level"]["overall"] == {"recall_at_k": None, "mrr": None, "n": 0}
+
+
+def test_build_report_chapter_level_and_by_doc_type():
+    """Chapter-level scoring plus the `by_doc_type` breakdown that lets a mixed paper+book fixture
+    report both doc types separately from one run (docs/DESIGN-book-chapters-and-hierarchy.md Part
+    3 Step 1: "must be able to evaluate books separately from papers, and report them separately")."""
+    from app.retrieval_eval import QuestionResult
+
+    results = [
+        QuestionResult(
+            "Q1", "Result-Comprehension", paper_rank=1, passage_rank=None, passage_scored=False,
+            doc_type="paper",
+        ),
+        QuestionResult(
+            "QB1", "Book-Chapter-Recall", paper_rank=1, passage_rank=1, passage_scored=True,
+            doc_type="book", chapter_rank=1, chapter_scored=True,
+        ),
+        QuestionResult(
+            "QB2", "Book-Chapter-Recall", paper_rank=None, passage_rank=None, passage_scored=True,
+            doc_type="book", chapter_rank=None, chapter_scored=True,
+        ),
+    ]
+
+    report = build_report(results, k=10)
+
+    # chapter-level: only the 2 chapter_scored questions count, 1/2 hits
+    assert report["chapter_level"]["n_scored"] == 2
+    assert report["chapter_level"]["overall"]["recall_at_k"] == 0.5
+    assert report["chapter_level"]["by_question_type"]["Book-Chapter-Recall"]["n"] == 2
+
+    # by_doc_type: paper-level split cleanly between the 1 paper and 2 book questions
+    assert report["paper_level"]["by_doc_type"]["paper"]["n"] == 1
+    assert report["paper_level"]["by_doc_type"]["paper"]["recall_at_k"] == 1.0
+    assert report["paper_level"]["by_doc_type"]["book"]["n"] == 2
+    assert report["paper_level"]["by_doc_type"]["book"]["recall_at_k"] == 0.5
+
+
+def test_build_report_no_chapter_scorable_questions_is_empty_not_error():
+    """A papers-only fixture (the 210-set/equation-slice today) must report an empty, not
+    crashing, chapter_level section."""
+    from app.retrieval_eval import QuestionResult
+
+    results = [
+        QuestionResult("Q1", "Result-Comprehension", paper_rank=1, passage_rank=None, passage_scored=False),
+    ]
+
+    report = build_report(results, k=10)
+
+    assert report["chapter_level"]["n_scored"] == 0
+    assert report["chapter_level"]["overall"] == {"recall_at_k": None, "mrr": None, "n": 0}
 
 
 # --- build_report: per-question breakdown (T-DOC57) -----------------------------------------
