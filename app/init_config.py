@@ -51,7 +51,9 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--force", action="store_true",
-        help="Overwrite an existing <data-dir>/config.yaml and/or repo-root config.yaml/symlink.",
+        help="One flag gates BOTH overwrite paths: an existing <data-dir>/config.yaml, AND (only "
+             "when --link is also given) an existing repo-root config.yaml/symlink. There is no "
+             "separate flag for the symlink.",
     )
     parser.add_argument(
         "--link", action="store_true",

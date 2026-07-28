@@ -260,6 +260,13 @@ def check_mcp_server(
     `_list_tools` is the injection seam a test uses to substitute a fake instead of a real
     subprocess spawn (CONVENTIONS.md §2, same pattern as `_Service.start` above); real callers
     never pass it.
+
+    CAVEAT: this does NOT spawn `python -m app.serve` the same way `app.mcp_verify_client` (or a
+    real MCP client) does -- see `_launch_and_list_tools`'s own docstring for why it omits the
+    full-environment forwarding that tool's spawn carries. A pass here is proof the server
+    launches and speaks MCP under a curated, safe-subset environment; it is NOT proof a real
+    client's launch (its own `PYTHONPATH`/full-environment config, `docs/RUNBOOK.md`) works. Use
+    `python -m app.mcp_verify_client` for that, before treating a real client integration as done.
     """
     list_tools = _list_tools or (
         lambda: asyncio.run(_launch_and_list_tools(cwd=cwd or os.getcwd(), timeout=timeout))
@@ -325,8 +332,8 @@ def main() -> None:
     # T-DOC89 §4: report what was resolved, same pattern as app/delete_docs.py -- an operator
     # standing in the wrong directory should see where this process actually pointed, not guess.
     logger.info(
-        "doctor: resolved db_path=%s collection=%s drop_in_dir=%s",
-        cfg.db_path, cfg.collection, cfg.drop_in_dir,
+        "doctor: resolved db_path=%s blob_dir=%s collection=%s",
+        cfg.db_path, cfg.blob_dir, cfg.collection,
     )
     args = _parse_args()
     issues = run_preflight(cfg, auto_start=not args.no_auto_start)

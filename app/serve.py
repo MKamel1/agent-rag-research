@@ -27,6 +27,7 @@ docstring already warns about elsewhere in this codebase.
 """
 
 import argparse
+import logging
 import sys
 from pathlib import Path
 
@@ -37,6 +38,8 @@ from contracts.mcp_server import PaperSearchResponse, PaperSummaryView, SearchRe
 from contracts.provenance import Anchor
 from contracts.vector_index import SearchFilters
 from rag.config import load_config
+
+logger = logging.getLogger(__name__)
 
 
 def _parse_args() -> argparse.Namespace:
@@ -71,6 +74,13 @@ else:
     _cfg = load_config()
     _db_path = _cfg.db_path
     _blob_dir = _cfg.blob_dir
+
+# T-DOC89 §4: report what was resolved, same pattern as app/delete_docs.py -- an operator (or an
+# MCP client's launch cwd/--data-dir) pointed at the wrong place should see it here, not guess.
+logging.basicConfig(level=logging.INFO)
+logger.info(
+    "serve: resolved db_path=%s blob_dir=%s collection=%s", _db_path, _blob_dir, _cfg.collection,
+)
 
 _server = build_mcp_server(_cfg, db_path=_db_path, blob_dir=_blob_dir, collection=_cfg.collection)
 mcp = FastMCP("research-system-rag")

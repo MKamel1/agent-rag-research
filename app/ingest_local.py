@@ -428,9 +428,11 @@ def main(argv: list[str] | None = None) -> int:
     cfg = load_config()
     # T-DOC89 §4: report what was resolved, same pattern as app/delete_docs.py -- an operator
     # standing in the wrong directory should see where this process actually pointed, not guess.
+    # drop_in_dir is included here (unlike every other T-DOC89 §4 log line) because it's the field
+    # that actually decides this module's behavior -- the directory it scans.
     logger.info(
-        "ingest_local: resolved db_path=%s collection=%s drop_in_dir=%s",
-        cfg.db_path, cfg.collection, cfg.drop_in_dir,
+        "ingest_local: resolved db_path=%s blob_dir=%s collection=%s drop_in_dir=%s",
+        cfg.db_path, cfg.blob_dir, cfg.collection, cfg.drop_in_dir,
     )
     if not cfg.pdf_cache_dir:
         # contracts/config.py: "" is a supported, documented way to disable the PDF cache

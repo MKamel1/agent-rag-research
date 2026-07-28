@@ -161,6 +161,27 @@ def test_shard_round_robin_not_contiguous():
     assert [r.paper_id for r in _shard(refs, 2, 3)] == ["2601.00002", "2601.00005"]
 
 
+def test_run_parse_phase_logs_resolved_paths(monkeypatch, tmp_path, caplog):
+    # T-DOC89 §4: `cfg` here is already this subprocess's own final config -- see the module
+    # docstring note added alongside the log line for why nothing further overrides it.
+    fake_orchestrator = FakeOrchestrator(refs_to_return=[])
+    monkeypatch.setattr(
+        "app.parse_phase.build_ingestion_orchestrator", lambda *a, **k: fake_orchestrator
+    )
+    cfg = Config(
+        focus_area_queries=["causal inference"],
+        db_path=str(tmp_path / "papers.db"), blob_dir=str(tmp_path / "blobs"),
+        collection="papers",
+    )
+    caplog.set_level("INFO")
+
+    _run_parse_phase(cfg)
+
+    assert f"db_path={cfg.db_path}" in caplog.text
+    assert f"blob_dir={cfg.blob_dir}" in caplog.text
+    assert f"collection={cfg.collection}" in caplog.text
+
+
 def test_run_parse_phase_applies_shard_before_calling_parse_phase(monkeypatch):
     """`_run_parse_phase`'s optional `shard_index`/`shard_count` kwargs must slice the harvested
     refs before `orchestrator.parse_phase()` is called -- not pass the full list through."""
