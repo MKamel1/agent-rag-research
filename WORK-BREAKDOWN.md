@@ -1083,22 +1083,30 @@ retrieval quality + operability, not the claim layer** — reinforcing the "use 
 
 ### T-DOC81 — additive migrations have no supported path to an existing populated database (2026-07-26)
 
-- **T-DOC81 (not started) — 🔴 HIGH PRIORITY: `migrations/migrate.py` cannot reach a database that
-  already has rows; T-DOC80's 0004 migration never applied to production, silently broke every
-  ingest path.** Discovered running a real ingest against the real 11,019-paper production DB on
-  2026-07-26: every ingest run — the normal arXiv corpus build and T-DOC80's new drop-in path alike
-  — crashed with `sqlite3.OperationalError: table papers has no column named doc_type`. Root cause is
+- **T-DOC81 (implemented — this branch, `fix/t-doc81-migration-mechanism`, commits `f433529`
+  onward; spec: `docs/superpowers/specs/2026-07-28-migration-mechanism-design.md`) — 🔴 HIGH
+  PRIORITY: `migrations/migrate.py` cannot reach a database that already has rows; T-DOC80's 0004
+  migration never applied to production, silently broke every ingest path.** Discovered running a
+  real ingest against the real 11,019-paper production DB on 2026-07-26: every ingest run — the
+  normal arXiv corpus build and T-DOC80's new drop-in path alike — crashed with
+  `sqlite3.OperationalError: table papers has no column named doc_type`. Root cause was
   structural, not a one-off missed step:
-  1. `migrations/migrate.py`'s `migrate()` applies **every** numbered `.sql` file in `migrations/`,
+  1. `migrations/migrate.py`'s `migrate()` applied **every** numbered `.sql` file in `migrations/`,
      in filename order, on every call, using plain `CREATE TABLE`/`ALTER TABLE` (no `IF NOT EXISTS`
-     guard) — this is deliberate (the module's own docstring: "there is no tracked-migration
-     framework here... every file in this directory is applied... every time `migrate()` runs.
-     Re-running against an already-migrated database is expected to fail loudly") and is pinned by
+     guard) — this was deliberate (the module's own docstring used to read: "there is no
+     tracked-migration framework here... every file in this directory is applied... every time
+     `migrate()` runs. Re-running against an already-migrated database is expected to fail
+     loudly") and was pinned by
      `migrations/test_migrate.py::test_migrate_on_already_migrated_db_fails_loudly_not_silently`
-     (asserts `sqlite3.OperationalError` matching "already exists").
-  2. `rag/document_store.py`'s `DocumentStore.__init__` (line 58-61) only calls `migrate(db_path)`
+     (asserted `sqlite3.OperationalError` matching "already exists"). **T-DOC81 deliberately
+     reverses this contract**: `migrate()` now tracks applied files in a `schema_version` table and
+     is idempotent — re-running it against an already-migrated database is the supported, expected
+     path, not a failure. The test above is rewritten
+     (`test_migrate_on_already_migrated_db_is_idempotent_not_a_failure`) to assert that instead.
+  2. `rag/document_store.py`'s `DocumentStore.__init__` (line 58-61) only called `migrate(db_path)`
      when `not db_file.exists()` — an existing DB, however far behind the `migrations/` directory,
-     is just opened and connected to, never re-migrated.
+     was just opened and connected to, never re-migrated. **Fixed**: it now calls `migrate(db_path)`
+     unconditionally, safe because `migrate()` is idempotent.
   Net effect: an additive migration (0002, 0003, 0004, ...) can only ever reach a **brand-new**
   database; there is no supported operator path to apply one to an existing, populated database.
   0004 (`ALTER TABLE papers ADD COLUMN doc_type ...; ALTER TABLE summaries ADD COLUMN title ...`)
