@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -21,6 +22,7 @@ from app.snapshot import (
     backup_sqlite,
     backup_vector_store,
     default_backup_root,
+    main,
     prune_old_snapshots,
     run_snapshot,
 )
@@ -271,3 +273,46 @@ def test_prune_old_snapshots_is_a_no_op_when_fewer_than_keep_exist(tmp_path):
 def test_default_backup_root_is_a_backups_dir_next_to_db_path(tmp_path):
     cfg = _base_config(db_path=str(tmp_path / "data" / "papers.db"))
     assert default_backup_root(cfg) == (tmp_path / "data" / "backups").resolve()
+
+
+# ---------------------------------------------------------------------------
+# main -- CLI entry point, T-DOC89 §4 resolved-path logging
+# ---------------------------------------------------------------------------
+
+
+class _FakeVectorIndexClass:
+    """Stands in for `rag.vector_index.VectorIndex` itself (not just an instance) -- `main()`
+    imports and constructs the real class locally, so this needs the same constructor signature,
+    never a live Qdrant connection (the real `VectorIndex.__init__` calls `_ensure_collection()`,
+    a real network round trip)."""
+
+    def __init__(self, host, port, collection_name, dim, hybrid_dense_weight=0.5):
+        self.collection_name = collection_name
+
+    def create_and_download_snapshot(self, dest_path: str) -> None:
+        Path(dest_path).write_bytes(b"fake vector-store snapshot bytes")
+
+
+def test_main_logs_resolved_paths(tmp_path, monkeypatch, caplog):
+    # T-DOC89 §4: an operator standing in the wrong directory should see where this process
+    # actually pointed, not guess. VectorIndex is faked (see _FakeVectorIndexClass) so this never
+    # makes a real Qdrant connection; sqlite/blob backup steps run for real against scratch tmp
+    # paths only, never a real corpus.
+    db_path = tmp_path / "papers.db"
+    migrate(str(db_path))
+    blob_dir = tmp_path / "blobs"
+    blob_dir.mkdir()
+    cfg = _base_config(
+        db_path=str(db_path), blob_dir=str(blob_dir), collection="papers",
+        drop_in_dir=str(tmp_path / "drop_in"),
+    )
+    monkeypatch.setattr("app.snapshot.load_config", lambda path=None: cfg)
+    monkeypatch.setattr("rag.vector_index.VectorIndex", _FakeVectorIndexClass)
+    monkeypatch.setattr(sys, "argv", ["snapshot", "--backup-root", str(tmp_path / "backups")])
+    caplog.set_level("INFO")
+
+    main()
+
+    assert f"db_path={cfg.db_path}" in caplog.text
+    assert f"collection={cfg.collection}" in caplog.text
+    assert f"drop_in_dir={cfg.drop_in_dir}" in caplog.text

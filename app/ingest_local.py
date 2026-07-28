@@ -426,6 +426,12 @@ def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO)
     args = _parse_args(argv)
     cfg = load_config()
+    # T-DOC89 §4: report what was resolved, same pattern as app/delete_docs.py -- an operator
+    # standing in the wrong directory should see where this process actually pointed, not guess.
+    logger.info(
+        "ingest_local: resolved db_path=%s collection=%s drop_in_dir=%s",
+        cfg.db_path, cfg.collection, cfg.drop_in_dir,
+    )
     if not cfg.pdf_cache_dir:
         # contracts/config.py: "" is a supported, documented way to disable the PDF cache
         # elsewhere in this codebase -- but this module's entire staging mechanism depends on it.
