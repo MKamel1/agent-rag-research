@@ -1521,7 +1521,9 @@ retrieval quality + operability, not the claim layer** — reinforcing the "use 
 
 ### T-DOC89 — config resolution depends on the current working directory, and has silently corrupted results four times (2026-07-28)
 
-- **T-DOC89 (not started) — 🔴 `load_config`'s default path resolves against the process's current
+- **T-DOC89 (part 1 implemented — branch `fix/t-doc89-config-resolution`; spec:
+  `docs/superpowers/specs/2026-07-28-operability-config-resolution-design.md`) — 🔴 `load_config`'s
+  default path resolves against the process's current
   working directory, and paths inside a resolved config are cwd-relative too — the combination has
   silently produced wrong results four times.** `rag/config.py`'s `load_config(path="config.yaml")`
   resolves its default relative to the **process's current working directory** — its own docstring
@@ -1581,6 +1583,27 @@ retrieval quality + operability, not the claim layer** — reinforcing the "use 
   are both CODEOWNERS foundation paths, so this needs the `foundation-change` label. Renaming a
   tracked config is the risky part — verify nothing else depends on that filename (CI workflows, the
   corpus dashboard, `app/serve.py`, tests) before committing to it.
+  **Part 1 implemented (this section only, §1-3 of the design):** a config resolves its own paths
+  against its own directory, the tracked template moved to `config.example.yaml` so it can't be
+  discovered by accident (plus a stub-validation warning when a resolved `db_path` lands inside the
+  repo tree), and `load_config()`'s no-arg default runs real discovery (`RAG_CONFIG` -> cwd -> walk
+  up to the repo boundary) instead of a bare cwd-relative `open()`. §4-7 (resolved-path startup
+  logging, `init_config`, doctor/runbook checks, deleting the stray repo-root `papers.db`/
+  `pdf_cache/`) are part 2, a separate branch.
+  **Design-doc review found three Criticals part 1's own design didn't anticipate**, all fixed on
+  the same branch: (1) §1's absolute-path resolution silently defeated
+  `app/dashboard/controller.py::_resolve_override_config`'s `(data_dir / value)` re-rooting
+  whenever `_load_base_config`'s fallback branch fired (already-absolute paths make that join a
+  no-op) — reopened OG-49#1; fixed by resetting the fallback's path fields back to the plain
+  `Config` class defaults before handing them to the override resolver. (2)
+  `app/dashboard/server.py`'s module-level `_STATIC_CONFIG = load_config()` made the whole module
+  unimportable (and `scripts/dashboard.sh` unable to start) in any checkout with no real deployed
+  config discoverable from the repo root — fixed by making it a lazy `@lru_cache`d
+  `_static_config()`, since every actual use site was already inside a function body. (3)
+  discovery's cwd/walk-up rungs returned the candidate unresolved while the explicit/`RAG_CONFIG`
+  rungs called `.resolve()` — a symlinked repo-root `config.yaml` (the design's own rollout
+  mechanism) would silently resolve relative paths against the SYMLINK's directory instead of the
+  real target's, re-creating OG-33 one level down.
 
 ### T-DOC90 — document titles are never derived from OCR, so an image-cover book falls through to its filename (2026-07-28)
 

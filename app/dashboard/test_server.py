@@ -492,7 +492,7 @@ def test_control_download_dispatches_start_with_mode_and_prefetch_target(running
     call = fake_controller.calls[-1]
     assert call[0] == "start"
     _, target, parse_workers, kwargs = call
-    assert target == server_mod._STATIC_CONFIG.prefetch_target
+    assert target == server_mod._static_config().prefetch_target
     assert parse_workers == 1
     assert kwargs["mode"] == "download"
 

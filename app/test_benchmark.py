@@ -306,7 +306,9 @@ def test_write_scratch_config_overrides_ids_and_storage_paths_only(tmp_path):
     assert written["focus_area_queries"] == ["causal inference"]
 
 
-def test_scratch_config_is_still_loadable_by_bare_load_config_after_the_rename(tmp_path, monkeypatch):
+def test_scratch_config_is_still_loadable_by_bare_load_config_after_the_rename(
+    tmp_path, monkeypatch
+):
     """T-DOC89 §2/§3: the tracked template moved to config.example.yaml, and load_config()'s
     no-arg default now runs full discovery instead of a bare cwd-relative open() -- this scratch
     writer must be unaffected either way, since app/parse_phase.py's subprocess trick (cwd=dest,

@@ -42,12 +42,14 @@ import secrets
 import threading
 import urllib.parse
 from datetime import date
+from functools import lru_cache
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 from app.assembly import build_mcp_server
 from app.dashboard import controller, status
 from app.dashboard.controller import InvalidOverrideError
+from contracts.config import Config
 from contracts.errors import ContractError, PermanentError, TransientError
 from contracts.vector_index import SearchFilters
 from rag.config import load_config
@@ -147,9 +149,21 @@ _RUN_FIELDS = (
 # repo-root `config.yaml` this used to read directly was the TRACKED TEMPLATE (now renamed to
 # config.example.yaml precisely so it's not silently loadable); a real deployment's config is
 # found the same way every other `app/` entrypoint's bare `load_config()` finds it.
-_STATIC_CONFIG = load_config()
+#
+# T-DOC89 part-1-review Critical 2: LAZY, not a module-level read. Every one of this module's own
+# use sites is inside a function body (`_status_dict`, `_LazyMcpServer.semantic_search`, the
+# download-mode spawn helper) -- nothing needs this at import time, and `scripts/dashboard.sh`
+# `cd`s to the repo root before launch, where discovery finds nothing in a checkout with no real
+# deployed config.yaml (only the renamed, gitignored-away template). A module-level `load_config()`
+# call made the whole server module unimportable in that shape; `lru_cache` gives the exact same
+# "read once, reuse for the process lifetime" behavior the old module-level global had, just
+# deferred to first actual use.
+@lru_cache(maxsize=1)
+def _static_config() -> Config:
+    return load_config()
 
-# Search-side (query-time) params, read straight off `_STATIC_CONFIG` -- as of 2026-07-18,
+
+# Search-side (query-time) params, read straight off `_static_config()` -- as of 2026-07-18,
 # `Config.top_k`/`Config.rerank_depth` are genuinely wired (`app/assembly.py::build_mcp_server`
 # threads them into `McpServer`'s `default_k`/`Retriever`'s `rerank_pool_size`), so this display
 # no longer needs to hardcode a stand-in value for either: `top_k_default` is the real
@@ -159,8 +173,8 @@ _STATIC_CONFIG = load_config()
 # limit either way -- `rag/reranker.py`'s `_MAX_BATCH_SIZE`).
 def _search_display() -> dict:
     return {
-        "top_k_default": _STATIC_CONFIG.top_k,
-        "rerank_pool_size": min(_STATIC_CONFIG.rerank_depth, _RERANKER_MAX_BATCH_SIZE),
+        "top_k_default": _static_config().top_k,
+        "rerank_pool_size": min(_static_config().rerank_depth, _RERANKER_MAX_BATCH_SIZE),
     }
 
 
@@ -220,7 +234,7 @@ def _status_dict(data_dir: Path, status_module, controller_module) -> dict:
             **{field: live.get(field) for field in _RUN_FIELDS},
             "parse_batch_size": (
                 manifest_parse_batch_size if manifest_parse_batch_size is not None
-                else _STATIC_CONFIG.parse_batch_size
+                else _static_config().parse_batch_size
             ),
         },
         "telemetry": status_module.read_telemetry(
@@ -234,7 +248,7 @@ def _status_dict(data_dir: Path, status_module, controller_module) -> dict:
         "quarantine_reasons": corpus["quarantine_reasons"],
         "search": {
             **_search_display(),
-            "hybrid_dense_weight": _STATIC_CONFIG.hybrid_dense_weight,
+            "hybrid_dense_weight": _static_config().hybrid_dense_weight,
         },
         "tei": status_module.read_tei_status(),
     }
@@ -249,7 +263,7 @@ class _LazyMcpServer:
 
     `db_path`/`blob_dir` follow the same `<data_dir>/papers.db` / `<data_dir>/blobs` convention
     `app/dashboard/status.py::read_corpus` already reads for this exact `data_dir`; `collection`
-    is `_STATIC_CONFIG.collection` (the base `config.yaml`, same source `_status_dict`'s other
+    is `_static_config().collection` (the base `config.yaml`, same source `_status_dict`'s other
     static fields already read from).
 
     OG-48#7: `ThreadingHTTPServer` runs every request on its own thread, so two concurrent FIRST
@@ -269,10 +283,10 @@ class _LazyMcpServer:
             with self._build_lock:
                 if self._server is None:  # re-check: another thread may have built it while we waited
                     self._server = build_mcp_server(
-                        _STATIC_CONFIG,
+                        _static_config(),
                         db_path=str(self._data_dir / "papers.db"),
                         blob_dir=str(self._data_dir / "blobs"),
-                        collection=_STATIC_CONFIG.collection,
+                        collection=_static_config().collection,
                     )
         return self._server.semantic_search(query, filters, k)
 
@@ -478,7 +492,7 @@ def make_handler(
                 kwargs = _editable_query_kwargs(body)
                 _validate_editable_kwargs(kwargs)
                 controller_module.start(
-                    data_dir, _STATIC_CONFIG.prefetch_target, 1, mode="download", **kwargs,
+                    data_dir, _static_config().prefetch_target, 1, mode="download", **kwargs,
                 )
             elif action == "pause":
                 controller_module.pause(data_dir)

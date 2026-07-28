@@ -99,7 +99,7 @@ few, large iterations, not many tiny ones.
 
 ## Constraints for the builder
 - **Non-foundation only.** New `app/build_corpus.py` + tests; edit `app/dashboard/controller.py`.
-  Do NOT touch `contracts/`, `rag/config.py`, `config.yaml`, `migrations/`, `ci/`, `.github/`,
+  Do NOT touch `contracts/`, `rag/config.py`, `config.example.yaml`, `migrations/`, `ci/`, `.github/`,
   `rag/fakes/`, `fixtures/`. No `os.environ` reads in `app/` (argparse only; the `env` *command*
   is fine for subprocess PYTHONPATH, as `controller._spawn` already does).
 - **Do NOT disturb the live run.** A real ingest (`run-3995`, pid 2753456) is running and holds
