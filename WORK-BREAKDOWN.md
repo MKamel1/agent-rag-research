@@ -1646,3 +1646,56 @@ retrieval quality + operability, not the claim layer** — reinforcing the "use 
   relationship needs deciding; (b) it reintroduces inference where T-DOC88 now provides a
   deterministic operator control, so it should apply only as a fallback when no `title--` marker is
   present and the chain would otherwise land on the filename stem.
+
+### T-DOC91 — the MCP SDK is pinned below a major version we have not evaluated (2026-07-28)
+
+- **T-DOC91 (not started) — 🟡 `environment.yml` now pins the MCP SDK to `<2`, which stops the CI
+  breakage recorded below but permanently cuts us off from every 2.x release — including security
+  fixes — until someone deliberately migrates.** **What happened (2026-07-28):** CI went red across
+  `main`, #181, and #182 with `ModuleNotFoundError: No module named 'mcp.server.fastmcp'` at
+  `app/serve.py:32`. Root cause was not a code or test defect: `environment.yml` had declared the SDK
+  as a bare `- mcp` with no version constraint; PyPI published `mcp 2.0.0`; CI, which builds a fresh
+  environment on every run, installed it; `2.0.0` removed or moved `mcp.server.fastmcp`. The local dev
+  environment had `1.28.1` already installed, where the import still works, which is why every local
+  test run stayed green while CI was red — the defect was invisible from the developer's own machine.
+  Fixed in PR #183 by pinning `mcp>=1.28,<2` (`environment.yml:41`).
+  **The API surface an upgrade must re-verify:**
+  - `app/serve.py:32` — `from mcp.server.fastmcp import FastMCP`
+  - `app/serve.py:75` — `FastMCP("research-system-rag")`
+  - `app/serve.py:78,92,…` — the `@mcp.tool()` decorator on each of the four MCP tools
+  - `app/serve.py:22` — stdio transport via `mcp.run()`'s default; the module docstring records that
+    choice explicitly
+  - `app/mcp_verify_client.py` — the client half, used by the connectivity check T-DOC66 adds to
+    `app/doctor.py`
+  **Why a ceiling is a deferred obligation, not a fix.** `<2` means we no longer receive 2.x releases
+  at all, including security fixes. If a vulnerability is found that upstream only patches on the 2.x
+  line, the migration becomes urgent and unplanned — exactly the situation a pin exists to avoid.
+  Migrating deliberately, on our own schedule, is cheaper than migrating under a CVE.
+  **Fix — evaluate and migrate to 2.x on purpose.** Read the 2.0 changelog for what replaced
+  `mcp.server.fastmcp`; port the four tool registrations and the transport choice; re-verify with
+  `app/mcp_verify_client.py` and the `app/doctor.py` MCP connectivity check (T-DOC66) that the server
+  launches and answers `list_tools`; then raise the ceiling. Re-check the stdio transport decision at
+  the same time, since transport is the most likely thing to have changed across a major version.
+  `app/doctor.py`'s MCP check is what makes this migration verifiable end to end, rather than another
+  change that only local dev happens to exercise.
+
+### T-DOC92 — ten more dependencies remain unpinned and can break CI the same way (2026-07-28)
+
+- **T-DOC92 (not started) — 🟢 `environment.yml` still declares ten packages with no version
+  constraint, each capable of reproducing T-DOC91's CI break with zero change on our side.** The
+  unpinned set: `pytest`, `pytest-cov`, `pytest-socket`, `qdrant-client`, `pyyaml`, `httpx`,
+  `filelock`, `ruff`, `pypdfium2`, `markdownify`. Because CI builds a fresh environment on every run
+  (the same mechanism that turned `mcp`'s unconstrained entry into a red build), any of these can
+  break CI spontaneously on a new upstream release, with no PR of ours as the trigger.
+  `qdrant-client` and `pypdfium2` carry the most risk, being the vector-store and PDF-parsing adapters
+  respectively — both sit on the critical path of ingestion and retrieval. `ruff` is next: several CI
+  enforcement checks in `ci/` shell out to it, so a new lint rule shipping in a minor release would
+  surface as a spurious enforcement violation unrelated to any real code change.
+  **Deliberately not fixed alongside the mcp hotfix**, which was kept to one line (`environment.yml:41`)
+  so it could merge fast while `main` was red; broadening it to ten packages would have widened the
+  diff and slowed the fix everyone was blocked on.
+  **Fix needs a judgement call, not a script:** pinning everything maximizes reproducibility but
+  creates upgrade churn — every pin becomes a future manual bump. Pinning only the adapters whose APIs
+  we call directly (`qdrant-client`, `pypdfium2`, arguably `ruff` for its CI role) is a middle path
+  that leaves general-purpose libraries (`pytest`, `pyyaml`, `httpx`, `filelock`, `markdownify`,
+  `pytest-cov`, `pytest-socket`) floating. Recording both options here; not choosing one.
