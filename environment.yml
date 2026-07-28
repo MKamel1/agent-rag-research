@@ -38,7 +38,9 @@ dependencies:
       - qdrant-client         # ADR-01 — Qdrant is locked, not a Phase-0 open question
       - pyyaml                # T-F2's Config loader (config.yaml)
       - httpx                 # generic HTTP client — arXiv (M1) + TEI/vLLM embedder (M4) + GROBID (M2) adapters
-      - mcp                   # M8 McpServer — MCP protocol is decided, not a Phase-0 open question
+      - mcp>=1.28,<2          # M8 McpServer — MCP protocol is decided, not a Phase-0 open question.
+                                # Ceiling <2: mcp 2.0.0 removed/moved mcp.server.fastmcp, which
+                                # app/serve.py:32 imports — check that import still resolves before raising this.
       - filelock               # GpuLock's real adapter (DATA-CONTRACTS.md "GpuLock" — FileGpuLock)
       - ruff                  # drives several T-F6 static/grep-adjacent checks
       # ADR-06 / T-B1 — Phase-0 Spike 1 locked MinerU's `pipeline` backend as the sole V0 Parser
