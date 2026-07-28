@@ -13,6 +13,11 @@ papers.db-wal
 pdf_cache/
 blobs/
 
+# The real, operator-specific config (T-DOC89 §2): the tracked template is config.example.yaml.
+# A real config.yaml (repo-root symlink or copy) must never be committed -- it names real,
+# machine-specific absolute paths.
+config.yaml
+
 # Agent worktrees / local Claude state — never track.
 .claude/
 .worktrees/

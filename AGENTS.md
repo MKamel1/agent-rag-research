@@ -85,7 +85,7 @@ GIT-WORKFLOW.md) rather than as new owner tickets. For the ticket-by-ticket buil
 
 **Foundation sign-off authority (T-F7, CONVENTIONS §0.2):** the human operator, GitHub `@MKamel1`. Any PR
 touching a foundation-protected path (`.github/CODEOWNERS` — currently `contracts/`, `rag/config.py`,
-`config.yaml`, `migrations/`, `rag/fakes/`, `fixtures/`, `ci/`, `.github/`) requires their explicit
+`config.example.yaml`, `migrations/`, `rag/fakes/`, `fixtures/`, `ci/`, `.github/`) requires their explicit
 approval before merge — mechanized via `.github/CODEOWNERS` + branch protection, see GIT-WORKFLOW.md.
 
 ## If you're picking up work right now

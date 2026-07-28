@@ -38,7 +38,7 @@ Concretely, for this build:
    - Changes to a foundation-protected path require **explicit human sign-off** before merge (a CI rule: a
      diff touching those paths is auto-flagged, not auto-mergeable). **Protected paths are read from
      `.github/CODEOWNERS`** — that file is the single source of truth for the list (currently `contracts/`,
-     `rag/config.py`, `config.yaml`, `migrations/`, `rag/fakes/`, `fixtures/`, `ci/`, `.github/`; see
+     `rag/config.py`, `config.example.yaml`, `migrations/`, `rag/fakes/`, `fixtures/`, `ci/`, `.github/`; see
      GIT-WORKFLOW.md "Foundation freeze") — not hand-enumerated here, so this doc can't drift out of sync
      with the actual enforcement mechanism the way an inline list would. This is a build-process gate,
      distinct from the *product's* agent-as-reasoner design (CONTEXT.md) — it's about protecting a shared
@@ -346,7 +346,7 @@ judgment and stay as review items.
       file? → fail the build.
 - [ ] **CI:** does the diff define a dataclass/TypedDict with a name already in `contracts/`, or touch any
       foundation-protected path (`.github/CODEOWNERS` — currently `contracts/`, `rag/config.py`,
-      `config.yaml`, `migrations/`, `rag/fakes/`, `fixtures/`, `ci/`, `.github/`) without the "foundation
+      `config.example.yaml`, `migrations/`, `rag/fakes/`, `fixtures/`, `ci/`, `.github/`) without the "foundation
       change" label + human sign-off? → fail the build.
 - [ ] **CI:** any `except Exception:` / `except:` in the diff? → fail the build.
 - [ ] **CI:** any `os.getenv`/`os.environ` outside the Config loader? → fail the build.

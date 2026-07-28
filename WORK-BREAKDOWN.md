@@ -81,7 +81,7 @@ mechanical gate — don't rely on every other agent remembering not to touch it.
   adapter file, (b) fails if a diff defines a type shadowing a `contracts/` name, (c) fails on
   `except Exception`/bare `except`, (d) fails on `os.getenv`/`os.environ` outside the Config loader, (e)
   fails if a diff touches a foundation-protected path (`.github/CODEOWNERS` — currently `contracts/`,
-  `rag/config.py`, `config.yaml`, `migrations/`, `rag/fakes/`, `fixtures/`, `ci/`, `.github/`) **without**
+  `rag/config.py`, `config.example.yaml`, `migrations/`, `rag/fakes/`, `fixtures/`, `ci/`, `.github/`) **without**
   an explicit "foundation-change" label, (f) fails if the real `Embedder`/`Summarizer`/`Reranker` adapter's
   `__init__` doesn't declare a `gpu_lock: GpuLock` parameter — a **necessary prefilter, not sufficient
   proof**: it only shows the parameter exists in the signature, not that `acquire()` wraps the real
@@ -102,7 +102,7 @@ mechanical gate — don't rely on every other agent remembering not to touch it.
   `FakeVectorStore` and is confirmed to fail on socket block, not just "would have been slow."
 - **T-F7 — foundation-change protocol.** Once T-F1–T-F5 are reviewed and merged, tag the commit
   (`foundation-v0-frozen`). From that point, any PR touching a foundation-protected path — the list lives
-  in `.github/CODEOWNERS` (currently `contracts/`, `rag/config.py`, `config.yaml`, `migrations/`,
+  in `.github/CODEOWNERS` (currently `contracts/`, `rag/config.py`, `config.example.yaml`, `migrations/`,
   `rag/fakes/`, `fixtures/`, `ci/`, `.github/`; see GIT-WORKFLOW.md "Foundation freeze") — must (i) carry
   the "foundation-change" label, (ii) state which module's need is forcing the change, and (iii) get
   **your (the human's) explicit sign-off** before merge — T-F6(e) blocks the merge button until that

@@ -1,8 +1,9 @@
-"""Sibling test for rag/config.py (T-F2). Covers the loader: reading the real repo-root
-`config.yaml`, each of pydantic's strict-validation failure modes propagating uncaught through
-`load_config` (missing required field, unknown key, out-of-range value), malformed YAML syntax,
-the non-mapping precondition (`ContractError`), the `str`-path branch, and the no-arg
-default-path branch.
+"""Sibling test for rag/config.py (T-F2, extended by T-DOC89). Covers the loader: reading the
+real repo-root `config.example.yaml`, each of pydantic's strict-validation failure modes
+propagating uncaught through `load_config` (missing required field, unknown key, out-of-range
+value), malformed YAML syntax, the non-mapping precondition (`ContractError`), the `str`-path
+branch, and the no-arg default-path branch. T-DOC89 §1/§3 additions live in
+`test_config_path_resolution.py`.
 """
 
 from pathlib import Path
@@ -16,14 +17,16 @@ from contracts.errors import ContractError
 from rag.config import load_config
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-REAL_CONFIG_PATH = REPO_ROOT / "config.yaml"
+REAL_CONFIG_PATH = REPO_ROOT / "config.example.yaml"
 
 
-def test_loads_real_repo_config():
+def test_loads_real_repo_example_config():
     config = load_config(REAL_CONFIG_PATH)
     assert len(config.focus_area_queries) == 33
     assert config.corpus_cap == 30_000
-    assert config.gpu_lock_path == ".gpu.lock"
+    # T-DOC89 §1: path fields resolve against the config file's own directory (here, REPO_ROOT),
+    # not the literal string in the YAML -- gpu_lock_path is no longer the bare ".gpu.lock".
+    assert config.gpu_lock_path == str(REPO_ROOT / ".gpu.lock")
     assert config.parse_batch_size == 4
 
 
@@ -67,6 +70,9 @@ def test_str_path_works(tmp_path):
 
 
 def test_default_path_uses_cwd(tmp_path, monkeypatch):
+    # T-DOC89 §3: cwd is one rung of discovery, below RAG_CONFIG -- isolate from the repo's
+    # session-wide RAG_CONFIG default (conftest.py) so this test proves the cwd rung specifically.
+    monkeypatch.delenv("RAG_CONFIG", raising=False)
     path = tmp_path / "config.yaml"
     path.write_text(yaml.dump({"focus_area_queries": ["causal inference"]}))
     monkeypatch.chdir(tmp_path)

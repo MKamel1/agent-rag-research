@@ -396,7 +396,10 @@ def run_benchmark(
 
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--config", default="config.yaml", help="base config.yaml to copy levers from")
+    # T-DOC89 §2: no default -- config.yaml (the tracked template) was renamed to
+    # config.example.yaml precisely so it can't be silently loaded by accident; a benchmark run's
+    # base levers must be named explicitly, not fall back to whatever happens to sit in cwd.
+    parser.add_argument("--config", required=True, help="base config.yaml to copy levers from")
     parser.add_argument("--config-name", required=True, help="label for this run in the report")
     parser.add_argument("--paper-ids", required=True, help="comma-separated fixed paper-id corpus")
     parser.add_argument("--parse-workers", type=int, default=1)

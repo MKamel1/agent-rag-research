@@ -1,6 +1,8 @@
-# config.yaml — the ONE injected Config object (DATA-CONTRACTS.md §Config). No module reads this file
-# or `os.getenv` directly except the loader Owner F builds in T-F2 (CONVENTIONS.md §3) — that loader is
-# still to be built; the VALUES below are already decided so Owner F doesn't have to invent them.
+# config.example.yaml — the tracked TEMPLATE for the ONE injected Config object (DATA-CONTRACTS.md
+# §Config). Never loaded directly (T-DOC89 §2: this filename is deliberately not `config.yaml`, so it
+# can never be discovered by accident) -- copy it to a real `config.yaml` (repo root, via a symlink, or
+# wherever `RAG_CONFIG`/discovery will find it) and fill in real absolute paths. No module reads a
+# config file directly, or calls `os.getenv`, except the loader in `rag/config.py` (CONVENTIONS.md §3).
 #
 # `focus_area_queries` are real arXiv search-query strings (CONTEXT.md: "a set of arXiv search queries,
 # not just categories"), organized under CONTEXT.md's 6 V0 sub-topics for causal methods, across

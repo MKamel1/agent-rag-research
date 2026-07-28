@@ -162,7 +162,7 @@ def test_start_download_reuses_keywords_override_same_as_a_full_run(tmp_path):
     the same override path `test_start_with_keywords_augments_not_replaces_and_writes_override_config`
     already proves for a full run."""
     calls = []
-    base_cfg = controller_mod.load_config(controller_mod._REPO_ROOT / "config.yaml")
+    base_cfg = controller_mod.load_config(controller_mod._REPO_ROOT / "config.example.yaml")
     manifest = controller_mod.start(
         tmp_path, target=30000, parse_workers=1, mode="download",
         keywords=["zzz-test-keyword"], spawn=_kwargs_spawn(calls),
@@ -818,7 +818,7 @@ def test_start_with_keywords_augments_not_replaces_and_writes_override_config(tm
     launch with cwd=<the scratch dir that holds it> so app.build_corpus/prefetch/ingest all pick
     it up via their own load_config()."""
     calls = []
-    base_cfg = controller_mod.load_config(controller_mod._REPO_ROOT / "config.yaml")
+    base_cfg = controller_mod.load_config(controller_mod._REPO_ROOT / "config.example.yaml")
     manifest = controller_mod.start(
         tmp_path, target=100, keywords=["zzz-test-keyword"], spawn=_kwargs_spawn(calls),
     )
@@ -837,7 +837,7 @@ def test_start_with_keywords_augments_not_replaces_and_writes_override_config(tm
 def test_start_with_keyword_already_in_base_config_is_a_no_op_override(tmp_path):
     """Re-adding an already-present keyword changes nothing -- no override dir needed."""
     calls = []
-    base_cfg = controller_mod.load_config(controller_mod._REPO_ROOT / "config.yaml")
+    base_cfg = controller_mod.load_config(controller_mod._REPO_ROOT / "config.example.yaml")
     manifest = controller_mod.start(
         tmp_path, target=100, keywords=[base_cfg.focus_area_queries[0]], spawn=_kwargs_spawn(calls),
     )
@@ -855,7 +855,7 @@ def test_start_with_remove_keywords_removes_a_base_config_query(tmp_path):
     """Removal works on the 33 base config.yaml queries too, not just ones added in this same
     request -- the override writes the resulting list wholesale."""
     calls = []
-    base_cfg = controller_mod.load_config(controller_mod._REPO_ROOT / "config.yaml")
+    base_cfg = controller_mod.load_config(controller_mod._REPO_ROOT / "config.example.yaml")
     removed = base_cfg.focus_area_queries[0]
     manifest = controller_mod.start(
         tmp_path, target=100, remove_keywords=[removed], spawn=_kwargs_spawn(calls),
@@ -890,7 +890,7 @@ def test_start_with_keywords_and_remove_keywords_together_applies_remove_after_a
     """Semantics: remove_keywords applies AFTER the keywords augment merge -- add+remove in one
     request is well-defined (e.g. adding then immediately removing the same term is a no-op add)."""
     calls = []
-    base_cfg = controller_mod.load_config(controller_mod._REPO_ROOT / "config.yaml")
+    base_cfg = controller_mod.load_config(controller_mod._REPO_ROOT / "config.example.yaml")
     to_remove = base_cfg.focus_area_queries[0]
     manifest = controller_mod.start(
         tmp_path, target=100, keywords=["zzz-added-keyword"], remove_keywords=[to_remove],
@@ -926,7 +926,7 @@ def test_start_with_remove_keywords_removing_everything_is_refused(tmp_path):
     no min-length, so this explicit guard is the only thing standing between the request and a
     dead run."""
     calls = []
-    base_cfg = controller_mod.load_config(controller_mod._REPO_ROOT / "config.yaml")
+    base_cfg = controller_mod.load_config(controller_mod._REPO_ROOT / "config.example.yaml")
     with pytest.raises(InvalidOverrideError):
         controller_mod.start(
             tmp_path, target=100, remove_keywords=list(base_cfg.focus_area_queries),
@@ -939,7 +939,7 @@ def test_start_with_remove_keywords_removing_everything_is_refused(tmp_path):
 def test_retarget_wires_remove_keywords_through(tmp_path):
     calls = []
     controller_mod.start(tmp_path, target=100, spawn=_kwargs_spawn(calls))
-    base_cfg = controller_mod.load_config(controller_mod._REPO_ROOT / "config.yaml")
+    base_cfg = controller_mod.load_config(controller_mod._REPO_ROOT / "config.example.yaml")
     removed = base_cfg.focus_area_queries[0]
     try:
         retargeted = controller_mod.retarget(
@@ -1023,7 +1023,7 @@ def test_start_with_no_edits_reports_the_base_config_ordering_and_filters(tmp_pa
     dashboard's run-panel indicator has something to read regardless of whether this run edited
     anything."""
     calls = []
-    base_cfg = controller_mod.load_config(controller_mod._REPO_ROOT / "config.yaml")
+    base_cfg = controller_mod.load_config(controller_mod._REPO_ROOT / "config.example.yaml")
     manifest = controller_mod.start(tmp_path, target=100, spawn=_kwargs_spawn(calls))
     try:
         assert calls[0]["cwd"] == tmp_path  # no override -- nothing actually changed
@@ -1370,7 +1370,7 @@ def test_start_falls_back_to_repo_root_config_when_data_dir_has_none(tmp_path):
     """No data_dir/config.yaml (e.g. a fresh/test data dir) -- must fall back to the repo-root
     config, same as every other existing test in this file relies on implicitly."""
     calls = []
-    base_cfg = controller_mod.load_config(controller_mod._REPO_ROOT / "config.yaml")
+    base_cfg = controller_mod.load_config(controller_mod._REPO_ROOT / "config.example.yaml")
     manifest = controller_mod.start(
         tmp_path, target=100, keywords=["zzz-fallback-test"], spawn=_kwargs_spawn(calls),
     )

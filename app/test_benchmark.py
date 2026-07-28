@@ -33,6 +33,7 @@ from app.benchmark import (
 )
 import app.benchmark as benchmark_mod
 from contracts.config import Config
+from rag.config import load_config
 
 
 def _make_pdf(path: Path, n_pages: int) -> None:
@@ -303,6 +304,24 @@ def test_write_scratch_config_overrides_ids_and_storage_paths_only(tmp_path):
     assert written["gpu_lock_path"] == ".custom.gpu.lock"
     assert written["corpus_cap"] == 42
     assert written["focus_area_queries"] == ["causal inference"]
+
+
+def test_scratch_config_is_still_loadable_by_bare_load_config_after_the_rename(tmp_path, monkeypatch):
+    """T-DOC89 §2/§3: the tracked template moved to config.example.yaml, and load_config()'s
+    no-arg default now runs full discovery instead of a bare cwd-relative open() -- this scratch
+    writer must be unaffected either way, since app/parse_phase.py's subprocess trick (cwd=dest,
+    bare load_config()) only ever depended on discovery's cwd rung, which existed before and still
+    exists now."""
+    base = _base_config(gpu_lock_path=".custom.gpu.lock", corpus_cap=42)
+    dest = tmp_path / "scratch"
+    _write_scratch_config(dest, base, paper_ids=["a"], db_path="t.db", blob_dir="t_blobs")
+
+    monkeypatch.delenv("RAG_CONFIG", raising=False)
+    monkeypatch.chdir(dest)
+    cfg = load_config()
+
+    assert cfg.ingest_paper_ids == ["a"]
+    assert cfg.corpus_cap == 42
 
 
 # ---------------------------------------------------------------------------
