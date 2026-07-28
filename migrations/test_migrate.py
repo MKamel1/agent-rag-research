@@ -29,6 +29,10 @@ ALL_TABLES = V0_TABLES | {"ingest_checkpoint", "quarantine_diagnostics"}
 # below build a schema by executing the raw `.sql` files directly and never see it, so they keep
 # comparing against plain ALL_TABLES.
 MIGRATED_TABLES = ALL_TABLES | {"schema_version"}
+# Pre-existing bug, unrelated to T-DOC81: 0001+0002 alone don't create quarantine_diagnostics
+# (that's 0003) or doc_type (that's 0004) -- the 0002-scoped parity test below must compare
+# against what 0001+0002 actually create, not the whole-schema ALL_TABLES.
+CHECKPOINT_TABLES = V0_TABLES | {"ingest_checkpoint"}
 V1_TABLES_NOT_CREATED = {"claims", "claim_relations", "citation_edges"}
 ALL_MIGRATION_FILENAMES = {
     "0001_init.sql",
@@ -330,7 +334,7 @@ def test_0002_ingest_checkpoint_matches_data_contracts_schema():
         init_conn.executescript(SCHEMA_FILE.read_text())
         init_conn.executescript(checkpoint_sql)
 
-        assert _table_names(contracts_conn) == _table_names(init_conn) == ALL_TABLES
+        assert _table_names(contracts_conn) == _table_names(init_conn) == CHECKPOINT_TABLES
         assert _schema_snapshot(contracts_conn) == _schema_snapshot(init_conn)
     finally:
         contracts_conn.close()
