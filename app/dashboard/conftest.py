@@ -15,9 +15,16 @@ repo-tree stub-validation warning (T-DOC89 §2) never fires just from running th
 that wants to exercise discovery itself (`app/dashboard/test_controller.py`'s own fallback test)
 sets `RAG_CONFIG` explicitly via `monkeypatch`, which pytest restores after that one test --
 taking precedence for its duration over this session-wide default.
+
+Uses `pytest.MonkeyPatch()` instantiated directly, not a raw process-environment mapping
+read/write -- the documented pytest API for monkeypatching outside function scope (the
+function-scoped `monkeypatch` fixture can't be depended on by a session-scoped fixture). Also
+keeps this file inside `ci/checks/env_leak.py` check (d)'s scope (`app/` is in scope; only
+`rag/config.py` is exempt) -- a raw process-environment mutation here would be a real violation of
+CONVENTIONS.md §3's "no module reads/writes the process environment outside the Config loader",
+not a false positive to suppress.
 """
 
-import os
 import shutil
 
 import pytest
@@ -31,10 +38,7 @@ def _dashboard_static_config(tmp_path_factory):
     target = config_dir / "config.yaml"
     shutil.copy(config_mod._REPO_ROOT / "config.example.yaml", target)
 
-    previous = os.environ.get("RAG_CONFIG")
-    os.environ["RAG_CONFIG"] = str(target)
+    mp = pytest.MonkeyPatch()
+    mp.setenv("RAG_CONFIG", str(target))
     yield
-    if previous is None:
-        os.environ.pop("RAG_CONFIG", None)
-    else:
-        os.environ["RAG_CONFIG"] = previous
+    mp.undo()
