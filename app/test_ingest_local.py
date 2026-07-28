@@ -521,6 +521,21 @@ def test_main_empty_drop_dir_exits_zero_without_ingest(tmp_path, monkeypatch):
     assert list((tmp_path / "drop").glob("manifest-*.txt")) == []
 
 
+def test_main_logs_resolved_paths(tmp_path, monkeypatch, caplog):
+    # T-DOC89 §4: an operator standing in the wrong directory should see where this process
+    # actually pointed, not guess -- empty drop dir keeps this to the log line, no real work.
+    cfg = _fake_config(tmp_path)
+    monkeypatch.setattr("app.ingest_local.load_config", lambda: cfg)
+    caplog.set_level("INFO")
+
+    exit_code = main([])
+
+    assert exit_code == 0
+    assert f"db_path={cfg.db_path}" in caplog.text
+    assert f"collection={cfg.collection}" in caplog.text
+    assert f"drop_in_dir={cfg.drop_in_dir}" in caplog.text
+
+
 def _fake_config_with_disabled_cache(tmp_path: Path) -> Config:
     """`pdf_cache_dir=""` is a documented, supported value elsewhere (contracts/config.py: ""
     disables the cache) but this module's whole staging mechanism depends on a working cache dir

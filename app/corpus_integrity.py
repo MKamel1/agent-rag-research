@@ -13,9 +13,12 @@ This module is the standing check for that invariant: a `done` paper must have >
 GPU, no network -- so it's safe to run against the real production DB at any time.
 """
 
+import logging
 import sqlite3
 import sys
 from dataclasses import dataclass
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -57,7 +60,14 @@ def main() -> None:
     # than reading RAG_DB_PATH from the environment directly here.
     from rag.config import load_config
 
+    logging.basicConfig(level=logging.INFO)
     cfg = load_config()
+    # T-DOC89 §4: report what was resolved, same pattern as app/delete_docs.py -- an operator
+    # standing in the wrong directory should see where this process actually pointed, not guess.
+    logger.info(
+        "corpus_integrity: resolved db_path=%s collection=%s drop_in_dir=%s",
+        cfg.db_path, cfg.collection, cfg.drop_in_dir,
+    )
     conn = sqlite3.connect(cfg.db_path)
     try:
         offenders = find_done_papers_without_chunks(conn)

@@ -14,6 +14,7 @@ import os
 import signal
 import sqlite3
 import subprocess
+import sys
 import time
 from pathlib import Path
 
@@ -35,8 +36,10 @@ from app.build_corpus import (
     cached_not_done,
     done_count,
     ensure_prefetch_running,
+    main,
     stranded_ids,
 )
+from contracts.config import Config
 from migrations.migrate import migrate
 from rag.ingest_state_sqlite import SqliteIngestState
 
@@ -1173,3 +1176,23 @@ def test_build_to_target_finish_first_drains_stranded_before_touching_fresh(tmp_
 
     assert batches[0] == ["strand1", "strand2"]   # stranded drained FIRST, alone
     assert sorted(batches[1]) == ["fresh1", "fresh2"]
+
+
+def test_main_logs_resolved_paths(tmp_path, monkeypatch, caplog):
+    # T-DOC89 §4: an operator standing in the wrong directory should see where this process
+    # actually pointed, not guess -- build_to_target itself faked, so this never does real work.
+    cfg = Config(
+        focus_area_queries=["causal inference"],
+        db_path=str(tmp_path / "papers.db"), collection="papers",
+        drop_in_dir=str(tmp_path / "drop_in"),
+    )
+    monkeypatch.setattr("app.build_corpus.load_config", lambda: cfg)
+    monkeypatch.setattr("app.build_corpus.build_to_target", lambda *a, **k: None)
+    monkeypatch.setattr(sys, "argv", ["build_corpus", "--target", "1"])
+    caplog.set_level("INFO")
+
+    main()
+
+    assert f"db_path={cfg.db_path}" in caplog.text
+    assert f"collection={cfg.collection}" in caplog.text
+    assert f"drop_in_dir={cfg.drop_in_dir}" in caplog.text

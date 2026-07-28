@@ -34,6 +34,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import shutil
 import sqlite3
 from datetime import datetime, timezone
@@ -42,6 +43,8 @@ from typing import Protocol
 
 from contracts.config import Config
 from rag.config import load_config
+
+logger = logging.getLogger(__name__)
 
 # Same host/port/dim wiring app/assembly.py's real composition roots use for the vector store --
 # named vendor-neutrally here since this module must never say the vector store's vendor name
@@ -236,8 +239,15 @@ def _parse_args() -> argparse.Namespace:
 def main() -> None:
     from rag.vector_index import VectorIndex  # only imported here -- see module docstring
 
+    logging.basicConfig(level=logging.INFO)
     args = _parse_args()
     cfg = load_config(args.config)
+    # T-DOC89 §4: report what was resolved, same pattern as app/delete_docs.py -- an operator
+    # standing in the wrong directory should see where this process actually pointed, not guess.
+    logger.info(
+        "snapshot: resolved db_path=%s collection=%s drop_in_dir=%s",
+        cfg.db_path, cfg.collection, cfg.drop_in_dir,
+    )
     backup_root = Path(args.backup_root) if args.backup_root else default_backup_root(cfg)
 
     vector_index = VectorIndex(

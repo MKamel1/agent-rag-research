@@ -6,7 +6,8 @@ connection), then inserts minimal rows directly -- no ingest pipeline involved.
 
 import sqlite3
 
-from app.corpus_integrity import IntegrityOffender, find_done_papers_without_chunks
+from app.corpus_integrity import IntegrityOffender, find_done_papers_without_chunks, main
+from contracts.config import Config
 from migrations.migrate import migrate
 
 
@@ -95,3 +96,22 @@ def test_done_state_row_with_no_papers_row_is_reported(tmp_path):
     offenders = find_done_papers_without_chunks(conn)
 
     assert offenders == [IntegrityOffender(paper_id="local:f0929288d4f3", chunk_count=0, block_count=0)]
+
+
+def test_main_logs_resolved_paths(tmp_path, monkeypatch, caplog):
+    # T-DOC89 §4: an operator standing in the wrong directory should see where this process
+    # actually pointed, not guess -- a real (but scratch, empty) migrated DB, no production data.
+    db_path = str(tmp_path / "papers.db")
+    migrate(db_path)
+    cfg = Config(
+        focus_area_queries=["causal inference"], db_path=db_path, collection="papers",
+        drop_in_dir=str(tmp_path / "drop_in"),
+    )
+    monkeypatch.setattr("rag.config.load_config", lambda: cfg)
+    caplog.set_level("INFO")
+
+    main()
+
+    assert f"db_path={db_path}" in caplog.text
+    assert f"collection={cfg.collection}" in caplog.text
+    assert f"drop_in_dir={cfg.drop_in_dir}" in caplog.text
