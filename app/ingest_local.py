@@ -376,13 +376,23 @@ def _report_dry_run(drop_dir: Path) -> int:
         arxiv_id = detect_arxiv_id(path.name, first_page_text)
         mtime = date.fromtimestamp(path.stat().st_mtime)
         # Reuse mint_local_ref's own title resolution (T-DOC88) rather than re-deriving it here --
-        # a duplicate title chain could silently drift from what actually gets stored.
+        # a duplicate title chain could silently drift from what actually gets stored. BUT only
+        # trust it as a preview of the STORED title when arxiv_id is None: stage_file only calls
+        # mint_local_ref in that case (or when the fetch later fails, which this offline preview
+        # can't know in advance -- the whole point of --dry-run is zero network). When arxiv_id is
+        # set, the real staged title normally comes from fetch_by_ids instead, and mint_local_ref's
+        # result (including any title-- marker) is never consulted -- showing it here would look
+        # like confirmation the marker worked while staging silently used arXiv's title instead.
         ref = mint_local_ref(raw, path.name, doc_type, mtime)
         paper_id = arxiv_id or ref.paper_id
+        title_display = (
+            ref.title if arxiv_id is None
+            else "(from arXiv metadata, not previewed offline)"
+        )
         preview = first_page_text[:500].replace("\n", " ")
         logger.info(
             "\n--- %s\n    doc_type: %s\n    id:      %s\n    title:   %s\n    preview: %s",
-            path.name, doc_type, paper_id, ref.title, preview,
+            path.name, doc_type, paper_id, title_display, preview,
         )
         previewed += 1
     logger.info(

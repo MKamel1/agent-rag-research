@@ -543,6 +543,29 @@ def test_dry_run_reports_resolved_title(tmp_path, monkeypatch, caplog):
     assert "title:   Causal Inference in Python" in caplog.text
 
 
+def test_dry_run_does_not_preview_local_title_for_arxiv_detected_file(tmp_path, monkeypatch, caplog):
+    """T-DOC88 fix round 1: when `detect_arxiv_id` finds a real id (via the golden fixture's own
+    page-1 `arXiv:` banner), `stage_file` will use the FETCHED ref's title, never
+    `mint_local_ref`'s -- so a `title--` marker on such a file must NOT be shown as if it were the
+    title that will actually be stored. Showing it would look like confirmation the marker worked
+    while staging silently used arXiv's title instead (the exact failure mode `--dry-run` exists to
+    prevent)."""
+    monkeypatch.setattr("app.ingest_local.load_config", lambda: _fake_config(tmp_path))
+    papers_dir = tmp_path / "drop" / "papers"
+    papers_dir.mkdir(parents=True)
+    (papers_dir / "title--My Chosen Title.pdf").write_bytes(GOLDEN_PDF.read_bytes())
+
+    with caplog.at_level("INFO", logger="app.ingest_local"):
+        exit_code = main(["--dry-run"])
+
+    assert exit_code == 0
+    assert "id:      2409.01266" in caplog.text  # arxiv_id was in fact detected
+    # The filename itself (containing "My Chosen Title") legitimately appears in the "--- <name>"
+    # header line -- what must NOT appear is a "title:" line claiming that as the resolved title.
+    assert "title:   My Chosen Title" not in caplog.text
+    assert "title:   (from arXiv metadata, not previewed offline)" in caplog.text
+
+
 def test_main_disabled_pdf_cache_refuses_to_stage(tmp_path, monkeypatch):
     """`pdf_cache_dir=""` means "cache disabled" (contracts/config.py). This module's staged files
     are cache-first entries `app.assembly.harvest_refs` reads back -- with the cache disabled,
