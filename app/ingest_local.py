@@ -64,6 +64,14 @@ _ARXIV_ID_PREFIXED = re.compile(r"arxiv[:\s/]*(\d{4}\.\d{4,5})(?:v\d+)?\b", re.I
 _ARXIV_ID_BARE = re.compile(r"^(\d{4}\.\d{4,5})(?:v\d+)?\b")
 _YEAR = re.compile(r"\b(19|20)\d{2}\b")
 
+# T-DOC88: an operator-opt-in filename prefix that marks the rest of the stem as the authoritative
+# title -- e.g. "title--Causal Inference in Python.pdf". Deliberately not a heuristic blocklist of
+# download-name shapes (T-DOC82 already rejected that as endless) and not "always prefer the
+# stem" (libgen-style download names like "Matheus Facure - Causal Inference in Python_ ... -
+# libgen.li.pdf" would make terrible titles) -- an explicit marker is the only deterministic way
+# to state a title without either problem.
+TITLE_PREFIX = "title--"
+
 
 def detect_arxiv_id(filename: str, first_page_text: str) -> str | None:
     """Filename checked before content -- cheaper, and a deliberately-named file
@@ -132,16 +140,36 @@ def _first_nonempty_line(text: str) -> str | None:
     return None
 
 
+def _explicit_title(filename: str) -> str | None:
+    """The operator's own title, opted in via a `TITLE_PREFIX` filename prefix (T-DOC88).
+    Matched case-insensitively on the stem -- a silent fall-through over capitalization (e.g.
+    "Title--...") would be a footgun nobody notices until the corpus is inspected. Returns None
+    (fall through to `mint_local_ref`'s normal chain) when the prefix is absent, or when the
+    remainder is empty/whitespace-only (`title--.pdf` must not mint an empty title). The
+    remainder is stripped but otherwise passed through verbatim -- no underscore-to-space, no
+    title-casing; the operator typed what they wanted."""
+    stem = Path(filename).stem
+    if not stem.lower().startswith(TITLE_PREFIX):
+        return None
+    return stem[len(TITLE_PREFIX):].strip() or None
+
+
 def mint_local_ref(pdf_bytes: bytes, filename: str, doc_type: str, mtime: date) -> PaperRef:
     """Content-addressed `local:<12-hex>` id -- same bytes always mint the same id regardless of
     `filename`, so re-staging identical content is idempotent (`stage_file`'s docstring). Title
-    falls back through PDF metadata -> first non-empty line of page 1 -> the filename's own stem;
-    `published` falls back to a 19xx/20xx year found on page 1, else the file's own `mtime`.
+    falls back through an explicit `title--` filename marker (T-DOC88) -> PDF metadata -> first
+    non-empty line of page 1 -> the filename's own stem; `published` falls back to a 19xx/20xx
+    year found on page 1, else the file's own `mtime`.
     """
     digest = hashlib.sha256(pdf_bytes).hexdigest()[:12]
     title_meta, author_meta = _pdf_title_author(pdf_bytes)
     first_page = _safe_first_page(pdf_bytes)
-    title = title_meta or _first_nonempty_line(first_page) or Path(filename).stem
+    title = (
+        _explicit_title(filename)
+        or title_meta
+        or _first_nonempty_line(first_page)
+        or Path(filename).stem
+    )
     year = _YEAR.search(first_page or "")
     published = date(int(year.group(0)), 1, 1) if year else mtime
     return PaperRef(
@@ -347,11 +375,14 @@ def _report_dry_run(drop_dir: Path) -> int:
             continue
         arxiv_id = detect_arxiv_id(path.name, first_page_text)
         mtime = date.fromtimestamp(path.stat().st_mtime)
-        paper_id = arxiv_id or mint_local_ref(raw, path.name, doc_type, mtime).paper_id
+        # Reuse mint_local_ref's own title resolution (T-DOC88) rather than re-deriving it here --
+        # a duplicate title chain could silently drift from what actually gets stored.
+        ref = mint_local_ref(raw, path.name, doc_type, mtime)
+        paper_id = arxiv_id or ref.paper_id
         preview = first_page_text[:500].replace("\n", " ")
         logger.info(
-            "\n--- %s\n    doc_type: %s\n    id:      %s\n    preview: %s",
-            path.name, doc_type, paper_id, preview,
+            "\n--- %s\n    doc_type: %s\n    id:      %s\n    title:   %s\n    preview: %s",
+            path.name, doc_type, paper_id, ref.title, preview,
         )
         previewed += 1
     logger.info(

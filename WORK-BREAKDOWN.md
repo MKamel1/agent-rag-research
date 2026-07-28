@@ -1364,3 +1364,68 @@ retrieval quality + operability, not the claim layer** — reinforcing the "use 
   simulated the new splitter against every book's real `blocks` rows before the T-DOC85 rollout
   rather than after. **T-DOC85 improves 3 of the 5 books in the corpus; these two take the
   strategy-A path and are unaffected by it.**
+
+### T-DOC88 — an operator has no deterministic way to set a drop-in document's title (2026-07-27)
+
+- **T-DOC88 (implemented — branch `feat/t-doc88-explicit-title-marker`) — 🟢 added an opt-in
+  `title--` filename prefix so a drop-in operator can state a document's title explicitly instead
+  of hoping PDF extraction gets it right.** `app/ingest_local.py:mint_local_ref` (invoked from
+  `stage_file` for every dropped file that isn't a recognized arXiv paper — the whole `books/` path
+  plus any `papers/` file arXiv can't resolve) derives `title` through a three-rung fallback chain:
+  `title_meta or _first_nonempty_line(first_page) or Path(filename).stem`. All three rungs are
+  **extraction luck** — whichever one fires first depends entirely on whether the publisher
+  happened to set PDF metadata, and if not, whatever text pypdfium2 finds first on page 1.
+  **Measured against the five books live in the corpus, 2026-07-27:** four get good titles this way
+  (*Causal Inference and Discovery in Python*, *Causal Inference and Machine Learning in Economics,
+  Social, and Health Sciences*, *Causal Inference in Python*, *Causality: Models, Reasoning, and
+  Inference*); one — `local:...` for *Handbook of Labor, Human Resources and Population Economics*
+  — stores `Handbook of Labor, Human Resources and Population Economics (Mutlu Yuksel, Yigit
+  Aydede)`, author names appended by whichever rung fired. This ticket does not repair that title
+  (a stored title is not touched retroactively); it is *control* over what the next drop mints, not
+  a fix for what's already in the corpus — Task 8 (re-ingest all five books) is the follow-up that
+  will actually pick up a corrected filename.
+  **Two alternatives were considered and rejected.** (i) "Always prefer the filename stem" —
+  rejected because the operator's real filenames are libgen-style download names (e.g. `Matheus
+  Facure - Causal Inference in Python_ ... (2023, O'Reilly Media) - libgen.li.pdf`), and the stem
+  of that is a worse title than what extraction luck already produces for most files; it would fix
+  the one bad book and break others. (ii) A heuristic blocklist of download-name shapes (strip
+  `- libgen.li`, parenthesized publisher/year, etc.) — rejected on T-DOC82 precedent, which already
+  refused an equivalent front-matter blocklist as open-ended: every new download source is a new
+  shape, and the list never actually closes.
+  **Design: an explicit, opt-in marker instead of a heuristic.** A new module-level constant
+  `TITLE_PREFIX = "title--"` (`app/ingest_local.py:73`) and a new `_explicit_title(filename)`
+  helper (`app/ingest_local.py:143-154`) are checked first, ahead of the existing three rungs:
+  `title = _explicit_title(filename) or title_meta or _first_nonempty_line(first_page) or
+  Path(filename).stem` (`app/ingest_local.py:167-172`). `_explicit_title` matches the prefix
+  case-insensitively against `Path(filename).stem.lower()` — `Title--`/`TITLE--` also work, so a
+  capitalization slip is never a silent fall-through the operator wouldn't notice until inspecting
+  the corpus — and returns the remainder after the prefix, `.strip()`-ed and otherwise untouched
+  (no underscore-to-space, no title-casing: the operator typed what they wanted). An empty or
+  whitespace-only remainder (`title--.pdf`) returns `None`, i.e. falls through to the unchanged
+  three-rung chain rather than minting an empty title. The mechanism is generic and applies to both
+  `doc_type="paper"` and `doc_type="book"` with no branch on `doc_type` — a paper with bad metadata
+  benefits identically, and a `doc_type` special-case would be unrequested complexity the marker
+  doesn't need. `pdf_url` (`app/ingest_local.py:184`, `pdf_url=filename`) is left untouched and
+  still carries the prefix verbatim — it is a provenance record of the file actually on disk, not a
+  display title. The content-addressed `paper_id` (`sha256(pdf_bytes)[:12]`,
+  `app/ingest_local.py:164,176`) is computed from `pdf_bytes` only and was never touched by this
+  change — verified by
+  `test_mint_local_ref_title_prefix_does_not_change_content_addressed_id`
+  (`app/test_ingest_local.py`), which mints the same bytes under a plain and a `title--`-prefixed
+  filename and asserts identical ids; this is load-bearing for the Task 8 re-ingest, which renames
+  files in place without wanting to re-mint ids for already-cached content.
+  **Second change: the `--dry-run` preview (T-DOC86, `_report_dry_run`) now reports the resolved
+  title**, reusing `mint_local_ref`'s own return value (`app/ingest_local.py:378-386`) rather than
+  re-deriving title logic a second time — a duplicate chain could silently drift from what actually
+  gets stored. This is what closes the loop: an operator who forgot to add or misspelled the
+  `title--` marker sees the wrong title in the preview before any GPU time is spent on parse/
+  chunk/embed, instead of discovering it by inspecting the corpus afterward, the same discovery
+  path that surfaced the *Handbook of Labor* author-name noise in the first place.
+  **Tests** (`app/test_ingest_local.py`): prefix used; case-insensitive (`Title--`/`TITLE--`);
+  whitespace stripped but not otherwise transformed; empty-remainder falls through; applies to
+  `doc_type="paper"` as well as `"book"`; id unchanged by renaming; dry-run reports the title; and
+  a regression pin (`test_mint_local_ref_no_prefix_title_unchanged`) asserting a file WITHOUT the
+  prefix produces byte-for-byte the same title the pre-T-DOC88 chain already produced, against the
+  real `fixtures/golden/2409.01266.pdf` fixture (no PDF metadata Title, so this exercises the
+  `_first_nonempty_line` rung) — the assertion protecting the 11k-paper corpus and today's book
+  behavior from an accidental change here.

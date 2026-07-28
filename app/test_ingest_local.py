@@ -143,6 +143,67 @@ def test_mint_local_ref_falls_back_to_filename_stem_title():
 
 
 # ---------------------------------------------------------------------------
+# mint_local_ref -- explicit `title--` marker (T-DOC88)
+# ---------------------------------------------------------------------------
+
+
+def test_mint_local_ref_title_prefix_used():
+    raw = _synthetic_pdf_bytes()
+    ref = mint_local_ref(
+        raw, "title--Causal Inference in Python.pdf", "book", date(2026, 7, 25)
+    )
+    assert ref.title == "Causal Inference in Python"
+
+
+def test_mint_local_ref_title_prefix_case_insensitive():
+    raw = _synthetic_pdf_bytes()
+    ref = mint_local_ref(raw, "TITLE--Causal Inference.pdf", "book", date(2026, 7, 25))
+    assert ref.title == "Causal Inference"
+    ref2 = mint_local_ref(raw, "Title--Causal Inference.pdf", "book", date(2026, 7, 25))
+    assert ref2.title == "Causal Inference"
+
+
+def test_mint_local_ref_title_prefix_strips_surrounding_whitespace_only():
+    """The remainder is stripped, but NOT further transformed -- no underscore-to-space, no
+    title-casing. The operator typed what they wanted (T-DOC88)."""
+    raw = _synthetic_pdf_bytes()
+    ref = mint_local_ref(raw, "title--  causal_inference IN python .pdf", "book", date(2026, 7, 25))
+    assert ref.title == "causal_inference IN python"
+
+
+def test_mint_local_ref_title_prefix_empty_remainder_falls_through():
+    raw = _synthetic_pdf_bytes()  # no metadata, no first-page text
+    ref = mint_local_ref(raw, "title--.pdf", "book", date(2026, 7, 25))
+    assert ref.title == "title--"  # falls through to the stem, unmodified by the marker
+
+
+def test_mint_local_ref_title_prefix_applies_to_papers_too():
+    """No doc_type branch -- a paper with bad metadata benefits identically (T-DOC88)."""
+    raw = _synthetic_pdf_bytes()
+    ref = mint_local_ref(raw, "title--A Real Paper Title.pdf", "paper", date(2026, 7, 25))
+    assert ref.title == "A Real Paper Title"
+
+
+def test_mint_local_ref_title_prefix_does_not_change_content_addressed_id():
+    """Renaming a file (adding/removing the `title--` marker) must never change its `paper_id` --
+    it stays `sha256(pdf_bytes)[:12]`, load-bearing for an upcoming re-ingest (T-DOC88)."""
+    raw = _synthetic_pdf_bytes()
+    plain = mint_local_ref(raw, "my-book.pdf", "book", date(2026, 7, 25))
+    prefixed = mint_local_ref(raw, "title--My Book.pdf", "book", date(2026, 7, 25))
+    assert plain.paper_id == prefixed.paper_id
+
+
+def test_mint_local_ref_no_prefix_title_unchanged():
+    """Regression pin: a file WITHOUT the `title--` prefix must produce EXACTLY the title today's
+    fallback chain already produces -- this is the assertion protecting the 11k-paper corpus and
+    today's book behavior from an accidental change in T-DOC88. The golden fixture has no PDF
+    metadata Title, so this exercises the `_first_nonempty_line` rung of the chain."""
+    raw = GOLDEN_PDF.read_bytes()
+    ref = mint_local_ref(raw, "2409.01266.pdf", "paper", date(2026, 7, 25))
+    assert ref.title == "Double Machine Learning meets Panel Data - Promises, Pitfalls,"
+
+
+# ---------------------------------------------------------------------------
 # stage_file
 # ---------------------------------------------------------------------------
 
@@ -464,6 +525,22 @@ def test_dry_run_skips_a_corrupt_pdf_and_continues(tmp_path, monkeypatch, caplog
     # to failed/, not stage it) -- the count must reflect files actually previewed, not every PDF
     # found.
     assert "1 file(s) would be staged" in caplog.text
+
+
+def test_dry_run_reports_resolved_title(tmp_path, monkeypatch, caplog):
+    """T-DOC88: the dry-run preview must surface the resolved title -- an operator who forgot a
+    `title--` marker sees the wrong title before any GPU time is spent, rather than discovering it
+    in the corpus afterwards."""
+    monkeypatch.setattr("app.ingest_local.load_config", lambda: _fake_config(tmp_path))
+    books_dir = tmp_path / "drop" / "books"
+    books_dir.mkdir(parents=True)
+    (books_dir / "title--Causal Inference in Python.pdf").write_bytes(_synthetic_pdf_bytes())
+
+    with caplog.at_level("INFO", logger="app.ingest_local"):
+        exit_code = main(["--dry-run"])
+
+    assert exit_code == 0
+    assert "title:   Causal Inference in Python" in caplog.text
 
 
 def test_main_disabled_pdf_cache_refuses_to_stage(tmp_path, monkeypatch):
