@@ -1429,3 +1429,47 @@ retrieval quality + operability, not the claim layer** — reinforcing the "use 
   real `fixtures/golden/2409.01266.pdf` fixture (no PDF metadata Title, so this exercises the
   `_first_nonempty_line` rung) — the assertion protecting the 11k-paper corpus and today's book
   behavior from an accidental change here.
+  **Fix round 2 (2026-07-27): the marker now also overrides a successful arXiv fetch's title.**
+  The original design above only reached `mint_local_ref` — and therefore `_explicit_title` — for
+  files `stage_file` couldn't or didn't resolve via arXiv. A file whose filename or page-1 text
+  *did* yield an arXiv id, fetched successfully via `fetch_by_ids`, used the fetched `PaperRef`
+  wholesale (`fetched[0].model_copy(update={"doc_type": doc_type})`,
+  `app/ingest_local.py:stage_file`) — the operator's marker was silently ignored for exactly the
+  files most likely to already have a wrong or unwanted title (arXiv's own, e.g. a preprint's
+  working title that differs from what the operator wants displayed). **The operator's ruling:** a
+  `title--` marker is a deliberate act, and a deliberate marker outranks fetched metadata — so it
+  must win in both branches, not just the local one. **Fix:** `stage_file`'s arXiv branch now
+  checks `_explicit_title(path.name)` and includes `"title"` in the `model_copy(update=...)` dict
+  only when it returns non-`None`, exactly mirroring how `doc_type` already overrode the fetched
+  ref (`app/ingest_local.py:stage_file`, the `if fetched:` block). Every other fetched field —
+  authors, abstract, categories, published, paper_id, version — is left exactly as arXiv supplied
+  it; only `title` (and, as before, `doc_type`) are ever overridden. **The marker still only
+  short-circuits the title *search*, not the PDF parse it depends on for other fields** —
+  `mint_local_ref`'s fallback chain (`_explicit_title(filename) or title_meta or
+  _first_nonempty_line(first_page) or Path(filename).stem`) already stopped at the first truthy
+  value before this fix, but `_pdf_title_author` and `_safe_first_page` still run unconditionally
+  either way, because their OTHER return values (`author_meta` for `authors=`, and the page-1 text
+  for the `published` year regex) are needed regardless of whether a marker is present — a comment
+  was added at the title chain (`app/ingest_local.py:mint_local_ref`) making this explicit rather
+  than leaving it as a trap for the next reader who might try to skip those calls and quietly break
+  `authors`/`published`. **`--dry-run` (`_report_dry_run`) updated to match:** it used to show
+  `"(from arXiv metadata, not previewed offline)"` whenever `arxiv_id` was detected, because the
+  local title chain's result would have been discarded by staging regardless of a marker (fix round
+  1). That's no longer true — the preview now checks `_explicit_title` first and shows the marker's
+  title in *either* branch (it's accurate now, since the marker really will be what's stored); only
+  falls back to the arXiv label when no marker is present and `arxiv_id` is set; and shows the
+  local chain's title as before when neither applies. Still zero network — no `fetch_by_ids` call
+  added, per its existing offline contract.
+  **Tests** (`app/test_ingest_local.py`): `test_stage_file_title_marker_overrides_fetched_arxiv_title`
+  (marker wins over a successful fetch, with explicit assertions that authors/abstract/categories/
+  published/paper_id/version all survive untouched — the assertion that would catch an over-broad
+  `model_copy`); `test_stage_file_no_marker_fetched_title_used_unchanged` (regression pin: no
+  marker still uses the fetched title verbatim); `test_stage_file_title_marker_wins_on_fetch_failure_too`
+  (marker + a failing fetch falls back to `mint_local_ref`, where the marker still wins);
+  `test_dry_run_shows_arxiv_label_when_no_marker_present` (new: the label is still shown when there
+  really is no marker to preview). One existing test,
+  `test_dry_run_does_not_preview_local_title_for_arxiv_detected_file` (added in fix round 1), tested
+  exactly the behavior fix round 2 reverses — that a marker was hidden behind the arXiv label. It
+  was renamed to `test_dry_run_shows_marker_title_for_arxiv_detected_file` and its assertions
+  flipped to match the new rule, with a note in its docstring explaining why: this is an intentional
+  update to a test that encoded round 1's now-superseded behavior, not a regression.

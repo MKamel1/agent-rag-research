@@ -14,9 +14,10 @@ Two ways a dropped file gets a `paper_id`:
    PDF's own first-page text, e.g. a "arXiv:2409.01266v1" banner) -- its real metadata is fetched
    via the injected `fetch_by_ids` (production wires `app.assembly._fetch_by_ids_with_backoff`,
    already 429-resilient), tagged with the `doc_type` implied by which subfolder it was dropped
-   into (`ref.model_copy(update={"doc_type": doc_type})` -- the folder wins over the fetched ref's
-   own default, since e.g. a thesis dropped under `books/` IS an arXiv paper but should still be
-   treated as a book).
+   into (`ref.model_copy(update={"doc_type": doc_type, ...})` -- the folder wins over the fetched
+   ref's own default, since e.g. a thesis dropped under `books/` IS an arXiv paper but should
+   still be treated as a book). An explicit `title--` filename marker (T-DOC88) wins over the
+   fetched title the same way -- a deliberate operator override outranks fetched metadata.
 2. Anything else (a real book, a fetch failure, a paper arXiv just doesn't have) mints a
    content-addressed `local:<sha256-prefix>` id (`mint_local_ref`) -- same bytes always produce
    the same id regardless of filename, so re-dropping identical content is idempotent by
@@ -164,6 +165,10 @@ def mint_local_ref(pdf_bytes: bytes, filename: str, doc_type: str, mtime: date) 
     digest = hashlib.sha256(pdf_bytes).hexdigest()[:12]
     title_meta, author_meta = _pdf_title_author(pdf_bytes)
     first_page = _safe_first_page(pdf_bytes)
+    # `_explicit_title` short-circuits the title SEARCH below via `or` -- but both calls above
+    # still run regardless of a marker: `_pdf_title_author` also yields `author_meta` (used for
+    # `authors=` below) and `_safe_first_page` feeds the `published` year regex further down. A
+    # marker only supersedes the title, not those other fields, so neither call can be skipped.
     title = (
         _explicit_title(filename)
         or title_meta
@@ -268,8 +273,17 @@ def stage_file(
             fetched = []
         if fetched:
             # The drop folder's doc_type wins over the fetched ref's own (always "paper")
-            # default -- see module docstring point 1.
-            ref = fetched[0].model_copy(update={"doc_type": doc_type})
+            # default -- see module docstring point 1. An explicit title-- marker (T-DOC88 fix
+            # round 2) wins over the fetched title too: it's a deliberate operator override, and
+            # the operator's ruling is that a deliberate marker outranks fetched metadata.
+            # Everything else about the fetched ref (authors, abstract, categories, published,
+            # paper_id, version) is left exactly as arXiv supplied it -- only doc_type and title
+            # are ever overridden here.
+            update: dict[str, object] = {"doc_type": doc_type}
+            explicit_title = _explicit_title(path.name)
+            if explicit_title is not None:
+                update["title"] = explicit_title
+            ref = fetched[0].model_copy(update=update)
     if ref is None:
         ref = mint_local_ref(raw, path.name, doc_type, mtime)
 
@@ -376,19 +390,23 @@ def _report_dry_run(drop_dir: Path) -> int:
         arxiv_id = detect_arxiv_id(path.name, first_page_text)
         mtime = date.fromtimestamp(path.stat().st_mtime)
         # Reuse mint_local_ref's own title resolution (T-DOC88) rather than re-deriving it here --
-        # a duplicate title chain could silently drift from what actually gets stored. BUT only
-        # trust it as a preview of the STORED title when arxiv_id is None: stage_file only calls
-        # mint_local_ref in that case (or when the fetch later fails, which this offline preview
-        # can't know in advance -- the whole point of --dry-run is zero network). When arxiv_id is
-        # set, the real staged title normally comes from fetch_by_ids instead, and mint_local_ref's
-        # result (including any title-- marker) is never consulted -- showing it here would look
-        # like confirmation the marker worked while staging silently used arXiv's title instead.
+        # a duplicate title chain could silently drift from what actually gets stored. An explicit
+        # title-- marker is shown as-is regardless of arxiv_id: T-DOC88 fix round 2 made
+        # stage_file's arXiv branch apply the marker over a fetched title too (it's a deliberate
+        # operator override and wins over everything), so the preview is now accurate in both
+        # branches. Absent a marker, when arxiv_id is set, the real staged title comes from
+        # fetch_by_ids instead -- mint_local_ref's fallback chain (PDF metadata / first line /
+        # stem) was never going to be used, so showing it here would be misleading; the label is
+        # the honest answer, and --dry-run stays offline (no fetch_by_ids call).
         ref = mint_local_ref(raw, path.name, doc_type, mtime)
         paper_id = arxiv_id or ref.paper_id
-        title_display = (
-            ref.title if arxiv_id is None
-            else "(from arXiv metadata, not previewed offline)"
-        )
+        explicit_title = _explicit_title(path.name)
+        if explicit_title is not None:
+            title_display = explicit_title
+        elif arxiv_id is not None:
+            title_display = "(from arXiv metadata, not previewed offline)"
+        else:
+            title_display = ref.title
         preview = first_page_text[:500].replace("\n", " ")
         logger.info(
             "\n--- %s\n    doc_type: %s\n    id:      %s\n    title:   %s\n    preview: %s",

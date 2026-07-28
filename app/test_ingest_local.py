@@ -277,6 +277,77 @@ def test_stage_file_arxiv_fetch_failure_falls_back_to_local_id(tmp_path):
     assert reconstructed.doc_type == "paper"
 
 
+# ---------------------------------------------------------------------------
+# stage_file -- title-- marker overrides a successful arXiv fetch (T-DOC88 fix round 2)
+# ---------------------------------------------------------------------------
+
+
+def test_stage_file_title_marker_overrides_fetched_arxiv_title(tmp_path):
+    """The operator's marker is deliberate and wins over a successful arXiv fetch -- but ONLY
+    the title. Every other field the fetch supplied (authors, abstract, categories, published,
+    paper_id, version) must survive untouched -- this is the assertion that would catch an
+    over-broad `model_copy` that clobbered more than the title."""
+    papers_dir = tmp_path / "papers"
+    papers_dir.mkdir()
+    # Filename stem starts with "title--", not digits, so detect_arxiv_id can't find the id via
+    # the bare-stem rung -- it comes from the golden fixture's own page-1 "arXiv:" banner instead.
+    src = papers_dir / "title--My Chosen Title.pdf"
+    src.write_bytes(GOLDEN_PDF.read_bytes())
+    cache_dir = tmp_path / "cache"
+
+    paper_id = stage_file(
+        src, "paper", cache_dir, fetch_by_ids=lambda ids: [_known_ref("2409.01266")]
+    )
+
+    assert paper_id == "2409.01266"
+    reconstructed = _cached_ref(cache_dir, "2409.01266")
+    assert reconstructed is not None
+    assert reconstructed.title == "My Chosen Title"
+    # Everything else about the fetched ref is untouched.
+    assert reconstructed.authors == ["A. Author"]
+    assert reconstructed.abstract == "a real abstract"
+    assert reconstructed.categories == ["stat.ME"]
+    assert reconstructed.published == date(2024, 9, 1)
+    assert reconstructed.paper_id == "2409.01266"
+    assert reconstructed.version == "v1"
+    assert reconstructed.doc_type == "paper"
+
+
+def test_stage_file_no_marker_fetched_title_used_unchanged(tmp_path):
+    """Regression pin: without a marker, the fetched ref's own title is used exactly as
+    fetched -- unchanged by T-DOC88 fix round 2."""
+    papers_dir = tmp_path / "papers"
+    papers_dir.mkdir()
+    src = papers_dir / "2409.01266.pdf"
+    src.write_bytes(GOLDEN_PDF.read_bytes())
+    cache_dir = tmp_path / "cache"
+
+    paper_id = stage_file(
+        src, "paper", cache_dir, fetch_by_ids=lambda ids: [_known_ref("2409.01266")]
+    )
+
+    reconstructed = _cached_ref(cache_dir, paper_id)
+    assert reconstructed.title == "Fetched title for 2409.01266"
+
+
+def test_stage_file_title_marker_wins_on_fetch_failure_too(tmp_path):
+    """A marker + a failing fetch falls back to `mint_local_ref` (the pre-existing fallback
+    behavior) -- and the marker still wins there, same as the direct `mint_local_ref` tests
+    above."""
+    papers_dir = tmp_path / "papers"
+    papers_dir.mkdir()
+    src = papers_dir / "title--Local Fallback Title.pdf"
+    src.write_bytes(GOLDEN_PDF.read_bytes())
+    cache_dir = tmp_path / "cache"
+
+    paper_id = stage_file(src, "paper", cache_dir, fetch_by_ids=_RaisingFetcher())
+
+    assert paper_id is not None
+    assert paper_id.startswith("local:")
+    reconstructed = _cached_ref(cache_dir, paper_id)
+    assert reconstructed.title == "Local Fallback Title"
+
+
 def test_stage_file_non_arxiv_uses_pdf_meta_or_filename_title(tmp_path):
     books_dir = tmp_path / "books"
     books_dir.mkdir()
@@ -543,13 +614,16 @@ def test_dry_run_reports_resolved_title(tmp_path, monkeypatch, caplog):
     assert "title:   Causal Inference in Python" in caplog.text
 
 
-def test_dry_run_does_not_preview_local_title_for_arxiv_detected_file(tmp_path, monkeypatch, caplog):
-    """T-DOC88 fix round 1: when `detect_arxiv_id` finds a real id (via the golden fixture's own
-    page-1 `arXiv:` banner), `stage_file` will use the FETCHED ref's title, never
-    `mint_local_ref`'s -- so a `title--` marker on such a file must NOT be shown as if it were the
-    title that will actually be stored. Showing it would look like confirmation the marker worked
-    while staging silently used arXiv's title instead (the exact failure mode `--dry-run` exists to
-    prevent)."""
+def test_dry_run_shows_marker_title_for_arxiv_detected_file(tmp_path, monkeypatch, caplog):
+    """T-DOC88 fix round 2: a `title--` marker now overrides a successful arXiv fetch's title in
+    `stage_file` itself (it's a deliberate operator override, and wins over everything), so the
+    preview is accurate showing it even when `detect_arxiv_id` finds a real id (via the golden
+    fixture's own page-1 `arXiv:` banner).
+
+    NOTE: this test used to assert the OPPOSITE -- that the marker was hidden behind the
+    "(from arXiv metadata...)" label -- under fix round 1, before the marker won over a fetched
+    title. That was correct under round 1's rules; it now encodes stale behavior and has been
+    updated rather than kept as a regression pin, since the underlying rule it tested changed."""
     monkeypatch.setattr("app.ingest_local.load_config", lambda: _fake_config(tmp_path))
     papers_dir = tmp_path / "drop" / "papers"
     papers_dir.mkdir(parents=True)
@@ -560,9 +634,24 @@ def test_dry_run_does_not_preview_local_title_for_arxiv_detected_file(tmp_path, 
 
     assert exit_code == 0
     assert "id:      2409.01266" in caplog.text  # arxiv_id was in fact detected
-    # The filename itself (containing "My Chosen Title") legitimately appears in the "--- <name>"
-    # header line -- what must NOT appear is a "title:" line claiming that as the resolved title.
-    assert "title:   My Chosen Title" not in caplog.text
+    assert "title:   My Chosen Title" in caplog.text
+    assert "title:   (from arXiv metadata, not previewed offline)" not in caplog.text
+
+
+def test_dry_run_shows_arxiv_label_when_no_marker_present(tmp_path, monkeypatch, caplog):
+    """Without a marker, the preview still can't know the fetched title offline (--dry-run makes
+    zero network calls, `fetch_by_ids` is never invoked here) -- the label is the honest answer,
+    same as fix round 1."""
+    monkeypatch.setattr("app.ingest_local.load_config", lambda: _fake_config(tmp_path))
+    papers_dir = tmp_path / "drop" / "papers"
+    papers_dir.mkdir(parents=True)
+    (papers_dir / "2409.01266.pdf").write_bytes(GOLDEN_PDF.read_bytes())
+
+    with caplog.at_level("INFO", logger="app.ingest_local"):
+        exit_code = main(["--dry-run"])
+
+    assert exit_code == 0
+    assert "id:      2409.01266" in caplog.text
     assert "title:   (from arXiv metadata, not previewed offline)" in caplog.text
 
 
