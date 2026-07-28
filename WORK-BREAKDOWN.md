@@ -1473,3 +1473,131 @@ retrieval quality + operability, not the claim layer** — reinforcing the "use 
   was renamed to `test_dry_run_shows_marker_title_for_arxiv_detected_file` and its assertions
   flipped to match the new rule, with a note in its docstring explaining why: this is an intentional
   update to a test that encoded round 1's now-superseded behavior, not a regression.
+  **Confirmed in production (2026-07-28 re-ingest of all five books).** `local:54d6ca71dda9`
+  produced **44 chapters** whose titles are numbered list items lifted from body text. Verbatim
+  examples: `1. https://freakonometrics.hypotheses.org/52776`, `2. DiD%20Resources`, `4. Verify GPU
+  availability:`, `2. Define Gini Index for a Node t`, `5. Recursive Partitioning: Split Left and
+  Right Nodes`, `8. Cross-Validation to Select Optimal Tree Size`. The unit *boundaries* are
+  arbitrary mid-body slices, not just the labels. `local:dfe850b3281a` produced **7 chapters** for
+  an entire book, including `3. Finally, let's examine the results in Table 3.1:`.
+  **NEW FINDING — duplicate titles.** In `local:dfe850b3281a`, `Part 2: Causal Inference` appears as
+  the title of BOTH chapter 2 and chapter 5, and `Part 3: Causal Discovery` as BOTH chapter 3 and
+  chapter 6. Two distinct routing units carry byte-identical labels, so an agent selecting a chapter
+  by title cannot distinguish them — `search_papers` surfaces the title as `PaperSearchResult.chapter`.
+  This is strictly worse than an unhelpful label and was not anticipated when the ticket was filed.
+  Record it as an added requirement: the fix must guarantee UNIQUE chapter labels within a document,
+  not merely plausible ones.
+  **Contrast, same run:** the three books that took the strategy-B size-merge path produced 16, 26,
+  and 8 chapters with genuine section titles (e.g. `Hypothesis Testing: Establishing Statistical
+  Significance`, `Goodhart's Law, Campbell's Law, and the Lucas Critique`). T-DOC85 works; it simply
+  never reaches strategy A.
+  Also record the known strategy-B ceiling observed on `local:f6c64e1e8c7d` (8 chapters): where every
+  heading inside a merged window is mid-content, the chosen title is mid-content too —
+  `{probabilistically/interventionally/counterfactually} equivalent`, `Example 9.2 Consider the
+  following SCM`, `C.2 Proof of Proposition 6.3`. Not a defect of T-DOC85's scorer (it picks the
+  best of what exists) but a real limit worth noting beside T-DOC87.
+
+### T-DOC89 — config resolution depends on the current working directory, and has silently corrupted results four times (2026-07-28)
+
+- **T-DOC89 (not started) — 🔴 `load_config`'s default path resolves against the process's current
+  working directory, and paths inside a resolved config are cwd-relative too — the combination has
+  silently produced wrong results four times.** `rag/config.py`'s `load_config(path="config.yaml")`
+  resolves its default relative to the **process's current working directory** — its own docstring
+  says so. Two problems compound:
+  1. **Which config file you get depends on where you stand.** Two exist.
+     `/home/omar/ai-projects/research-system-rag/config.yaml` is **tracked in git**, a template
+     whose every path is relative (`db_path: "papers.db"`, `blob_dir: "blobs"`, `pdf_cache_dir:
+     "pdf_cache"`, `drop_in_dir: "drop_in"`). `/home/omar/ai-projects/research-system-rag-data/config.yaml`
+     is untracked, outside the repo, and real — all paths absolute, pointing at the actual
+     11,026-document corpus.
+  2. **Paths *inside* a config are also cwd-relative.** The template's `db_path: "papers.db"` does
+     not mean "the repo's database"; it means "a `papers.db` wherever this process happens to be
+     running." From the repo root that resolves to an empty, migrated, 0-row stub file.
+  **Every failure mode is silent** — no exception, no warning, just wrong results.
+  **Four recurrences, three of them already ticketed:**
+  - **OG-33** — relative-path runs creating empty/partial `papers.db`/`pdf_cache` copies at the repo
+    root. Mitigated by `.gitignore` entries (lines 6-14), which stop them being *committed* but not
+    created.
+  - **T-DOC56** — the empty repo-root `papers.db` was what `build_mcp_server` silently fell back to,
+    producing a **false benchmark result of Recall@10 = 0.000**. The `.gitignore` comment still
+    records this as "the fake Recall@10=0.000 trap".
+  - **T-DOC22** — a process whose cwd differed from ingest's.
+  - **2026-07-28, this rollout, twice.** `app/delete_docs.py` called
+    `build_ingestion_orchestrator(load_config())` without `db_path`/`blob_dir`/`collection`; that
+    function defaults `db_path = db_path or "papers.db"`, so run from the repo root — where
+    `docs/RUNBOOK.md` tells the operator to stand — the deletion tool would have deleted nothing,
+    logged five successes, and exited 0. Caught by the final whole-branch review of PR #177, not by
+    any test. Then, operating the corrected tool, `app.ingest_local --dry-run` reported "no PDFs in
+    drop_in" from the data directory (whose config has no `drop_in_dir`, so it defaulted to a
+    relative `drop_in` that does not exist there), while running from the repo root would have found
+    the books but targeted the empty stub database. **Neither working directory was correct**; the
+    rollout proceeded only via an explicit `--drop-dir` override, which is a workaround, not a fix.
+  **Corroborating artifact:** a stray 20-file `pdf_cache/` currently sits in the repo root, evidence
+  that something has already run in the wrong place.
+  **`docs/RUNBOOK.md` documents no working-directory convention at all** — grepping it for `cd`,
+  `config.yaml`, `RAG_CONFIG`, `drop_in`, or "working directory" returns nothing.
+  **Fix — designed to be correct by default, not to fail first.** The operator was explicit that
+  this must not become a tool that fails repeatedly; it should resolve the right config on its own,
+  and when it genuinely cannot, say exactly what it tried and what to set. Three parts:
+  1. **A config describes itself.** Relative paths *inside* a config resolve against **that config
+     file's own directory**, not cwd. `drop_in` in the repo template then permanently means
+     `<repo>/drop_in` from anywhere. This alone eliminates the "ran from the wrong place" class — a
+     config stops being instructions whose meaning shifts underneath the process.
+  2. **Discovery that finds the right file unaided.** Precedence: explicit `--config` argument →
+     `RAG_CONFIG` environment variable → `config.yaml` in cwd → walk up parent directories → only
+     then an error that names every location tried and both ways to fix it. Rename the tracked
+     template to `config.example.yaml` so it is not *named* `config.yaml` and therefore can never be
+     discovered by accident — that is what stops the wrong file winning, without requiring anyone to
+     be disciplined about cwd. Rollout sets the link once (either `RAG_CONFIG` exported, or a
+     gitignored symlink at the repo root pointing at the real config) so the common path works from
+     day one and the error path is genuinely rare.
+  3. **Always report what was resolved.** Every `app/` entrypoint logs its resolved absolute
+     `db_path`, `collection`, and `drop_in_dir` at startup. `app/delete_docs.py` already does exactly
+     this — added after the final review caught the bug above — so this generalizes a proven pattern
+     rather than inventing one.
+  **Risks to check during implementation, not to assume away:** `rag/config.py` and `config.yaml`
+  are both CODEOWNERS foundation paths, so this needs the `foundation-change` label. Renaming a
+  tracked config is the risky part — verify nothing else depends on that filename (CI workflows, the
+  corpus dashboard, `app/serve.py`, tests) before committing to it.
+
+### T-DOC90 — document titles are never derived from OCR, so an image-cover book falls through to its filename (2026-07-28)
+
+- **T-DOC90 (not started) — 🟢 title extraction never sees OCR output, so a book whose cover page is
+  a scanned image with no text layer falls all the way through to its raw filename stem.**
+  Explicitly a documented future option, not work to schedule now. The operator's current answer is
+  to name drop-in files with T-DOC88's `title--` prefix, which is deterministic and requires no
+  inference. This ticket exists so the scalable alternative is on record for when files arrive
+  without a marker.
+  **The measurement (2026-07-28, the five corpus books).** `app/ingest_local.py`'s `mint_local_ref`
+  resolves a title through `_explicit_title(filename) or title_meta or
+  _first_nonempty_line(first_page) or Path(filename).stem`. The `first_page` there comes from
+  `_first_page_text`, which uses **pypdfium2's `get_textpage().get_text_bounded()` — embedded
+  text-layer extraction, with no OCR whatsoever.** Measured text-layer characters on page 1:
+
+  | book | page-1 text chars | PDF metadata Title | source actually used |
+  |---|---|---|---|
+  | `local:dfe850b3281a` | **0** | "Causal Inference and Discovery in Python" | metadata |
+  | `local:54d6ca71dda9` | **0** | *(empty)* | **filename stem** |
+  | `local:f0929288d4f3` | **0** | "Causal Inference in Python" | metadata |
+  | `local:f6c64e1e8c7d` | **0** | "Elements of Causal Inference" | metadata |
+  | `local:14b7e283bdcd` | 2438 | *(empty)* | first line of page-1 text |
+
+  **Four of five book covers carry no text layer at all** — they are images. The first page
+  contributed a title for exactly one book, and only because that one happened to ship a text layer.
+  **This explains a real observed defect.** Before the operator renamed the files,
+  `local:54d6ca71dda9`'s stored title was `Causal Inference and Machine Learning In Economics,
+  Social, and Health Sciences (Mutlu Yuksel, Yigit Aydede)` — with author names appended. That book
+  has neither PDF metadata nor a page-1 text layer, so the chain fell all the way through to the raw
+  libgen-style filename stem. The title was never extracted from the document at all.
+  **The pipeline does have OCR — at the wrong time.** MinerU runs `OCR-det`/`OCR-rec` and is how
+  these books get parsed at all. But that happens at *parse* time, whereas `mint_local_ref` fixes the
+  title at *staging* time, before MinerU sees the file. OCR output has never been available to the
+  title chain.
+  **The option to record:** after parsing, refine a title that fell through to the filename stem by
+  taking the first heading of the OCR'd markdown. That would have produced a correct title for
+  `local:54d6ca71dda9` with no renaming.
+  **Two caveats that must be weighed if this is ever built:** (a) it means a document's title changes
+  *after* staging, while the `PaperRef` sidecar is written earlier — so the sidecar/`papers` row
+  relationship needs deciding; (b) it reintroduces inference where T-DOC88 now provides a
+  deterministic operator control, so it should apply only as a fallback when no `title--` marker is
+  present and the chain would otherwise land on the filename stem.
