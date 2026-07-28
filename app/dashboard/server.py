@@ -143,8 +143,11 @@ _RUN_FIELDS = (
 # `run_manifest.json`'s own top-level `parse_batch_size` field, distinct from the STATIC default
 # below) -- `_status_dict` prefers the manifest's value when a run has one, and falls back to this
 # process-start-time `config.yaml` read (unchanged OG-42 behavior) otherwise.
-_CONFIG_PATH = Path(__file__).resolve().parents[2] / "config.yaml"
-_STATIC_CONFIG = load_config(_CONFIG_PATH)
+# T-DOC89 §3: discovery (RAG_CONFIG -> cwd -> walk-up), not a hardcoded repo-root path -- the
+# repo-root `config.yaml` this used to read directly was the TRACKED TEMPLATE (now renamed to
+# config.example.yaml precisely so it's not silently loadable); a real deployment's config is
+# found the same way every other `app/` entrypoint's bare `load_config()` finds it.
+_STATIC_CONFIG = load_config()
 
 # Search-side (query-time) params, read straight off `_STATIC_CONFIG` -- as of 2026-07-18,
 # `Config.top_k`/`Config.rerank_depth` are genuinely wired (`app/assembly.py::build_mcp_server`

@@ -128,7 +128,7 @@ CONVENTIONS.md §0.2 / WORK-BREAKDOWN.md T-F7 require the human operator's expli
 to a foundation-protected path. This is mechanized, not left to memory:
 
 - `.github/CODEOWNERS` names the human (`@MKamel1`) as required reviewer for `contracts/**`,
-  `rag/config.py`, `config.yaml`, `migrations/**`, `rag/fakes/**`, `fixtures/**`, `ci/**`, and
+  `rag/config.py`, `config.example.yaml`, `migrations/**`, `rag/fakes/**`, `fixtures/**`, `ci/**`, and
   `.github/**` — the last two so the enforcement mechanism and CI config can't be weakened by an
   ordinary unprotected PR.
 - The `foundation-change` label (registered at repo bootstrap) must be applied to any PR touching those

@@ -1,5 +1,5 @@
 """Check (e) — CONVENTIONS.md §0.2 / §12, WORK-BREAKDOWN.md T-F7: a diff touching a
-CODEOWNERS-protected path (`contracts/`, `rag/config.py`, `config.yaml`, `migrations/`,
+CODEOWNERS-protected path (`contracts/`, `rag/config.py`, `config.example.yaml`, `migrations/`,
 `rag/fakes/`, `fixtures/`) must carry the `foundation-change` label.
 
 Unlike every other check here, this one has no meaning on a bare `push` — a push event's payload

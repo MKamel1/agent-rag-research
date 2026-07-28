@@ -451,17 +451,20 @@ def liveness(data_dir: str | Path) -> dict | None:
 def _load_base_config(data_dir: Path) -> Config:
     """OG-49#1: the run's BASE config, loaded from `<data_dir>/config.yaml` -- the real data
     directory's own config -- so an overridden run's `db_path`/`blob_dir`/`pdf_cache_dir`/
-    `collection` resolve against the real corpus location. Falls back to the repo-root
-    `config.yaml` only when `data_dir` has none of its own (e.g. a fresh/test data dir): before
-    this fix, `start`/`retarget` always loaded `_REPO_ROOT/config.yaml` regardless of `data_dir`,
-    so `_write_override_config_dir`'s path resolution (below) resolved relative fields against the
-    DASHBOARD SERVER PROCESS's own cwd -- not the corpus's actual data dir -- misdirecting every
-    edited run's `papers.db`/`blobs` while it kept upserting into the real, shared vector-store
-    collection (orphan vector points with no matching row in the misdirected db)."""
+    `collection` resolve against the real corpus location. Falls back to discovery (T-DOC89 §3:
+    `RAG_CONFIG` -> `config.yaml` in cwd -> walk up) only when `data_dir` has none of its own (e.g.
+    a fresh/test data dir): before OG-49#1, `start`/`retarget` always loaded `_REPO_ROOT/
+    config.yaml` regardless of `data_dir`, so `_write_override_config_dir`'s path resolution
+    (below) resolved relative fields against the DASHBOARD SERVER PROCESS's own cwd -- not the
+    corpus's actual data dir -- misdirecting every edited run's `papers.db`/`blobs` while it kept
+    upserting into the real, shared vector-store collection (orphan vector points with no matching
+    row in the misdirected db). T-DOC89 §2 additionally moved the hardcoded repo-root fallback off
+    the now-renamed tracked template (`config.example.yaml`) onto real discovery -- a hardcoded
+    `_REPO_ROOT / "config.yaml"` would only ever have found that template."""
     data_dir_config = data_dir / "config.yaml"
     if data_dir_config.exists():
         return load_config(data_dir_config)
-    return load_config(_REPO_ROOT / "config.yaml")
+    return load_config()
 
 
 def _resolve_override_config(cfg: Config, data_dir: Path) -> Config:

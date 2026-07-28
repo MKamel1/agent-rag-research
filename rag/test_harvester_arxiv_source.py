@@ -16,7 +16,7 @@ from contracts.errors import PermanentError, TransientError
 from rag.config import load_config
 from rag.harvester import ArxivSource
 
-REAL_CONFIG_PATH = Path(__file__).resolve().parent.parent / "config.yaml"
+REAL_CONFIG_PATH = Path(__file__).resolve().parent.parent / "config.example.yaml"
 
 _ATOM_ENTRY = """<?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">

@@ -7,7 +7,7 @@
 
 /contracts/          @MKamel1
 /rag/config.py        @MKamel1
-/config.yaml          @MKamel1
+/config.example.yaml   @MKamel1
 /migrations/          @MKamel1
 /rag/fakes/            @MKamel1
 /fixtures/             @MKamel1
