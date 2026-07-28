@@ -392,3 +392,32 @@ passes green while guarding nothing — the exact "green but not enforcing" fail
 Good — that's how design improves. But raise it as a change to *this file* (so everyone moves together), don't
 route around it in your module. A convention that half the team follows is worse than none: it creates the
 "which way is it here?" cognitive load this file exists to remove. Conceptual integrity is the point.
+
+---
+
+## 14. An invariant claim must carry its check
+
+Any claim of the form "never", "always", "exactly one", "this is complete", "all callers do X" — in a
+code comment, docstring, commit message, ticket, or review — is an assertion of fact, and an unverified
+one costs nothing to write and everything to get wrong. It must ship with **either** the check that
+verifies it (a test name, a grep, a measurement) **or** an explicit hedge marking it as observed, not
+guaranteed. See T-DOC93 (WORK-BREAKDOWN.md) for the incident that forced this: three unverified invariant
+claims failed in a single day (2026-07-28), each cheap to have checked.
+
+- **Sibling-path check.** When a fix guards or relocates one branch, state what happens on the adjacent
+  branch. Most "complete fix" claims fail exactly here: T-DOC93's first fix stripped
+  `raw_body_blocks[0]` but left `first.text` unchecked whenever `overlap` was present, reintroducing the
+  defect it was written to close — caught only because a reviewer built a fixture for the sibling case.
+- **Mutation proof.** A claim that a test would catch a regression requires actually reverting the fix
+  and watching it fail. "The test passes" only proves the test runs, not that it has teeth — T-DOC93's
+  fix was trusted only after this was done.
+- **Statistic is not guarantee.** A pattern measured in data is an observation about *this* corpus; only
+  a property forced by the code is a guarantee about every corpus. Never promote the former to the
+  latter: T-DOC93's "exactly one affected chunk per document" was true of every document measured and
+  false as a property of the algorithm — nothing prevents two sections in one document matching the same
+  shape — and it was about to size a corpus retrofit on that basis.
+
+**Corollary for comments specifically:** a comment asserting an invariant the code does not enforce is
+worse than no comment — it tells the next reader "don't bother checking" instead of "check this."
+`rag/chunker.py` carried exactly this comment ("`overlap` and later blocks in `group` are never a
+section's opening heading, so they're joined in unchanged") and the false invariant *was* the bug.
