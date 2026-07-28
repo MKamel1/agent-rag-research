@@ -1702,3 +1702,47 @@ retrieval quality + operability, not the claim layer** — reinforcing the "use 
   we call directly (`qdrant-client`, `pypdfium2`, arguably `ruff` for its CI role) is a middle path
   that leaves general-purpose libraries (`pytest`, `pyyaml`, `httpx`, `filelock`, `markdownify`,
   `pytest-cov`, `pytest-socket`) floating. Recording both options here; not choosing one.
+
+### T-DOC93 — 🟢 LOW: `_strip_duplicate_heading` misses one chunk per document, cause unknown (2026-07-28)
+
+- **T-DOC93 (not started) — 🟢 `_strip_duplicate_heading` still leaves a duplicated heading in
+  exactly one chunk per affected document, and the cause is unidentified.** All figures below were
+  measured read-only against the live corpus on 2026-07-28; they are not to be re-derived.
+  T-DOC62's analysis measured duplicate-heading rates before and after the chunker fix
+  (`rag/chunker.py::_strip_duplicate_heading`, commit `157af4d`, 2026-07-17): 58.49% of pre-fix
+  chunks duplicated, **0.01% of post-fix chunks**. The fix works. But 0.01% should be 0.
+  **The residue has a very specific signature — 34 papers, exactly one affected chunk each**,
+  regardless of document size (1 of 10 chunks, 1 of 85, 1 of 647, 1 of 1444; two papers have 2).
+  That uniformity is the interesting part: a legacy-data explanation would show the pre-fix ~58%
+  rate within an affected paper, and it does not.
+  **It is a live bug, not stale data.** One of the 34 is `local:54d6ca71dda9`, a book **deleted and
+  re-ingested on 2026-07-28** with the current chunker. Whatever this is, it still happens on every
+  ingest.
+  **The affected chunks share a shape.** They sit at high chunk indices (`2410.15166:c23`,
+  `2505.13921:c42`, `2511.17170:c80`, `2606.12968:c66`) and their `section_path` values skew toward
+  document furniture and repeated headings: `References` (multiple papers), `Contents`, `Dataset:`,
+  `Confidential`, `6 Numerical Simulations`, `CAgent – Weight Reconciliation`.
+  **Why the obvious explanations were ruled out:**
+  - *Not* misclassified pre-fix data — see the one-chunk-per-paper uniformity above.
+  - *Not* two adjacent byte-identical heading blocks (an initial hypothesis). Checked directly on
+    `2410.15166`: that paper has **zero** adjacent byte-identical blocks sharing a `section_path`,
+    and its `section_path = "6 Numerical Simulations"` section begins with exactly one heading block
+    followed by ordinary prose.
+  - *Not* a whitespace or unicode normalization mismatch. The stored chunk's line 1 (`section_path`)
+    and line 3 (first body line) are **byte-identical** — verified with `repr()` on both, `L[1] ==
+    L[3]` is `True`. So `_strip_duplicate_heading`'s comparison, which normalizes with `"
+    ".join(x.split())`, should have matched and stripped.
+  **Cause unknown.** The comparison that should fire, doesn't, on exactly one chunk per document.
+  Investigation should start from `rag/chunker.py:178` —
+  `group_texts = [_strip_duplicate_heading(first.text, first.section_path)]` — and establish which
+  chunk in a document takes a path where `first` is not the block the stored text's line 3 came
+  from. Note that when the strip *does* work, the resulting chunk text has an empty line 3, so the
+  failing cases are distinguishable by that alone.
+  **Impact is small but real:** ~0.01% of chunks carry a duplicated heading, wasting embedded tokens
+  and showing the heading twice in a retrieved passage. Same symptom as T-DOC62, ~4000× rarer.
+  **Fix:** find the actual cause before changing anything — the byte-identical evidence means the
+  current hypothesis space is empty, and a speculative fix risks masking it. Once understood, the
+  repair is likely small and belongs in `rag/chunker.py`. Any fix is a **re-chunk trigger** for
+  affected papers, and `app/rechunk.py` (T-DOC62 option B) is the tool that retrofits it, so this
+  can ride along with a future re-chunk rather than needing its own migration.
+  **Discovered by** the T-DOC62 option B work (PR #185), while characterising the post-fix residue.
