@@ -1705,8 +1705,21 @@ retrieval quality + operability, not the claim layer** — reinforcing the "use 
 
 ### T-DOC93 — 🟢 LOW: `_strip_duplicate_heading` misses one chunk per document, cause unknown (2026-07-28)
 
-- **T-DOC93 (not started) — 🟢 `_strip_duplicate_heading` still leaves a duplicated heading in
-  exactly one chunk per affected document, and the cause is unidentified.** All figures below were
+- **T-DOC93 (code fix implemented; re-chunk retrofit for the 34 affected papers still pending) —
+  🟢 `_strip_duplicate_heading` still leaves a duplicated heading in exactly one chunk per
+  affected document.** Cause found: `_build_chunk` (`rag/chunker.py:160`) ran the dedup check
+  against `first.text` unconditionally, but when a split's `overlap` block is present it is
+  prepended ahead of `first.text` in `body` — so `overlap.text`, not `first.text`, is the body's
+  true opening line. A split's first sub-group can end up containing nothing but the section
+  heading (a small heading block immediately followed by a single block so large it alone blows
+  `_MAX_CHUNK_WORDS`), and that heading-only block then becomes the *next* sub-chunk's borrowed
+  `overlap`, landing unchecked as body's real first line — duplicating the title+section_path
+  prefix. Fixed by running the dedup check against whichever block actually opens `body` (overlap
+  when present, else `first`), not unconditionally against `first.text`. Reproduced with a
+  synthetic fixture in `rag/test_chunker.py::test_overlap_carrying_the_section_heading_is_not_duplicated_in_the_next_sub_chunk`
+  (fails on prior `main`, passes after the fix) — no corpus data was touched to find or fix this.
+  This is a re-chunk trigger for the 34 affected papers; `app/rechunk.py` (T-DOC62 option B)
+  already exists to retrofit it and has not yet been run for this fix. All figures below were
   measured read-only against the live corpus on 2026-07-28; they are not to be re-derived.
   T-DOC62's analysis measured duplicate-heading rates before and after the chunker fix
   (`rag/chunker.py::_strip_duplicate_heading`, commit `157af4d`, 2026-07-17): 58.49% of pre-fix
