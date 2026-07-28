@@ -124,3 +124,49 @@ invocation instead -- a substring nothing but the real server process's own argv
 
 No process supervisor, no restart-on-crash, no boot integration -- see "why manual" above. If the
 dashboard dies, `scripts/dashboard.sh status` will say so; `start` again.
+
+## Connecting an MCP client (Claude Code / Claude Desktop) — T-DOC66
+
+`app/serve.py` is the MCP server. It is launched by the MCP client itself (not by hand, not by
+`scripts/dashboard.sh`), driven by the client's own MCP server config. The exact command shape
+that's actually launched, and every requirement that trips a client-config edit if missed:
+
+```json
+{
+  "command": "conda",
+  "args": ["run", "-n", "agent-rag-research", "--no-capture-output", "python", "-m", "app.serve"],
+  "env": { "PYTHONPATH": "/home/omar/ai-projects/research-system-rag" }
+}
+```
+
+- **`--no-capture-output` is required.** `conda run` buffers/intercepts the child process's stdout
+  by default -- MCP's stdio transport is the JSON-RPC protocol itself riding on stdout, so a
+  captured/buffered stdout means the client's handshake never arrives and the connection just
+  hangs (no error, no timeout message -- it looks identical to a slow start). `--no-capture-output`
+  is what makes `conda run` pass the child's stdout straight through, unbuffered.
+- **`PYTHONPATH` must include this repo's root.** The client spawns `python -m app.serve` as a bare
+  subprocess, not through a shell that's `cd`'d into the repo with its venv/conda env already
+  active the way an interactive terminal is -- without `PYTHONPATH` pointing at the repo root,
+  `import app...`/`import rag...`/`import contracts...` fail at the top of `app/serve.py` and the
+  server never starts.
+- **`cwd` matters because `app.serve` (no `--data-dir`) uses plain `load_config()` discovery**
+  (T-DOC89 §3: `RAG_CONFIG` env var -> `config.yaml` in the spawned process's cwd -> walk up parent
+  directories -> loud error naming every location tried). If the client doesn't set an explicit
+  `cwd`, whatever directory the client itself was launched from is what discovery starts from. The
+  supported fix is the same T-DOC89 §3 rollout used everywhere else in this repo: a gitignored
+  repo-root `config.yaml` symlink (`python -m app.init_config --data-dir <path> --link`, T-DOC65)
+  -- discovery's walk-up rung then finds it from any cwd inside this repo, including the repo root
+  itself. Setting an explicit `"cwd"` in the client's server config to this repo's root is the
+  belt-and-braces alternative if a client's own launch cwd is unpredictable.
+- **`RAG_DB_PATH`/`RAG_BLOB_DIR`/`RAG_COLLECTION` env vars do nothing.** `app/serve.py` doesn't read
+  the process environment at all (CONVENTIONS.md §3) -- only `RAG_CONFIG` (the config file's own
+  location) and `rag/config.py`'s discovery matter. A client config carrying these from before
+  T-DOC29 is inert, not wrong-but-working; delete them, or pass `--data-dir <path>` in `args`
+  instead if the target corpus isn't reachable via discovery.
+
+**Verifying a deploy before relying on it:** `python -m app.doctor --check-mcp` (T-DOC66) spawns
+`python -m app.serve` for real and confirms it answers `list_tools` -- the automated version of
+"connect a client and see if it works." It is opt-in (`run_preflight`, what `app.ingest` calls
+automatically, never touches the MCP server) since it spawns a real subprocess and shouldn't slow
+down every ingest run. For a full query -> citation round trip (semantic_search, then get_span on
+the top hit), use `python -m app.mcp_verify_client "some query"` -- see that module's own docstring.

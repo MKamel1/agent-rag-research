@@ -42,6 +42,9 @@ quarantining papers or crashing partway through a multi-hour run.
 """
 
 import argparse
+import asyncio
+import logging
+import os
 import shutil
 import sys
 import urllib.error
@@ -55,6 +58,8 @@ from app import gpu_headroom, tei_lifecycle
 from contracts.config import Config
 from rag import parser as _parser_adapter
 from rag import vector_index as _vector_index_adapter
+
+logger = logging.getLogger(__name__)
 
 # Same URLs app/tei_lifecycle.py health-polls -- this module owns its own copies rather than
 # importing that module's private constants (same "own your own copies" convention that
@@ -107,6 +112,11 @@ _HEALTH_ONLY_SERVICES = (
 _MIN_FREE_DISK_GIB = 5.0
 _MIN_FREE_VRAM_MIB = 2000
 _HEALTH_CHECK_TIMEOUT_SECONDS = 5.0
+# T-DOC66: generous relative to the HTTP health-check timeout above -- this spawns a real `conda`/
+# `python` subprocess and imports app.serve's full composition root (httpx clients, TeiEmbedder,
+# etc.), not a single socket round trip. No network calls happen before list_tools responds, so
+# this is bounded by process/import startup, not by any downstream service being slow.
+_MCP_CHECK_TIMEOUT_SECONDS = 20.0
 
 
 @dataclass(frozen=True)
@@ -204,6 +214,63 @@ def check_services(*, auto_start: bool = True) -> list[PreflightIssue]:
     return issues
 
 
+async def _launch_and_list_tools(*, cwd: str, timeout: float) -> list[str]:
+    """Spawns `python -m app.serve` over real MCP stdio and returns the tool names it advertises.
+
+    Same subprocess spelling as `app.mcp_verify_client`'s own manual-verification tool
+    (`command=sys.executable, args=["-m", "app.serve"]`), but NOT by importing that module's
+    params -- its own builder also forwards the full process environment (`env=dict(os.environ)`),
+    and re-exposing that here would mean spelling `os.environ` in a NEW `app/` line, which
+    `ci/checks/env_leak.py` check (d) flags wherever it lands, not just at its original site (see
+    that check's own module docstring). `env` is left unset here (the MCP SDK's own curated
+    safe-subset default) instead -- sufficient because `-m app.serve` resolves its own package
+    imports via `cwd` (Python's `-m` semantics add `cwd` to `sys.path[0]`), not via `PYTHONPATH`,
+    as long as `cwd` names a real checkout root. True for `check_mcp_server`'s default (the calling
+    process's own cwd, docs/RUNBOOK.md's documented "run from the repo root" convention).
+    """
+    from mcp import ClientSession, StdioServerParameters
+    from mcp.client.stdio import stdio_client
+
+    params = StdioServerParameters(command=sys.executable, args=["-m", "app.serve"], cwd=cwd)
+    async with asyncio.timeout(timeout):
+        async with stdio_client(params) as (read, write):
+            async with ClientSession(read, write) as session:
+                await session.initialize()
+                tools = await session.list_tools()
+                return [t.name for t in tools.tools]
+
+
+def check_mcp_server(
+    *,
+    cwd: str | None = None,
+    timeout: float = _MCP_CHECK_TIMEOUT_SECONDS,
+    _list_tools: Callable[[], list[str]] | None = None,
+) -> PreflightIssue | None:
+    """T-DOC66: verifies `python -m app.serve` actually launches and answers `list_tools` --
+    catches a broken MCP deploy (missing `PYTHONPATH`, wrong `cwd`, a crash on import) before an
+    operator finds out the hard way mid-session, same "check before relying on it" shape as every
+    other check in this module.
+
+    `cwd` defaults to THIS process's own cwd -- the same one `load_config()` already resolved
+    `main()`'s `cfg` from -- so the spawned server discovers the identical config, not always this
+    repo's root regardless of where `doctor` itself was invoked from.
+
+    `_list_tools` is the injection seam a test uses to substitute a fake instead of a real
+    subprocess spawn (CONVENTIONS.md §2, same pattern as `_Service.start` above); real callers
+    never pass it.
+    """
+    list_tools = _list_tools or (
+        lambda: asyncio.run(_launch_and_list_tools(cwd=cwd or os.getcwd(), timeout=timeout))
+    )
+    try:
+        tool_names = list_tools()
+    except Exception as exc:
+        return PreflightIssue("mcp server", f"failed to launch or answer list_tools: {exc!r}")
+    if not tool_names:
+        return PreflightIssue("mcp server", "launched but advertised zero tools")
+    return None
+
+
 def run_preflight(cfg: Config, *, auto_start: bool = True) -> list[PreflightIssue]:
     """Every T-DOC43/T-DOC52/T-DOC78 check in one call -- disk, GPU/VRAM, `.gpu.lock`, every
     required service (auto-starting each stopped-but-startable container first). Returns the full
@@ -233,15 +300,33 @@ def _parse_args() -> argparse.Namespace:
         help="health-check only; never attempt to start a stopped TEI/vector-store/"
         "reference-resolution container",
     )
+    parser.add_argument(
+        "--check-mcp", action="store_true",
+        help="T-DOC66: also verify `python -m app.serve` launches and answers list_tools. Spawns "
+        "a real subprocess, so it's opt-in -- app.ingest's own preflight gate (run_preflight, "
+        "the default path below) never touches the MCP server and shouldn't pay for this on "
+        "every ingest run.",
+    )
     return parser.parse_args()
 
 
 def main() -> None:
     from rag.config import load_config
 
+    logging.basicConfig(level=logging.INFO)
     cfg = load_config()
+    # T-DOC89 §4: report what was resolved, same pattern as app/delete_docs.py -- an operator
+    # standing in the wrong directory should see where this process actually pointed, not guess.
+    logger.info(
+        "doctor: resolved db_path=%s collection=%s drop_in_dir=%s",
+        cfg.db_path, cfg.collection, cfg.drop_in_dir,
+    )
     args = _parse_args()
     issues = run_preflight(cfg, auto_start=not args.no_auto_start)
+    if args.check_mcp:
+        mcp_issue = check_mcp_server()
+        if mcp_issue is not None:
+            issues.append(mcp_issue)
 
     if not issues:
         print("doctor: OK -- disk/GPU/lock/all required services healthy.")
