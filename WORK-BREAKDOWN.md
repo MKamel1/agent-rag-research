@@ -1746,3 +1746,56 @@ retrieval quality + operability, not the claim layer** — reinforcing the "use 
   affected papers, and `app/rechunk.py` (T-DOC62 option B) is the tool that retrofits it, so this
   can ride along with a future re-chunk rather than needing its own migration.
   **Discovered by** the T-DOC62 option B work (PR #185), while characterising the post-fix residue.
+
+### T-DOC94 — `app/snapshot.py` cannot back up the vector store; the client has no timeout (2026-07-28)
+
+- **T-DOC94 (not started) — 🔴 `rag/vector_index.py:154` constructs `QdrantClient` with no `timeout`
+  argument, so a real snapshot of the live collection exceeds the library default and
+  `python -m app.snapshot` dies mid-run — meaning the corpus has had no complete vector-store backup
+  since 2026-07-17.** All of this was observed first-hand on 2026-07-28 while taking a pre-migration
+  backup; it is written up here, not re-derived, and nothing was run against
+  `/home/omar/ai-projects/research-system-rag-data/` to produce this ticket.
+  **What happened.** `python -m app.snapshot` was run to protect the corpus before the T-DOC62
+  re-chunk migration. It wrote the SQLite copy and the blob directory successfully, then died:
+  ```
+  contracts.errors.TransientError: Qdrant call failed: timed out
+    app/snapshot.py:134   backup_vector_store -> vector_index.create_and_download_snapshot(...)
+    rag/vector_index.py:331 create_and_download_snapshot
+    rag/vector_index.py:199 _call -> raise TransientError
+  ```
+  **Root cause.** `rag/vector_index.py:154` constructs the client as `QdrantClient(host=host,
+  port=port, check_compatibility=False)` — no `timeout` argument, so the library default applies.
+  That default is shorter than the time a real snapshot of this collection takes. Measured directly
+  against the live collection (372,741 points, 750,228 indexed vectors, 5.6 GB): the snapshot
+  completes in **6.75 seconds**. So this is not a slow or hanging operation — it is a default timeout
+  marginally too small, which makes the failure look transient and mysterious rather than obviously
+  configurational. `rag/vector_index.py:341` *does* set an explicit `_SNAPSHOT_DOWNLOAD_TIMEOUT_S`
+  (900s, line 62) on the download half — only the client-call half was left on the default, so the
+  fix is consistent with the file's own existing practice, not a new idea.
+  **Impact — this is why it is HIGH.** The most recent *complete* snapshot on disk is
+  `backups/snapshot-20260717T175932Z`, from 2026-07-17. Everything since — the entire
+  T-DOC80/82/84/85/86 book work, the five-book re-ingest, and the 809-paper re-chunk — was performed
+  with no current vector-store backup. The failure is not silent in the log, but it is silent in
+  outcome: an operator who backgrounds the command and checks only the process exit status can
+  easily believe a backup was taken; that happened during this session. It defeats the tool's stated
+  purpose — its own module docstring says it exists because "a power-down this session destroyed an
+  in-progress ingest run" and nothing took a *consistent* point-in-time backup of all three stores.
+  **What worked correctly, and should be preserved.** The tool wrote into `snapshot-<ts>.partial/`
+  and did not promote it to a completed snapshot name on failure. The partial was independently
+  verified afterwards: `PRAGMA integrity_check = ok`, and every table count matched the live database
+  exactly (papers 11,026, chunks 361,614, blocks 2,429,874, summaries 11,127, ingest_state 11,525).
+  The partial/promote design (`app/snapshot.py`'s module docstring, "Atomicity") is sound; only the
+  timeout is wrong.
+  **Fix:** pass an explicit, generous `timeout` when constructing `QdrantClient`
+  (`rag/vector_index.py:154`) — snapshotting is a bulk operation and should not share a default sized
+  for ordinary search calls. Consider whether the value belongs in `Config` rather than hardcoded,
+  since collection size will keep growing. Then re-run a full snapshot and confirm all three artifacts
+  land and the directory is promoted out of `.partial`. A regression test should assert the client is
+  constructed with an explicit timeout, since the defect is an *absent* argument and is therefore
+  invisible to any test that only exercises fast calls.
+  **Interim workaround, already used:** the vector-store snapshot can be triggered directly over
+  HTTP, which bypasses the client entirely — `curl -X POST
+  http://localhost:6333/collections/<collection>/snapshots`. That produced
+  `papers-2274900716545307-2026-07-28-20-36-47.snapshot` (5.6 GB, checksummed) server-side, which
+  together with the verified `.partial` SQLite and blobs formed a complete hand-assembled backup for
+  the re-chunk migration.
