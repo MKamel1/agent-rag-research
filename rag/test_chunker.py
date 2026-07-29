@@ -466,6 +466,93 @@ def test_a_sub_groups_own_first_block_can_independently_duplicate_the_heading_to
     )
 
 
+# ---------------------------------------------------------------------------
+# T-DOC95: two adjacent blocks in a group can BOTH be byte-equal to `section_path` (e.g. a PDF
+# extractor emitting a running header as its own block, right next to the real heading block).
+# `first` (group[0]) was already deduped; a duplicate sitting anywhere in `group[1:]` was joined
+# into `body` raw, reproducing `title\n{section_path}\n\n{section_path}`. Covers the sibling
+# positions named in CONVENTIONS §14: start, middle, and end of `group[1:]`, plus the case where
+# `overlap` (T-DOC93's mechanism) is present at the same time.
+# ---------------------------------------------------------------------------
+
+
+def test_duplicate_heading_block_at_the_start_of_group_tail_is_stripped():
+    # Reproduces the real-corpus shape found on 2607.07306's REFERENCES section: two adjacent
+    # blocks whose text is BOTH byte-equal to section_path, with real content after them.
+    heading_path = "REFERENCES"
+    body_text = "Smith, J. (2020). A paper about causal inference. Journal of ML."
+    blocks = [
+        _block(0, heading_path, "prose", heading_path),  # first -- already deduped pre-T-DOC95
+        _block(1, heading_path, "prose", heading_path),  # group[1:][0] -- the T-DOC95 gap
+        _block(2, body_text, "prose", heading_path),
+    ]
+    chunks = _chunk(_parsed_doc(blocks=blocks))
+    assert len(chunks) == 1, "sanity check: this fixture must not trigger a split"
+    assert chunks[0].text.count(heading_path) == 1, (
+        "a second heading-duplicate block at the start of group[1:] was joined into body raw"
+    )
+    assert body_text in chunks[0].text
+
+
+def test_duplicate_heading_block_in_the_middle_of_group_tail_is_stripped():
+    heading_path = "6 Numerical Simulations"
+    lead_text = "The estimator is evaluated across five simulated regimes."
+    trail_text = "Table 3 summarizes the resulting coverage rates."
+    blocks = [
+        _block(0, lead_text, "prose", heading_path),  # first -- not a heading, untouched
+        _block(1, "Intermediate discussion before the repeated header.", "prose", heading_path),
+        _block(2, heading_path, "prose", heading_path),  # group[1:][1] -- mid-group duplicate
+        _block(3, trail_text, "prose", heading_path),
+    ]
+    chunks = _chunk(_parsed_doc(blocks=blocks))
+    assert len(chunks) == 1, "sanity check: this fixture must not trigger a split"
+    assert chunks[0].text.count(heading_path) == 1, (
+        "a heading-duplicate block in the middle of group[1:] was joined into body raw"
+    )
+    assert lead_text in chunks[0].text
+    assert trail_text in chunks[0].text
+
+
+def test_duplicate_heading_block_at_the_end_of_group_tail_is_stripped():
+    heading_path = "Appendix C"
+    lead_text = "The proof proceeds by induction on the sample size."
+    blocks = [
+        _block(0, lead_text, "prose", heading_path),  # first -- not a heading, untouched
+        _block(1, "A short closing remark.", "prose", heading_path),
+        _block(2, heading_path, "prose", heading_path),  # group[1:][-1] -- trailing duplicate
+    ]
+    chunks = _chunk(_parsed_doc(blocks=blocks))
+    assert len(chunks) == 1, "sanity check: this fixture must not trigger a split"
+    assert chunks[0].text.count(heading_path) == 1, (
+        "a heading-duplicate block at the end of group[1:] was joined into body raw"
+    )
+    assert lead_text in chunks[0].text
+
+
+def test_duplicate_heading_block_in_group_tail_is_stripped_even_when_overlap_is_also_present():
+    # Combines both mechanisms in one chunk build: `overlap` (T-DOC93, legitimate, non-duplicate
+    # content borrowed from the previous sub-chunk) sits ahead of a `group` whose OWN group[1:]
+    # independently contains a heading-duplicate block. Word counts are chosen so
+    # `_split_oversized` produces exactly this shape -- see the arithmetic in the T-DOC95
+    # WORK-BREAKDOWN.md entry / PR description for the trace.
+    heading_path = "6 Numerical Simulations"
+    blocks = [
+        _sentinel_prose_block(0, 200, "ALPHA", heading_path),  # -> becomes the next overlap
+        _sentinel_prose_block(1, 1400, "BETA", heading_path),  # forces the first split
+        _block(2, heading_path, "prose", heading_path),  # group[1:][0] of the BETA sub-chunk
+        _sentinel_prose_block(3, 100, "GAMMA", heading_path),  # forces the second split
+    ]
+    chunks = _chunk(_parsed_doc(blocks=blocks))
+    assert len(chunks) == 3, "sanity check: this fixture must trigger two splits"
+    target = chunks[1]
+    assert "ALPHA" in target.text, "sanity check: overlap must actually be borrowed forward"
+    assert "BETA" in target.text
+    assert "GAMMA" not in target.text
+    assert target.text.count(heading_path) == 1, (
+        "overlap being deduped correctly masked group[1:]'s own heading-duplicate block"
+    )
+
+
 def test_chunk_ids_stay_sequential_and_unique_with_overlap():
     blocks = [
         _sentinel_prose_block(0, 100, "ALPHA"),

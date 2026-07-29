@@ -171,19 +171,23 @@ class Chunker:
         # `_split_oversized`) is prepended into the body text only -- it never becomes `first`,
         # so anchor/parent_id/section_path stay pinned to this chunk's own true start.
         first = group[0]
-        # The duplicate-heading check (`_strip_duplicate_heading`) must run on `overlap` AND
-        # `first` INDEPENDENTLY, not just whichever sits first in `body` -- both can independently
-        # be a heading-duplicate block. `overlap` (a carried-forward block from the *previous*
-        # sub-chunk, see `_split_oversized`) is prepended ahead of `first.text`, so checking only
-        # index 0 would silently stop checking `first.text` whenever `overlap` is present -- a
-        # split's first sub-group can be the section heading alone, and EITHER that heading (as
-        # the next sub-chunk's `overlap`) OR the next sub-group's own opening block can
-        # independently duplicate `section_path`. `first.text` itself (used for `anchor.snippet`
-        # below) is untouched either way -- this only affects what goes into `body`.
+        # The duplicate-heading check (`_strip_duplicate_heading`) must run on `overlap`, `first`,
+        # AND every block in `group[1:]` INDEPENDENTLY -- any of them can independently be a
+        # heading-duplicate block (T-DOC95: a PDF extractor can emit a section heading as two (or
+        # more) adjacent blocks, e.g. a running header repeated by the parser -- `group[1:]`'s
+        # blocks are ordinary body content and were previously joined in raw, so a second
+        # heading-only block there duplicated `section_path` in `body` exactly like `first` or
+        # `overlap` could). `overlap` (a carried-forward block from the *previous* sub-chunk, see
+        # `_split_oversized`) is prepended ahead of `first.text`, so checking only index 0 would
+        # silently stop checking `first.text` whenever `overlap` is present -- a split's first
+        # sub-group can be the section heading alone, and EITHER that heading (as the next
+        # sub-chunk's `overlap`) OR the next sub-group's own opening block can independently
+        # duplicate `section_path`. `first.text` itself (used for `anchor.snippet` below) is
+        # untouched either way -- this only affects what goes into `body`.
         raw_body_blocks = (
             ([_strip_duplicate_heading(overlap.text, first.section_path)] if overlap else [])
             + [_strip_duplicate_heading(first.text, first.section_path)]
-            + [b.text for b in group[1:]]
+            + [_strip_duplicate_heading(b.text, first.section_path) for b in group[1:]]
         )
         body = "\n\n".join(t for t in raw_body_blocks if t)
         text = f"{title}\n{first.section_path}\n\n{body}"
