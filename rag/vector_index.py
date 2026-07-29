@@ -56,6 +56,15 @@ _FUSION_DEPTH_CAP = 10_000
 # Per-page size for rebuild()'s scroll through the collection. Paged (see rebuild()) so this is
 # just a page size, not a ceiling on how many points rebuild() can see.
 _SCROLL_PAGE_SIZE = 100_000
+# clone_points_into()'s own upsert batch size -- deliberately much smaller than
+# _SCROLL_PAGE_SIZE. Measured live: a _SCROLL_PAGE_SIZE=100_000 page of real production points
+# (2560-dim dense + sparse vectors) serializes to a ~3.8GB request body, which Qdrant's REST API
+# rejects outright (its own fixed 32MB request-size ceiling, not a timeout) -- read and write
+# sides need independent sizes, reading a big page is fine, sending it in one request is not.
+# 1,000 points of this collection's real vector size measured ~38MB -- still over the 32MB
+# ceiling -- so this is 400 (~15MB at that same per-point size), leaving real margin rather than
+# retuning to the observed edge.
+_CLONE_UPSERT_BATCH_SIZE = 400
 # create_and_download_snapshot() streams a whole collection snapshot file over localhost -- large
 # but not slow (no WAN hop), so a generous fixed ceiling rather than a caller-tunable knob is
 # enough headroom without letting a wedged download hang the caller (app/snapshot.py) forever.
@@ -339,6 +348,14 @@ class VectorIndex:
         Creates `dest_collection` with this collection's own schema if it doesn't exist yet (via a
         second `VectorIndex`, which runs the same `_ensure_collection()` this instance did).
 
+        The upsert side is additionally re-batched to `_CLONE_UPSERT_BATCH_SIZE` -- a full
+        `_SCROLL_PAGE_SIZE` page is fine to READ in one round-trip, but sending it back in one
+        `upsert` request is not: a real 372,741-point production collection's own
+        `_SCROLL_PAGE_SIZE` page serializes to a multi-GB request body, and Qdrant's REST API
+        rejects any single request over a fixed 32MB regardless of client-side timeout. Read and
+        write sides need independent sizes; `_CLONE_UPSERT_BATCH_SIZE` is sized for the write side
+        only (see its own comment).
+
         Used by experiment scripts that need a throwaway collection seeded from the full
         production corpus without spending GPU time recomputing every existing vector -- e.g.
         app/exp1_outline_split.py, which then deletes/upserts only the handful of points its A/B
@@ -358,16 +375,17 @@ class VectorIndex:
                 with_payload=True,
                 with_vectors=True,
             )
-            if page:
+            for i in range(0, len(page), _CLONE_UPSERT_BATCH_SIZE):
+                batch = page[i : i + _CLONE_UPSERT_BATCH_SIZE]
                 self._call(
                     dest._client.upsert,
                     dest._collection,
                     points=[
                         models.PointStruct(id=p.id, vector=p.vector, payload=p.payload)
-                        for p in page
+                        for p in batch
                     ],
                 )
-                total += len(page)
+                total += len(batch)
             if offset is None:
                 break
         return total

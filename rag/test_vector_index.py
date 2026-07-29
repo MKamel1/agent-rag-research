@@ -458,6 +458,43 @@ def test_clone_points_into_copies_points_verbatim_to_a_new_collection():
         src._client.delete_collection(dest_name)
 
 
+@pytest.mark.enable_socket
+def test_clone_points_into_batches_the_upsert_side(monkeypatch):
+    """Regression test for a real failure: a single `_SCROLL_PAGE_SIZE`-sized upsert request
+    blew Qdrant's fixed 32MB request-size ceiling against the actual 372,741-point production
+    collection (a multi-GB request body). `_CLONE_UPSERT_BATCH_SIZE` is monkeypatched down to 2
+    here so 5 points genuinely exercise 3 separate upsert batches with a real service, instead of
+    needing thousands of real points to reach the production-sized threshold."""
+    real = pytest.importorskip("rag.vector_index")
+    monkeypatch.setattr(real, "_CLONE_UPSERT_BATCH_SIZE", 2)
+
+    src_name = "m1a_clone_batch_src"
+    dest_name = "m1a_clone_batch_dest"
+    try:
+        src = real.VectorIndex(
+            host="localhost", port=6333, collection_name=src_name, dim=2, hybrid_dense_weight=0.5
+        )
+    except TransientError as e:
+        pytest.skip(f"no live vector-store service reachable at localhost:6333: {e}")
+
+    try:
+        ids = [f"2506.01234:c{i}" for i in range(5)]
+        for i in ids:
+            src.upsert(i, [1.0, 0.0], _payload(text="method estimator"))
+
+        copied = src.clone_points_into(dest_name)
+        assert copied == 5
+
+        dest = real.VectorIndex(
+            host="localhost", port=6333, collection_name=dest_name, dim=2, hybrid_dense_weight=0.5
+        )
+        hits = dest.hybrid_search(qvec=[1.0, 0.0], qtext="method", filters=None, k=10)
+        assert {h.id for h in hits} == set(ids)
+    finally:
+        src._client.delete_collection(src_name)
+        src._client.delete_collection(dest_name)
+
+
 # ==================================================================================================
 # T-DOC27 — sparse-channel IDF weighting (ADR-01: the vector store treats sparse vectors as
 # first-class beside dense).
