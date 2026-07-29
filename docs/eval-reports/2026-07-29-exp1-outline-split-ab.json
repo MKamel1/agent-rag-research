@@ -1,0 +1,1065 @@
+{
+  "k": 10,
+  "n_questions": 40,
+  "n_errors": 0,
+  "paper_level": {
+    "overall": {
+      "recall_at_k": 0.75,
+      "mrr": 0.7145833333333333,
+      "n": 40
+    },
+    "by_question_type": {
+      "Book-Chapter-Recall": {
+        "recall_at_k": 0.75,
+        "mrr": 0.7145833333333333,
+        "n": 40
+      }
+    },
+    "by_doc_type": {
+      "book": {
+        "recall_at_k": 0.75,
+        "mrr": 0.7145833333333333,
+        "n": 40
+      }
+    }
+  },
+  "passage_level": {
+    "n_scored": 40,
+    "overall": {
+      "recall_at_k": 0.7,
+      "mrr": 0.6583333333333333,
+      "n": 40
+    },
+    "by_question_type": {
+      "Book-Chapter-Recall": {
+        "recall_at_k": 0.7,
+        "mrr": 0.6583333333333333,
+        "n": 40
+      }
+    },
+    "by_doc_type": {
+      "book": {
+        "recall_at_k": 0.7,
+        "mrr": 0.6583333333333333,
+        "n": 40
+      }
+    }
+  },
+  "chapter_level": {
+    "n_scored": 40,
+    "overall": {
+      "recall_at_k": 0.325,
+      "mrr": 0.2331547619047619,
+      "n": 40
+    },
+    "by_question_type": {
+      "Book-Chapter-Recall": {
+        "recall_at_k": 0.325,
+        "mrr": 0.2331547619047619,
+        "n": 40
+      }
+    }
+  },
+  "questions": [
+    {
+      "question_id": "QB-001",
+      "question_type": "Book-Chapter-Recall",
+      "doc_type": "book",
+      "gold_paper_ids": [
+        "local:14b7e283bdcd"
+      ],
+      "gold_block_id": "local:14b7e283bdcd:b183",
+      "gold_chapter_title": "Necessary Ingredients for Running Useful Controlled Experiments",
+      "error": null,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      }
+    },
+    {
+      "question_id": "QB-002",
+      "question_type": "Book-Chapter-Recall",
+      "doc_type": "book",
+      "gold_paper_ids": [
+        "local:14b7e283bdcd"
+      ],
+      "gold_block_id": "local:14b7e283bdcd:b340",
+      "gold_chapter_title": "Hypothesis Testing: Establishing Statistical Significance",
+      "error": null,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      },
+      "chapter_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 3
+      }
+    },
+    {
+      "question_id": "QB-003",
+      "question_type": "Book-Chapter-Recall",
+      "doc_type": "book",
+      "gold_paper_ids": [
+        "local:14b7e283bdcd"
+      ],
+      "gold_block_id": "local:14b7e283bdcd:b622",
+      "gold_chapter_title": "Scaling Experimentation: Digging into Variant Assignment",
+      "error": null,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      }
+    },
+    {
+      "question_id": "QB-004",
+      "question_type": "Book-Chapter-Recall",
+      "doc_type": "book",
+      "gold_paper_ids": [
+        "local:14b7e283bdcd"
+      ],
+      "gold_block_id": "local:14b7e283bdcd:b840",
+      "gold_chapter_title": "Goodhart\u2019s Law, Campbell\u2019s Law, and the Lucas Critique",
+      "error": null,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      }
+    },
+    {
+      "question_id": "QB-005",
+      "question_type": "Book-Chapter-Recall",
+      "doc_type": "book",
+      "gold_paper_ids": [
+        "local:14b7e283bdcd"
+      ],
+      "gold_block_id": "local:14b7e283bdcd:b1039",
+      "gold_chapter_title": "Instrumented Variables (IV) and Natural Experiments",
+      "error": null,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 2
+      }
+    },
+    {
+      "question_id": "QB-006",
+      "question_type": "Book-Chapter-Recall",
+      "doc_type": "book",
+      "gold_paper_ids": [
+        "local:14b7e283bdcd"
+      ],
+      "gold_block_id": "local:14b7e283bdcd:b1234",
+      "gold_chapter_title": "Ramp Phase Four: Long-Term Holdout or Replication",
+      "error": null,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      }
+    },
+    {
+      "question_id": "QB-007",
+      "question_type": "Book-Chapter-Recall",
+      "doc_type": "book",
+      "gold_paper_ids": [
+        "local:14b7e283bdcd"
+      ],
+      "gold_block_id": "local:14b7e283bdcd:b1424",
+      "gold_chapter_title": "Example 5: Counterfactual Triggering for Machine Learning Models",
+      "error": null,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      }
+    },
+    {
+      "question_id": "QB-008",
+      "question_type": "Book-Chapter-Recall",
+      "doc_type": "book",
+      "gold_paper_ids": [
+        "local:14b7e283bdcd"
+      ],
+      "gold_block_id": "local:14b7e283bdcd:b1705",
+      "gold_chapter_title": "Reasons the Treatment Effect May Differ between Short-Term and Long-Term",
+      "error": null,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      }
+    },
+    {
+      "question_id": "QB-009",
+      "question_type": "Book-Chapter-Recall",
+      "doc_type": "book",
+      "gold_paper_ids": [
+        "local:f0929288d4f3"
+      ],
+      "gold_block_id": "local:f0929288d4f3:b153",
+      "gold_chapter_title": "Chapter 1. Introduction to Causal Inference",
+      "error": null,
+      "paper_level": {
+        "hit": false,
+        "rank": null
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      },
+      "chapter_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      }
+    },
+    {
+      "question_id": "QB-010",
+      "question_type": "Book-Chapter-Recall",
+      "doc_type": "book",
+      "gold_paper_ids": [
+        "local:f0929288d4f3"
+      ],
+      "gold_block_id": "local:f0929288d4f3:b311",
+      "gold_chapter_title": "Chapter 1. Introduction to Causal Inference",
+      "error": null,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      }
+    },
+    {
+      "question_id": "QB-011",
+      "question_type": "Book-Chapter-Recall",
+      "doc_type": "book",
+      "gold_paper_ids": [
+        "local:f0929288d4f3"
+      ],
+      "gold_block_id": "local:f0929288d4f3:b807",
+      "gold_chapter_title": "Chapter 4. The Unreasonable Effectiveness of Linear Regression",
+      "error": null,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      }
+    },
+    {
+      "question_id": "QB-012",
+      "question_type": "Book-Chapter-Recall",
+      "doc_type": "book",
+      "gold_paper_ids": [
+        "local:f0929288d4f3"
+      ],
+      "gold_block_id": "local:f0929288d4f3:b1150",
+      "gold_chapter_title": "Chapter 5. Propensity Score",
+      "error": null,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 10
+      }
+    },
+    {
+      "question_id": "QB-013",
+      "question_type": "Book-Chapter-Recall",
+      "doc_type": "book",
+      "gold_paper_ids": [
+        "local:f0929288d4f3"
+      ],
+      "gold_block_id": "local:f0929288d4f3:b1661",
+      "gold_chapter_title": "Chapter 8. Difference-in-Differences",
+      "error": null,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      }
+    },
+    {
+      "question_id": "QB-014",
+      "question_type": "Book-Chapter-Recall",
+      "doc_type": "book",
+      "gold_paper_ids": [
+        "local:f0929288d4f3"
+      ],
+      "gold_block_id": "local:f0929288d4f3:b1945",
+      "gold_chapter_title": "Chapter 9. Synthetic Control",
+      "error": null,
+      "paper_level": {
+        "hit": false,
+        "rank": null
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      },
+      "chapter_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      }
+    },
+    {
+      "question_id": "QB-015",
+      "question_type": "Book-Chapter-Recall",
+      "doc_type": "book",
+      "gold_paper_ids": [
+        "local:f0929288d4f3"
+      ],
+      "gold_block_id": "local:f0929288d4f3:b2432",
+      "gold_chapter_title": "Chapter 12. Next Steps",
+      "error": null,
+      "paper_level": {
+        "hit": false,
+        "rank": null
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      },
+      "chapter_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      }
+    },
+    {
+      "question_id": "QB-016",
+      "question_type": "Book-Chapter-Recall",
+      "doc_type": "book",
+      "gold_paper_ids": [
+        "local:f6c64e1e8c7d"
+      ],
+      "gold_block_id": "local:f6c64e1e8c7d:b92",
+      "gold_chapter_title": "Assumptions for Causal Inference",
+      "error": null,
+      "paper_level": {
+        "hit": true,
+        "rank": 3
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 3
+      },
+      "chapter_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      }
+    },
+    {
+      "question_id": "QB-017",
+      "question_type": "Book-Chapter-Recall",
+      "doc_type": "book",
+      "gold_paper_ids": [
+        "local:f6c64e1e8c7d"
+      ],
+      "gold_block_id": "local:f6c64e1e8c7d:b517",
+      "gold_chapter_title": "Multivariate Causal Models",
+      "error": null,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      }
+    },
+    {
+      "question_id": "QB-018",
+      "question_type": "Book-Chapter-Recall",
+      "doc_type": "book",
+      "gold_paper_ids": [
+        "local:f6c64e1e8c7d"
+      ],
+      "gold_block_id": "local:f6c64e1e8c7d:b905",
+      "gold_chapter_title": "Multivariate Causal Models",
+      "error": null,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      }
+    },
+    {
+      "question_id": "QB-019",
+      "question_type": "Book-Chapter-Recall",
+      "doc_type": "book",
+      "gold_paper_ids": [
+        "local:f6c64e1e8c7d"
+      ],
+      "gold_block_id": "local:f6c64e1e8c7d:b1075",
+      "gold_chapter_title": "Learning Multivariate Causal Models",
+      "error": null,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      }
+    },
+    {
+      "question_id": "QB-020",
+      "question_type": "Book-Chapter-Recall",
+      "doc_type": "book",
+      "gold_paper_ids": [
+        "local:f6c64e1e8c7d"
+      ],
+      "gold_block_id": "local:f6c64e1e8c7d:b1382",
+      "gold_chapter_title": "Hidden Variables",
+      "error": null,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 2
+      },
+      "chapter_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      }
+    },
+    {
+      "question_id": "QB-021",
+      "question_type": "Book-Chapter-Recall",
+      "doc_type": "book",
+      "gold_paper_ids": [
+        "local:f6c64e1e8c7d"
+      ],
+      "gold_block_id": "local:f6c64e1e8c7d:b1448",
+      "gold_chapter_title": "Time Series",
+      "error": null,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 2
+      },
+      "chapter_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      }
+    },
+    {
+      "question_id": "QB-022",
+      "question_type": "Book-Chapter-Recall",
+      "doc_type": "book",
+      "gold_paper_ids": [
+        "local:f6c64e1e8c7d"
+      ],
+      "gold_block_id": "local:f6c64e1e8c7d:b1606",
+      "gold_chapter_title": "Appendix Causal Orderings and Adjacency Matrices",
+      "error": null,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 4
+      }
+    },
+    {
+      "question_id": "QB-023",
+      "question_type": "Book-Chapter-Recall",
+      "doc_type": "book",
+      "gold_paper_ids": [
+        "local:f6c64e1e8c7d"
+      ],
+      "gold_block_id": "local:f6c64e1e8c7d:b1614",
+      "gold_chapter_title": "Appendix Proofs",
+      "error": null,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      }
+    },
+    {
+      "question_id": "QB-024",
+      "question_type": "Book-Chapter-Recall",
+      "doc_type": "book",
+      "gold_paper_ids": [
+        "local:dfe850b3281a"
+      ],
+      "gold_block_id": "local:dfe850b3281a:b558",
+      "gold_chapter_title": "Chapter 3: Regression, Observations,  and Interventions",
+      "error": null,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      }
+    },
+    {
+      "question_id": "QB-025",
+      "question_type": "Book-Chapter-Recall",
+      "doc_type": "book",
+      "gold_paper_ids": [
+        "local:dfe850b3281a"
+      ],
+      "gold_block_id": "local:dfe850b3281a:b718",
+      "gold_chapter_title": "Chapter 4: Graphical Models",
+      "error": null,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      }
+    },
+    {
+      "question_id": "QB-026",
+      "question_type": "Book-Chapter-Recall",
+      "doc_type": "book",
+      "gold_paper_ids": [
+        "local:dfe850b3281a"
+      ],
+      "gold_block_id": "local:dfe850b3281a:b849",
+      "gold_chapter_title": "Chapter 5: Forks, Chains, and Immoralities",
+      "error": null,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      }
+    },
+    {
+      "question_id": "QB-027",
+      "question_type": "Book-Chapter-Recall",
+      "doc_type": "book",
+      "gold_paper_ids": [
+        "local:dfe850b3281a"
+      ],
+      "gold_block_id": "local:dfe850b3281a:b974",
+      "gold_chapter_title": "Chapter 5: Forks, Chains, and Immoralities",
+      "error": null,
+      "paper_level": {
+        "hit": false,
+        "rank": null
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      },
+      "chapter_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      }
+    },
+    {
+      "question_id": "QB-028",
+      "question_type": "Book-Chapter-Recall",
+      "doc_type": "book",
+      "gold_paper_ids": [
+        "local:dfe850b3281a"
+      ],
+      "gold_block_id": "local:dfe850b3281a:b1527",
+      "gold_chapter_title": "Chapter 7: The Four-Step Process  of Causal Inference",
+      "error": null,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      }
+    },
+    {
+      "question_id": "QB-029",
+      "question_type": "Book-Chapter-Recall",
+      "doc_type": "book",
+      "gold_paper_ids": [
+        "local:dfe850b3281a"
+      ],
+      "gold_block_id": "local:dfe850b3281a:b2587",
+      "gold_chapter_title": "Chapter 10: Causal Inference and Machine Learning \u2013 Advanced Estimators, Experiments, Evaluations, and More",
+      "error": null,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      }
+    },
+    {
+      "question_id": "QB-030",
+      "question_type": "Book-Chapter-Recall",
+      "doc_type": "book",
+      "gold_paper_ids": [
+        "local:dfe850b3281a"
+      ],
+      "gold_block_id": "local:dfe850b3281a:b3596",
+      "gold_chapter_title": "Chapter 13: Causal Discovery and Machine Learning \u2013 from Assumptions to Applications",
+      "error": null,
+      "paper_level": {
+        "hit": false,
+        "rank": null
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      },
+      "chapter_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      }
+    },
+    {
+      "question_id": "QB-031",
+      "question_type": "Book-Chapter-Recall",
+      "doc_type": "book",
+      "gold_paper_ids": [
+        "local:dfe850b3281a"
+      ],
+      "gold_block_id": "local:dfe850b3281a:b4097",
+      "gold_chapter_title": "Chapter 15: Epilogue",
+      "error": null,
+      "paper_level": {
+        "hit": false,
+        "rank": null
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      },
+      "chapter_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      }
+    },
+    {
+      "question_id": "QB-032",
+      "question_type": "Book-Chapter-Recall",
+      "doc_type": "book",
+      "gold_paper_ids": [
+        "local:54d6ca71dda9"
+      ],
+      "gold_block_id": "local:54d6ca71dda9:b336",
+      "gold_chapter_title": "2. From Data to Causality",
+      "error": null,
+      "paper_level": {
+        "hit": false,
+        "rank": null
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      },
+      "chapter_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      }
+    },
+    {
+      "question_id": "QB-033",
+      "question_type": "Book-Chapter-Recall",
+      "doc_type": "book",
+      "gold_paper_ids": [
+        "local:54d6ca71dda9"
+      ],
+      "gold_block_id": "local:54d6ca71dda9:b1008",
+      "gold_chapter_title": "6. Overfitting",
+      "error": null,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      }
+    },
+    {
+      "question_id": "QB-034",
+      "question_type": "Book-Chapter-Recall",
+      "doc_type": "book",
+      "gold_paper_ids": [
+        "local:54d6ca71dda9"
+      ],
+      "gold_block_id": "local:54d6ca71dda9:b2328",
+      "gold_chapter_title": "13. Classification and Regression Trees (CART)",
+      "error": null,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 7
+      }
+    },
+    {
+      "question_id": "QB-035",
+      "question_type": "Book-Chapter-Recall",
+      "doc_type": "book",
+      "gold_paper_ids": [
+        "local:54d6ca71dda9"
+      ],
+      "gold_block_id": "local:54d6ca71dda9:b2961",
+      "gold_chapter_title": "16. Counterfactual Framework",
+      "error": null,
+      "paper_level": {
+        "hit": false,
+        "rank": null
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      },
+      "chapter_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      }
+    },
+    {
+      "question_id": "QB-036",
+      "question_type": "Book-Chapter-Recall",
+      "doc_type": "book",
+      "gold_paper_ids": [
+        "local:54d6ca71dda9"
+      ],
+      "gold_block_id": "local:54d6ca71dda9:b3434",
+      "gold_chapter_title": "19. Double Machine Learning",
+      "error": null,
+      "paper_level": {
+        "hit": true,
+        "rank": 4
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      },
+      "chapter_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      }
+    },
+    {
+      "question_id": "QB-037",
+      "question_type": "Book-Chapter-Recall",
+      "doc_type": "book",
+      "gold_paper_ids": [
+        "local:54d6ca71dda9"
+      ],
+      "gold_block_id": "local:54d6ca71dda9:b3705",
+      "gold_chapter_title": "20. Matching Methods",
+      "error": null,
+      "paper_level": {
+        "hit": false,
+        "rank": null
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      },
+      "chapter_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      }
+    },
+    {
+      "question_id": "QB-038",
+      "question_type": "Book-Chapter-Recall",
+      "doc_type": "book",
+      "gold_paper_ids": [
+        "local:54d6ca71dda9"
+      ],
+      "gold_block_id": "local:54d6ca71dda9:b4435",
+      "gold_chapter_title": "24. Causal Trees and Forests",
+      "error": null,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      }
+    },
+    {
+      "question_id": "QB-039",
+      "question_type": "Book-Chapter-Recall",
+      "doc_type": "book",
+      "gold_paper_ids": [
+        "local:54d6ca71dda9"
+      ],
+      "gold_block_id": "local:54d6ca71dda9:b6016",
+      "gold_chapter_title": "32. Optimization Algorithms: Basics",
+      "error": null,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      }
+    },
+    {
+      "question_id": "QB-040",
+      "question_type": "Book-Chapter-Recall",
+      "doc_type": "book",
+      "gold_paper_ids": [
+        "local:f0929288d4f3"
+      ],
+      "gold_block_id": "local:f0929288d4f3:b2278",
+      "gold_chapter_title": "Chapter 11. Noncompliance and Instruments",
+      "error": null,
+      "paper_level": {
+        "hit": false,
+        "rank": null
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      },
+      "chapter_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      }
+    }
+  ]
+}
