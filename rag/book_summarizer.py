@@ -16,6 +16,7 @@ hooks, retry taxonomy all stay the injected summarizer's concern, unchanged.
 """
 
 import re
+from typing import NamedTuple
 
 from contracts.document_store import ChapterSummary
 from contracts.errors import PermanentError
@@ -170,6 +171,130 @@ def _split_chapters(parsed: ParsedDoc) -> list[tuple[str, list[Block]]]:
             for i in range(0, len(blocks), _FALLBACK_WINDOW_BLOCKS)
         ]
     return _split_by_markers(groups) or _merge_to_target(groups)
+
+
+# ------------------------------------------------------------------------------------------------
+# Outline-based splitter (Experiment 1, docs/PLAN-book-rag-experiments.md; gate result:
+# docs/eval-reports/2026-07-29-outline-join-feasibility.md).
+#
+# A SIBLING strategy to `_split_chapters()` above, never a replacement -- the gate doc's own risk
+# note is that an outline helps only 4 of the corpus's 5 books (the 5th, and any future
+# scanned/no-outline book, has no `pypdfium2.get_toc()` entries at all), so the size-merge path
+# stays the only option for those books permanently. Deliberately has NO `pypdfium2` import and no
+# `paper_id`/PDF-path argument -- it takes already-extracted outline entries, the same
+# decoupling `outline_join_probe.py`'s split between "read the PDF" and "compute the join"
+# already established, and keeps `pypdfium2` out of this module (CONVENTIONS.md §1 confines a
+# vendor import to the one module that owns it -- here, whichever caller reads the PDF).
+#
+# `summarize_book()` is NOT changed to call this -- it still only ever calls `_split_chapters()`.
+# The experiment script that drives this (app/exp1_outline_split.py) instead substitutes this
+# module's `_split_chapters` NAME for the duration of one `summarize_book()` call (`unittest.mock.
+# patch`), so `summarize_book()`'s own source is untouched and its only variable is *which
+# function* `_split_chapters` resolves to at call time -- see that script's own docstring for why.
+# ------------------------------------------------------------------------------------------------
+
+
+class OutlineEntry(NamedTuple):
+    """One `pypdfium2.get_toc()` bookmark, already resolved to a title and a 0-based page index
+    (`get_dest().get_index()`) by the caller -- entries `get_dest()` couldn't resolve (`None` for
+    0 of 1,035 entries across the gate doc's 4 books) are the caller's to drop before construction,
+    not this module's problem."""
+
+    level: int
+    title: str
+    page_index: int
+
+
+_OUTLINE_MARKER = re.compile(
+    r"^\s*(?:chapter|part|appendix)\s+"
+    r"(?:\d+|[ivxlcdm]+|[a-z]|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\b",
+    re.IGNORECASE,
+)  # same marker family as `_CHAPTER_MARKER` above, minus its bare "N. Title" branch -- verified in
+# the gate doc (Q5) against all 4 outline-bearing books' actual outlines, not reused unchecked.
+
+# ponytail: front matter (Cover/Half Title/Copyright/Dedication) is detected structurally -- by
+# word count, not a label blocklist -- same "no word blocklist" reasoning as `_title_score`'s
+# comment above: publishers phrase these differently and a name list would be endless and still
+# incomplete. A cover/title/copyright/dedication page carries a handful of words; a real opening
+# chapter carries thousands. Ceiling: a front-matter page with unusually dense boilerplate (a
+# copyright page listing a long disclaimer, say) could cross this and end up as its own tiny
+# routing unit instead of being folded into the front-matter bucket -- harmless (one extra small
+# chapter, not a wrong boundary), not silently corrected further; retune this constant if a book
+# is found where it matters.
+_FRONT_MATTER_MAX_WORDS = 500
+
+
+def pick_outline_level(entries: list[OutlineEntry]) -> int:
+    """Q5 rule (gate doc): the outline level with the most Chapter/Part/Appendix-marker titles,
+    else level 0. One rule for all 4 outline-bearing books, even though the level it lands on
+    differs per book (some nest chapters under parts, some don't print the word "chapter" at
+    all) -- see the gate doc's Q5 section for the per-book reasoning this rule was checked against.
+    """
+    counts: dict[int, int] = {}
+    for e in entries:
+        if _OUTLINE_MARKER.match(e.title):
+            counts[e.level] = counts.get(e.level, 0) + 1
+    return max(counts, key=lambda lv: counts[lv]) if counts else 0
+
+
+def _split_chapters_outline(
+    parsed: ParsedDoc, entries: list[OutlineEntry]
+) -> list[tuple[str, list[Block]]] | None:
+    """Cuts `parsed.blocks` at the chosen outline level's page boundaries. Returns `None` when
+    there's no usable outline (fewer than 2 boundaries at the picked level) -- same "return None,
+    caller decides the fallback" contract `_split_by_markers` already uses above, so a caller can
+    write `_split_chapters_outline(parsed, entries) or _split_chapters(parsed)` symmetrically.
+
+    Offset is applied as exactly 0 -- the gate doc measured this as a CONSTANT offset (94-100% of
+    matched entries land at offset 0 for all 4 books, the small remainder being 1-2 isolated
+    single-entry outliers, never a spread), so this cuts directly at `page_index` with no
+    per-entry fuzzy re-verification at split time; that fuzzy title-word matching lives only in
+    `app/outline_join_probe.py`, where it was needed to PROVE the offset at gate time, not to be
+    repeated on every split.
+
+    Front matter (leading Cover/Half Title/Copyright/Dedication-type units, see
+    `_FRONT_MATTER_MAX_WORDS`) is merged into one leading `("", blocks)` unit -- the same
+    convention `_split_by_markers` already uses for its own pre-first-marker content -- rather
+    than left as several near-empty routing units. This only merges a LEADING run: a small unit
+    later in the book (e.g. a bare "Part II" divider page, which some outlines put at the same
+    level as real chapters -- see the gate doc's Q5 note on `dfe850b3281a`) is left as its own
+    unit, unchanged; that is an existing property of the outline's own structure, not something
+    this experiment was asked to fix.
+    """
+    if not entries:
+        return None
+    level = pick_outline_level(entries)
+    level_entries = [e for e in entries if e.level == level]
+    boundaries = sorted({e.page_index for e in level_entries})
+    if len(boundaries) < 2:
+        return None
+
+    # Earliest entry at a given page_index wins the title (matches how a reader would read a
+    # boundary page with two outline entries pointing at it -- the outermost/first-listed one).
+    title_by_boundary: dict[int, str] = {}
+    for e in sorted(level_entries, key=lambda e: e.page_index):
+        title_by_boundary.setdefault(e.page_index, e.title.strip())
+
+    units: list[list[Block]] = [[] for _ in boundaries]
+    for block in parsed.blocks:
+        u = 0
+        for i, start in enumerate(boundaries):
+            if block.page >= start:
+                u = i
+        units[u].append(block)
+
+    cut = 0
+    while cut < len(units) - 1 and _words(units[cut]) < _FRONT_MATTER_MAX_WORDS:
+        cut += 1
+    front = [blk for u in units[:cut] for blk in u]
+
+    result: list[tuple[str, list[Block]]] = []
+    if front:
+        result.append(("", front))
+    for i in range(cut, len(units)):
+        if units[i]:  # a boundary page with no blocks that landed in its range -- skip, not ""
+            result.append((title_by_boundary[boundaries[i]], units[i]))
+    return result
 
 
 def _doc_from_text(parsed: ParsedDoc, text: str) -> ParsedDoc:

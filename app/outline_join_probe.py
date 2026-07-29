@@ -88,7 +88,7 @@ class TocEntry:
 
 
 @dataclass
-class Block:
+class ProbeBlock:
     idx: int
     page: int
     text: str
@@ -106,14 +106,14 @@ def load_toc(pdf_path: Path) -> tuple[list[TocEntry], int]:
     return entries, len(pdf)
 
 
-def load_blocks(conn: sqlite3.Connection, paper_id: str) -> list[Block]:
+def load_blocks(conn: sqlite3.Connection, paper_id: str) -> list[ProbeBlock]:
     cur = conn.execute(
         "SELECT idx, page, text FROM blocks WHERE paper_id = ? ORDER BY idx", (paper_id,)
     )
-    return [Block(idx=r[0], page=r[1], text=r[2]) for r in cur.fetchall()]
+    return [ProbeBlock(idx=r[0], page=r[1], text=r[2]) for r in cur.fetchall()]
 
 
-def page_word_index(blocks: list[Block]) -> dict[int, set[str]]:
+def page_word_index(blocks: list[ProbeBlock]) -> dict[int, set[str]]:
     """page -> set of significant lowercase words across all blocks on that page."""
     idx: dict[int, set[str]] = {}
     for b in blocks:
@@ -193,7 +193,7 @@ class UnitStat:
     word_shares: list[float]  # each unit's share of total book words, sorted ascending
 
 
-def units_at_level(blocks: list[Block], entries: list[TocEntry], level: int) -> UnitStat | None:
+def units_at_level(blocks: list[ProbeBlock], entries: list[TocEntry], level: int) -> UnitStat | None:
     """Build chapter units by cutting at each outline entry's page_index for the given level,
     entirely from already-loaded blocks/entries (no re-read). Returns None if <2 usable
     boundaries exist at this level."""
