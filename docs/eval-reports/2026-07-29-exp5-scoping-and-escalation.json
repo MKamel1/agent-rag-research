@@ -1,0 +1,1832 @@
+{
+  "_metadata": {
+    "date": "2026-07-29",
+    "collection": "exp1_ctrl_sizemerge_idf",
+    "fixture": "fixtures/eval/eval_book_questions.json",
+    "n_questions": 40,
+    "k": 10,
+    "description": "Task A: chapter-routing recall under three scoping tightnesses (no filter, doc_type=book, gold-book-scoped), plus the paper-level ceiling and a two-stage routing projection. Task B: Self-Route-style escalation (unfiltered first call, retry with doc_type=book if the top hit doesn't look like a book) scored against the best single-shot configuration already available."
+  },
+  "task_a_scoping": {
+    "method": {
+      "no_filter": "Retriever.retrieve_papers(query, filters=None, k=10) -- reproduces the programme's established 0.425.",
+      "doc_type_book": "Retriever.retrieve_papers(query, filters=SearchFilters(doc_type='book'), k=10) -- reproduces the programme's established 0.650.",
+      "gold_book_scoped": "IMPORTANT CAVEAT (added after independent review): this was computed by calling the NORMAL Retriever.retrieve_papers(query, filters=SearchFilters(doc_type='book'), k=32) -- i.e. through the public method, not a bypass -- then post-hoc filtering the returned list to rows whose paper_id is the question's gold paper, keeping the first min(len,10). k=32 was chosen because retrieve_papers's own candidate pool is max(k, rerank_pool_size) and rerank_pool_size is clamped to 32 (app/assembly.py, TEI's own hard batch-size ceiling); TeiReranker.rerank() truncates its candidate batch to the first 32 unconditionally (rag/reranker.py _MAX_BATCH_SIZE), so no k above 32 changes the output -- this is the pipeline's real ceiling, not an arbitrary 'large' choice. THE CONFOUND: because this went through the public retrieve_papers() method, rag/retriever.py's _cap_per_paper (_MAX_HITS_PER_PAPER=3, T-DOC82) ran INSIDE that call, before the post-hoc gold-paper filter ever saw the results -- so at most 3 of the gold book's chapters could ever appear in what this measurement filtered down to. The doc_type=book arm is subject to the exact same cap. Because gold_book_scoped_chapter == doc_type_book_chapter exactly (0.650 both, identical per book too), this measurement CANNOT distinguish 'a paper_id filter adds nothing' from 'the shared 3-per-paper cap is binding in both arms and masks whatever a paper_id filter would add.' An independent measurement (reported by the task's reviewer, not reproduced here per instruction) found that relaxing this cap to 10 while keeping doc_type=book raises chapter R@10 from 0.650 to 0.725 -- confirming the cap, not the filter, was the binding constraint. Whether a paper_id filter adds anything ABOVE a relaxed cap remains open; this run does not answer that question and should not be read as though it does."
+    },
+    "overall": {
+      "no_filter_chapter": {
+        "recall_at_k": 0.425,
+        "mrr": 0.27395833333333336,
+        "n": 40
+      },
+      "no_filter_paper": {
+        "recall_at_k": 0.675,
+        "mrr": 0.44065476190476194,
+        "n": 40
+      },
+      "doc_type_book_chapter": {
+        "recall_at_k": 0.65,
+        "mrr": 0.34447420634920634,
+        "n": 40
+      },
+      "doc_type_book_paper": {
+        "recall_at_k": 1.0,
+        "mrr": 0.75,
+        "n": 40
+      },
+      "gold_book_scoped_chapter": {
+        "recall_at_k": 0.65,
+        "mrr": 0.4416666666666667,
+        "n": 40
+      },
+      "gold_book_scoped_paper": {
+        "recall_at_k": 1.0,
+        "mrr": 1.0,
+        "n": 40
+      }
+    },
+    "by_book": {
+      "Trustworthy Online Controlled Experiments": {
+        "no_filter_chapter": {
+          "recall_at_k": 0.625,
+          "mrr": 0.4166666666666667,
+          "n": 8
+        },
+        "no_filter_paper": {
+          "recall_at_k": 0.875,
+          "mrr": 0.875,
+          "n": 8
+        },
+        "doc_type_book_chapter": {
+          "recall_at_k": 0.75,
+          "mrr": 0.375,
+          "n": 8
+        },
+        "doc_type_book_paper": {
+          "recall_at_k": 1.0,
+          "mrr": 1.0,
+          "n": 8
+        },
+        "gold_book_scoped_chapter": {
+          "recall_at_k": 0.75,
+          "mrr": 0.4166666666666667,
+          "n": 8
+        },
+        "gold_book_scoped_paper": {
+          "recall_at_k": 1.0,
+          "mrr": 1.0,
+          "n": 8
+        }
+      },
+      "Causal Inference and Machine Learning in Economics, Social, and Health Sciences": {
+        "no_filter_chapter": {
+          "recall_at_k": 0.625,
+          "mrr": 0.34375,
+          "n": 8
+        },
+        "no_filter_paper": {
+          "recall_at_k": 0.625,
+          "mrr": 0.390625,
+          "n": 8
+        },
+        "doc_type_book_chapter": {
+          "recall_at_k": 0.75,
+          "mrr": 0.5458333333333333,
+          "n": 8
+        },
+        "doc_type_book_paper": {
+          "recall_at_k": 1.0,
+          "mrr": 0.7,
+          "n": 8
+        },
+        "gold_book_scoped_chapter": {
+          "recall_at_k": 0.75,
+          "mrr": 0.6875,
+          "n": 8
+        },
+        "gold_book_scoped_paper": {
+          "recall_at_k": 1.0,
+          "mrr": 1.0,
+          "n": 8
+        }
+      },
+      "Causal Inference and Discovery in Python": {
+        "no_filter_chapter": {
+          "recall_at_k": 0.375,
+          "mrr": 0.28125,
+          "n": 8
+        },
+        "no_filter_paper": {
+          "recall_at_k": 0.625,
+          "mrr": 0.3645833333333333,
+          "n": 8
+        },
+        "doc_type_book_chapter": {
+          "recall_at_k": 0.75,
+          "mrr": 0.35138888888888886,
+          "n": 8
+        },
+        "doc_type_book_paper": {
+          "recall_at_k": 1.0,
+          "mrr": 0.61875,
+          "n": 8
+        },
+        "gold_book_scoped_chapter": {
+          "recall_at_k": 0.75,
+          "mrr": 0.5416666666666666,
+          "n": 8
+        },
+        "gold_book_scoped_paper": {
+          "recall_at_k": 1.0,
+          "mrr": 1.0,
+          "n": 8
+        }
+      },
+      "Causal Inference in Python": {
+        "no_filter_chapter": {
+          "recall_at_k": 0.25,
+          "mrr": 0.1875,
+          "n": 8
+        },
+        "no_filter_paper": {
+          "recall_at_k": 0.75,
+          "mrr": 0.38244047619047616,
+          "n": 8
+        },
+        "doc_type_book_chapter": {
+          "recall_at_k": 0.5,
+          "mrr": 0.22916666666666666,
+          "n": 8
+        },
+        "doc_type_book_paper": {
+          "recall_at_k": 1.0,
+          "mrr": 0.7541666666666667,
+          "n": 8
+        },
+        "gold_book_scoped_chapter": {
+          "recall_at_k": 0.5,
+          "mrr": 0.2708333333333333,
+          "n": 8
+        },
+        "gold_book_scoped_paper": {
+          "recall_at_k": 1.0,
+          "mrr": 1.0,
+          "n": 8
+        }
+      },
+      "Elements of Causal Inference": {
+        "no_filter_chapter": {
+          "recall_at_k": 0.25,
+          "mrr": 0.140625,
+          "n": 8
+        },
+        "no_filter_paper": {
+          "recall_at_k": 0.5,
+          "mrr": 0.190625,
+          "n": 8
+        },
+        "doc_type_book_chapter": {
+          "recall_at_k": 0.5,
+          "mrr": 0.22098214285714285,
+          "n": 8
+        },
+        "doc_type_book_paper": {
+          "recall_at_k": 1.0,
+          "mrr": 0.6770833333333334,
+          "n": 8
+        },
+        "gold_book_scoped_chapter": {
+          "recall_at_k": 0.5,
+          "mrr": 0.2916666666666667,
+          "n": 8
+        },
+        "gold_book_scoped_paper": {
+          "recall_at_k": 1.0,
+          "mrr": 1.0,
+          "n": 8
+        }
+      }
+    },
+    "paper_level_ceiling": {
+      "value": {
+        "recall_at_k": 0.75,
+        "mrr": 0.7145833333333333,
+        "n": 40
+      },
+      "source": "app/retrieval_eval.py standard run (Retriever.retrieve() passage-level paper hit, filters=None) -- this is the 'paper-level recall 0.750' cited as the established two-stage ceiling; reproduced exactly in this run."
+    },
+    "two_stage_projection": {
+      "formula": "stage1_pick_book_accuracy * stage2_route_within_book_accuracy",
+      "stage1_pick_book_accuracy": 0.75,
+      "stage1_source": "paper_level_ceiling above (retrieve()'s own paper-level recall)",
+      "stage2_route_within_book_accuracy": 0.65,
+      "stage2_source": "gold_book_scoped_chapter (== doc_type_book_chapter here; caveat above applies to this input)",
+      "projected_two_stage_recall": 0.48750000000000004,
+      "arithmetic": "0.750 * 0.650 = 0.4875",
+      "finding": "The naive two-stage projection (0.4875) is LOWER than doc_type='book' filtering achieves in a single shot (0.650) -- an imperfect book-picking stage (75% accurate) throws away answer mass a one-shot filtered search never has to gamble on, because one-shot search lets ALL books' chapters compete directly and rerank sorts out which book wins, rather than committing to one book first. This qualitative conclusion (two-stage loses to one-shot) is NOT sensitive to the cap confound above, since it only uses the two established numbers 0.750 and 0.650, whichever underlying mechanism explains the 0.650."
+    }
+  },
+  "task_b_escalation": {
+    "method": "app/escalation_eval.py: one unfiltered Retriever.retrieve_papers() call; escalate (retry once with SearchFilters(doc_type='book')) iff the top hit's doc_type isn't 'book' (or there were no hits) -- a signal readable off search_papers' own response, no gold label used.",
+    "falsification_bar_asked_in_brief": 0.65,
+    "falsification_bar_revised": 0.725,
+    "revised_bar_source": "Reported by task reviewer: doc_type='book' chapter R@10 measured at a relaxed per-paper cap (10 instead of 3) on this fixture/collection -- not independently reproduced by this run per instruction not to duplicate it.",
+    "result": {
+      "k": 10,
+      "n_questions": 40,
+      "n_errors": 0,
+      "n_escalated": 24,
+      "escalation_rate": 0.6,
+      "chapter_level": {
+        "recall_at_k": 0.575,
+        "mrr": 0.3478075396825397,
+        "n": 40
+      },
+      "questions": [
+        {
+          "question_id": "QB-001",
+          "chapter_rank": 1,
+          "hit": true,
+          "escalated": false,
+          "error": null
+        },
+        {
+          "question_id": "QB-002",
+          "chapter_rank": 3,
+          "hit": true,
+          "escalated": false,
+          "error": null
+        },
+        {
+          "question_id": "QB-003",
+          "chapter_rank": null,
+          "hit": false,
+          "escalated": true,
+          "error": null
+        },
+        {
+          "question_id": "QB-004",
+          "chapter_rank": 1,
+          "hit": true,
+          "escalated": false,
+          "error": null
+        },
+        {
+          "question_id": "QB-005",
+          "chapter_rank": 2,
+          "hit": true,
+          "escalated": false,
+          "error": null
+        },
+        {
+          "question_id": "QB-006",
+          "chapter_rank": 2,
+          "hit": true,
+          "escalated": false,
+          "error": null
+        },
+        {
+          "question_id": "QB-007",
+          "chapter_rank": null,
+          "hit": false,
+          "escalated": false,
+          "error": null
+        },
+        {
+          "question_id": "QB-008",
+          "chapter_rank": null,
+          "hit": false,
+          "escalated": false,
+          "error": null
+        },
+        {
+          "question_id": "QB-009",
+          "chapter_rank": null,
+          "hit": false,
+          "escalated": true,
+          "error": null
+        },
+        {
+          "question_id": "QB-010",
+          "chapter_rank": 1,
+          "hit": true,
+          "escalated": false,
+          "error": null
+        },
+        {
+          "question_id": "QB-011",
+          "chapter_rank": 2,
+          "hit": true,
+          "escalated": false,
+          "error": null
+        },
+        {
+          "question_id": "QB-012",
+          "chapter_rank": null,
+          "hit": false,
+          "escalated": true,
+          "error": null
+        },
+        {
+          "question_id": "QB-013",
+          "chapter_rank": 3,
+          "hit": true,
+          "escalated": true,
+          "error": null
+        },
+        {
+          "question_id": "QB-014",
+          "chapter_rank": 6,
+          "hit": true,
+          "escalated": true,
+          "error": null
+        },
+        {
+          "question_id": "QB-015",
+          "chapter_rank": null,
+          "hit": false,
+          "escalated": true,
+          "error": null
+        },
+        {
+          "question_id": "QB-016",
+          "chapter_rank": 1,
+          "hit": true,
+          "escalated": false,
+          "error": null
+        },
+        {
+          "question_id": "QB-017",
+          "chapter_rank": 2,
+          "hit": true,
+          "escalated": true,
+          "error": null
+        },
+        {
+          "question_id": "QB-018",
+          "chapter_rank": null,
+          "hit": false,
+          "escalated": true,
+          "error": null
+        },
+        {
+          "question_id": "QB-019",
+          "chapter_rank": null,
+          "hit": false,
+          "escalated": true,
+          "error": null
+        },
+        {
+          "question_id": "QB-020",
+          "chapter_rank": 8,
+          "hit": true,
+          "escalated": true,
+          "error": null
+        },
+        {
+          "question_id": "QB-021",
+          "chapter_rank": 7,
+          "hit": true,
+          "escalated": true,
+          "error": null
+        },
+        {
+          "question_id": "QB-022",
+          "chapter_rank": null,
+          "hit": false,
+          "escalated": true,
+          "error": null
+        },
+        {
+          "question_id": "QB-023",
+          "chapter_rank": null,
+          "hit": false,
+          "escalated": true,
+          "error": null
+        },
+        {
+          "question_id": "QB-024",
+          "chapter_rank": 6,
+          "hit": true,
+          "escalated": true,
+          "error": null
+        },
+        {
+          "question_id": "QB-025",
+          "chapter_rank": null,
+          "hit": false,
+          "escalated": true,
+          "error": null
+        },
+        {
+          "question_id": "QB-026",
+          "chapter_rank": null,
+          "hit": false,
+          "escalated": true,
+          "error": null
+        },
+        {
+          "question_id": "QB-027",
+          "chapter_rank": 5,
+          "hit": true,
+          "escalated": true,
+          "error": null
+        },
+        {
+          "question_id": "QB-028",
+          "chapter_rank": 1,
+          "hit": true,
+          "escalated": false,
+          "error": null
+        },
+        {
+          "question_id": "QB-029",
+          "chapter_rank": 1,
+          "hit": true,
+          "escalated": false,
+          "error": null
+        },
+        {
+          "question_id": "QB-030",
+          "chapter_rank": 9,
+          "hit": true,
+          "escalated": true,
+          "error": null
+        },
+        {
+          "question_id": "QB-031",
+          "chapter_rank": 3,
+          "hit": true,
+          "escalated": true,
+          "error": null
+        },
+        {
+          "question_id": "QB-032",
+          "chapter_rank": null,
+          "hit": false,
+          "escalated": false,
+          "error": null
+        },
+        {
+          "question_id": "QB-033",
+          "chapter_rank": 1,
+          "hit": true,
+          "escalated": false,
+          "error": null
+        },
+        {
+          "question_id": "QB-034",
+          "chapter_rank": 1,
+          "hit": true,
+          "escalated": false,
+          "error": null
+        },
+        {
+          "question_id": "QB-035",
+          "chapter_rank": null,
+          "hit": false,
+          "escalated": true,
+          "error": null
+        },
+        {
+          "question_id": "QB-036",
+          "chapter_rank": 1,
+          "hit": true,
+          "escalated": true,
+          "error": null
+        },
+        {
+          "question_id": "QB-037",
+          "chapter_rank": null,
+          "hit": false,
+          "escalated": true,
+          "error": null
+        },
+        {
+          "question_id": "QB-038",
+          "chapter_rank": null,
+          "hit": false,
+          "escalated": false,
+          "error": null
+        },
+        {
+          "question_id": "QB-039",
+          "chapter_rank": 1,
+          "hit": true,
+          "escalated": true,
+          "error": null
+        },
+        {
+          "question_id": "QB-040",
+          "chapter_rank": null,
+          "hit": false,
+          "escalated": true,
+          "error": null
+        }
+      ]
+    },
+    "verdict": "FAILS both bars. Escalation scored 0.575 chapter R@10 (60% of questions escalated), below the 0.650 bar the brief specified and further below the revised 0.725 bar. It does beat the unfiltered baseline (0.425), which the brief explicitly says does not count: 'Beating 0.425 only proves the filter works.' On a fixture where every gold answer is doc_type='book', filtering to books can only narrow the candidate pool toward the right answer or leave it unchanged -- it has no way to hurt a book question. Any policy that sometimes skips the filter (as escalation's heuristic does for the 40% of questions whose unfiltered top hit already looked book-shaped) forgoes whatever the filter would have added on exactly those questions, and the measurement shows that forgone value exceeds what the other 60% gained by escalating. Always-filter dominates adaptive escalation on this fixture."
+  },
+  "recommendation": {
+    "ship": "Always pass filters={'doc_type': 'book'} for book-shaped queries (already the documented search_papers guidance) -- do not build Self-Route-style escalation logic into the MCP consumer pattern. Measured value: +0.225 chapter R@10 over the unfiltered baseline (0.425 -> 0.650) with zero extra retrieval calls, versus escalation's +0.150 (0.425 -> 0.575) at the cost of a second call on 60% of questions and a result that still trails always-filtering.",
+    "do_not_ship": "Two-stage 'pick a book, then route within it' as a retrieval strategy -- the projection above shows it loses to one-shot doc_type=book filtering even under the most favorable available stage-1 number (0.750).",
+    "open_question_not_resolved_here": "Whether a dedicated `paper_id` field on `SearchFilters` (a foundation-frozen contracts/ change) is worth proposing. This run's gold-book-scoped measurement is confounded by the shared _MAX_HITS_PER_PAPER=3 cap and cannot answer it. The cap itself (rag/retriever.py, not contracts/, not foundation-frozen) is the cheaper lever and the reviewer's cited number (0.650 -> 0.725 from a cap raise alone, no paper_id filter) suggests it should be investigated and likely raised before any contracts/ change is proposed.",
+    "mrr_vs_recall_finding": "gold_book_scoped_chapter's MRR improved over doc_type_book_chapter's (0.442 vs 0.344) while recall stayed exactly flat (0.650 both). Under the shared cap, scoping to one book can only reorder the (already-hit-or-miss) fixed set of <=3 candidates from that book to the top of the ranking, ahead of other books' competing chapters -- it cannot introduce a 4th candidate the cap excluded. That is exactly the mechanical signature of a ranking-position effect, not a candidate-set effect: it changes where a correct answer sits, not whether one is present at all. The complementary fact -- that raising the cap (reviewer's number) DID move recall, not just MRR -- places the real remaining fix in the candidate-set stage (the cap), not in re-ranking."
+  },
+  "task_a_full_scoping_data": {
+    "collection": "exp1_ctrl_sizemerge_idf",
+    "k": 10,
+    "overfetch_k": 32,
+    "n_questions": 40,
+    "overall": {
+      "no_filter_chapter": {
+        "recall_at_k": 0.425,
+        "mrr": 0.27395833333333336,
+        "n": 40
+      },
+      "no_filter_paper": {
+        "recall_at_k": 0.675,
+        "mrr": 0.44065476190476194,
+        "n": 40
+      },
+      "doc_type_book_chapter": {
+        "recall_at_k": 0.65,
+        "mrr": 0.34447420634920634,
+        "n": 40
+      },
+      "doc_type_book_paper": {
+        "recall_at_k": 1.0,
+        "mrr": 0.75,
+        "n": 40
+      },
+      "gold_book_scoped_chapter": {
+        "recall_at_k": 0.65,
+        "mrr": 0.4416666666666667,
+        "n": 40
+      },
+      "gold_book_scoped_paper": {
+        "recall_at_k": 1.0,
+        "mrr": 1.0,
+        "n": 40
+      }
+    },
+    "by_book": {
+      "local:14b7e283bdcd": {
+        "no_filter_chapter": {
+          "recall_at_k": 0.625,
+          "mrr": 0.4166666666666667,
+          "n": 8
+        },
+        "no_filter_paper": {
+          "recall_at_k": 0.875,
+          "mrr": 0.875,
+          "n": 8
+        },
+        "doc_type_book_chapter": {
+          "recall_at_k": 0.75,
+          "mrr": 0.375,
+          "n": 8
+        },
+        "doc_type_book_paper": {
+          "recall_at_k": 1.0,
+          "mrr": 1.0,
+          "n": 8
+        },
+        "gold_book_scoped_chapter": {
+          "recall_at_k": 0.75,
+          "mrr": 0.4166666666666667,
+          "n": 8
+        },
+        "gold_book_scoped_paper": {
+          "recall_at_k": 1.0,
+          "mrr": 1.0,
+          "n": 8
+        }
+      },
+      "local:54d6ca71dda9": {
+        "no_filter_chapter": {
+          "recall_at_k": 0.625,
+          "mrr": 0.34375,
+          "n": 8
+        },
+        "no_filter_paper": {
+          "recall_at_k": 0.625,
+          "mrr": 0.390625,
+          "n": 8
+        },
+        "doc_type_book_chapter": {
+          "recall_at_k": 0.75,
+          "mrr": 0.5458333333333333,
+          "n": 8
+        },
+        "doc_type_book_paper": {
+          "recall_at_k": 1.0,
+          "mrr": 0.7,
+          "n": 8
+        },
+        "gold_book_scoped_chapter": {
+          "recall_at_k": 0.75,
+          "mrr": 0.6875,
+          "n": 8
+        },
+        "gold_book_scoped_paper": {
+          "recall_at_k": 1.0,
+          "mrr": 1.0,
+          "n": 8
+        }
+      },
+      "local:dfe850b3281a": {
+        "no_filter_chapter": {
+          "recall_at_k": 0.375,
+          "mrr": 0.28125,
+          "n": 8
+        },
+        "no_filter_paper": {
+          "recall_at_k": 0.625,
+          "mrr": 0.3645833333333333,
+          "n": 8
+        },
+        "doc_type_book_chapter": {
+          "recall_at_k": 0.75,
+          "mrr": 0.35138888888888886,
+          "n": 8
+        },
+        "doc_type_book_paper": {
+          "recall_at_k": 1.0,
+          "mrr": 0.61875,
+          "n": 8
+        },
+        "gold_book_scoped_chapter": {
+          "recall_at_k": 0.75,
+          "mrr": 0.5416666666666666,
+          "n": 8
+        },
+        "gold_book_scoped_paper": {
+          "recall_at_k": 1.0,
+          "mrr": 1.0,
+          "n": 8
+        }
+      },
+      "local:f0929288d4f3": {
+        "no_filter_chapter": {
+          "recall_at_k": 0.25,
+          "mrr": 0.1875,
+          "n": 8
+        },
+        "no_filter_paper": {
+          "recall_at_k": 0.75,
+          "mrr": 0.38244047619047616,
+          "n": 8
+        },
+        "doc_type_book_chapter": {
+          "recall_at_k": 0.5,
+          "mrr": 0.22916666666666666,
+          "n": 8
+        },
+        "doc_type_book_paper": {
+          "recall_at_k": 1.0,
+          "mrr": 0.7541666666666667,
+          "n": 8
+        },
+        "gold_book_scoped_chapter": {
+          "recall_at_k": 0.5,
+          "mrr": 0.2708333333333333,
+          "n": 8
+        },
+        "gold_book_scoped_paper": {
+          "recall_at_k": 1.0,
+          "mrr": 1.0,
+          "n": 8
+        }
+      },
+      "local:f6c64e1e8c7d": {
+        "no_filter_chapter": {
+          "recall_at_k": 0.25,
+          "mrr": 0.140625,
+          "n": 8
+        },
+        "no_filter_paper": {
+          "recall_at_k": 0.5,
+          "mrr": 0.190625,
+          "n": 8
+        },
+        "doc_type_book_chapter": {
+          "recall_at_k": 0.5,
+          "mrr": 0.22098214285714285,
+          "n": 8
+        },
+        "doc_type_book_paper": {
+          "recall_at_k": 1.0,
+          "mrr": 0.6770833333333334,
+          "n": 8
+        },
+        "gold_book_scoped_chapter": {
+          "recall_at_k": 0.5,
+          "mrr": 0.2916666666666667,
+          "n": 8
+        },
+        "gold_book_scoped_paper": {
+          "recall_at_k": 1.0,
+          "mrr": 1.0,
+          "n": 8
+        }
+      }
+    },
+    "questions": [
+      {
+        "question_id": "QB-001",
+        "doc_type": "book",
+        "gold_paper_ids": [
+          "local:14b7e283bdcd"
+        ],
+        "gold_chapter_title": "Necessary Ingredients for Running Useful Controlled Experiments",
+        "no_filter": {
+          "paper_rank": 1,
+          "chapter_rank": 1
+        },
+        "doc_type_book": {
+          "paper_rank": 1,
+          "chapter_rank": 1
+        },
+        "gold_book_scoped": {
+          "paper_rank": 1,
+          "chapter_rank": 1
+        }
+      },
+      {
+        "question_id": "QB-002",
+        "doc_type": "book",
+        "gold_paper_ids": [
+          "local:14b7e283bdcd"
+        ],
+        "gold_chapter_title": "Hypothesis Testing: Establishing Statistical Significance",
+        "no_filter": {
+          "paper_rank": 1,
+          "chapter_rank": 3
+        },
+        "doc_type_book": {
+          "paper_rank": 1,
+          "chapter_rank": 3
+        },
+        "gold_book_scoped": {
+          "paper_rank": 1,
+          "chapter_rank": 3
+        }
+      },
+      {
+        "question_id": "QB-003",
+        "doc_type": "book",
+        "gold_paper_ids": [
+          "local:14b7e283bdcd"
+        ],
+        "gold_chapter_title": "Scaling Experimentation: Digging into Variant Assignment",
+        "no_filter": {
+          "paper_rank": null,
+          "chapter_rank": null
+        },
+        "doc_type_book": {
+          "paper_rank": 1,
+          "chapter_rank": null
+        },
+        "gold_book_scoped": {
+          "paper_rank": 1,
+          "chapter_rank": null
+        }
+      },
+      {
+        "question_id": "QB-004",
+        "doc_type": "book",
+        "gold_paper_ids": [
+          "local:14b7e283bdcd"
+        ],
+        "gold_chapter_title": "Goodhart\u2019s Law, Campbell\u2019s Law, and the Lucas Critique",
+        "no_filter": {
+          "paper_rank": 1,
+          "chapter_rank": 1
+        },
+        "doc_type_book": {
+          "paper_rank": 1,
+          "chapter_rank": 2
+        },
+        "gold_book_scoped": {
+          "paper_rank": 1,
+          "chapter_rank": 2
+        }
+      },
+      {
+        "question_id": "QB-005",
+        "doc_type": "book",
+        "gold_paper_ids": [
+          "local:14b7e283bdcd"
+        ],
+        "gold_chapter_title": "Instrumented Variables (IV) and Natural Experiments",
+        "no_filter": {
+          "paper_rank": 1,
+          "chapter_rank": 2
+        },
+        "doc_type_book": {
+          "paper_rank": 1,
+          "chapter_rank": 3
+        },
+        "gold_book_scoped": {
+          "paper_rank": 1,
+          "chapter_rank": 2
+        }
+      },
+      {
+        "question_id": "QB-006",
+        "doc_type": "book",
+        "gold_paper_ids": [
+          "local:14b7e283bdcd"
+        ],
+        "gold_chapter_title": "Ramp Phase Four: Long-Term Holdout or Replication",
+        "no_filter": {
+          "paper_rank": 1,
+          "chapter_rank": 2
+        },
+        "doc_type_book": {
+          "paper_rank": 1,
+          "chapter_rank": 2
+        },
+        "gold_book_scoped": {
+          "paper_rank": 1,
+          "chapter_rank": 2
+        }
+      },
+      {
+        "question_id": "QB-007",
+        "doc_type": "book",
+        "gold_paper_ids": [
+          "local:14b7e283bdcd"
+        ],
+        "gold_chapter_title": "Example 5: Counterfactual Triggering for Machine Learning Models",
+        "no_filter": {
+          "paper_rank": 1,
+          "chapter_rank": null
+        },
+        "doc_type_book": {
+          "paper_rank": 1,
+          "chapter_rank": null
+        },
+        "gold_book_scoped": {
+          "paper_rank": 1,
+          "chapter_rank": null
+        }
+      },
+      {
+        "question_id": "QB-008",
+        "doc_type": "book",
+        "gold_paper_ids": [
+          "local:14b7e283bdcd"
+        ],
+        "gold_chapter_title": "Reasons the Treatment Effect May Differ between Short-Term and Long-Term",
+        "no_filter": {
+          "paper_rank": 1,
+          "chapter_rank": null
+        },
+        "doc_type_book": {
+          "paper_rank": 1,
+          "chapter_rank": 3
+        },
+        "gold_book_scoped": {
+          "paper_rank": 1,
+          "chapter_rank": 2
+        }
+      },
+      {
+        "question_id": "QB-009",
+        "doc_type": "book",
+        "gold_paper_ids": [
+          "local:f0929288d4f3"
+        ],
+        "gold_chapter_title": "Consistency and Stable Unit Treatment Values",
+        "no_filter": {
+          "paper_rank": 3,
+          "chapter_rank": null
+        },
+        "doc_type_book": {
+          "paper_rank": 2,
+          "chapter_rank": null
+        },
+        "gold_book_scoped": {
+          "paper_rank": 1,
+          "chapter_rank": null
+        }
+      },
+      {
+        "question_id": "QB-010",
+        "doc_type": "book",
+        "gold_paper_ids": [
+          "local:f0929288d4f3"
+        ],
+        "gold_chapter_title": "Brute-Force Independence with Randomization",
+        "no_filter": {
+          "paper_rank": 1,
+          "chapter_rank": 1
+        },
+        "doc_type_book": {
+          "paper_rank": 1,
+          "chapter_rank": 1
+        },
+        "gold_book_scoped": {
+          "paper_rank": 1,
+          "chapter_rank": 1
+        }
+      },
+      {
+        "question_id": "QB-011",
+        "doc_type": "book",
+        "gold_paper_ids": [
+          "local:f0929288d4f3"
+        ],
+        "gold_chapter_title": "Frisch-Waugh-Lovell Theorem and Orthogonalization",
+        "no_filter": {
+          "paper_rank": 1,
+          "chapter_rank": 2
+        },
+        "doc_type_book": {
+          "paper_rank": 1,
+          "chapter_rank": 3
+        },
+        "gold_book_scoped": {
+          "paper_rank": 1,
+          "chapter_rank": 3
+        }
+      },
+      {
+        "question_id": "QB-012",
+        "doc_type": "book",
+        "gold_paper_ids": [
+          "local:f0929288d4f3"
+        ],
+        "gold_chapter_title": "Design- Versus Model-Based Identification",
+        "no_filter": {
+          "paper_rank": 3,
+          "chapter_rank": null
+        },
+        "doc_type_book": {
+          "paper_rank": 1,
+          "chapter_rank": null
+        },
+        "gold_book_scoped": {
+          "paper_rank": 1,
+          "chapter_rank": null
+        }
+      },
+      {
+        "question_id": "QB-013",
+        "doc_type": "book",
+        "gold_paper_ids": [
+          "local:f0929288d4f3"
+        ],
+        "gold_chapter_title": "Canonical Diference-in-Diferences",
+        "no_filter": {
+          "paper_rank": 4,
+          "chapter_rank": null
+        },
+        "doc_type_book": {
+          "paper_rank": 1,
+          "chapter_rank": 3
+        },
+        "gold_book_scoped": {
+          "paper_rank": 1,
+          "chapter_rank": 3
+        }
+      },
+      {
+        "question_id": "QB-014",
+        "doc_type": "book",
+        "gold_paper_ids": [
+          "local:f0929288d4f3"
+        ],
+        "gold_chapter_title": "Synthetic Diference-in-Diferences",
+        "no_filter": {
+          "paper_rank": null,
+          "chapter_rank": null
+        },
+        "doc_type_book": {
+          "paper_rank": 3,
+          "chapter_rank": 6
+        },
+        "gold_book_scoped": {
+          "paper_rank": 1,
+          "chapter_rank": 2
+        }
+      },
+      {
+        "question_id": "QB-015",
+        "doc_type": "book",
+        "gold_paper_ids": [
+          "local:f0929288d4f3"
+        ],
+        "gold_chapter_title": "Causal Reinforcement Learning",
+        "no_filter": {
+          "paper_rank": 7,
+          "chapter_rank": null
+        },
+        "doc_type_book": {
+          "paper_rank": 1,
+          "chapter_rank": null
+        },
+        "gold_book_scoped": {
+          "paper_rank": 1,
+          "chapter_rank": null
+        }
+      },
+      {
+        "question_id": "QB-016",
+        "doc_type": "book",
+        "gold_paper_ids": [
+          "local:f6c64e1e8c7d"
+        ],
+        "gold_chapter_title": "Notation and Terminology",
+        "no_filter": {
+          "paper_rank": 1,
+          "chapter_rank": 1
+        },
+        "doc_type_book": {
+          "paper_rank": 1,
+          "chapter_rank": 1
+        },
+        "gold_book_scoped": {
+          "paper_rank": 1,
+          "chapter_rank": 1
+        }
+      },
+      {
+        "question_id": "QB-017",
+        "doc_type": "book",
+        "gold_paper_ids": [
+          "local:f6c64e1e8c7d"
+        ],
+        "gold_chapter_title": "Cause-Effect Models",
+        "no_filter": {
+          "paper_rank": 8,
+          "chapter_rank": 8
+        },
+        "doc_type_book": {
+          "paper_rank": 1,
+          "chapter_rank": 2
+        },
+        "gold_book_scoped": {
+          "paper_rank": 1,
+          "chapter_rank": 2
+        }
+      },
+      {
+        "question_id": "QB-018",
+        "doc_type": "book",
+        "gold_paper_ids": [
+          "local:f6c64e1e8c7d"
+        ],
+        "gold_chapter_title": "{probabilistically/interventionally/counterfactually} equivalent",
+        "no_filter": {
+          "paper_rank": null,
+          "chapter_rank": null
+        },
+        "doc_type_book": {
+          "paper_rank": 3,
+          "chapter_rank": null
+        },
+        "gold_book_scoped": {
+          "paper_rank": 1,
+          "chapter_rank": null
+        }
+      },
+      {
+        "question_id": "QB-019",
+        "doc_type": "book",
+        "gold_paper_ids": [
+          "local:f6c64e1e8c7d"
+        ],
+        "gold_chapter_title": "Example 7.9 (Conditional independence and partial correlation)",
+        "no_filter": {
+          "paper_rank": null,
+          "chapter_rank": null
+        },
+        "doc_type_book": {
+          "paper_rank": 1,
+          "chapter_rank": null
+        },
+        "gold_book_scoped": {
+          "paper_rank": 1,
+          "chapter_rank": null
+        }
+      },
+      {
+        "question_id": "QB-020",
+        "doc_type": "book",
+        "gold_paper_ids": [
+          "local:f6c64e1e8c7d"
+        ],
+        "gold_chapter_title": "Example 9.2 Consider the following SCM",
+        "no_filter": {
+          "paper_rank": null,
+          "chapter_rank": null
+        },
+        "doc_type_book": {
+          "paper_rank": 4,
+          "chapter_rank": 8
+        },
+        "gold_book_scoped": {
+          "paper_rank": 1,
+          "chapter_rank": 3
+        }
+      },
+      {
+        "question_id": "QB-021",
+        "doc_type": "book",
+        "gold_paper_ids": [
+          "local:f6c64e1e8c7d"
+        ],
+        "gold_chapter_title": "Time Series",
+        "no_filter": {
+          "paper_rank": 5,
+          "chapter_rank": null
+        },
+        "doc_type_book": {
+          "paper_rank": 3,
+          "chapter_rank": 7
+        },
+        "gold_book_scoped": {
+          "paper_rank": 1,
+          "chapter_rank": 2
+        }
+      },
+      {
+        "question_id": "QB-022",
+        "doc_type": "book",
+        "gold_paper_ids": [
+          "local:f6c64e1e8c7d"
+        ],
+        "gold_chapter_title": "A.2 Independence and Conditional Independence Testing",
+        "no_filter": {
+          "paper_rank": null,
+          "chapter_rank": null
+        },
+        "doc_type_book": {
+          "paper_rank": 1,
+          "chapter_rank": null
+        },
+        "gold_book_scoped": {
+          "paper_rank": 1,
+          "chapter_rank": null
+        }
+      },
+      {
+        "question_id": "QB-023",
+        "doc_type": "book",
+        "gold_paper_ids": [
+          "local:f6c64e1e8c7d"
+        ],
+        "gold_chapter_title": "C.2 Proof of Proposition 6.3",
+        "no_filter": {
+          "paper_rank": 5,
+          "chapter_rank": null
+        },
+        "doc_type_book": {
+          "paper_rank": 2,
+          "chapter_rank": null
+        },
+        "gold_book_scoped": {
+          "paper_rank": 1,
+          "chapter_rank": null
+        }
+      },
+      {
+        "question_id": "QB-024",
+        "doc_type": "book",
+        "gold_paper_ids": [
+          "local:dfe850b3281a"
+        ],
+        "gold_chapter_title": "3. Finally, let\u2019s examine the results in Table 3.1:",
+        "no_filter": {
+          "paper_rank": 6,
+          "chapter_rank": null
+        },
+        "doc_type_book": {
+          "paper_rank": 4,
+          "chapter_rank": 6
+        },
+        "gold_book_scoped": {
+          "paper_rank": 1,
+          "chapter_rank": 2
+        }
+      },
+      {
+        "question_id": "QB-025",
+        "doc_type": "book",
+        "gold_paper_ids": [
+          "local:dfe850b3281a"
+        ],
+        "gold_chapter_title": "3. Finally, let\u2019s examine the results in Table 3.1:",
+        "no_filter": {
+          "paper_rank": null,
+          "chapter_rank": null
+        },
+        "doc_type_book": {
+          "paper_rank": 4,
+          "chapter_rank": null
+        },
+        "gold_book_scoped": {
+          "paper_rank": 1,
+          "chapter_rank": null
+        }
+      },
+      {
+        "question_id": "QB-026",
+        "doc_type": "book",
+        "gold_paper_ids": [
+          "local:dfe850b3281a"
+        ],
+        "gold_chapter_title": "3. Finally, let\u2019s examine the results in Table 3.1:",
+        "no_filter": {
+          "paper_rank": 2,
+          "chapter_rank": null
+        },
+        "doc_type_book": {
+          "paper_rank": 1,
+          "chapter_rank": null
+        },
+        "gold_book_scoped": {
+          "paper_rank": 1,
+          "chapter_rank": null
+        }
+      },
+      {
+        "question_id": "QB-027",
+        "doc_type": "book",
+        "gold_paper_ids": [
+          "local:dfe850b3281a"
+        ],
+        "gold_chapter_title": "3. Finally, let\u2019s examine the results in Table 3.1:",
+        "no_filter": {
+          "paper_rank": 4,
+          "chapter_rank": 4
+        },
+        "doc_type_book": {
+          "paper_rank": 5,
+          "chapter_rank": 5
+        },
+        "gold_book_scoped": {
+          "paper_rank": 1,
+          "chapter_rank": 1
+        }
+      },
+      {
+        "question_id": "QB-028",
+        "doc_type": "book",
+        "gold_paper_ids": [
+          "local:dfe850b3281a"
+        ],
+        "gold_chapter_title": "Part 2: Causal Inference",
+        "no_filter": {
+          "paper_rank": 1,
+          "chapter_rank": 1
+        },
+        "doc_type_book": {
+          "paper_rank": 1,
+          "chapter_rank": 1
+        },
+        "gold_book_scoped": {
+          "paper_rank": 1,
+          "chapter_rank": 1
+        }
+      },
+      {
+        "question_id": "QB-029",
+        "doc_type": "book",
+        "gold_paper_ids": [
+          "local:dfe850b3281a"
+        ],
+        "gold_chapter_title": "Part 2: Causal Inference",
+        "no_filter": {
+          "paper_rank": 1,
+          "chapter_rank": 1
+        },
+        "doc_type_book": {
+          "paper_rank": 1,
+          "chapter_rank": 1
+        },
+        "gold_book_scoped": {
+          "paper_rank": 1,
+          "chapter_rank": 1
+        }
+      },
+      {
+        "question_id": "QB-030",
+        "doc_type": "book",
+        "gold_paper_ids": [
+          "local:dfe850b3281a"
+        ],
+        "gold_chapter_title": "Part 3: Causal Discovery",
+        "no_filter": {
+          "paper_rank": null,
+          "chapter_rank": null
+        },
+        "doc_type_book": {
+          "paper_rank": 4,
+          "chapter_rank": 9
+        },
+        "gold_book_scoped": {
+          "paper_rank": 1,
+          "chapter_rank": 3
+        }
+      },
+      {
+        "question_id": "QB-031",
+        "doc_type": "book",
+        "gold_paper_ids": [
+          "local:dfe850b3281a"
+        ],
+        "gold_chapter_title": "Part 3: Causal Discovery",
+        "no_filter": {
+          "paper_rank": null,
+          "chapter_rank": null
+        },
+        "doc_type_book": {
+          "paper_rank": 1,
+          "chapter_rank": 3
+        },
+        "gold_book_scoped": {
+          "paper_rank": 1,
+          "chapter_rank": 2
+        }
+      },
+      {
+        "question_id": "QB-032",
+        "doc_type": "book",
+        "gold_paper_ids": [
+          "local:54d6ca71dda9"
+        ],
+        "gold_chapter_title": "Prediction and Causation in Social Sciences",
+        "no_filter": {
+          "paper_rank": null,
+          "chapter_rank": null
+        },
+        "doc_type_book": {
+          "paper_rank": 5,
+          "chapter_rank": 5
+        },
+        "gold_book_scoped": {
+          "paper_rank": 1,
+          "chapter_rank": 1
+        }
+      },
+      {
+        "question_id": "QB-033",
+        "doc_type": "book",
+        "gold_paper_ids": [
+          "local:54d6ca71dda9"
+        ],
+        "gold_chapter_title": "2. Are the three estimators, ${ \\bar { X } } , { \\hat { X } } .$ , and ${ \\tilde { X } } .$ unbiased?",
+        "no_filter": {
+          "paper_rank": 1,
+          "chapter_rank": 1
+        },
+        "doc_type_book": {
+          "paper_rank": 1,
+          "chapter_rank": 1
+        },
+        "gold_book_scoped": {
+          "paper_rank": 1,
+          "chapter_rank": 1
+        }
+      },
+      {
+        "question_id": "QB-034",
+        "doc_type": "book",
+        "gold_paper_ids": [
+          "local:54d6ca71dda9"
+        ],
+        "gold_chapter_title": "5. Recursive Partitioning: Split Left and Right Nodes",
+        "no_filter": {
+          "paper_rank": 1,
+          "chapter_rank": 1
+        },
+        "doc_type_book": {
+          "paper_rank": 1,
+          "chapter_rank": 1
+        },
+        "gold_book_scoped": {
+          "paper_rank": 1,
+          "chapter_rank": 1
+        }
+      },
+      {
+        "question_id": "QB-035",
+        "doc_type": "book",
+        "gold_paper_ids": [
+          "local:54d6ca71dda9"
+        ],
+        "gold_chapter_title": "4. Weighted Impurity Decrease:",
+        "no_filter": {
+          "paper_rank": null,
+          "chapter_rank": null
+        },
+        "doc_type_book": {
+          "paper_rank": 5,
+          "chapter_rank": null
+        },
+        "gold_book_scoped": {
+          "paper_rank": 1,
+          "chapter_rank": null
+        }
+      },
+      {
+        "question_id": "QB-036",
+        "doc_type": "book",
+        "gold_paper_ids": [
+          "local:54d6ca71dda9"
+        ],
+        "gold_chapter_title": "4. Poor handling of continuous treatment probabilities:",
+        "no_filter": {
+          "paper_rank": 2,
+          "chapter_rank": 2
+        },
+        "doc_type_book": {
+          "paper_rank": 1,
+          "chapter_rank": 1
+        },
+        "gold_book_scoped": {
+          "paper_rank": 1,
+          "chapter_rank": 1
+        }
+      },
+      {
+        "question_id": "QB-037",
+        "doc_type": "book",
+        "gold_paper_ids": [
+          "local:54d6ca71dda9"
+        ],
+        "gold_chapter_title": "4. Approximate Solutions",
+        "no_filter": {
+          "paper_rank": 2,
+          "chapter_rank": 8
+        },
+        "doc_type_book": {
+          "paper_rank": 1,
+          "chapter_rank": null
+        },
+        "gold_book_scoped": {
+          "paper_rank": 1,
+          "chapter_rank": null
+        }
+      },
+      {
+        "question_id": "QB-038",
+        "doc_type": "book",
+        "gold_paper_ids": [
+          "local:54d6ca71dda9"
+        ],
+        "gold_chapter_title": "3. Monotonicity:",
+        "no_filter": {
+          "paper_rank": null,
+          "chapter_rank": null
+        },
+        "doc_type_book": {
+          "paper_rank": 5,
+          "chapter_rank": 6
+        },
+        "gold_book_scoped": {
+          "paper_rank": 1,
+          "chapter_rank": 2
+        }
+      },
+      {
+        "question_id": "QB-039",
+        "doc_type": "book",
+        "gold_paper_ids": [
+          "local:54d6ca71dda9"
+        ],
+        "gold_chapter_title": "4. Verify GPU availability:",
+        "no_filter": {
+          "paper_rank": 8,
+          "chapter_rank": 8
+        },
+        "doc_type_book": {
+          "paper_rank": 1,
+          "chapter_rank": 1
+        },
+        "gold_book_scoped": {
+          "paper_rank": 1,
+          "chapter_rank": 1
+        }
+      },
+      {
+        "question_id": "QB-040",
+        "doc_type": "book",
+        "gold_paper_ids": [
+          "local:f0929288d4f3"
+        ],
+        "gold_chapter_title": "Instrument Identification Assumptions",
+        "no_filter": {
+          "paper_rank": null,
+          "chapter_rank": null
+        },
+        "doc_type_book": {
+          "paper_rank": 5,
+          "chapter_rank": null
+        },
+        "gold_book_scoped": {
+          "paper_rank": 1,
+          "chapter_rank": null
+        }
+      }
+    ]
+  },
+  "task_b_full_escalation_data": {
+    "k": 10,
+    "n_questions": 40,
+    "n_errors": 0,
+    "n_escalated": 24,
+    "escalation_rate": 0.6,
+    "chapter_level": {
+      "recall_at_k": 0.575,
+      "mrr": 0.3478075396825397,
+      "n": 40
+    },
+    "questions": [
+      {
+        "question_id": "QB-001",
+        "chapter_rank": 1,
+        "hit": true,
+        "escalated": false,
+        "error": null
+      },
+      {
+        "question_id": "QB-002",
+        "chapter_rank": 3,
+        "hit": true,
+        "escalated": false,
+        "error": null
+      },
+      {
+        "question_id": "QB-003",
+        "chapter_rank": null,
+        "hit": false,
+        "escalated": true,
+        "error": null
+      },
+      {
+        "question_id": "QB-004",
+        "chapter_rank": 1,
+        "hit": true,
+        "escalated": false,
+        "error": null
+      },
+      {
+        "question_id": "QB-005",
+        "chapter_rank": 2,
+        "hit": true,
+        "escalated": false,
+        "error": null
+      },
+      {
+        "question_id": "QB-006",
+        "chapter_rank": 2,
+        "hit": true,
+        "escalated": false,
+        "error": null
+      },
+      {
+        "question_id": "QB-007",
+        "chapter_rank": null,
+        "hit": false,
+        "escalated": false,
+        "error": null
+      },
+      {
+        "question_id": "QB-008",
+        "chapter_rank": null,
+        "hit": false,
+        "escalated": false,
+        "error": null
+      },
+      {
+        "question_id": "QB-009",
+        "chapter_rank": null,
+        "hit": false,
+        "escalated": true,
+        "error": null
+      },
+      {
+        "question_id": "QB-010",
+        "chapter_rank": 1,
+        "hit": true,
+        "escalated": false,
+        "error": null
+      },
+      {
+        "question_id": "QB-011",
+        "chapter_rank": 2,
+        "hit": true,
+        "escalated": false,
+        "error": null
+      },
+      {
+        "question_id": "QB-012",
+        "chapter_rank": null,
+        "hit": false,
+        "escalated": true,
+        "error": null
+      },
+      {
+        "question_id": "QB-013",
+        "chapter_rank": 3,
+        "hit": true,
+        "escalated": true,
+        "error": null
+      },
+      {
+        "question_id": "QB-014",
+        "chapter_rank": 6,
+        "hit": true,
+        "escalated": true,
+        "error": null
+      },
+      {
+        "question_id": "QB-015",
+        "chapter_rank": null,
+        "hit": false,
+        "escalated": true,
+        "error": null
+      },
+      {
+        "question_id": "QB-016",
+        "chapter_rank": 1,
+        "hit": true,
+        "escalated": false,
+        "error": null
+      },
+      {
+        "question_id": "QB-017",
+        "chapter_rank": 2,
+        "hit": true,
+        "escalated": true,
+        "error": null
+      },
+      {
+        "question_id": "QB-018",
+        "chapter_rank": null,
+        "hit": false,
+        "escalated": true,
+        "error": null
+      },
+      {
+        "question_id": "QB-019",
+        "chapter_rank": null,
+        "hit": false,
+        "escalated": true,
+        "error": null
+      },
+      {
+        "question_id": "QB-020",
+        "chapter_rank": 8,
+        "hit": true,
+        "escalated": true,
+        "error": null
+      },
+      {
+        "question_id": "QB-021",
+        "chapter_rank": 7,
+        "hit": true,
+        "escalated": true,
+        "error": null
+      },
+      {
+        "question_id": "QB-022",
+        "chapter_rank": null,
+        "hit": false,
+        "escalated": true,
+        "error": null
+      },
+      {
+        "question_id": "QB-023",
+        "chapter_rank": null,
+        "hit": false,
+        "escalated": true,
+        "error": null
+      },
+      {
+        "question_id": "QB-024",
+        "chapter_rank": 6,
+        "hit": true,
+        "escalated": true,
+        "error": null
+      },
+      {
+        "question_id": "QB-025",
+        "chapter_rank": null,
+        "hit": false,
+        "escalated": true,
+        "error": null
+      },
+      {
+        "question_id": "QB-026",
+        "chapter_rank": null,
+        "hit": false,
+        "escalated": true,
+        "error": null
+      },
+      {
+        "question_id": "QB-027",
+        "chapter_rank": 5,
+        "hit": true,
+        "escalated": true,
+        "error": null
+      },
+      {
+        "question_id": "QB-028",
+        "chapter_rank": 1,
+        "hit": true,
+        "escalated": false,
+        "error": null
+      },
+      {
+        "question_id": "QB-029",
+        "chapter_rank": 1,
+        "hit": true,
+        "escalated": false,
+        "error": null
+      },
+      {
+        "question_id": "QB-030",
+        "chapter_rank": 9,
+        "hit": true,
+        "escalated": true,
+        "error": null
+      },
+      {
+        "question_id": "QB-031",
+        "chapter_rank": 3,
+        "hit": true,
+        "escalated": true,
+        "error": null
+      },
+      {
+        "question_id": "QB-032",
+        "chapter_rank": null,
+        "hit": false,
+        "escalated": false,
+        "error": null
+      },
+      {
+        "question_id": "QB-033",
+        "chapter_rank": 1,
+        "hit": true,
+        "escalated": false,
+        "error": null
+      },
+      {
+        "question_id": "QB-034",
+        "chapter_rank": 1,
+        "hit": true,
+        "escalated": false,
+        "error": null
+      },
+      {
+        "question_id": "QB-035",
+        "chapter_rank": null,
+        "hit": false,
+        "escalated": true,
+        "error": null
+      },
+      {
+        "question_id": "QB-036",
+        "chapter_rank": 1,
+        "hit": true,
+        "escalated": true,
+        "error": null
+      },
+      {
+        "question_id": "QB-037",
+        "chapter_rank": null,
+        "hit": false,
+        "escalated": true,
+        "error": null
+      },
+      {
+        "question_id": "QB-038",
+        "chapter_rank": null,
+        "hit": false,
+        "escalated": false,
+        "error": null
+      },
+      {
+        "question_id": "QB-039",
+        "chapter_rank": 1,
+        "hit": true,
+        "escalated": true,
+        "error": null
+      },
+      {
+        "question_id": "QB-040",
+        "chapter_rank": null,
+        "hit": false,
+        "escalated": true,
+        "error": null
+      }
+    ]
+  }
+}
