@@ -1821,3 +1821,88 @@ retrieval quality + operability, not the claim layer** — reinforcing the "use 
   `papers-2274900716545307-2026-07-28-20-36-47.snapshot` (5.6 GB, checksummed) server-side, which
   together with the verified `.partial` SQLite and blobs formed a complete hand-assembled backup for
   the re-chunk migration.
+
+### T-DOC95 — 🟢 LOW: a second, distinct duplicate-heading mechanism — two adjacent blocks both byte-equal to `section_path` (2026-07-28)
+
+- **T-DOC95 (code fix implemented; re-chunk retrofit for the affected papers still pending, to ride
+  along with T-DOC93's) — 🟢 `_build_chunk` (`rag/chunker.py:160`) joined every block in
+  `group[1:]` into `body` raw, with no duplicate-heading check at all.** T-DOC93 fixed the case
+  where `overlap` (a block borrowed forward across a split boundary) or `first` (group[0]) carried
+  a bare `section_path` unchecked. That fix accounts for only **9** of the **36** papers still
+  carrying a duplicated heading after it landed. The other **27** have this distinct cause.
+  **Mechanism.** Some sections contain two (or more) adjacent blocks whose text is each,
+  independently, byte-equal to the section's own `section_path` — almost certainly a PDF
+  extractor emitting a running header as its own block, immediately next to the "real" heading
+  block. `_build_chunk` already deduped `first` (`group[0]`) against `section_path`, via
+  `_strip_duplicate_heading`. But every other block in the group — `group[1:]` — was joined into
+  `body` as raw `b.text`, with no check at all. When one of those blocks is itself a bare
+  `section_path` duplicate, it becomes `body`'s opening line, reproducing
+  `title\n{section_path}\n\n{section_path}`.
+  **Confirmed with a synthetic fixture before any fix was written** (CONVENTIONS §14's "sibling
+  of statistic is not guarantee" — do not take a measured pattern on trust): a three-block
+  `ParsedDoc` — two blocks whose text is `"REFERENCES"` (== `section_path`), followed by one real
+  content block — reproduces `chunks[0].text.count("REFERENCES") == 2` on the pre-fix chunker.
+  Also verified read-only against the live `papers.db` (`mode=ro`, no writes): paper `2607.07306`,
+  section `REFERENCES`, has exactly this shape —
+  `2607.07306:b254` and `2607.07306:b255`, both `text == "REFERENCES"`, adjacent, `type: prose`.
+  **Counted across the 36 affected papers: 27 have two adjacent blocks whose text equals their
+  `section_path`; the other 9 are T-DOC93's already-fixed overlap case.** This is the larger
+  population, not a minority edge case.
+  **This hypothesis was originally proposed and wrongly dismissed** during T-DOC93's own
+  investigation (see that entry's "Why the obvious explanations were ruled out" — "*Not* two
+  adjacent byte-identical heading blocks... Checked directly on `2410.15166`: that paper has zero
+  adjacent byte-identical blocks"). That check was real and correctly negative for `2410.15166` —
+  but `2410.15166` turned out to exhibit T-DOC93's *other* mechanism (`overlap`), not this one. A
+  counter-example on one paper disproved the hypothesis as *that paper's* cause; it did not
+  disprove the hypothesis as *a* cause across the corpus. This is the direct sibling of CONVENTIONS
+  §14's "statistic is not guarantee": a negative finding on one instance is a fact about that
+  instance, not a universal disproof — promoting it to "ruled out" is the same error in the other
+  direction. It was T-DOC93's own fix landing, and this fix's retrofit prep re-measuring the
+  residual 36 papers, that surfaced the 27-vs-9 split and re-opened the hypothesis.
+  **Fix chosen.** Run `_strip_duplicate_heading` on every block in `group[1:]`, not just `first`
+  and `overlap`:
+  `+ [_strip_duplicate_heading(b.text, first.section_path) for b in group[1:]]` in place of
+  `+ [b.text for b in group[1:]]`. Considered and rejected: (a) "drop consecutive duplicate blocks
+  generally" — broader than what was verified; the confirmed mechanism is specifically
+  whole-block-text-equals-`section_path`, not arbitrary repeated text, and a repo with three
+  invented-invariant incidents in two days (CONVENTIONS §14) is not the place to generalize past
+  the measurement; (b) a bespoke "drop the block" branch — rejected because
+  `_strip_duplicate_heading` already exists, is already applied to `first` and `overlap`, and
+  (unlike an unconditional drop) preserves a block's real trailing content if only its *first line*
+  happens to duplicate the heading, consistent with how `first`/`overlap` are already handled.
+  **Checked whether dropping such a block could remove legitimate content.** A block whose entire
+  text is byte-identical to its own section's heading, with nothing else in it, is not a
+  content-bearing block — real prose, an equation, code, or a table caption does not consist
+  *solely* of repeating the section title. `_strip_duplicate_heading` only strips a block down to
+  `""` when the *whole first line* matches; a block with real content after a leading duplicate
+  line keeps that content (same behavior already trusted for `first`/`overlap`). No case was found,
+  in the fixtures or in the `2607.07306` sample, where this would discard real prose.
+  **Sibling-path check (CONVENTIONS §14).** All four positions were named and covered with a
+  regression fixture, `rag/test_chunker.py`:
+  - Duplicate at the **start** of `group[1:]` (immediately after `first`, `2607.07306`'s own
+    shape) — `test_duplicate_heading_block_at_the_start_of_group_tail_is_stripped`.
+  - Duplicate in the **middle** of `group[1:]` — `test_duplicate_heading_block_in_the_middle_of_group_tail_is_stripped`.
+  - Duplicate at the **end** of `group[1:]` — `test_duplicate_heading_block_at_the_end_of_group_tail_is_stripped`.
+  - Duplicate in `group[1:]` **with `overlap` also present** (both mechanisms in one chunk build,
+    `overlap` legitimate and non-duplicate, `group[1:]` independently containing the duplicate) —
+    `test_duplicate_heading_block_in_group_tail_is_stripped_even_when_overlap_is_also_present`.
+  All four pass with the fix; `first.text` (used for `anchor.snippet`) and `first.block_id` (used
+  for `anchor.block_id`/`parent_id`, which `get_span` resolves through) are untouched by this
+  change — only what feeds `body` changed.
+  **Mutation proof (CONVENTIONS §14).** The fix line was reverted
+  (`+ [b.text for b in group[1:]]` restored) and the 4 new tests re-run: all 4 failed, each with
+  `assert 2 == 1` on the relevant `heading_path.count(...)` — e.g. the start-of-tail case produced
+  `'Deep Causal Estimation\nREFERENCES\n\nREFERENCES\n\n...'`. The fix was then restored and the
+  full `rag/test_chunker.py` suite (32 tests, including both T-DOC93 regression tests) re-run
+  green.
+  **T-DOC93 not regressed.** Both of its tests,
+  `test_overlap_carrying_the_section_heading_is_not_duplicated_in_the_next_sub_chunk` and
+  `test_a_sub_groups_own_first_block_can_independently_duplicate_the_heading_too`, still pass —
+  this fix is additive to T-DOC93's (extends the same per-block independent-check pattern to
+  `group[1:]`, does not touch the `overlap`/`first` checks T-DOC93 added).
+  **Discovered while retrofitting T-DOC93's fix** — re-measuring the 36 residual duplicated-heading
+  papers against the *current, T-DOC93-fixed* chunker to size the corpus retrofit, rather than
+  assuming T-DOC93 closed all of them.
+  **Retrofit status:** a corpus retrofit for all 36 papers (the 9 T-DOC93 already covers plus these
+  27) is pending and will be run once this fix lands, via `app/rechunk.py` (T-DOC62 option B), the
+  same tool T-DOC93 designated for its own retrofit.
