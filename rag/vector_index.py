@@ -326,6 +326,52 @@ class VectorIndex:
                 ],
             )
 
+    def clone_points_into(self, dest_collection: str) -> int:
+        """Copies every point (id, dense+sparse vector, payload) from this collection into
+        `dest_collection` VERBATIM -- no re-embedding, and unlike `upsert()` (which always derives
+        the sparse vector fresh from `payload["text"]`), this reuses the ORIGINAL sparse vector
+        byte-for-byte, so document-frequency stats computed at the source collection's write time
+        carry over unchanged rather than resetting for the destination.
+
+        Same scroll-then-upsert shape as `rebuild()` above, upserting per-page instead of
+        accumulating the whole collection in memory first -- safe here because, unlike `rebuild()`,
+        the source collection is never deleted, so there's no reason to hold every point at once.
+        Creates `dest_collection` with this collection's own schema if it doesn't exist yet (via a
+        second `VectorIndex`, which runs the same `_ensure_collection()` this instance did).
+
+        Used by experiment scripts that need a throwaway collection seeded from the full
+        production corpus without spending GPU time recomputing every existing vector -- e.g.
+        app/exp1_outline_split.py, which then deletes/upserts only the handful of points its A/B
+        actually changes. Returns the number of points copied.
+        """
+        dest = VectorIndex(
+            self._host, self._port, dest_collection, self._dim, self._hybrid_dense_weight
+        )
+        offset = None
+        total = 0
+        while True:
+            page, offset = self._call(
+                self._client.scroll,
+                self._collection,
+                limit=_SCROLL_PAGE_SIZE,
+                offset=offset,
+                with_payload=True,
+                with_vectors=True,
+            )
+            if page:
+                self._call(
+                    dest._client.upsert,
+                    dest._collection,
+                    points=[
+                        models.PointStruct(id=p.id, vector=p.vector, payload=p.payload)
+                        for p in page
+                    ],
+                )
+                total += len(page)
+            if offset is None:
+                break
+        return total
+
     def point_count(self) -> int:
         """Current number of points in the collection -- `app/reindex_idf.py`'s (OG-27) before/
         after invariant check reads this on both sides of `rebuild()` and refuses to declare

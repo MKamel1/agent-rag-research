@@ -17,10 +17,13 @@ from rag.book_summarizer import (
     _MAX_CHAPTER_WORDS,
     _MAX_MARKER_UNITS,
     _TARGET_CHAPTER_WORDS,
+    OutlineEntry,
     _best_heading,
     _merge_to_target,
     _split_chapters,
+    _split_chapters_outline,
     _title_score,
+    pick_outline_level,
     summarize_book,
 )
 from rag.fakes.fake_summarizer import FakeSummarizer
@@ -28,13 +31,13 @@ from rag.fakes.fake_summarizer import FakeSummarizer
 PAPER_ID = "2506.09999"
 
 
-def _block(text: str, section_path: str, idx: int) -> Block:
+def _block(text: str, section_path: str, idx: int, page: int = 0) -> Block:
     return Block(
         block_id=f"{PAPER_ID}:b{idx}",
         paper_id=PAPER_ID,
         text=text,
         type="prose",
-        page=0,
+        page=page,
         bbox=(0.0, 0.0, 100.0, 200.0),
         section_path=section_path,
         index=idx,
@@ -460,3 +463,137 @@ def test_windowed_fallback_title_is_scored_not_kept_verbatim():
     _, chapters = summarize_book(_parsed_doc(blocks), _KindRecorder())
 
     assert all(c.title != "F" for c in chapters)
+
+
+# ---------------------------------------------------------------------------
+# Outline-based splitter (Experiment 1) -- pure functions, fakes only, no PDF/pypdfium2 dependency.
+# ---------------------------------------------------------------------------
+
+
+def test_pick_outline_level_prefers_the_level_with_the_most_markers():
+    # Mirrors CI-in-Python's real shape (gate doc Q5): level 0 has fewer "Part N" markers than
+    # level 1 has "Chapter N" markers, so level 1 wins even though level 0 is outermost.
+    entries = [
+        OutlineEntry(0, "Part I. Foundations", 0),
+        OutlineEntry(0, "Part II. Estimation", 10),
+        OutlineEntry(1, "Chapter 1. Intro", 0),
+        OutlineEntry(1, "Chapter 2. DAGs", 3),
+        OutlineEntry(1, "Chapter 3. Estimation", 10),
+    ]
+    assert pick_outline_level(entries) == 1
+
+
+def test_pick_outline_level_falls_back_to_zero_when_no_markers_at_any_level():
+    # Mirrors Elements of CI (gate doc Q5): topic titles, no "chapter"/"part"/"appendix" word
+    # anywhere -- falls back to level 0 even though nothing there matched either.
+    entries = [
+        OutlineEntry(0, "Statistical and Causal Models", 0),
+        OutlineEntry(0, "Cause-Effect Models", 20),
+        OutlineEntry(1, "Some Subsection", 2),
+    ]
+    assert pick_outline_level(entries) == 0
+
+
+def test_split_chapters_outline_cuts_at_page_boundaries_offset_zero():
+    blocks = [
+        _block("word " * 20, "front", 0, page=0),
+        _block("word " * 3000, "ch1", 1, page=5),
+        _block("word " * 3000, "ch1 cont", 2, page=6),
+        _block("word " * 3000, "ch2", 3, page=12),
+    ]
+    entries = [
+        OutlineEntry(0, "Chapter 1. Intro", 5),
+        OutlineEntry(0, "Chapter 2. Estimation", 12),
+    ]
+    units = _split_chapters_outline(_parsed_doc(blocks), entries)
+    assert units is not None
+    # page 0 block has no boundary <= it among {5, 12}, so `u` starts at 0 (the first boundary,
+    # per the "last boundary <= page wins, else unit 0" rule) -- it's front matter, merged below.
+    titles = [t for t, _ in units]
+    assert titles == ["Chapter 1. Intro", "Chapter 2. Estimation"]
+    ch1_texts = {b.block_id for b in units[0][1]}
+    assert ch1_texts == {f"{PAPER_ID}:b0", f"{PAPER_ID}:b1", f"{PAPER_ID}:b2"}
+    ch2_texts = {b.block_id for b in units[1][1]}
+    assert ch2_texts == {f"{PAPER_ID}:b3"}
+
+
+def test_split_chapters_outline_returns_none_with_fewer_than_two_boundaries():
+    blocks = [_block("word " * 100, "only", 0, page=0)]
+    entries = [OutlineEntry(0, "Chapter 1. Intro", 0)]
+    assert _split_chapters_outline(_parsed_doc(blocks), entries) is None
+
+
+def test_split_chapters_outline_returns_none_for_no_outline():
+    blocks = [_block("word " * 100, "only", 0, page=0)]
+    assert _split_chapters_outline(_parsed_doc(blocks), []) is None
+
+
+def test_split_chapters_outline_merges_leading_front_matter_into_one_empty_titled_unit():
+    # Cover/Half Title/Copyright/Dedication: each a handful of words, well under
+    # _FRONT_MATTER_MAX_WORDS -- merged into one leading ("", ...) unit rather than 4 tiny
+    # standalone routing units, same convention _split_by_markers uses for its own front matter.
+    blocks = [
+        _block("Some Book Title", "Cover", 0, page=0),
+        _block("Copyright 2024", "Copyright", 1, page=1),
+        _block("For my family", "Dedication", 2, page=2),
+        _block("word " * 3000, "real chapter content", 3, page=5),
+    ]
+    entries = [
+        OutlineEntry(0, "Cover", 0),
+        OutlineEntry(0, "Copyright Page", 1),
+        OutlineEntry(0, "Dedication", 2),
+        OutlineEntry(0, "Chapter 1. Intro", 5),
+    ]
+    units = _split_chapters_outline(_parsed_doc(blocks), entries)
+    assert units is not None
+    assert [t for t, _ in units] == ["", "Chapter 1. Intro"]
+    front_ids = {b.block_id for b in units[0][1]}
+    assert front_ids == {f"{PAPER_ID}:b0", f"{PAPER_ID}:b1", f"{PAPER_ID}:b2"}
+
+
+def test_split_chapters_outline_does_not_merge_a_non_leading_small_unit():
+    # A "Part II" divider page with almost no text, appearing AFTER real chapter content, stays
+    # its own standalone unit -- only a LEADING run of small units is front matter.
+    blocks = [
+        _block("word " * 3000, "ch1", 0, page=0),
+        _block("Part II", "divider", 1, page=10),
+        _block("word " * 3000, "ch2", 2, page=11),
+    ]
+    entries = [
+        OutlineEntry(0, "Chapter 1. Intro", 0),
+        OutlineEntry(0, "Part II", 10),
+        OutlineEntry(0, "Chapter 2. Estimation", 11),
+    ]
+    units = _split_chapters_outline(_parsed_doc(blocks), entries)
+    assert units is not None
+    assert [t for t, _ in units] == ["Chapter 1. Intro", "Part II", "Chapter 2. Estimation"]
+
+
+def test_split_chapters_outline_drives_summarize_book_unmodified(monkeypatch, make_groups):
+    """The experiment's actual integration seam: `summarize_book()`'s own source is never
+    touched -- the module-level `_split_chapters` NAME it calls is substituted for the duration
+    of one call (`app/exp1_outline_split.py` does this for real with `unittest.mock.patch`;
+    `monkeypatch.setattr` here is the same substitution, pytest's own idiom for it). This proves
+    the two functions really are interchangeable at that seam, not just shape-compatible on paper.
+    """
+    import rag.book_summarizer as book_summarizer
+
+    blocks = [
+        _block("word " * 20, "front", 0, page=0),
+        _block("word " * 3000, "ch1", 1, page=5),
+        _block("word " * 3000, "ch2", 2, page=12),
+    ]
+    entries = [
+        OutlineEntry(0, "Chapter 1. Intro", 5),
+        OutlineEntry(0, "Chapter 2. Estimation", 12),
+    ]
+    parsed = _parsed_doc(blocks)
+
+    monkeypatch.setattr(
+        book_summarizer,
+        "_split_chapters",
+        lambda p: _split_chapters_outline(p, entries),
+    )
+    _, chapters = summarize_book(parsed, FakeSummarizer())
+
+    assert [c.title for c in chapters] == ["Chapter 1. Intro", "Chapter 2. Estimation"]

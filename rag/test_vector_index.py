@@ -423,6 +423,41 @@ def test_real_adapter_satisfies_contract(check):
         adapter._client.delete_collection(collection)
 
 
+@pytest.mark.enable_socket
+def test_clone_points_into_copies_points_verbatim_to_a_new_collection():
+    """Experiment 1's `clone_points_into` (app/exp1_outline_split.py's dependency): every point
+    upserted into the source collection must be reachable, by the SAME id, in a freshly-created
+    destination collection -- no re-embedding, dense vector unchanged (round-tripped through
+    `hybrid_search` on a dense-dominant query, same as `assert_upsert_search_round_trips_id`
+    above)."""
+    real = pytest.importorskip("rag.vector_index")
+
+    src_name = "m1a_clone_src"
+    dest_name = "m1a_clone_dest"
+    try:
+        src = real.VectorIndex(
+            host="localhost", port=6333, collection_name=src_name, dim=2, hybrid_dense_weight=0.5
+        )
+    except TransientError as e:
+        pytest.skip(f"no live vector-store service reachable at localhost:6333: {e}")
+
+    try:
+        src.upsert("2506.01234:c0", [1.0, 0.0], _payload(text="method estimator"))
+        src.upsert("2506.01234:c1", [0.0, 1.0], _payload(text="unrelated header"))
+
+        copied = src.clone_points_into(dest_name)
+        assert copied == 2
+
+        dest = real.VectorIndex(
+            host="localhost", port=6333, collection_name=dest_name, dim=2, hybrid_dense_weight=0.5
+        )
+        hits = dest.hybrid_search(qvec=[1.0, 0.0], qtext="method", filters=None, k=10)
+        assert {h.id for h in hits} == {"2506.01234:c0", "2506.01234:c1"}
+    finally:
+        src._client.delete_collection(src_name)
+        src._client.delete_collection(dest_name)
+
+
 # ==================================================================================================
 # T-DOC27 — sparse-channel IDF weighting (ADR-01: the vector store treats sparse vectors as
 # first-class beside dense).
