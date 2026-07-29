@@ -6,8 +6,8 @@ connection, PDF, `DocumentStore`, `VectorIndex`, or GPU-backed adapter.
 
 `compute_splits`/`load_outline_entries`/`build_throwaway_db`/`write_new_chapters`/
 `clone_production_collection`/`swap_chapter_vectors`/`summarize_with_outline_split`/`main` all
-touch a real corpus connection, PDF, throwaway SQLite copy, live Qdrant, or the real GPU-backed
-Summarizer/Embedder -- deliberately NOT exercised here, same "compose real adapters only at the
+touch a real corpus connection, PDF, throwaway SQLite copy, the live vector store, or the real
+GPU-backed Summarizer/Embedder -- deliberately NOT exercised here, same "compose real adapters only at the
 very edge, test the logic against fakes" split `app/reembed_experiment.py`'s own test file follows
 (that file's docstring: "`reembed()` (not `__main__`) is the unit under test"). This run's actual
 end-to-end behavior is exercised by the real corpus/GPU run itself (see
