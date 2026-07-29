@@ -1,0 +1,296 @@
+{
+  "_metadata": {
+    "experiment": "Experiment 3 -- Hierarchy simulation (docs/PLAN-book-rag-experiments.md)",
+    "date": "2026-07-29",
+    "collection": "exp1_outline_chapters",
+    "collection_point_count": 372753,
+    "collection_has_idf_modifier": true,
+    "fixture": "fixtures/eval/eval_book_questions_outline_split.json",
+    "k": 10,
+    "exp1_db_source": "read-only copy of /home/omar/ai-projects/rag-exp1/.exp1-work/{papers.db,blobs} (Experiment 1 own throwaway artifacts, untouched)",
+    "persisted_writes": "none -- no summaries writes, no migration, no contracts change, no new collection"
+  },
+  "level_structure_survey": {
+    "local:f0929288d4f3": {
+      "level_histogram": {
+        "0": 12,
+        "1": 19,
+        "2": 95,
+        "3": 97
+      },
+      "chapter_level": 1,
+      "parent_level": 0,
+      "hierarchy_usable": true
+    },
+    "local:f6c64e1e8c7d": {
+      "level_histogram": {
+        "0": 18,
+        "1": 66
+      },
+      "chapter_level": 0,
+      "parent_level": null,
+      "hierarchy_usable": false
+    },
+    "local:dfe850b3281a": {
+      "level_histogram": {
+        "0": 29,
+        "1": 102,
+        "2": 219
+      },
+      "chapter_level": 0,
+      "parent_level": null,
+      "hierarchy_usable": false
+    },
+    "local:54d6ca71dda9": {
+      "level_histogram": {
+        "0": 42,
+        "1": 156,
+        "2": 180
+      },
+      "chapter_level": 0,
+      "parent_level": null,
+      "hierarchy_usable": false
+    }
+  },
+  "usable_books": [
+    "local:f0929288d4f3"
+  ],
+  "unusable_books_reason": "chapter_level == 0 (the outermost pypdfium2.get_toc() level) for all 3 -- no coarser level exists to route through, verified from real get_toc() output, not assumed",
+  "arm_a_flat": {
+    "description": "Retriever.retrieve_papers() unmodified, via app.retrieval_eval.run(), against exp1_outline_chapters -- reproduces Experiment 1 exactly",
+    "overall_chapter_level": {
+      "recall_at_k": 0.325,
+      "mrr": 0.2331547619047619,
+      "n": 40
+    },
+    "matches_experiment_1_reported_0325": true,
+    "per_book": {
+      "local:14b7e283bdcd": {
+        "name": "Trustworthy Online Controlled Experiments (control, no outline)",
+        "n": 8,
+        "recall_at_10": 0.5,
+        "mrr": 0.3541666666666667
+      },
+      "local:f0929288d4f3": {
+        "name": "Causal Inference in Python",
+        "n": 8,
+        "recall_at_10": 0.25,
+        "mrr": 0.1375
+      },
+      "local:f6c64e1e8c7d": {
+        "name": "Elements of Causal Inference",
+        "n": 8,
+        "recall_at_10": 0.375,
+        "mrr": 0.28125
+      },
+      "local:dfe850b3281a": {
+        "name": "Causal Inference and Discovery in Python",
+        "n": 8,
+        "recall_at_10": 0.0,
+        "mrr": 0.0
+      },
+      "local:54d6ca71dda9": {
+        "name": "Causal Inference and ML in Econ/Social/Health",
+        "n": 8,
+        "recall_at_10": 0.5,
+        "mrr": 0.39285714285714285
+      }
+    }
+  },
+  "arm_b_hierarchical": {
+    "description": "Only local:f0929288d4f3 (Causal Inference in Python) has a usable Part level. Part-title embeddings computed ad hoc (never persisted); route to single best-cosine Part; chapter-level score restricted to that Part's children via VectorIndex.hybrid_search (kind=summary, no rerank), same persisted chapter vectors as arm (a).",
+    "paper_id": "local:f0929288d4f3",
+    "part_titles": [
+      "Cover",
+      "Copyright",
+      "Table of Contents",
+      "Preface",
+      "Part I. Fundamentals",
+      "Part II. Adjusting for Bias",
+      "Part III. Effect Heterogeneity and Personalization",
+      "Part IV. Panel Data",
+      "Part V. Alternative Experimental Designs",
+      "Index",
+      "About the Author"
+    ],
+    "part_children_by_index": {
+      "0": [
+        0
+      ],
+      "1": [],
+      "2": [],
+      "3": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "4": [
+        5,
+        6,
+        7
+      ],
+      "5": [
+        8,
+        9
+      ],
+      "6": [
+        10,
+        11
+      ],
+      "7": [
+        12,
+        13
+      ],
+      "8": [
+        14,
+        15,
+        16
+      ],
+      "9": [],
+      "10": []
+    },
+    "per_question": [
+      {
+        "question_id": "QB-009",
+        "gold_chapter_index": 5,
+        "gold_chapter_title": "Chapter 1. Introduction to Causal Inference",
+        "gold_part_index": 4,
+        "gold_part_title": "Part I. Fundamentals",
+        "routed_part_index": 6,
+        "routed_part_title": "Part III. Effect Heterogeneity and Personalization",
+        "part_routing_correct": false,
+        "part_children_count": 2,
+        "hierarchical_rank": null,
+        "book_scoped_flat_rank": 1
+      },
+      {
+        "question_id": "QB-010",
+        "gold_chapter_index": 5,
+        "gold_chapter_title": "Chapter 1. Introduction to Causal Inference",
+        "gold_part_index": 4,
+        "gold_part_title": "Part I. Fundamentals",
+        "routed_part_index": 6,
+        "routed_part_title": "Part III. Effect Heterogeneity and Personalization",
+        "part_routing_correct": false,
+        "part_children_count": 2,
+        "hierarchical_rank": null,
+        "book_scoped_flat_rank": 2
+      },
+      {
+        "question_id": "QB-011",
+        "gold_chapter_index": 8,
+        "gold_chapter_title": "Chapter 4. The Unreasonable Effectiveness of Linear Regression",
+        "gold_part_index": 5,
+        "gold_part_title": "Part II. Adjusting for Bias",
+        "routed_part_index": 5,
+        "routed_part_title": "Part II. Adjusting for Bias",
+        "part_routing_correct": true,
+        "part_children_count": 2,
+        "hierarchical_rank": 1,
+        "book_scoped_flat_rank": 1
+      },
+      {
+        "question_id": "QB-012",
+        "gold_chapter_index": 9,
+        "gold_chapter_title": "Chapter 5. Propensity Score",
+        "gold_part_index": 5,
+        "gold_part_title": "Part II. Adjusting for Bias",
+        "routed_part_index": 6,
+        "routed_part_title": "Part III. Effect Heterogeneity and Personalization",
+        "part_routing_correct": false,
+        "part_children_count": 2,
+        "hierarchical_rank": null,
+        "book_scoped_flat_rank": 1
+      },
+      {
+        "question_id": "QB-013",
+        "gold_chapter_index": 12,
+        "gold_chapter_title": "Chapter 8. Difference-in-Differences",
+        "gold_part_index": 7,
+        "gold_part_title": "Part IV. Panel Data",
+        "routed_part_index": 8,
+        "routed_part_title": "Part V. Alternative Experimental Designs",
+        "part_routing_correct": false,
+        "part_children_count": 3,
+        "hierarchical_rank": null,
+        "book_scoped_flat_rank": 4
+      },
+      {
+        "question_id": "QB-014",
+        "gold_chapter_index": 13,
+        "gold_chapter_title": "Chapter 9. Synthetic Control",
+        "gold_part_index": 7,
+        "gold_part_title": "Part IV. Panel Data",
+        "routed_part_index": 5,
+        "routed_part_title": "Part II. Adjusting for Bias",
+        "part_routing_correct": false,
+        "part_children_count": 2,
+        "hierarchical_rank": null,
+        "book_scoped_flat_rank": 1
+      },
+      {
+        "question_id": "QB-015",
+        "gold_chapter_index": 16,
+        "gold_chapter_title": "Chapter 12. Next Steps",
+        "gold_part_index": 8,
+        "gold_part_title": "Part V. Alternative Experimental Designs",
+        "routed_part_index": 6,
+        "routed_part_title": "Part III. Effect Heterogeneity and Personalization",
+        "part_routing_correct": false,
+        "part_children_count": 2,
+        "hierarchical_rank": null,
+        "book_scoped_flat_rank": 2
+      },
+      {
+        "question_id": "QB-040",
+        "gold_chapter_index": 15,
+        "gold_chapter_title": "Chapter 11. Noncompliance and Instruments",
+        "gold_part_index": 8,
+        "gold_part_title": "Part V. Alternative Experimental Designs",
+        "routed_part_index": 8,
+        "routed_part_title": "Part V. Alternative Experimental Designs",
+        "part_routing_correct": true,
+        "part_children_count": 3,
+        "hierarchical_rank": 1,
+        "book_scoped_flat_rank": 1
+      }
+    ],
+    "part_routing_accuracy": {
+      "recall_at_k": 0.25,
+      "mrr": 0.25,
+      "n": 8
+    },
+    "hierarchical_chapter_level": {
+      "recall_at_k": 0.25,
+      "mrr": 0.25,
+      "n": 8
+    },
+    "book_scoped_flat_control": {
+      "recall_at_k": 1.0,
+      "mrr": 0.78125,
+      "n": 8
+    },
+    "flat_arm_same_book_same_8_questions": {
+      "name": "Causal Inference in Python",
+      "n": 8,
+      "recall_at_10": 0.25,
+      "mrr": 0.1375
+    }
+  },
+  "comparisons": {
+    "hierarchical_vs_flat_outline_same_book_same_questions": {
+      "hierarchical_recall": 0.25,
+      "flat_recall": 0.25,
+      "delta": 0.0,
+      "noise_floor": 0.125,
+      "clears_floor": false
+    },
+    "hierarchical_vs_size_merge_same_book_same_questions": {
+      "hierarchical_recall": 0.25,
+      "size_merge_recall_this_book": 0.25,
+      "delta": 0.0
+    },
+    "corpus_wide_hit_count_effect": "zero net change -- CI in Python contributes 2/8 chapter hits in BOTH arm(a) flat and arm(b) hierarchical (different specific questions, same count), so substituting hierarchical routing for this one eligible book leaves the full 40-question overall recall bit-for-bit at 0.325, identical to arm (a) and still 0.100 below size-merge (0.425)"
+  }
+}
