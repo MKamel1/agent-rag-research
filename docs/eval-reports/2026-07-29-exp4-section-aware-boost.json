@@ -1,0 +1,112 @@
+{
+  "experiment": "Experiment 4 -- section-aware boost/filter by section_path type (T-DOC64)",
+  "ticket": "T-DOC64",
+  "date": "2026-07-29",
+  "verdict": "STOPPED before implementation -- section_path is present but does not carry reliable Method/Results/Introduction-style semantic labels for the book corpus this experiment targets. No boost was built. No A/B eval was run.",
+  "method": "Read-only measurement of rag/retriever.py's data model (Chunk.section_path / blocks.section_path) against papers.db (file:...?mode=ro), corpus-wide and restricted to the 5-book eval fixture's paper_ids, plus a keyword-based canonical-category classifier (method/results/introduction/discussion/conclusion/related_work/abstract/references/acknowledgments/appendix/limitations/other) applied to every non-empty section_path value found.",
+  "collection_chosen_for_the_would_be_AB_run": {
+    "name": "exp1_ctrl_sizemerge_idf",
+    "reason": "Per the experiment brief: identical to production except IDF is on, the configuration this project is likely to ship. Verified read-only (not used, since the experiment stopped before the A/B stage).",
+    "point_count": 372741,
+    "has_idf_modifier": true,
+    "verification": "VectorIndex(host='localhost', port=6333, collection_name='exp1_ctrl_sizemerge_idf', dim=1024).point_count() == 372741 and .has_idf_modifier() == True, checked directly, 2026-07-29",
+    "production_papers_collection_for_contrast": {
+      "point_count": 372741,
+      "has_idf_modifier": false
+    }
+  },
+  "noise_floor": {
+    "chapter_level": 0.125,
+    "passage_level": "assumed same order pending contrary evidence, per experiment brief",
+    "n_questions": 40
+  },
+  "section_path_distribution": {
+    "corpus_wide": {
+      "description": "All 11,026 papers in papers.db (research papers + the 5 books), 361,614 chunks total.",
+      "total_chunks": 361614,
+      "empty_or_null_section_path": 11592,
+      "empty_pct": 3.2,
+      "nonempty_section_path": 350022,
+      "distinct_nonempty_values": 218714,
+      "category_breakdown_pct": {
+        "other": 44.3,
+        "method": 13.8,
+        "results": 13.0,
+        "appendix": 9.0,
+        "related_work": 4.0,
+        "introduction": 4.0,
+        "references": 3.3,
+        "abstract": 2.5,
+        "conclusion": 2.4,
+        "discussion": 2.1,
+        "acknowledgments": 1.3,
+        "limitations": 0.5
+      },
+      "note": "Field is NOT sparse (96.8% non-empty). Research papers follow IMRaD-ish conventions closely enough that a loose keyword classifier resolves 55.7% of non-empty values into a canonical category (method+results alone = 26.8%) -- this population, if it were the target of Experiment 4, would plausibly support a boost. It is not the target: the 40-question eval fixture this experiment must be measured against is 100% doc_type=book."
+    },
+    "five_book_eval_corpus": {
+      "description": "The 5 books backing the 40-question eval fixture (fixtures/eval/eval_book_questions.json), 1,939 chunks total -- the actual population any Experiment 4 boost would act on for this eval.",
+      "total_chunks": 1939,
+      "empty_or_null_section_path": 7,
+      "empty_pct": 0.4,
+      "nonempty_section_path": 1932,
+      "distinct_nonempty_values": 1673,
+      "distinct_value_uniqueness_pct": 86.6,
+      "category_breakdown_pct": {
+        "other": 80.4,
+        "method": 12.5,
+        "results": 3.8,
+        "appendix": 1.3,
+        "references": 0.9,
+        "introduction": 0.5,
+        "conclusion": 0.2,
+        "related_work": 0.2,
+        "acknowledgments": 0.2,
+        "limitations": 0.2
+      },
+      "per_book": {
+        "local:14b7e283bdcd": {
+          "title": "Trustworthy Online Controlled Experiments",
+          "n_chunks": 216, "empty": 2, "distinct_nonempty": 212,
+          "method_or_results_pct": 21.3, "other_pct": 76.9
+        },
+        "local:f0929288d4f3": {
+          "title": "Causal Inference in Python",
+          "n_chunks": 357, "empty": 2, "distinct_nonempty": 305,
+          "method_or_results_pct": 6.4, "other_pct": 92.2
+        },
+        "local:f6c64e1e8c7d": {
+          "title": "Elements of Causal Inference",
+          "n_chunks": 160, "empty": 1, "distinct_nonempty": 139,
+          "method_or_results_pct": 33.8, "other_pct": 54.4
+        },
+        "local:dfe850b3281a": {
+          "title": "Causal Inference and Discovery in Python",
+          "n_chunks": 535, "empty": 1, "distinct_nonempty": 494,
+          "method_or_results_pct": 7.5, "other_pct": 88.0
+        },
+        "local:54d6ca71dda9": {
+          "title": "Causal Inference and Machine Learning in Economics, Social, and Health Sciences",
+          "n_chunks": 671, "empty": 1, "distinct_nonempty": 581,
+          "method_or_results_pct": 22.5, "other_pct": 74.5
+        }
+      },
+      "note": "Field is essentially never empty (99.6% non-empty), but 86.6% of non-empty values are DISTINCT -- section_path here is a free-text subsection heading (worked examples, 'Notes > 5.1 Bias-Variance Trade-off', single-letter appendix markers A-W, OCR-garbled math snippets used as headers e.g. '## Best lambda for Ridge regression: 0.2529632'), not a stable enumerable type taxonomy. Only 16.3% (method+results combined) resolve to a canonical IMRaD-style label under a deliberately generous keyword classifier; per-book method+results share ranges 6.4%-33.8%, itself too variable to calibrate one boost weight across the corpus."
+    },
+    "eval_fixture_gold_labels": {
+      "description": "The 40-question fixture's own gold_chapter_title-adjacent section_path field (the fact-bearing block's actual section), categorized the same way -- i.e. what the boost would need to promote to matter for this eval.",
+      "n_questions": 40,
+      "question_type_distribution": { "Book-Chapter-Recall": 40 },
+      "gold_section_path_category_counts": { "other": 28, "method": 8, "results": 3, "appendix": 1 },
+      "method_or_results_count": 11,
+      "other_count": 28,
+      "note": "70% (28/40) of the eval set's own gold answers sit in a section_path the classifier cannot map to Method/Results/Introduction at all -- a boost built on that taxonomy would have no effect on 7 in 10 questions, and could only help the other 3 in 10 if it never mis-scores the boundary. Separately: question_type is uniform ('Book-Chapter-Recall') across all 40 questions -- the plan's assumption that a Method/Results-seeking subset could be isolated via the harness's existing by_question_type breakdown does not hold for the fixture as actually authored; there is no tagged subset to test a targeted boost against without post-hoc relabeling questions after their retrieval-relevant content is already known, which the eval set's own authoring discipline (write-before-retrieval) exists specifically to avoid."
+    }
+  },
+  "decision": {
+    "criterion_applied": "Experiment brief: 'If the field is too sparse or too inconsistent to support a boost, that is a legitimate and valuable finding -- report it and stop rather than building a boost over unusable data.'",
+    "finding": "section_path is not sparse for books (99.6% populated) but IS too inconsistent to support the specific Q4 hypothesis (favor Method/Results-shaped sections over Introduction-shaped ones): 80.4% of book chunks and 70% of the eval fixture's own gold answers fall outside any Method/Results/Introduction-style category, the field is instead a near-unique free-text subsection heading per chunk (86.6% distinct), and the eval fixture carries no question_type subset to even target the boost at.",
+    "action_taken": "Stopped at the read-only investigation stage. No boost implemented. No toggle added to rag/retriever.py. No A/B eval run against exp1_ctrl_sizemerge_idf or any other collection -- there is no 'no-boost arm' number to report because no boosted arm was built to compare it against.",
+    "T-DOC64_status": "Remains a documented idea without measured support, same status as before this experiment (per docs/METHODS-books-and-chunk-quality.md's own framing of the falsification criterion) -- this run adds the read-only section_path distribution as the reason, not a new open question."
+  }
+}
