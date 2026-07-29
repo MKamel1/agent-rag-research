@@ -14,8 +14,17 @@ from pathlib import Path
 
 FIXTURE_PATH = Path(__file__).resolve().parent / "eval_book_questions.json"
 
-TOTAL_ITEMS = 15
-ALLOWED_PAPER_IDS = {"local:14b7e283bdcd", "local:f0929288d4f3"}
+TOTAL_ITEMS = 40
+ALLOWED_PAPER_IDS = {
+    "local:14b7e283bdcd", "local:f0929288d4f3", "local:f6c64e1e8c7d",
+    "local:dfe850b3281a", "local:54d6ca71dda9",
+}
+# docs/PLAN-book-rag-experiments.md §1: "8 questions per book x 5 books = 40 questions" -- an
+# exact per-book count, not just "at least 1" (the 2-book seed set's weaker floor, kept below for
+# the books that were already asserted that way). A book with fewer/more than 8 is exactly the
+# kind of silent imbalance that would let one book's questions dominate the aggregate metric
+# without anyone noticing -- see the eval report's own "8-question book" caveat.
+QUESTIONS_PER_BOOK = 8
 REQUIRED_FIELDS = {
     "question_id", "question_text", "doc_type", "source_paper_id", "source_paper_title",
     "question_type", "gold_chapter_title", "gold_chapter_index", "gold_chunk_id",
@@ -71,6 +80,12 @@ def demo():
     # outline, local:f0929288d4f3 has a 223-entry/4-level one.
     assert set(per_paper) == ALLOWED_PAPER_IDS, f"missing a seed book: {per_paper}"
     assert all(n >= 1 for n in per_paper.values())
+    # T-DOC-BOOK-EVAL-5BOOK (docs/PLAN-book-rag-experiments.md §1): exactly 8 per book, not just
+    # "at least 1" -- see QUESTIONS_PER_BOOK's comment for why this is a separate, stronger check
+    # rather than a replacement of the line above.
+    assert per_paper == {pid: QUESTIONS_PER_BOOK for pid in ALLOWED_PAPER_IDS}, (
+        f"expected exactly {QUESTIONS_PER_BOOK} questions per book, got {per_paper}"
+    )
 
     print("all book eval fixture invariants hold")
 
