@@ -34,6 +34,7 @@ from pathlib import Path
 from mcp.server.fastmcp import FastMCP
 
 from app.assembly import build_mcp_server
+from app.usage_log import UsageLog, record_usage
 from contracts.mcp_server import PaperSearchResponse, PaperSummaryView, SearchResponse
 from contracts.provenance import Anchor
 from contracts.vector_index import SearchFilters
@@ -85,8 +86,26 @@ logger.info(
 _server = build_mcp_server(_cfg, db_path=_db_path, blob_dir=_blob_dir, collection=_cfg.collection)
 mcp = FastMCP("research-system-rag")
 
+# Request telemetry (T-DOC-usage-telemetry): a dedicated <data_dir>/mcp_usage.db, sibling to the
+# resolved db_path -- never a table in papers.db itself, which would need a migrations/ entry.
+# Built lazily on first use, not at import time, same "construct the real collaborator late"
+# reasoning as app/dashboard/server.py's _LazyMcpServer for its own real-infra dependency; here
+# the constructor itself is cheap (no I/O until .record() opens a connection), so the "lazy"
+# part is really about handing app/usage_log.py::record_usage a zero-arg callable per its own
+# interface rather than an eagerly-built instance.
+_usage_log_path = Path(_db_path).parent / "mcp_usage.db"
+_usage_log: UsageLog | None = None
+
+
+def _get_usage_log() -> UsageLog:
+    global _usage_log
+    if _usage_log is None:
+        _usage_log = UsageLog(_usage_log_path)
+    return _usage_log
+
 
 @mcp.tool()
+@record_usage(_get_usage_log, source="mcp", tool="semantic_search")
 def semantic_search(
     query: str, filters: SearchFilters | None = None, k: int | None = None
 ) -> SearchResponse:
@@ -101,6 +120,7 @@ def semantic_search(
 
 
 @mcp.tool()
+@record_usage(_get_usage_log, source="mcp", tool="search_papers")
 def search_papers(
     query: str, filters: SearchFilters | None = None, k: int | None = None
 ) -> PaperSearchResponse:
@@ -112,12 +132,14 @@ def search_papers(
 
 
 @mcp.tool()
+@record_usage(_get_usage_log, source="mcp", tool="get_paper")
 def get_paper(paper_id: str) -> PaperSummaryView:
     """Fetch a stored paper's summary view by id."""
     return _server.get_paper(paper_id)
 
 
 @mcp.tool()
+@record_usage(_get_usage_log, source="mcp", tool="get_span")
 def get_span(anchor: Anchor) -> str:
     """Resolve an `Anchor` (from a prior search result's `.anchor`) back to the full verbatim
     text of the source block it points at — the citation-verification round trip."""
