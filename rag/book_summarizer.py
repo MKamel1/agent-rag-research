@@ -36,12 +36,37 @@ _FALLBACK_WINDOW_BLOCKS = 150  # flat/scanned books with no usable section struc
 # `[a-z]\b` (with IGNORECASE) covers letter appendices -- "Appendix A Proofs". It cannot
 # over-match a word like "Part of the story": one letter must be followed by a word boundary,
 # and "o" in "of" is not.
-_CHAPTER_MARKER = re.compile(
+_CHAPTER_KEYWORD_MARKER = re.compile(
     r"^\s*(?:chapter|part|appendix)\s+"
-    r"(?:\d+|[ivxlcdm]+|[a-z]|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\b"
-    r"|^\s*\d+\.\s+\S",
+    r"(?:\d+|[ivxlcdm]+|[a-z]|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\b",
     re.IGNORECASE,
 )
+# T-DOC87: the bare "N. Title" alternative used to fire unconditionally on ANY numbered heading.
+# MinerU's layout model sometimes classifies a numbered list ITEM in body prose as a heading (e.g.
+# "1. https://freakonometrics.hypotheses.org/52776" -- a hyperlinked list entry, styled like a
+# heading in the source PDF) -- measured against the live corpus: 44/44 of this alternative's
+# matches across the two affected books were exactly this, 0/5 books had a single true positive.
+#
+# Discriminator: a bare "N. Title" heading is trusted as a chapter marker only when EVERY bare-
+# numbered heading in the document, taken together in reading order and excluding anything already
+# matched by the keyword alternative above, forms the single sequence 1, 2, 3, ..., k with no gaps
+# and no repeats -- the numbering a book's own chapters actually have. A numbered list restating
+# steps in body prose resets to 1 for each separate list (measured, Econ/Social/Health: the bare
+# matches read [1,2, 1,2,...,10, 1,2,...,10, ...] -- two independent 10-step algorithm walk-
+# throughs, never one running count across the book) or starts mid-sequence (Discovery in Python's
+# sole bare match starts at 3, with nothing numbered 1 or 2 anywhere near it). Position/block-type
+# were considered and rejected: MinerU already collapses the "is this a heading" decision to a
+# single flag before this module ever sees the block (rag/parser.py's `text_level`), so nothing
+# about a Block's `type` or position distinguishes a mis-tagged list item from a real heading --
+# only the numbering pattern across the WHOLE document does.
+#
+# Known ceiling: a book whose ONLY marker-worthy heading anywhere is a single, coincidentally
+# 1..N sequential body-prose list (no other bare-number or keyword heading in the entire book)
+# would still slip through this check alone -- not observed in this 5-book corpus. In practice the
+# word-share and duplicate-title guards below catch most such cases anyway, because the rest of
+# the book then piles into one lopsided front-matter unit around the "chapters" a fluke list
+# produced.
+_BARE_NUMBER_MARKER = re.compile(r"^\s*(\d+)\.\s+\S")
 # ponytail: fixed thresholds tuned against one measured 144k-word book, not adaptive. The guard
 # band is what stops a book that merely *mentions* "Chapter 3" from producing 2 lopsided units.
 _TARGET_CHAPTER_WORDS = 5000
@@ -109,24 +134,48 @@ def _heading_groups(parsed: ParsedDoc) -> list[tuple[str, list[Block]]]:
     return groups
 
 
+def _bare_numbers_are_sequential(groups: list[tuple[str, list[Block]]]) -> bool:
+    """True iff every bare "N. Title" heading not already claimed by the keyword alternative,
+    taken in reading order, forms exactly 1, 2, 3, ..., k -- see `_BARE_NUMBER_MARKER`'s comment
+    above for why this is what separates real bare-numbered chapters from numbered list items."""
+    numbers = [
+        int(match.group(1))
+        for title, _ in groups
+        if not _CHAPTER_KEYWORD_MARKER.match(title) and (match := _BARE_NUMBER_MARKER.match(title))
+    ]
+    return bool(numbers) and numbers == list(range(1, len(numbers) + 1))
+
+
 def _split_by_markers(
     groups: list[tuple[str, list[Block]]],
 ) -> list[tuple[str, list[Block]]] | None:
     """Strategy A. Returns None when the split isn't plausible, so the caller falls back."""
+    bare_numbers_ok = _bare_numbers_are_sequential(groups)
     units: list[tuple[str, list[Block]]] = []
     for title, blocks in groups:
-        if _CHAPTER_MARKER.match(title):
+        is_marker = bool(_CHAPTER_KEYWORD_MARKER.match(title)) or (
+            bare_numbers_ok and bool(_BARE_NUMBER_MARKER.match(title))
+        )
+        if is_marker:
             units.append((title, list(blocks)))
         elif units:
             units[-1][1].extend(blocks)
         else:
             units.append(("", list(blocks)))  # front matter, before the first marker
-    if sum(1 for title, _ in units if title) < _MIN_MARKER_UNITS:
+    titled = [title for title, _ in units if title]
+    if len(titled) < _MIN_MARKER_UNITS:
         return None
     if len(units) > _MAX_MARKER_UNITS:
         return None
     total = sum(_words(blocks) for _, blocks in units)
     if total and max(_words(blocks) for _, blocks in units) / total > _MAX_UNIT_WORD_SHARE:
+        return None
+    if len(titled) != len(set(titled)):
+        # T-DOC87: two matched markers sharing a title (e.g. a book's own table of contents
+        # repeating "Part 2: Causal Inference" as a heading ahead of the real divider) aren't
+        # distinct, addressable chapters -- an agent selecting by label can't tell them apart, so
+        # this split is no more trustworthy than the word-share/count guards above and gets the
+        # same treatment: reject the whole strategy, let the caller fall back to size-merging.
         return None
     return units
 
@@ -205,12 +254,11 @@ class OutlineEntry(NamedTuple):
     page_index: int
 
 
-_OUTLINE_MARKER = re.compile(
-    r"^\s*(?:chapter|part|appendix)\s+"
-    r"(?:\d+|[ivxlcdm]+|[a-z]|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\b",
-    re.IGNORECASE,
-)  # same marker family as `_CHAPTER_MARKER` above, minus its bare "N. Title" branch -- verified in
-# the gate doc (Q5) against all 4 outline-bearing books' actual outlines, not reused unchecked.
+# Same keyword family `_split_by_markers` uses above (deliberately excludes the bare "N. Title"
+# alternative -- an outline entry's own numbering isn't corroborated by document position the way
+# `_bare_numbers_are_sequential` corroborates a heading's, so this stays keyword-only) -- verified
+# in the gate doc (Q5) against all 4 outline-bearing books' actual outlines, not reused unchecked.
+_OUTLINE_MARKER = _CHAPTER_KEYWORD_MARKER
 
 # ponytail: front matter (Cover/Half Title/Copyright/Dedication) is detected structurally -- by
 # word count, not a label blocklist -- same "no word blocklist" reasoning as `_title_score`'s
