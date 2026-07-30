@@ -18,8 +18,11 @@ from rag.book_summarizer import (
     _MAX_MARKER_UNITS,
     _TARGET_CHAPTER_WORDS,
     OutlineEntry,
+    _bare_numbers_are_sequential,
     _best_heading,
+    _heading_groups,
     _merge_to_target,
+    _split_by_markers,
     _split_chapters,
     _split_chapters_outline,
     _title_score,
@@ -263,12 +266,77 @@ def test_explicit_chapter_markers_are_used_when_plausible():
 
 
 def test_marker_variants_part_appendix_numbered():
-    for marker in ["Part II Foundations", "Appendix A Proofs", "3. Estimation"]:
+    for marker in ["Part II Foundations", "Appendix A Proofs"]:
         blocks = []
         for title in ["Preface", marker, "Body", f"{marker} second", "More", f"{marker} third"]:
             blocks.append(_block(" ".join(["word"] * 100), title, len(blocks)))
         units = _split_chapters(_parsed_doc(blocks))
         assert any(t == marker for t, _ in units), f"{marker!r} not detected as a chapter marker"
+
+
+def test_bare_number_markers_used_when_sequential_from_one():
+    # T-DOC87: a real bare-numbered chapter scheme -- 1, 2, 3 with nothing else numbered in the
+    # book -- is exactly the shape `_bare_numbers_are_sequential` is meant to accept.
+    blocks = []
+    for title in ["Preface", "1. Introduction", "Body", "2. Methods", "More", "3. Estimation"]:
+        blocks.append(_block(" ".join(["word"] * 100), title, len(blocks)))
+    units = _split_chapters(_parsed_doc(blocks))
+    titles = [t for t, _ in units]
+    assert "1. Introduction" in titles
+    assert "2. Methods" in titles
+    assert "3. Estimation" in titles
+
+
+def test_bare_number_markers_rejected_when_not_sequential_from_one():
+    # T-DOC87 regression pin: the exact real-world failure shape -- numbered list items in body
+    # prose that MinerU classified as headings, restarting/skipping instead of running 1..k across
+    # the book. "3. Estimation" here plays the same role the live bug's "3. Finally, let's
+    # examine..." did (a single bare match that isn't preceded by "1."/"2." anywhere) -- must NOT
+    # be treated as a chapter BOUNDARY by Strategy A. (Whether Strategy B's independent best-
+    # heading scoring later reuses similar text as a fallback LABEL is a separate concern, not
+    # what this pins -- see `_bare_numbers_are_sequential` directly instead of the full
+    # `_split_chapters` pipeline.)
+    groups = [
+        ("Preface", [_block("word", "Preface", 0)]),
+        ("3. Estimation", [_block("word", "3. Estimation", 1)]),
+        ("Body", [_block("word", "Body", 2)]),
+        ("3. Estimation second", [_block("word", "3. Estimation second", 3)]),
+        ("More", [_block("word", "More", 4)]),
+        ("3. Estimation third", [_block("word", "3. Estimation third", 5)]),
+    ]
+    assert not _bare_numbers_are_sequential(groups)
+    assert _split_by_markers(groups) is None
+
+
+def test_bare_number_markers_reject_real_bogus_examples():
+    # T-DOC87: real bogus "chapters" measured live in the corpus (docs/eval-reports/
+    # 2026-07-29-tdoc87-marker-regex-repair.md) -- numbered list items, not chapters, and their
+    # numbering across the document is neither sequential nor starts at 1.
+    bogus_titles = [
+        "1. https://freakonometrics.hypotheses.org/52776",
+        "2. DiD%20Resources",
+        "4. Verify GPU availability:",
+        "3. Finally, let's examine the results in Table 3.1:",
+    ]
+    groups = [(title, [_block("word", title, i)]) for i, title in enumerate(bogus_titles)]
+    assert not _bare_numbers_are_sequential(groups)
+    assert _split_by_markers(groups) is None, "bogus numbered list items must not become chapters"
+
+
+def test_marker_split_rejected_when_matched_titles_duplicate():
+    # T-DOC87: two matched markers sharing a title (measured live: "Part 2: Causal Inference"
+    # labelling two different units in the same book, e.g. once in a book's own table of contents
+    # and once at the real divider) are not distinct, addressable chapters -- the whole marker
+    # strategy must reject rather than emit unusable duplicate labels.
+    groups = [
+        ("Front matter", [_block("word", "Front matter", 0)]),
+        ("Part 1: Intro", [_block("word", "Part 1: Intro", 1)]),
+        ("Body", [_block("word", "Body", 2)]),
+        ("Part 2: Methods", [_block("word", "Part 2: Methods", 3)]),
+        ("More", [_block("word", "More", 4)]),
+        ("Part 2: Methods", [_block("word", "Part 2: Methods", 5)]),
+    ]
+    assert _split_by_markers(groups) is None
 
 
 def test_too_few_markers_falls_back_to_size_merge():
@@ -307,8 +375,11 @@ def test_too_many_markers_falls_back_to_size_merge():
     """
     n_headings = 80
     assert n_headings > _MAX_MARKER_UNITS, "fixture must exceed the guard to exercise it"
+    # Numbered 1..n_headings (not 0..n_headings-1): sequential-from-one so the fixture still
+    # clears T-DOC87's `_bare_numbers_are_sequential` gate and reaches the guard this test targets,
+    # rather than being rejected earlier for the wrong reason.
     blocks = [
-        _block(" ".join(["word"] * 300), f"{i}. Section {i}", i) for i in range(n_headings)
+        _block(" ".join(["word"] * 300), f"{i}. Section {i}", i - 1) for i in range(1, n_headings + 1)
     ]
     units = _split_chapters(_parsed_doc(blocks))
     assert len(units) < n_headings, "expected size-merged units, not one unit per heading"
