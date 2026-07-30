@@ -38,7 +38,7 @@ import uuid
 from qdrant_client import QdrantClient, models
 from qdrant_client.http.exceptions import ApiException
 
-from contracts.errors import TransientError
+from contracts.errors import ContractError, TransientError
 from contracts.fusion import rrf_fuse
 from contracts.vector_index import Hit, SearchFilters, VectorPayload
 
@@ -309,6 +309,21 @@ class VectorIndex:
         has both dependencies; `VectorIndex`'s own interface takes neither a `DocumentStore` nor
         an `Embedder`, DATA-CONTRACTS.md §M6). Reads every point straight back out of Qdrant
         first (no separate local cache to keep in sync).
+
+        DANGER — between `delete_collection` and the re-upsert below, `points` (an in-process
+        Python list) is the ONLY copy of every point in this collection; nothing on disk holds
+        them. If the process running this call dies in that window — crash, OOM-kill, or (the
+        2026-07-29 incident) its PARENT process/session ending and taking this one down with it —
+        the collection is left empty, full stop, with no way for this method or its caller to
+        detect or prevent it: a dead process runs no more code. That incident retrofitted the
+        IDF modifier onto production `papers` (372,741 points) via `app/reindex_idf.py`, which was
+        launched attached to an interactive agent session; the session churned mid-rebuild, the
+        process died between step 2 and the re-upsert, and `papers` was left with 0 points until
+        restored from an unrelated full-clone collection that happened to exist. Any caller of
+        `rebuild()` on a collection whose loss would matter MUST run it fully detached from
+        whatever launched it (see `app/reindex_idf.py`'s module docstring) — or better, prefer
+        `migrate_via_clone_and_swap()` below, which never holds the only copy of the collection in
+        memory in the first place.
         """
         points = []
         offset = None
@@ -389,6 +404,93 @@ class VectorIndex:
             if offset is None:
                 break
         return total
+
+    def migrate_via_clone_and_swap(self, *, temp_collection: str | None = None) -> int:
+        """Non-destructive alternative to `rebuild()` for retrofitting a schema change (e.g.
+        T-DOC27's IDF modifier) onto a large LIVE collection — see `rebuild()`'s own docstring for
+        the 2026-07-29 incident this exists to prevent a repeat of. Shape: clone every point from
+        THIS collection into a fresh temp collection (`clone_points_into` — already creates the
+        temp collection via `_ensure_collection()`, so it gets today's schema, IDF modifier
+        included, "for free"), VERIFY the clone (`_verify_migrated_clone` below), and only THEN
+        touch the live collection. There is no window where the only copy of the data is in
+        process memory — unlike `rebuild()`, a crash before the swap step leaves the live
+        collection completely untouched, and a crash during/after it leaves the verified temp
+        collection as a ready-made recovery copy (see below).
+
+        Swap mechanism — investigated, not assumed: Qdrant (server 1.18 here; confirmed via
+        `QdrantClient.update_collection_aliases`'s own docstring, "Alias changes are atomic,
+        meaning that no collection modifications can happen between alias operations") DOES offer
+        an atomic swap, but only for a collection already exposed through an ALIAS. Production
+        `papers` is a plain collection name, not an alias — the 2026-07-29 incident proves this
+        directly, since `rebuild()` drops and recreates a collection literally named "papers" —
+        and Qdrant has no operation to rename or atomically replace a plain (non-aliased)
+        collection in place. Converting `papers` to alias-based naming would itself require a
+        first, separate, non-atomic step against the live collection (out of scope for this
+        change, which ships code only and runs no migration against production). So this method
+        does NOT claim atomicity it hasn't verified: the honest fallback is delete-then-clone-back
+        — delete the original collection, then clone the ALREADY-VERIFIED temp collection back
+        into a freshly-created collection under the original name. `self._collection` is briefly
+        absent during that final step, same as `rebuild()` — the safety win over `rebuild()` is
+        that the full point set is never ONLY in memory at any point: if this final step itself
+        is interrupted, the temp collection is untouched and still holds every point, so recovery
+        is just re-running the clone-back (`temp_index.clone_points_into(self._collection)`), not
+        a snapshot restore.
+
+        `temp_collection` defaults to this collection's name plus a random suffix. On success the
+        temp collection is deleted; on ANY verification or swap-count failure it is deliberately
+        left in place as the recovery copy and a `ContractError` is raised (CONVENTIONS.md §4) —
+        callers must not retry blindly. Returns the number of points in the final, swapped-in
+        collection.
+        """
+        temp = temp_collection or f"{self._collection}__migrate_{uuid.uuid4().hex[:8]}"
+        source_count = self.point_count()
+
+        self.clone_points_into(temp)
+        temp_index = VectorIndex(self._host, self._port, temp, self._dim, self._hybrid_dense_weight)
+        self._verify_migrated_clone(temp_index, source_count)
+
+        # Swap: no true atomic rename available for a plain-named live collection (see docstring
+        # above) -- delete the original, then clone the already-verified temp collection back into
+        # a freshly-created collection under the original name. `temp` is deliberately left alone
+        # until this fully succeeds -- it is the recovery copy if this step itself is interrupted.
+        self._call(self._client.delete_collection, self._collection)
+        self._ensure_collection()
+        final_count = temp_index.clone_points_into(self._collection)
+        if final_count != source_count:
+            raise ContractError(
+                f"migrate_via_clone_and_swap: swap into {self._collection!r} copied "
+                f"{final_count:,} of {source_count:,} points -- the verified copy is still intact "
+                f"at {temp!r}; do NOT delete it, re-run the swap from there instead of retrying "
+                f"from scratch."
+            )
+
+        self._call(self._client.delete_collection, temp)
+        return final_count
+
+    @staticmethod
+    def _verify_migrated_clone(temp_index: "VectorIndex", source_count: int) -> None:
+        """Raises `ContractError` (never returns a bool for the caller to maybe-check,
+        CONVENTIONS.md §4/§14) if the just-cloned temp collection doesn't actually match the
+        source: point count equal (an independent live re-read via `point_count()`, not just
+        trusting whatever `clone_points_into` claimed it copied) AND `has_idf_modifier()` holds —
+        the two properties `migrate_via_clone_and_swap`'s caller needs before it's safe to touch
+        the live collection at all. A silent mismatch here is exactly the class of bug the
+        2026-07-29 incident's missing safety layer would have caught had the process survived to
+        run it.
+        """
+        live_count = temp_index.point_count()
+        if live_count != source_count:
+            raise ContractError(
+                f"migrate_via_clone_and_swap: temp collection {temp_index._collection!r} has "
+                f"{live_count:,} points but the source had {source_count:,} -- refusing to swap "
+                f"an incomplete clone into place."
+            )
+        if not temp_index.has_idf_modifier():
+            raise ContractError(
+                f"migrate_via_clone_and_swap: temp collection {temp_index._collection!r} was "
+                f"cloned but does not have the IDF modifier set -- refusing to swap it into "
+                f"place."
+            )
 
     def point_count(self) -> int:
         """Current number of points in the collection -- `app/reindex_idf.py`'s (OG-27) before/

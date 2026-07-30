@@ -12,6 +12,30 @@ destructive-in-place operation needs -- see `rebuild()`'s own docstring: it hold
 only in memory between `delete_collection` and the re-upsert, so a crash/OOM/power-loss mid-run
 loses the collection outright.
 
+***MUST BE RUN FULLY DETACHED. This is not optional.*** Launch it with `setsid nohup python -m
+app.reindex_idf ... &` (or an equivalent that survives its parent exiting) -- NEVER as a job
+attached to an interactive shell, terminal session, or agent session that might end mid-run. Why
+this matters more than it looks like it should: between `delete_collection` and the re-upsert,
+the only copy of every point in the collection is sitting in this process's own memory -- nothing
+on disk holds them. If the parent that launched this process dies while it's running (a closed
+terminal, a killed tmux pane, an agent session that churns), the child dies with it, mid-window,
+and the collection is left empty. None of the three safety layers below can catch this: the
+snapshot check runs before `rebuild()` starts, the point-count and IDF checks run after it
+returns -- all three only execute if the process is still alive to reach that line of code, and a
+process killed by its parent's death runs no more code, full stop. **This is exactly what
+happened on 2026-07-29**: this command was run against production `papers` (372,741 points) as a
+session-attached background job; the parent session churned, the process was killed between
+`delete_collection` and the re-upsert, and `papers` was left with 0 points -- retrieval was down
+until it was restored from an unrelated full-clone collection that happened to exist. `--dry-run`
+is always safe to run attached (it calls no `rebuild()`), but nothing else in this module is.
+
+`--use-clone-swap` sidesteps this failure mode structurally rather than relying on the operator
+remembering to detach: it runs `VectorIndex.migrate_via_clone_and_swap()` instead of `rebuild()`,
+which never holds the only copy of the collection in memory (see that method's own docstring for
+the swap mechanism and why it isn't fully atomic either). It is not yet the default -- opt in
+explicitly; `rebuild()` remains this module's default path, still gated by the three safety
+layers below and now also by the detachment requirement above.
+
 Three safety layers, in order:
 
 1. **Snapshot-first.** Refuses to touch the collection without a snapshot on disk. Default:
@@ -61,6 +85,7 @@ class ReindexableVectorStore(Protocol):
     def point_count(self) -> int: ...
     def has_idf_modifier(self) -> bool: ...
     def rebuild(self) -> None: ...
+    def migrate_via_clone_and_swap(self) -> int: ...  # --use-clone-swap's non-destructive path
     def create_and_download_snapshot(self, dest_path: str) -> None: ...  # for run_snapshot
 
 
@@ -104,11 +129,18 @@ def run_reindex_idf(
     dry_run: bool,
     have_snapshot: bool,
     keep: int,
+    use_clone_swap: bool = False,
     now=None,
 ) -> str:
     """The full OG-27 flow -- see module docstring for the three safety layers. Returns a
     human-readable summary on success (including the idempotent no-op and dry-run cases); raises
     `ContractError` on any safety-gate failure (never prints a false success).
+
+    `use_clone_swap` (default `False`, matching `rebuild()` staying this module's default path --
+    see module docstring): when set, runs `vector_index.migrate_via_clone_and_swap()` instead of
+    `vector_index.rebuild()`. The point-count/IDF invariant checks below apply unchanged either
+    way -- they only care what `point_count()`/`has_idf_modifier()` report after the call, not
+    which path produced that state.
     """
     point_count_before = vector_index.point_count()
 
@@ -120,10 +152,15 @@ def run_reindex_idf(
 
     if dry_run:
         snapshot_plan = "verify an existing snapshot" if have_snapshot else "take a fresh snapshot"
+        migration_plan = (
+            "migrate_via_clone_and_swap() (non-destructive, --use-clone-swap)"
+            if use_clone_swap
+            else "rebuild() in place"
+        )
         return (
             f"reindex_idf: DRY RUN -- collection {collection!r} has {point_count_before:,} "
-            f"points, IDF modifier is NOT set. Would {snapshot_plan}, then rebuild() to add it. "
-            f"No changes made."
+            f"points, IDF modifier is NOT set. Would {snapshot_plan}, then {migration_plan} to "
+            f"add it. No changes made."
         )
 
     if have_snapshot:
@@ -136,7 +173,10 @@ def run_reindex_idf(
         )
         safety_note = f"took a fresh snapshot at {snapshot_dir}"
 
-    vector_index.rebuild()
+    if use_clone_swap:
+        vector_index.migrate_via_clone_and_swap()
+    else:
+        vector_index.rebuild()
 
     point_count_after = vector_index.point_count()
     if point_count_after != point_count_before:
@@ -186,6 +226,14 @@ def _parse_args() -> argparse.Namespace:
         "--keep", type=int, default=7,
         help="when taking a new snapshot, prune all but the newest N completed snapshots",
     )
+    parser.add_argument(
+        "--use-clone-swap", action="store_true",
+        help="use VectorIndex.migrate_via_clone_and_swap() instead of rebuild() -- never holds "
+        "the only copy of the collection in process memory (2026-07-29 incident: rebuild() "
+        "killed mid-run left the live collection with 0 points). Not yet the default -- opt in "
+        "explicitly. Costs one extra temp collection's worth of Qdrant storage/network for the "
+        "duration of the run.",
+    )
     parser.add_argument("--vector-store-host", default=_DEFAULT_VECTOR_STORE_HOST)
     parser.add_argument("--vector-store-port", type=int, default=_DEFAULT_VECTOR_STORE_PORT)
     return parser.parse_args()
@@ -210,6 +258,7 @@ def main() -> None:
         dry_run=args.dry_run,
         have_snapshot=args.i_have_a_snapshot,
         keep=args.keep,
+        use_clone_swap=args.use_clone_swap,
     )
     print(result)
 

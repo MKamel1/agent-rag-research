@@ -59,6 +59,8 @@ def _seeded_sources(tmp_path: Path) -> Config:
 class _FakeVectorIndex:
     """Fake `VectorIndex` for `run_reindex_idf`: pre-set point count / IDF state, `rebuild()`
     flips the modifier on (and can be told to also drop points, to prove the mismatch gate).
+    `migrate_via_clone_and_swap()` (the --use-clone-swap path) does the same state flip via a
+    separate counter, so tests can prove `run_reindex_idf` calls the right one and only one.
     """
 
     def __init__(self, *, points, has_idf, points_after_rebuild=None, idf_after_rebuild=True):
@@ -69,6 +71,7 @@ class _FakeVectorIndex:
         )
         self._idf_after_rebuild = idf_after_rebuild
         self.rebuild_calls = 0
+        self.migrate_via_clone_and_swap_calls = 0
         self.snapshot_calls: list[str] = []
 
     def point_count(self) -> int:
@@ -81,6 +84,12 @@ class _FakeVectorIndex:
         self.rebuild_calls += 1
         self._points = self._points_after_rebuild
         self._has_idf = self._idf_after_rebuild
+
+    def migrate_via_clone_and_swap(self) -> int:
+        self.migrate_via_clone_and_swap_calls += 1
+        self._points = self._points_after_rebuild
+        self._has_idf = self._idf_after_rebuild
+        return self._points
 
     def create_and_download_snapshot(self, dest_path: str) -> None:
         self.snapshot_calls.append(dest_path)
@@ -296,3 +305,56 @@ def test_successful_rebuild_reports_points_preserved_and_idf_set(tmp_path):
     assert "250" in result
     assert "IDF modifier now set" in result
     assert vi.rebuild_calls == 1
+
+
+# ---------------------------------------------------------------------------
+# --use-clone-swap -- 2026-07-29 incident follow-up. Opt-in, not the default (rebuild() stays the
+# default path -- see module docstring): must call migrate_via_clone_and_swap() instead of
+# rebuild(), never both, and the existing point-count/IDF invariant checks must still apply
+# unchanged regardless of which path produced the after-state.
+# ---------------------------------------------------------------------------
+
+
+def test_use_clone_swap_calls_migrate_via_clone_and_swap_not_rebuild(tmp_path):
+    cfg = _seeded_sources(tmp_path)
+    vi = _FakeVectorIndex(points=250, has_idf=False)
+    backup_root = tmp_path / "backups"
+
+    result = run_reindex_idf(
+        cfg, vi, collection="papers", backup_root=backup_root,
+        dry_run=False, have_snapshot=False, keep=7, use_clone_swap=True, now=_TS,
+    )
+
+    assert "rebuilt collection 'papers'" in result
+    assert vi.migrate_via_clone_and_swap_calls == 1
+    assert vi.rebuild_calls == 0
+
+
+def test_use_clone_swap_dry_run_mentions_the_clone_swap_path(tmp_path):
+    cfg = _base_config()
+    vi = _FakeVectorIndex(points=50, has_idf=False)
+
+    result = run_reindex_idf(
+        cfg, vi, collection="papers", backup_root=tmp_path / "backups",
+        dry_run=True, have_snapshot=False, keep=7, use_clone_swap=True, now=_TS,
+    )
+
+    assert "migrate_via_clone_and_swap" in result
+    assert vi.migrate_via_clone_and_swap_calls == 0
+    assert vi.rebuild_calls == 0
+
+
+def test_use_clone_swap_point_count_mismatch_still_raises(tmp_path):
+    # The invariant check downstream of the migration call must apply identically to this path --
+    # not a rebuild()-only safety net.
+    cfg = _seeded_sources(tmp_path)
+    vi = _FakeVectorIndex(points=10, has_idf=False, points_after_rebuild=9)
+    backup_root = tmp_path / "backups"
+
+    with pytest.raises(ContractError, match="POINT COUNT MISMATCH"):
+        run_reindex_idf(
+            cfg, vi, collection="papers", backup_root=backup_root,
+            dry_run=False, have_snapshot=False, keep=7, use_clone_swap=True, now=_TS,
+        )
+    assert vi.migrate_via_clone_and_swap_calls == 1
+    assert vi.rebuild_calls == 0

@@ -788,6 +788,156 @@ def test_real_adapter_point_count_and_idf_modifier_reflect_live_collection():
         adapter._client.delete_collection(collection)
 
 
+# ==================================================================================================
+# migrate_via_clone_and_swap() -- the 2026-07-29 incident's fix. `rebuild()` was killed between
+# `delete_collection` and the re-upsert (its parent session died mid-run); production `papers`
+# (372,741 points) was left with 0 points until restored from an unrelated full-clone collection.
+# This is the non-destructive alternative: clone -> verify -> swap, never holding the only copy of
+# the collection in process memory.
+#
+# Offline, no live service: `_FakeQdrantServer`/`_FakeQdrantConnection` below is a minimal
+# in-memory stand-in for a real Qdrant server -- collections keyed by name in one shared dict, so
+# every `VectorIndex` this method constructs internally (the temp collection, the recreated
+# original) shares the same backing "server" the way multiple real client connections to the same
+# host:port would. `real.QdrantClient` is monkeypatched module-wide to hand out connections
+# against that one shared server (same "monkeypatch the module-level vendor name" trick this file
+# already uses in test_client_is_constructed_with_an_explicit_generous_timeout above) -- no
+# network, no live service, CI-safe.
+# ==================================================================================================
+
+
+class _FakeQdrantServer:
+    """`collections: {name: {"points": {id: PointStruct}, "sparse_vectors_config": ...}}` --
+    enough state to back `collection_exists`/`create_collection`/`delete_collection`/`scroll`/
+    `upsert`/`get_collection`, the only vendor calls `migrate_via_clone_and_swap`'s code paths
+    make (via `clone_points_into`, `_ensure_collection`, `point_count`, `has_idf_modifier`)."""
+
+    def __init__(self):
+        self.collections: dict[str, dict] = {}
+
+    def connection(self, **kwargs):
+        return _FakeQdrantConnection(self)
+
+
+class _FakeQdrantConnection:
+    def __init__(self, server):
+        self._server = server
+
+    def collection_exists(self, collection_name):
+        return collection_name in self._server.collections
+
+    def create_collection(self, collection_name, vectors_config=None, sparse_vectors_config=None):
+        self._server.collections[collection_name] = {
+            "points": {},
+            "sparse_vectors_config": sparse_vectors_config,
+        }
+
+    def delete_collection(self, collection_name):
+        self._server.collections.pop(collection_name, None)
+
+    def scroll(self, collection_name, limit=None, offset=None, with_payload=True, with_vectors=True):
+        # Single page always -- every test collection here is far below _SCROLL_PAGE_SIZE, so
+        # offset=None (the adapter's "no more pages" signal) is correct on the first call.
+        return list(self._server.collections[collection_name]["points"].values()), None
+
+    def upsert(self, collection_name, points):
+        store = self._server.collections[collection_name]["points"]
+        for p in points:
+            store[p.id] = p
+
+    def get_collection(self, collection_name):
+        coll = self._server.collections[collection_name]
+        return SimpleNamespace(
+            points_count=len(coll["points"]),
+            config=SimpleNamespace(
+                params=SimpleNamespace(sparse_vectors=coll["sparse_vectors_config"])
+            ),
+        )
+
+
+def _fake_qdrant_server_index(real, monkeypatch, *, collection_name="papers"):
+    """A real `VectorIndex` wired to a fresh `_FakeQdrantServer` -- returns (adapter, server)."""
+    server = _FakeQdrantServer()
+    monkeypatch.setattr(real, "QdrantClient", lambda **kwargs: server.connection(**kwargs))
+    adapter = real.VectorIndex(
+        host="localhost", port=6333, collection_name=collection_name, dim=2, hybrid_dense_weight=0.5
+    )
+    return adapter, server
+
+
+def test_migrate_via_clone_and_swap_swaps_a_verified_full_copy_into_place(monkeypatch):
+    real = pytest.importorskip("rag.vector_index")
+    src, server = _fake_qdrant_server_index(real, monkeypatch)
+    src.upsert("a", [1.0, 0.0], _payload(text="method estimator"))
+    src.upsert("b", [0.0, 1.0], _payload(text="unrelated header"))
+
+    count = src.migrate_via_clone_and_swap(temp_collection="papers_temp")
+
+    assert count == 2
+    assert src.point_count() == 2
+    assert src.has_idf_modifier() is True
+    # the swapped-in collection actually holds the original points, not just the right count
+    swapped_ids = {p.payload[real._EXT_ID_KEY] for p in server.collections["papers"]["points"].values()}
+    assert swapped_ids == {"a", "b"}
+    # temp collection is cleaned up once the swap succeeds -- not left behind as clutter
+    assert "papers_temp" not in server.collections
+
+
+def test_migrate_via_clone_and_swap_raises_on_count_mismatch_and_never_empties_the_live_collection(
+    monkeypatch,
+):
+    """The invariant that matters: if the clone comes up short, this must raise loudly BEFORE ever
+    touching the live collection -- not delete-then-discover-the-problem the way `rebuild()`'s own
+    missing safety layer allowed on 2026-07-29. Fault injected in `upsert` (a batch silently drops
+    a point without itself raising -- the realistic failure shape a partial/transient write
+    produces) so only `_verify_migrated_clone`'s own count check can catch it.
+    """
+    real = pytest.importorskip("rag.vector_index")
+    src, server = _fake_qdrant_server_index(real, monkeypatch)
+    src.upsert("a", [1.0, 0.0], _payload())
+    src.upsert("b", [0.0, 1.0], _payload())
+    src.upsert("c", [1.0, 1.0], _payload())
+
+    def flaky_upsert(self, collection_name, points):
+        if collection_name == "papers_temp":
+            points = points[:-1]  # silently drop the last point of the batch bound for temp
+        store = self._server.collections[collection_name]["points"]
+        for p in points:
+            store[p.id] = p
+
+    monkeypatch.setattr(_FakeQdrantConnection, "upsert", flaky_upsert)
+
+    with pytest.raises(ContractError, match="papers_temp.*has 2.*source had 3"):
+        src.migrate_via_clone_and_swap(temp_collection="papers_temp")
+
+    # "papers" was never deleted/emptied -- verification caught the short clone before the swap
+    # step ever ran `delete_collection` on it.
+    assert src.point_count() == 3
+    live_ids = {p.payload[real._EXT_ID_KEY] for p in server.collections["papers"]["points"].values()}
+    assert live_ids == {"a", "b", "c"}
+    # the (incomplete, in this contrived case) temp collection is retained, not silently deleted
+    # on failure -- it's the recovery artifact a real short clone would need kept around.
+    assert "papers_temp" in server.collections
+
+
+def test_verify_migrated_clone_raises_when_idf_modifier_missing():
+    # Direct unit test of the second half of _verify_migrated_clone's contract -- offline, no
+    # server/adapter construction needed at all.
+    real = pytest.importorskip("rag.vector_index")
+
+    class _FakeTempIndex:
+        _collection = "papers_temp"
+
+        def point_count(self):
+            return 5
+
+        def has_idf_modifier(self):
+            return False
+
+    with pytest.raises(ContractError, match="does not have the IDF modifier"):
+        real.VectorIndex._verify_migrated_clone(_FakeTempIndex(), source_count=5)
+
+
 # ---------------------------------------------------------------------------
 # start_container() -- T-DOC78: app.doctor's health-only auto-start for the vector store, living
 # here (not app/doctor.py) because the container name is a vendor-restricted token only this file
