@@ -672,3 +672,101 @@ def test_read_tei_status_checks_each_endpoint_independently(monkeypatch):
     result = status_mod.read_tei_status()
 
     assert result == {"embed_healthy": True, "rerank_healthy": False}
+
+
+# --- drop-in tray -------------------------------------------------------------------------------
+
+
+def _seed_papers(db_path, papers: list[tuple[str, str]]):
+    """`papers`: [(paper_id, doc_type), ...] -- minimal valid row for `papers`' NOT NULL columns
+    (real schema: `migrations/`, confirmed via `.schema papers` against the operator's live DB)."""
+    conn = sqlite3.connect(str(db_path))
+    conn.executemany(
+        "INSERT INTO papers (paper_id, version, title, abstract, authors_json, categories_json, "
+        "published, updated, pdf_path, markdown_path, doc_type) "
+        "VALUES (?, '1', 't', 'a', '[]', '[]', '2026-01-01', '2026-01-01', 'p', 'm', ?)",
+        papers,
+    )
+    conn.commit()
+    conn.close()
+
+
+def test_read_drop_in_counts_each_bucket(tmp_path):
+    drop = tmp_path / "drop_in"
+    for sub in ("papers", "books", "done", "failed", "excluded"):
+        (drop / sub).mkdir(parents=True)
+    (drop / "papers" / "a.pdf").write_bytes(b"%PDF-1.4")
+    (drop / "papers" / "b.pdf").write_bytes(b"%PDF-1.4")
+    (drop / "books" / "c.pdf").write_bytes(b"%PDF-1.4")
+    (drop / "done" / "a.pdf").write_bytes(b"%PDF-1.4")
+    (drop / "failed" / "d.pdf").write_bytes(b"%PDF-1.4")
+    (drop / "failed" / "d.pdf.err").write_text("unreadable PDF: bad xref")
+    (drop / "excluded" / "e.pdf").write_bytes(b"%PDF-1.4")
+
+    out = status_mod.read_drop_in(drop, tmp_path / "nonexistent.db")
+
+    assert out["pending_papers"] == 2
+    assert out["pending_books"] == 1
+    assert out["staged"] == 1
+    assert out["failed"] == 1
+    assert out["excluded"] == 1
+    assert out["failure_reasons"] == [("unreadable PDF: bad xref", 1)]
+
+
+def test_read_drop_in_processed_is_none_when_db_unreadable(tmp_path):
+    """Absent and zero are different facts: a missing papers.db must not read as
+    'zero dropped documents made it into the corpus'."""
+    drop = tmp_path / "drop_in"
+    drop.mkdir()
+    (drop / "manifest-20260730T000000Z.txt").write_text("local:aaaaaaaaaaaa\n")
+
+    out = status_mod.read_drop_in(drop, tmp_path / "nonexistent.db")
+
+    assert out["processed"] is None
+    assert out["processed_papers"] is None
+    assert out["processed_books"] is None
+
+
+def test_read_drop_in_processed_counts_only_manifest_ids_at_stage_done(tmp_path):
+    """Real schema (confirmed against the operator's live papers.db) splits this across two
+    tables: `ingest_state.stage` (not `papers.stage` -- `papers` has no `stage` column) and
+    `papers.doc_type`, joined on `paper_id`."""
+    drop = tmp_path / "drop_in"
+    drop.mkdir()
+    (drop / "manifest-20260730T000000Z.txt").write_text(
+        "local:aaaaaaaaaaaa\nlocal:bbbbbbbbbbbb\nlocal:cccccccccccc\n"
+    )
+    db = tmp_path / "papers.db"
+    migrate(str(db))
+    _seed_papers(db, [
+        ("local:aaaaaaaaaaaa", "paper"),
+        ("local:bbbbbbbbbbbb", "book"),
+        ("local:cccccccccccc", "book"),
+        ("2501.00001", "paper"),
+    ])
+    conn = sqlite3.connect(str(db))
+    conn.executemany(
+        "INSERT INTO ingest_state (paper_id, stage, updated_at) VALUES (?, ?, '2026-01-01T00:00:00')",
+        [
+            ("local:aaaaaaaaaaaa", "done"),    # counted
+            ("local:bbbbbbbbbbbb", "done"),    # counted
+            ("local:cccccccccccc", "parsed"),  # staged but NOT processed
+            ("2501.00001", "done"),            # not from drop_in, must not count
+        ],
+    )
+    conn.commit()
+    conn.close()
+
+    out = status_mod.read_drop_in(drop, db)
+
+    assert out["processed"] == 2
+    assert out["processed_papers"] == 1
+    assert out["processed_books"] == 1
+
+
+def test_read_drop_in_tolerates_missing_tree(tmp_path):
+    out = status_mod.read_drop_in(tmp_path / "no_such_dir", tmp_path / "no.db")
+    assert out["pending_papers"] == 0
+    assert out["staged"] == 0
+    assert out["processed"] is None
+    assert out["latest_manifest"] is None
