@@ -14,6 +14,7 @@ from datetime import date
 
 import pytest
 
+import app.dashboard.controller as controller_mod
 import app.dashboard.server as server_mod
 from app.dashboard.controller import DoubleRunError, NoRunError
 from app.dashboard.server import _LazyMcpServer, _status_dict, build_server
@@ -484,7 +485,7 @@ def test_control_start_forwards_og45_og46_editable_params(running_server):
 # --- T-DOC78: POST /api/control {"action": "download"} -----------------------------------------
 
 
-def test_control_download_dispatches_start_with_mode_and_prefetch_target(running_server):
+def test_control_download_dispatches_start_with_mode_and_prefetch_target(running_server, tmp_path):
     url, fake_controller = running_server
     status, body = _post(url, "/api/control", {"action": "download"})
     assert status == 200
@@ -492,7 +493,7 @@ def test_control_download_dispatches_start_with_mode_and_prefetch_target(running
     call = fake_controller.calls[-1]
     assert call[0] == "start"
     _, target, parse_workers, kwargs = call
-    assert target == server_mod._static_config().prefetch_target
+    assert target == server_mod._static_config(tmp_path).prefetch_target
     assert parse_workers == 1
     assert kwargs["mode"] == "download"
 
@@ -547,6 +548,45 @@ def test_status_route_shape_includes_run_mode(running_server):
     status, body = _get(url, "/api/status")
     assert status == 200
     assert "mode" in body["run"]
+
+
+def test_status_route_reads_config_from_data_dir_not_cwd(tmp_path, monkeypatch):
+    """T-DOC90 regression: `_static_config` used a bare `load_config()`, so after T-DOC89 changed
+    discovery to RAG_CONFIG -> cwd -> walk-up, a dashboard started by `scripts/dashboard.sh` (which
+    cd's to the repo root, where no deployed config.yaml exists) raised ContractError on EVERY
+    `GET /api/status`. Serving from a cwd with no config.yaml is the exact shape that broke."""
+    import shutil
+    from pathlib import Path
+
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    shutil.copy(Path(__file__).resolve().parents[2] / "config.example.yaml",
+                data_dir / "config.yaml")
+
+    empty_cwd = tmp_path / "no_config_here"
+    empty_cwd.mkdir()
+    monkeypatch.chdir(empty_cwd)
+    monkeypatch.delenv("RAG_CONFIG", raising=False)
+
+    server = server_mod.build_server(data_dir, "tok", 0, host="127.0.0.1")
+    port = server.server_address[1]
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    try:
+        req = urllib.request.Request(
+            f"http://127.0.0.1:{port}/api/status",
+            headers={"X-Dashboard-Token": "tok"},
+        )
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            assert resp.status == 200
+            body = json.loads(resp.read())
+    finally:
+        server.shutdown()
+        server.server_close()
+
+    # Proves the config came from data_dir, not from a default or a stray discovery hit.
+    expected = controller_mod.load_config(data_dir / "config.yaml")
+    assert body["search"]["top_k_default"] == expected.top_k
+    assert body["search"]["hybrid_dense_weight"] == expected.hybrid_dense_weight
 
 
 def test_control_start_omits_unset_og45_og46_params(running_server):

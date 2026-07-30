@@ -158,8 +158,17 @@ _RUN_FIELDS = (
 # call made the whole server module unimportable in that shape; `lru_cache` gives the exact same
 # "read once, reuse for the process lifetime" behavior the old module-level global had, just
 # deferred to first actual use.
+#
+# T-DOC90: `data_dir`-first, discovery-fallback -- the same two-branch shape
+# `controller.py::_load_base_config` already uses. A bare `load_config()` here meant every
+# `GET /api/status` raised ContractError whenever the process's cwd had no config.yaml, which is
+# exactly how `scripts/dashboard.sh` launches it (it cd's to the repo root). `lru_cache` is keyed
+# on `data_dir` so the "read once per process" behavior is unchanged.
 @lru_cache(maxsize=1)
-def _static_config() -> Config:
+def _static_config(data_dir: Path) -> Config:
+    data_dir_config = data_dir / "config.yaml"
+    if data_dir_config.exists():
+        return load_config(data_dir_config)
     return load_config()
 
 
@@ -171,10 +180,10 @@ def _static_config() -> Config:
 # `rerank_pool_size` mirrors the same `min(rerank_depth, _RERANKER_MAX_BATCH_SIZE)` clamp
 # `build_mcp_server` applies (a value above 32 is silently truncated by TEI's `/rerank` batch
 # limit either way -- `rag/reranker.py`'s `_MAX_BATCH_SIZE`).
-def _search_display() -> dict:
+def _search_display(data_dir: Path) -> dict:
     return {
-        "top_k_default": _static_config().top_k,
-        "rerank_pool_size": min(_static_config().rerank_depth, _RERANKER_MAX_BATCH_SIZE),
+        "top_k_default": _static_config(data_dir).top_k,
+        "rerank_pool_size": min(_static_config(data_dir).rerank_depth, _RERANKER_MAX_BATCH_SIZE),
     }
 
 
@@ -234,7 +243,7 @@ def _status_dict(data_dir: Path, status_module, controller_module) -> dict:
             **{field: live.get(field) for field in _RUN_FIELDS},
             "parse_batch_size": (
                 manifest_parse_batch_size if manifest_parse_batch_size is not None
-                else _static_config().parse_batch_size
+                else _static_config(data_dir).parse_batch_size
             ),
         },
         "telemetry": status_module.read_telemetry(
@@ -247,8 +256,8 @@ def _status_dict(data_dir: Path, status_module, controller_module) -> dict:
         "consistency": status_module.read_consistency(done, live.get("collection")),
         "quarantine_reasons": corpus["quarantine_reasons"],
         "search": {
-            **_search_display(),
-            "hybrid_dense_weight": _static_config().hybrid_dense_weight,
+            **_search_display(data_dir),
+            "hybrid_dense_weight": _static_config(data_dir).hybrid_dense_weight,
         },
         "tei": status_module.read_tei_status(),
     }
@@ -283,10 +292,10 @@ class _LazyMcpServer:
             with self._build_lock:
                 if self._server is None:  # re-check: another thread may have built it while we waited
                     self._server = build_mcp_server(
-                        _static_config(),
+                        _static_config(self._data_dir),
                         db_path=str(self._data_dir / "papers.db"),
                         blob_dir=str(self._data_dir / "blobs"),
-                        collection=_static_config().collection,
+                        collection=_static_config(self._data_dir).collection,
                     )
         return self._server.semantic_search(query, filters, k)
 
@@ -492,7 +501,7 @@ def make_handler(
                 kwargs = _editable_query_kwargs(body)
                 _validate_editable_kwargs(kwargs)
                 controller_module.start(
-                    data_dir, _static_config().prefetch_target, 1, mode="download", **kwargs,
+                    data_dir, _static_config(data_dir).prefetch_target, 1, mode="download", **kwargs,
                 )
             elif action == "pause":
                 controller_module.pause(data_dir)
