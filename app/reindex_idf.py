@@ -231,8 +231,8 @@ def _parse_args() -> argparse.Namespace:
         help="use VectorIndex.migrate_via_clone_and_swap() instead of rebuild() -- never holds "
         "the only copy of the collection in process memory (2026-07-29 incident: rebuild() "
         "killed mid-run left the live collection with 0 points). Not yet the default -- opt in "
-        "explicitly. Costs one extra temp collection's worth of Qdrant storage/network for the "
-        "duration of the run.",
+        "explicitly. Costs one extra temp collection's worth of vector-store storage/network "
+        "for the duration of the run.",
     )
     parser.add_argument("--vector-store-host", default=_DEFAULT_VECTOR_STORE_HOST)
     parser.add_argument("--vector-store-port", type=int, default=_DEFAULT_VECTOR_STORE_PORT)
