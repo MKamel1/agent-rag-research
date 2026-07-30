@@ -3,7 +3,7 @@ zero-corpus (TEST-STRATEGY.md golden rule), same split `app/test_exp1_outline_sp
 follows: only the pure/synchronous logic (level-parent detection, boundary/title construction,
 part-routing math, candidate-list restriction, rank lookup) is exercised here. `survey_books`,
 `build_hierarchy`, `run_flat_arm`, `run_hierarchical_arm`, `stage_exp1_db_copy`, `main` all touch a
-real corpus connection, PDF, throwaway db copy, live Qdrant, or the real GPU-backed embedder --
+real corpus connection, PDF, throwaway db copy, a live vector store, or the real GPU-backed embedder --
 deliberately not exercised here; this run's actual end-to-end behavior is exercised by the real
 run itself (see docs/eval-reports/2026-07-29-exp3-hierarchy-simulation.md).
 """

@@ -5,8 +5,8 @@ on it beyond "it still runs and its own tests still pass" -- same posture `app/e
 documents for itself ("spike script, no unit-test file" -- this one gets a thin test file for its
 pure logic, following that same convention, since it has enough branching to be worth one).
 
-**Persists nothing.** No writes to `summaries`, no migration, no `contracts/` change, no new Qdrant
-collection -- every Part-title embedding this script computes is used once, in memory, and never
+**Persists nothing.** No writes to `summaries`, no migration, no `contracts/` change, no new
+vector-store collection -- every Part-title embedding this script computes is used once, in memory, and never
 upserted anywhere (`docs/PLAN-book-rag-experiments.md`'s own Experiment 3 section: "computed but
 never persisted").
 
@@ -15,7 +15,7 @@ Mechanism (see the plan's Experiment 3 section for the full spec this implements
   (a) FLAT -- reproduces Experiment 1's own chapter-routing number (0.325) EXACTLY, by reusing
       `app.retrieval_eval.load_questions/run/build_report` UNMODIFIED against the real
       `Retriever.retrieve_papers()` pipeline (same rerank + per-paper cap Experiment 1 scored
-      through), pointed at the same throwaway `exp1_outline_chapters` Qdrant collection and a
+      through), pointed at the same throwaway `exp1_outline_chapters` vector-store collection and a
       READ-ONLY COPY of Experiment 1's own throwaway `papers.db`/`blobs` (see `_EXP1_WORK_DIR`
       below for why copying, not regenerating, is correct here). This is the script's own
       self-check: if this number doesn't match, the rest of the run is not trustworthy and `main()`
@@ -39,8 +39,8 @@ git-ignored, worktree-local per Experiment 1's own report) -- this worktree has 
 (`git worktree add` never copies untracked files), so a READ (never a write) of that directory is
 the only way to get Experiment 1's exact final chapter/overview text without either (a) re-running
 `summarize_book()` through the real LLM a second time (real GPU cost this experiment is explicitly
-NOT supposed to pay -- "near-zero GPU" per the plan) or (b) reconstructing it from Qdrant payload
-text via a new `VectorIndex` read method this experiment has no need to add. Exactly the same
+NOT supposed to pay -- "near-zero GPU" per the plan) or (b) reconstructing it from the vector
+store's own payload text via a new `VectorIndex` read method this experiment has no need to add. Exactly the same
 "read another worktree/checkout's files, never write them" pattern `app/exp1_outline_split.py`'s
 own `PDF_DIR` already uses for the corpus's PDFs (see that module's docstring) -- reading bytes out
 of a sibling worktree is not "touching" it.
@@ -72,8 +72,8 @@ logger = logging.getLogger(__name__)
 # Same real-service wiring app/assembly.py / app/exp1_outline_split.py already use -- composition
 # constants, not Config fields (see those modules' own comments on why).
 _TEI_EMBED_URL = "http://localhost:8080"
-_QDRANT_HOST = "localhost"
-_QDRANT_PORT = 6333
+_VECTOR_STORE_HOST = "localhost"
+_VECTOR_STORE_PORT = 6333
 _EMBEDDER_INFO = EmbedderInfo(model_id="Qwen3-Embedding-4B", dim=2560, version="v1")
 
 # Experiment 1's own throwaway scratch dir -- see module docstring for why this is a read, not a
@@ -82,7 +82,7 @@ _EXP1_WORK_DIR = Path("/home/omar/ai-projects/rag-exp1/.exp1-work")
 
 _DEST_COLLECTION = "exp1_outline_chapters"
 _EXPECTED_FLAT_RECALL = 0.325  # Experiment 1's own reported chapter-routing recall@10
-_PART_SEARCH_POOL = 5000  # >> any book's own chapter count; cheap (one Qdrant query, no rerank)
+_PART_SEARCH_POOL = 5000  # >> any book's own chapter count; cheap (one vector-store query, no rerank)
 
 
 class Exp3Error(RuntimeError):
@@ -277,7 +277,7 @@ def run_hierarchical_arm(
     gpu_lock = FileGpuLock(Path(cfg.gpu_lock_path))
     embedder = TeiEmbedder(httpx.Client(base_url=_TEI_EMBED_URL, timeout=60.0), gpu_lock, _EMBEDDER_INFO)
     vector_index = VectorIndex(
-        _QDRANT_HOST, _QDRANT_PORT, _DEST_COLLECTION, _EMBEDDER_INFO.dim, cfg.hybrid_dense_weight
+        _VECTOR_STORE_HOST, _VECTOR_STORE_PORT, _DEST_COLLECTION, _EMBEDDER_INFO.dim, cfg.hybrid_dense_weight
     )
 
     # Ad hoc Part-title embeddings -- computed once, reused for every question on this book, NEVER
