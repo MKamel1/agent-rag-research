@@ -45,10 +45,18 @@ VENDOR_RULES: tuple[VendorRule, ...] = (
     # root the same shape as app/reembed_experiment.py/app/rechunk.py below -- it clones the
     # production Qdrant collection into a throwaway one via VectorIndex.clone_points_into and
     # names no vendor itself, only in comments/docstrings describing that call.
+    # T-DOC87: app/exp_tdoc87_marker_repair.py is the same composition-root shape again --
+    # re-summarizes the 2 regex-repair-affected books and clones production into a throwaway
+    # collection via the same VectorIndex.clone_points_into call, names no vendor itself.
     VendorRule(
         "qdrant",
         re.compile(r"qdrant", re.I),
-        ("rag/vector_index.py", "rag/test_vector_index.py", "app/exp1_outline_split.py"),
+        (
+            "rag/vector_index.py",
+            "rag/test_vector_index.py",
+            "app/exp1_outline_split.py",
+            "app/exp_tdoc87_marker_repair.py",
+        ),
     ),
     # rag/test_parser.py (T-DOC16) legitimately injects a fake `mineru.cli.common` module into
     # `sys.modules` (by that exact dotted name -- `rag.parser`'s own lazy `from mineru.cli.common
@@ -65,10 +73,17 @@ VENDOR_RULES: tuple[VendorRule, ...] = (
     # app/exp1_outline_split.py: same composition-root shape as app/reembed_experiment.py/
     # app/rechunk.py -- constructs the real OllamaSummarizer to re-summarize the 4 outline-split
     # books, names no vendor itself beyond the class import and its own service-URL constant.
+    # T-DOC87: app/exp_tdoc87_marker_repair.py, same shape -- constructs the real OllamaSummarizer
+    # to re-summarize the 2 regex-repair-affected books.
     VendorRule(
         "ollama",
         re.compile(r"ollama", re.I),
-        ("rag/summarizer.py", "rag/test_summarizer.py", "app/exp1_outline_split.py"),
+        (
+            "rag/summarizer.py",
+            "rag/test_summarizer.py",
+            "app/exp1_outline_split.py",
+            "app/exp_tdoc87_marker_repair.py",
+        ),
     ),
     # vLLM ADR-09 covers both the embedder and the summarizer's local-LLM serving; rag/test_summarizer.py
     # mentions vLLM in the same comment as Ollama, for the same reason.
@@ -125,6 +140,10 @@ VENDOR_RULES: tuple[VendorRule, ...] = (
     # composition-root shape as app/exp1_outline_split.py -- it constructs the real httpx-backed
     # TeiEmbedder to embed ad hoc Part-level query vectors for the hierarchy simulation, names no
     # vendor itself, only httpx as the shared HTTP client.
+    #
+    # T-DOC87: app/exp_tdoc87_marker_repair.py, same composition-root shape -- constructs the real
+    # httpx-backed OllamaSummarizer/TeiEmbedder to re-summarize/re-embed the 2 regex-repair-
+    # affected books, names no vendor itself, only httpx as the shared HTTP client.
     VendorRule(
         "httpx",
         re.compile(r"httpx", re.I),
@@ -148,6 +167,7 @@ VENDOR_RULES: tuple[VendorRule, ...] = (
             "app/rechunk.py",
             "app/exp1_outline_split.py",
             "app/exp3_hierarchy_sim.py",
+            "app/exp_tdoc87_marker_repair.py",
         ),
     ),
 )
