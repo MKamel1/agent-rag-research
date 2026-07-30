@@ -35,6 +35,7 @@ class SearchFilters(FrozenModel):
     published_before: date | None = None  # inclusive
     kind: Literal["chunk", "summary"] | None = None  # restrict to VectorPayload.kind
     doc_type: Literal["paper", "book"] | None = None  # restrict to VectorPayload.doc_type
+    paper_id: str | None = None  # restrict to VectorPayload.paper_id -- one document, Decision 3
 
 
 class VectorPayload(TypedDict):

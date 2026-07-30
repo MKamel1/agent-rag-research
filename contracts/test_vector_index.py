@@ -37,14 +37,22 @@ def test_search_filters_doc_type_default_none():
     assert SearchFilters().doc_type is None
 
 
+def test_search_filters_paper_id_default_none():
+    # Decision 3 option A: backward compatibility is not optional on a frozen contract -- every
+    # existing construction site that doesn't pass paper_id must keep working unchanged.
+    assert SearchFilters().paper_id is None
+
+
 def test_search_filters_constructs_with_explicit_values():
     filters = SearchFilters(
         categories=["cs.LG", "stat.ME"],
         published_after=date(2026, 1, 1),
         published_before=date(2026, 6, 1),
         kind="summary",
+        paper_id="local:abc123def456",
     )
     assert filters.kind == "summary"
+    assert filters.paper_id == "local:abc123def456"
 
 
 def test_search_filters_wrong_type_raises():
