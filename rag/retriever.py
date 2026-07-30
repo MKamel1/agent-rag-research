@@ -56,7 +56,36 @@ _RERANK_POOL_SIZE = 32
 # T-DOC82: a book contributes one vector per chapter, so a strong book match could fill every
 # slot of `k` with chapters of the SAME paper_id and crowd papers out of a mixed-corpus query.
 # Applied after rerank, before top-k truncation, so the cap selects the best N per paper.
+#
+# This value is for UNSCOPED search only (no `filters.doc_type`/per-document narrowing): the
+# diversity argument it defends -- don't let one paper dominate a page of results drawn from the
+# whole 11,026-document corpus -- only holds when the candidate pool genuinely spans many papers.
 _MAX_HITS_PER_PAPER = 3
+
+# Decision 2 (docs/DECISIONS-PENDING-operator.md, option B, operator-approved): once the caller has
+# already narrowed the search (`filters.doc_type` set today; any future per-document field, e.g. a
+# `paper_id` filter, should count the same way -- see `_is_scoped`), the diversity rationale above
+# no longer applies -- the caller has *asked* for depth in a narrow slice, not breadth across many.
+#
+# Sized from the corpus, not copied from a single measurement: the eval corpus's book chapter
+# counts range 8-44 per book, and `k` is typically 10. 50 sits above the largest observed
+# per-document unit count, so it effectively DISABLES the cap for scoped queries -- rerank order
+# alone decides which of a book's chapters fill the top `k`, which is exactly what "the caller
+# asked for depth in one document" should mean. (Measured: doc_type="book" search, chapter
+# R@10 0.650 -> 0.725 at this cap -- see docs/eval-reports/2026-07-29-scoped-cap-measurement.md.)
+_MAX_HITS_PER_PAPER_SCOPED = 50
+
+
+def _is_scoped(filters: SearchFilters | None) -> bool:
+    """True once the caller has narrowed results to one document/doc_type, per Decision 2 option B.
+
+    Only `doc_type` exists as a per-document narrowing field on `SearchFilters` today. `categories`
+    and the published-date range are corpus-wide filters (many documents can match), so they do NOT
+    count as scoping -- the T-DOC82 diversity argument still applies under them. If a future field
+    narrows to a single document (e.g. `paper_id`, Decision 3 in the same doc), add it here the same
+    way `doc_type` is checked.
+    """
+    return filters is not None and filters.doc_type is not None
 
 
 def _cap_per_paper(
@@ -65,6 +94,10 @@ def _cap_per_paper(
     """Filters an already-ranked `results` list in place order, keeping at most `limit` hits per
     `paper_id`. Never re-sorts — the highest-scoring hits per paper are kept because the input is
     already reranked (CONVENTIONS: this must run after rerank, before the caller's `results[:k]`).
+
+    `limit` is deliberately just a plain injectable arg, not resolved in here -- the decision of
+    *which* limit applies depends on `filters` (see `_is_scoped`), which only the call site has in
+    scope. Keeping that decision at the call site keeps this function a pure, easily-tested cap.
     """
     seen: dict[str, int] = {}
     capped: list[PaperSearchResult] = []
@@ -284,9 +317,11 @@ class Retriever:
                 chapter = cs.title if cs is not None else None
             results.append(PaperSearchResult(view=view, score=scores[candidate.id], chapter=chapter))
         # See the matching comment in `retrieve()` -- truncate to `k` only after reranking (T-DOC24).
-        # The per-paper cap (T-DOC82) runs first so it selects the best N per paper out of the
-        # reranked order, not an arbitrary N left over after `k` already cut the list off.
-        return _cap_per_paper(results)[:k], RetrievalCoverage(candidate_count=len(hits))
+        # The per-paper cap (T-DOC82, relaxed when scoped per Decision 2 option B) runs first so it
+        # selects the best N per paper out of the reranked order, not an arbitrary N left over after
+        # `k` already cut the list off.
+        cap = _MAX_HITS_PER_PAPER_SCOPED if _is_scoped(filters) else _MAX_HITS_PER_PAPER
+        return _cap_per_paper(results, cap)[:k], RetrievalCoverage(candidate_count=len(hits))
 
     def _hybrid_hits(self, query: str, filters: SearchFilters | None, k: int, *, kind: str):
         qvec = self._embedder.embed([query])[0]

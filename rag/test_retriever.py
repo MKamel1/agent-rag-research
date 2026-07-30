@@ -113,7 +113,7 @@ def _make_ref(paper_id: str, categories=("cs.LG",), doc_type="paper") -> PaperRe
     )
 
 
-def _payload(paper_id, kind, section_path, categories, embedder, text):
+def _payload(paper_id, kind, section_path, categories, embedder, text, doc_type="paper"):
     return {
         "paper_id": paper_id,
         "kind": kind,
@@ -122,6 +122,7 @@ def _payload(paper_id, kind, section_path, categories, embedder, text):
         "categories": list(categories),
         "published": "2026-06-01",
         "embedding_version": embedder.info.version,
+        "doc_type": doc_type,
     }
 
 
@@ -147,7 +148,8 @@ def _seed_chunk(store, docstore, embedder, *, chunk_id, paper_id, block_id, text
                          references=[], parser_id="test-parser-1.x"),
         chunks=[chunk], summary_text="s", summary_id=f"{paper_id}:summary")
     store.upsert(chunk_id, embedder.embed([text])[0],
-                 _payload(paper_id, "chunk", section_path, categories, embedder, text))
+                 _payload(paper_id, "chunk", section_path, categories, embedder, text,
+                          doc_type=doc_type))
     return chunk
 
 
@@ -162,7 +164,8 @@ def _seed_summary(store, docstore, embedder, *, paper_id, summary_id, summary_te
         chunks=[], summary_text=summary_text, summary_id=summary_id,
         chapter_summaries=list(chapter_summaries))
     store.upsert(summary_id, embedder.embed([summary_text])[0],
-                 _payload(paper_id, "summary", section_path, categories, embedder, summary_text))
+                 _payload(paper_id, "summary", section_path, categories, embedder, summary_text,
+                          doc_type=doc_type))
 
 
 def _make_retriever(store, docstore, reranker, embedder=None):
@@ -785,6 +788,110 @@ def test_search_papers_caps_chapter_hits_per_paper():
 
     assert len(results) <= _mod._MAX_HITS_PER_PAPER
     assert len({r.view.paper_id for r in results}) == 1
+
+
+def test_search_papers_scoped_by_doc_type_allows_more_than_unscoped_cap():
+    """Decision 2 option B: once `filters.doc_type` narrows the search, more than
+    `_MAX_HITS_PER_PAPER` chapter hits from the SAME book may survive -- the diversity rationale
+    (T-DOC82) only applies to unscoped, corpus-wide search."""
+    store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
+    paper_id = "local:cap0000cap2"
+    chapter_summaries = [
+        ChapterSummary(summary_id=f"{paper_id}:summary:ch{i}", title=f"Chapter {i}",
+                       text=f"causal inference chapter {i} content")
+        for i in range(8)
+    ]
+    _seed_summary(store, docstore, embedder, paper_id=paper_id, summary_id=f"{paper_id}:summary",
+                  summary_text="causal inference book overview", doc_type="book",
+                  chapter_summaries=chapter_summaries)
+    for cs in chapter_summaries:
+        docstore._summaries[cs.summary_id] = cs.text
+        store.upsert(cs.summary_id, embedder.embed([cs.text])[0],
+                     _payload(paper_id, "summary", "Ch.", ("cs.LG",), embedder, cs.text,
+                              doc_type="book"))
+
+    results, _coverage = _make_retriever(store, docstore, FakeReranker(), embedder).retrieve_papers(
+        "causal", filters=SearchFilters(doc_type="book"), k=8)
+
+    # 9 hits total exist for this paper_id (1 whole-book + 8 chapters); unscoped this would be
+    # capped to _MAX_HITS_PER_PAPER=3 -- scoped, more than that must survive.
+    assert len(results) > _mod._MAX_HITS_PER_PAPER
+    assert len({r.view.paper_id for r in results}) == 1
+
+
+def test_search_papers_unscoped_still_caps_at_three_with_doc_type_filter_absent():
+    """Regression guard for the unscoped path: with no `doc_type` filter, the T-DOC82 cap must be
+    unchanged -- this is the same scenario as `test_search_papers_caps_chapter_hits_per_paper`
+    but pinned explicitly alongside the new scoped test so the two behaviors are visibly
+    side-by-side and the unscoped one can't silently drift."""
+    store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
+    paper_id = "local:cap0000cap3"
+    chapter_summaries = [
+        ChapterSummary(summary_id=f"{paper_id}:summary:ch{i}", title=f"Chapter {i}",
+                       text=f"causal inference chapter {i} content")
+        for i in range(8)
+    ]
+    _seed_summary(store, docstore, embedder, paper_id=paper_id, summary_id=f"{paper_id}:summary",
+                  summary_text="causal inference book overview", doc_type="book",
+                  chapter_summaries=chapter_summaries)
+    for cs in chapter_summaries:
+        docstore._summaries[cs.summary_id] = cs.text
+        store.upsert(cs.summary_id, embedder.embed([cs.text])[0],
+                     _payload(paper_id, "summary", "Ch.", ("cs.LG",), embedder, cs.text))
+
+    results, _coverage = _make_retriever(store, docstore, FakeReranker(), embedder).retrieve_papers(
+        "causal", filters=None, k=8)
+
+    assert len(results) == _mod._MAX_HITS_PER_PAPER
+
+
+def test_is_scoped_true_only_when_doc_type_set():
+    assert _mod._is_scoped(None) is False
+    assert _mod._is_scoped(SearchFilters()) is False
+    assert _mod._is_scoped(SearchFilters(categories=["cs.LG"])) is False
+    assert _mod._is_scoped(SearchFilters(doc_type="book")) is True
+    assert _mod._is_scoped(SearchFilters(doc_type="paper")) is True
+
+
+def test_cap_per_paper_runs_after_rerank_and_before_k_truncation_when_scoped():
+    """Ordering invariant (T-DOC24): the scoped cap must still run on the FULL reranked pool, not
+    a pool already truncated to k -- otherwise a correct chapter reranked into position 6-9 could
+    be cut before the cap (and thus before `[:k]`) ever sees it. Seed 8 chapters ranked by
+    FakeReranker's full-pool reversal, request k=5: with the scoped cap effectively disabling the
+    per-paper limit, all 8 reranked chapters must be visible to the cap (asserted indirectly here
+    via the final k=5 truncation picking up the correctly-reversed order), proving the cap didn't
+    run on a pre-truncated k=5 slice.
+    """
+    store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
+    paper_id = "local:cap0000cap4"
+    chapter_summaries = [
+        ChapterSummary(summary_id=f"{paper_id}:summary:ch{i}", title=f"Chapter {i}",
+                       text=f"causal inference distinct chapter topic {i}")
+        for i in range(8)
+    ]
+    _seed_summary(store, docstore, embedder, paper_id=paper_id, summary_id=f"{paper_id}:summary",
+                  summary_text="causal inference book overview", doc_type="book",
+                  chapter_summaries=chapter_summaries)
+    for cs in chapter_summaries:
+        docstore._summaries[cs.summary_id] = cs.text
+        store.upsert(cs.summary_id, embedder.embed([cs.text])[0],
+                     _payload(paper_id, "summary", "Ch.", ("cs.LG",), embedder, cs.text,
+                              doc_type="book"))
+
+    query = "causal"
+    pre_rerank_ids = [h.id for h in _rrf_hits(store, embedder, query, "summary", categories=None)]
+    results, _coverage = _make_retriever(store, docstore, FakeReranker(), embedder).retrieve_papers(
+        query, filters=SearchFilters(doc_type="book"), k=5)
+
+    assert len(results) == 5
+    # FakeReranker reverses the FULL pre-rerank pool; if the cap (or truncation) ran before rerank
+    # had a chance to reorder the full pool, the top-5 would come out in RRF order instead.
+    # PaperSummaryView carries no summary_id, so recover it from the (distinct) summary_text.
+    summary_id_by_text = {cs.text: cs.summary_id for cs in chapter_summaries}
+    summary_id_by_text["causal inference book overview"] = f"{paper_id}:summary"
+    final_ids = [summary_id_by_text[r.view.summary_text] for r in results]
+    expected_top5 = list(reversed(pre_rerank_ids))[:5]
+    assert final_ids == expected_top5
 
 
 def test_cap_does_not_reduce_results_across_distinct_papers():
