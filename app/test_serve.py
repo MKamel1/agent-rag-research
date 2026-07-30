@@ -15,6 +15,8 @@ what makes the patch take effect even if some earlier test already imported the 
 from __future__ import annotations
 
 import importlib
+import inspect
+import sqlite3
 import sys
 
 import pytest
@@ -54,10 +56,14 @@ class _FakeMcpServer:
 
 
 @pytest.fixture
-def serve_module(monkeypatch):
+def serve_module(monkeypatch, tmp_path):
     fake_server = _FakeMcpServer()
+    # db_path pinned under tmp_path (not the default relative "papers.db") so the usage-telemetry
+    # wiring this fixture now also exercises (app/serve.py derives _usage_log_path from db_path's
+    # own directory) writes mcp_usage.db into a throwaway tmp dir, never into the repo checkout.
     monkeypatch.setattr(
-        rag.config, "load_config", lambda *a, **k: Config(focus_area_queries=["x"])
+        rag.config, "load_config",
+        lambda *a, **k: Config(focus_area_queries=["x"], db_path=str(tmp_path / "papers.db")),
     )
     monkeypatch.setattr(app.assembly, "build_mcp_server", lambda *a, **k: fake_server)
 
@@ -121,6 +127,57 @@ def test_get_span_delegates_to_the_server(serve_module):
 
     assert span == "verbatim source text"
     assert fake_server.get_span_calls == ["some-anchor"]
+
+
+# --- Usage telemetry wiring (T-DOC-usage-telemetry Task 2) ---------------------------------------
+# `@record_usage(...)` sits INSIDE `@mcp.tool()` on all four tools -- FastMCP registers the
+# wrapped function, so its schema comes from whatever signature/annotations survive the
+# decorator. `functools.wraps` (inside `app/usage_log.py::record_usage`) is what makes that
+# survive; losing it would silently break every tool's JSON schema with nothing here to catch it,
+# which is exactly what the first test below pins.
+
+
+def test_tool_signatures_and_docstrings_preserved_after_usage_wiring(serve_module):
+    serve_mod, _ = serve_module
+
+    assert list(inspect.signature(serve_mod.semantic_search).parameters) == [
+        "query", "filters", "k",
+    ]
+    assert list(inspect.signature(serve_mod.search_papers).parameters) == [
+        "query", "filters", "k",
+    ]
+    assert list(inspect.signature(serve_mod.get_paper).parameters) == ["paper_id"]
+    assert list(inspect.signature(serve_mod.get_span).parameters) == ["anchor"]
+    for name in ("semantic_search", "search_papers", "get_paper", "get_span"):
+        fn = getattr(serve_mod, name)
+        assert fn.__name__ == name
+        assert fn.__doc__
+
+
+def test_semantic_search_records_a_usage_row(serve_module):
+    serve_mod, _ = serve_module
+    filters = SearchFilters(doc_type="book")
+
+    serve_mod.semantic_search("estimator", filters, 5)
+
+    conn = sqlite3.connect(serve_mod._usage_log_path)
+    row = conn.execute(
+        "SELECT source, tool, query, k, doc_type, error FROM requests"
+    ).fetchone()
+    conn.close()
+    assert row == ("mcp", "semantic_search", "estimator", 5, "book", None)
+
+
+def test_get_paper_error_is_recorded_then_reraised(serve_module):
+    serve_mod, fake_server = serve_module
+
+    with pytest.raises(AssertionError):
+        serve_mod.get_paper("2506.01234")
+
+    conn = sqlite3.connect(serve_mod._usage_log_path)
+    row = conn.execute("SELECT tool, error FROM requests").fetchone()
+    conn.close()
+    assert row == ("get_paper", "AssertionError")
 
 
 # --- CONVENTIONS.md §3 conformance (only rag/config.py may read the process environment) ---------
