@@ -524,6 +524,119 @@ def _query_vector_store_point_count(collection: str) -> int | None:
         return None
 
 
+# --- drop-in tray (app/ingest_local.py's drop_in/ tree) ------------------------------------------
+
+_DROP_IN_DETAIL_CAP = 20  # per-file detail returned to the UI; counts are never capped
+
+# SQLite's default host-parameter limit is 32,766 in modern builds but was 999 historically --
+# chunked so a large manifest set never risks a single oversized IN (...) statement.
+_SQLITE_IN_CHUNK = 900
+
+
+# `done/` means "staged into pdf_cache with a paper_id minted" -- NOT "in the corpus". A staged
+# file can still be unparsed, unembedded, or quarantined downstream. The only honest source for
+# "processed" is the manifest's paper_ids joined against papers.db, which is what `_processed_*`
+# below does. Reporting `done/`'s count as progress would tell an operator the corpus has
+# documents it does not have.
+def read_drop_in(drop_dir: str | Path, db_path: str | Path) -> dict:
+    drop_dir = Path(drop_dir)
+    manifest_ids, latest_manifest = _read_drop_in_manifests(drop_dir)
+    processed = _processed_counts(Path(db_path), manifest_ids)
+    failure_reasons, truncated = _drop_in_failure_reasons(drop_dir / "failed")
+    return {
+        "pending_papers": _count_pdfs(drop_dir / "papers"),
+        "pending_books": _count_pdfs(drop_dir / "books"),
+        "staged": _count_pdfs(drop_dir / "done"),
+        "failed": _count_pdfs(drop_dir / "failed"),
+        "excluded": _count_pdfs(drop_dir / "excluded"),
+        "failure_reasons": failure_reasons,
+        "failure_reasons_truncated": truncated,
+        "manifest_ids": len(manifest_ids),
+        "latest_manifest": latest_manifest,
+        **processed,
+    }
+
+
+def _count_pdfs(d: Path) -> int:
+    """Counted without materializing a list -- a drop folder can hold thousands of files and this
+    runs on every status poll."""
+    if not d.is_dir():
+        return 0
+    return sum(1 for p in d.iterdir() if p.suffix.lower() == ".pdf")
+
+
+def _read_drop_in_manifests(drop_dir: Path) -> tuple[set[str], str | None]:
+    """Every `manifest-*.txt`'s paper_ids, unioned, plus the newest manifest's filename. Every
+    manifest is read, not just the newest: each staging run writes its own, and a document staged
+    three runs ago is still a dropped document."""
+    if not drop_dir.is_dir():
+        return set(), None
+    manifests = sorted(drop_dir.glob("manifest-*.txt"))
+    ids: set[str] = set()
+    for m in manifests:
+        try:
+            ids.update(line.strip() for line in m.read_text().splitlines() if line.strip())
+        except OSError:
+            continue
+    return ids, (manifests[-1].name if manifests else None)
+
+
+def _processed_counts(db_path: Path, manifest_ids: set[str]) -> dict:
+    """How many manifest paper_ids actually reached stage `done` in the corpus, split by doc_type.
+    `None` (not 0) when the DB is missing/unreadable or there are no manifest ids to ask about --
+    "we cannot tell" and "none made it" are different answers.
+
+    Two tables, not one: `ingest_state.stage` carries the pipeline stage, `papers.doc_type` carries
+    paper-vs-book -- `papers` itself has no `stage` column (confirmed against the live schema)."""
+    null = {"processed": None, "processed_papers": None, "processed_books": None}
+    if not manifest_ids:
+        return null
+    conn = _ro_connect(db_path)
+    if conn is None:
+        return null
+    try:
+        ids = sorted(manifest_ids)
+        by_type: dict[str, int] = {}
+        for i in range(0, len(ids), _SQLITE_IN_CHUNK):
+            chunk = ids[i : i + _SQLITE_IN_CHUNK]
+            placeholders = ",".join("?" * len(chunk))
+            rows = conn.execute(
+                "SELECT p.doc_type, COUNT(*) FROM ingest_state s "
+                "JOIN papers p ON p.paper_id = s.paper_id "
+                f"WHERE s.stage = 'done' AND s.paper_id IN ({placeholders}) "  # noqa: S608 - placeholders are '?' only
+                "GROUP BY p.doc_type",
+                chunk,
+            ).fetchall()
+            for doc_type, n in rows:
+                by_type[str(doc_type)] = by_type.get(str(doc_type), 0) + int(n)
+    except sqlite3.Error:
+        return null
+    finally:
+        conn.close()
+    return {
+        "processed": sum(by_type.values()),
+        "processed_papers": by_type.get("paper", 0),
+        "processed_books": by_type.get("book", 0),
+    }
+
+
+def _drop_in_failure_reasons(failed_dir: Path) -> tuple[list[tuple[str, int]], bool]:
+    """`(reason, count)` pairs from `failed/*.err`, most common first, capped at
+    `_DROP_IN_DETAIL_CAP`. The bool is True when reasons were dropped by that cap."""
+    if not failed_dir.is_dir():
+        return [], False
+    counts: dict[str, int] = {}
+    for err in failed_dir.glob("*.err"):
+        try:
+            reason = err.read_text().strip().splitlines()[0].strip()
+        except (OSError, IndexError):
+            continue
+        if reason:
+            counts[reason] = counts.get(reason, 0) + 1
+    ordered = sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))
+    return ordered[:_DROP_IN_DETAIL_CAP], len(ordered) > _DROP_IN_DETAIL_CAP
+
+
 # --- TEI live health probe ------------------------------------------------------------------
 
 # T-DOC78: same host/port app/tei_lifecycle.py already uses for its own health poll -- duplicated
