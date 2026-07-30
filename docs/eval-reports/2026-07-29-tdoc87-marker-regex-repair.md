@@ -323,13 +323,21 @@ repaired number is the one that has to ship, and it is worse.
 
 ```
 RAG_CONFIG=.../config.yaml python -m pytest -v --color=no
+# ===================== 1451 passed, 39 deselected in 49.47s =====================
 ```
+(1451 = 1448 from the phase-1 commit + 3 new tests in `app/test_exp_tdoc87_marker_repair.py`. 39
+deselected = `real_adapter`-marked tests, excluded by `pyproject.toml`'s default `addopts`, same as
+every other push.)
 
 ```
 RAG_CONFIG=.../config.yaml GITHUB_EVENT_NAME=push python -m ci.run_enforcement
+# enforcement: PASS -- no violations in checks (a)-(d), (f)-(h)
 ```
-
-(Numbers filled in after the final run below, post phase-2 file additions.)
+(One real finding along the way: `app/exp_tdoc87_marker_repair.py` needed adding to
+`ci/checks/vendor_isolation.py`'s qdrant/ollama/httpx allowlists -- the same composition-root
+shape as `app/exp1_outline_split.py`, already allowlisted there. `ci/` is foundation-frozen; this
+PR already needs the `foundation-change` label for the new fixture file, and this touch is flagged
+under the same label rather than treated as a separate exception.)
 
 ---
 
