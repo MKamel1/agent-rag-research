@@ -1,0 +1,93 @@
+{
+  "experiment": "Experiment 2 -- Contextual Retrieval, book-scoped (T-DOC41 revival)",
+  "plan_ref": "docs/PLAN-book-rag-experiments.md, Experiment 2",
+  "date": "2026-07-29",
+  "worktree": "/home/omar/ai-projects/rag-exp2",
+  "branch": "exp2-contextual-books",
+  "base_ref": "origin/exp0-5book-eval-baseline",
+  "ground_truth": "fixtures/eval/eval_book_questions.json (40 questions, 8/book, 5 books)",
+  "collections": {
+    "baseline_no_headers": "exp2_books_nohdr",
+    "headered": "exp2_books_hdr"
+  },
+  "book_paper_ids": [
+    "local:14b7e283bdcd",
+    "local:f0929288d4f3",
+    "local:f6c64e1e8c7d",
+    "local:dfe850b3281a",
+    "local:54d6ca71dda9"
+  ],
+  "total_chunks": 1939,
+  "matched_set_verification": {
+    "method": "Qdrant /points/scroll over both collections, full point-id sets compared (not just points_count); point id = uuid5(fixed namespace, chunk_id) per rag/vector_index.py, so id-set equality implies chunk_id-set equality",
+    "nohdr_point_count": 1939,
+    "hdr_point_count": 1939,
+    "sets_equal": true,
+    "only_in_nohdr": 0,
+    "only_in_hdr": 0,
+    "verdict": "PASS -- both arms embedded and upserted the identical 1939 chunk ids; only the embedded text differs between arms"
+  },
+  "headers_generated": {
+    "count": 1939,
+    "of_total_chunks": 1939,
+    "skipped_or_failed": 0,
+    "headers_out_path": "/tmp/exp2_headers_out.json (not committed -- generated artifact, chunk_id -> header text, referenced here for provenance)"
+  },
+  "results": {
+    "baseline_no_headers": {
+      "n_questions": 40,
+      "n_errors": 0,
+      "paper_level": {"recall_at_10": 1.0, "mrr": 0.9875},
+      "passage_level": {"recall_at_10": 1.0, "mrr": 0.9375},
+      "chapter_level": {"recall_at_10": 0.0, "mrr": 0.0, "n_scored": 40}
+    },
+    "headered": {
+      "n_questions": 40,
+      "n_errors": 0,
+      "paper_level": {"recall_at_10": 1.0, "mrr": 0.9875},
+      "passage_level": {"recall_at_10": 1.0, "mrr": 0.9375},
+      "chapter_level": {"recall_at_10": 0.0, "mrr": 0.0, "n_scored": 40}
+    },
+    "delta": {
+      "passage_recall_at_10": 0.0,
+      "passage_mrr": 0.0,
+      "per_question_rank_diff": "0 of 40 questions changed (paper_rank, passage_rank, chapter_rank) between arms -- exact null, not an aggregate cancellation"
+    }
+  },
+  "chapter_routing_tripwire": {
+    "expectation": "Experiment 2 does not touch ChapterSummary, so chapter-routing numbers must not move between arms",
+    "observed": "0.000/0.000 recall/MRR in BOTH arms, identically, and identical per-question ranks (all None/miss) -- did not move",
+    "explanation_not_a_regression": "app/reembed_experiment.py only upserts kind='chunk' points into the throwaway collections; it never writes chapter-summary vectors (ids of the form {paper_id}:summary:ch{n}), which rag/retriever.py's retrieve_papers() requires to score chapter-level hits at all. The throwaway collections structurally cannot support chapter routing -- this is a property of the experiment's scope, not a regression caused by headers. Chapter routing was not exercised by this experiment in either arm.",
+    "verdict": "tripwire clear -- no differential movement between arms; absolute chapter-level numbers here are not meaningful (not comparable to the 0.450 production baseline) and are reported only to make this explicit, not as a finding about chapter routing"
+  },
+  "scope_caveat_vs_number_to_beat": {
+    "number_to_beat_source": "docs/eval-reports/2026-07-29-book-retrieval-baseline-5book.md",
+    "number_to_beat_passage_recall_at_10": 0.625,
+    "number_to_beat_mrr": 0.596,
+    "number_to_beat_collection_scope": "production 'papers' collection, ~11,026 documents, book questions filtered by doc_type",
+    "this_experiment_collection_scope": "throwaway collection containing ONLY the 5 books' 1939 chunks, per the plan's explicit instruction to restrict app/reembed_experiment.py to the 5 book paper_ids",
+    "consequence": "Restricting the candidate pool to 1939 book-only chunks (vs. competing against the full ~11k-document corpus) makes the retrieval task substantially easier and both arms hit a 1.000 passage-recall ceiling. This is NOT the same measurement as the 0.625 production number -- the two are not on the same scale and should not be read as 'headers took recall from 0.625 to 1.000'. The valid comparison this experiment can make is the WITHIN-experiment nohdr-vs-hdr delta on the identical restricted collection, which is 0.000.",
+    "consequence_for_power": "A 1.000/1.000 ceiling in the baseline arm means there is zero headroom in this collection scope for a header effect to show up as a recall improvement, regardless of whether contextual headers help retrieval in principle. This experiment, as scoped, cannot distinguish 'headers don't help' from 'headers can't show up because baseline is already saturated.'"
+  },
+  "runtime": {
+    "worktree_setup": "~2 min",
+    "baseline_reembed_nohdr": "~2-3 min wall clock (1939 chunks, embedding only, no LLM calls)",
+    "headered_reembed_hdr": "37m39s wall clock (01:59:04-02:36:43 PDT), 1939 sequential qwen3:14b header-generation calls (~1.1s/chunk observed, think=false, num_predict capped) + one batched embed/upsert call",
+    "eval_scoring_each_arm": "~1-2 min wall clock (40 queries, cheap)",
+    "total_gpu_heavy_wall_clock": "~45 minutes across both arms + both scorings",
+    "vs_plan_estimate": "Plan's operator-revised estimate was 6-18 GPU-hours; actual was ~45 minutes -- roughly 10-20x faster than the low end of the estimate, because think=false + a tight num_predict cap made each header call ~1.1s rather than the multi-second-per-call assumption the estimate implicitly used.",
+    "infrastructure_incident": "Mid-run, the concurrently-working sibling agent's activity triggered a graceful shutdown of the system-wide rag-tei-embed/rag-tei-reranker Docker containers (not scoped to this worktree) while the headered re-embed was mid-flight generating headers via Ollama (unaffected, separate service). Detected via a failed /health check, containers restarted before the deferred embed() call needed them; no data loss (nohdr collection remained at 1939/1939 throughout, confirmed via direct Qdrant query). A first attempt at scoring the nohdr arm was run concurrently with the still-in-flight headered re-embed and got 4/40 GPU-lock-timeout errors from that contention; that report was discarded and both arms were rescored cleanly (0 errors) once the GPU was idle."
+  },
+  "corpus_and_production_safety": {
+    "papers_db_writes": 0,
+    "production_collection_papers_touched": false,
+    "throwaway_collections_left_in_place": ["exp2_books_nohdr", "exp2_books_hdr"],
+    "gpu_lock_used": "rag.gpu_lock.FileGpuLock at /home/omar/ai-projects/research-system-rag/.gpu.lock (shared absolute path across worktrees)"
+  },
+  "verdict": {
+    "against_falsification_criterion": "Headered passage recall (1.000) is NOT measurably better than baseline passage recall (1.000) -- delta is exactly 0.000, an exact per-question null (0/40 rank changes), not merely a small or noisy delta.",
+    "status": "HOLD, not rejected -- per the plan's pre-committed falsification criterion, this is treated exactly as T-DOC41's paper-scale result already is: no measured support for scaling the header technique further on GPU budget.",
+    "caveat": "This HOLD is further weakened as evidence (not strengthened) by the ceiling-effect scope problem above: both arms saturated at 1.000 recall in the restricted 1939-chunk collection, so this run cannot rule out a real header effect that a harder, full-corpus-competition retrieval task might reveal. A properly-powered, non-saturated book-only eval (the ~100+ question target the plan already calls for) would need either a larger/harder question set or a collection scope that isn't already at ceiling for the baseline arm.",
+    "recommendation": "Do not spend further GPU budget scaling contextual headers to the full corpus based on this result. If Experiment 2 is revisited, fix the ceiling-effect scope problem first (e.g. score against the full production-scale candidate pool, not a books-only throwaway collection) before concluding anything about the header technique itself."
+  }
+}

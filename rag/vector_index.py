@@ -56,6 +56,15 @@ _FUSION_DEPTH_CAP = 10_000
 # Per-page size for rebuild()'s scroll through the collection. Paged (see rebuild()) so this is
 # just a page size, not a ceiling on how many points rebuild() can see.
 _SCROLL_PAGE_SIZE = 100_000
+# clone_points_into()'s own upsert batch size -- deliberately much smaller than
+# _SCROLL_PAGE_SIZE. Measured live: a _SCROLL_PAGE_SIZE=100_000 page of real production points
+# (2560-dim dense + sparse vectors) serializes to a ~3.8GB request body, which Qdrant's REST API
+# rejects outright (its own fixed 32MB request-size ceiling, not a timeout) -- read and write
+# sides need independent sizes, reading a big page is fine, sending it in one request is not.
+# 1,000 points of this collection's real vector size measured ~38MB -- still over the 32MB
+# ceiling -- so this is 400 (~15MB at that same per-point size), leaving real margin rather than
+# retuning to the observed edge.
+_CLONE_UPSERT_BATCH_SIZE = 400
 # create_and_download_snapshot() streams a whole collection snapshot file over localhost -- large
 # but not slow (no WAN hop), so a generous fixed ceiling rather than a caller-tunable knob is
 # enough headroom without letting a wedged download hang the caller (app/snapshot.py) forever.
@@ -325,6 +334,61 @@ class VectorIndex:
                     models.PointStruct(id=p.id, vector=p.vector, payload=p.payload) for p in points
                 ],
             )
+
+    def clone_points_into(self, dest_collection: str) -> int:
+        """Copies every point (id, dense+sparse vector, payload) from this collection into
+        `dest_collection` VERBATIM -- no re-embedding, and unlike `upsert()` (which always derives
+        the sparse vector fresh from `payload["text"]`), this reuses the ORIGINAL sparse vector
+        byte-for-byte, so document-frequency stats computed at the source collection's write time
+        carry over unchanged rather than resetting for the destination.
+
+        Same scroll-then-upsert shape as `rebuild()` above, upserting per-page instead of
+        accumulating the whole collection in memory first -- safe here because, unlike `rebuild()`,
+        the source collection is never deleted, so there's no reason to hold every point at once.
+        Creates `dest_collection` with this collection's own schema if it doesn't exist yet (via a
+        second `VectorIndex`, which runs the same `_ensure_collection()` this instance did).
+
+        The upsert side is additionally re-batched to `_CLONE_UPSERT_BATCH_SIZE` -- a full
+        `_SCROLL_PAGE_SIZE` page is fine to READ in one round-trip, but sending it back in one
+        `upsert` request is not: a real 372,741-point production collection's own
+        `_SCROLL_PAGE_SIZE` page serializes to a multi-GB request body, and Qdrant's REST API
+        rejects any single request over a fixed 32MB regardless of client-side timeout. Read and
+        write sides need independent sizes; `_CLONE_UPSERT_BATCH_SIZE` is sized for the write side
+        only (see its own comment).
+
+        Used by experiment scripts that need a throwaway collection seeded from the full
+        production corpus without spending GPU time recomputing every existing vector -- e.g.
+        app/exp1_outline_split.py, which then deletes/upserts only the handful of points its A/B
+        actually changes. Returns the number of points copied.
+        """
+        dest = VectorIndex(
+            self._host, self._port, dest_collection, self._dim, self._hybrid_dense_weight
+        )
+        offset = None
+        total = 0
+        while True:
+            page, offset = self._call(
+                self._client.scroll,
+                self._collection,
+                limit=_SCROLL_PAGE_SIZE,
+                offset=offset,
+                with_payload=True,
+                with_vectors=True,
+            )
+            for i in range(0, len(page), _CLONE_UPSERT_BATCH_SIZE):
+                batch = page[i : i + _CLONE_UPSERT_BATCH_SIZE]
+                self._call(
+                    dest._client.upsert,
+                    dest._collection,
+                    points=[
+                        models.PointStruct(id=p.id, vector=p.vector, payload=p.payload)
+                        for p in batch
+                    ],
+                )
+                total += len(batch)
+            if offset is None:
+                break
+        return total
 
     def point_count(self) -> int:
         """Current number of points in the collection -- `app/reindex_idf.py`'s (OG-27) before/

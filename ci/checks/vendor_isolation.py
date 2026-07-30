@@ -41,8 +41,14 @@ VENDOR_RULES: tuple[VendorRule, ...] = (
     # rag/test_vector_index.py (T-DOC80) legitimately names Qdrant in its `_qdrant_filter` unit
     # tests -- they exercise the real Qdrant adapter's filter-building function directly, same
     # reasoning as the mineru/ollama test-file exemptions below.
+    # app/exp1_outline_split.py (Experiment 1, docs/PLAN-book-rag-experiments.md) is a composition
+    # root the same shape as app/reembed_experiment.py/app/rechunk.py below -- it clones the
+    # production Qdrant collection into a throwaway one via VectorIndex.clone_points_into and
+    # names no vendor itself, only in comments/docstrings describing that call.
     VendorRule(
-        "qdrant", re.compile(r"qdrant", re.I), ("rag/vector_index.py", "rag/test_vector_index.py")
+        "qdrant",
+        re.compile(r"qdrant", re.I),
+        ("rag/vector_index.py", "rag/test_vector_index.py", "app/exp1_outline_split.py"),
     ),
     # rag/test_parser.py (T-DOC16) legitimately injects a fake `mineru.cli.common` module into
     # `sys.modules` (by that exact dotted name -- `rag.parser`'s own lazy `from mineru.cli.common
@@ -56,7 +62,14 @@ VENDOR_RULES: tuple[VendorRule, ...] = (
     # rag/test_summarizer.py legitimately builds httpx.MockTransport fixtures with an
     # "http://ollama.local" stand-in URL (and a docstring/comment naming Ollama) to exercise the
     # adapter offline -- same reasoning as the httpx rule's own test-file exemptions below.
-    VendorRule("ollama", re.compile(r"ollama", re.I), ("rag/summarizer.py", "rag/test_summarizer.py")),
+    # app/exp1_outline_split.py: same composition-root shape as app/reembed_experiment.py/
+    # app/rechunk.py -- constructs the real OllamaSummarizer to re-summarize the 4 outline-split
+    # books, names no vendor itself beyond the class import and its own service-URL constant.
+    VendorRule(
+        "ollama",
+        re.compile(r"ollama", re.I),
+        ("rag/summarizer.py", "rag/test_summarizer.py", "app/exp1_outline_split.py"),
+    ),
     # vLLM ADR-09 covers both the embedder and the summarizer's local-LLM serving; rag/test_summarizer.py
     # mentions vLLM in the same comment as Ollama, for the same reason.
     VendorRule(
@@ -103,6 +116,10 @@ VENDOR_RULES: tuple[VendorRule, ...] = (
     # T-DOC62: app/rechunk.py's `main()` is a composition root the same shape as
     # app/reembed_experiment.py's -- it constructs the real httpx-backed TeiEmbedder to re-embed
     # re-chunked papers, names no vendor itself.
+    #
+    # Experiment 1 (docs/PLAN-book-rag-experiments.md): app/exp1_outline_split.py is the same
+    # composition-root shape again -- it constructs the real httpx-backed OllamaSummarizer and
+    # TeiEmbedder to re-summarize/re-embed the 4 outline-split books, names no vendor itself.
     VendorRule(
         "httpx",
         re.compile(r"httpx", re.I),
@@ -124,6 +141,7 @@ VENDOR_RULES: tuple[VendorRule, ...] = (
             "app/test_tei_lifecycle.py",
             "app/assembly.py",
             "app/rechunk.py",
+            "app/exp1_outline_split.py",
         ),
     ),
 )
