@@ -42,9 +42,9 @@ _CHAPTER_KEYWORD_MARKER = re.compile(
     re.IGNORECASE,
 )
 # T-DOC87: the bare "N. Title" alternative used to fire unconditionally on ANY numbered heading.
-# MinerU's layout model sometimes classifies a numbered list ITEM in body prose as a heading (e.g.
-# "1. https://freakonometrics.hypotheses.org/52776" -- a hyperlinked list entry, styled like a
-# heading in the source PDF) -- measured against the live corpus: 44/44 of this alternative's
+# The parser's layout model sometimes classifies a numbered list ITEM in body prose as a heading
+# (e.g. "1. https://freakonometrics.hypotheses.org/52776" -- a hyperlinked list entry, styled like
+# a heading in the source PDF) -- measured against the live corpus: 44/44 of this alternative's
 # matches across the two affected books were exactly this, 0/5 books had a single true positive.
 #
 # Discriminator: a bare "N. Title" heading is trusted as a chapter marker only when EVERY bare-
@@ -55,10 +55,10 @@ _CHAPTER_KEYWORD_MARKER = re.compile(
 # matches read [1,2, 1,2,...,10, 1,2,...,10, ...] -- two independent 10-step algorithm walk-
 # throughs, never one running count across the book) or starts mid-sequence (Discovery in Python's
 # sole bare match starts at 3, with nothing numbered 1 or 2 anywhere near it). Position/block-type
-# were considered and rejected: MinerU already collapses the "is this a heading" decision to a
-# single flag before this module ever sees the block (rag/parser.py's `text_level`), so nothing
-# about a Block's `type` or position distinguishes a mis-tagged list item from a real heading --
-# only the numbering pattern across the WHOLE document does.
+# were considered and rejected: the parser adapter already collapses the "is this a heading"
+# decision to a single flag before this module ever sees the block (rag/parser.py's `text_level`),
+# so nothing about a Block's `type` or position distinguishes a mis-tagged list item from a real
+# heading -- only the numbering pattern across the WHOLE document does.
 #
 # Known ceiling: a book whose ONLY marker-worthy heading anywhere is a single, coincidentally
 # 1..N sequential body-prose list (no other bare-number or keyword heading in the entire book)
