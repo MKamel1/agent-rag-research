@@ -20,7 +20,21 @@
 - Do not merge any PR. Never pass `--admin` or a branch-protection bypass.
 - Environment: `source ~/miniconda3/etc/profile.d/conda.sh && conda activate agent-rag-research && <cmd>` — chained in ONE shell call.
 - Report real exit codes: `rc=$?` on the line **immediately** after the command, never after `echo`, never through a pipe.
-- Enforcement must be run as `GITHUB_EVENT_NAME=pull_request python -m ci.run_enforcement`. A `push`-scoped local pass has previously coexisted with a `pull_request`-scoped CI failure on the same branch.
+- **Enforcement, run correctly.** `ci/checks/changed_files.py::compute_diff_base` reads the parsed
+  `GITHUB_EVENT_PATH` payload, so `GITHUB_EVENT_NAME=pull_request` **alone crashes** with
+  `KeyError: 'pull_request'`. Synthesize the payload — this is the same diff scope real CI uses:
+
+  ```bash
+  EV=$(mktemp) && printf '{"pull_request":{"base":{"sha":"%s"},"head":{"sha":"%s"}}}' \
+    "$(git merge-base origin/main HEAD)" "$(git rev-parse HEAD)" > "$EV"
+  source ~/miniconda3/etc/profile.d/conda.sh && conda activate agent-rag-research && \
+    GITHUB_EVENT_NAME=pull_request GITHUB_EVENT_PATH="$EV" python -m ci.run_enforcement
+  rc=$?
+  ```
+
+  Use this form everywhere this plan says "run enforcement". Do **not** substitute
+  `GITHUB_EVENT_NAME=push`: the two scan different diffs, and a `push`-scoped local pass has
+  previously coexisted with a `pull_request`-scoped CI failure on the same branch.
 - Absent and zero are different facts. Where a source is missing or unreadable, return `None`, never `0`.
 - Tests run with `--disable-socket`. No test may fork a real subprocess: inject `spawn`.
 
