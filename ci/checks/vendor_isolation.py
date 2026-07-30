@@ -120,6 +120,11 @@ VENDOR_RULES: tuple[VendorRule, ...] = (
     # Experiment 1 (docs/PLAN-book-rag-experiments.md): app/exp1_outline_split.py is the same
     # composition-root shape again -- it constructs the real httpx-backed OllamaSummarizer and
     # TeiEmbedder to re-summarize/re-embed the 4 outline-split books, names no vendor itself.
+    #
+    # Experiment 3 (docs/PLAN-book-rag-experiments.md): app/exp3_hierarchy_sim.py is the same
+    # composition-root shape as app/exp1_outline_split.py -- it constructs the real httpx-backed
+    # TeiEmbedder to embed ad hoc Part-level query vectors for the hierarchy simulation, names no
+    # vendor itself, only httpx as the shared HTTP client.
     VendorRule(
         "httpx",
         re.compile(r"httpx", re.I),
@@ -142,6 +147,7 @@ VENDOR_RULES: tuple[VendorRule, ...] = (
             "app/assembly.py",
             "app/rechunk.py",
             "app/exp1_outline_split.py",
+            "app/exp3_hierarchy_sim.py",
         ),
     ),
 )
