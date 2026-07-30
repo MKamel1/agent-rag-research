@@ -45,6 +45,23 @@ def _cleanup(manifest):
             pass
 
 
+def _live_manifest(**overrides):
+    """A manifest whose `pid` is THIS test process, with `pid_starttime`/`pid_cmdline` captured
+    for real (`_capture_identity`) rather than left `None` -- `_verified_pid` treats a manifest
+    with no stored identity as unconfirmed-alive BY DESIGN (see its own docstring), so `reconcile()`
+    would otherwise immediately downgrade a directly-written `status: "running"` manifest to a
+    terminal state before any guard under test even runs, regardless of the real process's actual
+    liveness. Capturing this process's own identity is the fixture-only way to write a manifest
+    `reconcile()` will treat as genuinely live without spawning a throwaway subprocess."""
+    starttime, cmdline = controller_mod._capture_identity(os.getpid())
+    manifest = {
+        "run_id": "run-1", "status": "running", "pid": os.getpid(),
+        "pid_starttime": starttime, "pid_cmdline": cmdline, "mode": "download",
+    }
+    manifest.update(overrides)
+    return manifest
+
+
 # --- start: the double-run guard -----------------------------------------------------------
 
 
@@ -1619,3 +1636,29 @@ def test_load_for_mcp_allowed_when_pass1_is_not_active(tmp_path):
     result = controller_mod.load_for_mcp(tmp_path, start_tei=lambda: calls.append("started"))
     assert calls == ["started"]
     assert result == {"tei_started": True}
+
+
+# --- Task 2: start_drop_in -- spawn a drop-in run -------------------------------------------------
+
+
+def test_start_drop_in_spawns_ingest_local_and_writes_manifest(tmp_path):
+    calls = []
+
+    def fake_spawn(data_dir, target, parse_workers, events_path, log_path, **kwargs):
+        calls.append(log_path)
+        return 4242
+
+    manifest = controller_mod.start_drop_in(tmp_path, spawn=fake_spawn)
+
+    assert manifest["mode"] == "drop_in"
+    assert manifest["status"] == "running"
+    assert manifest["pid"] == 4242
+    assert len(calls) == 1
+
+
+def test_start_drop_in_refuses_while_another_run_is_live(tmp_path):
+    """Guarded by the same DoubleRunError contract `start` uses -- Task 3 replaces this
+    with queue-jump behavior."""
+    controller_mod._write_manifest(tmp_path, _live_manifest())
+    with pytest.raises(controller_mod.DoubleRunError):
+        controller_mod.start_drop_in(tmp_path, spawn=lambda *a, **k: 1)

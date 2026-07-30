@@ -140,6 +140,41 @@ def _spawn_download(data_dir: Path, target: int, parse_workers: int, events_path
     return proc.pid
 
 
+def resolve_drop_dir(cfg: Config) -> Path:
+    """`Config.drop_in_dir` is relative whenever config.yaml omits it (`rag/config.py::_resolve_paths`
+    only resolves fields actually present in the YAML). A relative value would otherwise mean a
+    different directory to the dashboard (cwd=<repo root>) than to the `app.ingest_local` child
+    (cwd=<data_dir>) -- the dashboard would report a full tray while the run scanned an empty one
+    and exited 0. Anchored on the repo root, which is where the tray actually lives and where the
+    dashboard's own cwd already points."""
+    d = Path(cfg.drop_in_dir)
+    return d if d.is_absolute() else (_REPO_ROOT / d).resolve()
+
+
+def _spawn_drop_in(data_dir: Path, target: int, parse_workers: int, events_path: Path,
+                   log_path: Path) -> int:
+    """Launches `app.ingest_local`, which stages everything under `cfg.drop_in_dir` into
+    `pdf_cache` and then runs the normal ingest over the staged ids. Matches `SpawnFn`'s shape so
+    `_call_spawn`/`pause`/`stop` need no changes; `target`/`parse_workers`/`events_path` do not
+    apply (ingest_local's work is bounded by what is in the drop tray, not by a target) and are
+    ignored, same as `_spawn_download` ignores them.
+
+    `--drop-dir` is passed explicitly (`resolve_drop_dir`) rather than relying on the child's own
+    cwd-relative default -- see that helper's docstring for why: `cfg.drop_in_dir` is relative
+    whenever config.yaml omits it, and this child's cwd (`data_dir`) is NOT where the tray lives.
+
+    `start_new_session=True` gives it its own process group, so `pause`/`stop`'s `os.killpg`
+    reaches it exactly as it does a download or a full build."""
+    drop_dir = resolve_drop_dir(_load_base_config(data_dir))
+    cmd = ["env", f"PYTHONPATH={_REPO_ROOT}", sys.executable, "-m", "app.ingest_local",
+           "--drop-dir", str(drop_dir)]
+    log_f = log_path.open("a")
+    proc = subprocess.Popen(
+        cmd, cwd=str(data_dir), stdout=log_f, stderr=subprocess.STDOUT, start_new_session=True,
+    )
+    return proc.pid
+
+
 class DoubleRunError(RuntimeError):
     """Raised when start/resume is refused because a run is already live (or not yet confirmed
     dead)."""
@@ -886,6 +921,39 @@ def _start_locked(data_dir: Path, target: int, parse_workers: int = 3, *,
         run_cwd=run_cwd, effective_cfg=effective_cfg,
         telemetry_poll_interval=telemetry_poll_interval, batch_size=batch_size,
         mode=mode,
+    )
+    _write_manifest(data_dir, manifest)
+    return manifest
+
+
+def start_drop_in(data_dir: str | Path, *, spawn: SpawnFn | None = None) -> dict:
+    """Start a drop-in ingest run (`app.ingest_local`) over whatever is sitting in the drop tray.
+
+    `target`/`parse_workers` are not operator-settable for this run type: the work is bounded by
+    the drop tray's contents. `target=0` is recorded in the manifest so `_crashed_before_target`
+    (`done_count < target`) can never misclassify a clean drop-in finish as a crash."""
+    data_dir = Path(data_dir)
+    with _control_lock(data_dir):
+        return _start_drop_in_locked(data_dir, spawn=spawn)
+
+
+def _start_drop_in_locked(data_dir: Path, *, spawn: SpawnFn | None = None) -> dict:
+    manifest = reconcile(data_dir)
+    if manifest is not None and manifest.get("status") in _LIVE_STATUSES:
+        raise DoubleRunError(
+            f"run {manifest['run_id']!r} is still live (status={manifest['status']!r}) -- "
+            "pause or stop it before starting a drop-in run"
+        )
+    if manifest is not None:
+        _cleanup_run_cwd(data_dir, manifest)
+    run_id = f"dropin-{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}"
+    log_path = data_dir / "ingest_local.log"
+    events_path = data_dir / f"ingest_events_{run_id}.jsonl"
+    spawn_fn = spawn if spawn is not None else _spawn_drop_in
+    pid = spawn_fn(data_dir, 0, 1, events_path, log_path)
+    manifest = _build_manifest(
+        run_id, pid, 0, 1, events_path, log_path, data_dir / "papers.db",
+        run_cwd=data_dir, effective_cfg=_load_base_config(data_dir), mode="drop_in",
     )
     _write_manifest(data_dir, manifest)
     return manifest
