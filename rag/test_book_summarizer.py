@@ -289,8 +289,8 @@ def test_bare_number_markers_used_when_sequential_from_one():
 
 def test_bare_number_markers_rejected_when_not_sequential_from_one():
     # T-DOC87 regression pin: the exact real-world failure shape -- numbered list items in body
-    # prose that MinerU classified as headings, restarting/skipping instead of running 1..k across
-    # the book. "3. Estimation" here plays the same role the live bug's "3. Finally, let's
+    # prose that the parser classified as headings, restarting/skipping instead of running 1..k
+    # across the book. "3. Estimation" here plays the same role the live bug's "3. Finally, let's
     # examine..." did (a single bare match that isn't preceded by "1."/"2." anywhere) -- must NOT
     # be treated as a chapter BOUNDARY by Strategy A. (Whether Strategy B's independent best-
     # heading scoring later reuses similar text as a fallback LABEL is a separate concern, not
