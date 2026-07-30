@@ -184,6 +184,12 @@ class NoRunError(RuntimeError):
     """Raised when pause/resume/stop is asked to act on a run that doesn't exist."""
 
 
+class DropInPendingError(RuntimeError):
+    """A drop-in run is queued and must go first. Raised when a download/full run is started
+    while `pending_drop_in` is set -- without this refusal a fresh download can be started the
+    instant the previous one ends, starving the queued drop-in forever."""
+
+
 class InvalidOverrideError(ValueError):
     """Raised when a config-derived override (`_maybe_build_override`) produces an invalid
     `Config` (OG-49#6/M8): `cfg.model_copy(update=...)` does NOT re-run pydantic validation, so a
@@ -880,6 +886,11 @@ def _start_locked(data_dir: Path, target: int, parse_workers: int = 3, *,
             f"run {manifest['run_id']!r} is still live (status={manifest['status']!r}) -- "
             "pause or stop it before starting a fresh run"
         )
+    if manifest is not None and manifest.get("pending_drop_in"):
+        raise DropInPendingError(
+            "a drop-in run is queued and must run first -- it will start automatically, or "
+            "stop() to clear it"
+        )
     if manifest is not None:
         # Abandoning a non-live prior run (most commonly "paused" -- pause an edited run, then hit
         # Apply for a fresh one instead of resuming it) for good: its override run_cwd (if any) is
@@ -940,10 +951,11 @@ def start_drop_in(data_dir: str | Path, *, spawn: SpawnFn | None = None) -> dict
 def _start_drop_in_locked(data_dir: Path, *, spawn: SpawnFn | None = None) -> dict:
     manifest = reconcile(data_dir)
     if manifest is not None and manifest.get("status") in _LIVE_STATUSES:
-        raise DoubleRunError(
-            f"run {manifest['run_id']!r} is still live (status={manifest['status']!r}) -- "
-            "pause or stop it before starting a drop-in run"
-        )
+        # Queue-jump, not preemption: the live run is never signalled. `promote_pending_drop_in`
+        # spawns this the moment that run reaches a terminal state.
+        manifest["pending_drop_in"] = True
+        _write_manifest(data_dir, manifest)
+        return manifest
     if manifest is not None:
         _cleanup_run_cwd(data_dir, manifest)
     run_id = f"dropin-{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}"
@@ -957,6 +969,25 @@ def _start_drop_in_locked(data_dir: Path, *, spawn: SpawnFn | None = None) -> di
     )
     _write_manifest(data_dir, manifest)
     return manifest
+
+
+def promote_pending_drop_in(data_dir: str | Path, *,
+                            spawn: SpawnFn | None = None) -> dict | None:
+    """Spawn a queued drop-in run if the previously live run has reached a terminal state.
+    Returns the new drop-in manifest, or `None` when there is nothing to promote.
+
+    Takes `_control_lock` and re-reconciles INSIDE it. `reconcile()` itself must not spawn:
+    `liveness()` calls it with no lock held, and `server.py` is a ThreadingHTTPServer, so two
+    concurrent `/api/status` polls would otherwise both see `terminal + pending` and both spawn.
+    Idempotent and safe to call on every status poll."""
+    data_dir = Path(data_dir)
+    with _control_lock(data_dir):
+        manifest = reconcile(data_dir)
+        if manifest is None or not manifest.get("pending_drop_in"):
+            return None
+        if manifest.get("status") in _LIVE_STATUSES:
+            return None
+        return _start_drop_in_locked(data_dir, spawn=spawn)
 
 
 def pause(data_dir: str | Path) -> dict:
@@ -1069,6 +1100,9 @@ def _stop_locked(data_dir: Path) -> dict:
     manifest["status"] = "stopping"
     _write_manifest(data_dir, manifest)
     manifest["status"] = "done" if _terminate_with_escalation(pid) else "stopping"
+    # The operator's escape hatch: if a queued drop-in's wait target (ingest_local) wedges, stop()
+    # must unblock downloads/full runs again rather than leaving pending_drop_in stuck set forever.
+    manifest["pending_drop_in"] = False
     _write_manifest(data_dir, manifest)
     if manifest["status"] == "done":
         # OG-49 M10: a user-initiated stop is final (module docstring) -- no later resume() will

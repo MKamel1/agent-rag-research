@@ -1656,9 +1656,78 @@ def test_start_drop_in_spawns_ingest_local_and_writes_manifest(tmp_path):
     assert len(calls) == 1
 
 
-def test_start_drop_in_refuses_while_another_run_is_live(tmp_path):
-    """Guarded by the same DoubleRunError contract `start` uses -- Task 3 replaces this
-    with queue-jump behavior."""
-    controller_mod._write_manifest(tmp_path, _live_manifest())
-    with pytest.raises(controller_mod.DoubleRunError):
-        controller_mod.start_drop_in(tmp_path, spawn=lambda *a, **k: 1)
+# --- Task 3: queue-jump priority ------------------------------------------------------------------
+#
+# `test_start_drop_in_refuses_while_another_run_is_live` (Task 2) is deleted here, not just
+# amended: Task 3 deliberately replaces its DoubleRunError contract with queue-jump behavior --
+# `test_drop_in_queues_instead_of_raising_when_a_run_is_live` below is its direct successor,
+# asserting the opposite of what the deleted test asserted (queues instead of raising).
+
+
+def test_drop_in_queues_instead_of_raising_when_a_run_is_live(tmp_path):
+    controller_mod._write_manifest(tmp_path, _live_manifest(target=100))
+    spawned = []
+    out = controller_mod.start_drop_in(tmp_path, spawn=lambda *a, **k: spawned.append(1))
+
+    assert out["pending_drop_in"] is True
+    assert spawned == [], "must NOT spawn while another run is live"
+
+
+def test_promote_spawns_the_queued_drop_in_once_the_live_run_is_terminal(tmp_path):
+    controller_mod._write_manifest(tmp_path, {
+        "run_id": "run-1", "status": "done", "pid": 999999,
+        "pid_starttime": None, "pid_cmdline": None, "mode": "download",
+        "pending_drop_in": True,
+    })
+    spawned = []
+
+    def fake_spawn(*a, **k):
+        spawned.append(1)
+        return 5150
+
+    out = controller_mod.promote_pending_drop_in(tmp_path, spawn=fake_spawn)
+
+    assert spawned == [1]
+    assert out["mode"] == "drop_in"
+    assert out["status"] == "running"
+    assert not out.get("pending_drop_in")
+
+
+def test_promote_is_a_noop_while_the_live_run_is_still_running(tmp_path):
+    controller_mod._write_manifest(
+        tmp_path, _live_manifest(target=100, pending_drop_in=True),
+    )
+    spawned = []
+    out = controller_mod.promote_pending_drop_in(tmp_path, spawn=lambda *a, **k: spawned.append(1))
+
+    assert spawned == []
+    assert out is None
+
+
+def test_start_refuses_a_download_while_a_drop_in_is_pending(tmp_path):
+    """Without this, a download started the instant the previous one ends starves the queued
+    drop-in indefinitely -- 'priority' that never fires."""
+    controller_mod._write_manifest(tmp_path, {
+        "run_id": "run-1", "status": "done", "pid": 999999,
+        "pid_starttime": None, "pid_cmdline": None, "mode": "download",
+        "pending_drop_in": True,
+    })
+    with pytest.raises(controller_mod.DropInPendingError):
+        controller_mod.start(tmp_path, target=100, spawn=lambda *a, **k: 1)
+
+
+def test_stop_clears_the_pending_flag(tmp_path):
+    """The operator's escape hatch: if ingest_local wedges, `stop` must unblock downloads.
+
+    Uses a real spawned (harmless) process via `_fake_spawn`, not a directly-written `os.getpid()`
+    manifest -- `stop` actually signals `manifest['pid']`'s process GROUP (`os.killpg`), and this
+    test process is not its own process-group leader, so signaling `os.getpid()` directly here
+    would risk sending SIGTERM to this very test run's group instead of a throwaway child."""
+    manifest = controller_mod.start(tmp_path, target=100, spawn=_fake_spawn)
+    manifest["pending_drop_in"] = True
+    controller_mod._write_manifest(tmp_path, manifest)
+    try:
+        controller_mod.stop(tmp_path)
+        assert not controller_mod._read_manifest(tmp_path).get("pending_drop_in")
+    finally:
+        _cleanup(controller_mod._read_manifest(tmp_path))
