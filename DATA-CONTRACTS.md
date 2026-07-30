@@ -377,6 +377,7 @@ class SearchFilters:
     published_before: date | None = None       # inclusive
     kind: Literal["chunk", "summary"] | None = None   # restrict to VectorPayload.kind
     doc_type: Literal["paper", "book"] | None = None  # T-DOC80: restrict to VectorPayload.doc_type
+    paper_id: str | None = None                # Decision 3: restrict to VectorPayload.paper_id
 
 # hybrid_search(qvec: Vector, qtext: str, filters: SearchFilters | None, k: int) -> list[Hit]
 #   qvec -> dense side; qtext -> sparse/BM25 side; fused per the RRF formula below; top-k by fused score.

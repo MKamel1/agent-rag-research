@@ -324,6 +324,19 @@ def test_retrieve_restricts_to_chunk_kind():
     assert [res.paper_id for res in results] == ["2506.00001"]
 
 
+def test_retrieve_restricts_to_paper_id():
+    # Decision 3 option A: a chunk from a different paper sharing the query terms must NOT surface
+    # once filters.paper_id narrows the search to one document.
+    store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
+    _seed_chunk(store, docstore, embedder, chunk_id="2506.00001:c0", paper_id="2506.00001",
+                block_id="2506.00001:b0", text="double machine learning estimator")
+    _seed_chunk(store, docstore, embedder, chunk_id="2506.00002:c0", paper_id="2506.00002",
+                block_id="2506.00002:b0", text="double machine learning estimator")
+    results, _coverage = _make_retriever(store, docstore, FakeReranker(), embedder).retrieve(
+        "double machine learning", filters=SearchFilters(paper_id="2506.00002"), k=10)
+    assert [res.paper_id for res in results] == ["2506.00002"]
+
+
 def test_retrieve_pool_size_lets_reranker_promote_a_passage_ranked_below_k():
     # T-DOC24 regression: before this fix, retrieve(k=10) fetched only the top 10 pre-rerank RRF
     # candidates, so a candidate ranked 11th or lower was never even shown to the reranker -- no
@@ -819,6 +832,34 @@ def test_search_papers_scoped_by_doc_type_allows_more_than_unscoped_cap():
     assert len({r.view.paper_id for r in results}) == 1
 
 
+def test_search_papers_scoped_by_paper_id_allows_more_than_unscoped_cap():
+    """Decision 3 option A: filters.paper_id narrows to exactly one document, an even stronger
+    scoping signal than doc_type -- _is_scoped() must treat it the same way, relaxing the cap."""
+    store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
+    paper_id = "local:cap0000cap5"
+    chapter_summaries = [
+        ChapterSummary(summary_id=f"{paper_id}:summary:ch{i}", title=f"Chapter {i}",
+                       text=f"causal inference chapter {i} content")
+        for i in range(8)
+    ]
+    _seed_summary(store, docstore, embedder, paper_id=paper_id, summary_id=f"{paper_id}:summary",
+                  summary_text="causal inference book overview", doc_type="book",
+                  chapter_summaries=chapter_summaries)
+    for cs in chapter_summaries:
+        docstore._summaries[cs.summary_id] = cs.text
+        store.upsert(cs.summary_id, embedder.embed([cs.text])[0],
+                     _payload(paper_id, "summary", "Ch.", ("cs.LG",), embedder, cs.text,
+                              doc_type="book"))
+
+    results, _coverage = _make_retriever(store, docstore, FakeReranker(), embedder).retrieve_papers(
+        "causal", filters=SearchFilters(paper_id=paper_id), k=8)
+
+    # Same 9-hits-for-this-paper_id shape as the doc_type-scoped test above; unscoped this would be
+    # capped to _MAX_HITS_PER_PAPER=3 -- scoped by paper_id, more than that must survive.
+    assert len(results) > _mod._MAX_HITS_PER_PAPER
+    assert len({r.view.paper_id for r in results}) == 1
+
+
 def test_search_papers_unscoped_still_caps_at_three_with_doc_type_filter_absent():
     """Regression guard for the unscoped path: with no `doc_type` filter, the T-DOC82 cap must be
     unchanged -- this is the same scenario as `test_search_papers_caps_chapter_hits_per_paper`
@@ -845,12 +886,25 @@ def test_search_papers_unscoped_still_caps_at_three_with_doc_type_filter_absent(
     assert len(results) == _mod._MAX_HITS_PER_PAPER
 
 
-def test_is_scoped_true_only_when_doc_type_set():
+def test_is_scoped_true_when_doc_type_or_paper_id_set():
     assert _mod._is_scoped(None) is False
     assert _mod._is_scoped(SearchFilters()) is False
-    assert _mod._is_scoped(SearchFilters(categories=["cs.LG"])) is False
     assert _mod._is_scoped(SearchFilters(doc_type="book")) is True
     assert _mod._is_scoped(SearchFilters(doc_type="paper")) is True
+    # Decision 3 option A: paper_id narrows to one document, same as doc_type.
+    assert _mod._is_scoped(SearchFilters(paper_id="local:abc123def456")) is True
+    assert _mod._is_scoped(SearchFilters(doc_type="book", paper_id="local:abc123def456")) is True
+
+
+def test_is_scoped_false_for_corpus_wide_filters_alone():
+    # categories and the published-date range are corpus-wide (many documents can match) -- the
+    # T-DOC82 diversity argument still applies under them, so neither counts as scoping on its own.
+    assert _mod._is_scoped(SearchFilters(categories=["cs.LG"])) is False
+    assert _mod._is_scoped(SearchFilters(published_after=date(2026, 1, 1))) is False
+    assert _mod._is_scoped(SearchFilters(published_before=date(2026, 6, 1))) is False
+    assert _mod._is_scoped(
+        SearchFilters(categories=["cs.LG"], published_after=date(2026, 1, 1))
+    ) is False
 
 
 def test_cap_per_paper_runs_after_rerank_and_before_k_truncation_when_scoped():

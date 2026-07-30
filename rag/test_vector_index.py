@@ -130,6 +130,42 @@ def test_qdrant_filter_doc_type_paper_includes_legacy_points():
     )
 
 
+def test_qdrant_filter_paper_id():
+    # Decision 3 option A: paper_id restricts to VectorPayload.paper_id, same MatchValue shape as
+    # kind/doc_type above.
+    real = pytest.importorskip("rag.vector_index")
+    f = real._qdrant_filter(SearchFilters(paper_id="local:abc123def456"))
+    assert (
+        real.models.FieldCondition(
+            key="paper_id", match=real.models.MatchValue(value="local:abc123def456")
+        )
+        in f.must
+    )
+
+
+def test_qdrant_filter_paper_id_combines_with_doc_type_and_kind():
+    # AND semantics: every non-None SearchFilters field lands in the same `must` list, so
+    # paper_id narrows alongside doc_type/kind rather than one silently overriding the other.
+    real = pytest.importorskip("rag.vector_index")
+    f = real._qdrant_filter(
+        SearchFilters(paper_id="local:abc123def456", doc_type="book", kind="summary")
+    )
+    assert (
+        real.models.FieldCondition(
+            key="paper_id", match=real.models.MatchValue(value="local:abc123def456")
+        )
+        in f.must
+    )
+    assert (
+        real.models.FieldCondition(key="doc_type", match=real.models.MatchValue(value="book"))
+        in f.must
+    )
+    assert (
+        real.models.FieldCondition(key="kind", match=real.models.MatchValue(value="summary"))
+        in f.must
+    )
+
+
 # ==================================================================================================
 # T-DOC94 — the client's construction-time `timeout` was absent entirely, so the vendor library's
 # ~5s REST default applied to every call, including create_and_download_snapshot()'s
@@ -342,6 +378,39 @@ def assert_filters_by_doc_type(adapter):
     assert [h.id for h in hits] == ["b"]
 
 
+def assert_filters_by_paper_id(adapter):
+    # Decision 3 option A: paper_id restricts results to that one document.
+    adapter.upsert("a", [1.0, 0.0], _payload(paper_id="2506.00001"))
+    adapter.upsert("b", [1.0, 0.0], _payload(paper_id="2506.00002"))
+    hits = adapter.hybrid_search(
+        qvec=[1.0, 0.0], qtext="method", filters=SearchFilters(paper_id="2506.00002"), k=10
+    )
+    assert [h.id for h in hits] == ["b"]
+
+
+def assert_filters_by_paper_id_combines_with_doc_type_and_kind(adapter):
+    # AND semantics across the real adapter, not just the pure `_qdrant_filter` unit test above --
+    # a paper_id match on the WRONG kind/doc_type must not surface.
+    adapter.upsert(
+        "match", [1.0, 0.0], _payload(paper_id="local:target", doc_type="book", kind="summary")
+    )
+    adapter.upsert(
+        # same paper_id, wrong kind -- must be excluded by the combined filter
+        "wrong_kind", [1.0, 0.0], _payload(paper_id="local:target", doc_type="book", kind="chunk")
+    )
+    adapter.upsert(
+        # same kind/doc_type, wrong paper_id -- must be excluded by the combined filter
+        "wrong_paper", [1.0, 0.0], _payload(paper_id="local:other", doc_type="book", kind="summary")
+    )
+    hits = adapter.hybrid_search(
+        qvec=[1.0, 0.0],
+        qtext="method",
+        filters=SearchFilters(paper_id="local:target", doc_type="book", kind="summary"),
+        k=10,
+    )
+    assert [h.id for h in hits] == ["match"]
+
+
 def assert_legacy_payload_without_doc_type_counts_as_paper(adapter):
     # T-DOC80: points upserted before doc_type existed have no doc_type payload key at all --
     # both adapters must still treat them as "paper", not exclude them or match everything. This
@@ -382,6 +451,8 @@ CONTRACT = (
     assert_filters_by_date_range,
     assert_filters_by_kind,
     assert_filters_by_doc_type,
+    assert_filters_by_paper_id,
+    assert_filters_by_paper_id_combines_with_doc_type_and_kind,
     assert_legacy_payload_without_doc_type_counts_as_paper,
     assert_top1_is_the_dominant_document,
     assert_rebuild_reproduces_results,

@@ -58,17 +58,17 @@ class McpServer:
         self, query: str, filters: SearchFilters | None = None, k: int | None = None
     ) -> SearchResponse:
         """Passage-level search, delegated whole to `Retriever.retrieve()`. Always searches the
-        full chunk index across the whole corpus — `filters` (`SearchFilters`) can narrow by
-        category/date/kind, but has no paper-id field, so this tool alone cannot be scoped to one
-        paper or a known handful of papers. If the query is about a specific paper or a small set
-        of papers you already suspect matter, call `search_papers` first: it identifies which
-        paper(s) are actually relevant from a cheap summary-level match before any chunk search
-        runs, so you can decide whether a full-corpus chunk search is even needed and can check
-        this tool's results (each carries its own `paper_id`) against that expectation instead of
-        trusting an unscoped search alone. This project's agent-as-reasoner design (CONTEXT.md,
-        PRD.md §11A) puts that sequencing decision on the calling agent; this server never
-        auto-rewrites or narrows a query on its own. Postcondition: on an empty corpus/no hits,
-        `results == []` — empty is a valid answer, not an error.
+        full chunk index across the whole corpus by default — `filters` (`SearchFilters`) can
+        narrow by category/date/kind, and, once you already know which paper matters (e.g. from a
+        prior `search_papers` call), by `paper_id` to scope to that one document. If the query is
+        about a specific paper or a small set of papers you don't yet suspect, call `search_papers`
+        first: it identifies which paper(s) are actually relevant from a cheap summary-level match
+        before any chunk search runs, so you can decide whether a full-corpus chunk search is even
+        needed and can check this tool's results (each carries its own `paper_id`) against that
+        expectation instead of trusting an unscoped search alone. This project's agent-as-reasoner
+        design (CONTEXT.md, PRD.md §11A) puts that sequencing decision on the calling agent; this
+        server never auto-rewrites or narrows a query on its own. Postcondition: on an empty
+        corpus/no hits, `results == []` — empty is a valid answer, not an error.
 
         `k=None` (a caller that omits it entirely) resolves to `self._default_k` (`Config.top_k`,
         wired via `app/assembly.py::build_mcp_server`); an explicit `k` always overrides it.

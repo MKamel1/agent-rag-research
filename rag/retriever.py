@@ -63,9 +63,9 @@ _RERANK_POOL_SIZE = 32
 _MAX_HITS_PER_PAPER = 3
 
 # Decision 2 (docs/DECISIONS-PENDING-operator.md, option B, operator-approved): once the caller has
-# already narrowed the search (`filters.doc_type` set today; any future per-document field, e.g. a
-# `paper_id` filter, should count the same way -- see `_is_scoped`), the diversity rationale above
-# no longer applies -- the caller has *asked* for depth in a narrow slice, not breadth across many.
+# already narrowed the search (`filters.doc_type` or `filters.paper_id` set -- see `_is_scoped`),
+# the diversity rationale above no longer applies -- the caller has *asked* for depth in a narrow
+# slice, not breadth across many.
 #
 # Sized from the corpus, not copied from a single measurement: the eval corpus's book chapter
 # counts range 8-44 per book, and `k` is typically 10. 50 sits above the largest observed
@@ -79,13 +79,13 @@ _MAX_HITS_PER_PAPER_SCOPED = 50
 def _is_scoped(filters: SearchFilters | None) -> bool:
     """True once the caller has narrowed results to one document/doc_type, per Decision 2 option B.
 
-    Only `doc_type` exists as a per-document narrowing field on `SearchFilters` today. `categories`
-    and the published-date range are corpus-wide filters (many documents can match), so they do NOT
-    count as scoping -- the T-DOC82 diversity argument still applies under them. If a future field
-    narrows to a single document (e.g. `paper_id`, Decision 3 in the same doc), add it here the same
-    way `doc_type` is checked.
+    `doc_type` and `paper_id` (Decision 3, option A) are the per-document narrowing fields on
+    `SearchFilters` -- `paper_id` narrows to exactly one document, an even stronger case for the
+    relaxed cap than `doc_type`. `categories` and the published-date range are corpus-wide filters
+    (many documents can match), so they do NOT count as scoping -- the T-DOC82 diversity argument
+    still applies under them.
     """
-    return filters is not None and filters.doc_type is not None
+    return filters is not None and (filters.doc_type is not None or filters.paper_id is not None)
 
 
 def _cap_per_paper(

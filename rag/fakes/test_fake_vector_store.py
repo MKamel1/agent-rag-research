@@ -145,6 +145,16 @@ def test_filters_restrict_by_kind():
     assert [h.id for h in hits] == ["summary1"]
 
 
+def test_filters_restrict_by_paper_id():
+    store = FakeVectorStore()
+    store.upsert("a", [1.0, 0.0], _payload(paper_id="2506.00001"))
+    store.upsert("b", [1.0, 0.0], _payload(paper_id="2506.00002"))
+    hits = store.hybrid_search(
+        qvec=[1.0, 0.0], qtext="x", filters=SearchFilters(paper_id="2506.00002"), k=10
+    )
+    assert [h.id for h in hits] == ["b"]
+
+
 def test_doc_type_filter_book_only():
     store = FakeVectorStore()
     store.upsert("p", [1.0, 0.0], _payload(doc_type="paper"))

@@ -257,7 +257,8 @@ Ten modules, each independently ownable (owners A–F) and testable through its 
   §M6 — never a raw dict. **Routing (T-DOC34):** summary-level routing (§6 "coarse routing," ADR-11) is
   surfaced only as tool-description guidance on `search_papers`/`semantic_search` (`rag/mcp_server.py`
   docstrings) telling the calling agent to call `search_papers` first for paper-scoped queries — there is
-  no server-side auto-narrowing and no paper-id field on `SearchFilters`, consistent with the
+  no server-side auto-narrowing; the calling agent decides when to pass `SearchFilters.paper_id`
+  (Decision 3, docs/DECISIONS-PENDING-operator.md) to scope a follow-up call, consistent with the
   agent-as-reasoner decision (CONTEXT.md, PRD.md §11A).
 - **Hides:** composes `Retriever` + `DocumentStore`, formats citations. (Thin by nature — it's the
   protocol adapter; it calls `Retriever`'s two methods and wraps their output, it does not reimplement

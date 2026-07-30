@@ -93,6 +93,8 @@ class FakeVectorStore:
                 return False
         if filters.kind is not None and payload["kind"] != filters.kind:
             return False
+        if filters.paper_id is not None and payload["paper_id"] != filters.paper_id:
+            return False
         if filters.doc_type is not None:
             # .get: points upserted before T-DOC80 carry no doc_type key -- they are all papers.
             if payload.get("doc_type", "paper") != filters.doc_type:

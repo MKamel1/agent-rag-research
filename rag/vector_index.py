@@ -134,6 +134,10 @@ def _qdrant_filter(filters: SearchFilters | None) -> models.Filter | None:
         )
     if filters.kind is not None:
         must.append(models.FieldCondition(key="kind", match=models.MatchValue(value=filters.kind)))
+    if filters.paper_id is not None:
+        must.append(
+            models.FieldCondition(key="paper_id", match=models.MatchValue(value=filters.paper_id))
+        )
     if filters.doc_type == "book":
         must.append(models.FieldCondition(key="doc_type", match=models.MatchValue(value="book")))
     elif filters.doc_type == "paper":
