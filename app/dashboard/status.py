@@ -102,25 +102,60 @@ def read_corpus(data_dir: str | Path) -> dict:
     """Stage funnel (+ quarantine count) and top quarantine reasons, from `<data_dir>/papers.db`
     -- always the same fixed path (matches the HARD CONSTRAINT that this reader never touches
     anything but `papers.db`; every observed run's manifest `db_path` is this same path anyway).
-    Returns `{"funnel": {...}, "quarantine_reasons": [...]}`."""
+    Returns `{"funnel": {...}, "by_doc_type": {...}, "quarantine_reasons": [...]}`."""
     db_path = Path(data_dir) / _DEFAULT_DB_NAME
     conn = _ro_connect(db_path)
     if conn is None:
-        return {"funnel": _null_funnel(), "quarantine_reasons": []}
+        return {"funnel": _null_funnel(), "by_doc_type": {}, "quarantine_reasons": []}
     try:
         stage_counts = dict(
             conn.execute("SELECT stage, count(*) FROM ingest_state GROUP BY stage").fetchall()
         )
         quarantine_count, reason_pairs = quarantine_summary(conn)
+        by_doc_type = _funnels_by_doc_type(conn)
     except sqlite3.Error:
-        return {"funnel": _null_funnel(), "quarantine_reasons": []}
+        return {"funnel": _null_funnel(), "by_doc_type": {}, "quarantine_reasons": []}
     finally:
         conn.close()
 
     funnel = _funnel_from_stage_counts(stage_counts)
     funnel["quarantined"] = quarantine_count
     quarantine_reasons = [{"reason": reason, "count": count} for reason, count in reason_pairs]
-    return {"funnel": funnel, "quarantine_reasons": quarantine_reasons}
+    return {"funnel": funnel, "by_doc_type": by_doc_type, "quarantine_reasons": quarantine_reasons}
+
+
+# Books and papers share one pipeline but are worth watching apart: a dropped book that stalls at
+# `parsed` is invisible in the combined funnel, which is dominated by ~12k papers. The stage lives
+# in `ingest_state`, the type in `papers`; they join on paper_id. Cumulative semantics come from
+# `_funnel_from_stage_counts` -- reused per type rather than reimplemented, so the split can never
+# drift from the combined funnel's meaning.
+def _funnels_by_doc_type(conn: sqlite3.Connection) -> dict[str, dict[str, int]]:
+    rows = conn.execute(
+        "SELECT p.doc_type, i.stage, count(*) FROM ingest_state i "
+        "JOIN papers p ON p.paper_id = i.paper_id GROUP BY p.doc_type, i.stage"
+    ).fetchall()
+    per_type: dict[str, dict[str, int]] = {}
+    for doc_type, stage, n in rows:
+        per_type.setdefault(str(doc_type), {})[str(stage)] = int(n)
+
+    quarantined = dict(
+        conn.execute(
+            # Same OG-44 exclusion `quarantine_summary` applies: `quarantine` is an append-only
+            # dead-letter log, so a paper that later succeeded must not still read as stuck.
+            "SELECT p.doc_type, count(*) FROM quarantine q "
+            "JOIN papers p ON p.paper_id = q.paper_id "
+            "WHERE NOT EXISTS (SELECT 1 FROM ingest_state s "
+            "                  WHERE s.paper_id = q.paper_id AND s.stage = 'done') "
+            "GROUP BY p.doc_type"
+        ).fetchall()
+    )
+
+    out = {}
+    for doc_type, stage_counts in per_type.items():
+        funnel = _funnel_from_stage_counts(stage_counts)
+        funnel["quarantined"] = int(quarantined.get(doc_type, 0))
+        out[doc_type] = funnel
+    return out
 
 
 def _ro_connect(db_path: Path) -> sqlite3.Connection | None:
