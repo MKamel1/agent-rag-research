@@ -66,8 +66,11 @@ class _FakeStatus:
             "gpu_util_pct": 80.0, "vram_mib": 9000, "power_w": 200.0,
         }
 
-    def read_downloads(self, data_dir, target):
-        return {"cached_pdfs": 20, "sidecars": 15, "target": target}
+    def read_downloads(self, data_dir, prefetch_target):
+        return {
+            "staged_pdfs": 20, "sidecars": 15, "prefetch_target": prefetch_target,
+            "stalled": False, "new_last_pass": None,
+        }
 
     def read_consistency(self, done_count, collection):
         return {"sqlite_done": done_count, "vector_points": 500, "consistent": True}
@@ -302,7 +305,9 @@ def test_status_route_shape_matches_api_contract(running_server):
     assert set(body["telemetry"].keys()) == {
         "stage", "papers_per_hour", "gpu_util_pct", "vram_mib", "power_w", "wall_clock_s", "eta_s",
     }
-    assert set(body["downloads"].keys()) == {"cached_pdfs", "sidecars", "target"}
+    assert set(body["downloads"].keys()) == {
+        "staged_pdfs", "sidecars", "prefetch_target", "stalled", "new_last_pass",
+    }
     assert set(body["downloader"].keys()) == {"prefetch_alive", "downloaded", "prefetch_target"}
     assert set(body["disk"].keys()) == {"free_gb", "total_gb", "used_pct"}
     assert set(body["consistency"].keys()) == {"sqlite_done", "vector_points", "consistent"}
@@ -403,6 +408,24 @@ def test_status_dict_threads_real_read_corpus_done_into_read_telemetry(tmp_path)
     _status_dict(tmp_path, RealStatusSpy(), _FakeController())
 
     assert calls == [3]  # real _funnel_from_stage_counts: 3 "done" + 1 "parsed" behind it
+
+
+def test_status_dict_passes_prefetch_target_not_the_run_target(tmp_path):
+    """Regression: server.py used to pass live.get('target') -- the run's PROCESSING target -- as
+    the denominator for DOWNLOADED pdfs, while the downloader aims at cfg.prefetch_target. The fake
+    controller's manifest target is 100; config.example.yaml's prefetch_target is 30000 -- if the
+    wrong one leaks through, this test catches it."""
+    seen = {}
+
+    class SpyStatus(_FakeStatus):
+        def read_downloads(self, data_dir, prefetch_target):
+            seen["prefetch_target"] = prefetch_target
+            return super().read_downloads(data_dir, prefetch_target)
+
+    _status_dict(tmp_path, SpyStatus(), _FakeController())
+
+    assert seen["prefetch_target"] == server_mod._static_config(tmp_path).prefetch_target
+    assert seen["prefetch_target"] != 100  # the manifest's (unrelated) run target
 
 
 def test_control_without_token_is_rejected(running_server):
