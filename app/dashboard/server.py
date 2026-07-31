@@ -48,7 +48,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 from app.assembly import build_mcp_server
-from app.dashboard import controller, status
+from app.dashboard import controller, status, tag_pool
 from app.dashboard.controller import InvalidOverrideError
 from app.usage_log import UsageLog, read_usage_summary
 from contracts.config import Config
@@ -104,6 +104,19 @@ def _validate_editable_kwargs(kwargs: dict) -> None:
         value = kwargs.get(field)
         if value is not None and not _DATE_RE.match(value):
             raise ControlValidationError(f"{field} {value!r} is not YYYY-MM-DD or YYYYMMDD")
+
+
+def _validate_tags(tags: list[str]) -> None:
+    """`add_tags` is the one tag-pool action that introduces brand-new query strings (`hold_tags`/
+    `restore_tags` only move EXISTING pool entries around) -- same boundary check
+    `_validate_editable_kwargs` already applies to `keywords`, since an added tag ends up in the
+    same `focus_area_queries` an arXiv query gets built from."""
+    for tag in tags:
+        if _UNSAFE_KEYWORD_CHARS_RE.search(tag):
+            raise ControlValidationError(
+                f"tag {tag!r} contains a '\"' or '\\\\', which would break the arXiv query it's "
+                "added to"
+            )
 
 
 def _validate_control_kwargs(target: int, parse_workers: int, kwargs: dict) -> None:
@@ -254,6 +267,10 @@ def _status_dict(data_dir: Path, status_module, controller_module) -> dict:
     corpus = status_module.read_corpus(data_dir)
     done = corpus["funnel"].get("done")
     manifest_parse_batch_size = live.get("parse_batch_size")
+    # T-DOC41/D-5 Part 2: the persistent tag pool (app/dashboard/tag_pool.py), NOT a second read of
+    # config.yaml -- `active_count` is what Part 1's exhaustion banner names, so the two features
+    # can never drift apart (both read this same composed pool).
+    pool = tag_pool.load(data_dir, _static_config(data_dir).focus_area_queries)
     return {
         "funnel": corpus["funnel"],
         "by_doc_type": corpus["by_doc_type"],
@@ -284,6 +301,7 @@ def _status_dict(data_dir: Path, status_module, controller_module) -> dict:
             "pending_drop_in": bool(live.get("pending_drop_in")),
         },
         "usage": read_usage_summary(data_dir / "mcp_usage.db"),
+        "tags": {**pool, "active_count": len(pool["active"]), "held_count": len(pool["held"])},
     }
 
 
@@ -548,6 +566,16 @@ def make_handler(
                 )
             elif action == "start_drop_in":
                 controller_module.start_drop_in(data_dir)
+            elif action == "add_tags":
+                tags = [str(t) for t in body.get("tags") or []]
+                _validate_tags(tags)
+                tag_pool.add(data_dir, _static_config(data_dir).focus_area_queries, tags)
+            elif action == "hold_tags":
+                tags = [str(t) for t in body.get("tags") or []]
+                tag_pool.hold(data_dir, _static_config(data_dir).focus_area_queries, tags)
+            elif action == "restore_tags":
+                tags = [str(t) for t in body.get("tags") or []]
+                tag_pool.restore(data_dir, _static_config(data_dir).focus_area_queries, tags)
             elif action == "pause":
                 controller_module.pause(data_dir)
             elif action == "resume":

@@ -292,7 +292,7 @@ def test_status_route_shape_matches_api_contract(running_server):
     assert status == 200
     assert set(body.keys()) == {
         "funnel", "by_doc_type", "run", "telemetry", "downloads", "downloader", "disk",
-        "consistency", "quarantine_reasons", "search", "tei", "drop_in", "usage",
+        "consistency", "quarantine_reasons", "search", "tei", "drop_in", "usage", "tags",
     }
     assert set(body["funnel"].keys()) == {
         "harvested", "parsed", "chunked", "summarized", "embedded", "stored", "done", "quarantined",
@@ -499,6 +499,90 @@ def test_status_route_includes_usage_block(running_server):
     assert "available" in body["usage"]
     # No mcp_usage.db has been written in this tmp_path -- available: false, not a wall of zeros.
     assert body["usage"]["available"] is False
+
+
+# --- T-DOC41/D-5 Part 2: tag pool block + add/hold/restore_tags control actions ------------------
+
+
+def test_status_route_includes_tags_block(running_server):
+    url, _ = running_server
+    status, body = _get(url, "/api/status")
+    assert status == 200
+    assert set(body["tags"]) >= {"active", "held", "active_count", "held_count"}
+    # First touch seeds from config.example.yaml's own focus_area_queries (RAG_CONFIG, this
+    # suite's conftest) -- 33 queries, none held yet.
+    assert body["tags"]["active_count"] == len(body["tags"]["active"])
+    assert body["tags"]["held_count"] == 0
+
+
+def test_control_hold_tags_moves_a_tag_to_held(running_server):
+    url, _ = running_server
+    _, first_status = _get(url, "/api/status")
+    a_tag = first_status["tags"]["active"][0]
+
+    resp_status, resp = _post(url, "/api/control", {"action": "hold_tags", "tags": [a_tag]})
+    assert resp_status == 200
+    assert resp["ok"] is True
+
+    status, body = _get(url, "/api/status")
+    assert status == 200
+    assert a_tag not in body["tags"]["active"]
+    assert a_tag in [h["query"] for h in body["tags"]["held"]]
+
+
+def test_control_restore_tags_brings_a_held_tag_back(running_server):
+    url, _ = running_server
+    _, first_status = _get(url, "/api/status")
+    a_tag = first_status["tags"]["active"][0]
+    _post(url, "/api/control", {"action": "hold_tags", "tags": [a_tag]})
+
+    resp_status, resp = _post(url, "/api/control", {"action": "restore_tags", "tags": [a_tag]})
+    assert resp_status == 200
+    assert resp["ok"] is True
+
+    status, body = _get(url, "/api/status")
+    assert a_tag in body["tags"]["active"]
+    assert a_tag not in [h["query"] for h in body["tags"]["held"]]
+
+
+def test_control_add_tags_adds_a_new_query(running_server):
+    url, _ = running_server
+    status, resp = _post(url, "/api/control", {"action": "add_tags", "tags": ["a new topic"]})
+    assert status == 200
+    assert resp["ok"] is True
+
+    _, body = _get(url, "/api/status")
+    assert "a new topic" in body["tags"]["active"]
+
+
+def test_control_add_tags_rejects_a_quote_injection_tag(running_server):
+    url, _ = running_server
+    status, resp = _post(url, "/api/control", {"action": "add_tags", "tags": ['bad"tag']})
+    assert status == 400
+    assert resp["ok"] is False
+
+
+def test_control_hold_tags_refuses_to_empty_the_pool(running_server):
+    url, _ = running_server
+    _, first_status = _get(url, "/api/status")
+    everything = first_status["tags"]["active"]
+
+    status, resp = _post(url, "/api/control", {"action": "hold_tags", "tags": everything})
+    assert status == 400
+    assert resp["ok"] is False
+
+
+def test_control_without_token_is_rejected_for_hold_tags(running_server):
+    url, _ = running_server
+    req = urllib.request.Request(
+        url + "/api/control", data=json.dumps({"action": "hold_tags", "tags": ["x"]}).encode(),
+        method="POST", headers={"Content-Type": "application/json"},
+    )
+    try:
+        urllib.request.urlopen(req, timeout=5.0)
+        raise AssertionError("expected HTTPError")
+    except urllib.error.HTTPError as e:
+        assert e.code == 401
 
 
 def test_control_start_drop_in_dispatches_and_returns_ok(running_server):
