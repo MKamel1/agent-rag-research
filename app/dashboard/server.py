@@ -232,7 +232,22 @@ def _control_kwargs(body: dict) -> dict:
 
 def _status_dict(data_dir: Path, status_module, controller_module) -> dict:
     """Merges `controller.liveness()` (run identity) with `status.py`'s pure reads (funnel,
-    telemetry, downloads, downloader, disk, consistency) into the exact `/api/status` JSON shape."""
+    telemetry, downloads, downloader, disk, consistency, drop-in tray) into the exact
+    `/api/status` JSON shape.
+
+    KNOWN TRAP: `_static_config(data_dir).drop_in_dir` is NEVER read directly here --
+    `Config.drop_in_dir` is relative whenever config.yaml omits it, and a relative value means a
+    DIFFERENT directory to this dashboard process (cwd=<repo root>) than to the
+    `app.ingest_local` child `controller.start_drop_in` spawns (cwd=<data_dir>). Routing through
+    `controller_module.resolve_drop_dir` (the same helper `_spawn_drop_in` uses) is what keeps
+    this block honest about which directory is actually being scanned -- see that helper's own
+    docstring for the full story."""
+    drop_dir = controller_module.resolve_drop_dir(_static_config(data_dir))
+    # Promotion runs here, before liveness/the block below are read, so a queued drop-in starts
+    # as soon as the previous run goes terminal without the operator having to click anything. It
+    # is lock-guarded and idempotent (controller.promote_pending_drop_in), so calling it on every
+    # poll is safe.
+    controller_module.promote_pending_drop_in(data_dir)
     live = controller_module.liveness(data_dir) or {}
     corpus = status_module.read_corpus(data_dir)
     done = corpus["funnel"].get("done")
@@ -260,6 +275,11 @@ def _status_dict(data_dir: Path, status_module, controller_module) -> dict:
             "hybrid_dense_weight": _static_config(data_dir).hybrid_dense_weight,
         },
         "tei": status_module.read_tei_status(),
+        "drop_in": {
+            **status_module.read_drop_in(drop_dir, data_dir / "papers.db"),
+            "dir": str(drop_dir),
+            "pending_drop_in": bool(live.get("pending_drop_in")),
+        },
     }
 
 
@@ -471,6 +491,7 @@ def make_handler(
                 self._json(400, {"ok": False, "message": str(e)})
                 return
             except (controller_module.DoubleRunError, controller_module.NoRunError,
+                    controller_module.DropInPendingError,
                     KeyError, TypeError, ValueError, OSError) as e:
                 # ValueError: e.g. `int(body["target"])` on a non-numeric `"target"` -- previously
                 # uncaught, dropping the connection with no response body at all. OSError: e.g.
@@ -503,6 +524,8 @@ def make_handler(
                 controller_module.start(
                     data_dir, _static_config(data_dir).prefetch_target, 1, mode="download", **kwargs,
                 )
+            elif action == "start_drop_in":
+                controller_module.start_drop_in(data_dir)
             elif action == "pause":
                 controller_module.pause(data_dir)
             elif action == "resume":
