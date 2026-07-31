@@ -411,16 +411,58 @@ def _read_gpu() -> dict:
 
 # --- downloads (pdf_cache/) -----------------------------------------------------------------
 
+# app/prefetch_pdfs.py:417 logs this every stalled pass and nothing has ever read it -- the system
+# knew it had exhausted arXiv for the configured queries and never told the operator.
+_DOWNLOAD_STALL_RE = re.compile(
+    r"prefetch stalled: (\d+)/(\d+) cached, only (\d+) new available"
+)
 
-def read_downloads(data_dir: str | Path, target: int | None) -> dict:
+
+def read_downloads(data_dir: str | Path, prefetch_target: int | None) -> dict:
+    """Staged-PDF count paired with `prefetch_target` -- `Config.prefetch_target` (30,000), what
+    `app.prefetch_pdfs` actually aims at, NOT the run's processing target (a different, usually
+    much smaller, number `server._status_dict` used to pass here by mistake).
+
+    `stalled`/`new_last_pass` come from the same `<data_dir>/prefetch.log` tail
+    `read_downloader` already reads (`_DOWNLOAD_PACE_RE`): whichever of `_DOWNLOAD_STALL_RE` /
+    `_DOWNLOAD_PACE_RE`'s last match sits LATER in the tail wins, so a stall line followed by a
+    fresher pace line correctly clears `stalled`. Missing/unreadable log or no match ⇒
+    `stalled: False`, `new_last_pass: None` -- never a fabricated `0`."""
     cache_dir = Path(data_dir) / "pdf_cache"
+    stalled, new_last_pass = _tail_download_stall(Path(data_dir) / _PREFETCH_LOG_NAME)
     if not cache_dir.is_dir():
-        return {"cached_pdfs": None, "sidecars": None, "target": target}
+        return {
+            "staged_pdfs": None, "sidecars": None, "prefetch_target": prefetch_target,
+            "stalled": stalled, "new_last_pass": new_last_pass,
+        }
     return {
-        "cached_pdfs": len(glob.glob(str(cache_dir / "*.pdf"))),
+        "staged_pdfs": len(glob.glob(str(cache_dir / "*.pdf"))),
         "sidecars": len(glob.glob(str(cache_dir / "*.json"))),
-        "target": target,
+        "prefetch_target": prefetch_target,
+        "stalled": stalled, "new_last_pass": new_last_pass,
     }
+
+
+def _tail_download_stall(log_path: str | Path) -> tuple[bool, int | None]:
+    """`(stalled, new_last_pass)` -- scans the same tail window `_tail_download_pace` does. The
+    LATER of the last stall match and the last pace match wins (byte offset within the tail), so a
+    stall immediately followed by fresh progress reads as NOT stalled."""
+    try:
+        path = Path(log_path)
+        size = path.stat().st_size
+        with path.open("rb") as f:
+            f.seek(max(0, size - _LOG_TAIL_BYTES))
+            tail = f.read().decode(errors="replace")
+    except OSError:
+        return False, None
+    stall_matches = list(_DOWNLOAD_STALL_RE.finditer(tail))
+    if not stall_matches:
+        return False, None
+    pace_matches = list(_DOWNLOAD_PACE_RE.finditer(tail))
+    last_stall = stall_matches[-1]
+    if pace_matches and pace_matches[-1].start() > last_stall.start():
+        return False, None
+    return True, int(last_stall.group(3))
 
 
 # --- downloader liveness + pace (app.prefetch_pdfs, OG-43) --------------------------------------
