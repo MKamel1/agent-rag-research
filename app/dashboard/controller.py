@@ -74,6 +74,7 @@ import yaml
 from pydantic import ValidationError
 
 from app import tei_lifecycle
+from app.dashboard import tag_pool
 from contracts.config import Config
 from rag.config import load_config
 
@@ -615,22 +616,29 @@ def _maybe_build_override(
     ordering: str | None = None,
     stranded_policy: str | None = None,
 ) -> tuple[Config, Path | None]:
-    """Builds a run-scoped override `Config` + scratch `config.yaml` dir when `keywords` (AUGMENTED
-    onto `focus_area_queries` -- owner decision: an edit adds topics to the one library, it never
-    replaces it), `remove_keywords` (removes topics -- applied AFTER the augment merge, so add+
-    remove in one request is well-defined; a superseding owner decision for removal specifically,
-    the augment-only rule stands for `keywords`), `parse_batch_size`, the OG-45 arXiv DOWNLOAD
-    filters (`arxiv_categories`/`arxiv_date_from`/`arxiv_date_to`), or the OG-46 `ordering` actually
-    change anything relative to the base config. Returns `(cfg, None)` unchanged when nothing edits
-    -- a run that edits nothing launches exactly the old way (`cwd=data_dir`, no override dir, no
-    scratch files).
+    """Builds a run-scoped override `Config` + scratch `config.yaml` dir when the composed tag
+    pool, `parse_batch_size`, the OG-45 arXiv DOWNLOAD filters (`arxiv_categories`/
+    `arxiv_date_from`/`arxiv_date_to`), or the OG-46 `ordering` actually change anything relative
+    to the base config. Returns `(cfg, None)` unchanged when nothing edits -- a run that edits
+    nothing launches exactly the old way (`cwd=data_dir`, no override dir, no scratch files).
 
-    Removing a keyword that isn't present is a harmless no-op. Removing every keyword is refused
-    (`InvalidOverrideError`) -- an empty `focus_area_queries` leaves the downloader with nothing to
-    search; `contracts/config.py` doesn't constrain the field's length, so this explicit guard is
-    the only thing standing between a `remove_keywords` request and a dead run. This works on the
-    base config.yaml's own queries too, not just ones added via `keywords` in this same request --
-    the override always writes the resulting list wholesale.
+    `focus_area_queries` is now composed from `tag_pool.active_queries(data_dir, ...)`, NOT from
+    `cfg.focus_area_queries` directly -- `tag_pool.json` (seeded from `cfg.focus_area_queries` on
+    first touch) is the persistent source of truth, so an edit made in a PRIOR run's request is
+    still active here even when this call passes no `keywords`/`remove_keywords` at all. That is
+    the fix for the bug this replaces: edits used to live only in a run-scoped scratch
+    `config.yaml` that `_cleanup_run_cwd` deleted once the run went terminal, so the next run
+    silently reverted to the base config's queries.
+
+    `keywords` writes through `tag_pool.add` (augments the pool -- adds topics, reactivates a held
+    one, never replaces -- owner decision); `remove_keywords` writes through `tag_pool.hold`
+    (parks topics, applied AFTER `add` so add+remove in one request is well-defined -- a
+    superseding owner decision for removal specifically). Both are the SAME add/remove meaning
+    `keywords`/`remove_keywords` always had; they simply persist now instead of dying with the run.
+
+    Holding a tag that isn't active is a harmless no-op. Holding every active tag is refused
+    (`tag_pool.hold` raises `InvalidOverrideError`, pool left untouched) -- an empty
+    `focus_area_queries` leaves the downloader with nothing to search.
 
     Removing a keyword only stops FUTURE downloads matching it; papers already ingested stay in
     the corpus -- deleting corpus content is a separate, out-of-scope, destructive action.
@@ -643,17 +651,13 @@ def _maybe_build_override(
     raises `InvalidOverrideError` here, pre-spawn.
     """
     updates: dict = {}
-    if keywords or remove_keywords:
-        merged = cfg.focus_area_queries + [k for k in (keywords or []) if k not in cfg.focus_area_queries]
-        if remove_keywords:
-            merged = [q for q in merged if q not in remove_keywords]
-            if not merged:
-                raise InvalidOverrideError(
-                    "remove_keywords would remove every focus_area_queries entry -- refusing, "
-                    "the downloader would have nothing left to search"
-                )
-        if merged != cfg.focus_area_queries:
-            updates["focus_area_queries"] = merged
+    if keywords:
+        tag_pool.add(data_dir, cfg.focus_area_queries, keywords)
+    if remove_keywords:
+        tag_pool.hold(data_dir, cfg.focus_area_queries, remove_keywords)
+    composed_queries = tag_pool.active_queries(data_dir, cfg.focus_area_queries)
+    if composed_queries != cfg.focus_area_queries:
+        updates["focus_area_queries"] = composed_queries
     if parse_batch_size is not None and parse_batch_size != cfg.parse_batch_size:
         updates["parse_batch_size"] = parse_batch_size
     if arxiv_categories is not None and arxiv_categories != cfg.arxiv_categories:
@@ -806,7 +810,13 @@ def _build_manifest(
 
 
 def _control_lock(data_dir: Path) -> filelock.FileLock:
-    return filelock.FileLock(str(data_dir / _CONTROL_LOCK_NAME))
+    """`is_singleton=True` (filelock >= 3.29): every call for the same `data_dir` resolves to the
+    SAME `FileLock` instance, so a nested `with _control_lock(data_dir):` from the SAME thread
+    (`tag_pool.add`/`hold`/`restore`, called from `_maybe_build_override` while `start`/`retarget`
+    already hold this lock) is a cheap, safe same-object reentrant increment -- not a second
+    open-file-description racing the first, which plain per-call `FileLock(...)` construction
+    would produce and which `filelock`'s own deadlock detector would then reject outright."""
+    return filelock.FileLock(str(data_dir / _CONTROL_LOCK_NAME), is_singleton=True)
 
 
 # --- public control surface -----------------------------------------------------------------
