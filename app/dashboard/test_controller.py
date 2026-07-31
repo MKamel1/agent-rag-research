@@ -1704,6 +1704,53 @@ def test_promote_is_a_noop_while_the_live_run_is_still_running(tmp_path):
     assert out is None
 
 
+def test_concurrent_promote_pending_drop_in_spawns_exactly_once(tmp_path):
+    """T-3: `promote_pending_drop_in` documents itself as safe to call on every `/api/status` poll
+    specifically because `server.py` is a `ThreadingHTTPServer` -- two concurrent polls could
+    otherwise both see `terminal + pending` and both spawn a drop-in run. Same race-widening
+    pattern as `test_concurrent_starts_are_serialized_exactly_one_run` above (a slow spawn),
+    applied to `promote_pending_drop_in` instead of `start`, with N racing threads instead of 2.
+
+    Uses `_fake_spawn`'s real (harmless) subprocess, not a fabricated pid: a fabricated pid isn't
+    a real live process, so a losing thread's own `reconcile()` call (the first statement inside
+    `promote_pending_drop_in`) would immediately downgrade the winner's freshly-written "running"
+    manifest to "done" -- a race-condition false failure unrelated to what this test is checking.
+    """
+    controller_mod._write_manifest(tmp_path, {
+        "run_id": "run-1", "status": "done", "pid": 999999,
+        "pid_starttime": None, "pid_cmdline": None, "mode": "download",
+        "pending_drop_in": True,
+    })
+    spawn_calls = []
+
+    def slow_spawn(data_dir, target, parse_workers, events_path, log_path):
+        spawn_calls.append(1)  # recorded at call time, regardless of how long the spawn takes
+        time.sleep(0.3)
+        return _fake_spawn(data_dir, target, parse_workers, events_path, log_path)
+
+    results = []
+
+    def worker():
+        results.append(controller_mod.promote_pending_drop_in(tmp_path, spawn=slow_spawn))
+
+    threads = [threading.Thread(target=worker) for _ in range(5)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join(timeout=10)
+
+    try:
+        assert len(spawn_calls) == 1, f"expected exactly one spawn, got {len(spawn_calls)}"
+        assert sum(1 for r in results if r is not None) == 1, (
+            f"expected exactly one non-None promote result, got {results}"
+        )
+        manifest = controller_mod._read_manifest(tmp_path)
+        assert manifest["mode"] == "drop_in"
+        assert manifest["status"] == "running"
+    finally:
+        _cleanup(controller_mod._read_manifest(tmp_path))
+
+
 def test_start_refuses_a_download_while_a_drop_in_is_pending(tmp_path):
     """Without this, a download started the instant the previous one ends starves the queued
     drop-in indefinitely -- 'priority' that never fires."""
