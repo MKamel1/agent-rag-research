@@ -130,6 +130,25 @@
   </div>
 
   <div class="panel">
+    <h2>Drop-in tray</h2>
+    <div class="row"><span class="stat-label">pending papers</span><span class="stat" id="dropInPendingPapers">-</span></div>
+    <div class="row"><span class="stat-label">pending books</span><span id="dropInPendingBooks">-</span></div>
+    <div class="row"><span class="stat-label">staged (in pdf_cache)</span><span id="dropInStaged">-</span></div>
+    <div class="row"><span class="stat-label">processed (in corpus)</span><span class="stat" id="dropInProcessed">-</span></div>
+    <div class="row"><span class="stat-label">&nbsp;&nbsp;papers / books</span><span id="dropInProcessedSplit">-</span></div>
+    <div class="row"><span class="stat-label">failed</span><span id="dropInFailed">-</span></div>
+    <div class="row"><span class="stat-label">excluded</span><span id="dropInExcluded">-</span></div>
+    <div class="row"><span class="stat-label">latest manifest</span><span id="dropInLatestManifest">-</span></div>
+    <div class="note" id="dropInFailureReasons" style="margin-bottom:0;"></div>
+    <div class="note" id="dropInDir" style="margin:.35rem 0 0;">dir: -</div>
+    <div class="controls" style="margin-top: .5rem;">
+      <button id="btnStartDropIn" class="secondary" type="button">Run drop-in now</button>
+    </div>
+    <span class="note" id="dropInPendingNote" style="margin:.4rem 0 0;"></span>
+    <span class="note" style="margin:.2rem 0 0;">"Staged" means copied into pdf_cache with a paper_id minted -- it may still be unparsed/unembedded. "Processed" is the honest "actually in the corpus" count. Runs after any live run finishes if one is active (queued, shown above); never interrupts it.</span>
+  </div>
+
+  <div class="panel">
     <h2>Disk headroom</h2>
     <div class="row"><span class="stat-label">free / total</span><span id="diskFree">-</span></div>
     <div class="row"><span class="stat-label">used</span><span id="diskUsedPct">-</span></div>
@@ -384,6 +403,45 @@ function renderFunnel(funnel) {
     </div>`;
 }
 
+// "processed" (and its papers/books split) render "unknown" -- NEVER "0" -- when the server sent
+// null: papers.db being unreadable and "zero drop-in documents made it into the corpus" are
+// different facts (status.py::read_drop_in's own docstring), and collapsing them here would lose
+// exactly the distinction that field exists to carry.
+function renderDropIn(snap) {
+  const d = snap.drop_in || {};
+  document.getElementById("dropInPendingPapers").textContent = fmt(d.pending_papers);
+  document.getElementById("dropInPendingBooks").textContent = fmt(d.pending_books);
+  document.getElementById("dropInStaged").textContent = fmt(d.staged);
+  document.getElementById("dropInProcessed").textContent =
+    d.processed === null || d.processed === undefined ? "unknown" : fmt(d.processed);
+  document.getElementById("dropInProcessedSplit").textContent =
+    d.processed_papers === null || d.processed_papers === undefined
+      ? "unknown"
+      : `${fmt(d.processed_papers)} / ${fmt(d.processed_books)}`;
+  document.getElementById("dropInFailed").textContent = fmt(d.failed);
+  document.getElementById("dropInExcluded").textContent = fmt(d.excluded);
+  document.getElementById("dropInLatestManifest").textContent = d.latest_manifest || "-";
+
+  const reasons = d.failure_reasons || [];
+  document.getElementById("dropInFailureReasons").textContent = reasons.length
+    ? "top failure reasons: " + reasons.map(([reason, count]) => `${reason} (${count})`).join("; ")
+      + (d.failure_reasons_truncated ? " ..." : "")
+    : "";
+  document.getElementById("dropInDir").textContent = "dir: " + (d.dir || "-");
+
+  const btn = document.getElementById("btnStartDropIn");
+  const pendingNote = document.getElementById("dropInPendingNote");
+  if (d.pending_drop_in) {
+    btn.textContent = "Queued...";
+    btn.disabled = true;
+    pendingNote.textContent = "waiting on run " + (snap.run.run_id || "-") + " to finish, then starts automatically";
+  } else {
+    btn.textContent = "Run drop-in now";
+    btn.disabled = false;
+    pendingNote.textContent = "";
+  }
+}
+
 function renderTuning(snap) {
   document.getElementById("tuningTable").innerHTML = TUNING.map(([name, currentFn, def, rec, note]) => {
     const current = currentFn(snap);
@@ -519,6 +577,7 @@ function render(snap) {
   // fallback so the two never drift apart.
   if (snap.downloader && snap.downloader.prefetch_target) downloadCap = snap.downloader.prefetch_target;
 
+  renderDropIn(snap);
   renderTuning(snap);
   renderSearchParams(snap);
 
@@ -828,6 +887,7 @@ document.getElementById("btnDownloadOnly").addEventListener("click", () => {
 
 document.getElementById("btnFreeGpu").addEventListener("click", () => control("free_gpu"));
 document.getElementById("btnLoadForMcp").addEventListener("click", () => control("load_for_mcp"));
+document.getElementById("btnStartDropIn").addEventListener("click", () => control("start_drop_in"));
 
 poll();
 setInterval(poll, 4000);

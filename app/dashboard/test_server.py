@@ -16,7 +16,7 @@ import pytest
 
 import app.dashboard.controller as controller_mod
 import app.dashboard.server as server_mod
-from app.dashboard.controller import DoubleRunError, NoRunError
+from app.dashboard.controller import DoubleRunError, DropInPendingError, NoRunError
 from app.dashboard.server import _LazyMcpServer, _status_dict, build_server
 from contracts.errors import TransientError
 from contracts.mcp_server import Coverage, SearchResponse
@@ -68,6 +68,14 @@ class _FakeStatus:
     def read_tei_status(self):
         return {"embed_healthy": True, "rerank_healthy": True}
 
+    def read_drop_in(self, drop_dir, db_path):
+        return {
+            "pending_papers": 2, "pending_books": 1, "staged": 1, "failed": 0, "excluded": 0,
+            "failure_reasons": [], "failure_reasons_truncated": False, "manifest_ids": 0,
+            "latest_manifest": None, "processed": None, "processed_papers": None,
+            "processed_books": None,
+        }
+
 
 class _FakeController:
     def __init__(self):
@@ -104,8 +112,18 @@ class _FakeController:
     def load_for_mcp(self, data_dir):
         self.calls.append(("load_for_mcp",))
 
+    def resolve_drop_dir(self, cfg):
+        return "/fake/drop_in"
+
+    def promote_pending_drop_in(self, data_dir, spawn=None):
+        return None
+
+    def start_drop_in(self, data_dir, **kwargs):
+        self.calls.append(("start_drop_in",))
+
     DoubleRunError = DoubleRunError
     NoRunError = NoRunError
+    DropInPendingError = DropInPendingError
 
 
 @pytest.fixture
@@ -209,6 +227,14 @@ def test_root_html_mode_indicator_branches_on_download_mode(running_server):
     assert b"download-only" in body
 
 
+def test_root_html_has_drop_in_panel_wired_to_the_start_drop_in_action(running_server):
+    url, _ = running_server
+    status, body = _get_raw(url, "/")
+    assert status == 200
+    assert b'id="btnStartDropIn"' in body
+    assert b'"start_drop_in"' in body
+
+
 # --- OG-48#1/OG-49#4: GET /api/status and GET /api/search are now token-gated ------------------
 
 
@@ -241,7 +267,7 @@ def test_status_route_shape_matches_api_contract(running_server):
     assert status == 200
     assert set(body.keys()) == {
         "funnel", "run", "telemetry", "downloads", "downloader", "disk", "consistency",
-        "quarantine_reasons", "search", "tei",
+        "quarantine_reasons", "search", "tei", "drop_in",
     }
     assert set(body["funnel"].keys()) == {
         "harvested", "parsed", "chunked", "summarized", "embedded", "stored", "done", "quarantined",
@@ -349,6 +375,43 @@ def test_status_route_includes_tei_block(running_server):
     status, body = _get(url, "/api/status")
     assert status == 200
     assert body["tei"] == {"embed_healthy": True, "rerank_healthy": True}
+
+
+# --- Task 4: drop-in tray block + start_drop_in control action ----------------------------------
+
+
+def test_status_route_includes_drop_in_block(running_server):
+    url, _ = running_server
+    status, body = _get(url, "/api/status")
+    assert status == 200
+    block = body["drop_in"]
+    for key in ("pending_papers", "pending_books", "staged", "processed",
+                "failed", "excluded", "latest_manifest", "pending_drop_in"):
+        assert key in block, f"missing {key}"
+
+
+def test_control_start_drop_in_dispatches_and_returns_ok(running_server):
+    url, fake_controller = running_server
+    status, body = _post(url, "/api/control", {"action": "start_drop_in"})
+    assert status == 200
+    assert body == {"ok": True, "message": "start_drop_in ok"}
+    assert fake_controller.calls == [("start_drop_in",)]
+
+
+def test_control_start_drop_in_refused_while_a_drop_in_is_already_pending_returns_409(
+    running_server,
+):
+    """Same 409 mapping DoubleRunError/NoRunError already get -- DropInPendingError is a live-run
+    contention error too, not a validation error."""
+    url, fake_controller = running_server
+
+    def raise_pending(data_dir, **kwargs):
+        raise DropInPendingError("a drop-in run is queued and must run first")
+
+    fake_controller.start_drop_in = raise_pending
+    status, body = _post(url, "/api/control", {"action": "start_drop_in"})
+    assert status == 409
+    assert body["ok"] is False
 
 
 def test_control_start_forwards_target_and_parse_workers(running_server):
