@@ -206,6 +206,7 @@ of the request.
 | `add_tags` | appends to `active`; de-duplicates; a tag currently in `held` is **moved back to active** rather than duplicated |
 | `hold_tags` | moves `active` → `held`, stamped `held_at` |
 | `restore_tags` | moves `held` → `active` |
+| `purge_tags` | **removes a HELD tag from the pool entirely.** Only valid on a held tag; refuses on an active one. See "the X button" below. |
 
 The existing `keywords` / `remove_keywords` parameters keep working and keep their current
 add/remove meaning, but now **write through to the pool** instead of a scratch file. That is the
@@ -232,10 +233,43 @@ features stay consistent by construction rather than by coincidence.
 
 ### Frontend
 
-A "Tags" panel in `index.html`: active tags as chips each with a **Hold** control, a collapsed
-**Held** section each with **Restore**, and an add box. Held tags are visibly present but styled as
-inactive — the operator can see at a glance what has been parked and bring it back without
-retyping.
+**Phase A (ships with the first implementation PR).** A "Tags" panel in `index.html`: two columns,
+**Active** and **On hold**. Active tags are chips each with a **Hold** control; held tags are chips
+each with **Restore**; plus an add box. Held tags render visibly but styled inactive — the operator
+sees at a glance what has been parked and restores it without retyping.
+
+**Phase B (follow-up PR, operator request 2026-07-31): drag and drop between the two columns.**
+
+> "can we make it drag and drop to move them from active to not active and of course keep the x to
+> remove them and box to add new ones"
+
+Drag is an *additional* affordance, never the only one. The Hold/Restore buttons stay, because
+drag-and-drop is unusable by keyboard and by screen reader, and this panel is the only way to change
+what the corpus harvests.
+
+| gesture | effect | equivalent to |
+|---|---|---|
+| drag Active → On hold | `hold_tags` | the **Hold** button |
+| drag On hold → Active | `restore_tags` | the **Restore** button |
+| **X** on an **active** chip | `hold_tags` — parks it, does not destroy it | the **Hold** button |
+| **X** on a **held** chip | `purge_tags` — removes it from the pool for good, **with a confirm** | (no button equivalent) |
+| add box | `add_tags` | — |
+
+**Why X means two different things.** The operator asked to "keep the x to remove them" while also
+asking that removal be a reversible hold. Those reconcile if X always means *"take this out of where
+it is now"*: from Active that means park it (recoverable, no confirm needed); from On hold there is
+nowhere further down, so it means delete from the pool — and that one asks for confirmation, since
+it is the only irreversible tag action in the design.
+
+A tag purged from the pool is not gone forever in any deep sense: it can be re-added by typing it,
+and if it is still in `config.yaml`'s `focus_area_queries` it will reappear on a re-seed. Purge
+removes it from the *working* pool, not from history.
+
+**Implementation constraints for Phase B:** native HTML5 drag-and-drop (`draggable`,
+`dragstart`/`dragover`/`drop`) — no library, matching this file's zero-dependency, single-file
+idiom. Each drop issues the same `POST /api/control` the buttons issue; the panel then re-renders
+from the server's response rather than mutating local state optimistically, so a refused drop (the
+hold-everything guard) cannot leave the UI showing a state the server rejected.
 
 ## Non-goals
 
@@ -268,6 +302,8 @@ Per `TEST-STRATEGY.md`: zero-GPU, zero-network, fakes over live services, `--dis
 | add of a held tag | moves it back to active rather than creating a duplicate |
 | hold-everything guard | refused with `InvalidOverrideError`; pool left unmodified |
 | override composition | `_maybe_build_override` writes `focus_area_queries` from `active`, not from the base config |
+| `purge_tags` on a held tag | removed from both `active` and `held` |
+| `purge_tags` on an **active** tag | refused — purge is only reachable from the held column, so an active tag can never be destroyed in one gesture |
 
 ## Risk
 
