@@ -568,13 +568,50 @@ def test_read_downloads_counts_pdfs_and_sidecars(tmp_path):
     (cache / "a.pdf").write_bytes(b"")
     (cache / "b.pdf").write_bytes(b"")
     (cache / "a.json").write_text("{}")
-    result = status_mod.read_downloads(tmp_path, target=100)
-    assert result == {"cached_pdfs": 2, "sidecars": 1, "target": 100}
+    result = status_mod.read_downloads(tmp_path, prefetch_target=100)
+    assert result == {
+        "staged_pdfs": 2, "sidecars": 1, "prefetch_target": 100,
+        "stalled": False, "new_last_pass": None,
+    }
 
 
 def test_read_downloads_degrades_when_cache_dir_missing(tmp_path):
-    result = status_mod.read_downloads(tmp_path, target=100)
-    assert result == {"cached_pdfs": None, "sidecars": None, "target": 100}
+    result = status_mod.read_downloads(tmp_path, prefetch_target=100)
+    assert result == {
+        "staged_pdfs": None, "sidecars": None, "prefetch_target": 100,
+        "stalled": False, "new_last_pass": None,
+    }
+
+
+def test_read_downloads_reports_stall_from_the_prefetch_log(tmp_path):
+    (tmp_path / "pdf_cache").mkdir()
+    (tmp_path / "prefetch.log").write_text(
+        "INFO:__main__:prefetch_pdfs: pass complete, +6 this pass, 11556/30000 cached\n"
+        "INFO:__main__:prefetch_pdfs: prefetch stalled: 11556/30000 cached, "
+        "only 6 new available, next attempt in 3600s\n"
+    )
+    out = status_mod.read_downloads(tmp_path, 30000)
+    assert out["stalled"] is True
+    assert out["new_last_pass"] == 6
+    assert out["prefetch_target"] == 30000
+
+
+def test_read_downloads_stall_clears_when_a_newer_pace_line_follows(tmp_path):
+    """A stall followed by fresh progress is not a stall -- whichever line appears LATER wins."""
+    (tmp_path / "pdf_cache").mkdir()
+    (tmp_path / "prefetch.log").write_text(
+        "prefetch stalled: 11556/30000 cached, only 6 new available, next attempt in 3600s\n"
+        "prefetch_pdfs: downloaded 40 / target 30000\n"
+    )
+    out = status_mod.read_downloads(tmp_path, 30000)
+    assert out["stalled"] is False
+
+
+def test_read_downloads_absent_log_is_not_a_stall_and_not_a_zero(tmp_path):
+    (tmp_path / "pdf_cache").mkdir()
+    out = status_mod.read_downloads(tmp_path, 30000)
+    assert out["stalled"] is False
+    assert out["new_last_pass"] is None      # absent != zero
 
 
 # --- read_consistency -------------------------------------------------------------------------
