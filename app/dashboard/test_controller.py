@@ -967,6 +967,26 @@ def test_retarget_wires_remove_keywords_through(tmp_path):
         _cleanup(retargeted)
 
 
+# --- Task 4: the tag pool composes focus_area_queries -- edits persist across runs --------------
+
+
+def test_added_tags_persist_into_a_SECOND_run(tmp_path):
+    """The bug the operator hit: keyword edits were written to a run-scoped scratch config that
+    _cleanup_run_cwd deleted, so the next run reverted to the base queries and every edit built
+    its own private pool. Fails against the old code."""
+    base = controller_mod.load_config(controller_mod._REPO_ROOT / "config.example.yaml")
+
+    controller_mod._maybe_build_override(
+        base, ["new topic"], None, data_dir=tmp_path, run_id="run-1",
+    )
+    _, override_dir = controller_mod._maybe_build_override(
+        base, None, None, data_dir=tmp_path, run_id="run-2",
+    )
+
+    second = controller_mod.load_config(Path(override_dir) / "config.yaml")
+    assert "new topic" in second.focus_area_queries
+
+
 def test_start_with_parse_batch_size_writes_override_config_with_absolute_paths(tmp_path):
     """The override config.yaml's path-valued fields (db_path/blob_dir/pdf_cache_dir/...) must be
     resolved ABSOLUTE -- the subprocess launched into the scratch dir has a different cwd than the
@@ -1484,12 +1504,34 @@ def test_stop_escalates_to_sigkill_when_process_ignores_sigterm(tmp_path, monkey
 
 
 def test_control_lock_is_mutually_exclusive(tmp_path):
+    """Genuine cross-thread contention still blocks. `_control_lock` is `is_singleton=True`
+    (Task 4: `tag_pool.add`/`hold`/`restore` need to reentrantly nest inside an already-held lock
+    from the SAME thread, when `_maybe_build_override` calls them from inside `start`/`retarget`'s
+    own `with _control_lock(...):`) -- that only collapses SAME-thread double-acquisition into a
+    cheap reentrant increment (`FileLock`'s `_context` is thread-local). A genuinely DIFFERENT
+    thread contending for the same data_dir still hits the real OS-level lock and times out, which
+    is the property OG-47#1 actually depends on (ThreadingHTTPServer runs every control op on its
+    own thread)."""
     lock_a = controller_mod._control_lock(tmp_path)
-    with lock_a:
+    held = threading.Event()
+    release = threading.Event()
+
+    def hold_it():
+        with lock_a:
+            held.set()
+            release.wait(timeout=5.0)
+
+    t = threading.Thread(target=hold_it)
+    t.start()
+    try:
+        assert held.wait(timeout=5.0)
         lock_b = controller_mod._control_lock(tmp_path)
         with pytest.raises(controller_mod.filelock.Timeout):
             with lock_b.acquire(timeout=0.1):
                 pass
+    finally:
+        release.set()
+        t.join(timeout=5.0)
 
 
 def test_concurrent_starts_are_serialized_exactly_one_run(tmp_path):
