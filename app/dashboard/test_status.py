@@ -186,6 +186,72 @@ def test_read_corpus_is_read_only_never_writes(tmp_path):
     assert not db_path.exists()  # never auto-created by the reader
 
 
+def test_read_corpus_splits_the_funnel_by_doc_type(tmp_path):
+    db = tmp_path / "papers.db"
+    conn = sqlite3.connect(db)
+    conn.execute("CREATE TABLE ingest_state (paper_id TEXT PRIMARY KEY, stage TEXT NOT NULL, "
+                 "updated_at TEXT NOT NULL)")
+    conn.execute("CREATE TABLE papers (paper_id TEXT PRIMARY KEY, doc_type TEXT)")
+    conn.execute("CREATE TABLE quarantine (paper_id TEXT, stage TEXT)")
+    conn.execute("CREATE TABLE quarantine_diagnostics (paper_id TEXT PRIMARY KEY, error_type TEXT)")
+    rows = [
+        ("b1", "done", "book"), ("b2", "done", "book"),
+        ("b3", "parsed", "book"),                        # book still mid-pipeline
+        ("p1", "done", "paper"), ("p2", "embedded", "paper"),
+    ]
+    for pid, stage, dt in rows:
+        conn.execute("INSERT INTO ingest_state VALUES (?,?,'2026-07-31T00:00:00Z')", (pid, stage))
+        conn.execute("INSERT INTO papers VALUES (?,?)", (pid, dt))
+    conn.commit()
+    conn.close()
+
+    out = status_mod.read_corpus(tmp_path)
+
+    # The combined funnel is UNCHANGED -- cumulative over all 5 documents.
+    assert out["funnel"]["done"] == 3
+    assert out["funnel"]["parsed"] == 5
+
+    books = out["by_doc_type"]["book"]
+    assert books["done"] == 2
+    assert books["parsed"] == 3      # cumulative: 2 done + 1 sitting at parsed
+    assert books["harvested"] == 3
+
+    papers = out["by_doc_type"]["paper"]
+    assert papers["done"] == 1
+    assert papers["embedded"] == 2
+
+
+def test_read_corpus_by_doc_type_is_empty_when_db_is_unreadable(tmp_path):
+    out = status_mod.read_corpus(tmp_path / "no_such_dir")
+    assert out["by_doc_type"] == {}
+    assert out["funnel"]["done"] is None      # existing null-funnel behavior, unchanged
+
+
+def test_read_corpus_by_doc_type_counts_quarantine_per_type(tmp_path):
+    db = tmp_path / "papers.db"
+    conn = sqlite3.connect(db)
+    conn.execute("CREATE TABLE ingest_state (paper_id TEXT PRIMARY KEY, stage TEXT NOT NULL, "
+                 "updated_at TEXT NOT NULL)")
+    conn.execute("CREATE TABLE papers (paper_id TEXT PRIMARY KEY, doc_type TEXT)")
+    conn.execute("CREATE TABLE quarantine (paper_id TEXT, stage TEXT)")
+    conn.execute("CREATE TABLE quarantine_diagnostics (paper_id TEXT PRIMARY KEY, error_type TEXT)")
+    conn.execute("INSERT INTO ingest_state VALUES ('b1','parsed','2026-07-31T00:00:00Z')")
+    conn.execute("INSERT INTO papers VALUES ('b1','book')")
+    conn.execute("INSERT INTO quarantine VALUES ('b1','parsed')")
+    # A paper that was quarantined but LATER succeeded must not count (OG-44, same rule
+    # quarantine_summary already applies to the combined number).
+    conn.execute("INSERT INTO ingest_state VALUES ('p1','done','2026-07-31T00:00:00Z')")
+    conn.execute("INSERT INTO papers VALUES ('p1','paper')")
+    conn.execute("INSERT INTO quarantine VALUES ('p1','parsed')")
+    conn.commit()
+    conn.close()
+
+    out = status_mod.read_corpus(tmp_path)
+
+    assert out["by_doc_type"]["book"]["quarantined"] == 1
+    assert out["by_doc_type"]["paper"]["quarantined"] == 0
+
+
 # --- read_telemetry --------------------------------------------------------------------------
 
 
