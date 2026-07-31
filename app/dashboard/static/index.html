@@ -37,6 +37,8 @@
   .tag { background: #202632; border: 1px solid var(--border); border-radius: 999px; padding: .2rem .65rem; font-size: .75rem; color: var(--muted); }
   .tag.pending { color: var(--text); border-color: var(--accent); }
   .tag.tag-removing { color: var(--bad); border-color: var(--bad); text-decoration: line-through; opacity: .7; }
+  .tag.held { opacity: .55; text-decoration: line-through; }
+  .tag-action { text-decoration: none; margin-left: .35rem; font-weight: 700; color: var(--accent); }
   .tag-remove { color: var(--bad); text-decoration: none; margin-left: .35rem; font-weight: 700; }
   .note { color: var(--muted); font-size: .75rem; margin-bottom: .5rem; }
   .pill { display: inline-block; padding: .15rem .55rem; border-radius: 999px; font-size: .75rem; font-weight: 600; }
@@ -131,9 +133,10 @@
 
   <div class="panel">
     <h2>Downloads</h2>
-    <div class="row"><span class="stat-label">cached PDFs</span><span class="stat" id="cachedPdfs">-</span></div>
+    <div id="harvestExhaustedBanner" class="note" style="display:none; color: var(--warn); margin: 0 0 .6rem;"></div>
+    <div class="row"><span class="stat-label">staged for processing</span><span class="stat" id="stagedPdfs">-</span></div>
+    <div class="row"><span class="stat-label">&nbsp;&nbsp;/ download target</span><span id="prefetchTarget">-</span></div>
     <div class="row"><span class="stat-label">sidecars</span><span id="sidecars">-</span></div>
-    <div class="row"><span class="stat-label">target</span><span id="downloadTarget">-</span></div>
     <div class="row"><span class="stat-label">app.prefetch_pdfs alive</span><span id="prefetchAlive">-</span></div>
     <div class="row"><span class="stat-label">download pace</span><span id="prefetchPace">-</span></div>
     <div class="row"><span class="stat-label">TEI embed</span><span id="teiEmbedHealthy">-</span></div>
@@ -143,6 +146,7 @@
       <button id="btnLoadForMcp" class="secondary" type="button">Load for MCP</button>
     </div>
     <span class="note" style="margin:0;">Free GPU stops the TEI embedder/reranker containers (~9.4GB VRAM) on demand -- independent of Pause/Resume/Stop, which deliberately leave them running for live search. Refused while a full run is actively running. Live search self-heals on its own on the next query either way; Load for MCP just restores it immediately instead of waiting -- also refused while Pass 1 (parsing) is actively running, since reloading TEI mid-Pass-1 risks the same GPU-memory conflict Free GPU's own refusal guards against.</span>
+    <span class="note" style="margin:.3rem 0 0;">"Staged for processing" is downloads waiting their turn in pdf_cache, paired with <code>Config.prefetch_target</code> -- the downloader's own goal, NOT the run's processing target below. This corpus's authoritative size is the Stage funnel panel's "done" row, not this number.</span>
   </div>
 
   <div class="panel">
@@ -198,6 +202,27 @@
     <div class="row"><span class="stat-label">count</span><span class="stat" id="quarantineCount">-</span></div>
     <table id="quarantineTable"><tbody></tbody></table>
     <div id="quarantineEmpty" class="quarantine-empty" style="display:none;">none</div>
+  </div>
+
+  <div class="panel" style="grid-column: 1 / -1;">
+    <h2>Tag pool (arXiv search queries)</h2>
+    <div class="note">
+      One persistent pool of arXiv search queries -- <code>tag_pool.json</code>, seeded from
+      <code>config.yaml</code> once and never written back to it. Hold/Restore/Add here take
+      effect IMMEDIATELY and persist into every future run -- unlike the "add keyword" box in
+      Control below, which only stages an edit for the next Apply/Download click. Hold parks a
+      tag without deleting it; a held tag stays visible and restores in one click.
+    </div>
+    <div class="tags" id="tagPoolActive"></div>
+    <div class="controls" style="margin-top: .5rem;">
+      <input id="newPoolTag" type="text" placeholder="e.g. double machine learning" style="width: 18rem;">
+      <button id="btnAddPoolTag" class="secondary" type="button">Add</button>
+    </div>
+    <details style="margin-top: .6rem;">
+      <summary class="stat-label" style="cursor:pointer;">Held (<span id="heldCount">0</span>)</summary>
+      <div class="tags" id="tagPoolHeld" style="margin-top:.4rem;"></div>
+    </details>
+    <div id="tagPoolMsg" class="note" style="margin: .5rem 0 0;"></div>
   </div>
 
   <div class="panel" style="grid-column: 1 / -1;">
@@ -526,6 +551,35 @@ function renderUsage(snap) {
     rows.join("") || `<tr><td colspan="5">no calls yet</td></tr>`;
 }
 
+// T-DOC41/D-5 Part 2: the persistent tag pool -- Hold/Restore/Add fire immediately
+// (add_tags/hold_tags/restore_tags), unlike the Control panel's staged keyword box below which
+// only takes effect on the next Apply/Download.
+function renderTagPool(snap) {
+  const tags = snap.tags || {};
+  const active = tags.active || [];
+  const held = tags.held || [];
+
+  const activeEl = document.getElementById("tagPoolActive");
+  activeEl.innerHTML = active.length
+    ? active.map(q => `<span class="tag">${escapeHtml(q)} <a href="#" class="tag-action" data-hold="${escapeHtml(q)}">hold</a></span>`).join("")
+    : `<span class="stat-label">-</span>`;
+  activeEl.querySelectorAll("[data-hold]").forEach(a => a.addEventListener("click", e => {
+    e.preventDefault();
+    tagPoolControl("hold_tags", a.dataset.hold);
+  }));
+
+  const heldEl = document.getElementById("tagPoolHeld");
+  heldEl.innerHTML = held.length
+    ? held.map(h => `<span class="tag held">${escapeHtml(h.query)} <a href="#" class="tag-action" data-restore="${escapeHtml(h.query)}">restore</a></span>`).join("")
+    : `<span class="stat-label">none held</span>`;
+  heldEl.querySelectorAll("[data-restore]").forEach(a => a.addEventListener("click", e => {
+    e.preventDefault();
+    tagPoolControl("restore_tags", a.dataset.restore);
+  }));
+
+  document.getElementById("heldCount").textContent = held.length;
+}
+
 function renderTuning(snap) {
   document.getElementById("tuningTable").innerHTML = TUNING.map(([name, currentFn, def, rec, note]) => {
     const current = currentFn(snap);
@@ -619,9 +673,25 @@ function render(snap) {
   document.getElementById("gpuVram").textContent = snap.telemetry.vram_mib === null ? "-" : `${fmt(snap.telemetry.vram_mib)} MiB`;
   document.getElementById("gpuPower").textContent = snap.telemetry.power_w === null ? "-" : `${fmt(snap.telemetry.power_w, 1)} W`;
 
-  document.getElementById("cachedPdfs").textContent = fmt(snap.downloads.cached_pdfs);
+  document.getElementById("stagedPdfs").textContent = fmt(snap.downloads.staged_pdfs);
   document.getElementById("sidecars").textContent = fmt(snap.downloads.sidecars);
-  document.getElementById("downloadTarget").textContent = fmt(snap.downloads.target);
+  document.getElementById("prefetchTarget").textContent = fmt(snap.downloads.prefetch_target);
+
+  // D-5 Part 1: the harvest-exhaustion banner. `active_count` (not a second config read) so this
+  // can never drift from the Tag pool panel below -- both read the same tags block.
+  const exhaustedBanner = document.getElementById("harvestExhaustedBanner");
+  if (snap.downloads.stalled) {
+    const queryCount = (snap.tags && snap.tags.active_count) || 0;
+    const newLastPass = snap.downloads.new_last_pass;
+    const newPassText = newLastPass === null || newLastPass === undefined ? "" : `+${fmt(newLastPass)} new `;
+    exhaustedBanner.textContent =
+      `Harvest exhausted -- every arXiv paper matching your ${queryCount} queries has been ` +
+      `downloaded. ${newPassText}in the last pass. Widen focus_area_queries or arxiv_categories ` +
+      `to grow further.`;
+    exhaustedBanner.style.display = "block";
+  } else {
+    exhaustedBanner.style.display = "none";
+  }
 
   const dl = snap.downloader || {};
   document.getElementById("prefetchAlive").textContent =
@@ -664,6 +734,7 @@ function render(snap) {
 
   renderDropIn(snap);
   renderUsage(snap);
+  renderTagPool(snap);
   renderTuning(snap);
   renderSearchParams(snap);
 
@@ -796,9 +867,9 @@ async function poll() {
   }
 }
 
-async function control(action, extra) {
+async function control(action, extra, msgElId) {
   const token = document.getElementById("token").value;
-  const msg = document.getElementById("controlMsg");
+  const msg = document.getElementById(msgElId || "controlMsg");
   msg.textContent = "sending " + action + "...";
   try {
     const resp = await fetch("/api/control", {
@@ -974,6 +1045,24 @@ document.getElementById("btnDownloadOnly").addEventListener("click", () => {
 document.getElementById("btnFreeGpu").addEventListener("click", () => control("free_gpu"));
 document.getElementById("btnLoadForMcp").addEventListener("click", () => control("load_for_mcp"));
 document.getElementById("btnStartDropIn").addEventListener("click", () => control("start_drop_in"));
+
+// --- Tag pool panel: Hold/Restore/Add fire IMMEDIATELY (unlike the staged keyword box above) ----
+
+function tagPoolControl(action, tag) {
+  control(action, { tags: [tag] }, "tagPoolMsg");
+}
+
+document.getElementById("btnAddPoolTag").addEventListener("click", () => {
+  const input = document.getElementById("newPoolTag");
+  const v = input.value.trim();
+  if (v) {
+    control("add_tags", { tags: [v] }, "tagPoolMsg");
+    input.value = "";
+  }
+});
+document.getElementById("newPoolTag").addEventListener("keydown", e => {
+  if (e.key === "Enter") { e.preventDefault(); document.getElementById("btnAddPoolTag").click(); }
+});
 
 poll();
 setInterval(poll, 4000);
