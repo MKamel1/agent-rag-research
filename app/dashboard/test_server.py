@@ -17,6 +17,7 @@ import pytest
 
 import app.dashboard.controller as controller_mod
 import app.dashboard.server as server_mod
+import app.dashboard.status as status_mod
 from app.dashboard.controller import DoubleRunError, DropInPendingError, NoRunError
 from app.dashboard.server import _LazyMcpServer, _status_dict, build_server
 from contracts.errors import TransientError
@@ -24,6 +25,7 @@ from contracts.mcp_server import Coverage, SearchResponse
 from contracts.provenance import Anchor
 from contracts.retriever import Citation, GroundedResult
 from contracts.vector_index import SearchFilters
+from migrations.migrate import migrate
 
 # These tests bind a real loopback (127.0.0.1) socket -- no external network, no vendor -- so they
 # opt out of the suite's default `--disable-socket` (pytest.ini) the same way
@@ -357,6 +359,50 @@ def test_status_dict_threads_started_at_and_target_into_read_telemetry(tmp_path)
     assert call["data_dir"] == tmp_path
     assert call["started_at"] == "2026-01-01T00:00:00"
     assert call["target"] == 100
+
+
+# T-1 (docs/TEST-AUDIT-2026-07-31.md): the only test above joining `_status_dict` with
+# `status.read_corpus` uses `_FakeStatus`, which hardcodes `funnel["done"] = 5` -- it never
+# exercises the real `_funnel_from_stage_counts`. If that function's "done" key were ever renamed,
+# nested, or dropped, `_status_dict`'s `corpus["funnel"].get("done")` would silently become `None`
+# and no test would fail. This drives a REAL `status.read_corpus` against a real migrated sqlite
+# db, and spies on the real `status.read_telemetry` to capture the `total_done` it actually
+# receives -- closing that gap.
+def test_status_dict_threads_real_read_corpus_done_into_read_telemetry(tmp_path):
+    migrate(str(tmp_path / "papers.db"))
+    conn = sqlite3.connect(str(tmp_path / "papers.db"))
+    for i, stage in enumerate(["done", "done", "done", "parsed"]):
+        conn.execute(
+            "INSERT INTO ingest_state (paper_id, stage, updated_at) VALUES (?, ?, ?)",
+            (f"p{i}", stage, "2026-01-01T00:00:00"),
+        )
+    conn.commit()
+    conn.close()
+
+    calls = []
+    real_read_telemetry = status_mod.read_telemetry
+
+    class RealStatusSpy:
+        """Every read is the REAL `status` module function -- only `read_telemetry` is wrapped, to
+        record the `total_done` it's called with, matching this file's existing spy-around-a-real-
+        implementation pattern (`super().read_telemetry(...)` above) rather than a from-scratch
+        fake."""
+
+        read_corpus = staticmethod(status_mod.read_corpus)
+        read_downloads = staticmethod(status_mod.read_downloads)
+        read_consistency = staticmethod(status_mod.read_consistency)
+        read_downloader = staticmethod(status_mod.read_downloader)
+        read_disk = staticmethod(status_mod.read_disk)
+        read_tei_status = staticmethod(status_mod.read_tei_status)
+        read_drop_in = staticmethod(status_mod.read_drop_in)
+
+        def read_telemetry(self, events_path, total_done, **kwargs):
+            calls.append(total_done)
+            return real_read_telemetry(events_path, total_done, **kwargs)
+
+    _status_dict(tmp_path, RealStatusSpy(), _FakeController())
+
+    assert calls == [3]  # real _funnel_from_stage_counts: 3 "done" + 1 "parsed" behind it
 
 
 def test_control_without_token_is_rejected(running_server):
