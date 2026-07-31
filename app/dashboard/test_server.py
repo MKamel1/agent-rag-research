@@ -45,6 +45,16 @@ class _FakeStatus:
                 "harvested": 10, "parsed": 9, "chunked": 8, "summarized": 7,
                 "embedded": 6, "stored": 5, "done": 5, "quarantined": 1,
             },
+            "by_doc_type": {
+                "book": {
+                    "harvested": 2, "parsed": 2, "chunked": 1, "summarized": 1,
+                    "embedded": 1, "stored": 1, "done": 1, "quarantined": 0,
+                },
+                "paper": {
+                    "harvested": 8, "parsed": 7, "chunked": 7, "summarized": 6,
+                    "embedded": 5, "stored": 4, "done": 4, "quarantined": 1,
+                },
+            },
             "quarantine_reasons": [{"reason": "TransientError @ parsed", "count": 1}],
         }
 
@@ -276,8 +286,8 @@ def test_status_route_shape_matches_api_contract(running_server):
     status, body = _get(url, "/api/status")
     assert status == 200
     assert set(body.keys()) == {
-        "funnel", "run", "telemetry", "downloads", "downloader", "disk", "consistency",
-        "quarantine_reasons", "search", "tei", "drop_in", "usage",
+        "funnel", "by_doc_type", "run", "telemetry", "downloads", "downloader", "disk",
+        "consistency", "quarantine_reasons", "search", "tei", "drop_in", "usage",
     }
     assert set(body["funnel"].keys()) == {
         "harvested", "parsed", "chunked", "summarized", "embedded", "stored", "done", "quarantined",
@@ -302,6 +312,18 @@ def test_status_route_shape_matches_api_contract(running_server):
     assert body["run"]["parse_batch_size"] == 4  # config.yaml's real default -- not hard-coded null
     assert body["funnel"]["done"] == 5
     assert body["quarantine_reasons"] == [{"reason": "TransientError @ parsed", "count": 1}]
+
+
+def test_status_route_includes_by_doc_type_block(running_server):
+    url, _ = running_server
+    status, body = _get(url, "/api/status")
+    assert status == 200
+    assert "by_doc_type" in body
+    # The combined funnel must survive untouched -- it is what ETA/rate math reads.
+    assert "funnel" in body
+    assert "done" in body["funnel"]
+    assert body["by_doc_type"]["book"]["done"] == 1
+    assert body["by_doc_type"]["paper"]["done"] == 4
 
 
 # --- POST /api/control: token gate + dispatch + shapes -------------------------------------
