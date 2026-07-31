@@ -256,6 +256,7 @@ def _status_dict(data_dir: Path, status_module, controller_module) -> dict:
     manifest_parse_batch_size = live.get("parse_batch_size")
     return {
         "funnel": corpus["funnel"],
+        "by_doc_type": corpus["by_doc_type"],
         "run": {
             **{field: live.get(field) for field in _RUN_FIELDS},
             "parse_batch_size": (

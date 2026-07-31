@@ -98,6 +98,22 @@
     </div>
   </div>
 
+  <div class="panel" style="grid-column: 1 / -1;">
+    <h2>By document type</h2>
+    <div class="note" style="margin-top:0;">
+      The combined funnel above is dominated by ~12k papers, so a dropped book stalled mid-pipeline
+      is otherwise invisible. Same cumulative "reached at least this stage" counts, split by type.
+    </div>
+    <table id="byDocTypeTable">
+      <thead><tr>
+        <th>type</th><th>harvested</th><th>parsed</th><th>chunked</th><th>summarized</th>
+        <th>embedded</th><th>stored</th><th>done</th><th>quarantined</th>
+      </tr></thead>
+      <tbody></tbody>
+    </table>
+    <div class="note" id="byDocTypeUnavailable" style="display:none;">unavailable</div>
+  </div>
+
   <div class="panel">
     <h2>Throughput</h2>
     <div class="row"><span class="stat-label">papers / hour</span><span class="stat" id="papersPerHour">-</span></div>
@@ -419,6 +435,26 @@ function renderFunnel(funnel) {
     </div>`;
 }
 
+// {} (not populated per-type) means the DB was unreadable at read_corpus time -- render
+// "unavailable" rather than a misleading row of zeros (matches renderDropIn's null/0 distinction).
+function renderByDocType(byDocType) {
+  const table = document.getElementById("byDocTypeTable");
+  const unavailable = document.getElementById("byDocTypeUnavailable");
+  const types = Object.keys(byDocType || {}).sort();
+  if (!types.length) {
+    table.style.display = "none";
+    unavailable.style.display = "block";
+    return;
+  }
+  table.style.display = "";
+  unavailable.style.display = "none";
+  document.querySelector("#byDocTypeTable tbody").innerHTML = types.map(type => {
+    const f = byDocType[type];
+    const cells = STAGES.concat(["quarantined"]).map(stage => `<td>${fmt(f[stage])}</td>`).join("");
+    return `<tr><td>${type}</td>${cells}</tr>`;
+  }).join("");
+}
+
 // "processed" (and its papers/books split) render "unknown" -- NEVER "0" -- when the server sent
 // null: papers.db being unreadable and "zero drop-in documents made it into the corpus" are
 // different facts (status.py::read_drop_in's own docstring), and collapsing them here would lose
@@ -563,6 +599,7 @@ function render(snap) {
         + " · order: " + orderingLabel;
 
   renderFunnel(snap.funnel);
+  renderByDocType(snap.by_doc_type);
 
   const done = snap.funnel.done || 0;
   const target = snap.run.target;
