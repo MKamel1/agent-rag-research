@@ -509,6 +509,38 @@ def test_main_invokes_ingest_with_manifest(tmp_path, monkeypatch):
     ]
 
 
+def test_main_drop_dir_flag_overrides_cfg_drop_in_dir(tmp_path, monkeypatch):
+    """T-2: `--drop-dir` must override `cfg.drop_in_dir` for the scan -- it's the path production
+    actually uses (`controller._spawn_drop_in` passes it explicitly, since `Config.drop_in_dir`
+    resolves relative and the dashboard's cwd differs from its spawned child's cwd). A regression
+    here means a drop-in run silently scans the wrong directory, stages nothing, and still exits 0
+    -- success that isn't."""
+    cfg = _fake_config(tmp_path)  # cfg.drop_in_dir == tmp_path / "drop"
+    monkeypatch.setattr("app.ingest_local.load_config", lambda: cfg)
+
+    # A file sitting in cfg.drop_in_dir -- must be left completely alone if --drop-dir wins.
+    cfg_papers_dir = tmp_path / "drop" / "papers"
+    cfg_papers_dir.mkdir(parents=True)
+    (cfg_papers_dir / "should-not-be-scanned.pdf").write_bytes(_synthetic_pdf_bytes())
+
+    # The real target: a separate directory, passed via --drop-dir.
+    override_dir = tmp_path / "override_drop"
+    override_papers_dir = override_dir / "papers"
+    override_papers_dir.mkdir(parents=True)
+    (override_papers_dir / "book.pdf").write_bytes(_synthetic_pdf_bytes())
+
+    exit_code = main(["--drop-dir", str(override_dir), "--stage-only"])
+
+    assert exit_code == 0
+    # Staged from the override dir, not cfg.drop_in_dir.
+    assert (override_dir / "done" / "book.pdf").exists()
+    assert len(list(override_dir.glob("manifest-*.txt"))) == 1
+    # cfg.drop_in_dir was never scanned: the file is still exactly where it was dropped.
+    assert (cfg_papers_dir / "should-not-be-scanned.pdf").exists()
+    assert not (tmp_path / "drop" / "done").exists()
+    assert list((tmp_path / "drop").glob("manifest-*.txt")) == []
+
+
 def test_main_empty_drop_dir_exits_zero_without_ingest(tmp_path, monkeypatch):
     monkeypatch.setattr("app.ingest_local.load_config", lambda: _fake_config(tmp_path))
     calls = []
