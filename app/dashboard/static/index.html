@@ -149,6 +149,22 @@
   </div>
 
   <div class="panel">
+    <h2>Usage (MCP + dashboard)</h2>
+    <div class="note" id="usageUnavailable" style="display:none;">no usage recorded yet</div>
+    <div id="usageAvailable">
+      <div class="row"><span class="stat-label">total requests</span><span class="stat" id="usageTotal">-</span></div>
+      <div class="row"><span class="stat-label">last 24h</span><span id="usageTotal24h">-</span></div>
+      <div class="row"><span class="stat-label">doc_type filter share</span><span id="usageDocTypeShare">-</span></div>
+      <div class="row"><span class="stat-label">paper_id filter share</span><span id="usagePaperIdShare">-</span></div>
+      <div class="row"><span class="stat-label">top error</span><span id="usageTopError">-</span></div>
+      <table>
+        <thead><tr><th>tool</th><th>calls</th><th>p50 ms</th><th>p95 ms</th><th>errors</th></tr></thead>
+        <tbody id="usageByToolTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="panel">
     <h2>Disk headroom</h2>
     <div class="row"><span class="stat-label">free / total</span><span id="diskFree">-</span></div>
     <div class="row"><span class="stat-label">used</span><span id="diskUsedPct">-</span></div>
@@ -442,6 +458,38 @@ function renderDropIn(snap) {
   }
 }
 
+// available: false renders "no usage recorded yet" -- NEVER a wall of zeros (absent and zero are
+// different facts, same convention read_usage_summary's own docstring pins for the API shape).
+function renderUsage(snap) {
+  const u = snap.usage || {};
+  const unavailableEl = document.getElementById("usageUnavailable");
+  const availableEl = document.getElementById("usageAvailable");
+  if (!u.available) {
+    unavailableEl.style.display = "block";
+    availableEl.style.display = "none";
+    return;
+  }
+  unavailableEl.style.display = "none";
+  availableEl.style.display = "block";
+
+  document.getElementById("usageTotal").textContent = fmt(u.total);
+  document.getElementById("usageTotal24h").textContent = fmt(u.total_24h);
+  document.getElementById("usageDocTypeShare").textContent =
+    u.doc_type_share === null || u.doc_type_share === undefined ? "-" : `${(u.doc_type_share * 100).toFixed(0)}%`;
+  document.getElementById("usagePaperIdShare").textContent =
+    u.paper_id_share === null || u.paper_id_share === undefined ? "-" : `${(u.paper_id_share * 100).toFixed(0)}%`;
+  document.getElementById("usageTopError").textContent = u.top_error || "none";
+
+  const byTool = u.by_tool || {};
+  const rows = Object.keys(byTool).map(tool => {
+    const t = byTool[tool];
+    return `<tr><td>${tool}</td><td>${fmt(t.count)}</td><td>${fmt(t.p50_latency_ms, 1)}</td>`
+      + `<td>${fmt(t.p95_latency_ms, 1)}</td><td>${fmt(t.error_count)}</td></tr>`;
+  });
+  document.getElementById("usageByToolTable").innerHTML =
+    rows.join("") || `<tr><td colspan="5">no calls yet</td></tr>`;
+}
+
 function renderTuning(snap) {
   document.getElementById("tuningTable").innerHTML = TUNING.map(([name, currentFn, def, rec, note]) => {
     const current = currentFn(snap);
@@ -578,6 +626,7 @@ function render(snap) {
   if (snap.downloader && snap.downloader.prefetch_target) downloadCap = snap.downloader.prefetch_target;
 
   renderDropIn(snap);
+  renderUsage(snap);
   renderTuning(snap);
   renderSearchParams(snap);
 

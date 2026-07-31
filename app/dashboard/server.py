@@ -40,6 +40,7 @@ import logging
 import re
 import secrets
 import threading
+import time
 import urllib.parse
 from datetime import date
 from functools import lru_cache
@@ -49,6 +50,7 @@ from pathlib import Path
 from app.assembly import build_mcp_server
 from app.dashboard import controller, status
 from app.dashboard.controller import InvalidOverrideError
+from app.usage_log import UsageLog, read_usage_summary
 from contracts.config import Config
 from contracts.errors import ContractError, PermanentError, TransientError
 from contracts.vector_index import SearchFilters
@@ -280,6 +282,7 @@ def _status_dict(data_dir: Path, status_module, controller_module) -> dict:
             "dir": str(drop_dir),
             "pending_drop_in": bool(live.get("pending_drop_in")),
         },
+        "usage": read_usage_summary(data_dir / "mcp_usage.db"),
     }
 
 
@@ -435,9 +438,21 @@ def make_handler(
                     ),
                 })
                 return
+            # Deliverable 2 §3 (docs/superpowers/plans/2026-07-30-mcp-usage-telemetry.md Task 3):
+            # record this dashboard-originated search alongside the MCP tools' own recording
+            # (app/serve.py's @record_usage) so the usage picture has no hole in it. UsageLog()
+            # is cheap to construct (no connection opened until .record()), so a fresh instance
+            # per request is fine -- same "open, write, close" posture record() already has.
+            usage_log = UsageLog(data_dir / "mcp_usage.db")
+            start = time.perf_counter()
             try:
                 response = mcp_server.semantic_search(query, filters, k)
             except (TransientError, PermanentError, ContractError) as e:
+                usage_log.record(
+                    source="dashboard", tool="semantic_search", query=query, k=k, filters=filters,
+                    latency_ms=(time.perf_counter() - start) * 1000.0,
+                    result_count=None, candidates=None, error=type(e).__name__,
+                )
                 # A real search reaches live infra (GpuLock/TEI/the vector store, T-DOC24/25) --
                 # degrade to a clean error response, same as `/api/control`'s dispatch below,
                 # never a crashed request thread (ThreadingHTTPServer runs each request on its
@@ -450,6 +465,12 @@ def make_handler(
                 logger.warning("search failed for query=%r: %s", query, e)
                 self._json(502, {"ok": False, "message": "search failed; see server logs"})
                 return
+            usage_log.record(
+                source="dashboard", tool="semantic_search", query=query, k=k, filters=filters,
+                latency_ms=(time.perf_counter() - start) * 1000.0,
+                result_count=response.coverage.returned, candidates=response.coverage.candidates,
+                error=None,
+            )
             self._json(200, {
                 "ok": True,
                 "coverage": {

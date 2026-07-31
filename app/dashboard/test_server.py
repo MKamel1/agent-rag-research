@@ -5,6 +5,7 @@ parse bodies correctly, and return the exact API-contract shape, without touchin
 """
 
 import json
+import sqlite3
 import threading
 import urllib.error
 import urllib.parse
@@ -235,6 +236,15 @@ def test_root_html_has_drop_in_panel_wired_to_the_start_drop_in_action(running_s
     assert b'"start_drop_in"' in body
 
 
+def test_root_html_has_usage_panel(running_server):
+    url, _ = running_server
+    status, body = _get_raw(url, "/")
+    assert status == 200
+    assert b"renderUsage" in body
+    # available: false must render "no usage recorded yet", not a wall of zeros.
+    assert b"no usage recorded yet" in body
+
+
 # --- OG-48#1/OG-49#4: GET /api/status and GET /api/search are now token-gated ------------------
 
 
@@ -267,7 +277,7 @@ def test_status_route_shape_matches_api_contract(running_server):
     assert status == 200
     assert set(body.keys()) == {
         "funnel", "run", "telemetry", "downloads", "downloader", "disk", "consistency",
-        "quarantine_reasons", "search", "tei", "drop_in",
+        "quarantine_reasons", "search", "tei", "drop_in", "usage",
     }
     assert set(body["funnel"].keys()) == {
         "harvested", "parsed", "chunked", "summarized", "embedded", "stored", "done", "quarantined",
@@ -388,6 +398,16 @@ def test_status_route_includes_drop_in_block(running_server):
     for key in ("pending_papers", "pending_books", "staged", "processed",
                 "failed", "excluded", "latest_manifest", "pending_drop_in"):
         assert key in block, f"missing {key}"
+
+
+def test_status_route_includes_usage_block(running_server):
+    url, _ = running_server
+    status, body = _get(url, "/api/status")
+    assert status == 200
+    assert "usage" in body
+    assert "available" in body["usage"]
+    # No mcp_usage.db has been written in this tmp_path -- available: false, not a wall of zeros.
+    assert body["usage"]["available"] is False
 
 
 def test_control_start_drop_in_dispatches_and_returns_ok(running_server):
@@ -1041,6 +1061,40 @@ def test_search_route_backend_failure_degrades_to_502_not_a_crash(tmp_path):
     # must never see the raw backend exception text -- it can carry lock paths/vendor strings.
     assert "TEI reranker unreachable" not in body["message"]
     assert "TEI" not in body["message"]
+
+
+def test_search_route_records_dashboard_usage_on_success(tmp_path):
+    """Task 3: `/api/search` must record with source="dashboard" so the usage picture (Task 1's
+    `mcp_usage.db`) has no hole in it alongside the MCP tools' own @record_usage rows."""
+    fake_mcp = _FakeMcpServer(results=[], coverage=Coverage(returned=0, candidates=3))
+
+    with _search_server(tmp_path, fake_mcp) as url:
+        status, _body = _get(url, "/api/search?q=estimator")
+
+    assert status == 200
+    conn = sqlite3.connect(tmp_path / "mcp_usage.db")
+    row = conn.execute(
+        "SELECT source, tool, query, result_count, candidates, error FROM requests"
+    ).fetchone()
+    conn.close()
+    assert row == ("dashboard", "semantic_search", "estimator", 0, 3, None)
+
+
+def test_search_route_records_dashboard_usage_on_backend_failure(tmp_path):
+    """Recording happens on the failure path too -- without changing the existing 502 response."""
+    fake_mcp = _FakeMcpServer(error=TransientError("TEI reranker unreachable"))
+
+    with _search_server(tmp_path, fake_mcp) as url:
+        status, body = _get_allow_error(url, "/api/search?q=estimator")
+
+    assert status == 502  # existing error-response behavior is unchanged
+    assert body["ok"] is False
+    conn = sqlite3.connect(tmp_path / "mcp_usage.db")
+    row = conn.execute(
+        "SELECT source, tool, query, result_count, candidates, error FROM requests"
+    ).fetchone()
+    conn.close()
+    assert row == ("dashboard", "semantic_search", "estimator", None, None, "TransientError")
 
 
 def test_search_route_backend_failure_logs_full_detail_server_side(tmp_path, caplog):
