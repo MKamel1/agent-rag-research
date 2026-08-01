@@ -1970,3 +1970,185 @@ def test_terminate_orphan_downloaders_with_no_manifest_terminates_every_live_pid
         terminate=lambda pid: killed.append(pid) or True,
     )
     assert sorted(killed) == [1, 2] and sorted(out) == [1, 2]
+
+
+# --- orphan termination: killpg cannot signal a non-group-leader pid ----------------------------
+#
+# `_signal_group` must pick `os.killpg` vs plain `os.kill` based on `pid`'s ACTUAL pgid, not
+# assume `pid == pgid` always holds (an orphaned `app.prefetch_pdfs` inherits its dead supervisor's
+# pgid -- see `_signal_group`'s own docstring). Every test here fakes `os.getpgid`/`os.killpg`/
+# `os.kill` -- none signals a real process.
+
+
+class _FakeProc:
+    """Stands in for one OS process's signaling surface. `dies_after` is how many signals
+    (delivered via whichever of killpg/kill `_signal_group` picks) this fake survives before it
+    actually goes away -- lets a test drive `_terminate_with_escalation`'s full TERM/TERM/KILL
+    ladder without a real process ever existing."""
+
+    def __init__(self, pid, pgid, dies_after=1):
+        self.pid = pid
+        self.pgid = pgid
+        self.dies_after = dies_after
+        self.signals_received = 0
+        self.calls: list[tuple[str, int]] = []
+        self.alive = True
+
+    def getpgid(self):
+        if not self.alive:
+            raise ProcessLookupError(self.pid)
+        return self.pgid
+
+    def receive(self, method, sig):
+        self.calls.append((method, sig))
+        if not self.alive:
+            raise ProcessLookupError(self.pid)
+        self.signals_received += 1
+        if self.signals_received >= self.dies_after:
+            self.alive = False
+
+    def probe(self):
+        """`os.kill(pid, 0)` liveness check -- raises iff dead, never counts as a delivered signal."""
+        if not self.alive:
+            raise ProcessLookupError(self.pid)
+
+
+def _install_fake_process_table(monkeypatch, procs):
+    """Redirects `os.getpgid`/`os.killpg`/`os.kill` to the given `_FakeProc`s so
+    `_signal_group`/`_terminate_with_escalation`/`_wait_for_death` run for real against fakes."""
+    by_pid = {p.pid: p for p in procs}
+
+    def fake_getpgid(pid):
+        return by_pid[pid].getpgid()
+
+    def fake_killpg(pgid, sig):
+        # `_signal_group` only ever calls `os.killpg(pid, sig)` when `pid == pgid` (a leader), so
+        # the first arg here always names a registered process directly.
+        by_pid[pgid].receive("killpg", sig)
+
+    def fake_kill(pid, sig):
+        proc = by_pid[pid]
+        if sig == 0:
+            proc.probe()
+        else:
+            proc.receive("kill", sig)
+
+    monkeypatch.setattr(controller_mod.os, "getpgid", fake_getpgid)
+    monkeypatch.setattr(controller_mod.os, "killpg", fake_killpg)
+    monkeypatch.setattr(controller_mod.os, "kill", fake_kill)
+    return by_pid
+
+
+def test_signal_group_uses_killpg_for_a_group_leader(monkeypatch):
+    """`pgid == pid` (a `build_corpus` supervisor, or any freshly-spawned run) -- group semantics
+    preserved, exactly as before this fix."""
+    calls = []
+    monkeypatch.setattr(controller_mod.os, "getpgid", lambda pid: pid)
+    monkeypatch.setattr(controller_mod.os, "killpg", lambda pid, sig: calls.append(("killpg", pid, sig)))
+    monkeypatch.setattr(controller_mod.os, "kill", lambda pid, sig: calls.append(("kill", pid, sig)))
+    controller_mod._signal_group(2019305, signal.SIGTERM)
+    assert calls == [("killpg", 2019305, signal.SIGTERM)]
+
+
+def test_signal_group_falls_back_to_kill_for_a_non_leader_pid(monkeypatch):
+    """The orphan case: `pgid` names a dead supervisor, not `pid` itself -- `killpg` would target a
+    leaderless group and signal nothing, so plain `kill` must be used instead."""
+    calls = []
+    monkeypatch.setattr(controller_mod.os, "getpgid", lambda pid: 1181456)  # dead supervisor's pgid
+    monkeypatch.setattr(controller_mod.os, "killpg", lambda pid, sig: calls.append(("killpg", pid, sig)))
+    monkeypatch.setattr(controller_mod.os, "kill", lambda pid, sig: calls.append(("kill", pid, sig)))
+    controller_mod._signal_group(1181468, signal.SIGTERM)
+    assert calls == [("kill", 1181468, signal.SIGTERM)]
+
+
+def test_signal_group_swallows_process_lookup_error_from_the_delivery_call(monkeypatch):
+    """A process that dies in the gap between the pgid check and the actual signal call is
+    success, not an error -- matches the pre-existing `except ProcessLookupError: pass` contract."""
+    monkeypatch.setattr(controller_mod.os, "getpgid", lambda pid: pid)  # leader
+
+    def boom(pid, sig):
+        raise ProcessLookupError(pid)
+
+    monkeypatch.setattr(controller_mod.os, "killpg", boom)
+    controller_mod._signal_group(4242, signal.SIGTERM)  # must not raise
+
+
+def test_signal_group_returns_quietly_when_pid_is_already_gone(monkeypatch):
+    """`os.getpgid` itself raising `ProcessLookupError` (pid already dead before any signal is
+    attempted) is also just "nothing to signal", not an error."""
+    def boom(pid):
+        raise ProcessLookupError(pid)
+
+    calls = []
+    monkeypatch.setattr(controller_mod.os, "getpgid", boom)
+    monkeypatch.setattr(controller_mod.os, "killpg", lambda pid, sig: calls.append(("killpg", pid, sig)))
+    monkeypatch.setattr(controller_mod.os, "kill", lambda pid, sig: calls.append(("kill", pid, sig)))
+    controller_mod._signal_group(999999, signal.SIGTERM)
+    assert calls == []
+
+
+def test_escalation_ladder_uses_killpg_throughout_for_a_group_leader(monkeypatch):
+    """TERM -> TERM -> KILL, all delivered via `killpg`, when `pid` is its own group leader."""
+    monkeypatch.setattr(controller_mod, "_DEATH_TIMEOUT_S", 0.3)
+    monkeypatch.setattr(controller_mod, "_ESCALATION_RESEND_TIMEOUT_S", 0.3)
+    monkeypatch.setattr(controller_mod, "_ESCALATION_KILL_TIMEOUT_S", 0.3)
+    proc = _FakeProc(pid=2019305, pgid=2019305, dies_after=3)
+    _install_fake_process_table(monkeypatch, [proc])
+
+    assert controller_mod._terminate_with_escalation(2019305) is True
+    assert proc.calls == [
+        ("killpg", signal.SIGTERM), ("killpg", signal.SIGTERM), ("killpg", signal.SIGKILL),
+    ]
+
+
+def test_escalation_ladder_uses_kill_throughout_for_a_non_leader_pid(monkeypatch):
+    """Same TERM -> TERM -> KILL ladder, but delivered via plain `kill` throughout for an orphan
+    (`pgid != pid`) -- the ladder logic is unchanged, only the delivery mechanism adapts."""
+    monkeypatch.setattr(controller_mod, "_DEATH_TIMEOUT_S", 0.3)
+    monkeypatch.setattr(controller_mod, "_ESCALATION_RESEND_TIMEOUT_S", 0.3)
+    monkeypatch.setattr(controller_mod, "_ESCALATION_KILL_TIMEOUT_S", 0.3)
+    proc = _FakeProc(pid=1181468, pgid=1181456, dies_after=3)  # pgid names a dead supervisor
+    _install_fake_process_table(monkeypatch, [proc])
+
+    assert controller_mod._terminate_with_escalation(1181468) is True
+    assert proc.calls == [
+        ("kill", signal.SIGTERM), ("kill", signal.SIGTERM), ("kill", signal.SIGKILL),
+    ]
+
+
+def test_escalation_treats_a_mid_ladder_process_lookup_error_as_confirmed_dead(monkeypatch):
+    """The process actually dies (on its own, or to the signal just sent) between one escalation
+    step and the next -- `_terminate_with_escalation` must report it dead, not raise or hang."""
+    monkeypatch.setattr(controller_mod, "_DEATH_TIMEOUT_S", 0.3)
+    monkeypatch.setattr(controller_mod, "_ESCALATION_RESEND_TIMEOUT_S", 0.3)
+    monkeypatch.setattr(controller_mod, "_ESCALATION_KILL_TIMEOUT_S", 0.3)
+    proc = _FakeProc(pid=1181468, pgid=1181456, dies_after=1)  # gone right after the first TERM
+    _install_fake_process_table(monkeypatch, [proc])
+
+    assert controller_mod._terminate_with_escalation(1181468) is True
+    assert proc.calls == [("kill", signal.SIGTERM)], "must stop escalating once confirmed dead"
+
+
+def test_restart_downloader_terminates_a_mix_of_leader_and_non_leader_pids(tmp_path, monkeypatch):
+    """The scenario D-6 exists for: `live_pids()` reports both a genuine group leader and an
+    orphan reparented off a dead supervisor -- `restart_downloader` must terminate both, using the
+    real (unfaked) `_terminate_with_escalation`/`_signal_group`, only the OS primitives are fake."""
+    monkeypatch.setattr(controller_mod, "_DEATH_TIMEOUT_S", 0.3)
+    monkeypatch.setattr(controller_mod, "_ESCALATION_RESEND_TIMEOUT_S", 0.3)
+    monkeypatch.setattr(controller_mod, "_ESCALATION_KILL_TIMEOUT_S", 0.3)
+    leader = _FakeProc(pid=2019307, pgid=2019307, dies_after=1)
+    orphan = _FakeProc(pid=1181468, pgid=1181456, dies_after=1)  # pgid names a dead supervisor
+    _install_fake_process_table(monkeypatch, [leader, orphan])
+
+    controller_mod._write_manifest(tmp_path, {
+        "run_id": "dl-1", "status": "done", "pid": 999999,
+        "pid_starttime": None, "pid_cmdline": None, "mode": "download",
+    })
+    controller_mod.restart_downloader(
+        tmp_path, spawn=lambda *a, **k: 9999,
+        live_pids=lambda: [leader.pid, orphan.pid],
+    )
+
+    assert not leader.alive and not orphan.alive
+    assert leader.calls == [("killpg", signal.SIGTERM)]
+    assert orphan.calls == [("kill", signal.SIGTERM)]

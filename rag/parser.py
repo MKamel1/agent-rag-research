@@ -542,6 +542,11 @@ def _build_blocks(
             continue
 
         if item_type == "list" and item.get("sub_type") == "ref_text":
+            # Drops blank/whitespace-only reference strings right here, at construction -- why two
+            # later "blank citation" fixes downstream were no-ops (a blank never reaches
+            # `_fetch_references` at all). The real GROBID-500 trigger turned out to be unrelated:
+            # C0 control bytes inside otherwise-normal, non-blank citations -- see `_fetch_references`
+            # for the full story.
             raw_refs.extend(x for x in item.get("list_items", []) if x.strip())
             continue
 

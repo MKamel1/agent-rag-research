@@ -351,17 +351,46 @@ def _wait_for_death(pid: int, *, timeout_s: float = _DEATH_TIMEOUT_S) -> bool:
     return not _pid_running(pid)
 
 
-def _signal_group(pid: int, sig: int) -> None:
-    """Signals the whole process group `pid` leads (`start_new_session=True` at spawn makes
-    pid == pgid), so Pass-1's parse-worker children -- which inherit that same group -- die too,
-    instead of reparenting to init and continuing to run while the manifest says paused/stopped.
-    """
+def _pgid_of(pid: int) -> int | None:
+    """`pid`'s current process-group id, or `None` if it's already gone (`os.getpgid` raises
+    `ProcessLookupError` for a dead pid) -- `_signal_group` treats that the same as any other
+    "nothing left to signal" case."""
     try:
-        os.killpg(pid, sig)
+        return os.getpgid(pid)
+    except ProcessLookupError:
+        return None
+
+
+def _signal_group(pid: int, sig: int) -> None:
+    """Signals `pid` the way that actually reaches it.
+
+    The common, INTENDED case is `pid == pgid`: every spawn (`_spawn`/`_spawn_download`/
+    `_spawn_drop_in`) launches with `start_new_session=True`, making the child its own
+    process-group leader. `os.killpg` there reaches the whole group, so Pass-1's parse-worker
+    children -- which inherit that same group -- die too, instead of reparenting to init and
+    continuing to run while the manifest says paused/stopped.
+
+    An orphaned `app.prefetch_pdfs` is the exception: `app/build_corpus.py` deliberately spawns it
+    WITHOUT `start_new_session`, so it inherits its supervisor's pgid. Once that supervisor dies,
+    the child reparents to init but its pgid is unchanged -- now naming a group whose leader no
+    longer exists. `killpg` REQUIRES `pid` to be a group leader; calling it on a non-leader pid
+    signals nothing (measured 2026-08-01: Restart downloader left two such orphans running, while
+    a plain `kill <pid>` killed them instantly). So: `killpg` only when `pid` is its own group
+    leader, plain `kill` otherwise.
+    """
+    pgid = _pgid_of(pid)
+    if pgid is None:
+        return  # already gone -- nothing to signal
+    try:
+        if pgid == pid:
+            os.killpg(pid, sig)
+        else:
+            os.kill(pid, sig)
     except ProcessLookupError:
         pass
     except PermissionError:
-        os.kill(pid, sig)  # fallback: at least reach the leader we can signal
+        if pgid == pid:
+            os.kill(pid, sig)  # fallback: at least reach the leader we can signal
 
 
 # OG-49#5: how long to wait after a RESEND of SIGTERM, and after the final SIGKILL, before giving
