@@ -533,19 +533,33 @@ def reconcile(data_dir: str | Path) -> dict | None:
         else:
             manifest["status"] = {"pausing": "paused", "stopping": "done"}[status]
         _write_manifest(data_dir, manifest)
-        # Only "done" is cleaned up here. "paused" (from "pausing") expects a later resume() that
-        # reuses run_cwd, so it must NOT be cleaned up -- unchanged (OG-49 M10). "failed" USED to
-        # be cleaned up alongside "done" here, but that's exactly backwards: a crashed run is
-        # precisely the one the user will resume (that's the whole point of `reconcile()` telling
-        # a crash apart from a clean finish, OG-47#2) -- deleting its run_cwd out from under it
-        # guaranteed `resume()`'s later `subprocess.Popen(cwd=<deleted dir>)` a `FileNotFoundError`
-        # for every run that had edited keywords/filters/ordering (an override run_cwd, never the
-        # real data_dir). `_resume_locked` below now rebuilds a missing run_cwd from the manifest's
-        # own recorded params instead, so a "failed" run's scratch dir is left alone here; only a
-        # final, user-initiated `stop()` (never resumed) or a later abandoning `start()`
-        # (`_start_locked`'s own cleanup) removes it.
+        # Only "done" is CLEANED UP (deleted) here. "paused" (from "pausing") expects a later
+        # resume() that reuses run_cwd, so it must NOT be cleaned up -- unchanged (OG-49 M10).
+        # "failed" USED to be cleaned up alongside "done" here, but that's exactly backwards: a
+        # crashed run is precisely the one the user will resume (that's the whole point of
+        # `reconcile()` telling a crash apart from a clean finish, OG-47#2) -- deleting its run_cwd
+        # out from under it guaranteed `resume()`'s later `subprocess.Popen(cwd=<deleted dir>)` a
+        # `FileNotFoundError` for every run that had edited keywords/filters/ordering (an override
+        # run_cwd, never the real data_dir). `_resume_locked` below now rebuilds a missing run_cwd
+        # from the manifest's own recorded params instead, so a "failed" run's scratch dir is left
+        # alone here; only a final, user-initiated `stop()` (never resumed) or a later abandoning
+        # `start()` (`_start_locked`'s own cleanup) removes it. D-11: "failed" still gets its
+        # artifacts ARCHIVED (not deleted) below -- deletion and archiving used to be one
+        # `_cleanup_run_cwd` call, but a failed run needs the latter without the former.
         if manifest["status"] == "done":
             _cleanup_run_cwd(data_dir, manifest)
+        elif manifest["status"] == "failed":
+            # D-11: a failed run's `run_cwd` is deliberately kept (comment block above) so a later
+            # `resume()` can reuse it -- but that means `_cleanup_run_cwd`'s archiving (D-7) never
+            # fires for it either, and a failed run is exactly the one whose `prefetch.log`/
+            # `config.yaml` matter most. Archive here, independently of cleanup/deletion. Same
+            # `run_cwd == data_dir` no-op as `_cleanup_run_cwd` (an unedited run has no scratch
+            # dir to archive from). Idempotent (`shutil.copy2` over the same dest names), so
+            # `_cleanup_run_cwd` re-archiving the same files later (a follow-up run, or an eventual
+            # user-initiated `stop()`) is harmless.
+            run_cwd = manifest.get("run_cwd")
+            if run_cwd and Path(run_cwd) != data_dir:
+                _archive_run_artifacts(data_dir, Path(run_cwd), str(manifest.get("run_id") or "unknown"))
     return manifest
 
 
