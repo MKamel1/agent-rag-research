@@ -6,6 +6,7 @@ import json
 import os
 import sqlite3
 import subprocess
+import time
 
 import app.dashboard.status as status_mod
 from migrations.migrate import migrate
@@ -661,33 +662,48 @@ def test_read_consistency_verdict_none_when_done_count_unknown(monkeypatch):
 # --- read_downloader (OG-43) -------------------------------------------------------------------
 
 
-def test_read_downloader_degrades_to_nulls_when_no_run_cwd(tmp_path):
+# Every test below that doesn't itself care about `live_pids` injects an empty fake explicitly --
+# the operator's OWN real downloader is a live `app.prefetch_pdfs` process on THIS machine while
+# these tests run (D-6's whole reason for existing), so leaving `read_downloader` to its real
+# `_live_prefetch_pids()` default would make these tests' `live_pids`/`orphan`/`tags_pending`
+# fields silently depend on whatever happens to be running on the host at test time.
+
+
+def test_read_downloader_degrades_to_nulls_when_no_run_cwd(tmp_path, monkeypatch):
+    monkeypatch.setattr(status_mod, "_live_prefetch_pids", lambda: [])
     result = status_mod.read_downloader(None)
-    assert result == {"prefetch_alive": None, "downloaded": None, "prefetch_target": None}
+    assert result == {
+        "prefetch_alive": None, "downloaded": None, "prefetch_target": None,
+        "live_pids": [], "orphan": False, "tracked_pid": None, "tags_pending": None,
+    }
 
 
-def test_read_downloader_reports_dead_when_pid_file_missing(tmp_path):
+def test_read_downloader_reports_dead_when_pid_file_missing(tmp_path, monkeypatch):
+    monkeypatch.setattr(status_mod, "_live_prefetch_pids", lambda: [])
     result = status_mod.read_downloader(tmp_path)
     assert result["prefetch_alive"] is None  # no prefetch.pid at all -- distinct from "dead"
 
 
-def test_read_downloader_reports_dead_for_a_stale_pid(tmp_path):
+def test_read_downloader_reports_dead_for_a_stale_pid(tmp_path, monkeypatch):
+    monkeypatch.setattr(status_mod, "_live_prefetch_pids", lambda: [])
     (tmp_path / "prefetch.pid").write_text("999999999")
     result = status_mod.read_downloader(tmp_path)
     assert result["prefetch_alive"] is False
 
 
 def test_read_downloader_reports_alive_for_a_real_prefetch_pdfs_process(tmp_path, monkeypatch):
+    monkeypatch.setattr(status_mod, "_live_prefetch_pids", lambda: [])
     (tmp_path / "prefetch.pid").write_text("4242")
     monkeypatch.setattr(status_mod, "_is_live_prefetch", lambda pid: pid == 4242)
     result = status_mod.read_downloader(tmp_path)
     assert result["prefetch_alive"] is True
 
 
-def test_read_downloader_tails_its_own_dedicated_log_for_the_latest_pace_line(tmp_path):
+def test_read_downloader_tails_its_own_dedicated_log_for_the_latest_pace_line(tmp_path, monkeypatch):
     """`_PREFETCH_LOG_NAME` (`prefetch.log`), not the shared run log -- T-DOC<n>: a shared log
     also written by far more verbose parse-progress logging could push the real pace line outside
     `_LOG_TAIL_BYTES`'s window; a dedicated, single-writer log can't have that problem."""
+    monkeypatch.setattr(status_mod, "_live_prefetch_pids", lambda: [])
     (tmp_path / "prefetch.log").write_text(
         "some other line\n"
         "prefetch_pdfs: downloaded 10 / target 30000 (cache now 10)\n"
@@ -699,13 +715,15 @@ def test_read_downloader_tails_its_own_dedicated_log_for_the_latest_pace_line(tm
     assert result["prefetch_target"] == 30000
 
 
-def test_read_downloader_pace_degrades_when_log_missing(tmp_path):
+def test_read_downloader_pace_degrades_when_log_missing(tmp_path, monkeypatch):
+    monkeypatch.setattr(status_mod, "_live_prefetch_pids", lambda: [])
     result = status_mod.read_downloader(tmp_path)
     assert result["downloaded"] is None
     assert result["prefetch_target"] is None
 
 
-def test_read_downloader_pace_degrades_when_no_pace_line_yet(tmp_path):
+def test_read_downloader_pace_degrades_when_no_pace_line_yet(tmp_path, monkeypatch):
+    monkeypatch.setattr(status_mod, "_live_prefetch_pids", lambda: [])
     (tmp_path / "prefetch.log").write_text("nothing relevant here\n")
     result = status_mod.read_downloader(tmp_path)
     assert result["downloaded"] is None
@@ -718,6 +736,72 @@ def test_is_live_prefetch_false_for_non_prefetch_cmdline():
 
 def test_is_live_prefetch_false_for_a_dead_pid():
     assert status_mod._is_live_prefetch(999999999) is False
+
+
+# --- D-6 Task 1: read_downloader sees every live downloader via the process table --------------
+
+
+def test_read_downloader_reports_an_untracked_live_downloader_as_an_orphan(tmp_path, monkeypatch):
+    """The 20-hour blind spot: a prefetch process alive but named by neither prefetch.pid nor the
+    manifest was invisible to the dashboard entirely."""
+    monkeypatch.setattr(status_mod, "_live_prefetch_pids", lambda: [4242])
+    out = status_mod.read_downloader(tmp_path, manifest_pid=None)
+    assert out["live_pids"] == [4242]
+    assert out["orphan"] is True
+
+
+def test_read_downloader_is_not_an_orphan_when_the_manifest_names_it(tmp_path, monkeypatch):
+    monkeypatch.setattr(status_mod, "_live_prefetch_pids", lambda: [4242])
+    out = status_mod.read_downloader(tmp_path, manifest_pid=4242)
+    assert out["orphan"] is False
+    assert out["tracked_pid"] == 4242
+
+
+def test_read_downloader_no_live_process_is_not_an_orphan(tmp_path, monkeypatch):
+    monkeypatch.setattr(status_mod, "_live_prefetch_pids", lambda: [])
+    out = status_mod.read_downloader(tmp_path, manifest_pid=None)
+    assert out["live_pids"] == []
+    assert out["orphan"] is False
+
+
+# --- D-6 Task 3: tag-staleness warning -----------------------------------------------------------
+
+
+def test_tags_pending_when_the_pool_was_edited_after_the_downloader_started(tmp_path, monkeypatch):
+    pool = tmp_path / "tag_pool.json"
+    pool.write_text('{"active": ["a"], "held": []}')
+    # downloader started an hour before the pool was last written
+    monkeypatch.setattr(status_mod, "_process_start_epoch", lambda pid: pool.stat().st_mtime - 3600)
+    out = status_mod.read_downloader(
+        tmp_path, manifest_pid=4242, live_pids=lambda: [4242], data_dir=tmp_path,
+    )
+    assert out["tags_pending"] is True
+
+
+def test_tags_not_pending_when_the_downloader_started_after_the_last_edit(tmp_path, monkeypatch):
+    pool = tmp_path / "tag_pool.json"
+    pool.write_text('{"active": ["a"], "held": []}')
+    monkeypatch.setattr(status_mod, "_process_start_epoch", lambda pid: pool.stat().st_mtime + 3600)
+    out = status_mod.read_downloader(
+        tmp_path, manifest_pid=4242, live_pids=lambda: [4242], data_dir=tmp_path,
+    )
+    assert out["tags_pending"] is False
+
+
+def test_tags_pending_is_none_when_no_downloader_is_running(tmp_path, monkeypatch):
+    """Absent != false. With nothing running there is nothing for tags to be pending against."""
+    out = status_mod.read_downloader(
+        tmp_path, manifest_pid=None, live_pids=lambda: [], data_dir=tmp_path,
+    )
+    assert out["tags_pending"] is None
+
+
+def test_tags_pending_none_when_tag_pool_json_does_not_exist_yet(tmp_path, monkeypatch):
+    monkeypatch.setattr(status_mod, "_process_start_epoch", lambda pid: time.time() - 3600)
+    out = status_mod.read_downloader(
+        tmp_path, manifest_pid=4242, live_pids=lambda: [4242], data_dir=tmp_path,
+    )
+    assert out["tags_pending"] is None
 
 
 # --- read_disk (OG-43) --------------------------------------------------------------------------
