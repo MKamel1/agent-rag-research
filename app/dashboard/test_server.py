@@ -545,6 +545,34 @@ def test_control_restore_tags_brings_a_held_tag_back(running_server):
     assert a_tag not in [h["query"] for h in body["tags"]["held"]]
 
 
+def test_control_purge_tags_reaches_tag_pool_purge(running_server):
+    url, _ = running_server
+    _, first_status = _get(url, "/api/status")
+    a_tag = first_status["tags"]["active"][0]
+    _post(url, "/api/control", {"action": "hold_tags", "tags": [a_tag]})
+
+    resp_status, resp = _post(url, "/api/control", {"action": "purge_tags", "tags": [a_tag]})
+    assert resp_status == 200
+    assert resp["ok"] is True
+
+    status, body = _get(url, "/api/status")
+    assert a_tag not in body["tags"]["active"]
+    assert a_tag not in [h["query"] for h in body["tags"]["held"]]
+
+
+def test_control_purge_tags_on_an_active_tag_returns_400(running_server):
+    url, _ = running_server
+    _, first_status = _get(url, "/api/status")
+    a_tag = first_status["tags"]["active"][0]
+
+    status, resp = _post(url, "/api/control", {"action": "purge_tags", "tags": [a_tag]})
+    assert status == 400
+    assert resp["ok"] is False
+
+    _, body = _get(url, "/api/status")
+    assert a_tag in body["tags"]["active"]  # refused -- pool untouched
+
+
 def test_control_add_tags_adds_a_new_query(running_server):
     url, _ = running_server
     status, resp = _post(url, "/api/control", {"action": "add_tags", "tags": ["a new topic"]})

@@ -576,6 +576,9 @@ def make_handler(
             elif action == "restore_tags":
                 tags = [str(t) for t in body.get("tags") or []]
                 tag_pool.restore(data_dir, _static_config(data_dir).focus_area_queries, tags)
+            elif action == "purge_tags":
+                tags = [str(t) for t in body.get("tags") or []]
+                tag_pool.purge(data_dir, _static_config(data_dir).focus_area_queries, tags)
             elif action == "pause":
                 controller_module.pause(data_dir)
             elif action == "resume":

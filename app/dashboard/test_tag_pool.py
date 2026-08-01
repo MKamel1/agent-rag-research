@@ -71,6 +71,31 @@ def test_active_queries_returns_just_the_active_list(tmp_path):
     assert tag_pool.active_queries(tmp_path, seed) == ["a"]
 
 
+def test_purge_removes_a_held_tag_from_the_pool_entirely(tmp_path):
+    seed = ["a", "b"]
+    tag_pool.hold(tmp_path, seed, ["b"])
+    pool = tag_pool.purge(tmp_path, seed, ["b"])
+    assert "b" not in pool["active"]
+    assert pool["held"] == []
+
+
+def test_purge_on_an_active_tag_is_refused_and_leaves_the_pool_byte_identical(tmp_path):
+    seed = ["a", "b"]
+    tag_pool.load(tmp_path, seed)  # force the seed write so there's a file to compare bytes of
+    before = (tmp_path / "tag_pool.json").read_bytes()
+    with pytest.raises(controller.InvalidOverrideError):
+        tag_pool.purge(tmp_path, seed, ["a"])
+    after = (tmp_path / "tag_pool.json").read_bytes()
+    assert before == after
+
+
+def test_purge_of_an_unknown_tag_is_a_harmless_no_op(tmp_path):
+    seed = ["a", "b"]
+    pool = tag_pool.purge(tmp_path, seed, ["not-present"])
+    assert pool["active"] == ["a", "b"]
+    assert pool["held"] == []
+
+
 def test_corrupt_pool_file_reseeds_with_a_warning(tmp_path, caplog):
     (tmp_path / "tag_pool.json").write_text("not json")
     with caplog.at_level("WARNING"):

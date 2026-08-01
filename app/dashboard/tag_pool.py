@@ -148,6 +148,27 @@ def hold(data_dir: Path, seed_queries: list[str], tags: list[str]) -> dict:
         return _write(data_dir, pool)
 
 
+def purge(data_dir: Path, seed_queries: list[str], tags: list[str]) -> dict:
+    """Removes `tags` from `held` entirely -- the one destructive tag action. Refused with
+    `controller.InvalidOverrideError` -- pool left byte-identical -- if any named tag is currently
+    `active`: purge is reachable only from the held column (see `index.html`'s X-button semantics),
+    so a tag can never be destroyed in one gesture. An unknown/not-held tag is a harmless no-op."""
+    from app.dashboard import controller
+
+    data_dir = Path(data_dir)
+    with controller._control_lock(data_dir):
+        pool = _read_or_seed(data_dir, seed_queries)
+        active = set(pool["active"])
+        blocked = [t for t in tags if t in active]
+        if blocked:
+            raise controller.InvalidOverrideError(
+                f"purge_tags refused: {blocked!r} is currently active -- hold it first"
+            )
+        tags = set(tags)
+        pool["held"] = [h for h in pool["held"] if h["query"] not in tags]
+        return _write(data_dir, pool)
+
+
 def restore(data_dir: Path, seed_queries: list[str], tags: list[str]) -> dict:
     """Moves `tags` currently in `held` back to `active`. A tag not currently held is a harmless
     no-op."""
