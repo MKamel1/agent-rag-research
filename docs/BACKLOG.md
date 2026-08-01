@@ -22,8 +22,8 @@ Spec: `docs/superpowers/specs/2026-07-30-dashboard-dropin-and-usage-design.md`
 | D-4 | Test staleness audit | **DONE** | `docs/TEST-AUDIT-2026-07-31.md`. 78 files, ~1,440 test functions, 2 stale tests, 6 coverage gaps. T-1/T-2/T-3 fixed in PR #212. |
 | D-5 | Counter clarity + persistent tag pool | **DONE** | PRs #214 (counters, tag pool), #215 (drag-and-drop, purge). |
 | D-6 | Downloader tracking + restart control | **DONE** | PR #217. Live: `/proc` is the authority, orphan detection, Restart button, tag-staleness warning. |
-| D-7 | Archive per-run `prefetch.log` + config before cleanup | **IN PROGRESS** | PR #218 (spec+plan). Demonstrated live 2026-08-01: stopping a run deleted its harvest diagnostics. |
-| D-8 | Bound retries for repeatedly-failing quarantined papers | **OPEN** | See below. |
+| D-7 | Archive per-run `prefetch.log` + config before cleanup | **DONE — not yet exercised** | PRs #218/#219. No run has ended since merging, so the archive path has never actually fired. |
+| D-8 | Bound retries for repeatedly-failing quarantined papers | **OPEN — lower priority since O-2** | O-2's fix removed the cause. Now a guard against future misclassification, not a live problem. See below. |
 
 ---
 
@@ -130,17 +130,16 @@ the same class of bug and is in scope here.
 
 ---
 
-## Test-audit fix list — AWAITING OPERATOR APPROVAL
+## Test-audit fix list — T-1..T-3 DONE (PR #212); T-4..T-8 deferred by the operator
 
-From `docs/TEST-AUDIT-2026-07-31.md`. **Nothing here is actioned until the operator approves.**
-Ranked by value. Items T-1..T-3 are the ones worth doing; all three are purely additive (no existing
-test is modified), so the risk of acting on them is nil.
+From `docs/TEST-AUDIT-2026-07-31.md`. **T-1, T-2 and T-3 shipped in PR #212** (struck through below).
+T-4..T-8 remain open and were explicitly deferred by the operator as lower value.
 
 | # | item | kind | why |
 |---|---|---|---|
-| T-1 | Funnel → telemetry end-to-end test | gap | `server.py` reads `corpus["funnel"].get("done")` — a `.get`. If that key is renamed/nested/dropped, ETA and papers/hour silently zero out and **no test fails**. Only ever protected by hand-diffing. |
-| T-2 | `ingest_local --drop-dir` CLI test | gap | The path production uses. A regression makes a drop-in run scan the wrong directory, stage nothing, and **exit 0**. |
-| T-3 | `promote_pending_drop_in` concurrency test | gap | Its docstring names the exact race it defends against; both existing tests are single-threaded. The right pattern already exists at `test_controller.py:1495`. |
+| ~~T-1~~ | Funnel → telemetry end-to-end test | gap | `server.py` reads `corpus["funnel"].get("done")` — a `.get`. If that key is renamed/nested/dropped, ETA and papers/hour silently zero out and **no test fails**. Only ever protected by hand-diffing. |
+| ~~T-2~~ | `ingest_local --drop-dir` CLI test | gap | The path production uses. A regression makes a drop-in run scan the wrong directory, stage nothing, and **exit 0**. |
+| ~~T-3~~ | `promote_pending_drop_in` concurrency test | gap | Its docstring names the exact race it defends against; both existing tests are single-threaded. The right pattern already exists at `test_controller.py:1495`. |
 | T-4 | `_pr_labels` payload-shape tests | gap | Neither the raise-on-missing-`labels` nor the fallback-on-missing-`number` path is exercised. |
 | T-5 | Check (a)/(d) comment-matching tests | gap | Both regex raw added lines, so a comment-only mention trips them — a known, previously-hit failure mode with no test in either direction. |
 | T-6 | `test_start_tei_containers_poll_timeout_s_overrides_the_module_default` | stale | Asserts nothing about elapsed time; if `poll_timeout_s` were dropped the test would still pass, just take ~30s. No `pytest-timeout` configured. |
@@ -171,7 +170,8 @@ Recorded in `docs/BOOK-INTEGRATION-CLOSEOUT.md`; repeated here so they stay visi
 | id | item | status | notes |
 |---|---|---|---|
 | O-1 | Corpus is at its harvest ceiling | **BLOCKED — needs operator decision** | 12,333 done vs `target` 20,000. The downloader last reported `11556/30000 cached, only 6 new available`: arXiv is near-exhausted **for the current query filters**. Cannot reach 20k without changing `focus_area_queries` / `arxiv_categories` / the date window. Restarting runs will not move it. |
-| O-2 | 35 quarantined papers, mostly GROBID | **OPEN** | Repeated `POST /api/processCitationList → 500` plus a few `unparseable TEI`. A retry run re-quarantines them unchanged. Worth a GROBID-side look before another retry. |
+| O-2a | GROBID HTTP 500s (10 papers) | **FIXED — not yet verified on real data** | PR #221. Root cause: one blank citation makes GROBID 500 the whole batch (reproduced: `3 good + 1 empty` -> 500, `3 good` -> 200). Blanks now dropped and counted. **~10 papers should recover on the next ordinary run — that run has not happened yet.** |
+| O-2b | GROBID `unparseable TEI` (6 papers) | **OPEN** | A *different* failure: GROBID returns 200 with malformed XML. Deliberately out of scope for #221. Worth checking whether it is also deterministic-but-labelled-transient — that pattern cost real GPU time. |
 | O-3 | Stale `git stash` entry | **OPEN — do not touch without the owner** | `stash@{0}: On main: lessons-learned wip`. Provenance unknown; predates this session. |
 | O-4 | Dashboard is unsupervised by design | **WORKING AS INTENDED** | `scripts/dashboard.sh`: "no process supervisor, no systemd unit, no --restart policy". Needed manual restarts several times this session (stale process, agent live-checks). Revisit only if it becomes a real irritation. |
 
