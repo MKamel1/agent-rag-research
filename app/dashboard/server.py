@@ -280,6 +280,11 @@ def _status_dict(data_dir: Path, status_module, controller_module) -> dict:
                 manifest_parse_batch_size if manifest_parse_batch_size is not None
                 else _static_config(data_dir).parse_batch_size
             ),
+            # O-1: "supply_exhausted" or None -- `run.status == "done"` alone loses WHY a run
+            # finished short of target; app.build_corpus's run_outcome_<run_id>.json (read via
+            # controller.outcome_for_run, never this module reading the file itself) is the only
+            # source for that nuance.
+            "outcome": controller_module.outcome_for_run(data_dir, live.get("run_id")),
         },
         "telemetry": status_module.read_telemetry(
             live.get("events_path"), done,

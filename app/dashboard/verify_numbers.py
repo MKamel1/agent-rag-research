@@ -84,6 +84,7 @@ def verify(
     out: list[Discrepancy] = []
     out += _verify_funnel(data_dir, status.get("funnel"))
     out += _verify_by_doc_type(data_dir, status.get("by_doc_type"))
+    out += _verify_run(data_dir, status.get("run"))
     out += _verify_downloads(data_dir, status.get("downloads"))
     out += _verify_downloader(data_dir, status.get("downloader"), _pid_parent, manifest_pid)
     out += _verify_tags(data_dir, status.get("tags"))
@@ -257,6 +258,36 @@ def _manifest_pid_from_disk(data_dir: Path) -> int | None:
     except (OSError, json.JSONDecodeError):
         return None
     return manifest.get("pid")
+
+
+def _manifest_run_id_from_disk(data_dir: Path) -> str | None:
+    try:
+        manifest = json.loads((data_dir / "run_manifest.json").read_text())
+    except (OSError, json.JSONDecodeError):
+        return None
+    return manifest.get("run_id")
+
+
+def _verify_run(data_dir: Path, run: dict | None) -> list[Discrepancy]:
+    """O-1: `run.outcome` (`"supply_exhausted"` or `None`, `server.py`'s `/api/status` ->
+    `controller.outcome_for_run`) against ground truth read directly from
+    `<data_dir>/run_outcome_<run_id>.json` (`app/build_corpus.py`'s own completion record) --
+    keyed off the run_id on disk (`run_manifest.json`), NOT `run["run_id"]` from the payload under
+    test, so a wrong run_id the dashboard itself reported can't launder its own outcome check."""
+    if not run or "outcome" not in run:
+        return []
+    run_id = _manifest_run_id_from_disk(data_dir)
+    truth = None
+    if run_id:
+        try:
+            payload = json.loads((data_dir / f"run_outcome_{run_id}.json").read_text())
+        except (OSError, json.JSONDecodeError):
+            payload = None
+        if isinstance(payload, dict) and payload.get("run_id") == run_id:
+            truth = payload.get("outcome")
+    if run["outcome"] != truth:
+        return [Discrepancy("run.outcome", run["outcome"], truth)]
+    return []
 
 
 def _real_pid_parent(pid: int) -> int | None:

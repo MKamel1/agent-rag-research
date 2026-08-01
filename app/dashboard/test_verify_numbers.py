@@ -255,6 +255,71 @@ def test_verify_drop_in_processed_excludes_staging_from_processing(tmp_path):
     assert any(x.field == "drop_in.processed" and x.ground_truth == 0 for x in d)
 
 
+# --- O-1: run.outcome, against a ground truth read straight from run_outcome_<run_id>.json ------
+
+
+def _write_manifest(tmp_path, run_id):
+    (tmp_path / "run_manifest.json").write_text(json.dumps({"run_id": run_id, "pid": 12345}))
+
+
+def test_verify_run_reports_no_discrepancy_when_outcome_matches(tmp_path):
+    _write_manifest(tmp_path, "run-1")
+    (tmp_path / "run_outcome_run-1.json").write_text(json.dumps({
+        "run_id": "run-1", "outcome": "supply_exhausted",
+    }))
+    status = {"run": {"outcome": "supply_exhausted"}}
+    assert verify_numbers.verify(tmp_path, status) == []
+
+
+def test_verify_run_catches_a_dashboard_outcome_not_backed_by_a_file(tmp_path):
+    """The dashboard says supply_exhausted but no outcome file exists on disk at all -- a real
+    discrepancy, not absence-is-not-disagreement (the field IS present in the payload)."""
+    _write_manifest(tmp_path, "run-1")
+    status = {"run": {"outcome": "supply_exhausted"}}
+    d = verify_numbers.verify(tmp_path, status)
+    assert any(x.field == "run.outcome" and x.ground_truth is None for x in d)
+
+
+def test_verify_run_catches_a_missed_supply_exhausted_outcome(tmp_path):
+    """The reverse direction: the outcome file on disk says supply_exhausted but the dashboard
+    reported None -- also a discrepancy."""
+    _write_manifest(tmp_path, "run-1")
+    (tmp_path / "run_outcome_run-1.json").write_text(json.dumps({
+        "run_id": "run-1", "outcome": "supply_exhausted",
+    }))
+    status = {"run": {"outcome": None}}
+    d = verify_numbers.verify(tmp_path, status)
+    assert any(
+        x.field == "run.outcome" and x.dashboard is None and x.ground_truth == "supply_exhausted"
+        for x in d
+    )
+
+
+def test_verify_run_ignores_an_outcome_file_naming_a_different_run_id(tmp_path):
+    """A stale outcome file from an earlier run_id must not be treated as this run's ground
+    truth -- the dashboard reporting supply_exhausted off that stale file is itself the bug this
+    check exists to catch."""
+    _write_manifest(tmp_path, "run-1")
+    (tmp_path / "run_outcome_run-1.json").write_text(json.dumps({
+        "run_id": "some-other-run", "outcome": "supply_exhausted",
+    }))
+    status = {"run": {"outcome": "supply_exhausted"}}
+    d = verify_numbers.verify(tmp_path, status)
+    assert any(x.field == "run.outcome" and x.ground_truth is None for x in d)
+
+
+def test_verify_run_absent_field_yields_no_discrepancy(tmp_path):
+    """A status payload with no "run" block, or a "run" block with no "outcome" key at all, is
+    absence -- not disagreement."""
+    assert verify_numbers.verify(tmp_path, {}) == []
+    assert verify_numbers.verify(tmp_path, {"run": {}}) == []
+
+
+def test_verify_run_no_manifest_on_disk_and_dashboard_reports_none_matches(tmp_path):
+    status = {"run": {"outcome": None}}
+    assert verify_numbers.verify(tmp_path, status) == []
+
+
 # --- disk headroom (racy: tolerance, not exact) ---------------------------------------------------
 
 
