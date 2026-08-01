@@ -500,16 +500,21 @@ def read_downloader(
     `<that dir>/prefetch.pid`/`prefetch.log` both move with it, so this must match wherever it
     actually landed rather than assuming the fixed data dir.
 
-    D-6 Task 1: `manifest_pid` is the run manifest's OWN tracked pid for a `mode="download"` run
-    (`None` for a full run or no run at all -- a full run's manifest pid is a `build_corpus`
-    SUPERVISOR, not a downloader; passing it here would mark its legitimate prefetch child an
-    orphan). The AUTHORITY for "is anything downloading right now" is `live_pids()` -- a scan of
-    the process table (`_live_prefetch_pids`, default) -- not `manifest_pid` or `prefetch.pid`:
-    the 2026-08-01 incident had a real `app.prefetch_pdfs` alive for ~20 hours, tracked by
-    NEITHER, because `prefetch.pid` is written by both `app/build_corpus.py` and
-    `controller._spawn_download` and reconciled by nobody. `orphan` is `True` iff at least one
-    live pid is not `manifest_pid`; `tracked_pid` is `manifest_pid` only when it's actually
-    confirmed live.
+    D-6 Task 1: `manifest_pid` is the run manifest's own tracked pid, for EITHER mode. The
+    AUTHORITY for "is anything downloading right now" is `live_pids()` -- a scan of the process
+    table (`_live_prefetch_pids`, default) -- not `manifest_pid` or `prefetch.pid`: the
+    2026-08-01 incident had a real `app.prefetch_pdfs` alive for ~20 hours, tracked by NEITHER,
+    because `prefetch.pid` is written by both `app/build_corpus.py` and
+    `controller._spawn_download` and reconciled by nobody. `tracked_pid` is `manifest_pid` only
+    when it's actually confirmed live.
+
+    D-10 Task 3: `orphan` is `True` iff at least one live pid is neither `manifest_pid` nor a
+    DESCENDANT of it (`_is_descendant_of`, walking `/proc/<pid>/stat` PPID chains). A `mode="full"`
+    run's manifest pid is a `build_corpus` SUPERVISOR, not a downloader itself, but it legitimately
+    spawns `app.prefetch_pdfs` as a *child* -- the live 2026-08-01 bug was `server.py` passing
+    `manifest_pid=None` for every `full` run (so the child matched nothing) rather than this
+    function itself; now that the caller always passes the manifest pid, a plain `!=` check would
+    still misreport that legitimate child as an orphan, hence the descendant walk.
 
     D-6 Task 3: `tags_pending` warns when `tag_pool.json` was edited AFTER the live downloader's
     own launch-time `load_config()` (`app/prefetch_pdfs.py:433`, called once, never re-read) --
@@ -520,7 +525,9 @@ def read_downloader(
         _tail_download_pace(Path(run_cwd) / _PREFETCH_LOG_NAME) if run_cwd else (None, None)
     )
     live = (live_pids or _live_prefetch_pids)()
-    orphan = any(p != manifest_pid for p in live)
+    orphan = any(
+        p != manifest_pid and not _is_descendant_of(p, manifest_pid) for p in live
+    )
     tracked_pid = manifest_pid if manifest_pid in live else None
     reference_pid = tracked_pid if tracked_pid is not None else (live[0] if live else None)
     return {
@@ -579,6 +586,44 @@ def _live_prefetch_pids() -> list[int]:
         pid for entry in entries if entry.isdigit()
         for pid in (int(entry),) if _is_live_prefetch(pid)
     )
+
+
+# Bounds the PPID walk in `_is_descendant_of` so a reparented process or (in principle) a
+# corrupted /proc cycle can never loop forever -- a real process tree is at most a handful of
+# hops deep here (build_corpus -> prefetch_pdfs is 1), this is generous headroom, not a tuned
+# limit.
+_MAX_ANCESTOR_DEPTH = 32
+
+
+def _process_ppid(pid: int) -> int | None:
+    """Parent PID of `pid`, from `/proc/<pid>/stat` field 4 (`ppid`) -- same file/parsing
+    convention as `_process_start_epoch` and `controller.py::_process_identity` (mirrored, not
+    imported, this module's own "own your own copies" convention). `None` if `pid` is dead or
+    `/proc` is unreadable."""
+    try:
+        stat = Path(f"/proc/{pid}/stat").read_text()
+        after_comm = stat.rsplit(")", 1)[1].split()
+        return int(after_comm[1])
+    except (OSError, IndexError, ValueError):
+        return None
+
+
+def _is_descendant_of(pid: int, ancestor_pid: int | None) -> bool:
+    """True iff walking `pid`'s PPID chain reaches `ancestor_pid` within `_MAX_ANCESTOR_DEPTH`
+    hops -- e.g. `app.build_corpus` (the manifest pid for a `mode="full"` run) spawning
+    `app.prefetch_pdfs` as a direct child is one hop. `ancestor_pid=None` (no run at all) can
+    never be reached, so this is always `False` in that case."""
+    if ancestor_pid is None:
+        return False
+    current = pid
+    for _ in range(_MAX_ANCESTOR_DEPTH):
+        parent = _process_ppid(current)
+        if parent is None or parent <= 1:
+            return False
+        if parent == ancestor_pid:
+            return True
+        current = parent
+    return False
 
 
 def _process_start_epoch(pid: int) -> float | None:
