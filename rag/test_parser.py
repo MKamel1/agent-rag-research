@@ -465,15 +465,18 @@ def test_scanned_golden_pdf_is_quarantined(pdf_path):
 
 
 # ---------------------------------------------------------------------------
-# _fetch_references() -- O-2: a single empty/whitespace-only citation makes the reference-
-# resolution service return HTTP 500 for the ENTIRE batch (reproduced against a live instance,
-# 2026-08-01: "3 good + 1 empty" -> 500, "3 good" -> 200, while 1000 citations/130KB and one 60KB
-# citation both return 200 -- neither volume nor length). The upstream extractor yields a blank
-# entry often enough that this quarantined real papers as a TransientError no retry could ever
-# clear. Offline: `_fetch_references` delegates its one network call to `_post_citation_batch`
-# (parser.py's own seam over the vendor client only that file may name, CONVENTIONS.md §1) -- tests
-# here substitute that function directly rather than reaching for a vendor-specific transport
-# fixture, since this file isn't on that token's allowlist.
+# _fetch_references() -- O-2: a single citation with no alphanumeric character makes the
+# reference-resolution service return HTTP 500 for the ENTIRE batch (reproduced against a live
+# instance, 2026-08-01: "3 good + 1 empty" -> 500, "3 good" -> 200, while 1000 citations/130KB and
+# one 60KB citation both return 200 -- neither volume nor length). An earlier `.strip()` filter
+# only caught "" and whitespace, so junk like "." or "[]" -- also measured to 500 the batch --
+# slipped through; "no alphanumeric character" is a strict superset that catches every measured
+# 500 case. The upstream extractor yields such junk entries often enough that this quarantined
+# real papers as a TransientError no retry could ever clear. Offline: `_fetch_references`
+# delegates its one network call to `_post_citation_batch` (parser.py's own seam over the vendor
+# client only that file may name, CONVENTIONS.md §1) -- tests here substitute that function
+# directly rather than reaching for a vendor-specific transport fixture, since this file isn't on
+# that token's allowlist.
 # ---------------------------------------------------------------------------
 
 
@@ -524,6 +527,39 @@ def test_fetch_references_drops_blank_citations_before_posting(monkeypatch):
     assert [r.raw for r in refs] == ["Pearl, J. (2009). Causality.", "Rubin, D. (1974)."]
 
 
+@pytest.mark.parametrize("junk", [".", "..", "[]", "()", ",", " . ", "", "   "])
+def test_fetch_references_drops_no_alphanumeric_citations(monkeypatch, junk):
+    """Every measured-500 input (2026-08-01, live reference-resolution service) has no
+    alphanumeric character -- dropping on that rule, not just `.strip()`, is what actually
+    stops the batch 500."""
+    posted = {}
+    monkeypatch.setattr(_mod, "_post_citation_batch", _fake_post(posted))
+
+    _mod._fetch_references(
+        ["Pearl, J. (2009). Causality.", junk],
+        "http://reference-service.local",
+        paper_id="x",
+    )
+
+    assert posted["citations"] == ["Pearl, J. (2009). Causality."]
+
+
+@pytest.mark.parametrize(
+    "real", ["1", "a", "[1]", "p. 5", "Pearl, J. (2009). Causality."]
+)
+def test_fetch_references_keeps_citations_with_alphanumeric(monkeypatch, real):
+    """Anything with a real letter or digit is a plausible citation fragment and is measured to
+    return 200 -- it must survive the filter even when short or heavily punctuated."""
+    posted = {}
+    monkeypatch.setattr(_mod, "_post_citation_batch", _fake_post(posted))
+
+    _mod._fetch_references(
+        [real, "."], "http://reference-service.local", paper_id="x"
+    )
+
+    assert posted["citations"] == [real]
+
+
 def test_fetch_references_logs_how_many_blanks_were_dropped(monkeypatch, caplog):
     """Operator decision: drop them, but count them -- the number is how we learn how big the
     underlying blank-extraction problem is."""
@@ -539,6 +575,23 @@ def test_fetch_references_logs_how_many_blanks_were_dropped(monkeypatch, caplog)
     msg = caplog.text
     assert "2504.21062" in msg
     assert "3" in msg  # three blanks dropped
+
+
+def test_fetch_references_logs_drop_count_for_non_blank_junk(monkeypatch, caplog):
+    """The drop count must reflect the alphanumeric rule, not just blank/whitespace -- "." and
+    "[]" are non-empty but still dropped, and still counted."""
+    monkeypatch.setattr(_mod, "_post_citation_batch", _fake_post({}))
+
+    with caplog.at_level(logging.WARNING, logger="rag.parser"):
+        _mod._fetch_references(
+            ["Pearl, J. (2009). Causality.", ".", "[]", "  "],
+            "http://reference-service.local",
+            paper_id="2504.21062",
+        )
+
+    msg = caplog.text
+    assert "2504.21062" in msg
+    assert "3" in msg  # three non-alphanumeric entries dropped
 
 
 def test_fetch_references_all_blank_makes_no_network_call_at_all(monkeypatch):
@@ -558,6 +611,25 @@ def test_fetch_references_all_blank_makes_no_network_call_at_all(monkeypatch):
 
     assert refs == []
     assert called == [], "must not call out when every citation is blank"
+
+
+def test_fetch_references_all_non_alphanumeric_makes_no_network_call_at_all(monkeypatch):
+    """Same as above, but with non-blank junk ("." / "[]") instead of whitespace -- the no-call
+    guard must key off the alphanumeric rule, not `.strip()`."""
+    called = []
+
+    def handler(url, citations):
+        called.append(1)
+        return _FakeCitationResponse("<TEI/>")
+
+    monkeypatch.setattr(_mod, "_post_citation_batch", handler)
+
+    refs = _mod._fetch_references(
+        [".", "[]", "()", ","], "http://reference-service.local", paper_id="x"
+    )
+
+    assert refs == []
+    assert called == [], "must not call out when every citation lacks an alphanumeric character"
 
 
 def test_fetch_references_unchanged_when_nothing_is_blank(monkeypatch):
