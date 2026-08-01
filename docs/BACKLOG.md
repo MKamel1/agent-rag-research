@@ -21,7 +21,60 @@ Spec: `docs/superpowers/specs/2026-07-30-dashboard-dropin-and-usage-design.md`
 | D-3 | Per-doc_type funnel (book counters) | **DONE** | PR #210. Live: `book done=5`, `paper done=12328`. Combined funnel deliberately unchanged. |
 | D-4 | Test staleness audit | **DONE** | `docs/TEST-AUDIT-2026-07-31.md`. 78 files, ~1,440 test functions, 2 stale tests, 6 coverage gaps. T-1/T-2/T-3 fixed in PR #212. |
 | D-5 | Counter clarity + persistent tag pool | **DONE** | PRs #214 (counters, tag pool), #215 (drag-and-drop, purge). |
-| D-6 | Downloader tracking + restart control | **OPEN** | See below. |
+| D-6 | Downloader tracking + restart control | **DONE** | PR #217. Live: `/proc` is the authority, orphan detection, Restart button, tag-staleness warning. |
+| D-7 | Archive per-run `prefetch.log` + config before cleanup | **IN PROGRESS** | PR #218 (spec+plan). Demonstrated live 2026-08-01: stopping a run deleted its harvest diagnostics. |
+| D-8 | Bound retries for repeatedly-failing quarantined papers | **OPEN** | See below. |
+
+---
+
+## D-8 — bound retries for repeatedly-failing quarantined papers
+
+**A correction first.** This was initially framed as "`cached_not_done` doesn't consult the
+quarantine table." **That is wrong** — `app/build_corpus.py::cached_not_done` already subtracts
+`_permanently_failed_ids(db_path)`, and its exclusions are deliberate and documented:
+
+- `PermanentError` → **excluded** (a 404'd/withdrawn PDF; re-running cannot fix it). This exact bug
+  was already found and fixed once: *"measured on the live corpus: 22 of 33 quarantined papers had
+  a cached PDF and were being re-attempted every single run."*
+- `TransientError` → **deliberately retried** — "a network blip should be retried."
+- undiagnosed → **deliberately retried** — "unknown, not known-permanent."
+
+So the retry behaviour is by design, not an oversight. Do not "fix" it by excluding those
+categories; that would revert a considered decision.
+
+### The actual problem
+
+The design assumes `TransientError` means *transient*. For the GROBID failures it does not:
+
+```
+POST http://localhost:8070/api/processCitationList -> HTTP 500
+```
+
+These fail **identically on every run** against the same documents, but are recorded as
+`TransientError`, so they are retried forever. Measured 2026-08-01 on the live corpus:
+
+```
+quarantine by error_type:   PermanentError 9 | TransientError 17 | undiagnosed 53
+cached PDFs with no ingest_state row at all: 36   (24 of them quarantined)
+```
+
+Observed cost: a stopped run had been cycling batches of 16 and 28 of these, MinerU at **89% GPU
+util / 6.5 GB VRAM**, with the `done` counter frozen at 12,333 across the whole run
+(`build_corpus: batch of 16 ran but made zero net progress ... idle pass 1/12`).
+
+### Proposed shape (not yet designed)
+
+Bound the retries by **attempt count**, not by category — a `TransientError` that has failed N
+times in a row is not transient, whatever it is labelled. That preserves the dead-letter design's
+intent (retry genuine blips) while stopping the GPU burn on papers that fail every time.
+
+Needs: an attempt counter per paper_id (the `quarantine` table is append-only, so repeat rows may
+already be countable — check before adding schema, since `migrations/` is foundation-frozen), a
+threshold, and a way for the operator to reset it after fixing the underlying service.
+
+**Fix O-2 first.** If the GROBID 500s are a local service problem, fixing them may return ~24
+papers to the corpus and shrink this problem rather than papering over it. Bounding retries is the
+right guard either way, but it is a guard, not the cure.
 
 ---
 
