@@ -58,6 +58,7 @@ observe a torn/partial JSON file and misread "no active run."
 from __future__ import annotations
 
 import json
+import logging
 import os
 import shutil
 import signal
@@ -589,6 +590,42 @@ def _rebuild_missing_run_cwd(data_dir: Path, manifest: dict, run_cwd: Path) -> N
     _write_config_yaml(resolved, run_cwd)
 
 
+# D-7: what gets rescued from a run's override scratch dir before it is deleted, and the flat
+# per-run name it lands under in the data dir -- matching the existing
+# `ingest_run-<run_id>.log` / `ingest_events_<run_id>.jsonl` convention.
+#
+# `prefetch.log` holds the harvest diagnostics that answer "I added a tag and nothing changed"
+# ("4044 candidate papers found, 4031 already cached/claimed, 13 to download" -- 2026-08-01).
+# `config.yaml` is the other half of that question: which queries this run actually used. Neither
+# exists anywhere else once the scratch dir is gone. `prefetch.pid` is deliberately excluded --
+# process state, meaningless after the run ends.
+_ARCHIVED_RUN_ARTIFACTS = (("prefetch.log", "prefetch_{run_id}.log"),
+                           ("config.yaml", "config_{run_id}.yaml"))
+
+
+def _archive_run_artifacts(data_dir: Path, run_cwd: Path, run_id: str) -> list[Path]:
+    """Copy a run's durable-worth artifacts out of its scratch dir into `data_dir`.
+
+    Best-effort by contract: `_cleanup_run_cwd` is reached from `reconcile()`, which runs on every
+    `/api/status` poll, so a copy failure must never raise or prevent the cleanup it precedes. A
+    missing source file is normal (a run that never spawned a downloader), not an error."""
+    archived: list[Path] = []
+    try:
+        for src_name, dest_template in _ARCHIVED_RUN_ARTIFACTS:
+            src = run_cwd / src_name
+            if not src.is_file():
+                continue
+            dest = data_dir / dest_template.format(run_id=run_id)
+            shutil.copy2(src, dest)
+            archived.append(dest)
+    except Exception:  # noqa: BLE001 -- best-effort, must never block the cleanup it precedes
+        logging.warning(
+            "D-7: failed to archive run artifacts for run_id=%r from %s", run_id, run_cwd,
+            exc_info=True,
+        )
+    return archived
+
+
 def _cleanup_run_cwd(data_dir: Path, manifest: dict) -> None:
     """OG-49 M10: removes a run's override `config.yaml` scratch dir (`_write_override_config_dir`)
     once its manifest has settled into a genuinely terminal status ("done"/"failed") -- called only
@@ -599,10 +636,14 @@ def _cleanup_run_cwd(data_dir: Path, manifest: dict) -> None:
     directly in the real data dir -- never a scratch dir, must never be removed) or when the dir is
     already gone (`ignore_errors=True` -- e.g. `stop()` and a later `reconcile()` both observing the
     same terminal transition must not make the second cleanup call fail on the first's work).
+
+    D-7: before removal, best-effort archives `prefetch.log` and the run's effective `config.yaml`
+    into `data_dir` -- see `_archive_run_artifacts`.
     """
     run_cwd = manifest.get("run_cwd")
     if not run_cwd or Path(run_cwd) == data_dir:
         return
+    _archive_run_artifacts(data_dir, Path(run_cwd), str(manifest.get("run_id") or "unknown"))
     shutil.rmtree(run_cwd, ignore_errors=True)
 
 
