@@ -417,6 +417,40 @@ def _done_count(db_path: str) -> int:
         conn.close()
 
 
+def _run_outcome_path(data_dir: Path, run_id: str) -> Path:
+    return data_dir / f"run_outcome_{run_id}.json"
+
+
+def _read_run_outcome(data_dir: Path, run_id: str) -> dict | None:
+    """O-1: reads `<data_dir>/run_outcome_<run_id>.json` -- `app/build_corpus.py`'s durable record
+    of how a run finished, the only channel `reconcile()` has for anything beyond pid/done_count/
+    target (it cannot see the child process's exit code).
+
+    Defensive by contract, not just by habit: this runs inside `_crashed_before_target`, which runs
+    inside `reconcile()`, which runs on EVERY `/api/status` poll. A missing file (the common case --
+    most runs never hit supply exhaustion), unreadable/malformed JSON, or a payload whose own
+    `run_id` doesn't match the one we asked for (a stale file from an earlier run_id, defense in
+    depth -- filenames are already keyed by run_id) all return `None` and must never raise."""
+    try:
+        payload = json.loads(_run_outcome_path(data_dir, run_id).read_text())
+    except (OSError, json.JSONDecodeError):
+        return None
+    if not isinstance(payload, dict) or payload.get("run_id") != run_id:
+        return None
+    return payload
+
+
+def outcome_for_run(data_dir: str | Path, run_id: str | None) -> str | None:
+    """Public: the O-1 outcome string (`"supply_exhausted"`, or `None`) for `run_id`, for
+    `server.py`'s `/api/status` to surface in the `run` block -- `run.status == "done"` alone loses
+    the nuance of WHY a run finished short of its target. `None` when `run_id` is falsy (no run has
+    ever started) or the outcome file is missing/unreadable/mismatched (see `_read_run_outcome`)."""
+    if not run_id:
+        return None
+    outcome = _read_run_outcome(Path(data_dir), run_id)
+    return outcome.get("outcome") if outcome else None
+
+
 def _crashed_before_target(manifest: dict) -> bool:
     """True iff this `running` manifest's own recorded `target` and `db_path` show fewer than
     `target` papers actually done -- the OG-47#2 crash signal. Missing/unusable fields (a manifest
@@ -427,13 +461,26 @@ def _crashed_before_target(manifest: dict) -> bool:
     `_done_count < target` would ALWAYS read true and every clean downloader exit would be
     misreported as a crash. This function has no meaningful crashed-vs-clean signal for that mode,
     so it degrades the same way as the missing-fields case above: treat every download-mode exit
-    as clean."""
+    as clean.
+
+    O-1: a run that processed everything obtainable did NOT crash -- the target was unreachable
+    because arXiv had nothing left for the configured queries. `app.build_corpus` records that
+    explicitly (`run_outcome_<run_id>.json`, beside `db_path` in the real data dir -- NOT
+    `run_cwd`, which `_cleanup_run_cwd` deletes); without this check every such run reconciles to
+    "failed" and the status stops meaning anything (two consecutive runs ended this way on
+    2026-08-01). Checked BEFORE the done_count comparison below -- a supply-exhausted run's
+    done_count is, by definition, still short of target."""
     if manifest.get("mode") == "download":
         return False
     target = manifest.get("target")
     db_path = manifest.get("db_path")
     if target is None or not db_path:
         return False
+    run_id = manifest.get("run_id")
+    if run_id:
+        outcome = _read_run_outcome(Path(db_path).parent, run_id)
+        if outcome is not None and outcome.get("outcome") == "supply_exhausted":
+            return False
     return _done_count(db_path) < target
 
 
@@ -728,7 +775,8 @@ def _maybe_build_override(
 
 def _spawn(data_dir: Path, target: int, parse_workers: int, events_path: Path, log_path: Path,
            *, paper_ids_file: Path | None = None,
-           telemetry_poll_interval: float | None = None, batch_size: int | None = None) -> int:
+           telemetry_poll_interval: float | None = None, batch_size: int | None = None,
+           run_id: str | None = None) -> int:
     """The real launch, literally: `env PYTHONPATH=<repo> python -m app.build_corpus --target
     TARGET --parse-workers N --events-path <path>`, `cwd=<data_dir>`, as its own process-group
     leader (see `_signal_group`). The `env` *command* -- not a Python-level env-dict read -- sets
@@ -749,7 +797,12 @@ def _spawn(data_dir: Path, target: int, parse_workers: int, events_path: Path, l
     already accepts, no config override needed. `data_dir` here is really "the cwd to launch
     `app.build_corpus` in" -- ordinarily the real data dir, but `start`/`resume` pass a run-scoped
     override-config scratch dir instead whenever `keywords`/`parse_batch_size` were edited (see
-    `_maybe_build_override`)."""
+    `_maybe_build_override`).
+
+    `run_id` (O-1): forwarded as `--run-id` only when set -- this manifest's own `run_id`, so a
+    supply-exhausted finish can persist `run_outcome_<run_id>.json` under the REAL data dir
+    (`app.build_corpus` resolves that itself from `cfg.db_path`, not from `data_dir`/`cwd` here,
+    which is `run_cwd` for an edited run) for `_crashed_before_target` to read back."""
     cmd = [
         "env", f"PYTHONPATH={_REPO_ROOT}",
         sys.executable, "-m", "app.build_corpus",
@@ -761,6 +814,8 @@ def _spawn(data_dir: Path, target: int, parse_workers: int, events_path: Path, l
         cmd += ["--telemetry-poll-interval", str(telemetry_poll_interval)]
     if batch_size is not None:
         cmd += ["--batch-size", str(batch_size)]
+    if run_id is not None:
+        cmd += ["--run-id", run_id]
     log_f = log_path.open("a")
     proc = subprocess.Popen(
         cmd, cwd=str(data_dir), stdout=log_f, stderr=subprocess.STDOUT, start_new_session=True,
@@ -772,10 +827,14 @@ def _call_spawn(
     spawn: SpawnFn, data_dir: Path, target: int, parse_workers: int, events_path: Path,
     log_path: Path, paper_ids_file: Path | None, *,
     telemetry_poll_interval: float | None = None, batch_size: int | None = None,
+    run_id: str | None = None,
 ) -> int:
-    """Passes each of `paper_ids_file`/`telemetry_poll_interval`/`batch_size` to `spawn` only when
-    set -- so the injected test fake (whose signature may be the bare 5-positional `SpawnFn`) is
-    never handed a kwarg it doesn't accept, while the real `_spawn` gets whichever ones apply."""
+    """Passes each of `paper_ids_file`/`telemetry_poll_interval`/`batch_size`/`run_id` to `spawn`
+    only when set -- so the injected test fake (whose signature may be the bare 5-positional
+    `SpawnFn`) is never handed a kwarg it doesn't accept, while the real `_spawn` gets whichever
+    ones apply. `run_id` (O-1): the caller passes `None` for a `mode="download"` run --
+    `_spawn_download` launches `app.prefetch_pdfs` directly, which has no `--run-id` flag and no
+    matching `SpawnFn` signature slot for it."""
     kwargs: dict = {}
     if paper_ids_file is not None:
         kwargs["paper_ids_file"] = paper_ids_file
@@ -783,6 +842,8 @@ def _call_spawn(
         kwargs["telemetry_poll_interval"] = telemetry_poll_interval
     if batch_size is not None:
         kwargs["batch_size"] = batch_size
+    if run_id is not None:
+        kwargs["run_id"] = run_id
     return spawn(data_dir, target, parse_workers, events_path, log_path, **kwargs)
 
 
@@ -977,6 +1038,8 @@ def _start_locked(data_dir: Path, target: int, parse_workers: int = 3, *,
     pid = _call_spawn(
         spawn, run_cwd, target, parse_workers, events_path, log_path, paper_ids_file,
         telemetry_poll_interval=telemetry_poll_interval, batch_size=batch_size,
+        # O-1: only a "full" run is `app.build_corpus` -- `_spawn_download` has no --run-id flag.
+        run_id=run_id if mode == "full" else None,
     )
     manifest = _build_manifest(
         run_id, pid, target, parse_workers, events_path, log_path, db_path, paper_ids_file,
@@ -1122,6 +1185,8 @@ def _resume_locked(data_dir: Path, *, spawn: SpawnFn | None = None) -> dict:
         events_path, log_path, paper_ids_file,
         telemetry_poll_interval=params.get("telemetry_poll_interval"),
         batch_size=params.get("batch_size"),
+        # O-1: same run_id, same "full" mode gate as `_start_locked` above.
+        run_id=manifest["run_id"] if manifest.get("mode", "full") == "full" else None,
     )
     starttime, cmdline = _capture_identity(pid)
     manifest["pid"] = pid
