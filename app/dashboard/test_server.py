@@ -75,8 +75,15 @@ class _FakeStatus:
     def read_consistency(self, done_count, collection):
         return {"sqlite_done": done_count, "vector_points": 500, "consistent": True}
 
-    def read_downloader(self, run_cwd):
-        return {"prefetch_alive": True, "downloaded": 120, "prefetch_target": 30000}
+    def read_downloader(self, run_cwd, manifest_pid=None, *, live_pids=None, data_dir=None):
+        return {
+            "prefetch_alive": True, "downloaded": 120, "prefetch_target": 30000,
+            "live_pids": [], "orphan": False, "tracked_pid": None, "tags_pending": None,
+        }
+
+    @staticmethod
+    def _live_prefetch_pids():
+        return []
 
     def read_disk(self, data_dir):
         return {"free_gb": 500.0, "total_gb": 1000.0, "used_pct": 50.0}
@@ -121,6 +128,9 @@ class _FakeController:
 
     def stop(self, data_dir):
         raise NoRunError("no running run to stop")
+
+    def restart_downloader(self, data_dir, **kwargs):
+        self.calls.append(("restart_downloader",))
 
     def free_gpu(self, data_dir):
         self.calls.append(("free_gpu",))
@@ -236,6 +246,14 @@ def test_root_html_has_free_gpu_and_load_for_mcp_buttons(running_server):
     assert b'"load_for_mcp"' in body
 
 
+def test_root_html_has_restart_downloader_button(running_server):
+    url, _ = running_server
+    status, body = _get_raw(url, "/")
+    assert status == 200
+    assert b'id="btnRestartDownloader"' in body
+    assert b'"restart_downloader"' in body
+
+
 def test_root_html_mode_indicator_branches_on_download_mode(running_server):
     url, _ = running_server
     status, body = _get_raw(url, "/")
@@ -308,7 +326,10 @@ def test_status_route_shape_matches_api_contract(running_server):
     assert set(body["downloads"].keys()) == {
         "staged_pdfs", "sidecars", "prefetch_target", "stalled", "new_last_pass",
     }
-    assert set(body["downloader"].keys()) == {"prefetch_alive", "downloaded", "prefetch_target"}
+    assert set(body["downloader"].keys()) == {
+        "prefetch_alive", "downloaded", "prefetch_target", "live_pids", "orphan", "tracked_pid",
+        "tags_pending",
+    }
     assert set(body["disk"].keys()) == {"free_gb", "total_gb", "used_pct"}
     assert set(body["consistency"].keys()) == {"sqlite_done", "vector_points", "consistent"}
     assert set(body["search"].keys()) == {
@@ -319,6 +340,25 @@ def test_status_route_shape_matches_api_contract(running_server):
     assert body["run"]["parse_batch_size"] == 4  # config.yaml's real default -- not hard-coded null
     assert body["funnel"]["done"] == 5
     assert body["quarantine_reasons"] == [{"reason": "TransientError @ parsed", "count": 1}]
+
+
+# --- D-6 Task 4: downloader block carries orphan/tags_pending, restart control action ----------
+
+
+def test_status_route_downloader_block_exposes_orphan_and_tags_pending(running_server):
+    url, _ = running_server
+    status, body = _get(url, "/api/status")
+    assert status == 200
+    for key in ("live_pids", "orphan", "tags_pending", "tracked_pid"):
+        assert key in body["downloader"], f"missing {key}"
+
+
+def test_control_restart_downloader_calls_controller(running_server):
+    url, fake_controller = running_server
+    status, body = _post(url, "/api/control", {"action": "restart_downloader"})
+    assert status == 200
+    assert body["ok"] is True
+    assert fake_controller.calls == [("restart_downloader",)]
 
 
 def test_status_route_includes_by_doc_type_block(running_server):

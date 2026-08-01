@@ -286,7 +286,14 @@ def _status_dict(data_dir: Path, status_module, controller_module) -> dict:
             data_dir=data_dir, started_at=live.get("started_at"), target=live.get("target"),
         ),
         "downloads": status_module.read_downloads(data_dir, _static_config(data_dir).prefetch_target),
-        "downloader": status_module.read_downloader(live.get("run_cwd")),
+        # D-6 Task 4: manifest_pid only for a mode="download" run -- a "full" run's manifest pid
+        # is a build_corpus SUPERVISOR, not a downloader; passing it here would mark its own
+        # legitimate prefetch child as an orphan (see status.read_downloader's own docstring).
+        "downloader": status_module.read_downloader(
+            live.get("run_cwd"),
+            live.get("pid") if live.get("mode") == "download" else None,
+            data_dir=data_dir,
+        ),
         "disk": status_module.read_disk(data_dir),
         "consistency": status_module.read_consistency(done, live.get("collection")),
         "quarantine_reasons": corpus["quarantine_reasons"],
@@ -579,6 +586,13 @@ def make_handler(
             elif action == "purge_tags":
                 tags = [str(t) for t in body.get("tags") or []]
                 tag_pool.purge(data_dir, _static_config(data_dir).focus_area_queries, tags)
+            elif action == "restart_downloader":
+                # D-6 Task 4: controller.py must never import status.py (module docstrings on
+                # both sides), so THIS composition root -- which already imports both -- supplies
+                # the real process-table scan `restart_downloader` has no safe default for.
+                controller_module.restart_downloader(
+                    data_dir, live_pids=status_module._live_prefetch_pids,
+                )
             elif action == "pause":
                 controller_module.pause(data_dir)
             elif action == "resume":
