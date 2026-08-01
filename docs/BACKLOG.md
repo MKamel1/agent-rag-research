@@ -19,7 +19,61 @@ Spec: `docs/superpowers/specs/2026-07-30-dashboard-dropin-and-usage-design.md`
 | D-2a | MCP usage store + `app/serve.py` instrumentation | **DONE** | PR #207. Tool schemas verified intact after decoration. |
 | D-2b | Dashboard `usage` panel | **DONE** | PR #209. |
 | D-3 | Per-doc_type funnel (book counters) | **DONE** | PR #210. Live: `book done=5`, `paper done=12328`. Combined funnel deliberately unchanged. |
-| D-4 | Test staleness audit | **DONE — fix list awaiting approval** | `docs/TEST-AUDIT-2026-07-31.md`. 78 files, ~1,440 test functions, 2 stale tests, 6 coverage gaps. |
+| D-4 | Test staleness audit | **DONE** | `docs/TEST-AUDIT-2026-07-31.md`. 78 files, ~1,440 test functions, 2 stale tests, 6 coverage gaps. T-1/T-2/T-3 fixed in PR #212. |
+| D-5 | Counter clarity + persistent tag pool | **DONE** | PRs #214 (counters, tag pool), #215 (drag-and-drop, purge). |
+| D-6 | Downloader tracking + restart control | **OPEN** | See below. |
+
+---
+
+## D-6 — downloader tracking, restart control, and tag-staleness warning
+
+**Operator decisions (2026-08-01): fix tracking + add a Restart button; detect staleness by
+comparing `tag_pool.json` mtime against the running downloader's start time.**
+
+### The bug, measured 2026-08-01
+
+Three PID sources, none pointing at the live downloader:
+
+```
+prefetch.pid  -> 3757989   DEAD
+manifest pid  -> 196059    DEAD   (a finished full run)
+actual runner -> 3012944   ALIVE  <- tracked by NEITHER
+```
+
+The orphan had been running ~20 hours. **Consequence:** the natural workflow — stop, change tags,
+start — fails silently. `stop` acts on the manifest PID (dead, so it kills nothing), then
+`download` spawns a *second* prefetcher alongside the orphan: two processes harvesting arXiv with
+different query sets. The operator was told this workflow would work; it would not have.
+
+Resolved by hand this session (orphan killed by PID; a tracked replacement started —
+`run-30000-20260801_012157`, pid 655538). **`prefetch.pid` is still stale even after that
+restart** — `_spawn_download` writes it, but nothing reconciles it against the manifest. That is
+the same class of bug and is in scope here.
+
+### Scope
+
+1. **One source of truth for the downloader's PID.** Reconcile `prefetch.pid` and the run manifest,
+   or drop `prefetch.pid` in favour of the manifest alone. `status.read_downloader` and
+   `controller.stop` must agree on which process is the downloader. Whatever is chosen, `stop` must
+   reach a live downloader in every case where one exists.
+2. **Orphan detection.** If a `app.prefetch_pdfs` process is alive but matches neither source,
+   surface it — the dashboard currently cannot see it at all, which is how one ran unnoticed for
+   20 hours.
+3. **"Restart downloader" button** = stop + start, as one operation, only enabled when tracking is
+   sound. This is the workflow the operator asked for; the point of items 1–2 is making it safe
+   rather than silently spawning duplicates.
+4. **Tag-staleness warning.** `app/prefetch_pdfs.py:433` calls `load_config()` **once**, before its
+   forever-loop, and never re-reads. A running downloader therefore keeps its launch-time queries
+   no matter what the Tags panel says. When `tag_pool.json`'s mtime is newer than the running
+   downloader's start time, show: *"Tag changes pending — restart the downloader to apply."*
+   Comparing mtimes needs no new state and catches edits made outside the dashboard too.
+
+### Non-goals
+
+- Do **not** make `prefetch_pdfs` reload config mid-loop. Changing query sets underneath a
+  running harvest is a bigger behavioural change than this fixes, and a restart is cheap.
+- Do not auto-restart the downloader on a tag change. The operator decides when harvesting
+  changes.
 
 ---
 
