@@ -131,6 +131,11 @@ _START_POLL_TIMEOUT_SECONDS = 60.0
 
 _ARXIV_ID_RE = re.compile(r"\barxiv:\s*(\d{4}\.\d{4,5})(?:v\d+)?\b", re.IGNORECASE)
 _DOI_RE = re.compile(r'\b10\.\d{4,9}/[^\s"<>]+\b')
+
+# C0 control bytes MinerU's PDF text layer leaks into reference strings when a glyph fails to
+# decode (see `_fetch_references` for the measured GROBID-crash evidence). Tab/LF/CR are excluded
+# -- they're legitimate whitespace, not decode artifacts.
+_C0_CONTROL = {c for c in range(0x20) if c not in (0x09, 0x0A, 0x0D)}
 _SECTION_NUM_RE = re.compile(r"^([A-Za-z]?\d+(?:\.\d+)*)\b")
 
 # MinerU content_list.json `type` -> our closed BlockType (contracts/provenance.py). A strict
@@ -615,40 +620,47 @@ def _fetch_references(raw_refs: list[str], grobid_url: str, paper_id: str) -> li
     for citations that already spell them out verbatim is instead handled locally in
     `_parse_grobid_tei` via regex on the raw string, which needs no network round-trip at all.
     """
-    # A single citation with no alphanumeric character makes GROBID return HTTP 500 for the ENTIRE
-    # batch -- reproduced against GROBID 0.8.0 on 2026-08-01. Measured rule: every one of ".", "..",
-    # "[]", "()", ",", " . ", "" and "   " triggers the 500; "-", bare punctuation like "*" "/" ";"
-    # "•" "…", and anything with a real letter or digit ("1", "a", "[1]", "p.", "vol.") all return
-    # 200. "No alphanumeric" is a strict superset of the failing inputs -- it catches every 500 case
-    # while also harmlessly dropping junk that isn't a citation anyway (a real citation always has
-    # at least one letter or digit). An earlier `.strip()` filter only caught "" and whitespace, so
-    # entries like "." or "[]" still slipped through and kept 500'ing the batch. MinerU's extraction
-    # yields such junk entries often enough that this failed reference extraction for 10 papers,
-    # each quarantined as a TransientError that no retry could ever clear.
-    kept = [r for r in raw_refs if any(ch.isalnum() for ch in r)]
-    dropped = len(raw_refs) - len(kept)
-    if dropped:
-        # Counted, not silent: the number is how we learn how big MinerU's blank-extraction
+    # A single raw C0 control byte (0x00-0x1F, excluding tab/LF/CR) anywhere in a citation string
+    # makes GROBID return HTTP 500 for the ENTIRE batch -- reproduced with real `raw_refs` captured
+    # from MinerU (paper 2504.21062) and bisected to a single minimal reference:
+    #   'Angrist, J. D., & Pischke, J.\x17S. (2009). Mostly Harmless Econometrics ...'
+    # The 0x17 (ETB) stands in for a hyphen ("J.-S.") that MinerU's PDF text layer couldn't
+    # decode; the same pattern shows up standing in for "fi"/"ffi" ligatures and "epsilon" across
+    # sampled papers. These strings are otherwise ordinary, alphanumeric-rich citation text -- an
+    # earlier `.strip()` filter and a later "no alphanumeric character" filter were both no-ops
+    # here, since neither condition is ever true for them. Stripping the control bytes (not
+    # dropping the reference) flipped every one of 7 sampled real failing batches from 500 to 200
+    # with zero references lost: ~21% of real references (97 of 471 across the sample) carry one,
+    # and dropping the whole entry would have discarded a real citation for the sake of one
+    # garbage byte inside it.
+    sanitized = ["".join(ch for ch in r if ord(ch) not in _C0_CONTROL) for r in raw_refs]
+    sanitized_count = sum(1 for before, after in zip(raw_refs, sanitized) if before != after)
+    if sanitized_count:
+        # Counted, not silent: the number is how we learn how big MinerU's control-byte leakage
         # problem actually is (operator decision, 2026-08-01).
         logger.warning(
-            "parser: dropped %d blank reference(s) of %d before GROBID for paper %s",
-            dropped, len(raw_refs), paper_id,
+            "parser: sanitized %d reference(s) of %d (stripped C0 control bytes) before GROBID "
+            "for paper %s",
+            sanitized_count, len(raw_refs), paper_id,
         )
-    if not kept:
+    if not sanitized:
         return []
 
     try:
-        resp = _post_citation_batch(grobid_url, kept)
+        resp = _post_citation_batch(grobid_url, sanitized)
         resp.raise_for_status()
     except httpx.HTTPError as e:
         # GROBID being unreachable/erroring is about the *service*, not this paper's data --
         # TransientError (retry-then-quarantine, CONVENTIONS §4), not PermanentError.
         raise TransientError(f"GROBID reference extraction failed: {e}") from e
 
-    # `_parse_grobid_tei` zips GROBID's returned biblStructs against these raw strings BY INDEX --
-    # it must get the same filtered list that was posted, or every reference after the first blank
-    # would silently attach to the wrong citation.
-    return _parse_grobid_tei(resp.text, kept)
+    # `_parse_grobid_tei` zips GROBID's returned biblStructs against these strings BY INDEX -- it
+    # must get the exact same list that was posted, or every reference would misattribute to the
+    # wrong citation. `Reference.raw` therefore holds the sanitized text: sanitizing never drops
+    # or reorders entries (unlike the old alphanumeric filter, index alignment was never actually
+    # at risk here), and the stripped bytes are always MinerU decode artifacts -- never a real,
+    # useful character -- so there is nothing worth preserving in `raw` by keeping the original.
+    return _parse_grobid_tei(resp.text, sanitized)
 
 
 def _post_citation_batch(grobid_url: str, citations: list[str]) -> httpx.Response:
