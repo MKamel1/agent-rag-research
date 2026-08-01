@@ -285,7 +285,7 @@ def _assemble_parsed_doc(
         err.diagnostics = {"page_count": n_pages}
         raise err
 
-    references = _fetch_references(raw_refs, grobid_url) if raw_refs else []
+    references = _fetch_references(raw_refs, grobid_url, paper_id) if raw_refs else []
 
     try:
         return ParsedDoc(
@@ -604,7 +604,7 @@ def _build_blocks(
     return blocks, figures, tables, raw_refs
 
 
-def _fetch_references(raw_refs: list[str], grobid_url: str) -> list[Reference]:
+def _fetch_references(raw_refs: list[str], grobid_url: str, paper_id: str) -> list[Reference]:
     """One batched call to GROBID's `/api/processCitationList` (not N calls, one per reference --
     GROBID ships a batch endpoint for exactly this). `Accept: application/xml` requests TEI
     (its default response for this endpoint is BibTeX, which has no `<idno>`-style field for the
@@ -615,10 +615,28 @@ def _fetch_references(raw_refs: list[str], grobid_url: str) -> list[Reference]:
     for citations that already spell them out verbatim is instead handled locally in
     `_parse_grobid_tei` via regex on the raw string, which needs no network round-trip at all.
     """
+    # A single empty/whitespace-only citation makes GROBID return HTTP 500 for the ENTIRE batch
+    # -- reproduced against GROBID 0.8.0 on 2026-08-01: "3 good + 1 empty" -> 500, "3 good" -> 200,
+    # while 1000 citations / 130KB and a single 60KB citation both return 200 (so it is neither
+    # volume nor length). MinerU's extraction yields a blank entry often enough that this failed
+    # reference extraction for 10 papers, each quarantined as a TransientError that no retry could
+    # ever clear.
+    kept = [r for r in raw_refs if r.strip()]
+    dropped = len(raw_refs) - len(kept)
+    if dropped:
+        # Counted, not silent: the number is how we learn how big MinerU's blank-extraction
+        # problem actually is (operator decision, 2026-08-01).
+        logger.warning(
+            "parser: dropped %d blank reference(s) of %d before GROBID for paper %s",
+            dropped, len(raw_refs), paper_id,
+        )
+    if not kept:
+        return []
+
     try:
         resp = httpx.post(
             f"{grobid_url}/api/processCitationList",
-            data={"citations": raw_refs, "consolidateCitations": "0"},
+            data={"citations": kept, "consolidateCitations": "0"},
             headers={"Accept": "application/xml"},
             timeout=_GROBID_TIMEOUT,
         )
@@ -628,7 +646,10 @@ def _fetch_references(raw_refs: list[str], grobid_url: str) -> list[Reference]:
         # TransientError (retry-then-quarantine, CONVENTIONS §4), not PermanentError.
         raise TransientError(f"GROBID reference extraction failed: {e}") from e
 
-    return _parse_grobid_tei(resp.text, raw_refs)
+    # `_parse_grobid_tei` zips GROBID's returned biblStructs against these raw strings BY INDEX --
+    # it must get the same filtered list that was posted, or every reference after the first blank
+    # would silently attach to the wrong citation.
+    return _parse_grobid_tei(resp.text, kept)
 
 
 def _parse_grobid_tei(xml_text: str, raw_refs: list[str]) -> list[Reference]:
