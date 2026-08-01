@@ -43,6 +43,7 @@ import urllib.error
 import urllib.request
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import Callable
 
 _STAGES = ("harvested", "parsed", "chunked", "summarized", "embedded", "stored", "done")
 
@@ -487,21 +488,49 @@ _DOWNLOAD_PACE_RE = re.compile(r"downloaded (\d+) / target (\d+)")
 _LOG_TAIL_BYTES = 65_536
 
 
-def read_downloader(run_cwd: str | Path | None) -> dict:
+def read_downloader(
+    run_cwd: str | Path | None, manifest_pid: int | None = None, *,
+    live_pids: Callable[[], list[int]] | None = None,
+    data_dir: str | Path | None = None,
+) -> dict:
     """Is `app.prefetch_pdfs` alive, and its download pace -- `run_cwd` is the directory
     `app.build_corpus` (its parent) was actually launched with as `cwd` (`run_manifest.json`'s
     `run_cwd`, OG-43): ordinarily the real data dir, but a run-scoped override-config scratch dir
     when `keywords`/`parse_batch_size` were edited for this run -- `app.prefetch_pdfs`'s own
     `<that dir>/prefetch.pid`/`prefetch.log` both move with it, so this must match wherever it
-    actually landed rather than assuming the fixed data dir."""
+    actually landed rather than assuming the fixed data dir.
+
+    D-6 Task 1: `manifest_pid` is the run manifest's OWN tracked pid for a `mode="download"` run
+    (`None` for a full run or no run at all -- a full run's manifest pid is a `build_corpus`
+    SUPERVISOR, not a downloader; passing it here would mark its legitimate prefetch child an
+    orphan). The AUTHORITY for "is anything downloading right now" is `live_pids()` -- a scan of
+    the process table (`_live_prefetch_pids`, default) -- not `manifest_pid` or `prefetch.pid`:
+    the 2026-08-01 incident had a real `app.prefetch_pdfs` alive for ~20 hours, tracked by
+    NEITHER, because `prefetch.pid` is written by both `app/build_corpus.py` and
+    `controller._spawn_download` and reconciled by nobody. `orphan` is `True` iff at least one
+    live pid is not `manifest_pid`; `tracked_pid` is `manifest_pid` only when it's actually
+    confirmed live.
+
+    D-6 Task 3: `tags_pending` warns when `tag_pool.json` was edited AFTER the live downloader's
+    own launch-time `load_config()` (`app/prefetch_pdfs.py:433`, called once, never re-read) --
+    `None` (never a fabricated `False`) whenever there's nothing to compare a live downloader
+    against."""
     pid = _read_prefetch_pid(run_cwd) if run_cwd else None
     downloaded, target = (
         _tail_download_pace(Path(run_cwd) / _PREFETCH_LOG_NAME) if run_cwd else (None, None)
     )
+    live = (live_pids or _live_prefetch_pids)()
+    orphan = any(p != manifest_pid for p in live)
+    tracked_pid = manifest_pid if manifest_pid in live else None
+    reference_pid = tracked_pid if tracked_pid is not None else (live[0] if live else None)
     return {
         "prefetch_alive": _is_live_prefetch(pid) if pid is not None else None,
         "downloaded": downloaded,
         "prefetch_target": target,
+        "live_pids": live,
+        "orphan": orphan,
+        "tracked_pid": tracked_pid,
+        "tags_pending": _tags_pending(data_dir, reference_pid),
     }
 
 
@@ -530,6 +559,65 @@ def _is_live_prefetch(pid: int) -> bool:
     except PermissionError:
         pass
     return True
+
+
+def _live_prefetch_pids() -> list[int]:
+    """Every live `app.prefetch_pdfs` PID, from the process table rather than a pid file.
+
+    `prefetch.pid` is written by BOTH `app/build_corpus.py` and `controller._spawn_download`, and
+    reconciled by neither -- it was stale in every case observed on 2026-08-01. A running process
+    cannot be stale, so the process table is the authority and the pid file becomes advisory.
+
+    Reuses `_is_live_prefetch`'s existing cmdline identity check, so a recycled PID cannot
+    masquerade as a downloader. Unreadable `/proc` entries (races, permission errors) are normal
+    while scanning and are silently skipped -- this must never raise into a status poll."""
+    try:
+        entries = os.listdir("/proc")
+    except OSError:
+        return []
+    return sorted(
+        pid for entry in entries if entry.isdigit()
+        for pid in (int(entry),) if _is_live_prefetch(pid)
+    )
+
+
+def _process_start_epoch(pid: int) -> float | None:
+    """Wall-clock (UTC epoch) a process started, from `/proc/<pid>/stat` field 22 (jiffies since
+    boot) converted via `/proc/uptime` and `os.sysconf("SC_CLK_TCK")`. `None` on any failure --
+    a pid that has since exited, or `/proc` being otherwise unreadable, must never raise into a
+    status poll. Same field `controller.py::_process_identity` already parses (duplicated, not
+    imported -- this module's own "own your own copies" convention) -- that function keeps the
+    raw tick count for pid-reuse identity comparison; this one converts it to wall-clock time,
+    which has no use there."""
+    try:
+        stat = Path(f"/proc/{pid}/stat").read_text()
+        # See `controller.py::_process_identity` for why the split happens after the last ')'.
+        after_comm = stat.rsplit(")", 1)[1].split()
+        starttime_ticks = float(after_comm[19])
+        clk_tck = os.sysconf("SC_CLK_TCK")
+        uptime_s = float(Path("/proc/uptime").read_text().split()[0])
+    except (OSError, IndexError, ValueError):
+        return None
+    return time.time() - uptime_s + starttime_ticks / clk_tck
+
+
+def _tags_pending(data_dir: str | Path | None, reference_pid: int | None) -> bool | None:
+    """`True` iff `reference_pid`'s live downloader started BEFORE `tag_pool.json`'s last edit --
+    `app/prefetch_pdfs.py:433` calls `load_config()` once, before its forever-loop, and never
+    re-reads, so a running downloader keeps its launch-time queries no matter what the Tags panel
+    shows now. `None` (never a fabricated `False`) whenever there's nothing to compare: no live
+    downloader to reference, no `data_dir` to find the pool in, its start time can't be read, or
+    the pool file doesn't exist yet."""
+    if data_dir is None or reference_pid is None:
+        return None
+    start_epoch = _process_start_epoch(reference_pid)
+    if start_epoch is None:
+        return None
+    try:
+        mtime = (Path(data_dir) / "tag_pool.json").stat().st_mtime
+    except OSError:
+        return None
+    return mtime > start_epoch
 
 
 def _tail_download_pace(log_path: str | Path) -> tuple[int | None, int | None]:
