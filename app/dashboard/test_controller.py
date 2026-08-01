@@ -1144,6 +1144,68 @@ def test_stop_with_no_override_never_touches_the_real_data_dir(tmp_path):
     assert (tmp_path / "run_manifest.json").exists()
 
 
+def test_cleanup_archives_prefetch_log_and_config_before_deleting_run_cwd(tmp_path):
+    """D-7: the harvest diagnostics that explain 'I added a tag and nothing changed' lived only
+    inside the override dir and were destroyed by _cleanup_run_cwd's rmtree."""
+    run_cwd = tmp_path / ".run_overrides" / "run-1"
+    run_cwd.mkdir(parents=True)
+    (run_cwd / "prefetch.log").write_text(
+        "prefetch_pdfs: harvest phase complete: 4044 candidate papers found, "
+        "4031 already cached/claimed, 13 to download\n"
+    )
+    (run_cwd / "config.yaml").write_text("focus_area_queries:\n- causal inference\n")
+    (run_cwd / "prefetch.pid").write_text("4242")
+
+    controller_mod._cleanup_run_cwd(
+        tmp_path, {"run_id": "run-1", "run_cwd": str(run_cwd)},
+    )
+
+    assert not run_cwd.exists(), "the scratch dir must still be removed"
+    archived_log = tmp_path / "prefetch_run-1.log"
+    archived_cfg = tmp_path / "config_run-1.yaml"
+    assert "4031 already cached/claimed" in archived_log.read_text()
+    assert "causal inference" in archived_cfg.read_text()
+    # process state is not worth keeping
+    assert not (tmp_path / "prefetch_run-1.pid").exists()
+
+
+def test_cleanup_still_removes_run_cwd_when_archiving_fails(tmp_path, monkeypatch):
+    """Archiving is best-effort: _cleanup_run_cwd is reached from reconcile(), which runs on every
+    /api/status poll. A copy failure must never block cleanup or raise into a status poll."""
+    run_cwd = tmp_path / ".run_overrides" / "run-2"
+    run_cwd.mkdir(parents=True)
+    (run_cwd / "prefetch.log").write_text("x")
+
+    def boom(*a, **k):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(controller_mod.shutil, "copy2", boom)
+    controller_mod._cleanup_run_cwd(tmp_path, {"run_id": "run-2", "run_cwd": str(run_cwd)})
+    assert not run_cwd.exists()
+
+
+def test_cleanup_tolerates_a_run_that_never_spawned_a_downloader(tmp_path):
+    """No prefetch.log is normal -- a full run that never reached its download phase."""
+    run_cwd = tmp_path / ".run_overrides" / "run-3"
+    run_cwd.mkdir(parents=True)
+    (run_cwd / "config.yaml").write_text("focus_area_queries: []\n")
+
+    controller_mod._cleanup_run_cwd(tmp_path, {"run_id": "run-3", "run_cwd": str(run_cwd)})
+
+    assert not run_cwd.exists()
+    assert (tmp_path / "config_run-3.yaml").exists()
+    assert not (tmp_path / "prefetch_run-3.log").exists()
+
+
+def test_cleanup_without_an_override_archives_nothing(tmp_path):
+    """run_cwd == data_dir: an unedited run already writes prefetch.log durably into the data dir.
+    Copying it onto itself would be wrong; the existing early return must be preserved."""
+    (tmp_path / "prefetch.log").write_text("original")
+    controller_mod._cleanup_run_cwd(tmp_path, {"run_id": "run-4", "run_cwd": str(tmp_path)})
+    assert (tmp_path / "prefetch.log").read_text() == "original"
+    assert not (tmp_path / "prefetch_run-4.log").exists()
+
+
 def test_reconcile_removes_override_dir_once_a_crashed_run_self_heals_to_done(tmp_path):
     """A run whose process dies WITHOUT going through pause/stop, but had actually REACHED its
     target (a clean finish reconcile() just never got to record) is caught by reconcile()'s own
