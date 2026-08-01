@@ -634,12 +634,7 @@ def _fetch_references(raw_refs: list[str], grobid_url: str, paper_id: str) -> li
         return []
 
     try:
-        resp = httpx.post(
-            f"{grobid_url}/api/processCitationList",
-            data={"citations": kept, "consolidateCitations": "0"},
-            headers={"Accept": "application/xml"},
-            timeout=_GROBID_TIMEOUT,
-        )
+        resp = _post_citation_batch(grobid_url, kept)
         resp.raise_for_status()
     except httpx.HTTPError as e:
         # GROBID being unreachable/erroring is about the *service*, not this paper's data --
@@ -650,6 +645,20 @@ def _fetch_references(raw_refs: list[str], grobid_url: str, paper_id: str) -> li
     # it must get the same filtered list that was posted, or every reference after the first blank
     # would silently attach to the wrong citation.
     return _parse_grobid_tei(resp.text, kept)
+
+
+def _post_citation_batch(grobid_url: str, citations: list[str]) -> httpx.Response:
+    """The one network call `_fetch_references` makes, split out so `rag/test_parser.py` can
+    substitute it directly (CONVENTIONS.md §1 scopes both the `grobid` and `httpx` vendor tokens
+    to this file alone, so that test file can't build an `httpx.MockTransport` fixture the way
+    other adapters' tests do -- swapping this whole function out is the seam within that
+    constraint)."""
+    return httpx.post(
+        f"{grobid_url}/api/processCitationList",
+        data={"citations": citations, "consolidateCitations": "0"},
+        headers={"Accept": "application/xml"},
+        timeout=_GROBID_TIMEOUT,
+    )
 
 
 def _parse_grobid_tei(xml_text: str, raw_refs: list[str]) -> list[Reference]:
