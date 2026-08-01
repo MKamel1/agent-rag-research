@@ -90,6 +90,7 @@
   &middot; last updated <span id="lastUpdated">-</span>
   <span id="staleBadge" class="pill stale" style="display:none;">stale / reconnecting</span>
 </div>
+<div id="outcomeLine" class="stat-label" style="display:none;"></div>
 
 <div class="grid">
 
@@ -701,6 +702,18 @@ function render(snap) {
   const target = snap.run.target;
   document.getElementById("progressLabel").textContent = `${fmt(done)} / ${fmt(target)}`;
   document.getElementById("progressFill").style.width = target ? Math.min(100, (done / target) * 100) + "%" : "0%";
+
+  // O-1: a run that drained the cache because arXiv had nothing left for the configured queries
+  // finishes "done" like any other clean run -- this is the one line that says WHY, so it doesn't
+  // read as a silent early stop.
+  const outcomeEl = document.getElementById("outcomeLine");
+  if (snap.run.outcome === "supply_exhausted") {
+    outcomeEl.textContent =
+      `Completed — arXiv exhausted for the current queries (${fmt(done)} of ${fmt(target)}).`;
+    outcomeEl.style.display = "";
+  } else {
+    outcomeEl.style.display = "none";
+  }
 
   document.getElementById("papersPerHour").textContent = fmt(snap.telemetry.papers_per_hour, 1);
   document.getElementById("currentStage").textContent = STAGE_LABELS[snap.telemetry.stage] || snap.telemetry.stage || "-";

@@ -141,6 +141,9 @@ class _FakeController:
     def resolve_drop_dir(self, cfg):
         return "/fake/drop_in"
 
+    def outcome_for_run(self, data_dir, run_id):
+        return None
+
     def promote_pending_drop_in(self, data_dir, spawn=None):
         return None
 
@@ -246,6 +249,15 @@ def test_root_html_has_free_gpu_and_load_for_mcp_buttons(running_server):
     assert b'"load_for_mcp"' in body
 
 
+def test_root_html_has_the_supply_exhausted_outcome_line(running_server):
+    url, _ = running_server
+    status, body = _get_raw(url, "/")
+    assert status == 200
+    assert b'id="outcomeLine"' in body
+    assert b"arXiv exhausted" in body
+    assert b"supply_exhausted" in body
+
+
 def test_root_html_has_restart_downloader_button(running_server):
     url, _ = running_server
     status, body = _get_raw(url, "/")
@@ -318,7 +330,7 @@ def test_status_route_shape_matches_api_contract(running_server):
     assert set(body["run"].keys()) == {
         "run_id", "status", "target", "parse_workers", "focus_queries", "started_at", "params",
         "paper_ids_file", "parse_batch_size", "arxiv_categories", "arxiv_date_from",
-        "arxiv_date_to", "ordering", "stranded_policy", "mode",
+        "arxiv_date_to", "ordering", "stranded_policy", "mode", "outcome",
     }
     assert set(body["telemetry"].keys()) == {
         "stage", "papers_per_hour", "gpu_util_pct", "vram_mib", "power_w", "wall_clock_s", "eta_s",
@@ -340,6 +352,32 @@ def test_status_route_shape_matches_api_contract(running_server):
     assert body["run"]["parse_batch_size"] == 4  # config.yaml's real default -- not hard-coded null
     assert body["funnel"]["done"] == 5
     assert body["quarantine_reasons"] == [{"reason": "TransientError @ parsed", "count": 1}]
+
+
+# --- O-1: run.outcome ("supply_exhausted" or None) -----------------------------------------------
+
+
+def test_status_route_run_outcome_is_none_by_default(running_server):
+    url, _ = running_server
+    status, body = _get(url, "/api/status")
+    assert status == 200
+    assert body["run"]["outcome"] is None
+
+
+def test_status_dict_threads_outcome_for_run_into_the_run_block(tmp_path):
+    """`_status_dict` must call `controller_module.outcome_for_run(data_dir, run_id)` and surface
+    whatever it returns as `run.outcome` -- proven with a controller fake that actually returns a
+    value, not just the always-None default `_FakeController` uses everywhere else."""
+    calls = []
+
+    class _OutcomeController(_FakeController):
+        def outcome_for_run(self, data_dir, run_id):
+            calls.append((data_dir, run_id))
+            return "supply_exhausted"
+
+    body = _status_dict(tmp_path, _FakeStatus(), _OutcomeController())
+    assert body["run"]["outcome"] == "supply_exhausted"
+    assert calls == [(tmp_path, "run-fake")]  # "run-fake" is _FakeController.liveness's run_id
 
 
 # --- D-6 Task 4: downloader block carries orphan/tags_pending, restart control action ----------
