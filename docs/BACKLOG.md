@@ -25,6 +25,56 @@ Spec: `docs/superpowers/specs/2026-07-30-dashboard-dropin-and-usage-design.md`
 | D-7 | Archive per-run `prefetch.log` + config before cleanup | **DONE — not yet exercised** | PRs #218/#219. No run has ended since merging, so the archive path has never actually fired. |
 | D-8 | Bound retries for repeatedly-failing quarantined papers | **OPEN — lower priority since O-2** | O-2's fix removed the cause. Now a guard against future misclassification, not a live problem. See below. |
 | D-9 | Land the orphaned unexpected-exception safety net | **OPEN — real unmerged work** | `T-SEED-combined-fixes`, the only genuinely unmerged branch in the repo. The pipeline has **no catch-all for unforeseen exceptions today**. See below. |
+| D-10 | Dashboard number accuracy: cross-check + dynamic tests | **DONE** | PR #227. `verify_numbers` reports `OK -- every field matches ground truth`. Caught and fixed a live orphan false positive. |
+| D-11 | D-7 does not archive logs for a **failed** run | **OPEN** | See below. |
+
+---
+
+## D-11 — D-7 does not archive logs when a run ends as `failed`
+
+**Found 2026-08-01 while verifying D-7 on a real run.**
+
+`controller.reconcile()` calls `_cleanup_run_cwd` — which is where D-7's archiving lives — **only
+when the reconciled status becomes `done`**:
+
+```python
+if manifest["status"] == "done":
+    _cleanup_run_cwd(data_dir, manifest)
+```
+
+A run that gives up (`build_corpus: stalled ... giving up`) reconciles to **`failed`**, not `done`,
+because `_crashed_before_target` sees `done_count < target`. Failed runs deliberately keep their
+`run_cwd` so a later `resume()` can reuse it — that part is correct and documented.
+
+**The consequence:** the archive never fires on the `failed` transition. Observed live —
+`run-13000-20260801_072158` ended `failed` at 12,374/13,000, and no
+`prefetch_run-*.log` / `config_*.yaml` appeared until the *next* run's `_start_locked` cleaned up
+the abandoned manifest and archived it on the way out.
+
+So the logs survived **only because another run followed**. A failed run that is never followed by
+another keeps its diagnostics in `.run_overrides/<run_id>/` indefinitely — which is safe, but they
+are then deleted un-archived the moment any later run starts... except that later cleanup *does*
+archive them. The real exposure is narrower than it first looks:
+
+- failed run, then another run starts → archived (verified working)
+- failed run, then `resume()` → dir reused, nothing lost
+- failed run, then the operator deletes `.run_overrides/` by hand → lost
+
+**A failed run is exactly the one whose harvest diagnostics matter most**, so relying on a
+follow-up run to trigger the archive is the wrong dependency.
+
+### Proposed fix
+
+Archive at the point the status becomes terminal, independently of whether the directory is then
+deleted. Concretely: call `_archive_run_artifacts` on the `failed` transition in `reconcile()` too,
+**without** calling `_cleanup_run_cwd` (which must keep its current resume-preserving behaviour).
+Archiving is idempotent (`shutil.copy2` over the same names), so a later cleanup re-archiving the
+same files is harmless.
+
+### Test
+
+A run reconciled `running -> failed` must produce `prefetch_<run_id>.log` and `config_<run_id>.yaml`
+in the data dir **while `run_cwd` still exists**, proving the archive does not depend on deletion.
 
 ---
 
