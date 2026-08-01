@@ -286,13 +286,14 @@ def _status_dict(data_dir: Path, status_module, controller_module) -> dict:
             data_dir=data_dir, started_at=live.get("started_at"), target=live.get("target"),
         ),
         "downloads": status_module.read_downloads(data_dir, _static_config(data_dir).prefetch_target),
-        # D-6 Task 4: manifest_pid only for a mode="download" run -- a "full" run's manifest pid
-        # is a build_corpus SUPERVISOR, not a downloader; passing it here would mark its own
-        # legitimate prefetch child as an orphan (see status.read_downloader's own docstring).
+        # D-10 Task 3: manifest_pid is passed for EVERY mode now, not just "download" -- a
+        # "full" run's manifest pid is a build_corpus SUPERVISOR, not a downloader, but it
+        # legitimately spawns app.prefetch_pdfs as a child. Withholding the pid here (the
+        # pre-D-10 behaviour) made every full run's own prefetch child misreport as an orphan;
+        # status.read_downloader's descendant walk is what now tells "our child" from "a real
+        # orphan" (see its own docstring).
         "downloader": status_module.read_downloader(
-            live.get("run_cwd"),
-            live.get("pid") if live.get("mode") == "download" else None,
-            data_dir=data_dir,
+            live.get("run_cwd"), live.get("pid"), data_dir=data_dir,
         ),
         "disk": status_module.read_disk(data_dir),
         "consistency": status_module.read_consistency(done, live.get("collection")),

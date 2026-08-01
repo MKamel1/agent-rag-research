@@ -764,6 +764,45 @@ def test_read_downloader_no_live_process_is_not_an_orphan(tmp_path, monkeypatch)
     assert out["orphan"] is False
 
 
+# --- D-10 Task 3: a run's own prefetch child is not an orphan (the live 2026-08-01 bug) --------
+
+
+def test_read_downloader_is_not_an_orphan_when_it_is_a_child_of_the_manifest_pid(tmp_path, monkeypatch):
+    """The live false positive: a `mode="full"` run's manifest pid is the build_corpus
+    SUPERVISOR, and app.prefetch_pdfs is its legitimate direct child -- not an orphan."""
+    monkeypatch.setattr(status_mod, "_live_prefetch_pids", lambda: [222])
+    monkeypatch.setattr(status_mod, "_process_ppid", lambda pid: 111 if pid == 222 else None)
+    out = status_mod.read_downloader(tmp_path, manifest_pid=111, live_pids=lambda: [222])
+    assert out["orphan"] is False
+
+
+def test_read_downloader_is_not_an_orphan_when_it_is_a_grandchild_of_the_manifest_pid(tmp_path, monkeypatch):
+    """The descendant walk must climb more than one hop."""
+    ppids = {222: 150, 150: 111}
+    monkeypatch.setattr(status_mod, "_process_ppid", lambda pid: ppids.get(pid))
+    out = status_mod.read_downloader(tmp_path, manifest_pid=111, live_pids=lambda: [222])
+    assert out["orphan"] is False
+
+
+def test_read_downloader_is_an_orphan_when_its_parent_is_unrelated_to_the_manifest(tmp_path, monkeypatch):
+    """The real 20-hour case D-6 was built for must still be caught: a live prefetch process
+    whose parent chain never reaches the manifest pid at all."""
+    monkeypatch.setattr(status_mod, "_process_ppid", lambda pid: 1 if pid == 222 else None)
+    out = status_mod.read_downloader(tmp_path, manifest_pid=111, live_pids=lambda: [222])
+    assert out["orphan"] is True
+
+
+def test_is_descendant_of_bounds_the_walk_against_a_cycle(monkeypatch):
+    """A corrupted/cyclic PPID chain (should never happen in a real process tree) must not hang
+    the status poll forever -- `_MAX_ANCESTOR_DEPTH` bounds the walk."""
+    monkeypatch.setattr(status_mod, "_process_ppid", lambda pid: 222 if pid == 111 else 111)
+    assert status_mod._is_descendant_of(222, 999) is False
+
+
+def test_is_descendant_of_none_ancestor_is_never_a_descendant():
+    assert status_mod._is_descendant_of(222, None) is False
+
+
 # --- D-6 Task 3: tag-staleness warning -----------------------------------------------------------
 
 
