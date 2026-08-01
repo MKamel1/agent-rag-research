@@ -1388,6 +1388,144 @@ def test_reconcile_preserves_override_dir_for_a_genuine_crash_so_resume_can_use_
     assert override_dir.is_dir(), "a crashed run's run_cwd must survive for a later resume()"
 
 
+# --- D-11: reconcile() archives a failed run's diagnostics too, not only a done one --------------
+
+
+def test_reconcile_archives_on_failed_transition_while_run_cwd_still_exists(tmp_path):
+    """The core D-11 regression: archiving must not depend on `_cleanup_run_cwd`'s deletion.
+    `run-13000-20260801_072158` ended `failed` at 12,374/13,000 and produced no archive because
+    only `done` triggered `_archive_run_artifacts` -- fixed by calling it directly on the `failed`
+    transition, alongside (not instead of) leaving run_cwd in place for a later resume()."""
+    calls = []
+    manifest = controller_mod.start(
+        tmp_path, target=100, keywords=["zzz-test-keyword"], spawn=_kwargs_spawn(calls),
+    )
+    override_dir = Path(manifest["run_cwd"])
+    (override_dir / "prefetch.log").write_text(
+        "prefetch_pdfs: harvest phase complete: 12374 done, giving up short of target=13000\n"
+    )
+    os.killpg(manifest["pid"], signal.SIGKILL)
+    for _ in range(50):
+        if not controller_mod._pid_running(manifest["pid"]):
+            break
+        time.sleep(0.05)
+
+    reconciled = controller_mod.liveness(tmp_path)
+
+    assert reconciled["status"] == "failed"
+    assert override_dir.is_dir(), "resume() must still be able to reuse run_cwd"
+    archived_log = tmp_path / f"prefetch_{manifest['run_id']}.log"
+    archived_cfg = tmp_path / f"config_{manifest['run_id']}.yaml"
+    assert "giving up short of target" in archived_log.read_text()
+    assert "zzz-test-keyword" in archived_cfg.read_text()
+
+
+def test_reconcile_done_transition_still_archives_and_removes_run_cwd(tmp_path):
+    """Unchanged D-7 behaviour: a clean finish still archives via `_cleanup_run_cwd` AND removes
+    `run_cwd` -- only the `failed` path gained a new archive-without-delete branch."""
+    import sqlite3
+
+    calls = []
+    manifest = controller_mod.start(
+        tmp_path, target=2, keywords=["zzz-test-keyword"], spawn=_kwargs_spawn(calls),
+    )
+    override_dir = Path(manifest["run_cwd"])
+    (override_dir / "prefetch.log").write_text("harvest complete: 2 done\n")
+    conn = sqlite3.connect(manifest["db_path"])
+    conn.execute("CREATE TABLE ingest_state (paper_id TEXT PRIMARY KEY, stage TEXT)")
+    conn.execute("INSERT INTO ingest_state VALUES ('a', 'done')")
+    conn.execute("INSERT INTO ingest_state VALUES ('b', 'done')")
+    conn.commit()
+    conn.close()
+    os.killpg(manifest["pid"], signal.SIGKILL)
+    for _ in range(50):
+        if not controller_mod._pid_running(manifest["pid"]):
+            break
+        time.sleep(0.05)
+
+    reconciled = controller_mod.liveness(tmp_path)
+
+    assert reconciled["status"] == "done"
+    assert not override_dir.exists()
+    archived_log = tmp_path / f"prefetch_{manifest['run_id']}.log"
+    assert "harvest complete: 2 done" in archived_log.read_text()
+
+
+def test_archiving_twice_is_idempotent(tmp_path):
+    """Reconcile-to-failed archives once; a later `_cleanup_run_cwd` (e.g. the next run's
+    `_start_locked` abandoning this one, or an eventual `stop()`) re-archives the same names --
+    must not raise and must leave the files intact, exactly the idempotence D-11 relies on to
+    justify not special-casing "already archived" anywhere."""
+    calls = []
+    manifest = controller_mod.start(
+        tmp_path, target=100, keywords=["zzz-test-keyword"], spawn=_kwargs_spawn(calls),
+    )
+    override_dir = Path(manifest["run_cwd"])
+    (override_dir / "prefetch.log").write_text("first pass\n")
+    os.killpg(manifest["pid"], signal.SIGKILL)
+    for _ in range(50):
+        if not controller_mod._pid_running(manifest["pid"]):
+            break
+        time.sleep(0.05)
+
+    reconciled = controller_mod.liveness(tmp_path)
+    assert reconciled["status"] == "failed"
+    archived_log = tmp_path / f"prefetch_{manifest['run_id']}.log"
+    assert archived_log.read_text() == "first pass\n"
+
+    # Simulate a later cleanup (e.g. an abandoning start()) re-archiving + removing run_cwd.
+    controller_mod._cleanup_run_cwd(tmp_path, reconciled)
+    assert not override_dir.exists()
+    assert archived_log.read_text() == "first pass\n"
+
+
+def test_reconcile_failed_archive_tolerates_an_unwritable_destination(tmp_path, monkeypatch):
+    """Best-effort contract (same as `_cleanup_run_cwd`'s D-7 test): `reconcile()` runs on every
+    `/api/status` poll, so a copy failure during the `failed` archive must never raise or prevent
+    the status transition from being written."""
+    calls = []
+    manifest = controller_mod.start(
+        tmp_path, target=100, keywords=["zzz-test-keyword"], spawn=_kwargs_spawn(calls),
+    )
+    override_dir = Path(manifest["run_cwd"])
+    (override_dir / "prefetch.log").write_text("x")
+
+    def boom(*a, **k):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(controller_mod.shutil, "copy2", boom)
+    os.killpg(manifest["pid"], signal.SIGKILL)
+    for _ in range(50):
+        if not controller_mod._pid_running(manifest["pid"]):
+            break
+        time.sleep(0.05)
+
+    reconciled = controller_mod.liveness(tmp_path)
+
+    assert reconciled["status"] == "failed", "the status write must not be blocked by archive failure"
+    assert not (tmp_path / f"prefetch_{manifest['run_id']}.log").exists()
+
+
+def test_reconcile_failed_with_no_override_archives_nothing(tmp_path):
+    """The existing `run_cwd == data_dir` early return (D-7) must survive: an unedited run's
+    `prefetch.log` already lives durably in the data dir -- there is nothing to archive it INTO,
+    and copying it onto itself would be wrong."""
+    manifest = controller_mod.start(tmp_path, target=100, spawn=_fake_spawn)
+    assert manifest["run_cwd"] == str(tmp_path)
+    (tmp_path / "prefetch.log").write_text("original")
+    os.killpg(manifest["pid"], signal.SIGKILL)
+    for _ in range(50):
+        if not controller_mod._pid_running(manifest["pid"]):
+            break
+        time.sleep(0.05)
+
+    reconciled = controller_mod.liveness(tmp_path)
+
+    assert reconciled["status"] == "failed"
+    assert (tmp_path / "prefetch.log").read_text() == "original"
+    assert not (tmp_path / f"prefetch_{manifest['run_id']}.log").exists()
+
+
 # --- resume is broken for any run that used a config override (the durable-override-dir fix) ----
 #
 # Confirmed repro: reconcile() marks a crashed run "failed" -> the OLD reconcile() deleted that

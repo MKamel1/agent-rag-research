@@ -331,7 +331,7 @@ Recorded in `docs/BOOK-INTEGRATION-CLOSEOUT.md`; repeated here so they stay visi
 
 | id | item | status | notes |
 |---|---|---|---|
-| O-1 | Corpus is at its harvest ceiling | **BLOCKED — needs operator decision** | 12,333 done vs `target` 20,000. The downloader last reported `11556/30000 cached, only 6 new available`: arXiv is near-exhausted **for the current query filters**. Cannot reach 20k without changing `focus_area_queries` / `arxiv_categories` / the date window. Restarting runs will not move it. |
+| O-1 | Corpus is at its harvest ceiling | **CLOSED — operator will widen queries or the date range manually when needed (2026-08-01)** | 12,333 done vs `target` 20,000. The downloader last reported `11556/30000 cached, only 6 new available`: arXiv is near-exhausted **for the current query filters**. Cannot reach 20k without changing `focus_area_queries` / `arxiv_categories` / the date window. Restarting runs will not move it. |
 | O-2a | GROBID HTTP 500s (10 papers) | **FIXED — not yet verified on real data** | PR #221. Root cause: one blank citation makes GROBID 500 the whole batch (reproduced: `3 good + 1 empty` -> 500, `3 good` -> 200). Blanks now dropped and counted. **~10 papers should recover on the next ordinary run — that run has not happened yet.** |
 | O-2b | GROBID `unparseable TEI` (6 papers) | **OPEN** | A *different* failure: GROBID returns 200 with malformed XML. Deliberately out of scope for #221. Worth checking whether it is also deterministic-but-labelled-transient — that pattern cost real GPU time. |
 | O-3 | Stale `git stash` entry | **OPEN — do not touch without the owner** | `stash@{0}: On main: lessons-learned wip`. Provenance unknown; predates this session. |
