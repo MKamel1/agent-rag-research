@@ -1185,6 +1185,79 @@ def free_gpu(
         return {"tei_stopped": True}
 
 
+def _tracked_downloader_pid(manifest: dict | None) -> int | None:
+    """The current manifest's pid, but ONLY when it actually names a downloader (`mode ==
+    "download"`) -- a `mode == "full"` manifest's pid is a `build_corpus` SUPERVISOR, not a
+    downloader itself (`app.prefetch_pdfs` is its own child, tracked separately, see this
+    module's own docstring on the root cause); comparing IT against live `app.prefetch_pdfs`
+    pids would never match, so its own legitimate prefetch child would be misread as an orphan
+    and terminated out from under a live full run. Same gating `status.py`'s caller
+    (`server.py`) already applies to `manifest_pid`."""
+    if manifest is None or manifest.get("mode") != "download":
+        return None
+    return manifest.get("pid")
+
+
+def restart_downloader(
+    data_dir: str | Path, *, spawn: SpawnFn | None = None,
+    live_pids: Callable[[], list[int]],
+    terminate: Callable[[int], bool] | None = None,
+) -> dict:
+    """D-6 Task 2: stop + start as one locked operation -- fixes the 2026-08-01 root cause's
+    operator-facing consequence, "stop -> change tags -> start" silently starting a SECOND
+    downloader beside an orphan `stop` never reached (it only ever signaled the manifest's own,
+    possibly-stale, pid). Terminates EVERY live `app.prefetch_pdfs` pid `live_pids()` reports --
+    the tracked one AND every orphan -- then spawns exactly one fresh downloader via the same
+    `mode="download"` path `start(..., mode="download")` uses, all under a SINGLE
+    `_control_lock` acquisition so no window exists for a second downloader to start in between.
+
+    `live_pids` has no safe default here: the real scan (`status._live_prefetch_pids`) lives in
+    `status.py`, and this module must never import that (see this module's own docstring on why
+    -- `run_manifest.json` is the only channel between them). The one real caller (`server.py`,
+    the composition root that already imports both) always injects it explicitly; a test injects
+    a fake so no test ever signals a real process. `terminate` defaults to
+    `_terminate_with_escalation` (defined in this module, no import needed)."""
+    data_dir = Path(data_dir)
+    with _control_lock(data_dir):
+        return _restart_downloader_locked(
+            data_dir, spawn=spawn, live_pids=live_pids, terminate=terminate,
+        )
+
+
+def _restart_downloader_locked(
+    data_dir: Path, *, spawn: SpawnFn | None = None,
+    live_pids: Callable[[], list[int]],
+    terminate: Callable[[int], bool] | None = None,
+) -> dict:
+    terminate = terminate or _terminate_with_escalation
+    for pid in live_pids():
+        terminate(pid)
+    # `_start_locked` re-reconciles the manifest itself and refuses (DoubleRunError) only if it
+    # STILL looks live after the terminations above -- no separate cleanup/guard needed here.
+    target = _load_base_config(data_dir).prefetch_target
+    return _start_locked(data_dir, target, 1, mode="download", spawn=spawn)
+
+
+def terminate_orphan_downloaders(
+    data_dir: str | Path, *, live_pids: Callable[[], list[int]],
+    terminate: Callable[[int], bool] | None = None,
+) -> list[int]:
+    """The narrower half of what `restart_downloader` does unconditionally: terminates every live
+    `app.prefetch_pdfs` pid NOT tracked by the current manifest (`_tracked_downloader_pid`),
+    leaving a genuinely-tracked downloader running untouched. Returns the pids terminated.
+
+    Same injectable-`live_pids`, no-safe-default reasoning as `restart_downloader` above."""
+    terminate = terminate or _terminate_with_escalation
+    data_dir = Path(data_dir)
+    with _control_lock(data_dir):
+        manifest = reconcile(data_dir)
+        tracked_pid = _tracked_downloader_pid(manifest)
+        orphans = [pid for pid in live_pids() if pid != tracked_pid]
+        for pid in orphans:
+            terminate(pid)
+        return orphans
+
+
 def load_for_mcp(
     data_dir: str | Path, *, start_tei=tei_lifecycle.start_tei_containers,
 ) -> dict:
