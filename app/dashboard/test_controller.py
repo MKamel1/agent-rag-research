@@ -1821,3 +1821,90 @@ def test_stop_clears_the_pending_flag(tmp_path):
         assert not controller_mod._read_manifest(tmp_path).get("pending_drop_in")
     finally:
         _cleanup(controller_mod._read_manifest(tmp_path))
+
+
+# --- D-6 Task 2: restart_downloader, terminate_orphan_downloaders -------------------------------
+#
+# Every `live_pids`/`terminate` here is a FAKE (never the real process-table scan or a real
+# signal) -- these tests must never touch a real OS process, tracked or not.
+
+
+def test_restart_downloader_terminates_then_spawns_exactly_once(tmp_path):
+    spawned = []
+    controller_mod._write_manifest(tmp_path, {
+        "run_id": "dl-1", "status": "running", "pid": 4242,
+        "pid_starttime": None, "pid_cmdline": None, "mode": "download", "target": 30000,
+    })
+    out = controller_mod.restart_downloader(
+        tmp_path,
+        spawn=lambda *a, **k: (spawned.append(1) or 9999),
+        live_pids=lambda: [4242],
+    )
+    assert out["mode"] == "download"
+    assert out["status"] == "running"
+    assert out["pid"] == 9999
+    assert spawned == [1]
+
+
+def test_restart_downloader_also_terminates_an_untracked_orphan(tmp_path):
+    """The 2026-08-01 bug: stop acted on a dead manifest pid and left a live orphan running, so a
+    subsequent start produced TWO downloaders."""
+    controller_mod._write_manifest(tmp_path, {
+        "run_id": "dl-1", "status": "done", "pid": 111,   # dead
+        "pid_starttime": None, "pid_cmdline": None, "mode": "download",
+    })
+    killed = []
+    controller_mod.restart_downloader(
+        tmp_path,
+        spawn=lambda *a, **k: 9999,
+        live_pids=lambda: [3012944],                       # orphan, named by nothing
+        terminate=lambda pid: killed.append(pid) or True,
+    )
+    assert killed == [3012944], "the orphan must be terminated before a fresh downloader starts"
+
+
+def test_restart_downloader_refuses_to_import_status(tmp_path):
+    """`live_pids` has no internal default that reaches into `status.py` -- this module must never
+    import it (see this module's own docstring). Omitting `live_pids` entirely is a TypeError, not
+    a silent no-op scan."""
+    with pytest.raises(TypeError):
+        controller_mod.restart_downloader(tmp_path, spawn=lambda *a, **k: 9999)
+
+
+def test_terminate_orphan_downloaders_leaves_the_tracked_one_alone(tmp_path):
+    controller_mod._write_manifest(tmp_path, {
+        "run_id": "dl-1", "status": "running", "pid": 4242,
+        "pid_starttime": None, "pid_cmdline": None, "mode": "download",
+    })
+    killed = []
+    out = controller_mod.terminate_orphan_downloaders(
+        tmp_path, live_pids=lambda: [4242, 5555],
+        terminate=lambda pid: killed.append(pid) or True,
+    )
+    assert killed == [5555] and out == [5555]
+
+
+def test_terminate_orphan_downloaders_ignores_a_full_runs_own_pid(tmp_path):
+    """A `mode="full"` manifest's pid is a `build_corpus` SUPERVISOR, not a downloader -- it must
+    never be compared against live `app.prefetch_pdfs` pids (it would never match, so its own
+    legitimate prefetch child would be misread as an orphan and killed out from under a live full
+    run)."""
+    controller_mod._write_manifest(tmp_path, {
+        "run_id": "full-1", "status": "running", "pid": 999,
+        "pid_starttime": None, "pid_cmdline": None, "mode": "full",
+    })
+    killed = []
+    out = controller_mod.terminate_orphan_downloaders(
+        tmp_path, live_pids=lambda: [4242],
+        terminate=lambda pid: killed.append(pid) or True,
+    )
+    assert killed == [4242] and out == [4242]
+
+
+def test_terminate_orphan_downloaders_with_no_manifest_terminates_every_live_pid(tmp_path):
+    killed = []
+    out = controller_mod.terminate_orphan_downloaders(
+        tmp_path, live_pids=lambda: [1, 2],
+        terminate=lambda pid: killed.append(pid) or True,
+    )
+    assert sorted(killed) == [1, 2] and sorted(out) == [1, 2]
