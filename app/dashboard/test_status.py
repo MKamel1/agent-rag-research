@@ -739,6 +739,65 @@ def test_is_live_prefetch_false_for_a_dead_pid():
     assert status_mod._is_live_prefetch(999999999) is False
 
 
+# --- D-12: argv-aware matching, not a loose substring -------------------------------------------
+#
+# The bug: `_live_prefetch_pids` matched any cmdline CONTAINING "app.prefetch_pdfs" -- including a
+# diagnostic `pgrep -af "app.prefetch_pdfs"` naming the pattern, or a `bash -c "...
+# app.prefetch_pdfs..."` one-liner. Each was counted as a live downloader and, being neither the
+# manifest pid nor its descendant, tripped a spurious `orphan=True`. Every test below builds a
+# fully synthetic `/proc` tree under `tmp_path` (via `proc_root=`) -- none depends on what is
+# actually running on the host.
+
+
+def _write_fake_proc_entry(proc_root, pid: int, argv: list[str]) -> None:
+    d = proc_root / str(pid)
+    d.mkdir()
+    (d / "cmdline").write_bytes(b"\0".join(a.encode() for a in argv) + b"\0")
+
+
+def test_live_prefetch_pids_counts_a_real_module_invocation(tmp_path, monkeypatch):
+    monkeypatch.setattr(status_mod.os, "kill", lambda pid, sig: None)
+    _write_fake_proc_entry(tmp_path, 555501, ["python", "-m", "app.prefetch_pdfs"])
+    assert status_mod._live_prefetch_pids(proc_root=tmp_path) == [555501]
+
+
+def test_live_prefetch_pids_does_not_count_a_pgrep_naming_the_pattern(tmp_path, monkeypatch):
+    """The regression: `pgrep -af "app.prefetch_pdfs"` mentions the module string but has no `-m`
+    immediately before it."""
+    monkeypatch.setattr(status_mod.os, "kill", lambda pid, sig: None)
+    _write_fake_proc_entry(tmp_path, 555502, ["pgrep", "-af", "app.prefetch_pdfs"])
+    assert status_mod._live_prefetch_pids(proc_root=tmp_path) == []
+
+
+def test_live_prefetch_pids_does_not_count_a_shell_one_liner(tmp_path, monkeypatch):
+    """The whole script is a single argv element, so no `-m`/module adjacency is possible."""
+    monkeypatch.setattr(status_mod.os, "kill", lambda pid, sig: None)
+    _write_fake_proc_entry(tmp_path, 555503, ["bash", "-c", "echo hi app.prefetch_pdfs"])
+    assert status_mod._live_prefetch_pids(proc_root=tmp_path) == []
+
+
+def test_live_prefetch_pids_requires_exact_module_name_not_a_prefix(tmp_path, monkeypatch):
+    monkeypatch.setattr(status_mod.os, "kill", lambda pid, sig: None)
+    _write_fake_proc_entry(tmp_path, 555504, ["python", "-m", "app.prefetch_pdfs_experimental"])
+    assert status_mod._live_prefetch_pids(proc_root=tmp_path) == []
+
+
+def test_live_prefetch_pids_excludes_the_scanning_processs_own_pid(tmp_path, monkeypatch):
+    """Belt-and-braces guard: even a fake entry with a genuinely matching argv must not count
+    itself if it names this very process's own pid."""
+    monkeypatch.setattr(status_mod.os, "kill", lambda pid, sig: None)
+    _write_fake_proc_entry(tmp_path, os.getpid(), ["python", "-m", "app.prefetch_pdfs"])
+    assert status_mod._live_prefetch_pids(proc_root=tmp_path) == []
+
+
+def test_live_prefetch_pids_skips_unreadable_or_vanished_proc_entries(tmp_path, monkeypatch):
+    """A `/proc/<pid>` directory that exists but whose `cmdline` is gone (the process exited mid
+    scan) is a normal race, not an error."""
+    monkeypatch.setattr(status_mod.os, "kill", lambda pid, sig: None)
+    (tmp_path / "555505").mkdir()  # no cmdline file inside
+    assert status_mod._live_prefetch_pids(proc_root=tmp_path) == []
+
+
 # --- D-6 Task 1: read_downloader sees every live downloader via the process table --------------
 
 

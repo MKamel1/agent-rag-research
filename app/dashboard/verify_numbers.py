@@ -32,6 +32,7 @@ from __future__ import annotations
 import argparse
 import glob
 import json
+import os
 import re
 import shutil
 import sqlite3
@@ -317,9 +318,21 @@ def _is_descendant(
 
 def _live_prefetch_pids_via_pgrep() -> list[int] | None:
     """`pgrep -f app.prefetch_pdfs` -- a DIFFERENT mechanism than `status.py::_live_prefetch_pids`
-    (which walks `/proc` itself), so a bug in either one's scan can't hide behind the other. `None`
-    (not `[]`) when `pgrep` itself is unavailable/errors -- distinct from "confirmed nothing
-    live"."""
+    (which walks `/proc` itself) -- for a broad CANDIDATE set, then two structural checks neither
+    imported from nor textually copied off `status.py` narrow it to real downloaders:
+    `/proc/<pid>/exe` resolves to a python interpreter binary (`_exe_is_python`), AND
+    `/proc/<pid>/cmdline`'s argv (parsed here from scratch, not `status.py`'s
+    `_read_cmdline_argv`) has `-m` immediately followed by `app.prefetch_pdfs`
+    (`_has_prefetch_module_flag`).
+
+    D-12: `pgrep -f` alone is the exact loose substring predicate that let this cross-check agree
+    with `status.py`'s old bug -- a diagnostic `pgrep -af "app.prefetch_pdfs"` or a
+    `bash -c "...app.prefetch_pdfs..."` both satisfy `pgrep -f` but fail BOTH structural checks
+    here (no python `exe`, no `-m`-adjacent argv), so a flaw in one check can't be masked by the
+    other agreeing with it -- and a flaw in `status.py`'s own argv-adjacency logic can't silently
+    reproduce here, since this module's argv parsing and python-binary check are its own
+    independent code, not a shared helper. `None` (not `[]`) when `pgrep` itself is
+    unavailable/errors -- distinct from "confirmed nothing live"."""
     try:
         result = subprocess.run(
             ["pgrep", "-f", "app.prefetch_pdfs"], capture_output=True, text=True, timeout=5.0,
@@ -328,7 +341,34 @@ def _live_prefetch_pids_via_pgrep() -> list[int] | None:
         return None
     if result.returncode not in (0, 1):  # 1 == "no processes matched", still a valid answer
         return None
-    return sorted(int(p) for p in result.stdout.split())
+    candidates = sorted(int(p) for p in result.stdout.split())
+    return [pid for pid in candidates if _exe_is_python(pid) and _has_prefetch_module_flag(pid)]
+
+
+def _exe_is_python(pid: int) -> bool:
+    """`/proc/<pid>/exe` resolves to a binary named like a python interpreter -- a fact `pgrep -f`
+    (which only ever looks at cmdline text) cannot see at all, and `status.py`'s reader never
+    checks either. A `pgrep`/`grep`/`bash` process naming the pattern in its own arguments fails
+    this outright, independent of anything argv-shaped."""
+    try:
+        exe = os.readlink(f"/proc/{pid}/exe")
+    except OSError:
+        return False
+    return "python" in Path(exe).name
+
+
+def _has_prefetch_module_flag(pid: int) -> bool:
+    """Own from-scratch argv parse (not a call into `status.py`) confirming `-m` is immediately
+    followed by `app.prefetch_pdfs` as adjacent argv elements."""
+    try:
+        raw = Path(f"/proc/{pid}/cmdline").read_bytes()
+    except OSError:
+        return False
+    parts = raw.split(b"\0")
+    if parts and parts[-1] == b"":
+        parts.pop()
+    argv = [p.decode(errors="replace") for p in parts]
+    return any(a == "-m" and b == "app.prefetch_pdfs" for a, b in zip(argv, argv[1:]))
 
 
 def _verify_downloader(
