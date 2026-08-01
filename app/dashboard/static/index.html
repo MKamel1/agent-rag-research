@@ -143,10 +143,14 @@
     <div class="row"><span class="stat-label">download pace</span><span id="prefetchPace">-</span></div>
     <div class="row"><span class="stat-label">TEI embed</span><span id="teiEmbedHealthy">-</span></div>
     <div class="row"><span class="stat-label">TEI rerank</span><span id="teiRerankHealthy">-</span></div>
+    <div id="downloaderTagsPendingBanner" class="note" style="display:none; color: var(--warn); margin: .6rem 0 0;"></div>
+    <div id="downloaderOrphanBanner" class="note" style="display:none; color: var(--warn); margin: .6rem 0 0;"></div>
     <div class="controls" style="margin-top: .5rem;">
       <button id="btnFreeGpu" class="secondary" type="button">Free GPU</button>
       <button id="btnLoadForMcp" class="secondary" type="button">Load for MCP</button>
+      <button id="btnRestartDownloader" class="secondary" type="button">Restart downloader</button>
     </div>
+    <span class="note" style="margin:.3rem 0 0;">Restart downloader stops every live <code>app.prefetch_pdfs</code> process (the tracked one, plus any untracked orphan) and starts one fresh with the current tags/filters. No confirm: unlike a tag purge this is reversible, and it's the fix for both warnings above.</span>
     <span class="note" style="margin:0;">Free GPU stops the TEI embedder/reranker containers (~9.4GB VRAM) on demand -- independent of Pause/Resume/Stop, which deliberately leave them running for live search. Refused while a full run is actively running. Live search self-heals on its own on the next query either way; Load for MCP just restores it immediately instead of waiting -- also refused while Pass 1 (parsing) is actively running, since reloading TEI mid-Pass-1 risks the same GPU-memory conflict Free GPU's own refusal guards against.</span>
     <span class="note" style="margin:.3rem 0 0;">"Staged for processing" is downloads waiting their turn in pdf_cache, paired with <code>Config.prefetch_target</code> -- the downloader's own goal, NOT the run's processing target below. This corpus's authoritative size is the Stage funnel panel's "done" row, not this number.</span>
   </div>
@@ -737,6 +741,29 @@ function render(snap) {
   document.getElementById("prefetchPace").textContent =
     dl.downloaded === null || dl.downloaded === undefined ? "-" : `${fmt(dl.downloaded)} / ${fmt(dl.prefetch_target)} cached`;
 
+  // D-6: tag edits don't reach a downloader already running (app/prefetch_pdfs.py loads its
+  // config once, before its forever-loop, and never re-reads) -- and an untracked downloader
+  // (prefetch.pid reconciled by nobody, OG-43/D-6's root cause) is otherwise invisible. Both
+  // point at the same fix: the Restart downloader button right below.
+  const tagsPendingBanner = document.getElementById("downloaderTagsPendingBanner");
+  if (dl.tags_pending) {
+    tagsPendingBanner.textContent =
+      "Tag changes pending -- restart the downloader to apply. A running downloader keeps the " +
+      "queries it started with.";
+    tagsPendingBanner.style.display = "block";
+  } else {
+    tagsPendingBanner.style.display = "none";
+  }
+  const orphanBanner = document.getElementById("downloaderOrphanBanner");
+  if (dl.orphan) {
+    const orphanPid = (dl.live_pids || []).find(p => p !== dl.tracked_pid);
+    orphanBanner.textContent =
+      `An untracked downloader is running (pid ${fmt(orphanPid)}). Restart to take control of it.`;
+    orphanBanner.style.display = "block";
+  } else {
+    orphanBanner.style.display = "none";
+  }
+
   const tei = snap.tei || {};
   document.getElementById("teiEmbedHealthy").textContent =
     tei.embed_healthy === null || tei.embed_healthy === undefined ? "-" : (tei.embed_healthy ? "up" : "down");
@@ -1082,6 +1109,8 @@ document.getElementById("btnDownloadOnly").addEventListener("click", () => {
 
 document.getElementById("btnFreeGpu").addEventListener("click", () => control("free_gpu"));
 document.getElementById("btnLoadForMcp").addEventListener("click", () => control("load_for_mcp"));
+// No confirm() -- unlike a tag purge this is reversible (see the button's own note).
+document.getElementById("btnRestartDownloader").addEventListener("click", () => control("restart_downloader"));
 document.getElementById("btnStartDropIn").addEventListener("click", () => control("start_drop_in"));
 
 // --- Tag pool panel: Hold/Restore/Add fire IMMEDIATELY (unlike the staged keyword box above) ----
