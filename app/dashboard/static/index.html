@@ -34,10 +34,12 @@
   .progress-track { height: 14px; background: #232833; border-radius: 7px; overflow: hidden; }
   .progress-fill { height: 100%; background: var(--good); transition: width .3s; }
   .tags { display: flex; flex-wrap: wrap; gap: .35rem; max-height: 9rem; overflow-y: auto; }
+  .tags.dropzone.dragover { outline: 2px dashed var(--accent); background: #1b2129; }
   .tag { background: #202632; border: 1px solid var(--border); border-radius: 999px; padding: .2rem .65rem; font-size: .75rem; color: var(--muted); }
   .tag.pending { color: var(--text); border-color: var(--accent); }
   .tag.tag-removing { color: var(--bad); border-color: var(--bad); text-decoration: line-through; opacity: .7; }
   .tag.held { opacity: .55; text-decoration: line-through; }
+  .tag[draggable] { cursor: grab; }
   .tag-action { text-decoration: none; margin-left: .35rem; font-weight: 700; color: var(--accent); }
   .tag-remove { color: var(--bad); text-decoration: none; margin-left: .35rem; font-weight: 700; }
   .note { color: var(--muted); font-size: .75rem; margin-bottom: .5rem; }
@@ -211,16 +213,19 @@
       <code>config.yaml</code> once and never written back to it. Hold/Restore/Add here take
       effect IMMEDIATELY and persist into every future run -- unlike the "add keyword" box in
       Control below, which only stages an edit for the next Apply/Download click. Hold parks a
-      tag without deleting it; a held tag stays visible and restores in one click.
+      tag without deleting it; a held tag stays visible and restores in one click. Drag a tag
+      between the two boxes, or use Hold/Restore -- both do the same thing. &times; on an active
+      tag holds it (not a delete); &times; on a held tag purges it from the pool for good, and
+      asks for confirmation first.
     </div>
-    <div class="tags" id="tagPoolActive"></div>
+    <div class="tags dropzone" id="tagPoolActive" data-pool-drop="restore_tags"></div>
     <div class="controls" style="margin-top: .5rem;">
       <input id="newPoolTag" type="text" placeholder="e.g. double machine learning" style="width: 18rem;">
       <button id="btnAddPoolTag" class="secondary" type="button">Add</button>
     </div>
     <details style="margin-top: .6rem;">
       <summary class="stat-label" style="cursor:pointer;">Held (<span id="heldCount">0</span>)</summary>
-      <div class="tags" id="tagPoolHeld" style="margin-top:.4rem;"></div>
+      <div class="tags dropzone" id="tagPoolHeld" data-pool-drop="hold_tags" style="margin-top:.4rem;"></div>
     </details>
     <div id="tagPoolMsg" class="note" style="margin: .5rem 0 0;"></div>
   </div>
@@ -561,23 +566,56 @@ function renderTagPool(snap) {
 
   const activeEl = document.getElementById("tagPoolActive");
   activeEl.innerHTML = active.length
-    ? active.map(q => `<span class="tag">${escapeHtml(q)} <a href="#" class="tag-action" data-hold="${escapeHtml(q)}">hold</a></span>`).join("")
+    ? active.map(q => `<span class="tag" draggable="true" data-tag="${escapeHtml(q)}">${escapeHtml(q)} <a href="#" class="tag-action" data-hold="${escapeHtml(q)}">hold</a> <a href="#" class="tag-remove" data-x-active="${escapeHtml(q)}" title="hold">&times;</a></span>`).join("")
     : `<span class="stat-label">-</span>`;
   activeEl.querySelectorAll("[data-hold]").forEach(a => a.addEventListener("click", e => {
     e.preventDefault();
     tagPoolControl("hold_tags", a.dataset.hold);
   }));
+  // X on an ACTIVE chip parks it (hold_tags) -- NOT a delete, so no confirm.
+  activeEl.querySelectorAll("[data-x-active]").forEach(a => a.addEventListener("click", e => {
+    e.preventDefault();
+    tagPoolControl("hold_tags", a.dataset.xActive);
+  }));
+  bindTagDragSource(activeEl);
 
   const heldEl = document.getElementById("tagPoolHeld");
   heldEl.innerHTML = held.length
-    ? held.map(h => `<span class="tag held">${escapeHtml(h.query)} <a href="#" class="tag-action" data-restore="${escapeHtml(h.query)}">restore</a></span>`).join("")
+    ? held.map(h => `<span class="tag held" draggable="true" data-tag="${escapeHtml(h.query)}">${escapeHtml(h.query)} <a href="#" class="tag-action" data-restore="${escapeHtml(h.query)}">restore</a> <a href="#" class="tag-remove" data-x-held="${escapeHtml(h.query)}" title="purge">&times;</a></span>`).join("")
     : `<span class="stat-label">none held</span>`;
   heldEl.querySelectorAll("[data-restore]").forEach(a => a.addEventListener("click", e => {
     e.preventDefault();
     tagPoolControl("restore_tags", a.dataset.restore);
   }));
+  // X on a HELD chip has nowhere further down to go -- purges it from the pool for good.
+  // The only irreversible tag action, so the only one behind a confirm().
+  heldEl.querySelectorAll("[data-x-held]").forEach(a => a.addEventListener("click", e => {
+    e.preventDefault();
+    const tag = a.dataset.xHeld;
+    if (confirm(`Permanently remove "${tag}" from the tag pool? This cannot be undone.`)) {
+      tagPoolControl("purge_tags", tag);
+    }
+  }));
+  bindTagDragSource(heldEl);
 
   document.getElementById("heldCount").textContent = held.length;
+}
+
+// Native HTML5 drag-and-drop, no library: each `.tag` chip is a drag source (dragstart stashes
+// its query string as plain text); `#tagPoolActive`/`#tagPoolHeld` are drop targets wired once
+// below via `data-pool-drop`. A drop issues the SAME POST /api/control the Hold/Restore links
+// issue and re-renders from the response (tagPoolControl -> control -> poll) -- no optimistic
+// local mutation, so a refused drop (e.g. the hold-everything guard) never leaves the UI showing
+// a state the server rejected.
+function bindTagDragSource(container) {
+  container.querySelectorAll(".tag[draggable]").forEach(el => {
+    el.addEventListener("dragstart", e => {
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", el.dataset.tag);
+      // Held tags live inside a collapsed <details> -- open it so it's a visible drop target.
+      document.getElementById("tagPoolHeld").closest("details").open = true;
+    });
+  });
 }
 
 function renderTuning(snap) {
@@ -1062,6 +1100,20 @@ document.getElementById("btnAddPoolTag").addEventListener("click", () => {
 });
 document.getElementById("newPoolTag").addEventListener("keydown", e => {
   if (e.key === "Enter") { e.preventDefault(); document.getElementById("btnAddPoolTag").click(); }
+});
+
+// Drop targets: `data-pool-drop` on each container names the action a drop there issues --
+// "restore_tags" on the Active box, "hold_tags" on the On-hold box. Wired ONCE on the (persistent)
+// containers, not per-render -- only their innerHTML is replaced by renderTagPool.
+document.querySelectorAll(".dropzone[data-pool-drop]").forEach(el => {
+  el.addEventListener("dragover", e => { e.preventDefault(); el.classList.add("dragover"); });
+  el.addEventListener("dragleave", () => el.classList.remove("dragover"));
+  el.addEventListener("drop", e => {
+    e.preventDefault();
+    el.classList.remove("dragover");
+    const tag = e.dataTransfer.getData("text/plain");
+    if (tag) tagPoolControl(el.dataset.poolDrop, tag);
+  });
 });
 
 poll();

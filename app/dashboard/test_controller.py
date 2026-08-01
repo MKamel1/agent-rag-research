@@ -983,6 +983,7 @@ def test_added_tags_persist_into_a_SECOND_run(tmp_path):
         base, None, None, data_dir=tmp_path, run_id="run-2",
     )
 
+    assert override_dir is not None, "no override built -- tags did not persist"
     second = controller_mod.load_config(Path(override_dir) / "config.yaml")
     assert "new topic" in second.focus_area_queries
 
