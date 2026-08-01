@@ -9,6 +9,7 @@ import subprocess
 import time
 
 import app.dashboard.status as status_mod
+from app.dashboard import tag_pool
 from migrations.migrate import migrate
 
 
@@ -1002,3 +1003,172 @@ def test_read_drop_in_tolerates_missing_tree(tmp_path):
     assert out["staged"] == 0
     assert out["processed"] is None
     assert out["latest_manifest"] is None
+
+
+# --- D-10 Task 2: dynamic tests -- every number below must MOVE correctly under a real mutation,
+# not just match a frozen constant. A test asserting `done == 12333` is worthless the moment the
+# corpus changes; every test in this section instead reads a number, mutates the underlying
+# source, reads again, and asserts the DELTA.
+
+
+def _insert_rows(db_path, stage: str, n: int, prefix: str):
+    """Inserts `n` NEW distinct `ingest_state` rows at `stage`, never colliding with `_seed`'s own
+    `p0, p1, ...` ids -- used to grow an already-seeded corpus without a PRIMARY KEY collision."""
+    conn = sqlite3.connect(str(db_path))
+    for i in range(n):
+        conn.execute(
+            "INSERT INTO ingest_state (paper_id, stage, updated_at) VALUES (?, ?, ?)",
+            (f"{prefix}{i}", stage, "2026-01-01T00:00:00"),
+        )
+    conn.commit()
+    conn.close()
+
+
+def test_read_corpus_inserting_rows_at_a_stage_moves_it_and_every_earlier_stage(tmp_path):
+    """Cumulative funnel: N new rows landing at 'parsed' raise 'parsed' AND 'harvested' (an
+    EARLIER stage, since every parsed paper has also been harvested) by N, while 'chunked' and
+    everything after (a LATER stage) is untouched."""
+    db_path = tmp_path / "papers.db"
+    _seed(db_path, {"harvested": 2, "chunked": 1})
+    before = status_mod.read_corpus(tmp_path)["funnel"]
+
+    _insert_rows(db_path, "parsed", 4, prefix="new")
+
+    after = status_mod.read_corpus(tmp_path)["funnel"]
+    assert after["parsed"] == before["parsed"] + 4
+    assert after["harvested"] == before["harvested"] + 4
+    assert after["chunked"] == before["chunked"]
+    assert after["done"] == before["done"]
+
+
+def test_read_corpus_moving_a_row_to_done_leaves_the_cumulative_earlier_stage_unchanged(tmp_path):
+    """The subtlest case: `ingest_state` holds each paper's CURRENT stage only, so moving one row
+    chunked -> done increases 'done' by 1 while the CUMULATIVE 'chunked' figure (chunked-or-later)
+    stays exactly the same -- the paper hasn't left that cumulative bucket, it's moved deeper
+    inside it."""
+    db_path = tmp_path / "papers.db"
+    _seed(db_path, {"chunked": 3, "done": 2})  # _seed inserts p0..p2 at chunked, p3-p4 at done
+    before = status_mod.read_corpus(tmp_path)["funnel"]
+
+    _mark_done(db_path, "p0")
+
+    after = status_mod.read_corpus(tmp_path)["funnel"]
+    assert after["done"] == before["done"] + 1
+    assert after["chunked"] == before["chunked"]
+
+
+def test_by_doc_type_inserting_a_book_row_moves_only_the_book_funnel(tmp_path):
+    db_path = tmp_path / "papers.db"
+    migrate(str(db_path))
+    _seed_papers(db_path, [("p1", "paper")])
+    conn = sqlite3.connect(str(db_path))
+    conn.execute(
+        "INSERT INTO ingest_state (paper_id, stage, updated_at) VALUES ('p1', 'done', ?)",
+        ("2026-01-01T00:00:00",),
+    )
+    conn.commit()
+    conn.close()
+    before = status_mod.read_corpus(tmp_path)["by_doc_type"]
+
+    _seed_papers(db_path, [("b1", "book")])
+    conn = sqlite3.connect(str(db_path))
+    conn.execute(
+        "INSERT INTO ingest_state (paper_id, stage, updated_at) VALUES ('b1', 'done', ?)",
+        ("2026-01-01T00:00:00",),
+    )
+    conn.commit()
+    conn.close()
+    after = status_mod.read_corpus(tmp_path)["by_doc_type"]
+
+    assert after["book"]["done"] == 1
+    assert after["paper"]["done"] == before["paper"]["done"]  # untouched by the book insert
+
+
+def test_read_downloads_adding_a_pdf_then_a_sidecar_moves_only_the_right_counter(tmp_path):
+    cache = tmp_path / "pdf_cache"
+    cache.mkdir()
+    before = status_mod.read_downloads(tmp_path, prefetch_target=100)
+
+    (cache / "a.pdf").write_bytes(b"")
+    after_pdf = status_mod.read_downloads(tmp_path, prefetch_target=100)
+    assert after_pdf["staged_pdfs"] == before["staged_pdfs"] + 1
+    assert after_pdf["sidecars"] == before["sidecars"]
+
+    (cache / "a.json").write_text("{}")
+    after_json = status_mod.read_downloads(tmp_path, prefetch_target=100)
+    assert after_json["sidecars"] == after_pdf["sidecars"] + 1
+    assert after_json["staged_pdfs"] == after_pdf["staged_pdfs"]
+
+
+def test_read_downloads_stall_flag_flips_as_the_log_grows(tmp_path):
+    """A genuinely dynamic version of the existing stall tests above: the SAME log file is grown
+    across three reads, rather than written once -- stalled flips True on a stall line, then back
+    to False once a newer pace line follows it."""
+    (tmp_path / "pdf_cache").mkdir()
+    log = tmp_path / "prefetch.log"
+    log.write_text("prefetch_pdfs: downloaded 10 / target 30000\n")
+    before = status_mod.read_downloads(tmp_path, 30000)
+    assert before["stalled"] is False
+
+    with log.open("a") as f:
+        f.write(
+            "prefetch stalled: 11556/30000 cached, only 6 new available, next attempt in 3600s\n"
+        )
+    after_stall = status_mod.read_downloads(tmp_path, 30000)
+    assert after_stall["stalled"] is True
+
+    with log.open("a") as f:
+        f.write("prefetch_pdfs: downloaded 40 / target 30000\n")
+    after_pace = status_mod.read_downloads(tmp_path, 30000)
+    assert after_pace["stalled"] is False
+
+
+def test_read_drop_in_staging_a_file_moves_pending_and_staged_but_not_processed(tmp_path):
+    """`done/` means "staged", not "processed" -- the distinction the whole drop-in feature exists
+    for. Moving a file into `done/` must move `pending_papers`/`staged` but leave `processed`
+    (reached stage='done' in the corpus) exactly where it was."""
+    drop = tmp_path / "drop_in"
+    (drop / "papers").mkdir(parents=True)
+    (drop / "done").mkdir()
+    db_path = tmp_path / "papers.db"
+    migrate(str(db_path))
+    _seed_papers(db_path, [("m0", "paper")])
+    conn = sqlite3.connect(str(db_path))
+    conn.execute(
+        "INSERT INTO ingest_state (paper_id, stage, updated_at) VALUES ('m0', 'done', ?)",
+        ("2026-01-01T00:00:00",),
+    )
+    conn.commit()
+    conn.close()
+    (drop / "manifest-1.txt").write_text("m0\n")
+
+    before = status_mod.read_drop_in(drop, db_path)
+    assert before["processed"] == 1
+
+    pdf = drop / "papers" / "x.pdf"
+    pdf.write_bytes(b"%PDF-1.4")
+    after_add = status_mod.read_drop_in(drop, db_path)
+    assert after_add["pending_papers"] == before["pending_papers"] + 1
+    assert after_add["processed"] == before["processed"]
+
+    pdf.rename(drop / "done" / "x.pdf")
+    after_move = status_mod.read_drop_in(drop, db_path)
+    assert after_move["pending_papers"] == after_add["pending_papers"] - 1
+    assert after_move["staged"] == after_add["staged"] + 1
+    assert after_move["processed"] == after_add["processed"] == 1
+
+
+def test_tag_pool_holding_a_tag_moves_it_from_active_to_held_count_conserved(tmp_path):
+    """`active_count`/`held_count` (server.py's `_status_dict`) are `len()` of the pool's own
+    lists -- holding one tag must move it from one bucket to the other without changing the total,
+    matching the "removal is HOLD, not delete" invariant `tag_pool.py`'s module docstring states."""
+    seed = ["a", "b", "c"]
+    pool_before = tag_pool.load(tmp_path, seed)
+    active_before, held_before = len(pool_before["active"]), len(pool_before["held"])
+
+    pool_after = tag_pool.hold(tmp_path, seed, ["b"])
+    active_after, held_after = len(pool_after["active"]), len(pool_after["held"])
+
+    assert active_after == active_before - 1
+    assert held_after == held_before + 1
+    assert active_after + held_after == active_before + held_before
