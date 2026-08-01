@@ -271,14 +271,15 @@ Recorded in `docs/BOOK-INTEGRATION-CLOSEOUT.md`; repeated here so they stay visi
 - Local enforcement needs a **synthesized event payload**, not just the env var:
 
   ```bash
-  EV=$(mktemp) && printf '{"number":0,"labels":[],"pull_request":{"base":{"sha":"%s"},"head":{"sha":"%s"}}}' \
+  EV=$(mktemp) && printf '{"pull_request":{"number":0,"labels":[],"base":{"sha":"%s"},"head":{"sha":"%s"}}}' \
     "$(git merge-base origin/main HEAD)" "$(git rev-parse HEAD)" > "$EV"
   GITHUB_EVENT_NAME=pull_request GITHUB_EVENT_PATH="$EV" python -m ci.run_enforcement
   ```
 
-  Supplying both fields is correct. Precisely (verified 2026-07-31): the reader is
-  `ci/run_enforcement.py::_pr_labels`, **not** `changed_files.py::compute_diff_base`. `labels` is
-  required — read without `.get`, so a missing key raises `KeyError`. `number` is optional by
-  design and falls back to cached-payload mode.
+  **`number` and `labels` go INSIDE `pull_request`, not at the top level** — corrected 2026-08-01
+  after the top-level form raised `KeyError: 'labels'`. The reader is
+  `ci/run_enforcement.py::_pr_labels` (**not** `changed_files.py::compute_diff_base`, which reads
+  only the `base`/`head` SHAs). `labels` is read without `.get`, so a missing key raises;
+  `number` is optional and falls back to cached-payload mode.
 - A PR is not done until `gh pr checks <n>` shows **both** `enforcement` and `unit-tests` as `pass`.
   Never add a label or weaken a test to make a check go green.
