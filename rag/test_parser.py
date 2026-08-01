@@ -465,18 +465,20 @@ def test_scanned_golden_pdf_is_quarantined(pdf_path):
 
 
 # ---------------------------------------------------------------------------
-# _fetch_references() -- O-2: a single citation with no alphanumeric character makes the
-# reference-resolution service return HTTP 500 for the ENTIRE batch (reproduced against a live
-# instance, 2026-08-01: "3 good + 1 empty" -> 500, "3 good" -> 200, while 1000 citations/130KB and
-# one 60KB citation both return 200 -- neither volume nor length). An earlier `.strip()` filter
-# only caught "" and whitespace, so junk like "." or "[]" -- also measured to 500 the batch --
-# slipped through; "no alphanumeric character" is a strict superset that catches every measured
-# 500 case. The upstream extractor yields such junk entries often enough that this quarantined
-# real papers as a TransientError no retry could ever clear. Offline: `_fetch_references`
-# delegates its one network call to `_post_citation_batch` (parser.py's own seam over the vendor
-# client only that file may name, CONVENTIONS.md §1) -- tests here substitute that function
-# directly rather than reaching for a vendor-specific transport fixture, since this file isn't on
-# that token's allowlist.
+# _fetch_references() -- O-2: a single raw C0 control byte (0x00-0x1F, excluding tab/LF/CR)
+# anywhere in a citation string makes the reference-resolution service return HTTP 500 for the
+# ENTIRE batch (reproduced against a live instance with real upstream-extractor output, bisected
+# down to a single minimal reference carrying "\x17" standing in for a hyphen the extractor
+# couldn't decode). These strings are ordinary, alphanumeric-rich citation text -- neither an
+# earlier `.strip()` filter nor a later "no alphanumeric character" filter ever touched them,
+# which is why both were no-ops against the real failures. The fix strips the offending bytes in
+# place instead of dropping the reference: dropping would discard a whole citation's
+# author/title/venue text for one garbage byte inside it, while sanitizing was measured to flip
+# every one of 7 sampled real failing batches from 500 to 200 with zero references lost. Offline:
+# `_fetch_references` delegates its one network call to `_post_citation_batch` (parser.py's own
+# seam over the vendor client only that file may name, CONVENTIONS.md §1) -- tests here substitute
+# that function directly rather than reaching for a vendor-specific transport fixture, since this
+# file isn't on that token's allowlist.
 # ---------------------------------------------------------------------------
 
 
@@ -507,133 +509,141 @@ def _fake_post(posted: dict, text: str = _TEI_WITH_TWO_BIBLSTRUCTS):
     return handler
 
 
-def test_fetch_references_drops_blank_citations_before_posting(monkeypatch):
-    """A single empty or whitespace-only citation makes the reference-resolution service return
-    HTTP 500 for the WHOLE batch (reproduced live, 2026-08-01), so one stray blank line from the
-    upstream extractor failed reference extraction for an entire paper. Verified: '3 good + 1
-    empty' -> 500, '3 good' -> 200."""
+def test_fetch_references_sanitizes_not_drops_control_byte_citation(monkeypatch):
+    """A reference carrying a raw C0 control byte is sanitized in place, not dropped -- it must
+    still appear in the result. This is the property that distinguishes the fix from the two
+    prior drop-based ones (both no-ops against the real 500s)."""
     posted = {}
     monkeypatch.setattr(_mod, "_post_citation_batch", _fake_post(posted))
+    dirty = "Pischke, J.\x17S. (2009). Mostly Harmless Econometrics."
 
     refs = _mod._fetch_references(
-        ["Pearl, J. (2009). Causality.", "", "   ", "Rubin, D. (1974)."],
-        "http://reference-service.local",
-        paper_id="2504.21062",
+        [dirty], "http://reference-service.local", paper_id="2504.21062"
     )
 
-    # Only the two real citations are sent onward.
-    assert posted["citations"] == ["Pearl, J. (2009). Causality.", "Rubin, D. (1974)."]
-    # And only real ones come back -- a blank reference has no title, DOI or arXiv id to keep.
-    assert [r.raw for r in refs] == ["Pearl, J. (2009). Causality.", "Rubin, D. (1974)."]
+    assert len(refs) == 1
+    assert "\x17" not in refs[0].raw
+    assert "Pischke, J.S. (2009)" in refs[0].raw
 
 
-@pytest.mark.parametrize("junk", [".", "..", "[]", "()", ",", " . ", "", "   "])
-def test_fetch_references_drops_no_alphanumeric_citations(monkeypatch, junk):
-    """Every measured-500 input (2026-08-01, live reference-resolution service) has no
-    alphanumeric character -- dropping on that rule, not just `.strip()`, is what actually
-    stops the batch 500."""
+@pytest.mark.parametrize("bad_byte", ["\x00", "\x0f", "\x1b", "\x17"])
+def test_fetch_references_strips_c0_control_bytes(monkeypatch, bad_byte):
+    """Every C0 control byte the real diagnosis found in the wild (NUL/SI/ESC/ETB, standing in for
+    a mis-decoded "ff", "epsilon", "fi", and hyphen respectively) must be stripped before
+    posting."""
     posted = {}
     monkeypatch.setattr(_mod, "_post_citation_batch", _fake_post(posted))
+    dirty = f"Hoffman{bad_byte}M. (2014)."
 
-    _mod._fetch_references(
-        ["Pearl, J. (2009). Causality.", junk],
-        "http://reference-service.local",
-        paper_id="x",
-    )
+    _mod._fetch_references([dirty], "http://reference-service.local", paper_id="x")
 
-    assert posted["citations"] == ["Pearl, J. (2009). Causality."]
+    assert bad_byte not in posted["citations"][0]
 
 
-@pytest.mark.parametrize(
-    "real", ["1", "a", "[1]", "p. 5", "Pearl, J. (2009). Causality."]
-)
-def test_fetch_references_keeps_citations_with_alphanumeric(monkeypatch, real):
-    """Anything with a real letter or digit is a plausible citation fragment and is measured to
-    return 200 -- it must survive the filter even when short or heavily punctuated."""
+def test_fetch_references_preserves_tab_newline_carriage_return(monkeypatch):
+    """Tab/LF/CR are legitimate whitespace, not decode artifacts -- the sanitizer must not touch
+    them even though they're technically within the C0 range."""
     posted = {}
     monkeypatch.setattr(_mod, "_post_citation_batch", _fake_post(posted))
+    text = "Pearl,\tJ.\n(2009).\r Causality."
 
-    _mod._fetch_references(
-        [real, "."], "http://reference-service.local", paper_id="x"
-    )
+    _mod._fetch_references([text], "http://reference-service.local", paper_id="x")
 
-    assert posted["citations"] == [real]
+    assert posted["citations"] == [text]
 
 
-def test_fetch_references_logs_how_many_blanks_were_dropped(monkeypatch, caplog):
-    """Operator decision: drop them, but count them -- the number is how we learn how big the
-    underlying blank-extraction problem is."""
+def test_fetch_references_posted_body_has_no_c0_control_bytes(monkeypatch):
+    """End-to-end: whatever mix of clean and control-byte-carrying references comes in, nothing
+    posted to the reference-resolution service may contain a C0 control byte."""
+    posted = {}
+    monkeypatch.setattr(_mod, "_post_citation_batch", _fake_post(posted))
+    refs_in = [
+        "Angrist, J. D., & Pischke, J.\x17S. (2009).",
+        "Rubin, D. B.\x1b(1980).",
+        "Clean, C. (2020).",
+    ]
+
+    _mod._fetch_references(refs_in, "http://reference-service.local", paper_id="x")
+
+    c0 = {chr(c) for c in range(0x20) if c not in (0x09, 0x0A, 0x0D)}
+    for citation in posted["citations"]:
+        assert not (set(citation) & c0)
+
+
+def test_fetch_references_logs_sanitized_count_and_paper(monkeypatch, caplog):
+    """Counted, not silent -- the WARNING must report how many references needed sanitizing (not
+    dropping) and which paper, so the scale of the upstream decode-artifact problem stays
+    visible."""
     monkeypatch.setattr(_mod, "_post_citation_batch", _fake_post({}))
 
     with caplog.at_level(logging.WARNING, logger="rag.parser"):
         _mod._fetch_references(
-            ["Pearl, J. (2009). Causality.", "", "  ", "\n"],
+            [
+                "Angrist, J. D., & Pischke, J.\x17S. (2009).",
+                "Clean, C. (2020).",
+                "Rubin, D. B.\x1b(1980).",
+            ],
             "http://reference-service.local",
             paper_id="2504.21062",
         )
 
     msg = caplog.text
     assert "2504.21062" in msg
-    assert "3" in msg  # three blanks dropped
+    assert "2" in msg  # two of three references carried a control byte
+    assert "dropped" not in msg  # nothing was dropped -- the old wording must not survive
 
 
-def test_fetch_references_logs_drop_count_for_non_blank_junk(monkeypatch, caplog):
-    """The drop count must reflect the alphanumeric rule, not just blank/whitespace -- "." and
-    "[]" are non-empty but still dropped, and still counted."""
-    monkeypatch.setattr(_mod, "_post_citation_batch", _fake_post({}))
-
-    with caplog.at_level(logging.WARNING, logger="rag.parser"):
-        _mod._fetch_references(
-            ["Pearl, J. (2009). Causality.", ".", "[]", "  "],
-            "http://reference-service.local",
-            paper_id="2504.21062",
-        )
-
-    msg = caplog.text
-    assert "2504.21062" in msg
-    assert "3" in msg  # three non-alphanumeric entries dropped
-
-
-def test_fetch_references_all_blank_makes_no_network_call_at_all(monkeypatch):
-    """Every reference blank => nothing to ask the reference-resolution service about. Posting an
-    all-blank batch is the exact 500 this fixes, so it must not be sent."""
-    called = []
-
-    def handler(url, citations):
-        called.append(1)
-        return _FakeCitationResponse("<TEI/>")
-
-    monkeypatch.setattr(_mod, "_post_citation_batch", handler)
-
-    refs = _mod._fetch_references(
-        ["", "   ", "\t"], "http://reference-service.local", paper_id="x"
+def test_fetch_references_count_unchanged_by_sanitizing(monkeypatch):
+    """The property that distinguishes sanitize from drop: the number of references coming back
+    must equal the number going in, even when several carry control bytes."""
+    posted = {}
+    monkeypatch.setattr(
+        _mod, "_post_citation_batch", _fake_post(posted, _TEI_WITH_TWO_BIBLSTRUCTS)
     )
+    refs_in = [
+        "Pischke, J.\x17S. (2009). Causality.",
+        "Rubin, D. (1974).",
+        "Angrist\x1b, J. (1990).",
+    ]
 
-    assert refs == []
-    assert called == [], "must not call out when every citation is blank"
+    refs = _mod._fetch_references(refs_in, "http://reference-service.local", paper_id="x")
+
+    assert len(refs) == len(refs_in)
 
 
-def test_fetch_references_all_non_alphanumeric_makes_no_network_call_at_all(monkeypatch):
-    """Same as above, but with non-blank junk ("." / "[]") instead of whitespace -- the no-call
-    guard must key off the alphanumeric rule, not `.strip()`."""
-    called = []
+_TEI_WITH_THREE_BIBLSTRUCTS = """<?xml version="1.0" encoding="UTF-8"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0">
+  <text><back><listBibl>
+    <biblStruct><analytic><title level="a">First Paper</title></analytic></biblStruct>
+    <biblStruct><analytic><title level="a">Second Paper</title></analytic></biblStruct>
+    <biblStruct><analytic><title level="a">Third Paper</title></analytic></biblStruct>
+  </listBibl></back></text>
+</TEI>"""
 
-    def handler(url, citations):
-        called.append(1)
-        return _FakeCitationResponse("<TEI/>")
 
-    monkeypatch.setattr(_mod, "_post_citation_batch", handler)
-
-    refs = _mod._fetch_references(
-        [".", "[]", "()", ","], "http://reference-service.local", paper_id="x"
+def test_fetch_references_index_alignment_survives_partial_sanitizing(monkeypatch):
+    """Only the 1st and 3rd of three references carry a control byte -- every returned biblStruct
+    must still zip against the right raw string by position, not silently shift."""
+    posted = {}
+    monkeypatch.setattr(
+        _mod, "_post_citation_batch", _fake_post(posted, _TEI_WITH_THREE_BIBLSTRUCTS)
     )
+    refs_in = [
+        "Angrist\x1b, J. (1990). First.",
+        "Clean, C. (2020). Second.",
+        "Rubin\x00, D. (1974). Third.",
+    ]
 
-    assert refs == []
-    assert called == [], "must not call out when every citation lacks an alphanumeric character"
+    refs = _mod._fetch_references(refs_in, "http://reference-service.local", paper_id="x")
+
+    assert [r.title for r in refs] == ["First Paper", "Second Paper", "Third Paper"]
+    assert "\x1b" not in refs[0].raw and "First." in refs[0].raw
+    assert refs[1].raw == "Clean, C. (2020). Second."
+    assert "\x00" not in refs[2].raw and "Third." in refs[2].raw
 
 
-def test_fetch_references_unchanged_when_nothing_is_blank(monkeypatch):
-    """Regression guard: the ordinary path must be byte-identical to before."""
+def test_fetch_references_unchanged_when_nothing_needs_sanitizing(monkeypatch):
+    """Regression guard: the ordinary path (no control bytes) must be byte-identical to before."""
     posted = {}
     monkeypatch.setattr(_mod, "_post_citation_batch", _fake_post(posted))
 
