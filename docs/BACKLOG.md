@@ -27,6 +27,55 @@ Spec: `docs/superpowers/specs/2026-07-30-dashboard-dropin-and-usage-design.md`
 | D-9 | Land the orphaned unexpected-exception safety net | **OPEN — real unmerged work** | `T-SEED-combined-fixes`, the only genuinely unmerged branch in the repo. The pipeline has **no catch-all for unforeseen exceptions today**. See below. |
 | D-10 | Dashboard number accuracy: cross-check + dynamic tests | **DONE** | PR #227. `verify_numbers` reports `OK -- every field matches ground truth`. Caught and fixed a live orphan false positive. |
 | D-11 | D-7 does not archive logs for a **failed** run | **OPEN** | See below. |
+| D-12 | `_live_prefetch_pids` counts observer processes as downloaders | **OPEN** | Matches any cmdline containing `app.prefetch_pdfs` — including a `pgrep`/`grep` that names it. Causes spurious `orphan=True`. See below. |
+
+---
+
+## D-12 — the downloader scan counts its own observers
+
+**Found 2026-08-01 while testing the #230 orphan fix on the live system.**
+
+`status._live_prefetch_pids` scans `/proc/*/cmdline` for the substring `app.prefetch_pdfs`. Any
+process whose command line *mentions* that string matches — including a diagnostic
+`pgrep -af "app.prefetch_pdfs"`, a `grep`, or a shell one-liner. Each such transient process is
+counted as a live downloader, and because it is not the manifest PID nor a descendant of it, it
+trips **`orphan=True`**.
+
+Observed: `live_pids=[2187579, 2188865]` where `2188865` was the observing command itself; a scan
+that avoided naming the pattern in its own cmdline found **exactly one** real downloader.
+
+### This bug is already documented — elsewhere
+
+`scripts/dashboard.sh` carries the identical warning about its own PID lookup:
+
+> a naive `pgrep -f "dashboard"` ALSO matches this very wrapper's own invocation, since its own
+> path contains that substring too
+
+and solves it by anchoring on `-m app\.dashboard\.server`. D-6's `_live_prefetch_pids`
+reintroduced the flaw the wrapper had already fixed.
+
+### Why `verify_numbers` did not catch it
+
+`app/dashboard/verify_numbers.py` recomputes `downloader.live_pids` **the same way** the dashboard
+does, so both agree on the same wrong answer and the cross-check reports `OK`. This is a real gap
+in its independence guarantee — the property that makes it worth having. Any ground truth that
+shares an implementation with the thing it checks is not ground truth.
+
+### Proposed fix
+
+1. Match the *executable invocation*, not a loose substring: require the cmdline to contain the
+   `-m app.prefetch_pdfs` argument pair (argv-aware), the way `scripts/dashboard.sh` anchors on
+   `-m app\.dashboard\.server`. A `pgrep` naming the module in a search pattern does not have
+   `-m` as its own argv.
+2. Exclude the scanning process itself and its own ancestors as a belt-and-braces guard.
+3. **In `verify_numbers`, compute the ground truth differently from the reader** — e.g. resolve
+   `/proc/<pid>/exe` and check argv structurally — so a shared bug cannot hide again.
+
+### Severity
+
+Cosmetic in practice today (a spurious orphan warning, no wrong action taken), but it undermines
+two things that are supposed to be trustworthy: the orphan alarm, and the cross-check's claim of
+independence. Item 3 matters more than items 1–2.
 
 ---
 
