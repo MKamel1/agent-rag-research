@@ -40,8 +40,10 @@ the ordinary "cache exhausted and downloader stopped" branch below. A follow-up 
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import os
+import re
 import sqlite3
 import subprocess
 import sys
@@ -69,6 +71,15 @@ _DEFAULT_POLL_INTERVAL_S = 300.0
 # giving up as stalled instead of waiting forever -- mirrors `app/prefetch_pdfs.py`'s own
 # `--max-idle` guard, sized to roughly one prefetch re-harvest cycle's worth of patience.
 _DEFAULT_MAX_IDLE = 12
+
+# O-1: ~15 minutes -- the operator's chosen patience (2026-08-01) for "arXiv may publish something
+# in the next few minutes" before declaring the corpus complete for the configured queries, once
+# the cache is drained AND the downloader itself reports zero new papers available
+# (`_supply_exhausted` below). Deliberately much shorter than `_DEFAULT_MAX_IDLE`: a supply
+# exhaustion is a fact about the world outside this process -- more waiting cannot change what
+# arXiv has -- whereas a processing stall (batches running, zero net progress) may still clear
+# itself, so that guard is untouched.
+_SUPPLY_EXHAUSTED_MAX_IDLE = 3      # x _DEFAULT_POLL_INTERVAL_S (300s) = 15 minutes
 
 
 # --- cache-first to-do list (OG-40/OG-41) --------------------------------------------------------
@@ -242,6 +253,50 @@ def _is_live_prefetch(pid: int) -> bool:
 # Same name `app/dashboard/status.py` reads pace lines from -- duplicated (that module's own
 # "own your own copies" convention) rather than imported, matching `_PREFETCH_PID_NAME` above.
 _PREFETCH_LOG_NAME = "prefetch.log"
+
+# O-1: the exact line `app/prefetch_pdfs.py` logs every stalled pass, matched by the same pattern
+# `app/dashboard/status.py::_DOWNLOAD_STALL_RE` uses -- duplicated, NOT imported: this module must
+# not import `app/dashboard/status.py` (this file's own "own your own copies" convention, see
+# `_PREFETCH_PID_NAME` above).
+_PREFETCH_STALL_RE = re.compile(
+    r"prefetch stalled: (\d+)/(\d+) cached, only (\d+) new available"
+)
+
+
+def _supply_exhausted(prefetch_log_path: Path) -> bool:
+    """True iff the MOST RECENT 'prefetch stalled: ...' line in the downloader's own log reports
+    zero new papers available -- i.e. the cache is empty because arXiv genuinely has nothing left
+    for the configured queries, not because of a processing misconfiguration.
+
+    Absence is not exhaustion: a missing/unreadable log, or one with no stall line at all, both
+    return `False` -- the ordinary processing-stall guard (`_DEFAULT_MAX_IDLE`) stays the fallback
+    whenever there's no positive evidence of exhaustion either way."""
+    try:
+        text = prefetch_log_path.read_text()
+    except OSError:
+        return False
+    matches = _PREFETCH_STALL_RE.findall(text)
+    if not matches:
+        return False
+    _cached, _total, new_available = matches[-1]  # last match wins -- the most recent stall pass
+    return int(new_available) == 0
+
+
+def _write_run_outcome(
+    outcome_dir: Path, run_id: str, *, outcome: str, done: int, target: int, reason: str,
+) -> None:
+    """Persists `<outcome_dir>/run_outcome_<run_id>.json` so `controller.reconcile()` -- which sees
+    only pid/done_count/target, never this process's exit code -- can tell a run that processed
+    everything obtainable (O-1) apart from a real crash.
+
+    `outcome_dir` MUST be the real `data_dir`, never `run_cwd`: `controller._cleanup_run_cwd`
+    deletes `run_cwd` once a run goes terminal, and this file must outlive that, sitting beside the
+    existing per-run artifacts (`ingest_run-<run_id>.log`, `ingest_events_<run_id>.jsonl`)."""
+    payload = {
+        "run_id": run_id, "outcome": outcome, "done": done, "target": target,
+        "reason": reason, "finished_at": datetime.now(UTC).isoformat(),
+    }
+    (outcome_dir / f"run_outcome_{run_id}.json").write_text(json.dumps(payload))
 
 
 def _spawn_prefetch(data_dir: Path) -> int:
@@ -486,6 +541,9 @@ def build_to_target(
     sleep=time.sleep,
     poll_interval_s: float = _DEFAULT_POLL_INTERVAL_S,
     max_idle: int = _DEFAULT_MAX_IDLE,
+    supply_exhausted_max_idle: int = _SUPPLY_EXHAUSTED_MAX_IDLE,
+    run_id: str | None = None,
+    run_outcome_dir: Path | None = None,
 ) -> None:
     """Build the corpus to `target` done papers, cache-first: ensure the downloader is running,
     then repeatedly ingest whatever's cached-but-not-done until `done_count(db_path) >= target`,
@@ -516,7 +574,20 @@ def build_to_target(
     `arxiv_categories`): when any is set, `target` means "done papers matching this filter," not
     "done papers total" -- see `done_count`'s docstring. All unset (default) is byte-for-byte the
     old unscoped behavior.
+
+    O-1: `run_id`/`run_outcome_dir` are optional -- when a cache-drained wait turns out to be
+    supply exhaustion (`_supply_exhausted` on `<data_dir>/prefetch.log`), the loop still finishes
+    on the short `supply_exhausted_max_idle` guard either way, but can only PERSIST that verdict
+    (`_write_run_outcome`, for `controller.reconcile()` to read) when `run_id` is set --
+    `main()`/the dashboard controller always supply it; a bare manual invocation without `--run-id`
+    still gets the short wait and the honest log message, just no durable outcome record.
+    `run_outcome_dir` defaults to `data_dir` when unset (the unedited-run case, where `data_dir`
+    already IS the real data dir); a run launched from a keywords/parse_batch_size override scratch
+    dir (`run_cwd`) must pass the real data dir explicitly -- see `_write_run_outcome`'s docstring
+    for why it can't be `run_cwd`.
     """
+    outcome_dir = run_outcome_dir if run_outcome_dir is not None else data_dir
+    prefetch_log_path = data_dir / _PREFETCH_LOG_NAME
     prefetch_alive = ensure_prefetch(data_dir)
     idle_passes = 0
     ranked_ids: list[str] | None = None
@@ -553,12 +624,38 @@ def build_to_target(
                 )
                 return
             idle_passes += 1
-            if idle_passes >= max_idle:
-                logger.info(
-                    "build_corpus: stalled -- %d/%d done, no new cached papers after %d "
-                    "consecutive idle pass(es) (max_idle=%d), giving up",
-                    n_done, target, idle_passes, max_idle,
-                )
+            # O-1: the cache is drained (this is the empty-`cached_not_done` branch) -- check
+            # whether the downloader itself has told us WHY: a stall line reporting zero new
+            # papers available means arXiv has nothing left for the configured queries, a fact
+            # about the world that a longer wait cannot fix. That gets the short guard and a
+            # completed finish. Anything else (no stall line yet, or one reporting papers ARE
+            # available -- just not cached yet) is the ordinary "still waiting" case and keeps the
+            # full `max_idle` guard/message -- unchanged, still a failure if it trips.
+            exhausted = _supply_exhausted(prefetch_log_path)
+            effective_max_idle = supply_exhausted_max_idle if exhausted else max_idle
+            if idle_passes >= effective_max_idle:
+                if exhausted:
+                    wait_minutes = idle_passes * poll_interval_s / 60.0
+                    logger.info(
+                        "build_corpus: target not reachable -- %d/%d done, and arXiv has no new "
+                        "papers for the configured queries (downloader reported 0 new available "
+                        "over %d consecutive checks / %.0f min). Corpus is complete for the "
+                        "current focus_area_queries; widen them or lower the target to change "
+                        "this. Finishing as COMPLETED, not failed.",
+                        n_done, target, idle_passes, wait_minutes,
+                    )
+                    if run_id is not None:
+                        _write_run_outcome(
+                            outcome_dir, run_id, outcome="supply_exhausted",
+                            done=n_done, target=target,
+                            reason="no new papers available on arXiv for the configured queries",
+                        )
+                else:
+                    logger.info(
+                        "build_corpus: stalled -- %d/%d done, no new cached papers after %d "
+                        "consecutive idle pass(es) (max_idle=%d), giving up",
+                        n_done, target, idle_passes, max_idle,
+                    )
                 return
             logger.info(
                 "build_corpus: caught up with the cache (%d/%d done) -- waiting %.0fs for the "
@@ -636,6 +733,14 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
              "--telemetry-poll-interval; default (unset) omits the flag, so app.ingest's own "
              "default (telemetry.DEFAULT_GPU_POLL_INTERVAL_SECONDS) applies unchanged",
     )
+    parser.add_argument(
+        "--run-id", default=None,
+        help="this run's manifest run_id (app/dashboard/controller.py passes it); when set, a "
+             "supply-exhausted finish (O-1) persists <data_dir>/run_outcome_<run_id>.json so "
+             "controller.reconcile() can mark the run done instead of failed. Omitted (e.g. a "
+             "manual invocation outside the dashboard), the run still finishes on the short "
+             "15-minute guard and logs the honest reason -- it just can't be reconciled as done",
+    )
     return parser.parse_args(argv)
 
 
@@ -688,6 +793,13 @@ def main() -> None:
         categories=cfg.arxiv_categories,
         # Same Config-derived channel again: the dashboard's stranded-paper toggle.
         stranded_policy=cfg.stranded_policy,
+        # O-1: `--run-id` (unset for a manual invocation) and the REAL data dir -- `cfg.db_path`'s
+        # parent, not `data_dir` (which is really `run_cwd`: the real data dir for an unedited
+        # run, but a `.run_overrides/<run_id>` scratch dir controller.py deletes once the run goes
+        # terminal for an edited one). `cfg.db_path` is always already-absolute and always resolved
+        # against the real data dir regardless of override (controller.py's `_OVERRIDE_PATH_FIELDS`
+        # resolution), so its parent is the one place this process can find that survives the run.
+        run_id=args.run_id, run_outcome_dir=Path(cfg.db_path).parent,
     )
 
 
