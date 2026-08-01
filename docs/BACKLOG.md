@@ -24,6 +24,69 @@ Spec: `docs/superpowers/specs/2026-07-30-dashboard-dropin-and-usage-design.md`
 | D-6 | Downloader tracking + restart control | **DONE** | PR #217. Live: `/proc` is the authority, orphan detection, Restart button, tag-staleness warning. |
 | D-7 | Archive per-run `prefetch.log` + config before cleanup | **DONE — not yet exercised** | PRs #218/#219. No run has ended since merging, so the archive path has never actually fired. |
 | D-8 | Bound retries for repeatedly-failing quarantined papers | **OPEN — lower priority since O-2** | O-2's fix removed the cause. Now a guard against future misclassification, not a live problem. See below. |
+| D-9 | Land the orphaned unexpected-exception safety net | **OPEN — real unmerged work** | `T-SEED-combined-fixes`, the only genuinely unmerged branch in the repo. The pipeline has **no catch-all for unforeseen exceptions today**. See below. |
+
+---
+
+## D-9 — land the orphaned unexpected-exception safety net
+
+**Found 2026-08-01 during branch cleanup.** `T-SEED-combined-fixes` is the **only genuinely
+unmerged branch** left in the repo after 147 stale ones were deleted. Everything else was either
+already in `main` under a different SHA (rebase-merge rewrites them) or throwaway integration
+scratch. This one is real work that never landed.
+
+### What it contains
+
+```
+e4e15aa  Add a per-paper unexpected-exception safety net with a circuit breaker
+         rag/orchestrator.py  +123    rag/test_orchestrator.py  +152
+885dd1a  Exclude ContractError from the unexpected-exception safety net
+         rag/orchestrator.py   +15    rag/test_orchestrator.py   +23
+fe450f0  Document the UNEXPECTED: quarantine-reason prefix in the M9 quarantine() contract
+         DATA-CONTRACTS.md      +7
+```
+
+Authored 2026-07-14. A fourth commit on the branch (`T-DOC13: bound-retry-then-quarantine
+TransientError in finish_phase()`) **is** already in `main` — only these three are missing.
+
+### Why it matters
+
+`main` has no such guard. Verified 2026-08-01 against `origin/main`:
+
+```
+rag/orchestrator.py  -- grep 'except Exception|BaseException|safety net|consecutive|breaker'  -> 0 matches
+DATA-CONTRACTS.md    -- grep 'UNEXPECTED'                                                      -> 0 matches
+```
+
+So an exception from a path nobody anticipated still propagates and can end a whole run, rather
+than quarantining the one paper that caused it. That is not hypothetical for this pipeline — in a
+single session (2026-07-31/08-01) it hit a MinerU crash mid-parse, GROBID 500s on blank citations,
+and a `build_corpus` supervisor that died leaving an orphaned child process. Those particular cases
+are caught because each is wrapped explicitly; the *next* unanticipated one would not be.
+
+Excluding `ContractError` from the net (commit `885dd1a`) is the part worth preserving carefully:
+a contract violation is a bug that must surface loudly, not be swallowed into a quarantine row.
+
+### Before implementing
+
+- The branch is ~3 weeks stale and `rag/orchestrator.py` has moved since. **Expect a real rebase,
+  not a fast-forward** — treat it as "re-apply the design", not "merge the branch".
+- `DATA-CONTRACTS.md` is foundation-adjacent: the `UNEXPECTED:` prefix is a contract change and
+  needs the usual sign-off.
+- A circuit breaker needs a threshold. The branch picked one three weeks ago; check it still makes
+  sense against current batch sizes before adopting it unexamined.
+
+### Recovery
+
+Both cleanup bundles live in the data dir (outside the repo, so `git clean` cannot reach them):
+
+```
+research-system-rag-data/stale-branches-2026-08-01.bundle   37 MB   (the 12 local-only branches)
+research-system-rag-data/final9-branches-2026-08-01.bundle  21 MB   (the last 9 remote branches)
+```
+
+`T-SEED-combined-fixes` is in the second bundle **and** still on the remote — it was deliberately
+not deleted.
 
 ---
 
