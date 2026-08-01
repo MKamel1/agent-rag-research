@@ -24,6 +24,7 @@ from app.build_corpus import (
     _DEFAULT_MAX_IDLE,
     _MAX_BATCH,
     _RELEVANCE_RANK_CAP,
+    _SUPPLY_EXHAUSTED_MAX_IDLE,
     _apply_stranded_policy,
     _is_live_prefetch,
     _normalize_date,
@@ -31,6 +32,7 @@ from app.build_corpus import (
     _parse_args,
     _prefetch_pid_path,
     _spawn_prefetch,
+    _supply_exhausted,
     _validate_cli_args,
     build_to_target,
     cached_not_done,
@@ -640,6 +642,235 @@ def test_build_to_target_calls_ensure_prefetch_exactly_once(tmp_path):
 
 
 # ================================================================================================
+# O-1: supply exhaustion -- once the cache is drained AND the downloader itself reports zero new
+# papers available, the run finishes as completed after the short guard, not the long
+# processing-stall one. A processing stall (batches running, zero net progress, or the downloader
+# genuinely still has papers coming) must be unaffected: same guard, same message, still a failure.
+# ================================================================================================
+
+
+def _write_prefetch_log(dir_path: Path, line: str) -> None:
+    (dir_path / "prefetch.log").write_text(line + "\n")
+
+
+# --- _supply_exhausted: the pure log-tail detector, tested directly ------------------------------
+
+
+def test_supply_exhausted_true_when_the_most_recent_stall_reports_zero(tmp_path):
+    _write_prefetch_log(
+        tmp_path, "prefetch stalled: 11654/30000 cached, only 0 new available, next attempt in 3600s",
+    )
+    assert _supply_exhausted(tmp_path / "prefetch.log") is True
+
+
+def test_supply_exhausted_false_when_the_most_recent_stall_reports_papers_available(tmp_path):
+    _write_prefetch_log(
+        tmp_path, "prefetch stalled: 11654/30000 cached, only 42 new available, next attempt in 3600s",
+    )
+    assert _supply_exhausted(tmp_path / "prefetch.log") is False
+
+
+def test_supply_exhausted_only_the_latest_stall_line_counts(tmp_path):
+    """An earlier zero-available stall followed by a fresher non-zero one is NOT exhaustion --
+    matches `app/dashboard/status.py::_tail_download_stall`'s own "last match wins" semantics."""
+    log = tmp_path / "prefetch.log"
+    log.write_text(
+        "prefetch stalled: 1/2 cached, only 0 new available, next attempt in 3600s\n"
+        "prefetch stalled: 1/2 cached, only 7 new available, next attempt in 3600s\n"
+    )
+    assert _supply_exhausted(log) is False
+
+
+def test_supply_exhausted_false_for_a_log_with_no_stall_line(tmp_path):
+    """Absence is not exhaustion: pace lines alone (the downloader is actively working) must not
+    be mistaken for a stall report."""
+    (tmp_path / "prefetch.log").write_text(
+        "prefetch_pdfs: downloaded 10 / target 30000 (cache now 10)\n"
+    )
+    assert _supply_exhausted(tmp_path / "prefetch.log") is False
+
+
+def test_supply_exhausted_false_for_a_missing_log(tmp_path):
+    """Absence is not exhaustion: no prefetch.log at all (e.g. very first pass) must not raise."""
+    assert _supply_exhausted(tmp_path / "no_such_prefetch.log") is False
+
+
+# --- build_to_target: the two stalls, told apart -------------------------------------------------
+
+
+def test_supply_exhausted_finishes_after_the_short_guard_not_the_long_one(caplog, tmp_path):
+    """The downloader reporting 0 new available is a fact about the world -- waiting longer cannot
+    change it, so this trips `_SUPPLY_EXHAUSTED_MAX_IDLE` (3), nowhere near `_DEFAULT_MAX_IDLE`
+    (12): far fewer sleeps, and a completed-not-failed message."""
+    _write_prefetch_log(
+        tmp_path, "prefetch stalled: 11654/30000 cached, only 0 new available, next attempt in 3600s",
+    )
+    sleeps = []
+    with caplog.at_level(logging.INFO):
+        build_to_target(
+            tmp_path, "db", Path("cache"), target=12500, parse_workers=1, events_path=Path("events"),
+            ensure_prefetch=_fake_ensure_prefetch(alive=True),
+            run_ingest=lambda *a, **k: (_ for _ in ()).throw(AssertionError("no ingest expected")),
+            cached_not_done=lambda cache_dir, db_path: [],
+            done_count=lambda db_path: 12390,
+            sleep=sleeps.append,
+            run_id="run-1",
+        )
+    # Same "the guard-th idle pass stops immediately, no pointless sleep" convention as the
+    # existing max_idle tests above -- _SUPPLY_EXHAUSTED_MAX_IDLE - 1 sleeps, not _DEFAULT_MAX_IDLE.
+    assert len(sleeps) == _SUPPLY_EXHAUSTED_MAX_IDLE - 1
+    assert "arXiv has no new papers for the configured queries" in caplog.text
+    assert "Finishing as COMPLETED, not failed" in caplog.text
+    assert "parse_workers/parse_batch_size" not in caplog.text  # not the processing-stall message
+
+
+def test_supply_exhausted_writes_a_run_outcome_file(tmp_path):
+    _write_prefetch_log(
+        tmp_path, "prefetch stalled: 11654/30000 cached, only 0 new available, next attempt in 3600s",
+    )
+    build_to_target(
+        tmp_path, "db", Path("cache"), target=12500, parse_workers=1, events_path=Path("events"),
+        ensure_prefetch=_fake_ensure_prefetch(alive=True),
+        run_ingest=lambda *a, **k: (_ for _ in ()).throw(AssertionError("no ingest expected")),
+        cached_not_done=lambda cache_dir, db_path: [],
+        done_count=lambda db_path: 12390,
+        sleep=lambda s: None,
+        run_id="run-1",
+    )
+    out = json.loads((tmp_path / "run_outcome_run-1.json").read_text())
+    assert out["run_id"] == "run-1"
+    assert out["outcome"] == "supply_exhausted"
+    assert out["done"] == 12390
+    assert out["target"] == 12500
+    assert "no new papers available on arXiv" in out["reason"]
+    assert "finished_at" in out
+
+
+def test_supply_exhausted_writes_the_outcome_file_to_run_outcome_dir_not_data_dir(tmp_path):
+    """`data_dir` (the loop's own first positional arg) is really `run_cwd` in production -- an
+    edited run's scratch override dir that `controller._cleanup_run_cwd` deletes once the run goes
+    terminal. The outcome file must land in the REAL data dir (`run_outcome_dir`), which survives
+    that cleanup, not in `run_cwd`."""
+    run_cwd = tmp_path / "run_cwd"
+    run_cwd.mkdir()
+    real_data_dir = tmp_path / "real_data_dir"
+    real_data_dir.mkdir()
+    _write_prefetch_log(run_cwd, "prefetch stalled: 1/1 cached, only 0 new available")
+
+    build_to_target(
+        run_cwd, "db", Path("cache"), target=100, parse_workers=1, events_path=Path("events"),
+        ensure_prefetch=_fake_ensure_prefetch(alive=True),
+        run_ingest=lambda *a, **k: (_ for _ in ()).throw(AssertionError("no ingest expected")),
+        cached_not_done=lambda cache_dir, db_path: [],
+        done_count=lambda db_path: 5,
+        sleep=lambda s: None,
+        run_id="run-1",
+        run_outcome_dir=real_data_dir,
+    )
+    assert (real_data_dir / "run_outcome_run-1.json").exists()
+    assert not (run_cwd / "run_outcome_run-1.json").exists()
+
+
+def test_supply_exhausted_without_a_run_id_still_finishes_short_but_writes_no_outcome_file(
+    tmp_path,
+):
+    """A bare manual invocation with no --run-id still gets the honest short wait -- it just can't
+    be reconciled as `done` by the dashboard, since there's no run to attach the outcome to."""
+    _write_prefetch_log(
+        tmp_path, "prefetch stalled: 11654/30000 cached, only 0 new available, next attempt in 3600s",
+    )
+    sleeps = []
+    build_to_target(
+        tmp_path, "db", Path("cache"), target=12500, parse_workers=1, events_path=Path("events"),
+        ensure_prefetch=_fake_ensure_prefetch(alive=True),
+        run_ingest=lambda *a, **k: (_ for _ in ()).throw(AssertionError("no ingest expected")),
+        cached_not_done=lambda cache_dir, db_path: [],
+        done_count=lambda db_path: 12390,
+        sleep=sleeps.append,
+    )
+    assert len(sleeps) == _SUPPLY_EXHAUSTED_MAX_IDLE - 1
+    assert not list(tmp_path.glob("run_outcome_*.json"))
+
+
+def test_a_processing_stall_is_still_a_failure_and_still_waits_the_long_guard(caplog, tmp_path):
+    """The downloader has papers available (42, not 0) -- this is NOT supply exhaustion, so the
+    ordinary, UNCHANGED max_idle guard and "giving up" message apply, and no outcome file is
+    written. Zero-progress batches are a real problem and must still be reported as one."""
+    _write_prefetch_log(
+        tmp_path, "prefetch stalled: 11654/30000 cached, only 42 new available, next attempt in 3600s",
+    )
+    sleeps = []
+    with caplog.at_level(logging.INFO):
+        build_to_target(
+            tmp_path, "db", Path("cache"), target=12500, parse_workers=1, events_path=Path("events"),
+            ensure_prefetch=_fake_ensure_prefetch(alive=True),
+            run_ingest=lambda *a, **k: (_ for _ in ()).throw(AssertionError("no ingest expected")),
+            cached_not_done=lambda cache_dir, db_path: [],
+            done_count=lambda db_path: 12390,
+            sleep=sleeps.append,
+            max_idle=12,
+            run_id="run-1",
+        )
+    assert len(sleeps) == 11  # max_idle - 1, unchanged existing "no pointless sleep" convention
+    assert "stalled -- 12390/12500 done, no new cached papers after 12 consecutive idle" in (
+        caplog.text
+    )
+    assert "COMPLETED" not in caplog.text
+    assert not (tmp_path / "run_outcome_run-1.json").exists()
+
+
+def test_missing_prefetch_log_falls_back_to_the_existing_behaviour(caplog, tmp_path):
+    """Absence is not exhaustion -- no prefetch.log at all must behave exactly like today: the
+    long guard, the "giving up" message, no outcome file."""
+    sleeps = []
+    with caplog.at_level(logging.INFO):
+        build_to_target(
+            tmp_path, "db", Path("cache"), target=12500, parse_workers=1, events_path=Path("events"),
+            ensure_prefetch=_fake_ensure_prefetch(alive=True),
+            run_ingest=lambda *a, **k: (_ for _ in ()).throw(AssertionError("no ingest expected")),
+            cached_not_done=lambda cache_dir, db_path: [],
+            done_count=lambda db_path: 12390,
+            sleep=sleeps.append,
+            max_idle=12,
+            run_id="run-1",
+        )
+    assert len(sleeps) == 11
+    assert "stalled -- 12390/12500 done, no new cached papers after 12 consecutive idle" in (
+        caplog.text
+    )
+    assert "COMPLETED" not in caplog.text
+    assert not (tmp_path / "run_outcome_run-1.json").exists()
+
+
+def test_a_zero_net_progress_batch_stall_is_unaffected_by_supply_exhaustion_detection(
+    caplog, tmp_path,
+):
+    """The OTHER stall path (a non-empty batch runs but done_count doesn't move, OG-49#3/#4) never
+    even looks at the prefetch log -- it is a distinct failure mode from the empty-cache branch
+    above, and O-1 must not touch it. Even with a "0 new available" stall line present, a batch
+    that's actively running (not an empty cache) keeps the unchanged behaviour."""
+    _write_prefetch_log(
+        tmp_path, "prefetch stalled: 11654/30000 cached, only 0 new available, next attempt in 3600s",
+    )
+    sleeps = []
+    with caplog.at_level(logging.INFO):
+        build_to_target(
+            tmp_path, "db", Path("cache"), target=100, parse_workers=1, events_path=Path("events"),
+            ensure_prefetch=_fake_ensure_prefetch(alive=True),
+            run_ingest=lambda batch_file, parse_workers, events_path, data_dir: None,
+            cached_not_done=lambda cache_dir, db_path: ["2601.00001", "2601.00002"],
+            done_count=lambda db_path: 0,
+            sleep=sleeps.append,
+            max_idle=3,
+            run_id="run-1",
+        )
+    assert len(sleeps) == 2  # max_idle - 1, the ordinary zero-net-progress convention
+    assert "zero net progress" in caplog.text
+    assert "COMPLETED" not in caplog.text
+    assert not (tmp_path / "run_outcome_run-1.json").exists()
+
+
+# ================================================================================================
 # OG-43: telemetry_poll_interval pass-through -- app.build_corpus --telemetry-poll-interval must
 # reach every app.ingest batch invocation it runs (`_run_ingest`'s --telemetry-poll-interval flag).
 # ================================================================================================
@@ -982,6 +1213,16 @@ def test_validate_cli_args_accepts_unset_batch_size():
     _validate_cli_args(args)  # must not raise/exit
 
 
+def test_parse_args_run_id_defaults_to_none_and_is_settable():
+    """O-1: `--run-id` is how `app/dashboard/controller.py` threads the manifest's run_id through
+    to `build_to_target`, so a supply-exhausted finish can persist its outcome file. Unset (a bare
+    manual invocation) must default to None, not an empty string or a required value."""
+    assert _parse_args(["--target", "10"]).run_id is None
+    assert _parse_args(["--target", "10", "--run-id", "run-100-20260801_120000"]).run_id == (
+        "run-100-20260801_120000"
+    )
+
+
 # --- the batch cap, and the tie that stops it drifting from the relevance cap -------------------
 
 
@@ -1196,3 +1437,34 @@ def test_main_logs_resolved_paths(tmp_path, monkeypatch, caplog):
     assert f"db_path={cfg.db_path}" in caplog.text
     assert f"blob_dir={cfg.blob_dir}" in caplog.text
     assert f"collection={cfg.collection}" in caplog.text
+
+
+def test_main_forwards_run_id_and_the_real_data_dir_as_run_outcome_dir(tmp_path, monkeypatch):
+    """O-1: main() must thread `--run-id` through, and `run_outcome_dir` must be `cfg.db_path`'s
+    PARENT -- the real data dir -- not `Path.cwd()` (which is `run_cwd` for an edited/override
+    run, a scratch dir controller.py deletes once the run goes terminal)."""
+    real_data_dir = tmp_path / "real_data_dir"
+    real_data_dir.mkdir()
+    run_cwd = tmp_path / "run_cwd"
+    run_cwd.mkdir()
+    cfg = Config(
+        focus_area_queries=["causal inference"],
+        db_path=str(real_data_dir / "papers.db"), collection="papers",
+        drop_in_dir=str(tmp_path / "drop_in"),
+    )
+    seen = {}
+
+    def fake_build_to_target(*a, **k):
+        seen.update(k)
+
+    monkeypatch.setattr("app.build_corpus.load_config", lambda: cfg)
+    monkeypatch.setattr("app.build_corpus.build_to_target", fake_build_to_target)
+    monkeypatch.setattr(
+        sys, "argv", ["build_corpus", "--target", "1", "--run-id", "run-1-20260801_000000"],
+    )
+    monkeypatch.chdir(run_cwd)
+
+    main()
+
+    assert seen["run_id"] == "run-1-20260801_000000"
+    assert Path(seen["run_outcome_dir"]) == real_data_dir
