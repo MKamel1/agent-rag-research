@@ -20,18 +20,23 @@ import app.dashboard.controller as controller_mod
 from app.dashboard.controller import DoubleRunError, InvalidOverrideError, NoRunError
 
 
-def _fake_spawn(data_dir, target, parse_workers, events_path, log_path):
+def _fake_spawn(data_dir, target, parse_workers, events_path, log_path, **kwargs):
     """Launches `sleep 100` as its own process-group leader -- same `start_new_session=True`
     shape as the real `_spawn`, so `os.killpg` and `/proc`-based identity verification behave
-    exactly as they would against a real `app.ingest` process."""
+    exactly as they would against a real `app.ingest` process.
+
+    `**kwargs` (O-1): a `mode="full"` `start`/`resume` now always passes `run_id` -- accepted and
+    ignored here, same as every other optional pass-through kwarg (`paper_ids_file`,
+    `telemetry_poll_interval`, `batch_size`) this fake was never meant to assert on; tests that DO
+    care about what `spawn` received use `_kwargs_spawn` below instead."""
     proc = subprocess.Popen(["sleep", "100"], start_new_session=True)
     return proc.pid
 
 
 def _spawn_recorder(calls):
-    def spawn(data_dir, target, parse_workers, events_path, log_path):
+    def spawn(data_dir, target, parse_workers, events_path, log_path, **kwargs):
         calls.append((target, parse_workers, events_path, log_path))
-        return _fake_spawn(data_dir, target, parse_workers, events_path, log_path)
+        return _fake_spawn(data_dir, target, parse_workers, events_path, log_path, **kwargs)
     return spawn
 
 
@@ -336,11 +341,11 @@ def test_resume_relaunches_full_run_as_full_when_no_spawn_injected(tmp_path, mon
     stored mode or `mode="full"`."""
     calls = []
 
-    def spy_download(data_dir, target, parse_workers, events_path, log_path):
+    def spy_download(data_dir, target, parse_workers, events_path, log_path, **kwargs):
         calls.append("download")
         return subprocess.Popen(["sleep", "100"], start_new_session=True).pid
 
-    def spy_full(data_dir, target, parse_workers, events_path, log_path):
+    def spy_full(data_dir, target, parse_workers, events_path, log_path, **kwargs):
         calls.append("full")
         return subprocess.Popen(["sleep", "100"], start_new_session=True).pid
 
@@ -446,6 +451,122 @@ def test_reconcile_marks_clean_download_finish_as_done_even_though_done_count_ne
 
     live = controller_mod.liveness(tmp_path)
     assert live["status"] == "done"
+
+
+# --- O-1: a supply-exhausted run reconciles as done, not failed --------------------------------
+
+
+def test_reconcile_marks_a_supply_exhausted_run_as_done_not_failed(tmp_path):
+    """The whole point of O-1: a run that drained the cache because arXiv had nothing left for the
+    configured queries (`app.build_corpus`'s `run_outcome_<run_id>.json`) must NOT reconcile to
+    "failed" just because `done_count < target` -- the target was unreachable, not crashed into."""
+    manifest = controller_mod.start(tmp_path, target=12500, spawn=_fake_spawn)
+    (tmp_path / f"run_outcome_{manifest['run_id']}.json").write_text(json.dumps({
+        "run_id": manifest["run_id"], "outcome": "supply_exhausted",
+        "done": 12390, "target": 12500,
+        "reason": "no new papers available on arXiv for the configured queries",
+        "finished_at": "2026-08-01T17:33:41+00:00",
+    }))
+    os.killpg(manifest["pid"], signal.SIGKILL)
+    for _ in range(50):
+        if not controller_mod._pid_running(manifest["pid"]):
+            break
+        time.sleep(0.05)
+
+    live = controller_mod.liveness(tmp_path)
+    assert live["status"] == "done"
+
+
+def test_reconcile_still_marks_failed_when_no_outcome_file_exists(tmp_path):
+    """The crash signal must survive: without an outcome file, `done_count < target` is still a
+    real crash -- unchanged from before O-1 (same shape as `test_guard_sees_through_a_stale_
+    running_status_once_pid_is_dead` above, pinned again here specifically alongside the new
+    supply-exhausted contrast case)."""
+    manifest = controller_mod.start(tmp_path, target=12500, spawn=_fake_spawn)
+    os.killpg(manifest["pid"], signal.SIGKILL)
+    for _ in range(50):
+        if not controller_mod._pid_running(manifest["pid"]):
+            break
+        time.sleep(0.05)
+
+    live = controller_mod.liveness(tmp_path)
+    assert live["status"] == "failed"
+
+
+def test_reconcile_falls_back_to_failed_on_malformed_outcome_json(tmp_path):
+    """A bad JSON file must never break `reconcile()` -- it runs on EVERY `/api/status` poll -- it
+    must just fall through to the ordinary `done_count < target` verdict."""
+    manifest = controller_mod.start(tmp_path, target=12500, spawn=_fake_spawn)
+    (tmp_path / f"run_outcome_{manifest['run_id']}.json").write_text("{not valid json")
+    os.killpg(manifest["pid"], signal.SIGKILL)
+    for _ in range(50):
+        if not controller_mod._pid_running(manifest["pid"]):
+            break
+        time.sleep(0.05)
+
+    live = controller_mod.liveness(tmp_path)
+    assert live["status"] == "failed"
+
+
+def test_reconcile_ignores_an_outcome_file_naming_a_different_run_id(tmp_path):
+    """A stale outcome file left over from an earlier run_id must not be misapplied to THIS run --
+    filenames are already keyed by run_id, but the payload's own `run_id` is checked too (defense
+    in depth)."""
+    manifest = controller_mod.start(tmp_path, target=12500, spawn=_fake_spawn)
+    (tmp_path / f"run_outcome_{manifest['run_id']}.json").write_text(json.dumps({
+        "run_id": "some-other-run-id", "outcome": "supply_exhausted",
+        "done": 12390, "target": 12500, "reason": "x", "finished_at": "2026-08-01T00:00:00",
+    }))
+    os.killpg(manifest["pid"], signal.SIGKILL)
+    for _ in range(50):
+        if not controller_mod._pid_running(manifest["pid"]):
+            break
+        time.sleep(0.05)
+
+    live = controller_mod.liveness(tmp_path)
+    assert live["status"] == "failed"
+
+
+def test_reconcile_falls_back_to_failed_for_an_unrecognised_outcome_value(tmp_path):
+    """Only `outcome == "supply_exhausted"` is a clean finish -- an unrecognised (or future) value
+    must not silently mark a run done."""
+    manifest = controller_mod.start(tmp_path, target=12500, spawn=_fake_spawn)
+    (tmp_path / f"run_outcome_{manifest['run_id']}.json").write_text(json.dumps({
+        "run_id": manifest["run_id"], "outcome": "something_else",
+        "done": 12390, "target": 12500, "reason": "x", "finished_at": "2026-08-01T00:00:00",
+    }))
+    os.killpg(manifest["pid"], signal.SIGKILL)
+    for _ in range(50):
+        if not controller_mod._pid_running(manifest["pid"]):
+            break
+        time.sleep(0.05)
+
+    live = controller_mod.liveness(tmp_path)
+    assert live["status"] == "failed"
+
+
+# --- outcome_for_run: the pure reader server.py's /api/status surfaces -------------------------
+
+
+def test_outcome_for_run_returns_none_when_run_id_is_falsy(tmp_path):
+    assert controller_mod.outcome_for_run(tmp_path, None) is None
+    assert controller_mod.outcome_for_run(tmp_path, "") is None
+
+
+def test_outcome_for_run_returns_the_outcome_string(tmp_path):
+    (tmp_path / "run_outcome_run-1.json").write_text(
+        json.dumps({"run_id": "run-1", "outcome": "supply_exhausted"})
+    )
+    assert controller_mod.outcome_for_run(tmp_path, "run-1") == "supply_exhausted"
+
+
+def test_outcome_for_run_returns_none_for_a_missing_file(tmp_path):
+    assert controller_mod.outcome_for_run(tmp_path, "run-1") is None
+
+
+def test_outcome_for_run_returns_none_for_malformed_json(tmp_path):
+    (tmp_path / "run_outcome_run-1.json").write_text("{not valid json")
+    assert controller_mod.outcome_for_run(tmp_path, "run-1") is None
 
 
 def test_pause_refuses_to_signal_a_pid_reused_by_an_unrelated_process(tmp_path, monkeypatch):
@@ -722,7 +843,8 @@ def test_paper_ids_file_recorded_in_manifest_and_repassed_on_resume(tmp_path):
     ids_file.write_text("2403.19606\n2404.00207\n")
     seen = []
 
-    def spawn(data_dir, target, parse_workers, events_path, log_path, *, paper_ids_file=None):
+    def spawn(data_dir, target, parse_workers, events_path, log_path, *, paper_ids_file=None,
+              **kwargs):
         seen.append(paper_ids_file)
         return subprocess.Popen(["sleep", "100"], start_new_session=True).pid
 
@@ -769,7 +891,10 @@ def test_start_forwards_telemetry_poll_interval_and_batch_size_as_plain_flags(tm
         spawn=_kwargs_spawn(calls),
     )
     try:
-        assert calls[0]["kwargs"] == {"telemetry_poll_interval": 2.5, "batch_size": 50}
+        kwargs = dict(calls[0]["kwargs"])
+        # O-1: a "full" run always threads its own run_id through to spawn now.
+        assert kwargs.pop("run_id") == manifest["run_id"]
+        assert kwargs == {"telemetry_poll_interval": 2.5, "batch_size": 50}
         # no config-derived edit requested -- cwd stays the real data_dir, no override dir
         assert calls[0]["cwd"] == tmp_path
         assert manifest["run_cwd"] == str(tmp_path)
@@ -1095,7 +1220,9 @@ def test_resume_reuses_the_same_run_cwd_and_pass_through_params(tmp_path):
         resumed = controller_mod.resume(tmp_path, spawn=_kwargs_spawn(calls))
         assert resumed["run_cwd"] == manifest["run_cwd"]
         assert calls[1]["cwd"] == calls[0]["cwd"]
-        assert calls[1]["kwargs"] == {"telemetry_poll_interval": 2.5}
+        kwargs = dict(calls[1]["kwargs"])
+        assert kwargs.pop("run_id") == manifest["run_id"]  # O-1: same run_id, re-passed on resume
+        assert kwargs == {"telemetry_poll_interval": 2.5}
     finally:
         _cleanup(resumed)
 
@@ -1523,7 +1650,7 @@ def test_pause_escalates_to_sigkill_when_process_ignores_sigterm(tmp_path, monke
     monkeypatch.setattr(controller_mod, "_ESCALATION_RESEND_TIMEOUT_S", 0.3)
     monkeypatch.setattr(controller_mod, "_ESCALATION_KILL_TIMEOUT_S", 0.3)
 
-    def spawn(data_dir, target, parse_workers, events_path, log_path):
+    def spawn(data_dir, target, parse_workers, events_path, log_path, **kwargs):
         # The leader (bash) ignores SIGTERM forever; individual `sleep 0.1`s inside the loop each
         # die to the group SIGTERM independently but the loop just spawns another -- the leader
         # pid itself only ever dies to SIGKILL.
@@ -1547,7 +1674,7 @@ def test_stop_escalates_to_sigkill_when_process_ignores_sigterm(tmp_path, monkey
     monkeypatch.setattr(controller_mod, "_ESCALATION_RESEND_TIMEOUT_S", 0.3)
     monkeypatch.setattr(controller_mod, "_ESCALATION_KILL_TIMEOUT_S", 0.3)
 
-    def spawn(data_dir, target, parse_workers, events_path, log_path):
+    def spawn(data_dir, target, parse_workers, events_path, log_path, **kwargs):
         proc = subprocess.Popen(
             ["bash", "-c", "trap '' TERM; while true; do sleep 0.1; done"],
             start_new_session=True,
@@ -1606,9 +1733,9 @@ def test_concurrent_starts_are_serialized_exactly_one_run(tmp_path):
     results = []
     errors = []
 
-    def slow_spawn(data_dir, target, parse_workers, events_path, log_path):
+    def slow_spawn(data_dir, target, parse_workers, events_path, log_path, **kwargs):
         time.sleep(0.3)
-        return _fake_spawn(data_dir, target, parse_workers, events_path, log_path)
+        return _fake_spawn(data_dir, target, parse_workers, events_path, log_path, **kwargs)
 
     def worker(target, delay):
         time.sleep(delay)
