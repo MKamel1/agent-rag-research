@@ -5,6 +5,7 @@ real data dir."""
 
 import json
 import sqlite3
+import subprocess
 
 import app.dashboard.verify_numbers as verify_numbers
 from migrations.migrate import migrate
@@ -182,6 +183,37 @@ def test_verify_flags_a_true_orphan(tmp_path):
         tmp_path, status, _pid_parent=lambda p: 1 if p == 222 else None, _manifest_pid=111,
     )
     assert any(x.field == "downloader.orphan" and x.ground_truth is True for x in d)
+
+
+# --- D-12: the pgrep ground truth must not share status.py's old loose predicate ----------------
+
+
+def test_live_prefetch_pids_via_pgrep_rejects_a_pgrep_only_match(monkeypatch):
+    """D-12: `pgrep -f app.prefetch_pdfs` alone -- the exact predicate `status.py` used to have --
+    would count a diagnostic `pgrep -af "app.prefetch_pdfs"` process just for naming the pattern.
+    Inject that candidate (pgrep surfaces it, but it is neither a python `exe` nor has an
+    `-m`-adjacent argv -- exactly what such a process structurally looks like) and confirm the new
+    ground truth rejects it: a bug shared with status.py's old substring check can no longer make
+    both sides agree."""
+    fake_result = subprocess.CompletedProcess(
+        args=["pgrep", "-f", "app.prefetch_pdfs"], returncode=0, stdout="999901\n", stderr="",
+    )
+    monkeypatch.setattr(verify_numbers.subprocess, "run", lambda *a, **k: fake_result)
+    monkeypatch.setattr(verify_numbers, "_exe_is_python", lambda pid: False)
+    monkeypatch.setattr(verify_numbers, "_has_prefetch_module_flag", lambda pid: True)
+
+    assert verify_numbers._live_prefetch_pids_via_pgrep() == []
+
+
+def test_live_prefetch_pids_via_pgrep_accepts_a_structurally_real_downloader(monkeypatch):
+    fake_result = subprocess.CompletedProcess(
+        args=["pgrep", "-f", "app.prefetch_pdfs"], returncode=0, stdout="999902\n", stderr="",
+    )
+    monkeypatch.setattr(verify_numbers.subprocess, "run", lambda *a, **k: fake_result)
+    monkeypatch.setattr(verify_numbers, "_exe_is_python", lambda pid: True)
+    monkeypatch.setattr(verify_numbers, "_has_prefetch_module_flag", lambda pid: True)
+
+    assert verify_numbers._live_prefetch_pids_via_pgrep() == [999902]
 
 
 # --- downloads (pdf_cache/, config.yaml) ---------------------------------------------------------

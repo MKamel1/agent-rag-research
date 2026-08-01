@@ -548,16 +548,44 @@ def _read_prefetch_pid(run_cwd: str | Path) -> int | None:
         return None
 
 
-def _is_live_prefetch(pid: int) -> bool:
-    """pid+cmdline identity check -- same pattern as `app/build_corpus.py::_is_live_prefetch`
-    (mirrored, not imported, for the same reason `_PREFETCH_PID_NAME` above is): alive AND its
-    `/proc/<pid>/cmdline` actually names `app.prefetch_pdfs`, guarding against a stale pid file
-    whose PID has since been recycled onto an unrelated process."""
+_PREFETCH_MODULE = "app.prefetch_pdfs"
+
+
+def _read_cmdline_argv(pid: int, proc_root: str | Path = "/proc") -> list[str] | None:
+    """`/proc/<pid>/cmdline`'s NUL-separated argv, or `None` if unreadable/vanished -- races and
+    permission errors are normal while scanning and must never raise into a status poll.
+    `proc_root` is a test seam (default the real `/proc`)."""
     try:
-        cmdline = Path(f"/proc/{pid}/cmdline").read_text()
+        raw = Path(proc_root, str(pid), "cmdline").read_bytes()
     except OSError:
-        return False
-    if "app.prefetch_pdfs" not in cmdline:
+        return None
+    parts = raw.split(b"\0")
+    if parts and parts[-1] == b"":
+        parts.pop()  # trailing NUL produces one empty element after the last real argv entry
+    return [p.decode(errors="replace") for p in parts]
+
+
+def _is_prefetch_argv(argv: list[str]) -> bool:
+    """True iff `-m` is immediately followed by `app.prefetch_pdfs` as adjacent argv elements --
+    what a real `python -m app.prefetch_pdfs` looks like, the same anchoring
+    `scripts/dashboard.sh` already uses for its own PID lookup (`-m app\\.dashboard\\.server`).
+
+    D-12: the previous check was a bare substring test (`"app.prefetch_pdfs" in cmdline`), which
+    also matched a diagnostic `pgrep -af "app.prefetch_pdfs"` (the string is present but not
+    preceded by `-m`) or a `bash -c "...app.prefetch_pdfs..."` one-liner (the whole script is one
+    argv element, so adjacency is impossible). Exact equality, not a prefix, so
+    `app.prefetch_pdfs_experimental` does not match either."""
+    return any(a == "-m" and b == _PREFETCH_MODULE for a, b in zip(argv, argv[1:]))
+
+
+def _is_live_prefetch(pid: int, proc_root: str | Path = "/proc") -> bool:
+    """pid+argv identity check -- same pattern as `app/build_corpus.py::_is_live_prefetch`
+    (mirrored, not imported, for the same reason `_PREFETCH_PID_NAME` above is): alive AND its
+    argv actually names `-m app.prefetch_pdfs` (D-12: argv-aware, not a substring match) --
+    guards against both a stale pid file whose PID has since been recycled onto an unrelated
+    process AND a process that merely mentions the module name somewhere in its own cmdline."""
+    argv = _read_cmdline_argv(pid, proc_root)
+    if argv is None or not _is_prefetch_argv(argv):
         return False
     try:
         os.kill(pid, 0)
@@ -568,23 +596,45 @@ def _is_live_prefetch(pid: int) -> bool:
     return True
 
 
-def _live_prefetch_pids() -> list[int]:
+def _self_and_ancestor_pids() -> set[int]:
+    """D-12 belt-and-braces: this process's own pid plus its real PPID chain (always the actual
+    `/proc`, independent of any `proc_root` test seam used for the candidate scan below) -- so a
+    future caller that is itself launched with a matching argv can never count itself or an
+    ancestor as a live downloader. Bounded by `_MAX_ANCESTOR_DEPTH`, same guard `_is_descendant_of`
+    uses against a reparented process or corrupted `/proc` cycle."""
+    pids = {os.getpid()}
+    current = os.getpid()
+    for _ in range(_MAX_ANCESTOR_DEPTH):
+        parent = _process_ppid(current)
+        if parent is None or parent <= 1 or parent in pids:
+            break
+        pids.add(parent)
+        current = parent
+    return pids
+
+
+def _live_prefetch_pids(proc_root: str | Path = "/proc") -> list[int]:
     """Every live `app.prefetch_pdfs` PID, from the process table rather than a pid file.
 
     `prefetch.pid` is written by BOTH `app/build_corpus.py` and `controller._spawn_download`, and
     reconciled by neither -- it was stale in every case observed on 2026-08-01. A running process
     cannot be stale, so the process table is the authority and the pid file becomes advisory.
 
-    Reuses `_is_live_prefetch`'s existing cmdline identity check, so a recycled PID cannot
-    masquerade as a downloader. Unreadable `/proc` entries (races, permission errors) are normal
-    while scanning and are silently skipped -- this must never raise into a status poll."""
+    Reuses `_is_live_prefetch`'s argv-aware identity check, so a recycled PID cannot masquerade as
+    a downloader, and excludes this process and its ancestors (`_self_and_ancestor_pids`) as a
+    belt-and-braces guard against a future caller whose own argv happens to match. Unreadable
+    `/proc` entries (races, permission errors) are normal while scanning and are silently skipped
+    -- this must never raise into a status poll. `proc_root` is a test seam (default the real
+    `/proc`)."""
+    excluded = _self_and_ancestor_pids()
     try:
-        entries = os.listdir("/proc")
+        entries = os.listdir(proc_root)
     except OSError:
         return []
     return sorted(
         pid for entry in entries if entry.isdigit()
-        for pid in (int(entry),) if _is_live_prefetch(pid)
+        for pid in (int(entry),)
+        if pid not in excluded and _is_live_prefetch(pid, proc_root)
     )
 
 
