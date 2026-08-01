@@ -615,13 +615,17 @@ def _fetch_references(raw_refs: list[str], grobid_url: str, paper_id: str) -> li
     for citations that already spell them out verbatim is instead handled locally in
     `_parse_grobid_tei` via regex on the raw string, which needs no network round-trip at all.
     """
-    # A single empty/whitespace-only citation makes GROBID return HTTP 500 for the ENTIRE batch
-    # -- reproduced against GROBID 0.8.0 on 2026-08-01: "3 good + 1 empty" -> 500, "3 good" -> 200,
-    # while 1000 citations / 130KB and a single 60KB citation both return 200 (so it is neither
-    # volume nor length). MinerU's extraction yields a blank entry often enough that this failed
-    # reference extraction for 10 papers, each quarantined as a TransientError that no retry could
-    # ever clear.
-    kept = [r for r in raw_refs if r.strip()]
+    # A single citation with no alphanumeric character makes GROBID return HTTP 500 for the ENTIRE
+    # batch -- reproduced against GROBID 0.8.0 on 2026-08-01. Measured rule: every one of ".", "..",
+    # "[]", "()", ",", " . ", "" and "   " triggers the 500; "-", bare punctuation like "*" "/" ";"
+    # "•" "…", and anything with a real letter or digit ("1", "a", "[1]", "p.", "vol.") all return
+    # 200. "No alphanumeric" is a strict superset of the failing inputs -- it catches every 500 case
+    # while also harmlessly dropping junk that isn't a citation anyway (a real citation always has
+    # at least one letter or digit). An earlier `.strip()` filter only caught "" and whitespace, so
+    # entries like "." or "[]" still slipped through and kept 500'ing the batch. MinerU's extraction
+    # yields such junk entries often enough that this failed reference extraction for 10 papers,
+    # each quarantined as a TransientError that no retry could ever clear.
+    kept = [r for r in raw_refs if any(ch.isalnum() for ch in r)]
     dropped = len(raw_refs) - len(kept)
     if dropped:
         # Counted, not silent: the number is how we learn how big MinerU's blank-extraction
