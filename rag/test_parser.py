@@ -38,7 +38,6 @@ import sys
 import types
 from pathlib import Path
 
-import httpx
 import pypdfium2 as pdfium
 import pytest
 
@@ -466,15 +465,27 @@ def test_scanned_golden_pdf_is_quarantined(pdf_path):
 
 
 # ---------------------------------------------------------------------------
-# _fetch_references() -- O-2: a single empty/whitespace-only citation makes GROBID return HTTP 500
-# for the ENTIRE batch (reproduced against a live GROBID 0.8.0, 2026-08-01: "3 good + 1 empty" ->
-# 500, "3 good" -> 200, while 1000 citations/130KB and one 60KB citation both return 200 -- neither
-# volume nor length). MinerU's extraction yields a blank entry often enough that this quarantined
-# real papers as a TransientError no retry could ever clear. Offline: `_fetch_references` calls the
-# module-level `httpx.post` convenience function directly (not a `httpx.Client`), so there is no
-# transport to swap for `httpx.MockTransport` -- monkeypatching `httpx.post` itself is the equivalent
-# no-real-network substitution for this call shape.
+# _fetch_references() -- O-2: a single empty/whitespace-only citation makes the reference-
+# resolution service return HTTP 500 for the ENTIRE batch (reproduced against a live instance,
+# 2026-08-01: "3 good + 1 empty" -> 500, "3 good" -> 200, while 1000 citations/130KB and one 60KB
+# citation both return 200 -- neither volume nor length). The upstream extractor yields a blank
+# entry often enough that this quarantined real papers as a TransientError no retry could ever
+# clear. Offline: `_fetch_references` delegates its one network call to `_post_citation_batch`
+# (parser.py's own seam over the vendor client only that file may name, CONVENTIONS.md §1) -- tests
+# here substitute that function directly rather than reaching for a vendor-specific transport
+# fixture, since this file isn't on that token's allowlist.
 # ---------------------------------------------------------------------------
+
+
+class _FakeCitationResponse:
+    """Duck-types the two things `_fetch_references` uses off its network call's return value."""
+
+    def __init__(self, text: str) -> None:
+        self.text = text
+
+    def raise_for_status(self) -> None:
+        pass
+
 
 _TEI_WITH_TWO_BIBLSTRUCTS = """<?xml version="1.0" encoding="UTF-8"?>
 <TEI xmlns="http://www.tei-c.org/ns/1.0">
@@ -485,29 +496,29 @@ _TEI_WITH_TWO_BIBLSTRUCTS = """<?xml version="1.0" encoding="UTF-8"?>
 </TEI>"""
 
 
-def _fake_grobid_post(posted: dict, text: str = _TEI_WITH_TWO_BIBLSTRUCTS):
-    def handler(url, *, data, headers, timeout):
-        posted["citations"] = data["citations"]
-        return httpx.Response(200, text=text, request=httpx.Request("POST", url))
+def _fake_post(posted: dict, text: str = _TEI_WITH_TWO_BIBLSTRUCTS):
+    def handler(url, citations):
+        posted["citations"] = citations
+        return _FakeCitationResponse(text)
 
     return handler
 
 
 def test_fetch_references_drops_blank_citations_before_posting(monkeypatch):
-    """A single empty or whitespace-only citation makes GROBID return HTTP 500 for the WHOLE
-    batch (reproduced against GROBID 0.8.0, 2026-08-01), so one stray blank line from MinerU
-    failed reference extraction for an entire paper. Verified: '3 good + 1 empty' -> 500,
-    '3 good' -> 200."""
+    """A single empty or whitespace-only citation makes the reference-resolution service return
+    HTTP 500 for the WHOLE batch (reproduced live, 2026-08-01), so one stray blank line from the
+    upstream extractor failed reference extraction for an entire paper. Verified: '3 good + 1
+    empty' -> 500, '3 good' -> 200."""
     posted = {}
-    monkeypatch.setattr(_mod.httpx, "post", _fake_grobid_post(posted))
+    monkeypatch.setattr(_mod, "_post_citation_batch", _fake_post(posted))
 
     refs = _mod._fetch_references(
         ["Pearl, J. (2009). Causality.", "", "   ", "Rubin, D. (1974)."],
-        "http://grobid.local",
+        "http://reference-service.local",
         paper_id="2504.21062",
     )
 
-    # Only the two real citations reach GROBID.
+    # Only the two real citations are sent onward.
     assert posted["citations"] == ["Pearl, J. (2009). Causality.", "Rubin, D. (1974)."]
     # And only real ones come back -- a blank reference has no title, DOI or arXiv id to keep.
     assert [r.raw for r in refs] == ["Pearl, J. (2009). Causality.", "Rubin, D. (1974)."]
@@ -515,13 +526,13 @@ def test_fetch_references_drops_blank_citations_before_posting(monkeypatch):
 
 def test_fetch_references_logs_how_many_blanks_were_dropped(monkeypatch, caplog):
     """Operator decision: drop them, but count them -- the number is how we learn how big the
-    underlying MinerU blank-extraction problem is."""
-    monkeypatch.setattr(_mod.httpx, "post", _fake_grobid_post({}))
+    underlying blank-extraction problem is."""
+    monkeypatch.setattr(_mod, "_post_citation_batch", _fake_post({}))
 
     with caplog.at_level(logging.WARNING, logger="rag.parser"):
         _mod._fetch_references(
             ["Pearl, J. (2009). Causality.", "", "  ", "\n"],
-            "http://grobid.local",
+            "http://reference-service.local",
             paper_id="2504.21062",
         )
 
@@ -530,31 +541,33 @@ def test_fetch_references_logs_how_many_blanks_were_dropped(monkeypatch, caplog)
     assert "3" in msg  # three blanks dropped
 
 
-def test_fetch_references_all_blank_makes_no_grobid_call_at_all(monkeypatch):
-    """Every reference blank => nothing to ask GROBID about. Posting an all-blank batch is the
-    exact 500 this fixes, so it must not be sent."""
+def test_fetch_references_all_blank_makes_no_network_call_at_all(monkeypatch):
+    """Every reference blank => nothing to ask the reference-resolution service about. Posting an
+    all-blank batch is the exact 500 this fixes, so it must not be sent."""
     called = []
 
-    def handler(url, *, data, headers, timeout):
+    def handler(url, citations):
         called.append(1)
-        return httpx.Response(200, text="<TEI/>", request=httpx.Request("POST", url))
+        return _FakeCitationResponse("<TEI/>")
 
-    monkeypatch.setattr(_mod.httpx, "post", handler)
+    monkeypatch.setattr(_mod, "_post_citation_batch", handler)
 
-    refs = _mod._fetch_references(["", "   ", "\t"], "http://grobid.local", paper_id="x")
+    refs = _mod._fetch_references(
+        ["", "   ", "\t"], "http://reference-service.local", paper_id="x"
+    )
 
     assert refs == []
-    assert called == [], "must not POST when every citation is blank"
+    assert called == [], "must not call out when every citation is blank"
 
 
 def test_fetch_references_unchanged_when_nothing_is_blank(monkeypatch):
     """Regression guard: the ordinary path must be byte-identical to before."""
     posted = {}
-    monkeypatch.setattr(_mod.httpx, "post", _fake_grobid_post(posted))
+    monkeypatch.setattr(_mod, "_post_citation_batch", _fake_post(posted))
 
     refs = _mod._fetch_references(
         ["Pearl, J. (2009). Causality.", "Rubin, D. (1974)."],
-        "http://grobid.local",
+        "http://reference-service.local",
         paper_id="2504.21062",
     )
 
