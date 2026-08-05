@@ -382,6 +382,23 @@ def test_extract_affiliations_empty_array_when_none_stated():
     assert result == []
 
 
+def test_extract_affiliations_sanitizes_a_literal_backslash_escape():
+    # Reproduces the exact failure mode observed on paper 2201.12003: the model echoed a
+    # LaTeX-style `\`a` inside an institution name, which isn't a valid JSON escape sequence and
+    # made json.loads reject the whole response before this sanitize step was added.
+    raw = '["Department of Statistical Sciences, Universit\\`a Cattolica del Sacro Cuore, Milan"]'
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"response": raw})
+
+    client = httpx.Client(base_url="http://ollama.local", transport=httpx.MockTransport(handler))
+    adapter = _build_summarizer_with_client(client, FakeGpuLock())
+    result = adapter.extract_affiliations("some text")
+    assert result == [
+        "Department of Statistical Sciences, Universit\\`a Cattolica del Sacro Cuore, Milan"
+    ]
+
+
 def test_extract_affiliations_permanent_error_on_malformed_json():
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, json={"response": "not a json array"})
