@@ -75,6 +75,10 @@ VENDOR_RULES: tuple[VendorRule, ...] = (
     # books, names no vendor itself beyond the class import and its own service-URL constant.
     # T-DOC87: app/exp_tdoc87_marker_repair.py, same shape -- constructs the real OllamaSummarizer
     # to re-summarize the 2 regex-repair-affected books.
+    # app/exp_author_org_tagging.py: same composition-root shape again -- constructs the real
+    # OllamaSummarizer to run its extract_affiliations method against the validation experiment's
+    # positive/negative sets, names no vendor itself beyond the class import and its own
+    # service-URL constant.
     VendorRule(
         "ollama",
         re.compile(r"ollama", re.I),
@@ -83,6 +87,7 @@ VENDOR_RULES: tuple[VendorRule, ...] = (
             "rag/test_summarizer.py",
             "app/exp1_outline_split.py",
             "app/exp_tdoc87_marker_repair.py",
+            "app/exp_author_org_tagging.py",
         ),
     ),
     # vLLM ADR-09 covers both the embedder and the summarizer's local-LLM serving; rag/test_summarizer.py
@@ -144,6 +149,11 @@ VENDOR_RULES: tuple[VendorRule, ...] = (
     # T-DOC87: app/exp_tdoc87_marker_repair.py, same composition-root shape -- constructs the real
     # httpx-backed OllamaSummarizer/TeiEmbedder to re-summarize/re-embed the 2 regex-repair-
     # affected books, names no vendor itself, only httpx as the shared HTTP client.
+    #
+    # app/exp_author_org_tagging.py: same composition-root shape as the exp1/exp3/exp_tdoc87
+    # entries above -- constructs a real httpx.Client to hand to OllamaSummarizer for the
+    # author-org-tagging validation experiment, names no vendor itself, only httpx as the shared
+    # HTTP client.
     VendorRule(
         "httpx",
         re.compile(r"httpx", re.I),
@@ -168,6 +178,7 @@ VENDOR_RULES: tuple[VendorRule, ...] = (
             "app/exp1_outline_split.py",
             "app/exp3_hierarchy_sim.py",
             "app/exp_tdoc87_marker_repair.py",
+            "app/exp_author_org_tagging.py",
         ),
     ),
 )
