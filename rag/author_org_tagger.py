@@ -1,8 +1,8 @@
 """Rule-based affiliation extraction + KNOWN_ORGS matching (see
 docs/superpowers/specs/2026-08-05-paper-author-org-tagging-design.md §4). Pure functions, no
-vendor/HTTP dependency -- the LLM-based extraction alternative lives in
-rag/summarizer.py::OllamaSummarizer.extract_affiliations instead, per this repo's vendor-isolation
-rule confining "ollama" to that file (ci/checks/vendor_isolation.py).
+vendor/HTTP dependency -- the LLM-based extraction alternative lives in the generation-LLM
+summarizer adapter instead, per this repo's vendor-isolation rule confining any generation-vendor
+name to that one adapter file (ci/checks/vendor_isolation.py).
 
 extract_affiliations_rule_based is genuinely org-agnostic (returns raw candidate-region block
 text, no KNOWN_ORGS awareness) -- match_known_orgs is the separate, cheap, re-runnable-without-
@@ -19,7 +19,7 @@ _EMAIL_RE = re.compile(r"[\w.+-]+@([\w-]+\.[\w.-]+)")
 
 
 def _is_candidate_affiliation_block(block: Block) -> bool:
-    """Page-0 blocks that are either front matter (section_path=="", MinerU's marker for
+    """Page-0 blocks that are either front matter (section_path=="", the parser's marker for
     everything before the first real section heading -- see rag/parser.py's _SectionTracker
     comment) or contain an email address (a corresponding-author email is a strong positional
     signal that an affiliation statement is nearby) -- deliberately layout-position-agnostic
