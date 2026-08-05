@@ -8,6 +8,7 @@ file. The adapter talks to that stack over plain HTTP (`httpx`, already a core d
 several adapters), so no vendor SDK import is needed at all.
 """
 
+import json
 import logging
 import re
 import time
@@ -70,6 +71,23 @@ _PROMPTS = {
     "book_overview": _BOOK_OVERVIEW_PROMPT,
     "book_title": _BOOK_TITLE_PROMPT,
 }
+
+# Author-org-tagging (docs/superpowers/specs/2026-08-05-paper-author-org-tagging-design.md §4):
+# engineered against BOTH error directions, not just recall --
+# (a) "ONLY affiliations literally stated" + "do not infer from author names" guards false
+#     positives (no inventing an affiliation the text doesn't actually say);
+# (b) "scan the ENTIRE text, not just the author byline" guards false negatives (catches
+#     footnote-style/numbered affiliations printed elsewhere on the page, not only inline).
+_AFFILIATION_EXTRACTION_PROMPT = (
+    "Below is the first page of an academic paper. List every institutional or company "
+    "affiliation stated for the authors, as a JSON array of strings. Scan the entire text below, "
+    "not only the line immediately after the author names -- affiliations are sometimes listed "
+    "as numbered footnotes or in a separate block elsewhere on the page. Include ONLY "
+    "affiliations that are literally written in the text below; do not guess or infer an "
+    "affiliation from an author's name, nationality, or any outside knowledge. If no "
+    "affiliations are stated, return an empty array: [].\n\n"
+    "Respond with ONLY the JSON array, no other text.\n\n{page_text}"
+)
 
 # Same taxonomy split as rag/harvester.py's ArxivSource (CONVENTIONS.md §4): a rate-limited or
 # momentarily-unhealthy server is transient (retry, then quarantine); any other 4xx is this
@@ -214,6 +232,61 @@ class OllamaSummarizer:
                 f"{parsed.paper_id}: generation LLM returned an empty summary"
             )
         return summary_text
+
+    def extract_affiliations(self, first_page_text: str) -> list[str]:
+        """LLM-based candidate for Step 1 (extraction) of the author-org-tagging design (see
+        docs/superpowers/specs/2026-08-05-paper-author-org-tagging-design.md §4) -- general,
+        org-agnostic: returns whatever affiliations are literally stated on the given page text,
+        not matched against any known organization (that's the separate, cheap
+        rag.author_org_tagger.match_known_orgs step). Scoped to page-0 text only (bounded
+        context, cheap) by the caller.
+        """
+        with self._gpu_lock.acquire("extract_affiliations"):
+            try:
+                response = self._client.post(
+                    "/api/generate",
+                    json={
+                        "model": self._model,
+                        "prompt": _AFFILIATION_EXTRACTION_PROMPT.format(page_text=first_page_text),
+                        "stream": False,
+                        "think": False,
+                        "options": {"num_ctx": _NUM_CTX_CEILING, "num_predict": _NUM_PREDICT},
+                    },
+                )
+                response.raise_for_status()
+            except httpx.HTTPStatusError as error:
+                status = error.response.status_code
+                if status in _RETRYABLE_STATUSES:
+                    raise TransientError(
+                        f"extract_affiliations: generation LLM server returned {status}"
+                    ) from error
+                raise PermanentError(
+                    f"extract_affiliations: generation LLM server returned {status}"
+                ) from error
+            except httpx.HTTPError as error:
+                raise TransientError(
+                    f"extract_affiliations: generation LLM request failed: {error}"
+                ) from error
+
+            try:
+                raw_response = response.json()["response"].strip()
+            except KeyError as error:
+                raise PermanentError(
+                    "extract_affiliations: generation LLM response missing 'response' field"
+                ) from error
+
+        try:
+            parsed = json.loads(raw_response)
+        except json.JSONDecodeError as error:
+            raise PermanentError(
+                f"extract_affiliations: generation LLM did not return valid JSON: {raw_response!r}"
+            ) from error
+        if not isinstance(parsed, list) or not all(isinstance(item, str) for item in parsed):
+            raise PermanentError(
+                "extract_affiliations: generation LLM returned non-list-of-strings JSON: "
+                f"{parsed!r}"
+            )
+        return parsed
 
     def unload(self) -> None:
         """Proactively evict this model from GPU memory (ARCHITECTURE.md §3's two-phase ingest:

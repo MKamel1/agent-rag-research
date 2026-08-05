@@ -354,6 +354,55 @@ def test_response_body_missing_response_field_maps_to_permanent_error():
 
 
 # ---------------------------------------------------------------------------
+# extract_affiliations() — LLM-based candidate for the author-org-tagging design's Step 1
+# (docs/superpowers/specs/2026-08-05-paper-author-org-tagging-design.md §4), Task 4's second arm
+# alongside rag/author_org_tagger.py's rule-based extraction. Same GPU-lock/error-mapping shape as
+# summarize() above, over the same /api/generate endpoint.
+# ---------------------------------------------------------------------------
+
+
+def test_extract_affiliations_parses_json_array_response():
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.path == "/api/generate"
+        return httpx.Response(200, json={"response": '["Waymo LLC", "MIT"]'})
+
+    client = httpx.Client(base_url="http://ollama.local", transport=httpx.MockTransport(handler))
+    adapter = _build_summarizer_with_client(client, FakeGpuLock())
+    result = adapter.extract_affiliations("K. Kusano1, J. Doe2\n1Waymo LLC 2MIT")
+    assert result == ["Waymo LLC", "MIT"]
+
+
+def test_extract_affiliations_empty_array_when_none_stated():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"response": "[]"})
+
+    client = httpx.Client(base_url="http://ollama.local", transport=httpx.MockTransport(handler))
+    adapter = _build_summarizer_with_client(client, FakeGpuLock())
+    result = adapter.extract_affiliations("No affiliations printed here.")
+    assert result == []
+
+
+def test_extract_affiliations_permanent_error_on_malformed_json():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"response": "not a json array"})
+
+    client = httpx.Client(base_url="http://ollama.local", transport=httpx.MockTransport(handler))
+    adapter = _build_summarizer_with_client(client, FakeGpuLock())
+    with pytest.raises(PermanentError):
+        adapter.extract_affiliations("some text")
+
+
+def test_extract_affiliations_transient_error_on_503():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(503)
+
+    client = httpx.Client(base_url="http://ollama.local", transport=httpx.MockTransport(handler))
+    adapter = _build_summarizer_with_client(client, FakeGpuLock())
+    with pytest.raises(TransientError):
+        adapter.extract_affiliations("some text")
+
+
+# ---------------------------------------------------------------------------
 # unload() — proactive eviction for the two-pass ingest's phase boundary (ARCHITECTURE.md §3).
 # No `prompt` and `keep_alive: 0` is Ollama's documented no-generation unload; must not acquire
 # gpu_lock (it's not an inference call) and must not raise on a failed request (best-effort).
