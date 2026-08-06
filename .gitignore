@@ -13,6 +13,14 @@ papers.db-wal
 pdf_cache/
 blobs/
 
+# Waymo AV-safety corpus (docs/superpowers/plans/2026-08-05-waymo-corpus-expansion.md) — an
+# isolated second corpus's data dir, living outside any worktree (main checkout), never
+# committed, same reason the main corpus's data files aren't tracked either.
+/waymo/
+
+# Stray test-run log leftovers at repo root — not source, never intentionally tracked.
+test*.log
+
 # The real, operator-specific config (T-DOC89 §2): the tracked template is config.example.yaml.
 # A real config.yaml (repo-root symlink or copy) must never be committed -- it names real,
 # machine-specific absolute paths.
