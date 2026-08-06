@@ -78,18 +78,17 @@ def _is_doc(path: str) -> bool:
 
 
 def main() -> int:
-    # Always returns 0 -- this is a nudge, never a gate (see module docstring). Any failure to
-    # compute the diff (e.g. no GITHUB_EVENT_* env vars on a local run) is swallowed the same way:
-    # nothing to remind about beats a crash in a step whose entire point is "never block CI".
-    try:  # ponytail: deliberately broad, see module docstring -- this script must never fail closed
-        event_name = os.environ["GITHUB_EVENT_NAME"]
-        event = _load_event()
-        diff_base = compute_diff_base(event_name, event, REPO_ROOT)
-        changed = list_changed_paths(diff_base, REPO_ROOT)
-        for message in check_doc_touch(changed):
-            print(message)
-    except Exception as exc:
-        print(f"doc_touch_reminder: skipped ({exc!r})")
+    # Always returns 0 -- this is a nudge, never a gate (see module docstring). No try/except here:
+    # CONVENTIONS.md §12 check (c) blocks any `except Exception`/bare `except:` in the diff with no
+    # exemption mechanism (§0.1 -- a checkable rule is a CI job, not a comment a reviewer trusts). The
+    # "never block CI" guarantee instead comes entirely from this always-0 return plus the workflow
+    # step's own `continue-on-error: true` -- an uncaught exception here still can't fail the build.
+    event_name = os.environ["GITHUB_EVENT_NAME"]
+    event = _load_event()
+    diff_base = compute_diff_base(event_name, event, REPO_ROOT)
+    changed = list_changed_paths(diff_base, REPO_ROOT)
+    for message in check_doc_touch(changed):
+        print(message)
     return 0
 
 
