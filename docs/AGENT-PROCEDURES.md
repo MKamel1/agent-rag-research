@@ -74,6 +74,39 @@ tried-and-failed, §6 open) were confirmed against the file as of 2026-08-06 —
 headings before citing a section number if this doc has since been renumbered; `docs/PROJECT-STATUS.md`
 itself, not this doc, is authoritative for its own structure.
 
+### Before you report a PR as done
+
+Two steps, both mandatory, neither optional because "the tests looked fine locally":
+
+1. **Run the actual CI enforcement check yourself before pushing — not a narrower stand-in for it.**
+   `pytest ci/checks/test_checks.py` alone is not the same check CI runs: it only exercises the
+   functions in isolation, not the lexical scan (`ruff`'s `BLE001` and friends, CONVENTIONS.md §12
+   checks (a)-(d)/(f)-(h)) that `ci/run_enforcement.py` runs over every changed file in the diff —
+   including files that are never imported or called by anything else, since checks (a)-(d) are a
+   grep/lint pass over the diff's *text*, not a call graph. Run it locally by simulating a push
+   event (no `GITHUB_EVENT_NAME` in a local shell otherwise):
+   ```bash
+   echo '{}' > /tmp/fake_push_event.json
+   GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH=/tmp/fake_push_event.json python -m ci.run_enforcement
+   ```
+   This diffs your branch against `origin/<default-branch>` (`ci/checks/changed_files.py`'s
+   `compute_diff_base` fallback) the same way the real `push`/`pull_request` CI trigger would.
+
+2. **After `gh pr create` or a push to an open PR, watch CI to actual conclusion before declaring the
+   task done — do not just push and report success.** `gh pr checks <number> --watch` (interval a few
+   seconds; it blocks until every check finishes, pass or fail). A PR that merely *exists* is not
+   verified — only a PR whose checks you've watched conclude is.
+
+**Real incident, 2026-08-06, PR #236:** step 1 above didn't exist yet as a rule, so a subagent building
+`ci/checks/doc_touch_reminder.py` ran only the targeted `pytest ci/checks/test_checks.py` (61 passed)
+and a YAML parse check, reported success, and the PR was opened without anyone watching its CI. The
+`enforcement` job failed twice in a row on check (c): the script had a `# ponytail:`-commented
+`except Exception` that its own author believed was a documented, deliberate exemption — but
+CONVENTIONS.md §12 check (c) has no exemption mechanism for any comment; it blocks the pattern
+unconditionally, per §0.1's own point that a checkable rule must be a CI job, not something a
+reviewer (human or agent) is trusted to read and honor. Running step 1 above against the real diff
+would have caught it before the first push, at zero cost. This is why the rule above exists.
+
 ---
 
 ## C. Periodic drift-correction pass
