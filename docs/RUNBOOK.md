@@ -170,3 +170,33 @@ that's actually launched, and every requirement that trips a client-config edit 
 automatically, never touches the MCP server) since it spawns a real subprocess and shouldn't slow
 down every ingest run. For a full query -> citation round trip (semantic_search, then get_span on
 the top hit), use `python -m app.mcp_verify_client "some query"` -- see that module's own docstring.
+
+## Running a second corpus
+
+A second corpus is just a second data directory with its own `config.yaml` -- nothing in this
+repo's pipeline is hardcoded to one corpus. Bootstrap it with
+`python -m app.init_config --data-dir <dir>` (writes every path field resolved absolute under
+`<dir>`), then hand-edit at minimum `collection` (a distinct Qdrant collection name -- never reuse
+`papers`) and `focus_area_queries`. Most ingest-side tools (`app.ingest`, `app.build_corpus`,
+`app.parse_phase`, `app.prefetch_pdfs`) take no `--data-dir` flag at all -- they use the process's
+own `cwd` as the data dir by convention, so run them as `cd <dir> && python -m app.ingest ...` (or
+`app.build_corpus`). Only four tools take `--data-dir` explicitly and don't need the `cd`:
+`app.serve`, `app.dashboard.server`, `app.dashboard.verify_numbers`, and `app.init_config` itself.
+
+`gpu_lock_path` should normally point at the **same shared lock file** across every corpus's
+`config.yaml` (not a separate per-corpus lock) -- both corpora's GPU-heavy parse/embed work then
+serialize on the one physical GPU instead of risking a concurrent OOM. A second dashboard instance
+for live monitoring is just `DASHBOARD_DATA_DIR=<dir> DASHBOARD_PORT=<port> scripts/dashboard.sh
+start` with a port other than 8700.
+
+```bash
+python -m app.init_config --data-dir "$PWD/second-corpus/data"
+# hand-edit second-corpus/data/config.yaml: collection, focus_area_queries, gpu_lock_path
+cd second-corpus/data && python -m app.doctor
+DASHBOARD_DATA_DIR="$PWD" DASHBOARD_PORT=8701 /home/omar/ai-projects/research-system-rag/scripts/dashboard.sh start
+python -m app.build_corpus --target 1000 --parse-workers 3
+```
+
+See `docs/WAYMO-CORPUS-STATUS.md` for a worked example of this -- including where its own
+execution drifted from these supported mechanisms (a hand-rolled batch script instead of
+`app.build_corpus`) and what that cost.
