@@ -1,5 +1,7 @@
 # Phase 0 Results
 
+> **HISTORICAL** — measured numbers from a Phase-0 that's long complete. Current state: [docs/PROJECT-STATUS.md](docs/PROJECT-STATUS.md).
+
 Per PHASE0-RUNBOOK.md's ethos ("record the numbers... so no decision is asserted, not proven," PRD §9),
 every number below is sourced from a specific artifact under `.phase0-data/` (not committed — see
 `.gitignore` — but referenced by path for anyone who wants to re-verify).

@@ -1,5 +1,7 @@
 # Design — Corpus Dashboard
 
+> **HISTORICAL** — superseded by the 2026-07-30/31 dashboard specs under docs/superpowers/specs/. Current state: [PROJECT-STATUS.md](PROJECT-STATUS.md).
+
 *A local web dashboard to observe AND control corpus ingestion runs, reachable over Tailscale.
 Design proposal 2026-07-17. Deep-module lens: small interfaces over the messy reality of "what is the
 run doing." Build target for dispatched agents; principal-design-review in progress.*

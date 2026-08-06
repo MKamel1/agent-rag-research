@@ -1,5 +1,7 @@
 # SCHEDULE — V0 build plan after `foundation-v0-frozen`
 
+> **HISTORICAL** — a view of WORK-BREAKDOWN.md + PHASE0-RUNBOOK.md, both long past this stage. Current state: [docs/PROJECT-STATUS.md](docs/PROJECT-STATUS.md).
+
 The sequencing and gates for everything after Owner F's foundation freeze. This file is a **view** of two
 sources of truth — `WORK-BREAKDOWN.md` (milestones + dependency graph) and `PHASE0-RUNBOOK.md` (spikes). If
 this file ever disagrees with them, they win; update this view rather than forking the plan.

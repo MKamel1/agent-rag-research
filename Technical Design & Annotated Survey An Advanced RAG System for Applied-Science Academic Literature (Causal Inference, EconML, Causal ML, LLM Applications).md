@@ -1,5 +1,7 @@
 # Technical Design & Annotated Survey: An Advanced RAG System for Applied-Science Academic Literature (Causal Inference, EconML, Causal ML, LLM Applications)
 
+> **HISTORICAL** — background-only (per AGENTS.md). Current state: [docs/PROJECT-STATUS.md](docs/PROJECT-STATUS.md).
+
 ## TL;DR
 - Build a **multimodal, hybrid, hierarchical RAG system** with a layout-aware parsing front end (MinerU/Docling + Mathpix for math), section-aware parent-child chunking, contextual retrieval, hybrid dense+BM25 search with cross-encoder reranking, and a citation-graph/GraphRAG reasoning layer — recommended core stack: **Qdrant** (15K MVP → tens of millions) with a **Milvus/DiskANN** migration path at billions, **SPECTER2 + E5-Mistral/Voyage** dual embeddings, and a **ColBERT/ColPali** late-interaction layer (served at scale via MUVERA) for math-heavy and figure pages.
 - The single biggest lever for "let the smart agent be smart AND save tokens" is **retrieval precision + context compression**: contextual retrieval cuts the top-20 retrieval-failure rate from 5.7% to 1.9% (a 67% reduction) with reranking, cross-encoder reranking shrinks the context passed to the LLM, LLMLingua compresses context 2–20×, and semantic caching eliminates 30–70% of LLM calls entirely.

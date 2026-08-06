@@ -1,5 +1,7 @@
 # Can the System Do What You Actually Want? — Method Research, "Why This Method," and Gaps
 
+> **HISTORICAL** — same vintage as THE-DECISION-plain-english.md; answers now dated. Current state: [PROJECT-STATUS.md](PROJECT-STATUS.md).
+
 *Written 2026-07-17, in plain English. You described three real uses. Here's an honest answer for
 each: can it do this now, why/why not, and how we make it work. Grounded in what's actually in the
 corpus today.*

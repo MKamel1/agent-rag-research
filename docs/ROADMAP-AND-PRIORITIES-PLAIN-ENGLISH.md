@@ -1,5 +1,7 @@
 # The System, In Plain English — What We're Building, Why, and What I'd Reprioritize
 
+> **HISTORICAL** — predates books, drop-in, and the dashboard. Current state: [PROJECT-STATUS.md](PROJECT-STATUS.md).
+
 *Written 2026-07-17. For a non-specialist reader: jargon is explained inline the first time it
 appears. Three parts: (1) what's being worked on right now, (2) the V1→V3 roadmap and what each
 feature could buy us, (3) my honest recommendation on what deserves higher priority than some of

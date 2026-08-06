@@ -1,5 +1,7 @@
 # Book retrieval baseline — 2026-07-28
 
+> **HISTORICAL** — superseded by the 5-book baseline (2026-07-29-book-retrieval-baseline-5book.md). Current state: [../PROJECT-STATUS.md](../PROJECT-STATUS.md).
+
 Part 3 Step 1 of `docs/DESIGN-book-chapters-and-hierarchy.md`: the first-ever measurement of
 whether book chapter routing/retrieval works at all, against today's chapter split (before any
 outline-based re-split — that's Step 2).

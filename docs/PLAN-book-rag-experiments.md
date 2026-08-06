@@ -1,5 +1,7 @@
 # Book RAG experiment plan
 
+> **HISTORICAL** — executed; superseded by docs/BOOK-INTEGRATION-CLOSEOUT.md + eval-reports. Current state: [PROJECT-STATUS.md](PROJECT-STATUS.md).
+
 *2026-07-28. Companion to `docs/RESEARCH-book-rag-established-methods.md` (the evidence this plan
 acts on) and `docs/METHODS-books-and-chunk-quality.md`/`docs/DESIGN-book-chapters-and-hierarchy.md`
 (the internal plan this pressure-tests). Written so a later implementer can execute without
