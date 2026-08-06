@@ -372,7 +372,7 @@ authored project docs — excluded from classification.
 | `docs/ROADMAP-AND-PRIORITIES-PLAIN-ENGLISH.md` | HISTORICAL | 2026-07-17 plain-English roadmap/reprioritization opinion piece; superseded as a status source by this doc. |
 | `docs/THE-DECISION-plain-english.md` | HISTORICAL | A single 2026-07-17 decision clarification, resolved. |
 | `docs/YOUR-USE-CASES-can-the-system-do-this.md` | HISTORICAL | 2026-07-17 capability Q&A snapshot; capabilities have moved on since. |
-| `docs/DECISIONS-PENDING-operator.md` | HISTORICAL | 4 book-RAG decisions from 2026-07-29; resolved by the Exp 1-5 verdicts (§5) and `DECISION-book-rag-what-to-ship.md`. |
+| `docs/DECISIONS-PENDING-operator.md` | REFERENCE | 4 book-RAG decisions from 2026-07-29; Decisions 2-4 actioned (see its status banner for SHAs), Decision 1 (IDF reindex) still genuinely open — not fully historical. |
 | `docs/DECISION-book-rag-what-to-ship.md` | HISTORICAL | Book-RAG shipping decision, absorbed into `docs/BOOK-INTEGRATION-CLOSEOUT.md`. |
 | `docs/DECISION-t-doc62-duplicate-chunk-headers.md` | HISTORICAL | Decision record for the T-DOC62 fix (§4); superseded by the shipped fix. |
 | `docs/DESIGN-book-chapters-and-hierarchy.md` | HISTORICAL | Original book-hierarchy design; pressure-tested and partly falsified by Exp 1/3 (§5). |
