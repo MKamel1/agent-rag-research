@@ -18,6 +18,7 @@ No claims, no reconciliation, no evidence tiers beyond a pinned `"A"`, no Obsidi
 
 | Doc | Authoritative for |
 |---|---|
+| **docs/AGENT-PROCEDURES.md** | Onboarding checklist for a new agent/session, the per-PR documentation obligation (what to update when a ticket ships, a module lands, a decision is made), and the periodic drift-correction procedure. Read early — before you start acting on any ticket status. |
 | **docs/PROJECT-STATUS.md** | Current system state: what shipped (with commit SHAs/PR#s), what was tried and rejected, what's open. Every numeric/status claim is re-derived against live source/git, not copied — start here for "what actually exists today." |
 | **docs/BACKLOG.md** | The live work queue (D/T/B/O ticket series) — what's open right now, updated as items land. |
 | **CONTEXT.md** | Vocabulary and V0–V3 phase definitions. **Wins any terminology dispute.** |
@@ -99,6 +100,8 @@ The Waymo AV-safety corpus (`docs/PROJECT-STATUS.md` §1) is exactly this patter
 
 ## If you're picking up work right now
 
+0. Read `docs/AGENT-PROCEDURES.md` §A first — the onboarding checklist, including why a ticket status
+   ("(not started)", "OPEN") must be verified against git before you act on it, not trusted as read.
 1. Read `docs/PROJECT-STATUS.md` §3 for what's already shipped and §6 for what's open, then pick an
    item from `docs/BACKLOG.md`. The `owners/OWNER-<X>.md` briefs still exist and describe each
    module's original design intent (M1-M9 boundaries, invariants) — useful background, but frozen:
