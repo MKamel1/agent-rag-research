@@ -32,6 +32,12 @@ from ci.checks import (
 # test file of its own and testpaths doesn't collect bare "ci/" (pyproject.toml).
 from ci.run_enforcement import _pr_labels
 
+# doc_touch_reminder is a warn-only nudge, deliberately not exported from ci/checks/__init__.py
+# (it must never be wired into ci/run_enforcement.py's blocking check list) -- imported directly
+# from its own module, same reasoning as _pr_labels above.
+from ci.checks import doc_touch_reminder
+from ci.checks.doc_touch_reminder import check_doc_touch
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 # "negative_examples" also appears in pyproject.toml's `extend-exclude` (keeps ruff off it) and
 # ci/run_enforcement.py's _EXCLUDED_PREFIXES (keeps it out of the real enforcement scan) -- if this
@@ -428,3 +434,62 @@ def test_every_negative_example_is_valid_python(fixture_name):
     import ast
 
     ast.parse((FIXTURES / fixture_name).read_text())
+
+
+# --- doc_touch_reminder (warn-only nudge, docs/AGENT-PROCEDURES.md section B) -------------------
+# Not one of CONVENTIONS.md §12(a)-(i)'s blocking checks -- see the module docstring for why it's
+# tested here but never composed into ci/run_enforcement.py's violation list.
+
+
+def test_check_doc_touch_fires_on_app_or_rag_only_diff():
+    messages = check_doc_touch(["rag/retriever.py", "app/ingest.py"])
+    assert len(messages) == 1
+    assert "docs/AGENT-PROCEDURES.md section B" in messages[0]
+
+
+def test_check_doc_touch_silent_when_docs_also_touched():
+    assert check_doc_touch(["rag/retriever.py", "docs/PROJECT-STATUS.md"]) == []
+    assert check_doc_touch(["rag/retriever.py", "AGENTS.md"]) == []
+
+
+def test_check_doc_touch_silent_when_no_source_touched():
+    assert check_doc_touch(["ci/checks/test_checks.py", "README.md"]) == []
+
+
+def test_check_doc_touch_ignores_test_files_as_the_source_signal():
+    # A diff that only touches a test file under rag/ (no doc, no non-test source) shouldn't fire --
+    # test_*.py is excluded the same way sibling_tests.py's check_g excludes it from its own scope.
+    assert check_doc_touch(["rag/test_retriever.py"]) == []
+
+
+def test_doc_touch_reminder_main_returns_0_when_it_fires(monkeypatch, capsys):
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "push")
+    monkeypatch.delenv("GITHUB_EVENT_PATH", raising=False)
+    monkeypatch.setattr(doc_touch_reminder, "compute_diff_base", lambda *a, **k: "deadbeef")
+    monkeypatch.setattr(
+        doc_touch_reminder, "list_changed_paths", lambda *a, **k: ["rag/retriever.py"]
+    )
+    assert doc_touch_reminder.main() == 0
+    assert "docs/AGENT-PROCEDURES.md section B" in capsys.readouterr().out
+
+
+def test_doc_touch_reminder_main_returns_0_when_env_is_missing(monkeypatch):
+    # No GITHUB_EVENT_NAME at all (e.g. a local run outside CI) -- main()'s broad except must
+    # swallow the resulting KeyError rather than propagate it. This is the guarantee the CLI
+    # entrypoint rests on: "always exit 0 regardless of what it finds" includes "regardless of
+    # whether it could even compute a diff".
+    monkeypatch.delenv("GITHUB_EVENT_NAME", raising=False)
+    assert doc_touch_reminder.main() == 0
+
+
+def test_doc_touch_reminder_main_returns_0_when_diff_is_clean(monkeypatch, capsys):
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "push")
+    monkeypatch.delenv("GITHUB_EVENT_PATH", raising=False)
+    monkeypatch.setattr(doc_touch_reminder, "compute_diff_base", lambda *a, **k: "deadbeef")
+    monkeypatch.setattr(
+        doc_touch_reminder,
+        "list_changed_paths",
+        lambda *a, **k: ["rag/retriever.py", "docs/PROJECT-STATUS.md"],
+    )
+    assert doc_touch_reminder.main() == 0
+    assert capsys.readouterr().out == ""

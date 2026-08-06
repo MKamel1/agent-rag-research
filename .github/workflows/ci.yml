@@ -103,5 +103,17 @@ jobs:
         shell: bash -l {0}
         run: pytest ci/proof_socket_block/ -v --disable-socket
 
+      # Warn-only nudge (docs/AGENT-PROCEDURES.md section B) -- never blocks the build. The
+      # script's own main() always exits 0 (ci/checks/doc_touch_reminder.py); continue-on-error is
+      # belt-and-suspenders on top of that guarantee, not the only thing keeping this from failing
+      # the job.
+      - name: Doc-touch reminder (warn-only, never blocks)
+        shell: bash -l {0}
+        continue-on-error: true
+        run: python -m ci.checks.doc_touch_reminder
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
+
   # Real-adapter contract tests + the retrieval eval run nightly/on-demand, not on every push
   # (TEST-STRATEGY.md "CI expectations") — add a separate scheduled workflow once those adapters exist.
