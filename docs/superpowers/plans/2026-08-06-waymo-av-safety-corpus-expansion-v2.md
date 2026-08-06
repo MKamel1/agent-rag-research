@@ -617,7 +617,7 @@ below required a change to the plan itself:
 
 | setting | plan's current value | where it's used | source of truth |
 |---|---|---|---|
-| `--parse-workers` | `3` | Task 4 Step 3, Task 5 Step 4, Task 6 Step 2 | `WORK-BREAKDOWN.md:548` (T-DOC51): +63% Pass-1 throughput (171.9 → 280.7 pages/min), N>1 confirmed safe by anchor round-trip verification across all 25,387 real anchors (OG-19, RESOLVED). |
+| `--parse-workers` | `3` | Task 4 Step 3, Task 5 Step 5, Task 6 Step 2 | `WORK-BREAKDOWN.md:548` (T-DOC51): +63% Pass-1 throughput (171.9 → 280.7 pages/min), N>1 confirmed safe by anchor round-trip verification across all 25,387 real anchors (OG-19, RESOLVED). |
 | `--batch-size` (on `app.build_corpus`) | `300` | Task 4 Step 3, Task 6 Step 2 | matches the 12,390-paper main corpus's own production pattern (§7 table above: "what the 12,390-paper main corpus runs in production"). |
 | `gpu_lock_path` | shared repo-root `.gpu.lock` | Global constraints; "Authorized config edits" table | confirmed still correctly stated (unchanged, "already correct") — both corpora serialize on one physical GPU rather than contending, per this machine's prior OOM history. |
 | `parse_batch_size` (Config field) | **not overridden anywhere in this plan** | absent from "Authorized config edits" and every command example — confirmed by grep, zero mentions in this doc | leaving it at Config's default (`4`, `contracts/config.py:63`) lets `app/adaptive_batch_sizer.py`'s AIMD self-tuning (T-DOC21) apply to Waymo exactly as it does to the main corpus, instead of hand-picking a fixed value that would disable that self-tuning. |
@@ -853,11 +853,28 @@ PR needs the `foundation-change` label and operator approval; agents never merge
 
 **Files:** none tracked. Runtime only. **Reordered 2026-08-06 (§9):** the drop-in library now comes
 *before* the arXiv id-file run, because 97 of the 114 Waymo-authored ids are already in it as PDFs.
-Staging first puts those PDFs in `pdf_cache/` under their real arXiv ids, so Step 4's id-file run
+Staging first puts those PDFs in `pdf_cache/` under their real arXiv ids, so Step 5's id-file run
 finds them cached (`app/assembly.py`'s `_cached_ref` hit path) and downloads only the ~17 remainder.
 Running the id-file first would re-download 97 PDFs the machine already has.
 
-- [ ] **Step 1: flatten the library into the drop tray by COPY, never by move.** `scan_drop_dir`
+- [ ] **Step 1: re-fetch both Waymo research index pages and diff against the existing 152-paper
+      enumeration before anything else in this task runs.** `docs/WAYMO-RESEARCH-PAPERS-NEEDED.md`'s
+      count is a single `WebFetch` snapshot from 2026-08-06 (Self-review §4(c) flagged this as
+      unverified, not complete) — confirm it's still current, don't just trust it silently:
+      1. `WebFetch` `https://waymo.com/research/` and `https://waymo.com/safety/research/` again.
+      2. Enumerate every paper/publication listed on each page the same way the original pass did
+         (title, authors if listed, venue/year if listed, arXiv id if resolvable).
+      3. Diff the fresh list against `docs/WAYMO-RESEARCH-PAPERS-NEEDED.md`'s existing Group A/B/C
+         entries by title. Two outcomes:
+         - **No new papers, no structural change (pagination, a redesigned listing, etc.)**: note the
+           re-fetch date in `docs/WAYMO-RESEARCH-PAPERS-NEEDED.md`'s header as confirmed-current, and
+           proceed to Step 2.
+         - **New papers found, or evidence either page paginates/loads more beyond what a single
+           fetch captured**: update `docs/WAYMO-RESEARCH-PAPERS-NEEDED.md`'s Group A/B/C split and
+           `fixtures/waymo/waymo_authored_ids.txt` (Task 2) with the additions *before* continuing —
+           do not proceed to Step 2 on a list known to be incomplete.
+      One-time check, matching this plan's one-shot build style — not a recurring/scheduled re-fetch.
+- [ ] **Step 2: flatten the library into the drop tray by COPY, never by move.** `scan_drop_dir`
       is a flat `glob("*.pdf")` over `papers/`/`books/` only (§9.4) — nested folders are invisible —
       and `stage_file` *moves* what it stages, so a move here would destroy the operator's curated
       folder structure. All 449 basenames are unique, so a flat copy is collision-free:
@@ -872,15 +889,15 @@ Running the id-file first would re-download 97 PDFs the machine already has.
       contains no books, and a book mis-filed as a paper costs GPU-hours (`_report_dry_run`'s own
       docstring). The source library under `drop_in/waymo downloaded research/` is left untouched
       and remains the operator's master copy.
-- [ ] **Step 2: dry-run and read the output before staging anything.**
+- [ ] **Step 3: dry-run and read the output before staging anything.**
       ```bash
       cd /home/omar/ai-projects/research-system-rag/waymo/data
       /home/omar/miniconda3/envs/agent-rag-research/bin/python -m app.ingest_local --dry-run
       ```
       Expect **449** previews, of which ~188 report a detected arXiv id and ~261 fall back to a
-      `local:` id (§9.3). A report of "no PDFs in …" means Step 1's copy landed in the wrong place —
+      `local:` id (§9.3). A report of "no PDFs in …" means Step 2's copy landed in the wrong place —
       that is the exact failure the non-recursive glob produces silently.
-- [ ] **Step 3: stage only — do NOT let `ingest_local` invoke a single 449-paper `app.ingest`.**
+- [ ] **Step 4: stage only — do NOT let `ingest_local` invoke a single 449-paper `app.ingest`.**
       ```bash
       cd /home/omar/ai-projects/research-system-rag/waymo/data
       /home/omar/miniconda3/envs/agent-rag-research/bin/python -m app.ingest_local --stage-only
@@ -897,7 +914,7 @@ Running the id-file first would re-download 97 PDFs the machine already has.
       back-to-back with no inter-file delay. `_fetch_by_ids_with_backoff` rides out a 429 with
       30s/60s/120s retries (`app/assembly.py:142-167`), so this is safe but can be slow; a file
       whose metadata fetch exhausts the retry budget falls back to a `local:` id rather than failing.
-- [ ] **Step 4: verify the staging, then top up the remaining Waymo-authored ids.**
+- [ ] **Step 5: verify the staging, then top up the remaining Waymo-authored ids.**
       ```bash
       cd /home/omar/ai-projects/research-system-rag/waymo/data
       ls drop_in/failed/ | wc -l          # expect ~4 (§9.3's unreadable PDFs), each with a .err
@@ -908,15 +925,15 @@ Running the id-file first would re-download 97 PDFs the machine already has.
       ```
       One batch is fine for 114. The ~97 already staged are cache hits (no download); only the
       remainder is fetched.
-- [ ] **Step 5: fetch the 4 outstanding Group-B PDFs** — **B1, B2, B7, B8** only; the other 11 are
+- [ ] **Step 6: fetch the 4 outstanding Group-B PDFs** — **B1, B2, B7, B8** only; the other 11 are
       already in the library (`docs/WAYMO-RESEARCH-PAPERS-NEEDED.md` §3). Public URLs, no auth,
-      into `waymo/data/drop_in/papers/`, then re-run Step 3. Name each with a
+      into `waymo/data/drop_in/papers/`, then re-run Step 4. Name each with a
       `title--<short title>.pdf` marker — T-DOC88 lets an explicit filename title outrank fetched
       metadata, which matters for the non-arXiv ones that mint a `local:<sha256>` id.
-- [ ] **Step 6: add whatever of the 9 outstanding Group-C papers the operator sources**
-      (C2, C8, C10, C17, C18, C20, C21, C22, C23) to the same folder and re-run Step 3.
+- [ ] **Step 7: add whatever of the 9 outstanding Group-C papers the operator sources**
+      (C2, C8, C10, C17, C18, C20, C21, C22, C23) to the same folder and re-run Step 4.
       `mint_local_ref` is content-addressed, so re-dropping an identical file is a no-op.
-- [ ] **Step 7: sanity-check** that a `local:`-id paper is retrievable via the dashboard's
+- [ ] **Step 8: sanity-check** that a `local:`-id paper is retrievable via the dashboard's
       `/api/search`, and review `drop_in/failed/` — anything beyond §9.3's four known-corrupt files
       is a real problem, not expected noise.
 
@@ -1022,7 +1039,7 @@ was *yes, use it* in every case — no reinvention found, three integration gaps
 | drain the stranded 810 | `app.build_corpus` + `stranded_policy: finish_first` | uses it; measured that all 810 are actually batchable (§1) |
 | batch the work | `--batch-size` → `cached_not_done` → `_write_batch_ids` | uses them directly; explicitly forbids a shell wrapper (Task 4 Step 3). No duplication |
 | ingest operator PDFs | `app.ingest_local` | only route named. **Gap found:** the scan is non-recursive and moves files (§9.4) — Task 5 rewritten around a copy-then-flatten step |
-| supervise the drop-in batches | `app.build_corpus` | **Gap found:** original Task 5 let `ingest_local` fire one 449-id `app.ingest`. Now `--stage-only` + let the supervisor batch it (Task 5 Step 3) |
+| supervise the drop-in batches | `app.build_corpus` | **Gap found:** original Task 5 let `ingest_local` fire one 449-id `app.ingest`. Now `--stage-only` + let the supervisor batch it (Task 5 Step 4) |
 | edit the harvest queries | `config.yaml` + `app/dashboard/tag_pool.py` | **Gap found:** `tag_pool.json` is already seeded and never re-reads the config (§8) — Task 3 Step 2b added |
 | Waymo-authored vs. adjacent | enumerated id list, not the tagger | confirmed correct; author-org tagging independently re-grepped and is experiment-only (§4) |
 | dashboard drop-in tray (D-1, PR #208) | `controller.start_drop_in` | not duplicated — the plan drives `app.ingest_local` from the CLI, which is the same module the tray spawns (`controller._spawn_drop_in`, `:156-171`) |
@@ -1033,13 +1050,15 @@ was *yes, use it* in every case — no reinvention found, three integration gaps
 expect lower precision than Phase D's output, which is why the review checkpoint and `ordering:
 relevance` exist. (b) `build_corpus`'s `_relevance_rank` ignores `arxiv_categories` by design (its
 own docstring), so the ranking signal is broader than the download filter — an ordering weakness,
-never a scope leak. (c) The two Waymo index pages may paginate beyond one fetch; both counts in
-`docs/WAYMO-RESEARCH-PAPERS-NEEDED.md` are dated and should be re-fetched before being treated as
-complete. **[REVIEW 2026-08-06]** (d) The drop-in library's 261 `local:<sha256>` documents carry
+never a scope leak. (c) **[OPERATOR 2026-08-06, closed]** The two Waymo index pages may paginate
+beyond one fetch and `docs/WAYMO-RESEARCH-PAPERS-NEEDED.md`'s count was a single dated snapshot —
+Task 5 Step 1 now re-fetches both pages and diffs against that snapshot immediately before the rest
+of the task runs, gated on confirming no material change (or absorbing one) before continuing; not
+left as a standing risk. **[REVIEW 2026-08-06]** (d) The drop-in library's 261 `local:<sha256>` documents carry
 whatever title `mint_local_ref` derives from PDF metadata / first line / filename stem — for the
 machine-harvested `Total Research Library` files the stem embeds the real title, but for the
 hand-named tier it does not (`Kusano_CrashRates56.7MillionMiles_2025` is not a title). Consider a
-`title--` rename pass over the curated tier's copies before Task 5 Step 3 if retrieval-by-title
+`title--` rename pass over the curated tier's copies before Task 5 Step 4 if retrieval-by-title
 matters; the delivery's own `manifest.json` already carries clean titles for the 243 sweep files.
 (e) `stage_file` issues one arXiv metadata request per detected-arXiv file — ~188 back-to-back with
 no inter-file rate limit; retry-safe but slow, and a 429 storm degrades affected files to `local:`
