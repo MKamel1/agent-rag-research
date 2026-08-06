@@ -1,5 +1,7 @@
 # The One Decision I Need From You — In Plain English
 
+> **HISTORICAL** — answered long ago. Current state: [PROJECT-STATUS.md](PROJECT-STATUS.md).
+
 *Written 2026-07-17. I asked you a question using shorthand and it wasn't clear. Here it is properly.*
 
 ---

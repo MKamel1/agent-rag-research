@@ -14,6 +14,8 @@ outline:
 
 # Principal Design Review: AI Research Knowledge System (V0–V3)
 
+> **HISTORICAL** — superseded by later design reviews and the current architecture. Current state: [docs/PROJECT-STATUS.md](docs/PROJECT-STATUS.md).
+
 ## 1. Architectural Assessment & Scorecard
 
 This evaluation applies the design principles of *A Philosophy of Software Design* (APoSD, Ousterhout), *The Pragmatic Programmer* (PP, Hunt & Thomas), and *The Design of Design* (DoD, Brooks). The review is tailored to the project's primary operational constraint: **the build workforce consists of autonomous AI coding agents and junior developers operating in parallel with weak communication and zero persistent institutional memory.**

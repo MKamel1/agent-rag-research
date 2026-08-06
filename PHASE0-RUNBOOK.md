@@ -1,5 +1,7 @@
 # PHASE0-RUNBOOK — de-risking before the build (V0)
 
+> **HISTORICAL** — all Phase-0 spikes long complete. Current state: [docs/PROJECT-STATUS.md](docs/PROJECT-STATUS.md).
+
 Phase 0 answers the questions V0 cannot start without: **which parser, which embedder, which vector store**,
 and **is retrieval good enough**. V0 needs only a *light* Phase 0 (PRD §9 scope note): **S0 bring-up + Spike 1
 (parse) + Spike 2 (retrieval)**. Spike 3 (reconciliation) and Spike 5 (consumption) gate V1+, not V0 — do not

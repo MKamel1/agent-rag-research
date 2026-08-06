@@ -8,6 +8,8 @@ status: "Findings 1-6 applied directly to ARCHITECTURE.md / DATA-CONTRACTS.md / 
 # Principal Design Review — AI Research Knowledge System V0
 ## Execution-readiness pass, ahead of handing off to a weak-communication build team (AI agents + junior devs)
 
+> **HISTORICAL** — reference only, fixes applied (per AGENTS.md). Current state: [docs/PROJECT-STATUS.md](docs/PROJECT-STATUS.md).
+
 > **Update (2026-07-08):** Findings 1–6 below have been applied directly to the design docs (see the
 > `status` field above and the per-finding notes). This file is kept as the historical review record —
 > the docs themselves are now authoritative. The **Execution Readiness Gap List** section is still an

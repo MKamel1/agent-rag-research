@@ -1,5 +1,7 @@
 # Owner E — Retriever (M7) + McpServer (M8)
 
+> **HISTORICAL** — all six owner tracks landed; the owner model is no longer used. Current state: [../docs/PROJECT-STATUS.md](../docs/PROJECT-STATUS.md).
+
 Read `AGENTS.md` (or `CLAUDE.md`, same content) first if you haven't. This file is self-contained for your role — you shouldn't need to
 read any other doc cover-to-cover before starting, only the sections pointed at below.
 

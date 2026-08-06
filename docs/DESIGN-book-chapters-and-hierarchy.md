@@ -1,5 +1,7 @@
 # Books: chapter boundaries, hierarchy, and how we'll actually know it works
 
+> **HISTORICAL** — superseded by docs/BOOK-INTEGRATION-CLOSEOUT.md. Current state: [PROJECT-STATUS.md](PROJECT-STATUS.md).
+
 *2026-07-28. A plan for comparing approaches and for measuring them. Written after the five-book
 re-ingest, which is the first real evidence we have.*
 

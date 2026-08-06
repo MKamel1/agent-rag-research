@@ -1,5 +1,7 @@
 # AI Research Knowledge System — Scope
 
+> **HISTORICAL** — superseded by PRD.md (per AGENTS.md). Current state: [docs/PROJECT-STATUS.md](docs/PROJECT-STATUS.md).
+
 **Date:** 2026-07-04
 **Status:** Scoping / pre-build
 **Owner:** Omar AKA Mohamed (mkamel1)

@@ -1,5 +1,7 @@
 # What to ship from the book-RAG experiment programme
 
+> **HISTORICAL** — superseded by docs/BOOK-INTEGRATION-CLOSEOUT.md + eval-reports. Current state: [PROJECT-STATUS.md](PROJECT-STATUS.md).
+
 *2026-07-29. Decision document for the operator. Every number below was measured on the same
 40-question / 5-book fixture at k=10, on collection `exp1_ctrl_sizemerge_idf` (372,741 points,
 identical to production except sparse IDF is ON) unless stated otherwise.*

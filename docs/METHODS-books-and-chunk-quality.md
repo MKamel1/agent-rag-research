@@ -1,5 +1,7 @@
 # Books and chunk quality — the problem, what we tried, what's queued
 
+> **HISTORICAL** — superseded by docs/BOOK-INTEGRATION-CLOSEOUT.md. Current state: [PROJECT-STATUS.md](PROJECT-STATUS.md).
+
 *Living document, started 2026-07-28. A methods log, not a plan — the plan is
 `DESIGN-book-chapters-and-hierarchy.md`. This records what was attempted, what it cost, what it
 produced, and what was rejected and why, so approaches aren't silently re-tried.*

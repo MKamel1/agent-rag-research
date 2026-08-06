@@ -1,5 +1,7 @@
 # TEST-STRATEGY — how V0 is tested
 
+> See also [docs/TEST-AUDIT-2026-07-31.md](docs/TEST-AUDIT-2026-07-31.md) for the current measured test-suite state (file count, coverage gaps) as of that date.
+
 Testing is what lets five people build nine modules in parallel and have them fit together. The strategy is
 built on one idea from the architecture: **the interface is the test surface.** You test each module by
 driving its interface with fakes at the seams — never by reaching inside it.

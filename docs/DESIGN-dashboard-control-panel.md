@@ -1,5 +1,7 @@
 # Design — Dashboard Control Panel (OG-43): full tunable-parameter inventory
 
+> **HISTORICAL** — superseded by the tag-pool design. Current state: [PROJECT-STATUS.md](PROJECT-STATUS.md).
+
 *Owner-approved direction 2026-07-18. The dashboard becomes a full control panel: start/pause/resume
 (exists) + edit keyword tags + edit all SAFE tuning parameters, grouped by what they affect. Keyword
 edits AUGMENT the one library (owner decision). Storage-identity params (db/collection/blob) are NOT
