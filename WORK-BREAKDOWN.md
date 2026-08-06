@@ -1,5 +1,10 @@
 # WORK-BREAKDOWN — V0 build plan
 
+> **Ticket statuses here drift out of date after every doc pass** (this table was corrected once
+> before, in commit `4f46b55`, and had already gone stale again by the next pass). For current
+> shipped-work status, check `docs/PROJECT-STATUS.md` or `git log` directly rather than trusting the
+> "(not started)" / "(done)" labels below.
+
 Who builds what, in what order, and what "done" means for each piece. Read alongside ARCHITECTURE.md (the
 design), DATA-CONTRACTS.md (the shapes), CONVENTIONS.md (the rules), and PHASE0-RUNBOOK.md (the de-risking).
 
@@ -1051,22 +1056,28 @@ retrieval quality + operability, not the claim layer** — reinforcing the "use 
   observed problem (one paper can no longer fill `k`) but leaves a remainder: nothing lets a caller
   raise/lower the per-paper limit or turn it off for a query that genuinely wants many chunks from one
   paper.
-- **T-DOC64 (not started) — 🟢 HIGHEST-VALUE retrieval enhancement for the owner's uses:
-  section-aware retrieval (OG-30 #3).** Retrieval finds the right paper but often lands on the
-  Introduction/Related-Work block, not the "we propose X which does Y" method sentence. Boost/filter
-  by `section_path` type (favor Method/Results for method questions, Limitations for gap questions).
-  Directly serves method-research + why-this-method + gap-finding. Candidate first real enhancement
-  after dogfooding. (Also absorbs the minor topic-drift seen — a causal-flavored LLM-prompt paper
-  surfaced on 2 treatment-effect queries.)
+- **T-DOC64 (stopped before implementation — `d6ec80a`) — 🟢 HIGHEST-VALUE retrieval enhancement for
+  the owner's uses: section-aware retrieval (OG-30 #3).** Retrieval finds the right paper but often
+  lands on the Introduction/Related-Work block, not the "we propose X which does Y" method sentence.
+  Boost/filter by `section_path` type (favor Method/Results for method questions, Limitations for gap
+  questions). Directly serves method-research + why-this-method + gap-finding. **Experiment 4
+  (`docs/eval-reports/2026-07-29-exp4-section-aware-boost.md`) measured this and stopped before
+  implementation:** `section_path` in books is a near-unique free-text subsection heading (86.6%
+  distinct values), not a stable Method/Results/Introduction taxonomy — 80.4% of book chunks and 70%
+  of the eval set's own gold answers fall outside any such category, so no boost or toggle was added
+  and no A/B eval was run. Not "not started" — measured and explicitly declined, per the experiment's
+  own pre-authorization for this outcome. (Also absorbs the minor topic-drift seen — a causal-flavored
+  LLM-prompt paper surfaced on 2 treatment-effect queries.)
 
 ### Turn-on / operability
-- **T-DOC65 (not started) — 🟡 production config generation (OG-31).** Document or script creating the
+- **T-DOC65 (done — `649e140`) — 🟡 production config generation (OG-31).** Document or script creating the
   data-dir `config.yaml` (repo config + absolute paths) so bringing the system up isn't tribal
-  knowledge.
-- **T-DOC66 (not started) — 🟡 MCP deploy runbook + connectivity doctor-check (OG-32).** Capture the
+  knowledge. Shipped as `python -m app.init_config`.
+- **T-DOC66 (done — `b5deff4`) — 🟡 MCP deploy runbook + connectivity doctor-check (OG-32).** Capture the
   `--no-capture-output` / `PYTHONPATH` / `cwd` requirements, and add a check that the MCP server
-  launches and answers `list_tools` before the user relies on it.
-- **T-DOC67 (not started) — 🟢 delete the stray repo-root `papers.db` + gitignore `papers.db*`
+  launches and answers `list_tools` before the user relies on it. Shipped as `app/doctor.py --check-mcp`
+  plus `docs/RUNBOOK.md` coverage.
+- **T-DOC67 (done — `d550bf8`) — 🟢 delete the stray repo-root `papers.db` + gitignore `papers.db*`
   (OG-33).** Remove the near-empty file that caused the fake `Recall@10=0.000` trap; prevent recreation.
 
 ### T-DOC80 — drop-in folder ingestion + book support (2026-07-25)
@@ -1341,8 +1352,16 @@ retrieval quality + operability, not the claim layer** — reinforcing the "use 
 
 ### T-DOC87 — `_CHAPTER_MARKER` matches numbered list items, so Strategy A mis-splits books into non-chapters (2026-07-27)
 
-- **T-DOC87 (not started) — 🟡 strategy-A's numbered-heading alternative matches ordinary numbered
-  list items, not just chapter headings, producing spurious unit boundaries and titles.**
+- **T-DOC87 (nuanced — not a flat done/not-started; see `docs/BACKLOG.md` B-3) — 🟡 strategy-A's
+  numbered-heading alternative matches ordinary numbered list items, not just chapter headings,
+  producing spurious unit boundaries and titles.** The regex-discriminator *correctness* fix shipped
+  in `rag/book_summarizer.py` (`8c11304`, gated by a sequence-plausibility check + duplicate-title
+  guard). The corpus **boundary re-ingest that would apply the new split does not ship**: Phase-1
+  read-only projection (`docs/eval-reports/2026-07-29-tdoc87-marker-regex-repair.md`) tripped the
+  task's own stop conditions (implausible titles persist on one book; eliminating another book's
+  duplicate titles reshapes it in the same way Experiment 1 measured collapsing routing recall to
+  0.000), so Phase 2 GPU re-summarization was deliberately never run (`c587a8a`, `e166a39`;
+  CI/vendor-isolation plumbing in `517806c`, `619d3eb`).
   `rag/book_summarizer.py`'s `_CHAPTER_MARKER` (line 38) has two alternatives; the second,
   `^\s*\d+\.\s+\S`, was meant to catch numbered chapter headings like `3. Estimation`. It also
   matches **any numbered list item that the parser emitted as its own heading group** — ordered
@@ -1610,8 +1629,10 @@ retrieval quality + operability, not the claim layer** — reinforcing the "use 
 
 ### T-DOC90 — document titles are never derived from OCR, so an image-cover book falls through to its filename (2026-07-28)
 
-- **T-DOC90 (not started) — 🟢 title extraction never sees OCR output, so a book whose cover page is
-  a scanned image with no text layer falls all the way through to its raw filename stem.**
+- **T-DOC90 (not started — still true; do not confuse with `5fc7d10`, an unrelated dashboard
+  config-loading fix that reused the "T-DOC90" label by mistake) — 🟢 title extraction never sees OCR
+  output, so a book whose cover page is a scanned image with no text layer falls all the way through
+  to its raw filename stem.**
   Explicitly a documented future option, not work to schedule now. The operator's current answer is
   to name drop-in files with T-DOC88's `title--` prefix, which is deterministic and requires no
   inference. This ticket exists so the scalable alternative is on record for when files arrive
@@ -1652,7 +1673,8 @@ retrieval quality + operability, not the claim layer** — reinforcing the "use 
 
 ### T-DOC91 — the MCP SDK is pinned below a major version we have not evaluated (2026-07-28)
 
-- **T-DOC91 (not started) — 🟡 `environment.yml` now pins the MCP SDK to `<2`, which stops the CI
+- **T-DOC91 (filed, not yet fixed — `27007b8` recorded this ticket; the `<2` ceiling itself was
+  already in place from PR #183) — 🟡 `environment.yml` now pins the MCP SDK to `<2`, which stops the CI
   breakage recorded below but permanently cuts us off from every 2.x release — including security
   fixes — until someone deliberately migrates.** **What happened (2026-07-28):** CI went red across
   `main`, #181, and #182 with `ModuleNotFoundError: No module named 'mcp.server.fastmcp'` at
@@ -1684,7 +1706,7 @@ retrieval quality + operability, not the claim layer** — reinforcing the "use 
 
 ### T-DOC92 — ten more dependencies remain unpinned and can break CI the same way (2026-07-28)
 
-- **T-DOC92 (not started) — 🟢 `environment.yml` still declares ten packages with no version
+- **T-DOC92 (filed, not yet fixed — `27007b8`) — 🟢 `environment.yml` still declares ten packages with no version
   constraint, each capable of reproducing T-DOC91's CI break with zero change on our side.** The
   unpinned set: `pytest`, `pytest-cov`, `pytest-socket`, `qdrant-client`, `pyyaml`, `httpx`,
   `filelock`, `ruff`, `pypdfium2`, `markdownify`. Because CI builds a fresh environment on every run
@@ -1771,7 +1793,7 @@ retrieval quality + operability, not the claim layer** — reinforcing the "use 
 
 ### T-DOC94 — `app/snapshot.py` cannot back up the vector store; the client has no timeout (2026-07-28)
 
-- **T-DOC94 (not started) — 🔴 `rag/vector_index.py:154` constructs `QdrantClient` with no `timeout`
+- **T-DOC94 (done — `bd9870c`) — 🔴 `rag/vector_index.py:154` constructs `QdrantClient` with no `timeout`
   argument, so a real snapshot of the live collection exceeds the library default and
   `python -m app.snapshot` dies mid-run — meaning the corpus has had no complete vector-store backup
   since 2026-07-17.** All of this was observed first-hand on 2026-07-28 while taking a pre-migration

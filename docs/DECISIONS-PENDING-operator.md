@@ -1,5 +1,19 @@
 # Decisions waiting on you — book-RAG programme, 2026-07-29
 
+> **Status update (2026-08-06):** the "nothing here has been actioned" line below is now stale.
+> **Decision 2** (option B) and **Decision 3** (option A) were both implemented as recommended, but
+> on local feature branches — `scoped-per-paper-cap` (commit `ecf866b`, measured in
+> `docs/eval-reports/2026-07-29-scoped-cap-measurement.md`) and `paperid-search-filter` (commit
+> `2ebd491`, measured in `docs/eval-reports/2026-07-30-paperid-filter.md`) — **neither has merged to
+> `origin/main`**, so "actioned" here means "coded and measured," not "shipped." **Decision 4**'s
+> deferred option B (repair the marker regex, T-DOC87) was also attempted (`8c11304`) and *did* land
+> on `origin/main`, but the commit's own title is "gate: do not ship" — the phase-1 projection tripped
+> its own stop conditions (`docs/eval-reports/2026-07-29-tdoc87-marker-regex-repair.md`), so the
+> recommended option A (disambiguate titles) was never built and the duplicate-title defect remains
+> open (`docs/BACKLOG.md` B-3). **Decision 1** (the IDF reindex) is genuinely still pending — no
+> commit runs it against production; `docs/BACKLOG.md` B-5 confirms the non-destructive migration path
+> exists but isn't the default and hasn't been triggered.
+
 *Four decisions. Each states the question, the options, the trade-offs, why it matters, and a
 recommendation. Nothing here has been actioned — all four need your call.*
 

@@ -22,12 +22,12 @@ Spec: `docs/superpowers/specs/2026-07-30-dashboard-dropin-and-usage-design.md`
 | D-4 | Test staleness audit | **DONE** | `docs/TEST-AUDIT-2026-07-31.md`. 78 files, ~1,440 test functions, 2 stale tests, 6 coverage gaps. T-1/T-2/T-3 fixed in PR #212. |
 | D-5 | Counter clarity + persistent tag pool | **DONE** | PRs #214 (counters, tag pool), #215 (drag-and-drop, purge). |
 | D-6 | Downloader tracking + restart control | **DONE** | PR #217. Live: `/proc` is the authority, orphan detection, Restart button, tag-staleness warning. |
-| D-7 | Archive per-run `prefetch.log` + config before cleanup | **DONE — not yet exercised** | PRs #218/#219. No run has ended since merging, so the archive path has never actually fired. |
+| D-7 | Archive per-run `prefetch.log` + config before cleanup | **DONE — exercised** | PRs #218/#219. Per D-11's own investigation below, `run-13000-20260801_072158` (failed) had its logs archived once a later run's cleanup ran; the mechanism is confirmed working on real data, though a run ending `done` specifically hasn't been observed. |
 | D-8 | Bound retries for repeatedly-failing quarantined papers | **OPEN — lower priority since O-2** | O-2's fix removed the cause. Now a guard against future misclassification, not a live problem. See below. |
-| D-9 | Land the orphaned unexpected-exception safety net | **OPEN — real unmerged work** | `T-SEED-combined-fixes`, the only genuinely unmerged branch in the repo. The pipeline has **no catch-all for unforeseen exceptions today**. See below. |
+| D-9 | Land the orphaned unexpected-exception safety net | **OPEN — real unmerged work** | `T-SEED-combined-fixes` is real unmerged work, but is no longer "the only genuinely unmerged branch in the repo" — `worktree-waymo-corpus-expansion` also has real unmerged commits (see `docs/WAYMO-CORPUS-STATUS.md`). The pipeline has **no catch-all for unforeseen exceptions today**. See below. |
 | D-10 | Dashboard number accuracy: cross-check + dynamic tests | **DONE** | PR #227. `verify_numbers` reports `OK -- every field matches ground truth`. Caught and fixed a live orphan false positive. |
-| D-11 | D-7 does not archive logs for a **failed** run | **OPEN** | See below. |
-| D-12 | `_live_prefetch_pids` counts observer processes as downloaders | **OPEN** | Matches any cmdline containing `app.prefetch_pdfs` — including a `pgrep`/`grep` that names it. Causes spurious `orphan=True`. See below. |
+| D-11 | D-7 does not archive logs for a **failed** run | **DONE — `4e07eb4`** | Archives on the `failed` transition too, not only on `done`. |
+| D-12 | `_live_prefetch_pids` counts observer processes as downloaders | **DONE — `f351a27`** | Matches the downloader by argv, not substring; the cross-check is now independent. |
 
 ---
 
@@ -331,11 +331,20 @@ Recorded in `docs/BOOK-INTEGRATION-CLOSEOUT.md`; repeated here so they stay visi
 
 | id | item | status | notes |
 |---|---|---|---|
-| O-1 | Corpus is at its harvest ceiling | **CLOSED — operator will widen queries or the date range manually when needed (2026-08-01)** | 12,333 done vs `target` 20,000. The downloader last reported `11556/30000 cached, only 6 new available`: arXiv is near-exhausted **for the current query filters**. Cannot reach 20k without changing `focus_area_queries` / `arxiv_categories` / the date window. Restarting runs will not move it. |
-| O-2a | GROBID HTTP 500s (10 papers) | **FIXED — not yet verified on real data** | PR #221. Root cause: one blank citation makes GROBID 500 the whole batch (reproduced: `3 good + 1 empty` -> 500, `3 good` -> 200). Blanks now dropped and counted. **~10 papers should recover on the next ordinary run — that run has not happened yet.** |
+| O-1 | Corpus is at its harvest ceiling | **CLOSED — automated, not manual (commits `70940dc`/`f8a7f69`/`013f7cf`)** | 12,333 done vs `target` 20,000. The downloader last reported `11556/30000 cached, only 6 new available`: arXiv is near-exhausted **for the current query filters**. Rather than requiring the operator to widen queries by hand, `build_corpus` now finishes as `completed` (reconciled `done`, not `failed`) when supply is exhausted, and the run panel surfaces the supply-exhausted outcome directly. Cannot reach 20k without changing `focus_area_queries` / `arxiv_categories` / the date window — that part still needs an operator decision — but the completion path itself is automatic. |
+| O-2a | GROBID HTTP 500s (10 papers) | **FIXED — PR #221's blank-citation fix was superseded, not merely followed up** | PR #221's `.strip()` blank-citation filter only caught empty/whitespace citations; `25543f1` (2026-08-01) widened it to drop any citation with no alphanumeric character. Neither was the real fix: `fa70acd` (2026-08-01, later same day) found the actual culprit is MinerU leaking raw C0 control bytes into ordinary alphanumeric-rich citation text, which neither prior filter ever caught, and **replaced** the alphanumeric-drop filter with an in-place sanitize step that strips C0 bytes and drops nothing. Validated against all 7 sampled real failing batches: every one flips 500→200 with zero references lost. |
 | O-2b | GROBID `unparseable TEI` (6 papers) | **OPEN** | A *different* failure: GROBID returns 200 with malformed XML. Deliberately out of scope for #221. Worth checking whether it is also deterministic-but-labelled-transient — that pattern cost real GPU time. |
 | O-3 | Stale `git stash` entry | **OPEN — do not touch without the owner** | `stash@{0}: On main: lessons-learned wip`. Provenance unknown; predates this session. |
 | O-4 | Dashboard is unsupervised by design | **WORKING AS INTENDED** | `scripts/dashboard.sh`: "no process supervisor, no systemd unit, no --restart policy". Needed manual restarts several times this session (stale process, agent live-checks). Revisit only if it becomes a real irritation. |
+
+---
+
+## Other
+
+| id | item | status | notes |
+|---|---|---|---|
+| W-1 | Waymo second-corpus resume | **OPEN — real unmerged work** | Scout script and 7 commits live only on the unmerged `worktree-waymo-corpus-expansion` branch; the corpus itself is mid-build (17 done / 810). Recovery runbook and full detail: `docs/WAYMO-CORPUS-STATUS.md`. |
+| A-1 | Author-org tagging | **DONE — shipped on `origin/main` 2026-08-05, retroactively documented here** | Landed with zero backlog/tracking entry until now. Two-step extraction+matching pipeline (`rag/author_org_tagger.py`) identifying which papers were actually written by a known org's own team (currently: Waymo). See `docs/PROJECT-STATUS.md` §3 for the full writeup. |
 
 ### Investigated and closed — do not re-open
 
