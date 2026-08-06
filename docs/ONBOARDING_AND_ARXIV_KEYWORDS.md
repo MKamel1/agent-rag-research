@@ -1,5 +1,15 @@
 # Onboarding: Waymo AV-Safety Research Corpus — for `agent-rag-research`
 
+> **Scope broadened 2026-08-06.** §1–§2 below describe the *original, narrow* Waymo-centric scope.
+> The corpus this repo now builds covers 11 topic areas (AV safety, AV simulation, traffic modelling
+> for AV simulation, Waymo tech stack, Waymo research, research *using* Waymo data,
+> AV-safety-evaluation methodology, AV simulation assessment, simulation validation/realism,
+> evaluation-framed motion forecasting, AV safety-case/standards literature). **§2b is the current
+> query strategy; §2 is retained as its narrower ancestor, not as a competing spec.** §3's ID list
+> has been **repurposed** — read §3's banner before using it as an exclusion set, because using it
+> as one is what kept every Waymo-authored paper out of the corpus. Plan:
+> `docs/superpowers/plans/2026-08-06-waymo-av-safety-corpus-expansion-v2.md`.
+
 **Handoff document.** This is written so an agent with zero prior context on this project (e.g. the
 `agent-rag-research` pipeline at github.com/MKamel1/agent-rag-research) can pick up arXiv harvesting for
 this effort without re-deriving anything covered here. It has three parts: (1) why this exists and what
@@ -130,9 +140,190 @@ Drop anything scoring 0 (no keyword match at all) rather than keeping it as unra
 
 ---
 
-## 3. Already captured — exclude these before downloading
+## 2b. Broadened query strategy (2026-08-06) — the current spec
 
-**173 arXiv IDs** already downloaded and present in `Research Papers/` or
+§2 above is the ancestor of this section, kept for provenance. Where the two disagree, **this
+section wins**. It is written to be copied directly into `scripts/waymo_arxiv_scout.py`'s
+`_TOPIC_QUERIES` / `_KEYWORD_WEIGHTS` / `_CATEGORY_FILTER` constants — one file, one source of
+truth, which is why this lives here rather than in a second doc that would immediately fork.
+
+### 2b.1 Category priority
+
+Unchanged in membership from §2, now with explicit priority ordering:
+
+| priority | category | role |
+|---|---|---|
+| 1 | `cs.RO` | primary — robotics/AV |
+| 2 | `stat.AP`, `stat.ME` | rare-event and risk-estimation methodology |
+| 3 | `cs.LG` | general ML / monitoring methodology |
+| 4 | `eess.SY` | systems and control |
+| 5 | `cs.CV` | **lowest — perception only, not general CV**; see the exclusion rule in 2b.4 |
+
+Category filter string (AND-combined with every topic query; **not** with the author queries — an
+author's own paper may sit outside these categories, and category-restricting an author search
+defeats its purpose):
+
+```
+(cat:cs.RO OR cat:stat.AP OR cat:stat.ME OR cat:cs.LG OR cat:eess.SY OR cat:cs.CV)
+```
+
+### 2b.2 The 11 topic areas → query set
+
+Every query below is arXiv-API `search_query` Lucene syntax. Queries 1–18 are §2's set, retained
+verbatim (they already cover topics 1, 3, 7, 9 and 11); 19–36 are new coverage for the areas §2
+did not reach. Coverage is tracked explicitly so a later reader can tell which topic a query serves.
+
+| # | topic area | `search_query` |
+|---|---|---|
+| 1 | AV safety | `abs:"autonomous vehicle" AND abs:safety AND (abs:evaluation OR abs:assessment)` |
+| 2 | safety-eval methodology | `abs:"crash rate" AND (abs:"automated driving" OR abs:"autonomous vehicle")` |
+| 3 | safety-eval methodology | `(abs:"rare event" OR abs:"extreme value") AND (abs:"autonomous vehicle" OR abs:"automated driving" OR abs:traffic)` |
+| 4 | safety-eval methodology | `abs:"importance sampling" AND (abs:"autonomous vehicle" OR abs:"automated driving")` |
+| 5 | safety-eval methodology | `abs:"surrogate safety" OR abs:"time-to-collision" OR abs:"post-encroachment time"` |
+| 6 | standards / scenario testing | `abs:"scenario-based" AND (abs:testing OR abs:validation) AND (abs:"automated driving" OR abs:"autonomous vehicle")` |
+| 7 | safety case / standards | `abs:"safety case" AND (abs:"automated driving" OR abs:"autonomous vehicle" OR abs:"self-driving")` |
+| 8 | simulation validation / realism | `abs:simulation AND abs:realism AND (abs:driving OR abs:traffic)` |
+| 9 | motion forecasting (see 2b.4) | `cat:cs.RO AND abs:"trajectory prediction" AND (abs:driving OR abs:vehicle)` |
+| 10 | research using Waymo data | `abs:"Waymo Open Dataset" OR abs:"Waymo Open Motion"` |
+| 11 | monitoring methodology | `abs:"concept drift" AND (abs:monitoring OR abs:production)` |
+| 12 | safety-eval methodology | `abs:bayesian AND abs:"rare event" AND (abs:safety OR abs:risk)` |
+| 13 | standards (RSS / SFF) | `abs:"responsibility sensitive safety" OR abs:"safety force field"` |
+| 14 | AV safety | `abs:"traffic conflict" AND (abs:risk OR abs:safety)` |
+| 15 | AV safety | `abs:"deployment readiness" AND (abs:"automated driving" OR abs:autonomous)` |
+| 16 | AV safety | `abs:"naturalistic driving" AND (abs:risk OR abs:crash)` |
+| 17 | AV safety | `abs:"vulnerable road user" AND (abs:injury OR abs:risk) AND abs:vehicle` |
+| 18 | standards (ODD) | `abs:"operational design domain" AND (abs:safety OR abs:standard)` |
+| 19 | **AV simulation** | `(abs:"driving simulation" OR abs:"driving simulator" OR abs:"autonomous driving simulator") AND (abs:evaluation OR abs:validation OR abs:fidelity OR abs:realism)` |
+| 20 | **AV simulation** | `abs:"closed-loop simulation" AND (abs:driving OR abs:"autonomous vehicle" OR abs:traffic)` |
+| 21 | **AV simulation assessment** | `(abs:"sim agents" OR abs:"simulation agents") AND (abs:driving OR abs:traffic OR abs:realism)` |
+| 22 | **AV simulation assessment** | `abs:"simulation-based testing" AND (abs:"autonomous vehicle" OR abs:"automated driving" OR abs:"cyber-physical")` |
+| 23 | **traffic modelling for simulation** | `(abs:"traffic simulation" OR abs:"microscopic traffic" OR abs:"car-following model" OR abs:"lane change model") AND (abs:calibration OR abs:validation OR abs:realism OR abs:safety)` |
+| 24 | **traffic modelling for simulation** | `abs:"driver behavior model" AND (abs:simulation OR abs:calibration OR abs:validation)` |
+| 25 | **sim-to-real / distributional fidelity** | `(abs:"sim-to-real" OR abs:"sim2real" OR abs:"reality gap" OR abs:"distributional realism" OR abs:"distribution shift") AND (abs:driving OR abs:"autonomous vehicle" OR abs:traffic)` |
+| 26 | **scenario generation** | `(abs:"scenario generation" OR abs:"critical scenario" OR abs:"adversarial scenario" OR abs:"safety-critical scenario") AND (abs:"autonomous vehicle" OR abs:"automated driving" OR abs:simulation)` |
+| 27 | **evaluation-framed forecasting** | `(abs:"motion forecasting" OR abs:"behavior prediction" OR abs:"trajectory prediction") AND (abs:calibration OR abs:"uncertainty quantification" OR abs:"failure mode" OR abs:robustness OR abs:"safety impact" OR abs:"evaluation metric")` |
+| 28 | **evaluation-framed forecasting** | `abs:"prediction" AND abs:"planner" AND (abs:"safety" OR abs:"downstream") AND (abs:driving OR abs:"autonomous vehicle")` |
+| 29 | **standards — UL 4600** | `abs:"UL 4600" OR (abs:"safety case" AND abs:"autonomous" AND abs:standard)` |
+| 30 | **standards — SOTIF** | `abs:SOTIF OR abs:"safety of the intended functionality" OR abs:"ISO 21448"` |
+| 31 | **standards — PEGASUS-adjacent** | `abs:PEGASUS OR (abs:"scenario database" AND abs:"automated driving") OR abs:"logical scenario"` |
+| 32 | **standards — general** | `(abs:"ISO 26262" OR abs:"functional safety") AND (abs:"automated driving" OR abs:"autonomous vehicle")` |
+| 33 | **Waymo tech stack** | `abs:Waymo` |
+| 34 | **Waymo tech stack / simulation** | `abs:Waymax OR abs:"Waymo Open Sim Agents" OR abs:"WOMD"` |
+| 35 | **AV safety — assurance/runtime** | `(abs:"runtime monitoring" OR abs:"safety envelope" OR abs:"reachability analysis") AND (abs:"autonomous vehicle" OR abs:"automated driving")` |
+| 36 | **safety-eval methodology** | `(abs:"miles per intervention" OR abs:disengagement OR abs:"safety benchmark") AND (abs:"autonomous vehicle" OR abs:"automated driving")` |
+
+Author-field queries (no category filter), extended from §2's four to cover the full author roster
+in §2 "Author names worth a dedicated author-field search":
+
+```
+au:Kusano_K AND (abs:vehicle OR abs:driving OR abs:safety)
+au:Scanlon_J AND (abs:vehicle OR abs:driving OR abs:safety)
+au:Favaro_F AND (abs:vehicle OR abs:driving OR abs:safety)
+au:Engström_J AND (abs:vehicle OR abs:driving OR abs:safety)
+au:McMurry_T AND (abs:vehicle OR abs:driving OR abs:safety)
+au:Victor_T AND (abs:vehicle OR abs:driving OR abs:safety)
+au:Fraade-Blanar_L AND (abs:vehicle OR abs:driving OR abs:safety)
+au:Schnelle_S AND (abs:vehicle OR abs:driving OR abs:safety)
+au:Campolettano_E AND (abs:vehicle OR abs:driving OR abs:safety)
+au:Dinparastdjadid_A AND (abs:vehicle OR abs:driving OR abs:safety)
+au:Schumann_J AND (abs:vehicle OR abs:driving OR abs:safety)
+au:Anguelov_D AND (abs:driving OR abs:vehicle)
+au:Sapp_B AND (abs:driving OR abs:vehicle)
+```
+
+`au:Chen_Y`, `au:Johnson_L`, `au:Schubert_A` and `au:Wichner_D` from §2's roster are **deliberately
+omitted** — they are high-collision surnames on arXiv and their `abs:` guard is too weak to hold
+precision. Waymo's own papers by those authors are already captured exactly by
+`docs/WAYMO-RESEARCH-PAPERS-NEEDED.md` §2, which is ground truth rather than a search heuristic.
+
+### 2b.3 Extended relevance-scoring keyword weights
+
+§2's table, plus the new areas. Additive, no existing weight changed — the ranking stays comparable
+to the earlier run's output.
+
+| Keyword | Weight | Keyword | Weight |
+|---|---|---|---|
+| waymo | 5 | scenario generation | 4 |
+| rare event | 4 | safety-critical scenario | 4 |
+| extreme value | 4 | sim-to-real | 3 |
+| surrogate safety | 4 | sim2real | 3 |
+| crash rate | 4 | distributional realism | 4 |
+| importance sampling | 4 | traffic simulation | 3 |
+| time-to-collision | 3 | car-following | 2 |
+| post-encroachment | 3 | driving simulator | 2 |
+| safety case | 3 | closed-loop simulation | 3 |
+| deployment readiness | 3 | sim agents | 4 |
+| bayesian | 2 | waymax | 5 |
+| simulation | 2 | waymo open | 5 |
+| autonomous vehicle | 2 | sotif | 4 |
+| automated driving | 2 | ul 4600 | 4 |
+| self-driving | 1 | iso 21448 | 4 |
+| traffic conflict | 3 | iso 26262 | 3 |
+| scenario-based | 2 | pegasus | 3 |
+| concept drift | 2 | functional safety | 2 |
+| responsibility sensitive safety | 3 | reachability analysis | 3 |
+| safety force field | 3 | runtime monitoring | 3 |
+| trajectory prediction | 1 | uncertainty quantification | 2 |
+| motion forecasting | 1 | calibration | 2 |
+| naturalistic driving | 2 | failure mode | 2 |
+| collision avoidance | 2 | disengagement | 2 |
+| operational design domain | 2 | safety benchmark | 3 |
+| benchmark | 1 | scenario database | 2 |
+| risk estimation | 3 | logical scenario | 2 |
+| injury risk | 2 | | |
+| vulnerable road user | 2 | | |
+
+Unchanged rule: **drop anything scoring 0.**
+
+### 2b.4 Exclusions — what must NOT enter the corpus
+
+These are the scope's negative space. Stated as rules a reviewer can apply to a candidate list, not
+as query syntax (arXiv's `ANDNOT` is too blunt for judgement calls like these):
+
+1. **Pure motion-forecasting/behavior-prediction architecture papers are OUT.** A paper proposing a
+   new forecasting model architecture, with no safety or evaluation angle, does not belong here
+   however good it is. A paper *evaluating* forecasting models — their safety implications,
+   calibration, uncertainty, failure modes, or downstream effect on a planner — is IN. Operational
+   test: if the contribution is "a better number on a forecasting leaderboard," it's out; if the
+   contribution is "here is what those numbers do or don't tell you about safety," it's in.
+   Query 27/28 encode this by requiring an evaluation term alongside the forecasting term; query 9
+   (inherited from §2) does **not**, so its hits need the manual pass at the review checkpoint.
+2. **`cs.CV` is perception-only.** A `cs.CV` hit is in scope only if it is about AV perception. A
+   general computer-vision paper that merely benchmarks on an AV dataset is out.
+3. **Generic robotics/ML** with no AV-safety framing is out — §1's original "do not pad the count"
+   rule, unchanged.
+4. **Waymo-authored papers are never excluded**, even when they land in an out-of-scope-looking
+   area (e.g. a pure 3D-detection paper). Author affiliation outranks topic here: the corpus needs
+   to be able to answer "what has Waymo published," which requires the whole body of work.
+   `docs/WAYMO-RESEARCH-PAPERS-NEEDED.md` is the authoritative list of what that means.
+
+### 2b.5 Waymo-authored vs. Waymo-adjacent
+
+Both are in scope; the corpus must be able to tell them apart. The mechanism chosen (see the v2
+plan §4) is **not** an ingest-time affiliation extractor — it is the exact, enumerated ID list in
+`docs/WAYMO-RESEARCH-PAPERS-NEEDED.md` §2, mirrored to `fixtures/waymo/waymo_authored_ids.txt`.
+Membership in that file means "authored by Waymo"; everything else in the corpus that matches
+Waymo-related queries is "about or using Waymo," and needs no extraction step to be classified.
+
+---
+
+## 3. Already captured — **repurposed 2026-08-06, no longer an exclusion list**
+
+> **Read this before using the list below.** These 173 IDs describe PDFs sitting in an *external*
+> folder (`Waymo — Senior Data Scientist 2026-07-21/Research Papers/`) that does **not exist on the
+> machine running this repo** (checked 2026-08-06). Treating them as "already captured" and
+> excluding them from harvest is what kept **every one of Waymo's own 114 arXiv-published papers
+> out of this repo's corpus** — verified: all 114 IDs enumerated in
+> `docs/WAYMO-RESEARCH-PAPERS-NEEDED.md` §2 are inside this list, and **0** of them appear in
+> `fixtures/waymo/paper_ids.txt` (1,437 ids) or in `waymo/data/papers.db`'s `ingest_state`.
+>
+> **Correct use from now on:** this is a *seed/priority* list, not an exclusion list. The scout's
+> `ALREADY_CAPTURED_IDS` constant must be emptied (the pipeline's own `ingest_state` is the real
+> "already have it" authority — `app/build_corpus.py::cached_not_done` already subtracts
+> `stage='done'` ids every iteration, so a second hand-maintained exclusion list is both redundant
+> and, as shown, dangerous).
+
+**173 arXiv IDs** originally downloaded and present in `Research Papers/` or
 `Research Papers (Extended - Lower Priority 53-200)/` in this folder's parent. Skip any of these on
 arXiv-side search (parse the ID out of the search result's arXiv URL and check membership in this list):
 
