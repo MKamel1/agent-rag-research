@@ -473,13 +473,16 @@ def test_doc_touch_reminder_main_returns_0_when_it_fires(monkeypatch, capsys):
     assert "docs/AGENT-PROCEDURES.md section B" in capsys.readouterr().out
 
 
-def test_doc_touch_reminder_main_returns_0_when_env_is_missing(monkeypatch):
-    # No GITHUB_EVENT_NAME at all (e.g. a local run outside CI) -- main()'s broad except must
-    # swallow the resulting KeyError rather than propagate it. This is the guarantee the CLI
-    # entrypoint rests on: "always exit 0 regardless of what it finds" includes "regardless of
-    # whether it could even compute a diff".
+def test_doc_touch_reminder_main_raises_when_env_is_missing(monkeypatch):
+    # GITHUB_EVENT_NAME is always set by GitHub Actions -- its absence only happens on a local run
+    # outside CI. main() does NOT catch this (CONVENTIONS.md §12 check (c) blocks any
+    # `except Exception`/bare `except:` in the diff, no exemption for "but it's just a nudge script"
+    # -- §0.1: a checkable rule is a CI job, not a comment a reviewer trusts). The "never blocks CI"
+    # guarantee for a real crash instead lives at the workflow-step level (`continue-on-error: true`
+    # in .github/workflows/ci.yml), not inside this script.
     monkeypatch.delenv("GITHUB_EVENT_NAME", raising=False)
-    assert doc_touch_reminder.main() == 0
+    with pytest.raises(KeyError):
+        doc_touch_reminder.main()
 
 
 def test_doc_touch_reminder_main_returns_0_when_diff_is_clean(monkeypatch, capsys):
