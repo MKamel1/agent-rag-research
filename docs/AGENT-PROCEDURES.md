@@ -54,6 +54,18 @@ match `GIT-WORKFLOW.md`/`CONVENTIONS.md`'s register: concrete triggers, not pros
    - `config.yaml` path fields resolve against **the config file's own directory**, not cwd —
      confirmed at `rag/config.py::_resolve_paths`, called with `config_path.parent` as `base_dir`.
      Loading the same `config.yaml` from two different cwds yields identical absolute paths.
+   - **`app.build_corpus`'s batches and `app.prefetch_pdfs`'s downloads are two independent,
+     mismatched processes — know this before touching either.** `app.build_corpus` only ever batches
+     IDs already sitting in `pdf_cache/` (`cached_not_done`, `app/build_corpus.py:203`). It spawns
+     `app.prefetch_pdfs` to keep that cache filled, but prefetch harvests from `cfg.focus_area_queries`
+     (`app/prefetch_pdfs.py:297`) and **never reads `cfg.ingest_paper_ids`** — confirmed by grep,
+     zero hits for `ingest_paper_ids` in `app/prefetch_pdfs.py`. So an ID-scoped build (a
+     `--paper-ids-file`/`ingest_paper_ids` corpus, not a query-driven one) gets nothing useful from
+     the default prefetcher no matter how long you wait — this is the actual root cause the v1 Waymo
+     attempt worked around by setting `prefetch_target: 1` and hand-rolling a batch script, per
+     `docs/WAYMO-CORPUS-STATUS.md`. For an ID-scoped corpus, populate `pdf_cache/` yourself (e.g. via
+     `app.ingest_local`/`drop_in/`, or a direct-download step) rather than relying on
+     `app.prefetch_pdfs` to do it.
 
 ---
 
@@ -67,6 +79,7 @@ match `GIT-WORKFLOW.md`/`CONVENTIONS.md`'s register: concrete triggers, not pros
 | A new top-level entry point/module ships (new `app/*.py` with argparse, new `rag/*.py` seam) | `docs/PROJECT-STATUS.md` §2 (entry-point table) + `ARCHITECTURE.md` if it's a new module/seam | The flag/signature and a one-line purpose, verified against the actual `argparse` block in the diff, not guessed. |
 | A design decision is made or reversed (an experiment concludes, an option is chosen) | A new `docs/DECISION-*.md` or `docs/eval-reports/*.md` (existing naming pattern — e.g. `docs/DECISION-book-rag-what-to-ship.md`, `docs/eval-reports/2026-07-29-exp1-outline-split-ab.md`) + `docs/PROJECT-STATUS.md` §5 (Tried and failed / deliberately not shipped) or §6 (Open and known-broken) | The verdict and why, with the measurement/report it rests on. |
 | A doc becomes superseded by this PR's work | The superseded doc's top line | The HISTORICAL banner, added in the **same PR** that causes the supersession, not later: `> **HISTORICAL** — <why>. Current state: [PROJECT-STATUS.md](PROJECT-STATUS.md).` (exact format taken from `docs/DESIGN-corpus-dashboard.md`'s and `docs/ROADMAP-AND-PRIORITIES-PLAIN-ENGLISH.md`'s live banners.) |
+| A new `docs/*.md` ships | `docs/PROJECT-STATUS.md` §7 (Doc map) | One row: path, class (AUTHORITATIVE/REFERENCE/HISTORICAL), a one-line note on what it's for and what (if anything) it supersedes or is superseded by. Don't skip this because the new doc "explains itself" — §7 is the only place that tells a cold reader the doc *exists* at all. |
 | Every PR, regardless | — | Self-check before opening: does this diff make any existing doc claim false? If yes, fix that doc in this PR. |
 
 `docs/PROJECT-STATUS.md`'s section numbers above (§2 entry-point table, §3 shipped-work ledger, §5
@@ -179,6 +192,14 @@ Distilled from what actually worked in this branch's real commit sequence
 6. **Worked examples of expected output format and evidence density** — every claim carries a SHA,
    a `file:line`, or a report path, never a bare assertion: `docs/PROJECT-STATUS.md` and
    `docs/WAYMO-CORPUS-STATUS.md`.
+
+A drift-correction pass produces status/ledger docs (§6 above). **Writing a forward-looking implementation
+plan is a different shape** — this repo already has a convention for that, don't improvise one:
+`docs/superpowers/plans/<date>-<slug>.md` (checkbox tasks, explicit Global Constraints, a Self-Review
+section before handing it off) is the format every plan in this repo follows. Look at
+`docs/superpowers/plans/2026-08-05-waymo-corpus-expansion.md` or the newer
+`docs/superpowers/plans/2026-08-06-waymo-av-safety-corpus-expansion-v2.md` for the actual shape before
+writing a new one — don't reverse-engineer it from the status docs above.
 
 Every claim in this doc was checked against the actual repo state as of 2026-08-06 before being
 written — a doc about not trusting unverified doc claims has to model that discipline itself, not just

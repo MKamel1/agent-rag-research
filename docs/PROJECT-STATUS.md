@@ -363,6 +363,8 @@ authored project docs — excluded from classification.
 | Doc | Class | Notes |
 |---|---|---|
 | `docs/BACKLOG.md` | AUTHORITATIVE | The live work queue (D/T/B/O series) — see §6. |
+| `docs/AGENT-PROCEDURES.md` | AUTHORITATIVE | Onboarding checklist, per-PR/per-trigger doc obligations, periodic drift-correction procedure — read this, and this file, before your first commit. |
+| `docs/WAYMO-CORPUS-STATUS.md` | AUTHORITATIVE | Post-mortem + recovery runbook for the stalled v1 Waymo corpus attempt (17/1437 done, 810 stranded at `chunked`). Superseded as the forward-looking plan by `docs/superpowers/plans/2026-08-06-waymo-av-safety-corpus-expansion-v2.md`, but still the authoritative record of what actually happened and why. |
 | `docs/RUNBOOK.md` | AUTHORITATIVE | Operator bring-up after a reboot; dashboard token location; Tailscale access. |
 | `docs/GRAPHIFY.md` | AUTHORITATIVE | Knowledge-graph dev-tooling setup/usage (not product scope). |
 | `docs/BOOK-INTEGRATION-CLOSEOUT.md` | AUTHORITATIVE | Book integration closeout — how it works, what shipped, every rejected approach with its falsifying test. |
@@ -387,7 +389,7 @@ authored project docs — excluded from classification.
 | `docs/RESEARCH-book-rag-established-methods.md` | REFERENCE | External literature pressure-testing the book design; background evidence. |
 | `docs/METHODS-books-and-chunk-quality.md` | REFERENCE | Living methods log for book/chunk-quality work; largely folded into `BOOK-INTEGRATION-CLOSEOUT.md`. |
 | `docs/eval-reports/*.md` | AUTHORITATIVE | Primary source for every book-RAG experiment verdict (§5) and several measurement claims (§1). |
-| `docs/superpowers/plans/*.md`, `docs/superpowers/specs/*.md` | REFERENCE | Per-feature design/implementation plans (superpowers workflow artifacts); the newest, `2026-08-05-paper-author-org-tagging-design.md` and `2026-08-05-waymo-corpus-expansion.md`, are the only source for those two efforts' design (§3). |
+| `docs/superpowers/plans/*.md`, `docs/superpowers/specs/*.md` | REFERENCE | Per-feature design/implementation plans (superpowers workflow artifacts); the newest, `2026-08-05-paper-author-org-tagging-design.md` and `2026-08-06-waymo-av-safety-corpus-expansion-v2.md`, are the only source for those two efforts' design (§3). The original `2026-08-05-waymo-corpus-expansion.md` is superseded by the v2 plan — kept for its own historical record of what v1 intended, per `docs/WAYMO-CORPUS-STATUS.md`. |
 
 ## 8. Preserved-but-unmerged work index
 
