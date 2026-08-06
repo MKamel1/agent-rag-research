@@ -1,11 +1,13 @@
 # Decisions waiting on you — book-RAG programme, 2026-07-29
 
 > **Status update (2026-08-06):** the "nothing here has been actioned" line below is now stale.
-> **Decision 2** (option B) and **Decision 3** (option A) were both implemented as recommended, but
-> on local feature branches — `scoped-per-paper-cap` (commit `ecf866b`, measured in
-> `docs/eval-reports/2026-07-29-scoped-cap-measurement.md`) and `paperid-search-filter` (commit
-> `2ebd491`, measured in `docs/eval-reports/2026-07-30-paperid-filter.md`) — **neither has merged to
-> `origin/main`**, so "actioned" here means "coded and measured," not "shipped." **Decision 4**'s
+> **Decision 2** (option B) and **Decision 3** (option A) were both implemented as recommended and
+> have shipped on `origin/main` — as `T-DOC-DECISION2` (commit `73336f3`, measured in
+> `docs/eval-reports/2026-07-29-scoped-cap-measurement.md`) and `T-DOC-DECISION3` (commit `2dad68a`,
+> measured in `docs/eval-reports/2026-07-30-paperid-filter.md`). (Their original local-branch commits
+> `ecf866b`/`scoped-per-paper-cap` and `2ebd491`/`paperid-search-filter` are rebase-merge duplicates
+> of those two — same change, different SHA, still unmerged themselves; the content is not lost.)
+> **Decision 4**'s
 > deferred option B (repair the marker regex, T-DOC87) was also attempted (`8c11304`) and *did* land
 > on `origin/main`, but the commit's own title is "gate: do not ship" — the phase-1 projection tripped
 > its own stop conditions (`docs/eval-reports/2026-07-29-tdoc87-marker-regex-repair.md`), so the
