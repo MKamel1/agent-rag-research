@@ -29,6 +29,26 @@ number as permanent.
 Group A + B = **129 of 152 (85%)** are obtainable without a human. Group C is the deliverable the
 operator actually has to work.
 
+### Update 2026-08-06 — the operator's manually-curated drop-in delivery
+
+A 449-PDF library was placed at `drop_in/waymo downloaded research/` after this document was first
+written. Measured against it (read-only; filenames + `manifest.json` + `app.ingest_local.detect_arxiv_id`
+run over every file, nothing moved or ingested):
+
+| group | before | after this delivery |
+|---|---|---|
+| A — arXiv ID available (114) | 0 held locally | **97 of 114 present as PDFs** (`detect_arxiv_id` resolves them to their real arXiv id, so they stage under that id, not a `local:` one) |
+| B — public direct PDF (15) | 0 held locally | **11 of 15 present.** Missing: **B1**, **B2** (the two ESV26 "Building scientific consensus…" papers) and **B7**, **B8** (the two IWAI 2024 active-inference posters) |
+| C — needs manual sourcing (23) | 23 outstanding | **14 sourced, 9 still outstanding** — see the `status` column in §4 |
+
+Still outstanding overall: **9 Group-C papers** (C2, C8, C10, C17, C18, C20, C21, C22, C23) and
+**4 Group-B PDFs** (B1, B2, B7, B8 — all still fetchable from the URLs in §3, no manual work
+needed). Nothing else on Waymo's two index pages is blocked on a human.
+
+The 449 files are far more than gap-filling for these 23 — see
+`docs/superpowers/plans/2026-08-06-waymo-av-safety-corpus-expansion-v2.md` §8 for what the library
+actually contains and how it gets ingested.
+
 ### The finding that matters most
 
 **All 114 Group-A arXiv IDs are already inside `docs/ONBOARDING_AND_ARXIV_KEYWORDS.md` §3's 173-ID
@@ -88,6 +108,11 @@ ingest, and these are **not** Group C.
 
 ## 3. Group B — public direct PDF, not on arXiv (15)
 
+**Status 2026-08-06:** 11 of these 15 already arrived in the operator's drop-in delivery —
+B3, B4, B5, B6, B9, B10, B11, B12, B13, B14, B15 are all in
+`drop_in/waymo downloaded research/Research Papers/01_Safety_Statistics_Evaluation/`. Only **B1,
+B2, B7, B8** still need fetching from the URLs below.
+
 Downloadable without a login, but not through the arXiv path. Route: fetch the URL into
 `waymo/data/drop_in/papers/`, then run `python -m app.ingest_local` from `waymo/data/`
 (`app/ingest_local.py` mints a content-addressed `local:<sha256>` id for a PDF arXiv doesn't have —
@@ -127,37 +152,42 @@ direct PDF on Waymo's own page. `access` distinguishes two very different amount
 Once a PDF is obtained, drop it into `waymo/data/drop_in/papers/` and run
 `python -m app.ingest_local` from `waymo/data/` — same route as Group B, no new mechanism.
 
-| # | title | authors | venue / year | access | link |
-|---|---|---|---|---|---|
-| C1 | Building a credible case for safety: Waymo's approach for the determination of absence of unreasonable risk | Favaro, F.; Fraade-Blanar, L.; Schnelle, S.; Victor, T.; Peña, M.; Engström, J.; Scanlon, J.; Kusano, K.; Smith, D. | Journal of Safety Research, 96 (2026) | paywalled (Elsevier) | `https://doi.org/10.1016/j.jsr.2025.10.019` |
-| C2 | A mechanistic approach to modeling omnidirectional motorcyclist injury risk | Schubert, A.; Campolettano, E. T.; Scanlon, J. M.; McMurry, T. L.; Unger, T. | Traffic Injury Prevention, 26(sup1) (2025) | paywalled (Taylor & Francis) | `https://doi.org/10.1080/15389588.2025.2570829` |
-| C3 | Potential Safety Benefits Associated with Speed Limit Compliance in San Francisco and Phoenix | Campolettano, E. T.; Kusano, K. D.; Victor, T. | Traffic Injury Prevention (2025) | paywalled (Taylor & Francis) | `https://doi.org/10.1080/15389588.2025.2538726` |
-| C4 | TARGET setting for high severity collisions: tolerance-based assessment of risk for generalized event thresholds | Campolettano, E. T.; Scanlon, J. M.; McMurry, T. L.; Kusano, K. D.; Victor, T. | Traffic Safety Research, 9 (2025) | open-access, no direct link | `https://doi.org/10.55329/wxoa2712` |
-| C5 | Determining Absence of Unreasonable Risk: Approval Guidelines for an Automated Driving System Deployment | Favaro, F.; Schnelle, S.; Fraade-Blanar, L.; Victor, T.; Peña, M.; Webb, N.; Smith, D. | SAE Int. J. Connected and Automated Vehicles, 9(4) (2026) | paywalled (SAE) | `https://doi.org/10.4271/12-09-04-0026` |
-| C6 | Comparison of Waymo Rider-Only Crash Rates by Crash Type to Human Benchmarks at 56.7 Million Miles | Kusano, K. D.; Scanlon, J. M.; Chen, Y.; McMurry, T. L.; Gode, T.; Victor, T. | Traffic Injury Prevention, 26(sup1) (2025) | paywalled (Taylor & Francis) | `https://doi.org/10.1080/15389588.2025.2499887` |
-| C7 | Developing a Safety Management System for the Automated Vehicle Industry | Wichner, D.; Wishart, J.; Sergent, J.; Swaminathan, S. | SAE Technical Paper 2025-01-8673 (2025) | paywalled (SAE) | `https://doi.org/10.4271/2025-01-8673` |
-| C8 | Baseline vulnerable road user injury risk in multiple U.S. dense-urban driving environments | Campolettano, E. T.; Scanlon, J. M.; Kadar, I.; Lavy, L. L.; Moura, D.; Kusano, K. D. | Traffic Injury Prevention (2024) | paywalled (Taylor & Francis) | `https://doi.org/10.1080/15389588.2024.2364050` |
-| C9 | Kinematic characterization of micro-mobility vehicles during evasive maneuvers | Terranova, P.; Liu, S. Y.; Jain, S.; Engström, J.; Perez, M. A. | Journal of Safety Research, 91 (2024) | paywalled (Elsevier) | `https://doi.org/10.1016/j.jsr.2024.09.020` |
-| C10 | Representative cyclist collision injury risk distributions for a dense-urban US ODD using naturalistic dash camera data | Campolettano, E. T.; Scanlon, J. M.; Kusano, K. D. | SAE Technical Paper 2024-01-2645 (2024) | paywalled (SAE) | `https://doi.org/10.4271/2024-01-2645` |
-| C11 | Comparative safety performance of autonomous and human drivers: A real-world case study of the Waymo One service | Di Lillo, L.; Gode, T.; Zhou, X.; Atzei, M.; Chen, R.; Victor, T. | Heliyon, 10(14) (2024) | open-access, no direct link | `https://doi.org/10.1016/j.heliyon.2024.e34379` |
-| C12 | Modeling road user response timing in naturalistic traffic conflicts: A surprise-based framework | Engström, J.; Liu, S. Y.; Dinparastdjadid, A.; Simoiu, C. | Accident Analysis & Prevention, 198 (2024) | paywalled (Elsevier) | `https://doi.org/10.1016/j.aap.2024.107460` |
-| C13 | Resolving uncertainty on the fly: modeling adaptive driving behavior as active inference | Engström, J.; Wei, R.; McDonald, A. D.; Garcia, A.; O'Kelly, M.; Johnson, L. | Frontiers in Neurorobotics, 18 (2024) | open-access, no direct link | `https://doi.org/10.3389/fnbot.2024.1341750` |
-| C14 | Comparison of Waymo rider-only crash data to human benchmarks at 7.1 million miles | Kusano, K. D.; Scanlon, J. M.; Chen, Y. H.; McMurry, T. L.; Chen, R.; Gode, T.; Victor, T. | Traffic Injury Prevention, 25(sup1) (2024) | paywalled (Taylor & Francis) | `https://doi.org/10.1080/15389588.2024.2380786` |
-| C15 | Benchmarks for retrospective automated driving system crash rate analysis using police-reported crash data | Scanlon, J. M.; Kusano, K. D.; Fraade-Blanar, L. A.; McMurry, T. L.; Chen, Y. H.; Victor, T. | Traffic Injury Prevention, 25(sup1) (2024) | paywalled (Taylor & Francis) | `https://doi.org/10.1080/15389588.2024.2380522` |
-| C16 | RAVE checklist: Recommendations for overcoming challenges in retrospective studies of Automated Driving Systems | Scanlon, J. M.; Teoh, E. R.; Kidd, D. G.; Kusano, K. D.; Bärgman, J.; Chi-Johnston, G.; Di Lillo, L.; Favaro, F.; Flannagan, C.; Liers, H.; Lin, B.; Lindman, M.; McLaughlin, S.; Perez, M.; Victor, T. | Traffic Injury Prevention (2024) | paywalled (Taylor & Francis) | `https://doi.org/10.1080/15389588.2024.2435620` |
-| C17 | Bridging the gap: Mechanistic-based cyclist injury risk curves using two decades of crash data | Schubert, A.; Campolettano, E. T.; Scanlon, J. M.; McMurry, T. L.; Unger, T. | Traffic Injury Prevention, 25(sup1) (2024) | paywalled (Taylor & Francis) | `https://doi.org/10.1080/15389588.2024.2400276` |
-| C18 | Passenger and heavy vehicle collisions with pedestrians: Assessment of injury mechanisms and risk | Schubert, A.; Babisch, S.; Scanlon, J. M.; Campolettano, E. T.; Roessler, R.; Unger, T.; McMurry, T. L. | Accident Analysis & Prevention, 190 (2023) | paywalled (Elsevier) | `https://doi.org/10.1016/j.aap.2023.107139` |
-| C19 | World model learning from demonstrations with active inference: Application to driving behavior | Wei, R.; Garcia, A.; McDonald, A.; Markkula, G.; Engström, J.; Supeene, I.; O'Kelly, M. | IWAI 2022, CCIS vol. 1721, Springer (2023) | paywalled (Springer) | `https://doi.org/10.1007/978-3-031-28719-0_9` |
-| C20 | Determination of functional scenarios for intersection collisions | Bangert, L. G.; Lubash, T.; Scanlon, J. M.; Kusano, K. D.; Riexinger, L. E. | Accident Analysis & Prevention, 193 (2023) | paywalled (Elsevier) | `https://doi.org/10.1016/j.aap.2023.107326` |
-| C21 | Methodology for determining maximum injury potential for automated driving system evaluation | Kusano, K.; Victor, T. | Traffic Injury Prevention, 23(sup1) (2022) | paywalled (Taylor & Francis) | `https://doi.org/10.1080/15389588.2022.2125231` |
-| C22 | An omni-directional model of injury risk in planar crashes with application for autonomous vehicles | McMurry, T. L.; Cormier, J. M.; Daniel, T.; Scanlon, J. M.; Crandall, J. R. | Traffic Injury Prevention, 22(sup1) (2021) | paywalled (Taylor & Francis) | `https://doi.org/10.1080/15389588.2021.1955108` |
-| C23 | Waymo simulated driving behavior in reconstructed fatal crashes within an autonomous vehicle operating domain | Scanlon, J. M.; Kusano, K. D.; Daniel, T.; Alderson, C.; Ogle, A.; Victor, T. | Accident Analysis & Prevention, 163 (2021) | paywalled (Elsevier) | `https://doi.org/10.1016/j.aap.2021.106454` |
+| # | title | authors | venue / year | access | link | status (2026-08-06 drop-in delivery) |
+|---|---|---|---|---|---|---|
+| C1 | Building a credible case for safety: Waymo's approach for the determination of absence of unreasonable risk | Favaro, F.; Fraade-Blanar, L.; Schnelle, S.; Victor, T.; Peña, M.; Engström, J.; Scanlon, J.; Kusano, K.; Smith, D. | Journal of Safety Research, 96 (2026) | paywalled (Elsevier) | `https://doi.org/10.1016/j.jsr.2025.10.019` | **SOURCED*** — `058_Favaro_BuildingCredibleCaseForSafety_2023.pdf` (2023 whitepaper version of the same title, not the JSR-96 journal text) |
+| C2 | A mechanistic approach to modeling omnidirectional motorcyclist injury risk | Schubert, A.; Campolettano, E. T.; Scanlon, J. M.; McMurry, T. L.; Unger, T. | Traffic Injury Prevention, 26(sup1) (2025) | paywalled (Taylor & Francis) | `https://doi.org/10.1080/15389588.2025.2570829` | **STILL NEEDED** |
+| C3 | Potential Safety Benefits Associated with Speed Limit Compliance in San Francisco and Phoenix | Campolettano, E. T.; Kusano, K. D.; Victor, T. | Traffic Injury Prevention (2025) | paywalled (Taylor & Francis) | `https://doi.org/10.1080/15389588.2025.2538726` | **SOURCED** — `053_Campolettano_SpeedLimitCompliance_SF_Phoenix_2025.pdf` |
+| C4 | TARGET setting for high severity collisions: tolerance-based assessment of risk for generalized event thresholds | Campolettano, E. T.; Scanlon, J. M.; McMurry, T. L.; Kusano, K. D.; Victor, T. | Traffic Safety Research, 9 (2025) | open-access, no direct link | `https://doi.org/10.55329/wxoa2712` | **SOURCED** — `054_Campolettano_TARGETSetting_HighSeverityCollisions_2025.pdf` |
+| C5 | Determining Absence of Unreasonable Risk: Approval Guidelines for an Automated Driving System Deployment | Favaro, F.; Schnelle, S.; Fraade-Blanar, L.; Victor, T.; Peña, M.; Webb, N.; Smith, D. | SAE Int. J. Connected and Automated Vehicles, 9(4) (2026) | paywalled (SAE) | `https://doi.org/10.4271/12-09-04-0026` | **SOURCED** — `Favaro_DeterminingAbsenceUnreasonableRisk_2025.pdf` |
+| C6 | Comparison of Waymo Rider-Only Crash Rates by Crash Type to Human Benchmarks at 56.7 Million Miles | Kusano, K. D.; Scanlon, J. M.; Chen, Y.; McMurry, T. L.; Gode, T.; Victor, T. | Traffic Injury Prevention, 26(sup1) (2025) | paywalled (Taylor & Francis) | `https://doi.org/10.1080/15389588.2025.2499887` | **SOURCED** — `Kusano_CrashRates56.7MillionMiles_2025.pdf` |
+| C7 | Developing a Safety Management System for the Automated Vehicle Industry | Wichner, D.; Wishart, J.; Sergent, J.; Swaminathan, S. | SAE Technical Paper 2025-01-8673 (2025) | paywalled (SAE) | `https://doi.org/10.4271/2025-01-8673` | **SOURCED** — `055_Wichner_SafetyManagementSystem_AVIndustry_2025.pdf` |
+| C8 | Baseline vulnerable road user injury risk in multiple U.S. dense-urban driving environments | Campolettano, E. T.; Scanlon, J. M.; Kadar, I.; Lavy, L. L.; Moura, D.; Kusano, K. D. | Traffic Injury Prevention (2024) | paywalled (Taylor & Francis) | `https://doi.org/10.1080/15389588.2024.2364050` | **STILL NEEDED** |
+| C9 | Kinematic characterization of micro-mobility vehicles during evasive maneuvers | Terranova, P.; Liu, S. Y.; Jain, S.; Engström, J.; Perez, M. A. | Journal of Safety Research, 91 (2024) | paywalled (Elsevier) | `https://doi.org/10.1016/j.jsr.2024.09.020` | **SOURCED** — `056_Terranova_KinematicCharacterization_MicroMobility_2024.pdf` |
+| C10 | Representative cyclist collision injury risk distributions for a dense-urban US ODD using naturalistic dash camera data | Campolettano, E. T.; Scanlon, J. M.; Kusano, K. D. | SAE Technical Paper 2024-01-2645 (2024) | paywalled (SAE) | `https://doi.org/10.4271/2024-01-2645` | **STILL NEEDED** |
+| C11 | Comparative safety performance of autonomous and human drivers: A real-world case study of the Waymo One service | Di Lillo, L.; Gode, T.; Zhou, X.; Atzei, M.; Chen, R.; Victor, T. | Heliyon, 10(14) (2024) | open-access, no direct link | `https://doi.org/10.1016/j.heliyon.2024.e34379` | **SOURCED** — `DiLillo_ComparativeSafetyPerformance_Heliyon_2024.pdf` |
+| C12 | Modeling road user response timing in naturalistic traffic conflicts: A surprise-based framework | Engström, J.; Liu, S. Y.; Dinparastdjadid, A.; Simoiu, C. | Accident Analysis & Prevention, 198 (2024) | paywalled (Elsevier) | `https://doi.org/10.1016/j.aap.2024.107460` | **SOURCED** — `Engstrom_ModelingRoadUserResponseTiming_SurpriseFramework_2024.pdf` |
+| C13 | Resolving uncertainty on the fly: modeling adaptive driving behavior as active inference | Engström, J.; Wei, R.; McDonald, A. D.; Garcia, A.; O'Kelly, M.; Johnson, L. | Frontiers in Neurorobotics, 18 (2024) | open-access, no direct link | `https://doi.org/10.3389/fnbot.2024.1341750` | **SOURCED** — `Engstrom_ResolvingUncertaintyOnTheFly_ActiveInference_2024.pdf` |
+| C14 | Comparison of Waymo rider-only crash data to human benchmarks at 7.1 million miles | Kusano, K. D.; Scanlon, J. M.; Chen, Y. H.; McMurry, T. L.; Chen, R.; Gode, T.; Victor, T. | Traffic Injury Prevention, 25(sup1) (2024) | paywalled (Taylor & Francis) | `https://doi.org/10.1080/15389588.2024.2380786` | **SOURCED** — `Kusano_Comparison7.1MillionMiles_2024.pdf` |
+| C15 | Benchmarks for retrospective automated driving system crash rate analysis using police-reported crash data | Scanlon, J. M.; Kusano, K. D.; Fraade-Blanar, L. A.; McMurry, T. L.; Chen, Y. H.; Victor, T. | Traffic Injury Prevention, 25(sup1) (2024) | paywalled (Taylor & Francis) | `https://doi.org/10.1080/15389588.2024.2380522` | **SOURCED** — `Scanlon_BenchmarksRetrospectiveCrashRateAnalysis_2024.pdf` |
+| C16 | RAVE checklist: Recommendations for overcoming challenges in retrospective studies of Automated Driving Systems | Scanlon, J. M.; Teoh, E. R.; Kidd, D. G.; Kusano, K. D.; Bärgman, J.; Chi-Johnston, G.; Di Lillo, L.; Favaro, F.; Flannagan, C.; Liers, H.; Lin, B.; Lindman, M.; McLaughlin, S.; Perez, M.; Victor, T. | Traffic Injury Prevention (2024) | paywalled (Taylor & Francis) | `https://doi.org/10.1080/15389588.2024.2435620` | **SOURCED** — `Scanlon_RAVEChecklist_2024.pdf` |
+| C17 | Bridging the gap: Mechanistic-based cyclist injury risk curves using two decades of crash data | Schubert, A.; Campolettano, E. T.; Scanlon, J. M.; McMurry, T. L.; Unger, T. | Traffic Injury Prevention, 25(sup1) (2024) | paywalled (Taylor & Francis) | `https://doi.org/10.1080/15389588.2024.2400276` | **STILL NEEDED** |
+| C18 | Passenger and heavy vehicle collisions with pedestrians: Assessment of injury mechanisms and risk | Schubert, A.; Babisch, S.; Scanlon, J. M.; Campolettano, E. T.; Roessler, R.; Unger, T.; McMurry, T. L. | Accident Analysis & Prevention, 190 (2023) | paywalled (Elsevier) | `https://doi.org/10.1016/j.aap.2023.107139` | **STILL NEEDED** |
+| C19 | World model learning from demonstrations with active inference: Application to driving behavior | Wei, R.; Garcia, A.; McDonald, A.; Markkula, G.; Engström, J.; Supeene, I.; O'Kelly, M. | IWAI 2022, CCIS vol. 1721, Springer (2023) | paywalled (Springer) | `https://doi.org/10.1007/978-3-031-28719-0_9` | **SOURCED** — `057_Wei_WorldModelLearning_ActiveInference_2023.pdf` |
+| C20 | Determination of functional scenarios for intersection collisions | Bangert, L. G.; Lubash, T.; Scanlon, J. M.; Kusano, K. D.; Riexinger, L. E. | Accident Analysis & Prevention, 193 (2023) | paywalled (Elsevier) | `https://doi.org/10.1016/j.aap.2023.107326` | **STILL NEEDED** |
+| C21 | Methodology for determining maximum injury potential for automated driving system evaluation | Kusano, K.; Victor, T. | Traffic Injury Prevention, 23(sup1) (2022) | paywalled (Taylor & Francis) | `https://doi.org/10.1080/15389588.2022.2125231` | **STILL NEEDED** |
+| C22 | An omni-directional model of injury risk in planar crashes with application for autonomous vehicles | McMurry, T. L.; Cormier, J. M.; Daniel, T.; Scanlon, J. M.; Crandall, J. R. | Traffic Injury Prevention, 22(sup1) (2021) | paywalled (Taylor & Francis) | `https://doi.org/10.1080/15389588.2021.1955108` | **STILL NEEDED** |
+| C23 | Waymo simulated driving behavior in reconstructed fatal crashes within an autonomous vehicle operating domain | Scanlon, J. M.; Kusano, K. D.; Daniel, T.; Alderson, C.; Ogle, A.; Victor, T. | Accident Analysis & Prevention, 163 (2021) | paywalled (Elsevier) | `https://doi.org/10.1016/j.aap.2021.106454` | **STILL NEEDED** |
 
 ### Suggested order of work for the operator
 
-1. **C4, C11, C13** first — flagged open-access; likely a single click each.
-2. **C6, C14, C15, C16** next — the crash-rate-benchmark line of work, the single most
-   scope-relevant cluster in Group C for an AV-safety-evaluation corpus.
-3. Everything else as availability allows. Nothing in the v2 plan blocks on Group C: it is additive,
-   and `app.ingest_local` is idempotent, so PDFs can be dropped in at any point during or after the
+**Revised 2026-08-06** — the original ordering (C4/C11/C13 first, then C6/C14/C15/C16) is now moot:
+all seven of those are in the drop-in delivery. What is left:
+
+1. **C8, C10, C17, C18, C22** — the injury-risk/VRU cluster (Campolettano, Schubert, McMurry). Five
+   papers, all Taylor & Francis / Elsevier / SAE paywalled.
+2. **C2** — Schubert motorcyclist injury risk (Taylor & Francis).
+3. **C20, C21, C23** — Bangert functional scenarios, Kusano maximum injury potential, Scanlon
+   reconstructed fatal crashes (Elsevier / Taylor & Francis).
+4. Nothing in the v2 plan blocks on Group C: it is additive, and `app.ingest_local` is idempotent
+   by content hash (`mint_local_ref`), so PDFs can be dropped in at any point during or after the
    main build.
