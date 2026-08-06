@@ -2,8 +2,9 @@
 
 Whichever agent you are — Claude Code, a local LLM running under OpenCode, or another tool that reads
 this file — **start here.** This file is deliberately an index, not a copy: nothing here restates
-content that lives in a doc below; it tells you which doc to open. Read your `owners/OWNER-<X>.md` brief
-next; it tells you exactly what your job is.
+content that lives in a doc below; it tells you which doc to open. Read `docs/PROJECT-STATUS.md` next
+for what's actually shipped and open today; see "How work is tracked now" below for how work is
+assigned.
 
 ## What this project is
 
@@ -17,6 +18,8 @@ No claims, no reconciliation, no evidence tiers beyond a pinned `"A"`, no Obsidi
 
 | Doc | Authoritative for |
 |---|---|
+| **docs/PROJECT-STATUS.md** | Current system state: what shipped (with commit SHAs/PR#s), what was tried and rejected, what's open. Every numeric/status claim is re-derived against live source/git, not copied — start here for "what actually exists today." |
+| **docs/BACKLOG.md** | The live work queue (D/T/B/O ticket series) — what's open right now, updated as items land. |
 | **CONTEXT.md** | Vocabulary and V0–V3 phase definitions. **Wins any terminology dispute.** |
 | **DATA-CONTRACTS.md** | Every frozen data shape, ID format, SQLite schema, `Config` fields. **Wins any shape conflict** with ARCHITECTURE.md or PRD.md — never fork a type, fix the other doc to match. |
 | **PRD.md** | Vision + 18 ADRs (§12). The ADRs are settled decisions — don't re-litigate Qdrant, SQLite, Ollama→vLLM, etc. without a new fact from Phase 0. |
@@ -28,7 +31,7 @@ No claims, no reconciliation, no evidence tiers beyond a pinned `"A"`, no Obsidi
 | **docs/RUNBOOK.md** | Operator bring-up after a reboot: `nvidia-smi` → `python -m app.doctor` → `scripts/dashboard.sh start`, where the dashboard token lives, reaching it over Tailscale. Not to be confused with PHASE0-RUNBOOK.md above (Phase-0 spikes, a different thing). |
 | **GIT-WORKFLOW.md** | Branch naming, PR flow, CI gating, the foundation-freeze mechanism. **Read before your first commit.** |
 | **EXECUTION-READINESS-REVIEW.md** | Historical principal design review; its fixes are already applied to the docs above. Reference only. |
-| **owners/OWNER-\<X>.md** | **Your actual task brief. Start there, not here.** |
+| **owners/OWNER-\<X>.md** | Frozen build briefs from the original V0 owner-track (module boundaries, invariants) — background, not a live task assignment. See "How work is tracked now" below for what is. |
 
 Two files at repo root are **background only, not authoritative** — don't build against them:
 `research-kb-system-scope.md` (earliest raw scoping notes, superseded by PRD.md) and
@@ -66,32 +69,40 @@ agent-rag-research`) — not the machine's pre-existing `pytorch-env`. Downstrea
 except the real adapters' own contract tests) run **zero-GPU, zero-network** — this is CI-enforced
 (GIT-WORKFLOW.md / CONVENTIONS §12), not just a convention to remember.
 
-## Owner → session mapping and sign-off authority
+## How work is tracked now
 
-Filled in as each owner is actually dispatched — update this table when you start work as an owner so a
-later session (or the human) can see who's doing what. All six tracks have landed on `main`; V0 is now
-in the hardening phase, tracked as ungoverned `T-DOC<n>` fixes (see WORK-BREAKDOWN.md's T-DOC series and
-GIT-WORKFLOW.md) rather than as new owner tickets. For the ticket-by-ticket build history, closed PRs
-#31-#38, #40-#46 are the authoritative record — this table is a landing summary, not a live tracker:
-
-| Owner | Modules | Session/agent | Status |
-|---|---|---|---|
-| F | Shared foundation (T-F1…T-F7) | _unassigned_ | done — frozen at `foundation-v0-frozen` |
-| A | Harvester, Orchestrator | _unassigned_ | done — T-A1 (PR #36), T-A2 (PR #38) merged; hardened by T-DOC4/5/6/7/8/10 (PRs #62-65, #67-68) |
-| B | Parser | _unassigned_ | done — Spike 1 locked MinerU (PR #41); T-B1 (PR #43) merged |
-| C | Chunker, Summarizer, Embedder | _unassigned_ | done — T-C1 (PR #42), T-C2 (PR #31), T-C3 (PR #32) merged; hardened by PRs #56/#57/#59/#60/#61 (Summarizer OOM fix, embedder error taxonomy, chunk cap + overlap) |
-| D | DocumentStore, VectorIndex | _unassigned_ | done — T-D1 (PR #33), T-D2 (PR #37) merged; hardened by PR #44 (sparse-channel text) |
-| E | Retriever, McpServer | _unassigned_ | done — T-E1 (PR #34), T-E2 (PR #35) merged; hardened by PR #50 (real Reranker) and PR #52 (real Embedder seam) |
+The six-owner (A-F) build-out is long done — all six tracks landed on `main`, then went through a
+hardening phase tracked as `T-DOC<n>` tickets (`WORK-BREAKDOWN.md`'s T-DOC series, now up to
+T-DOC95), and the project has since grown well past V0's original scope (books, drop-in, the
+dashboard, MCP telemetry, author-org tagging). There is no live owner→session assignment table
+anymore — work today is tracked in `docs/BACKLOG.md`'s `D-<n>`/`T-<n>`/`B-<n>`/`O-<n>` series (D =
+dashboard/telemetry, T = ad hoc test/tooling, B = book-programme carryover, O = operational/infra),
+which is the queue of what's *open*. For what has already shipped — grouped by programme, each item
+with its commit SHA(s)/PR#(s) — see `docs/PROJECT-STATUS.md` §3 (shipped-work ledger). The record of
+closed PRs runs well past the original #31-#46 range this table used to cite — `docs/BACKLOG.md`
+alone references PRs through #227, and the live PR list (`gh pr list --state all`) tops out at #235
+as of 2026-08-05; treat any PR-number ceiling as a snapshot, not a fact to hardcode.
 
 **Foundation sign-off authority (T-F7, CONVENTIONS §0.2):** the human operator, GitHub `@MKamel1`. Any PR
 touching a foundation-protected path (`.github/CODEOWNERS` — currently `contracts/`, `rag/config.py`,
 `config.example.yaml`, `migrations/`, `rag/fakes/`, `fixtures/`, `ci/`, `.github/`) requires their explicit
 approval before merge — mechanized via `.github/CODEOWNERS` + branch protection, see GIT-WORKFLOW.md.
 
+## A second corpus is just a second directory
+
+The pipeline is not hardwired to one corpus. `python -m app.init_config --data-dir <dir>` scaffolds a
+new corpus's own `config.yaml` under `<dir>`; select it either by running an ingest-side tool (no
+`--data-dir` flag — cwd is the data dir) from inside `<dir>`, or by passing `--data-dir <dir>` to one
+of the 4 tools that support it (`app.init_config`, `app.serve`, `app.dashboard.server`,
+`app.dashboard.verify_numbers`) — see `docs/PROJECT-STATUS.md` §2 for the full flag table and traps.
+The Waymo AV-safety corpus (`docs/PROJECT-STATUS.md` §1) is exactly this pattern, live today.
+
 ## If you're picking up work right now
 
-1. Find your owner letter and read `owners/OWNER-<X>.md` — it names your modules, your ticket IDs, your
-   prerequisites, and points you at the exact sections of the docs above that govern your work.
+1. Read `docs/PROJECT-STATUS.md` §3 for what's already shipped and §6 for what's open, then pick an
+   item from `docs/BACKLOG.md`. The `owners/OWNER-<X>.md` briefs still exist and describe each
+   module's original design intent (M1-M9 boundaries, invariants) — useful background, but frozen:
+   they are not live ticket assignments.
 2. Read `GIT-WORKFLOW.md` before your first commit — including its commit-authorship convention.
 3. Do not start a ticket whose prerequisites (foundation freeze, a Phase-0 spike lock) haven't landed —
-   your owner brief states them explicitly.
+   `docs/BACKLOG.md`'s item states them explicitly when they matter.
