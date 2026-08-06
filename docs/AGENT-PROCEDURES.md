@@ -97,6 +97,29 @@ Two steps, both mandatory, neither optional because "the tests looked fine local
    seconds; it blocks until every check finishes, pass or fail). A PR that merely *exists* is not
    verified — only a PR whose checks you've watched conclude is.
 
+   **Check the rollup against the commit you actually pushed, not a snapshot from a few minutes ago.**
+   `git commit` and `git push` are two different actions — a commit made after you last watched CI is
+   not covered by that earlier "all green" result, even if it feels like the same PR. Confirm the SHA
+   before trusting the rollup:
+   ```bash
+   gh pr view <number> --json headRefOid,mergeable,mergeStateStatus,statusCheckRollup \
+     --jq '.headRefOid, .mergeable, .mergeStateStatus, (.statusCheckRollup[] | {name, status, conclusion})'
+   ```
+   Compare `.headRefOid` against `git rev-parse HEAD` (and against `git log origin/<branch>..HEAD` —
+   non-empty means something local is still unpushed) before trusting `mergeStateStatus`. Only
+   `CLEAN` means done; `BLOCKED` with everything showing `SUCCESS` in the rollup usually means the
+   rollup is still for an older SHA, not that something is silently wrong.
+
+   **A `CANCELLED` job with zero steps run, or a "Service Unavailable"/"Failed to resolve action
+   download info" error during "Set up job," is GitHub Actions infrastructure flakiness, not a code
+   problem** — check `gh run view <job-id> --json jobs` for zero completed steps before assuming your
+   diff caused it. `gh run rerun <run-id> --failed` re-runs only the failed/cancelled jobs (not the
+   whole workflow) and is safe to repeat. If it keeps failing the same way across several retries
+   within a short window, stop retrying and say so plainly rather than looping — it may be a live
+   platform incident, not something a retry will fix; local verification (step 1 above, plus the full
+   test suite) stands on its own in the meantime, and the live CI check can be revisited once GitHub's
+   infra is stable again.
+
 **Real incident, 2026-08-06, PR #236:** step 1 above didn't exist yet as a rule, so a subagent building
 `ci/checks/doc_touch_reminder.py` ran only the targeted `pytest ci/checks/test_checks.py` (61 passed)
 and a YAML parse check, reported success, and the PR was opened without anyone watching its CI. The
