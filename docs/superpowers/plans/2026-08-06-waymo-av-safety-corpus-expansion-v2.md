@@ -17,6 +17,14 @@
 > would silently bypass**), and a new §8 + rewritten Task 5 for the operator's 449-PDF drop-in
 > delivery. §4 (affiliation tagging) was independently re-grepped and stands as written.
 
+> **Extended 2026-08-06 (third dispatch)** with four operator-requested items, each verified
+> read-only against source/git/a live query before writing, per `docs/AGENT-PROCEDURES.md` §A.2:
+> new §10 (2015 arXiv cutoff — config field + per-source filters + the 827→825 resume-target
+> adjustment, folded into Task 4), §11 (separate-corpus decision, recorded and reasoned), §12 (MCP
+> registration — no code changes needed; documents an already-fixed stale-env-var bug elsewhere),
+> and §13 (confirms the plan's Pass-1/Pass-2/GPU/dashboard settings are the existing tuned values,
+> not re-invented — no changes needed there).
+
 **Goal:** rebuild the Waymo AV-safety corpus (`waymo/data/`, Qdrant collection `waymo_av_safety`)
 against a **broadened 11-area scope**, resuming the existing partial corpus rather than restarting,
 using only mechanisms this repo already supports. Supersedes
@@ -95,7 +103,8 @@ rather than taken from the text above:
    (`app/build_corpus.py:203-211`) — a stranded paper with no cached PDF would never drain. Measured:
    **810 of 810** stranded ids have a `pdf_cache/<id>.pdf`; 0 do not. 1,062 cached PDFs total, of
    which 235 are not tracked in `ingest_state` at all (fresh work `build_corpus` will pick up for
-   free). So `--target 827` genuinely drains, and restarting would discard 810 papers of GPU parse
+   free). So `--target 827` genuinely drains (see §10 for the 827 → 825 adjustment once the 2
+   pre-2015 stranded papers are excluded), and restarting would discard 810 papers of GPU parse
    work plus 5.2 GB of already-downloaded PDFs for zero benefit. The new material is purely
    additive — it does not make anything already ingested out-of-scope.
 2. **`docs/WAYMO-CORPUS-STATUS.md` §4's second finding is now closed, not just noted.** That
@@ -313,7 +322,7 @@ mismatching.
 
 | phase | work | mechanism | why this one |
 |---|---|---|---|
-| A | drain the 810 stranded + the rest of the 1,062 cached | `app.build_corpus --target 827` | Cache already populated; downloader has nothing to do; `stranded_policy: finish_first` drains at Pass-2 speed. `build_corpus` in its element. |
+| A | drain the 808 in-scope stranded (810 minus the 2 pre-2015 exclusions, §10) + the rest of the 1,062 cached | `app.build_corpus --target 825` | Cache already populated; downloader has nothing to do; `stranded_policy: finish_first` drains at Pass-2 speed. `build_corpus` in its element. |
 | B | the 114 Waymo-authored ids + drop-in PDFs | `app.ingest --paper-ids-file` (one batch) and `app.ingest_local` | 114 papers is one batch; a supervisor loop adds nothing. `app.ingest` downloads and caches its own PDFs via `_PdfDownloadParser._write_cache`. |
 | C | the broad discovery bulk | real `focus_area_queries` + `arxiv_categories` + real `prefetch_target`, then `app.build_corpus --target N --batch-size 300` | Query-driven downloader + cache-first supervisor is exactly the design `app/build_corpus.py`'s docstring describes, and what the 12,390-paper main corpus runs in production. |
 | D (optional) | precision top-up | scout → filtered `paper_ids.txt` → `app.ingest --paper-ids-file` in ≤500-id chunks | Boolean/author queries `_build_query` can't express. Supplements C, doesn't replace it. |
@@ -438,6 +447,187 @@ is at risk of being picked up by an unrelated main-corpus run today.
 
 ---
 
+### 10. [2026-08-06] The 2015 arXiv cutoff — a query-side config field AND a separate filter at every fixed-id source
+
+Verified directly against `waymo/data/papers.db` (read-only), 2026-08-06:
+
+- **All 17 `done` papers are 2017-07-16 or later.** `select paper_id, published from papers order
+  by published` returns a clean run from `1707.04896` (2017-07-16) to `2607.16156` (2026-07-17),
+  zero pre-2015. **No action needed on the existing 17.**
+- **Of the 810 `chunked`-stage papers** (no `papers` row yet — `published` is only written at
+  `stored`/`done`, so year has to come from the arXiv id's own `YYMM.NNNNN` prefix), all 810 ids
+  match the modern format (zero malformed/legacy-style ids), and exactly **2 are pre-2015**:
+  `1009.1191` (2010-09, "Universality of Cluster Dynamics" — condensed-matter physics, confirmed
+  off-topic by reading its parsed markdown in `ingest_checkpoint.artifacts_json`) and `1203.5986`
+  (2012-03, "Bayesian Network Enhanced with Structural Reliability Methods: Methodology" —
+  borderline-relevant risk/reliability methodology, but still pre-cutoff). The other 808 are all
+  post-2015.
+
+**Config change:** `arxiv_date_from: "2015-01-01"` in the "Authorized config edits" table below.
+`rag/harvester.py:232` folds `arxiv_date_from`/`arxiv_date_to` into every `search_query` at the
+download layer — zero code needed, covers Phase C/D's future query-driven harvest.
+
+**This does NOT retroactively filter the plan's other three paper sources — they're id lists, not
+queries, so a query-side date filter never touches them:**
+
+1. **The 114 Waymo-authored arXiv ids (`fixtures/waymo/waymo_authored_ids.txt`, Task 2) and the
+   scout's `candidates.json` (Task 7 Phase D).** Both are plain `YYMM.NNNNN` arXiv ids — filter by
+   the id's own year prefix (`YY < 15` → drop) before writing `paper_ids.txt`/`--paper-ids-file`,
+   same method used above for the 810. Add this check alongside Task 7 Step 3's existing
+   `re.fullmatch(r'\d{4}\.\d{4,5}', ...)` id-format filter — same pass, one extra comparison.
+2. **The drop-in library (449 PDFs, §9).** `app.ingest_local.detect_arxiv_id` run read-only over
+   all 449 (same pass §9.3 already used) splits it into three sub-populations, each with its own
+   filter:
+   - **188 files resolve to a real arXiv id** (24 curated + 115 extended + 49 sweep): filter by the
+     arXiv-ID year prefix, identical to method 1.
+   - **194 of the remaining 261** — every `Total Research Library/` file that isn't in the 4-file
+     unreadable set (243 manifest entries − 49 arXiv-resolving = 194) — has a usable
+     **`manifest.json`'s `year` field** (int, present on all 243 entries, keyed by `local_file`
+     basename; confirmed by direct read, e.g. `{"year": 2011, "local_file":
+     "openalex_W1492596192_...pdf", ...}`). Filter on `year < 2015` before staging. Measured:
+     **11 of 243** manifest entries are pre-2015 (`W1828553022` 2002 through `W2344569186` 2011);
+     none overlap the 49 arXiv-resolving files already accounted for by method 1.
+   - **The remaining 63 files** (`Research Papers/` + `Extended/`, hand-named, no manifest, no
+     arXiv id) are the genuinely gap-prone tier — investigated rather than left unresolved, by
+     testing two candidate signals against all 63, read-only, reusing `app.ingest_local`'s own
+     `detect_arxiv_id`/`_first_page_text` (zero new code):
+     - **First-page year regex** (`_YEAR`, the same one `mint_local_ref` already uses as its
+       `published` fallback for `local:` ids) is **unreliable here**: it produced 3 apparent
+       pre-2015 hits (`2000`, `2006`, `1938`), and all 3 are false positives — the filenames
+       self-report 2025/2026 (`Chen_DynamicBenchmarks_SpatialTemporalAlignment_2025.pdf`,
+       `FraadeBlanar_BeingGoodAtDriving_2026.pdf`, `Johnson_FieldOfSafeMotion_2026.pdf`); the
+       regex is matching a citation year inside body text, not the paper's own date.
+     - **The filename's own trailing year token** (the tier's naming convention,
+       `Author_Topic_Year.pdf` / `NNN_Topic_Year.pdf`) is reliable: **58 of 63** files carry one,
+       and **zero of the 58 are pre-2015**.
+     - **The remaining 5** carry no year in filename or first-page regex:
+       `182_RAND_RR1478_DrivingToSafety_Official.pdf`, `189_Mobileye_SDS_SafetyArchitecture.pdf`,
+       `190_Mobileye_RSS_FactSheet.pdf`, `192_Waymo_SafetyCaseApproach_Whitepaper.pdf`,
+       `193_PEGASUS_MethodOverview.pdf`. Checked individually by reading each one's extracted
+       page-1 text: RAND RR-1478 "Driving to Safety" (Kalra & Paddock, RAND Corporation, 2016);
+       Mobileye's safety-architecture paper (page 1 states "Mobileye, 2024"); Waymo's safety-case
+       whitepaper (page 1 states "March 2023"); Mobileye's RSS fact sheet (RSS itself launched
+       2017, this is a marketing sheet describing it, necessarily later); PEGASUS's method overview
+       (title-page-only PDF, no extractable body text — the PEGASUS project ran 2016-2019). All
+       five confirmed post-2015 by direct inspection; none need exclusion.
+
+     **Decision: accept this 63-file tier without an automated hard date filter.** The reliable
+     signal (filename year) already clears all 58 it covers; the remaining 5 were resolved by a
+     one-off manual check on a fixed, bounded set. Building a general first-page-date extractor
+     here would spend real code fixing a signal already shown unreliable, for a population that
+     needed zero exclusions in the end. Stated as a deliberate, bounded gap: if a *future*
+     curated-tier delivery arrives with more files and no filename year, this manual-check approach
+     does not scale and would need revisiting then, not now.
+
+**Resume target changes from 827 to 825.** `app.build_corpus` has no id-list input for Phase A —
+its batch is `cache_dir.glob("*.pdf")` minus `done` minus permanently-quarantined
+(`cached_not_done`, `app/build_corpus.py:203-211`), so there is no `--exclude-ids` lever. Both
+`1009.1191.pdf` and `1203.5986.pdf` are confirmed present in `waymo/data/pdf_cache/` (still
+`chunked`-stage, not `done`, not quarantined), so they would otherwise be swept into Phase A's
+drain. **Concrete step, folded into Task 4 below:** move (not delete — keep the already-downloaded
+bytes) both files out of `pdf_cache/` before running `build_corpus`, then run `--target 825`
+(17 done + 808 in-scope stranded) instead of `--target 827`. This keeps `cached_not_done`'s glob
+from ever seeing them, zero code change, and no risk of the supervisor re-downloading them later —
+their `ingest_state` row stays at `chunked` indefinitely, excluded from `cached_not_done` for as
+long as their PDF sits outside the glob path.
+
+### 11. [2026-08-06] Waymo stays a separate corpus, not merged into the main one — reversible, not permanent
+
+The operator asked whether Waymo should live in its own corpus or share the main causal-methods
+one. Recorded here as an explicit, reasoned decision rather than left as an unwritten assumption:
+
+**Keep it separate.** Verified before writing:
+
+- `contracts/vector_index.py`'s `SearchFilters`/`VectorPayload` (read in full) have no
+  "domain"/"corpus" field today — `SearchFilters` filters on `categories`, `published_after/before`,
+  `kind`, `doc_type`, `paper_id` only; `VectorPayload` carries `paper_id`/`kind`/`section_path`/
+  `text`/`categories`/`published`/`embedding_version`/`doc_type`, nothing corpus-scoped. The only
+  isolation mechanism between domains today is structural, not a filter: each `app.serve` process
+  is bound to exactly one `DocumentStore`/`VectorIndex`/Qdrant collection via its own `config.yaml`
+  (`docs/PROJECT-STATUS.md` §2, "second corpus = second directory").
+- Merging into one corpus would mean adding a new field to a **foundation-protected contract** —
+  `.github/CODEOWNERS` lists `/contracts/` under `@MKamel1` sign-off, confirmed by reading the file
+  — plus a schema migration (`migrations/` is separately foundation-protected too), just to keep two
+  topically-disjoint domains (causal-inference methods vs. AV safety) from polluting each other's
+  retrieval relevance in a shared Qdrant collection.
+- Staying separate costs zero new schema/contract work and matches how this corpus has been
+  described throughout this effort — experimental, disposable, still under development
+  (`docs/WAYMO-CORPUS-STATUS.md`; `docs/PROJECT-STATUS.md` §1: "much smaller and mid-build, not
+  production-grade").
+- **This is reversible, not permanent.** Revisit merging only if a genuine cross-domain retrieval
+  need shows up later — e.g. rare-event/extreme-value risk-estimation statistics methods that turn
+  out to be genuinely shared between both domains — not as a default to drift back toward.
+
+### 12. [2026-08-06] MCP server registration — no code changes; a real bug found and fixed along the way
+
+While investigating whether Waymo needs its own MCP-side changes, a live bug was found in the
+operator's global Claude Code config (`~/.claude.json`, outside this repo) and already fixed there.
+Recorded here as a finding, not a to-do — verified independently before writing:
+
+- `app/serve.py`'s own module docstring (read in full) states `--data-dir` was added specifically
+  because the composition root used to read `RAG_DB_PATH`/`RAG_BLOB_DIR`/`RAG_COLLECTION`
+  environment variables directly, "a CONVENTIONS.md §3 violation (only `rag/config.py` may read
+  env vars)" — fixed, and those three env vars are no longer read anywhere in `app/serve.py`.
+  Confirmed by reading the module: `_parse_args` only recognizes `--data-dir`; when given,
+  `load_config(_data_dir / "config.yaml")` resolves `db_path`/`blob_dir` absolute against that
+  directory, and `collection` comes from the loaded `Config` — never a separate override
+  (`app/serve.py:47-58`).
+- The existing `research-system-rag` MCP entry in `~/.claude.json` was setting those same three
+  now-dead env vars. They were being silently ignored — the server was actually resolving the main
+  corpus by cwd-walkup coincidence through the repo-root `config.yaml` symlink, not by the env vars
+  doing anything. **Already fixed** (outside this repo, spot-checked read-only, 2026-08-06): the
+  entry's `args` now end `..., "-m", "app.serve", "--data-dir",
+  "/home/omar/ai-projects/research-system-rag-data"`, with no `env` block naming any of the three
+  stale vars.
+
+**What this means for Waymo:**
+
+1. **No `rag/mcp_server.py` or `app/serve.py` code changes are needed** for a second corpus — the
+   existing `--data-dir` flag is the correct, already-supported mechanism, and it already does the
+   right thing (verified above).
+2. **Lesson for any future second MCP registration:** always use `--data-dir` in `args`; never the
+   env-var pattern — it is not read, and silently falls back to cwd-walkup instead of erroring,
+   which is exactly the "confident fake result against the wrong corpus" failure `app/serve.py`'s
+   own `--data-dir` existence check was built to prevent for the flag path (there is no equivalent
+   protection for the env-var path, because that path no longer exists at all).
+3. **Documented but not yet applied** — a second MCP entry for Waymo, gated on the corpus build
+   from this plan actually completing (not stood up against a mid-build, still-being-filtered
+   corpus):
+   ```json
+   "research-system-rag-waymo": {
+     "type": "stdio",
+     "command": "conda",
+     "args": [
+       "run", "-n", "agent-rag-research", "--no-capture-output",
+       "python", "-m", "app.serve",
+       "--data-dir", "/home/omar/ai-projects/research-system-rag/waymo/data"
+     ],
+     "env": { "PYTHONPATH": "/home/omar/ai-projects/research-system-rag" }
+   }
+   ```
+   Do not register this until Task 8 (documentation obligations) confirms the build is done —
+   registering it now would expose an MCP client to the pre-filter, pre-resume, partially-stranded
+   corpus this whole plan exists to fix.
+
+### 13. [2026-08-06] Reused, not re-tuned — Pass-1/Pass-2/GPU/dashboard settings
+
+Every setting below was checked against this plan's actual command examples (not assumed) and
+against its own source of truth. All five are already correct in this plan as written — nothing
+below required a change to the plan itself:
+
+| setting | plan's current value | where it's used | source of truth |
+|---|---|---|---|
+| `--parse-workers` | `3` | Task 4 Step 3, Task 5 Step 4, Task 6 Step 2 | `WORK-BREAKDOWN.md:548` (T-DOC51): +63% Pass-1 throughput (171.9 → 280.7 pages/min), N>1 confirmed safe by anchor round-trip verification across all 25,387 real anchors (OG-19, RESOLVED). |
+| `--batch-size` (on `app.build_corpus`) | `300` | Task 4 Step 3, Task 6 Step 2 | matches the 12,390-paper main corpus's own production pattern (§7 table above: "what the 12,390-paper main corpus runs in production"). |
+| `gpu_lock_path` | shared repo-root `.gpu.lock` | Global constraints; "Authorized config edits" table | confirmed still correctly stated (unchanged, "already correct") — both corpora serialize on one physical GPU rather than contending, per this machine's prior OOM history. |
+| `parse_batch_size` (Config field) | **not overridden anywhere in this plan** | absent from "Authorized config edits" and every command example — confirmed by grep, zero mentions in this doc | leaving it at Config's default (`4`, `contracts/config.py:63`) lets `app/adaptive_batch_sizer.py`'s AIMD self-tuning (T-DOC21) apply to Waymo exactly as it does to the main corpus, instead of hand-picking a fixed value that would disable that self-tuning. |
+| `scripts/dashboard.sh` via `DASHBOARD_DATA_DIR`/`DASHBOARD_PORT=8701` | Task 4 Step 2 | same pattern the v1 Waymo attempt already proved working — `docs/WAYMO-CORPUS-STATUS.md` §7 confirms `dashboard.pid` was alive and correctly configured at this exact port/data-dir combination. |
+
+No discrepancy found between the operator's brief and the plan's actual text — all five values are
+already the tuned/reused ones, not re-invented.
+
+---
+
 ## Authorized `waymo/data/config.yaml` edits
 
 `app.init_config --data-dir` wrote every other field; **leave all of them alone**. Exactly these
@@ -452,6 +642,7 @@ keys may be hand-edited, and no others:
 | `focus_area_queries` | 3 placeholder strings | flat keyword list (Task 3) | phase C's discovery lever; also feeds `ordering: relevance` |
 | `arxiv_categories` | `null` | `["cs.RO","stat.AP","stat.ME","cs.LG","eess.SY","cs.CV"]` | download-side subject filter (OG-45), `docs/ONBOARDING_AND_ARXIV_KEYWORDS.md` §2b.1 |
 | `ordering` | `freshest_first` | `relevance` | precision-sensitive corpus; `build_corpus` reorders each batch by arXiv's own ranking (`_order_by_relevance`) |
+| `arxiv_date_from` | `null` | **`"2015-01-01"`** | §10: download-side lower bound, folded into every `search_query` (`rag/harvester.py:232`) — covers Phase C/D's future query-driven harvest only, does **not** retroactively filter the fixed-id sources (§10 has the per-source filter for those) |
 
 ---
 
@@ -548,7 +739,10 @@ worktree branch, by file — see §3).
 PR needs the `foundation-change` label and operator approval; agents never merge it).
 
 - [ ] **Step 1: write the file** — the 114 ids from `docs/WAYMO-RESEARCH-PAPERS-NEEDED.md` §2, one
-      per line, sorted.
+      per line, sorted. **Apply the §10 year filter first**: drop any id whose `YYMM` prefix's `YY`
+      is `< 15` (pre-2015) before writing. (Expected to be a no-op here — Waymo's own published
+      research starts well after 2015 — but the check costs one line and keeps this file consistent
+      with the same rule applied to every other id source in §10.)
 - [ ] **Step 2: verify it against the doc**, don't eyeball it:
       ```bash
       python3 - <<'PY'
@@ -617,30 +811,40 @@ PR needs the `foundation-change` label and operator approval; agents never merge
       (`app/ingest_local.py::scan_drop_dir` creates `papers/`, `books/`, `done/`, `failed/` itself
       on first run, so this is belt-and-braces, not required.)
 
-### Task 4: Phase A — drain the existing 827
+### Task 4: Phase A — drain the existing 825 (excludes the 2 pre-2015 stranded papers, §10)
 
 **Files:** none. Runtime only.
 
-- [ ] **Step 1: start the second dashboard** (own port, own data dir):
+- [ ] **Step 1: exclude the 2 pre-2015 stranded papers before starting** (§10) — `build_corpus` has
+      no id-list input, so the only lever is keeping their PDFs out of `cached_not_done`'s glob:
+      ```bash
+      mkdir -p /home/omar/ai-projects/research-system-rag/waymo/data/pdf_cache/excluded-pre2015
+      mv /home/omar/ai-projects/research-system-rag/waymo/data/pdf_cache/{1009.1191,1203.5986}.pdf \
+        /home/omar/ai-projects/research-system-rag/waymo/data/pdf_cache/excluded-pre2015/
+      ```
+      Moves, not deletes — the already-downloaded bytes are kept, just out of the glob path. Their
+      `ingest_state` rows stay at `chunked` (never reached, never re-downloaded) unless the files
+      are moved back later.
+- [ ] **Step 2: start the second dashboard** (own port, own data dir):
       ```bash
       cd /home/omar/ai-projects/research-system-rag
       DASHBOARD_DATA_DIR="$PWD/waymo/data" DASHBOARD_PORT=8701 scripts/dashboard.sh start
       ```
-- [ ] **Step 2: run the supervisor** — this is the mechanism the post-mortem says to use, and the
+- [ ] **Step 3: run the supervisor** — this is the mechanism the post-mortem says to use, and the
       one place it fits without qualification (the cache is already full):
       ```bash
       cd /home/omar/ai-projects/research-system-rag/waymo/data
       /home/omar/miniconda3/envs/agent-rag-research/bin/python -m app.build_corpus \
-        --target 827 --parse-workers 3 --batch-size 300
+        --target 825 --parse-workers 3 --batch-size 300
       ```
-      `--target 827` = `done (17) + chunked (810)`. With `stranded_policy: finish_first`, the first
-      batches are stranded-only and skip Pass 1 entirely; the run log says so explicitly
-      (`"draining N stranded (Pass-1-complete) paper(s), Pass 1 is a no-op for this batch"`).
-      **Do not** write a shell wrapper around this — `build_corpus` recomputes remaining work every
-      iteration (`cached_not_done` → `_write_batch_ids`) and stops on a real nonzero exit
-      (`subprocess.run(..., check=True)`), the two things `run_batches.sh` got wrong
-      (`docs/WAYMO-CORPUS-STATUS.md` §5).
-- [ ] **Step 3: verify** — `funnel.done` ≈ 827 on `http://127.0.0.1:8701/api/status`
+      `--target 825` = `done (17) + chunked (808 in-scope, after excluding the 2 pre-2015 papers in
+      Step 1)`. With `stranded_policy: finish_first`, the first batches are stranded-only and skip
+      Pass 1 entirely; the run log says so explicitly (`"draining N stranded (Pass-1-complete)
+      paper(s), Pass 1 is a no-op for this batch"`). **Do not** write a shell wrapper around this —
+      `build_corpus` recomputes remaining work every iteration (`cached_not_done` →
+      `_write_batch_ids`) and stops on a real nonzero exit (`subprocess.run(..., check=True)`), the
+      two things `run_batches.sh` got wrong (`docs/WAYMO-CORPUS-STATUS.md` §5).
+- [ ] **Step 4: verify** — `funnel.done` ≈ 825 on `http://127.0.0.1:8701/api/status`
       (`X-Dashboard-Token` from `waymo/data/.dashboard_token`), `consistency.consistent: true`.
       Compare against a direct read-only `select stage,count(*) from ingest_state group by stage`;
       the dashboard is a reader, not the authority.
@@ -723,8 +927,8 @@ Running the id-file first would re-download 97 PDFs the machine already has.
 - [ ] **Step 1: pick a target honestly.** `docs/ONBOARDING_AND_ARXIV_KEYWORDS.md` §1's own framing
       stands: this topic yields "a few hundred to low thousands," and padding is a failure, not a
       success. **[REVIEW 2026-08-06]** `--target` is a *cumulative* `done`-count, so it must now be
-      read on top of Phase A's 827 **and** Phase B's ~441 distinct drop-in documents (§9.3) — the
-      arXiv-discovery increment `--target 3000` actually asks for is roughly 1,700, not 3,000.
+      read on top of Phase A's 825 (§10) **and** Phase B's ~441 distinct drop-in documents (§9.3) —
+      the arXiv-discovery increment `--target 3000` actually asks for is roughly 1,700, not 3,000.
       Set the target after Phase B's real `done` count is known rather than guessing now.
       Start `--target 3000` and let the supervisor tell you the truth — O-1's
       supply-exhaustion handling means an unreachable target now finishes **completed**, not failed,
@@ -816,7 +1020,7 @@ was *yes, use it* in every case — no reinvention found, three integration gaps
 | plan action | existing mechanism | verdict |
 |---|---|---|
 | drain the stranded 810 | `app.build_corpus` + `stranded_policy: finish_first` | uses it; measured that all 810 are actually batchable (§1) |
-| batch the work | `--batch-size` → `cached_not_done` → `_write_batch_ids` | uses them directly; explicitly forbids a shell wrapper (Task 4 Step 2). No duplication |
+| batch the work | `--batch-size` → `cached_not_done` → `_write_batch_ids` | uses them directly; explicitly forbids a shell wrapper (Task 4 Step 3). No duplication |
 | ingest operator PDFs | `app.ingest_local` | only route named. **Gap found:** the scan is non-recursive and moves files (§9.4) — Task 5 rewritten around a copy-then-flatten step |
 | supervise the drop-in batches | `app.build_corpus` | **Gap found:** original Task 5 let `ingest_local` fire one 449-id `app.ingest`. Now `--stage-only` + let the supervisor batch it (Task 5 Step 3) |
 | edit the harvest queries | `config.yaml` + `app/dashboard/tag_pool.py` | **Gap found:** `tag_pool.json` is already seeded and never re-reads the config (§8) — Task 3 Step 2b added |
