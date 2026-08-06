@@ -2,7 +2,7 @@
 (TEST-STRATEGY.md golden rule): drives the module's pure/synchronous helpers
 (`_first_page_text`, `_reservoir_sample`, `_score`) against small synthetic fixtures.
 
-`run`/`main` touch a real DocumentStore/corpus, the live Ollama-backed OllamaSummarizer, and a
+`run`/`main` touch a real DocumentStore/corpus, the live generation-LLM summarizer adapter, and a
 real GpuLock -- deliberately NOT exercised here. Their actual end-to-end behavior (including the
 tp=0/fp=0 precision=nan edge case for `_score`) was exercised by the real corpus/GPU validation
 run documented in
