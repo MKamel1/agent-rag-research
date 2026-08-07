@@ -1,5 +1,9 @@
 # Waymo AV-Safety Corpus Expansion Implementation Plan
 
+> **HISTORICAL** — superseded by 2026-08-06-waymo-av-safety-corpus-expansion-v2.md; its
+> execution is post-mortemed in docs/WAYMO-CORPUS-STATUS.md. Current state:
+> [PROJECT-STATUS.md](../../PROJECT-STATUS.md).
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development to
 > implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. (Per this
 > user's standing preference, always subagent-driven for this project — don't re-ask.)
