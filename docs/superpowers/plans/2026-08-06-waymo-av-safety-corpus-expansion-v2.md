@@ -690,12 +690,12 @@ research-system-rag/
       GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH=/tmp/fake_push_event.json python -m ci.run_enforcement
       ```
       then watch CI to conclusion (`gh pr checks <n> --watch`) against the SHA you actually pushed.
-- [ ] **Step 3: mark the v1 plan HISTORICAL** — add to the top of
+- [x] **Step 3: mark the v1 plan HISTORICAL** — add to the top of
       `docs/superpowers/plans/2026-08-05-waymo-corpus-expansion.md`:
       `> **HISTORICAL** — superseded by 2026-08-06-waymo-av-safety-corpus-expansion-v2.md; its
       execution is post-mortemed in docs/WAYMO-CORPUS-STATUS.md. Current state:
       [PROJECT-STATUS.md](../../PROJECT-STATUS.md).`
-- [ ] **Step 4: confirm services.**
+- [x] **Step 4: confirm services.**
       ```bash
       cd /home/omar/ai-projects/research-system-rag/waymo/data
       /home/omar/miniconda3/envs/agent-rag-research/bin/python -m app.doctor
@@ -708,13 +708,13 @@ research-system-rag/
 **Files:** `scripts/waymo_arxiv_scout.py`, `scripts/test_waymo_arxiv_scout.py` (both from the
 worktree branch, by file — see §3).
 
-- [ ] **Step 1: fetch the two files by path (never merge/checkout the branch).**
+- [x] **Step 1: fetch the two files by path (never merge/checkout the branch).**
       ```bash
       cd /home/omar/ai-projects/research-system-rag
       git checkout worktree-waymo-corpus-expansion -- \
         scripts/waymo_arxiv_scout.py scripts/test_waymo_arxiv_scout.py
       ```
-- [ ] **Step 2: write the failing tests first** (TDD, CONVENTIONS §0.7). Add to
+- [x] **Step 2: write the failing tests first** (TDD, CONVENTIONS §0.7). Add to
       `scripts/test_waymo_arxiv_scout.py`:
       - `test_already_captured_ids_is_empty()` — asserts `len(ALREADY_CAPTURED_IDS) == 0`
         (replaces the existing `== 173` assertion, which now encodes the §5 defect).
@@ -725,25 +725,25 @@ worktree branch, by file — see §3).
       - `test_topic_queries_cover_every_scope_area()` — asserts the count and that each of
         `sotif`, `ul 4600`, `pegasus`, `scenario generation`, `sim-to-real`, `traffic simulation`,
         `waymax` appears in at least one query string.
-- [ ] **Step 3: implement** — replace `_TOPIC_QUERIES`, `_AUTHOR_QUERIES`, `_KEYWORD_WEIGHTS` with
+- [x] **Step 3: implement** — replace `_TOPIC_QUERIES`, `_AUTHOR_QUERIES`, `_KEYWORD_WEIGHTS` with
       `docs/ONBOARDING_AND_ARXIV_KEYWORDS.md` §2b.2/§2b.3; empty `ALREADY_CAPTURED_IDS`; add
       `_is_modern_arxiv_id` and apply it in `scout()` before scoring; bump
       `_MAX_RESULTS_PER_QUERY` to 600. Keep the `_fetch_page`/`_backoff` reuse untouched.
-- [ ] **Step 4: green.** `python -m pytest scripts/test_waymo_arxiv_scout.py -v` — offline, no
+- [x] **Step 4: green.** `python -m pytest scripts/test_waymo_arxiv_scout.py -v` — offline, no
       network, no GPU (CI-enforced, GIT-WORKFLOW.md).
-- [ ] **Step 5: commit** (`git add` by explicit path, never `-A`).
+- [x] **Step 5: commit** (`git add` by explicit path, never `-A`).
 
 ### Task 2: Seed the Waymo-authored ground-truth list
 
 **Files:** `fixtures/waymo/waymo_authored_ids.txt` (NEW — **foundation-protected path**, so this
 PR needs the `foundation-change` label and operator approval; agents never merge it).
 
-- [ ] **Step 1: write the file** — the 114 ids from `docs/WAYMO-RESEARCH-PAPERS-NEEDED.md` §2, one
+- [x] **Step 1: write the file** — the 114 ids from `docs/WAYMO-RESEARCH-PAPERS-NEEDED.md` §2, one
       per line, sorted. **Apply the §10 year filter first**: drop any id whose `YYMM` prefix's `YY`
       is `< 15` (pre-2015) before writing. (Expected to be a no-op here — Waymo's own published
       research starts well after 2015 — but the check costs one line and keeps this file consistent
       with the same rule applied to every other id source in §10.)
-- [ ] **Step 2: verify it against the doc**, don't eyeball it:
+- [x] **Step 2: verify it against the doc**, don't eyeball it:
       ```bash
       python3 - <<'PY'
       import re, pathlib
@@ -755,17 +755,17 @@ PR needs the `foundation-change` label and operator approval; agents never merge
       print("OK", len(fx))
       PY
       ```
-- [ ] **Step 3: commit and open the PR with the `foundation-change` label.** Leave the merge to the
+- [x] **Step 3: commit and open the PR with the `foundation-change` label.** Leave the merge to the
       operator (GIT-WORKFLOW.md "Agent git-action authorization").
 
 ### Task 3: Reconfigure `waymo/data/config.yaml`
 
 **Files:** `waymo/data/config.yaml` (gitignored; no commit).
 
-- [ ] **Step 1: back the current file up** into `waymo/data/config.yaml.pre-v2` before editing —
+- [x] **Step 1: back the current file up** into `waymo/data/config.yaml.pre-v2` before editing —
       it holds the 1,437-id `ingest_paper_ids` block, which is the only copy outside
       `fixtures/waymo/paper_ids.txt`.
-- [ ] **Step 2: apply exactly the edits in the "Authorized config edits" table above.** Set
+- [x] **Step 2: apply exactly the edits in the "Authorized config edits" table above.** Set
       `focus_area_queries` to a flat keyword list (`ArxivSource._build_query` wraps each as
       `all:"<term>"` and rejects `"`/`\` — plain phrases only, no booleans):
       ```yaml
@@ -791,7 +791,7 @@ PR needs the `foundation-change` label and operator approval; agents never merge
         - "autonomous vehicle runtime monitoring"
         - "reachability analysis vehicle safety"
       ```
-- [ ] **Step 2b: delete the stale `tag_pool.json` so the dashboard re-seeds from the new queries**
+- [x] **Step 2b: delete the stale `tag_pool.json` so the dashboard re-seeds from the new queries**
       (§8 — without this, dashboard-launched runs keep using the 3 placeholder queries while CLI
       runs use the new 20):
       ```bash
@@ -799,13 +799,13 @@ PR needs the `foundation-change` label and operator approval; agents never merge
       ```
       Safe: its `held` list is empty, so nothing an operator chose is discarded. Verify the reseed
       after Step 3 — `GET /api/status` on port 8701 should report the new `active` list.
-- [ ] **Step 3: verify it loads and points where expected.**
+- [x] **Step 3: verify it loads and points where expected.**
       ```bash
       cd /home/omar/ai-projects/research-system-rag/waymo/data
       /home/omar/miniconda3/envs/agent-rag-research/bin/python -m app.doctor
       ```
       Expected: `doctor: OK`, `collection=waymo_av_safety`, paths under `waymo/data/`.
-- [ ] **Step 4: create the drop-in tree** the config already names
+- [x] **Step 4: create the drop-in tree** the config already names
       (`drop_in_dir: .../waymo/data/drop_in`, verified in the live config):
       `mkdir -p /home/omar/ai-projects/research-system-rag/waymo/data/drop_in/papers`.
       (`app/ingest_local.py::scan_drop_dir` creates `papers/`, `books/`, `done/`, `failed/` itself
@@ -815,7 +815,7 @@ PR needs the `foundation-change` label and operator approval; agents never merge
 
 **Files:** none. Runtime only.
 
-- [ ] **Step 1: exclude the 2 pre-2015 stranded papers before starting** (§10) — `build_corpus` has
+- [x] **Step 1: exclude the 2 pre-2015 stranded papers before starting** (§10) — `build_corpus` has
       no id-list input, so the only lever is keeping their PDFs out of `cached_not_done`'s glob:
       ```bash
       mkdir -p /home/omar/ai-projects/research-system-rag/waymo/data/pdf_cache/excluded-pre2015
@@ -825,12 +825,12 @@ PR needs the `foundation-change` label and operator approval; agents never merge
       Moves, not deletes — the already-downloaded bytes are kept, just out of the glob path. Their
       `ingest_state` rows stay at `chunked` (never reached, never re-downloaded) unless the files
       are moved back later.
-- [ ] **Step 2: start the second dashboard** (own port, own data dir):
+- [x] **Step 2: start the second dashboard** (own port, own data dir):
       ```bash
       cd /home/omar/ai-projects/research-system-rag
       DASHBOARD_DATA_DIR="$PWD/waymo/data" DASHBOARD_PORT=8701 scripts/dashboard.sh start
       ```
-- [ ] **Step 3: run the supervisor** — this is the mechanism the post-mortem says to use, and the
+- [x] **Step 3: run the supervisor** — this is the mechanism the post-mortem says to use, and the
       one place it fits without qualification (the cache is already full):
       ```bash
       cd /home/omar/ai-projects/research-system-rag/waymo/data
@@ -857,7 +857,7 @@ Staging first puts those PDFs in `pdf_cache/` under their real arXiv ids, so Ste
 finds them cached (`app/assembly.py`'s `_cached_ref` hit path) and downloads only the ~17 remainder.
 Running the id-file first would re-download 97 PDFs the machine already has.
 
-- [ ] **Step 1: re-fetch both Waymo research index pages and diff against the existing 152-paper
+- [x] **Step 1: re-fetch both Waymo research index pages and diff against the existing 152-paper
       enumeration before anything else in this task runs.** `docs/WAYMO-RESEARCH-PAPERS-NEEDED.md`'s
       count is a single `WebFetch` snapshot from 2026-08-06 (Self-review §4(c) flagged this as
       unverified, not complete) — confirm it's still current, don't just trust it silently:
@@ -874,7 +874,7 @@ Running the id-file first would re-download 97 PDFs the machine already has.
            `fixtures/waymo/waymo_authored_ids.txt` (Task 2) with the additions *before* continuing —
            do not proceed to Step 2 on a list known to be incomplete.
       One-time check, matching this plan's one-shot build style — not a recurring/scheduled re-fetch.
-- [ ] **Step 2: flatten the library into the drop tray by COPY, never by move.** `scan_drop_dir`
+- [x] **Step 2: flatten the library into the drop tray by COPY, never by move.** `scan_drop_dir`
       is a flat `glob("*.pdf")` over `papers/`/`books/` only (§9.4) — nested folders are invisible —
       and `stage_file` *moves* what it stages, so a move here would destroy the operator's curated
       folder structure. All 449 basenames are unique, so a flat copy is collision-free:
@@ -889,7 +889,7 @@ Running the id-file first would re-download 97 PDFs the machine already has.
       contains no books, and a book mis-filed as a paper costs GPU-hours (`_report_dry_run`'s own
       docstring). The source library under `drop_in/waymo downloaded research/` is left untouched
       and remains the operator's master copy.
-- [ ] **Step 3: dry-run and read the output before staging anything.**
+- [x] **Step 3: dry-run and read the output before staging anything.**
       ```bash
       cd /home/omar/ai-projects/research-system-rag/waymo/data
       /home/omar/miniconda3/envs/agent-rag-research/bin/python -m app.ingest_local --dry-run
@@ -936,6 +936,24 @@ Running the id-file first would re-download 97 PDFs the machine already has.
 - [ ] **Step 8: sanity-check** that a `local:`-id paper is retrievable via the dashboard's
       `/api/search`, and review `drop_in/failed/` — anything beyond §9.3's four known-corrupt files
       is a real problem, not expected noise.
+
+> **[EXECUTION 2026-08-07] Deviation: the phases are chained by a driver script, not run by hand.**
+> The operator was AFK for the build, so stopping at each phase boundary to wait for a human (or an
+> agent session) would have idled the GPU for hours between phases. `waymo/data/run_phases.sh`
+> (gitignored, lives with the corpus data) waits for the already-running Phase A pid, then runs
+> Phase B1 → B2 → C in order.
+>
+> **This is not the thing `docs/WAYMO-CORPUS-STATUS.md` §5 warns against.** v1's `run_batches.sh`
+> reimplemented `build_corpus`'s *batching* in shell — static `batch_*.txt` splits that never
+> recomputed remaining work — and could not detect a failed batch. The driver reimplements nothing:
+> each phase is one supported command, `build_corpus` still owns all batching, remaining-work
+> recomputation, and stall detection. The two specific v1 defects are fixed and were verified by
+> running the driver's own `run_phase` helper against a deliberately failing command before use:
+> `set -e` is on (v1 had only `set -uo pipefail`, so a failed batch never stopped the loop), and the
+> exit status is captured on the line immediately after the command, before anything else runs (v1
+> wrote `echo "... exit $?"` with an intervening `$(date)` that had already reset `$?`, so it
+> printed `0` for every crashed run). Verified behaviour: a failing phase reports its true non-zero
+> code, aborts the chain, and later phases do not run.
 
 ### Task 6: Phase C — the broad build
 
