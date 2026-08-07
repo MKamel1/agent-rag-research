@@ -78,6 +78,41 @@ def test_derives_pdf_and_latex_urls_from_the_versioned_id():
     assert ref.latex_url == "https://arxiv.org/e-print/2504.09999v2"
 
 
+def test_modern_id_round_trips_unchanged():
+    refs = make_source()._parse_entries(_ATOM_ENTRY)
+    assert len(refs) == 1
+    assert refs[0].paper_id == "2504.09999"
+    assert refs[0].version == "v2"
+
+
+def test_legacy_id_is_dropped_not_mangled():
+    body = _ATOM_ENTRY.replace(
+        "http://arxiv.org/abs/2504.09999v2", "http://arxiv.org/abs/hep-th/9304006v1"
+    )
+    refs = make_source()._parse_entries(body)
+    assert refs == []
+    assert not any(r.paper_id == "9304006" for r in refs)
+
+
+@pytest.mark.parametrize(
+    "entry_id",
+    ["hep-th/9304006v1", "cond-mat/9701008v3", "math.CO/0605123v1"],
+)
+def test_paper_id_never_contains_a_slash(entry_id):
+    body = _ATOM_ENTRY.replace("2504.09999v2", entry_id)
+    refs = make_source()._parse_entries(body)
+    assert all("/" not in r.paper_id for r in refs)
+
+
+def test_dropping_a_legacy_id_logs_a_warning(caplog):
+    body = _ATOM_ENTRY.replace(
+        "http://arxiv.org/abs/2504.09999v2", "http://arxiv.org/abs/hep-th/9304006v1"
+    )
+    with caplog.at_level("WARNING"):
+        make_source()._parse_entries(body)
+    assert any("hep-th" in record.message for record in caplog.records)
+
+
 def test_empty_feed_parses_to_no_entries():
     assert make_source()._parse_entries(_EMPTY_FEED) == []
 
