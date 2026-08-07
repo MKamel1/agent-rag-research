@@ -1473,3 +1473,92 @@ def test_parse_args_token_defaults_to_none_so_main_falls_back_to_the_token_file(
     )
     args = server_mod._parse_args()
     assert args.token is None
+
+
+def test_status_dict_falls_back_to_the_data_dirs_own_collection_not_papers(tmp_path):
+    """Regression (found 2026-08-07 running the Waymo corpus's dashboard): `_status_dict` passed
+    `live.get("collection")` straight to `status.read_consistency`, but `collection` is only ever
+    written into the run manifest when a run STARTS (`controller.py`'s `"collection":
+    effective_cfg.collection`). With no run in the manifest -- an idle dashboard, or one brought up
+    before the first run -- that get returns None, and `read_consistency`'s own
+    `collection or "papers"` fallback then counted points in the DEFAULT corpus's collection.
+
+    On any data dir whose config names a non-default collection, the consistency panel therefore
+    reported a completely unrelated corpus's `vector_points` and derived `consistent` from it.
+    Observed live: the Waymo dashboard (`collection: waymo_av_safety`, 405 points) reported
+    412,167 -- the main `papers` corpus -- alongside its own `sqlite_done: 17`, and called that
+    `consistent: True`. A false pass on exactly the OG-16/T-DOC35 "done rows, zero vectors" check
+    `read_consistency` exists to make, since it was checking the wrong collection entirely.
+
+    `app/dashboard/verify_numbers.py` does not cross-check `consistency` at all, so nothing caught
+    this -- hence a direct test here.
+    """
+    import shutil
+    from pathlib import Path
+
+    import re
+
+    shutil.copy(Path(__file__).resolve().parents[2] / "config.example.yaml",
+                tmp_path / "config.yaml")
+    config_text = (tmp_path / "config.yaml").read_text()
+    config_text, n = re.subn(
+        r"^collection:.*$", "collection: some_other_corpus", config_text, flags=re.M
+    )
+    assert n == 1, f"expected exactly one collection: line in config.example.yaml, found {n}"
+    (tmp_path / "config.yaml").write_text(config_text)
+
+    seen = {}
+
+    class SpyStatus(_FakeStatus):
+        def read_consistency(self, done_count, collection):
+            seen["collection"] = collection
+            return super().read_consistency(done_count, collection)
+
+    class _IdleController(_FakeController):
+        def liveness(self, data_dir):
+            live = super().liveness(data_dir)
+            live.pop("collection")  # no run has started -> manifest carries no collection
+            return live
+
+    _status_dict(tmp_path, SpyStatus(), _IdleController())
+
+    assert seen["collection"] == "some_other_corpus", (
+        "read_consistency must fall back to the data dir's OWN configured collection, never to "
+        f"the hardcoded default; got {seen['collection']!r}"
+    )
+
+
+def test_status_dict_still_prefers_the_running_runs_collection_over_config(tmp_path):
+    """Companion to the test above: when a run IS live, its manifest collection still wins. A run
+    can be started against a run-scoped override config (`controller`'s `.run_overrides/<run_id>`),
+    so the manifest -- not the data dir's base config.yaml -- is the authority while it runs."""
+    import shutil
+    from pathlib import Path
+
+    import re
+
+    shutil.copy(Path(__file__).resolve().parents[2] / "config.example.yaml",
+                tmp_path / "config.yaml")
+    config_text = (tmp_path / "config.yaml").read_text()
+    config_text, n = re.subn(
+        r"^collection:.*$", "collection: base_config_collection", config_text, flags=re.M
+    )
+    assert n == 1
+    (tmp_path / "config.yaml").write_text(config_text)
+
+    seen = {}
+
+    class SpyStatus(_FakeStatus):
+        def read_consistency(self, done_count, collection):
+            seen["collection"] = collection
+            return super().read_consistency(done_count, collection)
+
+    class _RunningController(_FakeController):
+        def liveness(self, data_dir):
+            live = super().liveness(data_dir)
+            live["collection"] = "run_scoped_collection"
+            return live
+
+    _status_dict(tmp_path, SpyStatus(), _RunningController())
+
+    assert seen["collection"] == "run_scoped_collection"
