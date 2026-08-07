@@ -175,6 +175,14 @@ _CATEGORY_RE = re.compile(r"^[A-Za-z0-9.\-]+$")
 # ISO `YYYY-MM-DD` or arXiv's own `YYYYMMDD` -- validated BEFORE building the `submittedDate:[...]`
 # range clause (was previously just `.replace('-', '')`'d with no format check at all).
 _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$|^\d{8}$")
+# Post-2007 arXiv id shape only (e.g. "2504.09999"). Pre-2007 ids carry an archive prefix
+# (e.g. "hep-th/9304006") that `_entry_to_ref` used to silently drop via `rsplit("/", 1)`,
+# producing a bare "9304006" that collides with other archives' numbers and 400s the whole
+# `id_list` batch it's re-submitted in (`_fetch_by_id_list`). `PaperRef.paper_id` (contracts/
+# harvester.py) is also used verbatim as a single filesystem path component downstream
+# (app/assembly.py, app/prefetch_pdfs.py, rag/document_store.py) -- preserving the slash would
+# trade one loud failure for several silent ones, so a legacy id is rejected outright instead.
+_MODERN_ARXIV_ID_RE = re.compile(r"^\d{4}\.\d{4,5}$")
 
 _ATOM_NS = "{http://www.w3.org/2005/Atom}"
 _API_URL = "https://export.arxiv.org/api/query"
@@ -411,9 +419,14 @@ class ArxivSource:
             root = ET.fromstring(atom_xml)
         except ET.ParseError as error:
             raise PermanentError(f"ArxivSource: malformed arXiv Atom feed: {error}") from error
-        return [self._entry_to_ref(entry) for entry in root.findall(f"{_ATOM_NS}entry")]
+        refs: list[PaperRef] = []
+        for entry in root.findall(f"{_ATOM_NS}entry"):
+            ref = self._entry_to_ref(entry)
+            if ref is not None:
+                refs.append(ref)
+        return refs
 
-    def _entry_to_ref(self, entry: ET.Element) -> PaperRef:
+    def _entry_to_ref(self, entry: ET.Element) -> PaperRef | None:
         raw_id = (entry.findtext(f"{_ATOM_NS}id") or "").strip()
         versioned_id = raw_id.rsplit("/", 1)[-1]  # e.g. "2504.09999v2"
         paper_id = versioned_id
@@ -421,6 +434,16 @@ class ArxivSource:
         m = re.match(r"^(?P<base>.+)v(?P<version>\d+)$", versioned_id)
         if m:
             paper_id, version = m.group("base"), f"v{m.group('version')}"
+
+        if not _MODERN_ARXIV_ID_RE.match(paper_id):
+            # Legacy (pre-2007) id -- the archive prefix `rsplit("/", 1)` dropped above would
+            # otherwise be silently gone. Reject rather than mangle (see _MODERN_ARXIV_ID_RE).
+            logger.warning(
+                "ArxivSource: dropping entry with legacy (pre-2007) arXiv id %r, raw id %r",
+                paper_id,
+                raw_id,
+            )
+            return None
 
         title = " ".join((entry.findtext(f"{_ATOM_NS}title") or "").split())
         abstract = " ".join((entry.findtext(f"{_ATOM_NS}summary") or "").split())
