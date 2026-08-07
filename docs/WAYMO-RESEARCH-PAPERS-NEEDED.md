@@ -17,6 +17,16 @@ Both counts are what the page rendered on the fetch date — if either page lazy
 beyond what a single fetch returns, the true count could be higher. Re-fetch before treating either
 number as permanent.
 
+> **Re-fetch gate CONFIRMED CURRENT — 2026-08-07** (plan Task 5 Step 1). Both pages re-fetched and
+> re-enumerated: `https://waymo.com/research/` → **98**, `https://waymo.com/safety/research/` → **54**,
+> total **152** — identical to the 2026-08-06 snapshot above. Neither page shows pagination,
+> lazy-loading, or a "load more" control; `/safety/research/` self-reports "54 results found",
+> matching its enumerated count. **No new publications, no structural change**, so
+> `fixtures/waymo/waymo_authored_ids.txt` (114 ids) needed no additions — spot-verified that today's
+> re-fetched ids are present in it, including both range endpoints (`1812.03079`, `2605.22809`) and
+> both OpenReview-only entries' arXiv mirrors (`2412.12129`, `2411.17826`). Staging proceeds on a
+> list confirmed complete, per the plan's own gate condition.
+
 ## 1. Split summary
 
 | group | count | how it gets into the corpus |
