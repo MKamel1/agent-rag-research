@@ -301,7 +301,18 @@ def _status_dict(data_dir: Path, status_module, controller_module) -> dict:
             live.get("run_cwd"), live.get("pid"), data_dir=data_dir,
         ),
         "disk": status_module.read_disk(data_dir),
-        "consistency": status_module.read_consistency(done, live.get("collection")),
+        # The manifest's collection wins while a run is live (a run may use a run-scoped override
+        # config, `.run_overrides/<run_id>`), but `"collection"` is only written there when a run
+        # STARTS -- so an idle dashboard, or one brought up before its first run, has no manifest
+        # value. Falling through to `read_consistency`'s own `collection or "papers"` default then
+        # counted points in the DEFAULT corpus: on the Waymo data dir that reported the main
+        # `papers` corpus's 412,167 points next to Waymo's own `sqlite_done: 17` and called it
+        # `consistent: True` -- a false pass on the very "done rows, zero vectors" check
+        # (OG-16/T-DOC35) this field exists to make. This data dir's own config is the correct
+        # fallback; `verify_numbers.py` does not cross-check `consistency`, so nothing else caught it.
+        "consistency": status_module.read_consistency(
+            done, live.get("collection") or _static_config(data_dir).collection,
+        ),
         "quarantine_reasons": corpus["quarantine_reasons"],
         "search": {
             **_search_display(data_dir),
