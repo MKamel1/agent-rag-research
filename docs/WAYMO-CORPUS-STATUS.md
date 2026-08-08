@@ -243,3 +243,63 @@ part of writing this document.**
   keyword-weight table, and the 173 already-captured ids the scout excludes.
 - `docs/superpowers/plans/2026-08-05-waymo-corpus-expansion.md` — the original plan this status
   report is measured against.
+
+---
+
+## 11. Closeout — how v2 actually resolved this (2026-08-07)
+
+**§9's recovery runbook was followed in substance and superseded in form.** The substance held: the
+partial corpus was resumed rather than rebuilt, `app.build_corpus` did the batching, and v1's two
+unauthorized config edits were reverted. What changed is that the run is now driven by the
+**dashboard controller** rather than a CLI invocation, because the operator wanted Pause/Resume —
+and those only work for runs the controller started (a CLI run writes no `run_manifest.json`, so the
+UI cannot see it). Plan Task 4's exact command was therefore issued as
+`POST /api/control {"action":"start","target":825,"parse_workers":3,"batch_size":300}` instead.
+
+**Resume, not rebuild — vindicated.** All 810 stranded papers had their Pass-1 work banked in
+`ingest_state`, so the drain skipped parsing entirely (`"draining 810 stranded (Pass-1-complete)
+paper(s), Pass 1 is a no-op for this batch"`). Measured throughput once warm: **~72 papers/hour**.
+
+**The 2 pre-2015 papers** (`1009.1191`, `1203.5986`) were excluded exactly as §10 of the plan
+specifies — their PDFs moved to `pdf_cache/excluded-pre2015/`, not deleted — dropping the target
+from 827 to 825.
+
+### A power outage mid-build, and what it proved
+
+The workstation lost power at ~16:30 with Phase A at `done=103`. Nothing was lost, and the recovery
+is worth recording because it validates the design:
+
+- `pragma integrity_check` → `ok` (SQLite's WAL did its job).
+- Both Qdrant collections came back `green`; the main corpus was untouched.
+- Cross-store consistency held: every paper marked `done` — including the one written *seconds*
+  before power was cut — had `qdrant_points == chunks + 1` (its summary vector).
+- The lock files were 0-byte advisory `filelock` files, released automatically with their processes;
+  no stale-lock cleanup was needed.
+
+The build resumed from `done=103` with no manual repair. Per-phase completion markers were added to
+the chainer afterwards so a future hard shutdown skips finished phases rather than restarting them,
+and an adopted phase that ends *below* target is deliberately not marked complete — otherwise a
+power cut could make a resume silently skip the rest of the drain.
+
+### Three defects the v1 post-mortem could not have found
+
+v1 never got far enough to hit these; all three were found by running v2 and are fixed with tests
+(detail in `docs/PROJECT-STATUS.md` §3/§4):
+
+1. **`49b966a`** — a one-sided `arxiv_date_from` emitted `submittedDate:[<from> TO *]`, which arXiv
+   answers with HTTP 500. The operator's own 2015 cutoff was therefore **silently disabling the
+   downloader**, presenting as "0 new available" supply exhaustion. This is also the true origin of
+   v1's `prefetch_target: 1` symptom being so easy to rationalize: a broken downloader looks
+   identical to an exhausted one.
+2. **`4cc164f`** — the dashboard's consistency panel reported the *main* corpus's vector count for
+   this corpus and called it consistent.
+3. **`c3765c9`** — the scout's 12 tests were never collected by CI.
+
+### Still open
+
+- Phases B (449-PDF drop-in + the 114-id top-up) and C (broad build) had not run at the time of
+  writing; the chainer advances into them when Phase A finishes naturally, and deliberately aborts
+  instead of advancing if the operator presses Stop.
+- `T-ORG2` — affiliation retrieval measured at precision 0.000 and blocking `T-ORG1`
+  (`docs/eval-reports/2026-08-07-affiliation-retrieval-first-batch.md`). It does not affect this
+  build, which never calls the tagger.
