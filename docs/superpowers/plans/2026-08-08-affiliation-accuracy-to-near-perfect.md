@@ -104,6 +104,49 @@ the GROBID cascade scored *worse* (F1 0.649) than the plain regex (0.742) it was
 
 ---
 
+---
+
+## Track V — validate the ground truth itself (STANDING GATE, not a one-off)
+
+**Added 2026-08-08 after the operator asked whether the perfect score was a test-set artifact. It
+was.** The curated tier *reads* `fixtures/waymo/waymo_authored_ids.txt`; the ground truth *is* that
+file. Measuring one against the other is a tautology — 1.000/1.000 is arithmetic, not evidence, and
+it must never again be quoted as validation of anything.
+
+A curated list is only as good as its curation, so it needs its own independent audit. The audit
+must use evidence that did **not** put the paper on the list.
+
+### V1 — the audit, run whenever the list changes
+For every curated id, classify the independent evidence:
+
+| bucket | meaning | action |
+|---|---|---|
+| confirmed | an extractor independently found the org (email domain / org name) | none |
+| **contradicted** | an extractor read the affiliations and found no such org | **investigate every one** |
+| unverifiable | nothing could extract affiliations at all | count it, never call it confirmed |
+
+Run 2026-08-08 over the 138 Waymo ids: **63 confirmed, 21 contradicted, 54 unverifiable.** All 21
+contradicted were investigated and cleared — they are EMMA, Block-NeRF, SceneDiffuser++, StarNet and
+similar, i.e. extractor failures, not list errors. **54 unverifiable is the honest residual**, and it
+is the same 30% extraction floor Track B attacks. It is not evidence of correctness; it is absence
+of evidence.
+
+### V2 — the completeness direction
+Assert the converse: **no paper carrying an org's email domain may be absent from that org's curated
+list.** Run 2026-08-08: 50 papers had a `@waymo.com` email, 0 were missing. This is the check that
+originally caught the list being 114 instead of 138, so it earns a permanent place.
+
+### V3 — trust the tooling last
+Two measurement bugs were found in one day, both of which corrupted reported numbers:
+- a fuzzy title matcher that accepted a paper titled `"9"` (a failed parse) because `"9"` is a
+  substring of almost anything;
+- an email parser that dropped `&lt;user@waymo.com&gt;` because GROBID HTML-escapes some addresses,
+  so `split("@")[-1]` produced `waymo.com&gt;` and failed the domain test. This understated GROBID
+  in every figure quoted before 2026-08-08.
+
+So: before believing any surprising score, re-derive one row of it by hand. A result that looks
+excellent is a reason to check the harness, not to ship.
+
 ## Non-negotiables (learned the hard way this week)
 
 1. **Always measure at the real base rate.** GROBID showed precision 1.000 on a 36%-positive sample
@@ -119,7 +162,8 @@ the GROBID cascade scored *worse* (F1 0.649) than the plain regex (0.742) it was
 
 | step | effort | unblocks |
 |---|---|---|
-| A (curated tier) | in progress | the Waymo-stack use case, exactly |
+| A (curated tier) | DONE — T-ORG3, PR #240 | the Waymo-stack use case, exactly |
+| **V1/V2 (validate the ground truth)** | **done once; now a standing gate** | **the right to trust any score at all** |
 | A2 (complete + provenance the list) | small | stops silent recall decay |
 | B1 (characterise failures) | ½ day | tells us whether B2 is worth it at all |
 | B2 (measure LLM on failures) | 1 day | the decision |
