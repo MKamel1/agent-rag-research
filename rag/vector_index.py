@@ -151,6 +151,16 @@ def _qdrant_filter(filters: SearchFilters | None) -> models.Filter | None:
                 ]
             )
         )
+    if filters.author_org is not None:
+        # T-ORG1: VectorPayload.author_orgs is a list of names; MatchValue against a list-valued
+        # payload field matches if the value equals ANY element of the array (Qdrant's standard
+        # keyword-array behavior) -- exactly the "author_org is one of the matched org names"
+        # semantics this filter wants, no MatchAny/list needed on the query side.
+        must.append(
+            models.FieldCondition(
+                key="author_orgs", match=models.MatchValue(value=filters.author_org)
+            )
+        )
     if filters.published_after is not None or filters.published_before is not None:
         must.append(
             models.FieldCondition(

@@ -1,10 +1,12 @@
 """Offline unit tests for rag/author_org_tagger.py -- no network, no GPU, canned Block fixtures.
 Fixture shape mirrors rag/test_parser.py's `_block()` helper (Block's real required fields,
 including `index`, which `contracts.provenance.Block` requires but is otherwise irrelevant here)."""
+from contracts.author_orgs import AuthorOrgMatch
 from contracts.provenance import Block
 from rag.author_org_tagger import (
     extract_affiliations_rule_based,
     match_known_orgs,
+    match_known_orgs_with_method,
     mentions_orgs,
 )
 
@@ -126,6 +128,42 @@ def test_a_dataset_mention_in_the_abstract_no_longer_reads_as_waymo_authorship()
         ),
     ]
     assert match_known_orgs(extract_affiliations_rule_based(blocks)) == []
+
+
+# --- T-ORG1: match_known_orgs_with_method -- which signal fired ---------------------------------
+
+
+def test_match_known_orgs_with_method_email_domain_only():
+    result = match_known_orgs_with_method(["Contact: k.kusano@waymo.com"])
+    assert result == [AuthorOrgMatch(name="Waymo", method="email_domain")]
+
+
+def test_match_known_orgs_with_method_keyword_only_no_email():
+    result = match_known_orgs_with_method(["Waymo LLC, Mountain View, CA"])
+    assert result == [AuthorOrgMatch(name="Waymo", method="keyword")]
+
+
+def test_match_known_orgs_with_method_email_domain_wins_when_both_present():
+    result = match_known_orgs_with_method(
+        ["Waymo LLC, Mountain View, CA. Correspondence: k.kusano@waymo.com"]
+    )
+    assert result == [AuthorOrgMatch(name="Waymo", method="email_domain")]
+
+
+def test_match_known_orgs_with_method_empty_when_no_match():
+    assert match_known_orgs_with_method(["MIT, Cambridge, MA", "contact@mit.edu"]) == []
+
+
+def test_match_known_orgs_with_method_empty_list_input():
+    assert match_known_orgs_with_method([]) == []
+
+
+def test_match_known_orgs_is_still_a_thin_wrapper_returning_names_only():
+    # Regression guard (T-ORG1): match_known_orgs's existing list[str] shape and callers
+    # (app/exp_author_org_tagging.py) must keep working unchanged.
+    assert match_known_orgs(["Contact: k.kusano@waymo.com"]) == ["Waymo"]
+    assert match_known_orgs(["Waymo LLC, Mountain View, CA"]) == ["Waymo"]
+    assert match_known_orgs([]) == []
 
 
 def test_a_long_block_is_still_kept_when_it_carries_an_email():

@@ -99,6 +99,12 @@ class FakeVectorStore:
             # .get: points upserted before T-DOC80 carry no doc_type key -- they are all papers.
             if payload.get("doc_type", "paper") != filters.doc_type:
                 return False
+        if filters.author_org is not None:
+            # T-ORG1: .get default [] -- points upserted before this field existed carry no
+            # author_orgs key at all (same legacy-key convention as doc_type above), and match
+            # nothing rather than everything.
+            if filters.author_org not in payload.get("author_orgs", []):
+                return False
         published = payload["published"]  # ISO date string
         if filters.published_after is not None:
             if published < filters.published_after.isoformat():

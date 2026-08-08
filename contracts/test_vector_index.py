@@ -43,6 +43,15 @@ def test_search_filters_paper_id_default_none():
     assert SearchFilters().paper_id is None
 
 
+def test_search_filters_author_org_default_none():
+    # T-ORG1: same backward-compatibility requirement as paper_id above.
+    assert SearchFilters().author_org is None
+
+
+def test_search_filters_author_org_constructs_with_explicit_value():
+    assert SearchFilters(author_org="Waymo").author_org == "Waymo"
+
+
 def test_search_filters_constructs_with_explicit_values():
     filters = SearchFilters(
         categories=["cs.LG", "stat.ME"],

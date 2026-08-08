@@ -44,6 +44,7 @@ ALL_MIGRATION_FILENAMES = {
     "0002_ingest_checkpoint.sql",
     "0003_quarantine_diagnostics.sql",
     "0004_doc_type_and_chapter_titles.sql",
+    "0005_author_orgs.sql",
 }
 
 REPO_ROOT = Path(__file__).parent.parent
@@ -52,6 +53,7 @@ SCHEMA_FILE = Path(__file__).parent / "0001_init.sql"
 CHECKPOINT_SCHEMA_FILE = Path(__file__).parent / "0002_ingest_checkpoint.sql"
 QUARANTINE_DIAGNOSTICS_SCHEMA_FILE = Path(__file__).parent / "0003_quarantine_diagnostics.sql"
 DOC_TYPE_AND_TITLES_SCHEMA_FILE = Path(__file__).parent / "0004_doc_type_and_chapter_titles.sql"
+AUTHOR_ORGS_SCHEMA_FILE = Path(__file__).parent / "0005_author_orgs.sql"
 
 
 def _table_names(conn: sqlite3.Connection) -> set[str]:
@@ -211,6 +213,65 @@ def test_migrate_applies_additive_migration_to_populated_db_and_preserves_data(t
             "SELECT chunk_id FROM chunks WHERE paper_id = 'p1'"
         ).fetchone()
         assert chunk == ("c1",)
+    finally:
+        conn.close()
+
+
+def test_migrate_applies_0005_author_orgs_to_populated_db_and_preserves_data(tmp_path):
+    """T-ORG1's own version of the T-DOC81 required test #1: 0005 is additive on top of 0001-0004
+    -- a database with real rows and no `raw_affiliations`/`author_orgs` columns yet must pick
+    them up (as NULL, since nothing has run the tagger against pre-existing rows) without losing
+    anything already there."""
+    db_path = str(tmp_path / "test.sqlite")
+    conn = sqlite3.connect(db_path)
+    try:
+        _raw_apply(
+            conn,
+            SCHEMA_FILE,
+            CHECKPOINT_SCHEMA_FILE,
+            QUARANTINE_DIAGNOSTICS_SCHEMA_FILE,
+            DOC_TYPE_AND_TITLES_SCHEMA_FILE,
+        )
+        _insert_minimal_paper(conn, "p1", doc_type_column=True)
+        _insert_minimal_chunk(conn, "c1", "p1")
+    finally:
+        conn.close()
+
+    migrate(db_path)
+
+    conn = sqlite3.connect(db_path)
+    try:
+        assert _applied_migrations(conn) == ALL_MIGRATION_FILENAMES
+        cols = {row[1] for row in conn.execute("PRAGMA table_info(papers)")}
+        assert {"raw_affiliations", "author_orgs"} <= cols
+        paper = conn.execute(
+            "SELECT paper_id, title, raw_affiliations, author_orgs FROM papers WHERE paper_id = 'p1'"
+        ).fetchone()
+        assert paper == ("p1", "T", None, None)  # pre-existing row survived; new columns NULL
+        chunk = conn.execute("SELECT chunk_id FROM chunks WHERE paper_id = 'p1'").fetchone()
+        assert chunk == ("c1",)
+    finally:
+        conn.close()
+
+
+def test_migrate_twice_in_a_row_is_a_noop_the_second_time_including_0005(tmp_path):
+    """Idempotency for 0005 specifically (mirrors `test_migrate_twice_in_a_row_is_a_noop_the_second_time`
+    for 0001-0004): calling `migrate()` twice consecutively must not raise and must leave exactly
+    one recorded application of 0005."""
+    db_path = str(tmp_path / "test.sqlite")
+
+    migrate(db_path)
+    migrate(db_path)
+
+    conn = sqlite3.connect(db_path)
+    try:
+        assert _applied_migrations(conn) == ALL_MIGRATION_FILENAMES
+        rows = conn.execute(
+            "SELECT COUNT(*) FROM schema_version WHERE filename = '0005_author_orgs.sql'"
+        ).fetchone()
+        assert rows[0] == 1
+        cols = {row[1] for row in conn.execute("PRAGMA table_info(papers)")}
+        assert {"raw_affiliations", "author_orgs"} <= cols
     finally:
         conn.close()
 
@@ -416,6 +477,34 @@ def test_0004_doc_type_and_chapter_titles_matches_data_contracts_schema():
         init_conn.executescript(CHECKPOINT_SCHEMA_FILE.read_text())
         init_conn.executescript(QUARANTINE_DIAGNOSTICS_SCHEMA_FILE.read_text())
         init_conn.executescript(doc_type_sql)
+
+        assert _table_names(contracts_conn) == _table_names(init_conn) == ALL_TABLES
+        assert _schema_snapshot(contracts_conn) == _schema_snapshot(init_conn)
+    finally:
+        contracts_conn.close()
+        init_conn.close()
+
+
+def test_0005_author_orgs_matches_data_contracts_schema():
+    """Same DDL parity check, for the additive `papers.raw_affiliations` / `papers.author_orgs`
+    columns (T-ORG1). Like 0004, adds no new table -- just two `ALTER TABLE ADD COLUMN`s on
+    `papers`, which 0001-0004 must already have created."""
+    contracts_sql = _extract_schema_sql_block(DATA_CONTRACTS.read_text(), "### author orgs")
+    author_orgs_sql = AUTHOR_ORGS_SCHEMA_FILE.read_text()
+
+    contracts_conn = sqlite3.connect(":memory:")
+    init_conn = sqlite3.connect(":memory:")
+    try:
+        contracts_conn.executescript(SCHEMA_FILE.read_text())
+        contracts_conn.executescript(CHECKPOINT_SCHEMA_FILE.read_text())
+        contracts_conn.executescript(QUARANTINE_DIAGNOSTICS_SCHEMA_FILE.read_text())
+        contracts_conn.executescript(DOC_TYPE_AND_TITLES_SCHEMA_FILE.read_text())
+        contracts_conn.executescript(contracts_sql)
+        init_conn.executescript(SCHEMA_FILE.read_text())
+        init_conn.executescript(CHECKPOINT_SCHEMA_FILE.read_text())
+        init_conn.executescript(QUARANTINE_DIAGNOSTICS_SCHEMA_FILE.read_text())
+        init_conn.executescript(DOC_TYPE_AND_TITLES_SCHEMA_FILE.read_text())
+        init_conn.executescript(author_orgs_sql)
 
         assert _table_names(contracts_conn) == _table_names(init_conn) == ALL_TABLES
         assert _schema_snapshot(contracts_conn) == _schema_snapshot(init_conn)

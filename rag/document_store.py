@@ -22,6 +22,7 @@ from collections.abc import Iterator
 from datetime import date
 from pathlib import Path
 
+from contracts.author_orgs import AuthorOrgMatch
 from contracts.chunker import Chunk
 from contracts.document_store import ChapterSummary, PaperRecord
 from contracts.errors import ContractError
@@ -41,6 +42,8 @@ from migrations.migrate import migrate
 _REQUIRED_COLUMNS: dict[tuple[str, str], str] = {
     ("papers", "doc_type"): "migrations/0004_doc_type_and_chapter_titles.sql",
     ("summaries", "title"): "migrations/0004_doc_type_and_chapter_titles.sql",
+    ("papers", "raw_affiliations"): "migrations/0005_author_orgs.sql",
+    ("papers", "author_orgs"): "migrations/0005_author_orgs.sql",
 }
 
 
@@ -148,14 +151,16 @@ class DocumentStore:
                     """
                     INSERT INTO papers
                         (paper_id, version, title, abstract, authors_json, categories_json,
-                         published, updated, pdf_path, markdown_path, relevance_score, doc_type)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                         published, updated, pdf_path, markdown_path, relevance_score, doc_type,
+                         raw_affiliations, author_orgs)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ON CONFLICT(paper_id) DO UPDATE SET
                         version=excluded.version, title=excluded.title, abstract=excluded.abstract,
                         authors_json=excluded.authors_json, categories_json=excluded.categories_json,
                         published=excluded.published, updated=excluded.updated,
                         pdf_path=excluded.pdf_path, markdown_path=excluded.markdown_path,
-                        relevance_score=excluded.relevance_score, doc_type=excluded.doc_type
+                        relevance_score=excluded.relevance_score, doc_type=excluded.doc_type,
+                        raw_affiliations=excluded.raw_affiliations, author_orgs=excluded.author_orgs
                     """,
                     (
                         paper_id,
@@ -170,6 +175,10 @@ class DocumentStore:
                         str(markdown_path),
                         record.relevance_score,
                         ref.doc_type,
+                        # T-ORG1: JSON-encoded, same as authors_json/categories_json above -- read
+                        # whole, never queried by inner field in V0 (module docstring).
+                        json.dumps(record.raw_affiliations),
+                        json.dumps([m.model_dump() for m in record.author_orgs]),
                     ),
                 )
                 for block in record.parsed.blocks:
@@ -348,6 +357,16 @@ class DocumentStore:
             summary_id=summary_row["summary_id"] if summary_row else whole_doc_summary_id,
             relevance_score=row["relevance_score"],
             chapter_summaries=chapter_summaries,
+            # T-ORG1: NULL (pre-existing row, tagger never ran) reads back as [] -- same "no
+            # sensible default, so nullable" reasoning as migrations/0005_author_orgs.sql's header.
+            raw_affiliations=(
+                json.loads(row["raw_affiliations"]) if row["raw_affiliations"] is not None else []
+            ),
+            author_orgs=(
+                [AuthorOrgMatch(**m) for m in json.loads(row["author_orgs"])]
+                if row["author_orgs"] is not None
+                else []
+            ),
         )
 
     @staticmethod

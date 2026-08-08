@@ -12,7 +12,7 @@ only means re-running match_known_orgs over already-extracted raw_affiliations.
 
 import re
 
-from contracts.author_orgs import KNOWN_ORGS
+from contracts.author_orgs import KNOWN_ORGS, AuthorOrgMatch
 from contracts.provenance import Block
 
 _EMAIL_RE = re.compile(r"[\w.+-]+@([\w-]+\.[\w.-]+)")
@@ -58,10 +58,16 @@ def extract_affiliations_rule_based(blocks: list[Block]) -> list[str]:
     ]
 
 
-def match_known_orgs(raw_affiliations: list[str]) -> list[str]:
-    """Step 2: deterministic, cheap, re-runnable without re-parsing or re-extracting -- matches
-    already-extracted raw_affiliations text against KNOWN_ORGS by email domain (higher precision)
-    or keyword substring (catches affiliations printed without an email)."""
+def match_known_orgs_with_method(raw_affiliations: list[str]) -> list[AuthorOrgMatch]:
+    """Step 2, method-preserving variant (T-ORG1): same matching as `match_known_orgs`, but keeps
+    which signal fired for each match -- see `AuthorOrgMatch`'s docstring (`contracts/author_orgs.py`)
+    for the measured precision/recall behind why that matters. `email_domain` wins when both
+    signals fire for the same org, since it is the higher-precision one.
+
+    Returns `AuthorOrgMatch` (not a bare `(name, method)` tuple): `AuthorOrgMatch` is also what
+    `PaperRecord.author_orgs` (`contracts/document_store.py`) stores, so this function's output is
+    the exact value the orchestrator persists -- one shape, not a tuple representation that then
+    needs converting."""
     combined = " ".join(raw_affiliations).lower()
     found_domains = {d.lower() for d in _EMAIL_RE.findall(combined)}
     matched = []
@@ -69,8 +75,18 @@ def match_known_orgs(raw_affiliations: list[str]) -> list[str]:
         domain_hit = any(d.lower() in found_domains for d in org.email_domains)
         keyword_hit = any(kw.lower() in combined for kw in org.keywords)
         if domain_hit or keyword_hit:
-            matched.append(org.name)
+            method = "email_domain" if domain_hit else "keyword"
+            matched.append(AuthorOrgMatch(name=org.name, method=method))
     return matched
+
+
+def match_known_orgs(raw_affiliations: list[str]) -> list[str]:
+    """Step 2: deterministic, cheap, re-runnable without re-parsing or re-extracting -- matches
+    already-extracted raw_affiliations text against KNOWN_ORGS by email domain (higher precision)
+    or keyword substring (catches affiliations printed without an email). Thin wrapper over
+    `match_known_orgs_with_method` -- exactly one matching implementation, not two that can drift
+    -- for callers that only need the matched org names (existing shape, unchanged)."""
+    return [match.name for match in match_known_orgs_with_method(raw_affiliations)]
 
 
 def mentions_orgs(title: str, abstract: str) -> list[str]:

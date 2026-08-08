@@ -89,6 +89,13 @@ class McpServer:
         claim against textbook grounding, run both and cite each. `search_papers` returns individual
         book **chapters** as routing hits (`chapter` field set) — follow up with `semantic_search`
         for anchored passages.
+
+        `filters.author_org` restricts to papers tagged as authored by that org (e.g.
+        `{"author_org": "Waymo"}`) — NOT authoritative. It's a derived, imperfect signal (keyword/
+        email-domain matching over extracted affiliation text, `rag/author_org_tagger.py`):
+        measured precision 0.569 / recall 0.763 over 1,741 done papers against 114 known-positive
+        ids. Treat a hit as "worth a closer look" (e.g. before citing "Waymo's own research
+        shows..."), not as confirmed authorship.
         """
         results, retrieval_coverage = self._retriever.retrieve(
             query, filters, self._resolve_k(k)
@@ -116,6 +123,10 @@ class McpServer:
         claim against textbook grounding, run both and cite each. `search_papers` returns individual
         book **chapters** as routing hits (`chapter` field set) — follow up with `semantic_search`
         for anchored passages.
+
+        `filters.author_org` restricts to papers tagged as authored by that org — see
+        `semantic_search`'s docstring for the same caveat: this is a derived, imperfect signal
+        (precision 0.569 / recall 0.763 measured), not confirmed authorship.
         """
         results, retrieval_coverage = self._retriever.retrieve_papers(
             query, filters, self._resolve_k(k)

@@ -36,6 +36,14 @@ class SearchFilters(FrozenModel):
     kind: Literal["chunk", "summary"] | None = None  # restrict to VectorPayload.kind
     doc_type: Literal["paper", "book"] | None = None  # restrict to VectorPayload.doc_type
     paper_id: str | None = None  # restrict to VectorPayload.paper_id -- one document, Decision 3
+    # T-ORG1: restrict to VectorPayload.author_orgs containing this name -- one org name in, not a
+    # list (unlike categories' any-overlap), since a caller asks "papers by org X," not "papers by
+    # any of these orgs." NOT authoritative: rag/author_org_tagger.py's keyword matching (the
+    # source of VectorPayload.author_orgs) measures precision 0.569 / recall 0.763 over 1,741 done
+    # papers against 114 known-positive ids (T-ORG2) -- see AuthorOrgMatch's docstring
+    # (contracts/author_orgs.py) for the full numbers, incl. the higher-precision/lower-recall
+    # email_domain-only alternative. Treat a hit here as "worth a closer look," not "confirmed."
+    author_org: str | None = None
 
 
 class VectorPayload(TypedDict):
@@ -60,3 +68,6 @@ class VectorPayload(TypedDict):
     published: str  # ISO date, for date-range filters
     embedding_version: str  # must match the collection's model version
     doc_type: str  # "paper" | "book" — mirrors PaperRef.doc_type
+    author_orgs: list[str]  # T-ORG1: matched org names only (no method -- filtering doesn't need
+    # it) -- mirrors PaperRecord.author_orgs. Absent (not []) on any point upserted before this
+    # field existed, same legacy-key convention as doc_type above.
