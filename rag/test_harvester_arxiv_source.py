@@ -498,7 +498,25 @@ def test_query_with_categories_and_dates_combines_both_clauses():
     ]
 
 
-def test_query_with_an_open_ended_date_bound_uses_a_wildcard():
+def test_query_with_an_open_ended_date_bound_uses_a_concrete_far_future_upper_bound():
+    """Regression, found 2026-08-07 on the live Waymo corpus: an open UPPER bound used to emit
+    `submittedDate:[<from> TO *]`, and arXiv's API answers that with **HTTP 500**, not results.
+
+    Isolated against the real service that day -- same term, same categories, only the upper bound
+    varied:
+        submittedDate:[201501010000 TO *]              -> HTTP 500
+        submittedDate:[201501010000 TO 209912312359]   -> HTTP 200, results
+        (no date clause at all)                        -> HTTP 200, results
+
+    500 is in `_RETRYABLE_STATUSES`, so every harvest burned its retries and then reported
+    `truncated early -- got 0 distinct paper(s)`. `app/prefetch_pdfs.py` reads that as "0 new
+    available", logs `prefetch stalled`, and sleeps an hour -- so setting ONLY `arxiv_date_from`
+    (exactly what a "papers newer than YYYY" cutoff means) silently disabled the downloader
+    entirely while looking like a supply problem rather than a malformed query.
+
+    The previous version of this test asserted the `TO *` form and passed, which is what kept the
+    defect invisible. A lower-bound-only filter must therefore emit a concrete upper bound.
+    """
     queries_seen = []
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -508,7 +526,10 @@ def test_query_with_an_open_ended_date_bound_uses_a_wildcard():
     client = httpx.Client(transport=httpx.MockTransport(handler))
     source = make_source(client=client, page_size=10, date_from="2018-01-01")
     list(source.fetch(["causal inference"], cap=100, ordering="freshest_first"))
-    assert queries_seen == ['all:"causal inference" AND submittedDate:[201801010000 TO *]']
+    assert queries_seen == [
+        'all:"causal inference" AND submittedDate:[201801010000 TO 209912312359]'
+    ]
+    assert "*" not in queries_seen[0], "arXiv answers a wildcard date bound with HTTP 500"
 
 
 # --- OG-49#6/M7: query injection + unvalidated dates rejected before building search_query ------

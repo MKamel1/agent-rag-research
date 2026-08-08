@@ -175,6 +175,16 @@ _CATEGORY_RE = re.compile(r"^[A-Za-z0-9.\-]+$")
 # ISO `YYYY-MM-DD` or arXiv's own `YYYYMMDD` -- validated BEFORE building the `submittedDate:[...]`
 # range clause (was previously just `.replace('-', '')`'d with no format check at all).
 _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$|^\d{8}$")
+# A one-sided `submittedDate` filter still needs a CONCRETE bound on the open end: arXiv answers
+# the obvious `[<from> TO *]` wildcard form with HTTP 500, not results (isolated against the live
+# API 2026-08-07 -- the identical query with `TO 209912312359` returns 200). Because 500 is in
+# `_RETRYABLE_STATUSES`, the wildcard form burned its retries and surfaced as
+# `truncated early -- got 0 distinct paper(s)`, which `app/prefetch_pdfs.py` then reports as
+# "0 new available" and sleeps an hour on -- so setting only `arxiv_date_from` (an ordinary
+# "papers newer than YYYY" cutoff) silently disabled the downloader while looking like arXiv had
+# run out of papers. arXiv's own oldest submissions are 1991, so the floor is safely below them.
+_DATE_FLOOR = "199101010000"
+_DATE_CEILING = "209912312359"
 # Post-2007 arXiv id shape only (e.g. "2504.09999"). Pre-2007 ids carry an archive prefix
 # (e.g. "hep-th/9304006") that `_entry_to_ref` used to silently drop via `rsplit("/", 1)`,
 # producing a bare "9304006" that collides with other archives' numbers and 400s the whole
@@ -278,8 +288,8 @@ class ArxivSource:
             cats = " OR ".join(f"cat:{c}" for c in self._categories)
             query += f" AND ({cats})"
         if self._date_from or self._date_to:
-            lo = f"{self._validated_date(self._date_from)}0000" if self._date_from else "*"
-            hi = f"{self._validated_date(self._date_to)}2359" if self._date_to else "*"
+            lo = f"{self._validated_date(self._date_from)}0000" if self._date_from else _DATE_FLOOR
+            hi = f"{self._validated_date(self._date_to)}2359" if self._date_to else _DATE_CEILING
             query += f" AND submittedDate:[{lo} TO {hi}]"
         return query
 
