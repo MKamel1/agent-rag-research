@@ -222,3 +222,62 @@ email evidence, and **30 false negatives**.
 Reaching near-perfect means fixing extraction (GROBID `processFulltextDocument`, or the already-
 shipped-but-never-compared `OllamaSummarizer.extract_affiliations`) and completing the ground truth
 — not tuning the matcher, which is now the best-performing part of the system.
+
+---
+
+# ADDENDUM 2 — 2026-08-08, corrected measurement harness
+
+## A parser bug in my own tooling, and its real size
+
+GROBID HTML-escapes some addresses as `&lt;user@waymo.com&gt;`. The sweep did
+`email.split("@")[-1]`, producing `waymo.com&gt;`, which failed `endswith("waymo.com")` — so valid
+Waymo hits were silently discarded. Caught on EMMA (`2410.23262`), where GROBID *had* extracted
+`tanmingxing@waymo.com` and the harness reported "no Waymo".
+
+Re-ran the full 1,741-paper sweep with entity-aware parsing. **Honest impact: small.** Exactly three
+papers changed verdict (`2410.23262`, `2510.26125` → `domain`; `2605.20390` `org` → `domain`).
+GROBID moved from TP=63/FP=6 to TP=64/FP=7. The bug was real and worth fixing, but it was not
+distorting the conclusions — stated plainly here rather than left as "understated by an unknown
+amount".
+
+## A scope hole in the completeness check (V2)
+
+The first V2 run checked only `domain` evidence and reported "0 missing". Re-run over `domain` **or**
+`org` evidence, **7** papers with GROBID Waymo evidence were absent from the curated list. Two carried
+an author `@waymo.com` address — conclusive — and were added: `2510.26125` (WOD-E2E) and `2605.20390`
+(STELLAR). **Ground truth 138 → 140.**
+
+The other five were **not** added. An `org`-only hit is not conclusive: GROBID can lift
+"Waymo Open Motion Dataset" out of a title into an `orgName` field, which would make a paper *about*
+Waymo's dataset look Waymo-authored — the exact confusion this whole effort exists to prevent. All
+five are queued in the operator labeling sheet (`affiliation-labeling/`) for a human verdict instead.
+
+**V2 is amended: the completeness check must consider every evidence channel, not just the
+strongest one.** A check with a narrower scope than the thing it audits will report a clean bill of
+health it has not earned.
+
+## Current honest numbers
+
+Corrected harness, corrected 140-id ground truth, all 1,741 done papers:
+
+| signal | TP | FP | FN | precision | recall | F1 |
+|---|---|---|---|---|---|---|
+| block-regex (shipped in T-ORG1) | 109 | 44 | 31 | **0.712** | **0.779** | **0.744** |
+| GROBID header | 66 | 5 | 74 | 0.930\* | 0.471 | 0.626 |
+
+`*` **circular** — 10 of the 140 ground-truth ids were added on GROBID's own email evidence. Not an
+independent result and must not be quoted as one.
+
+The regex figure is the trustworthy one: it never sees GROBID's output, so no ground-truth id was
+added on evidence it produced.
+
+## What is still unresolved
+
+- **54 curated ids remain unverifiable** — no extractor can read their affiliations, so the
+  authoritative list rests partly on unaudited curation. This is P1 of the labeling sheet.
+- **Precision is still a lower bound.** Three successive rounds of ground-truth correction
+  (114 → 130 → 138 → 140) each raised it with no classifier change. There is no reason to believe
+  the fourth round would find nothing.
+- **526 papers (30%) yield no affiliation text at all.** Until that is fixed, recall has a hard
+  ceiling no matching rule can lift — Track B of
+  `docs/superpowers/plans/2026-08-08-affiliation-accuracy-to-near-perfect.md`.
