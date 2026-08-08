@@ -225,6 +225,39 @@ sources the Waymo-vs-other split from the enumerated id list rather than the tag
 tag would bake a wrong answer into the schema. It does **not** affect the corpus build, which never
 calls the tagger.
 
+### T-ORG2 fixed, T-ORG1 wired into ingest (2026-08-08)
+
+**T-ORG2 (commit `d3e79c3`):** the abstract-as-affiliation bug above is fixed — candidate blocks are
+now capped at 40 words, with an email-address override so a genuine affiliation merged into a longer
+block by the parser isn't dropped (front-matter blocks containing "waymo" run a median of 6 words in
+genuinely Waymo-authored papers vs. 166 in the rest). Measured live over the 1,741 done papers against
+the 114 enumerated Waymo-authored ids: **precision 0.569, recall 0.763** (pre-fix, correctly measured
+against the same 114 ids: 0.311/0.851 — the 0.000/0.043 numbers reported on 2026-08-07 above were
+measured before those 114 known-positive papers were ingested, so they undercounted true positives the
+sample hadn't seen yet, not a different bug). Email-domain-only matching scores precision 0.700 but
+recall only 0.123 (81% of extracted affiliation regions carry no email at all).
+
+**T-ORG1 (`migrations/0005_author_orgs.sql`):** wires the tagger into the ingest pipeline, but
+deliberately does NOT persist a bare "authored by org X" boolean — at 0.569 precision, close to half of
+keyword-derived tags are wrong, so baking that straight into a boolean would bake the errors in too.
+`papers.raw_affiliations`/`papers.author_orgs` (both nullable JSON — no sensible default for a row the
+tagger has never run against) carry the evidence and, per match, which signal fired:
+`rag/author_org_tagger.py::match_known_orgs_with_method` returns `AuthorOrgMatch(name, method)` with
+`method` one of `"email_domain"`/`"keyword"` (`email_domain` wins when both fire for the same org, since
+it's the higher-precision one) — `contracts/author_orgs.py`. `rag/orchestrator.py::_finish` computes both
+fields during ingest (pure, no new I/O — a regex scan over already-parsed blocks plus a substring check).
+`contracts/vector_index.py` adds `SearchFilters.author_org`/`VectorPayload.author_orgs` (names only) so
+"papers by org X" is queryable via `semantic_search`/`search_papers`; both tool docstrings now state the
+measured precision/recall plainly. `match_known_orgs` (existing `list[str]`-returning callers, e.g.
+`app/exp_author_org_tagging.py`) is now a thin wrapper over `match_known_orgs_with_method` — one matching
+implementation, not two that can drift.
+
+**Not authoritative — this is a derived, imperfect signal, not ground truth.** The enumerated id list
+(`fixtures/waymo/waymo_authored_ids.txt`) remains the exact, free source for the Waymo-authored-vs-
+adjacent split used elsewhere in this corpus build; `author_orgs`/the `author_org` filter are for
+open-ended "find papers plausibly authored by org X" queries where an enumerated list doesn't exist,
+not for anything where a wrong tag is costly.
+
 ## 4. Problems faced → solution landed
 
 **MinerU VRAM peak measurement correction (T-DOC15).** `ARCHITECTURE.md`/`CONVENTIONS.md` originally
