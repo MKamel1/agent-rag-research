@@ -145,3 +145,80 @@ method is: rebuild the stratified test set from `ingest_state` + `blocks` with t
 label tiers 1 and 3 blind, then score with `unclear` excluded. The two true positives
 (`2604.03827`, `2605.22997`) and the 2-of-370 `waymo.com`-email count are the anchors any re-run
 should reproduce.
+
+---
+
+# ADDENDUM 2026-08-08 — the ground truth was the problem, not (only) the classifier
+
+Everything above measured against `fixtures/waymo/waymo_authored_ids.txt` when it held **114 ids**.
+That file was Group A only — the Waymo papers with an *arXiv link*. Groups B (15) and C (23) are
+equally Waymo's own published research, listed on waymo.com by DOI or direct PDF, and they entered
+the corpus through the operator's drop-in delivery under `local:<sha256>` ids. **They were never
+added to the ground truth, so a classifier that correctly identified them was scored as wrong.**
+
+The tell: 14 of GROBID's 24 "false positives" carried an author `@waymo.com` email in the parsed
+header. A paper written by someone with a Waymo email is a Waymo paper. That is a broken
+measurement, not a broken classifier.
+
+## Correcting it, in two evidence-based steps
+
+1. **Group B/C title-matched to corpus ids** (+16). Fuzzy title match against `papers.title`, then
+   every borderline case adjudicated by reading the actual titles. Three were **rejected**: `B7`
+   (an IWAI poster fuzzy-matching a different arXiv paper), `C6` ("56.7 Million Miles" vs the
+   corpus's "7.1 Million Miles" — different papers), and `B13`, which matched a paper whose title
+   is literally `"9"` — a failed PDF parse that my containment heuristic accepted because `"9"` is
+   a substring of almost anything. That was a bug in the matcher, fixed by requiring real length on
+   both sides before allowing a containment boost.
+2. **+8 more on conclusive evidence**: papers where GROBID parsed an author `@waymo.com` email out
+   of the header. Includes `2604.03827` ("Waymo LLC", five `@waymo.com` addresses) and `2605.22997`,
+   both hand-verified earlier in this report as true positives that the 114-id list did not contain.
+
+Ground truth: **114 → 138**.
+
+## What that did to the numbers — with no classifier change at all
+
+| rule | GT=114 | GT=130 | GT=138 |
+|---|---|---|---|
+| block-regex (what T-ORG1 ships) | 0.569 / 0.763 | 0.654 / 0.769 | **0.706 / 0.783** (F1 0.742) |
+| GROBID alone | 0.652 / 0.395 | 0.797 / 0.423 | 0.913 / 0.457 |
+| GROBID email-domain only | 0.720 / 0.316 | 0.840 / 0.323 | — |
+
+Precision rose **0.569 → 0.706** purely by fixing what we were measuring against.
+
+**Circularity warning, stated plainly:** the +8 were identified *by* GROBID's email signal, so
+GROBID's own 0.913 at GT=138 is partly self-referential and must not be quoted as an independent
+result. The regex figure is not contaminated that way — regex and GROBID are independent signals,
+and regex never saw the evidence used to extend the ground truth.
+
+## GROBID does not help — recommendation withdrawn
+
+An earlier draft of this work recommended a GROBID cascade on the strength of a 314-paper sample
+where it produced **zero false positives** (precision 1.000). Run over the full 1,741 papers it
+produced 24, and precision fell to 0.652. The sample had a 36% positive rate against the corpus's
+real 6.5% — precision depends on class balance, and the small sample was flattering. Measured at
+the real base rate:
+
+| rule | prec | rec | F1 |
+|---|---|---|---|
+| regex alone | 0.706 | 0.783 | **0.742** |
+| GROBID alone | 0.913* | 0.457 | 0.609 |
+| union | 0.704 | 0.812 | 0.754 |
+| cascade (GROBID vetoes when it has data) | 0.649 | 0.649 | 0.649 |
+
+`*` circular, see above. **The cascade scores worse than what already ships.** T-ORG1 keeps the
+regex signal. GROBID's value here was diagnostic — it found the ground-truth gap — not predictive.
+
+## Near-perfect was not reached, and here is what stands in the way
+
+Best honest F1 is **0.742**. The residue after all corrections: **45 false positives** with no Waymo
+email evidence, and **30 false negatives**.
+
+- The FN floor is an **extraction** problem, not a matching one: 53% of papers yield no institution
+  name and no email at all from the parser, so no rule can match what was never extracted.
+- The remaining FPs need per-paper adjudication to know whether they are genuine errors or *further*
+  ground-truth gaps. Every round of this so far has found more gaps, so the current 0.706 should
+  still be read as a **lower bound**.
+
+Reaching near-perfect means fixing extraction (GROBID `processFulltextDocument`, or the already-
+shipped-but-never-compared `OllamaSummarizer.extract_affiliations`) and completing the ground truth
+— not tuning the matcher, which is now the best-performing part of the system.
