@@ -18,13 +18,35 @@ from contracts.provenance import Block
 _EMAIL_RE = re.compile(r"[\w.+-]+@([\w-]+\.[\w.-]+)")
 
 
+# T-ORG2: front matter includes the ABSTRACT, and an abstract that cites a Waymo dataset used to
+# keyword-match as Waymo AUTHORSHIP -- the dominant false-positive source on a corpus where most
+# papers benchmark on such datasets. Affiliation lines and abstracts are different objects by
+# length: measured over 1,741 done papers, front-matter blocks containing "waymo" run a median of
+# 6 words in genuinely Waymo-authored papers ("Waymo LLC, Mountain View, CA") against 166 in the
+# rest. Capping candidate blocks at 40 words took precision 0.311 -> 0.573 against the 114
+# enumerated Waymo-authored ids, costing recall 0.851 -> 0.754. A length ceiling is used rather
+# than diffing against `papers.abstract` because this module is a pure function over Blocks with
+# no store access; it also catches the other observed false-positive source, long index-terms
+# lines naming the dataset.
+_MAX_AFFILIATION_BLOCK_WORDS = 40
+
+
 def _is_candidate_affiliation_block(block: Block) -> bool:
     """Page-0 blocks that are either front matter (section_path=="", the parser's marker for
     everything before the first real section heading -- see rag/parser.py's _SectionTracker
     comment) or contain an email address (a corresponding-author email is a strong positional
     signal that an affiliation statement is nearby) -- deliberately layout-position-agnostic
-    beyond these two conditions, since real papers vary in exactly where affiliations print."""
-    return block.page == 0 and (block.section_path == "" or "@" in block.text)
+    beyond these two conditions, since real papers vary in exactly where affiliations print.
+
+    Long blocks are excluded (see `_MAX_AFFILIATION_BLOCK_WORDS`) UNLESS they carry an email: a
+    parser that merges the affiliation into a longer run of text would otherwise lose a genuine
+    affiliation, and an email is strong enough positive evidence to override the ceiling."""
+    if block.page != 0:
+        return False
+    has_email = "@" in block.text
+    if not (block.section_path == "" or has_email):
+        return False
+    return has_email or len(block.text.split()) <= _MAX_AFFILIATION_BLOCK_WORDS
 
 
 def extract_affiliations_rule_based(blocks: list[Block]) -> list[str]:

@@ -72,3 +72,70 @@ def test_mentions_orgs_case_insensitive():
 
 def test_mentions_orgs_empty_when_absent():
     assert mentions_orgs("A study of driving", "We use naturalistic data.") == []
+
+
+# --- T-ORG2: the abstract must not be read as an affiliation ------------------------------------
+
+
+def test_extract_excludes_the_abstract_even_though_it_is_page_zero_front_matter():
+    """Regression (T-ORG2, measured 2026-08-07/08 on the live Waymo corpus). The abstract is page-0
+    front matter (`section_path == ""`), so it was being handed to `match_known_orgs` as candidate
+    affiliation text. Any paper that merely benchmarks on a Waymo dataset -- most of an AV-safety
+    corpus -- therefore keyword-matched as Waymo-AUTHORED.
+
+    Measured over 1,741 done papers against the 114 enumerated Waymo-authored ids:
+        no cap (old)      precision 0.311, recall 0.851
+        <=40-word cap     precision 0.573, recall 0.754
+    The separation is stark because the two kinds of block are different objects: front-matter
+    blocks containing "waymo" have a median of 6 words in genuinely Waymo-authored papers
+    ("Waymo LLC") versus 166 in other papers (an abstract citing the Waymo Open Dataset).
+
+    A word ceiling is used rather than matching against `papers.abstract` because this module is a
+    pure function over `Block`s with no store access -- and it also catches the other observed
+    false-positive source, long index-terms/keyword lines naming the dataset.
+    """
+    affiliation = "Waymo LLC, Mountain View, CA"
+    abstract = (
+        "We propose a method for trajectory prediction. " * 3
+        + "Evaluations using the Waymo Open Motion Dataset demonstrate that our model reduces "
+        "the mean minimum time-to-collision from 1.62 to 1.08 seconds, substantially "
+        "outperforming prior work across every scenario category we considered. " * 4
+    )
+    assert len(abstract.split()) > 40, "fixture must exceed the cap to exercise it"
+
+    blocks = [_block(abstract, section_path="", block_id="abs", index=1)]
+    assert extract_affiliations_rule_based(blocks) == [], (
+        "an abstract-length front-matter block must not be offered as affiliation text"
+    )
+
+    # The genuine affiliation line is short, and must still come through.
+    blocks = [_block(affiliation, section_path="", block_id="aff", index=0)]
+    assert extract_affiliations_rule_based(blocks) == [affiliation]
+
+
+def test_a_dataset_mention_in_the_abstract_no_longer_reads_as_waymo_authorship():
+    """The end-to-end shape of the false positive: real authors from another institution, plus an
+    abstract citing a Waymo dataset. Before the cap this returned ["Waymo"]."""
+    blocks = [
+        _block("Yuewen Mei, Tongji University, Shanghai, China", block_id="a", index=0),
+        _block("meiyuewen@tongji.edu.cn", block_id="b", index=1),
+        _block(
+            "Evaluations using the Waymo Open Motion Dataset demonstrate that our model "
+            "reduces the mean minimum time-to-collision from 1.62 to 1.08 seconds. " * 4,
+            block_id="c", index=2,
+        ),
+    ]
+    assert match_known_orgs(extract_affiliations_rule_based(blocks)) == []
+
+
+def test_a_long_block_is_still_kept_when_it_carries_an_email():
+    """The cap must not silently drop a genuine affiliation just because the parser merged it into
+    a longer block -- an email address is strong positive evidence of an affiliation region, so it
+    overrides the length ceiling."""
+    text = (
+        "Kristofer D. Kusano, John M. Scanlon, Waymo LLC, Mountain View, California, USA. "
+        "Correspondence: kusano@waymo.com. " + "Additional boilerplate text. " * 30
+    )
+    assert len(text.split()) > 40
+    blocks = [_block(text, block_id="a", index=0)]
+    assert match_known_orgs(extract_affiliations_rule_based(blocks)) == ["Waymo"]
