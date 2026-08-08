@@ -937,7 +937,22 @@ Running the id-file first would re-download 97 PDFs the machine already has.
       `/api/search`, and review `drop_in/failed/` — anything beyond §9.3's four known-corrupt files
       is a real problem, not expected noise.
 
-> **[EXECUTION 2026-08-07] Deviation: the phases are chained by a driver script, not run by hand.**
+> **[EXECUTION 2026-08-07, superseded same day] The run is now dashboard-driven, and the chainer
+> drives the dashboard's control API rather than launching processes itself.** The operator asked to
+> be able to pause/resume the build, which only works for runs the *controller* started — a
+> hand-launched CLI run writes no `run_manifest.json`, so the UI's Pause/Resume cannot see it. Phase A
+> was therefore restarted via `POST /api/control {"action":"start"}` (verified: `running → paused →
+> running`, build process stops and returns), and `waymo/data/chain_phases.sh` now advances the
+> phases by posting `start_drop_in` and `start` to the same API, so every phase stays pausable.
+>
+> **`controller.stop()` marks a run `status: "done"` — the same terminal status as a natural finish.**
+> Reading "done" alone as "phase complete, start the next one" would mean the operator pressing Stop
+> silently launches the next phase. The chainer tells them apart by transition path
+> (`stopping → done` = operator stop, abort; `running → done` = natural, advance; `pausing → paused`
+> = hold, never auto-resume), polling at 10s to shrink the miss window. All three paths were
+> unit-tested against a scripted status sequence before the chainer was launched.
+>
+> **[EXECUTION 2026-08-07] Original deviation: the phases are chained rather than run by hand.**
 > The operator was AFK for the build, so stopping at each phase boundary to wait for a human (or an
 > agent session) would have idled the GPU for hours between phases. `waymo/data/run_phases.sh`
 > (gitignored, lives with the corpus data) waits for the already-running Phase A pid, then runs
