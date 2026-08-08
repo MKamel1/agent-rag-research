@@ -156,10 +156,11 @@ def _qdrant_filter(filters: SearchFilters | None) -> models.Filter | None:
         # payload field matches if the value equals ANY element of the array (Qdrant's standard
         # keyword-array behavior) -- exactly the "author_org is one of the matched org names"
         # semantics this filter wants, no MatchAny/list needed on the query side.
+        # T-ORG3: author_org_curated_only switches the filtered key to curated_author_orgs (the
+        # enumerated-only subset) instead of author_orgs (any method) -- same MatchValue shape.
+        key = "curated_author_orgs" if filters.author_org_curated_only else "author_orgs"
         must.append(
-            models.FieldCondition(
-                key="author_orgs", match=models.MatchValue(value=filters.author_org)
-            )
+            models.FieldCondition(key=key, match=models.MatchValue(value=filters.author_org))
         )
     if filters.published_after is not None or filters.published_before is not None:
         must.append(

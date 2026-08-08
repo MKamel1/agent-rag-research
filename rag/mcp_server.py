@@ -91,11 +91,18 @@ class McpServer:
         for anchored passages.
 
         `filters.author_org` restricts to papers tagged as authored by that org (e.g.
-        `{"author_org": "Waymo"}`) — NOT authoritative. It's a derived, imperfect signal (keyword/
-        email-domain matching over extracted affiliation text, `rag/author_org_tagger.py`):
-        measured precision 0.569 / recall 0.763 over 1,741 done papers against 114 known-positive
-        ids. Treat a hit as "worth a closer look" (e.g. before citing "Waymo's own research
-        shows..."), not as confirmed authorship.
+        `{"author_org": "Waymo"}`) — by default this matches ANY tagging method and is NOT
+        authoritative on its own. Two tiers exist, and they are not interchangeable:
+        - `curated`: the paper id is on the org's own enumerated list of its published research
+          (an enumerated fact, exact by construction — see `AuthorOrgMatch`'s docstring,
+          `contracts/author_orgs.py`). Set `filters.author_org_curated_only=True` alongside
+          `author_org` to demand ONLY this tier — this is the correct way to ask "what does
+          Waymo's own research say" and get back only confirmed hits.
+        - `email_domain`/`keyword`: a derived heuristic (`rag/author_org_tagger.py`) — measured
+          precision 0.706 / recall 0.783 over 1,741 done papers against 138 known-positive ids
+          (docs/eval-reports/2026-08-07-affiliation-retrieval-first-batch.md). Roughly 3 in 10
+          hits at this tier are wrong. Fine for open-ended discovery ("candidates worth a closer
+          look"), never for a claim that needs to be correct.
         """
         results, retrieval_coverage = self._retriever.retrieve(
             query, filters, self._resolve_k(k)
@@ -125,8 +132,10 @@ class McpServer:
         for anchored passages.
 
         `filters.author_org` restricts to papers tagged as authored by that org — see
-        `semantic_search`'s docstring for the same caveat: this is a derived, imperfect signal
-        (precision 0.569 / recall 0.763 measured), not confirmed authorship.
+        `semantic_search`'s docstring for the full tier breakdown: `author_org_curated_only=True`
+        demands the exact, enumerated `curated` tier; without it, a hit may be the derived
+        `email_domain`/`keyword` heuristic (precision 0.706 / recall 0.783 measured), not confirmed
+        authorship.
         """
         results, retrieval_coverage = self._retriever.retrieve_papers(
             query, filters, self._resolve_k(k)

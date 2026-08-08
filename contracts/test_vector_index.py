@@ -52,6 +52,15 @@ def test_search_filters_author_org_constructs_with_explicit_value():
     assert SearchFilters(author_org="Waymo").author_org == "Waymo"
 
 
+def test_search_filters_author_org_curated_only_defaults_to_false():
+    assert SearchFilters().author_org_curated_only is False
+
+
+def test_search_filters_author_org_curated_only_constructs_true():
+    filters = SearchFilters(author_org="Waymo", author_org_curated_only=True)
+    assert filters.author_org_curated_only is True
+
+
 def test_search_filters_constructs_with_explicit_values():
     filters = SearchFilters(
         categories=["cs.LG", "stat.ME"],
@@ -84,3 +93,21 @@ def test_vector_payload_is_a_plain_dict_shape():
     }
     assert isinstance(payload, dict)
     assert payload["kind"] == "chunk"
+
+
+def test_vector_payload_accepts_curated_author_orgs():
+    # T-ORG3: same legacy-key convention as author_orgs -- a TypedDict, so this is a type-checker
+    # contract, not a runtime one; the meaningful assertion is that the key round-trips as a plain
+    # list like every other payload field.
+    payload: VectorPayload = {
+        "paper_id": "2506.01234",
+        "kind": "summary",
+        "section_path": "",
+        "text": "summary text",
+        "categories": ["cs.RO"],
+        "published": "2026-06-01",
+        "embedding_version": "1.0.0",
+        "author_orgs": ["Waymo"],
+        "curated_author_orgs": ["Waymo"],
+    }
+    assert payload["curated_author_orgs"] == ["Waymo"]

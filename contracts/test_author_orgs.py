@@ -31,6 +31,11 @@ def test_author_org_match_constructs_with_keyword_method():
     assert m.method == "keyword"
 
 
+def test_author_org_match_constructs_with_curated_method():
+    m = AuthorOrgMatch(name="Waymo", method="curated")
+    assert m.method == "curated"
+
+
 def test_author_org_match_method_must_be_a_valid_literal():
     with pytest.raises(ValidationError):
         AuthorOrgMatch(name="Waymo", method="guess")
@@ -40,3 +45,24 @@ def test_author_org_match_is_frozen():
     m = AuthorOrgMatch(name="Waymo", method="keyword")
     with pytest.raises(Exception):
         m.name = "Changed"
+
+
+# --- curated_ids_path seam ------------------------------------------------------------------
+
+
+def test_author_org_tag_curated_ids_path_defaults_to_none():
+    tag = AuthorOrgTag(name="Test", email_domains=["test.com"], keywords=["test"])
+    assert tag.curated_ids_path is None
+
+
+def test_author_org_tag_constructs_with_explicit_curated_ids_path():
+    tag = AuthorOrgTag(
+        name="Test", email_domains=["test.com"], keywords=["test"],
+        curated_ids_path="fixtures/test/ids.txt",
+    )
+    assert tag.curated_ids_path == "fixtures/test/ids.txt"
+
+
+def test_waymo_entry_points_at_the_curated_ids_fixture():
+    waymo = next(org for org in KNOWN_ORGS if org.name == "Waymo")
+    assert waymo.curated_ids_path == "fixtures/waymo/waymo_authored_ids.txt"

@@ -38,12 +38,21 @@ class SearchFilters(FrozenModel):
     paper_id: str | None = None  # restrict to VectorPayload.paper_id -- one document, Decision 3
     # T-ORG1: restrict to VectorPayload.author_orgs containing this name -- one org name in, not a
     # list (unlike categories' any-overlap), since a caller asks "papers by org X," not "papers by
-    # any of these orgs." NOT authoritative: rag/author_org_tagger.py's keyword matching (the
-    # source of VectorPayload.author_orgs) measures precision 0.569 / recall 0.763 over 1,741 done
-    # papers against 114 known-positive ids (T-ORG2) -- see AuthorOrgMatch's docstring
-    # (contracts/author_orgs.py) for the full numbers, incl. the higher-precision/lower-recall
-    # email_domain-only alternative. Treat a hit here as "worth a closer look," not "confirmed."
+    # any of these orgs." By default this matches ANY method (curated, email_domain, or keyword)
+    # -- NOT authoritative on its own: the email_domain/keyword heuristic (the majority source of
+    # VectorPayload.author_orgs) measures precision 0.706 / recall 0.783 over 1,741 done papers
+    # against 138 known-positive ids (T-ORG2/T-ORG3, docs/eval-reports/2026-08-07-affiliation-
+    # retrieval-first-batch.md's 2026-08-08 addendum) -- see AuthorOrgMatch's docstring
+    # (contracts/author_orgs.py) for the full numbers. Treat a hit here as "worth a closer look,"
+    # not "confirmed," UNLESS `author_org_curated_only` is also set (see below).
     author_org: str | None = None
+    # T-ORG3: when True, restrict to VectorPayload.curated_author_orgs instead of author_orgs --
+    # the enumerated, authoritative tier only (AuthorOrgMatch.method == "curated"), never the
+    # email_domain/keyword heuristic. This is the flag a caller sets to demand "papers Waymo
+    # actually wrote" and get back only exact hits, not "worth a closer look" candidates. Only
+    # takes effect when `author_org` is also set -- on its own (author_org=None) it is a no-op,
+    # same as every other filter field here that means "don't filter on this."
+    author_org_curated_only: bool = False
 
 
 class VectorPayload(TypedDict):
@@ -71,3 +80,6 @@ class VectorPayload(TypedDict):
     author_orgs: list[str]  # T-ORG1: matched org names only (no method -- filtering doesn't need
     # it) -- mirrors PaperRecord.author_orgs. Absent (not []) on any point upserted before this
     # field existed, same legacy-key convention as doc_type above.
+    curated_author_orgs: list[str]  # T-ORG3: the subset of author_orgs whose method is "curated"
+    # -- what SearchFilters.author_org_curated_only filters against. Absent (not []) on any point
+    # upserted before this field existed, same legacy-key convention as author_orgs above.

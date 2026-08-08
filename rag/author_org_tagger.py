@@ -11,11 +11,14 @@ only means re-running match_known_orgs over already-extracted raw_affiliations.
 """
 
 import re
+from pathlib import Path
 
 from contracts.author_orgs import KNOWN_ORGS, AuthorOrgMatch
 from contracts.provenance import Block
 
 _EMAIL_RE = re.compile(r"[\w.+-]+@([\w-]+\.[\w.-]+)")
+
+_REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
 # T-ORG2: front matter includes the ABSTRACT, and an abstract that cites a Waymo dataset used to
@@ -87,6 +90,52 @@ def match_known_orgs(raw_affiliations: list[str]) -> list[str]:
     `match_known_orgs_with_method` -- exactly one matching implementation, not two that can drift
     -- for callers that only need the matched org names (existing shape, unchanged)."""
     return [match.name for match in match_known_orgs_with_method(raw_affiliations)]
+
+
+def _resolve_curated_path(path: str) -> Path:
+    """`AuthorOrgTag.curated_ids_path` is documented as resolved relative to the repo root -- but
+    an already-absolute path (a test's `tmp_path` fixture) is used as-is, so tests don't need a
+    real file under the repo tree to exercise this seam."""
+    candidate = Path(path)
+    return candidate if candidate.is_absolute() else _REPO_ROOT / candidate
+
+
+def _read_ids_file(path: str) -> frozenset[str]:
+    with open(_resolve_curated_path(path)) as f:
+        return frozenset(line.strip() for line in f if line.strip())
+
+
+# Keyed by the tag's raw `curated_ids_path` string (not the resolved Path) -- ingest calls
+# curated_orgs_for() once per paper (rag/orchestrator.py::_finish), so this file must be read
+# once per run, not once per paper (a 138-line file re-read 1,741 times for nothing).
+_curated_ids_cache: dict[str, frozenset[str]] = {}
+
+
+def _load_curated_ids(path: str) -> frozenset[str]:
+    if path not in _curated_ids_cache:
+        _curated_ids_cache[path] = _read_ids_file(path)
+    return _curated_ids_cache[path]
+
+
+def curated_orgs_for(paper_id: str) -> list[AuthorOrgMatch]:
+    """Step 2's authoritative counterpart to `match_known_orgs_with_method` (T-ORG3): for each
+    `KNOWN_ORGS` entry that declares a `curated_ids_path`, a `"curated"` `AuthorOrgMatch` if
+    `paper_id` is on that org's enumerated list -- an ID LOOKUP, no affiliation text involved at
+    all. This is deliberately independent of `extract_affiliations_rule_based`/
+    `match_known_orgs_with_method`: a curated match must not depend on (or be defeated by) what
+    the heuristic finds or fails to find in a paper's parsed text, which is the whole reason this
+    tier exists (see `AuthorOrgMatch`'s docstring, `contracts/author_orgs.py`).
+
+    An org with `curated_ids_path is None` (the default -- most orgs) simply never contributes a
+    match here, same as if this function didn't exist for it. `rag/orchestrator.py::_finish` is
+    the caller that merges this with the heuristic result, curated taking precedence for the same
+    org name.
+    """
+    return [
+        AuthorOrgMatch(name=org.name, method="curated")
+        for org in KNOWN_ORGS
+        if org.curated_ids_path is not None and paper_id in _load_curated_ids(org.curated_ids_path)
+    ]
 
 
 def mentions_orgs(title: str, abstract: str) -> list[str]:
