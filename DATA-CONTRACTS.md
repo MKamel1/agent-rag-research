@@ -324,6 +324,12 @@ class PaperRecord:
     chapter_summaries: list[ChapterSummary] = field(default_factory=list)   # T-DOC80: non-empty ONLY
         # for doc_type="book" records — produced by rag/book_summarizer.py's summarize_book(), never
         # by the plain Summarizer. [] for every paper, unchanged.
+    raw_affiliations: list[str] = field(default_factory=list)   # T-ORG1: extracted candidate
+        # affiliation text (rag/author_org_tagger.py::extract_affiliations_rule_based). [] if none
+        # extracted -- not necessarily "no affiliation," may just mean nothing candidate-shaped found.
+    author_orgs: list[AuthorOrgMatch] = field(default_factory=list)   # T-ORG1: which KNOWN_ORGS
+        # matched raw_affiliations, and by which signal (match_known_orgs_with_method). DERIVED,
+        # IMPERFECT (precision 0.569 / recall 0.763 measured, T-ORG2) -- never ground-truth authorship.
     # blobs (PDF, figure PNGs, markdown) are written to the filesystem; their paths live on ref/parsed.
 
 # DocumentStore interface (all reads return the frozen types above):
@@ -378,6 +384,11 @@ class SearchFilters:
     kind: Literal["chunk", "summary"] | None = None   # restrict to VectorPayload.kind
     doc_type: Literal["paper", "book"] | None = None  # T-DOC80: restrict to VectorPayload.doc_type
     paper_id: str | None = None                # Decision 3: restrict to VectorPayload.paper_id
+    author_org: str | None = None              # T-ORG1: restrict to papers whose
+        # VectorPayload.author_orgs contains this name (any-membership match, not any-overlap --
+        # a single org name in, same semantics as an equality match against a list-valued field).
+        # NOT authoritative -- see AuthorOrgMatch's docstring (contracts/author_orgs.py) for the
+        # measured precision/recall this filter inherits.
 
 # hybrid_search(qvec: Vector, qtext: str, filters: SearchFilters | None, k: int) -> list[Hit]
 #   qvec -> dense side; qtext -> sparse/BM25 side; fused per the RRF formula below; top-k by fused score.
@@ -431,6 +442,10 @@ class VectorPayload(TypedDict):
     categories: list[str]      # for metadata filtering
     published: str             # ISO date, for date-range filters
     embedding_version: str     # must match the collection's model version
+    author_orgs: list[str]     # T-ORG1: matched KNOWN_ORGS names only (no method -- the payload
+                                # doesn't need it for filtering); mirrors PaperRecord.author_orgs.
+                                # Absent (not []) on any point upserted before this field existed --
+                                # same legacy-key convention as doc_type below.
 ```
 
 **Legacy points count as papers (T-DOC80).** Every point upserted before `doc_type` existed has no
@@ -901,6 +916,26 @@ them and is populated only for the new `{paper_id}:summary:ch{n}` chapter rows a
 ```sql
 ALTER TABLE papers ADD COLUMN doc_type TEXT NOT NULL DEFAULT 'paper';
 ALTER TABLE summaries ADD COLUMN title TEXT;
+```
+
+### author orgs (additive — `migrations/0005_author_orgs.sql`, T-ORG1)
+
+Two more `ALTER TABLE ADD COLUMN`s, no new tables — additive to `papers` above, same
+"never edit an already-applied migration file" rule as 0002-0004. `papers.raw_affiliations` is a
+JSON list of the extracted candidate affiliation strings (the evidence); `papers.author_orgs` is a
+JSON list of `{"name": ..., "method": "email_domain"|"keyword"}` objects (mirrors
+`contracts/author_orgs.py`'s `AuthorOrgMatch`) — which org matched AND which signal fired. Both
+nullable, unlike `doc_type` — every pre-existing row genuinely has no value (the tagger has never
+run against it) and there is no sensible default; `"[]"` would silently assert "checked, found
+nothing" for a row that was never checked. `method` is stored per match, not a bare boolean,
+because the signal is measured, not exact: keyword matching scores precision 0.569 / recall 0.763
+over 1,741 done papers against 114 enumerated Waymo-authored ids (T-ORG2, commit `d3e79c3`) — at
+that precision, close to half of keyword-derived tags are wrong, so a consumer needs to see which
+signal fired to decide whether to trust a given match.
+
+```sql
+ALTER TABLE papers ADD COLUMN raw_affiliations TEXT;
+ALTER TABLE papers ADD COLUMN author_orgs TEXT;
 ```
 
 Run SQLite in **WAL mode** (ADR-05 — the relational-store decision; WAL is an implementation detail of

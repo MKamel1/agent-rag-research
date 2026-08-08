@@ -6,6 +6,8 @@ focus_area_queries is -- adding an organization is a code edit to this one file,
 change duplicated across every corpus's config.yaml.
 """
 
+from typing import Literal
+
 from contracts._base import FrozenModel
 
 
@@ -25,6 +27,31 @@ class AuthorOrgTag(FrozenModel):
     name: str
     email_domains: list[str]
     keywords: list[str]
+
+
+class AuthorOrgMatch(FrozenModel):
+    """One matched organization, carried on `PaperRecord.author_orgs`
+    (`contracts/document_store.py`) and (names only) on `VectorPayload.author_orgs`
+    (`contracts/vector_index.py`).
+
+    `method` records which signal fired -- never a bare "authored by org X" boolean -- so a
+    consumer can demand the high-precision signal when precision matters and accept the broader
+    one when recall matters:
+    - `"email_domain"`: an author's own email at the org's domain (e.g. `@waymo.com`) -- the
+      higher-precision signal.
+    - `"keyword"`: the org's name/keyword found in extracted affiliation text with no
+      accompanying email -- broader (catches affiliations printed without an email) but noisier.
+
+    `email_domain` wins when both signals fire for the same org (`match_known_orgs_with_method`,
+    `rag/author_org_tagger.py`). This is a DERIVED, IMPERFECT signal, never ground truth: measured
+    live over 1,741 done papers against 114 enumerated Waymo-authored ids (T-ORG2, commit
+    `d3e79c3`) -- keyword matching scores precision 0.569 / recall 0.763; email-domain-only scores
+    precision 0.700 but recall only 0.123 (81% of extracted affiliation regions carry no email at
+    all). At 0.569 precision, close to half of keyword-derived matches are wrong.
+    """
+
+    name: str
+    method: Literal["email_domain", "keyword"]
 
 
 # Seeded from docs/ONBOARDING_AND_ARXIV_KEYWORDS.md's Waymo AV-safety corpus context.

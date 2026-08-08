@@ -76,6 +76,7 @@ from datetime import date
 
 import pytest
 
+from contracts.author_orgs import AuthorOrgMatch
 from contracts.chunker import Chunk
 from contracts.config import Config
 from contracts.document_store import PaperRecord
@@ -471,6 +472,71 @@ def test_every_stored_paper_has_a_non_null_relevance_score():
         record = rig.document_store.get(pid)
         assert record.relevance_score is not None, f"{pid} stored with NULL relevance_score"
         assert -1.0001 <= record.relevance_score <= 1.0001
+
+
+# ================================================================================================
+# T-ORG1: author-org tagging computed and persisted during _finish, cheap/pure (no I/O, no
+# network) -- extract_affiliations_rule_based + match_known_orgs_with_method run over the real
+# parsed blocks the same run already produced.
+# ================================================================================================
+
+
+class _WaymoAffiliationParser:
+    """Returns a canned `ParsedDoc` with a genuine Waymo affiliation block (front matter,
+    short -- so it clears T-ORG2's abstract-length ceiling) prepended for one paper_id; every
+    other ref falls back to the shared `make_parsed` helper, same shape as `BookSpyParser` below."""
+
+    def __init__(self, paper_id: str):
+        self.calls: list[str] = []
+        self._paper_id = paper_id
+
+    def parse(self, ref: PaperRef) -> ParsedDoc:
+        self.calls.append(ref.paper_id)
+        parsed = make_parsed(ref)
+        if ref.paper_id != self._paper_id:
+            return parsed
+        affiliation_block = Block(
+            block_id=f"{ref.paper_id}:aff",
+            paper_id=ref.paper_id,
+            text="K. Kusano, Waymo LLC, Mountain View, CA. Correspondence: kusano@waymo.com",
+            type="prose",
+            page=0,
+            bbox=(0.0, 0.0, 1.0, 1.0),
+            section_path="",  # front matter -- the extractor's candidate-block signal
+            index=0,
+        )
+        return parsed.model_copy(update={"blocks": [affiliation_block, *parsed.blocks]})
+
+
+def test_finish_populates_raw_affiliations_and_author_orgs_when_evidence_found():
+    rig = Rig(refs=REFS[:1])
+    rig.parser = _WaymoAffiliationParser(FIRST_ID)
+
+    rig.ingest()
+
+    record = rig.document_store.get(FIRST_ID)
+    assert record.raw_affiliations == [
+        "K. Kusano, Waymo LLC, Mountain View, CA. Correspondence: kusano@waymo.com"
+    ]
+    assert record.author_orgs == [AuthorOrgMatch(name="Waymo", method="email_domain")]
+
+    # Names-only mirror on the vector payload (contracts/vector_index.py VectorPayload docstring).
+    _, payload = rig.vector_store._store[record.summary_id]
+    assert payload["author_orgs"] == ["Waymo"]
+
+
+def test_finish_populates_empty_lists_when_no_affiliation_evidence_found():
+    # The common/default case: make_parsed's own block has section_path="1. Introduction" (not
+    # front matter) and no "@" -- extract_affiliations_rule_based finds no candidate at all.
+    rig = Rig(refs=REFS[:1])
+
+    rig.ingest()
+
+    record = rig.document_store.get(FIRST_ID)
+    assert record.raw_affiliations == []
+    assert record.author_orgs == []
+    _, payload = rig.vector_store._store[record.summary_id]
+    assert payload["author_orgs"] == []
 
 
 def test_source_of_truth_is_written_before_the_derived_index():

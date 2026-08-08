@@ -60,6 +60,7 @@ from contracts.errors import ContractError, PermanentError, TransientError
 from contracts.harvester import PaperRef
 from contracts.ingest_state import CheckpointArtifacts
 from contracts.parser import ParsedDoc
+from rag.author_org_tagger import extract_affiliations_rule_based, match_known_orgs_with_method
 from rag.book_summarizer import summarize_book
 
 RetrySleep = Callable[[float], None]
@@ -615,6 +616,13 @@ class IngestionOrchestrator:
             ),
         )
 
+        # T-ORG1: cheap, pure, no I/O -- extraction is a regex scan over already-parsed blocks,
+        # matching is a string-substring check against KNOWN_ORGS (rag/author_org_tagger.py). If
+        # extraction finds nothing, both come back [] (extract_affiliations_rule_based's own
+        # contract), never None.
+        raw_affiliations = extract_affiliations_rule_based(parsed.blocks)
+        author_orgs = match_known_orgs_with_method(raw_affiliations)
+
         record = PaperRecord(
             ref=ref,
             parsed=parsed,
@@ -623,6 +631,8 @@ class IngestionOrchestrator:
             summary_id=f"{paper_id}:summary",
             relevance_score=relevance_score,
             chapter_summaries=chapter_summaries,
+            raw_affiliations=raw_affiliations,
+            author_orgs=author_orgs,
         )
         self._on_stage("store")
         self._document_store.put(record)  # source of truth, written before the derived index
@@ -754,6 +764,9 @@ class IngestionOrchestrator:
             "published": record.ref.published.isoformat(),
             "embedding_version": self._embedder.info.version,
             "doc_type": record.ref.doc_type,
+            # T-ORG1: names only, no method -- filtering doesn't need it (contracts/vector_index.py
+            # VectorPayload docstring).
+            "author_orgs": [match.name for match in record.author_orgs],
         }
         self._vector_index.upsert(
             record.summary_id,

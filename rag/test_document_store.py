@@ -24,6 +24,7 @@ import pytest
 
 _mod = pytest.importorskip("rag.document_store")
 
+from contracts.author_orgs import AuthorOrgMatch  # noqa: E402
 from contracts.chunker import Chunk  # noqa: E402  (imports follow importorskip, per M1a convention)
 from contracts.document_store import ChapterSummary, PaperRecord  # noqa: E402
 from contracts.errors import ContractError  # noqa: E402
@@ -271,6 +272,35 @@ def test_put_is_idempotent_and_reflects_new_content(store):
 # --------------------------------------------------------------------------------------------------
 # get_span — resolves anchor.block_id to the FULL Block.text, not the shorter Anchor.snippet
 # --------------------------------------------------------------------------------------------------
+
+
+# --------------------------------------------------------------------------------------------------
+# raw_affiliations / author_orgs (T-ORG1, migration 0005) — evidence + which signal matched
+# --------------------------------------------------------------------------------------------------
+
+
+def test_put_get_round_trips_raw_affiliations_and_author_orgs(store):
+    record = make_paper_record(
+        raw_affiliations=["Waymo LLC, Mountain View, CA", "kusano@waymo.com"],
+        author_orgs=[AuthorOrgMatch(name="Waymo", method="email_domain")],
+    )
+    store.put(record)
+    got = store.get(PAPER_ID)
+
+    assert got.raw_affiliations == ["Waymo LLC, Mountain View, CA", "kusano@waymo.com"]
+    assert got.author_orgs == [AuthorOrgMatch(name="Waymo", method="email_domain")]
+
+
+def test_put_get_round_trips_empty_raw_affiliations_and_author_orgs(store):
+    # The common case: no candidate affiliation text found at all. Empty list, not None/missing --
+    # a store that round-trips NULL as something other than [] breaks PaperRecord's own contract
+    # (raw_affiliations: list[str] = Field(default_factory=list)).
+    record = make_paper_record()
+    store.put(record)
+    got = store.get(PAPER_ID)
+
+    assert got.raw_affiliations == []
+    assert got.author_orgs == []
 
 
 def test_get_span_returns_full_block_text_not_snippet(store):

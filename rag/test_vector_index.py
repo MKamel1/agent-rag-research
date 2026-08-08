@@ -130,6 +130,20 @@ def test_qdrant_filter_doc_type_paper_includes_legacy_points():
     )
 
 
+def test_qdrant_filter_author_org():
+    real = pytest.importorskip("rag.vector_index")
+    f = real._qdrant_filter(SearchFilters(author_org="Waymo"))
+    assert (
+        real.models.FieldCondition(key="author_orgs", match=real.models.MatchValue(value="Waymo"))
+        in f.must
+    )
+
+
+def test_qdrant_filter_none_when_no_author_org():
+    real = pytest.importorskip("rag.vector_index")
+    assert real._qdrant_filter(SearchFilters()) is None
+
+
 def test_qdrant_filter_paper_id():
     # Decision 3 option A: paper_id restricts to VectorPayload.paper_id, same MatchValue shape as
     # kind/doc_type above.
@@ -378,6 +392,30 @@ def assert_filters_by_doc_type(adapter):
     assert [h.id for h in hits] == ["b"]
 
 
+def assert_filters_by_author_org(adapter):
+    adapter.upsert("w", [1.0, 0.0], _payload(author_orgs=["Waymo"]))
+    adapter.upsert("m", [1.0, 0.0], _payload(author_orgs=["MIT"]))
+    adapter.upsert("none", [1.0, 0.0], _payload(author_orgs=[]))
+    hits = adapter.hybrid_search(
+        qvec=[1.0, 0.0], qtext="method", filters=SearchFilters(author_org="Waymo"), k=10
+    )
+    assert [h.id for h in hits] == ["w"]
+
+
+def assert_legacy_payload_without_author_orgs_matches_nothing(adapter):
+    # T-ORG1: unlike doc_type's legacy-defaults-to-"paper" rule, a point upserted before
+    # author_orgs existed has NO evidence either way -- it must not match an author_org filter
+    # (there is no sensible "assume it's Waymo" default the way "assume it's a paper" is for
+    # doc_type).
+    legacy_payload = _payload()
+    assert "author_orgs" not in legacy_payload
+    adapter.upsert("legacy", [1.0, 0.0], legacy_payload)
+    hits = adapter.hybrid_search(
+        qvec=[1.0, 0.0], qtext="method", filters=SearchFilters(author_org="Waymo"), k=10
+    )
+    assert hits == []
+
+
 def assert_filters_by_paper_id(adapter):
     # Decision 3 option A: paper_id restricts results to that one document.
     adapter.upsert("a", [1.0, 0.0], _payload(paper_id="2506.00001"))
@@ -451,6 +489,8 @@ CONTRACT = (
     assert_filters_by_date_range,
     assert_filters_by_kind,
     assert_filters_by_doc_type,
+    assert_filters_by_author_org,
+    assert_legacy_payload_without_author_orgs_matches_nothing,
     assert_filters_by_paper_id,
     assert_filters_by_paper_id_combines_with_doc_type_and_kind,
     assert_legacy_payload_without_doc_type_counts_as_paper,
