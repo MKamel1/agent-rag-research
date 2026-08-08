@@ -1,95 +1,147 @@
-# Affiliation retrieval, measured on the Waymo corpus's first batch — 2026-08-07
+# Affiliation retrieval accuracy, measured against AI-labelled ground truth — 2026-08-07
 
-**Verdict: the rule-based authorship signal does not work as an authorship signal. Precision 0.000
-on the evaluated subset (36 flagged Waymo-authored, 0 actually Waymo-authored).** It is structurally
-unable to tell "written by Waymo" from "mentions Waymo", which is the one distinction this corpus
-needs it for. The v2 plan's decision to source the Waymo-vs-other split from the enumerated
-`fixtures/waymo/waymo_authored_ids.txt` instead of the tagger is therefore correct, and now has
-evidence behind it rather than only an argument.
+**Two findings, the second larger than the first:**
 
-## What was measured
+1. **The authorship signal is not usable: precision 0.043** (2 true positives against 44 false
+   positives). It cannot tell "written by Waymo" from "mentions Waymo".
+2. **For 53% of papers the affiliation evidence was never extracted at all** — no institution name
+   and no email in the front matter the parser captured. That caps what *any* affiliation method can
+   achieve, including the fix recommended below, and is a parser problem rather than a matching one.
 
-`rag/author_org_tagger.py` deliberately exposes two different signals, and its own docstring says
-they must not be conflated:
+The v2 plan's decision to source the Waymo-vs-other split from the enumerated
+`fixtures/waymo/waymo_authored_ids.txt` instead of the tagger is therefore correct, and now rests on
+measurement rather than argument.
 
-| function | intended meaning |
-|---|---|
-| `match_known_orgs(extract_affiliations_rule_based(blocks))` | **authorship** — a Waymo employee wrote this |
-| `mentions_orgs(title, abstract)` | **topical** — this paper uses Waymo data |
+> **Supersedes the earlier draft of this report.** That version scored against the 114-id list, of
+> which **0 papers had been ingested**, so it could report precision only — recall and false
+> negatives were unmeasurable, and its "false positives" really meant "not on the list". This
+> version builds ground truth from each paper's own source text, so FP *and* FN are both measured.
 
-Both were run read-only over the **134 papers at `stage='done'`** in `waymo/data/papers.db` at the
-time of the run, and scored against the 114 enumerated Waymo-authored ids in
-`fixtures/waymo/waymo_authored_ids.txt`.
+## Method
+
+Ground truth is per-paper, built by three independent AI labellers reading **only the paper's own
+front-matter affiliation region** — with the abstract removed, since the abstract is precisely what
+contaminates the tagger and must not be allowed to contaminate the reference labels either. Labellers
+were **not shown the tagger's prediction**, so labels cannot be anchored to the thing being measured.
+
+The instruction they scored against: a paper counts as Waymo-affiliated only if Waymo appears as an
+author's *employer* or an author has an `@waymo.com` address. "Waymo Open Dataset", "we compare
+against Waymo", or Waymo in an index-terms line are explicitly **not** affiliations.
+
+Sampling was stratified over the **370 papers at `stage='done'`**:
+
+| tier | what | n | purpose |
+|---|---|---|---|
+| 1 | every paper the tagger predicted Waymo-authored | 80 (all labelled) | exact TP / FP |
+| 2 | tagger said no, but "waymo" in the affiliation region | 0 | empty *by construction* — the tagger reads a superset of this region, so it cannot miss a mention it can see |
+| 3 | random sample of the unflagged remainder | 40 of 290 | bounds false negatives in the silent majority |
+
+Labels of `unclear` are **excluded from the metrics** rather than being forced into a bucket — the
+conservative choice, and the reason the denominators below are smaller than the tier sizes.
 
 ## Results
 
 ```
-done papers evaluated : 134
-ground-truth Waymo ids: 114   (of which already done: 0)
+CONFUSION MATRIX (predicted-positive side exhaustive)
+  TRUE POSITIVES  :  2
+  FALSE POSITIVES : 44
+  unclear         : 34      excluded
 
-AUTHORSHIP signal : 36
-TOPICAL   signal  : 60
+NEGATIVE SAMPLE (40 of 290)
+  TRUE NEGATIVES  : 24
+  FALSE NEGATIVES :  0
+  unclear         : 16      excluded
 
-authored-by AND mentions : 35
-mentions but NOT authored: 25
-authored but no mention  :  1     <- the whole "independent signal" claim rests on this one paper
-
-authorship vs ground truth:
-  true positives : 0
-  false positives: 36
-  precision      : 0.000
+PRECISION = 2/46 = 0.043
+FN rate   = 0/24 = 0.000
 ```
 
-Recall is **not** measurable yet: 0 of the 114 ground-truth papers had been ingested at this point
-(Phase A drains v1's broad harvest; the 114 arrive in Phase B2). Precision alone is already
-conclusive, and the false positives were confirmed by reading the actual author lists:
+**Precision 0.043.** Of 46 decided predictions, 44 are wrong.
 
-| paper | flagged as | actual authors |
-|---|---|---|
-| `2505.00972` | Waymo | Tongji University, Hong Kong Polytechnic |
-| `2404.18464` | Waymo | Baotian He, Yibing Li |
-| `2508.00384` | Waymo | Purdue, Toyota |
+**No false negatives found**, but this is a weaker result than it looks and should not be quoted as
+"recall ≈ 1.0": it rests on **24 decided negatives**, because 16 of the 40 sampled were `unclear`.
+It does establish that the tagger is not silently missing large numbers of Waymo papers — its
+failure mode is over-firing, not under-firing.
 
-## Root cause — the extractor's candidate window includes the abstract
+### Why the 44 false positives fired
 
-`_is_candidate_affiliation_block` (`rag/author_org_tagger.py:21`) accepts any page-0 block that is
-front matter (`section_path == ""`) or contains an `@`. On a real parse, front matter is not just
-the affiliation lines — it includes the **abstract**. `match_known_orgs` then joins every candidate
-block into one string and substring-matches org keywords across the lot.
+| cause | n |
+|---|---|
+| no "waymo" anywhere in the affiliation region — the keyword can only have come from the **abstract** | 27 |
+| "waymo" present in region but not as an affiliation (e.g. "Waymo Open Dataset" in an index-terms line) | 17 |
 
-Traced directly on `2505.00972` — 7 candidate blocks were extracted:
+Traced end-to-end on `2505.00972` (authors: Tongji University, Hong Kong Polytechnic). Its 7
+candidate blocks:
 
 ```
-[0]..[4]  waymo_in_block=False   (title, authors, the real Tongji/HK-Poly affiliations)
+[0]..[4]  waymo_in_block=False   title, authors, the real Tongji / HK-Poly affiliations
 [5]       waymo_in_block=True    len=1091   <- the ABSTRACT
           "...Evaluations using the Waymo Open Motion Dataset demonstrate that our model
            reduces the mean minimum time-to-collision from 1.62 to 1.08 s..."
 [6]       waymo_in_block=False
 ```
 
-The keyword hit comes from the abstract's *use* of the Waymo Open Motion Dataset, not from any
-affiliation. So the "authorship" signal is largely re-deriving the topical one: **35 of its 36 hits
-also fire `mentions_orgs`**.
+`_is_candidate_affiliation_block` (`rag/author_org_tagger.py:21`) accepts any page-0 block that is
+front matter (`section_path == ""`) or contains `@`. On a real parse that includes the abstract.
+`match_known_orgs` then joins every candidate into one string and substring-matches, so a paper that
+merely *benchmarks on* a Waymo dataset is indistinguishable from one Waymo wrote.
 
-## What this does and does not condemn
+### The two true positives
 
-- **`extract_affiliations_rule_based` + `match_known_orgs` as an authorship classifier: not usable.**
-  Any AV paper benchmarking on a Waymo dataset — which is most of this corpus — is a false positive.
-- **`mentions_orgs` is fine** at what it claims (a topical signal), and correctly labelled as weaker.
-- **The `KNOWN_ORGS` roster and the email-domain path are not the problem.** No false positive here
-  matched by email domain; every one came through the keyword-substring path reading abstract text.
-  A domain-only match would likely be high-precision, just low-recall.
+| paper | evidence |
+|---|---|
+| `2604.03827` | affiliation line reads "Waymo LLC"; all five authors carry `@waymo.com` emails |
+| `2605.22997` | "1Waymo LLC 2UC San Diego", emails `{ylzou, ywli}@waymo.com` |
+
+Both carry a `waymo.com` email. Across all 370 done papers, exactly **2** have one.
+
+## The larger finding: the evidence is usually missing
+
+Measured over the 120 labelled records:
+
+| | n | share |
+|---|---|---|
+| no institution-like word in the affiliation region | 65 | **54%** |
+| no email address in the region | 97 | **81%** |
+| **neither institution nor email** | **64** | **53%** |
+
+This is what drove 50 of 120 labels to `unclear`: the labellers repeatedly found author names with
+superscript markers (`Yao¹, Bouzidi¹, Goehring¹, Reichardt²`) and **no affiliation list captured at
+all**. For those papers no matching rule can succeed, because the text it would match against was
+never extracted. This is an extraction/parser gap, and it bounds every option below.
 
 ## Recommended fixes, cheapest first
 
-1. **Exclude the abstract from the candidate window.** The abstract is typically the longest page-0
-   front-matter block; affiliation lines are short. A length ceiling, or dropping the block that the
-   parser also stored as the paper's `abstract`, would remove the dominant false-positive source at
-   near-zero cost. Needs re-measuring against ground truth once Phase B2 has ingested the 114.
-2. **Prefer the email-domain signal, treat keyword matches as weak.** Return a confidence rather
-   than a bare list, so a downstream filter can require domain-level evidence.
-3. **Do not wire this into ingest until precision is re-measured** (backlog `T-ORG1`). Persisting a
-   0.000-precision tag into the schema would bake a wrong answer into the corpus.
+1. **Match on email domain, not keyword substring.** On this sample a domain-only rule flags exactly
+   2 papers: **2 correct, 0 wrong, 0 missed** — precision 1.000 where the current rule scores 0.043.
+   The obvious caveat is recall: 81% of regions carry no email, so domain-only would be
+   high-precision and unknown-recall on the wider corpus.
+2. **Exclude the abstract from the candidate window.** Removes the dominant false-positive source
+   (27 of 44) at near-zero cost. The abstract is identifiable — it is already stored separately in
+   `papers.abstract`.
+3. **Fix the extraction gap before trusting any recall number** (the 53% above). Until affiliation
+   text is reliably captured, a high-precision rule will simply be silent on half the corpus.
+4. **Do not wire any of this into ingest until precision *and* recall are re-measured** — backlog
+   `T-ORG1`, now blocked by `T-ORG2`. Persisting a 0.043-precision tag would bake a wrong answer into
+   the schema.
 
-Until then the Waymo-authored set comes from `fixtures/waymo/waymo_authored_ids.txt` — enumerated
-from Waymo's own research index pages, exact by construction, and re-verified current on 2026-08-07.
+## Threats to validity, stated plainly
+
+- **Recall is an estimate, not a measurement.** 24 decided negatives out of a 290-paper population.
+- **Labeller inconsistency on empty regions.** Batch A treated "no affiliation text at all" as
+  `unclear`; batch B called some of the same shape `false` at low confidence. Because `unclear` is
+  excluded and those records contain no Waymo text either way, this cannot manufacture a false
+  positive or hide a false negative — but it does mean the `unclear`/`false` split is softer than
+  the TP/FP split.
+- **The done set is not the target corpus.** These 370 papers come from v1's broad harvest, not from
+  the 114 Waymo-authored ids (still uningested at the time of the run — they arrive in Phase B2).
+  Precision measured here should hold, but recall must be re-measured once the known-positive
+  population is actually in the corpus.
+
+## Reproducing
+
+Ground-truth labels and the scoring harness are throwaway job-scratch artifacts, not committed. The
+method is: rebuild the stratified test set from `ingest_state` + `blocks` with the abstract removed,
+label tiers 1 and 3 blind, then score with `unclear` excluded. The two true positives
+(`2604.03827`, `2605.22997`) and the 2-of-370 `waymo.com`-email count are the anchors any re-run
+should reproduce.
