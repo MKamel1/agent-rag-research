@@ -76,7 +76,8 @@ from datetime import date
 
 import pytest
 
-from contracts.author_orgs import AuthorOrgMatch
+import rag.author_org_tagger as author_org_tagger
+from contracts.author_orgs import AuthorOrgMatch, AuthorOrgTag
 from contracts.chunker import Chunk
 from contracts.config import Config
 from contracts.document_store import PaperRecord
@@ -537,6 +538,123 @@ def test_finish_populates_empty_lists_when_no_affiliation_evidence_found():
     assert record.author_orgs == []
     _, payload = rig.vector_store._store[record.summary_id]
     assert payload["author_orgs"] == []
+
+
+# ================================================================================================
+# T-ORG3: the curated tier merged in during _finish -- curated wins over keyword/email_domain for
+# the same org, and fires independently of whatever the heuristic extraction found (or didn't).
+# ================================================================================================
+
+
+class _NoWaymoTextParser:
+    """Every ref parses to the plain `make_parsed` shape -- no affiliation evidence, no Waymo
+    keyword anywhere. Used to prove a curated match needs no heuristic text signal at all."""
+
+    def parse(self, ref: PaperRef) -> ParsedDoc:
+        return make_parsed(ref)
+
+
+class _ChallengePaperParser:
+    """The real-world false-positive shape (docs/eval-reports/2026-08-07-affiliation-retrieval-
+    first-batch.md): a paper that heavily mentions Waymo in its front matter/abstract-adjacent
+    text -- e.g. a "1st Place Solution for Waymo Open Dataset Challenge" writeup -- but was NOT
+    written by Waymo. `match_known_orgs_with_method` fires `keyword` on this; `curated_orgs_for`
+    must not, since this paper_id is never on the curated list."""
+
+    def parse(self, ref: PaperRef) -> ParsedDoc:
+        parsed = make_parsed(ref)
+        block = Block(
+            block_id=f"{ref.paper_id}:aff",
+            paper_id=ref.paper_id,
+            text="1st Place Solution for the Waymo Open Dataset Motion Prediction Challenge",
+            type="prose",
+            page=0,
+            bbox=(0.0, 0.0, 1.0, 1.0),
+            section_path="",
+            index=0,
+        )
+        return parsed.model_copy(update={"blocks": [block, *parsed.blocks]})
+
+
+def _patch_curated_waymo(monkeypatch, tmp_path, *curated_ids: str) -> None:
+    ids_path = tmp_path / "curated.txt"
+    ids_path.write_text("\n".join(curated_ids) + "\n")
+    monkeypatch.setattr(
+        author_org_tagger, "KNOWN_ORGS",
+        [AuthorOrgTag(
+            name="Waymo", email_domains=["waymo.com"], keywords=["waymo"],
+            curated_ids_path=str(ids_path),
+        )],
+    )
+    monkeypatch.setattr(author_org_tagger, "_curated_ids_cache", {})
+
+
+def test_finish_curated_wins_over_keyword_for_the_same_org(monkeypatch, tmp_path):
+    _patch_curated_waymo(monkeypatch, tmp_path, FIRST_ID)
+    rig = Rig(refs=REFS[:1])
+    rig.parser = _WaymoAffiliationParser(FIRST_ID)  # would otherwise match "email_domain"
+
+    rig.ingest()
+
+    record = rig.document_store.get(FIRST_ID)
+    assert record.author_orgs == [AuthorOrgMatch(name="Waymo", method="curated")]
+
+
+def test_finish_curated_match_with_no_affiliation_text_at_all(monkeypatch, tmp_path):
+    # The whole point of the curated tier: FIRST_ID is on the curated list, but its parsed text
+    # carries zero Waymo signal -- the heuristic alone would find nothing.
+    _patch_curated_waymo(monkeypatch, tmp_path, FIRST_ID)
+    rig = Rig(refs=REFS[:1])
+    rig.parser = _NoWaymoTextParser()
+
+    rig.ingest()
+
+    record = rig.document_store.get(FIRST_ID)
+    assert record.raw_affiliations == []
+    assert record.author_orgs == [AuthorOrgMatch(name="Waymo", method="curated")]
+
+
+def test_finish_no_curated_match_for_a_challenge_paper_not_on_the_curated_list(
+    monkeypatch, tmp_path
+):
+    # FIRST_ID is deliberately NOT on the curated list here -- the exact real-world false-positive
+    # this tier exists to close: heavy Waymo text, zero Waymo authorship.
+    _patch_curated_waymo(monkeypatch, tmp_path, "some-other-id")
+    rig = Rig(refs=REFS[:1])
+    rig.parser = _ChallengePaperParser()
+
+    rig.ingest()
+
+    record = rig.document_store.get(FIRST_ID)
+    assert record.author_orgs == [AuthorOrgMatch(name="Waymo", method="keyword")]  # heuristic only
+
+
+def test_finish_curated_author_orgs_mirrored_on_vector_payload(monkeypatch, tmp_path):
+    _patch_curated_waymo(monkeypatch, tmp_path, FIRST_ID)
+    rig = Rig(refs=REFS[:1])
+    rig.parser = _NoWaymoTextParser()
+
+    rig.ingest()
+
+    record = rig.document_store.get(FIRST_ID)
+    _, payload = rig.vector_store._store[record.summary_id]
+    assert payload["author_orgs"] == ["Waymo"]
+    assert payload["curated_author_orgs"] == ["Waymo"]
+
+
+def test_finish_curated_author_orgs_empty_on_vector_payload_for_keyword_only_match(
+    monkeypatch, tmp_path
+):
+    _patch_curated_waymo(monkeypatch, tmp_path, "some-other-id")
+    rig = Rig(refs=REFS[:1])
+    rig.parser = _ChallengePaperParser()
+
+    rig.ingest()
+
+    record = rig.document_store.get(FIRST_ID)
+    _, payload = rig.vector_store._store[record.summary_id]
+    assert payload["author_orgs"] == ["Waymo"]
+    assert payload["curated_author_orgs"] == []
 
 
 def test_source_of_truth_is_written_before_the_derived_index():

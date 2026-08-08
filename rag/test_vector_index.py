@@ -144,6 +144,32 @@ def test_qdrant_filter_none_when_no_author_org():
     assert real._qdrant_filter(SearchFilters()) is None
 
 
+def test_qdrant_filter_author_org_curated_only_uses_the_curated_key():
+    # T-ORG3: author_org_curated_only=True must switch the filtered payload key from
+    # "author_orgs" to "curated_author_orgs" -- the enumerated-only tier, not any-method.
+    real = pytest.importorskip("rag.vector_index")
+    f = real._qdrant_filter(SearchFilters(author_org="Waymo", author_org_curated_only=True))
+    assert (
+        real.models.FieldCondition(
+            key="curated_author_orgs", match=real.models.MatchValue(value="Waymo")
+        )
+        in f.must
+    )
+    assert (
+        real.models.FieldCondition(key="author_orgs", match=real.models.MatchValue(value="Waymo"))
+        not in f.must
+    )
+
+
+def test_qdrant_filter_author_org_curated_only_false_still_uses_author_orgs_key():
+    real = pytest.importorskip("rag.vector_index")
+    f = real._qdrant_filter(SearchFilters(author_org="Waymo", author_org_curated_only=False))
+    assert (
+        real.models.FieldCondition(key="author_orgs", match=real.models.MatchValue(value="Waymo"))
+        in f.must
+    )
+
+
 def test_qdrant_filter_paper_id():
     # Decision 3 option A: paper_id restricts to VectorPayload.paper_id, same MatchValue shape as
     # kind/doc_type above.
@@ -402,6 +428,25 @@ def assert_filters_by_author_org(adapter):
     assert [h.id for h in hits] == ["w"]
 
 
+def assert_filters_by_author_org_curated_only(adapter):
+    # T-ORG3: two points both carry author_orgs=["Waymo"] (either method would pass a plain
+    # author_org filter) -- only the one whose curated_author_orgs also names Waymo may pass when
+    # author_org_curated_only=True.
+    adapter.upsert(
+        "curated", [1.0, 0.0],
+        _payload(author_orgs=["Waymo"], curated_author_orgs=["Waymo"]),
+    )
+    adapter.upsert(
+        "keyword_only", [1.0, 0.0],
+        _payload(author_orgs=["Waymo"], curated_author_orgs=[]),
+    )
+    hits = adapter.hybrid_search(
+        qvec=[1.0, 0.0], qtext="method",
+        filters=SearchFilters(author_org="Waymo", author_org_curated_only=True), k=10,
+    )
+    assert [h.id for h in hits] == ["curated"]
+
+
 def assert_legacy_payload_without_author_orgs_matches_nothing(adapter):
     # T-ORG1: unlike doc_type's legacy-defaults-to-"paper" rule, a point upserted before
     # author_orgs existed has NO evidence either way -- it must not match an author_org filter
@@ -490,6 +535,7 @@ CONTRACT = (
     assert_filters_by_kind,
     assert_filters_by_doc_type,
     assert_filters_by_author_org,
+    assert_filters_by_author_org_curated_only,
     assert_legacy_payload_without_author_orgs_matches_nothing,
     assert_filters_by_paper_id,
     assert_filters_by_paper_id_combines_with_doc_type_and_kind,

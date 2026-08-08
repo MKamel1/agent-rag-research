@@ -53,6 +53,7 @@ import time
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 
+from contracts.author_orgs import AuthorOrgMatch
 from contracts.chunker import Chunk
 from contracts.config import Config
 from contracts.document_store import ChapterSummary, PaperRecord
@@ -60,7 +61,11 @@ from contracts.errors import ContractError, PermanentError, TransientError
 from contracts.harvester import PaperRef
 from contracts.ingest_state import CheckpointArtifacts
 from contracts.parser import ParsedDoc
-from rag.author_org_tagger import extract_affiliations_rule_based, match_known_orgs_with_method
+from rag.author_org_tagger import (
+    curated_orgs_for,
+    extract_affiliations_rule_based,
+    match_known_orgs_with_method,
+)
 from rag.book_summarizer import summarize_book
 
 RetrySleep = Callable[[float], None]
@@ -102,6 +107,19 @@ def _cosine(a: list[float], b: list[float]) -> float:
     if norm_a == 0.0 or norm_b == 0.0:
         return 0.0
     return dot / (norm_a * norm_b)
+
+
+def _merge_author_orgs(
+    curated: list[AuthorOrgMatch], heuristic: list[AuthorOrgMatch]
+) -> list[AuthorOrgMatch]:
+    """T-ORG3: `curated` (`rag/author_org_tagger.py::curated_orgs_for`) wins over
+    `heuristic` (`match_known_orgs_with_method`'s `email_domain`/`keyword` result) for the same
+    org name -- an enumerated fact from the org itself is never second-guessed by a keyword scan
+    (`AuthorOrgMatch`'s docstring, `contracts/author_orgs.py`, states this precedence). An org name
+    only in `heuristic` keeps its heuristic match unchanged; every curated match is kept as-is.
+    """
+    curated_names = {match.name for match in curated}
+    return curated + [match for match in heuristic if match.name not in curated_names]
 
 
 @dataclass
@@ -621,7 +639,12 @@ class IngestionOrchestrator:
         # extraction finds nothing, both come back [] (extract_affiliations_rule_based's own
         # contract), never None.
         raw_affiliations = extract_affiliations_rule_based(parsed.blocks)
-        author_orgs = match_known_orgs_with_method(raw_affiliations)
+        heuristic_orgs = match_known_orgs_with_method(raw_affiliations)
+        # T-ORG3: an id lookup against each org's curated list (rag/author_org_tagger.py's own
+        # cache -- read once per run, not per paper). Independent of raw_affiliations by design:
+        # a curated match must fire (or not) with no dependence on what the heuristic scan found.
+        curated_orgs = curated_orgs_for(paper_id)
+        author_orgs = _merge_author_orgs(curated_orgs, heuristic_orgs)
 
         record = PaperRecord(
             ref=ref,
@@ -767,6 +790,11 @@ class IngestionOrchestrator:
             # T-ORG1: names only, no method -- filtering doesn't need it (contracts/vector_index.py
             # VectorPayload docstring).
             "author_orgs": [match.name for match in record.author_orgs],
+            # T-ORG3: the subset of the above whose method is "curated" -- the seam
+            # SearchFilters.author_org_curated_only filters against (contracts/vector_index.py).
+            "curated_author_orgs": [
+                match.name for match in record.author_orgs if match.method == "curated"
+            ],
         }
         self._vector_index.upsert(
             record.summary_id,

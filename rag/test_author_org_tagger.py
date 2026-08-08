@@ -1,9 +1,11 @@
 """Offline unit tests for rag/author_org_tagger.py -- no network, no GPU, canned Block fixtures.
 Fixture shape mirrors rag/test_parser.py's `_block()` helper (Block's real required fields,
 including `index`, which `contracts.provenance.Block` requires but is otherwise irrelevant here)."""
-from contracts.author_orgs import AuthorOrgMatch
+import rag.author_org_tagger as tagger
+from contracts.author_orgs import AuthorOrgMatch, AuthorOrgTag
 from contracts.provenance import Block
 from rag.author_org_tagger import (
+    curated_orgs_for,
     extract_affiliations_rule_based,
     match_known_orgs,
     match_known_orgs_with_method,
@@ -148,6 +150,82 @@ def test_match_known_orgs_with_method_email_domain_wins_when_both_present():
         ["Waymo LLC, Mountain View, CA. Correspondence: k.kusano@waymo.com"]
     )
     assert result == [AuthorOrgMatch(name="Waymo", method="email_domain")]
+
+
+# --- T-ORG3: curated_orgs_for -- the enumerated, authoritative tier -----------------------------
+
+
+def _write_ids(tmp_path, *ids):
+    path = tmp_path / "curated_ids.txt"
+    path.write_text("\n".join(ids) + "\n")
+    return str(path)  # absolute -- _resolve_curated_path leaves an absolute path untouched
+
+
+def test_curated_orgs_for_matches_an_id_on_the_curated_list(tmp_path, monkeypatch):
+    ids_path = _write_ids(tmp_path, "2604.03827", "2605.22997")
+    monkeypatch.setattr(
+        tagger, "KNOWN_ORGS",
+        [AuthorOrgTag(name="Waymo", email_domains=[], keywords=[], curated_ids_path=ids_path)],
+    )
+    assert curated_orgs_for("2604.03827") == [AuthorOrgMatch(name="Waymo", method="curated")]
+
+
+def test_curated_orgs_for_finds_no_match_for_an_id_not_on_the_list():
+    # 2006.15505 is a real "1st Place Solution for Waymo Open Dataset Challenge"-style paper --
+    # the exact false-positive shape T-ORG3 exists to close -- and is not in the curated fixture.
+    assert curated_orgs_for("2006.15505") == []
+
+
+def test_curated_orgs_for_does_not_depend_on_any_heuristic_text_signal(tmp_path, monkeypatch):
+    # The whole point: a curated id gets a curated match with ZERO reliance on affiliation text --
+    # this test never constructs a Block or calls extract_affiliations_rule_based/
+    # match_known_orgs_with_method at all.
+    ids_path = _write_ids(tmp_path, "9999.99999")
+    monkeypatch.setattr(
+        tagger, "KNOWN_ORGS",
+        [AuthorOrgTag(name="Waymo", email_domains=[], keywords=[], curated_ids_path=ids_path)],
+    )
+    assert curated_orgs_for("9999.99999") == [AuthorOrgMatch(name="Waymo", method="curated")]
+
+
+def test_curated_orgs_for_empty_for_an_org_with_no_curated_ids_path(monkeypatch):
+    # No behavior change for an org that never opts in (curated_ids_path=None, the default) --
+    # even for a paper id that would otherwise plausibly match nothing else either.
+    monkeypatch.setattr(
+        tagger, "KNOWN_ORGS",
+        [AuthorOrgTag(name="MIT", email_domains=["mit.edu"], keywords=["mit"])],
+    )
+    assert curated_orgs_for("anything") == []
+
+
+def test_curated_ids_file_is_read_once_not_per_call(tmp_path, monkeypatch):
+    ids_path = _write_ids(tmp_path, "1111.11111")
+    monkeypatch.setattr(
+        tagger, "KNOWN_ORGS",
+        [AuthorOrgTag(name="Waymo", email_domains=[], keywords=[], curated_ids_path=ids_path)],
+    )
+    monkeypatch.setattr(tagger, "_curated_ids_cache", {})
+
+    calls: list[str] = []
+    real_read = tagger._read_ids_file
+
+    def counting_read(path):
+        calls.append(path)
+        return real_read(path)
+
+    monkeypatch.setattr(tagger, "_read_ids_file", counting_read)
+
+    for paper_id in ["1111.11111", "2222.22222", "1111.11111", "3333.33333"]:
+        curated_orgs_for(paper_id)
+
+    assert len(calls) == 1, f"expected exactly one file read across 4 calls, got {len(calls)}"
+
+
+def test_curated_orgs_for_against_the_real_waymo_fixture():
+    # Exercises the real KNOWN_ORGS Waymo entry (contracts/author_orgs.py) + the real
+    # fixtures/waymo/waymo_authored_ids.txt -- no monkeypatching. Read-only.
+    matched = curated_orgs_for("1812.03079")  # first id in the committed fixture file
+    assert matched == [AuthorOrgMatch(name="Waymo", method="curated")]
 
 
 def test_match_known_orgs_with_method_empty_when_no_match():

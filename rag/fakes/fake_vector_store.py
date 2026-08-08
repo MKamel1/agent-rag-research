@@ -103,7 +103,10 @@ class FakeVectorStore:
             # T-ORG1: .get default [] -- points upserted before this field existed carry no
             # author_orgs key at all (same legacy-key convention as doc_type above), and match
             # nothing rather than everything.
-            if filters.author_org not in payload.get("author_orgs", []):
+            # T-ORG3: author_org_curated_only switches to the curated_author_orgs key (the
+            # enumerated-only subset), same .get([])-default legacy behavior.
+            key = "curated_author_orgs" if filters.author_org_curated_only else "author_orgs"
+            if filters.author_org not in payload.get(key, []):
                 return False
         published = payload["published"]  # ISO date string
         if filters.published_after is not None:

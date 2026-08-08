@@ -291,6 +291,18 @@ def test_put_get_round_trips_raw_affiliations_and_author_orgs(store):
     assert got.author_orgs == [AuthorOrgMatch(name="Waymo", method="email_domain")]
 
 
+def test_put_get_round_trips_curated_method(store):
+    # T-ORG3: "curated" needs no schema change (author_orgs is already a JSON TEXT column,
+    # migrations/0005_author_orgs.sql) -- this is a pure Literal-widening round-trip proof.
+    record = make_paper_record(
+        author_orgs=[AuthorOrgMatch(name="Waymo", method="curated")],
+    )
+    store.put(record)
+    got = store.get(PAPER_ID)
+
+    assert got.author_orgs == [AuthorOrgMatch(name="Waymo", method="curated")]
+
+
 def test_put_get_round_trips_empty_raw_affiliations_and_author_orgs(store):
     # The common case: no candidate affiliation text found at all. Empty list, not None/missing --
     # a store that round-trips NULL as something other than [] breaks PaperRecord's own contract
