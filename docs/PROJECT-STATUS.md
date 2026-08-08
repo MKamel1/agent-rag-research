@@ -39,17 +39,29 @@ separate data directory. It is much smaller and mid-build, not production-grade 
 | Qdrant `papers` collection | **412,167 points**, 823,956 indexed vectors (dense 2560-dim + sparse IDF), 8 segments, status `green` | `curl localhost:6333/collections/papers` |
 
 **Waymo corpus** (`waymo/data/config.yaml`, `db_path: waymo/data/papers.db`, collection
-`waymo_av_safety` — this directory is gitignored, `.gitignore:19`, but present on disk):
+`waymo_av_safety` — this directory is gitignored, `.gitignore:19`, but present on disk).
+**Mid-build under the v2 plan as of 2026-08-07** — these are a snapshot of a run in progress, not a
+finished corpus; re-measure rather than quoting them:
 
-| metric | value |
-|---|---|
-| `papers` rows | 17, all `doc_type='paper'` |
-| `ingest_state` stages | `done`=17, `chunked`=810 (mid-build, Pass-2 not yet run on those) |
-| `chunks` rows | 388 |
-| Qdrant `waymo_av_safety` collection | 405 points / 405 indexed vectors |
+| metric | value | how measured |
+|---|---|---|
+| `ingest_state` stages | `done`=221, `chunked`=606 | `select stage, count(*) from ingest_state group by stage` |
+| `papers` rows | 221, all `doc_type='paper'` | `select doc_type, count(*) from papers group by doc_type` |
+| `chunks` / `blocks` / `summaries` | 4,745 / 24,093 / 221 | `select count(*) from <table>` |
+| `quarantine` rows | 1 | `2601.05653`, a 404 on the PDF fetch |
+| Qdrant `waymo_av_safety` | 4,966 points / 4,966 indexed | `curl localhost:6333/collections/waymo_av_safety` |
+| `pdf_cache` | 1,097 PDFs, 37 `.json` sidecars | `ls pdf_cache/*.pdf \| wc -l` |
+| drop-in tray | 449 PDFs staged, awaiting Phase B | `ls waymo/data/drop_in/papers/*.pdf \| wc -l` |
 
-The Waymo `config.yaml` also carries a 700+-entry `ingest_paper_ids` allowlist (T-EVAL-style scoped
-harvest, `contracts/config.py:88` `ingest_paper_ids`) — it is not query-driven like the main corpus.
+Config changes from the v1 state, all applied by plan Task 3: `ingest_paper_ids` cleared (it held a
+hand-pasted 1,437-id allowlist, duplicating what `--paper-ids-file` already does), `prefetch_target`
+restored to 30000 from v1's neutering value of 1, `focus_area_queries` replaced with the 20-term
+broadened-scope list, and `arxiv_date_from: '2015-01-01'` for the operator's cutoff.
+
+The sidecar count is worth watching: it was **0** for the whole v1 era, because sidecars are written
+by the downloader and v1 had neutered it. Every missing sidecar costs an arXiv metadata re-fetch at
+ingest time, which is what produced the multi-minute per-batch stalls observed on 2026-08-07 before
+`49b966a` got the downloader working again.
 
 ## 2. How to actually run it
 
@@ -181,9 +193,37 @@ from the existing corpus). Not yet backfilled onto the existing 12,390-paper cor
 
 ### Waymo second-corpus attempt
 
-Scout script (`worktree-waymo-corpus-expansion` branch, 7 commits, unmerged — see §8) plus the corpus
-itself (§1's live numbers, 17 done / 810 mid-build). Full detail, including whatever verdict a
-parallel workstream reaches on its viability: `docs/WAYMO-CORPUS-STATUS.md`.
+**v1 (2026-08-05) stalled at 17 done / 810 stranded** — post-mortem in `docs/WAYMO-CORPUS-STATUS.md`.
+
+**v2 (2026-08-06/07) — plan merged, setup shipped, build executing.** Plan:
+`docs/superpowers/plans/2026-08-06-waymo-av-safety-corpus-expansion-v2.md`. Landed in PR #238
+(`cfae593` and below): the arXiv scout brought onto `main` and extended from the narrow v1 scope to
+the operator's 11 topic areas (`scripts/waymo_arxiv_scout.py`, 12 tests);
+`fixtures/waymo/waymo_authored_ids.txt`, the 114 Waymo-authored arXiv ids enumerated off Waymo's own
+two research index pages (re-fetch-verified current 2026-08-07, `54df0dc`); and `waymo/data/config.yaml`
+reconfigured off v1's hand-edits. Live numbers in §1.
+
+Three real defects were found by *running* it, each fixed with a regression test — see §4.
+
+### Corpus-build fixes found in execution (2026-08-07)
+
+| fix | commit | what it was |
+|---|---|---|
+| Harvester emitted a wildcard arXiv rejects | `49b966a` | A one-sided `arxiv_date_from` produced `submittedDate:[<from> TO *]`; arXiv answers that with HTTP 500. Since 500 is retryable, harvests burned their retries and reported `0 distinct paper(s)`, which the downloader logged as "0 new available" before sleeping an hour — so an ordinary 2015 cutoff **silently disabled the downloader** while looking like supply exhaustion. Both open ends now emit concrete bounds. After the fix the same harvest found **596 candidates / 306 to download** where it had found 0. |
+| Dashboard consistency panel read the wrong corpus | `4cc164f` | `read_consistency` fell back to the hardcoded `"papers"` collection whenever no run was in the manifest, so an idle Waymo dashboard reported the **main** corpus's 412,167 points beside its own `sqlite_done: 17` and called it `consistent: true` — a false pass on the OG-16/T-DOC35 check. Now falls back to the data dir's own configured collection. |
+| Scout's 12 tests never ran in CI | `c3765c9` | `scripts/` was absent from `pyproject.toml` `testpaths`. |
+
+### Affiliation retrieval — measured, and it does not work (2026-08-07)
+
+Report: `docs/eval-reports/2026-08-07-affiliation-retrieval-first-batch.md`. Run over the first 134
+done Waymo papers, the authorship signal flagged 36 as Waymo-authored and **none of them are**
+(precision 0.000); 35 of the 36 also fire the topical `mentions_orgs`. Root cause:
+`_is_candidate_affiliation_block` accepts any page-0 front-matter block, which includes the
+**abstract** — so any paper benchmarking on a Waymo dataset keyword-matches. This is why the v2 plan
+sources the Waymo-vs-other split from the enumerated id list rather than the tagger, and why
+`T-ORG1` (wiring tagging into ingest) is now **blocked by `T-ORG2`**: persisting a 0.000-precision
+tag would bake a wrong answer into the schema. It does **not** affect the corpus build, which never
+calls the tagger.
 
 ## 4. Problems faced → solution landed
 
