@@ -258,6 +258,53 @@ adjacent split used elsewhere in this corpus build; `author_orgs`/the `author_or
 open-ended "find papers plausibly authored by org X" queries where an enumerated list doesn't exist,
 not for anything where a wrong tag is costly.
 
+### T-ORG3: the curated tier — wiring the enumerated list in as a first-class method (2026-08-08)
+
+The section above already names the fix for a wrong tag being costly: the enumerated id list. T-ORG3
+(commit `0498e82`) wires that list into the tagging pipeline itself, as a third `AuthorOrgMatch.method`
+value, `"curated"` (`contracts/author_orgs.py`) — rather than the operator having to know to reach for
+`fixtures/waymo/waymo_authored_ids.txt` separately every time. The trigger: T-ORG1's heuristic measures
+precision 0.706 / recall 0.783 at the corrected 138-id ground truth (`docs/eval-reports/2026-08-07-
+affiliation-retrieval-first-batch.md`'s 2026-08-08 addendum — the 0.569/0.763 numbers in the T-ORG2
+writeup above are now stale relative to this; the ground truth grew 114 → 138 with zero classifier
+change, see that addendum for the correction). That's fine for open-ended discovery, but the operator's
+actual use case — understanding Waymo's technical stack from Waymo's own papers — needs zero false
+positives, and the dominant false-positive shape ("1st Place Solution for Waymo Open Dataset Challenge"
+-type papers, another team competing on Waymo's public benchmark) is one a keyword matcher will never
+get to zero on. The curated list, built from Waymo's own two research-index pages, gives 0 FP / 0 FN by
+construction over the 138 ids — an enumerated fact from the org itself, not a measured approximation.
+
+**Design:** `AuthorOrgTag.curated_ids_path` (`contracts/author_orgs.py`) is an optional path, resolved
+relative to the repo root, defaulting to `None` — an org that doesn't opt in gets no curated matches and
+no behavior change. Waymo's `KNOWN_ORGS` entry points it at the existing fixture file; this keeps
+`rag/` free of any Waymo-specific path (the seam works for any corpus/org). `rag/author_org_tagger.py::
+curated_orgs_for(paper_id)` is a pure id lookup against the org's list, independent of
+`extract_affiliations_rule_based`/`match_known_orgs_with_method` by design — a curated match must not
+depend on (or be defeated by) whatever the heuristic scan does or doesn't find in a paper's parsed text.
+The file is read once per run and cached in a module-level dict keyed by path — ingest calls this once
+per paper (`rag/orchestrator.py::_finish`), so a naive re-read would hit the 138-line file 1,741 times
+for nothing. `rag/orchestrator.py::_finish` merges `curated_orgs_for()` with the existing heuristic
+result (`_merge_author_orgs`), `curated` winning over `email_domain`/`keyword` for the same org name.
+
+**Making the correctness path queryable, not just stored:** `contracts/vector_index.py` adds
+`SearchFilters.author_org_curated_only: bool` (only takes effect combined with `author_org`; a no-op on
+its own, same as every other filter field meaning "don't filter on this") and
+`VectorPayload.curated_author_orgs: list[str]` (the `method=="curated"` subset of `author_orgs`,
+populated in `rag/orchestrator.py`'s `_upsert_record`). `rag/vector_index.py`/`rag/fakes/fake_vector_store.py`
+switch the filtered payload key to `curated_author_orgs` when the flag is set — same `.get([])`-default
+legacy-point handling as every other list-valued filter field here. `rag/mcp_server.py`'s
+`semantic_search`/`search_papers` docstrings now state plainly that `curated` is exact and the heuristic
+tiers are ~0.71 precision, and that a caller asking "what does Waymo's own research say" should set
+`author_org_curated_only=True`.
+
+**No migration.** `papers.author_orgs` was already a JSON `TEXT` column (`migrations/0005_author_orgs.sql`)
+— `"curated"` is a `Literal`-only widening of the same JSON shape, confirmed by a committed round-trip
+test rather than assumed.
+
+**Verified, read-only, against the live corpus:** all 138 curated ids resolve via `curated_orgs_for`
+(no `waymo/data/` writes, no ingest run) — and the real challenge-paper false positive `2006.15505`
+("1st Place Solution"-style, not Waymo-authored) correctly gets no curated match.
+
 ## 4. Problems faced → solution landed
 
 **MinerU VRAM peak measurement correction (T-DOC15).** `ARCHITECTURE.md`/`CONVENTIONS.md` originally
