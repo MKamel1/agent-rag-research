@@ -14,10 +14,19 @@ Current state, measured over all 1,741 done papers against a corrected 138-id gr
 | signal | precision | recall | F1 |
 |---|---|---|---|
 | block-regex (shipped in T-ORG1) | 0.706 | 0.783 | 0.742 |
-| GROBID header | 0.913\* | 0.457 | 0.609 |
-| curated enumerated list | **1.000** | **1.000** (within corpus) | **1.000** |
+| GROBID header | 0.913\* | 0.457\*\* | 0.609 |
+| curated enumerated list | *not scoreable this way* — see below | | |
 
-`*` partly circular — see the eval report.
+`*` partly circular: 8 ground-truth ids were added on GROBID's own email evidence.
+`**` understated — a parser bug (V3) discarded HTML-escaped `&lt;user@waymo.com&gt;` addresses.
+
+**The curated list is deliberately absent from that table.** Scoring it against
+`fixtures/waymo/waymo_authored_ids.txt` returns 1.000/1.000 because the signal *reads that very
+file* — a tautology, not a measurement (Track V). What can honestly be said is that all 138 curated
+ids resolve to papers present and `done` in the corpus, and that the list survived an independent
+audit: 63 confirmed by evidence that did not put them there, 21 contradicted-then-cleared, 54
+unverifiable. Its real risk is **staleness and incompleteness**, which V2 and A2 address — not
+per-paper precision.
 
 **Requirement: near-zero false positives AND near-zero misses, for any org, in any corpus.**
 
