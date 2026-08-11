@@ -59,6 +59,19 @@ abstract page), otherwise an absolute path to the cached PDF. `machine_found` te
 automated extractors saw, purely as a hint — **please judge from the paper, not from that column**,
 since the whole point is to catch cases where the machines are wrong.
 
+## ⚠ Spreadsheet warning — arXiv ids get silently corrupted
+
+Excel/LibreOffice treat `2106.14880` as a *number* and drop the trailing zero, saving it as
+`2106.1488`. In the first labeling round **11 ids were mangled this way**, and 4 of them then looked
+like brand-new papers when they were already on the curated list — adding them would have written
+phantom ids into the ground truth.
+
+Before editing: format the `paper_id` column as **Text**, or open the CSV with the import dialog and
+set that column to Text. On save, prefer UTF-8 (round one came back as cp1252, which mangles
+non-ASCII text such as `Straße`).
+
+Both problems are detectable and were repaired, but it is cheaper to avoid them.
+
 ## When you're done
 
 Save as CSV in place (or tell me another path). I will:
