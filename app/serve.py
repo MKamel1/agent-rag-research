@@ -35,7 +35,12 @@ from mcp.server.fastmcp import FastMCP
 
 from app.assembly import build_mcp_server
 from app.usage_log import UsageLog, record_usage
-from contracts.mcp_server import PaperSearchResponse, PaperSummaryView, SearchResponse
+from contracts.mcp_server import (
+    PaperSearchResponse,
+    PaperSummaryView,
+    ScanResponse,
+    SearchResponse,
+)
 from contracts.provenance import Anchor
 from contracts.vector_index import SearchFilters
 from rag.config import load_config
@@ -113,10 +118,39 @@ def semantic_search(
     (`GroundedResult`s) plus a `Coverage` note — never bare text. `k` left unset uses the
     server's configured default (`Config.top_k`, `_cfg` above); pass it explicitly to override.
 
-    Note: `k` is accepted up to 100, but at most 32 results are ever returned (a TEI reranker
-    vendor batch-size limit) — `Coverage.returned <= 32` with a larger `Coverage.candidates` means
-    this ceiling, not a sparse corpus."""
+    The old "at most 32 results ever" ceiling is GONE (2026-08-19): the reranker used to truncate
+    any batch over TEI's 32-item vendor limit, so the candidate pool was pinned to 32 no matter
+    what `k` asked for. It now chunks oversized batches and merges them by score, and the pool
+    follows `Config.rerank_depth`.
+
+    Set `filters.max_hits_per_paper` when asking "which papers…" so one verbose paper cannot fill
+    the page. Better still, for a question whose answer is a LIST OF PAPERS, use `scan_corpus` —
+    ranked top-k retrieval samples, it does not enumerate, and it cannot tell you what it missed."""
     return _server.semantic_search(query, filters, k)
+
+
+@mcp.tool()
+@record_usage(_get_usage_log, source="mcp", tool="scan_corpus")
+def scan_corpus(
+    pattern: str, paper_id: str | None = None, author_org: str | None = None,
+    max_matches_per_paper: int = 3, context: int = 200,
+) -> ScanResponse:
+    """Exhaustive regex scan over every stored block — the tool for "WHICH PAPERS contain X".
+
+    `semantic_search` ranks and samples; it cannot promise completeness, and it cannot tell you
+    what it missed. This examines every block, so recall is 1.0 for the pattern you give — at the
+    price of lexical false positives you reject by reading them. Recall cannot be repaired after
+    the fact; precision can.
+
+    Pattern is a Python regex, case-insensitive. Widen the vocabulary rather than trusting one
+    spelling (`bootstrap|resampl|jackknife`), because a paper that never names the technique will
+    not match. Every hit carries `section_path`, which is what separates a method NAMED in Related
+    Work (a citation) from one USED in Methods.
+
+    `paper_id` narrows to a single document — the right way to resolve a definition or an
+    abbreviation, which retrieval handles badly. `author_org` restricts to papers carrying a
+    curated (enumerated, not heuristic) authorship tag for that organisation."""
+    return _server.scan_corpus(pattern, paper_id, author_org, max_matches_per_paper, context)
 
 
 @mcp.tool()
