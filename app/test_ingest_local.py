@@ -23,6 +23,7 @@ from pathlib import Path
 import pypdfium2 as pdfium
 import pytest
 
+import app.ingest_local as _mod
 from app.assembly import _cached_ref
 from app.ingest_local import (
     detect_arxiv_id,
@@ -729,3 +730,44 @@ def test_main_disabled_pdf_cache_refuses_to_stage(tmp_path, monkeypatch):
 
 if __name__ == "__main__":
     sys.exit(pytest.main([__file__, "-v"]))
+
+
+# ================================================================================================
+# Title quality (2026-08-19). `mint_local_ref` trusted PDF metadata, so an authoring tool's default
+# became the paper's identity: the Waymo Safety Report was stored as "February 2021", an IWAI
+# poster as "PowerPoint Presentation", one paper as "1". That is not cosmetic -- a junk title
+# defeats every title-based lookup, and those papers were invisible to searches that should have
+# found them.
+# ================================================================================================
+
+
+@pytest.mark.parametrize("junk", [
+    "untitled", "PowerPoint Presentation", "Microsoft Word - draft3.docx", "P398-cd.dvi",
+    "February 2021", "1", "9", "371", "Paper Number", "ISSN 2712-0554", "",
+    "• Extended the active inference model",          # a bullet, not a heading
+    "Humans choose actions which minimize $E$",       # body text carrying math markup
+])
+def test_junk_titles_are_rejected(junk):
+    assert _mod._looks_like_a_title(junk) is False
+
+
+@pytest.mark.parametrize("real", [
+    "Waymo Public Road Safety Performance Data",
+    "Dynamic Benchmarks: Spatial and Temporal Alignment for ADS Performance Evaluation",
+    "A FRAMEWORK FOR APPLYING SURROGATE SAFETY MEASURES FOR SIDESWIPE CONFLICTS",
+])
+def test_real_titles_are_accepted(real):
+    assert _mod._looks_like_a_title(real) is True
+
+
+def test_first_nonempty_line_skips_page_furniture_to_reach_the_title():
+    """The exact failure that stored the Waymo Safety Report as "February 2021": a page number and
+    a date occupied the first two lines of the extracted page."""
+    page = "1\nFebruary 2021\nWaymo Safety Report\nthe world around us, our mission"
+    assert _mod._first_nonempty_line(page) == "Waymo Safety Report"
+
+
+def test_first_nonempty_line_falls_back_rather_than_returning_none():
+    """A page with nothing title-shaped must still yield the old behaviour's answer -- this change
+    may only ever improve a title, never erase one."""
+    assert _mod._first_nonempty_line("1\n2\n3") == "1"
