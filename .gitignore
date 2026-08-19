@@ -18,6 +18,12 @@ blobs/
 # committed, same reason the main corpus's data files aren't tracked either.
 /waymo/
 
+# The operator's manually-curated PDF library staged for `app.ingest_local` (1.8G, 457 PDFs as of
+# 2026-08-18). Source material, not source code -- and large enough that an unguarded `git add -A`
+# would be a genuinely painful mistake. `waymo/data/drop_in/` is already covered by /waymo/ above;
+# this covers the repo-root tray.
+/drop_in/
+
 # Stray test-run log leftovers at repo root — not source, never intentionally tracked.
 test*.log
 
