@@ -88,6 +88,22 @@ def _is_scoped(filters: SearchFilters | None) -> bool:
     return filters is not None and (filters.doc_type is not None or filters.paper_id is not None)
 
 
+def _cap_hits_per_paper(results: list, paper_id_of, limit: int) -> list:
+    """Generic form of `_cap_per_paper` for result types that expose `paper_id` differently --
+    `GroundedResult.paper_id` directly, `PaperSearchResult.view.paper_id` one level down. Same
+    place-order, no-re-sort discipline; see `_cap_per_paper`'s docstring for why that matters."""
+    seen: dict[str, int] = {}
+    capped: list = []
+    for result in results:
+        paper_id = paper_id_of(result)
+        count = seen.get(paper_id, 0)
+        if count >= limit:
+            continue
+        seen[paper_id] = count + 1
+        capped.append(result)
+    return capped
+
+
 def _cap_per_paper(
     results: list[PaperSearchResult], limit: int = _MAX_HITS_PER_PAPER
 ) -> list[PaperSearchResult]:
@@ -230,6 +246,16 @@ class Retriever:
                     score=scores[candidate.id],
                     citation=citation,
                 )
+            )
+        # 2026-08-19: opt-in per-paper diversity for ENUMERATION queries
+        # (`SearchFilters.max_hits_per_paper` -- see its contract comment). Deliberately not a
+        # default: passage search is often a deep dive within one paper, and a blanket cap would
+        # drop a gold passage ranked 5th inside its own paper. Applied after rerank and before the
+        # `[:k]` truncation, same ordering discipline as `retrieve_papers()`, so the cap selects
+        # each paper's BEST passages rather than its first-encountered ones.
+        if filters is not None and filters.max_hits_per_paper is not None:
+            results = _cap_hits_per_paper(
+                results, lambda r: r.paper_id, filters.max_hits_per_paper
             )
         # Reranked results are sized to the pool, not the caller's `k` -- truncate only now that
         # reranking has had the chance to promote a correct passage into the top `k` (T-DOC24).

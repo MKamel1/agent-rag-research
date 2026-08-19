@@ -53,6 +53,27 @@ class SearchFilters(FrozenModel):
     # takes effect when `author_org` is also set -- on its own (author_org=None) it is a no-op,
     # same as every other filter field here that means "don't filter on this."
     author_org_curated_only: bool = False
+    # 2026-08-19: cap how many passages a SINGLE paper may contribute to one result set.
+    #
+    # `None` (the default) means uncapped, which is `semantic_search`'s long-standing behaviour and
+    # is deliberately left as the default: passage-level search is often a DEEP DIVE ("show me the
+    # evidence in this paper"), and a blanket cap would drop a gold passage that happens to rank
+    # 5th within its own paper -- a recall regression, the opposite of what this field is for.
+    #
+    # Set it when the question is an ENUMERATION ("which papers used method X"), where the failure
+    # mode runs the other way: ranking is by passage relevance, so one verbose paper crowds out
+    # papers that mention the method once, plainly. Measured on the Waymo corpus before this
+    # existed: a single paper took 13 of 30 result slots for "bootstrap resampling confidence
+    # interval", starving the enumeration of distinct papers.
+    #
+    # `retrieve_papers()` (search_papers) applies its own separate default cap
+    # (`rag/retriever.py::_MAX_HITS_PER_PAPER`, T-DOC82) and does not need this; this field is what
+    # gives the PASSAGE path the same lever, on demand rather than always.
+    #
+    # Note this bounds distinct papers only as far as the candidate pool allows -- it cannot invent
+    # papers the first-stage hybrid search never surfaced. For guaranteed-complete enumeration use
+    # the corpus scan tool, which touches every paper, rather than expecting top-k to be exhaustive.
+    max_hits_per_paper: int | None = None
 
 
 class VectorPayload(TypedDict):

@@ -976,3 +976,59 @@ def test_both_methods_use_the_same_injected_reranker():
     r.retrieve("propensity", filters=None, k=10)
     r.retrieve_papers("propensity", filters=None, k=10)
     assert len(reranker.calls) == 2
+
+
+# ================================================================================================
+# SearchFilters.max_hits_per_paper (2026-08-19) -- opt-in per-paper diversity on the PASSAGE path.
+#
+# `retrieve_papers()` has capped per paper since T-DOC82, but `retrieve()` never did, so one
+# verbose paper could fill a whole result page. Measured on the live Waymo corpus: a single paper
+# took 13 of 30 slots for "bootstrap resampling confidence interval", starving an enumeration
+# question of distinct papers. The cap is opt-in rather than default precisely because the same
+# behaviour is CORRECT for a deep dive -- a blanket cap would drop a gold passage ranked 5th within
+# its own paper, which is a recall regression.
+# ================================================================================================
+
+
+def _seed_one_paper_many_chunks(store, docstore, embedder, paper_id, n):
+    for i in range(n):
+        _seed_chunk(store, docstore, embedder, chunk_id=f"{paper_id}:c{i}", paper_id=paper_id,
+                    block_id=f"{paper_id}:b{i}", text=f"bootstrap resampling passage {i}")
+
+
+def test_retrieve_is_uncapped_per_paper_by_default():
+    """The default must stay uncapped: passage search is often a deep dive inside one paper."""
+    store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
+    _seed_one_paper_many_chunks(store, docstore, embedder, "2506.00001", 6)
+    r = _make_retriever(store, docstore, FakeReranker(), embedder)
+
+    results, _coverage = r.retrieve("bootstrap resampling", filters=None, k=10)
+
+    assert len({res.paper_id for res in results}) == 1
+    assert len(results) == 6, "no filters -> every passage from the one paper is kept"
+
+
+def test_retrieve_caps_hits_per_paper_when_the_filter_asks_for_it():
+    store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
+    _seed_one_paper_many_chunks(store, docstore, embedder, "2506.00001", 6)
+    r = _make_retriever(store, docstore, FakeReranker(), embedder)
+
+    results, _coverage = r.retrieve(
+        "bootstrap resampling", filters=SearchFilters(max_hits_per_paper=2), k=10)
+
+    assert len(results) == 2
+
+
+def test_retrieve_cap_frees_slots_for_other_papers():
+    """The point of the cap: the same `k` returns MORE DISTINCT PAPERS, which is what an
+    enumeration question needs. Without it the hoggy paper crowds the other one out."""
+    store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
+    _seed_one_paper_many_chunks(store, docstore, embedder, "2506.00001", 5)
+    _seed_chunk(store, docstore, embedder, chunk_id="2506.00002:c0", paper_id="2506.00002",
+                block_id="2506.00002:b0", text="bootstrap resampling passage in another paper")
+    r = _make_retriever(store, docstore, FakeReranker(), embedder)
+
+    capped, _ = r.retrieve("bootstrap resampling",
+                           filters=SearchFilters(max_hits_per_paper=1), k=3)
+
+    assert len({res.paper_id for res in capped}) == 2, "both papers represented under the cap"
