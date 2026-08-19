@@ -35,7 +35,6 @@ from rag.mcp_server import McpServer
 from rag.orchestrator import IngestionOrchestrator
 from rag.parser import parse as parse_pdf_bytes
 from rag.parser import parse_batch as parse_pdf_bytes_batch
-from rag.reranker import _MAX_BATCH_SIZE as _RERANKER_MAX_BATCH_SIZE
 from rag.reranker import TeiReranker
 from rag.retriever import Retriever
 from rag.summarizer import OllamaSummarizer
@@ -620,13 +619,18 @@ def build_mcp_server(
     )
     # 2026-07-18: `Config.rerank_depth`/`Config.top_k` were dead fields (declared, never read) --
     # wired here, the one composition root that knows both the Config lever and the reranker's
-    # real vendor batch-size ceiling. `rerank_pool_size` is clamped to `_RERANKER_MAX_BATCH_SIZE`
-    # (32) here, not inside `Retriever` itself (T-DOC39/rag/retriever.py's own `_RERANK_POOL_SIZE`
-    # docstring: the retriever deliberately never hardcodes a vendor batch limit) -- a pool bigger
-    # than 32 would just be silently truncated by TEI's `/rerank` endpoint anyway
-    # (`rag/reranker.py`'s `TeiReranker.rerank()`), so clamping here avoids fetching a bigger
-    # hybrid-search pool than reranking could ever actually use.
-    rerank_pool_size = min(config.rerank_depth, _RERANKER_MAX_BATCH_SIZE)
+    # real vendor batch-size ceiling.
+    #
+    # 2026-08-19: the clamp to the reranker's vendor batch size (32) is GONE. It existed because
+    # `TeiReranker.rerank()` used to TRUNCATE any batch over 32, so fetching a bigger hybrid pool
+    # than 32 was pure waste -- the extra candidates could never reach the cross-encoder. That
+    # reranker now splits an oversized batch into 32-candidate chunks and merges them by score
+    # (`rag/reranker.py`), so a larger pool is genuinely used rather than silently discarded, and
+    # the clamp had become the single hard ceiling on retrieval recall: with it, `Config.top_k`
+    # could be raised freely but the pool behind it never grew, so `--k 60` returned 32 passages.
+    # `config.rerank_depth` is now the real lever, and the vendor limit stays where T-DOC39 put it
+    # -- inside the reranker, which still defends it unconditionally per call.
+    rerank_pool_size = config.rerank_depth
     retriever = Retriever(embedder, vector_index, document_store, reranker, rerank_pool_size)
 
     return McpServer(retriever, document_store, default_k=config.top_k)

@@ -104,28 +104,33 @@ class TeiReranker:
         if self._ensure_ready is not None:
             self._ensure_ready()
 
-        if len(candidates) > _MAX_BATCH_SIZE:
-            # Defend the vendor limit ourselves rather than trust every caller to pre-clamp --
-            # never send a batch TEI will 422 on (T-DOC39). Truncating (not erroring) keeps this
-            # consistent with the type's own "length <= len(candidates)" contract
-            # (DATA-CONTRACTS.md "Reranker") and lets the caller's top-ranked candidates (the ones
-            # a prior hybrid/RRF pass already favored) still get reranked instead of the whole
-            # call failing.
-            logger.warning(
-                "rerank(): candidate batch (%d) exceeds the reranker's max batch size (%d) -- "
-                "truncating to the first %d candidates instead of sending an oversized batch "
-                "that would 422",
-                len(candidates), _MAX_BATCH_SIZE, _MAX_BATCH_SIZE,
-            )
-            candidates = candidates[:_MAX_BATCH_SIZE]
-
-        body = self._post_with_retry(query, candidates)
-        try:
-            scored = [(item["index"], item["score"]) for item in body]
-        except (KeyError, TypeError, ValueError) as error:
-            raise PermanentError(
-                f"reranker response malformed (expected [{{'index', 'score'}}, ...]): {error}"
-            ) from error
+        # A batch over the vendor limit used to be TRUNCATED to the first 32, which silently
+        # capped recall: `_RERANK_POOL_SIZE` was pinned to 32 to match, so no caller could ever put
+        # more than 32 candidates in front of the cross-encoder however large a `k` it asked for.
+        # Measured consequence on the Waymo corpus: `--k 60` returned 32 passages, and an
+        # enumeration question ("which papers used method X") could not see past the 32 the
+        # first-stage hybrid pass happened to favour.
+        #
+        # Batching instead of truncating removes that ceiling. Cross-encoder scores are absolute
+        # per-(query, document) relevance values, NOT normalised within a request, so scores from
+        # separate batches are directly comparable and a global sort over the merged results is
+        # the same ordering a single oversized call would have produced -- which is exactly why
+        # this is safe to do here and would not be for a scoring scheme that softmaxed per batch.
+        #
+        # Cost is linear: ceil(n/32) sequential HTTP calls, each taking the GPU lock in turn.
+        # `_post_with_retry` keeps its own per-attempt lock discipline (OG-48#3), so a slow batch
+        # never holds the lock across a backoff sleep.
+        scored: list[tuple[int, float]] = []
+        for offset in range(0, len(candidates), _MAX_BATCH_SIZE):
+            batch = candidates[offset:offset + _MAX_BATCH_SIZE]
+            body = self._post_with_retry(query, batch)
+            try:
+                # Re-base each batch's local index onto the caller's original candidate list.
+                scored.extend((offset + item["index"], item["score"]) for item in body)
+            except (KeyError, TypeError, ValueError) as error:
+                raise PermanentError(
+                    f"reranker response malformed (expected [{{'index', 'score'}}, ...]): {error}"
+                ) from error
 
         # Sort by score descending ourselves (tie-broken by original index, ascending) rather than
         # trusting TEI's response ordering — a vendor detail this project doesn't control.

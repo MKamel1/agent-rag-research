@@ -81,7 +81,27 @@ arxiv_date_to: null     # same format; unset = open upper bound
 # remain the V0 defaults.
 child_parent_expansion: true
 top_k: 10
-rerank_depth: 50
+# 2026-08-19: 32, not 50, and the number is MEASURED rather than inherited.
+#
+# This used to read 50 while `app/assembly.py` silently clamped it to 32 (the TEI reranker's vendor
+# batch limit, above which `TeiReranker.rerank()` truncated). The clamp is gone -- the reranker now
+# chunks oversized batches -- so this value finally reaches the retriever intact, and the honest
+# question became "what should it actually be?"
+#
+# Measured on the 210-question eval against the causal corpus:
+#
+#   pool 32 (what the clamp had been silently enforcing):  Recall@10 0.976  MRR 0.919
+#   pool 50 (what this file had been claiming):            Recall@10 0.967  MRR 0.911
+#
+# Enlarging the pool made retrieval WORSE: 2 questions lost, 0 gained (Q-122 fell from rank 10,
+# Q-184 from rank 8). The extra candidates were scored above the gold passages by the
+# cross-encoder and displaced them out of the top 10. More candidates is not more recall when the
+# reranker's scores are not sharp enough to order them -- near the top-k boundary they add noise.
+#
+# Raising this is legitimate for an ENUMERATION workload, where seeing more distinct papers matters
+# more than the ordering of the first ten. Re-run `python -m app.retrieval_eval` if you change it;
+# do not assume a bigger pool is a better one.
+rerank_depth: 32
 hybrid_dense_weight: 0.5
 
 # both composition roots (IngestionOrchestrator, McpServer) build their real GpuLock from this path

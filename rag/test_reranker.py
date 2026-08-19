@@ -112,12 +112,14 @@ def test_rerank_ties_break_by_original_index_ascending():
     assert [c.id for c in result] == ["a", "b"]
 
 
-def test_rerank_truncates_a_batch_over_the_max_before_calling_tei():
-    # T-DOC39 (mocked, zero-network): a caller-supplied batch over `_MAX_BATCH_SIZE` (e.g. a
-    # retriever pool built from `k > 32`, McpServer exposes `k` unclamped) must never reach TEI at
-    # its full size -- that's exactly the T-DOC24/25 422/0%-recall crash. Assert on what actually
-    # went over the wire (via the mock transport), not just the return value, so a fix that
-    # truncates the *response* instead of the *request* wouldn't slip this test.
+def test_rerank_splits_a_batch_over_the_max_into_chunks_and_keeps_every_candidate():
+    # A caller-supplied batch over `_MAX_BATCH_SIZE` (a retriever pool built from `k > 32`;
+    # McpServer exposes `k` unclamped) must never reach TEI at its full size -- that is the
+    # T-DOC24/25 422/0%-recall crash. It must ALSO not be truncated, which is what this used to do:
+    # truncation silently capped recall at 32 candidates no matter how many the caller had, and
+    # pinned `_RERANK_POOL_SIZE` to 32 with it. Assert on what actually went over the wire (via the
+    # mock transport), not just the return value, so a fix that chunks the *response* instead of
+    # the *request* would not slip this test.
     import rag.reranker as reranker_module
 
     sent_batch_sizes = []
@@ -133,18 +135,47 @@ def test_rerank_truncates_a_batch_over_the_max_before_calling_tei():
 
     client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
     reranker = TeiReranker(client, FakeGpuLock())
-    oversized = _candidates(
-        *[(str(i), f"text {i}") for i in range(reranker_module._MAX_BATCH_SIZE + 5)]
-    )
+    total = reranker_module._MAX_BATCH_SIZE + 5
+    oversized = _candidates(*[(str(i), f"text {i}") for i in range(total)])
 
     result = reranker.rerank("q", oversized)
 
-    assert sent_batch_sizes == [reranker_module._MAX_BATCH_SIZE]
-    assert len(result) == reranker_module._MAX_BATCH_SIZE
-    # The candidates that DID get sent are the caller's first `_MAX_BATCH_SIZE`, not a random
-    # slice -- callers order their pool best-first (RRF/hybrid rank), so truncating from the front
-    # keeps the candidates most likely to matter.
-    assert {c.id for c in result} == {str(i) for i in range(reranker_module._MAX_BATCH_SIZE)}
+    # Two requests, neither over the vendor limit.
+    assert sent_batch_sizes == [reranker_module._MAX_BATCH_SIZE, 5]
+    assert max(sent_batch_sizes) <= reranker_module._MAX_BATCH_SIZE
+    # Nothing dropped: every candidate the caller supplied comes back.
+    assert len(result) == total
+    assert {c.id for c in result} == {str(i) for i in range(total)}
+
+
+def test_rerank_merges_batches_by_score_not_by_batch_order():
+    # The point of chunking is a GLOBAL ranking. A high-scoring candidate sitting in the SECOND
+    # batch must outrank a low-scoring one from the first -- otherwise chunking would just be
+    # truncation with extra steps, preserving the first batch's priority. Cross-encoder scores are
+    # absolute per-(query, document) values, not normalised per request, which is what makes
+    # comparing them across batches valid.
+    import rag.reranker as reranker_module
+
+    def handler(request):
+        import json
+
+        body = json.loads(request.content)
+        # Score by the candidate's own text so scores are position-independent: "text N" -> N/100.
+        scores = [int(text.split()[-1]) / 100.0 for text in body["texts"]]
+        return httpx.Response(
+            200, json=[{"index": i, "score": s} for i, s in enumerate(scores)]
+        )
+
+    client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
+    reranker = TeiReranker(client, FakeGpuLock())
+    total = reranker_module._MAX_BATCH_SIZE + 5
+    candidates = _candidates(*[(str(i), f"text {i}") for i in range(total)])
+
+    result = reranker.rerank("q", candidates)
+
+    # Highest-numbered text scores highest and lives in the LAST batch -- it must come first.
+    assert result[0].id == str(total - 1)
+    assert [c.id for c in result] == [str(i) for i in range(total - 1, -1, -1)]
 
 
 def test_rerank_empty_candidates_returns_empty_without_http_call():

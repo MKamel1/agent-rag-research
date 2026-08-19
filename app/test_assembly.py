@@ -1245,10 +1245,14 @@ def test_resolve_store_paths_falls_back_to_config_not_hardcoded_papers_db():
 # ================================================================================================
 # 2026-07-18: `Config.top_k`/`Config.rerank_depth` were declared-but-dead fields (a code sweep
 # found no code path that read either). `build_mcp_server` now threads them into
-# `McpServer.default_k` / `Retriever.rerank_pool_size` -- the latter CLAMPED to the reranker's
-# real vendor batch-size ceiling (`rag/reranker.py`'s `_MAX_BATCH_SIZE=32`), since a hybrid-search
-# pool bigger than that would just be silently truncated by TEI's `/rerank` endpoint anyway
-# (T-DOC39). `VectorIndex` is stubbed the same way every other `build_mcp_server`-adjacent test in
+# `McpServer.default_k` / `Retriever.rerank_pool_size`.
+#
+# 2026-08-19: `rerank_pool_size` used to be CLAMPED here to the reranker's vendor batch ceiling
+# (`rag/reranker.py`'s `_MAX_BATCH_SIZE=32`), because an oversized batch was truncated by
+# `TeiReranker.rerank()` and the extra candidates were therefore wasted. The reranker now chunks
+# oversized batches and merges by score, so the clamp is gone and `Config.rerank_depth` passes
+# through as the real recall lever. `VectorIndex` is stubbed the same way every other
+# `build_mcp_server`-adjacent test in
 # this file stubs it (its real constructor makes an eager vector-store network call) -- nothing
 # else `build_mcp_server` constructs makes a network call at construction time (TeiEmbedder/
 # TeiReranker just store an HTTP client; `FileGpuLock` just wraps a file lock), so this stays
@@ -1256,20 +1260,25 @@ def test_resolve_store_paths_falls_back_to_config_not_hardcoded_papers_db():
 # ================================================================================================
 
 
-def test_build_mcp_server_clamps_rerank_pool_size_to_the_rerankers_max_batch_size(
+def test_build_mcp_server_passes_rerank_depth_above_the_vendor_batch_size_through_unclamped(
     monkeypatch, tmp_path,
 ):
+    """The clamp this used to assert was the single hard ceiling on retrieval recall: it pinned the
+    hybrid pool to 32 candidates no matter what `Config.rerank_depth` said, so a caller asking for
+    `k=60` got 32 passages back. Now that `TeiReranker.rerank()` chunks oversized batches rather
+    than truncating them, a pool above 32 is genuinely reranked, so the config value must reach the
+    Retriever intact."""
     monkeypatch.setattr("app.assembly.VectorIndex", lambda *a, **k: object())
 
     cfg = Config(
         focus_area_queries=["x"], gpu_lock_path=str(tmp_path / ".gpu.lock"),
-        rerank_depth=50,  # > _RERANKER_MAX_BATCH_SIZE=32 -- must clamp down, not pass through raw
+        rerank_depth=50,  # > _RERANKER_MAX_BATCH_SIZE=32 -- must NOT be clamped down
     )
     server = build_mcp_server(
         cfg, db_path=str(tmp_path / "papers.db"), blob_dir=str(tmp_path / "blobs")
     )
 
-    assert server._retriever._rerank_pool_size == 32
+    assert server._retriever._rerank_pool_size == 50
 
 
 def test_build_mcp_server_rerank_pool_size_below_the_cap_passes_through_unclamped(
