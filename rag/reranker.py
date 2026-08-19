@@ -50,6 +50,70 @@ def _default_retry_sleep(seconds: float) -> None:
 # limit itself, unconditionally, regardless of how large a batch any caller hands it.
 _MAX_BATCH_SIZE = 32
 
+# TEI enforces THREE limits, and batching by item count alone only respects the first. Read live
+# from the deployed container (`GET /info` on BAAI/bge-reranker-v2-m3): `max_client_batch_size` 32,
+# `max_input_length` 8192 (tokens per query+document pair), and `max_batch_tokens` 16384 -- a budget
+# for the WHOLE request, not per item. 32 items therefore fit only if they average ~512 tokens.
+#
+# They do not. Measured over 20k chunks: the causal corpus's median chunk is ~566 estimated tokens,
+# so a full 32-item batch runs ~18,100 tokens against a 16,384 ceiling and TEI answers 413. That is
+# not an edge case, it is the median case; the Waymo corpus (median ~400) merely sits under it more
+# often. The observed symptom was one eval question (Q-158) failing outright on every run, because
+# 413 is correctly non-retryable -- resending an identical oversized batch fails identically.
+#
+# The fix is to pack batches against the token budget rather than the item count. Headroom is
+# deliberate on both numbers below: the estimate is a heuristic, and the cost of over-estimating is
+# one extra HTTP round trip while the cost of under-estimating is a dropped query.
+_MAX_BATCH_TOKENS = 12_000        # against TEI's 16_384
+_MAX_ITEM_TOKENS = 8_000          # against TEI's max_input_length of 8_192
+
+# Deliberately pessimistic: English averages ~4 characters per token, so dividing by 3 OVER-estimates
+# the token count and produces smaller, safer batches. Tokenising properly here would mean importing
+# the model's tokenizer into a module whose whole job is to be a thin HTTP adapter (CONVENTIONS §1),
+# for an accuracy this does not need -- the headroom above absorbs the error.
+_CHARS_PER_TOKEN = 3
+
+
+def _estimate_tokens(text: str) -> int:
+    return len(text) // _CHARS_PER_TOKEN + 1
+
+
+def _truncate_to_item_budget(text: str) -> str:
+    """Cap a single document at the model's own input ceiling.
+
+    Lossless in the only sense that matters: TEI truncates at `max_input_length` server-side anyway,
+    so bytes beyond it never influence the score. Sending them only risks blowing the batch budget.
+    """
+    limit = _MAX_ITEM_TOKENS * _CHARS_PER_TOKEN
+    return text if len(text) <= limit else text[:limit]
+
+
+def _pack_batches(query: str, candidates: list[RerankCandidate]) -> list[list[RerankCandidate]]:
+    """Split candidates into batches satisfying BOTH the item-count and token-budget limits.
+
+    The query is counted once per candidate, not once per batch: `/rerank` scores (query, document)
+    PAIRS, so a batch of n items tokenises the query n times. Forgetting that is how a batch that
+    looks comfortably under budget still 413s.
+    """
+    query_tokens = _estimate_tokens(query)
+    batches: list[list[RerankCandidate]] = []
+    current: list[RerankCandidate] = []
+    current_tokens = 0
+    for candidate in candidates:
+        item_tokens = query_tokens + _estimate_tokens(
+            _truncate_to_item_budget(candidate.text)
+        )
+        over_items = len(current) >= _MAX_BATCH_SIZE
+        over_tokens = current and (current_tokens + item_tokens) > _MAX_BATCH_TOKENS
+        if over_items or over_tokens:
+            batches.append(current)
+            current, current_tokens = [], 0
+        current.append(candidate)
+        current_tokens += item_tokens
+    if current:
+        batches.append(current)
+    return batches
+
 
 class TeiReranker:
     """Real `Reranker` adapter: one cross-encoder call per `rerank()`, through an injected HTTP
@@ -121,8 +185,8 @@ class TeiReranker:
         # `_post_with_retry` keeps its own per-attempt lock discipline (OG-48#3), so a slow batch
         # never holds the lock across a backoff sleep.
         scored: list[tuple[int, float]] = []
-        for offset in range(0, len(candidates), _MAX_BATCH_SIZE):
-            batch = candidates[offset:offset + _MAX_BATCH_SIZE]
+        offset = 0
+        for batch in _pack_batches(query, candidates):
             body = self._post_with_retry(query, batch)
             try:
                 # Re-base each batch's local index onto the caller's original candidate list.
@@ -131,6 +195,7 @@ class TeiReranker:
                 raise PermanentError(
                     f"reranker response malformed (expected [{{'index', 'score'}}, ...]): {error}"
                 ) from error
+            offset += len(batch)
 
         # Sort by score descending ourselves (tie-broken by original index, ascending) rather than
         # trusting TEI's response ordering — a vendor detail this project doesn't control.
@@ -155,7 +220,13 @@ class TeiReranker:
                 with self._gpu_lock.acquire("rerank", timeout=self._gpu_lock_timeout):
                     response = self._client.post(
                         "/rerank",
-                        json={"query": query, "texts": [c.text for c in candidates]},
+                        json={
+                            "query": query,
+                            # Truncated per item: see `_truncate_to_item_budget`. The candidate
+                            # objects themselves are never modified -- callers get back exactly
+                            # what they passed in, reordered.
+                            "texts": [_truncate_to_item_budget(c.text) for c in candidates],
+                        },
                     )
                     response.raise_for_status()
                     return response.json()
