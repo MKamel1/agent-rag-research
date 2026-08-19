@@ -303,3 +303,196 @@ v1 never got far enough to hit these; all three were found by running v2 and are
 - `T-ORG2` — affiliation retrieval measured at precision 0.000 and blocking `T-ORG1`
   (`docs/eval-reports/2026-08-07-affiliation-retrieval-first-batch.md`). It does not affect this
   build, which never calls the tagger.
+
+---
+
+## 12. Current state — 2026-08-18
+
+*Re-measured today against the live DB, Qdrant, and Waymo's two index pages. §1's "17 of 1437" and
+§6's tables are the v1 snapshot and are **long superseded** — read this section instead.*
+
+The v2 chainer ran to completion on 2026-08-08 (`chain.log`: `### ALL PHASES COMPLETE (done=1726)`).
+Phases B and C, listed as "still open" in §11, both finished. Nothing has run since; the corpus was
+idle for 10 days until today.
+
+| metric | value |
+|---|---|
+| `ingest_state` | **1,745 done**, 2 chunked, 1 quarantined |
+| `papers` | 1,745 (1,490 arXiv + 255 `local:` drop-in) |
+| `chunks` / `blocks` | 46,215 / — |
+| Qdrant `waymo_av_safety` | **48,024 points**, status green |
+| `app.corpus_integrity` | **OK** — every `done` paper has ≥1 chunk and ≥1 block |
+| `app.doctor` | **OK** — all services healthy (had to be started; all 6 containers were down) |
+| repo test suite | **1,755 tests, all pass** (`pytest` exit 0) |
+
+### Waymo-authorship was unqueryable until today
+
+`papers.author_orgs` and `papers.raw_affiliations` were **NULL for all 1,741 rows**, and no Qdrant
+point carried the `author_orgs`/`curated_author_orgs` payload keys. The corpus held every Waymo
+paper but could not answer *"is this a Waymo paper?"* at all — `SearchFilters.author_org` and
+`author_org_curated_only` (`rag/vector_index.py:161`) filter on payload keys that simply were not
+there, so any org-filtered query returned nothing.
+
+Cause: the corpus was built before T-ORG1/T-ORG3 wired `curated_orgs_for()` into
+`rag/orchestrator.py::_finish`. The tagging code, `KNOWN_ORGS`, and the MCP filters were all
+correct and tested — they had just never run over this data.
+
+Fixed by `scripts/backfill_curated_author_orgs.py` (+ tests), which writes what `_finish` would
+have written, in both stores, without re-ingesting:
+
+```
+curated ids: 147
+sqlite papers rows updated: 147
+qdrant points now tagged curated=Waymo: 3529
+```
+
+Only the `curated` tier is backfilled — an enumerated fact from Waymo's own index pages, exact by
+construction. The `email_domain`/`keyword` heuristics (precision 0.706) are deliberately **not**
+backfilled: they would need the parsed Blocks re-scanned, and at ~3-in-10 wrong they cannot support
+the "100% tell if it is Waymo research" requirement this corpus exists to serve. **Operator ruling
+2026-08-18: anything named on Waymo's two index pages is Waymo research** — which is precisely what
+the curated tier encodes.
+
+Note the backfill *replaces* `author_orgs` rather than merging. Harmless today (Waymo is the only
+entry in `KNOWN_ORGS`); if a second org is ever added, merge instead.
+
+### Verified working over a real MCP client
+
+`python -m app.serve --data-dir waymo/data` was driven over stdio by an actual MCP client (not an
+in-process call). All four tools respond: `semantic_search`, `search_papers`, `get_paper`,
+`get_span`.
+
+**`author_org_curated_only=True` was then verified by assertion, not by eye.** Five queries chosen
+to surface mostly non-Waymo work (RL training, pedestrian detection, driver behavior, lidar
+segmentation, safety cases), `k=25` each:
+
+| | hits | of which NOT on the curated list |
+|---|---|---|
+| unfiltered | 125 | **107** |
+| `author_org_curated_only=True` | 125 | **0** |
+
+Zero leaks, while the unfiltered control proves the corpus really is dominated by non-Waymo papers
+for these queries — so the filter is doing work, not passing everything through. `search_papers`
+behaves the same (32 papers returned, all curated; the unfiltered run returns 31 non-Waymo).
+
+An earlier draft of this section claimed the filter was proven by two `local:` ids vanishing from a
+filtered query. That was wrong: both (`local:3633ca3a8efb`, `local:6b9ccd0431f6`) ARE curated Waymo
+papers, and their absence was a ranking artefact, not exclusion. The table above replaces it.
+
+Citations resolve to verbatim evidence. Asking *"bootstrap resampling confidence intervals"*
+restricted to curated-Waymo returns, with `anchor = {paper_id, block_id, page, bbox}` on every hit:
+
+- `2410.08903` *Dynamic Benchmarks* p6 — "…estimated using Poisson bootstrap method (28) with 90%
+  confidence level. For each of the bootstrap iterations (N=1000)…"
+- `2604.03827` *Confidence Intervals for Rate Estimation…* p0/p6/p12 — "…a novel exponential
+  bootstrap (EB) method for CI construction based on a fiducial argument…"
+- `2312.12675` *Comparison…at 7.1 Million Miles* p6 — "…confidence intervals using a parametric
+  bootstrap using the standard error for the benchmark crash counts…"
+
+### Two known defects, neither blocking
+
+1. **Duplicate papers — 19 pairs, corpus-wide.** *(An earlier draft of this section said "two",
+   from an ad-hoc title-token scan. That was a large undercount; `scripts/find_duplicate_papers.py`
+   is the real measurement and supersedes it.)*
+
+   The pipeline's only dedup is `mint_local_ref`'s **sha256 over PDF bytes** (identical file, any
+   filename → idempotent) and `detect_arxiv_id` (drop-in copy folded onto its arXiv id when that id
+   is in the filename or page-1 text). **Nothing compares titles or body text.** So the same paper
+   arriving as two differently-encoded PDFs, with no detectable arXiv id, is ingested twice — which
+   is what happened 19 times. 16 of the 19 score a 5-gram-shingle Jaccard of **1.000** (identical
+   extracted text under two ids).
+
+   `papers.abstract` cannot detect this: **all 259 `local:` rows have an empty abstract.** The
+   detector compares chunk text for that reason.
+
+   | class | pairs | why it matters |
+   |---|---|---|
+   | both ids curated | **3** | a curated-only query can cite the same work twice (`2410.08903`/`local:3633ca3a8efb`, `2505.14842`/`local:3d17a9f42374`, `2210.08375`/`local:4addea530fb0`) |
+   | one id curated | **11** | **the provenance hole** — a second copy of a Waymo paper sits in the corpus answering "not Waymo" to a curated query (e.g. `2212.08148`/`local:a46ca5506b1f`, `2011.00038`/`local:8f3f207a6c38`) |
+   | neither curated | 5 | third-party papers, cosmetic only |
+
+   The 11 "one curated" pairs qualify the exactness claim above: the curated tier is exact **for the
+   ids on the list**, but a duplicate copy of a listed paper under a different id is not on the list
+   and therefore reads as non-Waymo. Recall against *papers* is 100%; recall against *stored copies*
+   is not.
+
+   Fix is `python -m app.delete_docs <local-id> --yes` on the redundant twin, then re-run the
+   backfill and `scripts/verify_curated_filter.py`. **Not done here — it destroys data and is the
+   operator's call.** Deleting the `local:` side is usually right (the arXiv id is the citable one),
+   but check first where the drop-in copy is the published version and the arXiv one a preprint.
+2. **Poor titles on some drop-in PDFs** — `local:ebf093becfa1` is "PowerPoint Presentation",
+   `local:03e2dfdfa816` is "1". Content, chunks and retrieval are unaffected; only the display
+   title is wrong.
+
+### Coverage of Waymo's own research
+
+**143 of 153 (93.5%)** — all 114 arXiv-available and all 15 direct-PDF works are in. The 10 gaps are
+all paywalled journal articles needing a human with access; see
+`docs/WAYMO-RESEARCH-PAPERS-NEEDED.md` §5–6 for the enumerated list and the re-fetch method.
+
+---
+
+## 13. Duplicate cleanup — executed 2026-08-18
+
+Defect 1 in §12 is now resolved. **16 of the 19 duplicate pairs were collapsed; 3 were deliberately
+left alone.**
+
+### The rule, not a hand-curated list
+
+`scripts/propose_duplicate_resolution.py` decides each pair mechanically, so this is re-runnable
+after every ingest rather than a one-off:
+
+1. **Directional containment over FULL text.** `find_duplicate_papers.py` scores a truncated prefix
+   (first 40 chunks / 8,000 words) for speed — enough to *find* candidates, **not** enough to delete
+   on, since two documents can share an introduction and diverge after. The proposer rebuilds
+   shingles over every chunk with no cap and asks what fraction of the loser's text the survivor
+   already contains. Deletion requires ≥ 0.995. **When neither side contains the other, both are
+   kept** — that is the no-information-loss guarantee, and it is a hard gate, not a heuristic.
+2. **The source PDF is never touched.** `delete_paper` clears SQLite rows, vectors and ingest state
+   only. The proposer verifies the loser's PDF is on disk *before* proposing, so every deletion is
+   reversible by re-ingesting one file. Confirmed after the fact: **16/16 PDFs still in
+   `pdf_cache/`.**
+3. **Tie-break** when both contain each other: keep the arXiv id. Borne out by the data — every
+   survivor had authors + abstract, every deleted `local:` twin had `authors=0, abstract=N`.
+
+All 16 deletions scored containment **1.0000 both ways with identical character counts** — the same
+document stored twice, not two versions.
+
+### What it fixed
+
+| | before | after |
+|---|---|---|
+| duplicate pairs | 19 | **3** |
+| …both ids curated (double-citation risk) | 3 | **0** |
+| …one id curated (**copy of a Waymo paper reading "not Waymo"**) | 11 | **0** |
+| papers / chunks / vectors | 1,745 / 46,279 / 48,024 | 1,729 / 45,899 / 47,628 |
+| curated ids | 147 | 144 |
+
+The three curated ids removed (`local:3d17a9f42374`, `local:3633ca3a8efb`, `local:4addea530fb0`)
+were each the redundant twin of an **already-curated** arXiv survivor (`2505.14842`, `2410.08903`,
+`2210.08375`), so no work lost its Waymo tag.
+
+### Deliberately not touched
+
+| pair | containment | why |
+|---|---|---|
+| `2205.02911` / `local:fa85983cd3c7` | 0.927 / 0.916 | each holds text the other lacks (15 vs 20 chunks) |
+| `2312.06371` / `local:9e227ca73ba3` | 0.891 / 0.743 | same shape — looks like v1 vs v2 |
+| `2207.10035` / `2301.02562` | 0.319 / 0.602 | **not duplicates** — a false positive the prefix scan flagged at 0.320 and full containment rejected |
+
+None involve Waymo-authored work. The third is the containment gate paying for itself.
+
+### Verification after the fact
+
+- `pragma integrity_check` → **ok**; `app.corpus_integrity` → **OK**; Qdrant **green**.
+- `scripts/verify_curated_filter.py` → **0 leaks** (125 curated-only hits, all on the list).
+- `find_duplicate_papers.py` → 3 pairs remaining, **0 curated**.
+- All **112** arXiv ids on Waymo's two index pages still at `stage='done'`; all **144** curated ids
+  still resolve to a stored paper.
+
+### Rollback
+
+`app.snapshot` was taken first and covers all three stores together —
+`waymo/data/backups/snapshot-20260819T024659Z` (1.2G: `papers.db` 297MB, blobs 124MB, Qdrant
+snapshot 808MB), plus a separate verified `papers.db.pre-dedupe-20260818T194653.bak`
+(`integrity_check: ok`, 1,745 papers). Either restores the pre-cleanup state.
