@@ -102,8 +102,43 @@ because a definitional aside is topically dominated by the mathematics around it
 result. No amount of query rephrasing was going to fix this; it is the wrong tool applied to the
 question.
 
-## Known, not fixed
+## The 413, and why batching by item count was only a third of the fix
 
-`reranker server returned 413` on `Q-158` in both runs. That is a payload-**bytes** limit, distinct
-from the batch-**count** limit fixed here, and it predates these changes. It silently drops a
-question from every eval run. Worth fixing separately.
+`reranker server returned 413` on `Q-158` in every run, including the first two here. It predated
+these changes, and the first instinct -- "a payload-size edge case, worth doing separately" -- was
+wrong on both counts. It is neither an edge case nor separate.
+
+TEI enforces **three** limits, read live from the deployed container (`GET /info`):
+
+| limit | value |
+|---|---|
+| `max_client_batch_size` | 32 items |
+| `max_input_length` | 8192 tokens per (query, document) pair |
+| **`max_batch_tokens`** | **16384 for the whole request** |
+
+Batching by item count respects only the first. 32 items sharing a 16384-token budget is ~512 tokens
+each -- and measured over 20k chunks, the **causal corpus's median chunk is ~566 estimated tokens**,
+so a full batch runs ~18,100 against the ceiling. **The median case exceeded the limit.** The Waymo
+corpus (median ~400) merely sits under it more often, which is why this never surfaced during the
+Waymo work. 413 is correctly non-retryable -- resending an identical oversized batch fails
+identically -- so the affected question was dropped outright on every run.
+
+The fix packs against the token budget, counting the query **once per candidate** (each pair
+re-tokenises it; forgetting that is how a batch that looks under budget still 413s) and truncating
+any single document at the model's own `max_input_length`, which is lossless because TEI truncates
+there server-side regardless.
+
+Verified against live TEI: 32 real corpus chunks estimated at **54,411 tokens, 3.3x the limit**,
+now pack into 5 requests and return all 32 candidates.
+
+### It was a recall bug, not a plumbing bug
+
+| run | Recall@10 | MRR | errors |
+|---|---|---|---|
+| baseline | 0.9762 | 0.9192 | 2 |
+| **with token-budget packing** | **0.9857** | **0.9264** | **0** |
+
+**0 questions lost, 2 gained** (`Q-116`, `Q-158`), and `Q-158` now returns its gold paper at
+**rank 1** -- it was always a strong match, it just never got scored because the batch died before
+reaching it. A silent infrastructure limit was costing real answers, and it looked like a corpus gap
+rather than a bug, which is the reason to chase 413s rather than route around them.

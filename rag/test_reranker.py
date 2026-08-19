@@ -467,3 +467,85 @@ def test_real_tei_endpoint_rejects_one_batch_item_over_the_max():
         f"real deployed limit has changed, update _MAX_BATCH_SIZE (rag/reranker.py) to match; "
         f"don't just relax this test."
     )
+
+
+# ================================================================================================
+# Token-budget packing (2026-08-19). TEI enforces three limits, not one: max_client_batch_size 32,
+# max_input_length 8192 per pair, and max_batch_tokens 16384 for the WHOLE request. Batching by item
+# count alone respects only the first, so a 32-item batch of ordinary chunks (causal-corpus median
+# ~566 est. tokens => ~18,100 for the batch) exceeds the token budget and TEI answers 413. That is
+# non-retryable by design -- resending the same oversized batch fails identically -- so it dropped
+# an eval question (Q-158) on every single run.
+# ================================================================================================
+
+
+def test_pack_batches_respects_the_token_budget_not_just_the_item_count():
+    import rag.reranker as reranker_module
+
+    # 20 items well under the 32-item cap, but far over the token budget.
+    big = "word " * 3000                                   # ~5000 est. tokens each
+    candidates = _candidates(*[(str(i), big) for i in range(20)])
+
+    batches = reranker_module._pack_batches("q", candidates)
+
+    assert len(batches) > 1, "item count alone would have sent this as ONE oversized batch"
+    for batch in batches:
+        est = sum(reranker_module._estimate_tokens(c.text) for c in batch) + \
+              len(batch) * reranker_module._estimate_tokens("q")
+        assert est <= reranker_module._MAX_BATCH_TOKENS or len(batch) == 1
+    assert sum(len(b) for b in batches) == 20, "packing must never drop a candidate"
+
+
+def test_pack_batches_counts_the_query_once_per_candidate():
+    """`/rerank` scores (query, document) PAIRS, so an n-item batch tokenises the query n times.
+    Ignoring that is how a batch that looks under budget still 413s."""
+    import rag.reranker as reranker_module
+
+    long_query = "q " * 2000                               # ~1300 est. tokens
+    candidates = _candidates(*[(str(i), "short text") for i in range(32)])
+
+    batches = reranker_module._pack_batches(long_query, candidates)
+
+    assert len(batches) > 1, "32 * a long query alone blows the budget even with tiny documents"
+
+
+def test_pack_batches_still_honours_the_item_cap_for_small_documents():
+    import rag.reranker as reranker_module
+    candidates = _candidates(*[(str(i), "tiny") for i in range(70)])
+
+    batches = reranker_module._pack_batches("q", candidates)
+
+    assert all(len(b) <= reranker_module._MAX_BATCH_SIZE for b in batches)
+    assert sum(len(b) for b in batches) == 70
+
+
+def test_oversized_single_document_is_truncated_to_the_models_own_ceiling():
+    """TEI truncates at max_input_length server-side anyway, so the excess never affects the score
+    -- sending it only risks blowing the batch budget."""
+    import rag.reranker as reranker_module
+
+    huge = "x" * (reranker_module._MAX_ITEM_TOKENS * reranker_module._CHARS_PER_TOKEN * 3)
+    sent = reranker_module._truncate_to_item_budget(huge)
+
+    assert len(sent) == reranker_module._MAX_ITEM_TOKENS * reranker_module._CHARS_PER_TOKEN
+    assert reranker_module._truncate_to_item_budget("short") == "short"
+
+
+def test_rerank_sends_truncated_text_but_returns_the_original_candidates():
+    """The wire payload is capped; the caller's objects are not. A caller must get back exactly what
+    it passed in, or `get_span`/citation resolution downstream would be reading a truncated text."""
+    import rag.reranker as reranker_module
+
+    def handler(request):
+        import json
+        body = json.loads(request.content)
+        assert all(len(t) <= reranker_module._MAX_ITEM_TOKENS * reranker_module._CHARS_PER_TOKEN
+                   for t in body["texts"])
+        return httpx.Response(200, json=[{"index": i, "score": 1.0}
+                                         for i in range(len(body["texts"]))])
+
+    client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
+    original = "y" * (reranker_module._MAX_ITEM_TOKENS * reranker_module._CHARS_PER_TOKEN * 2)
+    result = TeiReranker(client, FakeGpuLock()).rerank("q", _candidates(("a", original)))
+
+    assert result[0].text == original, "the candidate object itself must be untouched"
