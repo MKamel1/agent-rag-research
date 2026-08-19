@@ -700,3 +700,111 @@ def test_verify_required_columns_raises_when_adoption_misclassifies_partial_0004
         ContractError, match=r"summaries.*title.*0004_doc_type_and_chapter_titles"
     ):
         _mod.DocumentStore(db_path=db_path, blob_dir=str(tmp_path / "blobs"))
+
+
+# --------------------------------------------------------------------------------------------------
+# scan_blocks -- exhaustive lexical enumeration (2026-08-19)
+#
+# The store-side half of `McpServer.scan_corpus`. It exists because ranked retrieval cannot answer
+# "which papers contain X": top-k samples a ranked list, so a paper that names a method once ranks
+# below a paper that discusses it at length, and no amount of `k` proves nothing was missed.
+# Measured on the live corpus, an enumeration answered by retrieval alone found 3 of 4 qualifying
+# papers; the same question via this scan found 4 of 4.
+# --------------------------------------------------------------------------------------------------
+
+
+def _put_paper(store, paper_id, blocks, title="T", author_orgs=None):
+    record = make_paper_record(
+        ref=make_paper_ref(paper_id=paper_id, title=title),
+        parsed=make_parsed_doc(paper_id=paper_id, blocks=blocks),
+        chunks=[], summary_id=f"{paper_id}:summary",
+    )
+    store.put(record)
+    if author_orgs is not None:
+        store._con.execute("UPDATE papers SET author_orgs=? WHERE paper_id=?",
+                           (author_orgs, paper_id))
+        store._con.commit()
+
+
+def test_scan_blocks_finds_every_matching_paper_not_just_the_best_ranked(store):
+    """Recall is the whole point: every paper containing the pattern must come back."""
+    for i in range(4):
+        pid = f"2506.0000{i}"
+        _put_paper(store, pid, [make_block(block_id=f"{pid}:b0", paper_id=pid,
+                                           text="we used a Poisson bootstrap here")])
+    _put_paper(store, "2506.00009", [make_block(block_id="2506.00009:b0",
+                                                paper_id="2506.00009", text="nothing relevant")])
+
+    rows, scanned, matched, _truncated = store.scan_blocks("bootstrap")
+
+    assert scanned == 5
+    assert matched == 4
+    assert {r[0] for r in rows} == {f"2506.0000{i}" for i in range(4)}
+
+
+def test_scan_blocks_returns_section_path_so_use_can_be_told_from_citation(store):
+    """`section_path` is what makes a match adjudicable -- Related Work means cited, Methods means
+    used. Without it, a lexical hit is undecidable."""
+    _put_paper(store, "2506.00001", [
+        make_block(block_id="2506.00001:b0", paper_id="2506.00001",
+                   text="prior work applied a bootstrap", section_path="2 Related Work"),
+        make_block(block_id="2506.00001:b1", paper_id="2506.00001", index=1,
+                   text="we computed a bootstrap CI", section_path="4 Methods"),
+    ])
+
+    rows, _scanned, _matched, _truncated = store.scan_blocks("bootstrap", max_per_paper=5)
+
+    assert {r[4] for r in rows} == {"2 Related Work", "4 Methods"}
+
+
+def test_scan_blocks_caps_evidence_per_paper_but_never_drops_the_paper(store):
+    """Truncation must cost extra QUOTES, never a PAPER -- losing a paper is the failure this tool
+    exists to prevent."""
+    blocks = [make_block(block_id=f"2506.00001:b{i}", paper_id="2506.00001", index=i,
+                         text="bootstrap again") for i in range(5)]
+    _put_paper(store, "2506.00001", blocks)
+
+    rows, _scanned, matched, truncated = store.scan_blocks("bootstrap", max_per_paper=2)
+
+    assert len(rows) == 2
+    assert matched == 1, "the paper still appears"
+    assert truncated is True
+
+
+def test_scan_blocks_paper_id_scopes_to_one_document_for_definition_lookup(store):
+    _put_paper(store, "2506.00001", [make_block(block_id="2506.00001:b0", paper_id="2506.00001",
+                                                text="we call this exponential bootstrap (EB)")])
+    _put_paper(store, "2506.00002", [make_block(block_id="2506.00002:b0", paper_id="2506.00002",
+                                                text="unrelated exponential bootstrap mention")])
+
+    rows, _scanned, matched, _t = store.scan_blocks("exponential bootstrap",
+                                                    paper_id="2506.00001")
+
+    assert matched == 1
+    assert {r[0] for r in rows} == {"2506.00001"}
+
+
+def test_scan_blocks_curated_org_matches_only_the_enumerated_tier(store):
+    """`curated` is an enumerated fact; `keyword` is a 0.706-precision heuristic. Asking for one
+    must never silently return the other."""
+    _put_paper(store, "2506.00001", [make_block(block_id="2506.00001:b0", paper_id="2506.00001",
+               text="bootstrap")], author_orgs='[{"name": "Waymo", "method": "curated"}]')
+    _put_paper(store, "2506.00002", [make_block(block_id="2506.00002:b0", paper_id="2506.00002",
+               text="bootstrap")], author_orgs='[{"name": "Waymo", "method": "keyword"}]')
+    _put_paper(store, "2506.00003", [make_block(block_id="2506.00003:b0", paper_id="2506.00003",
+               text="bootstrap")], author_orgs=None)
+
+    rows, scanned, matched, _t = store.scan_blocks("bootstrap", curated_org="Waymo")
+
+    assert matched == 1
+    assert {r[0] for r in rows} == {"2506.00001"}
+    assert scanned == 1, "papers outside the curated tier are not even scanned"
+
+
+def test_scan_blocks_rejects_an_invalid_regex_rather_than_matching_nothing(store):
+    """A malformed pattern must fail loudly -- silently returning zero matches would read as
+    'no paper contains this', the exact false-negative this tool exists to prevent."""
+    _put_paper(store, "2506.00001", [make_block(block_id="2506.00001:b0",
+                                                paper_id="2506.00001")])
+    with pytest.raises(ContractError):
+        store.scan_blocks("bootstrap(")

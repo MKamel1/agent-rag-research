@@ -17,6 +17,7 @@ also happens to round-trip `pdf_url` exactly. `papers.markdown_path` DOES have a
 
 import json
 import os
+import re
 import sqlite3
 from collections.abc import Iterator
 from datetime import date
@@ -384,6 +385,83 @@ class DocumentStore:
             "SELECT * FROM blocks WHERE paper_id = ? ORDER BY idx", (paper_id,)
         ).fetchall()
         return [self._row_to_block(r) for r in rows]
+
+    def scan_blocks(
+        self, pattern: str, *, paper_id: str | None = None,
+        curated_org: str | None = None, context: int = 200, max_per_paper: int = 3,
+    ) -> tuple[list[tuple[str, str, str, int, str, str]], int, int, bool]:
+        """Exhaustive regex scan over stored block text. Returns
+        `(rows, papers_scanned, papers_matched, truncated)` where each row is
+        `(paper_id, title, block_id, page, section_path, snippet)`.
+
+        This is the store-side half of `McpServer.scan_corpus` and it exists because retrieval
+        cannot answer an enumeration question. `hybrid_search` + rerank returns the best `k`
+        passages for a query; "which papers contain X" needs every paper examined, and no top-k
+        sample can promise that. Here recall is 1.0 by construction -- the cost being that
+        precision is the caller's problem, which is the right way round, since recall is the half
+        that cannot be repaired after the fact.
+
+        Filtering happens in Python rather than SQL: SQLite has no built-in REGEXP, and `LIKE`
+        cannot express alternation ("bootstrap|resampl") which is exactly what a method-vocabulary
+        sweep needs. One sequential scan over the blocks table is fast enough at this corpus size
+        (measured ~1s over 236k blocks) and keeps the pattern language a plain Python regex the
+        caller already knows.
+
+        `max_per_paper` bounds evidence per paper, never papers: a paper with more matches still
+        appears, it just contributes fewer rows, and `truncated` says so.
+        """
+        try:
+            regex = re.compile(pattern, re.IGNORECASE)
+        except re.error as error:
+            raise ContractError(f"scan_blocks: invalid regex {pattern!r}: {error}") from error
+
+        sql = ("SELECT b.paper_id, b.block_id, b.page, b.section_path, b.text, p.title, "
+               "p.author_orgs FROM blocks b JOIN papers p ON p.paper_id = b.paper_id")
+        params: list = []
+        if paper_id is not None:
+            sql += " WHERE b.paper_id = ?"
+            params.append(paper_id)
+        sql += " ORDER BY b.paper_id, b.idx"
+
+        def _is_curated(author_orgs_json: str | None) -> bool:
+            """Same enumerated tier `SearchFilters.author_org_curated_only` selects. Parsed rather
+            than LIKE-matched: the stored JSON's exact spacing is `json.dumps`'s business, not a
+            thing to hardcode a substring against, and a LIKE broad enough to survive that could
+            also match a paper curated for a DIFFERENT org while merely keyword-matching this one.
+            """
+            if not author_orgs_json:
+                return False
+            try:
+                entries = json.loads(author_orgs_json)
+            except (TypeError, ValueError):
+                return False
+            return any(e.get("name") == curated_org and e.get("method") == "curated"
+                       for e in entries if isinstance(e, dict))
+
+        rows: list[tuple[str, str, str, int, str, str]] = []
+        per_paper: dict[str, int] = {}
+        scanned: set[str] = set()
+        curated_cache: dict[str, bool] = {}
+        truncated = False
+        for (r_paper_id, block_id, page, section_path, text, title,
+             author_orgs) in self._con.execute(sql, params):
+            if curated_org is not None:
+                if r_paper_id not in curated_cache:
+                    curated_cache[r_paper_id] = _is_curated(author_orgs)
+                if not curated_cache[r_paper_id]:
+                    continue
+            scanned.add(r_paper_id)
+            match = regex.search(text or "")
+            if match is None:
+                continue
+            if per_paper.get(r_paper_id, 0) >= max_per_paper:
+                truncated = True
+                continue
+            per_paper[r_paper_id] = per_paper.get(r_paper_id, 0) + 1
+            start = max(0, match.start() - context)
+            snippet = " ".join((text or "")[start:match.end() + context].split())
+            rows.append((r_paper_id, title or "", block_id, page, section_path or "", snippet))
+        return rows, len(scanned), len(per_paper), truncated
 
     def get_block(self, block_id: str) -> Block:
         row = self._con.execute(

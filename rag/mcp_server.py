@@ -13,7 +13,14 @@ even an option here.
 """
 
 from contracts.errors import ContractError
-from contracts.mcp_server import Coverage, PaperSearchResponse, PaperSummaryView, SearchResponse
+from contracts.mcp_server import (
+    BlockMatch,
+    Coverage,
+    PaperSearchResponse,
+    PaperSummaryView,
+    ScanResponse,
+    SearchResponse,
+)
 from contracts.provenance import Anchor
 from contracts.retriever import Citation, RetrievalCoverage
 from contracts.vector_index import SearchFilters
@@ -142,6 +149,55 @@ class McpServer:
         )
         return PaperSearchResponse(
             results=results, coverage=self._coverage(results, retrieval_coverage)
+        )
+
+    def scan_corpus(
+        self, pattern: str, paper_id: str | None = None, author_org: str | None = None,
+        max_matches_per_paper: int = 3, context: int = 200,
+    ) -> ScanResponse:
+        """Exhaustive regex scan over every stored block. **Use this, not `semantic_search`, when
+        the question is "WHICH PAPERS do/contain X".**
+
+        The two tools answer different questions and are not substitutes:
+
+        - `semantic_search` ranks passages by relevance and returns the best `k`. It cannot promise
+          it surfaced every qualifying paper, because ranking is per-passage: a paper that states a
+          method once, plainly, ranks below a paper that discusses it at length, and one verbose
+          paper can occupy most of `k`. Measured on this corpus, an enumeration question answered
+          by retrieval alone found 3 of 4 qualifying papers.
+        - `scan_corpus` examines every block, so recall is 1.0 **for the pattern given**. It does no
+          ranking and no semantic matching whatsoever — a paper that describes a technique without
+          ever naming it will not match, so the pattern's vocabulary is the real limit. Widen it
+          (`bootstrap|resampl|jackknife`) rather than relying on one spelling.
+
+        The tradeoff is deliberate: this returns lexical false positives (a "bootstrap particle
+        filter" matches a "bootstrap" pattern while being an unrelated method) and leaves the caller
+        to reject them. That is the right way round — precision can be repaired by reading the
+        matches, recall cannot be repaired at all once a paper is missing.
+
+        `section_path` on every match is what makes rejection cheap: a hit under "Related Work" is
+        a citation, one under "Methods" is a use. Treat `""` as "judge from the text" rather than
+        as evidence of anything — parsing does not always recover headings.
+
+        `paper_id` narrows to one document, which is how to resolve a definition or an abbreviation.
+        Retrieval is structurally bad at that (a defining aside is topically dominated by the
+        surrounding prose and ranks below it), and this is a full-text lookup instead.
+
+        `author_org` restricts to papers with a CURATED authorship tag for that org — the enumerated
+        tier only (`AuthorOrgMatch.method == "curated"`), never the email/keyword heuristic, so
+        "which of Waymo's own papers" means exactly that.
+        """
+        rows, scanned, matched, truncated = self._document_store.scan_blocks(
+            pattern, paper_id=paper_id, curated_org=author_org,
+            context=context, max_per_paper=max_matches_per_paper,
+        )
+        return ScanResponse(
+            matches=[
+                BlockMatch(paper_id=r_paper_id, block_id=block_id, page=page,
+                           section_path=section_path, title=title, snippet=snippet)
+                for r_paper_id, title, block_id, page, section_path, snippet in rows
+            ],
+            papers_scanned=scanned, papers_matched=matched, truncated=truncated,
         )
 
     def get_paper(self, paper_id: str) -> PaperSummaryView:
