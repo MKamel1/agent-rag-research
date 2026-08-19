@@ -201,3 +201,103 @@ all seven of those are in the drop-in delivery. What is left:
 4. Nothing in the v2 plan blocks on Group C: it is additive, and `app.ingest_local` is idempotent
    by content hash (`mint_local_ref`), so PDFs can be dropped in at any point during or after the
    main build.
+
+---
+
+## 5. Re-fetch gate — 2026-08-18
+
+Both index pages re-fetched and re-enumerated today. **Waymo's pages are the authoritative
+definition of "is this Waymo research": anything named on them is Waymo-authored** (operator
+ruling, 2026-08-18). The curated tier (`fixtures/waymo/waymo_authored_ids.txt`,
+`AuthorOrgMatch.method == "curated"`) encodes exactly that set, which is why it is exact by
+construction rather than a measured approximation.
+
+| page | 2026-08-07 | 2026-08-18 |
+|---|---|---|
+| `waymo.com/research/` | 98 | **98** (unchanged) |
+| `waymo.com/safety/research/` | 54 | **55** (+1) |
+
+Method: raw HTML fetched with `curl`, then arXiv ids extracted for both the `arxiv.org/abs|pdf/`
+and bare `arXiv:` forms (the first pass missed `2303.15201`, which the page prints in the bare
+form — hence the two-pattern extraction). Distinct link targets were then deduped per work.
+
+**112 distinct arXiv ids appear across the two pages. All 112 are in the curated list, and all 112
+are at `stage='done'` in the corpus** (verified by set intersection against `ingest_state`). Zero
+missing.
+
+### The one genuinely new publication
+
+`https://doi.org/10.1080/15389588.2026.2684002` — **"High-resolution urban fatal crash rate
+benchmarks for automated driving system assessment"**, *Traffic Injury Prevention* (2026),
+paywalled (Taylor & Francis). No arXiv mirror, no direct PDF on Waymo's page. **Operator-sourced —
+this is Group C item C24 and is the only page entry added since the 2026-08-07 gate.**
+
+### Four DOIs that look new but are not
+
+The safety page grew from 23 to 28 non-arXiv DOI links, but 4 of the 5 additions are *publisher
+DOIs newly attached to papers already held via arXiv or a direct PDF* — resolved via CrossRef:
+
+| DOI | resolves to | already in corpus as |
+|---|---|---|
+| `10.4271/09-14-02-0003` | From Stoplights to On-Ramps | arXiv `2508.19425` |
+| `10.1007/978-3-032-12374-9_6` | Being Good (at Driving) | arXiv `2502.08121` |
+| `10.1177/03611981251398744` | Dynamic Benchmarks | arXiv `2410.08903` |
+| `10.2760/135735` | Interpreting safety outcomes | Group-B PDF (B11) |
+
+This reconciles the +1 entry count against the +5 DOI count, and is why DOI-link deltas must be
+resolved to titles before being treated as new work.
+
+### Group B is now CLOSED
+
+B1, B2, B7 and B8 — the four outstanding public PDFs — were downloaded from the §3 URLs and
+ingested via `app.ingest_local` on 2026-08-18. All four carry "Waymo, LLC" on page 1 (verified by
+first-page text extraction). Corpus went 1,741 → 1,745 `done`.
+
+| # | corpus id | note |
+|---|---|---|
+| B1 | `local:b12ef27e3cd6` | **§3's B1 title was wrong.** `ESV26-294` is *"Refinements in Benchmarking for Vulnerable Road User Collisions by Comparing Naturalistic Driving and Police-Report Data"* (Campolettano, Scanlon, Kusano) — not a second copy of "Building scientific consensus". The live page agrees. §3's table is corrected by this row, not by an edit above, so the original error stays visible. |
+| B2 | `local:73b22bed599f` | ESV26-252, "Building scientific consensus…" — the real one |
+| B7 | `local:ebf093becfa1` | IWAI poster, Schumann et al. Title extracted as "PowerPoint Presentation" (poster PDF metadata) |
+| B8 | `local:b3dd74970ec8` | IWAI poster, Engström et al. |
+
+**All 15 of Group B are now in the corpus.**
+
+### Group C — 10 outstanding (was 9, +1 new)
+
+C12/C13/C14/C15 are additionally covered by their arXiv preprints (`2208.08651`, `2311.06417`,
+`2312.12675`, `2312.13228`) independently of the sourced journal PDFs.
+
+| # | title | access | DOI |
+|---|---|---|---|
+| C2 | A mechanistic approach to modeling omnidirectional motorcyclist injury risk | T&F | `10.1080/15389588.2025.2570829` |
+| C8 | Baseline vulnerable road user injury risk in multiple U.S. dense-urban driving environments | T&F | `10.1080/15389588.2024.2364050` |
+| C10 | Representative cyclist collision injury risk distributions… | SAE | `10.4271/2024-01-2645` |
+| C17 | Bridging the gap: Mechanistic-based cyclist injury risk curves… | T&F | `10.1080/15389588.2024.2400276` |
+| C18 | Passenger and heavy vehicle collisions with pedestrians… | Elsevier | `10.1016/j.aap.2023.107139` |
+| C20 | Determination of functional scenarios for intersection collisions | Elsevier | `10.1016/j.aap.2023.107326` |
+| C21 | Methodology for determining maximum injury potential… | T&F | `10.1080/15389588.2022.2125231` |
+| C22 | An omni-directional model of injury risk in planar crashes… | T&F | `10.1080/15389588.2021.1955108` |
+| C23 | Waymo simulated driving behavior in reconstructed fatal crashes… | Elsevier | `10.1016/j.aap.2021.106454` |
+| **C24** | **High-resolution urban fatal crash rate benchmarks…** (NEW) | T&F | `10.1080/15389588.2026.2684002` |
+
+Route once a PDF is obtained is unchanged: drop into `waymo/data/drop_in/papers/`, run
+`python -m app.ingest_local` from `waymo/data/`, **then add the resulting id to
+`fixtures/waymo/waymo_authored_ids.txt` and re-run `scripts/backfill_curated_author_orgs.py`** —
+ingesting alone does not make a paper answer "yes" to a curated-only query if the id was not on the
+list when it was ingested.
+
+## 6. Coverage as of 2026-08-18
+
+| group | on Waymo's pages | in corpus | outstanding |
+|---|---|---|---|
+| A — arXiv | 112 (+2 OpenReview→arXiv mirrors) | **114** | 0 |
+| B — direct PDF | 15 | **15** | 0 |
+| C — DOI only | 24 | 14 | **10** |
+| **total** | **153** | **143** | **10** |
+
+**143 of 153 (93.5%)** of Waymo's own published research is in the corpus. Every one of the 10
+gaps is paywalled and needs a human with journal access — nothing else is blocked.
+
+The curated list also carries 8 Waymo arXiv papers that are *not* on either index page
+(`2510.26125` WOD-E2E, `2604.03827`, `2605.20390` STELLAR, `2605.22997`, plus the four C-preprints
+above) — Waymo's site lags arXiv, so the list is a superset of the pages, never a subset.
