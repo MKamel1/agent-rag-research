@@ -133,12 +133,66 @@ def _pdf_title_author(pdf_bytes: bytes) -> tuple[str | None, str | None]:
     return meta.get("Title"), meta.get("Author")
 
 
+# Titles that are technically non-empty and technically what the PDF says, but are not the paper's
+# title. Two sources, both observed in this corpus: PDF metadata written by the authoring tool
+# ("untitled", "PowerPoint Presentation", "Microsoft Word - draft3.docx", "P398-cd.dvi" -- a LaTeX
+# intermediate filename), and page furniture picked up as page 1's first line ("1", "February 2021",
+# "Paper Number"). A junk title is not cosmetic: it silently defeats every title-based lookup, and
+# in this corpus the Waymo Safety Report was stored as "February 2021" and an IWAI poster as
+# "PowerPoint Presentation", so both were invisible to a title search that should have found them.
+_JUNK_TITLE_PATTERNS = (
+    r"^untitled$", r"^powerpoint presentation$", r"^microsoft word", r"^document\d*$",
+    r"^paper number$", r"^fact sheet:?$", r"^an overview$",
+    r"\.(dvi|doc|docx|indd|tex|pdf|pptx?)$",           # authoring-tool filenames
+    r"^[\d\W]+$",                                       # digits/punctuation only -- page numbers
+    r"^[\u2022\u25cf\u00b7*\-\u2013\u2014]\s",              # a bullet point, not a heading
+    r"<[a-z/][^>]*>",                                   # markup fragment (e.g. "<sup>[1]</sup>")
+    r"^(issn|isbn|doi)\b",                              # identifier lines
+    r"[$\\]",                                           # LaTeX/math markup -- body text
+    r"^(january|february|march|april|may|june|july|august|september|october|november|december)"
+    r"\s+\d{4}$",                                       # a date line
+)
+_MIN_TITLE_WORDS = 3
+
+
+def _looks_like_a_title(candidate: str | None) -> bool:
+    """A candidate is usable if it is not obviously page furniture or tool metadata.
+
+    Deliberately conservative -- a wrongly REJECTED good title just falls through to the next
+    candidate in `mint_local_ref`'s chain, while a wrongly ACCEPTED junk one becomes the paper's
+    identity everywhere it is displayed or searched. The asymmetry is the whole reason for the
+    word-count floor: real paper titles are several words long, and almost nothing that is 1-2
+    words is a title rather than a header fragment.
+    """
+    if candidate is None:
+        return False
+    text = candidate.strip()
+    if not text:
+        return False
+    if any(re.search(pattern, text, re.IGNORECASE) for pattern in _JUNK_TITLE_PATTERNS):
+        return False
+    return len(text.split()) >= _MIN_TITLE_WORDS
+
+
 def _first_nonempty_line(text: str) -> str | None:
-    for line in text.splitlines():
+    """First line of page 1 that actually looks like a title, not merely the first non-blank one.
+
+    Scans a bounded window rather than stopping at line 1: a running header, a page number or a
+    date routinely occupies the first line or two of an extracted page, and taking it produced
+    titles like "1" and "February 2021" in this corpus.
+    """
+    fallback = None
+    for line in text.splitlines()[:15]:
         stripped = line.strip()
-        if stripped:
+        if not stripped:
+            continue
+        if fallback is None:
+            fallback = stripped
+        if _looks_like_a_title(stripped):
             return stripped
-    return None
+    # Nothing title-shaped in the window -- hand back the old behaviour's answer rather than None,
+    # so this can only ever improve on the previous result, never erase one.
+    return fallback
 
 
 def _explicit_title(filename: str) -> str | None:
@@ -169,10 +223,14 @@ def mint_local_ref(pdf_bytes: bytes, filename: str, doc_type: str, mtime: date) 
     # still run regardless of a marker: `_pdf_title_author` also yields `author_meta` (used for
     # `authors=` below) and `_safe_first_page` feeds the `published` year regex further down. A
     # marker only supersedes the title, not those other fields, so neither call can be skipped.
+    # Metadata is consulted first but only if it is title-shaped: an authoring tool's default
+    # ("untitled", "PowerPoint Presentation") is worse than the paper's own first heading, which is
+    # what the next link in the chain recovers.
     title = (
         _explicit_title(filename)
-        or title_meta
+        or (title_meta if _looks_like_a_title(title_meta) else None)
         or _first_nonempty_line(first_page)
+        or title_meta                     # junk metadata still beats a bare filename stem
         or Path(filename).stem
     )
     year = _YEAR.search(first_page or "")
