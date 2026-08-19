@@ -74,6 +74,23 @@ class SearchFilters(FrozenModel):
     # papers the first-stage hybrid search never surfaced. For guaranteed-complete enumeration use
     # the corpus scan tool, which touches every paper, rather than expecting top-k to be exhaustive.
     max_hits_per_paper: int | None = None
+    # 2026-08-19: ensure at least this many DISTINCT papers appear, by ADDING rather than removing.
+    #
+    # The additive counterpart to `max_hits_per_paper` above, and the safer of the two. Capping is
+    # SUBTRACTIVE: it deletes passages to make room, so a gold passage ranked 5th inside its own
+    # paper is silently gone under a cap of 3, and nothing in the response says so. This instead
+    # keeps the top `k` exactly as ranked and APPENDS the best not-yet-seen passage from further
+    # papers until the count is met -- so no passage that would have been returned is ever lost.
+    # Recall cannot regress under this field; it can under `max_hits_per_paper`.
+    #
+    # The cost is the honest one: the result set can exceed `k`. A caller with a fixed context
+    # budget is trading tokens for coverage, which is the right trade to make explicitly rather
+    # than to have a cap make silently on its behalf.
+    #
+    # Bounded by the candidate pool: this can only surface papers the first-stage hybrid search
+    # already retrieved. Guaranteed-complete enumeration is `scan_corpus`, which examines every
+    # paper rather than the pool.
+    min_distinct_papers: int | None = None
 
 
 class VectorPayload(TypedDict):
