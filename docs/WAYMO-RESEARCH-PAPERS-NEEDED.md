@@ -373,3 +373,39 @@ link, no arXiv mirror.
 
 **152 of 153 (99.3%)** of Waymo's own published research is in the corpus, every one of them tagged
 `curated` and therefore answerable with certainty to "is this Waymo research?".
+
+---
+
+## 9. C10 — closed as an accepted gap, 2026-08-18
+
+**Operator decision: stop pursuing C10. Do not re-open it, and do not re-derive it as a to-do.**
+
+| | |
+|---|---|
+| title | Representative cyclist collision injury risk distributions for a dense-urban US ODD using naturalistic dash camera data |
+| authors | Campolettano, E. T.; Scanlon, J. M.; Kusano, K. D. |
+| venue | SAE Technical Paper 2024-01-2645 (2024) |
+| DOI | `10.4271/2024-01-2645` |
+| status | **ACCEPTED GAP — could not be obtained** |
+
+The operator sourced every other paywalled paper on Waymo's index pages but could not get this one.
+It is behind the SAE paywall, and Waymo publishes no free copy: its own research page
+(`waymo.com/research/representative-cyclist-collision-injury-risk-distr/`) links only to
+`https://www.sae.org/publications/technical-papers/content/2024-01-2645/` — no direct PDF, no DOI
+link, no arXiv mirror. Verified 2026-08-18.
+
+**Final coverage: 152 of 153 (99.3%).** This is the intended end state, not an in-progress number.
+Group C is otherwise complete; Groups A and B are complete.
+
+### The one blind spot this leaves
+
+Worth knowing when reading corpus answers rather than treating 99.3% as "everything". A query about
+cyclist collision injury risk distributions in a dense-urban ODD will be answered from adjacent
+papers that ARE held — the pedestrian equivalent (`local:aa069e80dac9`, ESV-27), the mechanistic
+cyclist injury curves (C17, `local:7b943f45c1da`), the baseline VRU risk work (C8,
+`local:bc031ecd9224`) — and nothing in the response will signal that a closer-matching Waymo paper
+exists and is absent. The corpus cannot report an absence it has no record of.
+
+If the paper is ever obtained: drop it in `waymo/data/drop_in/papers/`, run
+`python -m app.ingest_local` from `waymo/data/`, add the resulting id to
+`fixtures/waymo/waymo_authored_ids.txt`, and re-run `scripts/backfill_curated_author_orgs.py`.
