@@ -73,6 +73,52 @@ honest — a value above 32 now does what it says, for a workload that wants it.
 matters more than the ordering of the first ten. That is a different objective from what this eval
 scores, which is why the tool for enumeration is `scan_corpus`, not a bigger `k`.
 
+## Diversity: additive beats subtractive, measured
+
+`max_hits_per_paper` caps hits per paper. It is SUBTRACTIVE -- it deletes passages to make room --
+so a gold passage ranked 5th inside its own paper is gone under a cap of 3, and nothing in the
+response says so. `min_distinct_papers` reaches the same goal by ADDING: it keeps the top `k` exactly
+as ranked and appends the best not-yet-seen passage from further papers.
+
+60 real eval questions, k=10, against the causal corpus:
+
+| mode | gold found | distinct papers | result size | **passages lost vs plain** |
+|---|---|---|---|---|
+| plain (uncapped) | 60/60 | 3.92 | 10.00 | 0 |
+| capped, `max_hits_per_paper=2` | 60/60 | 8.58 | 10.00 | **298** |
+| additive, `min_distinct_papers=8` | 60/60 | 8.00 | 14.08 | **0** |
+
+**The cap destroyed 298 passages** across 60 questions -- about 5 per question -- that the plain
+query had returned. The additive form destroyed none, which is a guarantee of its construction
+rather than a property of this sample.
+
+### What this does NOT show
+
+**Paper-level gold recall was 60/60 for all three.** The cap's 298 deletions did not cost a single
+gold *paper* here, and it would be dishonest to claim otherwise. The reason is granularity: this
+ground truth scores whether any passage from the right paper was returned, so deleting a paper's
+2nd-best passage is invisible as long as its best one survives. The cap's danger lives at
+passage level (`gold_block_id`), which the 210-question set does not carry -- see this runner's own
+docstring on that gap.
+
+So the finding is: **the cap demonstrably destroys evidence, and this fixture cannot see the cost.**
+That is a reason to prefer the form that cannot destroy evidence at all, not a reason to believe the
+cost is zero.
+
+### The honest trade
+
+The additive form is not free and not superior on every axis:
+
+| dimension | vs. the cap |
+|---|---|
+| passages lost | **strictly better** -- zero, by construction |
+| distinct papers | comparable (8.00 vs 8.58; the additive target is exact and configurable) |
+| response size | **worse** -- 14.08 vs 10.00, a 41% larger result set |
+
+It converts a silent loss into a visible cost. A caller on a fixed context budget is now spending
+tokens deliberately instead of having a cap discard evidence on its behalf without telling it. Both
+fields remain available; `min_distinct_papers` is the one to reach for by default.
+
 ## Enumeration, measured
 
 Against the bootstrap audit's ground truth (4 papers that genuinely used resampling):

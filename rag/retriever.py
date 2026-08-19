@@ -104,6 +104,28 @@ def _cap_hits_per_paper(results: list, paper_id_of, limit: int) -> list:
     return capped
 
 
+def _top_up_distinct_papers(top: list, remainder: list, minimum: int) -> list:
+    """Append the best passage from papers not already represented, until `minimum` distinct papers
+    appear or the reranked remainder runs out.
+
+    Purely additive -- `top` is returned unchanged with entries appended, never reordered or
+    dropped. `remainder` is already in rerank order, so the first hit encountered for a new paper is
+    that paper's best available passage.
+    """
+    seen = {result.paper_id for result in top}
+    if len(seen) >= minimum:
+        return top
+    topped = list(top)
+    for result in remainder:
+        if result.paper_id in seen:
+            continue
+        topped.append(result)
+        seen.add(result.paper_id)
+        if len(seen) >= minimum:
+            break
+    return topped
+
+
 def _cap_per_paper(
     results: list[PaperSearchResult], limit: int = _MAX_HITS_PER_PAPER
 ) -> list[PaperSearchResult]:
@@ -259,7 +281,14 @@ class Retriever:
             )
         # Reranked results are sized to the pool, not the caller's `k` -- truncate only now that
         # reranking has had the chance to promote a correct passage into the top `k` (T-DOC24).
-        return results[:k], RetrievalCoverage(candidate_count=len(hits))
+        top = results[:k]
+        # `min_distinct_papers` tops the result up from the REMAINDER of the reranked pool, after
+        # the `[:k]` truncation, so the top `k` is returned exactly as ranked and nothing that
+        # would have been shown is displaced. That ordering is the whole difference between this
+        # and `max_hits_per_paper` -- see the contract comment on both fields.
+        if filters is not None and filters.min_distinct_papers is not None:
+            top = _top_up_distinct_papers(top, results[k:], filters.min_distinct_papers)
+        return top, RetrievalCoverage(candidate_count=len(hits))
 
     def retrieve_papers(
         self, query: str, filters: SearchFilters | None, k: int

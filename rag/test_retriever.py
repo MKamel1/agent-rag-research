@@ -1032,3 +1032,97 @@ def test_retrieve_cap_frees_slots_for_other_papers():
                            filters=SearchFilters(max_hits_per_paper=1), k=3)
 
     assert len({res.paper_id for res in capped}) == 2, "both papers represented under the cap"
+
+
+# ================================================================================================
+# SearchFilters.min_distinct_papers (2026-08-19) -- ADDITIVE diversity.
+#
+# The counterpart to max_hits_per_paper, and the safer of the two. Capping is subtractive: it
+# deletes passages to make room, so a gold passage ranked 5th within its own paper vanishes under a
+# cap of 3 and nothing says so. This keeps the top k exactly as ranked and appends from the
+# remainder, so recall cannot regress -- which is the property these tests exist to pin down.
+# ================================================================================================
+
+
+def test_min_distinct_papers_never_drops_anything_the_uncapped_query_returned():
+    """The core guarantee. Whatever plain top-k returned must still be present, in order."""
+    store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
+    _seed_one_paper_many_chunks(store, docstore, embedder, "2506.00001", 5)
+    _seed_chunk(store, docstore, embedder, chunk_id="2506.00002:c0", paper_id="2506.00002",
+                block_id="2506.00002:b0", text="bootstrap resampling passage in another paper")
+    r = _make_retriever(store, docstore, FakeReranker(), embedder)
+
+    plain, _ = r.retrieve("bootstrap resampling", filters=None, k=3)
+    topped, _ = r.retrieve("bootstrap resampling",
+                           filters=SearchFilters(min_distinct_papers=2), k=3)
+
+    assert [x.anchor.block_id for x in topped[:len(plain)]] == \
+           [x.anchor.block_id for x in plain], "the top k is returned unchanged, in order"
+    assert len(topped) >= len(plain)
+
+
+def test_min_distinct_papers_adds_papers_the_cap_would_have_had_to_delete_for():
+    store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
+    _seed_one_paper_many_chunks(store, docstore, embedder, "2506.00001", 5)
+    _seed_chunk(store, docstore, embedder, chunk_id="2506.00002:c0", paper_id="2506.00002",
+                block_id="2506.00002:b0", text="bootstrap resampling passage in another paper")
+    r = _make_retriever(store, docstore, FakeReranker(), embedder)
+
+    # k=2 is where the hoggy paper monopolises the page (verified against this fixture's ordering).
+    plain, _ = r.retrieve("bootstrap resampling", filters=None, k=2)
+    topped, _ = r.retrieve("bootstrap resampling",
+                           filters=SearchFilters(min_distinct_papers=2), k=2)
+
+    assert len({x.paper_id for x in plain}) == 1, "plain top-2 is monopolised by the hoggy paper"
+    assert len({x.paper_id for x in topped}) == 2, "the second paper is ADDED, not swapped in"
+    assert len(topped) == len(plain) + 1, "added, so the result set grew -- the honest cost"
+    assert [x.anchor.block_id for x in topped[:2]] == [x.anchor.block_id for x in plain]
+
+
+def test_min_distinct_papers_is_a_noop_when_the_target_is_already_met():
+    store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
+    for i in (1, 2, 3):
+        pid = f"2506.0000{i}"
+        _seed_chunk(store, docstore, embedder, chunk_id=f"{pid}:c0", paper_id=pid,
+                    block_id=f"{pid}:b0", text="bootstrap resampling passage")
+    r = _make_retriever(store, docstore, FakeReranker(), embedder)
+
+    plain, _ = r.retrieve("bootstrap resampling", filters=None, k=3)
+    topped, _ = r.retrieve("bootstrap resampling",
+                           filters=SearchFilters(min_distinct_papers=2), k=3)
+
+    assert [x.anchor.block_id for x in topped] == [x.anchor.block_id for x in plain]
+
+
+def test_min_distinct_papers_stops_at_the_pool_rather_than_inventing_papers():
+    """It can only surface what the first-stage search retrieved. Asking for more distinct papers
+    than exist must return what there is, not fail or pad."""
+    store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
+    _seed_one_paper_many_chunks(store, docstore, embedder, "2506.00001", 3)
+    r = _make_retriever(store, docstore, FakeReranker(), embedder)
+
+    topped, _ = r.retrieve("bootstrap resampling",
+                           filters=SearchFilters(min_distinct_papers=9), k=2)
+
+    assert len({x.paper_id for x in topped}) == 1
+
+
+def test_cap_can_lose_a_passage_that_the_additive_form_keeps():
+    """The two fields side by side, on the same data -- this is the reason to prefer the additive
+    one. The cap deletes the paper's 3rd/4th/5th passages; min_distinct_papers keeps every one the
+    plain query returned and appends instead."""
+    store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
+    _seed_one_paper_many_chunks(store, docstore, embedder, "2506.00001", 5)
+    _seed_chunk(store, docstore, embedder, chunk_id="2506.00002:c0", paper_id="2506.00002",
+                block_id="2506.00002:b0", text="bootstrap resampling passage in another paper")
+    r = _make_retriever(store, docstore, FakeReranker(), embedder)
+
+    plain, _ = r.retrieve("bootstrap resampling", filters=None, k=5)
+    capped, _ = r.retrieve("bootstrap resampling",
+                           filters=SearchFilters(max_hits_per_paper=2), k=5)
+    topped, _ = r.retrieve("bootstrap resampling",
+                           filters=SearchFilters(min_distinct_papers=2), k=5)
+
+    plain_blocks = {x.anchor.block_id for x in plain}
+    assert plain_blocks - {x.anchor.block_id for x in capped}, "the cap dropped passages"
+    assert not plain_blocks - {x.anchor.block_id for x in topped}, "the additive form dropped none"
