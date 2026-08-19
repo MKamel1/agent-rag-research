@@ -496,3 +496,30 @@ None involve Waymo-authored work. The third is the containment gate paying for i
 `waymo/data/backups/snapshot-20260819T024659Z` (1.2G: `papers.db` 297MB, blobs 124MB, Qdrant
 snapshot 808MB), plus a separate verified `papers.db.pre-dedupe-20260818T194653.bak`
 (`integrity_check: ok`, 1,745 papers). Either restores the pre-cleanup state.
+
+---
+
+## 14. Group C closed but one — 2026-08-18 (later same day)
+
+The operator sourced the outstanding paywalled papers; **9 ingested, 1 still out.**
+
+| metric | §12/§13 | now |
+|---|---|---|
+| `ingest_state` done | 1,729 | **1,738** |
+| curated ids | 144 | **153** |
+| Qdrant points tagged `curated=Waymo` | 3,466 | **3,731** |
+| coverage of Waymo's own research | 143/153 | **152/153 (99.3%)** |
+
+Re-verified after ingest: `app.corpus_integrity` **OK**; `verify_curated_filter.py` **0 leaks**;
+`find_duplicate_papers.py` still **3 pairs, 0 curated** — the nine additions introduced no duplicate.
+
+The single remaining gap is **C10**, *Representative cyclist collision injury risk distributions*
+(SAE 2024-01-2645), behind the SAE paywall with no free copy published anywhere by Waymo — see
+`docs/WAYMO-RESEARCH-PAPERS-NEEDED.md` §7.
+
+**Coverage was verified per-entry against all 55 safety-page entries**, replacing the earlier
+figure that was inherited from the group tables rather than checked. The method matters and is
+recorded there: match a page title against a paper's **opening ~3,500 characters**, never its full
+text (which matches bibliographies) and never its stored title alone (drop-in titles include
+"February 2021", "PowerPoint Presentation" and "9"). Both shortcuts produced wrong answers first.
+

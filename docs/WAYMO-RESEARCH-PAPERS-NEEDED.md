@@ -301,3 +301,75 @@ gaps is paywalled and needs a human with journal access — nothing else is bloc
 The curated list also carries 8 Waymo arXiv papers that are *not* on either index page
 (`2510.26125` WOD-E2E, `2604.03827`, `2605.20390` STELLAR, `2605.22997`, plus the four C-preprints
 above) — Waymo's site lags arXiv, so the list is a superset of the pages, never a subset.
+
+---
+
+## 7. Group C closed but one — 2026-08-18 (later same day)
+
+The operator sourced and dropped in the outstanding paywalled papers. **9 of the 10 ingested; Group
+C now has a single remaining gap.**
+
+Verified per-entry against all 55 safety-page entries, not inherited from the group tables above.
+The check that matters: a paper's own title appears in its **opening ~3,500 characters**, whereas a
+merely-cited paper appears only in a bibliography. Matching on full document text instead produces
+confident false positives — `2212.08148` was briefly credited with holding C22 because it *cites*
+it. Titles alone fail too: the Waymo Safety Report is stored under the extracted title
+**"February 2021"**, the Schumann IWAI poster as **"PowerPoint Presentation"**, and one paper as
+**"9"**.
+
+| # | paper | corpus id |
+|---|---|---|
+| C24 | High-resolution urban fatal crash rate benchmarks | `local:79c782071ad2` |
+| C2 | A mechanistic approach…omnidirectional motorcyclist injury risk | `local:bb74867d2259` |
+| C8 | Baseline vulnerable road user injury risk…dense urban | `local:bc031ecd9224` |
+| C17 | Bridging the gap: Mechanistic-based cyclist injury risk curves | `local:7b943f45c1da` |
+| C18 | Passenger and heavy vehicle collisions with pedestrians | `local:c92c18fe2ac2` |
+| C20 | Determination of functional scenarios for intersection collisions | `local:2e47fb1e0308` |
+| C21 | Methodology for determining maximum injury potential | `local:7bf8bf93e22e` |
+| C22 | An omni-directional model of injury risk in planar crashes | `local:071d15c56158` |
+| C23 | Waymo simulated driving behavior in reconstructed fatal crashes | `local:1d8d84d78b21` |
+
+All nine were added to `fixtures/waymo/waymo_authored_ids.txt` and tagged by
+`scripts/backfill_curated_author_orgs.py` — **ingesting alone does not make a paper answer "yes" to
+a curated-only query.**
+
+### A near-miss worth recording
+
+The delivery also contained `27ESV-000075.pdf`, the **pedestrian** ESV-27 study — not C10, the
+near-identically-titled **cyclist** study. The two differ by one word:
+
+- *Representative **pedestrian** collision injury risk distributions…* — ESV 27 (2023), already held
+  as `local:aa069e80dac9`
+- *Representative **cyclist** collision injury risk distributions…* — SAE 2024-01-2645, **still
+  outstanding**
+
+No harm done: the file was byte-identical to the copy already ingested, so `mint_local_ref`'s
+content-addressed id made re-staging a no-op rather than a duplicate. Worth knowing that the
+sha256-over-bytes dedup silently absorbs an accidental re-delivery, so a "10 files in, 9 papers out"
+count is expected rather than a fault.
+
+### The last gap — C10
+
+| | |
+|---|---|
+| title | Representative cyclist collision injury risk distributions for a dense-urban US ODD using naturalistic dash camera data |
+| authors | Campolettano, E. T.; Scanlon, J. M.; Kusano, K. D. |
+| venue | SAE Technical Paper 2024-01-2645 (2024) |
+| DOI | `10.4271/2024-01-2645` |
+| access | **SAE paywall — purchase required** |
+
+Confirmed 2026-08-18 that no free copy is published by Waymo: its own research page
+(`waymo.com/research/representative-cyclist-collision-injury-risk-distr/`) links only to
+`https://www.sae.org/publications/technical-papers/content/2024-01-2645/` — no direct PDF, no DOI
+link, no arXiv mirror.
+
+## 8. Coverage — 2026-08-18 final
+
+| page | entries | in corpus | missing |
+|---|---|---|---|
+| `waymo.com/research/` | 98 | 98 | 0 |
+| `waymo.com/safety/research/` | 55 | **54** | 1 (C10) |
+| **total** | **153** | **152** | **1** |
+
+**152 of 153 (99.3%)** of Waymo's own published research is in the corpus, every one of them tagged
+`curated` and therefore answerable with certainty to "is this Waymo research?".
