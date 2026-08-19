@@ -67,10 +67,10 @@ _MAX_BATCH_SIZE = 32
 _MAX_BATCH_TOKENS = 12_000        # against TEI's 16_384
 _MAX_ITEM_TOKENS = 8_000          # against TEI's max_input_length of 8_192
 
-# Deliberately pessimistic: English averages ~4 characters per token, so dividing by 3 OVER-estimates
-# the token count and produces smaller, safer batches. Tokenising properly here would mean importing
-# the model's tokenizer into a module whose whole job is to be a thin HTTP adapter (CONVENTIONS §1),
-# for an accuracy this does not need -- the headroom above absorbs the error.
+# Deliberately pessimistic: English averages ~4 characters per token, so dividing by 3
+# OVER-estimates the token count and produces smaller, safer batches. Tokenising properly
+# here would mean importing the model's tokenizer into a module whose whole job is to be a thin
+# HTTP adapter (CONVENTIONS §1), for an accuracy this does not need -- the headroom absorbs it.
 _CHARS_PER_TOKEN = 3
 
 
