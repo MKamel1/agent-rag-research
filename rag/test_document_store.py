@@ -16,6 +16,7 @@ not implementable and is NOT asserted. Instead each schema-backed field is check
 is what "round-trips a whole PaperRecord" means against this schema.
 """
 
+import concurrent.futures
 import sqlite3
 from datetime import date
 from pathlib import Path
@@ -808,3 +809,28 @@ def test_scan_blocks_rejects_an_invalid_regex_rather_than_matching_nothing(store
                                                 paper_id="2506.00001")])
     with pytest.raises(ContractError):
         store.scan_blocks("bootstrap(")
+
+
+# --------------------------------------------------------------------------------------------------
+# cross-thread reads (RI-1) — the dashboard builds the retrieval stack on one thread and reads
+# through it from ThreadingHTTPServer request threads on every search
+# --------------------------------------------------------------------------------------------------
+
+
+def test_store_readable_from_a_thread_other_than_its_creating_thread(tmp_path):
+    """RI-1: sqlite3.connect defaults to check_same_thread=True, so a DocumentStore built on one
+    thread raised ProgrammingError on the first read from another -- exactly the dashboard's shape:
+    app.assembly.build_mcp_server constructs the store inside whichever request thread happens to
+    run the first search, and every later search is a different ThreadingHTTPServer thread."""
+    store = _mod.DocumentStore(
+        db_path=str(tmp_path / "store.db"), blob_dir=str(tmp_path / "blobs")
+    )
+    store.put(make_paper_record())
+
+    # .result() re-raises a worker-thread exception in THIS thread, so a check_same_thread
+    # violation fails the test loudly instead of killing a worker silently.
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+        got = pool.submit(store.get, PAPER_ID).result()
+
+    assert got is not None
+    assert got.ref.paper_id == PAPER_ID
