@@ -47,6 +47,7 @@ from rag.summarizer import (  # noqa: E402
     _TOKENS_PER_WORD_ESTIMATE,
     _fit_for_summarization,
 )
+from scripts.census_common import rank_by_count  # noqa: E402
 
 # Average `question_text` length measured over fixtures/eval/eval_questions_blind.json's 210
 # questions (2026-08-22): a stand-in for realistic query length only, not real query content --
@@ -99,10 +100,8 @@ class GroupedCensus:
 def top_offenders(groups: Mapping[str, BindTally], n: int = 10) -> list[tuple[str, BindTally]]:
     """Worst-`dropped`-first, silent about a group the limit never touched -- a census exists to
     find where loss concentrates, not to list every key that was never at risk."""
-    return sorted(
-        ((key, tally) for key, tally in groups.items() if tally.bound),
-        key=lambda pair: -pair[1].dropped,
-    )[:n]
+    ranked = rank_by_count({key: tally.dropped for key, tally in groups.items()}, n=n)
+    return [(key, groups[key]) for key, _dropped in ranked]
 
 
 # --------------------------------------------------------------------------------------------
