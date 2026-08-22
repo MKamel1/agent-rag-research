@@ -165,6 +165,31 @@ class TeiReranker:
         if not candidates:
             return []
 
+        # RI-28: the query rides in EVERY (query, document) pair, but only the document side was
+        # ever capped (`_truncate_to_item_budget`) -- nothing bounded the query. Past
+        # `_MAX_ITEM_TOKENS` estimated tokens (24,000 chars at the /3 overestimate below; verified
+        # 23,999 chars still estimates 8,000) the query alone busts the per-pair input ceiling, so
+        # every batch `_pack_batches` can emit is rejected with a non-retryable 4xx and the whole
+        # search dies with a generic "server returned 413" that never names the query as the
+        # cause. (The packer's own degenerate point -- where even a one-item batch exceeds
+        # `_MAX_BATCH_TOKENS`, ~35,997 chars -- sits past this guard, so checking the item budget
+        # here subsumes it.)
+        #
+        # Fail fast rather than truncate. Truncation is correct for documents because the excess
+        # bytes never influence the score either way (the service truncates the same bytes
+        # server-side); for the query there is no such lossless reading -- a truncated query is a
+        # DIFFERENT question, and silently reranking against its prefix would return plausibly
+        # ordered results for something the user never asked, exactly the quiet degradation this
+        # codebase's absence-honesty work exists to prevent. `PermanentError`, not transient:
+        # resending the identical query fails identically (same reasoning as the 413s the service
+        # itself returns).
+        query_tokens = _estimate_tokens(query)
+        if query_tokens > _MAX_ITEM_TOKENS:
+            raise PermanentError(
+                f"query too large to rerank: {len(query)} chars (~{query_tokens} estimated "
+                f"tokens, limit {_MAX_ITEM_TOKENS}); shorten the query"
+            )
+
         if self._ensure_ready is not None:
             self._ensure_ready()
 
