@@ -596,6 +596,25 @@ class IngestionOrchestrator:
             # rag/document_store.py), so a later full re-ingest of a quarantined paper_id
             # safely overwrites this record rather than duplicating or orphaning it.
             record = self._document_store.get(paper_id)
+            if record is None:
+                # RI-4: this branch assumed the papers row is still there because the checkpoint
+                # says stored-or-later, but `delete_paper` commits the SQLite delete before
+                # `state.forget`, so a crash in that window leaves a checkpoint with no row
+                # behind it -- and the unguarded read used to die on an AttributeError here,
+                # killing the run for every paper queued behind it. Same quarantine-and-continue
+                # shape this branch already applies to embed/upsert exhaustion; quarantine also
+                # deletes the state row, so the next run re-ingests the paper fresh and
+                # `DocumentStore.put`'s upsert simply rebuilds the missing row.
+                self._state.quarantine(
+                    paper_id,
+                    stage,
+                    PermanentError(
+                        f"resume: ingest_state says stage={stage!r} but the papers row for "
+                        f"{paper_id} is missing (delete-ordering window) -- quarantining so "
+                        f"the next run re-ingests it from scratch"
+                    ),
+                )
+                return
             self._before_embed()
             self._on_stage("embed")
             texts = (
