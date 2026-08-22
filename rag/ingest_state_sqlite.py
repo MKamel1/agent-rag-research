@@ -25,6 +25,7 @@ from datetime import UTC, datetime
 from typing import TypeVar
 
 from contracts.ingest_state import Checkpoint, CheckpointArtifacts
+from migrations.migrate import migrate
 
 logger = logging.getLogger(__name__)
 
@@ -45,9 +46,10 @@ def _delete_state_rows(conn: sqlite3.Connection, paper_id: str) -> None:
 
 
 class SqliteIngestState:
-    """Precondition: `db_path` has already had `migrations/migrate.py`'s `migrate()` applied (so
-    `ingest_state`/`ingest_checkpoint`/`quarantine` exist) -- this adapter contains no DDL of its
-    own (CONVENTIONS §1: schema lives in `migrations/`, never re-declared by an adapter).
+    """`__init__` applies `migrations/migrate.py`'s `migrate()` itself, so `ingest_state`/
+    `ingest_checkpoint`/`quarantine` exist before the first statement runs; this adapter contains
+    no DDL of its own (CONVENTIONS §1: schema lives in `migrations/`, never re-declared by an
+    adapter).
 
     Thread-safety: `IngestionOrchestrator` calls `state.get`/`state.checkpoint` from two threads
     concurrently (its own prefetch pool + the main thread -- see `rag/orchestrator.py`'s module
@@ -70,6 +72,14 @@ class SqliteIngestState:
 
     def __init__(self, db_path: str):
         self._db_path = db_path
+        # RI-5: apply the schema here instead of stating "caller has run migrate()" as a
+        # precondition -- the old docstring claimed exactly that, and nothing enforced it, so a
+        # construction against an unmigrated db survived __init__ only to die on the first
+        # get()/checkpoint() with `no such table`. Mirrors DocumentStore.__init__
+        # (rag/document_store.py) -- the same class of object, previously the opposite policy.
+        # Unconditional is free: migrate() is idempotent (T-DOC81) and this runs once per
+        # instance, not once per operation.
+        migrate(db_path)
         self._lock = threading.Lock()
 
     def _with_connection(self, fn: Callable[[sqlite3.Connection], _T]) -> _T:

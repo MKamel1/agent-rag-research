@@ -105,6 +105,19 @@ def test_get_returns_none_for_an_unknown_paper(tmp_path):
     assert state.get("2601.00001") is None
 
 
+def test_construction_against_an_unmigrated_database_applies_the_schema(tmp_path):
+    """RI-5: the old docstring stated "caller has already run migrate()" as a precondition, and
+    nothing enforced it -- the first get()/checkpoint() against an unmigrated db died on
+    `no such table`. __init__ must apply the migration itself (mirroring DocumentStore), so
+    constructing straight against a bare db path yields a working adapter, not a delayed crash."""
+    db_path = str(tmp_path / "test.sqlite")
+    state = SqliteIngestState(db_path)  # no migrate() call -- that is the point
+
+    assert state.get("2601.00001") is None
+    state.checkpoint("2601.00001", "parsed")
+    assert state.stage_of("2601.00001") == "parsed"
+
+
 def test_checkpoint_round_trips_stage_and_artifacts_through_real_sqlite(tmp_path):
     db_path = str(tmp_path / "test.sqlite")
     migrate(db_path)
