@@ -453,6 +453,44 @@ def test_reconcile_marks_clean_download_finish_as_done_even_though_done_count_ne
     assert live["status"] == "done"
 
 
+# --- RI-20: reconcile()'s unlocked downgrade write must not clobber a newer run's manifest ------
+#
+# Every WRITER of run_manifest.json holds `_control_lock`; reconcile() does not -- it runs bare on
+# every /api/status poll (liveness() <- server.py), by design, so a poll never queues behind a
+# long pause or a stop's termination-escalation ladder. Between its read and its write, a locked
+# retarget (full stop->start) or stop can legitimately replace the whole file; writing the poll's
+# stale captured dict back would overwrite the newer run's manifest with the old run's terminal
+# verdict -- and since a terminal status doesn't satisfy _LIVE_STATUSES, no later reconcile
+# touches it again (pause/resume/stop all refuse; a later start()'s double-run guard passes and
+# spawns beside the still-live new run).
+
+
+def test_reconcile_skips_the_write_when_a_newer_run_replaced_the_manifest(tmp_path, monkeypatch):
+    """Drives the interleaving directly: a stale `running` manifest for run-1 is already read by
+    `reconcile()` when a locked caller's replacement manifest (run-2, genuinely live) lands on
+    disk mid-verdict -- hooked here into `_crashed_before_target`, the slow SQLite-reading step
+    that makes the read->write window real rather than microseconds. The stale downgrade must
+    skip its write; run-2's manifest must survive untouched."""
+    stale = {
+        "run_id": "run-1", "status": "running",
+        "pid": 999999999, "pid_starttime": 1.0, "pid_cmdline": "long-gone\x00",
+        "mode": "download", "target": 100, "db_path": str(tmp_path / "papers.db"),
+    }
+    controller_mod._write_manifest(tmp_path, stale)
+
+    def replacement_lands_mid_verdict(manifest):
+        controller_mod._write_manifest(tmp_path, _live_manifest(run_id="run-2"))
+        return False
+
+    monkeypatch.setattr(controller_mod, "_crashed_before_target", replacement_lands_mid_verdict)
+
+    out = controller_mod.reconcile(tmp_path)
+    on_disk = json.loads((tmp_path / "run_manifest.json").read_text())
+    assert on_disk["run_id"] == "run-2"
+    assert on_disk["status"] == "running"  # not the stale dict's terminal verdict
+    assert out == on_disk  # the poll surfaces what is actually on disk, not what it captured
+
+
 # --- O-1: a supply-exhausted run reconciles as done, not failed --------------------------------
 
 

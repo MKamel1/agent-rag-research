@@ -521,7 +521,9 @@ def reconcile(data_dir: str | Path) -> dict | None:
     (a user-initiated stop is final either way); `running`->`failed` when `done_count < target`
     (OG-47#2: a crash mid-run, pid gone before reaching its own target -- previously collapsed
     into `done`, indistinguishable from a clean finish), else `running`->`done`. Idempotent and
-    cheap enough to call on every status poll (`server.py` does, before every `GET /api/status`)."""
+    cheap enough to call on every status poll (`server.py` does, before every `GET /api/status`).
+    RI-20: this runs UNLOCKED (unlike every writer), so a downgrade whose captured read went
+    stale mid-verdict skips its write instead of clobbering the newer run's manifest."""
     data_dir = Path(data_dir)
     manifest = _read_manifest(data_dir)
     if manifest is None:
@@ -532,6 +534,23 @@ def reconcile(data_dir: str | Path) -> dict | None:
             manifest["status"] = "failed" if _crashed_before_target(manifest) else "done"
         else:
             manifest["status"] = {"pausing": "paused", "stopping": "done"}[status]
+        # RI-20 compare-and-swap, not the control lock: taking `_control_lock` here would make
+        # every ~4s status poll queue behind a long pause or a stop's termination-escalation
+        # ladder -- exactly the poll latency this unlocked path exists to avoid. But unlocked
+        # means a locked caller can replace the whole manifest between our read above and this
+        # write (a retarget's full stop->start, or stop's final "done"; for a `running` verdict
+        # the window includes `_crashed_before_target`, which opens SQLite and can block on a
+        # contended DB). Writing our stale captured dict back would overwrite the NEWER run's
+        # manifest with the OLD run's terminal verdict -- fatal because it doesn't self-heal: a
+        # terminal status doesn't satisfy `_LIVE_STATUSES`, so no later reconcile touches it,
+        # pause/resume/stop all refuse forever, and a later start()'s double-run guard passes
+        # and spawns beside the still-live new run. So re-read; persist only if it is still the
+        # same run, otherwise surface the newer manifest and let the next poll reconcile it.
+        # The done/failed cleanup+archive blocks below are skipped with it -- they belong to a
+        # manifest we just decided not to persist.
+        latest = _read_manifest(data_dir)
+        if latest is None or latest.get("run_id") != manifest.get("run_id"):
+            return latest
         _write_manifest(data_dir, manifest)
         # Only "done" is CLEANED UP (deleted) here. "paused" (from "pausing") expects a later
         # resume() that reuses run_cwd, so it must NOT be cleaned up -- unchanged (OG-49 M10).
