@@ -8,6 +8,69 @@ Status: **OPEN** (not started) · **IN PROGRESS** (branch/PR exists) · **BLOCKE
 
 ---
 
+## Code-grounded review programme (RI-19+, 2026-08-22) — IN PROGRESS
+
+A second review campaign, run after the first was found to have anchored on documentation rather
+than source. The rule this time: a finding whose evidence is a docstring, comment, or `.md` file is
+not a finding. Five reviewers, one per code area, read-only, each required to cite `file:line`, the
+caller path found by grep, a concrete trigger, and a falsification attempt.
+
+The change in method paid for itself. The first campaign's FD-1 read a docstring, reported "figure
+images go to a temp directory", and missed that figures were never persisted at all — no table,
+`figures=[]` hard-coded on read. And the single most valuable finding below was found by querying
+GitHub Actions, which no amount of source reading would have surfaced.
+
+| id | item | status | notes |
+|---|---|---|---|
+| RI-19 | `restart_downloader` SIGKILLs another corpus's downloader | **DONE** -- `bc147bc` | A bare callable reference, called zero-arg, defaulted `data_dir=None` and skipped RI-8's qualification. |
+| RI-20 | Unlocked `reconcile()` can orphan a live run | **DONE** -- `def1cdc` | Compare-and-swap at the write site; the lock's poll latency was rejected. |
+| RI-21 | Eight temp-write sites, four not pid-qualified | **IN PROGRESS** | One shared helper, modelled on RI-6's `_write_private_file`. |
+| RI-22 | Sharded Pass 1 can double-assign papers | **IN PROGRESS** | Positional slicing over independently-harvested lists; hash-partition on `paper_id`. |
+| RI-23 | The enforcement gate is RED on `main` | **IN PROGRESS** | Two merges failing a required check. See below. |
+| RI-24 | `migrate()` races on first init | **OPEN** | Reproduced with 4 threads. RI-5 widened this. See below. |
+| RI-25 | Injected process-scan callables have no mechanical guard | **OPEN** | RI-19's fix is correct but nothing stops the next injection site repeating it. |
+| RI-26 | `search_papers` silently drops `min_distinct_papers` | **OPEN** | Honor it, reusing `_top_up_distinct_papers`. Resolved: it IS meaningful there. |
+| RI-27 | Six further LOW/MED findings | **OPEN** | Reranker 413 on a huge query; wrong log path behind a displayed verdict; filtered-target reconciliation; error-taxonomy escape; broken-config connection drop. |
+
+### RI-23 — the required `enforcement` check has been failing on `main`
+
+**This was missed because "CI checks pass" was claimed on the wrong evidence.** Running
+`pytest ci/checks/` exercises the checks' own unit tests; it does not run the checks against a
+diff, which is what the enforcement job does. Nothing ran the real gate locally, and the actual
+run results were never read after pushing.
+
+Live: run `32591144469` (the RI-18 merge) failed with 6 `[a]` violations — `httpx.MockTransport`
+test fixtures in `app/test_assembly.py`, a file never added to that rule's allow-list. Run
+`32579939693` (the RI-M3/M7 merge) failed with 2 `[f]` violations — `_FixedVectorEmbedder` and
+`_IdentityReranker`, pure in-memory doubles caught by a class-name-suffix heuristic meant for real
+GPU adapters. Both are the check being wrong, not the code.
+
+Three further tripwires will fire on the next unrelated diff that touches their file:
+`contracts/_base.py` has no sibling test (check g); `app/mcp_verify_client.py`'s
+`env=dict(os.environ)` passes the environment through to a child rather than reading config from it
+(check d); `contracts/config.py`'s module docstring contains the literal `os.getenv` and check (d)
+scans prose.
+
+The durable fix is the fourth part: a way to run the real checks against a diff locally, reusing
+`ci/run_enforcement.py`'s composition rather than duplicating it.
+
+### RI-24 — `migrate()` is not concurrency-safe on a brand-new database
+
+Reproduced: 4 threads calling `migrate()` on one fresh path — the winner completes, the losers die
+with `OperationalError('duplicate column name: doc_type')` inside 0004's `executescript`. The
+T-DOC81 transaction wrapper does its job (losers roll back and stay unrecorded), but the exception
+still propagates out of `__init__` and kills the caller's startup.
+
+**RI-5 made this more likely**: it added `SqliteIngestState.__init__` as a second unconditional
+`migrate()` caller alongside `DocumentStore.__init__`. The realistic shape is starting the
+dashboard or MCP server while an ingest bootstraps a brand-new corpus directory.
+
+Fix reuses a pattern already in this repo: `rag/vector_index.py` handles the identical
+concurrent-creator race by catching the already-exists error and re-checking whether the artifact
+is now present.
+
+---
+
 ## Review implementation programme (RI series, 2026-08-22) — COMPLETE
 
 Plan: `docs/superpowers/plans/2026-08-22-review-implementation.md`. Provenance: three independent
