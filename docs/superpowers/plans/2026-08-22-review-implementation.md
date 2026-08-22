@@ -196,13 +196,29 @@ single PR to pay one gate toll rather than four:
 - score-semantics sentence
 - `testpaths` fix
 
-Plus, outside the frozen set: eval instrument restoration in `app/retrieval_eval.py`, carrying the
-**verbatim** `title_leak` predicate and a `scoring_rule` stamp on every emitted result, so a future
-reader can tell which rule produced a number. The hit rule at `:141` is currently a bare
-`r.paper_id in question.gold_paper_ids` with no record of the scoring convention in the output.
+Plus, outside the frozen set, **new** eval instrumentation in `app/retrieval_eval.py` (verified
+2026-08-22: no `title_leak` predicate exists anywhere in this repo today, so this is new work, not
+a restoration):
+
+- A **verbatim `title_leak` predicate.** The hit rule at `:141` is a bare
+  `r.paper_id in question.gold_paper_ids`. It cannot distinguish a genuine semantic match from a
+  retrieval that succeeded only because the gold paper's title appears verbatim in the passage --
+  which inflates apparent retrieval quality by an unknown amount. The predicate is a **diagnostic
+  reported alongside the metrics, never subtracted from them**: it measures how much of the score
+  rests on title overlap, and the decision about what to do with that number is not the
+  instrument's to make.
+- A **`scoring_rule` stamp** on every emitted report, naming the hit rule in force, so two numbers
+  produced under different rules can never be silently compared.
 
 **Known limitation, to be stated in the report rather than silently carried:** a verbatim predicate
-leaves paraphrase-level leaks in the "absent" bucket. That is a measurement floor, not a bug.
+leaves paraphrase-level leaks uncounted. That is a measurement floor, not a bug.
+
+**On `testpaths`:** verified 2026-08-22 -- it is currently complete (85 of the 86 `test_*.py` files
+are collected; the one exclusion, `ci/proof_socket_block/`, is deliberate and documented). The
+defect is that it is an allow-list, so a future top-level package's tests are silently uncollected,
+and the exit-5 carve-out above turns a total collection failure green. Deleting the carve-out closes
+the dangerous half; the rider here is a mechanical guard that fails when a `test_*.py` exists
+outside the collected set -- CONVENTIONS.md §0 says guardrails are mechanical, not cultural.
 
 ---
 
