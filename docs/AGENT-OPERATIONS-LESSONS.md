@@ -245,6 +245,46 @@ Where a precondition is cheap to satisfy, satisfy it instead of documenting it.
 
 ---
 
+## 6b. Watching agents work
+
+### 6b.1 `opencode serve` cannot show a headless fan-out
+
+It lists sessions started by separate `opencode run` processes but returns **zero messages** for
+them — it only streams sessions it created itself. The live data is in
+`~/.local/share/opencode/opencode.db` (WAL-mode SQLite, updates as agents work). Read that
+read-only instead. `~/.local/bin/oc-watch` does exactly this.
+
+Also: `opencode serve` starts **unauthenticated** by default and warns about it in one line that is
+easy to miss. That API can drive opencode with full tool access. Set `OPENCODE_SERVER_PASSWORD`
+(HTTP Basic, any username) and bind to the tailnet address, never `0.0.0.0`.
+
+### 6b.2 Show what a tool DID, not which tool it was
+
+First version of the watch page rendered `part.data["tool"]` — a feed of `bash`, `edit`, `bash`.
+Useless: the tool name says nothing about the work. The store already holds
+`state.input.command`, `state.output`, `state.metadata.exit`, and for edits
+`input.newString`. Render the command and its result.
+
+This is the same mistake as reviewing documentation instead of code: the real artifact was
+available and a label was displayed instead of it.
+
+### 6b.3 `pkill -f <pattern>` matches its own command line
+
+**Cost: killed the controlling shell twice, the second time an hour after writing this file.**
+
+`pkill -f 'opencode serve'` matches the pkill invocation itself, because that string is in its own
+`/proc/self/cmdline`. Same for a bracket trick when the *calling* shell's command line also
+contains the literal text.
+
+This is verbatim the D-12 bug already fixed in this repo (`_live_prefetch_pids` counting its own
+observing process) and the RI-19 bug (an unqualified scan killing the wrong corpus's downloader).
+Three instances of one bug class, two of them self-inflicted while working on the other.
+
+**Rule:** kill by port or by a PID you captured at spawn time, never by pattern match on a string
+your own command contains.
+
+---
+
 ## 7. Open items
 
 - Superpowers skills are wired into opencode by a **version-pinned** path
