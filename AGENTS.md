@@ -18,6 +18,7 @@ No claims, no reconciliation, no evidence tiers beyond a pinned `"A"`, no Obsidi
 
 | Doc | Authoritative for |
 |---|---|
+| **docs/AGENT-OPERATIONS-LESSONS.md** | Living log of what has actually gone wrong running agents on this repo — verification claims that were false, review methods that failed, dispatch and parallelism traps, and repo-specific gotchas. Each entry carries its incident. Append, don't rewrite. Read before orchestrating multi-agent work. |
 | **docs/AGENT-PROCEDURES.md** | Onboarding checklist for a new agent/session, the per-PR documentation obligation (what to update when a ticket ships, a module lands, a decision is made), and the periodic drift-correction procedure. Read early — before you start acting on any ticket status. |
 | **docs/PROJECT-STATUS.md** | Current system state: what shipped (with commit SHAs/PR#s), what was tried and rejected, what's open. Every numeric/status claim is re-derived against live source/git, not copied — start here for "what actually exists today." |
 | **docs/BACKLOG.md** | The live work queue (D/T/B/O ticket series) — what's open right now, updated as items land. |
