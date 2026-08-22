@@ -275,6 +275,14 @@ class _PdfDownloadParser:
     through `_download` above, so a hit against `cache_dir` short-circuits it exactly the same way
     it short-circuits a foreground call -- the two pieces compose without either needing to know
     about the other.
+
+    `figures_dir` (RI-18): the real Parser (`rag/parser.py`) extracts figure/table PNGs to
+    `output_dir` (default: a content-addressed directory under the OS temp dir, never cleaned up
+    -- see that module's docstring). `build_ingestion_orchestrator` derives this from
+    `Config.blob_dir`, the same durable root `DocumentStore` already writes its own blobs under,
+    so extracted images land in persistent storage instead of a temp dir subject to OS eviction.
+    `figures_dir=None` (the default here) reproduces the Parser's own `output_dir=None` behavior
+    unchanged -- only the composition root passes a real path.
     """
 
     def __init__(
@@ -283,10 +291,12 @@ class _PdfDownloadParser:
         *,
         sleep: Callable[[float], None] = time.sleep,
         cache_dir: Path | None = None,
+        figures_dir: Path | None = None,
     ):
         self._client = client
         self._sleep = sleep
         self._cache_dir = cache_dir
+        self._figures_dir = figures_dir
         self._executor = ThreadPoolExecutor(max_workers=1)
         # Set by `prefetch_next_batch()`, consumed (and cleared) by the next matching
         # `parse_batch()` call. Keyed by paper_id tuple, not the `PaperRef` objects themselves,
@@ -310,7 +320,7 @@ class _PdfDownloadParser:
                 self._sleep(_PDF_DOWNLOAD_DELAY_SECONDS)
         # T-DOC31: `ref.paper_id` is the real id (from the Harvester) -- pass it through instead
         # of letting the real Parser fall back to deriving one from the PDF's own content.
-        return parse_pdf_bytes(content, ref.paper_id)
+        return parse_pdf_bytes(content, ref.paper_id, output_dir=self._figures_dir)
 
     def parse_batch(self, refs: list[PaperRef]) -> list[ParsedDoc]:
         """Bridges `IngestionOrchestrator.parse_phase`'s batched `parser.parse_batch(refs)` call
@@ -331,7 +341,9 @@ class _PdfDownloadParser:
         download instead of starting a new one.
         """
         contents = self._resolve_contents(refs)
-        return parse_pdf_bytes_batch(contents, [ref.paper_id for ref in refs])
+        return parse_pdf_bytes_batch(
+            contents, [ref.paper_id for ref in refs], output_dir=self._figures_dir
+        )
 
     def prefetch_next_batch(self, refs: list[PaperRef]) -> None:
         """Start resolving `refs`' PDF bytes on a background thread now, so they're ready by the
@@ -503,7 +515,17 @@ def build_ingestion_orchestrator(
             "disabled for this run: every download will be a live HTTP call with no "
             "write-through cache."
         )
-    parser = _PdfDownloadParser(httpx.Client(timeout=60.0), cache_dir=pdf_cache_dir)
+    # RI-18: figures/tables PNGs extracted by the real Parser must land in durable storage, not
+    # the OS temp dir `rag/parser.py`'s own `output_dir=None` default falls back to (subject to
+    # eviction). `blob_dir` (above) is the same durable root `DocumentStore` writes its own blobs
+    # under (T-D1) -- a `figures/` subdirectory of it needs no new `Config` field (contracts/ is
+    # frozen, CODEOWNERS-gated). mkdir here, not inside `_PdfDownloadParser`, for the same reason
+    # as `pdf_cache_dir` above: only the composition root knows this run's real blob root.
+    figures_dir = Path(blob_dir) / "figures"
+    figures_dir.mkdir(parents=True, exist_ok=True)
+    parser = _PdfDownloadParser(
+        httpx.Client(timeout=60.0), cache_dir=pdf_cache_dir, figures_dir=figures_dir
+    )
     chunker = Chunker(config)
     summarizer = OllamaSummarizer(
         httpx.Client(base_url=_OLLAMA_URL, timeout=300.0), gpu_lock, _OLLAMA_MODEL

@@ -66,11 +66,12 @@ Ambiguities the frozen interface/tests don't resolve, decided here (rather than 
 
 - **Output directory for extracted figure/table images.** `ParsedDoc.figures[].image_path` must be
   a real filesystem path (DATA-CONTRACTS.md "source-of-truth blob"). No `Config` field owns this
-  either — `DocumentStore`'s own `blob_dir` (T-D1) is a separate, later concern. Defaults to a
-  content-addressed directory under the OS temp dir (`output_dir=None`), never cleaned up here
-  (ponytail: a real deployment should point `output_dir` at wherever `DocumentStore`'s blob storage
-  lives, or add periodic cache eviction, once that integration is wired up — out of scope for a
-  Parser that only has to hand back valid paths).
+  directly — this adapter still defaults `output_dir=None` to a content-addressed directory under
+  the OS temp dir, unchanged, for tests and any other direct caller. RI-18 wired the production
+  path: `app/assembly.py`'s `_PdfDownloadParser` (the only caller inside `IngestionOrchestrator`)
+  now passes `output_dir` as a `figures/` subdirectory of `Config.blob_dir` — the same durable
+  root `DocumentStore` (T-D1) already writes its own blobs under — so real ingestion runs no
+  longer extract into a directory subject to OS temp-file eviction.
 
 - **`parse_batch(raws) -> list[ParsedDoc]`, whole-batch-fails, no partial results.** Real
   `nvidia-smi dmon` measurement of a live Pass 1 run found the GPU idling *inside* one document's
