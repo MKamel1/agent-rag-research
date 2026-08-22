@@ -953,3 +953,77 @@ def test_fused_mode_still_finds_the_dense_matching_paper():
 def test_every_sparse_mode_stamps_its_own_scoring_rule(mode):
     report = _run_ablation(mode)
     assert f"sparse_mode={mode}" in report["scoring_rule"]
+
+
+# --- RI-M7: top_score capture + the null-source_paper_id known-absent shape ----------------------
+
+
+def test_load_questions_null_source_paper_id_is_no_gold_paper(tmp_path):
+    """`fixtures/eval/eval_known_absent.json`'s shape: `source_paper_id: null` means "there is no
+    gold paper," not "the gold paper is the string 'None'" -- gold_paper_ids must come out empty,
+    not `{None}`, so it stays a genuine `frozenset[str]` and can never accidentally equal a real
+    hit's `paper_id`."""
+    gt_path = tmp_path / "eval_known_absent.json"
+    gt_path.write_text(json.dumps({
+        "_metadata": {},
+        "ground_truth": [
+            {
+                "question_id": "Q-ABS-001",
+                "question_text": "What does the Kestrel-Odom estimator correct for?",
+                "source_paper_id": None,
+                "question_type": "Known-Absent",
+            },
+        ],
+    }))
+
+    [question] = load_questions(gt_path)
+
+    assert question.gold_paper_ids == frozenset()
+
+
+def test_score_question_top_score_is_the_rank_1_result_score():
+    q = Question("Q1", "text", "Result-Comprehension", frozenset({"P1"}), gold_block_id=None)
+    results = [_hit("P1", "P1:b1"), _hit("P2", "P2:b1")]
+
+    r = score_question(q, results, k=10)
+
+    assert r.top_score == results[0].score
+
+
+def test_score_question_top_score_is_none_with_zero_results():
+    q = Question("Q1", "text", "Result-Comprehension", frozenset({"P1"}), gold_block_id=None)
+
+    assert score_question(q, [], k=10).top_score is None
+
+
+def test_score_question_top_score_is_recorded_even_for_a_known_absent_miss():
+    """The whole point of the field: a question with no gold paper at all (the known-absent
+    shape) still gets its rank-1 score recorded -- top_score is not gated on paper_rank."""
+    q = Question("Q1", "text", "Known-Absent", frozenset(), gold_block_id=None)
+    results = [_hit("P9", "P9:b1")]
+
+    r = score_question(q, results, k=10)
+
+    assert r.paper_rank is None  # no gold paper -- can never be a hit
+    assert r.top_score == results[0].score
+
+
+def test_run_records_no_top_score_for_an_errored_question():
+    questions = [Question("Q1", "boom", "Result-Comprehension", frozenset({"P1"}), None)]
+    retriever = FakeRetriever({})  # "boom" has no canned entry -> retrieve() raises
+
+    (result,) = run(questions, retriever, k=10)
+
+    assert result.error is not None
+    assert result.top_score is None
+
+
+def test_build_report_per_question_row_carries_top_score():
+    questions = [Question("Q1", "q", "Result-Comprehension", frozenset({"P1"}), None)]
+    retriever = FakeRetriever({"q": [_hit("P1", "P1:b1")]})
+
+    results = run(questions, retriever, k=10)
+    report = build_report(results, k=10)
+
+    [row] = report["questions"]
+    assert row["top_score"] == results[0].top_score

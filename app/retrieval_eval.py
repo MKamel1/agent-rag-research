@@ -76,6 +76,17 @@ alone does not independently surface enough candidates to fill `k`. At real corp
 query is queried `_FUSION_DEPTH_CAP` deep (rag/vector_index.py), so this is not expected to matter
 in practice, but it means "dense_only"/"sparse_only" measure "this arm's contribution to ranking,"
 not "retrieval with the other arm physically removed."
+
+Score-distribution census (RI-M7): `QuestionResult.top_score` (and `_question_row`'s
+`"top_score"`) carry the rank-1 result's own fused/reranked score for EVERY question, hit or
+miss -- a known-absent question (no gold paper, `source_paper_id: null` in
+`fixtures/eval/eval_known_absent.json`) still returns a top score whenever the corpus is
+non-empty, since this retriever always returns its best-available top-k (RI-10's absence-honesty
+docstrings) rather than refusing when nothing answers the question. `app/score_distribution_
+census.py` reuses `load_questions`/`run`/`build_report` UNMODIFIED (no second eval runner) --
+scoring the known-answerable arm (`eval_ground_truth.json` + `eval_equation_slice.json`) and the
+known-absent arm separately, then comparing the two `top_score` distributions. See that module
+for the summary statistics and the separation rule.
 """
 
 from __future__ import annotations
@@ -151,6 +162,13 @@ class QuestionResult:
     chapter_scored: bool = False  # whether this question had a gold_chapter_title to score against
     gold_chapter_title: str | None = None
     title_leak: bool = False  # a top-k gold passage embeds its own paper's title verbatim
+    # RI-M7: the fused-and-reranked score of the rank-1 result (None if retrieve() returned zero
+    # results, e.g. an empty corpus or an errored question) -- the one number the score-
+    # distribution census (app/score_distribution_census.py) needs per question. Independent of
+    # gold_paper_ids: recorded whether or not the question turns out to be a hit, since a
+    # known-absent question is never a hit by construction (see load_questions' source_paper_id
+    # handling) and still returns a top score every real corpus query is expected to.
+    top_score: float | None = None
 
 
 def load_questions(ground_truth_path: Path) -> list[Question]:
@@ -178,7 +196,15 @@ def load_questions(ground_truth_path: Path) -> list[Question]:
             raise ValueError(
                 f"{qid}: no question_text in {ground_truth_path} or its blind sibling"
             )
-        gold_papers = {r["source_paper_id"], *r.get("additional_gold_paper_ids", [])}
+        # RI-M7: `source_paper_id: null` (fixtures/eval/eval_known_absent.json) means "no gold
+        # paper" -- a known-absent question, by construction, has none. Folding it into the set
+        # as a bare `None` would make `gold_paper_ids` a `frozenset[str]` containing a non-str and
+        # risk `sorted()` crashing the moment a real gold id sits alongside it (_question_row); an
+        # empty set is both the correct semantics (no real paper_id ever equals None anyway) and
+        # a clean `frozenset[str]`.
+        gold_papers = set(r.get("additional_gold_paper_ids", []))
+        if r["source_paper_id"] is not None:
+            gold_papers.add(r["source_paper_id"])
         questions.append(
             Question(
                 question_id=qid,
@@ -271,6 +297,10 @@ def score_question(
         chapter_scored=chapter_scored,
         gold_chapter_title=question.gold_chapter_title,
         title_leak=any(_title_leak(r, question.gold_paper_ids) for r in truncated),
+        # RI-M7: rank-1's own score, whatever hit rule says about it -- a known-absent question
+        # has no gold_paper_ids to hit, but still has a top result (and a top score) whenever the
+        # corpus is non-empty, which is exactly the number the score-distribution census reads.
+        top_score=truncated[0].score if truncated else None,
     )
 
 
@@ -348,6 +378,8 @@ def _question_row(r: QuestionResult) -> dict:
         # Diagnostic only -- see build_report's paper_level.title_leak note; not an input to
         # hit/rank above (pinned by test_build_report_reports_leaks_alongside_untouched_metrics).
         "title_leak": r.title_leak,
+        # RI-M7: rank-1's score, independent of hit/miss -- see QuestionResult.top_score.
+        "top_score": r.top_score,
         "paper_level": {"hit": r.paper_rank is not None, "rank": r.paper_rank},
         "passage_level": {
             "scored": r.passage_scored,
