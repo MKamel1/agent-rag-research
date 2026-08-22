@@ -52,6 +52,41 @@ Two report-level honesty features (RI-15):
     reported ALONGSIDE Recall/MRR and deducted from nothing -- deciding what to do about the
     number is not the instrument's call. Matching is verbatim-after-normalization only, so
     paraphrase-level leaks go uncounted and the figure is a floor; the report itself says so.
+
+Sparse-arm ablation (RI-M3): `--sparse-mode {fused,dense_only,sparse_only}` measures what the
+hybrid retriever's sparse arm (`rag/vector_index.py::_sparse_vector`, raw per-token counts, no
+stemming/stopwording) contributes on top of dense, and what dense contributes on top of sparse.
+
+The honest disable is NOT "zero or perturb the sparse vector sent at query time" -- the sparse
+field's IDF weighting (`_sparse_vector_params()`'s native modifier) runs server-side, computed by
+the vector store from its own live document-frequency stats, and is not reproduced anywhere in
+this repo. Sending a degenerate query vector would still get server-side-weighted, so it would not
+reproduce genuine sparse absence. The seam this module actually uses is one layer up: the
+client-side RRF fusion weight (`contracts/fusion.py::rrf_fuse`'s `hybrid_dense_weight`), which both
+`VectorIndex` and `FakeVectorStore` already take as a plain constructor argument.
+`hybrid_dense_weight=1.0` zeroes the sparse arm's contribution to every fused score without
+touching what either query sends or how the server scores it; `=0.0` does the same to dense. See
+`sparse_mode_weight`.
+
+Known limitation, stated here and in every report's `scoring_rule` rather than silently carried:
+zeroing a weight does not remove that arm's candidates from the fused pool -- `rrf_fuse` returns a
+score for the union of both ranked lists (its own postcondition), so a document found ONLY by the
+disabled arm still appears, at score 0.0, and can still occupy a result slot if the enabled arm
+alone does not independently surface enough candidates to fill `k`. At real corpus scale each arm's
+query is queried `_FUSION_DEPTH_CAP` deep (rag/vector_index.py), so this is not expected to matter
+in practice, but it means "dense_only"/"sparse_only" measure "this arm's contribution to ranking,"
+not "retrieval with the other arm physically removed."
+
+Score-distribution census (RI-M7): `QuestionResult.top_score` (and `_question_row`'s
+`"top_score"`) carry the rank-1 result's own fused/reranked score for EVERY question, hit or
+miss -- a known-absent question (no gold paper, `source_paper_id: null` in
+`fixtures/eval/eval_known_absent.json`) still returns a top score whenever the corpus is
+non-empty, since this retriever always returns its best-available top-k (RI-10's absence-honesty
+docstrings) rather than refusing when nothing answers the question. `app/score_distribution_
+census.py` reuses `load_questions`/`run`/`build_report` UNMODIFIED (no second eval runner) --
+scoring the known-answerable arm (`eval_ground_truth.json` + `eval_equation_slice.json`) and the
+known-absent arm separately, then comparing the two `top_score` distributions. See that module
+for the summary statistics and the separation rule.
 """
 
 from __future__ import annotations
@@ -74,6 +109,29 @@ _TITLE_LEAK_NOTE = (
     "whitespace runs collapsed), so paraphrase-level leaks go uncounted and true title-driven "
     "retrieval is at least this large. Diagnostic alongside Recall/MRR -- deducted from neither."
 )
+
+# RI-M3: the three sparse-arm ablation modes. See the module docstring's "Sparse-arm ablation"
+# section for why the disable happens at the RRF fusion weight, not by perturbing the sparse
+# vector itself.
+SPARSE_MODES = ("fused", "dense_only", "sparse_only")
+
+
+def sparse_mode_weight(mode: str, configured_weight: float) -> float:
+    """Maps an ablation `mode` to the `hybrid_dense_weight` a vector store (`VectorIndex` or
+    `FakeVectorStore`) must be CONSTRUCTED with -- both adapters already take this as a plain
+    constructor argument (DATA-CONTRACTS.md §M6), so ablating needs no new seam. "fused" passes
+    `configured_weight` straight through unchanged (whatever `Config`/the caller's fixture already
+    uses); "dense_only"/"sparse_only" pin the weight to the extreme that zeroes the OTHER arm's
+    contribution to the fused RRF score (module docstring: this zeroes a score contribution, it
+    does not remove that arm's candidates from the fused pool).
+    """
+    if mode == "fused":
+        return configured_weight
+    if mode == "dense_only":
+        return 1.0
+    if mode == "sparse_only":
+        return 0.0
+    raise ValueError(f"unknown sparse mode {mode!r}, expected one of {SPARSE_MODES}")
 
 
 @dataclass(frozen=True)
@@ -104,6 +162,13 @@ class QuestionResult:
     chapter_scored: bool = False  # whether this question had a gold_chapter_title to score against
     gold_chapter_title: str | None = None
     title_leak: bool = False  # a top-k gold passage embeds its own paper's title verbatim
+    # RI-M7: the fused-and-reranked score of the rank-1 result (None if retrieve() returned zero
+    # results, e.g. an empty corpus or an errored question) -- the one number the score-
+    # distribution census (app/score_distribution_census.py) needs per question. Independent of
+    # gold_paper_ids: recorded whether or not the question turns out to be a hit, since a
+    # known-absent question is never a hit by construction (see load_questions' source_paper_id
+    # handling) and still returns a top score every real corpus query is expected to.
+    top_score: float | None = None
 
 
 def load_questions(ground_truth_path: Path) -> list[Question]:
@@ -131,7 +196,15 @@ def load_questions(ground_truth_path: Path) -> list[Question]:
             raise ValueError(
                 f"{qid}: no question_text in {ground_truth_path} or its blind sibling"
             )
-        gold_papers = {r["source_paper_id"], *r.get("additional_gold_paper_ids", [])}
+        # RI-M7: `source_paper_id: null` (fixtures/eval/eval_known_absent.json) means "no gold
+        # paper" -- a known-absent question, by construction, has none. Folding it into the set
+        # as a bare `None` would make `gold_paper_ids` a `frozenset[str]` containing a non-str and
+        # risk `sorted()` crashing the moment a real gold id sits alongside it (_question_row); an
+        # empty set is both the correct semantics (no real paper_id ever equals None anyway) and
+        # a clean `frozenset[str]`.
+        gold_papers = set(r.get("additional_gold_paper_ids", []))
+        if r["source_paper_id"] is not None:
+            gold_papers.add(r["source_paper_id"])
         questions.append(
             Question(
                 question_id=qid,
@@ -224,6 +297,10 @@ def score_question(
         chapter_scored=chapter_scored,
         gold_chapter_title=question.gold_chapter_title,
         title_leak=any(_title_leak(r, question.gold_paper_ids) for r in truncated),
+        # RI-M7: rank-1's own score, whatever hit rule says about it -- a known-absent question
+        # has no gold_paper_ids to hit, but still has a top result (and a top score) whenever the
+        # corpus is non-empty, which is exactly the number the score-distribution census reads.
+        top_score=truncated[0].score if truncated else None,
     )
 
 
@@ -301,6 +378,8 @@ def _question_row(r: QuestionResult) -> dict:
         # Diagnostic only -- see build_report's paper_level.title_leak note; not an input to
         # hit/rank above (pinned by test_build_report_reports_leaks_alongside_untouched_metrics).
         "title_leak": r.title_leak,
+        # RI-M7: rank-1's score, independent of hit/miss -- see QuestionResult.top_score.
+        "top_score": r.top_score,
         "paper_level": {"hit": r.paper_rank is not None, "rank": r.paper_rank},
         "passage_level": {
             "scored": r.passage_scored,
@@ -315,20 +394,31 @@ def _question_row(r: QuestionResult) -> dict:
     }
 
 
-def _scoring_rule(k: int) -> str:
-    """The hit rule in force, formatted with the k it was applied at. Stamped into every emitted
-    report (`build_report`) so two numbers produced under different rules cannot be silently
-    compared -- a number in a JSON file outlives everyone's memory of how it was computed."""
+def _scoring_rule(k: int, mode: str, hybrid_dense_weight: float) -> str:
+    """The hit rule in force, formatted with the k it was applied at, PLUS (RI-M3) which
+    sparse-arm ablation mode produced this report and the RRF weight that means. Stamped into
+    every emitted report (`build_report`) so two numbers produced under different rules -- or
+    different ablation modes -- cannot be silently compared: a number in a JSON file outlives
+    everyone's memory of how it was computed."""
     return (
-        f"top-{k} truncation; paper-level hit = first rank r <= {k} with result.paper_id in "
-        f"question.gold_paper_ids; passage-level hit = first rank r <= {k} with "
-        f"result.anchor.block_id == question.gold_block_id; chapter-level hit = first "
+        f"top-{k} truncation; sparse_mode={mode} (hybrid_dense_weight={hybrid_dense_weight} -- "
+        f"zeroes a score contribution, does not remove that arm's candidates from the fused "
+        f"pool, see module docstring); paper-level hit = first rank r <= {k} with "
+        f"result.paper_id in question.gold_paper_ids; passage-level hit = first rank r <= {k} "
+        f"with result.anchor.block_id == question.gold_block_id; chapter-level hit = first "
         f"retrieve_papers rank with paper_id in gold_paper_ids and chapter == "
         f"gold_chapter_title"
     )
 
 
-def build_report(results: list[QuestionResult], k: int, *, include_per_question: bool = True) -> dict:
+def build_report(
+    results: list[QuestionResult],
+    k: int,
+    *,
+    mode: str = "fused",
+    hybrid_dense_weight: float = 0.5,
+    include_per_question: bool = True,
+) -> dict:
     question_types = sorted({r.question_type for r in results})
     doc_types = sorted({r.doc_type for r in results})
     passage_eligible = [r for r in results if r.passage_scored]
@@ -340,8 +430,10 @@ def build_report(results: list[QuestionResult], k: int, *, include_per_question:
 
     report = {
         # RI-15: names the hit rule and k in force, so reports produced under different rules are
-        # not comparable by accident. See _scoring_rule.
-        "scoring_rule": _scoring_rule(k),
+        # not comparable by accident. RI-M3 extends this to also name the sparse-ablation mode
+        # (and its RRF weight) rather than adding a second, parallel report field for it.
+        # See _scoring_rule.
+        "scoring_rule": _scoring_rule(k, mode, hybrid_dense_weight),
         "k": k,
         "n_questions": len(results),
         "n_errors": sum(1 for r in results if r.error),
@@ -478,6 +570,12 @@ def _parse_args() -> argparse.Namespace:
         help="omit the report's per-question array (present by default) -- use if it bloats the "
              "report and only the aggregates are needed",
     )
+    parser.add_argument(
+        "--sparse-mode", choices=SPARSE_MODES, default="fused",
+        help="RI-M3 sparse-arm ablation: 'dense_only'/'sparse_only' pin hybrid_dense_weight to "
+             "the RRF extreme that zeroes the other arm's score contribution; 'fused' (default) "
+             "uses the loaded config's own hybrid_dense_weight unchanged. See module docstring.",
+    )
     return parser.parse_args()
 
 
@@ -492,6 +590,15 @@ def main() -> None:
     from rag.config import load_config
 
     config = load_config(args.config)
+    # RI-M3: resolve the ablation mode to a concrete hybrid_dense_weight and, for a real
+    # (non-fused) ablation run, rebuild config with that weight -- build_mcp_server reads
+    # config.hybrid_dense_weight to construct its VectorIndex, so this is the one place the
+    # override needs to land. `model_copy` (Config is a frozen pydantic model, contracts/_base.py)
+    # produces a new instance rather than mutating the frozen one build_mcp_server also gets.
+    weight = sparse_mode_weight(args.sparse_mode, config.hybrid_dense_weight)
+    if args.sparse_mode != "fused":
+        config = config.model_copy(update={"hybrid_dense_weight": weight})
+
     build_kwargs = {}
     if args.db_path is not None:
         build_kwargs["db_path"] = args.db_path
@@ -506,7 +613,10 @@ def main() -> None:
         questions = questions[: args.limit]
 
     results = run(questions, server.retriever, args.k)
-    report = build_report(results, args.k, include_per_question=not args.no_per_question)
+    report = build_report(
+        results, args.k, mode=args.sparse_mode, hybrid_dense_weight=weight,
+        include_per_question=not args.no_per_question,
+    )
     _print_summary(report)
 
     if args.report_path:

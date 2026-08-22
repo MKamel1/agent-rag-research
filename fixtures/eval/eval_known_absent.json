@@ -1,0 +1,205 @@
+{
+  "_metadata": {
+    "description": "RI-M7: the known-absent arm of the retrieval score-distribution census. Every question names one FABRICATED, specific causal-inference method/test/bound/dataset (an invented surname-pair plus a genuine methodological role -- 'estimator', 'test', 'bound', ...) that does not exist in the published literature and therefore cannot be present in ANY corpus, including this one -- a stronger absence guarantee than picking a real but supposedly-uncovered topic out of a ~12k-paper corpus would give. Framed as a natural, specific research question so retrieval is exercised the same way an answerable question is (plausible causal-inference vocabulary, a well-formed methodological ask) -- NOT a topic-absent question in eval_equation_slice_topic_absent.json's sense (that fixture's answers ARE in the corpus; this fixture's are not, by construction).",
+    "structure": "Array of records keyed by question_id, self-contained (question_text inline, same shape as eval_equation_slice.json -- no blind-file join needed). source_paper_id is JSON null: there is no gold paper, by design, so app/retrieval_eval.py's paper-level hit rule (result.paper_id in gold_paper_ids) can never fire a false hit against a real paper_id. fabricated_entity is the exact term the absence check (test_eval_known_absent_invariants.py) searches for; fabrication_kind is the methodological role assigned to it, for provenance/diversity bookkeeping only (not scored).",
+    "total_items": 24,
+    "last_updated": "2026-08-22T00:00:00Z",
+    "provenance": "Each fabricated_entity is an invented two-part surname (no connection to any real researcher intended or checked beyond the corpus search below) paired with a real methodological role, covering a spread of causal-inference subareas (staggered DiD, weak-IV, double ML, partial identification, synthetic control, causal discovery, regression discontinuity, missing data, conditional-independence testing, network interference, causal forests, transportability, external validity, mediation, adaptive trial design, instrument selection, exclusion-restriction testing, sensitivity analysis, dose-response) so the known-absent arm is not concentrated in one corner of the topic space. Each question_text was then written as a genuine, specific methodological question about that fabricated entity -- the kind a researcher would ask if the method were real -- so the retrieval system is exercised the same way an answerable question exercises it (real causal-inference vocabulary, a well-formed ask), not with an obviously off-topic or nonsensical string.",
+    "absence_verification": "Verified 2026-08-22 against the real ingested corpus DB (research-system-rag-data/papers.db, 12,390 papers / 399,676 chunks / 2,720,572 blocks, read-only): a case-insensitive SQL LIKE search for each record's exact fabricated_entity substring against papers.title, papers.abstract, chunks.text, AND blocks.text returned ZERO rows for all 24 entities -- not merely 'no paper about this,' but the literal term string never occurs anywhere in the corpus's own text. Because every entity is a fabricated name (not a real, possibly-obscure method this corpus happens to lack), this is a stronger claim than 'not covered by these 12,390 papers': it cannot be present in any corpus, so a future corpus refresh does not need to re-litigate the 'plausibly real but rare' judgment call a genuine-topic absence arm would carry. The same search is re-run mechanically (not just claimed) by test_eval_known_absent_invariants.py's DB cross-check tier, which skips (not fails) when papers.db isn't present near the checkout -- see that file's docstring for why, same posture as eval_equation_slice.json's own DB tier. A later corpus re-ingest that happened to introduce a paper using one of these exact invented terms (vanishingly unlikely, but not impossible for a common surname pair) would be caught by that tier, not silently poison the census.",
+    "limitation": "This is the known-absent arm consumed by app/score_distribution_census.py's RI-M7 census, and the fabricated-entity design that makes absence airtight also introduces a construction limitation on the census's verdict: because every fabricated_entity is guaranteed (by absence_verification, above) to have zero exact-term matches anywhere in the corpus, the sparse/lexical retrieval arm gets a zero exact-term match by construction, every time -- a real-but-uncovered topic would not get that guarantee, since a real term can still partially match real corpus text. The dense arm is still exercised close to normally (each question_text is plausible in-domain vocabulary and a well-formed methodological ask, per provenance above), so this caveat bites the sparse arm specifically, not the whole comparison. Net effect: any known-answerable-vs-known-absent score separation measured against this fixture is plausibly an UPPER BOUND on the separation a real uncovered topic would show, not a direct measurement of it. See app/score_distribution_census.py's `_KNOWN_ABSENT_LIMITATION_NOTE` and the `known_absent_limitation` field of every emitted census report -- this same statement travels with the verdict there, not only here."
+  },
+  "ground_truth": [
+    {
+      "question_id": "Q-ABS-001",
+      "question_text": "What is the closed-form asymptotic variance of the Kestrel-Odom double-difference estimator under staggered treatment adoption with heterogeneous cohort sizes?",
+      "question_type": "Known-Absent",
+      "source_paper_id": null,
+      "fabricated_entity": "Kestrel-Odom double-difference estimator",
+      "fabrication_kind": "estimator"
+    },
+    {
+      "question_id": "Q-ABS-002",
+      "question_text": "How does the Vantresca stability test detect violations of the parallel trends assumption in a difference-in-differences design?",
+      "question_type": "Known-Absent",
+      "source_paper_id": null,
+      "fabricated_entity": "Vantresca stability test",
+      "fabrication_kind": "test"
+    },
+    {
+      "question_id": "Q-ABS-003",
+      "question_text": "What moment condition does the Halvorsen-Bijl instrument impose to achieve identification under many weak instruments?",
+      "question_type": "Known-Absent",
+      "source_paper_id": null,
+      "fabricated_entity": "Halvorsen-Bijl instrument",
+      "fabrication_kind": "instrument"
+    },
+    {
+      "question_id": "Q-ABS-004",
+      "question_text": "What bias term does the Corrigan-Ashby debiasing correction remove from inverse-propensity-weighted estimators when the propensity model is misspecified?",
+      "question_type": "Known-Absent",
+      "source_paper_id": null,
+      "fabricated_entity": "Corrigan-Ashby debiasing correction",
+      "fabrication_kind": "correction"
+    },
+    {
+      "question_id": "Q-ABS-005",
+      "question_text": "How is the Petrenko orthogonal score test constructed to achieve Neyman orthogonality in a double machine learning pipeline with high-dimensional nuisance parameters?",
+      "question_type": "Known-Absent",
+      "source_paper_id": null,
+      "fabricated_entity": "Petrenko orthogonal score test",
+      "fabrication_kind": "test"
+    },
+    {
+      "question_id": "Q-ABS-006",
+      "question_text": "What is the width of the Sablefeld bound for the average treatment effect under a monotone instrumental variable assumption?",
+      "question_type": "Known-Absent",
+      "source_paper_id": null,
+      "fabricated_entity": "Sablefeld bound",
+      "fabrication_kind": "bound"
+    },
+    {
+      "question_id": "Q-ABS-007",
+      "question_text": "How does the Quennell synthetic control weighting scheme penalize donor units with high pre-treatment volatility?",
+      "question_type": "Known-Absent",
+      "source_paper_id": null,
+      "fabricated_entity": "Quennell synthetic control weighting scheme",
+      "fabrication_kind": "weighting scheme"
+    },
+    {
+      "question_id": "Q-ABS-008",
+      "question_text": "What independence test does the Draventis algorithm use to orient edges in the presence of latent confounders?",
+      "question_type": "Known-Absent",
+      "source_paper_id": null,
+      "fabricated_entity": "Draventis algorithm",
+      "fabrication_kind": "algorithm"
+    },
+    {
+      "question_id": "Q-ABS-009",
+      "question_text": "What is the Torvald-Meng correction factor applied to optimal bandwidth selection in a fuzzy regression discontinuity design?",
+      "question_type": "Known-Absent",
+      "source_paper_id": null,
+      "fabricated_entity": "Torvald-Meng correction factor",
+      "fabrication_kind": "correction"
+    },
+    {
+      "question_id": "Q-ABS-010",
+      "question_text": "How does the Ostrowicz partial identification bound tighten worst-case treatment effect bounds under nonignorable missingness?",
+      "question_type": "Known-Absent",
+      "source_paper_id": null,
+      "fabricated_entity": "Ostrowicz partial identification bound",
+      "fabrication_kind": "bound"
+    },
+    {
+      "question_id": "Q-ABS-011",
+      "question_text": "What is the asymptotic distribution of the Chenoweth-Rudkin test statistic used to test conditional independence in a causal graphical model?",
+      "question_type": "Known-Absent",
+      "source_paper_id": null,
+      "fabricated_entity": "Chenoweth-Rudkin test statistic",
+      "fabrication_kind": "test"
+    },
+    {
+      "question_id": "Q-ABS-012",
+      "question_text": "How does the Larkspur estimator adjust for network interference when estimating heterogeneous treatment effects?",
+      "question_type": "Known-Absent",
+      "source_paper_id": null,
+      "fabricated_entity": "Larkspur estimator",
+      "fabrication_kind": "estimator"
+    },
+    {
+      "question_id": "Q-ABS-013",
+      "question_text": "What splitting rule does the Bellcastle instrumental forest use to estimate heterogeneous local average treatment effects?",
+      "question_type": "Known-Absent",
+      "source_paper_id": null,
+      "fabricated_entity": "Bellcastle instrumental forest",
+      "fabrication_kind": "algorithm"
+    },
+    {
+      "question_id": "Q-ABS-014",
+      "question_text": "How does the Marchetti-Vann calibration procedure reweight a source population to support transportability of a causal estimate to a target population?",
+      "question_type": "Known-Absent",
+      "source_paper_id": null,
+      "fabricated_entity": "Marchetti-Vann calibration",
+      "fabrication_kind": "procedure"
+    },
+    {
+      "question_id": "Q-ABS-015",
+      "question_text": "What does the Grunfeldt stability index measure when assessing the external validity of an estimated treatment effect across sites?",
+      "question_type": "Known-Absent",
+      "source_paper_id": null,
+      "fabricated_entity": "Grunfeldt stability index",
+      "fabrication_kind": "index"
+    },
+    {
+      "question_id": "Q-ABS-016",
+      "question_text": "What weighting scheme does the Ilinca doubly robust estimator use to remain consistent under nonignorable missing outcomes?",
+      "question_type": "Known-Absent",
+      "source_paper_id": null,
+      "fabricated_entity": "Ilinca doubly robust estimator",
+      "fabrication_kind": "weighting scheme"
+    },
+    {
+      "question_id": "Q-ABS-017",
+      "question_text": "What structural hamming distance do causal discovery algorithms achieve on the Tovarik benchmark dataset?",
+      "question_type": "Known-Absent",
+      "source_paper_id": null,
+      "fabricated_entity": "Tovarik benchmark dataset",
+      "fabrication_kind": "dataset"
+    },
+    {
+      "question_id": "Q-ABS-018",
+      "question_text": "How does the Whitlock-Fenn corrected variance estimator adjust cluster-robust standard errors when the number of treated clusters is small?",
+      "question_type": "Known-Absent",
+      "source_paper_id": null,
+      "fabricated_entity": "Whitlock-Fenn corrected variance estimator",
+      "fabrication_kind": "estimator"
+    },
+    {
+      "question_id": "Q-ABS-019",
+      "question_text": "How does the Amsterdam-Kilbride effect decomposition separate the natural direct and indirect effects when the mediator is affected by treatment-induced confounding?",
+      "question_type": "Known-Absent",
+      "source_paper_id": null,
+      "fabricated_entity": "Amsterdam-Kilbride effect decomposition",
+      "fabrication_kind": "decomposition"
+    },
+    {
+      "question_id": "Q-ABS-020",
+      "question_text": "How does the Rostova design adapt treatment allocation probabilities in response to interim causal effect estimates?",
+      "question_type": "Known-Absent",
+      "source_paper_id": null,
+      "fabricated_entity": "Rostova design",
+      "fabrication_kind": "design"
+    },
+    {
+      "question_id": "Q-ABS-021",
+      "question_text": "What criterion does the Feringhetti procedure use to select a valid instrument from a large set of candidate instruments?",
+      "question_type": "Known-Absent",
+      "source_paper_id": null,
+      "fabricated_entity": "Feringhetti procedure",
+      "fabrication_kind": "criterion"
+    },
+    {
+      "question_id": "Q-ABS-022",
+      "question_text": "What overidentification statistic does the Solenberg test use to assess violations of the exclusion restriction?",
+      "question_type": "Known-Absent",
+      "source_paper_id": null,
+      "fabricated_entity": "Solenberg test",
+      "fabrication_kind": "test"
+    },
+    {
+      "question_id": "Q-ABS-023",
+      "question_text": "How is the Kranholt bound derived to quantify the sensitivity of an estimated causal effect to unmeasured confounding?",
+      "question_type": "Known-Absent",
+      "source_paper_id": null,
+      "fabricated_entity": "Kranholt bound",
+      "fabrication_kind": "bound"
+    },
+    {
+      "question_id": "Q-ABS-024",
+      "question_text": "What kernel does the Petrossian estimator use to estimate the dose-response function for a continuous treatment?",
+      "question_type": "Known-Absent",
+      "source_paper_id": null,
+      "fabricated_entity": "Petrossian estimator",
+      "fabrication_kind": "estimator"
+    }
+  ]
+}

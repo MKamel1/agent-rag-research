@@ -1,8 +1,14 @@
-"""Unit tests for `app/retrieval_eval.py` (T-DOC41). Zero-GPU, zero-network: every test uses a
+"""Unit tests for `app/retrieval_eval.py` (T-DOC41). Zero-GPU, zero-network: most tests use a
 local `FakeRetriever` double (never the real `app.assembly.build_mcp_server` wiring) and
-hand-built `GroundedResult`s -- no `rag/fakes/` collaborators needed since nothing here exercises
+hand-built `GroundedResult`s -- no `rag/fakes/` collaborators needed since nothing there exercises
 the embed/hybrid/RRF/rerank pipeline itself, only the scoring math sitting on top of whatever a
 `Retriever.retrieve()`-shaped call returns.
+
+The RI-M3 sparse-ablation section near the bottom is the one deliberate exception: the ablation
+itself lives one layer BELOW `FakeRetriever` (inside `VectorIndex.hybrid_search`/
+`FakeVectorStore.hybrid_search`'s `rrf_fuse` call), so proving it works means wiring a real
+`rag.retriever.Retriever` to the committed `FakeVectorStore`, the same way `rag/test_retriever.py`
+does.
 """
 
 import json
@@ -10,11 +16,13 @@ import json
 import pytest
 
 from app.retrieval_eval import (
+    SPARSE_MODES,
     Question,
     build_report,
     load_questions,
     run,
     score_question,
+    sparse_mode_weight,
 )
 from contracts.mcp_server import PaperSearchResult, PaperSummaryView
 from contracts.provenance import Anchor
@@ -762,3 +770,260 @@ def test_build_report_per_question_row_carries_title_leak():
     rows = {row["question_id"]: row for row in report["questions"]}
     assert rows["Q1"]["title_leak"] is True
     assert rows["Q2"]["title_leak"] is False
+
+
+# --- RI-M3: sparse-arm ablation ------------------------------------------------------------------
+# `sparse_mode_weight` -- the pure mapping from mode name to the hybrid_dense_weight a vector store
+# must be built with.
+
+
+def test_sparse_mode_weight_dense_only_and_sparse_only_are_the_rrf_extremes():
+    assert sparse_mode_weight("dense_only", configured_weight=0.5) == 1.0
+    assert sparse_mode_weight("sparse_only", configured_weight=0.5) == 0.0
+
+
+def test_sparse_mode_weight_fused_passes_the_configured_weight_through_unchanged():
+    assert sparse_mode_weight("fused", configured_weight=0.73) == 0.73
+
+
+def test_sparse_mode_weight_rejects_an_unknown_mode():
+    with pytest.raises(ValueError):
+        sparse_mode_weight("bogus", configured_weight=0.5)
+
+
+def test_build_report_stamps_the_sparse_mode_and_weight_into_scoring_rule():
+    fused = build_report([], k=10)
+    dense = build_report([], k=10, mode="dense_only", hybrid_dense_weight=1.0)
+    sparse = build_report([], k=10, mode="sparse_only", hybrid_dense_weight=0.0)
+
+    assert "sparse_mode=fused" in fused["scoring_rule"]
+    assert "sparse_mode=dense_only" in dense["scoring_rule"]
+    assert "hybrid_dense_weight=1.0" in dense["scoring_rule"]
+    assert "sparse_mode=sparse_only" in sparse["scoring_rule"]
+    assert "hybrid_dense_weight=0.0" in sparse["scoring_rule"]
+    # RI-15's whole point (never silently comparable across rules), extended to modes: none of
+    # the three stamps may collide.
+    assert len({fused["scoring_rule"], dense["scoring_rule"], sparse["scoring_rule"]}) == 3
+    # No parallel "sparse_mode" report field -- the ticket's REUSE instruction is that the existing
+    # scoring_rule stamp carries this, not a second field alongside it.
+    assert "sparse_mode" not in fused
+    assert "sparse_mode" not in dense
+
+
+# --- RI-M3 end-to-end: a real Retriever + the committed FakeVectorStore, not FakeRetriever --------
+#
+# Everything above scores against FakeRetriever, which never touches hybrid_search/rrf_fuse -- so
+# it cannot prove the ablation itself works. This wires an actual `rag.retriever.Retriever` to
+# `rag.fakes.FakeVectorStore` (frozen, unmodified) and drives it through this module's own
+# `run()`/`build_report()`, proving three things at once: (1) constructing the vector store with
+# `sparse_mode_weight`'s extremes genuinely changes which paper ranks first, (2) a paper found only
+# by the disabled arm is demoted, not dropped (the module docstring's stated limitation), and (3)
+# the SAME run()/build_report() functions RI-M7 also reuses handle all three modes end to end.
+
+
+class _FixedVectorEmbedder:
+    """Returns one caller-supplied vector for every query, ignoring the actual text -- places the
+    query at an exact, known point relative to the two candidate vectors below, rather than
+    depending on FakeEmbedder's hash-derived (uncontrollable) similarity."""
+
+    def __init__(self, vector):
+        self._vector = vector
+
+    def embed(self, texts):
+        return [self._vector for _ in texts]
+
+
+class _IdentityReranker:
+    """A no-op Reranker double. `rag.fakes.FakeReranker` deliberately REVERSES order (M7's own
+    anti-cheat measure) -- exactly what would obscure which arm actually won here."""
+
+    def rerank(self, query, candidates):
+        return list(candidates)
+
+
+class _MinimalAblationDocStore:
+    """Just enough of the DocumentStore seam for `Retriever.retrieve()` to resolve a chunk hit --
+    same minimal-double posture as `rag/test_retriever.py`'s `RecordingDocStore`, trimmed to only
+    what this fixture needs (one chunk/one block/one record per paper, no chapters/summaries)."""
+
+    def __init__(self):
+        self._chunks: dict = {}
+        self._blocks: dict = {}
+        self._records: dict = {}
+
+    def get_chunk(self, chunk_id):
+        return self._chunks[chunk_id]
+
+    def get_block(self, block_id):
+        return self._blocks[block_id]
+
+    def get(self, paper_id):
+        return self._records.get(paper_id)
+
+
+def _seed_ablation_paper(store, docstore, *, paper_id, vector, text):
+    from datetime import date
+
+    from contracts.chunker import Chunk
+    from contracts.document_store import PaperRecord
+    from contracts.harvester import PaperRef
+    from contracts.parser import ParsedDoc
+    from contracts.provenance import Block
+
+    block_id = f"{paper_id}:b0"
+    anchor = Anchor(paper_id=paper_id, block_id=block_id, page=0, bbox=(0.0, 0.0, 1.0, 1.0),
+                     snippet=text[:20], section_path="3. Method")
+    docstore._blocks[block_id] = Block(
+        block_id=block_id, paper_id=paper_id, text=text, type="prose", page=0,
+        bbox=(0.0, 0.0, 1.0, 1.0), section_path="3. Method", index=0,
+    )
+    chunk_id = f"{paper_id}:c0"
+    docstore._chunks[chunk_id] = Chunk(
+        chunk_id=chunk_id, paper_id=paper_id, text=text, anchor=anchor,
+        section_path="3. Method", parent_id=block_id,
+    )
+    ref = PaperRef(
+        paper_id=paper_id, version="v1", title=f"Paper {paper_id}", abstract="We propose...",
+        authors=["A. Author"], categories=["cs.LG"], published=date(2026, 6, 1),
+        updated=date(2026, 6, 1), pdf_url=f"https://arxiv.org/pdf/{paper_id}v1",
+    )
+    docstore._records[paper_id] = PaperRecord(
+        ref=ref,
+        parsed=ParsedDoc(paper_id=paper_id, markdown="# T", blocks=[], figures=[], tables=[],
+                         references=[], parser_id="test-parser-1.x"),
+        chunks=[docstore._chunks[chunk_id]], summary_text="s", summary_id=f"{paper_id}:summary",
+    )
+    store.upsert(chunk_id, vector, {
+        "paper_id": paper_id, "kind": "chunk", "section_path": "3. Method", "text": text,
+        "categories": ["cs.LG"], "published": "2026-06-01", "embedding_version": "v1",
+    })
+
+
+# The query sits exactly at DENSE's stored vector (cosine 1.0) and is orthogonal to SPARSE's
+# (cosine 0.0) -- but the query TEXT is copied verbatim into SPARSE's passage and shares no tokens
+# with DENSE's, so the two arms are engineered to pick different winners.
+_QUERY_VEC = [1.0, 0.0]
+_QUERY_TEXT = "doubly robust orthogonal moment estimator"
+
+
+def _run_ablation(mode: str) -> dict:
+    from rag.fakes import FakeVectorStore
+    from rag.retriever import Retriever
+
+    weight = sparse_mode_weight(mode, configured_weight=0.5)
+    store = FakeVectorStore(hybrid_dense_weight=weight)
+    docstore = _MinimalAblationDocStore()
+    _seed_ablation_paper(
+        store, docstore, paper_id="DENSE", vector=_QUERY_VEC,
+        text="an unrelated sentence about something else entirely",
+    )
+    _seed_ablation_paper(
+        store, docstore, paper_id="SPARSE", vector=[0.0, 1.0], text=_QUERY_TEXT,
+    )
+    retriever = Retriever(
+        embedder=_FixedVectorEmbedder(_QUERY_VEC), vector_store=store,
+        document_store=docstore, reranker=_IdentityReranker(),
+    )
+    question = Question("Q1", _QUERY_TEXT, "Result-Comprehension", frozenset({"DENSE"}), None)
+    results = run([question], retriever, k=10)
+    return build_report(results, k=10, mode=mode, hybrid_dense_weight=weight)
+
+
+def test_dense_only_mode_ranks_the_dense_matching_paper_first():
+    report = _run_ablation("dense_only")
+    row = report["questions"][0]
+    assert row["paper_level"] == {"hit": True, "rank": 1}
+
+
+def test_sparse_only_mode_demotes_the_dense_matching_paper_but_does_not_drop_it():
+    """The stated limitation, proven rather than just asserted in prose: zeroing dense's weight
+    does not remove DENSE from the fused candidate pool (rrf_fuse's postcondition -- no id is
+    dropped for appearing in only one input list), it demotes DENSE to below SPARSE at score 0.0."""
+    report = _run_ablation("sparse_only")
+    row = report["questions"][0]
+    assert row["paper_level"] == {"hit": True, "rank": 2}
+
+
+def test_fused_mode_still_finds_the_dense_matching_paper():
+    report = _run_ablation("fused")
+    assert report["questions"][0]["paper_level"]["hit"] is True
+
+
+@pytest.mark.parametrize("mode", SPARSE_MODES)
+def test_every_sparse_mode_stamps_its_own_scoring_rule(mode):
+    report = _run_ablation(mode)
+    assert f"sparse_mode={mode}" in report["scoring_rule"]
+
+
+# --- RI-M7: top_score capture + the null-source_paper_id known-absent shape ----------------------
+
+
+def test_load_questions_null_source_paper_id_is_no_gold_paper(tmp_path):
+    """`fixtures/eval/eval_known_absent.json`'s shape: `source_paper_id: null` means "there is no
+    gold paper," not "the gold paper is the string 'None'" -- gold_paper_ids must come out empty,
+    not `{None}`, so it stays a genuine `frozenset[str]` and can never accidentally equal a real
+    hit's `paper_id`."""
+    gt_path = tmp_path / "eval_known_absent.json"
+    gt_path.write_text(json.dumps({
+        "_metadata": {},
+        "ground_truth": [
+            {
+                "question_id": "Q-ABS-001",
+                "question_text": "What does the Kestrel-Odom estimator correct for?",
+                "source_paper_id": None,
+                "question_type": "Known-Absent",
+            },
+        ],
+    }))
+
+    [question] = load_questions(gt_path)
+
+    assert question.gold_paper_ids == frozenset()
+
+
+def test_score_question_top_score_is_the_rank_1_result_score():
+    q = Question("Q1", "text", "Result-Comprehension", frozenset({"P1"}), gold_block_id=None)
+    results = [_hit("P1", "P1:b1"), _hit("P2", "P2:b1")]
+
+    r = score_question(q, results, k=10)
+
+    assert r.top_score == results[0].score
+
+
+def test_score_question_top_score_is_none_with_zero_results():
+    q = Question("Q1", "text", "Result-Comprehension", frozenset({"P1"}), gold_block_id=None)
+
+    assert score_question(q, [], k=10).top_score is None
+
+
+def test_score_question_top_score_is_recorded_even_for_a_known_absent_miss():
+    """The whole point of the field: a question with no gold paper at all (the known-absent
+    shape) still gets its rank-1 score recorded -- top_score is not gated on paper_rank."""
+    q = Question("Q1", "text", "Known-Absent", frozenset(), gold_block_id=None)
+    results = [_hit("P9", "P9:b1")]
+
+    r = score_question(q, results, k=10)
+
+    assert r.paper_rank is None  # no gold paper -- can never be a hit
+    assert r.top_score == results[0].score
+
+
+def test_run_records_no_top_score_for_an_errored_question():
+    questions = [Question("Q1", "boom", "Result-Comprehension", frozenset({"P1"}), None)]
+    retriever = FakeRetriever({})  # "boom" has no canned entry -> retrieve() raises
+
+    (result,) = run(questions, retriever, k=10)
+
+    assert result.error is not None
+    assert result.top_score is None
+
+
+def test_build_report_per_question_row_carries_top_score():
+    questions = [Question("Q1", "q", "Result-Comprehension", frozenset({"P1"}), None)]
+    retriever = FakeRetriever({"q": [_hit("P1", "P1:b1")]})
+
+    results = run(questions, retriever, k=10)
+    report = build_report(results, k=10)
+
+    [row] = report["questions"]
+    assert row["top_score"] == results[0].top_score
