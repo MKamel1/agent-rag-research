@@ -426,19 +426,65 @@ def _terminate_with_escalation(pid: int) -> bool:
 # --- reconciliation (the sole manifest read/write authority) ------------------------------------
 
 
-def _done_count(db_path: str) -> int:
-    """Read-only `count(*) FROM ingest_state WHERE stage='done'` -- the one narrow, deliberate
-    exception to this module's "never touches papers.db" rule (module docstring), needed so
-    `reconcile()` can tell a genuine crash (pid gone, target not yet reached) from a clean finish
-    (OG-47#2). Same `mode=ro` URI guarantee `app/dashboard/status.py`/`app/build_corpus.py` already
-    use for the identical query; degrades to `0` on any read failure (missing/unmigrated/locked db)
-    rather than raising -- reconcile() must never fail a status poll over this."""
+def _normalize_date(value: str) -> str:
+    """Compact `YYYYMMDD` -> dashed `YYYY-MM-DD`, the reformat
+    `app/build_corpus.py::_normalize_date` applies before comparing against the schema's dashed
+    `published` column -- duplicated, not imported, per this module's import-hygiene rule (see
+    `_done_count`)."""
+    return value if "-" in value else f"{value[0:4]}-{value[4:6]}-{value[6:8]}"
+
+
+def _done_count(
+    db_path: str, *,
+    date_from: str | None = None, date_to: str | None = None,
+    categories: list[str] | None = None,
+) -> int:
+    """Read-only count of done papers -- the one narrow, deliberate exception to this module's
+    "never touches papers.db" rule (module docstring), needed so `reconcile()` can tell a genuine
+    crash (pid gone, target not yet reached) from a clean finish (OG-47#2). Same `mode=ro` URI
+    guarantee `app/dashboard/status.py`/`app/build_corpus.py` already use for the identical query;
+    degrades to `0` on any read failure (missing/unmigrated/locked db) rather than raising --
+    reconcile() must never fail a status poll over this.
+
+    RI-30: when the run recorded download filters (`date_from`/`date_to`/`categories`, the
+    manifest's OG-45 fields), only done papers MATCHING them are counted -- the same scoped
+    semantics as `app/build_corpus.py::done_count`, whose join clause this copies. The stop
+    condition this verdict mirrors (`build_corpus.run`'s `n_done >= target`) is filter-scoped;
+    an unfiltered count here over-reads by construction (unfiltered >= filtered), so a filtered
+    run that died short of its target reconciled to a clean "done" whenever the corpus TOTAL
+    already cleared it. The SQL is deliberately duplicated rather than imported --
+    `controller.py` does not pull in `app.build_corpus`'s module graph (the same reasoning its
+    own comments give for the OG-41 launch shape); drift between the two copies is the known
+    cost, and the cross-references on both sides are what guards it."""
     try:
         conn = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True, timeout=2.0)
     except sqlite3.Error:
         return 0
     try:
-        row = conn.execute("SELECT count(*) FROM ingest_state WHERE stage='done'").fetchone()
+        if date_from is None and date_to is None and not categories:
+            row = conn.execute(
+                "SELECT count(*) FROM ingest_state WHERE stage='done'"
+            ).fetchone()
+            return row[0] if row is not None else 0
+        query = (
+            "SELECT count(*) FROM ingest_state s JOIN papers p ON p.paper_id = s.paper_id "
+            "WHERE s.stage='done'"
+        )
+        params: list[str] = []
+        if date_from is not None:
+            query += " AND p.published >= ?"
+            params.append(_normalize_date(date_from))
+        if date_to is not None:
+            query += " AND p.published <= ?"
+            params.append(_normalize_date(date_to))
+        if categories:
+            placeholders = ", ".join("?" * len(categories))
+            query += (
+                f" AND EXISTS (SELECT 1 FROM json_each(p.categories_json) c "
+                f"WHERE c.value IN ({placeholders}))"
+            )
+            params.extend(categories)
+        row = conn.execute(query, params).fetchone()
         return row[0] if row is not None else 0
     except sqlite3.Error:
         return 0
@@ -498,7 +544,15 @@ def _crashed_before_target(manifest: dict) -> bool:
     `run_cwd`, which `_cleanup_run_cwd` deletes); without this check every such run reconciles to
     "failed" and the status stops meaning anything (two consecutive runs ended this way on
     2026-08-01). Checked BEFORE the done_count comparison below -- a supply-exhausted run's
-    done_count is, by definition, still short of target."""
+    done_count is, by definition, still short of target.
+
+    RI-30: the comparison itself is filter-scoped (see `_done_count`) using the manifest's own
+    recorded OG-45 fields. Rejected alternative: having `app.build_corpus` persist a terminal
+    outcome record for ALL THREE of its short-stop branches (it owns that writer and covers only
+    supply exhaustion today). That would leave this function's actual subject -- the run killed
+    hard enough to write nothing -- judged by a raw unfiltered count, still faking a clean "done"
+    whenever the corpus total cleared a filtered target; outcome records can only ever cover the
+    stops where the process lives long enough to write one."""
     if manifest.get("mode") == "download":
         return False
     target = manifest.get("target")
@@ -510,7 +564,14 @@ def _crashed_before_target(manifest: dict) -> bool:
         outcome = _read_run_outcome(Path(db_path).parent, run_id)
         if outcome is not None and outcome.get("outcome") == "supply_exhausted":
             return False
-    return _done_count(db_path) < target
+    return (
+        _done_count(
+            db_path,
+            date_from=manifest.get("arxiv_date_from"),
+            date_to=manifest.get("arxiv_date_to"),
+            categories=manifest.get("arxiv_categories"),
+        ) < target
+    )
 
 
 def reconcile(data_dir: str | Path) -> dict | None:
