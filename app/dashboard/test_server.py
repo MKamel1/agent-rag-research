@@ -5,7 +5,9 @@ parse bodies correctly, and return the exact API-contract shape, without touchin
 """
 
 import json
+import os
 import sqlite3
+import subprocess
 import threading
 import urllib.error
 import urllib.parse
@@ -1521,18 +1523,19 @@ def test_main_refuses_to_start_when_the_token_flag_is_empty(tmp_path, monkeypatc
     assert "--token" in capsys.readouterr().err
 
 
-@pytest.mark.parametrize("startup", ["explicit_flag", "generated_file", "preexisting_file"])
+@pytest.mark.parametrize("startup", ["explicit_flag", "generated_file", "preexisting_file",
+                                     "empty_file_regenerated"])
 def test_no_header_request_is_rejected_under_every_startup_path(tmp_path, startup):
     """RI-2's done-when, end to end over a real socket: however the server's token was resolved,
     a request with NO X-Dashboard-Token header must 401 -- it must never compare equal to the
-    configured token. The empty-FILE startup path joins this parametrization in the RI-6 commit,
-    once reading an empty token file regenerates instead of handing back ""."""
+    configured token."""
     if startup == "explicit_flag":
         token = "explicit-cli-token"
     elif startup == "generated_file":
         token = server_mod._load_or_create_token(tmp_path)
     else:
-        (tmp_path / ".dashboard_token").write_text("operator-token")
+        (tmp_path / ".dashboard_token").write_text("" if startup == "empty_file_regenerated"
+                                                   else "operator-token")
         token = server_mod._load_or_create_token(tmp_path)
     assert token, "every startup path that can start a server must resolve a non-empty token"
 
@@ -1541,6 +1544,131 @@ def test_no_header_request_is_rejected_under_every_startup_path(tmp_path, startu
 
     assert status == 401
     assert body["ok"] is False
+
+
+# --- RI-6: token-file crash window, writer sidecar, corrupt tolerance ---------------------------
+
+
+@pytest.mark.parametrize("content", ["", "  \n\t\n"])
+def test_empty_token_file_is_regenerated_never_handed_back(tmp_path, content):
+    """An empty `.dashboard_token` (an operator's `touch`, an editor saved empty, or the old
+    touch->chmod->write_text crash window) used to be read verbatim as "" -- feeding RI-2's auth
+    hole from the file side. Reading it back must regenerate instead; an empty value can never
+    again reach `_token_ok`'s comparison."""
+    (tmp_path / ".dashboard_token").write_text(content)
+
+    token = server_mod._load_or_create_token(tmp_path)
+
+    assert token and len(token) == 32
+    assert (tmp_path / ".dashboard_token").read_text() == token
+
+
+def test_generated_token_writes_a_sidecar_recording_the_writing_process(tmp_path):
+    """The sidecar records WHICH process generated the current token file (pid + /proc starttime
+    + cmdline, the run manifest's PID-reuse-safe identity triple) -- without it, a stale sidecar
+    from a dead run is indistinguishable from a live one."""
+    token = server_mod._load_or_create_token(tmp_path)
+
+    record = json.loads((tmp_path / ".dashboard_token.sidecar").read_text())
+    assert record["pid"] == os.getpid()
+    assert isinstance(record["pid_starttime"], float)
+    assert record["pid_cmdline"]
+    assert token not in json.dumps(record), "the sidecar carries provenance, not the secret"
+
+
+def test_generation_overwrites_a_malformed_sidecar(tmp_path):
+    """A truncated/corrupt sidecar must be tolerated as absent -- and the next generation simply
+    replaces it with a valid record rather than propagating the parse error."""
+    (tmp_path / ".dashboard_token.sidecar").write_text('{"pid": 12')  # torn JSON write
+
+    token = server_mod._load_or_create_token(tmp_path)
+
+    record = json.loads((tmp_path / ".dashboard_token.sidecar").read_text())
+    assert record["pid"] == os.getpid()
+    assert token and len(token) == 32
+
+
+def test_malformed_sidecar_does_not_block_reading_an_operator_token(tmp_path):
+    (tmp_path / ".dashboard_token").write_text("operator-token")
+    (tmp_path / ".dashboard_token.sidecar").write_text("not json at all")
+
+    assert server_mod._load_or_create_token(tmp_path) == "operator-token"
+
+
+def test_live_sidecar_writer_refuses_to_hand_out_the_token(tmp_path):
+    """A sidecar whose recorded writer is STILL the live process at that pid means another
+    dashboard instance is running on this data dir right now. Starting a second one would give
+    the two divergent views of the token state (the review's noted 'harmless' startup race, now
+    detectable, so no longer silently resolved by last-writer-wins). Refuse rather than steal."""
+    server_mod._load_or_create_token(tmp_path)  # records THIS process as the writer
+
+    with pytest.raises(server_mod._LiveTokenWriterError) as excinfo:
+        server_mod._load_or_create_token(tmp_path)
+
+    assert str(os.getpid()) in str(excinfo.value)
+
+
+def test_main_refuses_to_start_when_the_sidecar_writer_is_alive(tmp_path, monkeypatch, capsys):
+    identity = controller_mod._process_identity(os.getpid())
+    (tmp_path / ".dashboard_token").write_text("operator-token")
+    (tmp_path / ".dashboard_token.sidecar").write_text(json.dumps({
+        "pid": os.getpid(), "pid_starttime": identity[0], "pid_cmdline": identity[1],
+    }))
+    monkeypatch.setattr("sys.argv", ["dashboard", "--data-dir", str(tmp_path)])
+
+    def _must_not_be_reached(*args, **kwargs):
+        raise AssertionError("build_server must never run under a live rival writer")
+
+    monkeypatch.setattr(server_mod, "build_server", _must_not_be_reached)
+
+    with pytest.raises(SystemExit) as excinfo:
+        server_mod.main()
+
+    assert excinfo.value.code != 0
+    err = capsys.readouterr().err
+    assert "sidecar" in err
+    assert str(os.getpid()) in err
+
+
+def test_dead_writer_sidecar_is_honored(tmp_path):
+    """The normal restart case: the previous dashboard (the sidecar's writer) is gone -- its pid
+    verified dead via a really-reaped child, not an invented number -- so the persisted token is
+    honored unchanged. Token persistence across restarts is the whole point of T-DOC78."""
+    proc = subprocess.Popen(["true"])
+    proc.wait()  # reaped: this pid is definitively dead
+    (tmp_path / ".dashboard_token").write_text("operator-token")
+    (tmp_path / ".dashboard_token.sidecar").write_text(json.dumps({
+        "pid": proc.pid, "pid_starttime": 12345.0, "pid_cmdline": "whatever\x00the\x00child\x00ran",
+    }))
+
+    assert server_mod._load_or_create_token(tmp_path) == "operator-token"
+
+
+def test_recycled_pid_with_mismatched_identity_is_honored_not_refused(tmp_path):
+    """PID-reuse safety, same lesson as the run manifest's `_verified_pid`: bare pid-liveness is
+    not enough. Here the recorded pid IS alive (it is this very test process) but its starttime/
+    cmdline don't match the record -- i.e. the OS recycled the pid onto something else. That must
+    read as 'writer gone', not as a live rival: a check that only tested liveness would refuse
+    every restart after a reboot-and-pid-wraparound."""
+    (tmp_path / ".dashboard_token").write_text("operator-token")
+    (tmp_path / ".dashboard_token.sidecar").write_text(json.dumps({
+        "pid": os.getpid(), "pid_starttime": 1.0, "pid_cmdline": "\x00not\x00this\x00process",
+    }))
+
+    assert server_mod._load_or_create_token(tmp_path) == "operator-token"
+
+
+def test_generation_leaves_no_tmp_residue_and_both_files_are_private(tmp_path):
+    """The crash-window fix writes through a pid-qualified temp file (OG-49 M12's two-writer
+    convention) and renames: on success nothing temporary remains, and both files are owner-only
+    from creation, before any content lands in them."""
+    server_mod._load_or_create_token(tmp_path)
+
+    assert sorted(p.name for p in tmp_path.iterdir()) == [
+        ".dashboard_token", ".dashboard_token.sidecar",
+    ]
+    assert oct((tmp_path / ".dashboard_token").stat().st_mode)[-3:] == "600"
+    assert oct((tmp_path / ".dashboard_token.sidecar").stat().st_mode)[-3:] == "600"
 
 
 def test_status_dict_falls_back_to_the_data_dirs_own_collection_not_papers(tmp_path):
