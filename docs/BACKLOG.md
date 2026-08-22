@@ -30,6 +30,7 @@ GitHub Actions, which no amount of source reading would have surfaced.
 | RI-24 | `migrate()` races on first init | **OPEN** | Reproduced with 4 threads. RI-5 widened this. See below. |
 | RI-25 | Injected process-scan callables have no mechanical guard | **OPEN** | RI-19's fix is correct but nothing stops the next injection site repeating it. |
 | RI-26 | `search_papers` silently drops `min_distinct_papers` | **OPEN** | Honor it, reusing `_top_up_distinct_papers`. Resolved: it IS meaningful there. |
+| RI-31 | One decode-or-classify helper for four adapter seams | - | **OPEN** | Two fixed (RI-28/29); two remain, one needs a design call. |
 | RI-27 | Six further LOW/MED findings | **OPEN** | Reranker 413 on a huge query; wrong log path behind a displayed verdict; filtered-target reconciliation; error-taxonomy escape; broken-config connection drop. |
 
 ### RI-23 — the required `enforcement` check has been failing on `main`
@@ -154,6 +155,38 @@ recover the existing archive, which is exactly why it is worth doing now rather 
 next long run — every day it waits is another day of history that stays unmeasurable.
 
 Optionally, write a separator line on resume so segments are distinguishable.
+
+### RI-31 — one decode-or-classify helper for the four adapter seams
+
+Filed 2026-08-22 from RI-29's investigation, which was asked to report rather than fix.
+
+Four sites parse a response body without guarding the decode. RI-28 and RI-29 fixed two
+(`rag/reranker.py`, `rag/embedder.py`) with a settled rationale: won't-decode-at-all is transient
+(the service returned 2xx, so most plausibly transit corruption); decodes-but-wrong-shape stays
+permanent (deterministic for that request). Two remain: `rag/contextual_header.py` (~:150) and
+`rag/summarizer.py` (~:241, ~:289).
+
+**RI-29's read, which changes the shape of this ticket:**
+
+- `contextual_header` is the **same defect** — its sole caller catches only `PermanentError`, so a
+  raw decode escape aborts an entire re-embed run before any upsert.
+- `summarizer` is **masked, not handled** — a caller wraps it in a broad log-and-continue that
+  RI-29 characterised as "experiment-script posture, not a designed absorption".
+
+**Two constraints for whoever takes this:**
+
+1. The shared piece must be **decode-or-classify** (raise the taxonomy error), **not
+   decode-or-retry**. The summarizer and contextual-header have no internal retry loop *by design*
+   — they raise classified errors and the caller owns retry policy. For the summarizer a
+   `TransientError` then flows into the orchestrator's existing retry-then-quarantine for free.
+2. **A real design question, not mechanical porting:** `contextual_header`'s only caller handles
+   `PermanentError` (skip-chunk) but not `TransientError`. This ticket must decide whether transient
+   gets retry semantics there or also maps to skip-chunk. Do not let a helper smuggle that decision
+   in implicitly.
+
+Also worth settling here: the summarizer draws its wrong-shape line (`KeyError`) in a *second* try
+block after the HTTP one, which sits awkwardly against the classify-at-one-seam principle the other
+two now follow.
 
 **Operator decisions outstanding** (not agent work) -- see the plan's final section. The
 time-sensitive one is **FD-1**: figure images from the 12,390-paper parse went to an OS temp
