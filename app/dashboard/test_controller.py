@@ -2010,6 +2010,22 @@ def test_free_gpu_allowed_while_a_download_only_run_is_running(tmp_path):
         _cleanup(manifest)
 
 
+def test_free_gpu_refused_while_a_drop_in_run_is_running(tmp_path):
+    """RI-27 fix 1: a live drop-in blocks Free GPU just like a full run. Its manifest records
+    mode="drop_in", which the old negative exemption ("refuse only when mode == full") let
+    straight through -- yet a drop-in runs the whole ingest pipeline (`app.ingest_local` shells
+    out to `python -m app.ingest`), so its Pass 2 needs the very embed/rerank service Free GPU
+    kills."""
+    manifest = controller_mod.start_drop_in(tmp_path, spawn=_fake_spawn)
+    try:
+        calls = []
+        with pytest.raises(DoubleRunError):
+            controller_mod.free_gpu(tmp_path, stop_tei=lambda: calls.append("stopped"))
+        assert calls == [], "must refuse BEFORE calling stop_tei, not race it"
+    finally:
+        _cleanup(manifest)
+
+
 def test_free_gpu_allowed_with_no_run_at_all(tmp_path):
     calls = []
     result = controller_mod.free_gpu(tmp_path, stop_tei=lambda: calls.append("stopped"))

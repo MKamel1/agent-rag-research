@@ -1168,6 +1168,49 @@ def test_control_start_spawn_failure_is_a_clean_error_not_a_dropped_connection(t
         thread.join(timeout=5.0)
 
 
+_BROKEN_CONFIG_CASES = [
+    pytest.param("focus_area_queries: [unclosed\n", id="malformed-yaml-syntax"),
+    pytest.param("", id="empty-file-parses-to-no-mapping"),
+    pytest.param("bogus_key: 1\n", id="well-formed-mapping-with-an-unknown-key"),
+]
+
+
+@pytest.mark.parametrize("yaml_text", _BROKEN_CONFIG_CASES)
+def test_status_route_with_broken_config_yaml_is_a_clean_error_not_a_dropped_connection(
+    tmp_path, yaml_text,
+):
+    """RI-27 fix 2: do_GET had no error handling around the /api/status build, so a broken
+    config.yaml raised straight through the socket layer -- the client got a connection reset
+    with NO HTTP response at all, on every poll (startup never touches config, so the server
+    came up healthy, and lru_cache does not cache exceptions, so every poll re-raised). The
+    parametrized cases cover the config-error types rag.config.load_config's own docstring
+    enumerates (YAMLError / ContractError / pydantic ValidationError); each must come back as
+    the same JSON error shape do_POST already returns."""
+    (tmp_path / "config.yaml").write_text(yaml_text)
+    httpd = build_server(
+        tmp_path, _TOKEN, port=0, host="127.0.0.1",
+        status_module=_FakeStatus(), controller_module=_FakeController(),
+    )
+    thread = threading.Thread(target=httpd.serve_forever, daemon=True)
+    thread.start()
+    port = httpd.server_address[1]
+    try:
+        url = f"http://127.0.0.1:{port}"
+        req = urllib.request.Request(url + "/api/status", headers={"X-Dashboard-Token": _TOKEN})
+        try:
+            with urllib.request.urlopen(req, timeout=5.0) as resp:
+                status_code, body = resp.status, json.loads(resp.read())
+        except urllib.error.HTTPError as e:
+            status_code, body = e.code, json.loads(e.read())
+        assert status_code == 500
+        assert body["ok"] is False
+        assert body["message"], "the operator broke their own config -- name the actual problem"
+    finally:
+        httpd.shutdown()
+        httpd.server_close()
+        thread.join(timeout=5.0)
+
+
 def test_control_retarget_dispatches_with_params(running_server):
     """OG-43: "Apply new settings" while a run is live goes through `retarget` (stop-then-start),
     not plain `start` (which would just hit the double-run guard)."""

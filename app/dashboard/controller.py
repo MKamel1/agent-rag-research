@@ -1332,22 +1332,29 @@ def free_gpu(
 ) -> dict:
     """T-DOC78: stops the TEI containers (embedder+reranker, ~9.4GB) on demand -- independent of
     pause/resume/stop, which deliberately leave TEI running (CONVENTIONS.md §6: live MCP search
-    stays available except during Pass 1). Refuses while a FULL-mode run is actively running or
-    mid-pause/stop -- freeing TEI out from under an in-flight Pass-2 embed/rerank call would fail
-    real papers' retries and wrongly quarantine them. Safe anytime nothing is live, a run is
-    paused/stopped, or a download-only run is live/paused (that mode never touches TEI at all)."""
+    stays available except during Pass 1). Refuses while any run is actively running or
+    mid-pause/stop, EXCEPT a download-only one -- freeing TEI out from under an in-flight Pass-2
+    embed/rerank call would fail real papers' retries and wrongly quarantine them.
+    RI-27 fix 1: that exemption is positive ("only download may proceed"), not the old negative
+    ("refuse only mode == full"): a drop-in records mode="drop_in" and so slipped past the old
+    guard, but a drop-in is not a lighter path -- app.ingest_local shells out to the same
+    python -m app.ingest pipeline whose Pass 2 needs this very service. Safe anytime nothing is
+    live, a run is paused/stopped, or a download-only run is live/paused (that mode stays off the
+    service by design)."""
     data_dir = Path(data_dir)
     with _control_lock(data_dir):
         manifest = reconcile(data_dir)
+        # A missing/unrecognized mode conservatively refuses too -- wrongly blocking Free GPU
+        # costs the operator a retry later; wrongly allowing it kills a live Pass 2.
         if (
             manifest is not None
             and manifest.get("status") in _LIVE_STATUSES
-            and manifest.get("mode", "full") == "full"
+            and manifest.get("mode") != "download"
         ):
             raise DoubleRunError(
-                f"run {manifest['run_id']!r} is a full run actively running -- pause or stop it "
-                "before freeing the GPU (freeing TEI mid-Pass-2 would fail in-flight embed/rerank "
-                "calls and wrongly quarantine real papers)"
+                f"run {manifest['run_id']!r} (mode={manifest.get('mode', 'full')!r}) is actively "
+                "running -- pause or stop it before freeing the GPU (freeing TEI mid-Pass-2 "
+                "would fail in-flight embed/rerank calls and wrongly quarantine real papers)"
             )
         stop_tei()
         return {"tei_stopped": True}
