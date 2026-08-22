@@ -42,6 +42,7 @@ from app.assembly import (
 from contracts.config import Config
 from contracts.errors import PermanentError, TransientError
 from contracts.harvester import PaperRef
+from rag import atomic_write as _atomic_write_mod
 
 
 def _make_ref(paper_id: str = "2504.09999") -> PaperRef:
@@ -644,7 +645,10 @@ def test_build_ingestion_orchestrator_empty_pdf_cache_dir_disables_cache_and_log
 # ================================================================================================
 # T-DOC18 bug fix -- unique per-writer tmp filename (was a fixed `<paper_id>.pdf.tmp` shared with
 # `app/prefetch_pdfs.py`'s own tmp convention, so the 24/7 prefetcher and this live pipeline could
-# race to write the same tmp path and interleave into one sticky-corrupt cache file).
+# race to write the same tmp path and interleave into one sticky-corrupt cache file). RI-21 moved
+# the mechanism into the shared `rag.atomic_write` helper -- these tests now observe the staging
+# seam it owns (`_pid_tmp_path`) instead of spying on `Path.write_bytes`, which the helper no
+# longer goes through.
 # ================================================================================================
 
 
@@ -658,27 +662,30 @@ def test_write_cache_tmp_path_is_pid_qualified_not_the_old_shared_fixed_name(mon
     parser = _make_parser(monkeypatch, handler, sleeps, cache_dir=tmp_path)
 
     captured: dict[str, str] = {}
-    real_write_bytes = Path.write_bytes
+    real_pid_tmp_path = _atomic_write_mod._pid_tmp_path
 
-    def spying_write_bytes(self: Path, data: bytes):
-        captured["tmp_name"] = self.name
-        return real_write_bytes(self, data)
+    def spying_pid_tmp_path(target: Path):
+        staged = real_pid_tmp_path(target)
+        captured["tmp_name"] = staged.name
+        return staged
 
-    monkeypatch.setattr(Path, "write_bytes", spying_write_bytes)
-    monkeypatch.setattr("app.assembly.os.getpid", lambda: 4242)
+    monkeypatch.setattr(_atomic_write_mod, "_pid_tmp_path", spying_pid_tmp_path)
+    # Patches THE os module's getpid (which rag.atomic_write reads), simulating this process
+    # running as pid 4242.
+    monkeypatch.setattr(os, "getpid", lambda: 4242)
 
     parser.parse(ref)
 
     assert captured["tmp_name"] == f"{ref.paper_id}.pdf.4242.tmp"
     assert captured["tmp_name"] != f"{ref.paper_id}.pdf.tmp", (
-        "must not reuse prefetch_pdfs.py's shared fixed tmp name -- that shared name is the "
+        "must not reuse prefetch_pdfs.py's old shared fixed tmp name -- that shared name is the "
         "collision this fix removes"
     )
     assert not (tmp_path / f"{ref.paper_id}.pdf.tmp").exists(), (
         "the old fixed-name tmp path (prefetch_pdfs.py's own convention) must never be created"
     )
     assert (tmp_path / f"{ref.paper_id}.pdf").read_bytes() == b"%PDF-live", (
-        "the pid-qualified tmp file must still be renamed into the normal final path"
+        "the pid-qualified tmp file must still be swapped into the normal final path"
     )
 
 
@@ -695,17 +702,18 @@ def test_write_cache_tmp_path_differs_across_two_writer_pids(monkeypatch, tmp_pa
     ref = _make_ref("2504.00006")
 
     tmp_names: list[str] = []
-    real_write_bytes = Path.write_bytes
+    real_pid_tmp_path = _atomic_write_mod._pid_tmp_path
 
-    def spying_write_bytes(self: Path, data: bytes):
-        tmp_names.append(self.name)
-        return real_write_bytes(self, data)
+    def spying_pid_tmp_path(target: Path):
+        staged = real_pid_tmp_path(target)
+        tmp_names.append(staged.name)
+        return staged
 
-    monkeypatch.setattr(Path, "write_bytes", spying_write_bytes)
+    monkeypatch.setattr(_atomic_write_mod, "_pid_tmp_path", spying_pid_tmp_path)
 
-    monkeypatch.setattr("app.assembly.os.getpid", lambda: 111)
+    monkeypatch.setattr(os, "getpid", lambda: 111)
     parser._write_cache(ref, b"%PDF-from-writer-111")
-    monkeypatch.setattr("app.assembly.os.getpid", lambda: 222)
+    monkeypatch.setattr(os, "getpid", lambda: 222)
     parser._write_cache(ref, b"%PDF-from-writer-222")
 
     assert len(tmp_names) == 2

@@ -38,6 +38,8 @@ import logging
 from datetime import UTC, datetime
 from pathlib import Path
 
+from rag.atomic_write import atomic_write
+
 logger = logging.getLogger(__name__)
 
 _POOL_NAME = "tag_pool.json"
@@ -55,13 +57,11 @@ def _seed(seed_queries: list[str]) -> dict:
 
 
 def _write(data_dir: Path, pool: dict) -> dict:
-    """Write-temp + `os.replace` (POSIX-atomic rename) -- matches `controller.py`'s own manifest-
-    write pattern (finding #4 there): an unlocked `load()` can never observe a torn JSON file."""
+    """Atomic via the shared pid-qualified helper (`rag.atomic_write`, RI-21): an unlocked
+    `load()` can never observe a torn JSON file, and two writers of one data dir's pool can never
+    share a temp path."""
     pool = {**pool, "updated_at": datetime.now(UTC).isoformat()}
-    path = _pool_path(data_dir)
-    tmp = path.with_suffix(".json.tmp")
-    tmp.write_text(json.dumps(pool, indent=2))
-    tmp.replace(path)
+    atomic_write(_pool_path(data_dir), json.dumps(pool, indent=2))
     return pool
 
 

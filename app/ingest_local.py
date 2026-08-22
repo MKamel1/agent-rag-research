@@ -33,7 +33,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import logging
-import os
 import re
 import subprocess
 import sys
@@ -48,6 +47,7 @@ from pypdfium2._helpers.misc import PdfiumError
 from app.assembly import _fetch_by_ids_with_backoff
 from app.prefetch_pdfs import _pdf_path, _write_sidecar
 from contracts.harvester import PaperRef
+from rag.atomic_write import atomic_write
 from rag.config import load_config
 from rag.harvester import ArxivSource
 
@@ -286,13 +286,11 @@ def _quarantine(path: Path, failed_dir: Path, error: str) -> None:
 
 
 def _write_pdf_cache(cache_dir: Path, paper_id: str, raw: bytes) -> None:
-    """Same atomic tmp-then-rename discipline as `app.prefetch_pdfs._download_one`'s PDF write --
-    a crash mid-write must never leave a partial `.pdf` that a later cache-first read mistakes for
-    complete."""
-    final_path = _pdf_path(cache_dir, paper_id)
-    tmp_path = cache_dir / f"{paper_id}.pdf.{os.getpid()}.tmp"
-    tmp_path.write_bytes(raw)
-    tmp_path.rename(final_path)
+    """Same atomic write discipline as `app.prefetch_pdfs._download_one`'s PDF write -- a crash
+    mid-write must never leave a partial `.pdf` that a later cache-first read mistakes for
+    complete. Shared helper (RI-21): pid-qualified temp, so this script and a concurrent
+    prefetcher writing the same paper_id can never share one temp path."""
+    atomic_write(_pdf_path(cache_dir, paper_id), raw)
 
 
 def stage_file(

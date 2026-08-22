@@ -18,7 +18,6 @@ also happens to round-trip `pdf_url` exactly. `papers.markdown_path` DOES have a
 """
 
 import json
-import os
 import re
 import sqlite3
 from collections.abc import Iterator
@@ -33,7 +32,7 @@ from contracts.harvester import PaperRef
 from contracts.parser import Figure, ParsedDoc, TableItem
 from contracts.provenance import Anchor, Block
 from migrations.migrate import migrate
-
+from rag.atomic_write import staged_write
 
 # Spot-check, NOT a full schema audit: every (table, column) `put()` itself writes that was added
 # by a migration LATER than the table's own creation -- i.e. a column `migrate()` could plausibly
@@ -148,17 +147,17 @@ class DocumentStore:
         new content straight to that path would overwrite the prior good blob before the DB
         transaction below is known to succeed. A rolled-back re-put would then leave `get()`
         returning old DB rows paired with the NEW (should-have-been-discarded) markdown text —
-        a torn read. So the new content is written to a temp file first and only swapped into
-        place (`os.replace`, atomic on the same filesystem) after the transaction commits; on any
-        failure the temp file is discarded and the prior blob is untouched.
+        a torn read. So the new content is staged (`rag.atomic_write.staged_write`, whose
+        pid-qualified temp also keeps two concurrent ingests of one paper from sharing a temp
+        path — RI-21) and only swapped into place when this context exits cleanly, i.e. AFTER
+        the transaction commits; on any failure the staged temp is discarded and the prior blob
+        is untouched.
         """
         ref = record.ref
         paper_id = ref.paper_id
         markdown_path = self._blob_dir / f"{paper_id}.md"
-        tmp_path = self._blob_dir / f"{paper_id}.md.tmp"
-        tmp_path.write_text(record.parsed.markdown, encoding="utf-8")
-
-        try:
+        with staged_write(markdown_path) as blob_file:
+            blob_file.write(record.parsed.markdown)
             with self._con:
                 self._con.execute("DELETE FROM chunks WHERE paper_id = ?", (paper_id,))
                 self._con.execute("DELETE FROM blocks WHERE paper_id = ?", (paper_id,))
@@ -277,11 +276,6 @@ class DocumentStore:
                         "VALUES (?, ?, ?, ?)",
                         (chapter.summary_id, paper_id, chapter.text, chapter.title),
                     )
-        except Exception:
-            tmp_path.unlink(missing_ok=True)
-            raise
-
-        os.replace(tmp_path, markdown_path)
 
     # ----------------------------------------------------------------------------------------
     # delete — cascade removal by paper_id (T-DOC23)

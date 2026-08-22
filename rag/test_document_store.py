@@ -320,6 +320,25 @@ def test_put_failure_on_reput_leaves_prior_blob_untouched(store):
     assert "NEW CONTENT" not in got.parsed.markdown
 
 
+def test_blob_staging_never_touches_another_writers_temp_file(tmp_path):
+    """RI-21: the blob write used to stage through the FIXED name `<paper_id>.md.tmp` -- two
+    concurrent ingests of the same paper shared that path, so one truncated the other's partial
+    write and whichever publish landed second installed an interleaved blob (or died on a temp
+    already moved away). The shared helper stages pid-qualified (`rag.atomic_write`), so another
+    writer's staged temp -- materialized here as a foreign file at the old fixed name -- must
+    survive our put byte-for-byte, and the real blob must land with OUR content, not theirs."""
+    store = _mod.DocumentStore(
+        db_path=str(tmp_path / "store.db"), blob_dir=str(tmp_path / "blobs")
+    )
+    stale_tmp = tmp_path / "blobs" / f"{PAPER_ID}.md.tmp"
+    stale_tmp.write_text("another ingest's partial markdown")
+
+    store.put(make_paper_record(parsed=make_parsed_doc(markdown="# real content")))
+
+    assert stale_tmp.read_text() == "another ingest's partial markdown"
+    assert (tmp_path / "blobs" / f"{PAPER_ID}.md").read_text() == "# real content"
+
+
 # --------------------------------------------------------------------------------------------------
 # idempotency under CHANGED content — a re-put replaces, it does not silently no-op
 # --------------------------------------------------------------------------------------------------
