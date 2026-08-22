@@ -21,6 +21,7 @@ from ci.checks.gpu_lock import check_f
 from ci.checks.id_slicing import check_h
 from ci.checks.model import DiffFile, Violation
 from ci.checks.sibling_tests import check_g
+from ci.checks.testpaths_guard import check_testpaths
 from ci.checks.vendor_isolation import check_a
 
 __all__ = [
@@ -34,6 +35,7 @@ __all__ = [
     "check_f",
     "check_g",
     "check_h",
+    "check_testpaths",
     "discover_contract_names",
     "read_codeowners_paths",
 ]

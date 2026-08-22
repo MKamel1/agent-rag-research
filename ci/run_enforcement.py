@@ -44,6 +44,11 @@ for any reason falls back to it rather than crashing the job over a transient AP
 
 Check (i) is not run from here at all — it's proven by a pytest test
 (`ci/proof_socket_block/test_real_network_blocked.py`), run as its own workflow step.
+
+One deliberate exception to the diff-scoping rule: `check_testpaths` runs repo-wide on every
+invocation. Its subject is the relation between the whole tree and pyproject.toml's `testpaths`
+allow-list, which no diff can express -- its own module docstring carries the full reasoning for
+why diff-scoping it would guard nothing.
 """
 
 from __future__ import annotations
@@ -63,6 +68,7 @@ from ci.checks import (
     check_f,
     check_g,
     check_h,
+    check_testpaths,
     discover_contract_names,
     read_codeowners_paths,
 )
@@ -106,6 +112,9 @@ def main() -> int:
     violations += check_f(files)
     violations += check_g(files, REPO_ROOT, deleted_paths=deleted)
     violations += check_h(files)
+    # Repo-wide, not diff-scoped -- the one exception; see check_testpaths' docstring for why,
+    # and run_enforcement's module docstring above.
+    violations += check_testpaths(REPO_ROOT)
 
     if event_name == "pull_request":
         labels = _pr_labels(event)
@@ -117,7 +126,7 @@ def main() -> int:
 
     print(f"scanned {len(files)} changed file(s) (of {len(changed)} total changed)")
     if not violations:
-        print("enforcement: PASS -- no violations in checks (a)-(d), (f)-(h)")
+        print("enforcement: PASS -- no violations in checks (a)-(d), (f)-(h), testpaths")
         return 0
 
     print(f"enforcement: FAIL -- {len(violations)} violation(s):")
