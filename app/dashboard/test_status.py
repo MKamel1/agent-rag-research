@@ -667,11 +667,13 @@ def test_read_consistency_verdict_none_when_done_count_unknown(monkeypatch):
 # the operator's OWN real downloader is a live `app.prefetch_pdfs` process on THIS machine while
 # these tests run (D-6's whole reason for existing), so leaving `read_downloader` to its real
 # `_live_prefetch_pids()` default would make these tests' `live_pids`/`orphan`/`tags_pending`
-# fields silently depend on whatever happens to be running on the host at test time.
+# fields silently depend on whatever happens to be running on the host at test time. The fakes
+# take `**_` because RI-8's default scan is called with a `data_dir` keyword these tests don't
+# exercise.
 
 
 def test_read_downloader_degrades_to_nulls_when_no_run_cwd(tmp_path, monkeypatch):
-    monkeypatch.setattr(status_mod, "_live_prefetch_pids", lambda: [])
+    monkeypatch.setattr(status_mod, "_live_prefetch_pids", lambda **_: [])
     result = status_mod.read_downloader(None)
     assert result == {
         "prefetch_alive": None, "downloaded": None, "prefetch_target": None,
@@ -680,20 +682,20 @@ def test_read_downloader_degrades_to_nulls_when_no_run_cwd(tmp_path, monkeypatch
 
 
 def test_read_downloader_reports_dead_when_pid_file_missing(tmp_path, monkeypatch):
-    monkeypatch.setattr(status_mod, "_live_prefetch_pids", lambda: [])
+    monkeypatch.setattr(status_mod, "_live_prefetch_pids", lambda **_: [])
     result = status_mod.read_downloader(tmp_path)
     assert result["prefetch_alive"] is None  # no prefetch.pid at all -- distinct from "dead"
 
 
 def test_read_downloader_reports_dead_for_a_stale_pid(tmp_path, monkeypatch):
-    monkeypatch.setattr(status_mod, "_live_prefetch_pids", lambda: [])
+    monkeypatch.setattr(status_mod, "_live_prefetch_pids", lambda **_: [])
     (tmp_path / "prefetch.pid").write_text("999999999")
     result = status_mod.read_downloader(tmp_path)
     assert result["prefetch_alive"] is False
 
 
 def test_read_downloader_reports_alive_for_a_real_prefetch_pdfs_process(tmp_path, monkeypatch):
-    monkeypatch.setattr(status_mod, "_live_prefetch_pids", lambda: [])
+    monkeypatch.setattr(status_mod, "_live_prefetch_pids", lambda **_: [])
     (tmp_path / "prefetch.pid").write_text("4242")
     monkeypatch.setattr(status_mod, "_is_live_prefetch", lambda pid: pid == 4242)
     result = status_mod.read_downloader(tmp_path)
@@ -704,7 +706,7 @@ def test_read_downloader_tails_its_own_dedicated_log_for_the_latest_pace_line(tm
     """`_PREFETCH_LOG_NAME` (`prefetch.log`), not the shared run log -- T-DOC<n>: a shared log
     also written by far more verbose parse-progress logging could push the real pace line outside
     `_LOG_TAIL_BYTES`'s window; a dedicated, single-writer log can't have that problem."""
-    monkeypatch.setattr(status_mod, "_live_prefetch_pids", lambda: [])
+    monkeypatch.setattr(status_mod, "_live_prefetch_pids", lambda **_: [])
     (tmp_path / "prefetch.log").write_text(
         "some other line\n"
         "prefetch_pdfs: downloaded 10 / target 30000 (cache now 10)\n"
@@ -717,14 +719,14 @@ def test_read_downloader_tails_its_own_dedicated_log_for_the_latest_pace_line(tm
 
 
 def test_read_downloader_pace_degrades_when_log_missing(tmp_path, monkeypatch):
-    monkeypatch.setattr(status_mod, "_live_prefetch_pids", lambda: [])
+    monkeypatch.setattr(status_mod, "_live_prefetch_pids", lambda **_: [])
     result = status_mod.read_downloader(tmp_path)
     assert result["downloaded"] is None
     assert result["prefetch_target"] is None
 
 
 def test_read_downloader_pace_degrades_when_no_pace_line_yet(tmp_path, monkeypatch):
-    monkeypatch.setattr(status_mod, "_live_prefetch_pids", lambda: [])
+    monkeypatch.setattr(status_mod, "_live_prefetch_pids", lambda **_: [])
     (tmp_path / "prefetch.log").write_text("nothing relevant here\n")
     result = status_mod.read_downloader(tmp_path)
     assert result["downloaded"] is None
@@ -749,10 +751,12 @@ def test_is_live_prefetch_false_for_a_dead_pid():
 # actually running on the host.
 
 
-def _write_fake_proc_entry(proc_root, pid: int, argv: list[str]) -> None:
+def _write_fake_proc_entry(proc_root, pid: int, argv: list[str], *, cwd=None) -> None:
     d = proc_root / str(pid)
     d.mkdir()
     (d / "cmdline").write_bytes(b"\0".join(a.encode() for a in argv) + b"\0")
+    if cwd is not None:
+        (d / "cwd").symlink_to(cwd)
 
 
 def test_live_prefetch_pids_counts_a_real_module_invocation(tmp_path, monkeypatch):
@@ -798,27 +802,123 @@ def test_live_prefetch_pids_skips_unreadable_or_vanished_proc_entries(tmp_path, 
     assert status_mod._live_prefetch_pids(proc_root=tmp_path) == []
 
 
+# --- RI-8: the scan must not count ANOTHER corpus's downloader -----------------------------------
+#
+# D-12 fixed what a matching cmdline looks like (`-m app.prefetch_pdfs`, adjacent) but not WHOSE
+# corpus the match downloads for: with the causal corpus and the Waymo corpus both live, each
+# dashboard counted the other's downloader, inflating `live_pids` and tripping `orphan=True` on a
+# perfectly healthy pair of runs. The fix qualifies a match by the process's working directory
+# against the dashboard's own data_dir. Every test below builds a fully synthetic `/proc` tree
+# under `tmp_path` -- none depends on what is actually running on the host.
+
+
+def test_live_prefetch_pids_counts_one_running_under_the_dashboard_s_own_data_dir(
+    tmp_path, monkeypatch,
+):
+    own = tmp_path / "corpus"
+    own.mkdir()
+    monkeypatch.setattr(status_mod.os, "kill", lambda pid, sig: None)
+    _write_fake_proc_entry(tmp_path, 555510, ["python", "-m", "app.prefetch_pdfs"], cwd=own)
+    assert status_mod._live_prefetch_pids(proc_root=tmp_path, data_dir=own) == [555510]
+
+
+def test_live_prefetch_pids_excludes_a_downloader_for_a_different_data_dir(tmp_path, monkeypatch):
+    own = tmp_path / "corpus"
+    own.mkdir()
+    other = tmp_path / "other-corpus"
+    other.mkdir()
+    monkeypatch.setattr(status_mod.os, "kill", lambda pid, sig: None)
+    _write_fake_proc_entry(tmp_path, 555511, ["python", "-m", "app.prefetch_pdfs"], cwd=other)
+    assert status_mod._live_prefetch_pids(proc_root=tmp_path, data_dir=own) == []
+
+
+def test_live_prefetch_pids_returns_only_the_downloaders_of_the_dashboard_s_own_corpus(
+    tmp_path, monkeypatch,
+):
+    """The reported incident shape: two corpora live at once -- only THIS dashboard's downloader
+    may come back, not the union."""
+    own = tmp_path / "corpus"
+    other = tmp_path / "other-corpus"
+    own.mkdir()
+    other.mkdir()
+    monkeypatch.setattr(status_mod.os, "kill", lambda pid, sig: None)
+    _write_fake_proc_entry(tmp_path, 555512, ["python", "-m", "app.prefetch_pdfs"], cwd=own)
+    _write_fake_proc_entry(tmp_path, 555513, ["python", "-m", "app.prefetch_pdfs"], cwd=other)
+    assert status_mod._live_prefetch_pids(proc_root=tmp_path, data_dir=own) == [555512]
+
+
+def test_live_prefetch_pids_counts_one_in_a_run_override_scratch_dir_under_the_data_dir(
+    tmp_path, monkeypatch,
+):
+    """Containment (inside the data dir), not cwd==data_dir equality: an edited run's downloader
+    legitimately runs with cwd=<data_dir>/.run_overrides/<run_id> -- build_corpus resolves its
+    OWN data dir as Path.cwd() and controller launches it inside that scratch dir, so strict
+    equality would drop our own downloader exactly when keywords were edited for the run."""
+    own = tmp_path / "corpus"
+    scratch = own / ".run_overrides" / "run-1"
+    scratch.mkdir(parents=True)
+    monkeypatch.setattr(status_mod.os, "kill", lambda pid, sig: None)
+    _write_fake_proc_entry(tmp_path, 555514, ["python", "-m", "app.prefetch_pdfs"], cwd=scratch)
+    assert status_mod._live_prefetch_pids(proc_root=tmp_path, data_dir=own) == [555514]
+
+
+def test_live_prefetch_pids_treats_an_unreadable_cwd_as_not_a_match(tmp_path, monkeypatch):
+    """No `cwd` link (the process exited mid scan) or a dangling one (its working directory was
+    deleted under it) reads as not-a-match rather than raising -- same degrade-don't-raise rule
+    `_read_cmdline_argv` applies to cmdline."""
+    own = tmp_path / "corpus"
+    own.mkdir()
+    monkeypatch.setattr(status_mod.os, "kill", lambda pid, sig: None)
+    _write_fake_proc_entry(tmp_path, 555515, ["python", "-m", "app.prefetch_pdfs"])
+    dangling = tmp_path / "gone-dir"
+    _write_fake_proc_entry(tmp_path, 555516, ["python", "-m", "app.prefetch_pdfs"], cwd=dangling)
+    assert status_mod._live_prefetch_pids(proc_root=tmp_path, data_dir=own) == []
+
+
+def test_live_prefetch_pids_without_a_data_dir_stays_argv_only(tmp_path, monkeypatch):
+    """Pins the seam for callers with no data dir to qualify against: no `data_dir`, no cwd
+    requirement -- the pre-RI-8 behaviour. (A cwd-less entry still matches.)"""
+    monkeypatch.setattr(status_mod.os, "kill", lambda pid, sig: None)
+    _write_fake_proc_entry(tmp_path, 555517, ["python", "-m", "app.prefetch_pdfs"])
+    assert status_mod._live_prefetch_pids(proc_root=tmp_path) == [555517]
+
+
+def test_read_downloader_qualifies_its_default_scan_by_its_own_data_dir(tmp_path, monkeypatch):
+    """The scan `read_downloader` runs by default must be scoped to the SAME data dir the rest of
+    the status dict is read against (server.py passes it for every poll)."""
+    seen = {}
+
+    def fake_scan(**kwargs):
+        seen.update(kwargs)
+        return []
+
+    monkeypatch.setattr(status_mod, "_live_prefetch_pids", fake_scan)
+    out = status_mod.read_downloader(tmp_path, manifest_pid=None, data_dir=tmp_path)
+    assert seen == {"data_dir": tmp_path}
+    assert out["live_pids"] == []
+
+
 # --- D-6 Task 1: read_downloader sees every live downloader via the process table --------------
 
 
 def test_read_downloader_reports_an_untracked_live_downloader_as_an_orphan(tmp_path, monkeypatch):
     """The 20-hour blind spot: a prefetch process alive but named by neither prefetch.pid nor the
     manifest was invisible to the dashboard entirely."""
-    monkeypatch.setattr(status_mod, "_live_prefetch_pids", lambda: [4242])
+    monkeypatch.setattr(status_mod, "_live_prefetch_pids", lambda **_: [4242])
     out = status_mod.read_downloader(tmp_path, manifest_pid=None)
     assert out["live_pids"] == [4242]
     assert out["orphan"] is True
 
 
 def test_read_downloader_is_not_an_orphan_when_the_manifest_names_it(tmp_path, monkeypatch):
-    monkeypatch.setattr(status_mod, "_live_prefetch_pids", lambda: [4242])
+    monkeypatch.setattr(status_mod, "_live_prefetch_pids", lambda **_: [4242])
     out = status_mod.read_downloader(tmp_path, manifest_pid=4242)
     assert out["orphan"] is False
     assert out["tracked_pid"] == 4242
 
 
 def test_read_downloader_no_live_process_is_not_an_orphan(tmp_path, monkeypatch):
-    monkeypatch.setattr(status_mod, "_live_prefetch_pids", lambda: [])
+    monkeypatch.setattr(status_mod, "_live_prefetch_pids", lambda **_: [])
     out = status_mod.read_downloader(tmp_path, manifest_pid=None)
     assert out["live_pids"] == []
     assert out["orphan"] is False
@@ -832,7 +932,7 @@ def test_read_downloader_is_not_an_orphan_when_it_is_a_child_of_the_manifest_pid
 ):
     """The live false positive: a `mode="full"` run's manifest pid is the build_corpus
     SUPERVISOR, and app.prefetch_pdfs is its legitimate direct child -- not an orphan."""
-    monkeypatch.setattr(status_mod, "_live_prefetch_pids", lambda: [222])
+    monkeypatch.setattr(status_mod, "_live_prefetch_pids", lambda **_: [222])
     monkeypatch.setattr(status_mod, "_process_ppid", lambda pid: 111 if pid == 222 else None)
     out = status_mod.read_downloader(tmp_path, manifest_pid=111, live_pids=lambda: [222])
     assert out["orphan"] is False
