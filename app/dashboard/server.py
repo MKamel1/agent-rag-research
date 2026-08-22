@@ -304,7 +304,14 @@ def _status_dict(data_dir: Path, status_module, controller_module) -> dict:
             live.get("events_path"), done,
             data_dir=data_dir, started_at=live.get("started_at"), target=live.get("target"),
         ),
-        "downloads": status_module.read_downloads(data_dir, _static_config(data_dir).prefetch_target),
+        # RI-30: thread the manifest's run_cwd here exactly as the downloader block below does --
+        # one downloader, one log, two fields. An edited run's prefetch.log lands in its
+        # override scratch dir; falling back to data_dir tails the last unedited run's stale log
+        # and lets these two fields disagree about the same downloader.
+        "downloads": status_module.read_downloads(
+            data_dir, _static_config(data_dir).prefetch_target,
+            run_cwd=live.get("run_cwd") or data_dir,
+        ),
         # D-10 Task 3: manifest_pid is passed for EVERY mode now, not just "download" -- a
         # "full" run's manifest pid is a build_corpus SUPERVISOR, not a downloader, but it
         # legitimately spawns app.prefetch_pdfs as a child. Withholding the pid here (the

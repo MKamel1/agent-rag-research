@@ -437,6 +437,89 @@ def test_reconcile_marks_clean_finish_as_done_when_target_reached(tmp_path):
     assert live["status"] == "done"
 
 
+# --- RI-30: the crash verdict must be filter-scoped, like build_corpus's own stop condition ----
+
+
+def _write_scoped_done_db(db_path, published=None, categories_json=None):
+    """Five done papers -- one scoped to a 2024 date window / `econ.em`, four outside whatever
+    scope the caller's columns describe. Both optional columns default to unscoped values so a
+    test can turn on just the filter dimension it exercises."""
+    import sqlite3
+
+    conn = sqlite3.connect(db_path)
+    conn.execute("CREATE TABLE ingest_state (paper_id TEXT PRIMARY KEY, stage TEXT)")
+    conn.execute(
+        "CREATE TABLE papers (paper_id TEXT PRIMARY KEY, published TEXT, categories_json TEXT)"
+    )
+    conn.executemany("INSERT INTO ingest_state VALUES (?, 'done')", [(f"p{i}",) for i in range(5)])
+    conn.executemany(
+        "INSERT INTO papers VALUES (?, ?, ?)",
+        [
+            (
+                f"p{i}",
+                published[i] if published else "2020-06-01",
+                categories_json[i] if categories_json else "[]",
+            )
+            for i in range(5)
+        ],
+    )
+    conn.commit()
+    conn.close()
+
+
+def _scoped_running_manifest(db_path, **extra):
+    """A `running` manifest whose pid cannot verify as alive (same stale-identity shape the
+    RI-20 test uses) plus the OG-45 download filters a run records from its effective config."""
+    manifest = {
+        "run_id": "run-scoped", "status": "running",
+        "pid": 999999999, "pid_starttime": 1.0, "pid_cmdline": "long-gone\x00",
+        "mode": "full", "target": 2, "db_path": str(db_path),
+    }
+    manifest.update(extra)
+    return manifest
+
+
+def test_reconcile_judges_a_crashed_date_filtered_run_by_its_filtered_count(tmp_path):
+    """RI-30: `app/build_corpus.py::run`'s stop condition counts done papers matching the run's
+    OWN `arxiv_date_from`/`arxiv_date_to` window (`build_corpus.done_count`), but
+    `_crashed_before_target` compared a RAW total -- so a filtered run that died short of its
+    target reconciled to a clean `done` whenever the whole corpus's total already cleared it.
+    Direction matters: unfiltered >= filtered, so this could only ever fake a clean finish,
+    not fake a crash."""
+    db_path = tmp_path / "papers.db"
+    _write_scoped_done_db(
+        db_path,
+        published=["2024-01-05"] + ["2020-06-01"] * 4,
+    )
+    controller_mod._write_manifest(tmp_path, _scoped_running_manifest(
+        db_path, arxiv_date_from="2024-01-01", arxiv_date_to="2024-12-31",
+        arxiv_categories=None,
+    ))
+
+    live = controller_mod.liveness(tmp_path)
+
+    assert live["status"] == "failed"  # 1 done inside the window < target 2; raw 5 would say done
+
+
+def test_reconcile_judges_a_crashed_category_scoped_run_by_the_same_or_match(tmp_path):
+    """The categories half of RI-30, same shape: `build_corpus.done_count` OR-matches a paper's
+    `categories_json` against the requested list (ANY entry counts, the harvester's own `cat:`
+    semantics) -- the crash verdict must count the same way."""
+    db_path = tmp_path / "papers.db"
+    _write_scoped_done_db(
+        db_path,
+        categories_json=['["econ.em"]', '["stat.AP"]', '["stat.ME"]', '["stat.AP"]', '["cs.LG"]'],
+    )
+    controller_mod._write_manifest(tmp_path, _scoped_running_manifest(
+        db_path, arxiv_categories=["econ.em"],
+        arxiv_date_from=None, arxiv_date_to=None,
+    ))
+
+    live = controller_mod.liveness(tmp_path)
+
+    assert live["status"] == "failed"  # 1 econ.em paper < target 2; raw 5 would say done
+
+
 def test_reconcile_marks_clean_download_finish_as_done_even_though_done_count_never_moved(tmp_path):
     """T-DOC78: a `mode="download"` run's `target` is a PDF-cache count (e.g. prefetch_target),
     not a done-count -- `app.prefetch_pdfs` never writes `ingest_state` at all, so `done_count`

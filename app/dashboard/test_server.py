@@ -70,7 +70,7 @@ class _FakeStatus:
             "gpu_util_pct": 80.0, "vram_mib": 9000, "power_w": 200.0,
         }
 
-    def read_downloads(self, data_dir, prefetch_target):
+    def read_downloads(self, data_dir, prefetch_target, run_cwd=None):
         return {
             "staged_pdfs": 20, "sidecars": 15, "prefetch_target": prefetch_target,
             "stalled": False, "new_last_pass": None,
@@ -557,14 +557,38 @@ def test_status_dict_passes_prefetch_target_not_the_run_target(tmp_path):
     seen = {}
 
     class SpyStatus(_FakeStatus):
-        def read_downloads(self, data_dir, prefetch_target):
+        def read_downloads(self, data_dir, prefetch_target, run_cwd=None):
             seen["prefetch_target"] = prefetch_target
-            return super().read_downloads(data_dir, prefetch_target)
+            return super().read_downloads(data_dir, prefetch_target, run_cwd=run_cwd)
 
     _status_dict(tmp_path, SpyStatus(), _FakeController())
 
     assert seen["prefetch_target"] == server_mod._static_config(tmp_path).prefetch_target
     assert seen["prefetch_target"] != 100  # the manifest's (unrelated) run target
+
+
+def test_status_dict_threads_the_manifests_run_cwd_into_read_downloads(tmp_path):
+    """RI-30: `downloads.stalled` and `downloader.downloaded` describe the SAME downloader's
+    log -- the manifest `run_cwd` the downloader block below already receives must reach
+    `read_downloads` too, or an edited run's two downloader fields disagree (the data dir keeps
+    the last unedited run's stale log; the live one sits in the override dir)."""
+    seen = {}
+    override_dir = tmp_path / ".run_overrides" / "run-fake"
+
+    class SpyStatus(_FakeStatus):
+        def read_downloads(self, data_dir, prefetch_target, run_cwd=None):
+            seen["run_cwd"] = run_cwd
+            return super().read_downloads(data_dir, prefetch_target)
+
+    class OverrideCwdController(_FakeController):
+        def liveness(self, data_dir):
+            manifest = super().liveness(data_dir)
+            manifest["run_cwd"] = str(override_dir)
+            return manifest
+
+    _status_dict(tmp_path, SpyStatus(), OverrideCwdController())
+
+    assert seen["run_cwd"] == str(override_dir)
 
 
 def test_control_without_token_is_rejected(running_server):

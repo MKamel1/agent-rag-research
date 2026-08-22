@@ -217,7 +217,13 @@ def _verify_downloads(data_dir: Path, downloads: dict | None) -> list[Discrepanc
                 Discrepancy("downloads.prefetch_target", downloads["prefetch_target"], truth)
             )
 
-    log_path = data_dir / "prefetch.log"
+    # RI-30: the dashboard tails `<run_manifest.json's run_cwd>/prefetch.log`, not the data
+    # dir's -- an edited run's downloader writes inside its override scratch dir, leaving the
+    # data dir's log as whatever the last unedited run left. Ground truth has to read the SAME
+    # file, or every such run reports a false downloads.stalled discrepancy. Still recomputed
+    # here from raw disk files (manifest JSON + log), with nothing imported from status.py.
+    run_cwd = _manifest_run_cwd_from_disk(data_dir)
+    log_path = Path(run_cwd) / "prefetch.log" if run_cwd else data_dir / "prefetch.log"
     if log_path.exists():
         stalled, new_last_pass = _tail_download_stall(log_path)
         if "stalled" in downloads and downloads["stalled"] != stalled:
@@ -267,6 +273,18 @@ def _manifest_run_id_from_disk(data_dir: Path) -> str | None:
     except (OSError, json.JSONDecodeError):
         return None
     return manifest.get("run_id")
+
+
+def _manifest_run_cwd_from_disk(data_dir: Path) -> str | None:
+    """The raw `run_manifest.json`'s `run_cwd` -- where this run's `prefetch.log` actually
+    landed (the override scratch dir for an edited run). Same independent single-key read as
+    `_manifest_pid_from_disk`/`_manifest_run_id_from_disk` above: one file open per key, no
+    shared "manifest" abstraction to keep in sync."""
+    try:
+        manifest = json.loads((data_dir / "run_manifest.json").read_text())
+    except (OSError, json.JSONDecodeError):
+        return None
+    return manifest.get("run_cwd")
 
 
 def _verify_run(data_dir: Path, run: dict | None) -> list[Discrepancy]:
