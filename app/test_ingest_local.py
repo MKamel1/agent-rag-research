@@ -16,6 +16,7 @@ silently drift from what `_cached_ref` expects.
 """
 
 import io
+import os
 import sys
 from datetime import date
 from pathlib import Path
@@ -26,6 +27,7 @@ import pytest
 import app.ingest_local as _mod
 from app.assembly import _cached_ref
 from app.ingest_local import (
+    _write_pdf_cache,
     detect_arxiv_id,
     main,
     mint_local_ref,
@@ -771,3 +773,24 @@ def test_first_nonempty_line_falls_back_rather_than_returning_none():
     """A page with nothing title-shaped must still yield the old behaviour's answer -- this change
     may only ever improve a title, never erase one."""
     assert _mod._first_nonempty_line("1\n2\n3") == "1"
+
+
+# ================================================================================================
+# RI-21: `_write_pdf_cache` stages through the shared pid-qualified helper (`rag.atomic_write`)
+# now. This write was already pid-qualified inline (OG-49 M12), so this is a characterization
+# test, not a behavior change: the cache PDF lands complete, no temp residue remains, and another
+# writer's staged temp survives untouched.
+# ================================================================================================
+
+
+def test_write_pdf_cache_lands_complete_with_no_residue_and_foreign_temps_untouched(tmp_path):
+    cache_dir = tmp_path / "cache"
+    cache_dir.mkdir()
+    foreign_tmp = cache_dir / f"2601.00001.pdf.{os.getpid() + 1}.tmp"
+    foreign_tmp.write_bytes(b"another writer's partial download")
+
+    _write_pdf_cache(cache_dir, "2601.00001", b"%PDF-1.7 complete-bytes")
+
+    assert foreign_tmp.read_bytes() == b"another writer's partial download"
+    assert (cache_dir / "2601.00001.pdf").read_bytes() == b"%PDF-1.7 complete-bytes"
+    assert [p.name for p in cache_dir.glob("*.tmp") if p != foreign_tmp] == []
