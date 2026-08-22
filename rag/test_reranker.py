@@ -382,6 +382,70 @@ def test_response_index_out_of_range_maps_to_permanent_error():
 
 
 # ---------------------------------------------------------------------------
+# RI-28: a 200 whose body won't decode as JSON. Used to escape as a raw
+# json.JSONDecodeError/UnicodeDecodeError -- outside the TransientError/PermanentError taxonomy --
+# sailing past callers written to handle only the contract errors (e.g. app/dashboard/server.py's
+# search route) and killing the dashboard request thread with no response. Classified at the same
+# seam as the HTTP failures, and transient: the service accepted the request (a 2xx), so an
+# undecodable body is transit corruption (truncation, proxy garbage), not a property of the
+# request -- resending can genuinely succeed.
+# ---------------------------------------------------------------------------
+
+
+def test_200_with_undecodable_body_maps_to_transient_error():
+    attempts = {"n": 0}
+
+    def handler(request):
+        attempts["n"] += 1
+        return httpx.Response(200, content=b"<html>gateway garbage</html>")
+
+    client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
+    sleeps: list[float] = []
+    reranker = TeiReranker(client, FakeGpuLock(), retry_sleep=sleeps.append)
+
+    with pytest.raises(TransientError):
+        reranker.rerank("q", _candidates(("a", "text a")))
+
+    # Transient means RETRYABLE: the retry budget must actually be spent before giving up...
+    assert attempts["n"] == 3  # initial attempt + 2 retries
+    assert sleeps == [1.0, 2.0]  # ...with the same exponential backoff as any other hiccup
+
+
+def test_undecodable_binary_body_is_also_transient():
+    # The non-UTF-8 flavor: json.loads raises UnicodeDecodeError here, not JSONDecodeError. Both
+    # are ValueError subclasses and both mean "this body didn't decode" -- the classification must
+    # cover the binary-garbage case too, not just malformed text.
+    def handler(request):
+        return httpx.Response(200, content=b"\x81\x81\x81\x81")
+
+    client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
+    reranker = TeiReranker(client, FakeGpuLock(), retry_sleep=lambda seconds: None)
+
+    with pytest.raises(TransientError):
+        reranker.rerank("q", _candidates(("a", "text a")))
+
+
+def test_undecodable_200_body_then_success_is_recovered_with_backoff():
+    attempts = {"n": 0}
+
+    def handler(request):
+        attempts["n"] += 1
+        if attempts["n"] == 1:
+            return httpx.Response(200, content=b'{"results": [{"index": 0')  # truncated in transit
+        return httpx.Response(200, json=[{"index": 0, "score": 1.0}])
+
+    client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
+    sleeps: list[float] = []
+    reranker = TeiReranker(client, FakeGpuLock(), retry_sleep=sleeps.append)
+
+    result = reranker.rerank("q", _candidates(("a", "text a")))
+
+    assert attempts["n"] == 2  # first attempt garbled, second succeeds -- no third attempt
+    assert sleeps == [1.0]
+    assert [c.id for c in result] == ["a"]
+
+
+# ---------------------------------------------------------------------------
 # Live isolated test (DATA-CONTRACTS.md "Reranker": isolated, not a contract/agreement pair —
 # V0 has only one reranker choice, so there's no second adapter to prove agreement against).
 # ---------------------------------------------------------------------------
@@ -549,3 +613,59 @@ def test_rerank_sends_truncated_text_but_returns_the_original_candidates():
     result = TeiReranker(client, FakeGpuLock()).rerank("q", _candidates(("a", original)))
 
     assert result[0].text == original, "the candidate object itself must be untouched"
+
+
+# ================================================================================================
+# Oversized-query guard (RI-28). The query rides in EVERY (query, document) pair, but only the
+# document side was ever capped (`_truncate_to_item_budget`) -- nothing bounded the query. Past
+# _MAX_ITEM_TOKENS estimated tokens (24,000 chars at the deliberate /3 overestimate) the query
+# alone busts the per-pair input ceiling, so every batch the packer can emit is rejected with a
+# non-retryable 4xx and the whole search dies with a generic "server returned 413" that never
+# names the query as the cause. The adapter must fail fast AT THE SEAM instead.
+# ================================================================================================
+
+
+def test_oversized_query_fails_fast_without_an_http_call():
+    """A query over the per-pair item budget cannot produce a single legal request: the service
+    would reject every batch. Raise PermanentError naming the query and its measured size, before
+    any HTTP work -- not a generic server-status error from a request we already knew was doomed."""
+    import rag.reranker as reranker_module
+
+    requests = []
+
+    def handler(request):
+        requests.append(request.url.path)
+        return httpx.Response(200, json=[{"index": 0, "score": 1.0}])
+
+    client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
+    reranker = TeiReranker(client, FakeGpuLock())
+    # 24,000 chars is the first length whose estimate (8,001) exceeds _MAX_ITEM_TOKENS (verified:
+    # 23,999 chars estimates exactly 8,000 and must still pass).
+    oversized = "q" * (reranker_module._MAX_ITEM_TOKENS * reranker_module._CHARS_PER_TOKEN)
+
+    with pytest.raises(PermanentError, match="query too large"):
+        reranker.rerank(oversized, _candidates(("a", "text a")))
+
+    assert requests == [], "a doomed query must fail before any HTTP request is attempted"
+
+
+def test_query_at_the_item_budget_still_reranks_untruncated():
+    """Boundary: a query whose estimate sits exactly AT _MAX_ITEM_TOKENS is legal and must go over
+    the wire UNTRUNCATED -- this pins the fail-fast choice against a regression to the rejected
+    alternative (truncating the query to make the request 'fit')."""
+    import rag.reranker as reranker_module
+
+    def handler(request):
+        import json
+        body = json.loads(request.content)
+        limit_chars = reranker_module._MAX_ITEM_TOKENS * reranker_module._CHARS_PER_TOKEN - 3
+        assert len(body["query"]) == limit_chars
+        return httpx.Response(200, json=[{"index": 0, "score": 1.0}])
+
+    client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
+    reranker = TeiReranker(client, FakeGpuLock())
+    at_limit = "q" * (reranker_module._MAX_ITEM_TOKENS * reranker_module._CHARS_PER_TOKEN - 3)
+
+    result = reranker.rerank(at_limit, _candidates(("a", "text a")))
+
+    assert [c.id for c in result] == ["a"]

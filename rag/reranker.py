@@ -126,8 +126,10 @@ class TeiReranker:
 
     A `TransientError` from the `/rerank` HTTP call gets a bounded, backed-off retry
     (`max_retries`, `retry_sleep` — same shape as `rag/harvester.py`'s `Harvester`); a
-    `PermanentError` (a non-retryable status, or a malformed/out-of-range response body) is never
-    retried. Unlike the ingest-side retry sites, there is no quarantine outcome here — a
+    `PermanentError` (a non-retryable status, or a response body that decodes but is malformed or
+    out of range) is never retried. A 200 whose body won't decode at all is classified as
+    transient at the same seam (transit corruption — retried; see `_post_with_retry`). Unlike the
+    ingest-side retry sites, there is no quarantine outcome here — a
     query-path caller has no "skip this paper and continue" fallback, so once the retry budget is
     exhausted the (still-classified) error simply propagates.
 
@@ -164,6 +166,31 @@ class TeiReranker:
     ) -> list[RerankCandidate]:
         if not candidates:
             return []
+
+        # RI-28: the query rides in EVERY (query, document) pair, but only the document side was
+        # ever capped (`_truncate_to_item_budget`) -- nothing bounded the query. Past
+        # `_MAX_ITEM_TOKENS` estimated tokens (24,000 chars at the /3 overestimate below; verified
+        # 23,999 chars still estimates 8,000) the query alone busts the per-pair input ceiling, so
+        # every batch `_pack_batches` can emit is rejected with a non-retryable 4xx and the whole
+        # search dies with a generic "server returned 413" that never names the query as the
+        # cause. (The packer's own degenerate point -- where even a one-item batch exceeds
+        # `_MAX_BATCH_TOKENS`, ~35,997 chars -- sits past this guard, so checking the item budget
+        # here subsumes it.)
+        #
+        # Fail fast rather than truncate. Truncation is correct for documents because the excess
+        # bytes never influence the score either way (the service truncates the same bytes
+        # server-side); for the query there is no such lossless reading -- a truncated query is a
+        # DIFFERENT question, and silently reranking against its prefix would return plausibly
+        # ordered results for something the user never asked, exactly the quiet degradation this
+        # codebase's absence-honesty work exists to prevent. `PermanentError`, not transient:
+        # resending the identical query fails identically (same reasoning as the 413s the service
+        # itself returns).
+        query_tokens = _estimate_tokens(query)
+        if query_tokens > _MAX_ITEM_TOKENS:
+            raise PermanentError(
+                f"query too large to rerank: {len(query)} chars (~{query_tokens} estimated "
+                f"tokens, limit {_MAX_ITEM_TOKENS}); shorten the query"
+            )
 
         if self._ensure_ready is not None:
             self._ensure_ready()
@@ -207,7 +234,8 @@ class TeiReranker:
 
     def _post_with_retry(self, query: str, candidates: list[RerankCandidate]) -> list:
         """The `/rerank` HTTP call, retried up to `_max_retries` times on `TransientError`
-        (429/502/503/504, timeout, connection failure) with exponential backoff between attempts —
+        (429/502/503/504, timeout, connection failure, an undecodable 200 body) with exponential
+        backoff between attempts —
         same two-outcome shape as `rag/embedder.py`'s `_post_batch_with_retry`. A non-retryable
         status raises `PermanentError` immediately, same as before this method existed.
 
@@ -241,6 +269,24 @@ class TeiReranker:
                 attempt += 1
                 if attempt > self._max_retries:
                     raise TransientError(f"reranker request failed: {error}") from error
+            except ValueError as error:
+                # RI-28: a 200 whose body won't decode used to escape as a raw
+                # json.JSONDecodeError/UnicodeDecodeError -- outside the taxonomy -- sailing past
+                # callers written to handle only the contract errors (app/dashboard/server.py's
+                # search route) and killing that request thread with no response. Classified HERE,
+                # in the same mapping as the HTTP failures, and as TRANSIENT: the service accepted
+                # the request (a 2xx), so an undecodable body is most plausibly corruption in
+                # transit (a truncated or proxied response), not a property of the request --
+                # resending can genuinely succeed. ValueError rather than json.JSONDecodeError,
+                # because a non-UTF-8 body raises UnicodeDecodeError; both mean "this body didn't
+                # decode". The deliberate opposite of rerank()'s body checks above the retry loop,
+                # which stay PermanentError: a body that DECODES but has the wrong shape is
+                # deterministic given this request, not transit noise.
+                attempt += 1
+                if attempt > self._max_retries:
+                    raise TransientError(
+                        f"reranker returned HTTP 200 with an undecodable body: {error}"
+                    ) from error
             self._retry_sleep(self._backoff(attempt))
 
     @staticmethod
