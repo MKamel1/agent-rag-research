@@ -8,9 +8,12 @@ generating one (`secrets.token_hex(16)`, written at mode `0600`) the first time 
 `_load_or_create_token` below. An explicit `--token` still wins, for anyone scripting this. An
 empty effective token refuses to start (RI-2): "" authenticates requests that send no
 X-Dashboard-Token header at all. Generation is an atomic pid-qualified-temp + `os.replace` write,
-and records its writer's identity in `<data-dir>/.dashboard_token.sidecar` (RI-6) so a second
-dashboard starting against the same data dir while the first is still live is detected and refused
-rather than resolved silently by last-writer-wins. Beyond
+and records its writer's identity in `<data-dir>/.dashboard_token.sidecar` (RI-6) so a LATER
+GENERATION while that writer is still live -- which would hand the two dashboards divergent
+tokens, resolved silently by last-writer-wins -- is refused; a start that finds the recorded
+writer's token file intact hands out that same token instead, since two readers of one file
+converge rather than diverge (a second dashboard on another port against the same corpus is a
+supported shape -- scripts/dashboard.sh's DASHBOARD_PORT/DASHBOARD_DATA_DIR are independent). Beyond
 just removing a hand-managed file convention nothing in the repo previously created or read, this
 also gets the token out of `ps`/`/proc/<pid>/cmdline` output in the normal (no-`--token`) path --
 any other local user could previously read a live dashboard's control token straight off the
@@ -749,19 +752,21 @@ def _load_or_create_token(data_dir: Path) -> str:
     RI-2's auth hole from the file side, comparing equal to `_token_ok`'s missing-header default.
 
     Generation writes the token atomically (`_write_private_file`) and records this process's
-    identity in `<data_dir>/.dashboard_token.sidecar` -- which process generated the CURRENT
-    token file. The next start validates against it: a sidecar whose writer is still alive means
-    another dashboard instance is running on this data dir, an ambiguity that previously
-    resolved silently by last-writer-wins (two live dashboards, divergent tokens) -- it raises
-    `_LiveTokenWriterError` instead. A corrupt sidecar is tolerated as absent (provenance lost,
-    nothing more); a failed sidecar WRITE degrades to a logged warning for the same reason --
-    the token itself is already persisted and auth does not depend on the sidecar.
+    identity in `<data-dir>/.dashboard_token.sidecar` -- which process generated the CURRENT
+    token file. The next start validates against it IMMEDIATELY BEFORE GENERATING: a sidecar
+    whose writer is still alive means that writer is running on this data dir right now, so
+    replacing its token file would resolve the ambiguity silently by last-writer-wins (two live
+    dashboards, divergent tokens) -- it raises `_LiveTokenWriterError` instead. A start that
+    finds a usable token file returns it WITHOUT consulting the sidecar: reading one shared
+    value cannot diverge, so there is nothing to refuse (and refusing would reject a supported
+    second-dashboard-on-another-port start that would have been correct). A corrupt sidecar is
+    tolerated as absent (provenance lost, nothing more); a failed sidecar WRITE degrades to a
+    logged warning for the same reason -- the token itself is already persisted and auth does
+    not depend on the sidecar.
 
     Never logs/prints the token value itself -- only where it was written, so the operator can
     find it (`cat <path>`) without the value passing through any log line. The sidecar likewise
     carries writer identity, never the secret."""
-    _refuse_if_sidecar_writer_is_live(data_dir)
-
     token_path = data_dir / _TOKEN_FILENAME
     if token_path.exists():
         try:
@@ -770,6 +775,8 @@ def _load_or_create_token(data_dir: Path) -> str:
             existing = ""
         if existing:
             return existing
+
+    _refuse_if_sidecar_writer_is_live(data_dir)
 
     token = secrets.token_hex(16)
     _write_private_file(token_path, token)

@@ -1595,12 +1595,15 @@ def test_malformed_sidecar_does_not_block_reading_an_operator_token(tmp_path):
     assert server_mod._load_or_create_token(tmp_path) == "operator-token"
 
 
-def test_live_sidecar_writer_refuses_to_hand_out_the_token(tmp_path):
+def test_live_sidecar_writer_refuses_to_generate_a_token(tmp_path):
     """A sidecar whose recorded writer is STILL the live process at that pid means another
-    dashboard instance is running on this data dir right now. Starting a second one would give
-    the two divergent views of the token state (the review's noted 'harmless' startup race, now
-    detectable, so no longer silently resolved by last-writer-wins). Refuse rather than steal."""
+    dashboard instance generated the current token and is running on this data dir right now.
+    Handing out that persisted token would be safe -- both processes read the same value, so
+    nothing diverges -- but GENERATING a replacement would overwrite the file out from under
+    the live writer, last-writer-wins again. The refusal therefore fires exactly at the
+    generation path, not on the read-an-existing-token path."""
     server_mod._load_or_create_token(tmp_path)  # records THIS process as the writer
+    (tmp_path / ".dashboard_token").unlink()  # force the generation path
 
     with pytest.raises(server_mod._LiveTokenWriterError) as excinfo:
         server_mod._load_or_create_token(tmp_path)
@@ -1608,9 +1611,26 @@ def test_live_sidecar_writer_refuses_to_hand_out_the_token(tmp_path):
     assert str(os.getpid()) in str(excinfo.value)
 
 
+def test_live_writer_with_a_usable_token_file_hands_out_that_same_token(tmp_path):
+    """The ambiguity the sidecar resolves is DIVERGENCE -- two processes each generating a
+    different token, silently resolved by last-writer-wins. With a valid non-empty token file
+    on disk there is nothing to diverge: a second start under a still-live writer reads the
+    same value and must succeed with it, not be refused -- e.g. a second dashboard on another
+    port against the same corpus, the shape scripts/dashboard.sh's independent
+    DASHBOARD_PORT/DASHBOARD_DATA_DIR env vars allow."""
+    first = server_mod._load_or_create_token(tmp_path)  # records THIS process as the writer
+
+    second = server_mod._load_or_create_token(tmp_path)
+
+    assert second == first
+    assert second == (tmp_path / ".dashboard_token").read_text()
+
+
 def test_main_refuses_to_start_when_the_sidecar_writer_is_alive(tmp_path, monkeypatch, capsys):
+    """End to end: a live rival writer blocks only the GENERATION path, so this drives main()
+    with no usable token file -- the sidecar alone would not refuse a start that finds one
+    (that start joins with the same token, see the join test above)."""
     identity = controller_mod._process_identity(os.getpid())
-    (tmp_path / ".dashboard_token").write_text("operator-token")
     (tmp_path / ".dashboard_token.sidecar").write_text(json.dumps({
         "pid": os.getpid(), "pid_starttime": identity[0], "pid_cmdline": identity[1],
     }))
