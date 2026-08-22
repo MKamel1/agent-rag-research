@@ -1,0 +1,85 @@
+{
+  "_metadata": {
+    "description": "Blind question set (no answers/sources) paired with eval_ground_truth_waymo.json by question_id, mirroring eval_questions_blind.json's shape.",
+    "total_items": 15,
+    "last_updated": "2026-08-22T00:00:00Z",
+    "corpus": "waymo_av_safety"
+  },
+  "questions": [
+    {
+      "question_id": "Q-WAY-001",
+      "question_text": "How many scenes does the Waymo Open Dataset used in this paper's experiments contain, and how is it split into training, validation, and test sets?",
+      "question_type": "Result-Comprehension"
+    },
+    {
+      "question_id": "Q-WAY-002",
+      "question_text": "What similarity scores did the Real-to-Real2 comparison yield across the second-, third-, and fourth-layer encoders, and what did the authors conclude from them?",
+      "question_type": "Result-Comprehension"
+    },
+    {
+      "question_id": "Q-WAY-003",
+      "question_text": "What similarity scores did the Real-to-CwD comparison yield, and what does the paper conclude about the CwD approach's ability to bridge the Sim2Real gap?",
+      "question_type": "Result-Comprehension"
+    },
+    {
+      "question_id": "Q-WAY-004",
+      "question_text": "How did the Real-to-Random-Data similarity scores compare to the other datasets in this study?",
+      "question_type": "Result-Comprehension"
+    },
+    {
+      "question_id": "Q-WAY-005",
+      "question_text": "In this paper's Crow-AMSAA reliability growth model, what does a larger empirical constant α imply about an AV system's early-phase failure rate?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-WAY-006",
+      "question_text": "What characterizes 'Stage 2 (Revenue Service Deployment)' in this paper's AV deployment timeline model?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-WAY-007",
+      "question_text": "Why do consumer-focused AV categories (consumer automotive, robo-taxis) require longer timeline horizons in this paper's analysis?",
+      "question_type": "Result-Comprehension"
+    },
+    {
+      "question_id": "Q-WAY-008",
+      "question_text": "What detector do the authors fine-tune for Stage 1 3D detection, and how large is the manually annotated roadside LiDAR dataset it was trained on?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-WAY-009",
+      "question_text": "How much does the joint detection-and-tracking design increase inference latency over a detection-only model, and on what GPU was this measured?",
+      "question_type": "Result-Comprehension"
+    },
+    {
+      "question_id": "Q-WAY-010",
+      "question_text": "What does this paper conclude about how its proposed IECBF compares to a classical ECBF that neglects surrounding-vehicle reactions?",
+      "question_type": "Contribution-Comprehension"
+    },
+    {
+      "question_id": "Q-WAY-011",
+      "question_text": "What model does the nominal IECBF assume for the surrounding vehicle (SV), and how can real SV behavior deviate from that assumption?",
+      "question_type": "Assumption-Comprehension"
+    },
+    {
+      "question_id": "Q-WAY-012",
+      "question_text": "What is TrajFlow's main mechanism for avoiding the repetitive i.i.d. sampling required by conventional generative motion-prediction models?",
+      "question_type": "Contribution-Comprehension"
+    },
+    {
+      "question_id": "Q-WAY-013",
+      "question_text": "What share of the surveyed critical-scenario-identification (CSI) methods focus on producing test cases for the AD system verification phase?",
+      "question_type": "Result-Comprehension"
+    },
+    {
+      "question_id": "Q-WAY-014",
+      "question_text": "How did the authors of SAVeD source candidate videos before manual review and trimming?",
+      "question_type": "Method-Comprehension"
+    },
+    {
+      "question_id": "Q-WAY-015",
+      "question_text": "What is claimed as novel about the SAVeD dataset relative to prior ADAS crash/near-miss data?",
+      "question_type": "Contribution-Comprehension"
+    }
+  ]
+}
