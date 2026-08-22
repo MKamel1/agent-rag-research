@@ -354,6 +354,40 @@ def test_response_body_missing_response_field_maps_to_permanent_error():
 
 
 # ---------------------------------------------------------------------------
+# RI-31: a 200 whose body won't decode as JSON at all. Used to escape summarize() as a raw
+# json.JSONDecodeError/UnicodeDecodeError -- outside the TransientError/PermanentError taxonomy --
+# and kill the orchestrator's whole run instead of retrying/quarantining the one paper (the same
+# defect RI-28/RI-29 fixed at the reranker/embedder retry seams). Classified transient for the
+# settled reason: the server accepted the request (a 2xx), so an undecodable body is most
+# plausibly corruption in transit, not a property of this request -- resending can succeed. The
+# wrong-shape line stays permanent (the missing-field test above), unchanged.
+# ---------------------------------------------------------------------------
+
+
+def test_200_with_undecodable_body_maps_to_transient_error():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=b"<html>gateway garbage</html>")
+
+    client = httpx.Client(base_url="http://ollama.local", transport=httpx.MockTransport(handler))
+    adapter = _build_summarizer_with_client(client, FakeGpuLock())
+    with pytest.raises(TransientError):
+        adapter.summarize(_prose_doc())
+
+
+def test_undecodable_binary_body_is_also_transient():
+    # The non-UTF-8 flavor: decoding raises UnicodeDecodeError here, not JSONDecodeError. Both are
+    # ValueError subclasses and both mean "this body didn't decode" -- the classification must
+    # cover binary garbage too, not just malformed text.
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=b"\x81\x81\x81\x81")
+
+    client = httpx.Client(base_url="http://ollama.local", transport=httpx.MockTransport(handler))
+    adapter = _build_summarizer_with_client(client, FakeGpuLock())
+    with pytest.raises(TransientError):
+        adapter.summarize(_prose_doc())
+
+
+# ---------------------------------------------------------------------------
 # extract_affiliations() — LLM-based candidate for the author-org-tagging design's Step 1
 # (docs/superpowers/specs/2026-08-05-paper-author-org-tagging-design.md §4), Task 4's second arm
 # alongside rag/author_org_tagger.py's rule-based extraction. Same GPU-lock/error-mapping shape as
@@ -412,6 +446,18 @@ def test_extract_affiliations_permanent_error_on_malformed_json():
 def test_extract_affiliations_transient_error_on_503():
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(503)
+
+    client = httpx.Client(base_url="http://ollama.local", transport=httpx.MockTransport(handler))
+    adapter = _build_summarizer_with_client(client, FakeGpuLock())
+    with pytest.raises(TransientError):
+        adapter.extract_affiliations("some text")
+
+
+def test_extract_affiliations_undecodable_body_maps_to_transient_error():
+    # Same RI-31 defect as summarize() above, same classification -- extract_affiliations reads
+    # the same /api/generate response envelope through the same decode-or-classify helper.
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=b"<html>gateway garbage</html>")
 
     client = httpx.Client(base_url="http://ollama.local", transport=httpx.MockTransport(handler))
     adapter = _build_summarizer_with_client(client, FakeGpuLock())

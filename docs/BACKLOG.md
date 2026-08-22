@@ -30,7 +30,7 @@ GitHub Actions, which no amount of source reading would have surfaced.
 | RI-24 | `migrate()` races on first init | **OPEN** | Reproduced with 4 threads. RI-5 widened this. See below. |
 | RI-25 | Injected process-scan callables have no mechanical guard | **OPEN** | RI-19's fix is correct but nothing stops the next injection site repeating it. |
 | RI-26 | `search_papers` silently drops `min_distinct_papers` | **OPEN** | Honor it, reusing `_top_up_distinct_papers`. Resolved: it IS meaningful there. |
-| RI-31 | One decode-or-classify helper for four adapter seams | - | **OPEN** | Two fixed (RI-28/29); two remain, one needs a design call. |
+| RI-31 | One decode-or-classify helper for four adapter seams | **DONE** -- `889cfae` | `rag/decode_classify.decode_or_classify` covers the two remaining seams (summarizer ×2 methods, contextual_header). Design call: transient degrades to skip-chunk at `reembed_experiment` (spike script, no retry loop by design); reranker/embedder keep their inline RI-28/29 mapping. |
 | RI-27 | Six further LOW/MED findings | **OPEN** | Reranker 413 on a huge query; wrong log path behind a displayed verdict; filtered-target reconciliation; error-taxonomy escape; broken-config connection drop. |
 
 ### RI-23 — the required `enforcement` check has been failing on `main`

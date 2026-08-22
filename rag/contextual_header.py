@@ -25,6 +25,7 @@ import httpx
 
 from contracts.errors import PermanentError, TransientError
 from contracts.gpu_lock import GpuLock
+from rag.decode_classify import decode_or_classify
 
 # ---------------------------------------------------------------------------------------------
 # DEFAULT_HEADER_PROMPT -- the one thing this ticket exists to let the user iterate on. Isolated
@@ -101,7 +102,11 @@ class ContextualHeaderGenerator:
     `_MAX_HEADER_WORDS` words (a safety backstop, not the primary length control -- the prompt
     itself asks for 50-100 tokens). A response that comes back genuinely empty is a
     `PermanentError` (mirrors `rag/summarizer.py`'s own rule for an empty summary) -- the
-    caller skips that one chunk's header, it does not crash the whole re-embed run.
+    caller skips that one chunk's header, it does not crash the whole re-embed run. A 200 whose
+    body won't decode at all is classified as transient via rag/decode_classify.py's shared
+    helper (RI-31, same split as rag/summarizer.py) -- the caller owns what transient means for
+    it; app/reembed_experiment.py degrades it to skip-this-chunk's-header like any other failed
+    header.
     Acquires `gpu_lock.acquire("header")` around the inference call only (CONVENTIONS.md §6) --
     never around the precondition check, so an empty-input call never queues behind the GPU lock.
     """
@@ -146,12 +151,11 @@ class ContextualHeaderGenerator:
                     f"header generation LLM request failed: {error}"
                 ) from error
 
-            try:
-                header = response.json()["response"].strip()
-            except KeyError as error:
-                raise PermanentError(
-                    "header generation LLM response missing 'response' field"
-                ) from error
+            # RI-31: decode + wrong-shape classification via the shared
+            # rag/decode_classify.decode_or_classify -- an undecodable 200 body used to escape
+            # here as a raw JSONDecodeError/UnicodeDecodeError and abort the caller's whole
+            # re-embed run; it now comes out classified (transient) like the HTTP failures above.
+            header = decode_or_classify(response, "header generation LLM")
 
         if not header:
             raise PermanentError("header generation LLM returned an empty header")

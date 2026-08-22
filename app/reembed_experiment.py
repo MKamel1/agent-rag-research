@@ -45,7 +45,7 @@ import httpx
 
 from contracts.document_store import PaperRecord
 from contracts.embedder import EmbedderInfo, Vector
-from contracts.errors import PermanentError
+from contracts.errors import PermanentError, TransientError
 from contracts.vector_index import VectorPayload
 from rag.config import load_config
 from rag.contextual_header import ContextualHeaderGenerator
@@ -118,10 +118,11 @@ def reembed(
 
     Postcondition: returns `{chunk_id: header}` for every chunk a header was actually generated
     for -- empty in `--no-headers` mode. A chunk whose header generation is skipped (empty
-    summary, `ContextualHeaderGenerator`'s own documented precondition) or fails
-    (`PermanentError`, e.g. a bad generation-LLM response for that one chunk) is still embedded
-    and upserted with its own unmodified `chunk.text` -- it is never dropped from the matched set,
-    it just has no header entry in the returned dict.
+    summary, `ContextualHeaderGenerator`'s own documented precondition) or fails (`PermanentError`
+    or `TransientError` -- e.g. a bad or undecodable generation-LLM response for that one chunk;
+    RI-31: this spike script has no retry loop, so transient degrades to skip-chunk like
+    permanent) is still embedded and upserted with its own unmodified `chunk.text` -- it is never
+    dropped from the matched set, it just has no header entry in the returned dict.
     """
     if with_headers and header_generator is None:
         raise ReembedError("with_headers=True requires a header_generator")
@@ -142,12 +143,33 @@ def reembed(
                 assert header_generator is not None  # checked above; narrows the type for mypy
                 try:
                     header = header_generator.generate(record.summary_text, chunk.text)
-                except PermanentError:
+                except (PermanentError, TransientError) as error:
+                    # RI-31 design call -- transient degrades to skip-chunk here too, rather
+                    # than getting retry semantics. This is a throwaway spike script with no
+                    # retry loop by design: retry policy belongs to a caller that owns one (the
+                    # orchestrator's _summarize_with_retry for the pipeline's own summarize
+                    # calls), and inventing a bounded-retry shape here would duplicate that
+                    # machinery into a script whose output is evidence, not production data --
+                    # one chunk's header out of thousands is noise the matched-A/B measurement
+                    # tolerates. So the caller's pre-existing declared policy for "header
+                    # generation failed for this chunk" (skip it, warn, keep the chunk in the
+                    # matched set) extends uniformly to both taxonomy classes now that
+                    # ContextualHeaderGenerator classifies undecodable bodies as TransientError
+                    # instead of letting a raw decode escape abort the run before any upsert.
+                    # Rejected alternative: keeping PermanentError-only at this seam would make
+                    # the adapter classify a possibly-transient body as permanent -- a lie that
+                    # erases the very split RI-28/29 settled. Known cost, accepted: a hard-down
+                    # generation server now completes the run with ~zero headers (per-chunk
+                    # warnings plus the final header count make that visible) instead of failing
+                    # fast -- the same masquerade the PermanentError path already had for a
+                    # wrong-model-name 404.
                     logger.warning(
-                        "%s: header generation failed for chunk %s -- embedding this chunk's "
-                        "unmodified text instead so the matched A/B chunk set is preserved",
+                        "%s: header generation failed for chunk %s (%s) -- embedding this "
+                        "chunk's unmodified text instead so the matched A/B chunk set is "
+                        "preserved",
                         paper_id,
                         chunk.chunk_id,
+                        type(error).__name__,
                     )
                     header = ""
                 if header:

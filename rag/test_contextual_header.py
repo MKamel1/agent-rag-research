@@ -176,6 +176,37 @@ def test_response_missing_response_field_maps_to_permanent_error():
         adapter.generate(_SUMMARY, _CHUNK)
 
 
+# ---------------------------------------------------------------------------
+# RI-31: a 200 whose body won't decode as JSON at all. Used to escape generate() as a raw
+# json.JSONDecodeError/UnicodeDecodeError -- outside the TransientError/PermanentError taxonomy --
+# and abort app/reembed_experiment.py's whole re-embed run before any upsert (its per-chunk
+# handler catches only PermanentError). Classified transient for the settled RI-28/29 reason: the
+# server accepted the request (a 2xx), so an undecodable body is most plausibly corruption in
+# transit, not a property of this request. The wrong-shape line stays permanent (the missing-field
+# test above), unchanged.
+# ---------------------------------------------------------------------------
+
+
+def test_200_with_undecodable_body_maps_to_transient_error():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=b"<html>gateway garbage</html>")
+
+    adapter = ContextualHeaderGenerator(_client(handler), FakeGpuLock(), "test-model")
+    with pytest.raises(TransientError):
+        adapter.generate(_SUMMARY, _CHUNK)
+
+
+def test_undecodable_binary_body_is_also_transient():
+    # The non-UTF-8 flavor: decoding raises UnicodeDecodeError here, not JSONDecodeError. Both are
+    # ValueError subclasses and both mean "this body didn't decode".
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=b"\x81\x81\x81\x81")
+
+    adapter = ContextualHeaderGenerator(_client(handler), FakeGpuLock(), "test-model")
+    with pytest.raises(TransientError):
+        adapter.generate(_SUMMARY, _CHUNK)
+
+
 def test_empty_llm_response_raises_permanent_error():
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, json={"response": "   "})

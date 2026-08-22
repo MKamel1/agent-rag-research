@@ -19,6 +19,7 @@ import httpx
 from contracts.errors import PermanentError, TransientError
 from contracts.gpu_lock import GpuLock
 from contracts.parser import ParsedDoc
+from rag.decode_classify import decode_or_classify
 
 logger = logging.getLogger(__name__)
 
@@ -178,8 +179,12 @@ class OllamaSummarizer:
     Preconditions: `parsed.markdown` contains usable prose (non-whitespace) — a degenerate parse
     (figures-only, or an empty document) has nothing to summarize; that is a `PermanentError`
     (DATA-CONTRACTS.md §M3B), not a crash, so the caller quarantines the paper and continues.
-    Postconditions: returns a non-empty `summary_text`. `summary_id` is never invented here — the
-    caller always derives it as `f"{paper_id}:summary"` (DATA-CONTRACTS.md §IDs).
+    Postconditions: returns a non-empty `summary_text`. A 200 whose body won't decode at all is
+    classified as transient (transit corruption — retried by the caller's retry boundary, same
+    split as rag/reranker.py's RI-28); a body that decodes but has no usable `response` field
+    stays `PermanentError` — both via rag/decode_classify.py's shared helper (RI-31).
+    `summary_id` is never invented here — the caller always derives it as
+    `f"{paper_id}:summary"` (DATA-CONTRACTS.md §IDs).
     Acquires `gpu_lock.acquire("summarize")` around the inference call only (CONVENTIONS.md §6) —
     never around the precondition check, so a degenerate paper never queues behind the GPU lock.
     """
@@ -237,12 +242,11 @@ class OllamaSummarizer:
                     f"{parsed.paper_id}: generation LLM request failed: {error}"
                 ) from error
 
-            try:
-                summary_text = response.json()["response"].strip()
-            except KeyError as error:
-                raise PermanentError(
-                    f"{parsed.paper_id}: generation LLM response missing 'response' field"
-                ) from error
+            # RI-31: decode + wrong-shape classification moved into the shared
+            # rag/decode_classify.decode_or_classify -- folding the second try block (the old
+            # local KeyError -> PermanentError line) away, so both generation endpoints draw
+            # their decode/shape lines from one place instead of a per-method copy.
+            summary_text = decode_or_classify(response, f"{parsed.paper_id}: generation LLM")
 
         if not summary_text:
             raise PermanentError(
@@ -285,12 +289,10 @@ class OllamaSummarizer:
                     f"extract_affiliations: generation LLM request failed: {error}"
                 ) from error
 
-            try:
-                raw_response = response.json()["response"].strip()
-            except KeyError as error:
-                raise PermanentError(
-                    "extract_affiliations: generation LLM response missing 'response' field"
-                ) from error
+            # Same shared decode-or-classify seam as summarize() above (RI-31); the later
+            # json.loads below is a different concern -- parsing the MODEL'S answer text as JSON,
+            # not decoding the transport body -- so it keeps its own PermanentError mapping.
+            raw_response = decode_or_classify(response, "extract_affiliations: generation LLM")
 
         try:
             parsed = json.loads(_sanitize_json_escapes(raw_response))
