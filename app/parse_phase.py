@@ -15,6 +15,7 @@ measured +63% throughput fix this enables (`.phase0-data/pass1-gpu-underutilizat
 """
 
 import argparse
+import hashlib
 import logging
 
 from app.assembly import build_ingestion_orchestrator, harvest_refs
@@ -26,19 +27,37 @@ logger = logging.getLogger(__name__)
 
 
 def _shard(refs: list[PaperRef], shard_index: int, shard_count: int) -> list[PaperRef]:
-    """Round-robin (stride) slice, not a contiguous chunk: `refs[shard_index::shard_count]`.
+    """Identity-stable partition (RI-22): keep the refs whose paper_id hashes into this shard.
 
-    Round-robin spreads papers of every page-count across every shard, so N workers finish at
-    roughly the same time even though arXiv ids aren't sorted by page count -- a contiguous split
-    (`refs[k*len//N : (k+1)*len//N]`) risks one shard drawing a run of unusually long papers and
-    straggling. Every worker calls `harvest_refs` itself and gets the identical ordered list (same
-    query, same DB state at harvest time), then takes its own disjoint slice of it -- deterministic
-    and requires no cross-process coordination. Disjoint-and-complete (union of all N shards ==
-    `refs`, pairwise intersections empty) is what makes N workers writing to the same `papers.db`
-    safe by construction: each `paper_id` is touched by exactly one shard (see
-    `rag/ingest_state_sqlite.py`'s module docstring, "Cross-PROCESS safety").
+    Shard membership must be a function of the paper_id alone -- NOT of list position. Each of the
+    N workers re-harvests independently (`_run_parse_phase` -> `harvest_refs`) against one shared
+    corpus, and a query-driven harvest paginates arXiv for many minutes at the shipped
+    `corpus_cap`; under `freshest_first`, one submission appearing between worker W0's page-k
+    fetch and worker W1's page-k fetch inserts at rank 0 and shifts every later position by one.
+    The previous stride slice (`refs[shard_index::shard_count]`) turned that shift into
+    cross-worker double-assignment -- concurrent dual-writer access to `ingest_state`
+    (`rag/ingest_state_sqlite.py`'s module docstring, "Cross-PROCESS safety") plus up to ~2x the
+    GPU work. Hashing the paper_id makes every worker's slices agree paper-by-paper even when
+    their lists differ: safety comes from identity-stable partitioning and no longer depends on
+    the two harvests agreeing.
+
+    Disjoint-and-complete still holds by construction (each id hashes to exactly one shard;
+    pinned by `app/test_parse_phase.py::test_shard_is_disjoint_and_complete`), so each paper_id
+    is still touched by exactly one worker. What is given up is the stride slice's exact
+    round-robin balance: hash partitioning balances only approximately -- sha256 spreads ids
+    roughly uniformly, so shard sizes stay close without depending on input order (17 ids over
+    4 shards measured 2/5/4/6).
+
+    The hash must be stable ACROSS PROCESSES, which rules out Python's builtin `hash()`: it is
+    randomised per process via PYTHONHASHSEED, so two workers would silently disagree on shard
+    assignment -- exactly the cross-process case this partition exists for. hashlib.sha256 is
+    deterministic across processes and runs.
     """
-    return refs[shard_index::shard_count]
+    def _in_this_shard(ref: PaperRef) -> bool:
+        digest = int(hashlib.sha256(ref.paper_id.encode("utf-8")).hexdigest(), 16)
+        return digest % shard_count == shard_index
+
+    return [ref for ref in refs if _in_this_shard(ref)]
 
 
 def _run_parse_phase(cfg: Config, *, shard_index: int = 0, shard_count: int = 1) -> None:
