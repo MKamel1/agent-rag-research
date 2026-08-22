@@ -8,7 +8,7 @@ Status: **OPEN** (not started) · **IN PROGRESS** (branch/PR exists) · **BLOCKE
 
 ---
 
-## Code-grounded review programme (RI-19+, 2026-08-22) — IN PROGRESS
+## Code-grounded review programme (RI-19+, 2026-08-22) — COMPLETE
 
 A second review campaign, run after the first was found to have anchored on documentation rather
 than source. The rule this time: a finding whose evidence is a docstring, comment, or `.md` file is
