@@ -154,6 +154,12 @@ VENDOR_RULES: tuple[VendorRule, ...] = (
     # entries above -- constructs a real httpx.Client to hand to OllamaSummarizer for the
     # author-org-tagging validation experiment, names no vendor itself, only httpx as the shared
     # HTTP client.
+    #
+    # app/test_assembly.py (RI-23): its _PdfDownloadParser tests build the same
+    # httpx.MockTransport/Client fixtures over "%PDF-fake" bodies as app/test_prefetch_pdfs.py
+    # above -- this repo's established zero-network adapter-test idiom. The file gained them in
+    # RI-18 without the matching entry being added in the same PR, and the enforcement gate went
+    # red on lines no check had ever complained about when they landed.
     VendorRule(
         "httpx",
         re.compile(r"httpx", re.I),
@@ -168,6 +174,7 @@ VENDOR_RULES: tuple[VendorRule, ...] = (
             "rag/reranker.py",
             "rag/test_reranker.py",
             "app/test_prefetch_pdfs.py",
+            "app/test_assembly.py",
             "rag/contextual_header.py",
             "rag/test_contextual_header.py",
             "app/reembed_experiment.py",

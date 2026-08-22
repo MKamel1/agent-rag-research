@@ -79,6 +79,18 @@ def test_check_a_passes_clean_file():
     assert check_a([f]) == []
 
 
+def test_check_a_allows_test_assemblys_httpx_mock_fixtures():
+    # RI-23: app/test_assembly.py's _PdfDownloadParser tests build the same
+    # httpx.MockTransport/Client fixtures as the adapter test files already exempted in the httpx
+    # rule -- this repo's established zero-network idiom. The file gained them (RI-18) without the
+    # matching allowed_paths entry, so the gate went red on correct code. Checked against the real
+    # file's whole content, but only the *httpx* violations are asserted away: the file's prose
+    # also names Qdrant/MinerU/Ollama in comments, which a diff never added and check (a)'s
+    # diff-scoped rule therefore never flags.
+    f = DiffFile.from_whole_file("app/test_assembly.py", REPO_ROOT)
+    assert [v for v in check_a([f]) if "httpx" in v.message] == []
+
+
 # --- (b) contract shadowing --------------------------------------------------------------------
 
 
