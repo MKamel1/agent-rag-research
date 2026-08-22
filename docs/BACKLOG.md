@@ -22,8 +22,8 @@ Tickets are grouped into workstreams by file ownership so concurrent work cannot
 |---|---|---|---|---|
 | RI-1 | `DocumentStore` connection is single-thread-bound | A | **DONE** -- `b9be4c3` | `check_same_thread=False`, no lock -- `threadsafety==3` and the threaded consumer performs no writes, both verified. |
 | RI-5 | `SqliteIngestState` requires a migration it does not perform | A | **DONE** -- `4695cd5` | Mirror `DocumentStore`: call `migrate()` in `__init__`, drop the unenforceable prose precondition. |
-| RI-2 | Dashboard auth does not fail closed on `--token ""` | B | **IN REVIEW** | Empty token matches a request sending no header at all. Refuse to start. |
-| RI-6 | Token sidecar: crash window, no pid qualification, no corrupt tolerance | B | **IN REVIEW** | `touch`/`write_text` can leave an empty token file, feeding RI-2 from a second direction. |
+| RI-2 | Dashboard auth does not fail closed on `--token ""` | B | **DONE** -- `7adcd83` | Empty token matches a request sending no header at all. Refuse to start. |
+| RI-6 | Token sidecar: crash window, no pid qualification, no corrupt tolerance | B | **DONE** -- `103edc5`, `8855db6` | `touch`/`write_text` can leave an empty token file, feeding RI-2 from a second direction. |
 | RI-3 | Chunk payload has two definitions that have already drifted | C | **DONE** -- `112f6bb` | `rechunk`'s copy omits `author_orgs` -- a rechunked paper silently loses affiliation facets. |
 | RI-4 | Resume path assumes the `papers` row exists | C | **DONE** -- `e5899f6` | Ships standalone, deliberately not folded into D-9: D-9's net is for *unknown* exceptions. |
 | RI-8 | Downloader scan counts another corpus's downloader | D | **DONE** -- `5b3f968` | Qualify by `/proc/<pid>/cwd`; the config/db-path alternative is not observable at scan time. |
