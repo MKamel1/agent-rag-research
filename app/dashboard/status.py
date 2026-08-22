@@ -419,18 +419,30 @@ _DOWNLOAD_STALL_RE = re.compile(
 )
 
 
-def read_downloads(data_dir: str | Path, prefetch_target: int | None) -> dict:
+def read_downloads(
+    data_dir: str | Path, prefetch_target: int | None,
+    run_cwd: str | Path | None = None,
+) -> dict:
     """Staged-PDF count paired with `prefetch_target` -- `Config.prefetch_target` (30,000), what
     `app.prefetch_pdfs` actually aims at, NOT the run's processing target (a different, usually
     much smaller, number `server._status_dict` used to pass here by mistake).
 
-    `stalled`/`new_last_pass` come from the same `<data_dir>/prefetch.log` tail
-    `read_downloader` already reads (`_DOWNLOAD_PACE_RE`): whichever of `_DOWNLOAD_STALL_RE` /
-    `_DOWNLOAD_PACE_RE`'s last match sits LATER in the tail wins, so a stall line followed by a
-    fresher pace line correctly clears `stalled`. Missing/unreadable log or no match ⇒
-    `stalled: False`, `new_last_pass: None` -- never a fabricated `0`."""
+    `stalled`/`new_last_pass` come from the `<run_cwd>/prefetch.log` tail `read_downloader`
+    already reads (`_DOWNLOAD_PACE_RE`) -- RI-30: an edited run's downloader writes that log in
+    its override scratch dir (`run_manifest.json`'s `run_cwd`, OG-43), so defaulting to the data
+    dir here tailed the last UNEDITED run's stale log: a lingering stall line held the
+    "Harvest exhausted" banner up while nothing was wrong, or hid a live one -- while this same
+    response's `read_downloader` fields described the correct file, two fields on one downloader
+    disagreeing. Whichever of `_DOWNLOAD_STALL_RE` / `_DOWNLOAD_PACE_RE`'s last match sits LATER
+    in the tail wins, so a stall line followed by a fresher pace line correctly clears
+    `stalled`. Missing/unreadable log or no match ⇒ `stalled: False`, `new_last_pass: None` --
+    never a fabricated `0`. The staged/sidecar counts stay rooted at `data_dir`: the override
+    config's path fields resolve absolute against the real data dir (`_resolve_override_config`),
+    so `pdf_cache` is where the cache actually lives even for an edited run."""
     cache_dir = Path(data_dir) / "pdf_cache"
-    stalled, new_last_pass = _tail_download_stall(Path(data_dir) / _PREFETCH_LOG_NAME)
+    stalled, new_last_pass = _tail_download_stall(
+        Path(run_cwd if run_cwd is not None else data_dir) / _PREFETCH_LOG_NAME
+    )
     if not cache_dir.is_dir():
         return {
             "staged_pdfs": None, "sidecars": None, "prefetch_target": prefetch_target,

@@ -616,6 +616,43 @@ def test_read_downloads_absent_log_is_not_a_stall_and_not_a_zero(tmp_path):
     assert out["new_last_pass"] is None      # absent != zero
 
 
+def test_read_downloads_stale_data_dir_stall_yields_to_a_fresher_run_cwd_pace_line(tmp_path):
+    """RI-30: since OG-43 any tag-pool edit sends later runs to a `.run_overrides/<run_id>`
+    scratch dir, where the downloader's `prefetch.log` actually lands -- the data dir's own log
+    is whatever the last UNEDITED run left behind. The verdict must come from the file the live
+    downloader writes (the same one `read_downloader`'s pace line already reads): a stale stall
+    at the data dir must not hold the banner open while the live log shows fresh progress."""
+    (tmp_path / "pdf_cache").mkdir()
+    (tmp_path / "prefetch.log").write_text(
+        "prefetch_pdfs: prefetch stalled: 11556/30000 cached, only 6 new available\n"
+    )
+    run_cwd = tmp_path / ".run_overrides" / "run-2"
+    run_cwd.mkdir(parents=True)
+    (run_cwd / "prefetch.log").write_text("prefetch_pdfs: downloaded 40 / target 30000\n")
+
+    out = status_mod.read_downloads(tmp_path, 30000, run_cwd=run_cwd)
+
+    assert out["stalled"] is False
+    assert out["new_last_pass"] is None
+
+
+def test_read_downloads_reports_a_live_run_cwd_stall_the_data_dir_never_saw(tmp_path):
+    """The other half of RI-30: a real current stall is invisible while only the data dir is
+    consulted -- an edited run's log lives in its override dir, so a data-dir-only read reports
+    no stall even as the downloader sits stuck."""
+    (tmp_path / "pdf_cache").mkdir()
+    run_cwd = tmp_path / ".run_overrides" / "run-3"
+    run_cwd.mkdir(parents=True)
+    (run_cwd / "prefetch.log").write_text(
+        "prefetch_pdfs: prefetch stalled: 11556/30000 cached, only 6 new available\n"
+    )
+
+    out = status_mod.read_downloads(tmp_path, 30000, run_cwd=run_cwd)
+
+    assert out["stalled"] is True
+    assert out["new_last_pass"] == 6
+
+
 # --- read_consistency -------------------------------------------------------------------------
 
 

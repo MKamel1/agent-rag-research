@@ -238,6 +238,53 @@ def test_verify_catches_a_wrong_prefetch_target(tmp_path):
     assert any(x.field == "downloads.prefetch_target" and x.ground_truth == 12345 for x in d)
 
 
+def test_verify_downloads_tails_the_manifests_run_cwd_log_not_a_stale_data_dir_one(tmp_path):
+    """RI-30: an edited run's `prefetch.log` lives under its manifest `run_cwd`; the data dir
+    keeps whatever the last unedited run left. Ground truth must read the SAME file the
+    dashboard does -- trusting the stale data-dir log here would flag a correct dashboard as
+    discrepant on exactly the runs where the two logs differ."""
+    run_cwd = tmp_path / ".run_overrides" / "run-1"
+    run_cwd.mkdir(parents=True)
+    (run_cwd / "prefetch.log").write_text(
+        "prefetch_pdfs: downloaded 40 / target 30000\n"
+    )
+    (tmp_path / "prefetch.log").write_text(
+        "prefetch_pdfs: prefetch stalled: 10/100 cached, only 3 new available\n"
+    )
+    (tmp_path / "run_manifest.json").write_text(
+        json.dumps({"run_id": "run-1", "pid": 12345, "run_cwd": str(run_cwd)})
+    )
+    status = {"downloads": {"stalled": False, "new_last_pass": None}}
+    assert verify_numbers.verify(tmp_path, status) == []
+
+
+def test_verify_downloads_flags_a_stall_verdict_read_from_the_wrong_log(tmp_path):
+    """The negative direction still catches: the dashboard says not stalled, but the run's OWN
+    (override-dir) log ends in a stall -- a data-dir-only read would see no log at all and let
+    this pass."""
+    run_cwd = tmp_path / ".run_overrides" / "run-2"
+    run_cwd.mkdir(parents=True)
+    (run_cwd / "prefetch.log").write_text(
+        "prefetch_pdfs: prefetch stalled: 10/100 cached, only 3 new available\n"
+    )
+    (tmp_path / "run_manifest.json").write_text(
+        json.dumps({"run_id": "run-2", "pid": 12345, "run_cwd": str(run_cwd)})
+    )
+    status = {"downloads": {"stalled": False, "new_last_pass": None}}
+    d = verify_numbers.verify(tmp_path, status)
+    assert any(x.field == "downloads.stalled" and x.ground_truth is True for x in d)
+
+
+def test_verify_downloads_without_a_manifest_falls_back_to_the_data_dir_log(tmp_path):
+    """No `run_manifest.json` on disk (or none naming a run_cwd): the data dir's own log stays
+    the ground truth, unchanged pre-RI-30 behavior."""
+    (tmp_path / "prefetch.log").write_text(
+        "prefetch_pdfs: prefetch stalled: 10/100 cached, only 3 new available\n"
+    )
+    status = {"downloads": {"stalled": True, "new_last_pass": 3}}
+    assert verify_numbers.verify(tmp_path, status) == []
+
+
 # --- tags (tag_pool.json) -------------------------------------------------------------------------
 
 
