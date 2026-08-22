@@ -8,6 +8,19 @@ Usage (as run from `.github/workflows/ci.yml`):
 
     python -m ci.run_enforcement
 
+Local pre-push equivalent (RI-23):
+
+    python -m ci.run_enforcement --local [<base-ref>]     # default base: origin/main
+
+runs the identical composition against the merge-base of `<base-ref>` and HEAD and prints the same
+violations CI would, so a branch can be asked "would enforcement pass?" before pushing -- the gap
+that let the gate reach `main` red (`pytest ci/checks/` executes the checks' own self-tests, not
+the checks against a diff). Check (e) needs a pull request's live labels and does not run locally;
+`--local` prints that explicitly instead of implying parity. There is deliberately no whole-tree
+mode: checks (a)/(d)/(g)/(h) are defined on a diff's added lines (each check's module docstring),
+so scanning every file as newly added would re-flag years of legitimate pre-existing prose no diff
+ever added.
+
 Reads `GITHUB_EVENT_NAME` and `GITHUB_EVENT_PATH` from the environment (both set by every GitHub
 Actions job) to compute the changed-file list and, for `pull_request` events, the PR's labels.
 
@@ -55,6 +68,7 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 import sys
 import urllib.request
 from pathlib import Path
@@ -72,7 +86,12 @@ from ci.checks import (
     discover_contract_names,
     read_codeowners_paths,
 )
-from ci.checks.changed_files import compute_diff_base, list_changed_paths, list_deleted_paths
+from ci.checks.changed_files import (
+    compute_diff_base,
+    list_changed_paths,
+    list_deleted_paths,
+    merge_base,
+)
 from ci.checks.diff import build_diff_files
 from ci.checks.model import Violation
 
@@ -94,27 +113,49 @@ def _is_scannable(path: str) -> bool:
     return path.endswith(".py") and not path.startswith(_EXCLUDED_PREFIXES)
 
 
+def _checks_over_diff(diff_base: str, repo_root: Path) -> tuple[list[Violation], list[str], int]:
+    """The composition both entrypoints share: resolve the diff's files and run checks (a)-(d),
+    (f)-(h), plus the repo-wide testpaths check, over them. Returns the violations, the changed
+    paths (check (e)'s input, which stays with each caller -- its inputs are event-specific), and
+    how many files were scanned.
+    """
+    deleted = list_deleted_paths(diff_base, repo_root)
+    changed = list_changed_paths(diff_base, repo_root)
+    scannable = [p for p in changed if _is_scannable(p)]
+    files = build_diff_files(scannable, repo_root, diff_base)
+
+    violations: list[Violation] = []
+    violations += check_a(files)
+    violations += check_b(files, contract_names=discover_contract_names(repo_root / "contracts"))
+    violations += check_c(files)
+    violations += check_d(files)
+    violations += check_f(files)
+    violations += check_g(files, repo_root, deleted_paths=deleted)
+    violations += check_h(files)
+    # Repo-wide, not diff-scoped -- the one exception; see check_testpaths' docstring for why,
+    # and run_enforcement's module docstring above.
+    violations += check_testpaths(repo_root)
+    return violations, changed, len(files)
+
+
+def _report(violations: list[Violation], scanned: int, total_changed: int) -> int:
+    print(f"scanned {scanned} changed file(s) (of {total_changed} total changed)")
+    if not violations:
+        print("enforcement: PASS -- no violations in checks (a)-(d), (f)-(h), testpaths")
+        return 0
+
+    print(f"enforcement: FAIL -- {len(violations)} violation(s):")
+    for v in violations:
+        print(f"  {v}")
+    return 1
+
+
 def main() -> int:
     event_name = os.environ["GITHUB_EVENT_NAME"]
     event = _load_event()
 
     diff_base = compute_diff_base(event_name, event, REPO_ROOT)
-    changed = list_changed_paths(diff_base, REPO_ROOT)
-    deleted = list_deleted_paths(diff_base, REPO_ROOT)
-    scannable = [p for p in changed if _is_scannable(p)]
-    files = build_diff_files(scannable, REPO_ROOT, diff_base)
-
-    violations: list[Violation] = []
-    violations += check_a(files)
-    violations += check_b(files, contract_names=discover_contract_names(REPO_ROOT / "contracts"))
-    violations += check_c(files)
-    violations += check_d(files)
-    violations += check_f(files)
-    violations += check_g(files, REPO_ROOT, deleted_paths=deleted)
-    violations += check_h(files)
-    # Repo-wide, not diff-scoped -- the one exception; see check_testpaths' docstring for why,
-    # and run_enforcement's module docstring above.
-    violations += check_testpaths(REPO_ROOT)
+    violations, changed, scanned = _checks_over_diff(diff_base, REPO_ROOT)
 
     if event_name == "pull_request":
         labels = _pr_labels(event)
@@ -124,15 +165,36 @@ def main() -> int:
     else:
         print(f"check (e): skipped -- {event_name!r} event has no PR label context to check")
 
-    print(f"scanned {len(files)} changed file(s) (of {len(changed)} total changed)")
-    if not violations:
-        print("enforcement: PASS -- no violations in checks (a)-(d), (f)-(h), testpaths")
-        return 0
+    return _report(violations, scanned, len(changed))
 
-    print(f"enforcement: FAIL -- {len(violations)} violation(s):")
-    for v in violations:
-        print(f"  {v}")
-    return 1
+
+LOCAL_DEFAULT_BASE = "origin/main"
+
+
+def main_local(argv: list[str] | None = None, repo_root: Path = REPO_ROOT) -> int:
+    """`--local`'s entrypoint (RI-23): run exactly what CI's enforcement job runs, over this
+    branch's diff against a base ref, so a developer can ask "would enforcement pass?" before
+    pushing instead of after merging red. Check (e) needs the pull request's live labels and is
+    reported as not-run rather than silently dropped.
+    """
+    base_ref = argv[0] if argv else LOCAL_DEFAULT_BASE
+    try:
+        diff_base = merge_base(repo_root, base_ref, "HEAD")
+    except subprocess.CalledProcessError:
+        fetched_name = base_ref.removeprefix("origin/")
+        print(
+            f"cannot resolve merge-base({base_ref!r}, HEAD) in this clone -- fetch it first "
+            f"(git fetch origin {fetched_name}) or pass an explicit ref/SHA"
+        )
+        return 2
+
+    print(f"local enforcement: HEAD vs merge-base({base_ref!r}, HEAD) = {diff_base[:12]}")
+    violations, changed, scanned = _checks_over_diff(diff_base, repo_root)
+    print(
+        "check (e): not run locally -- it needs the pull request's live labels; "
+        "CI runs it on pull_request events"
+    )
+    return _report(violations, scanned, len(changed))
 
 
 def _pr_labels(event: dict) -> list[str]:
@@ -188,4 +250,6 @@ def _load_event() -> dict:
 
 
 if __name__ == "__main__":
+    if sys.argv[1:2] == ["--local"]:
+        sys.exit(main_local(sys.argv[2:]))
     sys.exit(main())

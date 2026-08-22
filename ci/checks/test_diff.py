@@ -18,7 +18,7 @@ from pathlib import Path
 
 from ci.checks.changed_files import ZERO_SHA, compute_diff_base
 from ci.checks.diff import build_diff_files
-from ci.run_enforcement import _is_scannable
+from ci.run_enforcement import _is_scannable, main_local
 
 
 def _git(repo: Path, *args: str) -> subprocess.CompletedProcess[str]:
@@ -198,3 +198,74 @@ def test_is_scannable_rejects_negative_examples_fixtures():
 
 def test_is_scannable_rejects_proof_socket_block_files():
     assert _is_scannable("ci/proof_socket_block/test_real_network_blocked.py") is False
+
+
+# --- ci.run_enforcement.main_local (RI-23) ------------------------------------------------------
+#
+# The dev-machine entrypoint composes the same seams this file already covers (diff base → changed
+# paths → DiffFiles → checks), so it belongs here with the throwaway-git-repo helpers above. These
+# tests run the *real* checks against a scratch repo's real diff -- only check_testpaths is
+# stubbed, since its subject (pyproject.toml's testpaths vs the whole tree) has no counterpart in
+# a bare fixture repo.
+
+
+def _pipeline_module(repo: Path, text: str = "x = 1\n") -> None:
+    """A module under check scope, plus the sibling test file check (g) requires to let it be."""
+    (repo / "rag").mkdir(exist_ok=True)
+    (repo / "rag" / "retriever.py").write_text(text)
+    (repo / "rag" / "test_retriever.py").write_text("")
+
+
+def test_main_local_flags_a_real_violation_on_the_branch_diff(tmp_path, monkeypatch, capsys):
+    repo = _init_repo(tmp_path)
+    _pipeline_module(repo)
+    main_sha = _commit(repo, "base")
+    # Simulate the remote-tracking ref a developer's clone has after `git fetch origin` --
+    # `main_local`'s default base, no actual remote needed (same trick as the
+    # compute_diff_base fallback tests above).
+    _git(repo, "update-ref", "refs/remotes/origin/main", main_sha)
+
+    _git(repo, "checkout", "-q", "-b", "feature")
+    _pipeline_module(repo, "import os\nvalue = os.environ['X']\n")
+    _commit(repo, "leak an env read")
+
+    monkeypatch.setattr("ci.run_enforcement.check_testpaths", lambda repo_root: [])
+
+    exit_code = main_local(repo_root=repo)
+
+    out = capsys.readouterr().out
+    assert exit_code == 1
+    assert "[d]" in out  # the env read is flagged by the real check (d), not a stub
+    assert "check (e): not run locally" in out  # honest about what a dev machine cannot check
+
+
+def test_main_local_passes_a_clean_branch_diff(tmp_path, monkeypatch, capsys):
+    repo = _init_repo(tmp_path)
+    _pipeline_module(repo)
+    main_sha = _commit(repo, "base")
+    _git(repo, "update-ref", "refs/remotes/origin/main", main_sha)
+
+    _git(repo, "checkout", "-q", "-b", "feature")
+    _pipeline_module(repo, "y = 2\n")
+    _commit(repo, "clean change")
+
+    monkeypatch.setattr("ci.run_enforcement.check_testpaths", lambda repo_root: [])
+
+    assert main_local(repo_root=repo) == 0
+    assert "enforcement: PASS" in capsys.readouterr().out
+
+
+def test_main_local_names_the_unresolvable_base_ref_and_exits_nonzero_without_a_traceback(
+    tmp_path, capsys
+):
+    # A fresh/local clone may simply not have fetched origin/main yet; that must come back as a
+    # readable message naming the ref, not a git CalledProcessError traceback.
+    repo = _init_repo(tmp_path)
+    _pipeline_module(repo)
+    _commit(repo, "base")
+
+    exit_code = main_local(["no-such-ref"], repo_root=repo)
+
+    out = capsys.readouterr().out
+    assert exit_code == 2
+    assert "no-such-ref" in out

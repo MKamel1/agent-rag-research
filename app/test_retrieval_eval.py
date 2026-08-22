@@ -821,7 +821,7 @@ def test_build_report_stamps_the_sparse_mode_and_weight_into_scoring_rule():
 # the SAME run()/build_report() functions RI-M7 also reuses handle all three modes end to end.
 
 
-class _FixedVectorEmbedder:
+class FakeFixedVectorEmbedder:
     """Returns one caller-supplied vector for every query, ignoring the actual text -- places the
     query at an exact, known point relative to the two candidate vectors below, rather than
     depending on FakeEmbedder's hash-derived (uncontrollable) similarity."""
@@ -833,7 +833,7 @@ class _FixedVectorEmbedder:
         return [self._vector for _ in texts]
 
 
-class _IdentityReranker:
+class FakeIdentityReranker:
     """A no-op Reranker double. `rag.fakes.FakeReranker` deliberately REVERSES order (M7's own
     anti-cheat measure) -- exactly what would obscure which arm actually won here."""
 
@@ -921,8 +921,8 @@ def _run_ablation(mode: str) -> dict:
         store, docstore, paper_id="SPARSE", vector=[0.0, 1.0], text=_QUERY_TEXT,
     )
     retriever = Retriever(
-        embedder=_FixedVectorEmbedder(_QUERY_VEC), vector_store=store,
-        document_store=docstore, reranker=_IdentityReranker(),
+        embedder=FakeFixedVectorEmbedder(_QUERY_VEC), vector_store=store,
+        document_store=docstore, reranker=FakeIdentityReranker(),
     )
     question = Question("Q1", _QUERY_TEXT, "Result-Comprehension", frozenset({"DENSE"}), None)
     results = run([question], retriever, k=10)

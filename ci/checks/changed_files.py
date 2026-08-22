@@ -26,7 +26,7 @@ def compute_diff_base(event_name: str, event: dict, repo_root: Path) -> str:
     if event_name == "pull_request":
         base_sha = event["pull_request"]["base"]["sha"]
         head_sha = event["pull_request"]["head"]["sha"]
-        return _merge_base(repo_root, base_sha, head_sha)
+        return merge_base(repo_root, base_sha, head_sha)
     if event_name == "push":
         before = event.get("before", "")
         # A force-push (routine here -- GIT-WORKFLOW.md mandates `gh pr merge --rebase`, and
@@ -38,7 +38,7 @@ def compute_diff_base(event_name: str, event: dict, repo_root: Path) -> str:
         if before and before != ZERO_SHA and _rev_exists(repo_root, before):
             return before
         default_branch = event.get("repository", {}).get("default_branch", "main")
-        return _merge_base(repo_root, f"origin/{default_branch}", "HEAD")
+        return merge_base(repo_root, f"origin/{default_branch}", "HEAD")
     raise ValueError(f"compute_diff_base: unsupported event_name {event_name!r}")
 
 
@@ -56,7 +56,12 @@ def _rev_exists(repo_root: Path, rev: str) -> bool:
     return result.returncode == 0
 
 
-def _merge_base(repo_root: Path, ref_a: str, ref_b: str) -> str:
+def merge_base(repo_root: Path, ref_a: str, ref_b: str) -> str:
+    """The commit where `ref_a` and `ref_b` last diverged -- the diff base for any "what changed
+    between these two points" question (`compute_diff_base` for CI events;
+    `ci.run_enforcement.main_local`'s `--local` mode for a developer's branch-vs-base diff).
+    Raises `subprocess.CalledProcessError` when either ref doesn't resolve in this clone.
+    """
     result = subprocess.run(
         ["git", "merge-base", ref_a, ref_b],
         cwd=repo_root,

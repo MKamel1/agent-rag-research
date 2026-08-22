@@ -35,8 +35,16 @@ _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 async def _run(query: str, k: int) -> None:
+    # No explicit `env`: the SDK then spawns the child with its get_default_environment()
+    # (PATH/HOME/SHELL/TERM/USER/LOGNAME on POSIX -- verified in mcp/client/stdio's
+    # stdio_client). That is sufficient here because the child reads no configuration from the
+    # process environment (CONVENTIONS.md §3; config.yaml is resolved from `cwd` below, and
+    # RAG_CONFIG intentionally does NOT propagate -- this script's documented contract is to
+    # spawn against THIS repo root's config.yaml). The previous explicit pass-through of a copy
+    # of the parent environment handed all of it to the child by hand, which check (d) rightly
+    # flags as pipeline code plumbing env outside Config (RI-23).
     params = StdioServerParameters(
-        command=sys.executable, args=["-m", "app.serve"], cwd=_REPO_ROOT, env=dict(os.environ),
+        command=sys.executable, args=["-m", "app.serve"], cwd=_REPO_ROOT,
     )
     async with stdio_client(params) as (read, write):
         async with ClientSession(read, write) as session:
