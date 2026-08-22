@@ -138,6 +138,34 @@ That surfaced `Rate limit exceeded: free-models-per-day-stealth`, `X-RateLimit-R
 1000/day — exhausted by ~600 tool calls across parallel max-effort agents. It looked identical to
 "the model gave up mid-task," which sent the first diagnosis in the wrong direction.
 
+### 3.3b A hang at startup leaves no trace at all — distinguish it from working quietly
+
+**Cost: ~35 minutes across two agents before it was spotted.**
+
+Three failure modes look similar from outside and are not:
+
+| symptom | cause | signature |
+|---|---|---|
+| result `exit 0`, `tools: []`, empty output | provider quota refusal | 429 in a raw `opencode run` |
+| commits partially done, work uncommitted | ran out of budget mid-task | session exists, tokens climbing |
+| **nothing at all** | **hung before reaching the model** | **NO session row, no stderr, no log line** |
+
+The third has no trace in the wrapper's output, so waiting looks identical to progress. Diagnose by
+querying the session store directly:
+
+```sql
+SELECT COUNT(*) FROM session WHERE directory LIKE '%<worktree>%';
+```
+
+Zero rows plus a live process for many minutes means hung, not busy. Confirm the provider is fine
+with an independent one-line `opencode run` before blaming it.
+
+Observed cause candidate: the remote MCP servers in `opencode.json` blocking on connect. `--pure`
+runs without external plugins and is worth trying when a dispatch hangs at startup.
+
+**This is the argument for the watch page.** Without a live view into the session store, the only
+signal is a 50-minute timeout.
+
 ### 3.4 Free-tier limits are per ACCOUNT, not per key
 
 A new API key on the same account inherits the same exhausted bucket — the 429 body names the
