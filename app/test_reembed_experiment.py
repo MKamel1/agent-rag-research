@@ -24,7 +24,7 @@ from app.reembed_experiment import (
 )
 from contracts.chunker import Chunk
 from contracts.document_store import PaperRecord
-from contracts.errors import PermanentError
+from contracts.errors import PermanentError, TransientError
 from contracts.harvester import PaperRef
 from contracts.parser import ParsedDoc
 from contracts.provenance import Anchor
@@ -104,14 +104,22 @@ class _FakeHeaderGenerator:
     embed-text's prefix without depending on any real generation-LLM response shape.
     """
 
-    def __init__(self, *, fail_for: set[str] | None = None):
+    def __init__(
+        self,
+        *,
+        fail_for: set[str] | None = None,
+        transient_fail_for: set[str] | None = None,
+    ):
         self.calls: list[tuple[str, str]] = []
         self._fail_for = fail_for or set()
+        self._transient_fail_for = transient_fail_for or set()
 
     def generate(self, summary_text: str, chunk_text: str) -> str:
         self.calls.append((summary_text, chunk_text))
         if chunk_text in self._fail_for:
             raise PermanentError(f"synthetic failure for: {chunk_text!r}")
+        if chunk_text in self._transient_fail_for:
+            raise TransientError(f"synthetic transient for: {chunk_text!r}")
         return f"HEADER({chunk_text[:12]})"
 
 
@@ -236,6 +244,41 @@ def test_a_chunk_whose_header_generation_fails_still_gets_embedded_with_its_own_
         with_headers=True,
     )
 
+    assert chunk.chunk_id not in headers
+
+
+def test_a_chunk_whose_header_generation_fails_transiently_still_gets_embedded_with_its_own_text():
+    # RI-31: ContextualHeaderGenerator classifies an undecodable 200 body (and a 5xx, and a
+    # connection failure) as TransientError. This script has no retry loop by design -- the
+    # orchestrator owns retry policy for the pipeline's own summarize calls, not this spike
+    # script -- so a transient header failure degrades exactly like the PermanentError case
+    # above: the chunk is still embedded with its unmodified text (matched A/B set preserved),
+    # it just gets no header entry. Before this, a raw decode escape wasn't a TransientError at
+    # all and aborted the whole run before any upsert.
+    chunk = _make_chunk("2601.00001", 0, "A transiently failing chunk.")
+    record = PaperRecord(
+        ref=_make_ref("2601.00001"),
+        parsed=ParsedDoc(
+            paper_id="2601.00001", markdown="# T", blocks=[], figures=[], tables=[],
+            references=[], parser_id="test-parser-1.x",
+        ),
+        chunks=[chunk],
+        summary_text="A summary.",
+        summary_id="2601.00001:summary",
+    )
+    store = FakeVectorStore()
+    header_gen = _FakeHeaderGenerator(transient_fail_for={chunk.text})
+
+    headers = reembed(
+        document_store=_FakeDocumentStore({"2601.00001": record}),
+        embedder=FakeEmbedder(),
+        vector_index=store,
+        header_generator=header_gen,
+        paper_ids=["2601.00001"],
+        with_headers=True,
+    )
+
+    assert chunk.chunk_id in store._store
     assert chunk.chunk_id not in headers
 
 
