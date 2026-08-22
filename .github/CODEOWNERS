@@ -16,3 +16,8 @@
 # same sign-off as any other foundation path.
 /ci/                  @MKamel1
 /.github/             @MKamel1
+
+# pyproject.toml carries testpaths and pytest's addopts — including `--disable-socket`, which is the
+# wiring that enforces the zero-network unit-test guarantee (CONVENTIONS.md §12(i), T-F6(i)). One
+# edit there can weaken a foundation guarantee repo-wide, so it gates like the CI config next door.
+/pyproject.toml       @MKamel1
