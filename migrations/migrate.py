@@ -21,15 +21,25 @@ file (0001_init.sql's own header comment) — never an edit to an already-applie
 
 `schema_version (filename TEXT PRIMARY KEY, applied_at TEXT NOT NULL)` records exactly which
 numbered files have been applied to this database and when. `migrate()` is idempotent: it applies
-only the files not yet recorded, in filename order, recording each immediately after it succeeds.
+only the files not yet recorded, in filename order, recording each in the same transaction that
+applies it (RI-24) -- so concurrent callers of `migrate()` against one fresh database tolerate each
+other instead of colliding mid-file (see the except block in `migrate()`).
 """
 
 import sqlite3
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
 MIGRATIONS_DIR = Path(__file__).parent
+
+# RI-24: how long `migrate()` tolerates a peer connection holding the exclusive lock that the
+# journal-mode conversion below needs. Sized to match sqlite3.connect()'s own default busy
+# timeout (the wait every ordinary write on this connection already gets): the conversion itself
+# takes milliseconds once granted, so this window bounds pathological contention, not normal work.
+_WAL_CONVERSION_WINDOW_S = 5.0
+_WAL_RETRY_INTERVAL_S = 0.01
 
 _SCHEMA_VERSION_DDL = """
 CREATE TABLE IF NOT EXISTS schema_version (
@@ -99,8 +109,15 @@ def _adopt(conn: sqlite3.Connection) -> None:
 def migrate(db_path: str) -> None:
     """Bring the SQLite database at `db_path` up to date with every numbered schema file in this
     directory, creating the file if needed. Idempotent (T-DOC81): applies only the files not yet
-    recorded in `schema_version`, in filename order, recording each immediately after it succeeds.
-    Calling this twice in a row is a no-op the second time.
+    recorded in `schema_version`, in filename order, recording each in the same transaction that
+    applies it. Calling this twice in a row is a no-op the second time.
+
+    Concurrent callers against the same database (RI-24: two composition roots constructing on one
+    brand-new db_path) do not collide: each file is applied-and-recorded atomically, so a loser
+    whose apply hits a peer's just-committed file re-queries `schema_version`, finds the file
+    recorded, and moves on. Any failure that leaves the file unrecorded still propagates -- see
+    the except block in the loop below for why the recorded-state check, not the error text, is
+    the discriminator.
 
     A database that predates `schema_version` but already has application tables (production, the
     day T-DOC81 landed) is adopted first — see `_adopt` — so it is classified as already having
@@ -123,7 +140,25 @@ def migrate(db_path: str) -> None:
     """
     conn = sqlite3.connect(db_path)
     try:
-        conn.execute("PRAGMA journal_mode=WAL;")
+        # RI-24: concurrent migrators against one brand-new file all try to flip it to WAL at the
+        # same instant. That conversion takes a brief EXCLUSIVE lock, and -- observed while
+        # reproducing this race (4 threads, fresh path) -- SQLite raises "database is locked"
+        # immediately rather than routing the wait through connect()'s own busy timeout like an
+        # ordinary write would. Bounded retry instead: whichever connection wins the flip settles
+        # the file into WAL for everyone, after which the pragma is a no-op read for every later
+        # caller. This is the ONE spot of the race handled by retrying rather than by the apply
+        # loop's catch-and-recheck below: nothing has been applied or recorded yet, so there is no
+        # recorded state to re-query -- the only way forward is to attempt the conversion again.
+        # The window matches sqlite3.connect()'s default busy timeout; expiry re-raises, loud.
+        wal_deadline = time.monotonic() + _WAL_CONVERSION_WINDOW_S
+        while True:
+            try:
+                conn.execute("PRAGMA journal_mode=WAL;")
+                break
+            except sqlite3.OperationalError:
+                if time.monotonic() >= wal_deadline:
+                    raise
+                time.sleep(_WAL_RETRY_INTERVAL_S)
         # T-DOC40: this connection only ever runs DDL (CREATE TABLE/ALTER TABLE), so the pragma has
         # no observable effect here -- set anyway for consistency with every other seam that opens
         # a sqlite3 connection against this schema (DocumentStore, rag/document_store.py), so no
@@ -147,15 +182,39 @@ def migrate(db_path: str) -> None:
             # than one statement (0004's two ALTERs) that fails partway through then leaves the
             # earlier statements permanently committed while the file itself is never recorded --
             # every later migrate() call dies on that already-applied prefix, forever (this is what
-            # actually happened to 0004 in production). Wrapping the script in an explicit
-            # BEGIN/COMMIT makes it one transaction: SQLite DDL is transactional, so a mid-script
-            # failure leaves the transaction open and unwound by the `finally: conn.close()` below
-            # (closing a connection with an open transaction rolls it back) -- the file ends up
-            # cleanly unapplied and unrecorded, exactly what "record after success" is supposed to
-            # mean. DO NOT remove this wrapper as redundant-looking noise.
-            conn.executescript(f"BEGIN;\n{schema_file.read_text()}\nCOMMIT;")
-            _record_applied(conn, schema_file.name)
-            conn.commit()
+            # actually happened to 0004 in production). Wrapping the script in an explicit BEGIN
+            # makes it one transaction: SQLite DDL is transactional, so a mid-script failure leaves
+            # the transaction open and unwound by the rollback below (or, before RI-24, by the
+            # `finally: conn.close()`). DO NOT remove this wrapper as redundant-looking noise.
+            #
+            # RI-24: the recording INSERT deliberately joins that same transaction (the script text
+            # carries no COMMIT of its own) -- apply and record become atomically visible together,
+            # so no other migrator can ever observe the half-state "artifacts committed but file
+            # unrecorded" that a crash between two separate commits used to leave behind.
+            try:
+                conn.executescript(f"BEGIN;\n{schema_file.read_text()}")
+                _record_applied(conn, schema_file.name)
+                conn.commit()
+            except sqlite3.OperationalError:
+                # Same race `rag/vector_index.py`'s `_ensure_collection()` handles for concurrent
+                # collection creators: every composition root migrates at construction
+                # (DocumentStore.__init__, SqliteIngestState.__init__, this module's own main), so
+                # two processes starting against the same brand-new db_path both see an empty
+                # applied set and both run this loop; the loser hits whatever the winner just
+                # committed ("table ... already exists", "duplicate column name") or the write lock
+                # itself ("database is locked"). The discriminator is the OUTCOME, not the error
+                # string: recording lives inside the failed transaction, so if a re-query now shows
+                # this file recorded, a peer's byte-for-byte identical apply of the same file
+                # committed successfully and the database is in exactly the state we were about to
+                # produce -- treat it as applied and move on. If it is still unrecorded, nothing
+                # verified happened (a genuine syntax error, a real authoring mistake like two
+                # files creating the same table, or lock contention nobody won): re-raise rather
+                # than swallow. The rollback first unwinds the failed transaction so this
+                # connection stays usable for the remaining files.
+                conn.rollback()
+                applied = {row[0] for row in conn.execute("SELECT filename FROM schema_version")}
+                if schema_file.name not in applied:
+                    raise
     finally:
         conn.close()
 
