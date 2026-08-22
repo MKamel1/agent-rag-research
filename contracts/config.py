@@ -5,8 +5,8 @@ This module defines only the `Config` *shape* (it is a dataclass/TypedDict-equiv
 DATA-CONTRACTS.md like every other type in this package, so T-F1 owns it). The *loader* —
 reading `config.yaml` from disk and constructing a `Config` from it — is T-F2's ticket, and
 lives outside `contracts/` (see `GIT-WORKFLOW.md`'s CODEOWNERS list, which names `rag/config.py`
-and `contracts/**` as two separate foundation paths). No module other than that loader may call
-`os.getenv`/read `config.yaml` directly (CONVENTIONS.md §3) — everyone else receives a
+and `contracts/**` as two separate foundation paths). No module other than that loader may read
+the process environment or `config.yaml` directly (CONVENTIONS.md §3) — everyone else receives a
 already-constructed `Config` instance.
 """
 
