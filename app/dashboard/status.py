@@ -508,6 +508,10 @@ def read_downloader(
     `controller._spawn_download` and reconciled by nobody. `tracked_pid` is `manifest_pid` only
     when it's actually confirmed live.
 
+    RI-8: the default scan is qualified by `data_dir` -- the dashboard's own -- so a second live
+    corpus's downloader is not counted as ours (see `_live_prefetch_pids`). An injected
+    `live_pids` callable replaces the scan wholesale, its qualification included.
+
     D-10 Task 3: `orphan` is `True` iff at least one live pid is neither `manifest_pid` nor a
     DESCENDANT of it (`_is_descendant_of`, walking `/proc/<pid>/stat` PPID chains). A `mode="full"`
     run's manifest pid is a `build_corpus` SUPERVISOR, not a downloader itself, but it legitimately
@@ -524,7 +528,10 @@ def read_downloader(
     downloaded, target = (
         _tail_download_pace(Path(run_cwd) / _PREFETCH_LOG_NAME) if run_cwd else (None, None)
     )
-    live = (live_pids or _live_prefetch_pids)()
+    # RI-8: the default scan is qualified by THIS dashboard's data_dir, so another corpus's
+    # live downloader is not counted as ours. An injected `live_pids` callable owns its own
+    # qualification (tests inject zero-arg fakes), hence the plain call on that branch.
+    live = live_pids() if live_pids is not None else _live_prefetch_pids(data_dir=data_dir)
     orphan = any(
         p != manifest_pid and not _is_descendant_of(p, manifest_pid) for p in live
     )
@@ -578,14 +585,48 @@ def _is_prefetch_argv(argv: list[str]) -> bool:
     return any(a == "-m" and b == _PREFETCH_MODULE for a, b in zip(argv, argv[1:]))
 
 
-def _is_live_prefetch(pid: int, proc_root: str | Path = "/proc") -> bool:
+def _process_cwd(pid: int, proc_root: str | Path = "/proc") -> str | None:
+    """`/proc/<pid>/cwd` -- the kernel-maintained symlink to the process's working directory --
+    fully resolved, or `None` if unreadable/vanished. Races and permission errors are normal
+    while scanning and must never raise into a status poll, the same rule `_read_cmdline_argv`
+    applies to cmdline. `proc_root` is a test seam (default the real `/proc`)."""
+    try:
+        return os.path.realpath(os.readlink(Path(proc_root, str(pid), "cwd")))
+    except OSError:
+        return None
+
+
+def _process_cwd_within(pid: int, data_dir: str | Path, proc_root: str | Path = "/proc") -> bool:
+    """True iff `pid`'s working directory resolves to `data_dir` itself or anywhere INSIDE it.
+    Containment, not equality, because an edited run's downloader legitimately runs with
+    cwd=`<data_dir>/.run_overrides/<run_id>`: `app.build_corpus` resolves its own data dir as
+    `Path.cwd()` (build_corpus.py:779) and the controller launches it inside that scratch dir,
+    so the spawned prefetch child inherits the scratch dir as its cwd. An unreadable cwd counts
+    as outside, not an error (`_process_cwd`). Both sides are resolved so a symlinked data_dir
+    compares against the kernel's canonical cwd target rather than failing a string comparison."""
+    cwd = _process_cwd(pid, proc_root)
+    if cwd is None:
+        return False
+    return Path(cwd).is_relative_to(Path(data_dir).resolve())
+
+
+def _is_live_prefetch(
+    pid: int, proc_root: str | Path = "/proc", data_dir: str | Path | None = None,
+) -> bool:
     """pid+argv identity check -- same pattern as `app/build_corpus.py::_is_live_prefetch`
     (mirrored, not imported, for the same reason `_PREFETCH_PID_NAME` above is): alive AND its
     argv actually names `-m app.prefetch_pdfs` (D-12: argv-aware, not a substring match) --
     guards against both a stale pid file whose PID has since been recycled onto an unrelated
-    process AND a process that merely mentions the module name somewhere in its own cmdline."""
+    process AND a process that merely mentions the module name somewhere in its own cmdline.
+
+    RI-8: with `data_dir` set, a match is further qualified by WHERE the process runs
+    (`_process_cwd_within`) -- argv alone cannot tell which corpus a matched downloader serves.
+    `None` (the default) keeps the check argv-only, for the pid behind `read_downloader`'s
+    `prefetch_alive`, which comes from `<run_cwd>/prefetch.pid` -- corpus-local by construction."""
     argv = _read_cmdline_argv(pid, proc_root)
     if argv is None or not _is_prefetch_argv(argv):
+        return False
+    if data_dir is not None and not _process_cwd_within(pid, data_dir, proc_root):
         return False
     try:
         os.kill(pid, 0)
@@ -613,8 +654,11 @@ def _self_and_ancestor_pids() -> set[int]:
     return pids
 
 
-def _live_prefetch_pids(proc_root: str | Path = "/proc") -> list[int]:
-    """Every live `app.prefetch_pdfs` PID, from the process table rather than a pid file.
+def _live_prefetch_pids(
+    proc_root: str | Path = "/proc", data_dir: str | Path | None = None,
+) -> list[int]:
+    """Every live `app.prefetch_pdfs` PID downloading for THIS dashboard's corpus, from the
+    process table rather than a pid file.
 
     `prefetch.pid` is written by BOTH `app/build_corpus.py` and `controller._spawn_download`, and
     reconciled by neither -- it was stale in every case observed on 2026-08-01. A running process
@@ -625,7 +669,20 @@ def _live_prefetch_pids(proc_root: str | Path = "/proc") -> list[int]:
     belt-and-braces guard against a future caller whose own argv happens to match. Unreadable
     `/proc` entries (races, permission errors) are normal while scanning and are silently skipped
     -- this must never raise into a status poll. `proc_root` is a test seam (default the real
-    `/proc`)."""
+    `/proc`).
+
+    RI-8: argv anchoring (D-12) fixed what a matching cmdline looks like but not WHICH corpus the
+    match downloads for -- with two data dirs live at once, each dashboard counted the other's
+    downloader, inflating `live_pids` and tripping `orphan=True` on a healthy pair of runs. So a
+    match is additionally qualified by the process's working directory against `data_dir`
+    (`_process_cwd_within`, which explains why containment rather than equality). cwd, rather
+    than "the config/db path the child loaded", because that is not observable from outside the
+    process: `load_config()` closes the file after reading it and `SqliteIngestState` opens the
+    database per-operation, so neither shows up in `/proc/<pid>/fd` at scan time -- while cwd is
+    a real symlink that stays put for the process's lifetime (a grep for `chdir` in
+    `app/prefetch_pdfs.py` finds none). `data_dir=None` skips the qualification -- the pre-RI-8
+    behaviour, kept for callers with no data dir to qualify against; the status poll passes the
+    dashboard's own."""
     excluded = _self_and_ancestor_pids()
     try:
         entries = os.listdir(proc_root)
@@ -634,7 +691,7 @@ def _live_prefetch_pids(proc_root: str | Path = "/proc") -> list[int]:
     return sorted(
         pid for entry in entries if entry.isdigit()
         for pid in (int(entry),)
-        if pid not in excluded and _is_live_prefetch(pid, proc_root)
+        if pid not in excluded and _is_live_prefetch(pid, proc_root, data_dir)
     )
 
 

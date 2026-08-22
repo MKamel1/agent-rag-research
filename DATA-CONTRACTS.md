@@ -235,7 +235,8 @@ explicitly returns "grounded passages + summaries + citations", and `PaperRecord
 required (non-nullable) field, unlike `contextual_header`, which V0 deliberately leaves `None`.
 
 ```python
-# Summarizer.summarize(doc: ParsedDoc, *, kind: Literal["paper", "book", "book_overview"] = "paper") -> str
+# Summarizer.summarize(doc: ParsedDoc, *, kind: Literal["paper", "book", "book_overview",
+#     "book_title"] = "paper") -> str
 #   Returns summary_text for the paper (or, T-DOC82, one book chapter/the book overview). summary_id
 #   is NOT returned by this call — it is always derived deterministically as f"{paper_id}:summary"
 #   (see §IDs); Summarizer never invents it.
@@ -243,11 +244,15 @@ required (non-nullable) field, unlike `contextual_header`, which V0 deliberately
 
 - **`kind` (T-DOC82):** selects which prompt is used — `"paper"` (default, byte-identical to the
   original prompt) selects the paper prompt; `"book"` selects a per-chapter prompt; `"book_overview"`
-  selects the reduce-step prompt run once over the joined chapter summaries. Unlike the paper prompt,
-  the two book prompts omit paper-shaped fields (effect size, sample size, benchmark) and explicitly
+  selects the reduce-step prompt run once over the joined chapter summaries; `"book_title"` (T-DOC85)
+  selects the title-writing prompt used when no merged heading produced a usable chapter title
+  (`ChapterSummary.title` above — the model-generated fallback). Unlike the paper prompt,
+  the three book prompts omit paper-shaped fields (effect size, sample size, benchmark) and explicitly
   instruct the model not to invent numbers — a real stored book summary had fabricated "approximately
   15%... mean squared error on benchmark datasets" that appears nowhere in the book. An unrecognized
   `kind` raises `ValueError` (`OllamaSummarizer.summarize`, `rag/summarizer.py`).
+  RI-9 reconciliation note: the signature originally listed only the first three kinds;
+  `"book_title"` shipped with T-DOC85 and is in the live Literal — doc brought up to code.
 - **Invariants:** non-empty string; the local generation LLM (Qwen tier, ADR-08; served via the stack
   chosen in ADR-09) is a **GPU-bound stage** — subject to the single-GPU lock (`GpuLock`, above; ARCHITECTURE
   "Operational invariants" §3) exactly like the Embedder and reranker. It **cannot** run concurrently with
@@ -328,14 +333,41 @@ class PaperRecord:
         # affiliation text (rag/author_org_tagger.py::extract_affiliations_rule_based). [] if none
         # extracted -- not necessarily "no affiliation," may just mean nothing candidate-shaped found.
     author_orgs: list[AuthorOrgMatch] = field(default_factory=list)   # T-ORG1: which KNOWN_ORGS
-        # matched raw_affiliations, and by which signal (match_known_orgs_with_method). DERIVED,
-        # IMPERFECT (precision 0.569 / recall 0.763 measured, T-ORG2) -- never ground-truth authorship.
+        # matched raw_affiliations, and by which signal (match_known_orgs_with_method). The
+        # email_domain/keyword methods are DERIVED, IMPERFECT heuristics -- measured precision
+        # 0.706 / recall 0.783 (combined) over 1,741 done papers against 138 enumerated
+        # Waymo-authored ids after T-ORG3's ground-truth correction, superseding the keyword-only
+        # 0.569/0.763-over-114 figure first measured at T-ORG2; "curated" (T-ORG3) is an enumerated
+        # fact, exact by construction, and not covered by those numbers -- never treat any of it as
+        # unconditional ground-truth authorship. Full rule: AuthorOrgMatch's docstring
+        # (contracts/author_orgs.py), which wins over this summary if they drift again.
     # blobs (PDF, figure PNGs, markdown) are written to the filesystem; their paths live on ref/parsed.
 
 # DocumentStore interface (all reads return the frozen types above):
 #   put(record: PaperRecord) -> None            # atomic; upsert by paper_id (idempotent)
 #   get(paper_id) -> PaperRecord | None
 #   get_blocks(paper_id) -> list[Block]
+#   scan_blocks(pattern, *, paper_id=None, curated_org=None, context=200,
+#               max_per_paper=3)
+#                 -> (rows, papers_scanned, papers_matched, truncated)
+#                                               # store-side half of McpServer.scan_corpus (§M8):
+#                                               # exhaustive regex over stored block text; each row is
+#                                               # (paper_id, title, block_id, page, section_path,
+#                                               # snippet). Exists because retrieval cannot answer an
+#                                               # enumeration question — hybrid_search returns the best
+#                                               # k passages, "which papers contain X" needs every paper
+#                                               # examined. RI-9 reconciliation note: shipped with the
+#                                               # scan_corpus tool, absent from this list until now —
+#                                               # doc brought up to code.
+#   delete(paper_id) -> list[str]              # removes the paper's rows from chunks/blocks/summaries/
+#                                               # papers in one transaction (children before the parent,
+#                                               # what PRAGMA foreign_keys=ON requires anyway) plus a
+#                                               # best-effort blob removal; unknown paper_id is a safe
+#                                               # no-op returning []. Returns the chunk_id/summary_id set
+#                                               # to pass to VectorIndex.delete (§M6) — this method only
+#                                               # ever touches SQLite (vendor isolation, CONVENTIONS §1).
+#                                               # RI-9 note: shipped with T-DOC40, referenced by the FK
+#                                               # paragraph below but missing from this list until now.
 #   get_block(block_id) -> Block                # ContractError if unknown — a dangling parent_id is a bug
 #   get_chunk(chunk_id) -> Chunk                # ContractError if unknown
 #   get_summary(summary_id) -> str              # ContractError if unknown; hides the "{paper_id}:summary"
@@ -389,10 +421,33 @@ class SearchFilters:
         # a single org name in, same semantics as an equality match against a list-valued field).
         # NOT authoritative -- see AuthorOrgMatch's docstring (contracts/author_orgs.py) for the
         # measured precision/recall this filter inherits.
+    author_org_curated_only: bool = False      # T-ORG3: when True (and only then), match against
+        # VectorPayload.curated_author_orgs instead — the enumerated tier (AuthorOrgMatch.method
+        # == "curated"), for callers that need "papers the org actually wrote", not candidates.
+    max_hits_per_paper: int | None = None      # cap passages one paper may contribute to ONE result
+        # set. None (default) = uncapped -- passage-level search is often a deep dive and capping
+        # is SUBTRACTIVE (a gold passage ranked 5th within its paper is silently gone). Set it when
+        # the question is an enumeration ("which papers used method X") where crowding-out is the
+        # failure mode instead. retrieve_papers() applies its own separate default cap and does
+        # not read this.
+    min_distinct_papers: int | None = None     # additive counterpart to max_hits_per_paper: keep the
+        # top k exactly as ranked and APPEND the best not-yet-seen passage from further papers until
+        # this many distinct papers appear -- no returned passage is ever lost, so recall cannot
+        # regress; the cost is an honest one, the result set may exceed k. Bounded by the candidate
+        # pool (it can only surface papers hybrid_search already retrieved).
+        # RI-9 reconciliation note: the last three fields shipped in contracts/vector_index.py
+        # (T-ORG3 and the 2026-08-19 diversity work) but were never added here — doc brought up to
+        # code, field by field, since all three are live, fake-and-real-adapter-implemented, and
+        # dashboard/MCP-wired.
 
 # hybrid_search(qvec: Vector, qtext: str, filters: SearchFilters | None, k: int) -> list[Hit]
 #   qvec -> dense side; qtext -> sparse/BM25 side; fused per the RRF formula below; top-k by fused score.
 # upsert(id: str, vector: Vector, payload: VectorPayload) -> None
+# delete(ids: list[str]) -> None      # removes the points for these chunk_id/summary_ids; idempotent
+#                                     # (an unknown/already-gone id is a safe no-op). The other half of
+#                                     # DocumentStore.delete()'s cross-store cleanup (§M5): its return
+#                                     # value feeds this — deleting from SQLite alone is exactly the
+#                                     # orphaned-vector class T-DOC23/T-DOC40 close.
 # rebuild() -> None    # same-model reindex only: scrolls every point back out of Qdrant itself
 #                       # (payload + vector, verbatim), drops + recreates the collection, re-upserts
 #                       # them unchanged. Does NOT re-embed and does NOT read DocumentStore — an
@@ -446,6 +501,10 @@ class VectorPayload(TypedDict):
                                 # doesn't need it for filtering); mirrors PaperRecord.author_orgs.
                                 # Absent (not []) on any point upserted before this field existed --
                                 # same legacy-key convention as doc_type below.
+    curated_author_orgs: list[str]   # T-ORG3: the subset of author_orgs whose method is "curated" --
+                                # what SearchFilters.author_org_curated_only matches against. Absent
+                                # (not []) on any point upserted before this field existed, same
+                                # legacy-key convention as author_orgs above.
 ```
 
 **Legacy points count as papers (T-DOC80).** Every point upserted before `doc_type` existed has no
@@ -685,6 +744,36 @@ class PaperSearchResponse:
     a paraphrase, CONTEXT.md tier C, with no separate field needed to say it twice)."""
     results: list[PaperSearchResult]
     coverage: Coverage
+
+@dataclass(frozen=True)
+class BlockMatch:
+    """One block whose text matched a `scan_corpus` pattern. `section_path` is what makes a match
+    adjudicable: a method named under "Related Work" is a citation, one under "Methods" is a use,
+    and retrieval cannot tell those apart. It is "" when the parser could not detect a heading —
+    an empty value means "judge from the text", never "not in a section"."""
+    paper_id: str
+    block_id: str
+    page: int
+    section_path: str
+    title: str        # the paper's title, so a caller can adjudicate without a second get_paper call
+    snippet: str      # the matched text with surrounding context, verbatim
+
+@dataclass(frozen=True)
+class ScanResponse:
+    """`scan_corpus`'s return shape. Deliberately NOT a `SearchResponse`: there is no ranking and no
+    `score`, because scanning answers a different question from searching. `semantic_search` answers
+    "what are the best k passages for this query" — a top-k sample of a ranked list. `scan_corpus`
+    answers "which documents contain this pattern" — exhaustive enumeration whose recall is 1.0 by
+    construction because every block is examined (`DocumentStore.scan_blocks`, §M5). `papers_scanned`
+    /`papers_matched` make the completeness claim checkable; `truncated` is set when
+    `max_matches_per_paper` hid further matches WITHIN a paper — the paper still appears, so a
+    truncated scan never loses a PAPER, only extra evidence within one.
+    RI-9 reconciliation note: shipped as the system's fifth MCP tool (the corpus-scan answer to
+    retrieval's enumeration blind spot) but was never added here — doc brought up to code."""
+    matches: list[BlockMatch]
+    papers_scanned: int
+    papers_matched: int
+    truncated: bool = False
 ```
 
 | Tool | Returns |
@@ -693,6 +782,7 @@ class PaperSearchResponse:
 | `semantic_search(query, filters?, k)` | `SearchResponse` (passage-level `GroundedResult`s, via `Retriever.retrieve()`) |
 | `get_paper(paper_id)` | `PaperSummaryView` |
 | `get_span(anchor)` | the exact verbatim source text for an anchor (the check-my-source tool) |
+| `scan_corpus(pattern, paper_id?, author_org?, max_matches_per_paper=3, context=200)` | `ScanResponse` (exhaustive block-text enumeration — the "WHICH PAPERS contain X" tool; use it, not `semantic_search`, for that question) |
 
 `search_papers`/`semantic_search` carry a **`Coverage`** so the agent knows when it is seeing a sample, not
 the whole picture (PRD §8.5 anti-miss) — this is a real field on both response types now, not a prose promise;
@@ -713,6 +803,13 @@ class Config:
     corpus_cap: int = 15_000
     ordering: Literal["freshest_first", "relevance"] = "freshest_first"  # OG-46: "relevance" -> arXiv's
         # own sortBy=relevance (rag/harvester.py ArxivSource), instead of freshest-first.
+    stranded_policy: Literal["finish_first", "ignore"] = "finish_first"   # how app/build_corpus treats
+        # papers left at a Pass-1-complete stage ('parsed'..'stored') by an earlier pause/crash (the
+        # two-pass VRAM isolation means a pause mid-Pass-2 always leaves some behind): "finish_first"
+        # drains them before Pass 1 on fresh papers (such a batch skips Pass 1 entirely); "ignore"
+        # leaves them banked and ingests only fresh papers. Neither discards anything.
+        # RI-9 reconciliation note: this field shipped in contracts/config.py but was never added
+        # here — doc brought up to code, since the field is live and dashboard-wired.
     ingestion_mode: Literal["one_shot_seed"] = "one_shot_seed"
     sources: list[str] = field(default_factory=lambda: ["arxiv"])
     relevance_filter: Literal["off", "embedding"] = "off"
@@ -762,6 +859,10 @@ class CheckpointArtifacts(FrozenModel):
     chunks: list[Chunk] | None = None
     summary_text: str | None = None
     relevance_score: float | None = None
+    chapter_summaries: list[ChapterSummary] | None = None   # books only; None until the book's
+        # map-step has run. RI-9 reconciliation note: shipped with T-DOC82/T-DOC85 (a resumed run
+        # must not re-summarize a book's chapters any more than a paper's body) but was never added
+        # here — doc brought up to code.
 ```
 
 `state.checkpoint(paper_id, stage, artifacts)` merges `artifacts`'s non-`None` fields onto the
@@ -923,15 +1024,21 @@ ALTER TABLE summaries ADD COLUMN title TEXT;
 Two more `ALTER TABLE ADD COLUMN`s, no new tables — additive to `papers` above, same
 "never edit an already-applied migration file" rule as 0002-0004. `papers.raw_affiliations` is a
 JSON list of the extracted candidate affiliation strings (the evidence); `papers.author_orgs` is a
-JSON list of `{"name": ..., "method": "email_domain"|"keyword"}` objects (mirrors
+JSON list of `{"name": ..., "method": "curated"|"email_domain"|"keyword"}` objects (mirrors
 `contracts/author_orgs.py`'s `AuthorOrgMatch`) — which org matched AND which signal fired. Both
 nullable, unlike `doc_type` — every pre-existing row genuinely has no value (the tagger has never
 run against it) and there is no sensible default; `"[]"` would silently assert "checked, found
 nothing" for a row that was never checked. `method` is stored per match, not a bare boolean,
-because the signal is measured, not exact: keyword matching scores precision 0.569 / recall 0.763
-over 1,741 done papers against 114 enumerated Waymo-authored ids (T-ORG2, commit `d3e79c3`) — at
-that precision, close to half of keyword-derived tags are wrong, so a consumer needs to see which
-signal fired to decide whether to trust a given match.
+because the signals differ in trustworthiness and the heuristics are measured, not exact: the
+combined email_domain+keyword matcher ships precision 0.706 / recall 0.783 (F1 0.742) over 1,741
+done papers against 138 enumerated Waymo-authored ids (T-ORG2/T-ORG3 ground-truth correction,
+`docs/eval-reports/2026-08-07-affiliation-retrieval-first-batch.md`'s 2026-08-08 addendum —
+superseding the keyword-only precision 0.569 / recall 0.763 over 114 ids first measured at T-ORG2,
+commit `d3e79c3`), so at ~0.71 precision close to 3 in 10 heuristic tags are wrong and a consumer
+needs to see which signal fired to decide whether to trust a given match; `"curated"` matches come
+from the org's own enumerated id list (T-ORG3) and are exact by construction.
+RI-9 reconciliation note: this section predated T-ORG3 — the `"curated"` method and the corrected
+measurement are in live code (`AuthorOrgMatch`, `contracts/author_orgs.py`); doc brought up to code.
 
 ```sql
 ALTER TABLE papers ADD COLUMN raw_affiliations TEXT;
