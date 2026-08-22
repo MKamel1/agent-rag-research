@@ -20,20 +20,20 @@ Tickets are grouped into workstreams by file ownership so concurrent work cannot
 
 | id | item | ws | status | notes |
 |---|---|---|---|---|
-| RI-1 | `DocumentStore` connection is single-thread-bound | A | **IN PROGRESS** | `check_same_thread=False`, no lock -- `threadsafety==3` and the threaded consumer performs no writes, both verified. |
-| RI-5 | `SqliteIngestState` requires a migration it does not perform | A | **IN PROGRESS** | Mirror `DocumentStore`: call `migrate()` in `__init__`, drop the unenforceable prose precondition. |
-| RI-2 | Dashboard auth does not fail closed on `--token ""` | B | **IN PROGRESS** | Empty token matches a request sending no header at all. Refuse to start. |
-| RI-6 | Token sidecar: crash window, no pid qualification, no corrupt tolerance | B | **IN PROGRESS** | `touch`/`write_text` can leave an empty token file, feeding RI-2 from a second direction. |
-| RI-3 | Chunk payload has two definitions that have already drifted | C | **IN PROGRESS** | `rechunk`'s copy omits `author_orgs` -- a rechunked paper silently loses affiliation facets. |
-| RI-4 | Resume path assumes the `papers` row exists | C | **IN PROGRESS** | Ships standalone, deliberately not folded into D-9: D-9's net is for *unknown* exceptions. |
-| RI-8 | Downloader scan counts another corpus's downloader | D | **IN PROGRESS** | Qualify by `/proc/<pid>/cwd`; the config/db-path alternative is not observable at scan time. |
-| RI-9 | `DATA-CONTRACTS.md` out of sync with shipped shapes | D | **IN PROGRESS** | Per-field decision, not a blanket rewrite either way. |
-| RI-11 | Compiled bytecode is tracked | D | **IN PROGRESS** | Two `.pyc` files predate the ignore rule, which does not apply to tracked files. |
-| RI-10 | Stale docstrings + absence honesty | E | **IN PROGRESS** | *k* results are best-available, not *k* endorsements. No relevance floor -- see RI-M7. |
-| RI-12 | Delete the CI exit-5 carve-out | F | **IN PROGRESS** | With 1,774 tests collected, exit 5 now means collection broke, and CI goes green on it. |
-| RI-13 | `testpaths` fails open; add the mechanical guard | F | **IN PROGRESS** | The list is currently complete (85/86, one deliberate exclusion) -- the defect is structural. |
-| RI-14 | `CODEOWNERS` does not cover `pyproject.toml` | F | **IN PROGRESS** | It carries `--disable-socket`, the zero-network test guarantee, ungated. |
-| RI-15 | The eval reports a number whose rule it does not record | F | **IN PROGRESS** | New `title_leak` diagnostic + `scoring_rule` stamp. Reported alongside metrics, never subtracted. |
+| RI-1 | `DocumentStore` connection is single-thread-bound | A | **DONE** -- `b9be4c3` | `check_same_thread=False`, no lock -- `threadsafety==3` and the threaded consumer performs no writes, both verified. |
+| RI-5 | `SqliteIngestState` requires a migration it does not perform | A | **DONE** -- `4695cd5` | Mirror `DocumentStore`: call `migrate()` in `__init__`, drop the unenforceable prose precondition. |
+| RI-2 | Dashboard auth does not fail closed on `--token ""` | B | **IN REVIEW** | Empty token matches a request sending no header at all. Refuse to start. |
+| RI-6 | Token sidecar: crash window, no pid qualification, no corrupt tolerance | B | **IN REVIEW** | `touch`/`write_text` can leave an empty token file, feeding RI-2 from a second direction. |
+| RI-3 | Chunk payload has two definitions that have already drifted | C | **DONE** -- `112f6bb` | `rechunk`'s copy omits `author_orgs` -- a rechunked paper silently loses affiliation facets. |
+| RI-4 | Resume path assumes the `papers` row exists | C | **DONE** -- `e5899f6` | Ships standalone, deliberately not folded into D-9: D-9's net is for *unknown* exceptions. |
+| RI-8 | Downloader scan counts another corpus's downloader | D | **DONE** -- `5b3f968` | Qualify by `/proc/<pid>/cwd`; the config/db-path alternative is not observable at scan time. |
+| RI-9 | `DATA-CONTRACTS.md` out of sync with shipped shapes | D | **DONE** -- `89aba70` | Per-field decision, not a blanket rewrite either way. |
+| RI-11 | Compiled bytecode is tracked | D | **DONE** -- `799fb06` | Two `.pyc` files predate the ignore rule, which does not apply to tracked files. |
+| RI-10 | Stale docstrings + absence honesty | E | **IN REVIEW** | *k* results are best-available, not *k* endorsements. No relevance floor -- see RI-M7. |
+| RI-12 | Delete the CI exit-5 carve-out | F | **DONE** -- `1e928e4` | With 1,774 tests collected, exit 5 now means collection broke, and CI goes green on it. |
+| RI-13 | `testpaths` fails open; add the mechanical guard | F | **DONE** -- `969233c` | The list is currently complete (85/86, one deliberate exclusion) -- the defect is structural. |
+| RI-14 | `CODEOWNERS` does not cover `pyproject.toml` | F | **DONE** -- `5de07c7` | It carries `--disable-socket`, the zero-network test guarantee, ungated. |
+| RI-15 | The eval reports a number whose rule it does not record | F | **DONE** -- `155a3e8` | New `title_leak` diagnostic + `scoring_rule` stamp. Reported alongside metrics, never subtracted. |
 | RI-M1..M7 | Wave-4 measurement instruments | G-I | **OPEN** | Instruments are code; running the campaigns is operator work and is not an RI completion condition. |
 
 **Operator decisions outstanding** (not agent work) -- see the plan's final section. The
