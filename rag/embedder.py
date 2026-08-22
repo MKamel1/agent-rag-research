@@ -74,9 +74,13 @@ class TeiEmbedder:
 
     A `TransientError` from any one sub-batch's HTTP call gets a bounded, backed-off retry
     (`max_retries`, `retry_sleep` — same shape as `rag/harvester.py`'s `Harvester`); a
-    `PermanentError` is never retried. Unlike the ingest-side retry sites, there is no quarantine
-    outcome here — a query-path caller has no "skip this paper and continue" fallback, so once the
-    retry budget is exhausted the (still-classified) error simply propagates.
+    `PermanentError` (a non-retryable status) is never retried. A 200 whose body won't decode at
+    all is classified as transient at the same seam (transit corruption — retried; see
+    `_post_batch_with_retry`) — a body that DOES decode but has the wrong shape/dim stays
+    `ContractError` per the postcondition above, since that's a broken invariant given this
+    request, not transit noise. Unlike the ingest-side retry sites, there is no quarantine outcome
+    here — a query-path caller has no "skip this paper and continue" fallback, so once the retry
+    budget is exhausted the (still-classified) error simply propagates.
 
     OG-48#3: `gpu_lock.acquire("embed")` is held only around a SINGLE HTTP attempt (one sub-batch,
     one try) — never across the retry/backoff loop. Before this fix the lock was held for the
@@ -137,10 +141,11 @@ class TeiEmbedder:
 
     def _post_batch_with_retry(self, batch: list[str]) -> list:
         """One sub-batch's `/embed` call, retried up to `_max_retries` times on `TransientError`
-        (429/502/503/504, timeout, connection failure) with exponential backoff between attempts —
-        same two-outcome shape as `rag/orchestrator.py`'s `_embed_with_retry`, minus the
-        quarantine (no per-paper fallback exists on the query path). A non-retryable status raises
-        `PermanentError` immediately, same as before this method existed.
+        (429/502/503/504, timeout, connection failure, an undecodable 200 body) with exponential
+        backoff between attempts — same two-outcome shape as `rag/orchestrator.py`'s
+        `_embed_with_retry`, minus the quarantine (no per-paper fallback exists on the query path).
+        A non-retryable status raises `PermanentError` immediately, same as before this method
+        existed.
 
         `gpu_lock.acquire("embed", timeout=...)` wraps only the single HTTP attempt inside the
         `try` below (OG-48#3) — the `with` block is exited (lock released) before the `except`
@@ -165,6 +170,25 @@ class TeiEmbedder:
                 attempt += 1
                 if attempt > self._max_retries:
                     raise TransientError(f"embedding request failed: {error}") from error
+            except ValueError as error:
+                # RI-29: a 200 whose body won't decode used to escape as a raw
+                # json.JSONDecodeError/UnicodeDecodeError -- outside the taxonomy -- sailing past
+                # callers written to handle only the contract errors (app/dashboard/server.py's
+                # search route) and killing that request thread with no response. Classified HERE,
+                # in the same mapping as the HTTP failures, and as TRANSIENT: the service accepted
+                # the request (a 2xx), so an undecodable body is most plausibly corruption in
+                # transit (a truncated or proxied response), not a property of the request --
+                # resending can genuinely succeed. ValueError rather than json.JSONDecodeError,
+                # because a non-UTF-8 body raises UnicodeDecodeError; both mean "this body didn't
+                # decode" (same catch as rag/summarizer.py's /api/ps poll). The deliberate opposite
+                # of `_normalize`'s shape/dim checks below, which stay ContractError: those are a
+                # broken invariant on a body that DID decode, not transit noise (same split as
+                # rag/reranker.py's RI-28).
+                attempt += 1
+                if attempt > self._max_retries:
+                    raise TransientError(
+                        f"embedding server returned HTTP 200 with an undecodable body: {error}"
+                    ) from error
             self._retry_sleep(self._backoff(attempt))
 
     @staticmethod
