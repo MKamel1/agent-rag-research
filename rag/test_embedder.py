@@ -430,6 +430,71 @@ def test_retries_exhausted_still_raises_transient_error():
 
 
 # ---------------------------------------------------------------------------
+# RI-29: a 200 whose body won't decode as JSON. Used to escape as a raw
+# json.JSONDecodeError/UnicodeDecodeError -- outside the TransientError/PermanentError taxonomy --
+# sailing past callers written to handle only the contract errors (e.g. app/dashboard/server.py's
+# search route) and killing the request thread with no response. Classified at the same seam as
+# the HTTP failures, and transient: the service accepted the request (a 2xx), so an undecodable
+# body is transit corruption (truncation, proxy garbage), not a property of the request -- resending
+# can genuinely succeed. Same fix as rag/reranker.py's RI-28.
+# ---------------------------------------------------------------------------
+
+
+def test_200_with_undecodable_body_maps_to_transient_error():
+    attempts = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        attempts["n"] += 1
+        return httpx.Response(200, content=b"<html>gateway garbage</html>")
+
+    client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
+    sleeps: list[float] = []
+    adapter = _build_real_embedder(client, FakeGpuLock(), retry_sleep=sleeps.append)
+
+    with pytest.raises(TransientError):
+        adapter.embed(["a passage to embed"])
+
+    # Transient means RETRYABLE: the retry budget must actually be spent before giving up...
+    assert attempts["n"] == 3  # initial attempt + 2 retries
+    assert sleeps == [1.0, 2.0]  # ...with the same exponential backoff as any other hiccup
+
+
+def test_undecodable_binary_body_is_also_transient():
+    # The non-UTF-8 flavor: json.loads raises UnicodeDecodeError here, not JSONDecodeError. Both
+    # are ValueError subclasses and both mean "this body didn't decode" -- the classification must
+    # cover the binary-garbage case too, not just malformed text.
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=b"\x81\x81\x81\x81")
+
+    client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
+    adapter = _build_real_embedder(client, FakeGpuLock())
+
+    with pytest.raises(TransientError):
+        adapter.embed(["a passage to embed"])
+
+
+def test_undecodable_200_body_then_success_is_recovered_with_backoff():
+    dim = 8
+    attempts = {"n": 0}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        attempts["n"] += 1
+        if attempts["n"] == 1:
+            return httpx.Response(200, content=b'[[0.1, 0.2')  # truncated in transit
+        return httpx.Response(200, json=[_hash_to_raw_vector("a passage to embed", dim)])
+
+    client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
+    sleeps: list[float] = []
+    adapter = _build_real_embedder(client, FakeGpuLock(), retry_sleep=sleeps.append)
+
+    vectors = adapter.embed(["a passage to embed"])
+
+    assert attempts["n"] == 2  # first attempt garbled, second succeeds -- no third attempt
+    assert sleeps == [1.0]
+    assert len(vectors) == 1
+
+
+# ---------------------------------------------------------------------------
 # OG-48#3/#4: the GPU lock is held only around a single HTTP attempt (never across a backoff
 # sleep), and a wedged/crashed holder times out instead of hanging forever.
 # ---------------------------------------------------------------------------
