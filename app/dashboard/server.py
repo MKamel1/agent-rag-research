@@ -67,7 +67,6 @@ from contracts.vector_index import SearchFilters
 from rag.config import load_config
 from rag.mcp_server import _MAX_K as _SEARCH_MAX_K
 from rag.mcp_server import _MIN_K as _SEARCH_MIN_K
-from rag.reranker import _MAX_BATCH_SIZE as _RERANKER_MAX_BATCH_SIZE
 
 logger = logging.getLogger(__name__)
 
@@ -202,13 +201,15 @@ def _static_config(data_dir: Path) -> Config:
 # threads them into `McpServer`'s `default_k`/`Retriever`'s `rerank_pool_size`), so this display
 # no longer needs to hardcode a stand-in value for either: `top_k_default` is the real
 # `McpServer.semantic_search`/`search_papers` fallback when a caller's `k` is unset, and
-# `rerank_pool_size` mirrors the same `min(rerank_depth, _RERANKER_MAX_BATCH_SIZE)` clamp
-# `build_mcp_server` applies (a value above 32 is silently truncated by TEI's `/rerank` batch
-# limit either way -- `rag/reranker.py`'s `_MAX_BATCH_SIZE`).
+# `rerank_pool_size` is `rerank_depth` unclamped, matching what `build_mcp_server` now passes
+# `Retriever` (RI-16): the reranker's per-call vendor batch limit no longer caps the pool it can
+# draw from -- it packs an oversized pool into several batches and merges their scores instead of
+# truncating (`rag/reranker.py`), so a `rerank_depth` above that limit is genuinely used, not
+# wasted, and this display must show it uncapped to stay trustworthy (D-10).
 def _search_display(data_dir: Path) -> dict:
     return {
         "top_k_default": _static_config(data_dir).top_k,
-        "rerank_pool_size": min(_static_config(data_dir).rerank_depth, _RERANKER_MAX_BATCH_SIZE),
+        "rerank_pool_size": _static_config(data_dir).rerank_depth,
     }
 
 

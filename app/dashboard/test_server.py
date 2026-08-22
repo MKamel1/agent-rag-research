@@ -955,6 +955,24 @@ def test_status_route_reads_config_from_data_dir_not_cwd(tmp_path, monkeypatch):
     assert body["search"]["hybrid_dense_weight"] == expected.hybrid_dense_weight
 
 
+def test_search_display_rerank_pool_size_is_not_clamped(tmp_path):
+    """RI-16 regression: `build_mcp_server` threads `config.rerank_depth` into `Retriever`
+    unclamped (the reranker packs an oversized pool into several vendor-batch-sized chunks and
+    merges their scores instead of truncating), so this display must report that same uncapped
+    value. Pinned at 64 -- a `rerank_depth` still at or below the old 32-item batch limit would
+    pass even with a stale `min(rerank_depth, 32)` clamp reintroduced, so it wouldn't catch this."""
+    from pathlib import Path
+
+    data_dir = tmp_path / "data"
+    data_dir.mkdir()
+    config_path = Path(__file__).resolve().parents[2] / "config.example.yaml"
+    config_text = config_path.read_text().replace("rerank_depth: 32", "rerank_depth: 64")
+    (data_dir / "config.yaml").write_text(config_text)
+
+    result = server_mod._search_display(data_dir)
+    assert result["rerank_pool_size"] == 64
+
+
 def test_control_start_omits_unset_og45_og46_params(running_server):
     url, fake_controller = running_server
     _post(url, "/api/control", {
