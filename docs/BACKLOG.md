@@ -29,12 +29,39 @@ Tickets are grouped into workstreams by file ownership so concurrent work cannot
 | RI-8 | Downloader scan counts another corpus's downloader | D | **DONE** -- `5b3f968` | Qualify by `/proc/<pid>/cwd`; the config/db-path alternative is not observable at scan time. |
 | RI-9 | `DATA-CONTRACTS.md` out of sync with shipped shapes | D | **DONE** -- `89aba70` | Per-field decision, not a blanket rewrite either way. |
 | RI-11 | Compiled bytecode is tracked | D | **DONE** -- `799fb06` | Two `.pyc` files predate the ignore rule, which does not apply to tracked files. |
-| RI-10 | Stale docstrings + absence honesty | E | **IN REVIEW** | *k* results are best-available, not *k* endorsements. No relevance floor -- see RI-M7. |
+| RI-10 | Stale docstrings + absence honesty | E | **DONE** -- `189ac33` | *k* results are best-available, not *k* endorsements. No relevance floor -- see RI-M7. |
 | RI-12 | Delete the CI exit-5 carve-out | F | **DONE** -- `1e928e4` | With 1,774 tests collected, exit 5 now means collection broke, and CI goes green on it. |
 | RI-13 | `testpaths` fails open; add the mechanical guard | F | **DONE** -- `969233c` | The list is currently complete (85/86, one deliberate exclusion) -- the defect is structural. |
 | RI-14 | `CODEOWNERS` does not cover `pyproject.toml` | F | **DONE** -- `5de07c7` | It carries `--disable-socket`, the zero-network test guarantee, ungated. |
 | RI-15 | The eval reports a number whose rule it does not record | F | **DONE** -- `155a3e8` | New `title_leak` diagnostic + `scoring_rule` stamp. Reported alongside metrics, never subtracted. |
+| RI-16 | Dashboard under-reports `rerank_pool_size` above 32 | - | **OPEN** | Latent today, not live -- see below. |
 | RI-M1..M7 | Wave-4 measurement instruments | G-I | **OPEN** | Instruments are code; running the campaigns is operator work and is not an RI completion condition. |
+
+### RI-16 — the dashboard's displayed rerank pool size still carries a clamp the pipeline dropped
+
+Found 2026-08-22 while closing RI-10's stale-docstring sweep; the same staleness had already
+crossed from a comment into live code.
+
+`app/assembly.py:633` passes `rerank_pool_size = config.rerank_depth` **unclamped** into the
+`Retriever` — the clamp to `rag/reranker.py`'s 32-item vendor batch limit was deliberately removed
+once the reranker learned to pack an oversized pool into several batches and merge their scores
+instead of truncating. But `app/dashboard/server.py:201` still displays
+`min(rerank_depth, _RERANKER_MAX_BATCH_SIZE)`, and the comment above it still explains that as
+mirroring a clamp `build_mcp_server` no longer applies.
+
+**Latent, not live.** Both `config.example.yaml:104` and the operator's
+`../research-system-rag-data/config.yaml:43` set `rerank_depth: 32`, so `min(32, 32)` is currently
+the right answer and the dashboard is not misreporting anything today.
+
+It is worth fixing anyway, and the reason is the trap: removing the clamp is precisely what made a
+`rerank_depth` above 32 usable. The first operator to raise it gets a dashboard that silently
+under-reports the pool the retrieval path actually uses — while the panel exists to be trusted about
+exactly that kind of number (cf. D-10, dashboard number accuracy). Fix is to drop the `min(...)` and
+correct the comment.
+
+Deferred rather than folded into RI-2/RI-6: those were mid-flight in `app/dashboard/server.py` when
+this was found, and two agents editing one file is the collision this programme's workstream split
+exists to prevent.
 
 **Operator decisions outstanding** (not agent work) -- see the plan's final section. The
 time-sensitive one is **FD-1**: figure images from the 12,390-paper parse went to an OS temp
