@@ -35,7 +35,14 @@ Tickets are grouped into workstreams by file ownership so concurrent work cannot
 | RI-14 | `CODEOWNERS` does not cover `pyproject.toml` | F | **DONE** -- `5de07c7` | It carries `--disable-socket`, the zero-network test guarantee, ungated. |
 | RI-15 | The eval reports a number whose rule it does not record | F | **DONE** -- `155a3e8` | New `title_leak` diagnostic + `scoring_rule` stamp. Reported alongside metrics, never subtracted. |
 | RI-16 | Dashboard under-reports `rerank_pool_size` above 32 | - | **DONE** -- `88fd689` | Was latent, not live: rerank_depth was 32, so the clamp was a no-op. |
-| RI-M1..M7 | Wave-4 measurement instruments | G-I | **OPEN** | Instruments are code; running the campaigns is operator work and is not an RI completion condition. |
+| RI-M1 | Archived run-log census | H | **DONE** -- `01de25e` | Its findings about what is NOT recoverable drove RI-17. |
+| RI-M2 | Fabrication audit | I | **DONE** -- `637b60c` | Shares one harness with RI-M6. |
+| RI-M3 | Sparse-arm ablation | G | **DONE** -- `060f2a5` | |
+| RI-M4 | Truncation census | H | **DONE** -- `ce05f46` | Reports estimate-vs-real token calibration, not just bind rate. |
+| RI-M5 | Waymo eval fixture | I | **DONE** -- `c1f0254` | 15-item grounded seed set; every excerpt re-verified against the live corpus DB. |
+| RI-M6 | Groundedness harness | I | **DONE** -- `637b60c` | Rubric is PROVISIONAL -- needs operator sign-off before any output is treated as a baseline. |
+| RI-M7 | Score-distribution census | G | **IN PROGRESS** | Settles whether a relevance floor is even choosable. |
+| RI-17 | Prefetch logs carry no timestamps | - | **OPEN** | One-line fix, large payoff -- see below. |
 
 ### RI-16 — the dashboard's displayed rerank pool size still carries a clamp the pipeline dropped
 
@@ -62,6 +69,28 @@ correct the comment.
 Deferred rather than folded into RI-2/RI-6: those were mid-flight in `app/dashboard/server.py` when
 this was found, and two agents editing one file is the collision this programme's workstream split
 exists to prevent.
+
+### RI-17 — prefetch logging emits no timestamps, so its own history is unmeasurable
+
+Found 2026-08-22 by RI-M1, which set out to mine the archived run logs and discovered that the
+most valuable questions cannot be answered from them at all.
+
+`app/prefetch_pdfs.py:431` calls `logging.basicConfig(level=logging.INFO)` with no `format=` or
+`datefmt=`, so **no archived log line carries a timestamp**. Every number RI-M1's census can
+recover is therefore a line-occurrence count or a configured constant echoed back — never a
+measured duration. Stall duration, real download throughput, and whether the stall/retry
+parameters in use are anywhere near the observed distribution are all unanswerable, for every run
+already archived and every run until this changes.
+
+A second, smaller gap: the log is opened in append mode (`app/dashboard/controller.py`, three
+sites) across pause/resume with no separator line, so a paused-then-resumed run's segments cannot
+be told apart.
+
+**Fix:** pass a `format=` with `%(asctime)s` to that `basicConfig` call. One line. It cannot
+recover the existing archive, which is exactly why it is worth doing now rather than after the
+next long run — every day it waits is another day of history that stays unmeasurable.
+
+Optionally, write a separator line on resume so segments are distinguishable.
 
 **Operator decisions outstanding** (not agent work) -- see the plan's final section. The
 time-sensitive one is **FD-1**: figure images from the 12,390-paper parse went to an OS temp
