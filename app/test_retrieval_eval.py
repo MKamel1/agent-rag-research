@@ -20,22 +20,25 @@ from contracts.mcp_server import PaperSearchResult, PaperSummaryView
 from contracts.provenance import Anchor
 from contracts.retriever import Citation, GroundedResult
 
-_CITATION = Citation(
-    paper_id="P1", title="A Paper", authors=["A. Author"],
-    arxiv_url="https://arxiv.org/abs/P1", section_path="3 Method",
-)
 
-
-def _hit(paper_id: str, block_id: str) -> GroundedResult:
+def _hit(
+    paper_id: str,
+    block_id: str,
+    passage_text: str = "some chunk text",
+    title: str = "A Paper",
+) -> GroundedResult:
     return GroundedResult(
-        passage_text="some chunk text",
+        passage_text=passage_text,
         anchor=Anchor(
             paper_id=paper_id, block_id=block_id, page=0, bbox=(0.0, 0.0, 1.0, 1.0),
             snippet="snippet", section_path="3 Method",
         ),
         paper_id=paper_id,
         score=1.0,
-        citation=_CITATION,
+        citation=Citation(
+            paper_id=paper_id, title=title, authors=["A. Author"],
+            arxiv_url=f"https://arxiv.org/abs/{paper_id}", section_path="3 Method",
+        ),
     )
 
 
@@ -601,3 +604,161 @@ def test_build_report_per_question_array_omitted_when_disabled():
     assert "questions" not in report
     # aggregates are unaffected by the flag
     assert report["paper_level"]["overall"]["n"] == 1
+
+
+# --- title_leak diagnostic + scoring_rule stamp (RI-15) ---------------------------------------
+# The hit rule (r.paper_id in gold_paper_ids) cannot tell a semantic match from one that succeeded
+# only because the gold paper's TITLE appears verbatim in the passage. The predicate below is a
+# diagnostic reported ALONGSIDE the metrics -- a leak must leave recall/MRR untouched.
+
+
+def test_score_question_flags_verbatim_gold_title_in_passage():
+    q = Question("Q1", "text", "Result-Comprehension", frozenset({"P1"}), gold_block_id=None)
+    results = [_hit("P1", "P1:b1", passage_text="We follow A Paper and its baselines.")]
+
+    r = score_question(q, results, k=10)
+
+    assert r.paper_rank == 1  # still a hit -- the leak changes no metric
+    assert r.title_leak is True
+
+
+def test_score_question_clean_hit_is_not_a_leak():
+    q = Question("Q1", "text", "Result-Comprehension", frozenset({"P1"}), gold_block_id=None)
+    results = [_hit("P1", "P1:b1", passage_text="the estimator is consistent under assumption")]
+
+    assert score_question(q, results, k=10).title_leak is False
+
+
+def test_score_question_leak_match_is_case_and_whitespace_insensitive():
+    """Normalization is casefold + collapse-whitespace-runs: a title typeset differently from the
+    prose around it still matches."""
+    q = Question("Q1", "text", "Result-Comprehension", frozenset({"P1"}), gold_block_id=None)
+    results = [
+        _hit(
+            "P1", "P1:b1",
+            passage_text="earlier work on DOUBLE-SPACED titles aside, we study\n a   paper.",
+            title="A  Paper",
+        )
+    ]
+
+    assert score_question(q, results, k=10).title_leak is True
+
+
+def test_score_question_non_gold_results_are_out_of_scope_for_the_predicate():
+    """A non-gold paper whose passage embeds its own title is not a leak: the predicate exists to
+    qualify paper-level HITS, and P2 is not one here."""
+    q = Question("Q1", "text", "Result-Comprehension", frozenset({"P1"}), gold_block_id=None)
+    results = [
+        _hit("P2", "P2:b1", passage_text="B Paper is the canonical reference.", title="B Paper")
+    ]
+
+    r = score_question(q, results, k=10)
+
+    assert r.paper_rank is None
+    assert r.title_leak is False
+
+
+def test_score_question_only_the_hits_own_title_counts_as_a_leak():
+    """A gold-paper passage quoting some OTHER paper's title verbatim is ordinary scholarly text,
+    not evidence this hit rests on title overlap."""
+    q = Question("Q1", "text", "Result-Comprehension", frozenset({"P1"}), gold_block_id=None)
+    results = [_hit("P1", "P1:b1", passage_text="it extends B Paper's estimator.", title="A Paper")]
+
+    assert score_question(q, results, k=10).title_leak is False
+
+
+def test_score_question_any_gold_result_leaking_flags_the_question():
+    q = Question("Q1", "text", "Result-Comprehension", frozenset({"P1"}), gold_block_id=None)
+    results = [
+        _hit("P1", "P1:b1", passage_text="clean semantic match, no title anywhere"),
+        _hit("P9", "P9:b1", passage_text="unrelated"),
+        _hit("P1", "P1:b7", passage_text="as A Paper showed, ..."),
+    ]
+
+    assert score_question(q, results, k=10).title_leak is True
+
+
+def test_run_records_no_leak_for_an_errored_question():
+    questions = [
+        Question("Q1", "boom", "Result-Comprehension", frozenset({"P1"}), gold_block_id=None)
+    ]
+    retriever = FakeRetriever({})  # "boom" has no canned entry -> retrieve() raises
+
+    (result,) = run(questions, retriever, k=10)
+
+    assert result.error is not None
+    assert result.title_leak is False
+
+
+def test_build_report_reports_leaks_alongside_untouched_metrics():
+    """The diagnostic's contract: the aggregate counts leaking hits, while Recall/MRR are exactly
+    what they would be with the predicate deleted."""
+    from app.retrieval_eval import QuestionResult
+
+    results = [
+        QuestionResult("Q1", "Result-Comprehension", paper_rank=1, passage_rank=None,
+                       passage_scored=False, title_leak=True),
+        QuestionResult("Q2", "Result-Comprehension", paper_rank=2, passage_rank=None,
+                       passage_scored=False, title_leak=False),
+        QuestionResult("Q3", "Result-Comprehension", paper_rank=None, passage_rank=None,
+                       passage_scored=False, title_leak=False),  # a miss can't leak
+    ]
+
+    report = build_report(results, k=10)
+
+    tl = report["paper_level"]["title_leak"]
+    assert tl["n_hits"] == 2
+    assert tl["n_leaking"] == 1
+    assert tl["fraction_of_hits"] == 0.5
+    assert report["paper_level"]["overall"]["recall_at_k"] == 2 / 3  # leak not subtracted
+    assert report["paper_level"]["overall"]["mrr"] == (1.0 + 0.5) / 3
+
+
+def test_build_report_title_leak_fraction_is_none_with_zero_hits():
+    from app.retrieval_eval import QuestionResult
+
+    results = [QuestionResult("Q1", "Result-Comprehension", paper_rank=None,
+                              passage_rank=None, passage_scored=False)]
+
+    report = build_report(results, k=10)
+
+    assert report["paper_level"]["title_leak"]["n_leaking"] == 0
+    assert report["paper_level"]["title_leak"]["fraction_of_hits"] is None
+
+
+def test_build_report_states_the_floor_limitation_in_the_report_itself():
+    """The limitation must live in the emitted artifact, not just a docstring: a verbatim
+    predicate leaves paraphrase-level leaks uncounted, so the number is a floor."""
+    report = build_report([], k=10)
+
+    note = report["paper_level"]["title_leak"]["note"]
+    assert "floor" in note.lower()
+    assert "paraphrase" in note.lower()
+
+
+def test_build_report_stamps_the_scoring_rule_with_k():
+    report = build_report([], k=10)
+    other_k = build_report([], k=3)
+
+    stamp = report["scoring_rule"]
+    assert "10" in stamp
+    assert "gold_paper_ids" in stamp  # names the actual hit rule
+    assert stamp != other_k["scoring_rule"]  # k is part of the stamp
+
+
+def test_build_report_per_question_row_carries_title_leak():
+    questions = [
+        Question("Q1", "leaky query", "Result-Comprehension", frozenset({"P1"}), None),
+        Question("Q2", "clean query", "Result-Comprehension", frozenset({"P2"}), None),
+    ]
+    retriever = FakeRetriever({
+        "leaky query": [_hit("P1", "P1:b1", passage_text="per A Paper, the effect ...")],
+        "clean query": [_hit("P2", "P2:b1", passage_text="nothing relevant", title="B Paper")],
+    })
+
+    results = run(questions, retriever, k=10)
+    report = build_report(results, k=10)
+
+    rows = {row["question_id"]: row for row in report["questions"]}
+    assert rows["Q1"]["title_leak"] is True
+    assert rows["Q2"]["title_leak"] is False

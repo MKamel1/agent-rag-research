@@ -13,6 +13,9 @@ from pathlib import Path
 
 import pytest
 
+# doc_touch_reminder is a warn-only nudge, deliberately not exported from ci/checks/__init__.py
+# (it must never be wired into ci/run_enforcement.py's blocking check list) -- imported directly
+# from its own module, same reasoning as _pr_labels above.
 from ci.checks import (
     DiffFile,
     check_a,
@@ -23,20 +26,17 @@ from ci.checks import (
     check_f,
     check_g,
     check_h,
+    check_testpaths,
     discover_contract_names,
+    doc_touch_reminder,
     read_codeowners_paths,
 )
+from ci.checks.doc_touch_reminder import check_doc_touch
 
 # _pr_labels (T-DOC15) is ci/run_enforcement.py's, not ci/checks' -- imported directly (same
 # "test the private seam" pattern as check_c's fake_run test above) because that module has no
 # test file of its own and testpaths doesn't collect bare "ci/" (pyproject.toml).
 from ci.run_enforcement import _pr_labels
-
-# doc_touch_reminder is a warn-only nudge, deliberately not exported from ci/checks/__init__.py
-# (it must never be wired into ci/run_enforcement.py's blocking check list) -- imported directly
-# from its own module, same reasoning as _pr_labels above.
-from ci.checks import doc_touch_reminder
-from ci.checks.doc_touch_reminder import check_doc_touch
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 # "negative_examples" also appears in pyproject.toml's `extend-exclude` (keeps ruff off it) and
@@ -297,6 +297,78 @@ def test_check_h_flags_new_adhoc_parse_site_elsewhere_in_same_file():
     # The flagged line is the rogue function's parse, not the sanctioned helper's.
     flagged_line_text = f.content.splitlines()[violations[0].line - 1]
     assert "candidate.id.removesuffix" in flagged_line_text
+
+
+# --- testpaths completeness (RI-13) ---------------------------------------------------------
+# Not one of CONVENTIONS.md §12(a)-(i)'s lettered checks -- a repo-wide guard over pyproject.toml's
+# `testpaths` allow-list (its own module docstring explains why it cannot be diff-scoped like the
+# lettered ones).
+
+
+def _mini_pyproject(testpaths: list[str]) -> str:
+    entries = ", ".join(f'"{p}"' for p in testpaths)
+    return f'[tool.pytest.ini_options]\ntestpaths = [{entries}]\npython_files = ["test_*.py"]\n'
+
+
+def test_check_testpaths_passes_on_repo_as_it_stands():
+    assert check_testpaths(REPO_ROOT) == []
+
+
+def test_check_testpaths_flags_planted_test_file_outside_the_collected_set(tmp_path):
+    # The exact silent failure mode the check exists for: a test_*.py exists, but sits outside
+    # every testpaths entry, so pytest collects nothing from it and CI stays green regardless.
+    (tmp_path / "pkg").mkdir()
+    (tmp_path / "pkg" / "test_collected.py").write_text("")
+    (tmp_path / "test_stray.py").write_text("")
+    (tmp_path / "pyproject.toml").write_text(_mini_pyproject(["pkg"]))
+
+    violations = check_testpaths(tmp_path)
+
+    assert len(violations) == 1
+    assert violations[0].check == "testpaths"
+    assert violations[0].path == "test_stray.py"
+
+
+def test_check_testpaths_flags_nested_stray_directory_too(tmp_path):
+    # Same failure mode one level down -- a whole unlisted top-level package's tests are just as
+    # invisible as a single stray file.
+    nested = tmp_path / "tools"
+    nested.mkdir()
+    (nested / "test_tool.py").write_text("")
+    (tmp_path / "pyproject.toml").write_text(_mini_pyproject(["pkg"]))
+
+    violations = check_testpaths(tmp_path)
+
+    assert len(violations) == 1
+    assert violations[0].path == "tools/test_tool.py"
+
+
+def test_check_testpaths_honors_the_proof_socket_block_exemption(tmp_path):
+    # ci/proof_socket_block/ is the one deliberate exclusion (pyproject.toml's comment and that
+    # suite's own docstring: it must run with sockets enabled, so CI invokes it explicitly rather
+    # than letting the default socket-disabled collection pick it up). A mini-repo shaped like
+    # this one -- proof block present, listed dirs collected -- must therefore come back clean.
+    block = tmp_path / "ci" / "proof_socket_block"
+    block.mkdir(parents=True)
+    (block / "test_real_network_blocked.py").write_text("")
+    checks = tmp_path / "ci" / "checks"
+    checks.mkdir(parents=True)
+    (checks / "test_ok.py").write_text("")
+    (tmp_path / "pyproject.toml").write_text(_mini_pyproject(["ci/checks"]))
+
+    assert check_testpaths(tmp_path) == []
+
+
+def test_check_testpaths_judges_against_pyprojects_own_list_not_this_repos(tmp_path):
+    # The collected set comes from whatever pyproject.toml says, so a different layout with
+    # different testpaths is judged against ITS list (this layout would fail under this repo's).
+    (tmp_path / "suite").mkdir()
+    (tmp_path / "suite" / "test_a.py").write_text("")
+    (tmp_path / "other").mkdir()
+    (tmp_path / "other" / "test_b.py").write_text("")
+    (tmp_path / "pyproject.toml").write_text(_mini_pyproject(["suite", "other"]))
+
+    assert check_testpaths(tmp_path) == []
 
 
 # --- (e) foundation-change label (pull_request-only; no DiffFile needed) ---------------------
