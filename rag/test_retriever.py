@@ -467,10 +467,10 @@ def test_retrieve_all_hits_unresolvable_returns_empty_not_error():
 def test_retrieve_pool_size_grows_past_32_when_k_exceeds_it():
     # T-DOC39: `max(k, _RERANK_POOL_SIZE)` must never silently clamp the pool DOWN to 32 when the
     # caller's k is larger -- that's the retriever-side half of the T-DOC24/25 regression (the
-    # reranker-side half -- TeiReranker.rerank() defending its own vendor batch limit regardless
-    # of pool size -- has its own mocked+live tests in rag/test_reranker.py). FakeReranker never
-    # drops candidates, so all 40 seeded hits should come back reranked and untruncated up to
-    # k=40, proving the retriever itself imposes no hardcoded 32 cap.
+    # reranker-side half -- the reranker splitting an oversized batch and merging scores rather
+    # than truncating -- has its own mocked+live tests in rag/test_reranker.py). FakeReranker
+    # never drops candidates, so all 40 seeded hits should come back reranked and untruncated up
+    # to k=40, proving the retriever itself imposes no hardcoded 32 cap.
     store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
     query = "double machine learning orthogonal moment estimator"
     for i in range(40):
@@ -479,11 +479,17 @@ def test_retrieve_pool_size_grows_past_32_when_k_exceeds_it():
                     text=f"unrelated filler content about topic number {i}",
                     section_path=f"{i}. Section")
 
-    results, coverage = _make_retriever(store, docstore, FakeReranker(), embedder).retrieve(
+    reranker = FakeReranker()
+    results, coverage = _make_retriever(store, docstore, reranker, embedder).retrieve(
         query, filters=None, k=40)
 
     assert coverage.candidate_count == 40  # not clamped to _RERANK_POOL_SIZE=32
     assert len(results) == 40
+    # There is no batch-size clamp between the retriever and the reranker either: the full
+    # oversized pool is handed to `rerank()` in one call, not pre-sliced to 32 before it ever
+    # gets there. Any further splitting is the reranker's own concern (rag/test_reranker.py).
+    [(_call_query, call_candidate_ids)] = reranker.calls
+    assert len(call_candidate_ids) == 40
 
 
 def test_retrieve_pool_size_honors_a_custom_rerank_pool_size_constructor_arg():

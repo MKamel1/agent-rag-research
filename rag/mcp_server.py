@@ -82,12 +82,25 @@ class McpServer:
         Whichever value results is then clamped to `[_MIN_K, _MAX_K]` (OG-48#5) before it ever
         reaches the retriever.
 
-        OG-48#6: `k` can be as large as `_MAX_K` (100), but `Coverage.returned` is separately
-        capped at 32 regardless -- `app/assembly.py::build_mcp_server` clamps the rerank candidate
-        pool to `rag/reranker.py`'s TEI `/rerank` vendor batch limit (`_MAX_BATCH_SIZE=32`), and a
-        result can only come from that pool. A `k=60` request returning 32 results is this ceiling,
-        not a sparse corpus -- check `Coverage.candidates` (the true pre-rerank pool size) to tell
-        the two apart.
+        `Coverage.returned` has no further ceiling on top of `_MAX_K`: the candidate pool is
+        `max(k, rerank_pool_size)` (live value `Config.rerank_depth`, threaded through unclamped
+        by `app/assembly.py::build_mcp_server` -- pinned by its rerank-depth-passes-through-
+        unclamped tests), and `rag/reranker.py` splits an oversized pool into vendor-size batches
+        instead of truncating it, so a `k=60` request can return 60. A short result set therefore
+        means the corpus/filters genuinely yielded little -- compare `Coverage.returned` against
+        `Coverage.candidates` (the true pre-rerank pool size) to see whether the pool itself was
+        small.
+
+        A FULL result set is not evidence of the opposite, either. There is no relevance floor
+        anywhere in this pipeline -- every stage (hybrid, RRF, rerank) only ever ranks the
+        candidates it has and returns the best of them; none rejects a candidate for scoring low
+        in absolute terms. `k` `GroundedResult`s are the `k` best-available passages, not `k`
+        endorsements that any of them actually answer the query -- a caller still has to judge
+        relevance from the passage text itself. (A floor was proposed and rejected in review; it
+        stays rejected until a score-distribution census over known-answerable vs. known-absent
+        queries, RI-M7, shows the two distributions actually separate -- an unseparated
+        distribution means any threshold is a guess wearing a decision's clothes. Don't add one
+        here on a single bad-looking case.)
 
         The corpus mixes research **papers** (latest methods/evidence) and **books** (foundational
         definitions/concepts). For conceptual/definitional questions, pass
@@ -127,8 +140,12 @@ class McpServer:
         broader `semantic_search` chunk search at all. Postcondition: on no hits, `results == []`.
 
         `k=None` resolves to `self._default_k`, same as `semantic_search` — see its docstring
-        (including the `[_MIN_K, _MAX_K]` clamp, OG-48#5, and the separate 32-result reranker
-        ceiling, OG-48#6).
+        for the `[_MIN_K, _MAX_K]` clamp (OG-48#5) and why there is no further cap on how many
+        results come back.
+
+        Same absence-honesty caveat as `semantic_search`, and it applies here too: a full `k`-sized
+        result set is `k` best-scoring papers, not `k` papers confirmed to address the query — see
+        its docstring for why no relevance floor exists and why one stays rejected pending RI-M7.
 
         The corpus mixes research **papers** (latest methods/evidence) and **books** (foundational
         definitions/concepts). For conceptual/definitional questions, pass

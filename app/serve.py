@@ -123,6 +123,13 @@ def semantic_search(
     what `k` asked for. It now chunks oversized batches and merges them by score, and the pool
     follows `Config.rerank_depth`.
 
+    No stage of this pipeline rejects a candidate for scoring low in absolute terms -- there is
+    no relevance floor. A full `k`-sized result set is the `k` best-available passages, not `k`
+    endorsements that any of them answer your question; judge relevance from the passage text
+    itself. (A floor was proposed and rejected in review -- it stays rejected until a
+    score-distribution census over known-answerable vs. known-absent queries, RI-M7, shows the
+    score distributions actually separate. Do not add one here.)
+
     Set `filters.max_hits_per_paper` when asking "which papers…" so one verbose paper cannot fill
     the page. Better still, for a question whose answer is a LIST OF PAPERS, use `scan_corpus` —
     ranked top-k retrieval samples, it does not enumerate, and it cannot tell you what it missed."""
@@ -161,7 +168,10 @@ def search_papers(
     """Whole-paper/summary-level search over the ingested corpus. `k` left unset uses the
     server's configured default (`Config.top_k`); pass it explicitly to override.
 
-    Note: same 32-result ceiling as `semantic_search` — see its docstring."""
+    Same `k` semantics as `semantic_search` — see its docstring for the clamp and the removal of
+    the old result-count ceiling, and for why a full result set is not evidence that any of the
+    returned papers actually address the query (no relevance floor exists, and one stays
+    rejected pending RI-M7)."""
     return _server.search_papers(query, filters, k)
 
 

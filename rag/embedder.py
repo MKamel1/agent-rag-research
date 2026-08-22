@@ -67,8 +67,10 @@ class TeiEmbedder:
     re-normalized here regardless of whether the server already does, so the invariant holds
     independent of server config. A response that violates either of these is `ContractError` (a
     broken invariant, not a per-paper failure — CONVENTIONS.md §4).
-    Acquires `gpu_lock.acquire("embed")` once around all sub-batches (CONVENTIONS.md §6): from the
-    caller's side `embed()` is still a single call, so the lock scope matches that.
+    Acquires `gpu_lock.acquire("embed")` around each single HTTP attempt -- one sub-batch, one
+    try -- never across the retry/backoff loop (CONVENTIONS.md §6; the OG-48#3 paragraph below has
+    the why: holding it through every backoff sleep starved a concurrent ingest's GPU stage for
+    minutes).
 
     A `TransientError` from any one sub-batch's HTTP call gets a bounded, backed-off retry
     (`max_retries`, `retry_sleep` — same shape as `rag/harvester.py`'s `Harvester`); a
