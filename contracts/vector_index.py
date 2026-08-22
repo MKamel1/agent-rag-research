@@ -87,6 +87,13 @@ class SearchFilters(FrozenModel):
     # budget is trading tokens for coverage, which is the right trade to make explicitly rather
     # than to have a cap make silently on its behalf.
     #
+    # Applies to BOTH retrieval paths -- the passage path (`retrieve()`/semantic_search) AND the
+    # whole-paper path (`retrieve_papers()`/search_papers). On the paper path the crowding case is
+    # concrete: a book contributes one vector per chapter (T-DOC80), so one book's hits can fill a
+    # page even under that path's own default cap (`rag/retriever.py::_MAX_HITS_PER_PAPER`) --
+    # `max_hits_per_paper` deliberately does not apply there, this field does. RI-26 closed the gap
+    # where the guarantee silently held on only the passage path.
+    #
     # Bounded by the candidate pool: this can only surface papers the first-stage hybrid search
     # already retrieved. Guaranteed-complete enumeration is `scan_corpus`, which examines every
     # paper rather than the pool.

@@ -1132,3 +1132,92 @@ def test_cap_can_lose_a_passage_that_the_additive_form_keeps():
     plain_blocks = {x.anchor.block_id for x in plain}
     assert plain_blocks - {x.anchor.block_id for x in capped}, "the cap dropped passages"
     assert not plain_blocks - {x.anchor.block_id for x in topped}, "the additive form dropped none"
+
+
+# ================================================================================================
+# SearchFilters.min_distinct_papers on the PAPER path (RI-26) -- the same additive guarantee
+# `retrieve()` already honours, now for `retrieve_papers()`. The crowding case is concrete here:
+# a book contributes one vector per chapter (T-DOC80), so even under that path's own default cap
+# (`_MAX_HITS_PER_PAPER`) one book's chapters can fill the page and crowd other papers out.
+# `max_hits_per_paper` deliberately does NOT apply on this path (its contract comment scopes it
+# out); `min_distinct_papers` does.
+# ================================================================================================
+
+
+def _seed_book_many_chapters(store, docstore, embedder, paper_id, n):
+    """One book whose whole-book summary + n chapter summaries all match the same query."""
+    chapter_summaries = [
+        ChapterSummary(summary_id=f"{paper_id}:summary:ch{i}", title=f"Chapter {i}",
+                       text=f"causal inference chapter {i} content")
+        for i in range(n)
+    ]
+    _seed_summary(store, docstore, embedder, paper_id=paper_id, summary_id=f"{paper_id}:summary",
+                  summary_text="causal inference book overview", doc_type="book",
+                  chapter_summaries=chapter_summaries)
+    for cs in chapter_summaries:
+        docstore._summaries[cs.summary_id] = cs.text
+        store.upsert(cs.summary_id, embedder.embed([cs.text])[0],
+                     _payload(paper_id, "summary", "Ch.", ("cs.LG",), embedder, cs.text))
+
+
+def test_search_papers_min_distinct_papers_adds_back_a_crowded_out_paper():
+    """RI-26 core: with the page monopolised by one book's chapters, asking for more distinct
+    papers must ADD them from the reranked remainder, not return the monopolised page unchanged."""
+    store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
+    _seed_book_many_chapters(store, docstore, embedder, "local:mnd00000001", 8)
+    for i in (2, 3):
+        pid = f"2506.0000{i}"
+        _seed_summary(store, docstore, embedder, paper_id=pid, summary_id=f"{pid}:summary",
+                      summary_text=f"causal inference paper number {i}")
+    r = _make_retriever(store, docstore, FakeReranker(), embedder)
+
+    plain, _ = r.retrieve_papers("causal", filters=None, k=3)
+    topped, _ = r.retrieve_papers("causal",
+                                  filters=SearchFilters(min_distinct_papers=2), k=3)
+
+    assert len({res.view.paper_id for res in plain}) == 1, (
+        "premise: the default per-paper cap still leaves this page monopolised by the book"
+    )
+    assert len({res.view.paper_id for res in topped}) >= 2, (
+        "the crowded-out paper is appended from the remainder"
+    )
+
+
+def test_search_papers_min_distinct_papers_never_drops_what_plain_returned():
+    """The field's stated promise holds on this path too: whatever the plain top-k returned is
+    still present, in order, with the extra papers appended after it (the result set may exceed
+    k -- the documented honest cost)."""
+    store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
+    _seed_book_many_chapters(store, docstore, embedder, "local:mnd00000002", 8)
+    for i in (4, 5):
+        pid = f"2506.0000{i}"
+        _seed_summary(store, docstore, embedder, paper_id=pid, summary_id=f"{pid}:summary",
+                      summary_text=f"causal inference paper number {i}")
+    r = _make_retriever(store, docstore, FakeReranker(), embedder)
+
+    plain, _ = r.retrieve_papers("causal", filters=None, k=3)
+    topped, _ = r.retrieve_papers("causal",
+                                  filters=SearchFilters(min_distinct_papers=2), k=3)
+
+    # PaperSearchResult carries no summary_id; summary_text is unique per seeded vector here.
+    assert [x.view.summary_text for x in topped[:len(plain)]] == \
+        [x.view.summary_text for x in plain], "the top k is returned unchanged, in order"
+    # Exactly one append: the second paper arrives, then the target (2 distinct) is met.
+    assert len(topped) == len(plain) + 1, (
+        "additive: the crowded-out paper is appended and nothing was displaced"
+    )
+
+
+def test_search_papers_min_distinct_papers_is_a_noop_when_target_already_met():
+    store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
+    for i in (1, 2, 3):
+        pid = f"2506.0000{i}"
+        _seed_summary(store, docstore, embedder, paper_id=pid, summary_id=f"{pid}:summary",
+                      summary_text=f"causal inference paper number {i}")
+    r = _make_retriever(store, docstore, FakeReranker(), embedder)
+
+    plain, _ = r.retrieve_papers("causal", filters=None, k=3)
+    topped, _ = r.retrieve_papers("causal",
+                                  filters=SearchFilters(min_distinct_papers=2), k=3)
+
+    assert [x.view.summary_text for x in topped] == [x.view.summary_text for x in plain]

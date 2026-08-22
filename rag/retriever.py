@@ -106,23 +106,28 @@ def _cap_hits_per_paper(results: list, paper_id_of, limit: int) -> list:
     return capped
 
 
-def _top_up_distinct_papers(top: list, remainder: list, minimum: int) -> list:
-    """Append the best passage from papers not already represented, until `minimum` distinct papers
+def _top_up_distinct_papers(top: list, remainder: list, minimum: int, paper_id_of) -> list:
+    """Append the best result from papers not already represented, until `minimum` distinct papers
     appear or the reranked remainder runs out.
 
     Purely additive -- `top` is returned unchanged with entries appended, never reordered or
     dropped. `remainder` is already in rerank order, so the first hit encountered for a new paper is
     that paper's best available passage.
+
+    `paper_id_of` exists for the same reason `_cap_hits_per_paper`'s does: `GroundedResult` exposes
+    `paper_id` directly while `PaperSearchResult` carries it one level down (`view.paper_id`), and
+    only the call site knows which shape it holds.
     """
-    seen = {result.paper_id for result in top}
+    seen = {paper_id_of(result) for result in top}
     if len(seen) >= minimum:
         return top
     topped = list(top)
     for result in remainder:
-        if result.paper_id in seen:
+        paper_id = paper_id_of(result)
+        if paper_id in seen:
             continue
         topped.append(result)
-        seen.add(result.paper_id)
+        seen.add(paper_id)
         if len(seen) >= minimum:
             break
     return topped
@@ -289,7 +294,9 @@ class Retriever:
         # would have been shown is displaced. That ordering is the whole difference between this
         # and `max_hits_per_paper` -- see the contract comment on both fields.
         if filters is not None and filters.min_distinct_papers is not None:
-            top = _top_up_distinct_papers(top, results[k:], filters.min_distinct_papers)
+            top = _top_up_distinct_papers(
+                top, results[k:], filters.min_distinct_papers, lambda r: r.paper_id
+            )
         return top, RetrievalCoverage(candidate_count=len(hits))
 
     def retrieve_papers(
@@ -378,7 +385,22 @@ class Retriever:
         # selects the best N per paper out of the reranked order, not an arbitrary N left over after
         # `k` already cut the list off.
         cap = _MAX_HITS_PER_PAPER_SCOPED if _is_scoped(filters) else _MAX_HITS_PER_PAPER
-        return _cap_per_paper(results, cap)[:k], RetrievalCoverage(candidate_count=len(hits))
+        capped = _cap_per_paper(results, cap)
+        top = capped[:k]
+        # RI-26: `min_distinct_papers` holds on this path too (see its contract comment) -- a book's
+        # chapters are separate vectors (T-DOC80), so even under the cap above one book can fill
+        # the page and crowd other papers out. Same ordering discipline as `retrieve()`, for the
+        # same reasons: the cap runs first (it needs the FULL reranked pool to pick each paper's
+        # best N); the top-up runs AFTER the `[:k]` truncation and draws from the capped remainder,
+        # so the top `k` is returned exactly as ranked and nothing that would have been shown is
+        # displaced -- papers are appended, and the result set can exceed `k` (the field's
+        # documented honest cost). Drawing from the pre-cap pool instead would re-admit exactly the
+        # chapters the cap just dropped, undoing T-DOC82.
+        if filters is not None and filters.min_distinct_papers is not None:
+            top = _top_up_distinct_papers(
+                top, capped[k:], filters.min_distinct_papers, lambda r: r.view.paper_id
+            )
+        return top, RetrievalCoverage(candidate_count=len(hits))
 
     def _hybrid_hits(self, query: str, filters: SearchFilters | None, k: int, *, kind: str):
         qvec = self._embedder.embed([query])[0]
