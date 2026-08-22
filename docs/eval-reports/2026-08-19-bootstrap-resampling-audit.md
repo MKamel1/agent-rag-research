@@ -1,3 +1,14 @@
+> **SUPERSEDED (2026-08-19) — see `2026-08-19-bootstrap-waymo-verified.md`.**
+>
+> This audit excluded `2506.02215` (*Active inference as a unified model of collision avoidance
+> behavior in human drivers*) as a naming trap. That was a **false negative**: the paper runs a
+> nonparametric bootstrap with 10,000 resamples at p.27 to estimate sampling variability for model
+> comparison. The cause was a low per-paper evidence cap — the paper's cross-entropy-method
+> `resampl` hits filled its quota and hid the bootstrap passage.
+>
+> The verbatim evidence and reasoning below remain accurate for the papers it does cover; the
+> USED/EXCLUDED counts do not. Read the superseding report for the current classification.
+
 # Bootstrap / Resampling Audit — Waymo-Authored Papers
 
 **Scope:** the 153 Waymo-authored papers in the corpus only (queried with the default, non-`--all-papers` mode; every query below returned `scope: WAYMO-AUTHORED ONLY`). Third-party AV-safety literature elsewhere in the 1,738-paper corpus is out of scope by construction and does not appear anywhere below.

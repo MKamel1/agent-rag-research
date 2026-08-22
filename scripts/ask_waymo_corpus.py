@@ -78,8 +78,9 @@ def main() -> int:
     for i, r in enumerate(results, 1):
         anchor = r["anchor"]
         pid = anchor["paper_id"]
-        print(f"\n[{i}] {pid}  p.{anchor['page']}  score={r['score']:.3f}")
-        print(f"    TITLE  : {name.get(pid, '')[:88]}")
+        # Title first and in full -- see the note in scripts/enumerate_corpus.py.
+        print(f"\n[{i}] {name.get(pid, '')}")
+        print(f"    PAPER  : {pid}  p.{anchor['page']}  score={r['score']:.3f}")
         print(f"    SECTION: {anchor['section_path'] or '(front matter / unsectioned)'}")
         print(f"    TEXT   : {' '.join(r['passage_text'].split())[:700]}")
     print(f"\n({len(results)} results)")

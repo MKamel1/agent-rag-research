@@ -51,7 +51,9 @@ def main() -> int:
     for paper_id, title, _block_id, page, section_path, snippet in rows:
         if paper_id != current:
             current = paper_id
-            print(f"{'='*92}\n{paper_id}  {title[:66]}")
+            # Title first and in full: the paper_id is an internal handle, and a truncated title
+            # reads as a file name, which is exactly what it must never be mistaken for.
+            print(f"{'='*92}\n{title}\n  [{paper_id}]")
         # A hint, never a filter: section detection fails on some PDFs, and auto-excluding on it
         # would reintroduce exactly the recall hole this tool exists to close.
         hint = "  <- citing section, likely a MENTION" if any(

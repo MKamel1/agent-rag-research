@@ -147,10 +147,23 @@ _JUNK_TITLE_PATTERNS = (
     r"^[\d\W]+$",                                       # digits/punctuation only -- page numbers
     r"^[\u2022\u25cf\u00b7*\-\u2013\u2014]\s",              # a bullet point, not a heading
     r"<[a-z/][^>]*>",                                   # markup fragment (e.g. "<sup>[1]</sup>")
-    r"^(issn|isbn|doi)\b",                              # identifier lines
+    r"^(issn|isbn|doi|digital object identifier)\b",     # identifier lines
     r"[$\\]",                                           # LaTeX/math markup -- body text
     r"^(january|february|march|april|may|june|july|august|september|october|november|december)"
     r"\s+\d{4}$",                                       # a date line
+    # Authoring tools default the PDF metadata title to the FILE NAME, which is word-shaped and so
+    # sails past the word-count floor -- "Safety Impact Crash Type Manuscript", "Automated Brake
+    # Response Onset_submission". Only unambiguous workflow furniture is listed: a rejected title
+    # costs nothing (the chain falls through to page 1's heading) but a rejected REAL title would
+    # lose the paper's identity, so nothing merely stylistic belongs here.
+    r"[_\-]\s*(submission|preprint|draft|revised|final)\b",   # "..._submission", "...-final"
+    r"^(initial submission|arxiv preprint version)",
+    # A journal's received/accepted banner, in either date order ("Received 7 December 2020" and
+    # "Received December 11, 2019" both occur here). Anchored on the "accepted" that always follows
+    # rather than on a date shape, so neither order can slip through.
+    r"^received\b.{0,90}\baccepted\b",
+    r"\b\d{8}\b",                                      # a date stamp: 11212024, 20260129
+    r"\bmanuscript\b\s*(\([^)]*\))?\s*$",              # trailing "Manuscript", "Manuscript (X)"
 )
 _MIN_TITLE_WORDS = 3
 
