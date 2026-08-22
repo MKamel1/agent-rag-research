@@ -64,10 +64,12 @@ from app.usage_log import UsageLog, read_usage_summary
 from contracts.config import Config
 from contracts.errors import ContractError, PermanentError, TransientError
 from contracts.vector_index import SearchFilters
+from pydantic import ValidationError
 from rag.atomic_write import atomic_write
 from rag.config import load_config
 from rag.mcp_server import _MAX_K as _SEARCH_MAX_K
 from rag.mcp_server import _MIN_K as _SEARCH_MIN_K
+import yaml
 
 logger = logging.getLogger(__name__)
 
@@ -442,7 +444,22 @@ def make_handler(
             elif parsed.path == "/api/status":
                 if not self._token_ok():
                     return
-                self._json(200, _status_dict(data_dir, status_module, controller_module))
+                # RI-27 fix 2: a broken config.yaml (operator typo while the dashboard is up)
+                # used to raise straight out of _status_dict through the socket layer -- the
+                # client got a connection reset with no HTTP response at all, on every poll
+                # (startup never touches config, so the server came up healthy, and lru_cache
+                # does not cache exceptions). The except tuple is exactly the config-error types
+                # rag.config.load_config's own docstring enumerates; the response reuses
+                # do_POST's {"ok": False, "message": str(e)} shape rather than a second format.
+                # str(e) is safe to return here (unlike /api/search's generic message,
+                # OG-48#8): the audience is the token-authenticated operator who broke their
+                # own config and needs the parse/validation detail to fix it.
+                try:
+                    self._json(200, _status_dict(data_dir, status_module, controller_module))
+                except (ContractError, yaml.YAMLError, ValidationError, FileNotFoundError) as e:
+                    logger.warning("status build failed on a config error: %s", e)
+                    self._json(500, {"ok": False, "message": str(e)})
+                    return
             elif parsed.path == "/api/search":
                 if not self._token_ok():
                     return
