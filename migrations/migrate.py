@@ -8,9 +8,10 @@ AND against an already-migrated, populated database (see T-DOC81 note in `migrat
 Postcondition: the database at `path` has WAL journal mode active and contains exactly the tables
 defined across every `000N_*.sql` file in this directory (0001_init.sql's V0 tables — papers,
 blocks, chunks, summaries, ingest_state, quarantine — plus 0002_ingest_checkpoint.sql's
-`ingest_checkpoint` and 0003_quarantine_diagnostics.sql's `quarantine_diagnostics`) — no V1+ tables
-(DATA-CONTRACTS.md "SQLite schema": V1 tables are named in a comment only, never created here) —
-plus the `schema_version` tracking table this file itself owns.
+`ingest_checkpoint`, 0003_quarantine_diagnostics.sql's `quarantine_diagnostics`, and
+0006_figures_tables.sql's `figures`/`tables`) — no V1+ tables (DATA-CONTRACTS.md "SQLite schema":
+V1 tables are named in a comment only, never created here) — plus the `schema_version` tracking
+table this file itself owns.
 
 This script is intentionally a thin, literal executor of the numbered `.sql` files in this
 directory — it does not contain any DDL of its own, other than `schema_version` (see below). If a

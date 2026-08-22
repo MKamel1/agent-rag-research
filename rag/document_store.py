@@ -5,9 +5,11 @@ DATA-CONTRACTS.md §M5, migrations/0001_init.sql).
 seams legitimately allowed to touch it directly (applying the schema vs. querying it).
 
 Round-trip note (T-D1 open question, resolved): the V0 schema is a deliberate *projection* of the
-richer contract objects — no columns for `ParsedDoc.parser_id`/`figures`/`tables`/`references`,
-and `PaperRef.latex_url` has no column either. `get()` fills those back in with empty/placeholder
-values; callers must not rely on them surviving a round-trip. `papers.pdf_path` has no PDF-bytes
+richer contract objects — no columns for `ParsedDoc.parser_id`/`references`, and `PaperRef.
+latex_url` has no column either. `get()` fills those back in with empty/placeholder values;
+callers must not rely on them surviving a round-trip. `ParsedDoc.figures`/`tables` ARE persisted
+(migrations/0006_figures_tables.sql, RI-18) — the `figures`/`tables` tables — and DO round-trip;
+they are not part of this projection gap. `papers.pdf_path` has no PDF-bytes
 source in `PaperRecord` to point at (the Harvester downloads the PDF separately, outside this
 ticket's scope) — `PaperRef.pdf_url` is stored there instead of a fabricated local path, which
 also happens to round-trip `pdf_url` exactly. `papers.markdown_path` DOES have a real source
@@ -28,7 +30,7 @@ from contracts.chunker import Chunk
 from contracts.document_store import ChapterSummary, PaperRecord
 from contracts.errors import ContractError
 from contracts.harvester import PaperRef
-from contracts.parser import ParsedDoc
+from contracts.parser import Figure, ParsedDoc, TableItem
 from contracts.provenance import Anchor, Block
 from migrations.migrate import migrate
 
@@ -161,6 +163,8 @@ class DocumentStore:
                 self._con.execute("DELETE FROM chunks WHERE paper_id = ?", (paper_id,))
                 self._con.execute("DELETE FROM blocks WHERE paper_id = ?", (paper_id,))
                 self._con.execute("DELETE FROM summaries WHERE paper_id = ?", (paper_id,))
+                self._con.execute("DELETE FROM figures WHERE paper_id = ?", (paper_id,))
+                self._con.execute("DELETE FROM tables WHERE paper_id = ?", (paper_id,))
                 self._con.execute(
                     """
                     INSERT INTO papers
@@ -211,6 +215,38 @@ class DocumentStore:
                             block.page,
                             json.dumps(list(block.bbox)),
                             block.section_path,
+                        ),
+                    )
+                for figure in record.parsed.figures:
+                    self._con.execute(
+                        """
+                        INSERT INTO figures
+                            (paper_id, image_path, caption, page, bbox_json, vlm_description)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            figure.paper_id,
+                            figure.image_path,
+                            figure.caption,
+                            figure.page,
+                            json.dumps(list(figure.bbox)),
+                            # ALWAYS None in V0 (contracts/parser.py's Figure) -- passed through,
+                            # never invented, exactly like chunk.contextual_header above.
+                            figure.vlm_description,
+                        ),
+                    )
+                for table in record.parsed.tables:
+                    self._con.execute(
+                        """
+                        INSERT INTO tables (paper_id, markdown, caption, page, bbox_json)
+                        VALUES (?, ?, ?, ?, ?)
+                        """,
+                        (
+                            table.paper_id,
+                            table.markdown,
+                            table.caption,
+                            table.page,
+                            json.dumps(list(table.bbox)),
                         ),
                     )
                 for chunk in record.chunks:
@@ -264,13 +300,17 @@ class DocumentStore:
         this return value). Order matters: these ids are read BEFORE the delete transaction runs,
         so a paper with no rows at all (already gone) simply returns `[]`.
 
-        The three non-`papers` deletes run unconditionally -- NOT gated on a `papers` row
+        The five non-`papers` deletes run unconditionally -- NOT gated on a `papers` row
         existing first. This is the one deliberate departure from mirroring `put()`: it's what
         lets this method clean up a real orphan (chunks/blocks with no matching `papers` row,
         the exact shape of the T-DOC23 bug -- an earlier cleanup pass ran a raw `DELETE FROM
         papers` with no cascade, back when nothing enforced the declared foreign keys). Deleting
         children before the parent, in that order, is also what keeps this method compatible with
-        `PRAGMA foreign_keys=ON` (enabled in `__init__`, T-DOC40) without any special-casing.
+        `PRAGMA foreign_keys=ON` (enabled in `__init__`, T-DOC40) without any special-casing --
+        `figures`/`tables` (migrations/0006_figures_tables.sql, RI-18) also `REFERENCES
+        papers(paper_id)`, so they must be deleted before the `papers` row here too, or the
+        `papers` delete below would start failing on the FK constraint the moment a paper has any
+        figures/tables.
         """
         chunk_ids = [
             row["chunk_id"]
@@ -290,6 +330,8 @@ class DocumentStore:
             self._con.execute("DELETE FROM chunks WHERE paper_id = ?", (paper_id,))
             self._con.execute("DELETE FROM blocks WHERE paper_id = ?", (paper_id,))
             self._con.execute("DELETE FROM summaries WHERE paper_id = ?", (paper_id,))
+            self._con.execute("DELETE FROM figures WHERE paper_id = ?", (paper_id,))
+            self._con.execute("DELETE FROM tables WHERE paper_id = ?", (paper_id,))
             self._con.execute("DELETE FROM papers WHERE paper_id = ?", (paper_id,))
         # Best-effort: a missing blob isn't a failure here (unlike the read path's
         # ContractError) -- deleting something already-gone is fine, not an error.
@@ -324,8 +366,8 @@ class DocumentStore:
             paper_id=paper_id,
             markdown=self._read_markdown_blob(row["markdown_path"]),
             blocks=self.get_blocks(paper_id),
-            figures=[],  # no schema table (schema projection gap)
-            tables=[],  # no schema table (schema projection gap)
+            figures=self._get_figures(paper_id),
+            tables=self._get_tables(paper_id),
             references=[],  # no schema table (schema projection gap)
             parser_id="",  # no column (schema projection gap)
         )
@@ -398,6 +440,23 @@ class DocumentStore:
             "SELECT * FROM blocks WHERE paper_id = ? ORDER BY idx", (paper_id,)
         ).fetchall()
         return [self._row_to_block(r) for r in rows]
+
+    def _get_figures(self, paper_id: str) -> list[Figure]:
+        """No `get_figure(figure_id)` getter exists (DATA-CONTRACTS.md "figures + tables") --
+        figures are only ever read back as the whole per-paper list on `get()`, in insertion
+        order (`figure_id`, the surrogate `INTEGER PRIMARY KEY`), matching `ParsedDoc.figures`'s
+        own list order."""
+        rows = self._con.execute(
+            "SELECT * FROM figures WHERE paper_id = ? ORDER BY figure_id", (paper_id,)
+        ).fetchall()
+        return [self._row_to_figure(r) for r in rows]
+
+    def _get_tables(self, paper_id: str) -> list[TableItem]:
+        """Same convention as `_get_figures` above -- no `get_table(table_id)` getter."""
+        rows = self._con.execute(
+            "SELECT * FROM tables WHERE paper_id = ? ORDER BY table_id", (paper_id,)
+        ).fetchall()
+        return [self._row_to_table(r) for r in rows]
 
     def scan_blocks(
         self, pattern: str, *, paper_id: str | None = None,
@@ -538,4 +597,25 @@ class DocumentStore:
             section_path=row["section_path"],
             parent_id=row["parent_id"],
             contextual_header=row["contextual_header"],
+        )
+
+    @staticmethod
+    def _row_to_figure(row: sqlite3.Row) -> Figure:
+        return Figure(
+            paper_id=row["paper_id"],
+            image_path=row["image_path"],
+            caption=row["caption"],
+            page=row["page"],
+            bbox=tuple(json.loads(row["bbox_json"])),
+            vlm_description=row["vlm_description"],
+        )
+
+    @staticmethod
+    def _row_to_table(row: sqlite3.Row) -> TableItem:
+        return TableItem(
+            paper_id=row["paper_id"],
+            markdown=row["markdown"],
+            caption=row["caption"],
+            page=row["page"],
+            bbox=tuple(json.loads(row["bbox_json"])),
         )

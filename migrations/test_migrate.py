@@ -28,12 +28,16 @@ from migrations.migrate import migrate
 
 V0_TABLES = {"papers", "blocks", "chunks", "summaries", "ingest_state", "quarantine"}
 ALL_TABLES = V0_TABLES | {"ingest_checkpoint", "quarantine_diagnostics"}
+# Table set after every migration through 0006 (figures/tables, RI-18) has applied -- distinct
+# from ALL_TABLES above, which the 0004/0005 parity tests below still use to mean "the table set
+# as of THAT migration," not the whole-schema final set.
+ALL_TABLES_THROUGH_0006 = ALL_TABLES | {"figures", "tables"}
 # T-DOC81: schema_version is created unconditionally by migrate() itself (the one legitimate
 # `CREATE TABLE IF NOT EXISTS` in this codebase) -- it exists in every database migrate() has
 # touched, fresh or adopted. Only tests that call migrate() should expect it; the DDL-parity tests
 # below build a schema by executing the raw `.sql` files directly and never see it, so they keep
-# comparing against plain ALL_TABLES.
-MIGRATED_TABLES = ALL_TABLES | {"schema_version"}
+# comparing against plain ALL_TABLES (or ALL_TABLES_THROUGH_0006, for the 0006-scoped ones).
+MIGRATED_TABLES = ALL_TABLES_THROUGH_0006 | {"schema_version"}
 # Pre-existing bug, unrelated to T-DOC81: 0001+0002 alone don't create quarantine_diagnostics
 # (that's 0003) or doc_type (that's 0004) -- the 0002-scoped parity test below must compare
 # against what 0001+0002 actually create, not the whole-schema ALL_TABLES.
@@ -45,6 +49,7 @@ ALL_MIGRATION_FILENAMES = {
     "0003_quarantine_diagnostics.sql",
     "0004_doc_type_and_chapter_titles.sql",
     "0005_author_orgs.sql",
+    "0006_figures_tables.sql",
 }
 
 REPO_ROOT = Path(__file__).parent.parent
@@ -54,6 +59,7 @@ CHECKPOINT_SCHEMA_FILE = Path(__file__).parent / "0002_ingest_checkpoint.sql"
 QUARANTINE_DIAGNOSTICS_SCHEMA_FILE = Path(__file__).parent / "0003_quarantine_diagnostics.sql"
 DOC_TYPE_AND_TITLES_SCHEMA_FILE = Path(__file__).parent / "0004_doc_type_and_chapter_titles.sql"
 AUTHOR_ORGS_SCHEMA_FILE = Path(__file__).parent / "0005_author_orgs.sql"
+FIGURES_TABLES_SCHEMA_FILE = Path(__file__).parent / "0006_figures_tables.sql"
 
 
 def _table_names(conn: sqlite3.Connection) -> set[str]:
@@ -272,6 +278,67 @@ def test_migrate_twice_in_a_row_is_a_noop_the_second_time_including_0005(tmp_pat
         assert rows[0] == 1
         cols = {row[1] for row in conn.execute("PRAGMA table_info(papers)")}
         assert {"raw_affiliations", "author_orgs"} <= cols
+    finally:
+        conn.close()
+
+
+def test_migrate_applies_0006_figures_tables_to_populated_db_and_preserves_data(tmp_path):
+    """RI-18's own version of the T-DOC81 required test #1: 0006 (figures/tables, new child
+    tables rather than an ALTER) is additive on top of 0001-0005 -- a database with real rows and
+    no `figures`/`tables` tables yet must pick them up without losing anything already there.
+
+    Stops the raw-apply at 0004, like `test_migrate_applies_0005_author_orgs_...` above: 0005 has
+    no `_ADOPTION_PROBES` entry (only 0001-0004 do, by design -- see `migrations/migrate.py`), so
+    raw-applying 0005 here too would make `migrate()`'s own loop try to re-apply it and fail on
+    `raw_affiliations` already existing -- letting `migrate()` apply 0005 (and then 0006) itself
+    through its normal loop is the realistic "never touched by hand" scenario anyway."""
+    db_path = str(tmp_path / "test.sqlite")
+    conn = sqlite3.connect(db_path)
+    try:
+        _raw_apply(
+            conn,
+            SCHEMA_FILE,
+            CHECKPOINT_SCHEMA_FILE,
+            QUARANTINE_DIAGNOSTICS_SCHEMA_FILE,
+            DOC_TYPE_AND_TITLES_SCHEMA_FILE,
+        )
+        _insert_minimal_paper(conn, "p1", doc_type_column=True)
+        _insert_minimal_chunk(conn, "c1", "p1")
+    finally:
+        conn.close()
+
+    migrate(db_path)
+
+    conn = sqlite3.connect(db_path)
+    try:
+        assert _applied_migrations(conn) == ALL_MIGRATION_FILENAMES
+        assert {"figures", "tables"} <= _table_names(conn)
+        paper = conn.execute(
+            "SELECT paper_id, title FROM papers WHERE paper_id = 'p1'"
+        ).fetchone()
+        assert paper == ("p1", "T")  # pre-existing row survived
+        chunk = conn.execute("SELECT chunk_id FROM chunks WHERE paper_id = 'p1'").fetchone()
+        assert chunk == ("c1",)
+    finally:
+        conn.close()
+
+
+def test_migrate_twice_in_a_row_is_a_noop_the_second_time_including_0006(tmp_path):
+    """Idempotency for 0006 specifically (mirrors the 0005 version above): calling `migrate()`
+    twice consecutively must not raise and must leave exactly one recorded application of 0006."""
+    db_path = str(tmp_path / "test.sqlite")
+
+    migrate(db_path)
+    migrate(db_path)
+
+    conn = sqlite3.connect(db_path)
+    try:
+        assert _applied_migrations(conn) == ALL_MIGRATION_FILENAMES
+        rows = conn.execute(
+            "SELECT COUNT(*) FROM schema_version WHERE filename = '0006_figures_tables.sql'"
+        ).fetchone()
+        assert rows[0] == 1
+        assert {"figures", "tables"} <= _table_names(conn)
     finally:
         conn.close()
 
@@ -533,6 +600,36 @@ def test_0003_quarantine_diagnostics_matches_data_contracts_schema():
         init_conn.executescript(diagnostics_sql)
 
         assert _table_names(contracts_conn) == _table_names(init_conn) == ALL_TABLES
+        assert _schema_snapshot(contracts_conn) == _schema_snapshot(init_conn)
+    finally:
+        contracts_conn.close()
+        init_conn.close()
+
+
+def test_0006_figures_tables_matches_data_contracts_schema():
+    """Same DDL parity check, for the additive `figures`/`tables` tables (RI-18). Like 0002/0003,
+    adds new tables (not columns) that REFERENCE `papers`, so 0001_init.sql must be applied first
+    for the FK-bearing DDL to parse."""
+    contracts_sql = _extract_schema_sql_block(DATA_CONTRACTS.read_text(), "### figures + tables")
+    figures_tables_sql = FIGURES_TABLES_SCHEMA_FILE.read_text()
+
+    contracts_conn = sqlite3.connect(":memory:")
+    init_conn = sqlite3.connect(":memory:")
+    try:
+        contracts_conn.executescript(SCHEMA_FILE.read_text())
+        contracts_conn.executescript(CHECKPOINT_SCHEMA_FILE.read_text())
+        contracts_conn.executescript(QUARANTINE_DIAGNOSTICS_SCHEMA_FILE.read_text())
+        contracts_conn.executescript(DOC_TYPE_AND_TITLES_SCHEMA_FILE.read_text())
+        contracts_conn.executescript(AUTHOR_ORGS_SCHEMA_FILE.read_text())
+        contracts_conn.executescript(contracts_sql)
+        init_conn.executescript(SCHEMA_FILE.read_text())
+        init_conn.executescript(CHECKPOINT_SCHEMA_FILE.read_text())
+        init_conn.executescript(QUARANTINE_DIAGNOSTICS_SCHEMA_FILE.read_text())
+        init_conn.executescript(DOC_TYPE_AND_TITLES_SCHEMA_FILE.read_text())
+        init_conn.executescript(AUTHOR_ORGS_SCHEMA_FILE.read_text())
+        init_conn.executescript(figures_tables_sql)
+
+        assert _table_names(contracts_conn) == _table_names(init_conn) == ALL_TABLES_THROUGH_0006
         assert _schema_snapshot(contracts_conn) == _schema_snapshot(init_conn)
     finally:
         contracts_conn.close()
