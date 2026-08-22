@@ -8,7 +8,7 @@ Status: **OPEN** (not started) · **IN PROGRESS** (branch/PR exists) · **BLOCKE
 
 ---
 
-## Review implementation programme (RI series, 2026-08-22) — IN PROGRESS
+## Review implementation programme (RI series, 2026-08-22) — COMPLETE
 
 Plan: `docs/superpowers/plans/2026-08-22-review-implementation.md`. Provenance: three independent
 review campaigns run 2026-08-21 (code-defect rounds 1-2 and a five-lens methodology review), with
@@ -41,8 +41,8 @@ Tickets are grouped into workstreams by file ownership so concurrent work cannot
 | RI-M4 | Truncation census | H | **DONE** -- `ce05f46` | Reports estimate-vs-real token calibration, not just bind rate. |
 | RI-M5 | Waymo eval fixture | I | **DONE** -- `c1f0254` | 15-item grounded seed set; every excerpt re-verified against the live corpus DB. |
 | RI-M6 | Groundedness harness | I | **DONE** -- `637b60c` | Rubric is PROVISIONAL -- needs operator sign-off before any output is treated as a baseline. |
-| RI-M7 | Score-distribution census | G | **IN PROGRESS** | Settles whether a relevance floor is even choosable. |
-| RI-17 | Prefetch logs carry no timestamps | - | **OPEN** | One-line fix, large payoff -- see below. |
+| RI-M7 | Score-distribution census | G | **DONE** -- `033565b`, `19afe05` | Settles whether a relevance floor is choosable. Verdict carries its own upper-bound caveat. |
+| RI-17 | Prefetch logs carry no timestamps | - | **DONE** -- `adc101e` | Starts the clock; the existing archive stays unmeasurable. |
 
 ### RI-16 — the dashboard's displayed rerank pool size still carries a clamp the pipeline dropped
 
