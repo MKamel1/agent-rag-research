@@ -11,6 +11,7 @@ import pytest
 
 from app.retrieval_eval import Question, build_report, load_questions, run
 from app.score_distribution_census import (
+    _KNOWN_ABSENT_LIMITATION_NOTE,
     build_census,
     collect_top_scores,
     distribution_stats,
@@ -89,7 +90,7 @@ def test_build_census_reports_separation_when_iqrs_do_not_overlap():
     census = build_census(answerable, known_absent)
 
     assert census["distributions_separate"] is True
-    assert census["verdict"] == "the distributions separate"
+    assert census["verdict"].startswith("the distributions separate")
     assert census["answerable"]["n"] == 5
     assert census["known_absent"]["n"] == 5
     assert census["answerable"]["n_excluded"] == 0
@@ -103,7 +104,53 @@ def test_build_census_reports_no_separation_when_iqrs_overlap():
     census = build_census(answerable, known_absent)
 
     assert census["distributions_separate"] is False
-    assert census["verdict"] == "the distributions do not separate"
+    assert census["verdict"].startswith("the distributions do not separate")
+
+
+# --- known-absent construction limitation (reviewer objection on RI-M7) ----------------------
+#
+# The known-absent arm's fabricated-entity design guarantees the sparse/lexical arm a zero
+# exact-term match by construction, which a real-but-uncovered topic would not get -- so
+# separation measured against this arm is plausibly an upper bound, not a measurement, of what a
+# real uncovered topic would show. That limitation must travel with the verdict inside the
+# emitted report itself (not just a docstring or the fixture's own _metadata), worded so a
+# "separate" verdict cannot be quoted as a bare conclusion.
+
+
+def test_build_census_emits_the_known_absent_limitation_note_verbatim():
+    """The full caveat must be readable straight out of the JSON report, every time -- not only
+    when the verdict happens to be "separate"."""
+    answerable = _report_with_scores([0.80, 0.82, 0.85, 0.90, 0.95])
+    known_absent = _report_with_scores([0.05, 0.10, 0.12, 0.15, 0.20])
+
+    census = build_census(answerable, known_absent)
+
+    assert census["known_absent_limitation"] == _KNOWN_ABSENT_LIMITATION_NOTE
+    assert "fabricated" in _KNOWN_ABSENT_LIMITATION_NOTE.lower()
+    assert "upper bound" in _KNOWN_ABSENT_LIMITATION_NOTE.lower()
+
+
+def test_build_census_separate_verdict_states_the_upper_bound_direction_inline():
+    """The direction most at risk of misquotation: a bare "the distributions separate" could be
+    lifted out of context to justify revisiting a relevance floor. The verdict string itself must
+    carry the upper-bound caveat, not defer it to a field a reader might not open."""
+    answerable = _report_with_scores([0.80, 0.82, 0.85, 0.90, 0.95])
+    known_absent = _report_with_scores([0.05, 0.10, 0.12, 0.15, 0.20])
+
+    census = build_census(answerable, known_absent)
+
+    assert "upper bound" in census["verdict"].lower()
+    assert "known_absent_limitation" in census["verdict"]
+
+
+def test_build_census_no_separation_verdict_notes_the_limitation_does_not_weaken_it():
+    answerable = _report_with_scores([0.40, 0.50, 0.60, 0.70, 0.80])
+    known_absent = _report_with_scores([0.30, 0.45, 0.55, 0.65, 0.75])
+
+    census = build_census(answerable, known_absent)
+
+    assert "known_absent_limitation" in census["verdict"]
+    assert "does not weaken" in census["verdict"]
 
 
 def test_build_census_counts_excluded_none_scores_per_arm():
@@ -190,7 +237,7 @@ def test_census_end_to_end_over_a_small_two_arm_fixture():
     assert census["answerable"]["n"] == 2
     assert census["known_absent"]["n"] == 2
     assert census["distributions_separate"] is True
-    assert census["verdict"] == "the distributions separate"
+    assert census["verdict"].startswith("the distributions separate")
 
 
 def test_the_committed_known_absent_fixture_loads_with_no_gold_paper_and_the_right_type():

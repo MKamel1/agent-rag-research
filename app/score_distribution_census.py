@@ -112,6 +112,23 @@ _SEPARATION_RULE_NOTE = (
     "docstring for why a looser (e.g. mean-based) rule was not used."
 )
 
+# Reviewer objection on RI-M7: a bare "separates"/"does not separate" verdict travels without the
+# known-absent arm's one construction limitation, and this census is the named condition for
+# revisiting a previously-rejected relevance floor -- a verdict read out of context could reverse
+# a correct rejection. Same posture as retrieval_eval.py's _TITLE_LEAK_NOTE: the caveat rides
+# inside the emitted report itself, not only a docstring, so it travels wherever the JSON is read.
+_KNOWN_ABSENT_LIMITATION_NOTE = (
+    "Known-absent arm construction limitation: every question names a FABRICATED entity, verified "
+    "absent from the corpus's own text (see eval_known_absent.json's _metadata). That guarantees "
+    "the sparse/lexical retrieval arm a zero exact-term match by construction -- a real-but-"
+    "uncovered topic would not get this guarantee, since a real term can still partially match "
+    "real corpus text. The dense arm is still exercised close to normally (plausible in-domain "
+    "vocabulary, well-formed methodological asks), so this caveat bites the sparse arm "
+    "specifically, not the whole comparison. Net effect: separation measured against this arm is "
+    "plausibly an UPPER BOUND on the separation a real uncovered topic would show. A 'separate' "
+    "verdict should be read with that ceiling in mind, not quoted as a bare conclusion."
+)
+
 
 def build_census(answerable_report: dict, known_absent_report: dict) -> dict:
     """The whole comparison, from two `build_report()` reports to a plain verdict. Neither report
@@ -119,6 +136,11 @@ def build_census(answerable_report: dict, known_absent_report: dict) -> dict:
     scores`) and applies `_iqr_separates`. Excluded counts (`n_questions` minus scored `n`) are
     carried alongside each arm's stats so a census over a run with retrieval errors or empty
     corpus responses states that plainly rather than silently shrinking the sample.
+
+    The verdict string always carries `_KNOWN_ABSENT_LIMITATION_NOTE`'s substance (in full when it
+    matters most -- a "separate" verdict, the direction the limitation can inflate -- and as an
+    explicit non-weakening note otherwise) so the caveat cannot be dropped by quoting the verdict
+    on its own. The full note is also emitted as its own `known_absent_limitation` field.
     """
     answerable_scores = collect_top_scores(answerable_report)
     known_absent_scores = collect_top_scores(known_absent_report)
@@ -129,9 +151,21 @@ def build_census(answerable_report: dict, known_absent_report: dict) -> dict:
     if separates is None:
         verdict = "undetermined -- one or both arms have zero scored (non-null top_score) questions"
     elif separates:
-        verdict = "the distributions separate"
+        # The at-risk direction (see _KNOWN_ABSENT_LIMITATION_NOTE): say so in the verdict itself.
+        verdict = (
+            "the distributions separate -- but this is plausibly an UPPER BOUND on the separation "
+            "a real uncovered topic would show, not a measurement of it; see "
+            "known_absent_limitation before treating this as grounds to revisit a relevance floor"
+        )
     else:
-        verdict = "the distributions do not separate"
+        # This direction is NOT weakened by the limitation: the arm's construction can only
+        # inflate apparent separation, never manufacture false overlap, so "no separation" here
+        # is at least as strong as it would be for a real uncovered topic.
+        verdict = (
+            "the distributions do not separate -- known_absent_limitation does not weaken this "
+            "conclusion, since the arm's construction can only inflate apparent separation, not "
+            "create false overlap"
+        )
 
     return {
         "answerable": {
@@ -143,6 +177,7 @@ def build_census(answerable_report: dict, known_absent_report: dict) -> dict:
             "n_excluded": known_absent_report["n_questions"] - len(known_absent_scores),
         },
         "separation_rule": _SEPARATION_RULE_NOTE,
+        "known_absent_limitation": _KNOWN_ABSENT_LIMITATION_NOTE,
         "distributions_separate": separates,
         "verdict": verdict,
     }
