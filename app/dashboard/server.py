@@ -5,7 +5,15 @@ reachability, not just localhost) that serves the static frontend, `GET /api/sta
 
 **`--token` is optional (T-DOC78).** Omit it and the server reads `<data-dir>/.dashboard_token`,
 generating one (`secrets.token_hex(16)`, written at mode `0600`) the first time none exists --
-`_load_or_create_token` below. An explicit `--token` still wins, for anyone scripting this. Beyond
+`_load_or_create_token` below. An explicit `--token` still wins, for anyone scripting this. An
+empty effective token refuses to start (RI-2): "" authenticates requests that send no
+X-Dashboard-Token header at all. Generation is an atomic pid-qualified-temp + `os.replace` write,
+and records its writer's identity in `<data-dir>/.dashboard_token.sidecar` (RI-6) so a LATER
+GENERATION while that writer is still live -- which would hand the two dashboards divergent
+tokens, resolved silently by last-writer-wins -- is refused; a start that finds the recorded
+writer's token file intact hands out that same token instead, since two readers of one file
+converge rather than diverge (a second dashboard on another port against the same corpus is a
+supported shape -- scripts/dashboard.sh's DASHBOARD_PORT/DASHBOARD_DATA_DIR are independent). Beyond
 just removing a hand-managed file convention nothing in the repo previously created or read, this
 also gets the token out of `ps`/`/proc/<pid>/cmdline` output in the normal (no-`--token`) path --
 any other local user could previously read a live dashboard's control token straight off the
@@ -37,8 +45,10 @@ import argparse
 import hmac
 import json
 import logging
+import os
 import re
 import secrets
+import sys
 import threading
 import time
 import urllib.parse
@@ -655,25 +665,135 @@ def build_server(
 # `--token $(cat .dashboard_token)` from memory every restart).
 _TOKEN_FILENAME = ".dashboard_token"
 
+# RI-6: provenance sidecar FOR the token file -- records WHICH process generated the current
+# `.dashboard_token`, so a stale sidecar from a dead run is distinguishable from a live one. The
+# token file itself stays plain text (`cat`, operator-authored tokens and verify_numbers.py all
+# read it verbatim); the sidecar holds only non-secret writer identity, so it can appear without
+# touching any of those contracts.
+_TOKEN_SIDECAR_NAME = ".dashboard_token.sidecar"
+
+
+class _LiveTokenWriterError(RuntimeError):
+    """Raised when the token sidecar's recorded writer is still the live process at that pid --
+    another dashboard instance appears to be running on this data dir right now."""
+
+
+def _read_token_sidecar(data_dir: Path) -> dict | None:
+    """Reads the writer-provenance sidecar, tolerating every malformed shape as absent (RI-6):
+    missing, unreadable, torn/truncated JSON, or a `pid` that isn't a positive int all return
+    `None` rather than raising. The sidecar can only ever ADD a refusal (a confirmed-live rival
+    writer below) -- it must never be able to add a crash. Identity fields may be None (the
+    capture is best-effort); only a sane `pid` is required."""
+    try:
+        record = json.loads((data_dir / _TOKEN_SIDECAR_NAME).read_text())
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return None
+    if not isinstance(record, dict):
+        return None
+    pid = record.get("pid")
+    if not isinstance(pid, int) or isinstance(pid, bool) or pid < 1:
+        return None
+    return record
+
+
+def _sidecar_writer_is_live(record: dict) -> bool:
+    """True only when the recorded writer is STILL the same live process -- matched on /proc
+    starttime AND cmdline exactly like the run manifest's `_verified_pid` (controller.py), never
+    on bare liveness: a bare check cannot tell the original writer apart from an unrelated
+    process the OS has since recycled onto that pid (reboot, pid-space wraparound), and would
+    refuse every restart after such a wraparound. Dead/recycled/unreadable reads as False --
+    the normal restart case."""
+    stored_starttime = record.get("pid_starttime")
+    stored_cmdline = record.get("pid_cmdline")
+    if stored_starttime is None or stored_cmdline is None:
+        return False
+    identity = controller._process_identity(record["pid"])
+    if identity is None:
+        return False
+    return identity == (stored_starttime, stored_cmdline)
+
+
+def _refuse_if_sidecar_writer_is_live(data_dir: Path) -> None:
+    record = _read_token_sidecar(data_dir)
+    if record is None or not _sidecar_writer_is_live(record):
+        return
+    raise _LiveTokenWriterError(
+        f"{data_dir / _TOKEN_SIDECAR_NAME} records its writer as pid {record['pid']}, which is "
+        "still alive -- another dashboard appears to be running on this data dir; stop it first "
+        "(scripts/dashboard.sh stop), or remove the sidecar if that pid record is stale"
+    )
+
+
+def _write_private_file(path: Path, text: str) -> None:
+    """Writes `text` to `path` through a pid-qualified temp file in the same directory, created
+    mode 0600 BEFORE any content exists, then `os.replace` -- POSIX-atomically, so a concurrent
+    reader sees the old content or the full new content, never a torn one, and a crash mid-write
+    leaves the target untouched (RI-6's crash window: the old touch->chmod->write_text sequence
+    could die between touch and write_text, persisting an EMPTY token file that the next start
+    read back as ""). The temp name carries this pid per OG-49 M12's two-writer convention, so
+    two concurrent first-time generators cannot interleave into one shared temp path."""
+    tmp = path.with_name(f"{path.name}.{os.getpid()}.tmp")
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    try:
+        with os.fdopen(fd, "w") as f:
+            f.write(text)
+    except BaseException:  # noqa: BLE001 -- cleanup-then-reraise, not error suppression
+        tmp.unlink(missing_ok=True)
+        raise
+    os.replace(tmp, path)
+
 
 def _load_or_create_token(data_dir: Path) -> str:
-    """Read `<data_dir>/.dashboard_token`, or generate and persist a new one if it doesn't exist
-    yet (T-DOC78). Never regenerates or re-chmods an EXISTING file -- an operator-managed token
-    must survive restarts unchanged, and this function has no business tightening or loosening
-    permissions it didn't set. A freshly-created file is `chmod 0600` (owner read/write only)
-    BEFORE its content is written, so the token is never briefly readable by another local user;
-    an existing file's permissions (already `0600` for the operator's real one) are left alone.
+    """Read `<data_dir>/.dashboard_token`, or generate and persist a new one if there isn't a
+    usable one yet (T-DOC78). An existing NON-EMPTY file is honored verbatim -- never
+    regenerated, never re-chmodded: an operator-managed token must survive restarts unchanged,
+    and this function has no business tightening or loosening permissions it didn't set. An
+    empty or unreadable one is regenerated instead of being handed back (RI-6): "" used to feed
+    RI-2's auth hole from the file side, comparing equal to `_token_ok`'s missing-header default.
+
+    Generation writes the token atomically (`_write_private_file`) and records this process's
+    identity in `<data-dir>/.dashboard_token.sidecar` -- which process generated the CURRENT
+    token file. The next start validates against it IMMEDIATELY BEFORE GENERATING: a sidecar
+    whose writer is still alive means that writer is running on this data dir right now, so
+    replacing its token file would resolve the ambiguity silently by last-writer-wins (two live
+    dashboards, divergent tokens) -- it raises `_LiveTokenWriterError` instead. A start that
+    finds a usable token file returns it WITHOUT consulting the sidecar: reading one shared
+    value cannot diverge, so there is nothing to refuse (and refusing would reject a supported
+    second-dashboard-on-another-port start that would have been correct). A corrupt sidecar is
+    tolerated as absent (provenance lost, nothing more); a failed sidecar WRITE degrades to a
+    logged warning for the same reason -- the token itself is already persisted and auth does
+    not depend on the sidecar.
 
     Never logs/prints the token value itself -- only where it was written, so the operator can
-    find it (`cat <path>`) without the value passing through any log line.
-    """
+    find it (`cat <path>`) without the value passing through any log line. The sidecar likewise
+    carries writer identity, never the secret."""
     token_path = data_dir / _TOKEN_FILENAME
     if token_path.exists():
-        return token_path.read_text().strip()
+        try:
+            existing = token_path.read_text().strip()
+        except (OSError, UnicodeDecodeError):
+            existing = ""
+        if existing:
+            return existing
 
-    token_path.touch()
-    token_path.chmod(0o600)
-    token_path.write_text(token := secrets.token_hex(16))
+    _refuse_if_sidecar_writer_is_live(data_dir)
+
+    token = secrets.token_hex(16)
+    _write_private_file(token_path, token)
+    identity = controller._process_identity(os.getpid())
+    sidecar_record = {
+        "pid": os.getpid(),
+        "pid_starttime": identity[0] if identity else None,
+        "pid_cmdline": identity[1] if identity else None,
+    }
+    try:
+        _write_private_file(data_dir / _TOKEN_SIDECAR_NAME, json.dumps(sidecar_record))
+    except OSError:
+        logger.warning(
+            "dashboard: could not write token-writer sidecar %s -- live-writer detection is "
+            "unavailable for this token",
+            data_dir / _TOKEN_SIDECAR_NAME, exc_info=True,
+        )
     print(f"dashboard: generated a new token at {token_path}")
     return token
 
@@ -690,7 +810,8 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--token", default=None,
         help="X-Dashboard-Token required for POST /api/control. Omit to read/generate "
-             "<data-dir>/.dashboard_token instead (T-DOC78) -- an explicit value here always wins.",
+             "<data-dir>/.dashboard_token instead (T-DOC78) -- an explicit value here always wins; "
+             "an empty value is refused at startup (RI-2).",
     )
     parser.add_argument(
         "--host", default="0.0.0.0",
@@ -703,7 +824,27 @@ def _parse_args() -> argparse.Namespace:
 def main() -> None:
     args = _parse_args()
     data_dir = Path(args.data_dir)
-    token = args.token if args.token is not None else _load_or_create_token(data_dir)
+    try:
+        token = args.token if args.token is not None else _load_or_create_token(data_dir)
+    except _LiveTokenWriterError as e:
+        print(f"dashboard: refusing to start: {e}", file=sys.stderr)
+        raise SystemExit(2) from e
+    if not token:
+        # RI-2, fail closed at the effective-token resolution point (not inside
+        # `_load_or_create_token` -- only the flag can produce "" today, but a guard where the
+        # value is resolved covers any future third source too): a configured "" token makes the
+        # missing-header default in `_token_ok` (`headers.get(..., "")`) compare equal, so every
+        # request with NO X-Dashboard-Token header at all authenticates. Refuse-to-start over
+        # silently regenerating: an operator who typed `--token ""` has a broken invocation and
+        # needs to be told.
+        print(
+            "dashboard: refusing to start: the effective token is empty (--token was given as "
+            "an empty string, or <data-dir>/.dashboard_token is empty) -- an empty token "
+            "authenticates requests that carry no X-Dashboard-Token header at all, disabling "
+            "auth entirely; pass a non-empty --token or omit it to use the token file",
+            file=sys.stderr,
+        )
+        raise SystemExit(2)
     httpd = build_server(data_dir, token, args.port, host=args.host)
     print(f"Corpus dashboard: http://{args.host}:{args.port} (data_dir={data_dir})")
     try:
