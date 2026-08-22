@@ -47,10 +47,12 @@ _SUMMARY_ID_SUFFIX = ":summary"
 # 2026-07-18: this is now only the CONSTRUCTOR DEFAULT (`Retriever.__init__`'s `rerank_pool_size`
 # param below) -- a caller that doesn't pass one still gets this same 32, unchanged. The live
 # value is `Config.rerank_depth`, threaded in by the composition root
-# (`app/assembly.py::build_mcp_server`), which -- per the T-DOC39 reasoning just above -- is also
-# where it gets clamped to `rag/reranker.py`'s `_MAX_BATCH_SIZE=32` (a pool bigger than that is
-# silently truncated by TEI anyway); this module still never imports or hardcodes that vendor
-# constant itself.
+# (`app/assembly.py::build_mcp_server`) straight through to `Retriever.__init__`, unclamped: there
+# is no longer a vendor batch-size ceiling to clamp it to. `rag/reranker.py` now packs an
+# oversized pool into multiple batches and merges their scores rather than truncating, so a pool
+# bigger than any single reranker call's own limit is fully used, not discarded (see
+# `rag/reranker.py`'s own comments for why). This module still never imports or hardcodes that
+# batching limit itself.
 _RERANK_POOL_SIZE = 32
 
 # T-DOC82: a book contributes one vector per chapter, so a strong book match could fill every
