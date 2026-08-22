@@ -161,7 +161,8 @@ def search_papers(
     """Whole-paper/summary-level search over the ingested corpus. `k` left unset uses the
     server's configured default (`Config.top_k`); pass it explicitly to override.
 
-    Note: same 32-result ceiling as `semantic_search` — see its docstring."""
+    Same `k` semantics as `semantic_search` — see its docstring for the clamp and the removal of
+    the old result-count ceiling."""
     return _server.search_papers(query, filters, k)
 
 

@@ -154,6 +154,17 @@ def test_tool_signatures_and_docstrings_preserved_after_usage_wiring(serve_modul
         assert fn.__doc__
 
 
+def test_served_search_docstrings_do_not_claim_the_removed_32_result_ceiling(serve_module):
+    # RI-10: `search_papers`' served docstring pointed readers at "same 32-result ceiling as
+    # `semantic_search`" three weeks after that ceiling was deleted (2026-08-19) -- and after
+    # `semantic_search`'s own docstring had started saying so, making this file contradict
+    # itself. An MCP client introspects tool docstrings to decide usage; a stale cap claim makes
+    # it never ask for k > 32 while the server would honor it.
+    serve_mod, _ = serve_module
+    assert "32-result ceiling" not in serve_mod.search_papers.__doc__
+    assert "ceiling is GONE" in serve_mod.semantic_search.__doc__  # the correct note survives
+
+
 def test_semantic_search_records_a_usage_row(serve_module):
     serve_mod, _ = serve_module
     filters = SearchFilters(doc_type="book")

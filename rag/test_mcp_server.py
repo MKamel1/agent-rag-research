@@ -527,3 +527,18 @@ def test_tool_docstrings_carry_routing_guidance():
     assert "doc_type" in _mod.McpServer.semantic_search.__doc__
     assert "books" in _mod.McpServer.search_papers.__doc__
     assert "doc_type" in _mod.McpServer.search_papers.__doc__
+
+
+def test_tool_docstrings_do_not_claim_the_removed_32_result_ceiling():
+    # RI-10: the OG-48#6 paragraph asserted `Coverage.returned` was "separately capped at 32
+    # regardless", but that assembly-side clamp was deleted 2026-08-19 -- `app/assembly.py` now
+    # threads `Config.rerank_depth` through unclamped (pinned by app/test_assembly.py's
+    # rerank-depth-passes-through-unclamped tests) and `rag/reranker.py` batches an oversized pool
+    # instead of truncating it (`_pack_batches`). A docstring asserting a cap the code does not
+    # have sends an operator debugging a short result set to "expected ceiling" when the real
+    # answer is a sparse corpus -- an invariant claim whose check would fail (CONVENTIONS §14),
+    # on the live tool's diagnostic contract.
+    for tool in (_mod.McpServer.semantic_search, _mod.McpServer.search_papers):
+        assert tool.__doc__ is not None
+        assert "capped at 32" not in tool.__doc__
+        assert "OG-48#6" not in tool.__doc__

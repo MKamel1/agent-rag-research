@@ -506,3 +506,16 @@ def test_embed_default_gpu_lock_timeout_is_generous_not_none():
     adapter = _build_real_embedder(httpx.Client(base_url="http://tei.local"), FakeGpuLock())
     assert adapter._gpu_lock_timeout == _mod._DEFAULT_GPU_LOCK_TIMEOUT_S
     assert _mod._DEFAULT_GPU_LOCK_TIMEOUT_S is not None
+
+
+def test_class_docstring_lock_scope_matches_the_per_attempt_implementation():
+    # RI-10: the class docstring claimed the lock was acquired "once around all sub-batches",
+    # the opposite of both the implementation (`_post_batch_with_retry` acquires per HTTP attempt
+    # and releases before every backoff sleep -- proven by
+    # test_backoff_sleep_happens_with_the_gpu_lock_already_released above) and the same
+    # docstring's own OG-48#3 paragraphs. A reader "simplifying" the retry loop per the false
+    # sentence would reintroduce exactly the cross-process lock starvation OG-48#3 fixed
+    # (CONVENTIONS §14's corollary: a comment asserting an invariant the code does not enforce
+    # tells the next reader not to check).
+    assert _mod.TeiEmbedder.__doc__ is not None
+    assert "once around all sub-batches" not in _mod.TeiEmbedder.__doc__
