@@ -15,8 +15,8 @@ Real sqlite schema (`migrations.migrate`), no real network (`httpx.MockTransport
 `rag/test_harvester_arxiv_source.py` and `rag/test_ingest_state_sqlite.py` already use.
 """
 
+import json
 import logging
-import os
 import re
 from datetime import date
 from pathlib import Path
@@ -29,7 +29,7 @@ from app.prefetch_pdfs import (
     _cached_count,
     _parse_args,
     _skip_marker_path,
-    _tmp_pdf_path,
+    _write_sidecar,
     main,
     prefetch_loop,
     run,
@@ -656,23 +656,29 @@ def test_log_every_cli_flag_defaults_to_25_when_absent():
 
 
 # ================================================================================================
-# OG-49 M12: the download tmp path is pid-qualified -- two concurrent prefetchers (or this script
-# racing the live pipeline's own downloader) must never share one tmp path for the same paper_id.
+# RI-21: both of this module's writes go through the shared pid-qualified helper
+# (`rag.atomic_write`) now. The PDF write was already pid-qualified inline (OG-49 M12 -- its old
+# `_tmp_pdf_path` unit tests moved to `rag/test_atomic_write.py` with the mechanism); the SIDECAR
+# write claimed the same discipline in its docstring but staged through the fixed
+# `<paper_id>.json.tmp` name, so two prefetchers converging on the same newest paper_id shared
+# one temp path -- a corrupt `<paper_id>.json` that wedges every later corpus build
+# (`app.assembly._cached_ref` re-validates it on each retry, no recovery path).
 # ================================================================================================
 
 
-def test_tmp_pdf_path_is_qualified_by_this_process_pid():
-    path = _tmp_pdf_path(Path("cache"), "2601.00001")
-    assert path.name == f"2601.00001.pdf.{os.getpid()}.tmp"
+def test_sidecar_write_never_touches_another_writers_temp_file(tmp_path):
+    """The two-writer scenario end to end: another writer's staged temp -- materialized as a
+    foreign file at the OLD fixed temp name -- must survive our write byte-for-byte, and the
+    sidecar must land complete and valid."""
+    ref = _make_ref(0)
+    foreign_tmp = tmp_path / f"{ref.paper_id}.json.tmp"
+    foreign_tmp.write_text("another writer's partial sidecar")
 
+    _write_sidecar(tmp_path, ref)
 
-def test_tmp_pdf_path_differs_from_a_different_pids_tmp_path():
-    # Simulates what a second, concurrent prefetcher process would compute for the SAME paper_id --
-    # a different pid must never produce the same tmp path.
-    ours = _tmp_pdf_path(Path("cache"), "2601.00001")
-    other_pid = os.getpid() + 1
-    theirs = Path("cache") / f"2601.00001.pdf.{other_pid}.tmp"
-    assert ours != theirs
+    assert foreign_tmp.read_text() == "another writer's partial sidecar"
+    sidecar = json.loads((tmp_path / f"{ref.paper_id}.json").read_text())
+    assert sidecar == json.loads(ref.model_dump_json())
 
 
 

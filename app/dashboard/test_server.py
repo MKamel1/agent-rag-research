@@ -1512,6 +1512,21 @@ def test_load_or_create_token_generates_and_persists_a_new_token_at_mode_0600(tm
     assert oct(token_path.stat().st_mode)[-3:] == "600"
 
 
+def test_write_private_file_never_touches_another_writers_temp_file(tmp_path):
+    """RI-21: `_write_private_file` delegates to the shared pid-qualified helper
+    (`rag.atomic_write`) -- same mechanism, plus the mode=0600 opt-in asserted above. Another
+    writer's staged temp (different pid, same target) must survive our write byte-for-byte and
+    the token must land complete."""
+    target = tmp_path / ".dashboard_token"
+    foreign_tmp = tmp_path / f".dashboard_token.{os.getpid() + 1}.tmp"
+    foreign_tmp.write_text("another generator's partial write")
+
+    server_mod._write_private_file(target, "token-value")
+
+    assert foreign_tmp.read_text() == "another generator's partial write"
+    assert target.read_text() == "token-value"
+
+
 def test_load_or_create_token_reads_an_existing_token_without_regenerating_it(tmp_path):
     token_path = tmp_path / ".dashboard_token"
     token_path.write_text("existing-operator-token")

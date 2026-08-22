@@ -64,6 +64,7 @@ from app.usage_log import UsageLog, read_usage_summary
 from contracts.config import Config
 from contracts.errors import ContractError, PermanentError, TransientError
 from contracts.vector_index import SearchFilters
+from rag.atomic_write import atomic_write
 from rag.config import load_config
 from rag.mcp_server import _MAX_K as _SEARCH_MAX_K
 from rag.mcp_server import _MIN_K as _SEARCH_MIN_K
@@ -734,22 +735,16 @@ def _refuse_if_sidecar_writer_is_live(data_dir: Path) -> None:
 
 
 def _write_private_file(path: Path, text: str) -> None:
-    """Writes `text` to `path` through a pid-qualified temp file in the same directory, created
-    mode 0600 BEFORE any content exists, then `os.replace` -- POSIX-atomically, so a concurrent
-    reader sees the old content or the full new content, never a torn one, and a crash mid-write
-    leaves the target untouched (RI-6's crash window: the old touch->chmod->write_text sequence
-    could die between touch and write_text, persisting an EMPTY token file that the next start
-    read back as ""). The temp name carries this pid per OG-49 M12's two-writer convention, so
-    two concurrent first-time generators cannot interleave into one shared temp path."""
-    tmp = path.with_name(f"{path.name}.{os.getpid()}.tmp")
-    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-    try:
-        with os.fdopen(fd, "w") as f:
-            f.write(text)
-    except BaseException:  # noqa: BLE001 -- cleanup-then-reraise, not error suppression
-        tmp.unlink(missing_ok=True)
-        raise
-    os.replace(tmp, path)
+    """Writes `text` to `path` atomically via the shared pid-qualified helper (`rag.atomic_write`,
+    RI-21's generalization of this function), at mode 0600 -- the token file must be created
+    private BEFORE any content exists, never briefly world-readable mid-write. `os.replace` is
+    POSIX-atomic, so a concurrent reader sees the old content or the full new content, never a
+    torn one, and a crash mid-write leaves the target untouched (RI-6's crash window: the old
+    touch->chmod->write_text sequence could die between touch and write_text, persisting an EMPTY
+    token file that the next start read back as ""). The pid-qualified temp name per OG-49 M12's
+    two-writer convention means two concurrent first-time generators cannot interleave into one
+    shared temp path."""
+    atomic_write(path, text, mode=0o600)
 
 
 def _load_or_create_token(data_dir: Path) -> str:

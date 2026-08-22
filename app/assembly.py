@@ -8,7 +8,6 @@
 """
 
 import logging
-import os
 import time
 from collections.abc import Callable
 from concurrent.futures import Future, ThreadPoolExecutor
@@ -25,6 +24,7 @@ from contracts.embedder import EmbedderInfo
 from contracts.errors import PermanentError, TransientError
 from contracts.harvester import PaperRef
 from contracts.parser import ParsedDoc
+from rag.atomic_write import atomic_write
 from rag.chunker import Chunker
 from rag.document_store import DocumentStore
 from rag.embedder import TeiEmbedder
@@ -421,19 +421,14 @@ class _PdfDownloadParser:
         path = self._cache_path(ref)
         if path is None:
             return
-        # Atomic write -- tmp-then-rename, same convention as `prefetch_pdfs._download_one` --
-        # so a crash mid-write never leaves a partial `.pdf` that a later cache-hit check would
-        # mistake for complete. Both this path and `prefetch_pdfs._download_one`'s (OG-49 M12)
-        # pid-qualify their tmp name: the 24/7 standalone prefetcher and this live pipeline are
-        # structurally likely to grab the same newest paper_id around the same time, and two
-        # processes writing the SAME tmp path can interleave into one corrupted file that then
-        # gets renamed into place as a permanently-poisoned "valid" cache entry (T-DOC18 bug --
-        # sticky corruption, invisible to `exists()`). Both this module and `prefetch_pdfs` use the
-        # identical `<name>.<pid>.tmp` pattern, and no two live processes ever share a pid, so
-        # whichever process's atomic rename() lands last simply leaves one complete, valid file.
-        tmp_path = path.with_name(f"{path.name}.{os.getpid()}.tmp")
-        tmp_path.write_bytes(content)
-        tmp_path.rename(path)
+        # Atomic write via the shared helper (RI-21): staged in a pid-qualified temp sibling, then
+        # swapped into place whole. The pid qualification is the OG-49 M12 two-writer convention --
+        # the 24/7 standalone prefetcher and this live pipeline are structurally likely to grab the
+        # same newest paper_id around the same time, and two processes writing the SAME temp path
+        # can interleave into one corrupted file that then gets renamed into place as a
+        # permanently-poisoned "valid" cache entry (T-DOC18 bug -- sticky corruption, invisible to
+        # `exists()`). `rag/atomic_write.py`'s module docstring carries the full mechanism.
+        atomic_write(path, content)
 
     def _download_once(self, ref: PaperRef) -> bytes:
         try:

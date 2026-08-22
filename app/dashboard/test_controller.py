@@ -788,6 +788,23 @@ def test_manifest_write_is_atomic_no_tmp_file_left_behind(tmp_path):
         _cleanup(manifest)
 
 
+def test_manifest_write_never_touches_another_writers_temp_file(tmp_path):
+    """RI-21: this write used to stage through the FIXED name `run_manifest.json.tmp` -- two
+    concurrent writers of one data dir's manifest shared that path, so one truncated the other's
+    partial write and whichever publish landed second installed an interleaved manifest or died
+    on a temp already moved away. The shared helper stages pid-qualified (`rag.atomic_write`),
+    so another writer's staged temp -- materialized here as a foreign file at the old fixed name
+    -- must survive our write byte-for-byte."""
+    foreign_tmp = tmp_path / "run_manifest.json.tmp"
+    foreign_tmp.write_text('{"writer": "someone-else", "partial": true}')
+
+    controller_mod._write_manifest(tmp_path, {"run_id": "run-1", "status": "running"})
+
+    assert foreign_tmp.read_text() == '{"writer": "someone-else", "partial": true}'
+    on_disk = json.loads((tmp_path / "run_manifest.json").read_text())
+    assert on_disk["run_id"] == "run-1"
+
+
 # --- retarget: stop-then-start ---------------------------------------------------------------
 
 

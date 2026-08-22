@@ -77,6 +77,7 @@ from pydantic import ValidationError
 from app import tei_lifecycle
 from app.dashboard import tag_pool
 from contracts.config import Config
+from rag.atomic_write import atomic_write
 from rag.config import load_config
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -216,12 +217,11 @@ def _read_manifest(data_dir: Path) -> dict | None:
 
 
 def _write_manifest(data_dir: Path, manifest: dict) -> None:
-    """write-temp + `os.replace()`: the rename is POSIX-atomic, so a concurrent reader always
-    sees either the old file or the new one in full, never a torn read mid-write."""
+    """Atomic via the shared pid-qualified helper (`rag.atomic_write`, RI-21): a concurrent reader
+    always sees either the old file or the new one in full, never a torn read mid-write, and two
+    writers of one data dir's manifest can never share a temp path."""
     path = _manifest_path(data_dir)
-    tmp = path.with_suffix(".json.tmp")
-    tmp.write_text(json.dumps(manifest, indent=2))
-    os.replace(tmp, path)
+    atomic_write(path, json.dumps(manifest, indent=2))
 
 
 # --- process identity (PID-reuse safety) ---------------------------------------------------------

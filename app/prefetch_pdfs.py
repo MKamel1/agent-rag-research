@@ -82,7 +82,6 @@ from __future__ import annotations
 
 import argparse
 import logging
-import os
 import time
 from pathlib import Path
 
@@ -91,6 +90,7 @@ import httpx
 from contracts.config import Config
 from contracts.errors import PermanentError, TransientError
 from contracts.harvester import PaperRef
+from rag.atomic_write import atomic_write
 from rag.config import load_config
 from rag.harvester import ArxivSource, Harvester, arxiv_http_client
 from rag.ingest_state_sqlite import SqliteIngestState
@@ -131,13 +131,6 @@ def _pdf_path(cache_dir: Path, paper_id: str) -> Path:
     return cache_dir / f"{paper_id}.pdf"
 
 
-def _tmp_pdf_path(cache_dir: Path, paper_id: str) -> Path:
-    # OG-49 M12: pid-qualified so two concurrent prefetchers (or this script racing the live
-    # pipeline's own `app/assembly.py::_PdfDownloadParser._write_cache`, same pattern) downloading
-    # the SAME paper_id at once never share a tmp path -- see `_download_one`'s docstring.
-    return cache_dir / f"{paper_id}.pdf.{os.getpid()}.tmp"
-
-
 def _sidecar_path(cache_dir: Path, paper_id: str) -> Path:
     # T-DOC48: the `PaperRef` metadata this script already fetched to decide the download,
     # persisted alongside the PDF so a later offline ingest run (app/assembly.py's `harvest_refs`)
@@ -147,13 +140,13 @@ def _sidecar_path(cache_dir: Path, paper_id: str) -> Path:
 
 
 def _write_sidecar(cache_dir: Path, ref: PaperRef) -> None:
-    """Persist `ref` as `<paper_id>.json`, same atomic tmp-then-rename discipline as the PDF
-    write in `_download_one` -- a crash mid-write must never leave a partial/corrupt sidecar that
-    a later cache-first read would choke on."""
-    final_path = _sidecar_path(cache_dir, ref.paper_id)
-    tmp_path = cache_dir / f"{ref.paper_id}.json.tmp"
-    tmp_path.write_text(ref.model_dump_json())
-    tmp_path.rename(final_path)
+    """Persist `ref` as `<paper_id>.json`, same atomic discipline as the PDF write in
+    `_download_one` -- a crash mid-write must never leave a partial/corrupt sidecar that a later
+    cache-first read would choke on (and two concurrent prefetchers converging on the same newest
+    paper_id must never share one temp path: RI-21 -- this write's docstring claimed that
+    discipline long before it had it; the shared pid-qualified helper is what actually gives it).
+    """
+    atomic_write(_sidecar_path(cache_dir, ref.paper_id), ref.model_dump_json())
 
 
 def _skip_marker_path(cache_dir: Path, paper_id: str) -> Path:
@@ -179,17 +172,17 @@ def _download_one(client: httpx.Client, ref: PaperRef, cache_dir: Path) -> None:
     `rag/harvester.py`'s `ArxivSource` already uses) or `PermanentError` for anything else (e.g. a
     withdrawn paper's 404).
 
-    OG-49 M12: the tmp name is pid-qualified (`<paper_id>.pdf.<pid>.tmp`), same convention
-    `app/assembly.py`'s `_PdfDownloadParser._write_cache` already uses for the identical reason —
+    OG-49 M12 (via the shared `rag.atomic_write` helper, RI-21): the staged temp name is
+    pid-qualified (`<paper_id>.pdf.<pid>.tmp`, same convention `app/assembly.py`'s
+    `_PdfDownloadParser._write_cache` uses for the identical reason) --
     two concurrent prefetchers (or a prefetcher racing the live pipeline's own download-and-parse
     step) can independently decide to fetch the SAME newest paper_id around the same time; a fixed
-    tmp name would let their writes interleave into one corrupted file that then gets renamed into
+    temp name would let their writes interleave into one corrupted file that then gets renamed into
     place as a permanently-poisoned "valid" cache entry (T-DOC18's bug shape). A pid-qualified name
-    can never collide with another process's tmp write, so whichever atomic rename() lands last
-    simply leaves one complete, valid file.
+    gives each process its own staging file, so whichever atomic publish lands last simply leaves
+    one complete, valid file.
     """
     final_path = _pdf_path(cache_dir, ref.paper_id)
-    tmp_path = _tmp_pdf_path(cache_dir, ref.paper_id)
     try:
         resp = client.get(ref.pdf_url)
         resp.raise_for_status()
@@ -207,8 +200,7 @@ def _download_one(client: httpx.Client, ref: PaperRef, cache_dir: Path) -> None:
             f"prefetch_pdfs: request failed for paper_id={ref.paper_id!r}: {error}"
         ) from error
 
-    tmp_path.write_bytes(resp.content)
-    tmp_path.rename(final_path)
+    atomic_write(final_path, resp.content)
     # T-DOC48: capture the `PaperRef` this call already had in hand instead of discarding it --
     # see `_write_sidecar`. Written after the PDF is durably in place, not before: a later
     # cache-first reader (app/assembly.py) only trusts a sidecar once its matching `.pdf` exists.
