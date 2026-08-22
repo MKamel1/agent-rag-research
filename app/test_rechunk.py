@@ -408,7 +408,10 @@ class _StaticParser:
         return self._parsed
 
 
-class _StaticSummarizer:
+class _SummaryStub:
+    # Not named `*Summarizer`: CI check (f) reads that suffix as a real GPU-bound adapter
+    # missing its required `gpu_lock: GpuLock` parameter (same reason app/rechunk.py names its
+    # Protocol `_RechunkableEmbedderSeam`). This is a canned-text test double, not an adapter.
     def summarize(self, parsed: ParsedDoc, *, kind: str = "paper") -> str:
         return "A short summary."
 
@@ -442,7 +445,7 @@ def test_rechunked_chunk_payload_equals_the_ingest_time_payload_field_for_field(
         harvester=_OneRefHarvester(_paper_ref()),
         parser=_StaticParser(parsed),
         chunker=chunker,
-        summarizer=_StaticSummarizer(),
+        summarizer=_SummaryStub(),
         embedder=embedder,
         document_store=store,
         vector_index=ingest_vectors,
