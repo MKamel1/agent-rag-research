@@ -17,10 +17,12 @@ Real sqlite schema (`migrations.migrate`), no real network (`httpx.MockTransport
 
 import logging
 import os
+import re
 from datetime import date
 from pathlib import Path
 
 import httpx
+import pytest
 
 from app.prefetch_pdfs import (
     _RE_HARVEST_INTERVAL_SECONDS,
@@ -28,6 +30,7 @@ from app.prefetch_pdfs import (
     _parse_args,
     _skip_marker_path,
     _tmp_pdf_path,
+    main,
     prefetch_loop,
     run,
 )
@@ -671,3 +674,44 @@ def test_tmp_pdf_path_differs_from_a_different_pids_tmp_path():
     theirs = Path("cache") / f"2601.00001.pdf.{other_pid}.tmp"
     assert ours != theirs
 
+
+
+# ================================================================================================
+# RI-17: `main()`'s `logging.basicConfig` had no `format=`, so no line in an archived run log
+# carried a timestamp -- every number RI-M1's census could recover was a line-occurrence count or
+# a configured constant, never a measured duration (stall length, real throughput). This only
+# starts the clock going forward; it cannot recover timestamps for logs already archived.
+# ================================================================================================
+
+
+def test_main_configures_logging_with_a_timestamp_format(monkeypatch):
+    """Drive the real `main()` far enough to run its `logging.basicConfig` call, then format an
+    actual `LogRecord` through the handler it installed -- so this fails if the timestamp is
+    later dropped from the format, not just if some format string constant changes."""
+    root = logging.getLogger()
+    saved_handlers = root.handlers[:]
+    saved_level = root.level
+    root.handlers.clear()
+
+    def _stop_after_basic_config() -> None:
+        raise RuntimeError("stop after basicConfig")
+
+    monkeypatch.setattr("app.prefetch_pdfs._parse_args", _stop_after_basic_config)
+    try:
+        with pytest.raises(RuntimeError, match="stop after basicConfig"):
+            main()
+        assert len(root.handlers) == 1, "logging.basicConfig did not install its handler"
+        record = logging.LogRecord(
+            name="app.prefetch_pdfs", level=logging.INFO, pathname=__file__, lineno=1,
+            msg="prefetch stalled: 3/10 cached", args=(), exc_info=None,
+        )
+        line = root.handlers[0].formatter.format(record)
+    finally:
+        root.handlers.clear()
+        root.handlers.extend(saved_handlers)
+        root.setLevel(saved_level)
+
+    assert re.match(
+        r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3} INFO app\.prefetch_pdfs: prefetch stalled",
+        line,
+    ), f"emitted line missing a timestamp: {line!r}"

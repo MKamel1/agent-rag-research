@@ -394,7 +394,9 @@ def prefetch_loop(
 
     T-DOC61: all status lines below go through `logging` (INFO), not `print` -- see module
     `__main__`'s `logging.basicConfig` call, which is what actually makes a days-long unattended
-    run's progress show up anywhere.
+    run's progress show up anywhere. RI-17: that call also sets `format=` so every line carries a
+    timestamp -- without it, an archived run log records that something happened but not when,
+    and stall duration or throughput can't be measured from it after the fact.
     """
     idle_passes = 0
     while cached_count(cache_dir) < target:
@@ -428,7 +430,12 @@ def main() -> None:
     # days-long unattended cache-build produced an empty log because nothing ever configured a
     # handler. Matches the sibling `app/` entrypoints' own `__main__` convention (e.g.
     # `app/retrieval_eval.py`, `app/benchmark.py`).
-    logging.basicConfig(level=logging.INFO)
+    # RI-17: `format=` adds `%(asctime)s` so every line carries a timestamp -- previously it
+    # didn't, so an archived run log could say a stall happened but never how long it lasted.
+    # This only starts the clock; it can't recover timestamps for logs already archived.
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    )
     args = _parse_args()
     cfg = load_config()
     db_path = cfg.db_path
