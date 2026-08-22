@@ -165,6 +165,18 @@ def test_served_search_docstrings_do_not_claim_the_removed_32_result_ceiling(ser
     assert "ceiling is GONE" in serve_mod.semantic_search.__doc__  # the correct note survives
 
 
+def test_served_search_docstrings_state_absence_honesty_and_the_rejected_floor(serve_module):
+    # RI-10 part 2: the tool docstrings an MCP client actually sees over the wire must carry the
+    # same absence-honesty statement as rag/mcp_server.py's own docstrings -- no relevance floor
+    # exists, a full k-sized result set is not proof any result answers the query, and a floor
+    # stays rejected pending RI-M7's score-distribution census.
+    serve_mod, _ = serve_module
+    assert "relevance floor" in serve_mod.semantic_search.__doc__
+    assert "RI-M7" in serve_mod.semantic_search.__doc__
+    assert "relevance floor" in serve_mod.search_papers.__doc__
+    assert "RI-M7" in serve_mod.search_papers.__doc__
+
+
 def test_semantic_search_records_a_usage_row(serve_module):
     serve_mod, _ = serve_module
     filters = SearchFilters(doc_type="book")

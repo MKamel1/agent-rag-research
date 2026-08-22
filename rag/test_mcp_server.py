@@ -542,3 +542,16 @@ def test_tool_docstrings_do_not_claim_the_removed_32_result_ceiling():
         assert tool.__doc__ is not None
         assert "capped at 32" not in tool.__doc__
         assert "OG-48#6" not in tool.__doc__
+
+
+def test_tool_docstrings_state_absence_honesty_and_the_rejected_floor():
+    # RI-10 part 2: this system has no relevance floor -- semantic_search/search_papers return
+    # their top k candidates regardless of whether any of them actually answer the query. Without
+    # this stated plainly, a full k-sized result set reads like k confirmations of relevance. A
+    # floor was proposed and rejected in review (RI-M7 is the census that could someday overturn
+    # that); the docstring names RI-M7 so a future reader who wants to "helpfully" add a threshold
+    # finds the rejection and its reversal condition instead of just adding one.
+    for tool in (_mod.McpServer.semantic_search, _mod.McpServer.search_papers):
+        assert tool.__doc__ is not None
+        assert "relevance floor" in tool.__doc__
+        assert "RI-M7" in tool.__doc__

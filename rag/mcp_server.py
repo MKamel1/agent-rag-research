@@ -91,6 +91,17 @@ class McpServer:
         `Coverage.candidates` (the true pre-rerank pool size) to see whether the pool itself was
         small.
 
+        A FULL result set is not evidence of the opposite, either. There is no relevance floor
+        anywhere in this pipeline -- every stage (hybrid, RRF, rerank) only ever ranks the
+        candidates it has and returns the best of them; none rejects a candidate for scoring low
+        in absolute terms. `k` `GroundedResult`s are the `k` best-available passages, not `k`
+        endorsements that any of them actually answer the query -- a caller still has to judge
+        relevance from the passage text itself. (A floor was proposed and rejected in review; it
+        stays rejected until a score-distribution census over known-answerable vs. known-absent
+        queries, RI-M7, shows the two distributions actually separate -- an unseparated
+        distribution means any threshold is a guess wearing a decision's clothes. Don't add one
+        here on a single bad-looking case.)
+
         The corpus mixes research **papers** (latest methods/evidence) and **books** (foundational
         definitions/concepts). For conceptual/definitional questions, pass
         `filters={"doc_type": "book"}`; for state-of-the-art or empirical results, prefer
@@ -131,6 +142,10 @@ class McpServer:
         `k=None` resolves to `self._default_k`, same as `semantic_search` — see its docstring
         for the `[_MIN_K, _MAX_K]` clamp (OG-48#5) and why there is no further cap on how many
         results come back.
+
+        Same absence-honesty caveat as `semantic_search`, and it applies here too: a full `k`-sized
+        result set is `k` best-scoring papers, not `k` papers confirmed to address the query — see
+        its docstring for why no relevance floor exists and why one stays rejected pending RI-M7.
 
         The corpus mixes research **papers** (latest methods/evidence) and **books** (foundational
         definitions/concepts). For conceptual/definitional questions, pass
