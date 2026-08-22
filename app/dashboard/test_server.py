@@ -1475,6 +1475,74 @@ def test_parse_args_token_defaults_to_none_so_main_falls_back_to_the_token_file(
     assert args.token is None
 
 
+# --- RI-2: an empty effective token fails closed at startup -------------------------------------
+
+
+@contextmanager
+def _server_with_token(data_dir, token):
+    """A real server on 127.0.0.1:0 built with an explicitly-resolved `token`, for tests that
+    drive a startup path (flag / generated file / operator file) end to end."""
+    httpd = build_server(
+        data_dir, token, port=0, host="127.0.0.1",
+        status_module=_FakeStatus(), controller_module=_FakeController(),
+    )
+    thread = threading.Thread(target=httpd.serve_forever, daemon=True)
+    thread.start()
+    try:
+        yield f"http://127.0.0.1:{httpd.server_address[1]}"
+    finally:
+        httpd.shutdown()
+        httpd.server_close()
+        thread.join(timeout=5.0)
+
+
+def test_main_refuses_to_start_when_the_token_flag_is_empty(tmp_path, monkeypatch, capsys):
+    """`--token ""` used to win over the generated token (`args.token is not None`), and a
+    configured "" token makes `hmac.compare_digest(<missing header's default "">, "")` succeed --
+    every request carrying NO header at all authenticated (review-verified live: no header -> 200).
+    The guard lives at the effective-token resolution point in main(), NOT inside
+    `_load_or_create_token`: the file path can't hand back an empty token, only the flag can, and
+    a guard where the value is resolved also covers any future third source. Refuse-to-start over
+    silently regenerating: an operator who typed `--token ""` has a broken invocation and needs to
+    be told, not quietly overridden."""
+    monkeypatch.setattr(
+        "sys.argv", ["dashboard", "--data-dir", str(tmp_path), "--token", ""],
+    )
+
+    def _must_not_be_reached(*args, **kwargs):
+        raise AssertionError("build_server must never run with an empty effective token")
+
+    monkeypatch.setattr(server_mod, "build_server", _must_not_be_reached)
+
+    with pytest.raises(SystemExit) as excinfo:
+        server_mod.main()
+
+    assert excinfo.value.code != 0
+    assert "--token" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("startup", ["explicit_flag", "generated_file", "preexisting_file"])
+def test_no_header_request_is_rejected_under_every_startup_path(tmp_path, startup):
+    """RI-2's done-when, end to end over a real socket: however the server's token was resolved,
+    a request with NO X-Dashboard-Token header must 401 -- it must never compare equal to the
+    configured token. The empty-FILE startup path joins this parametrization in the RI-6 commit,
+    once reading an empty token file regenerates instead of handing back ""."""
+    if startup == "explicit_flag":
+        token = "explicit-cli-token"
+    elif startup == "generated_file":
+        token = server_mod._load_or_create_token(tmp_path)
+    else:
+        (tmp_path / ".dashboard_token").write_text("operator-token")
+        token = server_mod._load_or_create_token(tmp_path)
+    assert token, "every startup path that can start a server must resolve a non-empty token"
+
+    with _server_with_token(tmp_path, token) as url:
+        status, body = _get_allow_error(url, "/api/status", token=None)
+
+    assert status == 401
+    assert body["ok"] is False
+
+
 def test_status_dict_falls_back_to_the_data_dirs_own_collection_not_papers(tmp_path):
     """Regression (found 2026-08-07 running the Waymo corpus's dashboard): `_status_dict` passed
     `live.get("collection")` straight to `status.read_consistency`, but `collection` is only ever

@@ -39,6 +39,7 @@ import json
 import logging
 import re
 import secrets
+import sys
 import threading
 import time
 import urllib.parse
@@ -690,7 +691,8 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--token", default=None,
         help="X-Dashboard-Token required for POST /api/control. Omit to read/generate "
-             "<data-dir>/.dashboard_token instead (T-DOC78) -- an explicit value here always wins.",
+             "<data-dir>/.dashboard_token instead (T-DOC78) -- an explicit value here always wins; "
+             "an empty value is refused at startup (RI-2).",
     )
     parser.add_argument(
         "--host", default="0.0.0.0",
@@ -704,6 +706,22 @@ def main() -> None:
     args = _parse_args()
     data_dir = Path(args.data_dir)
     token = args.token if args.token is not None else _load_or_create_token(data_dir)
+    if not token:
+        # RI-2, fail closed at the effective-token resolution point (not inside
+        # `_load_or_create_token` -- only the flag can produce "" today, but a guard where the
+        # value is resolved covers any future third source too): a configured "" token makes the
+        # missing-header default in `_token_ok` (`headers.get(..., "")`) compare equal, so every
+        # request with NO X-Dashboard-Token header at all authenticates. Refuse-to-start over
+        # silently regenerating: an operator who typed `--token ""` has a broken invocation and
+        # needs to be told.
+        print(
+            "dashboard: refusing to start: the effective token is empty (--token was given as "
+            "an empty string, or <data-dir>/.dashboard_token is empty) -- an empty token "
+            "authenticates requests that carry no X-Dashboard-Token header at all, disabling "
+            "auth entirely; pass a non-empty --token or omit it to use the token file",
+            file=sys.stderr,
+        )
+        raise SystemExit(2)
     httpd = build_server(data_dir, token, args.port, host=args.host)
     print(f"Corpus dashboard: http://{args.host}:{args.port} (data_dir={data_dir})")
     try:
