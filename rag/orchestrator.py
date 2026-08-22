@@ -52,6 +52,7 @@ import math
 import time
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
+from typing import Literal
 
 from contracts.author_orgs import AuthorOrgMatch
 from contracts.chunker import Chunk
@@ -61,6 +62,7 @@ from contracts.errors import ContractError, PermanentError, TransientError
 from contracts.harvester import PaperRef
 from contracts.ingest_state import CheckpointArtifacts
 from contracts.parser import ParsedDoc
+from contracts.vector_index import VectorPayload
 from rag.author_org_tagger import (
     curated_orgs_for,
     extract_affiliations_rule_based,
@@ -120,6 +122,45 @@ def _merge_author_orgs(
     """
     curated_names = {match.name for match in curated}
     return curated + [match for match in heuristic if match.name not in curated_names]
+
+
+def vector_payload(
+    record: PaperRecord,
+    embedding_version: str,
+    *,
+    kind: Literal["chunk", "summary"],
+    section_path: str,
+    text: str,
+) -> VectorPayload:
+    """The one definition of a vector point's payload (`contracts/vector_index.py`'s
+    VectorPayload), shared by the ingest-time upsert (`_upsert_record`) and the retrofit
+    re-chunk path (`app/rechunk.py`). RI-3: the two paths used to declare the field set
+    independently and had already drifted -- rechunk's copy omitted `author_orgs`/
+    `curated_author_orgs`, so a rechunked paper silently dropped out of org-filtered retrieval.
+    With a single enumeration, a new VectorPayload field is added in one place and reaches
+    every producer; the parity test (app/test_rechunk.py) pins both paths field-for-field.
+
+    `kind`/`section_path`/`text` are the only per-point fields; everything else is common to
+    every point upserted for this record.
+    """
+    return {
+        "paper_id": record.ref.paper_id,
+        "kind": kind,
+        "section_path": section_path,
+        "text": text,
+        "categories": list(record.ref.categories),
+        "published": record.ref.published.isoformat(),
+        "embedding_version": embedding_version,
+        "doc_type": record.ref.doc_type,
+        # T-ORG1: names only, no method -- filtering doesn't need it (contracts/vector_index.py
+        # VectorPayload docstring).
+        "author_orgs": [match.name for match in record.author_orgs],
+        # T-ORG3: the subset of the above whose method is "curated" -- the seam
+        # SearchFilters.author_org_curated_only filters against (contracts/vector_index.py).
+        "curated_author_orgs": [
+            match.name for match in record.author_orgs if match.method == "curated"
+        ],
+    }
 
 
 @dataclass
@@ -781,25 +822,13 @@ class IngestionOrchestrator:
         chapter_vecs: list[list[float]],
         chunk_vecs: Iterable[list[float]],
     ) -> None:
-        payload_common = {
-            "paper_id": record.ref.paper_id,
-            "categories": record.ref.categories,
-            "published": record.ref.published.isoformat(),
-            "embedding_version": self._embedder.info.version,
-            "doc_type": record.ref.doc_type,
-            # T-ORG1: names only, no method -- filtering doesn't need it (contracts/vector_index.py
-            # VectorPayload docstring).
-            "author_orgs": [match.name for match in record.author_orgs],
-            # T-ORG3: the subset of the above whose method is "curated" -- the seam
-            # SearchFilters.author_org_curated_only filters against (contracts/vector_index.py).
-            "curated_author_orgs": [
-                match.name for match in record.author_orgs if match.method == "curated"
-            ],
-        }
+        version = self._embedder.info.version
         self._vector_index.upsert(
             record.summary_id,
             summary_vec,
-            {**payload_common, "kind": "summary", "section_path": "", "text": record.summary_text},
+            vector_payload(
+                record, version, kind="summary", section_path="", text=record.summary_text
+            ),
         )
         # Chapter summaries (books only -- `record.chapter_summaries` is `[]` for a plain paper,
         # so this loop never runs for one): each embedded/upserted as its own kind="summary" point
@@ -809,21 +838,23 @@ class IngestionOrchestrator:
             self._vector_index.upsert(
                 chapter.summary_id,
                 vector,
-                {
-                    **payload_common,
-                    "kind": "summary",
-                    "section_path": chapter.title,
-                    "text": chapter.text,
-                },
+                vector_payload(
+                    record,
+                    version,
+                    kind="summary",
+                    section_path=chapter.title,
+                    text=chapter.text,
+                ),
             )
         for chunk, vector in zip(record.chunks, chunk_vecs, strict=True):
             self._vector_index.upsert(
                 chunk.chunk_id,
                 vector,
-                {
-                    **payload_common,
-                    "kind": "chunk",
-                    "section_path": chunk.section_path,
-                    "text": chunk.text,
-                },
+                vector_payload(
+                    record,
+                    version,
+                    kind="chunk",
+                    section_path=chunk.section_path,
+                    text=chunk.text,
+                ),
             )

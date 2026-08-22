@@ -657,6 +657,25 @@ def test_finish_curated_author_orgs_empty_on_vector_payload_for_keyword_only_mat
     assert payload["curated_author_orgs"] == []
 
 
+def test_chunk_payloads_carry_author_orgs_too_not_just_the_summary_point():
+    # RI-3 pin: EVERY point of the record carries the org facets, not only the summary point the
+    # T-ORG3 tests above inspect. app/rechunk.py re-upserts CHUNK points on a retrofit, so this
+    # field set living anywhere but the shared builder (rag/orchestrator.py::vector_payload) is
+    # exactly how a rechunked paper dropped out of org-filtered retrieval.
+    rig = Rig(refs=REFS[:1])
+    rig.parser = _WaymoAffiliationParser(FIRST_ID)
+
+    rig.ingest()
+
+    record = rig.document_store.get(FIRST_ID)
+    assert record.author_orgs == [AuthorOrgMatch(name="Waymo", method="email_domain")]
+    for chunk in record.chunks:
+        _, payload = rig.vector_store._store[chunk.chunk_id]
+        assert payload["kind"] == "chunk"
+        assert payload["author_orgs"] == ["Waymo"]
+        assert payload["curated_author_orgs"] == []
+
+
 def test_source_of_truth_is_written_before_the_derived_index():
     # Ordering invariant (ARCHITECTURE §6A / Operational invariants §1): put() before upsert().
     rig = Rig()

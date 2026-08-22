@@ -25,6 +25,7 @@ from app.rechunk import (
     format_report,
     run_rechunk,
 )
+from contracts.author_orgs import AuthorOrgMatch
 from contracts.chunker import Chunk
 from contracts.config import Config
 from contracts.document_store import ChapterSummary, PaperRecord
@@ -35,7 +36,10 @@ from contracts.provenance import Block
 from rag.chunker import Chunker
 from rag.document_store import DocumentStore
 from rag.fakes.fake_embedder import FakeEmbedder
+from rag.fakes.fake_gpu_lock import FakeGpuLock
+from rag.fakes.fake_ingest_state import FakeIngestState
 from rag.fakes.fake_vector_store import FakeVectorStore
+from rag.orchestrator import IngestionOrchestrator
 
 PAPER_ID = "2506.01234"
 TITLE = "Some Paper Title"
@@ -377,6 +381,101 @@ def test_round_trip_preserves_everything_but_chunks_including_book_chapter_summa
     assert got.parsed.blocks == parsed.blocks
     assert got.parsed.markdown == parsed.markdown
     assert got.relevance_score == record.relevance_score
+
+
+# --------------------------------------------------------------------------------------------
+# RI-3 payload parity: what `run_rechunk` upserts for a paper's chunks must equal, field for
+# field, what the ingest-time upsert (`IngestionOrchestrator._upsert_record`) built for the
+# same record. The two paths used to be independent payload builders and had already drifted
+# (rechunk's copy omitted `author_orgs`/`curated_author_orgs`, so a rechunked paper silently
+# dropped out of org-filtered retrieval).
+# --------------------------------------------------------------------------------------------
+
+
+class _OneRefHarvester:
+    def __init__(self, ref: PaperRef):
+        self._ref = ref
+
+    def harvest(self, focus_area, cap, ordering):
+        return iter([self._ref][:cap])
+
+
+class _StaticParser:
+    def __init__(self, parsed: ParsedDoc):
+        self._parsed = parsed
+
+    def parse(self, ref: PaperRef) -> ParsedDoc:
+        return self._parsed
+
+
+class _StaticSummarizer:
+    def summarize(self, parsed: ParsedDoc, *, kind: str = "paper") -> str:
+        return "A short summary."
+
+
+def _affiliation_parsed_doc() -> ParsedDoc:
+    """`_parsed_doc()` plus a front-matter affiliation block, so the ingest path's T-ORG1
+    tagging puts a NON-empty `author_orgs` on the record -- the exact fields whose drift RI-3
+    is about (a parity test over an all-empty org list could not tell a missing key from [])."""
+    affiliation_block = Block(
+        block_id=f"{PAPER_ID}:aff",
+        paper_id=PAPER_ID,
+        text="K. Kusano, Waymo LLC, Mountain View, CA. Correspondence: kusano@waymo.com",
+        type="prose",
+        page=0,
+        bbox=BBOX,
+        section_path="",  # front matter -- the extractor's candidate-block signal
+        index=0,
+    )
+    return _parsed_doc(blocks=[affiliation_block, _block(index=1)])
+
+
+def test_rechunked_chunk_payload_equals_the_ingest_time_payload_field_for_field(
+    store, chunker, embedder
+):
+    # Ingest side: a real `IngestionOrchestrator` drive over the committed fakes (same wiring
+    # shape as rag/test_orchestrator.py's Rig; local doubles, per this file's no-shared-fixture
+    # convention). Whatever lands in `ingest_vectors` is "the ingest-time payload".
+    parsed = _affiliation_parsed_doc()
+    ingest_vectors = FakeVectorStore()
+    IngestionOrchestrator(
+        harvester=_OneRefHarvester(_paper_ref()),
+        parser=_StaticParser(parsed),
+        chunker=chunker,
+        summarizer=_StaticSummarizer(),
+        embedder=embedder,
+        document_store=store,
+        vector_index=ingest_vectors,
+        state=FakeIngestState(),
+        gpu_lock=FakeGpuLock(),
+        config=_config(),
+    ).ingest(["causal inference"], cap=1)
+
+    stored = store.get(PAPER_ID)
+    assert stored.author_orgs == [AuthorOrgMatch(name="Waymo", method="email_domain")]
+    fixed_chunks = stored.chunks
+    assert len(fixed_chunks) == 2  # front matter + prose -- both points get parity-checked
+    for chunk in fixed_chunks:
+        _, payload = ingest_vectors._store[chunk.chunk_id]
+        assert payload["author_orgs"] == ["Waymo"]
+        assert payload["curated_author_orgs"] == []
+
+    # Rechunk side: the same stored record with one chunk's text staled back to the
+    # pre-157af4d duplicated-heading shape, so `run_rechunk` has real work to do; its upserts
+    # go to a fresh store, standing in for the points being rewritten in place.
+    staled = fixed_chunks[1].model_copy(
+        update={"text": _duplicated_text(fixed_chunks[1], parsed.blocks[1])}
+    )
+    store.put(stored.model_copy(update={"chunks": [fixed_chunks[0], staled]}))
+    rechunk_vectors = FakeVectorStore()
+    [result] = run_rechunk(store, rechunk_vectors, embedder, chunker, [PAPER_ID], dry_run=False)
+    assert result.status == "rechunked"
+
+    assert set(rechunk_vectors._store) == {c.chunk_id for c in fixed_chunks}
+    for chunk in fixed_chunks:
+        _, ingest_payload = ingest_vectors._store[chunk.chunk_id]
+        _, rechunk_payload = rechunk_vectors._store[chunk.chunk_id]
+        assert rechunk_payload == ingest_payload  # dict equality: keys AND values, field for field
 
 
 # --------------------------------------------------------------------------------------------
