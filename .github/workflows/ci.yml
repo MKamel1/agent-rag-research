@@ -35,12 +35,12 @@ jobs:
         shell: bash -l {0}
         run: |
           export CUDA_VISIBLE_DEVICES=""
-          pytest; status=$?
-          # exit code 5 = "no tests collected" — expected on this bootstrap commit (WORK-BREAKDOWN.md
-          # M0 Done criterion: "green pipeline on an empty skeleton"). Any other non-zero code is a
-          # real failure. Once Owner F/A-E start committing test files, this tolerance stops mattering
-          # because real tests will exist and exit 0/1 instead of 5.
-          if [ "$status" -ne 0 ] && [ "$status" -ne 5 ]; then exit "$status"; fi
+          # Bare invocation, deliberately no exit-code tolerance: the suite now collects >1,700
+          # tests, so pytest's exit 5 ("no tests collected") can no longer mean "empty bootstrap
+          # skeleton" (its original M0 meaning) -- it can only mean collection itself broke (a bad
+          # testpaths entry, an import error at collection time). That must turn the job red, so
+          # any non-zero status fails the step.
+          pytest
         # `--disable-socket` is already the pytest default via pyproject.toml's addopts (T-F6(i)) — a
         # test that bypasses its fake and reaches for a live Qdrant/HF download/GPU fails loudly here
         # instead of silently passing.
