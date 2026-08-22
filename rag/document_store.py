@@ -99,7 +99,20 @@ class DocumentStore:
         db_file.parent.mkdir(parents=True, exist_ok=True)
         migrate(db_path)
 
-        self._con = sqlite3.connect(db_path)
+        # check_same_thread=False (RI-1): the dashboard is a ThreadingHTTPServer -- every search
+        # request runs on its own handler thread -- and app.assembly.build_mcp_server constructs
+        # this store inside whichever request thread happens to run the first search, so reads
+        # routinely come from a different thread than the one that opened this connection. With
+        # the default True, every such read raised ProgrammingError instead of returning data.
+        # Deliberately NO lock alongside the flag, on two checked facts: this build reports
+        # sqlite3.threadsafety == 3 (serialized -- the driver itself serializes access to one
+        # shared connection), and today zero writes reach this class from the threaded consumer
+        # (nothing under app/dashboard/ calls put()/delete(); the ingest writer is a separate,
+        # single-threaded orchestrator process). The write-free premise is the load-bearing hedge:
+        # driver serialization makes individual statements safe, but two threads interleaving
+        # put()'s multi-statement transaction would still interleave its rows. A future write path
+        # reachable from the dashboard must revisit this decision, not inherit it silently.
+        self._con = sqlite3.connect(db_path, check_same_thread=False)
         self._con.row_factory = sqlite3.Row
         self._con.execute("PRAGMA journal_mode=WAL;")
         # T-DOC40: `PRAGMA foreign_keys` is per-connection and non-persistent (DATA-CONTRACTS.md
