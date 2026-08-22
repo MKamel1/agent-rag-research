@@ -39,6 +39,19 @@ vector store or LLM adapters directly (CONVENTIONS §1): it only ever imports th
 parameter, so the same runner can score a throwaway "headered" collection against a throwaway
 baseline collection during the actual before/after measurement -- no new wiring, no foundation
 edit.
+
+Two report-level honesty features (RI-15):
+
+  * `scoring_rule` -- every emitted report carries a string naming the hit rule in force and the
+    truncation k, so two numbers produced under different rules cannot be compared silently: a
+    number in a JSON file outlives everyone's memory of how it was computed. (Pinned by
+    test_build_report_stamps_the_scoring_rule_with_k.)
+  * `paper_level.title_leak` -- a verbatim diagnostic counting paper-level hits whose retrieved
+    passage embeds the gold paper's own title (casefolded, whitespace runs collapsed), i.e.
+    retrievals that may have succeeded on title overlap rather than passage semantics. It is
+    reported ALONGSIDE Recall/MRR and deducted from nothing -- deciding what to do about the
+    number is not the instrument's call. Matching is verbatim-after-normalization only, so
+    paraphrase-level leaks go uncounted and the figure is a floor; the report itself says so.
 """
 
 from __future__ import annotations
@@ -53,6 +66,14 @@ logger = logging.getLogger(__name__)
 
 _DEFAULT_GROUND_TRUTH = "fixtures/eval/eval_ground_truth.json"
 _DEFAULT_K = 10
+
+# Stated in the emitted report itself (build_report), not just here: a verbatim predicate leaves
+# paraphrase-level leaks uncounted, so the reported figure is a floor, not a measurement.
+_TITLE_LEAK_NOTE = (
+    "Floor, not a measurement: the predicate matches the gold title verbatim only (casefolded, "
+    "whitespace runs collapsed), so paraphrase-level leaks go uncounted and true title-driven "
+    "retrieval is at least this large. Diagnostic alongside Recall/MRR -- deducted from neither."
+)
 
 
 @dataclass(frozen=True)
@@ -82,6 +103,7 @@ class QuestionResult:
     chapter_rank: int | None = None  # 1-indexed rank of the first chapter-routing hit, else None
     chapter_scored: bool = False  # whether this question had a gold_chapter_title to score against
     gold_chapter_title: str | None = None
+    title_leak: bool = False  # a top-k gold passage embeds its own paper's title verbatim
 
 
 def load_questions(ground_truth_path: Path) -> list[Question]:
@@ -122,6 +144,31 @@ def load_questions(ground_truth_path: Path) -> list[Question]:
             )
         )
     return questions
+
+
+def _normalized(text: str) -> str:
+    """Casefold + collapse runs of whitespace -- the entire normalization behind the title_leak
+    predicate. Nothing smarter (stemming, punctuation folding) on purpose: the diagnostic's
+    honesty depends on matching being strictly verbatim-after-normalization."""
+    return " ".join(text.casefold().split())
+
+
+def _title_leak(result, gold_paper_ids: frozenset[str]) -> bool:
+    """The verbatim title-leak predicate for one retrieved result (RI-15). Narrow by design:
+
+      * scoped to would-be hits -- a result whose `paper_id` is outside the gold set is out of
+        scope even when its passage quotes some title;
+      * the title examined is the result's own citation title -- the one place a gold paper's
+        title is observable at scoring time without a second corpus lookup;
+      * matching is contiguous-substring after `_normalized`, so paraphrase-level overlap leaves
+        this False, which is why the aggregate is reported as a floor (see `_TITLE_LEAK_NOTE`).
+
+    Diagnostic input only: it qualifies a hit, it does not un-hit it.
+    """
+    if result.paper_id not in gold_paper_ids:
+        return False
+    title = _normalized(result.citation.title or "")
+    return bool(title) and title in _normalized(result.passage_text)
 
 
 def score_question(
@@ -176,6 +223,7 @@ def score_question(
         chapter_rank=chapter_rank,
         chapter_scored=chapter_scored,
         gold_chapter_title=question.gold_chapter_title,
+        title_leak=any(_title_leak(r, question.gold_paper_ids) for r in truncated),
     )
 
 
@@ -250,6 +298,9 @@ def _question_row(r: QuestionResult) -> dict:
         "gold_block_id": r.gold_block_id,
         "gold_chapter_title": r.gold_chapter_title,
         "error": r.error,
+        # Diagnostic only -- see build_report's paper_level.title_leak note; not an input to
+        # hit/rank above (pinned by test_build_report_reports_leaks_alongside_untouched_metrics).
+        "title_leak": r.title_leak,
         "paper_level": {"hit": r.paper_rank is not None, "rank": r.paper_rank},
         "passage_level": {
             "scored": r.passage_scored,
@@ -264,13 +315,33 @@ def _question_row(r: QuestionResult) -> dict:
     }
 
 
+def _scoring_rule(k: int) -> str:
+    """The hit rule in force, formatted with the k it was applied at. Stamped into every emitted
+    report (`build_report`) so two numbers produced under different rules cannot be silently
+    compared -- a number in a JSON file outlives everyone's memory of how it was computed."""
+    return (
+        f"top-{k} truncation; paper-level hit = first rank r <= {k} with result.paper_id in "
+        f"question.gold_paper_ids; passage-level hit = first rank r <= {k} with "
+        f"result.anchor.block_id == question.gold_block_id; chapter-level hit = first "
+        f"retrieve_papers rank with paper_id in gold_paper_ids and chapter == "
+        f"gold_chapter_title"
+    )
+
+
 def build_report(results: list[QuestionResult], k: int, *, include_per_question: bool = True) -> dict:
     question_types = sorted({r.question_type for r in results})
     doc_types = sorted({r.doc_type for r in results})
     passage_eligible = [r for r in results if r.passage_scored]
     chapter_eligible = [r for r in results if r.chapter_scored]
+    # The leak aggregate is computed over the hits so leaking is structurally a subset of hitting,
+    # whatever a hand-built QuestionResult claims.
+    hits = [r for r in results if r.paper_rank is not None]
+    n_leaking = sum(1 for r in hits if r.title_leak)
 
     report = {
+        # RI-15: names the hit rule and k in force, so reports produced under different rules are
+        # not comparable by accident. See _scoring_rule.
+        "scoring_rule": _scoring_rule(k),
         "k": k,
         "n_questions": len(results),
         "n_errors": sum(1 for r in results if r.error),
@@ -286,6 +357,18 @@ def build_report(results: list[QuestionResult], k: int, *, include_per_question:
             "by_doc_type": {
                 dt: _recall_mrr([r.paper_rank for r in results if r.doc_type == dt])
                 for dt in doc_types
+            },
+            # RI-15 verbatim title-leak diagnostic. Reported alongside the metrics, deducted from
+            # none of them (pinned by test_build_report_reports_leaks_alongside_untouched_metrics):
+            # what to do about the number is not the instrument's call. `_TITLE_LEAK_NOTE` travels
+            # inside the emitted JSON because the floor limitation belongs to the artifact, not
+            # just this module's docstring.
+            "title_leak": {
+                "predicate": "verbatim-substring",
+                "n_hits": len(hits),
+                "n_leaking": n_leaking,
+                "fraction_of_hits": (n_leaking / len(hits)) if hits else None,
+                "note": _TITLE_LEAK_NOTE,
             },
         },
         "passage_level": {
@@ -330,8 +413,16 @@ def _print_summary(report: dict) -> None:
             return "n=0 (no questions in this split)"
         return f"Recall@{report['k']}={m['recall_at_k']:.3f}  MRR={m['mrr']:.3f}  (n={m['n']})"
 
+    print(f"Scoring rule: {report['scoring_rule']}")
     print(f"Questions scored: {report['n_questions']} (errors: {report['n_errors']})")
     print(f"Paper-level   {_fmt(report['paper_level']['overall'])}")
+    tl = report["paper_level"]["title_leak"]
+    if tl["n_hits"]:
+        print(
+            f"Title-leak    {tl['n_leaking']}/{tl['n_hits']} of paper-level hits embed their gold "
+            "title verbatim -- a floor estimate, paraphrase leaks go uncounted; diagnostic only, "
+            "not deducted from the metrics above"
+        )
     pl = report["passage_level"]
     if pl["n_scored"]:
         print(f"Passage-level {_fmt(pl['overall'])}  [{pl['n_scored']}/{report['n_questions']} "
