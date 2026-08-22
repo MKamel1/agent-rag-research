@@ -19,6 +19,8 @@ T-DOC17 parse-failure-diagnostics fix added 0003_quarantine_diagnostics.sql, add
 
 import re
 import sqlite3
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import pytest
@@ -183,6 +185,48 @@ def test_migrate_twice_in_a_row_is_a_noop_the_second_time(tmp_path):
     conn = sqlite3.connect(db_path)
     try:
         assert _applied_migrations(conn) == ALL_MIGRATION_FILENAMES
+        assert _table_names(conn) == MIGRATED_TABLES
+    finally:
+        conn.close()
+
+
+N_RACING_CALLERS = 4
+
+
+def test_concurrent_migrate_calls_on_one_fresh_db_all_succeed(tmp_path):
+    """RI-24: every composition root migrates at construction (`DocumentStore.__init__`,
+    `SqliteIngestState.__init__`, `python -m migrations.migrate`), and two of them starting
+    against the SAME brand-new db_path (dashboard coming up while an ingest bootstraps a new
+    corpus, RI-5) both see an empty `schema_version` and both run the apply loop. Before this
+    fix the loser died with `duplicate column name`/`table already exists` inside whichever
+    file the winner had just applied -- out of `__init__`, killing startup.
+
+    Drives the actual race the way the reviewer reproduced it: several threads, one fresh
+    path, all released together at a barrier. Every caller must return normally, and the
+    finished database must be exactly the standard migrated set with each file recorded
+    exactly once (the T-DOC81 BEGIN/COMMIT wrapper already keeps losers rolled back and
+    unrecorded; what was missing was tolerating "a peer just applied this")."""
+    db_path = str(tmp_path / "test.sqlite")
+    barrier = threading.Barrier(N_RACING_CALLERS)
+
+    def _attempt() -> None:
+        barrier.wait(timeout=30)
+        migrate(db_path)
+
+    with ThreadPoolExecutor(max_workers=N_RACING_CALLERS) as pool:
+        futures = [pool.submit(_attempt) for _ in range(N_RACING_CALLERS)]
+        outcomes = [future.exception(timeout=60) for future in futures]
+
+    assert outcomes == [None] * N_RACING_CALLERS
+
+    conn = sqlite3.connect(db_path)
+    try:
+        assert _applied_migrations(conn) == ALL_MIGRATION_FILENAMES
+        for filename in sorted(ALL_MIGRATION_FILENAMES):
+            count = conn.execute(
+                "SELECT COUNT(*) FROM schema_version WHERE filename = ?", (filename,)
+            ).fetchone()[0]
+            assert count == 1, f"{filename} recorded {count} times"
         assert _table_names(conn) == MIGRATED_TABLES
     finally:
         conn.close()
