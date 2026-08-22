@@ -306,6 +306,28 @@ Also: `opencode serve` starts **unauthenticated** by default and warns about it 
 easy to miss. That API can drive opencode with full tool access. Set `OPENCODE_SERVER_PASSWORD`
 (HTTP Basic, any username) and bind to the tailnet address, never `0.0.0.0`.
 
+### 6b.1b `opencode serve` starves headless runs — do not leave it running
+
+**Cost: four dispatches stalled across roughly two hours before the correlation was spotted.**
+
+`opencode serve` and every `opencode run` share one SQLite store (`~/.local/share/opencode/
+opencode.db`). A long-lived server holding write locks on it starves the headless runs: they either
+never create a session row at all, or create one, complete a single request, and then sit idle
+indefinitely.
+
+The timeline was the evidence. RI-19, 21, 22, 23, 24, 26 and 28 all ran clean **before** the server
+was started for the watch page. RI-27, 29, 30 and 31 all stalled **after**. Killing the server and
+re-dispatching moved RI-30 from `18,302 in / idle 813s` (frozen) to `19,598 in / 2,475 out /
+idle 6s` (working) immediately.
+
+This is nasty because it presents as two *different* failures — the startup hang of §3.3b and a
+mid-stream stall — and neither points at the server.
+
+**Rule:** do not run `opencode serve` while dispatching headless agents. `oc-watch` reads the same
+database **read-only** and does not cause this — it stayed up throughout, including while the fix
+was verified. Prefer it for observation, and treat any unexplained agent stall by first checking
+whether something is holding that database.
+
 ### 6b.2 Show what a tool DID, not which tool it was
 
 First version of the watch page rendered `part.data["tool"]` — a feed of `bash`, `edit`, `bash`.
