@@ -65,7 +65,9 @@ def _make_parser(
     # The real Parser (rag.parser.parse) needs an actual PDF/MinerU -- stub it so this test
     # exercises only the download+delay wiring, not the Parser module. Takes `paper_id` too
     # (T-DOC31) but this stub doesn't need it -- only `raw` flows into the assertions below.
-    monkeypatch.setattr("app.assembly.parse_pdf_bytes", lambda raw, paper_id: raw)
+    monkeypatch.setattr(
+        "app.assembly.parse_pdf_bytes", lambda raw, paper_id, output_dir=None: raw
+    )
     return _PdfDownloadParser(
         client, sleep=lambda seconds: sleeps.append(seconds), cache_dir=cache_dir
     )
@@ -174,7 +176,9 @@ def test_parse_batch_downloads_every_ref_and_returns_docs_in_order(monkeypatch):
     calls: list[list[bytes]] = []
     id_calls: list[list[str]] = []
 
-    def fake_parse_batch(contents: list[bytes], paper_ids: list[str]) -> list[str]:
+    def fake_parse_batch(
+        contents: list[bytes], paper_ids: list[str], output_dir=None
+    ) -> list[str]:
         calls.append(contents)
         id_calls.append(paper_ids)
         return [c.decode() for c in contents]
@@ -213,7 +217,9 @@ def test_prefetch_next_batch_downloads_overlap_the_current_batchs_gpu_call(monke
         events.append((f"download_end:{paper_id}", time.monotonic()))
         return httpx.Response(200, content=f"%PDF-{paper_id}".encode())
 
-    def fake_parse_pdf_bytes_batch(contents: list[bytes], paper_ids: list[str]) -> list[str]:
+    def fake_parse_pdf_bytes_batch(
+        contents: list[bytes], paper_ids: list[str], output_dir=None
+    ) -> list[str]:
         events.append(("gpu_start", time.monotonic()))
         time.sleep(GPU_SLEEP)
         events.append(("gpu_end", time.monotonic()))
@@ -266,7 +272,7 @@ def test_prefetch_next_batch_is_reused_by_the_matching_parse_batch_call_not_redo
 
     monkeypatch.setattr(
         "app.assembly.parse_pdf_bytes_batch",
-        lambda contents, paper_ids: [c.decode() for c in contents],
+        lambda contents, paper_ids, output_dir=None: [c.decode() for c in contents],
     )
     sleeps: list[float] = []
     parser = _make_parser(monkeypatch, handler, sleeps)
@@ -319,7 +325,7 @@ def test_parse_batch_falls_back_to_a_fresh_download_when_refs_dont_match_the_pre
 
     monkeypatch.setattr(
         "app.assembly.parse_pdf_bytes_batch",
-        lambda contents, paper_ids: [c.decode() for c in contents],
+        lambda contents, paper_ids, output_dir=None: [c.decode() for c in contents],
     )
     sleeps: list[float] = []
     parser = _make_parser(monkeypatch, handler, sleeps)
@@ -521,6 +527,74 @@ def test_build_ingestion_orchestrator_wires_pdf_cache_dir_config_field(monkeypat
     assert cache_dir.is_dir(), "the composition root must ensure the configured dir exists"
 
 
+def test_build_ingestion_orchestrator_wires_figures_dir_under_blob_dir(monkeypatch, tmp_path):
+    """RI-18: extracted figure/table PNGs must land in durable storage, not the OS temp dir
+    `rag/parser.py`'s own `output_dir=None` default falls back to. `build_ingestion_orchestrator`
+    must derive `figures_dir` as a `figures/` subdirectory of `blob_dir` (the same durable root
+    `DocumentStore` writes its own blobs under) and thread it into `_PdfDownloadParser`, creating
+    the directory (same convention as the `pdf_cache_dir` wiring above)."""
+    monkeypatch.setattr("app.assembly.VectorIndex", lambda *a, **k: object())
+
+    blob_dir = tmp_path / "blobs"
+    db_path = str(tmp_path / "papers.db")
+    cfg = Config(
+        focus_area_queries=["causal inference"], gpu_lock_path=str(tmp_path / ".gpu.lock")
+    )
+
+    orchestrator = build_ingestion_orchestrator(cfg, db_path=db_path, blob_dir=str(blob_dir))
+
+    assert orchestrator._parser._figures_dir == blob_dir / "figures"
+    assert (blob_dir / "figures").is_dir(), "the composition root must ensure the dir exists"
+
+
+def test_pdf_download_parser_parse_passes_figures_dir_as_output_dir(monkeypatch, tmp_path):
+    """`_PdfDownloadParser.parse()` must forward its `figures_dir` to the real Parser's
+    `output_dir` keyword -- otherwise the durable-path wiring above is inert."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=b"%PDF-fake")
+
+    seen_output_dirs = []
+    monkeypatch.setattr(
+        "app.assembly.parse_pdf_bytes",
+        lambda raw, paper_id, output_dir=None: seen_output_dirs.append(output_dir) or raw,
+    )
+    figures_dir = tmp_path / "figures"
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    parser = _PdfDownloadParser(
+        client, sleep=lambda seconds: None, figures_dir=figures_dir
+    )
+
+    parser.parse(_make_ref("2504.00001"))
+
+    assert seen_output_dirs == [figures_dir]
+
+
+def test_pdf_download_parser_parse_batch_passes_figures_dir_as_output_dir(monkeypatch, tmp_path):
+    """Same proof as the `parse()` test above, for `parse_batch()` -- the batch entry point the
+    real Pass-1 pipeline actually uses (T-DOC16)."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=b"%PDF-fake")
+
+    seen_output_dirs = []
+
+    def fake_parse_batch(contents, paper_ids, output_dir=None):
+        seen_output_dirs.append(output_dir)
+        return [c.decode() for c in contents]
+
+    monkeypatch.setattr("app.assembly.parse_pdf_bytes_batch", fake_parse_batch)
+    figures_dir = tmp_path / "figures"
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    parser = _PdfDownloadParser(
+        client, sleep=lambda seconds: None, figures_dir=figures_dir
+    )
+
+    parser.parse_batch([_make_ref("2504.00001")])
+
+    assert seen_output_dirs == [figures_dir]
+
+
 def test_build_ingestion_orchestrator_default_matches_prefetch_pdfs_default(monkeypatch, tmp_path):
     """T-DOC18 bug fix: `app/prefetch_pdfs.py` defaults its cache dir to `"pdf_cache"` and fills
     that real directory continuously. `build_ingestion_orchestrator` previously had NO default of
@@ -694,7 +768,7 @@ def test_download_all_makes_zero_sleeps_when_the_whole_batch_is_cached(monkeypat
 
     monkeypatch.setattr(
         "app.assembly.parse_pdf_bytes_batch",
-        lambda contents, paper_ids: [c.decode() for c in contents],
+        lambda contents, paper_ids, output_dir=None: [c.decode() for c in contents],
     )
     sleeps: list[float] = []
     parser = _make_parser(monkeypatch, handler, sleeps, cache_dir=tmp_path)
@@ -721,7 +795,7 @@ def test_download_all_sleeps_only_for_the_live_ref_not_the_cached_one(monkeypatc
 
     monkeypatch.setattr(
         "app.assembly.parse_pdf_bytes_batch",
-        lambda contents, paper_ids: [c.decode() for c in contents],
+        lambda contents, paper_ids, output_dir=None: [c.decode() for c in contents],
     )
     sleeps: list[float] = []
     parser = _make_parser(monkeypatch, handler, sleeps, cache_dir=tmp_path)

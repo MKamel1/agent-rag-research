@@ -1045,6 +1045,53 @@ ALTER TABLE papers ADD COLUMN raw_affiliations TEXT;
 ALTER TABLE papers ADD COLUMN author_orgs TEXT;
 ```
 
+### figures + tables (additive — `migrations/0006_figures_tables.sql`, RI-18)
+
+Two new child tables, not `ALTER TABLE`s — a paper has MANY figures/tables (a child relationship,
+like `blocks`/`chunks`), not one scalar value per paper the way `doc_type`/`author_orgs` are. Closes
+the gap PRD.md §12 (ADR list) already called for: the Parser (M2) extracts fully-populated `Figure`/
+`TableItem` objects on every parse (`contracts/parser.py`), but until this migration `put()` never
+wrote them and `get()` hard-coded `figures=[]`/`tables=[]` back — real work, paid for on every
+document, thrown away at the storage boundary.
+
+`figures.image_path` is the filesystem path to the extracted PNG (source-of-truth blob, "M2 Parser
+output" above). `figures.vlm_description` is nullable and **always NULL in V0** — `put()` never
+writes a non-NULL value into it; the V3 VLM enricher is the only writer this field will ever have.
+`tables.markdown` is the table rendered as markdown (`contracts/parser.py`'s `TableItem`). Neither
+table has a natural stable id (unlike `block_id`/`chunk_id`), so both use a plain `INTEGER PRIMARY
+KEY` (SQLite's ROWID alias) surrogate key — nothing resolves an individual figure/table by id (no
+`get_figure`/`get_table`
+getter); `get()` reads the whole list back per `paper_id`, ordered by that key, which matches
+`ParsedDoc.figures`/`ParsedDoc.tables`'s own list order.
+
+**Not indexed into retrieval.** Persisting figures/tables is durability only — their captions are
+NOT chunked, embedded, or exposed through `McpServer`'s search surface. Whether to index figure/
+table captions into retrieval is a separate, not-yet-made decision.
+
+```sql
+CREATE TABLE figures (
+  figure_id       INTEGER PRIMARY KEY,
+  paper_id        TEXT NOT NULL REFERENCES papers(paper_id),
+  image_path      TEXT NOT NULL,
+  caption         TEXT NOT NULL,
+  page            INTEGER NOT NULL,
+  bbox_json       TEXT NOT NULL,       -- JSON [x0,y0,x1,y1]
+  vlm_description TEXT                 -- ALWAYS NULL in V0 (see above)
+);
+
+CREATE TABLE tables (
+  table_id     INTEGER PRIMARY KEY,
+  paper_id     TEXT NOT NULL REFERENCES papers(paper_id),
+  markdown     TEXT NOT NULL,
+  caption      TEXT NOT NULL,
+  page         INTEGER NOT NULL,
+  bbox_json    TEXT NOT NULL           -- JSON [x0,y0,x1,y1]
+);
+
+CREATE INDEX idx_figures_paper_id ON figures(paper_id);
+CREATE INDEX idx_tables_paper_id ON tables(paper_id);
+```
+
 Run SQLite in **WAL mode** (ADR-05 — the relational-store decision; WAL is an implementation detail of
 that choice, not ADR-07, which is the unrelated chunking/contextual-header decision).
 `authors_json`/`categories_json`/`bbox_json`/`anchor_json` are JSON

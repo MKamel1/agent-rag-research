@@ -30,7 +30,7 @@ from contracts.chunker import Chunk  # noqa: E402  (imports follow importorskip,
 from contracts.document_store import ChapterSummary, PaperRecord  # noqa: E402
 from contracts.errors import ContractError  # noqa: E402
 from contracts.harvester import PaperRef  # noqa: E402
-from contracts.parser import ParsedDoc  # noqa: E402
+from contracts.parser import Figure, ParsedDoc, TableItem  # noqa: E402
 from contracts.provenance import Anchor, Block  # noqa: E402
 
 PAPER_ID = "2506.01234"
@@ -82,6 +82,30 @@ def make_chunk(**o) -> Chunk:
     )
     f.update(o)
     return Chunk(**f)
+
+
+def make_figure(**o) -> Figure:
+    f = dict(
+        paper_id=PAPER_ID,
+        image_path="/blobs/figures/2506.01234/fig0.png",
+        caption="Figure 1: An illustration.",
+        page=0,
+        bbox=BBOX,
+    )
+    f.update(o)
+    return Figure(**f)
+
+
+def make_table_item(**o) -> TableItem:
+    f = dict(
+        paper_id=PAPER_ID,
+        markdown="| a | b |\n|---|---|\n| 1 | 2 |",
+        caption="Table 1: Results.",
+        page=0,
+        bbox=BBOX,
+    )
+    f.update(o)
+    return TableItem(**f)
 
 
 def make_paper_ref(**o) -> PaperRef:
@@ -176,6 +200,55 @@ def test_get_unknown_paper_returns_none(store):
     assert store.get("9999.99999") is None
 
 
+# --------------------------------------------------------------------------------------------------
+# figures / tables (RI-18, migration 0006) — persisted, not thrown away at the storage boundary
+# --------------------------------------------------------------------------------------------------
+
+
+def test_put_get_round_trips_figures_and_tables(store):
+    figures = [
+        make_figure(image_path="/blobs/figures/2506.01234/fig0.png", caption="Fig 1", page=0),
+        make_figure(image_path="/blobs/figures/2506.01234/fig1.png", caption="Fig 2", page=1),
+    ]
+    tables = [make_table_item(markdown="| x |\n|---|\n| 1 |", caption="Table 1", page=2)]
+    record = make_paper_record(
+        parsed=make_parsed_doc(figures=figures, tables=tables)
+    )
+    store.put(record)
+    got = store.get(PAPER_ID)
+
+    assert got.parsed.figures == figures, "figures must survive put()/get() field-for-field"
+    assert got.parsed.tables == tables, "tables must survive put()/get() field-for-field"
+
+
+def test_put_get_round_trips_empty_figures_and_tables(store):
+    # The common case: a paper with no figures/tables at all -- must round-trip as [], not None.
+    store.put(make_paper_record())
+    got = store.get(PAPER_ID)
+
+    assert got.parsed.figures == []
+    assert got.parsed.tables == []
+
+
+def test_put_get_figure_vlm_description_is_always_none(store):
+    # contracts/parser.py's Figure: vlm_description is ALWAYS None in V0 -- put() must not invent
+    # a value, and get() must read back exactly None, never an empty string or sentinel.
+    store.put(make_paper_record(parsed=make_parsed_doc(figures=[make_figure()])))
+    got = store.get(PAPER_ID)
+
+    assert got.parsed.figures[0].vlm_description is None
+
+
+def test_put_is_idempotent_for_figures_and_tables(store):
+    store.put(make_paper_record(parsed=make_parsed_doc(figures=[make_figure(caption="old")])))
+    store.put(make_paper_record(parsed=make_parsed_doc(figures=[make_figure(caption="new")])))
+
+    got = store.get(PAPER_ID)
+    assert [f.caption for f in got.parsed.figures] == ["new"], (
+        "re-put must replace figures, not accumulate them (delete-then-insert, like blocks/chunks)"
+    )
+
+
 def test_markdown_blob_readable_after_a_relative_blob_dir_and_a_cwd_change(tmp_path, monkeypatch):
     # Real bug (T-DOC22): a relative `blob_dir` (production's own default, "blobs") used to get
     # written verbatim into `papers.markdown_path`, so `get()` from a *different* process/cwd than
@@ -199,15 +272,16 @@ def test_markdown_blob_readable_after_a_relative_blob_dir_and_a_cwd_change(tmp_p
 # --------------------------------------------------------------------------------------------------
 
 
-def test_put_is_atomic_across_all_four_tables(tmp_path):
+def test_put_is_atomic_across_all_six_tables(tmp_path):
     db_path = str(tmp_path / "store.db")
     store = _mod.DocumentStore(db_path=db_path, blob_dir=str(tmp_path / "blobs"))
 
-    # Inject a failure that fires DURING the chunks insert, AFTER papers+blocks are written: two
-    # chunks share one chunk_id, so the second violates the chunks PRIMARY KEY. This is a
-    # data-driven injection (sqlite3.Connection is a C type and can't be monkeypatched).
+    # Inject a failure that fires DURING the chunks insert, AFTER papers+blocks+figures+tables are
+    # written: two chunks share one chunk_id, so the second violates the chunks PRIMARY KEY. This
+    # is a data-driven injection (sqlite3.Connection is a C type and can't be monkeypatched).
     record = make_paper_record(
-        chunks=[make_chunk(chunk_id=f"{PAPER_ID}:c0"), make_chunk(chunk_id=f"{PAPER_ID}:c0")]
+        parsed=make_parsed_doc(figures=[make_figure()], tables=[make_table_item()]),
+        chunks=[make_chunk(chunk_id=f"{PAPER_ID}:c0"), make_chunk(chunk_id=f"{PAPER_ID}:c0")],
     )
     with pytest.raises((sqlite3.IntegrityError, ContractError)):
         store.put(record)
@@ -215,7 +289,7 @@ def test_put_is_atomic_across_all_four_tables(tmp_path):
     # Fresh connection (bypasses any in-object caching): the whole put() must have rolled back.
     con = sqlite3.connect(db_path)
     try:
-        for table in ("papers", "blocks", "chunks", "summaries"):
+        for table in ("papers", "blocks", "chunks", "summaries", "figures", "tables"):
             (count,) = con.execute(
                 f"SELECT count(*) FROM {table} WHERE paper_id = ?", (PAPER_ID,)
             ).fetchone()
@@ -398,20 +472,28 @@ def test_iter_papers_yields_all_stored_papers(store):
 # --------------------------------------------------------------------------------------------------
 
 
-def test_delete_removes_rows_from_all_four_tables_and_the_blob(tmp_path):
+def test_delete_removes_rows_from_all_six_tables_and_the_blob(tmp_path):
+    # RI-18/T-DOC40 FK trap: figures/tables also REFERENCES papers(paper_id) (migration 0006), and
+    # PRAGMA foreign_keys=ON is enabled on this connection -- if delete() didn't also delete these
+    # two child tables before the parent papers row, a paper with any figures/tables would raise
+    # sqlite3.IntegrityError on delete() instead of cleanly removing everything.
     db_path = str(tmp_path / "store.db")
     blob_dir = tmp_path / "blobs"
     store = _mod.DocumentStore(db_path=db_path, blob_dir=str(blob_dir))
-    store.put(make_paper_record())
+    store.put(
+        make_paper_record(
+            parsed=make_parsed_doc(figures=[make_figure()], tables=[make_table_item()])
+        )
+    )
     assert (blob_dir / f"{PAPER_ID}.md").exists()
 
-    store.delete(PAPER_ID)
+    store.delete(PAPER_ID)  # must not raise sqlite3.IntegrityError
 
     assert store.get(PAPER_ID) is None
     assert not (blob_dir / f"{PAPER_ID}.md").exists()
     con = sqlite3.connect(db_path)
     try:
-        for table in ("papers", "blocks", "chunks", "summaries"):
+        for table in ("papers", "blocks", "chunks", "summaries", "figures", "tables"):
             (count,) = con.execute(
                 f"SELECT count(*) FROM {table} WHERE paper_id = ?", (PAPER_ID,)
             ).fetchone()
