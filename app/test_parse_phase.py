@@ -152,13 +152,45 @@ def test_shard_is_disjoint_and_complete():
             )
 
 
-def test_shard_round_robin_not_contiguous():
-    """Sharding is a stride slice (`refs[i::n]`), not a contiguous chunk -- balances page counts
-    better across workers than splitting the harvested list into N contiguous runs."""
+def test_shard_same_paper_same_shard_when_two_workers_harvest_lists_diverge():
+    """RI-22: each of N workers re-harvests independently, and the two lists are NOT guaranteed
+    to agree -- a query-driven harvest paginates the source for many minutes at the shipped
+    `corpus_cap`, and under `freshest_first` one new submission between worker W0's page-k fetch
+    and worker W1's page-k fetch inserts at rank 0 and shifts every later position by one.
+    Positional slicing (`refs[i::n]`) then hands the same paper to two workers -- concurrent
+    dual-writer access to `ingest_state` from separate OS processes, plus up to ~2x the GPU work.
+    Shard membership must therefore be identity-stable: the same paper_id lands in the same shard
+    from either worker's list even when the lists differ."""
+    base = [_make_ref(f"2601.{i:05d}") for i in range(17)]
+    diverged = [_make_ref("2601.99999")] + base  # one new submission landed at rank 0
+    shard_count = 4
+
+    def _assignments(refs: list[PaperRef]) -> dict[str, int]:
+        return {
+            r.paper_id: i for i in range(shard_count) for r in _shard(refs, i, shard_count)
+        }
+
+    base_assignment = _assignments(base)
+    diverged_assignment = _assignments(diverged)
+
+    for paper_id, shard_index in base_assignment.items():
+        assert diverged_assignment[paper_id] == shard_index, (
+            f"{paper_id} moved from shard {shard_index} to shard "
+            f"{diverged_assignment[paper_id]} when one ref was prepended -- a second worker "
+            f"would parse it again, concurrently"
+        )
+
+
+def test_shard_membership_depends_only_on_paper_id_not_list_position():
+    """RI-22 replaces the stride slice (`refs[i::n]`) with identity-stable hash partitioning:
+    which shard a paper belongs to is a function of its paper_id alone, so no reordering of the
+    harvested list -- not a prepend, not a full reversal -- can reassign papers between workers.
+    (The test this replaces pinned the stride slice's exact positional membership, i.e. the
+    mechanism the fix removes.)"""
     refs = [_make_ref(f"2601.{i:05d}") for i in range(6)]
-    assert [r.paper_id for r in _shard(refs, 0, 3)] == ["2601.00000", "2601.00003"]
-    assert [r.paper_id for r in _shard(refs, 1, 3)] == ["2601.00001", "2601.00004"]
-    assert [r.paper_id for r in _shard(refs, 2, 3)] == ["2601.00002", "2601.00005"]
+    forward = [{r.paper_id for r in _shard(refs, i, 3)} for i in range(3)]
+    backward = [{r.paper_id for r in _shard(list(reversed(refs)), i, 3)} for i in range(3)]
+    assert forward == backward
 
 
 def test_run_parse_phase_logs_resolved_paths(monkeypatch, tmp_path, caplog):
@@ -183,8 +215,11 @@ def test_run_parse_phase_logs_resolved_paths(monkeypatch, tmp_path, caplog):
 
 
 def test_run_parse_phase_applies_shard_before_calling_parse_phase(monkeypatch):
-    """`_run_parse_phase`'s optional `shard_index`/`shard_count` kwargs must slice the harvested
-    refs before `orchestrator.parse_phase()` is called -- not pass the full list through."""
+    """`_run_parse_phase`'s optional `shard_index`/`shard_count` kwargs must select this worker's
+    identity-stable slice of the harvested refs before `orchestrator.parse_phase()` is called --
+    not pass the full list through. The expected ids are the sha256-assigned members of shard 1
+    of 2 for this id list; sha256 is stable across processes, so the pin is deterministic (a
+    builtin-`hash()` implementation would make it vary run to run -- see `_shard`)."""
     refs = [_make_ref(f"2601.{i:05d}") for i in range(4)]
     fake_orchestrator = FakeOrchestrator(refs_to_return=refs)
     monkeypatch.setattr(
@@ -195,5 +230,5 @@ def test_run_parse_phase_applies_shard_before_calling_parse_phase(monkeypatch):
     _run_parse_phase(cfg, shard_index=1, shard_count=2)
 
     assert [r.paper_id for r in fake_orchestrator.parse_phase_calls[0]] == [
-        "2601.00001", "2601.00003",
+        "2601.00000", "2601.00002",
     ]
