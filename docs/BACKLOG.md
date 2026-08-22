@@ -34,7 +34,7 @@ Tickets are grouped into workstreams by file ownership so concurrent work cannot
 | RI-13 | `testpaths` fails open; add the mechanical guard | F | **DONE** -- `969233c` | The list is currently complete (85/86, one deliberate exclusion) -- the defect is structural. |
 | RI-14 | `CODEOWNERS` does not cover `pyproject.toml` | F | **DONE** -- `5de07c7` | It carries `--disable-socket`, the zero-network test guarantee, ungated. |
 | RI-15 | The eval reports a number whose rule it does not record | F | **DONE** -- `155a3e8` | New `title_leak` diagnostic + `scoring_rule` stamp. Reported alongside metrics, never subtracted. |
-| RI-16 | Dashboard under-reports `rerank_pool_size` above 32 | - | **OPEN** | Latent today, not live -- see below. |
+| RI-16 | Dashboard under-reports `rerank_pool_size` above 32 | - | **DONE** -- `88fd689` | Was latent, not live: rerank_depth was 32, so the clamp was a no-op. |
 | RI-M1..M7 | Wave-4 measurement instruments | G-I | **OPEN** | Instruments are code; running the campaigns is operator work and is not an RI completion condition. |
 
 ### RI-16 — the dashboard's displayed rerank pool size still carries a clamp the pipeline dropped
