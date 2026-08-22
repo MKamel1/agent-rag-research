@@ -100,6 +100,26 @@ RI-22 later proved it in reverse: it truncated *exactly* at the GREEN step with 
 written and verified but uncommitted. Resuming the same session recovered it; a fresh dispatch
 would have redone the work.
 
+### 3.1b The multi-item rule applies to the person writing the brief, too
+
+**Cost: a 50-minute run, zero commits, everything lost — after §3.1 was already written.**
+
+RI-27 was handed a five-part brief (four defects plus a design task). It spent its whole budget
+reading and committed nothing. §3.1 above says exactly why this happens and was written hours
+earlier by the same person who wrote that brief.
+
+Two things make the rule stick better than "keep briefs small":
+
+- **Name the failure in the brief itself.** The re-dispatch opened with "a previous attempt at this
+  ticket was given five fixes, spent fifty minutes reading, and committed nothing." An agent that
+  knows the failure mode guards against it.
+- **Forbid reading ahead.** "Do fix 1, run its tests, COMMIT, and only then start fix 2. Do not read
+  ahead to fix 2 before fix 1 is committed." Without that, an agent front-loads comprehension of
+  the whole brief — which is the behaviour that runs out the budget.
+
+Rule of thumb: **two items per brief, three at the absolute most**, and only when they share a
+file. Anything larger is two dispatches.
+
 ### 3.2 Resume the session, never restart it
 
 `oc-task -s <session_id> "continue…"` keeps the agent's context. A fresh dispatch starts cold and
@@ -282,6 +302,22 @@ Three instances of one bug class, two of them self-inflicted while working on th
 
 **Rule:** kill by port or by a PID you captured at spawn time, never by pattern match on a string
 your own command contains.
+
+**Third occurrence (same session):** `pgrep -f "RI-27-dashboard-accuracy"` — the bracket trick does
+not help when the *calling shell's* command line carries the literal, which it always does. The
+only reliable form is a script file where the pattern arrives as an argument and never appears in
+the shell invocation, and which excludes its own pid and ancestor chain:
+
+```python
+mine = {os.getpid()}  # plus the ppid chain, walked from /proc/<pid>/stat
+for d in os.listdir("/proc"):
+    if d.isdigit() and int(d) not in mine and target in open(f"/proc/{d}/cmdline").read():
+        os.kill(int(d), signal.SIGTERM)
+```
+
+Three self-inflicted instances of the bug class this repo has fixed twice in product code. The
+lesson is not "be careful with pkill" — it is that **any process scan must exclude its own
+observer**, and a scan written inline in a shell cannot.
 
 ---
 
