@@ -53,7 +53,7 @@ import threading
 import time
 import urllib.parse
 from datetime import date
-from functools import lru_cache
+from functools import lru_cache, partial
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -618,8 +618,16 @@ def make_handler(
                 # D-6 Task 4: controller.py must never import status.py (module docstrings on
                 # both sides), so THIS composition root -- which already imports both -- supplies
                 # the real process-table scan `restart_downloader` has no safe default for.
+                # RI-19: bound here, not passed bare -- a bare reference gets called zero-arg,
+                # and `_live_prefetch_pids`'s `data_dir=None` default then skips the cwd/corpus
+                # qualification entirely (the machine-wide, argv-only pre-RI-8 behaviour), so
+                # this corpus's restart would SIGTERM/SIGKILL another live corpus's downloader.
+                # RI-8 fixed the counting path (`read_downloader`); the destructive path was
+                # missed. Still satisfies `restart_downloader`'s zero-arg
+                # `Callable[[], list[int]]` contract.
                 controller_module.restart_downloader(
-                    data_dir, live_pids=status_module._live_prefetch_pids,
+                    data_dir,
+                    live_pids=partial(status_module._live_prefetch_pids, data_dir=data_dir),
                 )
             elif action == "pause":
                 controller_module.pause(data_dir)

@@ -14,6 +14,7 @@ import urllib.parse
 import urllib.request
 from contextlib import contextmanager
 from datetime import date
+from functools import partial
 
 import pytest
 
@@ -21,6 +22,7 @@ import app.dashboard.controller as controller_mod
 import app.dashboard.server as server_mod
 import app.dashboard.status as status_mod
 from app.dashboard.controller import DoubleRunError, DropInPendingError, NoRunError
+from app.dashboard.test_status import _write_fake_proc_entry
 from app.dashboard.server import _LazyMcpServer, _status_dict, build_server
 from contracts.errors import TransientError
 from contracts.mcp_server import Coverage, SearchResponse
@@ -84,7 +86,9 @@ class _FakeStatus:
         }
 
     @staticmethod
-    def _live_prefetch_pids():
+    def _live_prefetch_pids(data_dir=None):
+        # RI-19: the route composes this with the dashboard's own data_dir bound, so the stub
+        # must accept it (a zero-arg signature hid the real function's data_dir=None default).
         return []
 
     def read_disk(self, data_dir):
@@ -399,6 +403,61 @@ def test_control_restart_downloader_calls_controller(running_server):
     assert status == 200
     assert body["ok"] is True
     assert fake_controller.calls == [("restart_downloader",)]
+
+
+def test_control_restart_downloader_hands_over_a_corpus_scoped_live_pid_scan(
+    tmp_path, monkeypatch,
+):
+    """RI-19: the route must hand `restart_downloader` a scan BOUND to this dashboard's own
+    data_dir. RI-8 qualified the COUNTING path (`read_downloader`), but this destructive path
+    passed the bare function -- whose `data_dir=None` default degrades to a machine-wide,
+    argv-only scan -- so with two corpora live, corpus A's "Restart downloader" SIGTERMed and
+    then SIGKILLed corpus B's downloader. A zero-arg stub could never catch that (the real
+    function's default was never exercised through this route), so this test keeps every read
+    fake EXCEPT the handed-over scan: the real `_live_prefetch_pids`, with only its `proc_root`
+    test seam pointed at a synthetic `/proc` tree (same helper `test_status.py` uses), invoked
+    through the actual route."""
+    own = tmp_path / "corpus-a"
+    other = tmp_path / "corpus-b"
+    own.mkdir()
+    other.mkdir()
+    proc_root = tmp_path / "proc"
+    proc_root.mkdir()
+    monkeypatch.setattr(status_mod.os, "kill", lambda pid, sig: None)
+    _write_fake_proc_entry(proc_root, 555601, ["python", "-m", "app.prefetch_pdfs"], cwd=own)
+    _write_fake_proc_entry(proc_root, 555602, ["python", "-m", "app.prefetch_pdfs"], cwd=other)
+
+    captured = {}
+
+    class CapturingController(_FakeController):
+        def restart_downloader(self, data_dir, **kwargs):
+            captured["data_dir"] = data_dir
+            captured["live_pids"] = kwargs["live_pids"]
+
+    fake_status = _FakeStatus()
+    fake_status._live_prefetch_pids = partial(
+        status_mod._live_prefetch_pids, proc_root=proc_root,
+    )
+    httpd = build_server(
+        own, _TOKEN, port=0, host="127.0.0.1",
+        status_module=fake_status, controller_module=CapturingController(),
+    )
+    thread = threading.Thread(target=httpd.serve_forever, daemon=True)
+    thread.start()
+    try:
+        url = f"http://127.0.0.1:{httpd.server_address[1]}"
+        status, body = _post(url, "/api/control", {"action": "restart_downloader"})
+        assert status == 200
+        assert body["ok"] is True
+    finally:
+        httpd.shutdown()
+        httpd.server_close()
+        thread.join(timeout=5.0)
+
+    assert captured["data_dir"] == own
+    # THE assertion: the composed callable excludes corpus B's downloader. With the bare-function
+    # bug it runs data_dir=None (argv-only) over the same tree and returns BOTH pids.
+    assert captured["live_pids"]() == [555601]
 
 
 def test_status_route_includes_by_doc_type_block(running_server):
