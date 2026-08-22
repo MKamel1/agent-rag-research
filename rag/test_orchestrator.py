@@ -657,6 +657,25 @@ def test_finish_curated_author_orgs_empty_on_vector_payload_for_keyword_only_mat
     assert payload["curated_author_orgs"] == []
 
 
+def test_chunk_payloads_carry_author_orgs_too_not_just_the_summary_point():
+    # RI-3 pin: EVERY point of the record carries the org facets, not only the summary point the
+    # T-ORG3 tests above inspect. app/rechunk.py re-upserts CHUNK points on a retrofit, so this
+    # field set living anywhere but the shared builder (rag/orchestrator.py::vector_payload) is
+    # exactly how a rechunked paper dropped out of org-filtered retrieval.
+    rig = Rig(refs=REFS[:1])
+    rig.parser = _WaymoAffiliationParser(FIRST_ID)
+
+    rig.ingest()
+
+    record = rig.document_store.get(FIRST_ID)
+    assert record.author_orgs == [AuthorOrgMatch(name="Waymo", method="email_domain")]
+    for chunk in record.chunks:
+        _, payload = rig.vector_store._store[chunk.chunk_id]
+        assert payload["kind"] == "chunk"
+        assert payload["author_orgs"] == ["Waymo"]
+        assert payload["curated_author_orgs"] == []
+
+
 def test_source_of_truth_is_written_before_the_derived_index():
     # Ordering invariant (ARCHITECTURE §6A / Operational invariants §1): put() before upsert().
     rig = Rig()
@@ -787,6 +806,43 @@ def test_resume_after_stored_reruns_upsert_and_reaches_done():
     assert rig.state.stage_of(FIRST_ID) == DONE
     assert f"{FIRST_ID}:summary" in rig.vector_store._store  # matching FakeVectorStore entry
     assert done_ids(rig) == set(PAPER_IDS)
+
+
+def test_resume_with_missing_papers_row_quarantines_and_the_run_continues():
+    """RI-4: `delete_paper` commits the SQLite delete before `state.forget`, so a crash in that
+    window leaves a checkpoint whose papers row is already gone. The resume branch used to read
+    `record.summary_text` off the None return of `document_store.get` and die on an uncaught
+    exception mid-corpus; it must instead quarantine the paper with a named reason -- same
+    quarantine-and-continue shape this branch already applies to embed/upsert exhaustion --
+    and let every other paper finish."""
+    rig = Rig()
+
+    # Run 1: FIRST_ID reaches `stored` via a crashing index (same setup as
+    # test_resume_after_stored_reruns_upsert_and_reaches_done).
+    failing_index = RecordingVectorIndex(rig.vector_store, rig.events, fail_paper_ids={FIRST_ID})
+    with pytest.raises(RuntimeError):
+        rig.ingest(embedder=EmbedderSpy(), vector_index=failing_index)
+    assert rig.state.stage_of(FIRST_ID) == "stored"
+
+    # Delete the papers row out from under the live checkpoint -- exactly the row/state
+    # combination the delete-ordering window leaves behind.
+    del rig.document_store.records[FIRST_ID]
+    assert rig.document_store.get(FIRST_ID) is None
+
+    healthy_index = RecordingVectorIndex(rig.vector_store, rig.events)
+    rig.ingest(embedder=EmbedderSpy(), vector_index=healthy_index)
+
+    assert FIRST_ID in rig.state.quarantined
+    stage, error = rig.state.quarantined[FIRST_ID]
+    assert stage == "stored"
+    assert "papers row" in str(error)  # a named reason, not a bare NoneType crash
+
+    # Quarantined before any re-embed/re-upsert work: FIRST_ID's points were never touched.
+    assert not any(uid.startswith(FIRST_ID) for uid in healthy_index.upserts)
+    # And the run continues: every other paper still finishes.
+    survivors = set(PAPER_IDS) - {FIRST_ID}
+    assert stored_ids(rig) == survivors
+    assert done_ids(rig) == survivors
 
 
 # ================================================================================================

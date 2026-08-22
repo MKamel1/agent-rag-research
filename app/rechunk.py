@@ -64,6 +64,7 @@ from contracts.errors import ContractError
 from contracts.parser import ParsedDoc
 from contracts.vector_index import VectorPayload
 from rag.config import load_config
+from rag.orchestrator import vector_payload
 
 # Same real-service wiring `app/reembed_experiment.py` uses (composition-root constants, not
 # `Config` fields -- nothing here varies across environments beyond what `--config` already
@@ -120,21 +121,6 @@ def _is_duplicated(chunk_text: str) -> bool:
     if len(lines) <= 3 or not lines[1].strip():
         return False
     return " ".join(lines[1].split()) == " ".join(lines[3].split())
-
-
-def _chunk_payload(record: PaperRecord, embedding_version: str, chunk: Chunk) -> VectorPayload:
-    # Same shape/fields `rag/orchestrator.py`'s `_upsert_record` builds for a chunk -- this is a
-    # re-derivation of the same points, not a new payload convention.
-    return {
-        "paper_id": record.ref.paper_id,
-        "kind": "chunk",
-        "section_path": chunk.section_path,
-        "text": chunk.text,
-        "categories": list(record.ref.categories),
-        "published": record.ref.published.isoformat(),
-        "embedding_version": embedding_version,
-        "doc_type": record.ref.doc_type,
-    }
 
 
 def run_rechunk(
@@ -202,8 +188,19 @@ def run_rechunk(
         vector_index.delete(list(ids_removed))
         vectors = embedder.embed([c.text for c in new_chunks])
         for chunk, vector in zip(new_chunks, vectors, strict=True):
+            # RI-3: the payload comes from rag/orchestrator.py's one shared builder, not a local
+            # copy -- this tool's own copy once omitted `author_orgs`/`curated_author_orgs`, so a
+            # rechunked paper silently dropped out of org-filtered retrieval.
             vector_index.upsert(
-                chunk.chunk_id, vector, _chunk_payload(updated, embedder.info.version, chunk)
+                chunk.chunk_id,
+                vector,
+                vector_payload(
+                    updated,
+                    embedder.info.version,
+                    kind="chunk",
+                    section_path=chunk.section_path,
+                    text=chunk.text,
+                ),
             )
 
         results.append(
