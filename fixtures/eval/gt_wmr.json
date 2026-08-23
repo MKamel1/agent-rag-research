@@ -52,6 +52,11 @@
         "item": "Q-WMR-093",
         "chunk": "2604.19838:c3",
         "reason": "re-grounded to exact DB span (99%)"
+      },
+      {
+        "item": "Q-WMR-080",
+        "chunk": "local:6b9ccd0431f6:c22",
+        "reason": "independent verifier found a quantitative SF evening/overnight split the absence_note understated; note + expected_behavior updated to disclose the near-miss (question unchanged; absence holds on strict reading)"
       }
     ]
   },
@@ -1077,7 +1082,7 @@
       "difficulty": "hard",
       "question_type": "Known-Absent",
       "question_text": "What exact percentage of Waymo's rider-only miles were driven at night?",
-      "absence_note": "The Dynamic Benchmarks paper analyzes time-of-day distributions qualitatively (late-afternoon-to-morning concentration) and no paper reports a single exact night-mile percentage for the RO fleet.",
+      "absence_note": "No corpus paper reports an exact percentage of rider-only miles driven at night. The nearest quantitative statement is a benchmark-comparison aside in the 56.7M-mile paper's Limitations (local:6b9ccd0431f6:c22): the SF ADS fleet 'drove slightly more in the evening and overnight (6:30PM-3AM, 41% vs 24%)' citing Chen et al. 2024 -- an SF-only, evening+overnight-window share compared against a human benchmark, not a night-mile percentage for the RO fleet. The Dynamic Benchmarks paper's time-of-day analysis is qualitative/relative. A system quoting 41% as 'the share of RO miles at night' would be a near-miss false positive.",
       "absence_search": {
         "queries": [
           [
@@ -1091,11 +1096,15 @@
           [
             "night miles",
             "0 hits"
+          ],
+          [
+            "evening and overnight (adversarial probe, verifier)",
+            "1 chunk (local:6b9ccd0431f6:c22) -- SF-only 41%-vs-24% benchmark comparison, not a fleet night-mile percentage"
           ]
         ],
         "method": "normalized substring over chunks.text, 2026-08-23"
       },
-      "expected_behavior": "Say the corpus gives qualitative time-of-day comparisons only; inventing a number from Figure-level discussion is a false positive."
+      "expected_behavior": "Say the corpus gives no exact night-mile percentage; the 41%-vs-24% figure is an SF-only evening/overnight benchmark comparison, not an answer."
     },
     {
       "question_id": "Q-WMR-081",

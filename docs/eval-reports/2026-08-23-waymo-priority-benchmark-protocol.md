@@ -110,3 +110,25 @@ python -m app.retrieval_eval --ground-truth fixtures/eval/waymo_gt_verified.json
 
 Results land in `docs/eval-reports/2026-08-23-waymo-priority-baseline.md` with gates A–D
 pass/fail and the absent-arm display, committed unmodified.
+
+---
+
+## ADDENDUM 2026-08-23 (post-first-measurement — gates stand as measured)
+
+The first measurement (docs/eval-reports/2026-08-23-waymo-priority-baseline.md) showed gates B and
+D fail at ~0.10 against a 0.95 target. Root cause is a definition error in THIS document, not a
+retrieval failure: with single-gold-paper queries and a retriever returning k mostly-distinct
+papers, `|top-k ∩ gold| / k` is structurally capped near `1/k` (measured ceiling 0.1086–0.1132) —
+no system, however good, can reach 0.95 under it. Per the integrity clause above, the frozen gates
+stand as measured; this addendum records the corrected companion metric for all future runs:
+
+- **Precision@1 (paper-level)**: fraction of answerable queries whose rank-1 retrieved paper is in
+  the gold set. Measures "is the thing we serve first the right paper" without the 1/k ceiling.
+- **Block-level Precision@1**: same, requiring rank-1's block_id to equal the item's gold_block_id
+  where one exists.
+
+Baseline values: P@1 = 0.9143 (GT-WMR fused) / 0.9286 (dense) / 0.7941 (ver84 fused & dense);
+block-P@1 = 0.7273 / 0.7121 / 0.3594 / 0.3750. Any future ≥95% precision claim must state which of
+these definitions it uses. The instrumentation that made precision computable
+(`retrieved_paper_ids`/`retrieved_block_ids` per question) was added after the freeze as pure
+additive report fields; first-run reports without them reproduced identical recall/MRR.
