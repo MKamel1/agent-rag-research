@@ -197,6 +197,54 @@ runs without external plugins and is worth trying when a dispatch hangs at start
 **This is the argument for the watch page.** Without a live view into the session store, the only
 signal is a 50-minute timeout.
 
+### 3.3d The silent mid-work death: exit 0, no error, log ends at the model call
+
+The dominant operational cost of one long session. A dispatch working normally simply stops. The
+signature is unambiguous once you know it:
+
+- the per-dispatch `opencode.log` ends at `message="llm runtime selected"` — the request went out
+  and nothing came back;
+- **no error line anywhere**, at any level;
+- the process exits **0**, and the `--json` payload reports `"exit": 0` with
+  `"tokens": {"input": 0, "output": 0}` and `"cost": 0.0`;
+- the final `output` string is a running narration that stops mid-sentence.
+
+Observed 8+ times across three tickets in one session, at 14-31 minutes in, on `stealth/ox-alpha`.
+
+**It is not quota.** That was the first hypothesis (§3.3 says an empty result is a quota signal) and
+it was wrong. A direct probe of the same model on the same key answered normally, cost 0, while
+three dispatches were dying:
+
+```
+curl -s https://openrouter.ai/api/v1/chat/completions -H "Authorization: Bearer $KEY" \
+  -d '{"model":"stealth/ox-alpha","messages":[{"role":"user","content":"Reply: alive"}],"max_tokens":200}'
+# -> {"content": "alive", "usage": {"cost": 0, ...}}
+```
+
+Note the model id: `stealth/ox-alpha`, **not** `openrouter/stealth/ox-alpha` — the latter returns
+`"is not a valid model ID"` (400) and would make a health check look like an outage.
+
+The root cause was not found and chasing it further was not worth the time. What matters is that the
+mitigation is cheap and total:
+
+**Brief every dispatch to commit at every green point, never to batch work for the end.** Before that
+instruction, three deaths lost 10-25 minutes of uncommitted work each — one left a repo file with a
+truncated line that did not parse. After it, four more deaths cost nothing: each left a clean
+worktree with its work on the branch. Same failure, zero loss.
+
+Two corollaries:
+
+- **Split long-running jobs out of agent sessions entirely.** A 6-hour corpus backfill cannot be
+  supervised by something that dies every 20 minutes. Have the agent build and gate the tool, then
+  launch the run as a detached process with its own log. Require the tool to survive a hard kill and
+  resume, because it will get one.
+- **A dead agent's reasoning is still recoverable and often worth more than its files.** One dispatch
+  died immediately before writing three ground-truth items. The items were lost; the transcript in
+  its session DB held the full analysis — three validated candidates with anchors, and two rejected
+  ones with the evidence that killed them (a value that leaked into extracted text, a page with no
+  blocks to anchor to). Reading that out of `part` turned a lost run into a complete handoff. Check
+  the transcript before re-dispatching the same work.
+
 ### 3.3c Telling a startup hang from a working agent, by log line count
 
 §3.3b says a startup hang leaves no trace. It leaves exactly one: the per-dispatch
