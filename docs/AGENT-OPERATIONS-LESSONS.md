@@ -197,6 +197,38 @@ runs without external plugins and is worth trying when a dispatch hangs at start
 **This is the argument for the watch page.** Without a live view into the session store, the only
 signal is a 50-minute timeout.
 
+### 3.3c Telling a startup hang from a working agent, by log line count
+
+§3.3b says a startup hang leaves no trace. It leaves exactly one: the per-dispatch
+`$XDG_DATA_HOME/opencode/log/opencode.log` stops at `message=init`, around **11 lines**. A healthy
+dispatch passes `init` within seconds and reaches `message=stream providerID=... modelID=...`, then
+grows steadily — a working agent 25 minutes in had **429** lines and a `loop ... step=37`.
+
+So the check is a one-liner, and it is the first thing to run on a quiet agent:
+
+```
+wc -l $STATE/opencode/log/opencode.log     # ~11 and static  => hung at init
+grep -c "llm runtime selected" .../opencode.log   # 0 => never reached the model
+```
+
+The session database does not tell you this. A hung dispatch creates its `opencode.db` and leaves it
+at 4096 bytes with an unflushed WAL and **zero rows in `part`** — indistinguishable at a glance from
+a store you cannot read.
+
+**Cost: 25 minutes of a dead GT-A dispatch, three restarts in a row, none noticed.** What hid it was
+watching the wrong signal: the monitor read the branch tip, which was legitimately unchanged, so
+"no new commits" looked like "still working". Two rules follow:
+
+- Watch the **working tree**, not the branch tip. Agents write files long before they commit, and a
+  tip that has not moved is ambiguous between working, hung, and dead.
+- A liveness signal must be able to distinguish *running* from *stalled*. Process-alive is not it:
+  the hung dispatch held 7 seconds of CPU across 24 minutes and looked alive in `ps` throughout.
+
+Observation, not a proven cause: the three hung GT-A dispatches all started against a worktree with
+an uncommitted modified file, and the two healthy concurrent dispatches started against clean trees.
+Committing the pending work and re-dispatching on a clean tree started normally. One data point
+each way — worth trying before a deeper diagnosis, not worth believing yet.
+
 ### 3.4 Free-tier limits are per ACCOUNT, not per key
 
 A new API key on the same account inherits the same exhausted bucket — the 429 body names the
