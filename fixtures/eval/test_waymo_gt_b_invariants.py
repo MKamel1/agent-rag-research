@@ -1,4 +1,4 @@
-"""Mechanical invariants for `waymo_gt_b.json` (GT-B: an independently-authored deep
+"""Mechanical invariants for `waymo_gt_b.json` (GT-B: a 40-item, independently-authored deep
 
 ground-truth set for evaluating retrieval/reading-comprehension quality against the Waymo
 AV-safety corpus).
@@ -18,12 +18,6 @@ Follows the same two-tier pattern as the seed set's invariants module:
      (waymo/data/papers.db, gitignored and not checked out in CI) and that passage_excerpt is
      a genuine substring of the resolved chunk's stored text. This tier auto-skips when that
      DB isn't found on the machine running the test.
-
-NOTE (first landing increment): this fixture is landing incrementally. This first commit covers
-single-passage factual lookup, multi-paper synthesis, and numeric/quantitative claims (20 items,
-see `_metadata.build_status`); methodological questions, negation and scope, temporal/versioned
-claims, the remaining known-absent items, and the vision-derived item land in the next commit,
-at which point TOTAL_ITEMS/the dimension-coverage check below are tightened to the full set.
 """
 
 import json
@@ -36,7 +30,7 @@ import pytest
 FIXTURE_DIR = Path(__file__).resolve().parent
 GT_PATH = FIXTURE_DIR / "waymo_gt_b.json"
 
-TOTAL_ITEMS = 20  # first landing increment -- see module docstring NOTE
+TOTAL_ITEMS = 40
 
 VALID_DIMENSIONS = {
     "single-passage factual lookup",
@@ -187,16 +181,14 @@ def test_structural_invariants():
         )
         assert len(item["passage_excerpt"].strip()) >= 20, f"{qid}: passage_excerpt too short"
 
-    # Dimension coverage: this first increment only covers a subset of the six dimensions (see
-    # module docstring NOTE) -- every dimension present must be one of the valid six, and the
+    # Dimension coverage: every one of the six evaluation dimensions must appear, and the
     # fixture's own recorded dimension_counts must match what's actually in the array (guards
-    # against the metadata drifting out of sync with the data on a future hand-edit). Full
-    # six-dimension coverage is asserted once the remaining items land.
+    # against the metadata drifting out of sync with the data on a future hand-edit).
     from collections import Counter
 
     dim_counts = Counter(item["dimension"] for item in gt)
-    assert set(dim_counts) <= VALID_DIMENSIONS, (
-        f"unknown dimension(s): {set(dim_counts) - VALID_DIMENSIONS}"
+    assert set(dim_counts) == VALID_DIMENSIONS, (
+        f"missing dimension coverage: {VALID_DIMENSIONS - set(dim_counts)}"
     )
     assert dim_counts == Counter(meta["dimension_counts"]), (
         f"_metadata.dimension_counts drifted from actual data: {dict(dim_counts)} vs "
@@ -207,11 +199,15 @@ def test_structural_invariants():
     assert tests_counts == Counter(meta["tests_counts"]), (
         f"_metadata.tests_counts drifted: {dict(tests_counts)} vs {meta['tests_counts']}"
     )
+    assert tests_counts["absent"] >= 6, (
+        "known-absent items should be a substantial fraction, not token coverage"
+    )
 
     vision_count = sum(1 for item in gt if item["vision_derived"])
     assert vision_count == meta["vision_derived_count"], (
         "_metadata.vision_derived_count drifted from actual data"
     )
+    assert vision_count >= 1, "no vision-derived item found -- expected at least one"
 
     print("all waymo_gt_b structural invariants hold")
 
