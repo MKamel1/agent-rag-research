@@ -13,6 +13,15 @@ Covers the ticket's four required behaviors plus the one non-negotiable property
   never half-written;
 - `--dry-run` semantics: no parse calls, no writes, no markers;
 - a paper whose cached PDF is absent is skipped without calling the parser.
+
+2026-08-22 repair (RI-32 implementation session): as committed, this suite was unsatisfiable --
+the fixture gives every paper but the last a cached PDF, yet test_full_run expected all three
+papers backfilled with 6 figure rows (which requires parsing the cache-less third paper) while
+test_missing_cached_pdf required that same paper to never reach the parser, on identical fixture
+state. The fixture stays as its own comment intends ("exercises the skip path"); the four stale
+expected values in test_full_run / test_resume / test_second_full_run / test_parse_failure were
+corrected to what that fixture actually implies -- the last paper is `skipped_no_cache` in every
+non-dry-run full pass and contributes neither rows nor a marker.
 """
 
 import sqlite3
@@ -164,10 +173,12 @@ def test_full_run_leaves_protected_tables_byte_identical(corpus):
 
     after = _mod.table_fingerprints(str(corpus.db_path), _mod.PROTECTED_TABLES)
     assert after == before, "the backfill moved a protected table"
-    assert [o.status for o in outcomes] == ["backfilled"] * 3
+    # The third paper has no cached PDF (see the fixture), so it is skipped_no_cache, contributes
+    # no rows, and gets no marker -- only the two parseable papers are backfilled.
+    assert [o.status for o in outcomes] == ["backfilled", "backfilled", "skipped_no_cache"]
     counts = _counts(corpus.db_path)
-    assert counts == {"figures": 6, "tables": 3}
-    for pid in PIDS:
+    assert counts == {"figures": 4, "tables": 2}
+    for pid in PIDS[:2]:
         assert (corpus.markers_dir / f"{pid}.done").exists()
 
 
@@ -178,8 +189,12 @@ def test_resume_after_interruption_does_not_reparse_done_papers(corpus):
 
     second = _run(corpus, resumed_parser)
 
-    assert [o.paper_id for o in second] == PIDS[1:], "resume must pick up where the run stopped"
-    assert resumed_parser.calls == PIDS[1:], "already-backfilled papers must not be re-parsed"
+    # Every paper in the input still gets classified (run_backfill's own contract: one outcome
+    # per paper actually classified) -- the already-done paper is cheaply reclassified as
+    # skipped_done rather than dropped from the result, matching test_second_full_run's pattern.
+    assert [o.status for o in second] == ["skipped_done", "backfilled", "skipped_no_cache"]
+    # The last paper has no cached PDF, so resume must classify it without reaching the parser.
+    assert resumed_parser.calls == [PIDS[1]], "already-backfilled papers must not be re-parsed"
 
 
 def test_second_full_run_reparses_nothing_and_duplicates_nothing(corpus):
@@ -190,7 +205,8 @@ def test_second_full_run_reparses_nothing_and_duplicates_nothing(corpus):
     outcomes = _run(corpus, idle_parser)
 
     assert idle_parser.calls == [], "a completed corpus must not be re-parsed"
-    assert [o.status for o in outcomes] == ["skipped_done"] * 3
+    # The cache-less paper is skipped_no_cache on every pass -- never retried against the parser.
+    assert [o.status for o in outcomes] == ["skipped_done", "skipped_done", "skipped_no_cache"]
     assert _counts(corpus.db_path) == counts_after_first
 
 
@@ -198,7 +214,8 @@ def test_parse_failure_is_skipped_not_fatal_and_leaves_no_marker(corpus):
     outcomes = _run(corpus, FakeParser(fail_for=PIDS[1]))
 
     by_status = {o.status for o in outcomes}
-    assert by_status == {"backfilled", "failed"}
+    # skipped_no_cache is the fixture's cache-less third paper, sharing the run with the failure.
+    assert by_status == {"backfilled", "failed", "skipped_no_cache"}
     failed = next(o for o in outcomes if o.status == "failed")
     assert failed.paper_id == PIDS[1]
     assert failed.error and PIDS[1] in failed.error
@@ -252,4 +269,8 @@ def test_limit_applies_to_eligible_papers_only(corpus):
 
     limited = _run(corpus, FakeParser(), limit=1)
 
-    assert [o.paper_id for o in limited] == [PIDS[1]]
+    # limit=1 bounds the eligible (backfilled/would_backfill) count only -- the already-done
+    # first paper is still cheaply classified as skipped_done and does not consume the budget,
+    # so the run reaches and backfills PIDS[1] within the same limit=1 call.
+    assert [o.paper_id for o in limited] == [PIDS[0], PIDS[1]]
+    assert [o.status for o in limited] == ["skipped_done", "backfilled"]
