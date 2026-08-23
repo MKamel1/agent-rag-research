@@ -75,6 +75,22 @@ means never knowing whether it helped.
 With 2-4 parse workers Pass 1 projects to roughly 9-17 h. PDFs are already cached (31 GB), so no
 re-download.
 
+**Corpus priority (operator, 2026-08-22): Waymo first, not causal.** It has near-term use and is
+7x smaller, so it is both the more valuable and the cheaper target — and it is the corpus both
+ground-truth sets are built against, so backfilling it is what makes vision-derived evaluation
+items possible at all.
+
+| corpus | papers | Pass-1 backfill, single-stream | with 3 workers |
+|---|---|---|---|
+| **Waymo** | 1,738 | **3.9 h** | ~1.6 h |
+| causal | 12,390 | 27.7 h | ~11.5 h |
+
+Waymo at under four hours is trivially inside the bar and can run today. Causal remains available
+on the same tool afterwards if wanted; it is no longer on the critical path.
+
+Note the Waymo corpus has not had migration 0006 applied yet — it self-applies on the first
+`DocumentStore` open, which the backfill will trigger. Idempotent, no manual step.
+
 **Decision: run a Pass-1-only FIGURES BACKFILL, not a re-ingest.**
 
 Both fit under 100 h, but full re-ingest is the wrong instrument: it costs 3x and rewrites
@@ -100,7 +116,7 @@ are byte-identical (content hashes, not just row counts) after a backfill run.
 
 ## 3. Ground truth: two independent authors, then mutual verification
 
-Two agents are building evaluation sets from the Waymo corpus **without seeing each other's work** —
+Two agents are building evaluation sets from the Waymo corpus (the operator's priority corpus) **without seeing each other's work** —
 one on ox-alpha, one on Claude. Neither is told what the other produced. Where they disagree, that
 disagreement is the signal.
 
