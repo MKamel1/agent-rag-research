@@ -69,6 +69,19 @@ match `GIT-WORKFLOW.md`/`CONVENTIONS.md`'s register: concrete triggers, not pros
 
 ---
 
+5. **Graph-first navigation and the query feedback loop.** For "where/how"
+   questions prefer `python -m scripts.graphify_brief "<question>"` (cited,
+   token-budgeted) over blind grep; raw traversal stays available via
+   `graphify query/path/explain`. When you act on a graph answer during real
+   work, record the outcome so curation is driven by usage:
+   ```bash
+   graphify save-result --question "<q>" --answer "<a>" \
+     --nodes <node1> <node2> --outcome useful|dead_end|corrected
+   ```
+   Aggregated lessons land in `graphify-out/reflections/LESSONS.md` via
+   `graphify reflect`. A dead-end mark on a stale edge is exactly the signal
+   T-G10's validator cannot infer on its own.
+
 ## B. Per-PR / per-trigger documentation obligation
 
 | Trigger | Doc to update | What to write |

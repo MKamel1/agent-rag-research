@@ -486,6 +486,8 @@ authored project docs — excluded from classification.
 | `docs/AGENT-PROCEDURES.md` | AUTHORITATIVE | Onboarding checklist, per-PR/per-trigger doc obligations, periodic drift-correction procedure — read this, and this file, before your first commit. |
 | `docs/WAYMO-CORPUS-STATUS.md` | AUTHORITATIVE | Post-mortem + recovery runbook for the stalled v1 Waymo corpus attempt (17/1437 done, 810 stranded at `chunked`). Superseded as the forward-looking plan by `docs/superpowers/plans/2026-08-06-waymo-av-safety-corpus-expansion-v2.md`, but still the authoritative record of what actually happened and why. |
 | `docs/RUNBOOK.md` | AUTHORITATIVE | Operator bring-up after a reboot; dashboard token location; Tailscale access. |
+| `docs/GRAPHIFY-ROADMAP.md` | AUTHORITATIVE | T-G agent-tooling plan + outcome ledger; refresh procedure for the enriched graph. New. |
+| `docs/GRAPHIFY-SCIP-SPIKE.md` | REFERENCE | T-G13 spike verdict (SCIP precision upgrade feasibility). New. |
 | `docs/GRAPHIFY.md` | AUTHORITATIVE | Knowledge-graph dev-tooling setup/usage (not product scope). |
 | `docs/BOOK-INTEGRATION-CLOSEOUT.md` | AUTHORITATIVE | Book integration closeout — how it works, what shipped, every rejected approach with its falsifying test. |
 | `docs/TEST-AUDIT-2026-07-31.md` | REFERENCE | Point-in-time test-suite audit; findings T-1..T-3 shipped (PR #212), T-4..T-8 tracked live in `docs/BACKLOG.md`. |
