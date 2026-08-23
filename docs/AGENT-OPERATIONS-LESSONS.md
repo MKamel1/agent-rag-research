@@ -318,6 +318,31 @@ Resume (§3.2) is right for a session that was interrupted mid-task. It is wrong
 already finished a phase: the accumulated context is now cost without value, and the model spends
 its budget reconstructing a state the brief could have stated in three lines.
 
+### 4.7 A queued chain script is an invisible second dispatcher
+
+RI-32 ran **twice, concurrently, in the same worktree** for eight minutes. One dispatch was manual;
+the other came from a `chain3.sh` started 80 minutes earlier that was blocked in
+`until grep -q "CHAIN COMPLETE" chain2.log` and fired the moment chain2 finished. Nothing in `ps`,
+the branch, or the agent list said "a dispatch is pending" — the chain was just a sleeping shell.
+
+The tree survived: syntactically valid, no duplicated definitions. That is luck, not a property.
+Two agents editing one `document_store.py` can interleave into something that parses and is wrong.
+
+- **Before dispatching, check for a queued dispatcher**, not just a running agent:
+  `ps -ef | grep -E "chain[0-9]*\.sh"` and read the tail of every chain log.
+- **One ticket, one worktree, one live dispatch.** If a second is wanted, it needs its own worktree.
+- A chain that waits on a marker in another log should re-check the precondition it was written for
+  at fire time, not only the marker. "chain2 finished" is not "RI-32 still needs doing".
+
+### 4.8 Never print an opencode process's command line
+
+`tr '\0' ' ' < /proc/<pid>/cmdline` on an `opencode run` process prints **the entire brief** — the
+brief is passed as the argument. Three of them cost thousands of tokens of context for one fact
+(the parent pid) that `awk '/^PPid:/{print $2}' /proc/<pid>/status` gives in one line.
+
+Read `/proc/<pid>/status` for parentage, `wc -l` on the dispatch's log for liveness (§3.3c), and
+`cut -c1-120` on a cmdline if you genuinely need to identify it.
+
 ## 5. Writing briefs
 
 ### 5.1 State the rejected alternative and why
