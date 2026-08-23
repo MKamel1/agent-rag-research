@@ -87,6 +87,15 @@ census.py` reuses `load_questions`/`run`/`build_report` UNMODIFIED (no second ev
 scoring the known-answerable arm (`eval_ground_truth.json` + `eval_equation_slice.json`) and the
 known-absent arm separately, then comparing the two `top_score` distributions. See that module
 for the summary statistics and the separation rule.
+
+Answerable vs known-absent arms inside one report (BENCH-1): a ground-truth file can MIX the two
+arms (`waymo_gt_verified.json`: 65 answerable items + 8 known-absent ones whose gold key set is
+empty by construction). `_recall_mrr` puts every rank in the denominator, so an unpartitioned
+aggregate over such a file deflates recall with guaranteed misses. `build_report` therefore also
+emits `paper_level.by_gold_status` -- `answerable` (the false-negative measure) and
+`known_absent` (what came back and at what scores; recall withheld, see
+`_KNOWN_ABSENT_METRIC_NOTE`) -- while `overall` keeps its exact prior definition for backward
+compatibility. `_print_summary` leads with the two arms whenever the absent arm is non-empty.
 """
 
 from __future__ import annotations
@@ -94,6 +103,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import statistics
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -376,6 +386,47 @@ def _recall_mrr(ranks: list[int | None]) -> dict:
     return {"recall_at_k": hits / n, "mrr": rr_sum / n, "n": n}
 
 
+# BENCH-1: a fixture that mixes answerable items with known-absent ones (waymo_gt_verified.json's
+# 8 no-gold items) must not let the guaranteed misses deflate the headline recall -- an item that
+# CANNOT hit is a different fact from one the retriever failed to hit. The partition lives inside
+# build_report (the artifact others read) rather than in caller discipline, because a rule that
+# only some callers remember is how a deflated number ships silently. 'overall' keeps its exact
+# pre-partition definition so reports over the existing all-answerable fixtures are unchanged;
+# the two arms travel alongside it, additively.
+_GOLD_STATUS_NOTE = (
+    "Partition by gold-set presence (BENCH-1): a question whose gold_paper_ids set is empty has "
+    "nothing to retrieve against -- a known-absent item, a guaranteed miss -- so blending it into "
+    "recall deflates the headline with items that cannot hit rather than failures to hit. "
+    "'answerable' is the false-negative measure; 'known_absent' is the false-positive arm, read "
+    "through its top-score distribution because recall is undefined when no hit is possible. "
+    "'overall' is retained unpartitioned exactly as earlier reports computed it, for diff "
+    "compatibility -- do not quote it as the headline for a fixture that mixes the arms."
+)
+
+_KNOWN_ABSENT_METRIC_NOTE = (
+    "recall/MRR withheld by design: an empty gold set misses by construction, so a number here "
+    "would measure the fixture, not the retriever. Read this arm through n_with_top_result and "
+    "the top_score distribution."
+)
+
+
+def _top_score_summary(scores: list[float]) -> dict:
+    """Lightweight distribution summary for build_report's known-absent arm -- what came back and
+    at what scores. Deliberately not app.score_distribution_census.distribution_stats' richer
+    shape: that module owns the IQR separation verdict and imports this module, so reaching back
+    into it from here would invert the dependency; this arm needs min/median/mean/max, no IQR."""
+    n = len(scores)
+    if n == 0:
+        return {"n": 0, "mean": None, "median": None, "min": None, "max": None}
+    return {
+        "n": n,
+        "mean": statistics.mean(scores),
+        "median": statistics.median(scores),
+        "min": min(scores),
+        "max": max(scores),
+    }
+
+
 def _question_row(r: QuestionResult) -> dict:
     """One `results` entry as a before/after-diffable dict: gold ids plus hit/rank at both
     granularities. `error` is carried at the top so a question that errored in one run but
@@ -442,6 +493,11 @@ def build_report(
     # whatever a hand-built QuestionResult claims.
     hits = [r for r in results if r.paper_rank is not None]
     n_leaking = sum(1 for r in hits if r.title_leak)
+    # BENCH-1: see _GOLD_STATUS_NOTE. Partition by gold-set presence, not by fixture file, so any
+    # mixed ground-truth file partitions correctly without a new per-fixture flag to remember.
+    answerable_results = [r for r in results if r.gold_paper_ids]
+    absent_results = [r for r in results if not r.gold_paper_ids]
+    absent_scores = [r.top_score for r in absent_results if r.top_score is not None]
 
     report = {
         # RI-15: names the hit rule and k in force, so reports produced under different rules are
@@ -454,6 +510,21 @@ def build_report(
         "n_errors": sum(1 for r in results if r.error),
         "paper_level": {
             "overall": _recall_mrr([r.paper_rank for r in results]),
+            # BENCH-1: the two arms a mixed fixture must be read through. Additive -- 'overall'
+            # above is untouched, so reports over fixtures where every question is answerable
+            # (the 210-set, the equation slice) carry numbers identical to pre-partition runs.
+            "by_gold_status": {
+                "note": _GOLD_STATUS_NOTE,
+                "answerable": _recall_mrr([r.paper_rank for r in answerable_results]),
+                "known_absent": {
+                    "n": len(absent_results),
+                    "recall_at_k": None,
+                    "mrr": None,
+                    "metric_note": _KNOWN_ABSENT_METRIC_NOTE,
+                    "n_with_top_result": len(absent_scores),
+                    "top_score": _top_score_summary(absent_scores),
+                },
+            },
             "by_question_type": {
                 t: _recall_mrr([r.paper_rank for r in results if r.question_type == t])
                 for t in question_types
@@ -522,7 +593,24 @@ def _print_summary(report: dict) -> None:
 
     print(f"Scoring rule: {report['scoring_rule']}")
     print(f"Questions scored: {report['n_questions']} (errors: {report['n_errors']})")
-    print(f"Paper-level   {_fmt(report['paper_level']['overall'])}")
+    # BENCH-1: a mixed fixture prints its two arms, not the blend -- the unpartitioned 'overall'
+    # stays in the JSON for diff compatibility only. An all-answerable fixture keeps the
+    # historical single headline line, byte for byte.
+    gold_status = report["paper_level"]["by_gold_status"]
+    if gold_status["known_absent"]["n"]:
+        print(f"Paper-level (answerable arm) {_fmt(gold_status['answerable'])}")
+        absent = gold_status["known_absent"]
+        ts = absent["top_score"]
+        if ts["n"]:
+            print(
+                f"Known-absent arm n={absent['n']}  with a top result: {absent['n_with_top_result']}"
+                f"  top_score median={ts['median']:.4f}  range=[{ts['min']:.4f}, {ts['max']:.4f}]"
+            )
+        else:
+            print(f"Known-absent arm n={absent['n']}  (no top scores recorded)")
+        print(f"  ({absent['metric_note']})")
+    else:
+        print(f"Paper-level   {_fmt(report['paper_level']['overall'])}")
     tl = report["paper_level"]["title_leak"]
     if tl["n_hits"]:
         print(

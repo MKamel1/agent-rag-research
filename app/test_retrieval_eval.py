@@ -12,12 +12,14 @@ does.
 """
 
 import json
+from pathlib import Path
 
 import pytest
 
 from app.retrieval_eval import (
     SPARSE_MODES,
     Question,
+    _print_summary,
     build_report,
     load_questions,
     run,
@@ -1146,3 +1148,150 @@ def test_build_report_per_question_row_carries_top_score():
 
     [row] = report["questions"]
     assert row["top_score"] == results[0].top_score
+
+
+# --- BENCH-1: answerable vs known-absent arms must never blend ---------------------------------
+# waymo_gt_verified.json mixes 65 answerable items with 8 known-absent ones (empty gold set by
+# construction). _recall_mrr counts every rank in the denominator, so one unpartitioned "overall"
+# deflates recall by 8 guaranteed misses -- items that CANNOT hit are indistinguishable from items
+# the retriever failed to hit. The fix partitions inside build_report (the artifact others read),
+# additively: 'overall' keeps its exact pre-partition definition so existing fixtures' reports are
+# unchanged, and the two arms travel alongside it.
+
+
+def _absent_result(qid: str, top_score: float | None) -> "QuestionResult":
+    from app.retrieval_eval import QuestionResult
+
+    return QuestionResult(
+        qid, "Known-Absent", paper_rank=None, passage_rank=None, passage_scored=False,
+        gold_paper_ids=frozenset(), top_score=top_score,
+    )
+
+
+def test_build_report_partitions_mixed_fixture_into_two_arms():
+    from app.retrieval_eval import QuestionResult
+
+    results = [
+        QuestionResult(
+            "Q1", "Result-Comprehension", paper_rank=1, passage_rank=None, passage_scored=False,
+            gold_paper_ids=frozenset({"P1"}), top_score=0.9,
+        ),
+        QuestionResult(
+            "Q2", "Result-Comprehension", paper_rank=None, passage_rank=None, passage_scored=False,
+            gold_paper_ids=frozenset({"P2"}), top_score=0.5,
+        ),
+        _absent_result("QA1", 0.42),
+    ]
+
+    report = build_report(results, k=10)
+
+    arms = report["paper_level"]["by_gold_status"]
+    # answerable arm: Q1 hit at 1, Q2 miss -> recall 0.5, MRR 0.5
+    assert arms["answerable"]["n"] == 2
+    assert arms["answerable"]["recall_at_k"] == 0.5
+    assert arms["answerable"]["mrr"] == 0.5
+    # known-absent arm: no recall/MRR at all -- not defined when nothing can hit
+    assert arms["known_absent"]["n"] == 1
+    assert arms["known_absent"]["recall_at_k"] is None
+    assert arms["known_absent"]["mrr"] is None
+
+    # overall is retained exactly as before the partition existed (backward compatibility):
+    # all 3 questions, QA1 a guaranteed miss.
+    assert report["paper_level"]["overall"]["n"] == 3
+    assert report["paper_level"]["overall"]["recall_at_k"] == pytest.approx(1 / 3)
+
+
+def test_build_report_known_absent_arm_reports_top_score_distribution():
+    """The absent arm's measurement is what came back and at what scores (the false-positive
+    read), not a recall number."""
+    results = [_absent_result("QA1", 0.42), _absent_result("QA2", None), _absent_result("QA3", 0.11)]
+
+    arms = build_report(results, k=10)["paper_level"]["by_gold_status"]
+
+    absent = arms["known_absent"]
+    assert absent["n"] == 3
+    assert absent["n_with_top_result"] == 2  # QA2's question errored / returned nothing
+    assert absent["top_score"]["n"] == 2
+    assert absent["top_score"]["min"] == pytest.approx(0.11)
+    assert absent["top_score"]["max"] == pytest.approx(0.42)
+    assert absent["top_score"]["mean"] == pytest.approx(0.265)
+    assert absent["top_score"]["median"] == pytest.approx(0.265)
+
+
+def test_build_report_all_answerable_fixture_partition_is_additive():
+    """Regression guard for the existing fixtures (210-set/equation-slice): every question has a
+    gold set, so the answerable arm must equal 'overall' exactly and the absent arm must be empty
+    -- the partition adds fields, it changes no existing number."""
+    from app.retrieval_eval import QuestionResult
+
+    results = [
+        QuestionResult(
+            "Q1", "Equation-Retrieval", paper_rank=1, passage_rank=1, passage_scored=True,
+            gold_paper_ids=frozenset({"P1"}), top_score=0.9,
+        ),
+        QuestionResult(
+            "Q2", "Result-Comprehension", paper_rank=None, passage_rank=None, passage_scored=False,
+            gold_paper_ids=frozenset({"P2"}), top_score=0.4,
+        ),
+    ]
+
+    report = build_report(results, k=10)
+
+    arms = report["paper_level"]["by_gold_status"]
+    assert arms["answerable"] == report["paper_level"]["overall"]
+    assert arms["known_absent"]["n"] == 0
+
+
+def test_load_questions_waymo_fixture_splits_65_answerable_and_8_known_absent():
+    """End-to-end over the real committed fixture: its 8 known-absent items omit every gold key,
+    so they must load as empty gold sets -- that empty-ness is exactly what build_report's
+    partition keys on."""
+    fixture = Path(__file__).resolve().parent.parent / "fixtures" / "eval" / "waymo_gt_verified.json"
+
+    questions = load_questions(fixture)
+
+    answerable = [q for q in questions if q.gold_paper_ids]
+    absent = [q for q in questions if not q.gold_paper_ids]
+    assert len(answerable) == 65
+    assert len(absent) == 8
+
+
+def test_print_summary_mixed_fixture_prints_both_arms_never_the_blend(capsys):
+    """For a fixture that mixes the arms, stdout leads with the two arms; the blended 'overall'
+    stays in the JSON for diff compatibility but is not printed as if it were THE recall."""
+    from app.retrieval_eval import QuestionResult
+
+    results = [
+        QuestionResult(
+            "Q1", "Result-Comprehension", paper_rank=1, passage_rank=None, passage_scored=False,
+            gold_paper_ids=frozenset({"P1"}), top_score=0.9,
+        ),
+        _absent_result("QA1", 0.42),
+    ]
+    report = build_report(results, k=10)
+
+    _print_summary(report)
+    out = capsys.readouterr().out
+
+    assert "answerable" in out
+    assert "Known-absent" in out
+    # the blended line format ("Paper-level   Recall@...") must NOT appear for a mixed fixture
+    assert "Paper-level   Recall@" not in out
+
+
+def test_print_summary_all_answerable_output_is_unchanged(capsys):
+    """A fixture where every question is answerable prints exactly the historical headline --
+    the partition must not disturb the long-standing summary shape."""
+    from app.retrieval_eval import QuestionResult
+
+    results = [
+        QuestionResult(
+            "Q1", "Result-Comprehension", paper_rank=1, passage_rank=None, passage_scored=False,
+            gold_paper_ids=frozenset({"P1"}), top_score=0.9,
+        ),
+    ]
+
+    _print_summary(build_report(results, k=10))
+    out = capsys.readouterr().out
+
+    assert "Paper-level   Recall@10=1.000  MRR=1.000  (n=1)\n" in out
