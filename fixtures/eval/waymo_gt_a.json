@@ -2,7 +2,7 @@
   "_metadata": {
     "description": "GT-A independent deep ground-truth set for the Waymo AV-safety corpus: 40+ items spanning factual lookup, multi-paper synthesis, numeric claims, methodology, negation/scope, temporal/versioned claims, plus verified-absence probes.",
     "structure": "Same record shape as eval_ground_truth_waymo.json, extended per ticket with 'dimension', 'tests' ('answerable'|'absent'), 'vision_derived', and 'provenance'; multi-paper items add verified 'supporting_sources'; absent items replace grounding fields with 'absence_verification'.",
-    "total_items": 33,
+    "total_items": 41,
     "last_updated": "2026-08-22T00:00:00Z",
     "corpus": "waymo_av_safety",
     "authorship": "Authored independently by GT-A without reference to any parallel ground-truth set beyond the pre-existing seed fixture eval_ground_truth_waymo.json (used for shape conventions only).",
@@ -619,6 +619,360 @@
           "gold_block_id": "2309.16534:b16"
         }
       ]
+    },
+    {
+      "question_id": "Q-GTA-034",
+      "question_text": "What randomized controlled trial design did Waymo use to compare its rider-only automated driver against human benchmark drivers?",
+      "question_type": "Method-Comprehension",
+      "difficulty": "hard",
+      "dimension": "methodological",
+      "tests": "absent",
+      "vision_derived": false,
+      "absence_verification": {
+        "searched_on": "2026-08-22",
+        "scope": "whitespace-normalized full block text of all 1738 papers in waymo/data/papers.db, substring search",
+        "queries": [
+          {
+            "terms": [
+              "randomized controlled trial"
+            ],
+            "papers_with_hits": 2,
+            "note": "2307.07907 discusses applying an RCT-like rule to a simulator mechanism; local:2b6a7d2ae102 (surrogate measures of safety and traffic conflict) describes a randomised controlled trial on bicycle running lights -- neither is a Waymo ADS-versus-human trial"
+          },
+          {
+            "terms": [
+              "randomised controlled"
+            ],
+            "papers_with_hits": 1,
+            "note": "same bicycle running-lights RCT as above"
+          },
+          {
+            "terms": [
+              "control group"
+            ],
+            "papers_with_hits": 12,
+            "note": "all hits are machine-learning/experimental-design senses: Eindhoven University's Dynamics and Control Group (2303.07891), treatment/control groups in causal-inference methodology (1809.04407, 2512.18703), detector baselines used 'as a control group' (2304.02867, 2305.09626), overdispersion validation (2603.20349) -- none describe a driver-comparison trial"
+          }
+        ],
+        "conclusion": "The corpus's Waymo-versus-human comparisons are retrospective/observational; no randomized experiment assigning drivers to conditions exists in it."
+      },
+      "expected_behavior": "A correct response states that the corpus contains no Waymo-run randomized controlled trial comparing its driver against humans; its comparisons are observational (police-reported crash rates, insurance claims, naturalistic benchmarks). Naming closest related content is acceptable; returning passages as if an answer exists is a false positive.",
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json. Absence verified 2026-08-22 by the recorded queries; hit contexts inspected."
+    },
+    {
+      "question_id": "Q-GTA-035",
+      "question_text": "According to this corpus, what crash rate per million miles has Tesla's Full Self-Driving system achieved compared with human drivers?",
+      "question_type": "Result-Comprehension",
+      "difficulty": "medium",
+      "dimension": "numeric/quantitative",
+      "tests": "absent",
+      "vision_derived": false,
+      "absence_verification": {
+        "searched_on": "2026-08-22",
+        "scope": "whitespace-normalized full block text of all 1738 papers in waymo/data/papers.db, substring search",
+        "queries": [
+          {
+            "terms": [
+              "Tesla"
+            ],
+            "papers_with_hits": 157,
+            "note": "closest content: FSD robotaxi deployment plans for Austin, Texas by June 2025 (2505.02274); Autopilot scrutiny in a digital-twin framework (2504.09461); adversarial scenario generation referencing Tesla (2408.03200) -- no rate numbers"
+          },
+          {
+            "terms": [
+              "Autopilot"
+            ],
+            "papers_with_hits": 78,
+            "note": "CARLA's built-in autopilot module (2603.03574), fault-injection case studies of a fatal Tesla Autopilot accident (1907.01051), generic ADAS feature lists including highway autopilots (2111.09533)"
+          },
+          {
+            "terms": [
+              "full self-driving"
+            ],
+            "papers_with_hits": 14,
+            "note": "FSD beta-package release timeline (2412.02574), Austin deployment plans (2505.02274), supervised lane-changing experiments citing Tesla FSD (2607.27085), monocular-depth attack context (2411.00192) -- all qualitative"
+          },
+          {
+            "terms": [
+              "FSD"
+            ],
+            "papers_with_hits": 30,
+            "note": "in this corpus the acronym FSD overwhelmingly denotes the Fully Sparse Detector perception family (2301.02562, 2207.10035, 2303.12621, 2304.02867, 2304.12315, 2401.16305), not Tesla's system -- a keyword matcher would be misled here"
+          }
+        ],
+        "conclusion": "No paper measures Tesla's FSD/Autopilot crash rate per mile or compares it to human-driver benchmarks."
+      },
+      "expected_behavior": "A correct response states that the corpus never reports a Tesla FSD/Autopilot crash rate against a human benchmark. Tesla is discussed extensively but always qualitatively; quoting any per-mile number for Tesla is a false positive.",
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json. Absence verified 2026-08-22; note the FSD-acronym trap recorded above."
+    },
+    {
+      "question_id": "Q-GTA-036",
+      "question_text": "How many crashes per million miles has Zoox's driverless service experienced, compared with human drivers?",
+      "question_type": "Result-Comprehension",
+      "difficulty": "medium",
+      "dimension": "numeric/quantitative",
+      "tests": "absent",
+      "vision_derived": false,
+      "absence_verification": {
+        "searched_on": "2026-08-22",
+        "scope": "whitespace-normalized full block text of all 1738 papers in waymo/data/papers.db, substring search",
+        "queries": [
+          {
+            "terms": [
+              "Zoox"
+            ],
+            "papers_with_hits": 10,
+            "note": "2403.14648 filters California DMV autonomous-vehicle reports by companies 'known to operate in San Francisco, namely Waymo, Cruise, Lyft (inactive since June 2021), and Zoox'; 1912.03618 cites Zoox's claimed disengagement rate of 1 per 1900 miles; 2411.03328 is authored at Zoox Inc.; others list Zoox among operators"
+          },
+          {
+            "terms": [
+              "zoox AND crash rate co-occurrence in same paper"
+            ],
+            "papers_with_hits": 1,
+            "note": "only 2403.14648 contains both strings; there Zoox appears solely in the data-source description while the reported CPMM comparisons cover Waymo, Cruise, supervised AVs, and Uber human ride-hail driving"
+          }
+        ],
+        "conclusion": "Zoox is present as a data source and operator name, but the corpus reports crash rates per million miles only for Waymo, Cruise, supervised AVs, and human Uber driving -- never for Zoox."
+      },
+      "expected_behavior": "A correct response states that no Zoox crash-rate measurement against human benchmarks appears in the corpus. Returning the Waymo or Cruise numbers from the corpus's DMV-report analysis, or Zoox's old disengagement-rate claim, is a false positive.",
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json. Absence verified 2026-08-22 including a co-occurrence check."
+    },
+    {
+      "question_id": "Q-GTA-037",
+      "question_text": "What laser wavelength does the lidar sensor on Waymo's production vehicles use?",
+      "question_type": "Assumption-Comprehension",
+      "difficulty": "hard",
+      "dimension": "single-passage factual lookup",
+      "tests": "absent",
+      "vision_derived": false,
+      "absence_verification": {
+        "searched_on": "2026-08-22",
+        "scope": "whitespace-normalized full block text of all 1738 papers in waymo/data/papers.db, substring search",
+        "queries": [
+          {
+            "terms": [
+              "wavelength"
+            ],
+            "papers_with_hits": 20,
+            "note": "generic optics/FMCW/sensor-simulation contexts: wavelength-dependent surface opacity in unified sensor simulation (2602.05617), FMCW grid assumptions (2505.12205, 2112.12984), reflectance definitions (2604.01254), half-wavelength antenna spacing (2510.02363), Doppler velocity formulation (2112.12984)"
+          },
+          {
+            "terms": [
+              "1550 nm"
+            ],
+            "papers_with_hits": 2,
+            "note": "an assumed FMCW lidar wavelength (2112.12984) and an Innovusion Falcon sensor quoted at 1550 nm with 250 m range at 10% reflectivity in the EDGAR platform paper (2309.15492) -- neither is Waymo's production sensor"
+          },
+          {
+            "terms": [
+              "905 nm"
+            ],
+            "papers_with_hits": 1,
+            "note": "a near-infrared LED discussion in local:0a57c839728c"
+          },
+          {
+            "terms": [
+              "nanometer"
+            ],
+            "papers_with_hits": 1,
+            "note": "visible-spectrum definition (380-750 nanometers) in local:ca07cc239c15"
+          }
+        ],
+        "conclusion": "Waymo-authored dataset papers describe range-image features (range, intensity, elongation) but never state their sensor's laser wavelength; every specific wavelength in the corpus belongs to another sensor or an assumption."
+      },
+      "expected_behavior": "A correct response states that the corpus never specifies the wavelength of Waymo's own lidar sensor. Quoting 1550 nm or 905 nm as Waymo's wavelength is a false positive -- those numbers belong to other sensors or assumptions.",
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json. Absence verified 2026-08-22; nearest-miss sensors identified and recorded."
+    },
+    {
+      "question_id": "Q-GTA-038",
+      "question_text": "How many riders in total have used Waymo's ride-hailing service since its commercial operations began?",
+      "question_type": "Result-Comprehension",
+      "difficulty": "easy",
+      "dimension": "single-passage factual lookup",
+      "tests": "absent",
+      "vision_derived": false,
+      "absence_verification": {
+        "searched_on": "2026-08-22",
+        "scope": "whitespace-normalized full block text of all 1738 papers in waymo/data/papers.db, substring search",
+        "queries": [
+          {
+            "terms": [
+              "riders carried"
+            ],
+            "papers_with_hits": 0,
+            "note": "no hits"
+          },
+          {
+            "terms": [
+              "total rides"
+            ],
+            "papers_with_hits": 0,
+            "note": "no hits"
+          },
+          {
+            "terms": [
+              "passengers served"
+            ],
+            "papers_with_hits": 0,
+            "note": "no hits"
+          },
+          {
+            "terms": [
+              "rides completed"
+            ],
+            "papers_with_hits": 0,
+            "note": "no hits"
+          },
+          {
+            "terms": [
+              "number of rides"
+            ],
+            "papers_with_hits": 0,
+            "note": "no hits"
+          }
+        ],
+        "conclusion": "Only weekly ride counts exist (2011.00038: 1000-2000 rides per week, 5-10% driverless, early 2020); no cumulative ridership figure anywhere."
+      },
+      "expected_behavior": "A correct response states that no cumulative rider count appears in the corpus; the closest content is the early public-road safety report's figure of 1,000-2,000 rides per week (5-10% driverless) in early 2020. Answering with that weekly figure is a false positive.",
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json. Absence verified 2026-08-22; five term variants all returned zero hits."
+    },
+    {
+      "question_id": "Q-GTA-039",
+      "question_text": "How much does a passenger pay for a typical Waymo One ride?",
+      "question_type": "Result-Comprehension",
+      "difficulty": "easy",
+      "dimension": "single-passage factual lookup",
+      "tests": "absent",
+      "vision_derived": false,
+      "absence_verification": {
+        "searched_on": "2026-08-22",
+        "scope": "whitespace-normalized full block text of all 1738 papers in waymo/data/papers.db, substring search",
+        "queries": [
+          {
+            "terms": [
+              "cost per ride"
+            ],
+            "papers_with_hits": 0,
+            "note": "no hits"
+          },
+          {
+            "terms": [
+              "ride fare"
+            ],
+            "papers_with_hits": 0,
+            "note": "no hits"
+          },
+          {
+            "terms": [
+              "$ per ride"
+            ],
+            "papers_with_hits": 0,
+            "note": "no hits"
+          },
+          {
+            "terms": [
+              "pricing model"
+            ],
+            "papers_with_hits": 0,
+            "note": "no hits"
+          },
+          {
+            "terms": [
+              "passenger fare"
+            ],
+            "papers_with_hits": 0,
+            "note": "no hits"
+          }
+        ],
+        "conclusion": "Clean absence: zero hits on all five pricing-related queries."
+      },
+      "expected_behavior": "A correct response states that the corpus contains nothing about fares or pricing; any dollar amount given for a ride fare is fabricated.",
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json. Absence verified 2026-08-22; five term variants all returned zero hits."
+    },
+    {
+      "question_id": "Q-GTA-040",
+      "question_text": "Which insurance company underwrites Waymo's auto liability coverage, and what premium discount followed from the Swiss Re claims analyses?",
+      "question_type": "Method-Comprehension",
+      "difficulty": "medium",
+      "dimension": "single-passage factual lookup",
+      "tests": "absent",
+      "vision_derived": false,
+      "absence_verification": {
+        "searched_on": "2026-08-22",
+        "scope": "whitespace-normalized full block text of all 1738 papers in waymo/data/papers.db, substring search",
+        "queries": [
+          {
+            "terms": [
+              "premium"
+            ],
+            "papers_with_hits": 12,
+            "note": "collision-risk premium in RL reward shaping (2411.09887, 2607.10975), premium SSD storage specs (2506.16535), insurance-premium tier tables in a driver-scoring paper (2603.14841), 'premium accessories on high-priced cars' (local:b1819859b098), hard-brake-rate/insurance-premium discussion (local:2c0e082a7af4)"
+          },
+          {
+            "terms": [
+              "underwrit"
+            ],
+            "papers_with_hits": 12,
+            "note": "all hits refer to Underwriters Laboratories / UL 4600 safety standard (local:e402895b56ca, local:c3c5f9de20cc, local:498a92868223, 2210.10876) -- a different sense entirely"
+          },
+          {
+            "terms": [
+              "policyholder"
+            ],
+            "papers_with_hits": 2,
+            "note": "conservative attribution assumption in a comparative study (local:5fa216c3425a); claims aggregated at the policyholder zip-code level in Dynamic Benchmarks (2410.08903) -- methodology only, no premium amounts"
+          }
+        ],
+        "conclusion": "The Swiss Re partnership and claims methodology are described, but no underwriting arrangement, underwriter identity, or premium discount appears anywhere in the corpus."
+      },
+      "expected_behavior": "A correct response states that the corpus describes the Swiss Re claims studies (3.8M-mile and 25.3M-mile analyses) and zip-code-level benchmark aggregation, but never names an underwriter, policy arrangement, or premium discount. Citing 'Underwriters Laboratories' would be a false positive from acronym collision.",
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json. Absence verified 2026-08-22; UL-acronym collision noted."
+    },
+    {
+      "question_id": "Q-GTA-041",
+      "question_text": "What fraction of scenarios in the Waymo Open Motion Dataset involve a collision between the autonomous vehicle and another road user?",
+      "question_type": "Assumption-Comprehension",
+      "difficulty": "hard",
+      "dimension": "negation and scope",
+      "tests": "absent",
+      "vision_derived": false,
+      "absence_verification": {
+        "searched_on": "2026-08-22",
+        "scope": "whitespace-normalized full block text of all 1738 papers in waymo/data/papers.db, substring search",
+        "queries": [
+          {
+            "terms": [
+              "collision in WOMD"
+            ],
+            "papers_with_hits": 0,
+            "note": "no hits"
+          },
+          {
+            "terms": [
+              "crash in the motion dataset"
+            ],
+            "papers_with_hits": 0,
+            "note": "no hits"
+          },
+          {
+            "terms": [
+              "Waymo Open Motion Dataset collision"
+            ],
+            "papers_with_hits": 0,
+            "note": "no hits"
+          },
+          {
+            "terms": [
+              "accident in WOMD"
+            ],
+            "papers_with_hits": 0,
+            "note": "no hits"
+          }
+        ],
+        "conclusion": "Zero direct hits on all four query variants; nearest corpus content is interaction mining (2104.10133 mines merges, lane changes, unprotected turns and other pairwise interactions) which is distinct from crash data."
+      },
+      "expected_behavior": "A correct response recognizes the premise is out of scope: WOMD consists of normal driving mined for interactions, not crash records, so no collision count or crash proportion is reported anywhere. Confusing the dataset's 'interaction' mining with crashes, or returning interaction-mining papers, is a false positive.",
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json. Absence verified 2026-08-22; four term variants all returned zero hits."
     }
   ]
 }
