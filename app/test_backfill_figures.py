@@ -263,6 +263,18 @@ def test_zero_artifact_paper_is_still_marked_done_and_not_reparsed(corpus):
     assert PIDS[0] not in resume_parser.calls
 
 
+def test_progress_log_reports_rate_and_eta(corpus, caplog):
+    """Detached-run requirement: progress output an operator can read an ETA from (module
+    docstring's DETACHED-RUN SAFETY section). `log_every=1` forces a line on the very first
+    backfilled paper instead of waiting for the default cadence of 10."""
+    with caplog.at_level("INFO", logger="app.backfill_figures"):
+        _run(corpus, FakeParser(), log_every=1)
+
+    progress = [r.getMessage() for r in caplog.records if "backfill progress" in r.getMessage()]
+    assert progress, "expected at least one rate/ETA progress line"
+    assert "ETA" in progress[0] and "s/paper" in progress[0]
+
+
 def test_limit_applies_to_eligible_papers_only(corpus):
     parser = FakeParser()
     _run(corpus, parser, limit=1)
