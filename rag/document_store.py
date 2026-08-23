@@ -17,10 +17,12 @@ also happens to round-trip `pdf_url` exactly. `papers.markdown_path` DOES have a
 `get()`, matching `PaperRecord`'s own docstring ("blobs ... are written to the filesystem").
 """
 
+import contextlib
+import hashlib
 import json
 import re
 import sqlite3
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from datetime import date
 from pathlib import Path
 
@@ -275,6 +277,107 @@ class DocumentStore:
                         "INSERT INTO summaries (summary_id, paper_id, text, title) "
                         "VALUES (?, ?, ?, ?)",
                         (chapter.summary_id, paper_id, chapter.text, chapter.title),
+                    )
+
+    # ----------------------------------------------------------------------------------------
+    # put_figures_and_tables — RI-32 backfill write path: figures/tables ONLY
+    # ----------------------------------------------------------------------------------------
+
+    @contextlib.contextmanager
+    def _figures_only_write_guard(self):
+        """Context manager that makes this connection refuse every write outside `figures`/
+        `tables` at the SQLite engine level (connection authorizer): any INSERT/UPDATE/DELETE on
+        papers/blocks/chunks/summaries (or any DDL) raises `sqlite3.DatabaseError` while it is
+        installed, even if code inside the block tried to issue such a statement deliberately.
+        Reads and transaction control stay allowed, so FK enforcement (a READ of the parent
+        `papers` row) still works under the guard. Restored to normal in `finally`, so a failure
+        mid-guard cannot leave the connection locked down.
+
+        This is what makes `put_figures_and_tables`' narrowness structural rather than a matter
+        of care: the guarantee does not depend on the method body staying short -- a future edit
+        that made it try to touch another table would fail loudly here instead of silently
+        damaging a corpus. Exercised directly by
+        `rag/test_document_store.py::test_figures_only_guard_denies_writes_outside_figures_
+        and_tables_at_the_engine_level`."""
+        self._con.set_authorizer(_figures_tables_authorizer)
+        try:
+            yield
+        finally:
+            self._con.set_authorizer(None)
+
+    def put_figures_and_tables(
+        self, paper_id: str, figures: Sequence[Figure], tables: Sequence[TableItem],
+    ) -> None:
+        """Inserts/replaces ONE paper's `figures`/`tables` rows and nothing else -- the write path
+        RI-32's backfill tool (`app/backfill_figures.py`) exists to use.
+
+        Why not just call `put()`: `put()` deletes and reinserts the paper's blocks/chunks/
+        summaries row sets and rewrites its `papers` row, and the orchestrator keeps the vector
+        index in sync with those rows only at ingest time -- a backfill that went through `put()`
+        would rewrite four working tables (and strand their vectors) to add data that lives in
+        two other tables entirely. This method runs exactly three statement kinds, all scoped to
+        this `paper_id`: a DELETE of its existing `figures` rows, the same for `tables` (so a
+        re-run replaces rather than duplicates -- same idempotent-replace semantics `put()` gives
+        these two tables), then INSERTs for the lists passed in.
+
+        The narrowness is engine-enforced, not review-enforced: the writes run inside
+        `_figures_only_write_guard`, so a statement targeting any other table is refused by
+        SQLite itself (`rag/test_document_store.py::
+        test_put_figures_and_tables_leaves_protected_tables_byte_identical` pins the observable
+        half: papers/blocks/chunks/summaries content-hash identical across the call).
+
+        Raises `ContractError` before any write if `paper_id` has no `papers` row or any passed
+        Figure/TableItem carries a different paper_id (both caller bugs -- crash early per
+        CONVENTIONS §4; without the pre-check the first would surface as a raw FK IntegrityError,
+        since `PRAGMA foreign_keys=ON` is enforced on this connection).
+        """
+        if self._con.execute(
+            "SELECT 1 FROM papers WHERE paper_id = ?", (paper_id,)
+        ).fetchone() is None:
+            raise ContractError(f"put_figures_and_tables: unknown paper_id {paper_id!r}")
+        mismatched = [f.paper_id for f in figures if f.paper_id != paper_id]
+        mismatched += [t.paper_id for t in tables if t.paper_id != paper_id]
+        if mismatched:
+            raise ContractError(
+                f"put_figures_and_tables({paper_id!r}): artifact carries foreign paper_id "
+                f"{mismatched[0]!r}"
+            )
+
+        with self._figures_only_write_guard():
+            with self._con:
+                self._con.execute("DELETE FROM figures WHERE paper_id = ?", (paper_id,))
+                self._con.execute("DELETE FROM tables WHERE paper_id = ?", (paper_id,))
+                for figure in figures:
+                    self._con.execute(
+                        """
+                        INSERT INTO figures
+                            (paper_id, image_path, caption, page, bbox_json, vlm_description)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            figure.paper_id,
+                            figure.image_path,
+                            figure.caption,
+                            figure.page,
+                            json.dumps(list(figure.bbox)),
+                            # Same passthrough as put(): ALWAYS None in V0
+                            # (contracts/parser.py's Figure) -- never invented here.
+                            figure.vlm_description,
+                        ),
+                    )
+                for table in tables:
+                    self._con.execute(
+                        """
+                        INSERT INTO tables (paper_id, markdown, caption, page, bbox_json)
+                        VALUES (?, ?, ?, ?, ?)
+                        """,
+                        (
+                            table.paper_id,
+                            table.markdown,
+                            table.caption,
+                            table.page,
+                            json.dumps(list(table.bbox)),
+                        ),
                     )
 
     # ----------------------------------------------------------------------------------------
@@ -613,3 +716,86 @@ class DocumentStore:
             page=row["page"],
             bbox=tuple(json.loads(row["bbox_json"])),
         )
+
+
+# --------------------------------------------------------------------------------------------------
+# RI-32: engine-level write guard + content fingerprints for the figures/tables backfill
+# --------------------------------------------------------------------------------------------------
+
+_FIGURES_TABLES = frozenset({"figures", "tables"})
+
+# Every schema-mutating / database-scoping action code the sqlite3 module exposes. None of them is
+# ever legitimate inside the backfill write path, which only inserts and deletes child rows.
+_GUARD_DENIED_ACTIONS = frozenset(
+    code for name, code in vars(sqlite3).items()
+    if name.startswith("SQLITE_") and (
+        name.startswith(("SQLITE_CREATE_", "SQLITE_DROP_"))
+        or name in (
+            "SQLITE_ALTER_TABLE", "SQLITE_REINDEX", "SQLITE_ANALYZE",
+            "SQLITE_ATTACH", "SQLITE_DETACH", "SQLITE_PRAGMA", "SQLITE_SAVEPOINT",
+            "SQLITE_COPY", "SQLITE_TRUNCATE",
+        )
+    )
+    and isinstance(code, int)
+)
+
+
+def _figures_tables_authorizer(
+    action: int, arg1: str | None, arg2: str | None, db_name: str | None,
+    trigger_name: str | None,
+) -> int:
+    """Connection-authorizer callback (see DocumentStore._figures_only_write_guard): row writes on
+    figures/tables pass; every other row write and everything in _GUARD_DENIED_ACTIONS is denied;
+    reads/transaction control pass so FK enforcement and `with con:` commits keep working."""
+    if action in (sqlite3.SQLITE_INSERT, sqlite3.SQLITE_UPDATE, sqlite3.SQLITE_DELETE):
+        return sqlite3.SQLITE_OK if arg1 in _FIGURES_TABLES else sqlite3.SQLITE_DENY
+    if action in _GUARD_DENIED_ACTIONS:
+        return sqlite3.SQLITE_DENY
+    return sqlite3.SQLITE_OK
+
+
+_IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+
+def table_fingerprints(
+    db_path: str | Path, tables: Sequence[str],
+) -> dict[str, tuple[int, str]]:
+    """Content fingerprint of each named table: `{table: (row_count, sha256)}`, read through a
+    read-only connection. RI-32's safety check compares these before/after a backfill -- the
+    ticket's requirement is byte-identical BY CONTENT, not just equal row counts, so each row's
+    full column tuple participates in the hash.
+
+    Determinism: rows are hashed as JSON-serialized tuples sorted by their own serialized form,
+    so physical row order / insertion order / rowid churn (which a delete-reinsert cycle changes)
+    does not move the hash -- identical content hashes identically. A NULL, a float, and a text
+    column all round-trip through `json.dumps` stably; a BLOB column would hex-encode rather than
+    fail (the V0 schema has none).
+
+    Raises `ContractError` for an unknown/misspelled table name -- a silently-empty fingerprint
+    would read as "table unchanged", exactly the false negative this function exists to prevent.
+    """
+    con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+    try:
+        result: dict[str, tuple[int, str]] = {}
+        for table in tables:
+            if not _IDENTIFIER_RE.match(table):
+                raise ContractError(f"table_fingerprints: not a plain table name: {table!r}")
+            columns = [row[1] for row in con.execute(f"PRAGMA table_info({table})")]
+            if not columns:
+                raise ContractError(f"table_fingerprints: no such table {table!r} in {db_path}")
+            rows = con.execute(f"SELECT * FROM {table}").fetchall()
+            canonical = sorted(
+                json.dumps(list(row), ensure_ascii=True, default=_fingerprint_json_default)
+                for row in rows
+            )
+            digest = hashlib.sha256("\n".join(canonical).encode("utf-8")).hexdigest()
+            result[table] = (len(rows), digest)
+        return result
+    finally:
+        con.close()
+
+
+def _fingerprint_json_default(obj):
+    if isinstance(obj, bytes | bytearray):
+        return obj.hex()
+    return str(obj)
