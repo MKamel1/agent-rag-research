@@ -129,6 +129,34 @@ Prefer these over blind grep when locating code or tracing dependencies — that
 
 ---
 
+## Agent tooling (T-G series) — deterministic enrichment & checks
+
+Companion scripts (see `docs/GRAPHIFY-ROADMAP.md` for the full ledger):
+
+```bash
+# Answer-shaped, token-budgeted brief with citations (preferred cold-start default):
+python -m scripts.graphify_brief "where is the open work queue" --graph-dir graphify-out
+
+# Deterministic enrichment of graph.json from repo sources of truth
+# (PROJECT-STATUS §2/§7 tables, BACKLOG + git SHAs, CODEOWNERS, seams, test map):
+python -m scripts.graphify_cochange --repo . --since HEAD~200 \
+  --exclude 'docs/eval-reports/*' --out /tmp/cochange.json
+python -m scripts.graphify_enrich --repo . --graph-dir graphify-out \
+  --cochange /tmp/cochange.json
+
+# Post-build health gate (dangling edges, unlabeled enrichment) — also wired
+# into the post-commit hook; writes graphify-out/.needs_update.json when unhealthy:
+python -m scripts.graphify_validate --graph-dir graphify-out --repo .
+
+# Diff-time documentation-obligation check (AGENT-PROCEDURES §B as data):
+git diff --name-only origin/main > /tmp/changed.txt
+python -m scripts.graphify_obligations --changed /tmp/changed.txt
+```
+
+Enrichment nodes/edges carry `source_file: "enrichment:..."` and are replaced on
+every run — never hand-edit them. An MCP server for this graph is registered in
+`.opencode/opencode.json` (`graphify-mcp`); it starts when an agent opens this repo.
+
 ## Troubleshooting
 
 - **`graphify-out/` missing** (fresh checkout / new machine) — it's git-ignored on purpose. Rebuild:
