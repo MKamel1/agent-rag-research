@@ -230,3 +230,99 @@ def test_load_items_works_against_the_real_waymo_fixture():
 
     assert len(items) == 15
     assert all(item.answer and item.passages and item.question_text for item in items)
+
+
+# --- load_items: the waymo_gt_verified.json shape (BENCH-1) --------------------------------------
+# fixtures/eval/waymo_gt_verified.json has two shapes the older fixtures never carried: the 4
+# multi-paper-synthesis items ground their answer only through supporting_passages (no top-level
+# passage_excerpt), and the 8 known-absent items carry no answer_text at all (nothing exists to
+# audit -- absence is the claim). Both must parse; the absent ones are skipped, not audited.
+
+
+def test_load_items_multi_paper_record_uses_the_supporting_passage_excerpts(tmp_path):
+    ground_truth_path = tmp_path / "waymo_gt.json"
+    ground_truth_path.write_text(
+        json.dumps(
+            {
+                "ground_truth": [
+                    {
+                        "question_id": "Q-WAYB-010",
+                        "question_text": "How does X compare to Y?",
+                        "answer_text": "X beats Y by 0.42 APH/L2.",
+                        "question_type": None,
+                        "tests": "answerable",
+                        "supporting_passages": [
+                            {"paper_id": "P1", "passage_excerpt": "excerpt one"},
+                            {"paper_id": "P2", "passage_excerpt": "excerpt two"},
+                        ],
+                    }
+                ]
+            }
+        )
+    )
+
+    items = load_items(ground_truth_path)
+
+    assert len(items) == 1
+    assert items[0].question_id == "Q-WAYB-010"
+    assert items[0].answer == "X beats Y by 0.42 APH/L2."
+    assert items[0].passages == ("excerpt one", "excerpt two")
+
+
+def test_load_items_supporting_sources_add_to_the_primary_passage(tmp_path):
+    ground_truth_path = tmp_path / "waymo_gt.json"
+    ground_truth_path.write_text(
+        json.dumps(
+            {
+                "ground_truth": [
+                    {
+                        "question_id": "Q-1",
+                        "question_text": "What was the crash rate?",
+                        "answer_text": "0.6 IPMM vs 2.80.",
+                        "passage_excerpt": "primary excerpt",
+                        "source_paper_id": "P1",
+                        "supporting_sources": [
+                            {"paper_id": "P9", "passage_excerpt": "co-source excerpt"}
+                        ],
+                    }
+                ]
+            }
+        )
+    )
+
+    items = load_items(ground_truth_path)
+
+    assert items[0].passages == ("primary excerpt", "co-source excerpt")
+
+
+def test_load_items_skips_known_absent_records_that_have_no_answer_to_audit(tmp_path, caplog):
+    """A known-absent record asserts that NO answer exists -- there is nothing to judge, so it is
+    skipped with a warning naming the id rather than KeyError-ing or being silently dropped."""
+    import logging
+
+    ground_truth_path = tmp_path / "waymo_gt.json"
+    ground_truth_path.write_text(
+        json.dumps(
+            {
+                "ground_truth": [
+                    {
+                        "question_id": "Q-A",
+                        "answer_text": "an auditable answer",
+                        "passage_excerpt": "a passage",
+                    },
+                    {
+                        "question_id": "Q-ABS",
+                        "question_text": "What does the corpus say about X?",
+                        "tests": "absent",
+                        "absence_note": "...",
+                    },
+                ]
+            }
+        )
+    )
+
+    with caplog.at_level(logging.WARNING):
+        items = load_items(ground_truth_path)
+
+    assert [i.question_id for i in items] == ["Q-A"]
+    assert "Q-ABS" in caplog.text

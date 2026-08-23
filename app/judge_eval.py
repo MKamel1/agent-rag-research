@@ -114,19 +114,40 @@ def load_items(ground_truth_path: Path) -> list[AuditItem]:
         blind_path = ground_truth_path.parent / (
             ground_truth_path.name.replace("eval_ground_truth", "eval_questions_blind")
         )
-        if blind_path.exists():
+        # The replace is a no-op for a file not named after the eval_ground_truth pattern --
+        # blind_path would then be the ground-truth file itself, and reading it back as a blind
+        # file crashes on the missing "questions" key. Only a genuinely separate sibling counts.
+        if blind_path != ground_truth_path and blind_path.exists():
             blind = json.loads(blind_path.read_text())["questions"]
             text_by_id.update({q["question_id"]: q["question_text"] for q in blind})
 
-    return [
-        AuditItem(
-            question_id=r["question_id"],
-            question_text=text_by_id.get(r["question_id"], ""),
-            passages=(r["passage_excerpt"],),
-            answer=r["answer_text"],
+    items = []
+    for r in records:
+        answer = r.get("answer_text")
+        # waymo_gt_verified.json grounds multi-paper-synthesis items through supporting_passages
+        # (no top-level passage_excerpt) and adds co-source excerpts via supporting_sources; all
+        # of them are grounding the same answer, so all of them are passages for the judge.
+        excerpts = [r["passage_excerpt"]] if "passage_excerpt" in r else []
+        excerpts += [p["passage_excerpt"] for p in r.get("supporting_passages", [])]
+        excerpts += [s["passage_excerpt"] for s in r.get("supporting_sources", [])]
+        if answer is None or not excerpts:
+            logger.warning(
+                "%s: skipping %s -- no %s to audit (a known-absent record asserts absence, so "
+                "this is expected for those items; an answerable record landing here means the "
+                "fixture itself is missing a required field)",
+                ground_truth_path.name, r["question_id"],
+                "answer_text" if answer is None else "passage_excerpt",
+            )
+            continue
+        items.append(
+            AuditItem(
+                question_id=r["question_id"],
+                question_text=text_by_id.get(r["question_id"], ""),
+                passages=tuple(excerpts),
+                answer=answer,
+            )
         )
-        for r in records
-    ]
+    return items
 
 
 def run_audit(items: list[AuditItem], judge: Judge, rubric: str) -> list[AuditResult]:

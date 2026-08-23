@@ -202,14 +202,29 @@ def load_questions(ground_truth_path: Path) -> list[Question]:
         # risk `sorted()` crashing the moment a real gold id sits alongside it (_question_row); an
         # empty set is both the correct semantics (no real paper_id ever equals None anyway) and
         # a clean `frozenset[str]`.
+        # BENCH-1: waymo_gt_verified.json goes further -- its 8 known-absent items OMIT the key
+        # outright, and its 4 multi-paper-synthesis items have NO top-level source_paper_id at
+        # all, only supporting_passages each carrying its own paper_id. `.get()` handles the
+        # omission; the supporting ids fold into the gold set under the same multi-gold
+        # methodology as additional_gold_paper_ids (a co-source passage retrieved is a hit --
+        # otherwise these items would carry an empty gold set and count as guaranteed misses,
+        # silently deflating recall). supporting_sources plays the same role for items that also
+        # have a primary.
         gold_papers = set(r.get("additional_gold_paper_ids", []))
-        if r["source_paper_id"] is not None:
+        if r.get("source_paper_id") is not None:
             gold_papers.add(r["source_paper_id"])
+        for passage in r.get("supporting_passages", []):
+            gold_papers.add(passage["paper_id"])
+        for source in r.get("supporting_sources", []):
+            gold_papers.add(source["paper_id"])
         questions.append(
             Question(
                 question_id=qid,
                 question_text=text_by_id[qid],
-                question_type=r["question_type"],
+                # waymo_gt_verified.json leaves question_type null on its 40 GT-B-authored
+                # records; build_report sorts the distinct types, so None would crash there.
+                # "Unlabeled" keeps the breakdown working while saying plainly none was assigned.
+                question_type=r.get("question_type") or "Unlabeled",
                 gold_paper_ids=frozenset(gold_papers),
                 gold_block_id=r.get("gold_block_id"),
                 doc_type=r.get("doc_type", "paper"),

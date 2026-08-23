@@ -238,6 +238,125 @@ def test_load_questions_missing_text_raises(tmp_path):
         load_questions(gt_path)
 
 
+# --- load_questions: the waymo_gt_verified.json shape (BENCH-1) ---------------------------------
+# fixtures/eval/waymo_gt_verified.json differs from every fixture above in three ways at once:
+# the 4 multi-paper-synthesis items carry NO top-level source_paper_id (only supporting_passages,
+# each with its own paper_id), the 8 known-absent items omit source_paper_id entirely (not even
+# null), and 40 of the 73 records carry `question_type: null`. All three must parse.
+
+
+def test_load_questions_multi_paper_item_takes_gold_from_supporting_passages(tmp_path):
+    """A record with no top-level source_paper_id but supporting_passages scores paper-level
+    against the UNION of the supporting papers -- otherwise it would carry an empty gold set and
+    count as a guaranteed miss, silently deflating recall."""
+    gt_path = tmp_path / "waymo_gt.json"
+    gt_path.write_text(json.dumps({
+        "_metadata": {},
+        "ground_truth": [
+            {
+                "question_id": "Q-WAYB-010",
+                "question_text": "How does X compare to Y?",
+                "question_type": None,
+                "tests": "answerable",
+                "supporting_passages": [
+                    {"paper_id": "P1", "gold_chunk_id": "P1:c14",
+                     "gold_block_id": "P1:b68", "passage_excerpt": "..."},
+                    {"paper_id": "P2", "gold_chunk_id": "P2:c2",
+                     "gold_block_id": "P2:b9", "passage_excerpt": "..."},
+                ],
+            },
+        ],
+    }))
+
+    [question] = load_questions(gt_path)
+
+    assert question.gold_paper_ids == frozenset({"P1", "P2"})
+    assert question.gold_block_id is None  # no top-level gold block -- paper-level only
+
+
+def test_load_questions_supporting_sources_also_widen_the_gold_paper_set(tmp_path):
+    """Records carrying supporting_sources alongside a primary still score the primary at passage
+    level, and the co-source papers count as gold at paper level (same multi-gold methodology as
+    additional_gold_paper_ids)."""
+    gt_path = tmp_path / "waymo_gt.json"
+    gt_path.write_text(json.dumps({
+        "_metadata": {},
+        "ground_truth": [
+            {
+                "question_id": "Q-1",
+                "question_text": "What was the crash rate?",
+                "question_type": "Result-Comprehension",
+                "source_paper_id": "P1",
+                "gold_block_id": "P1:b89",
+                "supporting_sources": [
+                    {"paper_id": "P9", "gold_chunk_id": "P9:c16",
+                     "gold_block_id": "P9:b90", "passage_excerpt": "..."},
+                ],
+            },
+        ],
+    }))
+
+    [question] = load_questions(gt_path)
+
+    assert question.gold_paper_ids == frozenset({"P1", "P9"})
+    assert question.gold_block_id == "P1:b89"
+
+
+def test_load_questions_known_absent_record_omitting_source_paper_id_has_no_gold(tmp_path):
+    """The waymo absent items OMIT source_paper_id outright (unlike eval_known_absent.json's
+    explicit null) -- same semantics either way: no gold paper, empty frozenset, never a stray
+    KeyError or a `{None}` gold set."""
+    gt_path = tmp_path / "waymo_gt.json"
+    gt_path.write_text(json.dumps({
+        "_metadata": {},
+        "ground_truth": [
+            {
+                "question_id": "Q-ABS",
+                "question_text": "What does the corpus say about X?",
+                "question_type": None,
+                "tests": "absent",
+                "absence_note": "...",
+            },
+        ],
+    }))
+
+    [question] = load_questions(gt_path)
+
+    assert question.gold_paper_ids == frozenset()
+
+
+def test_load_questions_null_question_type_is_reported_as_unlabeled_not_crashing(tmp_path):
+    """40 of waymo_gt_verified.json's records carry `question_type: null` -- build_report sorts
+    the distinct types, so a None landing in that set crashes sorted(). An explicit placeholder
+    keeps the by-type breakdown working while saying plainly that no type was assigned."""
+    from app.retrieval_eval import QuestionResult
+
+    gt_path = tmp_path / "waymo_gt.json"
+    gt_path.write_text(json.dumps({
+        "_metadata": {},
+        "ground_truth": [
+            {"question_id": "Q-A", "question_text": "a", "question_type": None,
+             "source_paper_id": "P1"},
+            {"question_id": "Q-B", "question_text": "b", "question_type": "Result-X",
+             "source_paper_id": "P1"},
+        ],
+    }))
+
+    questions = load_questions(gt_path)
+    assert questions[0].question_type == "Unlabeled"
+    assert questions[1].question_type == "Result-X"
+
+    # the crash this guards against lives in build_report's sorted() over result types
+    results = [
+        QuestionResult("Q-A", "Unlabeled", paper_rank=None, passage_rank=None,
+                       passage_scored=False),
+        QuestionResult("Q-B", "Result-X", paper_rank=None, passage_rank=None,
+                       passage_scored=False),
+    ]
+    report = build_report(results, k=10)
+    assert sorted(report["paper_level"]["by_question_type"]) == ["Result-X", "Unlabeled"]
+
+
 # --- score_question ----------------------------------------------------------------------------
 
 
