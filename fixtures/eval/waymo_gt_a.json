@@ -628,6 +628,17 @@
       "dimension": "methodological",
       "tests": "absent",
       "vision_derived": false,
+      "absence_note": "The corpus's Waymo-versus-human safety comparisons are entirely retrospective/observational (police-reported crash rates at 7.1M and 56.7M rider-only miles, Swiss Re liability-claims analyses, naturalistic benchmarks); no randomized experiment assigning drivers to conditions is described anywhere. The temptation for a false positive is real and specific: local:b716064bc4c9:c20/:c21 say outright that conducting randomized controlled trials in real traffic is unethical and infeasible and propose randomizing confounders inside high-fidelity simulation instead, and 2307.07907:c24 equates RCT logic with simulator domain randomization -- i.e., the corpus explains why such a trial does not exist without ever describing one. Surfacing either paper as if it answers the question is a false positive.",
+      "absence_search": [
+        "Method for all entries: case-insensitive substring over whitespace-normalized chunks.text (1,738 papers / 46,155 chunks), measured 2026-08-22.",
+        "'randomized controlled trial': 3 chunks / 2 papers -- 2307.07907:c24 (RCT-as-domain-randomization inside simulators) and local:b716064bc4c9:c20 (RCTs in traffic 'not only unethical ... but also impossible to conduct properly')",
+        "'randomised controlled': 2 chunks / 1 paper -- local:2b6a7d2ae102:c68/:c241, an RCT on bicycle running lights, not a driving trial",
+        "'randomized trial': 1 chunk / 1 paper -- 2604.13677:c11, counterbalancing 'trial order' in a pedestrian-perception experiment",
+        "adversarial probe 'randomly assigned': 19 chunks / 13 papers -- all ML senses (train/test splits, behavior-model assignment in simulators, participants assigned to simulators in a driving-simulator study); none assigns real drivers to ADS-versus-human experimental conditions",
+        "adversarial co-occurrence 'waymo' AND 'randomized' in one chunk: 6 chunks / 4 papers -- all dataset/benchmark contexts (WOMD splits, WOSAC sim-agent training); no trial design",
+        "'clinical trial': 13 chunks / 7 papers -- medical drug-trial methodology and ML benchmark domains; nothing on road-user trials",
+        "'unethical': 6 chunks / 6 papers -- one is local:b716064bc4c9:c20 (the RCT-infeasibility passage); the rest are unrelated (road-rage behavior, license restrictions on unethical dataset use, scenario ethics)"
+      ],
       "absence_verification": {
         "searched_on": "2026-08-22",
         "scope": "whitespace-normalized full block text of all 1738 papers in waymo/data/papers.db, substring search",
@@ -667,6 +678,16 @@
       "dimension": "numeric/quantitative",
       "tests": "absent",
       "vision_derived": false,
+      "absence_note": "No corpus paper measures Tesla's FSD or Autopilot crash rate per mile, and none compares either against human drivers; Tesla content here is qualitative (deployment plans, NHTSA investigation counts, architecture surveys). One genuine near-miss must be adjudicated correctly if surfaced: local:959c22bd9d85:c16 ('Comparability of Automated Vehicle Crash Databases', section 5.3) quotes Tesla's own self-reported 2022 Impact-Report figures -- 0.31 crashes per million miles with FSD engaged vs 0.18 Autopilot vs 0.68 with no active safety features engaged -- and then argues the FSD figure is biased toward lower rates by Safety-Score-gated rollout (only the safest drivers received FSD early), an undisclosed crash threshold, and recalls. That number therefore (a) is Tesla's self-report, not any corpus author's measurement; (b) is compared against other Tesla configurations, never against human drivers; and (c) is presented by the corpus itself as unreliable. Quoting 0.31 cpmm as the corpus's answer misses the question on all three counts -- but note it is not fabricated from nothing, unlike most false positives.",
+      "absence_search": [
+        "Method for all entries: case-insensitive substring over whitespace-normalized chunks.text (1,738 papers / 46,155 chunks), measured 2026-08-22.",
+        "'full self-driving': 19 chunks / 14 papers -- FSD beta-package timeline (2412.02574:c1), Austin robotaxi plans (2505.02274:c1), Mcity closed-track tests of an FSD-equipped Model 3 (2505.16214:c5/:c10/:c14), monocular-depth attack framing (2411.00192:c7), supervised lane-change context (2607.27085:c2) -- none reports a crash rate",
+        "adversarial co-occurrence 'tesla' AND 'crash rate': 9 chunks / 6 papers -- GPU-cluster and simulator mentions plus the Comparability-paper passages below; no Tesla-vs-human comparison",
+        "'full self-driving' AND 'per million' in one chunk: exactly 1 chunk -- local:959c22bd9d85:c16, the self-reported figures discussed in absence_note",
+        "'autopilot': 114 chunks / 78 papers -- CARLA's built-in autopilot module, generic highway-autopilot policies, NHTSA investigation crash COUNTS (2504.09461:c3), and a sparse-data methods demo built on Tesla's self-published Autopilot rates (local:959c22bd9d85:c5) -- never a benchmarked comparison against human drivers",
+        "adversarial probe 'crashes per million miles': 9 chunks / 6 papers -- the Waymo/Cruise/supervised-AV vs Uber-human CPMM analysis (2403.14648), the US-average police-reported rate (2505.06276:c2), a naturalistic-fleet estimate (2312.13228:c26) -- none involves Tesla",
+        "co-occurrence 'tesla' AND 'human drivers': 26 chunks / 23 papers -- inspection shows camera-only-perception and market-survey contexts; no safety-rate comparison"
+      ],
       "absence_verification": {
         "searched_on": "2026-08-22",
         "scope": "whitespace-normalized full block text of all 1738 papers in waymo/data/papers.db, substring search",
@@ -713,6 +734,15 @@
       "dimension": "numeric/quantitative",
       "tests": "absent",
       "vision_derived": false,
+      "absence_note": "Independent rediscovery of the fact Q-WAYB-034 already covers; kept deliberately (independent rediscovery is itself signal) but flagged so the merged set does not count it twice. Zoox appears in this corpus only as a name: a data-source filter in the San Francisco DMV/CPUC crash-rate analysis, which computes CPMM for Waymo, Cruise, supervised AVs, and Uber human driving but never Zoox (2403.14648:c8/:c12); a 2018-era claimed disengagement rate of 1 per 1900 miles (1912.03618:c11); the affiliation of a Zoox-authored validation-foundation-models paper that reports no safety rates (2411.03328:c0); teleoperation-HMI industry examples (2502.02207:c9); news-style incident narratives -- struck while turning right, two rear-end collisions (local:466c3988963b:c14) -- and a raw DMV table row listing individual Zoox incidents (local:78d07845dba7:c10). Individual events and old disengagement claims are not a crashes-per-million-mile service figure, and nothing compares Zoox with human drivers.",
+      "absence_search": [
+        "Method for all entries: case-insensitive substring over whitespace-normalized chunks.text unless stated otherwise, measured 2026-08-22.",
+        "papers.title LIKE '%Zoox%': 0 hits",
+        "'zoox': 11 chunks / 10 papers -- every hit inspected; roles listed in absence_note",
+        "adversarial co-occurrence 'zoox' AND 'per million': 0 chunks",
+        "co-occurrence 'zoox' AND 'crash': 5 chunks / 4 papers; 'zoox' AND 'collision': 6 chunks / 5 papers -- all are the passing mentions listed in absence_note (filter lists, the old disengagement claim, incident narratives and table rows), never a rate"
+      ],
+      "duplicate_of": "Q-WAYB-034",
       "absence_verification": {
         "searched_on": "2026-08-22",
         "scope": "whitespace-normalized full block text of all 1738 papers in waymo/data/papers.db, substring search",
@@ -745,6 +775,16 @@
       "dimension": "single-passage factual lookup",
       "tests": "absent",
       "vision_derived": false,
+      "absence_note": "Independent rediscovery of the fact Q-WAYB-009 already covers; kept deliberately (independent rediscovery is itself signal) but flagged so the merged set does not count it twice. Waymo-authored dataset papers describe range-image features (range, intensity, elongation) but never disclose their sensor's laser wavelength. Every specific wavelength in the corpus belongs to another device or an assumption: 1550 nm is an assumed FMCW lidar parameter (2112.12984:c5) and the spec of an Innovusion Falcon quoted in the EDGAR platform paper (2309.15492:c6); 905 nm appears in a laser-diode tutorial (local:0a57c839728c:c12). The decisive check is negative: no chunk in the corpus mentions Waymo and wavelength together.",
+      "absence_search": [
+        "Method for all entries: case-insensitive substring over whitespace-normalized chunks.text unless stated otherwise, measured 2026-08-22.",
+        "'wavelength': 35 chunks / 20 papers -- hyperspectral imaging, fluid-interface simulation, FMCW processing assumptions, half-wavelength MIMO antenna spacing, Doppler formulation; no Waymo hardware spec among them",
+        "adversarial co-occurrence 'waymo' AND 'wavelength' in one chunk: 0 chunks / 0 papers",
+        "adversarial probe '1550 nm': 2 chunks / 2 papers (2112.12984:c5 assumed FMCW wavelength; 2309.15492:c6 Innovusion Falcon) -- neither is Waymo's production sensor; quoting either as Waymo's wavelength is a false positive",
+        "'905 nm': 1 chunk / 1 paper (local:0a57c839728c:c12, near-infrared laser-diode background)",
+        "'laser wavelength': 1 chunk / 1 paper (local:07133a274fed:c16, generic NIR/SWIR transmitter discussion); 'emission wavelength': 0 hits"
+      ],
+      "duplicate_of": "Q-WAYB-009",
       "absence_verification": {
         "searched_on": "2026-08-22",
         "scope": "whitespace-normalized full block text of all 1738 papers in waymo/data/papers.db, substring search",
@@ -791,6 +831,14 @@
       "dimension": "single-passage factual lookup",
       "tests": "absent",
       "vision_derived": false,
+      "absence_note": "No cumulative ridership or total-rides figure exists anywhere in the corpus. What exists are two weekly-rate snapshots from different eras, either of which could be mistaken for an answer if surfaced: the early public-road safety report's 1,000-2,000 rides per week, 5-10% driverless, in early 2020 (2011.00038:c2, repeated nearly verbatim in local:2b0e7fb59b39:c73), and 'As of 2025, Waymo serves 250,000 commercial rides per week' citing Waymo (2506.11526:c1). Both are weekly ride rates -- neither cumulative, neither expressed as riders (persons) served -- so neither answers the question. A correct response rejects the premise; quoting either weekly figure as a lifetime total is a false positive.",
+      "absence_search": [
+        "Method for all entries: case-insensitive substring over whitespace-normalized chunks.text (1,738 papers / 46,155 chunks), measured 2026-08-22.",
+        "'total riders', 'million rides', 'riders served', 'rides provided', 'weekly rides', 'paid rides', 'trips per week': 0 hits each (7 queries)",
+        "'riders carried', 'total rides', 'passengers served', 'rides completed', 'number of rides', 'cumulative rides', 'rides given', 'ridership': 0 hits each (8 queries)",
+        "adversarial literals '100,000 rides' and '10 million rides': 0 hits each; co-occurrence 'waymo' AND 'million riders': 0 chunks",
+        "nearest-content probes: 'rides per week' 3 chunks / 3 papers, 'per week' 9 chunks / 9 papers -- surfaced exactly the two weekly snapshots named in absence_note plus unrelated survey questions (driving hours per week)"
+      ],
       "absence_verification": {
         "searched_on": "2026-08-22",
         "scope": "whitespace-normalized full block text of all 1738 papers in waymo/data/papers.db, substring search",
@@ -844,6 +892,14 @@
       "dimension": "single-passage factual lookup",
       "tests": "absent",
       "vision_derived": false,
+      "absence_note": "Nothing in the corpus states, compares, or estimates what a Waymo One ride costs -- clean zero-hit absence on all direct pricing phrasings. The noun 'fare' appears only definitionally or non-numerically: the California CPUC permit taxonomy, where Pilot rides 'cannot charge the riders' while Deployment rides 'charge them fares' (2403.14648:c2), and a status note that 'Waymo has been charging fares to the public in certain regions since 2022' without amounts (2501.14819:c42). Chunks pairing 'Waymo One' with 'cost' use cost in unrelated senses (simulation setup cost, camera-vs-lidar hardware cost, societal cost of fatal collisions). Any dollar amount attached to a Waymo One fare is fabricated.",
+      "absence_search": [
+        "Method for all entries: case-insensitive substring over whitespace-normalized chunks.text (1,738 papers / 46,155 chunks), measured 2026-08-22.",
+        "'cost per ride', 'price per ride', 'ride fare', 'passenger fare', '$ per ride', 'pricing model': 0 hits each (6 queries)",
+        "'fare': 50 chunks / 40 papers -- inspection shows the large majority are the verb ('fare better / fares against'); noun hits are the CPUC permit definitions (2403.14648) and unrelated contexts; no amounts anywhere",
+        "'fares': 7 chunks / 4 papers -- same definitional/status senses; 'charging fares': 1 chunk / 1 paper (2501.14819:c42, no amount)",
+        "adversarial co-occurrences with 'waymo one': 'price' 0 chunks, 'fare' 0 chunks, 'cost' 3 chunks / 3 papers -- all non-pricing senses named in absence_note"
+      ],
       "absence_verification": {
         "searched_on": "2026-08-22",
         "scope": "whitespace-normalized full block text of all 1738 papers in waymo/data/papers.db, substring search",
@@ -897,6 +953,15 @@
       "dimension": "single-passage factual lookup",
       "tests": "absent",
       "vision_derived": false,
+      "absence_note": "The corpus describes the Waymo-Swiss Re collaboration in detail -- claims-based comparative methodology, zip-code- and responsibility-calibrated human baselines built from over 600,000 claims, the 3.8M-mile and 25.3M-mile claim-frequency results, Swiss Re cast as an 'independent evaluator' (local:73b22bed599f:c18) -- but never names the company that underwrites Waymo's auto liability coverage, describes any policy arrangement, or mentions a premium discount following from those studies. The obvious trap is acronym collision: every 'underwriter(s)' hit is Underwriters Laboratories / UL 4600, a safety-certification body, so answering 'Underwriters Laboratories' is a false positive from the collision, not a find.",
+      "absence_search": [
+        "Method for all entries: case-insensitive substring over whitespace-normalized chunks.text (1,738 papers / 46,155 chunks), measured 2026-08-22.",
+        "'swiss re': 16 chunks / 8 papers (local:5fa216c3425a, local:f6f1461f2c9a, 2403.14648, 2312.13228, local:6b9ccd0431f6, local:73b22bed599f, local:4087ccce4c01, local:959c22bd9d85)",
+        "chunk-level co-occurrence of those 16 'swiss re' chunks with: 'premium' 0, 'discount' 0, 'underwrit' 0, 'insurer' 0",
+        "adversarial probe 'premium': 21 chunks / 12 papers -- RL reward-shaping premiums, SSD storage tiers, driver-scoring insurance-premium tier tables (2603.14841), hard-brake-rate insurance discussion (local:2c0e082a7af4) -- none connected to Waymo's coverage",
+        "adversarial probe 'underwriter': 8 chunks / 8 papers -- every hit is Underwriters Laboratories / UL 4600 safety-standard context",
+        "'policyholder': 2 chunks / 2 papers -- conservative attribution assumption (local:5fa216c3425a:c4) and zip-code-level benchmark aggregation (2410.08903:c2), methodology only; 'insurance partner': 0 hits"
+      ],
       "absence_verification": {
         "searched_on": "2026-08-22",
         "scope": "whitespace-normalized full block text of all 1738 papers in waymo/data/papers.db, substring search",
@@ -936,6 +1001,15 @@
       "dimension": "negation and scope",
       "tests": "absent",
       "vision_derived": false,
+      "absence_note": "WOMD is mined normal driving labeled for interactions (merges, lane changes, unprotected turns), not crash records, so no fraction-of-scenes-with-collisions statistic can exist for it. The corpus is nonetheless saturated with nearby-looking numbers: dozens of behavior-generation and sim-agent papers report 'collision rate' as an outcome metric of GENERATED or rolled-out agent behaviors over WOMD-seeded scenes (e.g., 2404.18464 evaluates MRIC partly by collision rate), which measures their generator or policy, not the dataset's composition. Interaction mining itself (2104.10133 mines merges, lane changes, unprotected turns) is another plausible-looking distractor but is pairwise-interaction frequency, not crashes. A correct response rejects the question's premise rather than quoting any simulated-outcome percentage.",
+      "absence_search": [
+        "Method for all entries: case-insensitive substring over whitespace-normalized chunks.text (1,738 papers / 46,155 chunks), measured 2026-08-22.",
+        "'collision in WOMD', 'accident in WOMD', 'Waymo Open Motion Dataset collision', 'crash in the motion dataset': 0 hits each (4 queries)",
+        "'involve a collision', 'contain a collision': 0 hits each",
+        "adversarial co-occurrence 'Waymo Open Motion Dataset' AND 'collision': 106 chunks / 68 papers; 'WOMD' AND 'collision': 130 chunks / 70 papers; 'WOMD' AND 'crash': 29 chunks / 18 papers -- inspection shows these are simulated-rollout/generator outcome metrics (see absence_note and adjudication), never a logged-dataset composition figure",
+        "adversarial probe 'collision rate': 594 chunks / 223 papers corpus-wide -- overwhelmingly closed-loop-simulation metric usage, confirming the dataset-composition reading has no support anywhere"
+      ],
+      "adjudication": "Canonical near-miss, adjudicated: arXiv 2505.00972 ('Seeking to Collide') abstracts 'our model reduces the mean minimum timeto-collision from 1.62 to 1.08 s and incurs a 75% collision rate' over 'Evaluations using the Waymo Open Motion Dataset' (2505.00972:c0). This does NOT answer the question: the 75% is the proportion of the paper's own generated safety-critical scenarios -- produced by its retrieval-augmented LLM adversarial generator from WOMD seed scenes -- in which a collision occurs during closed-loop replay (metric defined in 2505.00972:c15 as 'the proportion of scenarios that occur collision' across its 81 generated scenarios; results table in :c14 where the raw replay baseline scores 0.00). It is a property of the generator's output under rollouts, not a statistic about how many logged WOMD scenarios contain a collision; WOMD carries no crash labels. Surfacing 2505.00972 and quoting 75% as the dataset's composition is a false positive -- but a sophisticated one, and graders should treat this item accordingly. Kept un-reworded deliberately: the discrimination this item tests IS this near-miss, and rewording the question to exclude 2505.00972 would blunt it.",
       "absence_verification": {
         "searched_on": "2026-08-22",
         "scope": "whitespace-normalized full block text of all 1738 papers in waymo/data/papers.db, substring search",
