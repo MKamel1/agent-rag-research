@@ -1,8 +1,8 @@
 {
   "_metadata": {
-    "description": "GT-A independent deep ground-truth set for the Waymo AV-safety corpus: 40+ items spanning factual lookup, multi-paper synthesis, numeric claims, methodology, negation/scope, temporal/versioned claims, plus verified-absence probes.",
-    "structure": "Same record shape as eval_ground_truth_waymo.json, extended per ticket with 'dimension', 'tests' ('answerable'|'absent'), 'vision_derived', and 'provenance'; multi-paper items add verified 'supporting_sources'; absent items replace grounding fields with 'absence_verification'.",
-    "total_items": 41,
+    "description": "GT-A independent deep ground-truth set for the Waymo AV-safety corpus: 44 items spanning factual lookup, multi-paper synthesis, numeric claims, methodology, negation/scope, temporal/versioned claims, and vision-derived table/figure reading, plus verified-absence probes. 36 answerable (3 of them vision-derived, readable only from the rendered PDF page and not from this DB's own extracted block/chunk text) and 8 known-absent.",
+    "structure": "Same record shape as eval_ground_truth_waymo.json, extended per ticket with 'dimension', 'tests' ('answerable'|'absent'), 'vision_derived', and 'provenance'; multi-paper items add verified 'supporting_sources'; absent items replace grounding fields with 'absence_verification'; the three vision-derived items (Q-GTA-042..044) add 'page' and 'vision_note' in place of 'section_path'/'passage_excerpt'/'gold_chunk_id'.",
+    "total_items": 44,
     "last_updated": "2026-08-22T00:00:00Z",
     "corpus": "waymo_av_safety",
     "authorship": "Authored independently by GT-A without reference to any parallel ground-truth set beyond the pre-existing seed fixture eval_ground_truth_waymo.json (used for shape conventions only).",
