@@ -935,3 +935,136 @@ def test_store_readable_from_a_thread_other_than_its_creating_thread(tmp_path):
 
     assert got is not None
     assert got.ref.paper_id == PAPER_ID
+
+
+# --------------------------------------------------------------------------------------------------
+# put_figures_and_tables + table_fingerprints (RI-32) — a figures/tables-only backfill write path
+# whose blast radius is engine-enforced (connection authorizer), not care-enforced
+# --------------------------------------------------------------------------------------------------
+
+
+def _fig_only_store(tmp_path):
+    return _mod.DocumentStore(
+        db_path=str(tmp_path / "store.db"), blob_dir=str(tmp_path / "blobs")
+    )
+
+
+_PROTECTED_TABLES = ("papers", "blocks", "chunks", "summaries")
+
+
+def test_put_figures_and_tables_round_trips_via_get(store):
+    figures = [make_figure(caption="Fig 1", page=0), make_figure(caption="Fig 2", page=1)]
+    tables = [make_table_item(caption="Table 1", page=2)]
+    store.put(make_paper_record())
+    store.put_figures_and_tables(PAPER_ID, figures, tables)
+
+    got = store.get(PAPER_ID)
+    assert got.parsed.figures == figures
+    assert got.parsed.tables == tables
+
+
+def test_put_figures_and_tables_is_idempotent_on_a_rerun(store):
+    """RI-32 resume re-runs papers whose backfill was interrupted mid-flight -- a second call for
+    an already-backfilled paper must replace its rows, not duplicate them."""
+    store.put(make_paper_record())
+    figures = [make_figure()]
+    store.put_figures_and_tables(PAPER_ID, figures, [])
+    store.put_figures_and_tables(PAPER_ID, figures, [])
+
+    n_figures = store._con.execute(
+        "SELECT count(*) FROM figures WHERE paper_id = ?", (PAPER_ID,)
+    ).fetchone()[0]
+    assert n_figures == 1
+
+
+def test_put_figures_and_tables_replaces_stale_rows_for_the_same_paper(store):
+    store.put(make_paper_record())
+    store.put_figures_and_tables(PAPER_ID, [make_figure(caption="old")], [])
+    store.put_figures_and_tables(PAPER_ID, [make_figure(caption="new")], [])
+
+    got = store.get(PAPER_ID)
+    assert [f.caption for f in got.parsed.figures] == ["new"]
+
+
+def test_put_figures_and_tables_rejects_a_mismatched_paper_id_before_writing(store):
+    """A Figure carrying another paper's id is a caller bug (T-DOC31's shape) -- crash early,
+    write nothing."""
+    store.put(make_paper_record())
+    with pytest.raises(ContractError):
+        store.put_figures_and_tables(PAPER_ID, [make_figure(paper_id="other.paper")], [])
+
+    assert store._con.execute("SELECT count(*) FROM figures").fetchone()[0] == 0
+
+
+def test_put_figures_and_tables_unknown_paper_raises_and_writes_nothing(store):
+    with pytest.raises(ContractError):
+        store.put_figures_and_tables("9999.99999", [make_figure()], [])
+
+    assert store._con.execute("SELECT count(*) FROM figures").fetchone()[0] == 0
+
+
+def test_put_figures_and_tables_leaves_protected_tables_byte_identical(tmp_path):
+    """THE RI-32 property, at the write path itself: counts AND full-content hashes of
+    papers/blocks/chunks/summaries are identical across the call. `put()` cannot provide this --
+    it delete+reinserts all four (rag/document_store.py::put) -- which is exactly why this method
+    exists instead of the backfill calling put()."""
+    store = _fig_only_store(tmp_path)
+    record = make_paper_record()
+    store.put(record)
+    before = _mod.table_fingerprints(str(tmp_path / "store.db"), _PROTECTED_TABLES)
+
+    store.put_figures_and_tables(PAPER_ID, [make_figure()], [make_table_item()])
+
+    after = _mod.table_fingerprints(str(tmp_path / "store.db"), _PROTECTED_TABLES)
+    assert after == before
+
+
+def test_figures_only_guard_denies_writes_outside_figures_and_tables_at_the_engine_level(tmp_path):
+    """The narrowness claim is structural, not a matter of care: while the guard is installed, the
+    SQLite connection itself refuses any INSERT/UPDATE/DELETE outside figures/tables and any DDL
+    -- so even a future edit that made this path try to touch chunks would fail loudly here, not
+    silently damage a corpus. Verified by exercising the denial directly; the byte-identical test
+    above pins the same guarantee through the public method."""
+    store = _fig_only_store(tmp_path)
+    store.put(make_paper_record())
+
+    with store._figures_only_write_guard():
+        with pytest.raises(sqlite3.DatabaseError):
+            store._con.execute(
+                "INSERT INTO chunks (chunk_id, paper_id, text, anchor_json, section_path,"
+                " parent_id, contextual_header) VALUES ('x:c0', ?, 't', '{}', '', NULL, NULL)",
+                (PAPER_ID,),
+            )
+        with pytest.raises(sqlite3.DatabaseError):
+            store._con.execute("DELETE FROM blocks WHERE paper_id = ?", (PAPER_ID,))
+        with pytest.raises(sqlite3.DatabaseError):
+            store._con.execute("UPDATE papers SET title = 'x' WHERE paper_id = ?", (PAPER_ID,))
+        with pytest.raises(sqlite3.DatabaseError):
+            store._con.execute("DROP TABLE summaries")
+        # The allowed half of the guard: figures/tables writes go through.
+        store._con.execute(
+            "INSERT INTO figures (paper_id, image_path, caption, page, bbox_json,"
+            " vlm_description) VALUES (?, '/p.png', 'c', 0, '[0,0,1,1]', NULL)",
+            (PAPER_ID,),
+        )
+
+    # Guard removed -> the very statements the guard denied (papers/blocks/chunks writes via
+    # put()) work again. Re-putting the SAME record is fine: put() is delete+reinsert.
+    store.put(make_paper_record())
+
+
+def test_table_fingerprints_change_when_content_changes(tmp_path):
+    """The safety comparison is content-sensitive, not just row-count-sensitive: a mutated value
+    in one column of one row must change the hash even when counts match."""
+    store = _fig_only_store(tmp_path)
+    db = str(tmp_path / "store.db")
+    store.put(make_paper_record())
+    baseline = _mod.table_fingerprints(db, _PROTECTED_TABLES)
+
+    store.put(make_paper_record(summary_text="A different summary."))
+    rewritten = _mod.table_fingerprints(db, _PROTECTED_TABLES)
+    assert rewritten != baseline
+
+    store.put(make_paper_record())  # restore identical content
+    restored = _mod.table_fingerprints(db, _PROTECTED_TABLES)
+    assert restored == baseline, "identical content must hash identically regardless of insert order"
