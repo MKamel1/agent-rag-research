@@ -47,6 +47,37 @@ Agents that did this unprompted were right; agents that trusted a printed summar
 
 ---
 
+### 1.4 Prove an alarming infrastructure claim by a second route before recording it
+
+A benchmark run reported: "every gold chunk exists in SQLite but has **no vector** in Qdrant —
+catastrophic fixture-vs-corpus mismatch." It was a payload-key error. The collection stores a
+chunk's id in the payload field `_ext_id`; the harness looked for `chunk_id`, which does not exist,
+so every lookup missed. Two cheap independent checks contradicted it immediately: the collection
+reports 47,893 points against 46,155 SQLite chunks (a corpus with no vectors cannot), and scrolling
+any single point shows the payload keys.
+
+The asymmetry is what makes this worth a rule. A *boring* result that is wrong wastes one run. An
+*alarming* result that is wrong redirects the whole investigation, and the alarm suppresses the
+instinct to double-check — it feels urgent to report, not to verify. So: the more infrastructure-
+shaped and severe the finding, the more it owes a second, differently-shaped confirmation before it
+is written down.
+
+Same shape as §1.1: a check that cannot fail for the reason you think it can is not evidence.
+
+### 1.5 Verifying a fixture means handling every item shape it contains
+
+Twice now a verification pass over a ground-truth fixture reported false failures because the
+checker assumed one item shape. `waymo_gt_verified.json` has five: a plain single-passage item; one
+with `supporting_sources` alongside a primary; a multi-paper item carrying **only**
+`supporting_passages` and no top-level `source_paper_id` (this one raised `KeyError`, then, once
+guarded, silently skipped); an `absent` item with no gold chunk at all by construction; and a
+vision item with a `gold_block_id` and `page` but no chunk and an excerpt that is not in any text.
+
+A checker that crashes is the good case — it tells you. A checker that skips what it does not
+recognise reports a clean pass over a subset and calls it the whole set. Count what you checked and
+assert the count: 519 checks over 73 items is a claim that can be wrong out loud; "0 failures" is
+not.
+
 ## 2. Reviews
 
 ### 2.1 Documentation-anchored review finds documentation-shaped bugs
@@ -212,6 +243,49 @@ false regression or misses a real one. Re-read the baseline at dispatch time.
 
 ---
 
+### 4.5 One SQLite session store is why concurrent dispatches deadlock — isolate it, do not serialize
+
+**Cost: parallelism abandoned for roughly an hour on a wrong diagnosis.** §6b.1b blamed
+`opencode serve` and the fix recorded there was "do not run the server". That was half the story
+and the wrong half to generalise from: the server is only the loudest writer. *Any* two concurrent
+`opencode run` processes contend on the same `~/.local/share/opencode/opencode.db`, and the second
+one stalls. Having found that, the response was to run dispatches one at a time — which made the
+symptom go away and threw away the swarm.
+
+The store's location is controlled by `XDG_DATA_HOME`. Giving each dispatch its own removes the
+contention entirely:
+
+```python
+state = Path(tempfile.gettempdir()) / f"oc-state-{os.getpid()}-{uuid.uuid4().hex[:8]}"
+(state / "opencode").mkdir(parents=True, exist_ok=True)
+link = state / "opencode" / "auth.json"          # credentials must still resolve
+if (real := Path.home() / ".local/share/opencode/auth.json").exists() and not link.exists():
+    link.symlink_to(real)
+env["XDG_DATA_HOME"] = str(state)
+```
+
+`oc-task` now does this by default; `--shared-state` opts back into the single store. Four
+concurrent dispatches ran clean afterwards.
+
+Two lessons, and the second is the bigger one:
+
+- Serializing to dodge a contention bug is a workaround wearing a fix's clothes. It looks like it
+  worked because the symptom is gone, and it silently costs whatever the parallelism was worth.
+- The watcher reads a *different* database per dispatch now. `oc-watch` had to learn to glob
+  `/tmp/oc-state-*/opencode/opencode.db`, and until it did, the watch page showed nothing while
+  four agents worked normally — a fix in one place breaking observability in another.
+
+### 4.6 Do not resume a session that has accumulated a large context
+
+Continuing GT-A by resuming its existing session (~3.3M accumulated tokens) produced 40 minutes of
+re-reading its own history and **zero commits**. Re-dispatching a *fresh* agent with a narrow,
+append-only brief — "the file exists and has 33 items, add items 34+, do not rewrite what is there"
+— produced work immediately.
+
+Resume (§3.2) is right for a session that was interrupted mid-task. It is wrong for one that has
+already finished a phase: the accumulated context is now cost without value, and the model spends
+its budget reconstructing a state the brief could have stated in three lines.
+
 ## 5. Writing briefs
 
 ### 5.1 State the rejected alternative and why
@@ -309,6 +383,9 @@ easy to miss. That API can drive opencode with full tool access. Set `OPENCODE_S
 ### 6b.1b `opencode serve` starves headless runs — do not leave it running
 
 **Cost: four dispatches stalled across roughly two hours before the correlation was spotted.**
+
+**Superseded in part by §4.5** — the real cause is any concurrent writer on the shared store, and
+the fix is per-dispatch state isolation, not avoiding the server.
 
 `opencode serve` and every `opencode run` share one SQLite store (`~/.local/share/opencode/
 opencode.db`). A long-lived server holding write locks on it starves the headless runs: they either
