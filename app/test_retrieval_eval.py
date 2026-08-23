@@ -1242,18 +1242,26 @@ def test_build_report_all_answerable_fixture_partition_is_additive():
     assert arms["known_absent"]["n"] == 0
 
 
-def test_load_questions_waymo_fixture_splits_65_answerable_and_8_known_absent():
-    """End-to-end over the real committed fixture: its 8 known-absent items omit every gold key,
+def test_load_questions_waymo_fixture_splits_answerable_and_known_absent():
+    """End-to-end over the real committed fixture: its known-absent items omit every gold key,
     so they must load as empty gold sets -- that empty-ness is exactly what build_report's
-    partition keys on."""
+    partition keys on.
+
+    Counts (pass-2 merge, 2026-08-23): 84 records of which 2 carry duplicate_of and are
+    excluded by default -> 82 loaded, 68 answerable (incl. 4 vision items grounded at
+    paper level), 14 known-absent. With duplicates included: 84/68/16."""
     fixture = Path(__file__).resolve().parent.parent / "fixtures" / "eval" / "waymo_gt_verified.json"
 
     questions = load_questions(fixture)
-
+    assert len(questions) == 82
     answerable = [q for q in questions if q.gold_paper_ids]
     absent = [q for q in questions if not q.gold_paper_ids]
-    assert len(answerable) == 65
-    assert len(absent) == 8
+    assert len(answerable) == 68
+    assert len(absent) == 14
+
+    everything = load_questions(fixture, include_duplicates=True)
+    assert len(everything) == 84
+    assert sum(1 for q in everything if not q.gold_paper_ids) == 16
 
 
 def test_print_summary_mixed_fixture_prints_both_arms_never_the_blend(capsys):
@@ -1295,3 +1303,27 @@ def test_print_summary_all_answerable_output_is_unchanged(capsys):
     out = capsys.readouterr().out
 
     assert "Paper-level   Recall@10=1.000  MRR=1.000  (n=1)\n" in out
+
+
+def test_load_questions_duplicate_of_secondaries_excluded_by_default(tmp_path):
+    """waymo_gt_verified.json's dedup_policy: a record with duplicate_of re-asks a fact another
+    item already covers. Default loading excludes it so the fact cannot move an aggregate
+    denominator twice; include_duplicates=True scores it alongside its primary."""
+    gt_path = tmp_path / "waymo_gt.json"
+    gt_path.write_text(json.dumps({
+        "_metadata": {"dedup_policy": "secondaries excluded by default"},
+        "ground_truth": [
+            {"question_id": "Q-WAYB-034", "question_text": "primary",
+             "question_type": None, "tests": "absent"},
+            {"question_id": "Q-GTA-036", "question_text": "secondary rediscovery",
+             "question_type": None, "tests": "absent", "duplicate_of": "Q-WAYB-034"},
+            {"question_id": "Q-GTA-040", "question_text": "independent",
+             "question_type": None, "tests": "absent"},
+        ],
+    }))
+
+    default_ids = [q.question_id for q in load_questions(gt_path)]
+    assert default_ids == ["Q-WAYB-034", "Q-GTA-040"]
+
+    all_ids = [q.question_id for q in load_questions(gt_path, include_duplicates=True)]
+    assert all_ids == ["Q-WAYB-034", "Q-GTA-036", "Q-GTA-040"]

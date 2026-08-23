@@ -29,8 +29,11 @@ import pytest
 FIXTURE_DIR = Path(__file__).resolve().parent
 GT_PATH = FIXTURE_DIR / "waymo_gt_verified.json"
 
-TOTAL_ITEMS = 73
-PER_SET_COUNTS = {"GT-A": 33, "GT-B": 40}
+TOTAL_ITEMS = 84
+PER_SET_COUNTS = {"GT-A": 44, "GT-B": 40}
+# Q-GTA-036/Q-GTA-037 independently rediscover facts already covered by GT-B items; they are
+# kept under their own ids with explicit pointers, and aggregate scoring counts each group once.
+EXPECTED_DUPLICATES = {"Q-GTA-036": "Q-WAYB-034", "Q-GTA-037": "Q-WAYB-009"}
 
 QUESTION_ID_RES = {
     "GT-A": re.compile(r"^Q-GTA-\d{3}$"),
@@ -116,7 +119,13 @@ def test_structural_invariants():
         assert ver["source_fixture"] == f"waymo_gt_{src_set[-1].lower()}.json", (
             f"{qid}: source_fixture does not match source_set"
         )
-        assert ver["verified_at"] == meta["generated_at"], f"{qid}: verified_at/generated_at drift"
+        pass_name = ver.get("verification_pass", "pass-1")
+        assert pass_name in meta["verification_dates"], (
+            f"{qid}: unknown verification_pass {pass_name!r}"
+        )
+        assert ver["verified_at"] == meta["verification_dates"][pass_name], (
+            f"{qid}: verified_at/{pass_name} date drift"
+        )
         assert isinstance(ver["checks"], list) and ver["checks"], (
             f"{qid}: checks must be a non-empty list"
         )
@@ -134,6 +143,9 @@ def test_structural_invariants():
             evidence = " ".join(ver["checks"]) + " " + " ".join(ver.get("notes", []))
             assert "absence_re_established" in evidence, (
                 f"{qid}: absent item lacks independent re-verification evidence"
+            )
+            assert str(item.get("absence_search") or "").strip(), (
+                f"{qid}: absent item carries no recorded absence search log"
             )
             continue
 
@@ -185,6 +197,19 @@ def test_structural_invariants():
                 )
 
     assert per_set == PER_SET_COUNTS, f"per-set survival counts drifted: {per_set}"
+
+    # Duplicate-of bookkeeping: exactly the two known rediscoveries, pointing at in-file items.
+    dups = {i["question_id"]: i["duplicate_of"] for i in gt if "duplicate_of" in i}
+    assert dups == EXPECTED_DUPLICATES, f"duplicate_of map drifted: {dups}"
+    by_id = {i["question_id"] for i in gt}
+    for sec, prim in dups.items():
+        assert prim in by_id, f"{sec}: duplicate_of target {prim!r} not in fixture"
+        sec_item = next(i for i in gt if i["question_id"] == sec)
+        prim_item = next(i for i in gt if i["question_id"] == prim)
+        assert sec_item["tests"] == prim_item["tests"] == "absent", (
+            f"{sec}: duplicates must both be absent items"
+        )
+
     print("all waymo_gt_verified structural invariants hold")
 
 
