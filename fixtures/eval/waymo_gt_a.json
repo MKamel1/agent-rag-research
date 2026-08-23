@@ -1047,6 +1047,54 @@
       },
       "expected_behavior": "A correct response recognizes the premise is out of scope: WOMD consists of normal driving mined for interactions, not crash records, so no collision count or crash proportion is reported anywhere. Confusing the dataset's 'interaction' mining with crashes, or returning interaction-mining papers, is a false positive.",
       "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json. Absence verified 2026-08-22; four term variants all returned zero hits."
+    },
+    {
+      "question_id": "Q-GTA-042",
+      "question_text": "In Table 5 of 'From Stoplights to On-Ramps: A Comprehensive Set of Crash Rate Benchmarks for Freeway and Surface Street ADS Evaluation,' five rows of freeway crash-rate metrics (Police-Reported, Any-Injury-Reported, Any Airbag Deployment, Suspected Serious Injury+, Any Fatality) are grouped under one label printed vertically down the table's left edge. What is that vertical row-group label?",
+      "answer_text": "The vertical label reads 'Crashed Passenger Vehicles (IPMM)' -- it identifies that all five metric rows report rates specifically for crashed passenger vehicles (not other vehicle or road-user types), in the paper's IPMM units.",
+      "source_paper_id": "2508.19425",
+      "source_paper_title": "From Stoplights to On-Ramps: A Comprehensive Set of Crash Rate Benchmarks for Freeway and Surface Street ADS Evaluation",
+      "question_type": "Result-Comprehension",
+      "difficulty": "hard",
+      "dimension": "numeric/quantitative",
+      "tests": "answerable",
+      "vision_derived": true,
+      "gold_block_id": "2508.19425:b88",
+      "page": 13,
+      "vision_note": "Rendered PDF page 13 (0-indexed, matching blocks.page for this DB) at 200 DPI with pymupdf and read the table directly. The table's five data rows sit inside a bracket on the left edge labeled vertically 'Crashed Passenger Vehicles (IPMM)'. The block's own extracted text (2508.19425:b88, a markdown-table dump) mangles this rotated label into the unreadable fragment 'cras id picles (IPM)' misplaced above the wrong row, and the exact phrase 'Crashed Passenger Vehicles' does not occur anywhere else in this paper's blocks or chunks -- confirmed by case-insensitive substring search of both tables for this paper_id, 0 hits. (Every individual numeral in the table's grid does survive, column-order-intact, in the block's garbled text, which is why this item targets the row-group label rather than any cell value.)",
+      "provenance": "Vision-derived: paper_id/title verified against papers.db; PDF rendered from waymo/data/pdf_cache/2508.19425.pdf page index 13 with pymupdf (dpi=200) and read directly (not OCR'd, not fabricated from memory of the paper). gold_block_id anchors to the table block itself; blocks.page for 2508.19425:b88 verified equal to 13."
+    },
+    {
+      "question_id": "Q-GTA-043",
+      "question_text": "In 'Scaling Laws of Motion Forecasting and Planning' Figure 5, the optimal loss L(C) is plotted against compute budget C with two fitted curves: a pure power-law (shown in both panels) and a power-law-plus-constant (shown only in the right panel). What are the two fitted forms exactly as printed in the figure's legend, including their numerical constants?",
+      "answer_text": "The legend gives L is proportional to C^-0.026 for the pure power-law fit (the blue line, present in both the left and right panels), and L is proportional to C^-0.18 + 1.03 for the power-law-plus-constant fit (the red line, right panel only).",
+      "source_paper_id": "2506.08228",
+      "source_paper_title": "Scaling Laws of Motion Forecasting and Planning -- Technical Report",
+      "question_type": "Result-Comprehension",
+      "difficulty": "hard",
+      "dimension": "numeric/quantitative",
+      "tests": "answerable",
+      "vision_derived": true,
+      "gold_block_id": "2506.08228:b75",
+      "page": 9,
+      "vision_note": "Rendered PDF page 9 (0-indexed, matching blocks.page for this DB) at 200 DPI with pymupdf and read Figure 5 directly. Its left panel legend reads 'L ∝ C^-0.026'; its right panel legend adds a second line 'L ∝ C^-0.18 + 1.03' in red alongside the same blue fit. The surrounding prose (block 2506.08228:b75, the paragraph introducing Figure 5, and b76-b78 which give the fit forms only symbolically as 'L(C) = aC^b + L_inf' with a, b, L_inf described in words as 'the fit constants') never states these three numeric constants -- confirmed by substring search of this paper's blocks and chunks for '0.026', '-0.18', '0.18', and '1.03': 0 hits in every case. The only place the fitted numbers appear is inside the plot image's legend text.",
+      "provenance": "Vision-derived: paper_id/title verified against papers.db; PDF rendered from waymo/data/pdf_cache/2506.08228.pdf page index 9 with pymupdf (dpi=200) and read directly (not OCR'd, not fabricated from memory of the paper). gold_block_id anchors to the prose block introducing Figure 5; blocks.page for 2506.08228:b75 verified equal to 9."
+    },
+    {
+      "question_id": "Q-GTA-044",
+      "question_text": "In 'Large Scale Interactive Motion Forecasting for Autonomous Driving: The Waymo Open Motion Dataset,' Figure 5 shows three histogram panels of vehicle bounding-box distance error -- Human Label Boxes, Offboard Perception Boxes, and Baseline Detector Boxes -- each with an inset giving Recall, Mean DE, and Std DE. What are the recall and mean distance-error values printed in each panel's inset?",
+      "answer_text": "Human Label Boxes: Recall 99.29%, Mean DE 0.1849 (Std DE 0.2342). Offboard Perception Boxes: Recall 93.50%, Mean DE 0.1958 (Std DE 0.2721). Baseline Detector Boxes: Recall 87.31%, Mean DE 0.2738 (Std DE 0.3800).",
+      "source_paper_id": "2104.10133",
+      "source_paper_title": "Large Scale Interactive Motion Forecasting for Autonomous Driving : The Waymo Open Motion Dataset",
+      "question_type": "Result-Comprehension",
+      "difficulty": "hard",
+      "dimension": "numeric/quantitative",
+      "tests": "answerable",
+      "vision_derived": true,
+      "gold_block_id": "2104.10133:b66",
+      "page": 7,
+      "vision_note": "Rendered PDF page 7 (0-indexed, matching blocks.page for this DB) at 200 DPI with pymupdf and read Figure 5 directly: three side-by-side histograms, each with a small text inset reading 'Recall: X%', 'Mean DE: Y', 'Std DE: Z' for Human Label Boxes (99.29%, 0.1849, 0.2342), Offboard Perception Boxes (93.50%, 0.1958, 0.2721), and Baseline Detector Boxes (87.31%, 0.2738, 0.3800). The surrounding prose (block 2104.10133:b66 and neighbors) only describes the comparison qualitatively ('offboard perception achieves an accuracy and distance error distribution similar to human labels ... the baseline (onboard) detector leads to a significantly higher mean distance error') and never states any of these nine numbers. Note: these insets ARE selectable PDF text (raw fitz/pymupdf page.get_text() picks them up), but this DB's own block/chunk extraction dropped them -- confirmed by substring search of this paper's blocks and chunks for '99.29', '93.50', '87.31', '0.1849', '0.1958', '0.2738', '0.2342', '0.2721', and '0.3800': 0 hits in every case, so the fact is vision-only relative to what this corpus's retrieval actually indexes.",
+      "provenance": "Vision-derived: paper_id/title verified against papers.db; PDF rendered from waymo/data/pdf_cache/2104.10133.pdf page index 7 with pymupdf (dpi=200) and read directly (not OCR'd, not fabricated from memory of the paper). gold_block_id anchors to the prose block introducing Figure 5; blocks.page for 2104.10133:b66 verified equal to 7."
     }
   ]
 }
