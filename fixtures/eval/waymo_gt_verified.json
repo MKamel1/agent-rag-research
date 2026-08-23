@@ -1,0 +1,2299 @@
+{
+  "_metadata": {
+    "description": "Cross-verified union of the two independently-authored Waymo AV-safety ground-truth sets (GT-A from oxalpha, GT-B from claude), built by ticket GT-X. Only items that survived mechanical excerpt-fidelity checking, independent absence re-verification, answerability review, and numeric grounding audit are included.",
+    "total_items": 73,
+    "generated_at": "2026-08-22",
+    "corpus": "waymo_av_safety",
+    "sources": {
+      "GT-A": {
+        "fixture": "waymo_gt_a.json",
+        "branch": "GT-A-oxalpha-waymo-groundtruth",
+        "commits": [
+          "050c011",
+          "de28cbd"
+        ],
+        "items_survived": 33,
+        "items_total": 33
+      },
+      "GT-B": {
+        "fixture": "waymo_gt_b.json",
+        "branch": "GT-B-claude-waymo-groundtruth",
+        "commits": [
+          "d78102e",
+          "9d28e76"
+        ],
+        "items_survived": 40,
+        "items_total": 40
+      }
+    },
+    "verification_method": "Every grounding claim re-checked read-only against waymo/data/papers.db (1,738 papers / 46,155 chunks as of 2026-08-19 mtime): paper existence and title, chunk-to-paper membership, anchor_json block-id agreement, whitespace-normalized substring containment of every excerpt (primary and supporting), section-path agreement, numeral-level audit of every answer_text against the cited paper's text. All 8 absent items re-searched independently with additional adversarial probes beyond the authors' own logs. Full findings and ruled near-misses: docs/eval-reports/2026-08-22-waymo-groundtruth-cross-verification.md.",
+    "dimension_labels_note": "The two source sets use partially different dimension vocabularies (GT-A short forms e.g. 'numeric/quantitative'; GT-B noun forms e.g. 'numeric/quantitative claims'). Labels are preserved verbatim per item rather than normalized -- normalizing them here would silently rewrite the authors' labels; consumers should group via the mapping in the report if they need one bucketing.",
+    "known_caveats": [
+      "Q-WAYB-027 is vision-derived: only its machine-checkable ids/page were verified; the visual claim itself is unverified by the cross-verifier.",
+      "Several GT-B absence_search logs record hit counts that do not reproduce under plain SQLite LIKE on the frozen DB (see per-item verification.notes); every qualitative absence nevertheless held up under independent re-search."
+    ]
+  },
+  "ground_truth": [
+    {
+      "question_id": "Q-GTA-001",
+      "question_text": "Across the first 7.14 million fully driverless miles studied, how often did the automated vehicles experience incidents where someone reportedly sustained an injury, measured per vehicle-miles traveled — and how does that compare with the matched human-driver incidence over the same geography?",
+      "answer_text": "The any-injury-reported rate was 0.6 incidents per million miles for the ADS vs 2.80 IPMM for the human benchmark when considering all locations together — an 80% reduction, i.e. the human crash rate was 5 times higher than the ADS rate.",
+      "source_paper_id": "2312.12675",
+      "source_paper_title": "Comparison of Waymo Rider-Only Crash Data to Human Benchmarks at 7.1 Million Miles",
+      "section_path": "A BS T R AC T",
+      "passage_excerpt": "Results: When considering all locations together, the any-injury-reported crashed vehicle rate was 0.6 incidents per million miles (IPMM) for the ADS vs 2.80 IPMM for the human benchmark, an 80% reduction or a human crash rate that is 5 times higher than the ADS rate.",
+      "gold_chunk_id": "2312.12675:c1",
+      "gold_block_id": "2312.12675:b9",
+      "question_type": "Result-Comprehension",
+      "difficulty": "medium",
+      "dimension": "numeric/quantitative",
+      "tests": "answerable",
+      "vision_derived": false,
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json. Question deliberately paraphrases 'crash rate' as incident incidence per VMT.",
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-002",
+      "question_text": "In the Los Angeles portion of that same rider-only study, how many police-reportable or injury-involved events were actually observed, and what does the study report about the statistical confidence of the comparison there?",
+      "answer_text": "There were no (zero) police-reported and any-injury-reported crashes in Los Angeles, giving a 0 IPMM point estimate with 95% confidence intervals of (0, 64.1) IPMM; the single SGO crash there met the any-property-damage-or-injury threshold but the low mileage meant comparisons were not statistically significant.",
+      "source_paper_id": "2312.12675",
+      "source_paper_title": "Comparison of Waymo Rider-Only Crash Data to Human Benchmarks at 7.1 Million Miles",
+      "section_path": "A.2. Resultsfor Los Angeles",
+      "passage_excerpt": "There were no (zero) police-reported and any-injury-reported crashes in Los Angeles, resulting in a 0 IPMM with 95% confidence intervals of (0, 64.1) IPMM. The 1 crash in Los Angeles met both the SGO and low delta-V thresholds in the any property damage or injury comparison.",
+      "gold_chunk_id": "2312.12675:c23",
+      "gold_block_id": "2312.12675:b115",
+      "question_type": "Result-Comprehension",
+      "difficulty": "hard",
+      "dimension": "numeric/quantitative",
+      "tests": "answerable",
+      "vision_derived": false,
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json.",
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-003",
+      "question_text": "How did the authors assemble a single human comparison group spanning Phoenix, San Francisco, and Los Angeles, given that their benchmark rates came from separate city-level analyses?",
+      "answer_text": "They combined the human crash benchmarks for Phoenix, San Francisco, and Los Angeles proportional to the miles driven in the Waymo RO service (a mileage blended average); for confidence-interval purposes the blended benchmark used 19,002 million VMT.",
+      "source_paper_id": "2312.12675",
+      "source_paper_title": "Comparison of Waymo Rider-Only Crash Data to Human Benchmarks at 7.1 Million Miles",
+      "section_path": "Matching ofBenchmark and ADS Data",
+      "passage_excerpt": "The human crash benchmarks reported in Scanlon et al. (2023) for Phoenix, San Francisco, and Los Angeles were combined proportional to the miles driven in the Waymo RO service, as shown in Table 3.",
+      "gold_chunk_id": "2312.12675:c5",
+      "gold_block_id": "2312.12675:b31",
+      "question_type": "Method-Comprehension",
+      "difficulty": "medium",
+      "dimension": "methodological",
+      "tests": "answerable",
+      "vision_derived": false,
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json.",
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-004",
+      "question_text": "Which statistical method did the study use for confidence intervals on the ratio of automated-vehicle to human event rates, and why was it preferred over a resampling-based alternative?",
+      "answer_text": "Rate-ratio confidence intervals used the Nelson (1970) method based on a Poisson model. A parametric bootstrap using CRSS survey-design standard errors produced narrower intervals, so the Nelson method was kept because it is more conservative (wider CIs).",
+      "source_paper_id": "2312.12675",
+      "source_paper_title": "Comparison of Waymo Rider-Only Crash Data to Human Benchmarks at 7.1 Million Miles",
+      "section_path": "Confidence Intervals",
+      "passage_excerpt": "The Nelson (1970) method is more conservative (i.e., produces larger confidence intervals) relative to the parametric boostrap method.",
+      "gold_chunk_id": "2312.12675:c7",
+      "gold_block_id": "2312.12675:b45",
+      "question_type": "Method-Comprehension",
+      "difficulty": "hard",
+      "dimension": "methodological",
+      "tests": "answerable",
+      "vision_derived": false,
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json. Note 'boostrap' typo is verbatim in the stored chunk.",
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-005",
+      "question_text": "Two corpus papers benchmark the same driverless service at different exposure levels. How did the headline police-reported reduction estimate change between the roughly 7-million-mile analysis and the later 56.7-million-mile analysis, and what happened to the uncertainty around it?",
+      "answer_text": "The earlier 7.1M-mile study found a 55% reduction in police-reported crashes (95% CI 22% to 77%); the 56.7M-mile follow-up found a 65% reduction (95% CI 57% to 72%) — a similar point estimate with much tighter confidence intervals.",
+      "source_paper_id": "local:6b9ccd0431f6",
+      "source_paper_title": "Comparison of Waymo Rider-Only Crash Rates by Crash Type to Human Benchmarks at 56.7 Million Miles",
+      "section_path": "Comparisons to Prior Studies",
+      "passage_excerpt": "Kusano et al (2024) found a statistically significant reduction in Police-Reported (55% reduction, 22% to 77% 95% confidence interval) and Any-Injury-Reported (80% reduction, 44% to 96% 95% confidence interval) in all locations combined.",
+      "gold_chunk_id": "local:6b9ccd0431f6:c37",
+      "gold_block_id": "local:6b9ccd0431f6:b162",
+      "question_type": "Result-Comprehension",
+      "difficulty": "hard",
+      "dimension": "temporal/versioned",
+      "tests": "answerable",
+      "vision_derived": false,
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json. Multi-paper temporal pair: 7.1M-mile report vs its 56.7M-mile extension.",
+      "supporting_sources": [
+        {
+          "paper_id": "2312.12675",
+          "paper_title": "Comparison of Waymo Rider-Only Crash Data to Human Benchmarks at 7.1 Million Miles",
+          "section_path": "CONCLUSIONS",
+          "passage_excerpt": "The results show that the Waymo RO service had a lower police-reported and any-injury-reported crashed vehicle rate compared to the benchmarks.",
+          "gold_chunk_id": "2312.12675:c16",
+          "gold_block_id": "2312.12675:b89"
+        }
+      ],
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text",
+          "all 1 supporting_paper_exists_and_title_matches_corpus",
+          "supporting_gold_chunk_resolves_under_its_paper",
+          "supporting_anchor_block_id_matches_gold_block_id",
+          "supporting_excerpt_is_whitespace_normalized_substring_of_chunk_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-006",
+      "question_text": "Did every front-to-rear collision outcome move in the safer direction for the automated fleet at 56.7 million miles? Identify any sub-category where the automated vehicles did significantly worse than the human comparison, with numbers.",
+      "answer_text": "Yes, one went the other way: there was a statistically significant increase in F2R Struck Any-Injury-Reported crashes in Phoenix (+117%, 95% CI 11% to 281%). Overall F2R striking fell significantly while struck crashes rose or held steady, leaving overall F2R rates similar in magnitude to the benchmark.",
+      "source_paper_id": "local:6b9ccd0431f6",
+      "source_paper_title": "Comparison of Waymo Rider-Only Crash Rates by Crash Type to Human Benchmarks at 56.7 Million Miles",
+      "section_path": "Trends in Crash Types",
+      "passage_excerpt": "There was a statistically significant increase in F2R Struck Any-Injury-Reported crashes in Phoenix. All other comparisons were not statistically significant.",
+      "gold_chunk_id": "local:6b9ccd0431f6:c35",
+      "gold_block_id": "local:6b9ccd0431f6:b152",
+      "question_type": "Result-Comprehension",
+      "difficulty": "hard",
+      "dimension": "negation and scope",
+      "tests": "answerable",
+      "vision_derived": false,
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json. Tests whether the reader notices an adverse significant result, not just reductions.",
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-007",
+      "question_text": "Before impact, how was the automated vehicle typically moving in rear-end events where it was hit from behind? Give the movement categories the authors defined, their kinematic thresholds, and how the events distributed across them.",
+      "answer_text": "Pre-crash movement was classified into three categories: (a) stopped for more than 5 seconds prior to the crash, (b) traveling at constant speed or accelerating (decelerations less than 0.75 m/s^2 in the prior 5 seconds), or (c) braking with peak magnitude less than 3.5 m/s^2 over the prior 5 seconds. In 100% of Airbag Deployment and 76% of Any-Injury-Reported F2R Struck crashes the vehicle was stopped, at constant speed, or decelerating with traffic; the remaining 24% had braking above 3.5 m/s^2.",
+      "source_paper_id": "local:6b9ccd0431f6",
+      "source_paper_title": "Comparison of Waymo Rider-Only Crash Rates by Crash Type to Human Benchmarks at 56.7 Million Miles",
+      "section_path": "Trends in Crash Types",
+      "passage_excerpt": "The pre-crash movement was classified into three categories: (a) the ADS vehicle was stopped for more than 5 second prior to the crash, (b) the ADS vehicle was traveling at a constant speed (decelerations less than 0.75 m/s<sup>2</sup> in the 5 seconds prior to the crash) or accelerating and (c) braking with peak magnitude less than 3.5 m/s<sup>2</sup> for the 5 seconds prior to a crash.",
+      "gold_chunk_id": "local:6b9ccd0431f6:c36",
+      "gold_block_id": "local:6b9ccd0431f6:b156",
+      "question_type": "Method-Comprehension",
+      "difficulty": "hard",
+      "dimension": "methodological",
+      "tests": "answerable",
+      "vision_derived": false,
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json.",
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-008",
+      "question_text": "An insurance-industry analysis in this corpus measured driverless-vehicle safety using third-party liability claims rather than police reports. What reductions did it report against its newest-vehicle human comparison group, and why does the 56.7-million-mile crash-rate study say those claim-based figures cannot be compared head-to-head with its own?",
+      "answer_text": "Di Lillo et al. (2024b) found an 86% reduction in property damage claims and a 90% reduction in bodily injury claims versus latest-generation (model years 2018-2021) human-driven vehicles over 25.3 million rider-only miles. The 56.7M-mile study notes these are slightly higher than its own crash-rate reductions but not directly comparable, because liability claims are a subset of all crashes where the insured party has some contribution to the cause.",
+      "source_paper_id": "local:6b9ccd0431f6",
+      "source_paper_title": "Comparison of Waymo Rider-Only Crash Rates by Crash Type to Human Benchmarks at 56.7 Million Miles",
+      "section_path": "Comparisons to Prior Studies",
+      "passage_excerpt": "Di Lillo et al (2024b) compared the Waymo RO 3rd party liability property damage and bodily injury claims rates to a benchmark of human insured latest-generation vehicles (model years 2018-2021).",
+      "gold_chunk_id": "local:6b9ccd0431f6:c37",
+      "gold_block_id": "local:6b9ccd0431f6:b162",
+      "question_type": "Result-Comprehension",
+      "difficulty": "hard",
+      "dimension": "multi-paper synthesis",
+      "tests": "answerable",
+      "vision_derived": false,
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json. Synthesis across the Swiss Re claims study and the crash-rate benchmark study.",
+      "supporting_sources": [
+        {
+          "paper_id": "local:f6f1461f2c9a",
+          "paper_title": "Do Autonomous Vehicles Outperform Latest-Generation Human-Driven Vehicles? A Comparison to Waymo's Auto Liability Insurance Claims at 25 Million Miles",
+          "section_path": "Abstract",
+          "passage_excerpt": "Results demonstrate that the Waymo ADS significantly outperformed both the overall driving population (88% reduction in property damage claims, 92% in bodily injury claims), and outperformed the more stringent latest-generation HDV benchmark (86% reduction in property damage claims and 90% in bodily injury claims).",
+          "gold_chunk_id": "local:f6f1461f2c9a:c1",
+          "gold_block_id": "local:f6f1461f2c9a:b7"
+        }
+      ],
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text",
+          "all 1 supporting_paper_exists_and_title_matches_corpus",
+          "supporting_gold_chunk_resolves_under_its_paper",
+          "supporting_anchor_block_id_matches_gold_block_id",
+          "supporting_excerpt_is_whitespace_normalized_substring_of_chunk_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-009",
+      "question_text": "Which severity outcome in the 56.7-million-mile analysis flips its statistical conclusion depending on whether the human comparison rates are re-weighted to match where and when the automated fleet actually drove? Describe both conclusions.",
+      "answer_text": "Suspected Serious Injury+. Without the dynamic benchmark adjustment the reduction was NOT statistically significant in Phoenix or San Francisco (only in all locations combined); with the dynamic adjustment it was significant in Phoenix, San Francisco, and all locations combined. The authors therefore present Suspected Serious Injury+ as indicative, unlike the more certain Any-Injury-Reported and Airbag Deployment outcomes.",
+      "source_paper_id": "local:6b9ccd0431f6",
+      "source_paper_title": "Comparison of Waymo Rider-Only Crash Rates by Crash Type to Human Benchmarks at 56.7 Million Miles",
+      "section_path": "Underreporting and Dynamic Benchmark Sensitivity Study",
+      "passage_excerpt": "Without the dynamic benchmark adjustment, the reductions in Suspected Serious Injury+ crashes was not statistically significant in Phoenix or San Francisco but was statistically significant in all locations combined, whereas it was statistically significant in Phoenix, San Francisco, and in all locations combined with the dynamic adjustment.",
+      "gold_chunk_id": "local:6b9ccd0431f6:c33",
+      "gold_block_id": "local:6b9ccd0431f6:b135",
+      "question_type": "Result-Comprehension",
+      "difficulty": "hard",
+      "dimension": "negation and scope",
+      "tests": "answerable",
+      "vision_derived": false,
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json.",
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-010",
+      "question_text": "For controlled-access highways, how much did the rate of injury-involving collisions vary across the US metro areas benchmarked, quoting the extreme cities and the spread?",
+      "answer_text": "Freeway any-injury-reported crash rates showed large geographic variation: nearly 3.5 times higher in Atlanta (2.4 IPMM, the highest) compared to Phoenix (0.7 IPMM, the lowest).",
+      "source_paper_id": "2508.19425",
+      "source_paper_title": "From Stoplights to On-Ramps: A Comprehensive Set of Crash Rate Benchmarks for Freeway and Surface Street ADS Evaluation",
+      "section_path": "Abstract",
+      "passage_excerpt": "Key findings revealed that freeway crash rates exhibit large geographic dependence variations with any-injury-reported crash rates being nearly 3.5 times higher in Atlanta (2.4 IPMM; the highest) when compared to Phoenix (0.7 IPMM; the lowest).",
+      "gold_chunk_id": "2508.19425:c1",
+      "gold_block_id": "2508.19425:b4",
+      "question_type": "Result-Comprehension",
+      "difficulty": "medium",
+      "dimension": "numeric/quantitative",
+      "tests": "answerable",
+      "vision_derived": false,
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json.",
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-011",
+      "question_text": "What statistical power setup did the freeway-benchmark study use when computing how many miles an automated fleet must drive before its difference from human drivers becomes detectable, and which effect sizes were considered?",
+      "answer_text": "A power analysis modeling asymptotic normal approximations to a Poisson distribution, targeting 80% statistical power with two-sided tests at alpha = 0.05. Evaluated ADS performance levels were 25%, 50%, 75%, and 90% reductions in crash rates and 25% and 50% increases. Required mileage is inversely proportional to the benchmark crash rate.",
+      "source_paper_id": "2508.19425",
+      "source_paper_title": "From Stoplights to On-Ramps: A Comprehensive Set of Crash Rate Benchmarks for Freeway and Surface Street ADS Evaluation",
+      "section_path": "Power Analysis Methodology",
+      "passage_excerpt": "The method targeted 80% statistical power using two-sided tests with $\\alpha =$ 0.05. In detail, we calculated required mileage using the formula below, where $\\lambda _ { \\mathsf { A D S } }$ and $\\lambda _ { \\mathsf { H u m a n } }$ are ADS and human crash rates, $\\phi ^ { - 1 } ( .",
+      "gold_chunk_id": "2508.19425:c17",
+      "gold_block_id": "2508.19425:b79",
+      "question_type": "Method-Comprehension",
+      "difficulty": "medium",
+      "dimension": "methodological",
+      "tests": "answerable",
+      "vision_derived": false,
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json.",
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-012",
+      "question_text": "In Waymo's earliest published safety-performance report, how many physical contacts — real or reconstructed in counterfactual replay — occurred across the covered operations, and how do the real and simulated counts break down?",
+      "answer_text": "47 contact events in total: 18 actual and 29 simulated contact events, none expected to result in severe or life-threatening injuries.",
+      "source_paper_id": "2011.00038",
+      "source_paper_title": "Waymo Public Road Safety Performance Data",
+      "section_path": "Abstract",
+      "passage_excerpt": "There were 47 contact events that occurred over this time period, consisting of 18 actual and 29 simulated contact events, none of which would be expected to result in severe or life-threatening injuries.",
+      "gold_chunk_id": "2011.00038:c1",
+      "gold_block_id": "2011.00038:b2",
+      "question_type": "Result-Comprehension",
+      "difficulty": "easy",
+      "dimension": "single-passage factual lookup",
+      "tests": "answerable",
+      "vision_derived": false,
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json. FN probe: 'physical contacts / counterfactual replay' instead of 'contact events'.",
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-013",
+      "question_text": "According to that early report, which collision modes did the automated driver completely avoid — modes that human-driven vehicles are frequently involved in — and in how many events was the automated vehicle itself the party that hit a pedestrian or cyclist?",
+      "answer_text": "It completely avoided road departure, contact with fixed objects/roadway infrastructure, and rollover (zero actual or simulated such events), and there were no collisions in which the Waymo Driver struck a pedestrian or cyclist. There were three events (one actual, two simulated) in which the Waymo vehicle was struck by a pedestrian or cyclist while stopped.",
+      "source_paper_id": "2011.00038",
+      "source_paper_title": "Waymo Public Road Safety Performance Data",
+      "section_path": "3. Results: Collisions and Minor Contacts > 3.1 Single Vehicle Events",
+      "passage_excerpt": "The Waymo Driver did not have any events (actual or simulated) in this data that involved road departure, contact with the roadway environment/infrastructure or other fixed objects, or rollover.",
+      "gold_chunk_id": "2011.00038:c15",
+      "gold_block_id": "2011.00038:b48",
+      "question_type": "Result-Comprehension",
+      "difficulty": "medium",
+      "dimension": "negation and scope",
+      "tests": "answerable",
+      "vision_derived": false,
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json.",
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-014",
+      "question_text": "Of the most serious tier of events in the 2019-era public-road safety data — those involving airbag deployment in any vehicle — how many were genuine versus simulated, and did any reach the two highest ISO 26262 severity classes?",
+      "answer_text": "Eight airbag-deployment-level S1 events: five were simulated with expected deployment, two actual events involved deployment of only another vehicle's frontal airbags, and one actual event involved another vehicle's frontal airbags plus the Waymo vehicle's side airbags. There were no actual or predicted S2 or S3 events.",
+      "source_paper_id": "2011.00038",
+      "source_paper_title": "Waymo Public Road Safety Performance Data",
+      "section_path": "3. Results: Collisions and Minor Contacts",
+      "passage_excerpt": "Of the eight airbag-deployment-level S1 events,<sup>4</sup> five are simulated events with expected airbag deployment, two were actual events involving deployment of only another vehicle’s frontal airbags, and one actual event involved deployment of another vehicle’s frontal airbags and the Waymo vehicle’s side airbags.",
+      "gold_chunk_id": "2011.00038:c14",
+      "gold_block_id": "2011.00038:b42",
+      "question_type": "Result-Comprehension",
+      "difficulty": "medium",
+      "dimension": "numeric/quantitative",
+      "tests": "answerable",
+      "vision_derived": false,
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json.",
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-015",
+      "question_text": "Waymo's cumulative public-road mileage appears in several corpus papers at different dates. Reconstruct that timeline: the figure reported in the original open-dataset-era safety paper, the rider-only figure through January 2025, and the milestone reported as reached in July 2025.",
+      "answer_text": "Over 20 million miles on public roads since testing began in 2009 (Waymo Public Road Safety Performance Data); over 56.7 million rider-only miles through January 2025 (brake-onset paper citing Kusano et al. 2025), quickly reaching 100 million miles in July 2025 (per Waymo), surpassing SHRP2's mileage.",
+      "source_paper_id": "2507.17943",
+      "source_paper_title": "Automated Brake Onset Detection in Naturalistic Driving Data",
+      "section_path": "Introduction",
+      "passage_excerpt": "For example, Waymo has accumulated over 56.7 million miles of rider-only self-driving miles through January 2025 (Kusano et al., 2025) and quickly reached 100 million miles in July 2025 (Waymo, 2025) , surpassing the mileage covered in the second Strategic Highway Research Program (SHRP2) (Dingus et al., 2015; Perez et al., 2016).",
+      "gold_chunk_id": "2507.17943:c2",
+      "gold_block_id": "2507.17943:b6",
+      "question_type": "Result-Comprehension",
+      "difficulty": "hard",
+      "dimension": "temporal/versioned",
+      "tests": "answerable",
+      "vision_derived": false,
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json. Cross-paper mileage timeline; primary source is the brake-onset paper's motivation section.",
+      "supporting_sources": [
+        {
+          "paper_id": "2011.00038",
+          "paper_title": "Waymo Public Road Safety Performance Data",
+          "section_path": "1. Introduction",
+          "passage_excerpt": "Introduction Waymo’s automated driving system (ADS), the Waymo Driver, has driven over 20 million miles on public roads since testing began in 2009.",
+          "gold_chunk_id": "2011.00038:c2",
+          "gold_block_id": "2011.00038:b7"
+        }
+      ],
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text",
+          "all 1 supporting_paper_exists_and_title_matches_corpus",
+          "supporting_gold_chunk_resolves_under_its_paper",
+          "supporting_anchor_block_id_matches_gold_block_id",
+          "supporting_excerpt_is_whitespace_normalized_substring_of_chunk_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-016",
+      "question_text": "How much unique driving footage underpins the interactive motion-prediction dataset — total hours, roadway distance covered, scene count and clip length, and how many US cities the collection spans?",
+      "answer_text": "Over 100,000 scenes each 20 seconds long at 10 Hz — more than 570 hours of unique data over 1750 km of roadways, collected across six cities within the United States.",
+      "source_paper_id": "2104.10133",
+      "source_paper_title": "Large Scale Interactive Motion Forecasting for Autonomous Driving : The Waymo Open Motion Dataset",
+      "section_path": "Abstract",
+      "passage_excerpt": "With over 100,000 scenes, each 20 seconds long at 10 Hz, our new dataset contains more than 570 hours of unique data over 1750 km ofroadways.",
+      "gold_chunk_id": "2104.10133:c1",
+      "gold_block_id": "2104.10133:b2",
+      "question_type": "Result-Comprehension",
+      "difficulty": "easy",
+      "dimension": "numeric/quantitative",
+      "tests": "answerable",
+      "vision_derived": false,
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json. FN probe: 'footage/roadway distance' instead of the paper's own nouns.",
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-017",
+      "question_text": "The motion dataset ships two flavors of its validation and test material. How do the standard and interactive versions differ in what the model must predict, and how were the 20-second source clips cut down for modeling?",
+      "answer_text": "Scenes are 9.1 seconds (91 steps at 10 Hz) cut from the 20-second mined segments, split 70% train / 15% validation / 15% test. The standard validation/test sets provide up to 8 objects to predict per scene (biased toward objects that do not follow a constant-velocity model or straight paths); the interactive versions focus on the interactive portion of the segment and require only the 2 mined interactive objects to be predicted.",
+      "source_paper_id": "2104.10133",
+      "source_paper_title": "Large Scale Interactive Motion Forecasting for Autonomous Driving : The Waymo Open Motion Dataset",
+      "section_path": "3. Dataset",
+      "passage_excerpt": "The interactive versions of the validation and test sets focus on the interactive portion of the segment and require only the 2 mined interactive objects to be predicted.",
+      "gold_chunk_id": "2104.10133:c4",
+      "gold_block_id": "2104.10133:b21",
+      "question_type": "Method-Comprehension",
+      "difficulty": "medium",
+      "dimension": "methodological",
+      "tests": "answerable",
+      "vision_derived": false,
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json.",
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-018",
+      "question_text": "Within the motion-prediction dataset's scenes, how common are pedestrians and cyclists, and in what fraction of validation scenes must a model predict more than one agent class at once?",
+      "answer_text": "All scenes have at least one vehicle; 57% of scenes have at least one pedestrian (with 20% having four or more) and 16% at least one cyclist. 38.3% of validation scenes require predicting more than one type of agent, and 4.9% require trajectories for all three classes.",
+      "source_paper_id": "2104.10133",
+      "source_paper_title": "Large Scale Interactive Motion Forecasting for Autonomous Driving : The Waymo Open Motion Dataset",
+      "section_path": "3. Dataset > 3.2. Dataset statistics",
+      "passage_excerpt": "All scenes have at least one vehicle, 57% of scenes have at least one pedestrian (with 20% having four or more), and 16% of scenes have at least one cyclist. In addition to accurately predicting the motion of other vehicles, to safely drive, an autonomous vehicle must also accurately predict the motion of other road agents like pedestrians and cyclists.",
+      "gold_chunk_id": "2104.10133:c6",
+      "gold_block_id": "2104.10133:b27",
+      "question_type": "Result-Comprehension",
+      "difficulty": "medium",
+      "dimension": "numeric/quantitative",
+      "tests": "answerable",
+      "vision_derived": false,
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json.",
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-019",
+      "question_text": "One corpus release pairs motion labels with raw point-cloud returns. Roughly how much bigger is it than the camera-era perception dataset it augments, and what did compression do to its storage footprint?",
+      "answer_text": "WOMD-LiDAR contains 100x more scenes than WOD (104k segments, 574 hours); raw sensor data exceeded 20 TB, and the RIDDLE delta-encoder compression reduced it about 8x to around 2.3 TB.",
+      "source_paper_id": "2304.03834",
+      "source_paper_title": "WOMD-LiDAR: Raw Sensor Dataset Benchmark for Motion Forecasting",
+      "section_path": "I. INTRODUCTION",
+      "passage_excerpt": "To overcome the huge data storage problem and make the dataset user-friendly for academic research, we adopt stateof-the-art LiDAR compression technology [51]. It reduces the LiDAR dataset by $\\sim 8 \\times .$ , resulting in the final WOMD-LiDAR data to be around 2.3 TB.",
+      "gold_chunk_id": "2304.03834:c1",
+      "gold_block_id": "2304.03834:b4",
+      "question_type": "Result-Comprehension",
+      "difficulty": "medium",
+      "dimension": "numeric/quantitative",
+      "tests": "answerable",
+      "vision_derived": false,
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json. FN probe: 'point-cloud returns' instead of 'LiDAR'; 'storage footprint' framing.",
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-020",
+      "question_text": "How was the withheld evaluation material for the original 3D-detection dataset chosen, and why does that choice matter for measuring generalization?",
+      "answer_text": "The dataset has 1000 scenes for training and validation and 150 scenes for testing, each 20 s long; test scenes were selected from a geographical holdout area so models trained on the released data can be evaluated for generalization to previously unseen areas.",
+      "source_paper_id": "1912.04838",
+      "source_paper_title": "Scalability in Perception for Autonomous Driving: Waymo Open Dataset",
+      "section_path": "1. Introduction",
+      "passage_excerpt": "Our dataset currently consists of 1000 scenes for training and validation, and 150 scenes for testing, where each scene spans 20 s. Selecting the test set scenes from a geographical holdout area allows us to evaluate how well models that were trained on our dataset generalize to previously unseen areas.",
+      "gold_chunk_id": "1912.04838:c2",
+      "gold_block_id": "1912.04838:b5",
+      "question_type": "Method-Comprehension",
+      "difficulty": "easy",
+      "dimension": "single-passage factual lookup",
+      "tests": "answerable",
+      "vision_derived": false,
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json.",
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-021",
+      "question_text": "Between the original release paper of the 3D-detection dataset and a later sparse-window transformer paper in this corpus, the published scene split changed. State the split as each paper reports it.",
+      "answer_text": "The original dataset paper reports 1000 scenes for training and validation plus 150 test scenes (1150 total). The later SWFormer paper reports the same 1150 scenes as 798 training, 202 validation, and 150 test — the training/validation partition was re-cut between the two reports while the test set stayed fixed.",
+      "source_paper_id": "2210.07372",
+      "source_paper_title": "SWFormer: Sparse Window Transformer for 3D Object Detection in Point Clouds",
+      "section_path": "4 Experiments > 4.1 Waymo Open Dataset",
+      "passage_excerpt": "The dataset contains 1150 scenes, split into 798 training, 202 validation, and 150 test. Each scene has about 200 frames, where each frame captures the full 360 degrees around the ego-vehicle.",
+      "gold_chunk_id": "2210.07372:c12",
+      "gold_block_id": "2210.07372:b62",
+      "question_type": "Result-Comprehension",
+      "difficulty": "hard",
+      "dimension": "temporal/versioned",
+      "tests": "answerable",
+      "vision_derived": false,
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json. Versioned-claim probe across two reports of the same benchmark.",
+      "supporting_sources": [
+        {
+          "paper_id": "1912.04838",
+          "paper_title": "Scalability in Perception for Autonomous Driving: Waymo Open Dataset",
+          "section_path": "1. Introduction",
+          "passage_excerpt": "Our dataset currently consists of 1000 scenes for training and validation, and 150 scenes for testing, where each scene spans 20 s. Selecting the test set scenes from a geographical holdout area allows us to evaluate how well models that were trained on our dataset generalize to previously unseen areas.",
+          "gold_chunk_id": "1912.04838:c2",
+          "gold_block_id": "1912.04838:b5"
+        }
+      ],
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text",
+          "all 1 supporting_paper_exists_and_title_matches_corpus",
+          "supporting_gold_chunk_resolves_under_its_paper",
+          "supporting_anchor_block_id_matches_gold_block_id",
+          "supporting_excerpt_is_whitespace_normalized_substring_of_chunk_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-022",
+      "question_text": "What sensor payload recorded the original detection dataset, and what per-pixel feature beyond raw range helps the model tell genuine returns from weather clutter?",
+      "answer_text": "Five LiDAR sensors and five high-resolution pinhole cameras, with data for the first two returns of each laser pulse. Each range-image pixel also carries intensity and elongation; elongation (the stretch of the laser pulse beyond its nominal width) combined with intensity helps classify spurious objects such as dust, fog, and rain.",
+      "source_paper_id": "1912.04838",
+      "source_paper_title": "Scalability in Perception for Autonomous Driving: Waymo Open Dataset",
+      "section_path": "3. Waymo Open Dataset > 3.4. Sensor Data",
+      "passage_excerpt": "Elongation in conjunction with intensity is useful for classifying spurious objects, such as dust, fog, rain. Our experiments suggest that a highly elongated low-intensity return is a strong indicator for a spurious object, while low intensity alone is not a sufficient signal.",
+      "gold_chunk_id": "1912.04838:c8",
+      "gold_block_id": "1912.04838:b45",
+      "question_type": "Method-Comprehension",
+      "difficulty": "medium",
+      "dimension": "single-passage factual lookup",
+      "tests": "answerable",
+      "vision_derived": false,
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json.",
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-023",
+      "question_text": "Why can't a simulation benchmark that scores agents purely on how seldom they crash distinguish a good simulator from a degenerate one, and what two properties must WOSAC submissions therefore have?",
+      "answer_text": "Collision rate can be artificially driven to zero by static policies, so it cannot measure realism. WOSAC requires submissions to be both generative (enabling sampling from an arbitrary traffic simulator-AV policy pair) and closed-loop, formulated as a hidden Markov model over hidden world states and observations.",
+      "source_paper_id": "2305.12032",
+      "source_paper_title": "The Waymo Open Sim Agents Challenge",
+      "section_path": "2 Related Work",
+      "passage_excerpt": "However, collision rate can be artificially driven to zero by static policies, and thus cannot measure realism. Quantitative evaluation of realism requires comparison with logged data.",
+      "gold_chunk_id": "2305.12032:c3",
+      "gold_block_id": "2305.12032:b22",
+      "question_type": "Assumption-Comprehension",
+      "difficulty": "hard",
+      "dimension": "methodological",
+      "tests": "answerable",
+      "vision_derived": false,
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json.",
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-024",
+      "question_text": "How big is the end-to-end driving dataset built specifically around rare scenarios, and what rarity threshold defines inclusion?",
+      "answer_text": "4,021 driving segments, approximately 12 hours in total, each with 8 surrounding cameras covering 360 degrees, high-level routing information, ego states and 5 s of future trajectory; scenarios are long-tail situations occurring with a frequency of less than 0.03% in daily driving.",
+      "source_paper_id": "2510.26125",
+      "source_paper_title": "WOD-E2E: Waymo Open Dataset for End-to-End Driving in Challenging Long-tail Scenarios",
+      "section_path": "Abstract",
+      "passage_excerpt": "WOD-E2E contains 4,021 driving segments (approximately 12 hours), specifically curated for challenging long-tail scenarios that that are rare in daily life with an occurring frequency of less than 0.03%.",
+      "gold_chunk_id": "2510.26125:c1",
+      "gold_block_id": "2510.26125:b3",
+      "question_type": "Result-Comprehension",
+      "difficulty": "easy",
+      "dimension": "numeric/quantitative",
+      "tests": "answerable",
+      "vision_derived": false,
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json.",
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ],
+        "notes": [
+          "The '5 s of future trajectory' detail in answer_text is grounded at 2510.26125:c2, a sibling chunk of the cited gold chunk (c1) in the same paper."
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-025",
+      "question_text": "Why did the WOD-E2E authors reject waypoint-distance metrics and penalty-based scores for their long-tail benchmark, and what do raters provide instead?",
+      "answer_text": "ADE/L2 error only measures distance to a single ground-truth future although driving is multi-modal; predictive metrics like PDMS need annotated positions/futures of road agents to compute collision rates, which is impractical for novel or hard-to-detect objects (e.g. a flock of birds), and PDMS penalizes off-road even when partially leaving the road is the reasonable emergency response. Instead, human raters provide trajectory preference labels, and the Rater Feedback Score (RFS) measures how closely a predicted trajectory matches them.",
+      "source_paper_id": "2510.26125",
+      "source_paper_title": "WOD-E2E: Waymo Open Dataset for End-to-End Driving in Challenging Long-tail Scenarios",
+      "section_path": "1. Introduction",
+      "passage_excerpt": "Predictive metrics, such as PDMS scores [8], require annotated positions and future trajectories of road agents to calculate collision rates, and thus become impractical in many long-tail scenarios involving novel or hard-to-detect objects (e.g., the flock of birds shown in Figure 1).",
+      "gold_chunk_id": "2510.26125:c2",
+      "gold_block_id": "2510.26125:b6",
+      "question_type": "Method-Comprehension",
+      "difficulty": "hard",
+      "dimension": "methodological",
+      "tests": "answerable",
+      "vision_derived": false,
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json.",
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-026",
+      "question_text": "What does 'dynamic' mean in the dynamic human-benchmark methodology, what data sources feed it, and how large was the rider-only exposure used to derive the adjustments?",
+      "answer_text": "Dynamic benchmarks re-weight human police-reported crash rates and VMT so the human population's driving matches the spatial (S2-cell) and, for San Francisco, time-of-day distribution of the ADS fleet — i.e. the hypothetical human crash rate had humans driven where and when the ADS drives. Inputs: police-reported crash data, human VMT data (HPMS; SF County Transportation Authority 2016 for time-of-day), and over 20 million miles of Waymo rider-only operational data across three US counties.",
+      "source_paper_id": "2410.08903",
+      "source_paper_title": "Dynamic Benchmarks: Spatial and Temporal Alignment for ADS Performance Evaluation",
+      "section_path": "ABSTRACT",
+      "passage_excerpt": "Dynamic benchmarks were generated using human police-reported crash data, human vehicle miles traveled (VMT) data, and over 20 million miles of Waymo's rider-only (RO) operational data accumulated across three US counties. The spatial adjustment revealed significant differences across various severity levels in adjusted crash rates compared to unadjusted benchmarks with these differences ranging from 10% to 47% higher in San Francisco, 12% to 20% higher in Maricopa, and 7% lower to 34% higher in Los Angeles countie",
+      "gold_chunk_id": "2410.08903:c1",
+      "gold_block_id": "2410.08903:b4",
+      "question_type": "Method-Comprehension",
+      "difficulty": "hard",
+      "dimension": "methodological",
+      "tests": "answerable",
+      "vision_derived": false,
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json.",
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-027",
+      "question_text": "Camera-plus-radar fusion has a geometric blind-spot problem that lidar fusion avoids. Name the missing axis for each sensor, the matching mechanism proposed to fix it, and the training trick that lets the detector survive a sensor dying mid-drive.",
+      "answer_text": "Depth is unknown to the camera and elevation is unknown to (imaging) radar, so their perspective-view and bird's-eye-view representations form many-to-many mappings. CramNet resolves the ambiguity with ray-constrained cross-attention in a joint 3D space, and it supports training with sensor modality dropout so detection remains robust when a camera or radar suddenly malfunctions.",
+      "source_paper_id": "2210.09267",
+      "source_paper_title": "CramNet: Camera-Radar Fusion with Ray-Constrained Cross-Attention for Robust 3D Object Detection",
+      "section_path": "",
+      "passage_excerpt": "Our method supports training with sensor modality dropout, which leads to robust 3D object detection, even when a camera or radar sensor suddenly malfunctions on a vehicle. We demonstrate the efectiveness of our fusion approach through extensive experiments on the RADIATE dataset, one of the few large-scale datasets that provide radar radio frequency imagery.",
+      "gold_chunk_id": "2210.09267:c0",
+      "gold_block_id": "2210.09267:b0",
+      "question_type": "Method-Comprehension",
+      "difficulty": "medium",
+      "dimension": "methodological",
+      "tests": "answerable",
+      "vision_derived": false,
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json. FN probe: 'blind-spot problem', 'sensor dying mid-drive' paraphrases.",
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-028",
+      "question_text": "Standard 3D detection scoring punishes camera-only detectors for a specific kind of mistake even when the detection is useful downstream. What mistake, what metric fix was proposed, and what surprising head-to-head result did the new metric reveal?",
+      "answer_text": "Camera-only detectors estimate depth poorly, so reasonable detections with longitudinal (along-the-line-of-sight) localization errors fail the IoU matching of standard 3D AP and are counted as false positives. LET-3D-AP shifts predictions along the line of sight within a tolerance (a percentage of camera-object distance), computes a longitudinal-error-tolerant IoU with longitudinal affinity weighting, and LET-3D-APL additionally penalizes residual error by scaling precision. With the new metric past 10% depth-error tolerance, state-of-the-art camera-based detectors can outperform popular LiDAR-based detectors.",
+      "source_paper_id": "2206.07705",
+      "source_paper_title": "LET-3D-AP: Longitudinal Error Tolerant 3D Average Precision for Camera-Only 3D Detection",
+      "section_path": "",
+      "passage_excerpt": "Surprisingly, we find that state-of-the-art camera-based detectors can outperform popular LiDAR-based detectors with our new metrics past at 10% depth error tolerance, suggesting that existing camera-based detectors already have the potential to surpass LiDAR-based detectors in downstream applications.",
+      "gold_chunk_id": "2206.07705:c0",
+      "gold_block_id": "2206.07705:b0",
+      "question_type": "Method-Comprehension",
+      "difficulty": "hard",
+      "dimension": "methodological",
+      "tests": "answerable",
+      "vision_derived": false,
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json.",
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-029",
+      "question_text": "Earlier forecasters pinned their output diversity to a fixed bank of trajectory templates chosen before training. What replaced that in the successor model, and how are several trained models' outputs merged without a one-to-one correspondence between their templates?",
+      "answer_text": "MultiPath++ replaces MultiPath's pre-defined static anchors with latent anchor embeddings learned end-to-end in the model. For ensembling, where latent anchors of different models are not in direct correspondence, results are combined by formulating ensembling as greedy iterative clustering that maximizes a probabilistic objective via the EM algorithm.",
+      "source_paper_id": "2111.14973",
+      "source_paper_title": "MultiPath++: Efficient Information Fusion and Trajectory Aggregation for Behavior Prediction",
+      "section_path": "ABSTRACT",
+      "passage_excerpt": "Second, we reconsider the choice of pre-defined, static anchors, and develop a way to learn latent anchor embeddings end-to-end in the model.",
+      "gold_chunk_id": "2111.14973:c1",
+      "gold_block_id": "2111.14973:b5",
+      "question_type": "Method-Comprehension",
+      "difficulty": "hard",
+      "dimension": "methodological",
+      "tests": "answerable",
+      "vision_derived": false,
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json. FN probe: 'trajectory templates chosen before training' for 'static anchors'.",
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-030",
+      "question_text": "Among the early, late, and hierarchical ways of merging map, agent, and social context in the attention-based forecaster family, which won, and what two efficiency tricks kept self-attention affordable?",
+      "answer_text": "Early fusion — processing all inputs in one cross-modal encoder — is modality agnostic and achieved state-of-the-art results on both the Waymo and Argoverse leaderboards despite its simplicity. Efficiency comes from factorized attention and latent query attention.",
+      "source_paper_id": "2207.05844",
+      "source_paper_title": "Wayformer: Motion Forecasting via Simple & Efficient Attention Networks",
+      "section_path": "",
+      "passage_excerpt": "We show that early fusion, despite its simplicity of construction, is not only modality agnostic but also achieves state-of-the-art results on both Waymo Open Motion Dataset (WOMD) and Argoverse leaderboards, demonstrating the effectiveness of our design philosophy.",
+      "gold_chunk_id": "2207.05844:c0",
+      "gold_block_id": "2207.05844:b0",
+      "question_type": "Result-Comprehension",
+      "difficulty": "medium",
+      "dimension": "single-passage factual lookup",
+      "tests": "answerable",
+      "vision_derived": false,
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json.",
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-031",
+      "question_text": "When training-compute budget grows for joint motion forecasting and planning, how should model size and dataset size each scale relative to one another — and how does the optimal model size compare with what language-model work recommends?",
+      "answer_text": "Optimal scaling requires increasing the model size 1.5x as fast as the dataset size. At the same training compute budget an optimal LLM is roughly 50 times larger than an optimal motion forecasting model, which the authors hypothesize reflects driving data distributions needing more data to capture less common driving modes.",
+      "source_paper_id": "2506.08228",
+      "source_paper_title": "Scaling Laws of Motion Forecasting and Planning -- Technical Report",
+      "section_path": "Abstract",
+      "passage_excerpt": "We find that as the training compute budget grows, optimal scaling requires increasing the model size 1.5x as fast as the dataset size.",
+      "gold_chunk_id": "2506.08228:c1",
+      "gold_block_id": "2506.08228:b3",
+      "question_type": "Result-Comprehension",
+      "difficulty": "hard",
+      "dimension": "numeric/quantitative",
+      "tests": "answerable",
+      "vision_derived": false,
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json.",
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ],
+        "notes": [
+          "The '~50 times larger' LLM comparison in answer_text is grounded at 2506.08228:c4 and :c14, sibling chunks of the cited gold chunk (c1) in the same paper."
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-032",
+      "question_text": "Does getting better on the offline forecasting loss translate into better closed-loop driving in simulation, according to the scaling study — and why does that matter for how teams iterate on models?",
+      "answer_text": "Yes: closed-loop metrics also improve with scaling, consistent with training-loss improvements, despite conventional wisdom (and prior studies) that open- and closed-loop evaluations are misaligned. This suggests open-loop metrics remain suitable for model development and hill climbing.",
+      "source_paper_id": "2506.08228",
+      "source_paper_title": "Scaling Laws of Motion Forecasting and Planning -- Technical Report",
+      "section_path": "Abstract",
+      "passage_excerpt": "Most interestingly, closed-loop metrics also improve with scaling, which has important implications for the suitability of open-loop metrics for model development and hill climbing. We also study the optimal scaling of the number of transformer parameters and the training data size for a training compute-optimal model.",
+      "gold_chunk_id": "2506.08228:c1",
+      "gold_block_id": "2506.08228:b3",
+      "question_type": "Contribution-Comprehension",
+      "difficulty": "medium",
+      "dimension": "single-passage factual lookup",
+      "tests": "answerable",
+      "vision_derived": false,
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json.",
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-033",
+      "question_text": "Two corpus papers disagree on how a transformer should speak about geometry. One converts future waypoints into plain decimal text; the other quantizes trajectory deltas into discrete symbols. Which model took which route, and what reason did the text-based model give for its choice?",
+      "answer_text": "EMMA (Gemini-based) considered direct text conversion to floating-point coordinates versus special location tokens (as MotionLM uses) and chose the text representation so all tasks share one unified language space and maximally reuse pre-trained knowledge, even though it produces more tokens. MotionLM employs a simple uniform quantization of axis-aligned deltas between consecutive waypoints, casting multi-agent prediction as language modeling over discrete motion tokens.",
+      "source_paper_id": "2410.23262",
+      "source_paper_title": "EMMA: End-to-End Multimodal Model for Autonomous Driving",
+      "section_path": "2 Method",
+      "passage_excerpt": "We opt for the text representation such that all tasks can share the same unified language representation space and they can maximally reuse the knowledge from the pre-trained weights",
+      "gold_chunk_id": "2410.23262:c4",
+      "gold_block_id": "2410.23262:b18",
+      "question_type": "Method-Comprehension",
+      "difficulty": "hard",
+      "dimension": "multi-paper synthesis",
+      "tests": "answerable",
+      "vision_derived": false,
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json. Synthesis: EMMA's coordinate-representation discussion vs MotionLM's tokenization.",
+      "supporting_sources": [
+        {
+          "paper_id": "2309.16534",
+          "paper_title": "MotionLM: Multi-Agent Motion Forecasting as Language Modeling",
+          "section_path": "2. Related work",
+          "passage_excerpt": "In MotionLM, we employ a simple uniform quantization of axis-aligned deltas between consecutive waypoints of agent trajectories.",
+          "gold_chunk_id": "2309.16534:c3",
+          "gold_block_id": "2309.16534:b16"
+        }
+      ],
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text",
+          "all 1 supporting_paper_exists_and_title_matches_corpus",
+          "supporting_gold_chunk_resolves_under_its_paper",
+          "supporting_anchor_block_id_matches_gold_block_id",
+          "supporting_excerpt_is_whitespace_normalized_substring_of_chunk_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-WAYB-001",
+      "dimension": "single-passage factual lookup",
+      "tests": "answerable",
+      "vision_derived": false,
+      "difficulty": "easy",
+      "question_text": "In Waymo's 'Public Road Safety Performance Data' paper covering its Phoenix operations through the first nine months of 2020, how many total contact events (actual plus simulated) were identified, and how did that total split between actual and simulated events?",
+      "answer_text": "47 total contact events: 18 actual and 29 simulated, none of which would be expected to result in severe or life-threatening injuries.",
+      "source_paper_id": "2011.00038",
+      "source_paper_title": "Waymo Public Road Safety Performance Data",
+      "section_path": "Abstract",
+      "passage_excerpt": "There were 47 contact events that occurred over this time period, consisting of 18 actual and 29 simulated contact events, none of which would be expected to result in severe or life-threatening injuries.",
+      "gold_chunk_id": "2011.00038:c1",
+      "gold_block_id": "2011.00038:b2",
+      "provenance": "verified programmatically: passage_excerpt is a substring of chunks.text for gold_chunk_id",
+      "verification": {
+        "source_set": "GT-B",
+        "source_fixture": "waymo_gt_b.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-WAYB-002",
+      "dimension": "single-passage factual lookup",
+      "tests": "answerable",
+      "vision_derived": false,
+      "difficulty": "easy",
+      "question_text": "How many scenes does the Waymo Open Motion Dataset contain, what is each scene's duration and sample rate, and what total driving time and road distance does the dataset cover?",
+      "answer_text": "Over 100,000 scenes, each 20 seconds long sampled at 10 Hz, totaling more than 570 hours of unique data over 1,750 km of roadways.",
+      "source_paper_id": "2104.10133",
+      "source_paper_title": "Large Scale Interactive Motion Forecasting for Autonomous Driving : The Waymo Open Motion Dataset",
+      "section_path": "Abstract",
+      "passage_excerpt": "With over 100,000 scenes, each 20 seconds long at 10 Hz, our new dataset contains more than 570 hours of unique data over 1750 km ofroadways.",
+      "gold_chunk_id": "2104.10133:c1",
+      "gold_block_id": "2104.10133:b2",
+      "provenance": "verified programmatically: passage_excerpt is a substring of chunks.text for gold_chunk_id",
+      "verification": {
+        "source_set": "GT-B",
+        "source_fixture": "waymo_gt_b.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-WAYB-003",
+      "dimension": "single-passage factual lookup",
+      "tests": "answerable",
+      "vision_derived": false,
+      "difficulty": "medium",
+      "question_text": "According to the RAVE checklist (recommendations for retrospective ADS safety studies), what crash-severity coding scheme do the authors give as an example of an outcome researchers can read straight off crash records without any further statistical processing?",
+      "answer_text": "The KABCO injury-severity scale -- e.g. using the code 'K' to designate a fatality -- given as an example of a directly-measurable outcome that does not require the kind of data transformation discussed in the following section.",
+      "source_paper_id": "local:4087ccce4c01",
+      "source_paper_title": "RAVE Checklist: Recommendations for Overcoming Challenges in Retrospective Safety Studies of Automated Driving Systems",
+      "section_path": "Favor outcomes that are directly measurable.",
+      "passage_excerpt": "Directly measurable outcomes might include, for example, crashes where an injury outcome occurred above some predefined threshold, such as using the often encoded KABCO scale to identify crashes with a fatality (designated using “K”).",
+      "gold_chunk_id": "local:4087ccce4c01:c13",
+      "gold_block_id": "local:4087ccce4c01:b63",
+      "provenance": "verified programmatically: passage_excerpt is a substring of chunks.text for gold_chunk_id",
+      "verification": {
+        "source_set": "GT-B",
+        "source_fixture": "waymo_gt_b.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-WAYB-004",
+      "dimension": "single-passage factual lookup",
+      "tests": "answerable",
+      "vision_derived": false,
+      "difficulty": "easy",
+      "question_text": "What problem does the 'ADS Standardization Landscape' paper say it is trying to solve for the public and interested parties who are trying to follow ADS safety standards development, and what does it propose as a solution?",
+      "answer_text": "It addresses the difficulty of keeping track of the vast, fast-changing landscape of ADS safety standards-development-organization (SDO) efforts, including which topics and committees each standard touches. Its proposed solution is a simplified framework for abstracting and organizing the current standards landscape into high-level, long-term themes, which is then used to surface open research questions and standardization gaps.",
+      "source_paper_id": "2306.17682",
+      "source_paper_title": "ADS Standardization Landscape: Making Sense of its Status and of the Associated Research Questions",
+      "section_path": "Abstract",
+      "passage_excerpt": "The pace of development of the ADS industry makes it hard for the public and interested parties to keep track of ongoing SDO efforts, including the topics touched by each standard and the committees addressing each topic, as well as make sense of the wealth of documentation produced. Therefore, the authors present here a simplified framework for abstracting and organizing the current landscape of ADS safety standards into high-level, long term themes.",
+      "gold_chunk_id": "2306.17682:c1",
+      "gold_block_id": "2306.17682:b2",
+      "provenance": "verified programmatically: passage_excerpt is a substring of chunks.text for gold_chunk_id",
+      "verification": {
+        "source_set": "GT-B",
+        "source_fixture": "waymo_gt_b.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-WAYB-005",
+      "dimension": "single-passage factual lookup",
+      "tests": "answerable",
+      "vision_derived": false,
+      "difficulty": "easy",
+      "question_text": "What real-world data source does the Waymax simulator use to initialize or replay its multi-agent driving scenarios, and what kind of hardware does it run on?",
+      "answer_text": "Waymax uses publicly-released, real-world driving data such as the Waymo Open Motion Dataset to initialize or play back its simulated scenarios, and it runs entirely on hardware accelerators such as TPUs/GPUs, supporting in-graph simulation for training.",
+      "source_paper_id": "2310.08710",
+      "source_paper_title": "Waymax: An Accelerated, Data-Driven Simulator for Large-Scale Autonomous Driving Research",
+      "section_path": "Abstract",
+      "passage_excerpt": "Waymax uses publicly-released, real-world driving data (e.g., the Waymo Open Motion Dataset [15]) to initialize or play back a diverse set of multi-agent simulated scenarios. It runs entirely on hardware accelerators such as TPUs/GPUs and supports in-graph simulation for training",
+      "gold_chunk_id": "2310.08710:c1",
+      "gold_block_id": "2310.08710:b8",
+      "provenance": "verified programmatically: passage_excerpt is a substring of chunks.text for gold_chunk_id",
+      "verification": {
+        "source_set": "GT-B",
+        "source_fixture": "waymo_gt_b.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-WAYB-006",
+      "dimension": "single-passage factual lookup",
+      "tests": "answerable",
+      "vision_derived": false,
+      "difficulty": "hard",
+      "question_text": "One motion-prediction model for self-driving splits the unpredictability of another road user's future behavior into two separate, conditionally-dependent sources rather than modeling it as one big unstructured guess. Without using the model's own terms for these two sources, what real-world thing does each one capture, and how are they related to each other?",
+      "answer_text": "MultiPath factorizes uncertainty into 'intent uncertainty' -- uncertainty about an agent's latent, coarse-scale goal (e.g. which lane it is trying to reach) -- and, conditioned on that intent, 'control uncertainty' -- the remaining uncertainty over the exact sequence of states/waypoints the agent will follow to achieve that intent. The second is modeled given the first, not independently of it.",
+      "source_paper_id": "1910.05449",
+      "source_paper_title": "MultiPath: Multiple Probabilistic Anchor Trajectory Hypotheses for Behavior Prediction",
+      "section_path": "3 Method",
+      "passage_excerpt": "We factorize the notion of uncertainty into independent quantities. Intent uncertainty models uncertainty about the agents’ latent coarse-scale intent or desired goal. For example, in a driving context, uncertainty about which lane the agent is attempting to reach. Conditioned on intent, there is still control uncertainty, which describes the uncertainty over the sequence of states the agent will follow to",
+      "gold_chunk_id": "1910.05449:c3",
+      "gold_block_id": "1910.05449:b20",
+      "provenance": "verified programmatically: passage_excerpt is a substring of chunks.text for gold_chunk_id. This item deliberately avoids the paper's own terms 'intent uncertainty'/'control uncertainty' in the question text (false-negative probe: a retrieval system keyed on surface wording of the question would not obviously surface this chunk).",
+      "verification": {
+        "source_set": "GT-B",
+        "source_fixture": "waymo_gt_b.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-WAYB-007",
+      "dimension": "single-passage factual lookup",
+      "tests": "answerable",
+      "vision_derived": false,
+      "difficulty": "medium",
+      "question_text": "According to the RAVE checklist's 'Transparency' section, what does the paper say is complicated by ADS and benchmark data not always being publicly available, and why does the paper consider transparency important beyond just replication?",
+      "answer_text": "Non-public ADS/benchmark data makes it harder to achieve the kind of scientific reporting that truly supports replication of a study. Beyond enabling replication, the paper argues transparency fosters trust in this new and challenging science and helps facilitate future research that incrementally builds the body of knowledge.",
+      "source_paper_id": "local:4087ccce4c01",
+      "source_paper_title": "RAVE Checklist: Recommendations for Overcoming Challenges in Retrospective Safety Studies of Automated Driving Systems",
+      "section_path": "TRANSPARENCY",
+      "passage_excerpt": "There are also challenges with using ADS and benchmark data that is not always publicly available, which can make it harder to achieve scientific reporting that truly supports replication. Transparency not only fosters trust in this new, challenging science, but helps facilitate future research that incrementally increases the body of knowledge.",
+      "gold_chunk_id": "local:4087ccce4c01:c16",
+      "gold_block_id": "local:4087ccce4c01:b73",
+      "provenance": "verified programmatically: passage_excerpt is a substring of chunks.text for gold_chunk_id",
+      "verification": {
+        "source_set": "GT-B",
+        "source_fixture": "waymo_gt_b.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-WAYB-008",
+      "dimension": "single-passage factual lookup",
+      "tests": "answerable",
+      "vision_derived": false,
+      "difficulty": "easy",
+      "question_text": "What is the Waymo Open Sim Agents Challenge (WOSAC), and over what date range did its 2023 competition run?",
+      "answer_text": "WOSAC is described as the first public challenge to tackle realistic, interactive multi-agent simulation for autonomous driving and to propose corresponding evaluation metrics; its 2023 competition ran from March 16, 2023 to May 23, 2023.",
+      "source_paper_id": "2305.12032",
+      "source_paper_title": "The Waymo Open Sim Agents Challenge",
+      "section_path": "Abstract",
+      "passage_excerpt": "WOSAC is the first public challenge to tackle this task and propose corresponding metrics. The goal of the challenge is to stimulate the design of realistic simulators that can be used to evaluate and train a behavior model for autonomous driving. We outline our evaluation methodology, present results for a number of different baseline simulation agent methods, and analyze several submissions to the 2023 competition which ran from March 16, 2023 to May 23, 2023.",
+      "gold_chunk_id": "2305.12032:c1",
+      "gold_block_id": "2305.12032:b9",
+      "provenance": "verified programmatically: passage_excerpt is a substring of chunks.text for gold_chunk_id",
+      "verification": {
+        "source_set": "GT-B",
+        "source_fixture": "waymo_gt_b.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-WAYB-009",
+      "dimension": "single-passage factual lookup",
+      "tests": "absent",
+      "vision_derived": false,
+      "difficulty": "medium",
+      "question_text": "What LiDAR wavelength does Waymo's autonomous-driving hardware platform use, according to the corpus's own papers?",
+      "absence_note": "The corpus contains many Waymo-authored papers describing perception, detection, and safety-performance results, but none of them discloses a specific LiDAR wavelength for Waymo's own sensor hardware -- Waymo's papers describe point-cloud data and detection algorithms without disclosing this kind of proprietary hardware spec. This is a plausible-sounding, in-domain question (hardware questions are common in AV papers) whose answer is genuinely not in this corpus.",
+      "absence_search": [
+        "chunks.text LIKE '%wavelength%' (10 hits total across the whole 1,738-paper corpus; none discuss a Waymo-specific LiDAR wavelength -- hits are unrelated papers on MHD turbulence, lattice-Boltzmann simulation, V2X signal models, etc.)",
+        "papers.title LIKE '%LiDAR%' spot-checked among the 153 Waymo-authored paper_ids for hardware-spec disclosures (e.g. 2005.08417-style sensor papers are absent from this corpus; the Waymo-authored LiDAR papers here, e.g. 2106.13365 RSN, 2103.01306, are all about detection algorithms over already-released point clouds, not sensor hardware specs)"
+      ],
+      "provenance": "absence established by keyword search over chunks.text (papers.db) for 'wavelength' across the full corpus, and by spot-checking the Waymo-authored LiDAR-adjacent paper set for any hardware-spec disclosure; see absence_search",
+      "verification": {
+        "source_set": "GT-B",
+        "source_fixture": "waymo_gt_b.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "absence_re_established_by_independent_keyword_search_over_all_chunk_and_block_text",
+          "adversarial_probes_beyond_the_original_search_log_found_no_counterexample"
+        ],
+        "notes": [
+          "Absence verdict confirmed, but the recorded search-log hit count does not reproduce: 'wavelength' matches 35 chunks across 20 papers under plain SQLite LIKE today, not the 10 recorded. None of the hits discloses a Waymo-hardware LiDAR wavelength, so the qualitative absence stands. Adversarial probes ('1550', '1550 nm', 'lidar wavelength') found only camera-resolution tables and unrelated FMCW physics."
+        ]
+      }
+    },
+    {
+      "question_id": "Q-WAYB-010",
+      "dimension": "multi-paper synthesis",
+      "tests": "answerable",
+      "vision_derived": false,
+      "difficulty": "hard",
+      "question_text": "SWFormer claims it outperforms the prior best two-stage detector on the Waymo Open Dataset validation set by 0.42 APH/L2 for vehicle detection. Using that prior detector's own reported vehicle LEVEL_2 mAPH figure for its default (center-based RPN head, single frame) configuration, what vehicle LEVEL_2 mAPH would SWFormer's own claim imply for SWFormer itself?",
+      "answer_text": "SWFormer's own paper states it outperforms PV-RCNN++ (the prior best two-stage method) by 0.42 APH/L2 on vehicle detection. PV-RCNN++'s own paper reports 69.91 vehicle LEVEL_2 mAPH for its center-based, single-frame configuration. Combining the two: SWFormer's claim implies a vehicle LEVEL_2 mAPH of approximately 69.91 + 0.42 = 70.33.",
+      "supporting_passages": [
+        {
+          "paper_id": "2210.07372",
+          "paper_title": "SWFormer: Sparse Window Transformer for 3D Object Detection in Point Clouds",
+          "section_path": "4 Experiments > 4.3 Main Results",
+          "passage_excerpt": "SWFormer even outperforms the prior best performing two-stage method PVRCNN++[37] by 0.42 APH/L2.",
+          "gold_chunk_id": "2210.07372:c14",
+          "gold_block_id": "2210.07372:b68"
+        },
+        {
+          "paper_id": "2102.00463",
+          "paper_title": "PV-RCNN++: Point-Voxel Feature Set Abstraction With Local Vector Representation for 3D Object Detection",
+          "section_path": "5 Experiments > 5.2 Main Results",
+          "passage_excerpt": "| LEVEL 2 | PV-RCNN (anchor)PV-RCNN++ (anchor) | 68.4169.95 | 57.6160.94 | 63.9868.22 |\n| PV-RCNN (center)PV-RCNN++ (center) | 68.9869.91 | 64.7266.30 | 67.7969.62 |",
+          "gold_chunk_id": "2102.00463:c13",
+          "gold_block_id": "2102.00463:b111"
+        }
+      ],
+      "provenance": "verified programmatically: both passage_excerpts are substrings of their respective chunks.text. The PV-RCNN++ table row is OCR/markdown-mangled (numbers run together without separators, e.g. '68.9869.91' = 68.98 (PV-RCNN center) then 69.91 (PV-RCNN++ center)) -- the 69.91 figure used in the answer was cross-checked against the row order and column headers (Veh.mAPH) in the same table.",
+      "verification": {
+        "source_set": "GT-B",
+        "source_fixture": "waymo_gt_b.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text",
+          "all 2 supporting_paper_exists_and_title_matches_corpus",
+          "supporting_gold_chunk_resolves_under_its_paper",
+          "supporting_anchor_block_id_matches_gold_block_id",
+          "supporting_excerpt_is_whitespace_normalized_substring_of_chunk_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-WAYB-011",
+      "dimension": "multi-paper synthesis",
+      "tests": "answerable",
+      "vision_derived": false,
+      "difficulty": "hard",
+      "question_text": "Waymo has published safety comparisons using two different methodologies: a police/injury crash-rate comparison (rider-only crash data vs. human crash-rate benchmarks) and a third-party auto-liability insurance-claims comparison. Do these two methodologies report broadly similar or very different magnitudes of safety improvement, and which one reports the larger reduction?",
+      "answer_text": "They are broadly similar in magnitude, both reporting roughly 80-90% reductions, with the insurance-claims methodology reporting the larger headline reductions: the 25.3-million-mile insurance study found an 88% reduction in property-damage claims and 92% reduction in bodily-injury claims vs. the overall driving population (86%/90% vs. its stricter latest-generation-vehicle benchmark), while the 56.7-million-mile crash-rate study found a 65% reduction in Police-Reported and 79% reduction in Any-Injury-Reported crash rates vs. human benchmarks.",
+      "supporting_passages": [
+        {
+          "paper_id": "local:f6f1461f2c9a",
+          "paper_title": "Do Autonomous Vehicles Outperform Latest-Generation Human-Driven Vehicles? A Comparison to Waymo's Auto Liability Insurance Claims at 25 Million Miles",
+          "section_path": "Conclusions",
+          "passage_excerpt": "we observed an 88% reduction in property damage claims (0.36 vs 3.08 claims per million miles) and an 92% reduction in bodily injury claims (0.08 vs 1.04 claims per million miles) compared to the overall driving population.",
+          "gold_chunk_id": "local:f6f1461f2c9a:c15",
+          "gold_block_id": "local:f6f1461f2c9a:b83"
+        },
+        {
+          "paper_id": "local:6b9ccd0431f6",
+          "paper_title": "Comparison of Waymo Rider-Only Crash Rates by Crash Type to Human Benchmarks at 56.7 Million Miles",
+          "section_path": "Comparisons to Prior Studies",
+          "passage_excerpt": "The current study found a 65% reduction in Police-Reported (57% to 72% 95% confidence interval) and a 79% reduction in Any-Injury-Reported (72% to 86% 95% confidence interval) outcomes",
+          "gold_chunk_id": "local:6b9ccd0431f6:c37",
+          "gold_block_id": "local:6b9ccd0431f6:b162"
+        }
+      ],
+      "provenance": "verified programmatically: both passage_excerpts are substrings of their respective chunks.text",
+      "verification": {
+        "source_set": "GT-B",
+        "source_fixture": "waymo_gt_b.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text",
+          "all 2 supporting_paper_exists_and_title_matches_corpus",
+          "supporting_gold_chunk_resolves_under_its_paper",
+          "supporting_anchor_block_id_matches_gold_block_id",
+          "supporting_excerpt_is_whitespace_normalized_substring_of_chunk_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-WAYB-012",
+      "dimension": "multi-paper synthesis",
+      "tests": "answerable",
+      "vision_derived": false,
+      "difficulty": "hard",
+      "question_text": "A retrospective ADS-safety study in this corpus includes a self-assessment table scoring its own conformance to an external, named checklist for retrospective ADS safety studies. What is that checklist called, how many total recommendations does it define, and what does the study's self-assessment say about its overall conformance and the main limiting factor?",
+      "answer_text": "The checklist is the RAVE (Retrospective Automated Vehicle Evaluation) Checklist, which defines fifteen recommendations organized around quality and validity, transparency, and interpretation. The 56.7-million-mile Waymo rider-only crash-rate study's self-assessment concludes that it conforms overall and serves as 'a useful, unbiased indicator of safety impact,' but attributes the areas where conformance was not fully satisfactory primarily to limited human benchmarking data quality restricting the ability to fully account for potential confounders.",
+      "supporting_passages": [
+        {
+          "paper_id": "local:4087ccce4c01",
+          "paper_title": "RAVE Checklist: Recommendations for Overcoming Challenges in Retrospective Safety Studies of Automated Driving Systems",
+          "section_path": "Results",
+          "passage_excerpt": "This paper presents the RAVE (Retrospective Automated Vehicle Evaluation) checklist, a set of fifteen recommendations for performing and evaluating retrospective ADS performance comparisons.",
+          "gold_chunk_id": "local:4087ccce4c01:c4",
+          "gold_block_id": "local:4087ccce4c01:b19"
+        },
+        {
+          "paper_id": "local:6b9ccd0431f6",
+          "paper_title": "Comparison of Waymo Rider-Only Crash Rates by Crash Type to Human Benchmarks at 56.7 Million Miles",
+          "section_path": "Study Conformance to the RAVE Checklist",
+          "passage_excerpt": "Overall, we believe our study conforms to the recommendations outlined in the RAVE checklist and serves as a useful, unbiased indicator of safety impact. There are areas where conformance is not fully satisfactory, which we attribute primarily to limited human benchmarking data quality that restricts the ability to fully account for potential confounders.",
+          "gold_chunk_id": "local:6b9ccd0431f6:c40",
+          "gold_block_id": "local:6b9ccd0431f6:b176"
+        }
+      ],
+      "provenance": "verified programmatically: both passage_excerpts are substrings of their respective chunks.text",
+      "verification": {
+        "source_set": "GT-B",
+        "source_fixture": "waymo_gt_b.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text",
+          "all 2 supporting_paper_exists_and_title_matches_corpus",
+          "supporting_gold_chunk_resolves_under_its_paper",
+          "supporting_anchor_block_id_matches_gold_block_id",
+          "supporting_excerpt_is_whitespace_normalized_substring_of_chunk_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-WAYB-013",
+      "dimension": "multi-paper synthesis",
+      "tests": "answerable",
+      "vision_derived": false,
+      "difficulty": "medium",
+      "question_text": "CausalAgents builds a robustness benchmark for motion-forecasting models by labeling and removing 'non-causal' agents from an existing large motion dataset. Which dataset does it perturb, how large is that underlying dataset (per its own paper), and what relative change in minADE did CausalAgents observe across models even under non-causal (supposedly harmless) agent removal?",
+      "answer_text": "CausalAgents perturbs the Waymo Open Motion Dataset (WOMD), which its own paper describes as containing over 100,000 scenes (each 20 seconds at 10 Hz, more than 570 hours of unique data over 1,750 km of roadways). CausalAgents found that all evaluated models exhibited a 25-38% relative change in minADE compared to the original data, even under non-causal perturbation (removing agents that should not influence the outcome).",
+      "supporting_passages": [
+        {
+          "paper_id": "2207.03586",
+          "paper_title": "CausalAgents: A Robustness Benchmark for Motion Forecasting using Causal Relationships",
+          "section_path": "Abstract",
+          "passage_excerpt": "we conduct an extensive labeling efort to identify causal agents, or agents whose presence influences human drivers’ behavior in any format, in the Waymo Open Motion Dataset (WOMD), and we use these labels to perturb the data by deleting non-causal agents from the scene. We evaluate a diverse set of state-of-the-art deep-learning model architectures on our proposed benchmark and find that all models exhibit large shifts under even non-causal perturbation: we observe a 25-38% relative change in minADE as compared to the original.",
+          "gold_chunk_id": "2207.03586:c1",
+          "gold_block_id": "2207.03586:b3"
+        },
+        {
+          "paper_id": "2104.10133",
+          "paper_title": "Large Scale Interactive Motion Forecasting for Autonomous Driving : The Waymo Open Motion Dataset",
+          "section_path": "Abstract",
+          "passage_excerpt": "With over 100,000 scenes, each 20 seconds long at 10 Hz, our new dataset contains more than 570 hours of unique data over 1750 km ofroadways.",
+          "gold_chunk_id": "2104.10133:c1",
+          "gold_block_id": "2104.10133:b2"
+        }
+      ],
+      "provenance": "verified programmatically: both passage_excerpts are substrings of their respective chunks.text",
+      "verification": {
+        "source_set": "GT-B",
+        "source_fixture": "waymo_gt_b.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text",
+          "all 2 supporting_paper_exists_and_title_matches_corpus",
+          "supporting_gold_chunk_resolves_under_its_paper",
+          "supporting_anchor_block_id_matches_gold_block_id",
+          "supporting_excerpt_is_whitespace_normalized_substring_of_chunk_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-WAYB-014",
+      "dimension": "numeric/quantitative claims",
+      "tests": "answerable",
+      "vision_derived": false,
+      "difficulty": "medium",
+      "question_text": "Over Waymo's first 7.14 million rider-only miles, what were the any-injury-reported and police-reported crashed-vehicle rates (in incidents per million miles) for the ADS compared to the human benchmark, and what reduction percentage did each represent?",
+      "answer_text": "Any-injury-reported: 0.6 IPMM for the ADS vs 2.80 IPMM for the human benchmark, an 80% reduction (a human rate 5 times higher). Police-reported: 2.1 IPMM for the ADS vs 4.68 IPMM for the human benchmark, a 55% reduction (a human rate 2.2 times higher).",
+      "source_paper_id": "2312.12675",
+      "source_paper_title": "Comparison of Waymo Rider-Only Crash Data to Human Benchmarks at 7.1 Million Miles",
+      "section_path": "A BS T R AC T",
+      "passage_excerpt": "the any-injury-reported crashed vehicle rate was 0.6 incidents per million miles (IPMM) for the ADS vs 2.80 IPMM for the human benchmark, an 80% reduction or a human crash rate that is 5 times higher than the ADS rate. Police-reported crashed vehicle rates for all locations together were 2.1 IPMM for the ADS vs. 4.68 IPMM for the human benchmark, a 55% reduction or a human crash rate that was 2.2 times higher than the ADS rate.",
+      "gold_chunk_id": "2312.12675:c1",
+      "gold_block_id": "2312.12675:b9",
+      "provenance": "verified programmatically: passage_excerpt is a substring of chunks.text for gold_chunk_id",
+      "verification": {
+        "source_set": "GT-B",
+        "source_fixture": "waymo_gt_b.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-WAYB-015",
+      "dimension": "numeric/quantitative claims",
+      "tests": "answerable",
+      "vision_derived": false,
+      "difficulty": "medium",
+      "question_text": "In Waymo's 25.3-million-mile auto-liability insurance-claims study, how many property-damage and bodily-injury claims did the Waymo ADS yield, arising from how many unique collisions, and what was each claim rate (in claims per million miles) compared to the overall driving population?",
+      "answer_text": "Nine property-damage claims and two bodily-injury claims, arising from ten unique collisions, over 25.3 million miles. That represents 0.36 property-damage claims per million miles vs 3.08 for the overall driving population (88% reduction), and 0.08 bodily-injury claims per million miles vs 1.04 for the overall driving population (92% reduction).",
+      "source_paper_id": "local:f6f1461f2c9a",
+      "source_paper_title": "Do Autonomous Vehicles Outperform Latest-Generation Human-Driven Vehicles? A Comparison to Waymo's Auto Liability Insurance Claims at 25 Million Miles",
+      "section_path": "Conclusions",
+      "passage_excerpt": "the Waymo ADS yielded nine property damage and two bodily injury claims, arising from 10 unique collisions, over 25.3 million miles. Two of the property damage claims and both bodily injury claims are still open (unresolved) and could close without any liability payment. Our findings demonstrate that the Waymo ADS significantly outperformed both the overall driving population and the latest-generation HDV benchmarks in terms of third-party liability claims. Specifically, we observed an 88% reduction in property damage claims (0.36 vs 3.08 claims per million miles) and an 92% reduction in bodily injury claims (0.08 vs 1.04 claims per million miles) compared to the overall driving population.",
+      "gold_chunk_id": "local:f6f1461f2c9a:c15",
+      "gold_block_id": "local:f6f1461f2c9a:b83",
+      "provenance": "verified programmatically: passage_excerpt is a substring of chunks.text for gold_chunk_id",
+      "verification": {
+        "source_set": "GT-B",
+        "source_fixture": "waymo_gt_b.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-WAYB-016",
+      "dimension": "numeric/quantitative claims",
+      "tests": "answerable",
+      "vision_derived": false,
+      "difficulty": "medium",
+      "question_text": "According to 'From Stoplights to On-Ramps', how much do any-airbag-deployed freeway crash rates vary geographically between the highest and lowest cities studied, and by what multiple?",
+      "answer_text": "Any-airbag-deployed freeway crash rates varied from 0.355 incidents per million miles in Phoenix (lowest) to 1.033 incidents per million miles in Atlanta (highest) -- a 2.9-times difference.",
+      "source_paper_id": "2508.19425",
+      "source_paper_title": "From Stoplights to On-Ramps: A Comprehensive Set of Crash Rate Benchmarks for Freeway and Surface Street ADS Evaluation",
+      "section_path": "Freeway Crash Rates",
+      "passage_excerpt": "The any airbag deployed freeway crash rates varied from 0.355 (in Phoenix) to 1.033 (in Atlanta) incidents per million miles (2.9-times difference).",
+      "gold_chunk_id": "2508.19425:c19",
+      "gold_block_id": "2508.19425:b85",
+      "provenance": "verified programmatically: passage_excerpt is a substring of chunks.text for gold_chunk_id",
+      "verification": {
+        "source_set": "GT-B",
+        "source_fixture": "waymo_gt_b.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-WAYB-017",
+      "dimension": "numeric/quantitative claims",
+      "tests": "answerable",
+      "vision_derived": false,
+      "difficulty": "easy",
+      "question_text": "In the same freeway-vs-surface-street crash-rate benchmark study, how did surface street crash rates compare to freeway crash rates for any-injury-reported and for fatal outcomes?",
+      "answer_text": "Surface street rates were considerably higher than freeway rates across all geographic regions and severity outcomes: 1.7- to 2.8-times the freeway rate for any-injury-reported crashes, and 1.2- to 5.3-times higher than the freeway rate for fatal crashes.",
+      "source_paper_id": "2508.19425",
+      "source_paper_title": "From Stoplights to On-Ramps: A Comprehensive Set of Crash Rate Benchmarks for Freeway and Surface Street ADS Evaluation",
+      "section_path": "Comparison to Surface Streets",
+      "passage_excerpt": "Surface street crash rates were considerably higher than freeways across all geographic regions and severity outcomes. As a demonstration, for any-injury reported crashes, surface street rates were 1.7- to 2.8-times the freeway crash rate. On the other end of the spectrum, surface street fatal crash rates were 1.2- to 5.3-times higher than freeway fatal crash rates.",
+      "gold_chunk_id": "2508.19425:c20",
+      "gold_block_id": "2508.19425:b89",
+      "provenance": "verified programmatically: passage_excerpt is a substring of chunks.text for gold_chunk_id",
+      "verification": {
+        "source_set": "GT-B",
+        "source_fixture": "waymo_gt_b.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-WAYB-018",
+      "dimension": "numeric/quantitative claims",
+      "tests": "answerable",
+      "vision_derived": false,
+      "difficulty": "medium",
+      "question_text": "A third-party (non-Waymo-authored) study compared crashes-per-million-miles (CPMM) for driverless operations in San Francisco across companies, using DMV and CPUC data. Which direction did Waymo's driverless CPMM move relative to human/TNC driving, and which direction did Cruise's move?",
+      "answer_text": "Waymo had a lower CPMM with its driverless operation (i.e., a safety improvement relative to human/TNC driving), whereas Cruise had a higher CPMM with its driverless operations (i.e., worse than human/TNC driving) over the same study period and geography.",
+      "source_paper_id": "2403.14648",
+      "source_paper_title": "Initial Indications of Safety of Driverless Automated Driving Systems",
+      "section_path": "Conclusions and Future Study",
+      "passage_excerpt": "We observe that the CPMM between supervised AV and human-operated TNC is similar. We also observe that Waymo has a lower CPMM with their driverless operation, whereas Cruise has a higher CPMM with their driverless operations.",
+      "gold_chunk_id": "2403.14648:c14",
+      "gold_block_id": "2403.14648:b88",
+      "provenance": "verified programmatically: passage_excerpt is a substring of chunks.text for gold_chunk_id",
+      "verification": {
+        "source_set": "GT-B",
+        "source_fixture": "waymo_gt_b.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-WAYB-019",
+      "dimension": "numeric/quantitative claims",
+      "tests": "answerable",
+      "vision_derived": false,
+      "difficulty": "hard",
+      "question_text": "In the 56.7-million-mile Waymo rider-only crash-type study, what reduction (with 95% confidence interval) in Suspected Serious Injury+ crashes was found when considering all locations combined, and how did that compare to the Phoenix- and San-Francisco-only figures?",
+      "answer_text": "All locations combined: an 85% reduction (39% to 99% reduction, 95% CI). In Phoenix alone: a 100% reduction (3% to 100% reduction, 95% CI). In San Francisco alone: a 76% reduction (3% to 98% reduction, 95% CI).",
+      "source_paper_id": "local:6b9ccd0431f6",
+      "source_paper_title": "Comparison of Waymo Rider-Only Crash Rates by Crash Type to Human Benchmarks at 56.7 Million Miles",
+      "section_path": "Aggregate Crash Rate Comparison",
+      "passage_excerpt": "The Waymo RO service had a statistically significant reduction in Suspected Serious Injury+ crashes when considering all locations combined, with a 85% reduction (39% to 99% reduction 95% confidence interval), in Phoenix, with a 100% reduction (3% to 100% reduction 95% confidence interval), and in San Francisco with a 76% reduction (3% to 98% reduction 95% confidence interval).",
+      "gold_chunk_id": "local:6b9ccd0431f6:c16",
+      "gold_block_id": "local:6b9ccd0431f6:b53",
+      "provenance": "verified programmatically: passage_excerpt is a substring of chunks.text for gold_chunk_id",
+      "verification": {
+        "source_set": "GT-B",
+        "source_fixture": "waymo_gt_b.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-WAYB-020",
+      "dimension": "numeric/quantitative claims",
+      "tests": "answerable",
+      "vision_derived": false,
+      "difficulty": "medium",
+      "question_text": "The Waymo Open Dataset's panoramic video panoptic segmentation release covers how many semantic categories, how many temporal sequences, how many cameras, and how many total labeled camera images?",
+      "answer_text": "28 semantic categories and 2,860 temporal sequences, captured by five cameras mounted on autonomous vehicles driving in three different geographical locations, totaling 100k labeled camera images.",
+      "source_paper_id": "2206.07704",
+      "source_paper_title": "Waymo Open Dataset: Panoramic Video Panoptic Segmentation",
+      "section_path": "Abstract",
+      "passage_excerpt": "we offer labels for 28 semantic categories and 2,860 temporal sequences that were captured by five cameras mounted on autonomous vehicles driving in three different geographical locations, leading to a total of 100k labeled camera images.",
+      "gold_chunk_id": "2206.07704:c1",
+      "gold_block_id": "2206.07704:b3",
+      "provenance": "verified programmatically: passage_excerpt is a substring of chunks.text for gold_chunk_id",
+      "verification": {
+        "source_set": "GT-B",
+        "source_fixture": "waymo_gt_b.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-WAYB-021",
+      "dimension": "numeric/quantitative claims",
+      "tests": "absent",
+      "vision_derived": false,
+      "difficulty": "hard",
+      "question_text": "How many pedestrian, cyclist, and vehicle-occupant fatalities has Waymo's driverless fleet caused in total, broken down by category, according to the corpus's papers?",
+      "absence_note": "The corpus contains several Waymo-authored and third-party retrospective crash-rate studies (7.1M, 25.3M, 56.7M mile mileposts) that discuss injury severity tiers up to 'Suspected Serious Injury+', and other papers that discuss AV fatalities in the aggregate (e.g. human benchmark fatal-crash rates per 100 million miles), but none of the Waymo-specific studies in this corpus reports a specific Waymo-attributed fatality count broken down by victim category. This is a plausible, in-domain question (fatality counts are exactly the kind of headline number these papers report for lower-severity outcomes) whose specific answer is not present.",
+      "absence_search": [
+        "chunks.text LIKE '%fatal%' restricted to chunks whose text or title also mentions 'waymo' (23 of 200 sampled 'fatal' hits corpus-wide); manual review of all 23 found no Waymo-attributed fatality count -- hits are either about human benchmark fatality rates, unrelated papers' introductions, or Waymo safety-case papers discussing severity thresholds in the abstract without a concrete count",
+        "chunks.text LIKE '%zero fatalities%' (0 hits)",
+        "chunks.text LIKE '%fatality involving%' (0 hits relevant to Waymo)"
+      ],
+      "provenance": "absence established by keyword search over chunks.text (papers.db) for 'fatal' co-occurring with 'waymo', plus targeted phrase searches; see absence_search",
+      "verification": {
+        "source_set": "GT-B",
+        "source_fixture": "waymo_gt_b.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "absence_re_established_by_independent_keyword_search_over_all_chunk_and_block_text",
+          "adversarial_probes_beyond_the_original_search_log_found_no_counterexample"
+        ],
+        "notes": [
+          "Absence verdict confirmed by re-search: 430 'fatalit*' chunk hits corpus-wide, 29 of them co-occurring with 'waymo' reviewed individually (human benchmarks, severity-tier discussion, mission statements) plus death/died/killed/deaths probes; none reports a Waymo-attributed fatality count broken down by victim category."
+        ]
+      }
+    },
+    {
+      "question_id": "Q-WAYB-022",
+      "dimension": "numeric/quantitative claims",
+      "tests": "absent",
+      "vision_derived": false,
+      "difficulty": "hard",
+      "question_text": "What is the reported disengagement rate per 1,000 miles specifically for Waymo's 5th-generation ('Gen 5') hardware platform, as distinct from its 4th-generation platform, according to the corpus?",
+      "absence_note": "The corpus's disengagement-related papers (e.g. 'Initial Indications of Safety of Driverless Automated Driving Systems', which uses California DMV disengagement reporting) discuss disengagement data in aggregate across companies/time periods, not broken down by Waymo's own internal hardware-generation labels. No paper in the corpus reports a hardware-generation-specific disengagement rate for Waymo.",
+      "absence_search": [
+        "chunks.text LIKE '%disengagement%' (10 hits corpus-wide; none mention a hardware-generation breakdown for any single ADS operator)",
+        "chunks.text LIKE '%5th-generation%' / '%fifth generation%' / '%Gen 5%' -- no hits describing a Waymo hardware-generation-specific safety metric",
+        "chunks.text LIKE '%hardware platform%' (5 hits corpus-wide, all about other systems' compute hardware -- NVIDIA DriveAV, Apollo/Nuvo-6108GC, AD-EYE co-simulation rigs -- not a Waymo generation-specific disengagement rate)"
+      ],
+      "provenance": "absence established by keyword search over chunks.text (papers.db) for 'disengagement', hardware-generation phrasings, and 'hardware platform'; see absence_search",
+      "verification": {
+        "source_set": "GT-B",
+        "source_fixture": "waymo_gt_b.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "absence_re_established_by_independent_keyword_search_over_all_chunk_and_block_text",
+          "adversarial_probes_beyond_the_original_search_log_found_no_counterexample"
+        ],
+        "notes": [
+          "Absence verdict confirmed, but the recorded search-log hit count does not reproduce: 'disengagement' matches 168 chunks across 75 papers today, not the 10 recorded. No hit gives a hardware-generation-specific disengagement rate for any single operator, so the qualitative absence stands."
+        ]
+      }
+    },
+    {
+      "question_id": "Q-WAYB-023",
+      "dimension": "methodological questions",
+      "tests": "answerable",
+      "vision_derived": false,
+      "difficulty": "medium",
+      "question_text": "In the systematic literature review 'Is Scenario Generation Ready for SOTIF?', what formal/publication-type exclusion criterion do the authors apply, and what language and availability requirements do included articles have to meet?",
+      "answer_text": "As a formal criterion, relevant articles must be peer-reviewed contributions (conference papers or journal articles), explicitly excluding magazine articles and extended abstracts. Articles must also be written in English and publicly available.",
+      "source_paper_id": "2308.02273",
+      "source_paper_title": "Is Scenario Generation Ready for SOTIF? A Systematic Literature Review",
+      "section_path": "C. Exclusion criteria",
+      "passage_excerpt": "As a formal criterion, we require that relevant articles are peerreviewed contributions such as conference papers or journal articles ensuring that our study is based on comparable, high-quality articles. Thus, we explicitly exclude magazine articles and extended abstracts. We also require that articles are written in English and publicly available.",
+      "gold_chunk_id": "2308.02273:c9",
+      "gold_block_id": "2308.02273:b32",
+      "provenance": "verified programmatically: passage_excerpt is a substring of chunks.text for gold_chunk_id",
+      "verification": {
+        "source_set": "GT-B",
+        "source_fixture": "waymo_gt_b.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-WAYB-024",
+      "dimension": "methodological questions",
+      "tests": "answerable",
+      "vision_derived": false,
+      "difficulty": "medium",
+      "question_text": "In the systematic literature review on Safety of the Intended Functionality (SOTIF) for automated driving systems, at which phases of the review process are exclusion criteria E1-E3 applied versus E4-E5, and what is each group's purpose?",
+      "answer_text": "Exclusion criteria E1 to E3 are applied during the identification phase, to remove publications that do not meet specific requirements. E4 and E5 are applied during the screening phase, to exclude certain publications from further consideration -- both aimed at ensuring only literature closely aligned with the review's research objectives is retained.",
+      "source_paper_id": "2503.02498",
+      "source_paper_title": "A Systematic Literature Review on Safety of the Intended Functionality for Automated Driving Systems",
+      "section_path": "2.  Review Methodology > 2.2. Exclusion Criteria",
+      "passage_excerpt": "The exclusion criteria E1 to E3 are applied during the identification phase to remove publications that do not meet specific requirements. Conversely, E4 and E5 are applied in the screening phase to exclude certain publications from further consid eration.",
+      "gold_chunk_id": "2503.02498:c8",
+      "gold_block_id": "2503.02498:b59",
+      "provenance": "verified programmatically: passage_excerpt is a substring of chunks.text for gold_chunk_id",
+      "verification": {
+        "source_set": "GT-B",
+        "source_fixture": "waymo_gt_b.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-WAYB-025",
+      "dimension": "methodological questions",
+      "tests": "answerable",
+      "vision_derived": false,
+      "difficulty": "hard",
+      "question_text": "What statistical method do the authors of the 7.1-million-mile Waymo rider-only crash study use to compute confidence intervals for the crash rate ratio, and how do they demonstrate that their implementation of it is correct?",
+      "answer_text": "They use Nelson (1970) rate ratio confidence intervals, implemented as a Python function (Listing 1 in the appendix). They validate the implementation with test cases based on select results from the paper's own Table 7 (Listing 2), and show the output of that test code (Listing 3).",
+      "source_paper_id": "2312.12675",
+      "source_paper_title": "Comparison of Waymo Rider-Only Crash Data to Human Benchmarks at 7.1 Million Miles",
+      "section_path": "A.3. Example ofNelson (1970) Rate Ratio Confidence Intervals",
+      "passage_excerpt": "An example of the Nelson (1970) confidence interval for the crash rate ratio is shown in Listing 1 in the Python language.",
+      "gold_chunk_id": "2312.12675:c24",
+      "gold_block_id": "2312.12675:b119",
+      "provenance": "verified programmatically: passage_excerpt is a substring of chunks.text for gold_chunk_id",
+      "verification": {
+        "source_set": "GT-B",
+        "source_fixture": "waymo_gt_b.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-WAYB-026",
+      "dimension": "methodological questions",
+      "tests": "answerable",
+      "vision_derived": false,
+      "difficulty": "medium",
+      "question_text": "Waymo's Fatigue Risk Management (FRM) framework organizes its recommended practices along two crossed axes. What are those two axes, and what three categories does each one have?",
+      "answer_text": "One axis is the three 'pillars' of defense-in-depth: prevention, monitoring, and mitigation. The other axis is the operational lifecycle phase: before driving, while in the driver's seat, and after driving. Each of the framework's implementation blocks/practices is mapped onto this 3x3 grid of pillar x lifecycle phase.",
+      "source_paper_id": "2208.12833",
+      "source_paper_title": "Waymo's Fatigue Risk Management Framework: Prevention, Monitoring, and Mitigation of Fatigue-Induced Risks while Testing Automated Driving Systems",
+      "section_path": "OVERVIEW AND MAPPING",
+      "passage_excerpt": "Waymo’s framework for fatigue risk management accounts for the three different layers of prevention, monitoring, and mitigation (typical of defense-in-depth approaches [83]) - each applied across the entire lifecycle of operations: before driving, while in the driver’s seat, and after driving.",
+      "gold_chunk_id": "2208.12833:c20",
+      "gold_block_id": "2208.12833:b186",
+      "provenance": "verified programmatically: passage_excerpt is a substring of chunks.text for gold_chunk_id",
+      "verification": {
+        "source_set": "GT-B",
+        "source_fixture": "waymo_gt_b.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-WAYB-027",
+      "dimension": "methodological questions",
+      "tests": "answerable",
+      "vision_derived": true,
+      "difficulty": "hard",
+      "question_text": "In Waymo's Fatigue Risk Management Framework paper, Figure 19 maps all twenty recommended practices onto a grid of pillar (prevention/monitoring/mitigation) x lifecycle phase (before/while-in-seat/after driving). Which pillar and lifecycle phase does practice #9, 'Human drowsiness rating,' fall under, and which named implementation block groups it?",
+      "answer_text": "Practice #9 ('Human drowsiness rating') falls under the 'Monitoring' pillar and the 'While in Driver's Seat' lifecycle phase, grouped under the 'RT Vigilance Assessment' implementation block (alongside #10 'Automated drowsiness rating' and #11 'Fatigue self-reporting').",
+      "source_paper_id": "2208.12833",
+      "source_paper_title": "Waymo's Fatigue Risk Management Framework: Prevention, Monitoring, and Mitigation of Fatigue-Induced Risks while Testing Automated Driving Systems",
+      "page": 35,
+      "vision_note": "Rendered PDF page 35 (0-indexed, matching the anchor_json page convention used elsewhere in this DB; printed page footer reads '36') at 2x scale with pypdfium2 and read the image directly. The page shows Figure 19, 'Mapping of recommended elements, pillars, and methodologies for FRM' -- a grid with rows PREVENTION/MONITORING/MITIGATION and columns BEFORE DRIVING/WHILE IN DRIVER'S SEAT/AFTER DRIVING. The MONITORING row x WHILE IN DRIVER'S SEAT column cell contains two blocks: 'RT Vigilance Assessment' (items 9. Human drowsiness rating, 10. Automated drowsiness rating, 11. Fatigue self-reporting) and 'Awareness & Reporting' (no items listed in that cell). This mapping is not restated in the surrounding prose (the paragraph before the figure only describes the grid's existence and purpose in general terms, and the 'IMPLEMENTATION BLOCKS' section heading on an earlier page (p.18, block 2208.12833:b96) is itself followed only by a different figure, not by this table) -- the pillar/phase/block assignment for a specific numbered practice is only recoverable from the image.",
+      "gold_block_id": "2208.12833:b188",
+      "provenance": "vision-derived: paper_id/title verified against papers.db; PDF rendered from waymo/data/pdf_cache/2208.12833.pdf page index 35 with pypdfium2 (scale=2.0) and read directly (not OCR'd, not fabricated from memory of the paper). gold_block_id anchors to the block whose section_path is 'OVERVIEW AND MAPPING' and whose text references 'Figure 19' -- provided for context/navigation only, its own block text does not contain the grid content (that lives in the embedded image on the same page), so it is not substring-checked the way text-based items are.",
+      "verification": {
+        "source_set": "GT-B",
+        "source_fixture": "waymo_gt_b.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "vision_paper_exists_and_title_matches_corpus",
+          "vision_gold_block_id_resolves_in_blocks_table",
+          "vision_page_matches_block_page"
+        ],
+        "notes": [
+          "VISION ITEM: only the machine-checkable facts were verified (paper resolves, title matches, gold block id resolves in blocks table, cited page equals the block's stored page). The visual claim itself -- what Figure 19's pillar-x-phase grid shows for practice #9 -- could not be re-rendered or re-read by the cross-verifier and remains unverified, carried forward on the authoring model's reading alone."
+        ]
+      }
+    },
+    {
+      "question_id": "Q-WAYB-028",
+      "dimension": "methodological questions",
+      "tests": "absent",
+      "vision_derived": false,
+      "difficulty": "hard",
+      "question_text": "What statistical power analysis did the RAVE Checklist's working group perform to empirically validate that following its fifteen recommendations improves the accuracy of retrospective ADS safety studies?",
+      "absence_note": "The RAVE Checklist is a consensus recommendations paper produced by an expert working group (established via in-person and virtual meetings, per its own Methods section) -- it is not an empirical study, and it does not report any power analysis or other quantitative validation of its own recommendations' effect on study accuracy. The paper does discuss statistical power as a concept researchers should consider when choosing severity outcomes (its 'statistically significant conclusions' / severity-level guidance), but that is advice given to other researchers, not a self-validation of the checklist.",
+      "absence_search": [
+        "chunks.text LIKE '%power analysis%' restricted to paper_id='local:4087ccce4c01' (0 hits)",
+        "chunks.text LIKE '%statistical power%' restricted to the same paper_id (2 hits: local:4087ccce4c01:c20 and :c22, both guidance to future researchers about severity-level statistical power, not a validation of the checklist itself)",
+        "full chunk-by-chunk read of the paper's Methods/Results/Conclusions sections (local:4087ccce4c01:c3/c4/c5/c25) -- describes a working-group consensus process, not an empirical validation study"
+      ],
+      "provenance": "absence established by targeted phrase search over chunks.text restricted to this paper_id, plus a full read of its Methods/Results/Conclusions chunks",
+      "verification": {
+        "source_set": "GT-B",
+        "source_fixture": "waymo_gt_b.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "absence_re_established_by_independent_keyword_search_over_all_chunk_and_block_text",
+          "adversarial_probes_beyond_the_original_search_log_found_no_counterexample"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-WAYB-029",
+      "dimension": "methodological questions",
+      "tests": "absent",
+      "vision_derived": false,
+      "difficulty": "hard",
+      "question_text": "What blinding procedure does Waymo's Fatigue Risk Management Framework paper use to prevent evaluator bias when assessing autonomous specialists' fatigue survey responses?",
+      "absence_note": "This paper is a proposed policy/framework document (prevention, monitoring, and mitigation practices for fatigue risk), not a randomized or blinded empirical study, and it contains no discussion of blinding at all. This is a plausible-sounding methodological question (blinding is a standard concern for survey-based assessments) whose premise -- that a blinding procedure exists in this paper -- is false.",
+      "absence_search": [
+        "chunks.text LIKE '%blind%' / '%blinded%' / '%blinding%' restricted to paper_id='2208.12833' (0 hits for all three)"
+      ],
+      "provenance": "absence established by phrase search over chunks.text restricted to this paper_id; see absence_search",
+      "verification": {
+        "source_set": "GT-B",
+        "source_fixture": "waymo_gt_b.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "absence_re_established_by_independent_keyword_search_over_all_chunk_and_block_text",
+          "adversarial_probes_beyond_the_original_search_log_found_no_counterexample"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-WAYB-030",
+      "dimension": "negation and scope",
+      "tests": "answerable",
+      "vision_derived": false,
+      "difficulty": "medium",
+      "question_text": "In the context of a teleoperation system used to execute a minimal risk maneuver as a fallback for an ADS, what does this paper say is happening when the vehicle is genuinely outside the ADS's operational design domain (ODD), such as at a construction zone, and why does the ADS alone not suffice there?",
+      "answer_text": "The paper explains that when the vehicle is really outside the ADS's ODD, the ODD is being extended by the teleoperation function, and the ADS cannot drive through that operational domain on its own -- teleoperation is being used precisely because everything the ADS itself cannot do in that domain becomes possible only via the teleoperation function.",
+      "source_paper_id": "2605.29818",
+      "source_paper_title": "Teleoperation Operational Design Domain based on Minimal Risk Maneuver Capability",
+      "section_path": "2) Outside the ODD of the ADS?",
+      "passage_excerpt": "However, it must also be clear that the vehicle is really outside the ODD of the ADS, because the ODD is being extended and the ADS cannot drive through the current operational domain on its own.",
+      "gold_chunk_id": "2605.29818:c30",
+      "gold_block_id": "2605.29818:b146",
+      "provenance": "verified programmatically: passage_excerpt is a substring of chunks.text for gold_chunk_id",
+      "verification": {
+        "source_set": "GT-B",
+        "source_fixture": "waymo_gt_b.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-WAYB-031",
+      "dimension": "negation and scope",
+      "tests": "answerable",
+      "vision_derived": false,
+      "difficulty": "medium",
+      "question_text": "Across the 11 crash-type groups examined in the 56.7-million-mile Waymo rider-only crash-type study, was there any crash type where the ADS showed a statistically significant disbenefit (a higher rate than the human benchmark)?",
+      "answer_text": "No. There was no statistically significant disbenefit found in any of the 11 crash type groups.",
+      "source_paper_id": "local:6b9ccd0431f6",
+      "source_paper_title": "Comparison of Waymo Rider-Only Crash Rates by Crash Type to Human Benchmarks at 56.7 Million Miles",
+      "section_path": "Results:",
+      "passage_excerpt": "There was no statistically significant disbenefit found in any of the 11 crash type groups.",
+      "gold_chunk_id": "local:6b9ccd0431f6:c4",
+      "gold_block_id": "local:6b9ccd0431f6:b9",
+      "provenance": "verified programmatically: passage_excerpt is a substring of chunks.text for gold_chunk_id",
+      "verification": {
+        "source_set": "GT-B",
+        "source_fixture": "waymo_gt_b.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-WAYB-032",
+      "dimension": "negation and scope",
+      "tests": "answerable",
+      "vision_derived": false,
+      "difficulty": "medium",
+      "question_text": "Did Kusano et al.'s earlier 7.1-million-mile Waymo rider-only crash study perform a crash-type-specific breakdown of its results? If not, why not, according to the later 56.7-million-mile study that extends it?",
+      "answer_text": "No -- the 56.7-million-mile study describes itself as an extension of Kusano et al. (2024)'s overall crash-rate study, which performed a retrospective analysis in San Francisco and Phoenix over 7.1 million RO miles but did NOT perform a crash-type analysis, due to limited miles (insufficient statistical power at that mileage to break results out by crash type).",
+      "source_paper_id": "local:6b9ccd0431f6",
+      "source_paper_title": "Comparison of Waymo Rider-Only Crash Rates by Crash Type to Human Benchmarks at 56.7 Million Miles",
+      "section_path": "Comparisons to Prior Studies",
+      "passage_excerpt": "The current study is an extension of Kusano et al (2024), who performed a retrospective study of the Waymo Driver’s overall crash rate in San Francisco and Phoenix over 7.1 million RO miles, but did not perform a crash type analysis due to limited miles.",
+      "gold_chunk_id": "local:6b9ccd0431f6:c37",
+      "gold_block_id": "local:6b9ccd0431f6:b162",
+      "provenance": "verified programmatically: passage_excerpt is a substring of chunks.text for gold_chunk_id",
+      "verification": {
+        "source_set": "GT-B",
+        "source_fixture": "waymo_gt_b.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-WAYB-033",
+      "dimension": "negation and scope",
+      "tests": "answerable",
+      "vision_derived": false,
+      "difficulty": "easy",
+      "question_text": "Did the 56.7-million-mile Waymo rider-only crash-type study exclude vulnerable-road-user crash types (e.g. involving cyclists or pedestrians) from its crash-type breakdown, or were they tracked as their own categories?",
+      "answer_text": "They were tracked as their own categories, not excluded. The study explicitly reports that Cyclist, Motorcycle, Pedestrian, Secondary Crash, and Single Vehicle crashes were among the crash types statistically reduced for the Any-Injury-Reported outcome.",
+      "source_paper_id": "local:6b9ccd0431f6",
+      "source_paper_title": "Comparison of Waymo Rider-Only Crash Rates by Crash Type to Human Benchmarks at 56.7 Million Miles",
+      "section_path": "Results:",
+      "passage_excerpt": "Cyclist, Motorcycle, Pedestrian, Secondary Crash, and Single Vehicle crashes were also statistically reduced for the Any-Injury-Reported outcome.",
+      "gold_chunk_id": "local:6b9ccd0431f6:c4",
+      "gold_block_id": "local:6b9ccd0431f6:b9",
+      "provenance": "verified programmatically: passage_excerpt is a substring of chunks.text for gold_chunk_id",
+      "verification": {
+        "source_set": "GT-B",
+        "source_fixture": "waymo_gt_b.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-WAYB-034",
+      "dimension": "negation and scope",
+      "tests": "absent",
+      "vision_derived": false,
+      "difficulty": "medium",
+      "question_text": "Which paper in this corpus reports Zoox's own crashes-per-million-mile safety performance figure from a dedicated Zoox safety study?",
+      "absence_note": "Zoox appears in this corpus only as one of several companies named in a third-party aggregate comparison (2403.14648, which pools DMV/CPUC-reported mileage and crash data across Waymo, Cruise, Lyft, and Zoox) -- there is no paper in the corpus, Waymo-authored or otherwise, that presents a dedicated, Zoox-specific crash-rate benchmark study analogous to Waymo's 7.1M/25.3M/56.7M-mile self-studies. This is a plausible in-domain question (the corpus is full of exactly this kind of company-specific benchmark paper for Waymo) whose premise -- that an equivalent Zoox-specific paper exists -- is false.",
+      "absence_search": [
+        "papers.title LIKE '%Zoox%' (0 hits)",
+        "chunks.text LIKE '%Zoox%' (11 hits across the whole corpus); manual review shows all 11 are passing mentions of Zoox as one of several companies in aggregate comparison tables/text (chiefly 2403.14648), none is itself a Zoox-dedicated safety-performance study"
+      ],
+      "provenance": "absence established by title search and full-text keyword search over papers.db; see absence_search",
+      "verification": {
+        "source_set": "GT-B",
+        "source_fixture": "waymo_gt_b.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "absence_re_established_by_independent_keyword_search_over_all_chunk_and_block_text",
+          "adversarial_probes_beyond_the_original_search_log_found_no_counterexample"
+        ],
+        "notes": [
+          "Absence verdict confirmed: 0 title hits; 11 Zoox chunk mentions across 10 papers (matching the recorded count), all passing mentions -- aggregate comparisons, a disengagement-rate remark citing Zoox's own historical claim, incident anecdotes, and one Zoox-authored validation-methodology paper (2411.03328). None is a dedicated Zoox crashes-per-million-mile safety-performance study."
+        ]
+      }
+    },
+    {
+      "question_id": "Q-WAYB-035",
+      "dimension": "negation and scope",
+      "tests": "absent",
+      "vision_derived": false,
+      "difficulty": "hard",
+      "question_text": "Using the same underreporting-adjusted police-reported human benchmark rate (the Blincoe-adjusted rate) that Waymo's 7.1-million-mile rider-only crash study used, what crash-rate reduction did Cruise achieve when evaluated against that identical benchmark?",
+      "absence_note": "Waymo's 7.1-million-mile and 25.3-million-mile self-studies compare Waymo's own rider-only data to human benchmarks (including a Blincoe et al.-adjusted police-reported rate); neither paper computes or reports an equivalent figure for Cruise against that same benchmark. The only paper in this corpus that discusses Cruise's own crash rate (2403.14648) uses a different benchmark methodology entirely (raw DMV/CPUC mileage and crash counts, compared to Uber TNC human driving in San Francisco), not the Blincoe-adjusted police-reported rate. No paper cross-applies Waymo's specific benchmark methodology to Cruise's data.",
+      "absence_search": [
+        "chunks.text LIKE '%Cruise%' restricted to paper_id IN ('2312.12675','local:6b9ccd0431f6','local:f6f1461f2c9a') (2 hits total, both in 2312.12675:c11 and local:f6f1461f2c9a:c4 -- both are literature-review-style mentions of prior benchmark methodology discussions, not a Cruise-specific reduction figure computed against Waymo's benchmark)",
+        "full read of 2403.14648 (the only paper in the corpus computing an actual Cruise crash-rate figure) confirms it uses DMV/CPUC raw mileage and Uber TNC comparison data, not the Blincoe-adjusted police-reported benchmark used in Waymo's own 7.1M/25.3M-mile papers"
+      ],
+      "provenance": "absence established by keyword search over chunks.text restricted to the three Waymo self-authored crash-rate papers, plus a full read of 2403.14648's methodology; see absence_search",
+      "verification": {
+        "source_set": "GT-B",
+        "source_fixture": "waymo_gt_b.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "absence_re_established_by_independent_keyword_search_over_all_chunk_and_block_text",
+          "adversarial_probes_beyond_the_original_search_log_found_no_counterexample"
+        ],
+        "notes": [
+          "Absence verdict confirmed, but it is a near miss worth flagging: 2312.12675:c11 does report a Cruise-specific reduction (Zhang 2023: 65%, any-property-damage-or-injury, first 1M Cruise RO miles) -- however it was computed against the Flannagan et al. (2023) ride-hailing NDS benchmark, NOT the Blincoe-adjusted police-reported rate the question names, so the question as asked remains unanswerable from this corpus."
+        ]
+      }
+    },
+    {
+      "question_id": "Q-WAYB-036",
+      "dimension": "temporal/versioned claims",
+      "tests": "answerable",
+      "vision_derived": false,
+      "difficulty": "hard",
+      "question_text": "Waymo's rider-only crash-rate research program has published results at multiple mileage milestones. How did the reported Police-Reported and Any-Injury-Reported crash-rate reduction percentages (and their confidence intervals) change between the earlier 7.1-million-mile study and the later 56.7-million-mile study, according to the later study's own comparison?",
+      "answer_text": "Kusano et al. (2024), the 7.1-million-mile study, found a 55% reduction in Police-Reported crashes (22% to 77% 95% CI) and an 80% reduction in Any-Injury-Reported crashes (44% to 96% 95% CI), all locations combined. The later 56.7-million-mile study found a 65% reduction in Police-Reported (57% to 72% 95% CI) and a 79% reduction in Any-Injury-Reported (72% to 86% 95% CI) outcomes -- a similar magnitude of effect but with substantially tighter confidence intervals at the larger mileage.",
+      "source_paper_id": "local:6b9ccd0431f6",
+      "source_paper_title": "Comparison of Waymo Rider-Only Crash Rates by Crash Type to Human Benchmarks at 56.7 Million Miles",
+      "section_path": "Comparisons to Prior Studies",
+      "passage_excerpt": "Kusano et al (2024) found a statistically significant reduction in Police-Reported (55% reduction, 22% to 77% 95% confidence interval) and Any-Injury-Reported (80% reduction, 44% to 96% 95% confidence interval) in all locations combined. The current study found a 65% reduction in Police-Reported (57% to 72% 95% confidence interval) and a 79% reduction in Any-Injury-Reported (72% to 86% 95% confidence interval) outcomes, which is a similar magnitude with tighter confidence intervals compared to the previous study.",
+      "gold_chunk_id": "local:6b9ccd0431f6:c37",
+      "gold_block_id": "local:6b9ccd0431f6:b162",
+      "provenance": "verified programmatically: passage_excerpt is a substring of chunks.text for gold_chunk_id",
+      "verification": {
+        "source_set": "GT-B",
+        "source_fixture": "waymo_gt_b.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-WAYB-037",
+      "dimension": "temporal/versioned claims",
+      "tests": "answerable",
+      "vision_derived": false,
+      "difficulty": "medium",
+      "question_text": "How does Waymo's 25.3-million-mile insurance-claims study describe its own result relative to an earlier, smaller-mileage predecessor study by the same research program?",
+      "answer_text": "It describes its result as 'a substantial safety improvement' over the team's previous 3.8-million-mile study, framing the new 25.3-million-mile analysis as both updating the earlier findings with expanded geographical coverage and increased mileage, and validating ADS safety impact at greater scale.",
+      "source_paper_id": "local:f6f1461f2c9a",
+      "source_paper_title": "Do Autonomous Vehicles Outperform Latest-Generation Human-Driven Vehicles? A Comparison to Waymo's Auto Liability Insurance Claims at 25 Million Miles",
+      "section_path": "Abstract",
+      "passage_excerpt": "This substantial safety improvement<sup>1</sup> over our previous 3.8-million-mile study not only validates ADS safety at scale but also",
+      "gold_chunk_id": "local:f6f1461f2c9a:c1",
+      "gold_block_id": "local:f6f1461f2c9a:b7",
+      "provenance": "verified programmatically: passage_excerpt is a substring of chunks.text for gold_chunk_id",
+      "verification": {
+        "source_set": "GT-B",
+        "source_fixture": "waymo_gt_b.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-WAYB-038",
+      "dimension": "temporal/versioned claims",
+      "tests": "answerable",
+      "vision_derived": false,
+      "difficulty": "easy",
+      "question_text": "How does 'From Stoplights to On-Ramps' describe its own methodological scope relative to prior ADS crash-rate benchmark work?",
+      "answer_text": "It describes itself as extending prior benchmarks that were focused only on surface streets, additionally capturing freeway crash risk for future ADS safety-performance assessments.",
+      "source_paper_id": "2508.19425",
+      "source_paper_title": "From Stoplights to On-Ramps: A Comprehensive Set of Crash Rate Benchmarks for Freeway and Surface Street ADS Evaluation",
+      "section_path": "Abstract",
+      "passage_excerpt": "The purpose of this study was to extend prior benchmarks focused only on surface streets to additionally capture freeway crash risk for future ADS safety performance assessments.",
+      "gold_chunk_id": "2508.19425:c1",
+      "gold_block_id": "2508.19425:b4",
+      "provenance": "verified programmatically: passage_excerpt is a substring of chunks.text for gold_chunk_id",
+      "verification": {
+        "source_set": "GT-B",
+        "source_fixture": "waymo_gt_b.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-WAYB-039",
+      "dimension": "temporal/versioned claims",
+      "tests": "absent",
+      "vision_derived": false,
+      "difficulty": "medium",
+      "question_text": "What crash-rate reduction figures did Waymo report in a rider-only crash-rate study at the 100-million-mile milestone?",
+      "absence_note": "Waymo's rider-only crash-rate research program in this corpus has published results at 7.1 million miles (2312.12675), 25.3 million miles for the insurance-claims variant (local:f6f1461f2c9a), and 56.7 million miles (local:6b9ccd0431f6, the most recent/largest of the series, through end of January 2025) -- there is no 100-million-mile report in this corpus. This is a plausible extrapolation (the series clearly grows over time) but no such milestone report exists here.",
+      "absence_search": [
+        "chunks.text LIKE '%100 million miles%' / '%100.0 million%' / '%100-million-mile%' across the whole corpus -- hits found are all in unrelated papers (a 2016-era formal-verification paper's passing remark that 'driverless tests from Waymo and Tesla range around 100 million miles' at time of writing, a fatal-crash-rate-per-100-million-miles national statistic, and an accelerated-evaluation paper's rhetorical illustration) -- none is a Waymo rider-only crash-rate report at that mileage",
+        "confirmed the three Waymo RO crash-rate self-studies in the corpus cap out at 56.7 million miles (through end of January 2025), the largest mileage figure found in any of their abstracts"
+      ],
+      "provenance": "absence established by phrase search over chunks.text across the whole corpus; see absence_search",
+      "verification": {
+        "source_set": "GT-B",
+        "source_fixture": "waymo_gt_b.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "absence_re_established_by_independent_keyword_search_over_all_chunk_and_block_text",
+          "adversarial_probes_beyond_the_original_search_log_found_no_counterexample"
+        ],
+        "notes": [
+          "Absence verdict confirmed, but the recorded search log is incomplete: it missed the strongest 100-million-mile hit in the corpus, 2507.17943:c2 ('quickly reached 100 million miles in July 2025'), which the parallel GT-A set uses for its timeline item Q-GTA-015. Adjudication: that is a cited mileage-milestone mention inside a brake-onset paper, not a rider-only crash-rate study at 100M miles reporting reduction figures, so this absence still stands under its precise wording."
+        ]
+      }
+    },
+    {
+      "question_id": "Q-WAYB-040",
+      "dimension": "numeric/quantitative claims",
+      "tests": "answerable",
+      "vision_derived": false,
+      "difficulty": "easy",
+      "question_text": "RSN's single-frame car detector (CarS 1f) is compared to baseline LiDAR 3D detectors on the Waymo Open Dataset. How much more computationally efficient does the paper claim it is, while still improving accuracy over single-stage baselines?",
+      "answer_text": "At least 3x more efficient than the baselines, while still being more accurate than all single-stage methods.",
+      "source_paper_id": "2106.13365",
+      "source_paper_title": "RSN: Range Sparse Net for Efficient, Accurate LiDAR 3D Object Detection",
+      "section_path": "4. Experiments > 4.4. Results",
+      "passage_excerpt": "Table 1 shows that our single frame model CarS 1f is at least 3x more efficient than the baselines while still being more accurate than all single stage methods.",
+      "gold_chunk_id": "2106.13365:c16",
+      "gold_block_id": "2106.13365:b65",
+      "provenance": "verified programmatically: passage_excerpt is a substring of chunks.text for gold_chunk_id",
+      "verification": {
+        "source_set": "GT-B",
+        "source_fixture": "waymo_gt_b.json",
+        "verified_at": "2026-08-22",
+        "checks": [
+          "paper_exists_and_recorded_title_matches_corpus",
+          "gold_chunk_id_resolves_and_belongs_to_cited_paper",
+          "chunk_anchor_block_id_matches_gold_block_id",
+          "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
+          "section_path_matches_chunk_section_path",
+          "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ]
+      }
+    }
+  ]
+}
