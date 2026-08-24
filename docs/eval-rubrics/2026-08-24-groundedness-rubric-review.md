@@ -100,3 +100,73 @@ defense has a naming problem.
 **Verdict: partially.** It cleanly measures claim-content traceability to the supplied evidence
 set — a coherent and useful construct — but the name promises more (reasoning, sources) than the
 procedure tests (claims, excerpts).
+
+## Q3. What does it systematically over- or under-penalise?
+
+**Over-penalises:**
+
+1. **Richer answers against thin excerpts — intended mechanism, undeclared consequence.** The
+   judgments are excerpt-relative by design: `unsupported` is defined as "no passage addresses
+   this claim closely enough to ground it, *even if the claim happens to be true in general*."
+   The run confirms this fired deliberately, not by accident: several spot-checked `unsupported`
+   claims were "specific numbers genuinely absent from the supplied excerpt even though the
+   excerpt correctly supports the surrounding claim," which the report rules "the rubric working
+   as designed." So for the known case — an answer richer than its single cited excerpt scoring
+   unsupported even when the extra detail is true and appears elsewhere in the same paper — the
+   mechanism is intended calibration. What looks like an accident is the silence around its
+   consequence: nowhere does the wording acknowledge that retrieval shortfall converts into
+   `unsupported` mass, folding "the answer drew on material its excerpt lacked" and "the model
+   invented something" into one bucket. The sibling rubric explicitly refuses that conflation
+   ("This is not an accusation of fabrication — it may be a true fact the answer imported from
+   outside the passages"); groundedness inherits the verdict label but not the disclaimer.
+   Deliberate mechanism, unmanaged meaning: the rubric's most likely misreading is undefended in
+   its own text.
+2. **Compound claims over-penalise their grounded half.** With decomposition granularity wobbling
+   (Q1 locus 3), one ungrounded detail drags a jointly-extracted claim to `unsupported` wholesale.
+   Observed twice in the nine spot-checks (Q-GTA-004, Q-GTA-007) — systematic, and traceable to
+   wording rather than judge caprice.
+3. **Strength asymmetry is unspecified — variance more than bias.** The calibration examples all
+   run passage-weaker-than-answer (hedge→assertion, range→extreme). The reverse case — the
+   passage asserts outright, the answer hedges prudently — is uncovered: a strict reader can call
+   it a framing mismatch (`unsupported`); a sensible one says the passage entails the answer
+   (`supported`). This is precisely the kind of case two careful humans split on.
+
+**Under-penalises:**
+
+4. **Cross-claim inference errors escape** (Q2a): an answer can be wrong in the join between its
+   individually-grounded claims and still score clean.
+5. **Contradictions can escape via single-passage anchoring.** Nothing obliges the judge to
+   examine every supplied passage before concluding absence, and the `contradicted` definition
+   lacks any subject-scope requirement — so both false contradictions (wrong-passage comparison,
+   observed once at Q-GTA-021) and missed ones are live failure modes. The report's own caution
+   applies: the 0.5% contradicted rate "can be too low (a real contradiction reported as none) as
+   much as it can be too high."
+
+## Q4. Multi-passage attribution
+
+What the rubric says about multiple passages, exhaustively: the task setup's "one or more
+PASSAGES," and the output shape's requirement that each rationale "names the specific passage text
+the verdict rests on." That is all. There is no instruction to attribute a claim to the passage it
+is actually about, none to examine every supplied passage before concluding that none addresses a
+claim, no rule scoping what counts as a conflict when passages describe different things, and no
+precedence rule for mixed evidence.
+
+**Rubric gap or judge gap? Primarily a rubric gap, expressed through the judge.** The mechanism is
+stated in the rubric's own second paragraph: "`app/judge_eval.py` passes this file's text to
+whatever `Judge` it is given, unmodified... Edit it here, not in Python, to change what 'grounded'
+means for this measurement." The rubric file *is* the behavioral contract for judging; anything it
+omits is delegated to model default. Attribution across several supplied passages is a decision
+the judge must make on every multi-passage item, so leaving it unspecified guarantees default-driven
+behavior — which is exactly what the run observed: the sole `contradicted` verdict compared a claim
+"explicitly about the original paper" against the later SWFormer passage and called it contradicted,
+when the original-paper passage stated the claim verbatim. Calling that "a judge gap" would excuse
+the very control surface this system designates as owning judging behavior. (A complementary
+code-side mitigation exists outside this file — e.g., the harness verifying that a rationale's
+quoted text appears in some supplied passage — but that is Python, and this architecture
+deliberately puts meaning in the rubric.)
+
+One further point the fix must respect: correct attribution alone would not have saved Q-GTA-021.
+The two supplied passages legitimately state *different* splits — different papers describing their
+own dataset versions — so a naive any-conflict reading fires even with both passages in view. A
+conflict needs a subject-scope test, not just correct attribution; the two amendments have to land
+together.
