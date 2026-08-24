@@ -597,3 +597,31 @@ contracts/ diff, no T-F7). Review plan with the fuller design fork (method taxon
 layer): `docs/superpowers/plans/2026-08-23-mcp-review-plan.md`. Live-verified against the Waymo
 corpus: 8/8 method queries surface their known gold papers (NIEON → the CAT pair; GIDAS → the
 GIDAS trio; active inference → all four active-inference papers; …).
+
+### Operator tuning decision, 2026-08-24 — `hybrid_dense_weight` 0.5 → 0.7
+
+`waymo/data/config.yaml` is gitignored, so this change lives only on disk. Recorded here because an
+untracked operational change with no record is how a measured decision quietly becomes folklore.
+
+**Decision (operator):** optimise for the Waymo **safety/research priority corpus** (`gt_wmr.json`,
+the waymo.com/safety/research papers) until another corpus is benchmarked.
+
+**Basis** — FUSE-1's sweep, raw runs under `docs/eval-reports/2026-08-24-fuse1-sweep-*.json`:
+
+| w | GT-WMR R@10 | GT-WMR block-P@1 | verified-84 R@10 |
+|---|---|---|---|
+| 0.5 (was) | not swept | not swept | 0.8971 ✗ below bar |
+| **0.7 (now)** | **0.9714** | **0.7273** | 0.9559 ✓ |
+| 0.8 | 0.9571 | 0.6970 | 0.9706 ✓ |
+| 1.0 | 0.9571 | 0.6970 | 0.9706 ✓ |
+
+0.7 is the best measured value for the priority corpus on **both** metrics, and still clears the
+≥0.95 recall bar on the full Waymo corpus. Verified live after the change: paper-level
+Recall@10 = 0.971, MRR = 0.939 (n=70), with the run's own scoring line confirming
+`hybrid_dense_weight=0.7`.
+
+**Open caveat:** the priority-set sweep only covered w = 0.7–1.0. **0.7 was the lowest point tested
+and it won**, so the optimum may lie below it. Sweep 0.0–0.6 on `gt_wmr.json` before treating 0.7 as
+settled.
+
+**Rollback:** `waymo/data/config.yaml.bak-w0.5-20260824T122256`.
