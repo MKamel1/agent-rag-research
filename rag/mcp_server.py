@@ -21,7 +21,7 @@ from contracts.mcp_server import (
     ScanResponse,
     SearchResponse,
 )
-from contracts.provenance import Anchor
+from contracts.provenance import Anchor, Block
 from contracts.retriever import Citation, RetrievalCoverage
 from contracts.vector_index import SearchFilters
 from rag.method_aliases import build_method_regex, list_methods as _list_method_families, resolve_method
@@ -262,6 +262,43 @@ class McpServer:
         callers (what can be asked about), not evidence — the enumeration itself is
         `scan_methods`."""
         return _list_method_families()
+
+    def get_figures(self, paper_id: str, kind: str = "all") -> list[dict]:
+        """The figures and/or tables stored for one paper -- the structured artifact surface that
+        pairs with `get_section` for reading a paper and with `scan_methods` for finding one.
+
+        Returns plain dicts ordered by page (keys documented in
+        `DocumentStore.get_artifacts`): figures carry `{kind, id, page, caption, image_path,
+        bbox}`; tables carry `{kind, id, page, caption, markdown, bbox}`. `kind` selects
+        `"figure"`, `"table"`, or `"all"` (default). A typed envelope for these is a deferred
+        contracts/ (T-F7) change; until then the dicts are the interface, documented here and in
+        the store. Raises `ContractError` for an unknown `paper_id` -- a typo should error, not
+        silently return an empty list. `caption` can be empty (parsing does not always recover
+        one); `markdown` on tables is the extracted table text, which is what makes a table's
+        CONTENT answerable without vision."""
+        if self._document_store.get(paper_id) is None:
+            raise ContractError(f"get_figures: unknown paper_id {paper_id!r}")
+        return self._document_store.get_artifacts(paper_id, kind)
+
+    def get_section(self, paper_id: str, section_path: str) -> list[Block]:
+        """One section of a paper, as its blocks in reading order -- linear reading over MCP.
+
+        `get_paper` lists a paper's `section_paths`; this fetches the blocks under one of them
+        (exact match on `Block.section_path`). Returns `[]` for a known paper with no blocks under
+        that path (parsing does not always recover headings -- see `scan_corpus`'s note on `""`
+        section paths); raises `ContractError` for an unknown `paper_id`. Blocks are the same
+        frozen provenance type `get_span` resolves, so any block here can be cited."""
+        if self._document_store.get(paper_id) is None:
+            raise ContractError(f"get_section: unknown paper_id {paper_id!r}")
+        return [b for b in self._document_store.get_blocks(paper_id) if b.section_path == section_path]
+
+    def corpus_stats(self) -> dict:
+        """Corpus-level aggregates for query calibration: paper/block/chunk/figure/table counts,
+        published-date range, doc_type histogram, top categories. Use before searching -- knowing
+        the corpus is 1,738 AV-safety papers (not 12,390 causal-methods ones) changes how a
+        caller scopes everything else. Plain dict; keys documented in
+        `DocumentStore.corpus_stats`."""
+        return self._document_store.corpus_stats()
 
     def get_paper(self, paper_id: str) -> PaperSummaryView:
         """Precondition: `paper_id` is a stored paper; else `ContractError`. Postcondition:

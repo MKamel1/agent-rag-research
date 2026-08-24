@@ -107,6 +107,12 @@ Tickets are grouped into workstreams by file ownership so concurrent work cannot
 | RI-M6 | Groundedness harness | I | **DONE** -- `637b60c` | Rubric is PROVISIONAL -- needs operator sign-off before any output is treated as a baseline. |
 
 | GT-WMR | Waymo-priority ≥95% benchmark: protocol frozen, GT built, baseline measured | **BASELINE MEASURED** -- see `docs/eval-reports/2026-08-23-waymo-priority-baseline.md` | Protocol `4e14d7b`; GT-WMR fixture + invariants; verified-set v2 (84 items, dedup); RI-32 full backfill complete and corpus verified byte-identical. Gates A-D results in the baseline report; any gate miss becomes ranked work judged against those frozen numbers. |
+
+| MCP-E1 | Find-similar papers over MCP ("more like this paper": embed summary, nearest neighbours) | **OPEN** | Deferred from the 2026-08-23 MCP capability review (rank 3). Exa-style find-similar; cheap with the existing embedder; high literature-discovery value. |
+| MCP-E2 | Citation-graph traversal over MCP (what does X build on / who builds on it) | **OPEN -- feasibility check first** | Deferred (rank 4). GROBID resolved references at parse time -- first verify what references data the store actually holds; OpenEvidence-style differentiator if present. |
+| MCP-E3 | Token-lean search mode (snippet + highlighted span by default; full text via get_span) | **OPEN** | Deferred (rank 5). Aligns with best practice (Apple RAG MCP's token economy); GroundedResult currently carries full chunk text every call. |
+| MCP-E4 | Method taxonomy table + argument layer (per-method rationale & pro/anti quotes with anchors) | **OPEN -- T-F7 gated** | Deferred (rank 7 = plan options D+E). New migration + contracts shapes; eval set (rationale/stance items) must be frozen first per the review plan; V0 boundary: anchored quotes, never verdicts. |
+| MCP-E5 | Abstention / relevance floor | **OPEN -- blocked on RI-M7** | Deferred (rank 8). 2026-08-23 baseline reconfirmed answerable/absent score distributions do not separate on both fixtures; any threshold is a guess. Revisit only with a mechanism that separates them. |
 | RI-M7 | Score-distribution census | G | **DONE** -- `033565b`, `19afe05` | Settles whether a relevance floor is choosable. Verdict carries its own upper-bound caveat. |
 | RI-17 | Prefetch logs carry no timestamps | - | **DONE** -- `adc101e` | Starts the clock; the existing archive stays unmeasurable. |
 
