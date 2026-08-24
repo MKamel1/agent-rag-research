@@ -152,13 +152,16 @@ class AnswerGenerator:
     Acquires `gpu_lock.acquire("generate")` around the inference call only (CONVENTIONS.md §6).
     """
 
-    def __init__(self, client: httpx.Client, gpu_lock: GpuLock, model: str):
+    def __init__(
+        self, client: httpx.Client, gpu_lock: GpuLock, model: str, prompt: str = GENERATION_PROMPT,
+    ):
         self._client = client
         self._gpu_lock = gpu_lock
         self._model = model
+        self._prompt = prompt
 
     def __call__(self, question_text: str, passages: tuple[tuple[str, str], ...]) -> str:
-        prompt = GENERATION_PROMPT.format(
+        prompt = self._prompt.format(
             question=question_text, passages=_format_passages(passages)
         )
         with self._gpu_lock.acquire("generate"):
@@ -253,6 +256,13 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--retrieval-k", type=int, default=_DEFAULT_RETRIEVAL_K)
     parser.add_argument("--limit", type=int, default=None, help="capture only the first N items")
     parser.add_argument("--output", required=True, help="path to write the captured run JSON")
+    parser.add_argument(
+        "--prompt-file", default=None,
+        help="path to a text file containing an alternative generation prompt template (must "
+             "contain the same {question}/{passages} placeholders as GENERATION_PROMPT). Omit to "
+             "use GENERATION_PROMPT, this module's byte-identical default -- for a controlled A/B "
+             "against a captured run, only this flag should differ between the two invocations.",
+    )
     return parser.parse_args()
 
 
@@ -277,10 +287,12 @@ def main() -> None:
     if args.limit is not None:
         questions = questions[: args.limit]
 
+    prompt = Path(args.prompt_file).read_text() if args.prompt_file else GENERATION_PROMPT
     generator = AnswerGenerator(
         httpx.Client(base_url=_GENERATION_LLM_URL, timeout=300.0),
         FileGpuLock(Path(config.gpu_lock_path)),
         _GENERATION_MODEL,
+        prompt,
     )
     records = capture_run(questions, server.retriever, generator, args.retrieval_k)
 
@@ -295,7 +307,8 @@ def main() -> None:
             "retrieval_k": args.retrieval_k,
             "generation_k": _GENERATION_K,
             "generation_model": _GENERATION_MODEL,
-            "generation_prompt": GENERATION_PROMPT,
+            "generation_prompt": prompt,
+            "prompt_file": args.prompt_file,
         },
         "ground_truth": records,
     }

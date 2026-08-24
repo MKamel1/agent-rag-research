@@ -173,6 +173,41 @@ def test_call_formats_prompt_with_question_and_numbered_passages():
     assert GENERATION_PROMPT.split("\n\n")[0] in prompt  # the instruction line survived formatting
 
 
+def test_call_uses_the_default_generation_prompt_when_none_is_given():
+    captured = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured["body"] = json.loads(request.content)
+        return _ok_handler_returning("ok")(request)
+
+    gen = AnswerGenerator(_client(handler), FakeGpuLock(), "m")
+    gen("q", (("p1", "text"),))
+
+    assert captured["body"]["prompt"] == GENERATION_PROMPT.format(
+        question="q", passages="[1] text"
+    )
+
+
+def test_call_uses_a_custom_prompt_template_when_one_is_supplied():
+    captured = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured["body"] = json.loads(request.content)
+        return _ok_handler_returning("ok")(request)
+
+    custom_prompt = (
+        "QUESTION:\n{question}\n\nPASSAGES:\n{passages}\n\n"
+        "If the PASSAGES do not contain the information needed, say so plainly instead of "
+        "answering."
+    )
+    gen = AnswerGenerator(_client(handler), FakeGpuLock(), "m", custom_prompt)
+    gen("q", (("p1", "text"),))
+
+    prompt = captured["body"]["prompt"]
+    assert "say so plainly instead of answering" in prompt
+    assert prompt != GENERATION_PROMPT.format(question="q", passages="[1] text")
+
+
 def test_call_acquires_the_gpu_lock_with_the_generate_stage_label():
     lock = FakeGpuLock()
     gen = AnswerGenerator(_client(_ok_handler_returning("ok")), lock, "m")
