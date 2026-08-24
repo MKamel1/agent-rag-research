@@ -276,12 +276,33 @@ the reasoning class it should serve has them at 31–39.5%).
 
 ---
 
-## 8. What is still open
+## 8. What is still open — refreshed 2026-08-24
 
-| item | why it is open | closes when |
+Everything the 2026-08-23 version of this section listed as open has since closed. What replaced it
+is a shorter list, and three of the items are **operator decisions rather than work**.
+
+### Decisions only you can make
+
+| decision | why it is blocking | what it costs to leave open |
 |---|---|---|
-| dimension vocabulary + `question_type` | two authors, two labels per category; 40 nulls | normalised, closed-set invariant test added — *in flight* |
-| vision arm evaluation | built but never measured | page-proximity numbers reported at n=4, with the denominator stated — *in flight* |
-| groundedness | no Judge implementation, unsigned rubric | rubric signed, judge built, fabrication rate measured |
-| external benchmark | none exists for this corpus | out of scope until the above land; note that no cross-system number is possible without one |
-| causal corpus | Waymo was prioritised by the operator | same backfill tool, `--db` already takes a path; ~12,390 papers at the measured 5.35 s/paper ≈ 18.4 h |
+| **Sign off (or reject) both rubrics** | `groundedness-rubric.md` and `fabrication-audit-rubric.md` both say approval "belongs to a human". Until then no groundedness or fabrication number can be a baseline or a regression gate, by their own terms. | Every rate measured on those axes is provisional and cannot be compared across runs. |
+| **How vision items count in the passage-level denominator** | All 4 vision items are structurally unreachable by text retrieval, so block-level P@1 is **capped at 60/64 = 0.9375**. **The ≥0.95 passage target is arithmetically impossible as currently measured** — not hard, impossible. | Anyone optimising toward 0.95 is chasing a number that cannot be reached. Three ways out: scope the target to text-answerable items, put a VLM in the pipeline, or move the vision items to their own arm. |
+| **Whether to scope a real head-to-head with OpenEvidence** | No shared benchmark exists; three of nine capability rows in §1.6's scorecard have no published figure from them at all. A percentage across those cells would be invented. | The comparative question stays answered only structurally (scorecard + distance-to-your-own-bar), never numerically. |
+
+### Work, ranked by evidence
+
+| item | state | evidence behind it |
+|---|---|---|
+| **Reranking** | not started, **highest value** | ~67% of the passage gap is items sitting at ranks 2–10; 18 of 64 on verified-84 dense. The material is already retrieved. |
+| **Fusion weight** | sweep plumbing committed, sweep running | Fusion *evicts* 7 answer-bearing passages from the top-10 on verified-84 (83.3% → 71.7% pool coverage) and loses 5-0 on paper-level — but *wins* 2-0 on GT-WMR. Fixture-dependent; retune, do not disable. |
+| **The unexplained fixture gap** | **open, and it gates the two above** | 0.400 vs 0.727 passage precision on two sets against the same corpus. Vision items tested and ruled out (+2.5 pp of ~35). Until explained, a target calibrated on one set does not transfer. |
+| Text-retrieval misses | not started | 5 of 64 (8%) where the gold passage never enters the pool at all. |
+| Ground-truth adequacy | assessment running | Correctness is verified; *adequacy* — is it deep, does it test both error directions — has never been assessed. |
+| Fabrication residual | characterised, not fixed | 1 of 16 after a refusal affordance: generic-statement-to-specific-subject attribution (`Q-GTA-037`, "905 nm" from a laser tutorial that never mentions Waymo). No prompt reaches it — the model does not experience it as a gap. |
+| Causal corpus | not started | Same backfill tool, `--db` takes a path. 12,390 papers at the measured 5.35 s/paper ≈ **18.4 h**. |
+
+### The one-line answer to "how far are we"
+
+**For finding the right paper, essentially there. For finding the right passage, about two-thirds of
+the way, with most of the remainder already sitting in the retrieved pool. For knowing when to say
+nothing, not started.**
