@@ -291,6 +291,28 @@ authored). "How far are we" against **that** bar is a real number, per capabilit
 | abstention on known-absent | both fixtures, n=24 | **0 detected** | — (no target set) | cannot abstain at all |
 | wrong-side answers on unanswerable | n=16, with refusal affordance | 1 (0.0625) | — (no target set) | 5 of 6 were prompt artifact |
 
+**One qualification, measured after the table above was written, that changes which fix to buy.**
+The 0.375 block-level figure invites two readings — "the right passage is never retrieved" or "the
+metric is broken." Both are wrong. Recomputed from the committed per-question data
+(`data/2026-08-23-waymo-priority/ver84_dense_only.json`, n=60 answerable items carrying an excerpt),
+resolving every returned chunk's text and asking whether it literally contains the gold excerpt:
+
+| | |
+|---|---|
+| anchor-identity P@1 (the reported "block-level P@1") | 24/60 = **0.400** |
+| gold excerpt **contained** in the rank-1 chunk | 24/60 = **0.400** |
+| gold excerpt **contained anywhere in the top 10** | 50/60 = **0.833** |
+
+The first two are identical, so the metric is not under-crediting: when rank 1 is the right anchor it
+does contain the answer, and when it is not, it does not. The gold blocks being section headings
+(51 of 64 are under 40 characters — `'A BS T R AC T'`, `'Confidence Intervals'`) turns out not to
+distort anything, because the comparison is anchor-to-anchor on both sides.
+
+**The answer-bearing passage is retrieved 83% of the time and ranked first 40% of the time.** That
+is a *ranking* problem, not a retrieval or chunking problem — the material is already in the pool.
+It makes the passage-level gap far cheaper to close than the −57 pp headline implies, and it points
+at the reranker and `rerank_depth: 32` rather than at the embedder or the chunker.
+
 **Read down that column and the answer to "how far are we" is unambiguous, and it is not the answer
 the recall headline suggests:**
 
