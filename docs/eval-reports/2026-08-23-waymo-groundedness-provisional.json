@@ -1,0 +1,432 @@
+{
+  "rubric_path": "docs/eval-rubrics/groundedness-rubric.md",
+  "rubric_sha256_12": "ab502229362f",
+  "n_items": 64,
+  "n_errors": 1,
+  "n_claims": 210,
+  "rates": {
+    "supported": 0.6095238095238096,
+    "unsupported": 0.38571428571428573,
+    "contradicted": 0.004761904761904762
+  },
+  "counts": {
+    "supported": 128,
+    "unsupported": 81,
+    "contradicted": 1
+  },
+  "unsupported_claims": [
+    {
+      "question_id": "Q-GTA-002",
+      "claim": "but the low mileage meant comparisons were not statistically significant",
+      "rationale": "No passage addresses this claim closely enough to ground it, even if the claim happens to be true in general."
+    },
+    {
+      "question_id": "Q-GTA-003",
+      "claim": "for confidence-interval purposes the blended benchmark used 19,002 million VMT",
+      "rationale": "No passage provides the specific number '19,002 million VMT' or any mention of confidence-interval purposes"
+    },
+    {
+      "question_id": "Q-GTA-004",
+      "claim": "Rate-ratio confidence intervals used the Nelson (1970) method based on a Poisson model",
+      "rationale": "The passage does not mention the use of the Nelson (1970) method for rate-ratio confidence intervals or its basis in a Poisson model."
+    },
+    {
+      "question_id": "Q-GTA-004",
+      "claim": "A parametric bootstrap using CRSS survey-design standard errors produced narrower intervals",
+      "rationale": "The passage does not mention the use of CRSS survey-design standard errors in a parametric bootstrap or the resulting interval width."
+    },
+    {
+      "question_id": "Q-GTA-005",
+      "claim": "the 56.7M-mile follow-up found a 65% reduction (95% CI 57% to 72%)",
+      "rationale": "No passage provides information about a 65% reduction in police-reported crashes with a 95% CI of 57% to 72% in the 56.7M-mile follow-up study."
+    },
+    {
+      "question_id": "Q-GTA-005",
+      "claim": "\u2014 a similar point estimate with much tighter confidence intervals",
+      "rationale": "No passage provides information about the comparison of confidence intervals between the 7.1M-mile study and the 56.7M-mile follow-up study."
+    },
+    {
+      "question_id": "Q-GTA-006",
+      "claim": "there was a statistically significant increase in F2R Struck Any-Injury-Reported crashes in Phoenix (+117%, 95% CI 11% to 281%)",
+      "rationale": "The passage only states that there was a statistically significant increase in F2R Struck Any-Injury-Reported crashes in Phoenix, but it does not provide the specific percentage increase or confidence interval mentioned in the answer."
+    },
+    {
+      "question_id": "Q-GTA-006",
+      "claim": "Overall F2R striking fell significantly while struck crashes rose or held steady",
+      "rationale": "The passage does not mention anything about overall F2R striking or whether struck crashes rose or held steady."
+    },
+    {
+      "question_id": "Q-GTA-006",
+      "claim": "overall F2R rates similar in magnitude to the benchmark",
+      "rationale": "The passage does not mention anything about overall F2R rates or a benchmark for comparison."
+    },
+    {
+      "question_id": "Q-GTA-006",
+      "claim": "Yes, one went the other way",
+      "rationale": "The passage does not provide enough information to support or contradict the claim that 'one went the other way' in terms of collision outcomes."
+    },
+    {
+      "question_id": "Q-GTA-007",
+      "claim": "In 100% of Airbag Deployment and 76% of Any-Injury-Reported F2R Struck crashes the vehicle was stopped, at constant speed, or decelerating with traffic; the remaining 24% had braking above 3.5 m/s^2.",
+      "rationale": "No passage addresses this claim closely enough to ground it, even if the claim happens to be true in general."
+    },
+    {
+      "question_id": "Q-GTA-008",
+      "claim": "Di Lillo et al. (2024b) found an 86% reduction in property damage claims and a 90% reduction in bodily injury claims versus latest-generation (model years 2018-2021) human-driven vehicles over 25.3 million rider-only miles.",
+      "rationale": "Passage [2] states that Di Lillo et al. (2024b) found an 86% reduction in property damage claims and a 90% reduction in bodily injury claims, but it does not mention the 25.3 million rider-only miles figure. This specific detail is not supported by the passages."
+    },
+    {
+      "question_id": "Q-GTA-008",
+      "claim": "The 56.7M-mile study notes these are slightly higher than its own crash-rate reductions but not directly comparable, because liability claims are a subset of all crashes where the insured party has some contribution to the cause.",
+      "rationale": "The 56.7M-mile study is not mentioned in the provided passages, and no passage explains why liability claims are not directly comparable to crash-rate reductions."
+    },
+    {
+      "question_id": "Q-GTA-009",
+      "claim": "The authors therefore present Suspected Serious Injury+ as indicative, unlike the more certain Any-Injury-Reported and Airbag Deployment outcomes",
+      "rationale": "No passage addresses this claim closely enough to ground it, even if the claim happens to be true in general."
+    },
+    {
+      "question_id": "Q-GTA-011",
+      "claim": "A power analysis modeling asymptotic normal approximations to a Poisson distribution",
+      "rationale": "The passage mentions that the method targeted 80% statistical power using two-sided tests with \u03b1 = 0.05, but it does not mention anything about asymptotic normal approximations to a Poisson distribution."
+    },
+    {
+      "question_id": "Q-GTA-011",
+      "claim": "Evaluated ADS performance levels were 25%, 50%, 75%, and 90% reductions in crash rates and 25% and 50% increases",
+      "rationale": "The passage does not mention any specific ADS performance levels or the percentages of reductions or increases in crash rates that were evaluated."
+    },
+    {
+      "question_id": "Q-GTA-011",
+      "claim": "Required mileage is inversely proportional to the benchmark crash rate",
+      "rationale": "The passage does not mention anything about the relationship between required mileage and the benchmark crash rate."
+    },
+    {
+      "question_id": "Q-GTA-013",
+      "claim": "there were no collisions in which the Waymo Driver struck a pedestrian or cyclist",
+      "rationale": "The passages do not mention anything about collisions involving the Waymo Driver striking a pedestrian or cyclist."
+    },
+    {
+      "question_id": "Q-GTA-013",
+      "claim": "There were three events (one actual, two simulated) in which the Waymo vehicle was struck by a pedestrian or cyclist while stopped",
+      "rationale": "The passages do not mention anything about the Waymo vehicle being struck by a pedestrian or cyclist while stopped."
+    },
+    {
+      "question_id": "Q-GTA-014",
+      "claim": "There were no actual or predicted S2 or S3 events",
+      "rationale": "There is no passage text that mentions S2 or S3 events or their absence."
+    },
+    {
+      "question_id": "Q-GTA-016",
+      "claim": "collected across six cities within the United States",
+      "rationale": "No passage addresses the number of US cities the collection spans."
+    },
+    {
+      "question_id": "Q-GTA-017",
+      "claim": "Scenes are 9.1 seconds (91 steps at 10 Hz) cut from the 20-second mined segments",
+      "rationale": "No passage addresses this claim closely enough to ground it"
+    },
+    {
+      "question_id": "Q-GTA-017",
+      "claim": "split 70% train / 15% validation / 15% test",
+      "rationale": "No passage addresses this claim closely enough to ground it"
+    },
+    {
+      "question_id": "Q-GTA-017",
+      "claim": "The standard validation/test sets provide up to 8 objects to predict per scene (biased toward objects that do not follow a constant-velocity model or straight paths)",
+      "rationale": "No passage addresses this claim closely enough to ground it"
+    },
+    {
+      "question_id": "Q-GTA-018",
+      "claim": "38.3% of validation scenes require predicting more than one type of agent",
+      "rationale": "No passage addresses this claim closely enough to ground it"
+    },
+    {
+      "question_id": "Q-GTA-018",
+      "claim": "4.9% require trajectories for all three classes",
+      "rationale": "No passage addresses this claim closely enough to ground it"
+    },
+    {
+      "question_id": "Q-GTA-019",
+      "claim": "WOMD-LiDAR contains 100x more scenes than WOD (104k segments, 574 hours)",
+      "rationale": "No passage addresses the number of scenes, segments, or hours in WOMD-LiDAR or WOD."
+    },
+    {
+      "question_id": "Q-GTA-019",
+      "claim": "raw sensor data exceeded 20 TB",
+      "rationale": "No passage mentions the raw sensor data size exceeding 20 TB."
+    },
+    {
+      "question_id": "Q-GTA-021",
+      "claim": "The later SWFormer paper reports the same 1150 scenes as 798 training, 202 validation, and 150 test \u2014 the training/validation partition was re-cut between the two reports while the test set stayed fixed.",
+      "rationale": "There is no passage that explicitly states that the SWFormer paper reports the 798 training, 202 validation, and 150 test split. Passage [1] describes this split, but it is attributed to the original dataset paper, not the later SWFormer paper."
+    },
+    {
+      "question_id": "Q-GTA-022",
+      "claim": "Five LiDAR sensors and five high-resolution pinhole cameras",
+      "rationale": "The passage does not mention the number or type of sensors used to record the original detection dataset."
+    },
+    {
+      "question_id": "Q-GTA-022",
+      "claim": "data for the first two returns of each laser pulse",
+      "rationale": "The passage does not mention anything about data being collected for the first two returns of each laser pulse."
+    },
+    {
+      "question_id": "Q-GTA-023",
+      "claim": "WOSAC requires submissions to be both generative (enabling sampling from an arbitrary traffic simulator-AV policy pair) and closed-loop, formulated as a hidden Markov model over hidden world states and observations",
+      "rationale": "No passage addresses this claim closely enough to ground it"
+    },
+    {
+      "question_id": "Q-GTA-024",
+      "claim": "each with 8 surrounding cameras covering 360 degrees",
+      "rationale": "No passage addresses the number of surrounding cameras or their coverage"
+    },
+    {
+      "question_id": "Q-GTA-024",
+      "claim": "high-level routing information",
+      "rationale": "No passage addresses high-level routing information"
+    },
+    {
+      "question_id": "Q-GTA-024",
+      "claim": "ego states",
+      "rationale": "No passage addresses ego states"
+    },
+    {
+      "question_id": "Q-GTA-024",
+      "claim": "5 s of future trajectory",
+      "rationale": "No passage addresses future trajectory information"
+    },
+    {
+      "question_id": "Q-GTA-025",
+      "claim": "ADE/L2 error only measures distance to a single ground-truth future although driving is multi-modal",
+      "rationale": "The passage does not mention ADE/L2 error or multi-modal driving."
+    },
+    {
+      "question_id": "Q-GTA-025",
+      "claim": "PDMS penalizes off-road even when partially leaving the road is the reasonable emergency response",
+      "rationale": "The passage does not mention PDMS penalizing off-road behavior or reasonable emergency responses."
+    },
+    {
+      "question_id": "Q-GTA-025",
+      "claim": "human raters provide trajectory preference labels",
+      "rationale": "The passage does not mention human raters or trajectory preference labels."
+    },
+    {
+      "question_id": "Q-GTA-025",
+      "claim": "the Rater Feedback Score (RFS) measures how closely a predicted trajectory matches them",
+      "rationale": "The passage does not mention the Rater Feedback Score (RFS) or how it measures predicted trajectory matches."
+    },
+    {
+      "question_id": "Q-GTA-026",
+      "claim": "Dynamic benchmarks re-weight human police-reported crash rates and VMT",
+      "rationale": "The passage mentions that dynamic benchmarks were generated using human police-reported crash data and human VMT data, but it does not mention that they 're-weight' these data sources."
+    },
+    {
+      "question_id": "Q-GTA-026",
+      "claim": "so the human population's driving matches the spatial (S2-cell) and, for San Francisco, time-of-day distribution of the ADS fleet",
+      "rationale": "The passage does not mention anything about re-weighting to match the spatial or time-of-day distribution of the ADS fleet."
+    },
+    {
+      "question_id": "Q-GTA-026",
+      "claim": "the hypothetical human crash rate had humans driven where and when the ADS drives",
+      "rationale": "The passage does not mention anything about a 'hypothetical human crash rate' or about humans driving where and when the ADS drives."
+    },
+    {
+      "question_id": "Q-GTA-026",
+      "claim": "human VMT data (HPMS; SF County Transportation Authority 2016 for time-of-day)",
+      "rationale": "The passage mentions human VMT data but does not specify 'HPMS' or 'SF County Transportation Authority 2016 for time-of-day' as sources."
+    },
+    {
+      "question_id": "Q-GTA-027",
+      "claim": "Depth is unknown to the camera",
+      "rationale": "The passage does not mention anything about depth being unknown to the camera."
+    },
+    {
+      "question_id": "Q-GTA-027",
+      "claim": "Elevation is unknown to (imaging) radar",
+      "rationale": "The passage does not mention anything about elevation being unknown to (imaging) radar."
+    },
+    {
+      "question_id": "Q-GTA-027",
+      "claim": "their perspective-view and bird's-eye-view representations form many-to-many mappings",
+      "rationale": "The passage does not mention anything about perspective-view and bird's-eye-view representations or their mappings."
+    },
+    {
+      "question_id": "Q-GTA-027",
+      "claim": "CramNet resolves the ambiguity with ray-constrained cross-attention in a joint 3D space",
+      "rationale": "The passage does not mention anything about CramNet, ray-constrained cross-attention, or a joint 3D space."
+    },
+    {
+      "question_id": "Q-GTA-028",
+      "claim": "Camera-only detectors estimate depth poorly",
+      "rationale": "The passage does not mention that camera-only detectors estimate depth poorly."
+    },
+    {
+      "question_id": "Q-GTA-028",
+      "claim": "reasonable detections with longitudinal (along-the-line-of-sight) localization errors fail the IoU matching of standard 3D AP and are counted as false positives",
+      "rationale": "The passage does not mention that reasonable detections with longitudinal localization errors fail the IoU matching of standard 3D AP and are counted as false positives."
+    },
+    {
+      "question_id": "Q-GTA-028",
+      "claim": "LET-3D-AP shifts predictions along the line of sight within a tolerance (a percentage of camera-object distance)",
+      "rationale": "The passage does not mention LET-3D-AP shifting predictions along the line of sight within a tolerance."
+    },
+    {
+      "question_id": "Q-GTA-028",
+      "claim": "computes a longitudinal-error-tolerant IoU with longitudinal affinity weighting",
+      "rationale": "The passage does not mention computing a longitudinal-error-tolerant IoU with longitudinal affinity weighting."
+    },
+    {
+      "question_id": "Q-GTA-028",
+      "claim": "and LET-3D-APL additionally penalizes residual error by scaling precision",
+      "rationale": "The passage does not mention LET-3D-APL additionally penalizing residual error by scaling precision."
+    },
+    {
+      "question_id": "Q-GTA-029",
+      "claim": "For ensembling, where latent anchors of different models are not in direct correspondence, results are combined by formulating ensembling as greedy iterative clustering that maximizes a probabilistic objective via the EM algorithm",
+      "rationale": "No passage addresses this claim closely enough to ground it"
+    },
+    {
+      "question_id": "Q-GTA-030",
+      "claim": "Efficiency comes from factorized attention and latent query attention",
+      "rationale": "No passage addresses this claim closely enough to ground it"
+    },
+    {
+      "question_id": "Q-GTA-031",
+      "claim": "At the same training compute budget an optimal LLM is roughly 50 times larger than an optimal motion forecasting model",
+      "rationale": "No passage addresses this claim closely enough to ground it"
+    },
+    {
+      "question_id": "Q-GTA-031",
+      "claim": "the authors hypothesize reflects driving data distributions needing more data to capture less common driving modes",
+      "rationale": "No passage addresses this claim closely enough to ground it"
+    },
+    {
+      "question_id": "Q-GTA-032",
+      "claim": "This suggests open-loop metrics remain suitable for model development and hill climbing",
+      "rationale": "The passage mentions that closed-loop metrics improve with scaling, which has important implications for the suitability of open-loop metrics for model development and hill climbing. However, it does not explicitly state that open-loop metrics remain suitable for model development and hill climbing."
+    },
+    {
+      "question_id": "Q-GTA-032",
+      "claim": "consistent with training-loss improvements",
+      "rationale": "The passage does not mention training-loss improvements or their consistency with closed-loop metric improvements."
+    },
+    {
+      "question_id": "Q-GTA-032",
+      "claim": "despite conventional wisdom (and prior studies) that open- and closed-loop evaluations are misaligned",
+      "rationale": "The passage does not mention conventional wisdom or prior studies that suggest open- and closed-loop evaluations are misaligned."
+    },
+    {
+      "question_id": "Q-WAYB-003",
+      "claim": "The KABCO injury-severity scale -- e.g. using the code 'K' to designate a fatality -- given as an example of a directly-measurable outcome that does not require the kind of data transformation discussed in the following section.",
+      "rationale": "The passage mentions the KABCO scale being used to identify crashes with a fatality (designated using 'K'), but it does not explicitly state that the KABCO scale is given as an example of a directly-measurable outcome that does not require data transformation. The passage also does not mention anything about 'the following section' or data transformation."
+    },
+    {
+      "question_id": "Q-WAYB-004",
+      "claim": "which is then used to surface open research questions and standardization gaps",
+      "rationale": "No passage addresses this claim closely enough to ground it"
+    },
+    {
+      "question_id": "Q-WAYB-008",
+      "claim": "WOSAC is described as the first public challenge to tackle realistic, interactive multi-agent simulation for autonomous driving and to propose corresponding evaluation metrics",
+      "rationale": "The passage states that WOSAC is the first public challenge to tackle this task and propose corresponding metrics, but it does not mention 'realistic, interactive multi-agent simulation' specifically."
+    },
+    {
+      "question_id": "Q-WAYB-010",
+      "claim": "PV-RCNN++'s own paper reports 69.91 vehicle LEVEL_2 mAPH for its center-based, single-frame configuration.",
+      "rationale": "Passage [2] lists 'PV-RCNN++ (center)' with a LEVEL 2 mAPH of 69.91, but it does not explicitly state that this value is from 'PV-RCNN++'s own paper. The passage only provides a table of values without attribution to the source paper."
+    },
+    {
+      "question_id": "Q-WAYB-010",
+      "claim": "Combining the two: SWFormer's claim implies a vehicle LEVEL_2 mAPH of approximately 69.91 + 0.42 = 70.33.",
+      "rationale": "The passage does not provide sufficient information to support the calculation or the specific value of 70.33. The passage only provides the baseline value (69.91) and the improvement (0.42), but does not explicitly confirm that the calculation is valid or that it leads to the specific result of 70.33."
+    },
+    {
+      "question_id": "Q-WAYB-011",
+      "claim": "86%/90% vs. its stricter latest-generation-vehicle benchmark",
+      "rationale": "There is no passage that mentions a \"stricter latest-generation-vehicle benchmark\""
+    },
+    {
+      "question_id": "Q-WAYB-012",
+      "claim": "The checklist defines fifteen recommendations organized around quality and validity, transparency, and interpretation",
+      "rationale": "This paper presents the RAVE (Retrospective Automated Vehicle Evaluation) checklist, a set of fifteen recommendations for performing and evaluating retrospective ADS performance comparisons."
+    },
+    {
+      "question_id": "Q-WAYB-018",
+      "claim": "a safety improvement relative to human/TNC driving",
+      "rationale": "The passage does not mention safety improvements or comparisons to human/TNC driving in terms of safety."
+    },
+    {
+      "question_id": "Q-WAYB-018",
+      "claim": "worse than human/TNC driving",
+      "rationale": "The passage does not mention Cruise's driverless operations being worse than human/TNC driving in terms of safety."
+    },
+    {
+      "question_id": "Q-WAYB-024",
+      "claim": "both aimed at ensuring only literature closely aligned with the review's research objectives is retained",
+      "rationale": "No passage addresses this claim closely enough to ground it, even if the claim happens to be true in general."
+    },
+    {
+      "question_id": "Q-WAYB-025",
+      "claim": "implemented as a Python function (Listing 1 in the appendix)",
+      "rationale": "The passage mentions Listing 1 in the Python language but does not specify that it is in the appendix or that it is a Python function."
+    },
+    {
+      "question_id": "Q-WAYB-025",
+      "claim": "They validate the implementation with test cases based on select results from the paper's own Table 7 (Listing 2)",
+      "rationale": "There is no mention of test cases, Table 7, or Listing 2 in the provided passage."
+    },
+    {
+      "question_id": "Q-WAYB-025",
+      "claim": "and show the output of that test code (Listing 3)",
+      "rationale": "There is no mention of test code or Listing 3 in the provided passage."
+    },
+    {
+      "question_id": "Q-WAYB-026",
+      "claim": "One axis is the three 'pillars' of defense-in-depth: prevention, monitoring, and mitigation",
+      "rationale": "The passage does not mention 'pillars' or explicitly identify the three categories as 'prevention, monitoring, and mitigation' along one axis. It only mentions that the framework accounts for 'the three different layers of prevention, monitoring, and mitigation' in general, without specifying they are axes or categories on an axis."
+    },
+    {
+      "question_id": "Q-WAYB-026",
+      "claim": "Each of the framework's implementation blocks/practices is mapped onto this 3x3 grid of pillar x lifecycle phase",
+      "rationale": "The passage does not mention a '3x3 grid' or any 'implementation blocks/practices' being mapped onto such a grid. This is an inference not directly supported by the passage."
+    },
+    {
+      "question_id": "Q-WAYB-030",
+      "claim": "the paper explains that when the vehicle is really outside the ADS's ODD, the ODD is being extended by the teleoperation function",
+      "rationale": "The passage states that 'the ODD is being extended' but does not attribute this extension to the teleoperation function."
+    },
+    {
+      "question_id": "Q-WAYB-030",
+      "claim": "teleoperation is being used precisely because everything the ADS itself cannot do in that domain becomes possible only via the teleoperation function",
+      "rationale": "The passage does not mention that teleoperation is being used because everything the ADS cannot do becomes possible only via teleoperation."
+    },
+    {
+      "question_id": "Q-WAYB-033",
+      "claim": "They were tracked as their own categories, not excluded.",
+      "rationale": "The passage does not explicitly state whether these crash types were tracked as their own categories or excluded; it only mentions that they were statistically reduced for the Any-Injury-Reported outcome."
+    },
+    {
+      "question_id": "Q-WAYB-036",
+      "claim": "a similar magnitude of effect but with substantially tighter confidence intervals at the larger mileage",
+      "rationale": "The current study found a 65% reduction in Police-Reported (57% to 72% 95% confidence interval) and a 79% reduction in Any-Injury-Reported (72% to 86% 95% confidence interval) outcomes, which is a similar magnitude with tighter confidence intervals compared to the previous study."
+    },
+    {
+      "question_id": "Q-WAYB-037",
+      "claim": "framing the new 25.3-million-mile analysis as both updating the earlier findings with expanded geographical coverage and increased mileage",
+      "rationale": "No passage addresses expanded geographical coverage or explicitly mentions the new analysis as updating earlier findings with expanded geographical coverage and increased mileage"
+    },
+    {
+      "question_id": "Q-WAYB-037",
+      "claim": "validating ADS safety impact at greater scale",
+      "rationale": "No passage explicitly mentions 'validating ADS safety impact at greater scale' or directly addresses the concept of 'impact' in this context"
+    }
+  ],
+  "contradicted_claims": [
+    {
+      "question_id": "Q-GTA-021",
+      "claim": "The original dataset paper reports 1000 scenes for training and validation plus 150 test scenes (1150 total).",
+      "rationale": "Passage [1] states that the dataset contains 1150 scenes, split into 798 training, 202 validation, and 150 test. Passage [2] states that the dataset consists of 1000 scenes for training and validation, and 150 scenes for testing. The claim attributes the 1000 training/validation split to the original dataset paper, but passage [1] describes the 798/202 split, not the 1000 split."
+    }
+  ],
+  "disclaimer": "A judge model is itself fallible: these rates are one instrument's reading of the answer against the supplied passages, not ground truth. The rubric that produced this report lives at rubric_path (plain text, operator-editable) and is stamped by rubric_sha256_12 below so two reports produced under different rubric wording are never silently compared. This report is not a baseline -- see the rubric file's own header for sign-off status."
+}
