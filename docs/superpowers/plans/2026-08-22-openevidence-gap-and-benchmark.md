@@ -329,6 +329,32 @@ Two things fall out, and neither is visible in the headline number:
   literal answer-containment test. Until that is explained, a passage-level target set on one fixture
   does not transfer to the other.
 
+**And the block-level target is not reachable on this fixture as constructed.** Decomposing the 27
+"right paper at rank 1, gold block not at rank 1" failures on verified-84 dense-only:
+
+| cause | count (of 64 scored) | note |
+|---|---|---|
+| gold block in the pool at ranks 2–10 | 18 | ranking — the fix is the reranker |
+| gold block absent from the top 10 | 9 | of which… |
+| — **vision items** | **4** | **all four vision items in the fixture, every one a pool-miss** |
+| — genuine text-retrieval misses | 5 | 8% of the scored set |
+
+**All four vision-derived items are pool-misses, and that is structural rather than a defect.**
+Their answers exist only inside a figure, so the gold chunk's *text* does not contain the answer —
+a text retriever has nothing to rank it on. Confirmed: the set of vision items and the set of
+pool-misses intersect at exactly four, and every vision item is in it.
+
+Two consequences:
+
+- **The addressable retrieval problem is 5 of 64 (8%), not 9.** The passage gap is ~67% ranking,
+  ~19% text-retrieval, ~15% out of scope for any text-only pipeline.
+- **Block-level P@1 is capped at 60/64 = 0.9375 on this fixture** while it contains vision items and
+  the pipeline contains no VLM. The operator's ≥0.95 passage-level target is therefore *literally
+  unachievable* as currently measured — not hard, impossible. Either the target is scoped to
+  text-answerable items, or a VLM enters the pipeline, or the vision items are excluded from the
+  passage-level denominator and counted in their own arm. That is an operator decision and it should
+  be made before anyone optimises against 0.95.
+
 **The answer-bearing passage is retrieved 83% of the time and ranked first 40% of the time.** That
 is a *ranking* problem, not a retrieval or chunking problem — the material is already in the pool.
 It makes the passage-level gap far cheaper to close than the −57 pp headline implies, and it points
