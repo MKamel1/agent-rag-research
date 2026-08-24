@@ -105,6 +105,8 @@ Tickets are grouped into workstreams by file ownership so concurrent work cannot
 | RI-M4 | Truncation census | H | **DONE** -- `ce05f46` | Reports estimate-vs-real token calibration, not just bind rate. |
 | RI-M5 | Waymo eval fixture | I | **DONE** -- `c1f0254` | 15-item grounded seed set; every excerpt re-verified against the live corpus DB. |
 | RI-M6 | Groundedness harness | I | **DONE** -- `637b60c` | Rubric is PROVISIONAL -- needs operator sign-off before any output is treated as a baseline. |
+
+| GT-WMR | Waymo-priority ≥95% benchmark: protocol frozen, GT built, baseline measured | **BASELINE MEASURED** -- see `docs/eval-reports/2026-08-23-waymo-priority-baseline.md` | Protocol `4e14d7b`; GT-WMR fixture + invariants; verified-set v2 (84 items, dedup); RI-32 full backfill complete and corpus verified byte-identical. Gates A-D results in the baseline report; any gate miss becomes ranked work judged against those frozen numbers. |
 | RI-M7 | Score-distribution census | G | **DONE** -- `033565b`, `19afe05` | Settles whether a relevance floor is choosable. Verdict carries its own upper-bound caveat. |
 | RI-17 | Prefetch logs carry no timestamps | - | **DONE** -- `adc101e` | Starts the clock; the existing archive stays unmeasurable. |
 

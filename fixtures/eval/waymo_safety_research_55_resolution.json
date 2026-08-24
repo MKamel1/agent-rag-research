@@ -1,0 +1,278 @@
+{
+  "_metadata": {
+    "description": "Resolution of the 55 Waymo safety-research publications (waymo_safety_research_55.json) to corpus paper_ids in waymo/data/papers.db. 53 resolved (16 by direct arxiv_id, 30 exact normalized title, 7 adjudicated title-variants/preprints); 2 not ingested. Adjudications were made on inspected candidates, not thresholds alone.",
+    "resolved": 53,
+    "missing": 2,
+    "resolved_at": "2026-08-23"
+  },
+  "resolution": {
+    "High-resolution urban fatal crash rate benchmarks for automated driving system assessment": {
+      "paper_id": "local:79c782071ad2",
+      "how": "title-exact",
+      "corpus_title": "High-resolution urban fatal crash rate benchmarks for automated driving system assessment"
+    },
+    "Refinements in Benchmarking for Vulnerable Road User Collisions by Comparing Naturalistic Driving and Police-Report Data": {
+      "paper_id": "local:b12ef27e3cd6",
+      "how": "title-exact",
+      "corpus_title": "Refinements in Benchmarking for Vulnerable Road User Collisions by Comparing Naturalistic Driving and Police-Report Data"
+    },
+    "Building scientific consensus on the crash safety performance of automated driving systems": {
+      "paper_id": "local:73b22bed599f",
+      "how": "title-exact",
+      "corpus_title": "Building Scientific Consensus on the Crash Safety Performance of Automated Driving Systems"
+    },
+    "The Field of Safe Motion: Operationalizing Affordances in the Field of Safe Travel Using Reachability Analysis": {
+      "paper_id": "2604.27168",
+      "how": "arxiv_id",
+      "corpus_title": "The Field of Safe Motion: Operationalizing Affordances in the Field of Safe Travel Using Reachability Analysis"
+    },
+    "Resolving space-sharing conflicts in road user interactions through uncertainty reduction: An active inference-based computational model": {
+      "paper_id": "2604.19838",
+      "how": "arxiv_id",
+      "corpus_title": "Resolving space-sharing conflicts in road user interactions through uncertainty reduction: An active inference-based computational model"
+    },
+    "Collision avoidance testing of the Waymo automated driving system": {
+      "paper_id": "2212.08148",
+      "how": "arxiv_id",
+      "corpus_title": "Collision Avoidance Testing of the Waymo Automated Driving System"
+    },
+    "Collision avoidance effectiveness of an automated driving system using a human driver behavior reference model in reconstructed fatal collisions": {
+      "paper_id": "local:0983968f9ec2",
+      "how": "title-exact",
+      "corpus_title": "Collision Avoidance Effectiveness of an Automated Driving System Using a Human Driver Behavior Reference Model in Reconstructed Fatal Collisions"
+    },
+    "Assessing a Safety Case: Bottom-up Guidance for Claims and Evidence Evaluation": {
+      "paper_id": "2506.09929",
+      "how": "arxiv_id",
+      "corpus_title": "Assessing a Safety Case: Bottom-up Guidance for Claims and Evidence Evaluation"
+    },
+    "From Stoplights to On-Ramps: A Comprehensive Set of Crash Rate Benchmarks for Freeway and Surface Street ADS Evaluation": {
+      "paper_id": "2508.19425",
+      "how": "arxiv_id",
+      "corpus_title": "From Stoplights to On-Ramps: A Comprehensive Set of Crash Rate Benchmarks for Freeway and Surface Street ADS Evaluation"
+    },
+    "Being good (at driving): Characterizing behavioral expectations on automated and human driven vehicles": {
+      "paper_id": "2502.08121",
+      "how": "arxiv_id",
+      "corpus_title": "Being good (at driving): Characterizing behavioral expectations on automated and human driven vehicles"
+    },
+    "Building a credible case for safety: Waymo\u2019s approach for the determination of absence of unreasonable Risk": {
+      "paper_id": "local:e402895b56ca",
+      "how": "title-exact",
+      "corpus_title": "Building a Credible Case for Safety: Waymo\u2019s Approach for the Determination of Absence of Unreasonable Risk"
+    },
+    "A mechanistic approach to modeling omnidirectional motorcyclist injury risk": {
+      "paper_id": "local:bb74867d2259",
+      "how": "title-exact",
+      "corpus_title": "A mechanistic approach to modeling omnidirectional motorcyclist injury risk"
+    },
+    "Ride-hailing in the Safe System: Increased Seat Belt Compliance and Late Model Year Vehicles": {
+      "paper_id": "local:0bce58005210",
+      "how": "title-exact",
+      "corpus_title": "Ride-hailing in the Safe System: Increased Seat Belt Compliance and Late Model Year Vehicles"
+    },
+    "Automated Brake Onset Detection in Naturalistic Driving Data": {
+      "paper_id": "2507.17943",
+      "how": "arxiv_id",
+      "corpus_title": "Automated Brake Onset Detection in Naturalistic Driving Data"
+    },
+    "Potential Safety Benefits Associated with Speed Limit Compliance in San Francisco and Phoenix": {
+      "paper_id": "local:24cb2ca8ce9b",
+      "how": "title-exact",
+      "corpus_title": "Potential Safety Benefits Associated with Speed Limit Compliance in San Francisco and Phoenix"
+    },
+    "TARGET setting for high severity collisions: tolerance-based assessment of risk for generalized event thresholds.": {
+      "paper_id": "local:f2811feacd35",
+      "how": "title-exact",
+      "corpus_title": "TARGET Setting for High Severity Collisions: Tolerance-Based Assessment of Risk for Generalized Event Thresholds"
+    },
+    "Active inference as a unified model of collision avoidance behavior in human drivers": {
+      "paper_id": "2506.02215",
+      "how": "arxiv_id",
+      "corpus_title": "Active inference as a unified model of collision avoidance behavior in human drivers"
+    },
+    "Looking for an out: Affordances, uncertainty and collision avoidance behavior of human drivers": {
+      "paper_id": "2505.14842",
+      "how": "arxiv_id",
+      "corpus_title": "Looking for an out: Affordances, uncertainty and collision avoidance behavior of human drivers"
+    },
+    "Comparison of Waymo Rider-Only Crash Rates by Crash Type to Human Benchmarks at 56.7 Million Miles": {
+      "paper_id": "local:6b9ccd0431f6",
+      "how": "title-exact",
+      "corpus_title": "Comparison of Waymo Rider-Only Crash Rates by Crash Type to Human Benchmarks at 56.7 Million Miles"
+    },
+    "Dynamic Benchmarks: Spatial and Temporal Alignment for ADS Performance Evaluation": {
+      "paper_id": "2410.08903",
+      "how": "arxiv_id",
+      "corpus_title": "Dynamic Benchmarks: Spatial and Temporal Alignment for ADS Performance Evaluation"
+    },
+    "Do Autonomous Vehicles Outperform Latest-Generation Human-Driven Vehicles? A Comparison to Waymo's Auto Liability Insurance Claims at 25 Million Miles": {
+      "paper_id": "local:f6f1461f2c9a",
+      "how": "title-exact",
+      "corpus_title": "Do Autonomous Vehicles Outperform Latest-Generation Human-Driven Vehicles? A Comparison to Waymo's Auto Liability Insurance Claims at 25 Million Miles"
+    },
+    "Baseline vulnerable road user injury risk in multiple U.S. dense-urban driving environments": {
+      "paper_id": "local:bc031ecd9224",
+      "how": "title-exact",
+      "corpus_title": "Baseline vulnerable road user injury risk in multiple U.S. dense urban driving environments"
+    },
+    "Kinematic characterization of micro-mobility vehicles during evasive maneuvers": {
+      "paper_id": "local:03e2dfdfa816",
+      "how": "title-exact",
+      "corpus_title": "Kinematic Characterization of Micro-Mobility Vehicles During Evasive Maneuvers"
+    },
+    "Characterising vulnerable road user evasive manoeuvring in real-world crashes: Injury risk implications": {
+      "paper_id": "local:d45d629ccad0",
+      "how": "title-exact",
+      "corpus_title": "Characterising Vulnerable Road User Evasive Manoeuvring in Real-World Crashes: Injury Risk Implications"
+    },
+    "Active inference-based modeling of human driver collision avoidance behavior": {
+      "paper_id": "local:ebf093becfa1",
+      "how": "title-exact",
+      "corpus_title": "Active inference-based modeling of human driver collision avoidance behavior"
+    },
+    "Active inference as a general framework for modeling human driving behavior": {
+      "paper_id": "local:b3dd74970ec8",
+      "how": "title-exact",
+      "corpus_title": "Active inference as a general framework for modeling human driving behavior"
+    },
+    "Resolving uncertainty on the fly: modeling adaptive driving behavior as active inference": {
+      "paper_id": "2311.06417",
+      "how": "title-exact",
+      "corpus_title": "Resolving uncertainty on the fly: Modeling adaptive driving behavior as active inference"
+    },
+    "Comparison of Waymo rider-only crash data to human benchmarks at 7.1 million miles": {
+      "paper_id": "2312.12675",
+      "how": "title-exact",
+      "corpus_title": "Comparison of Waymo Rider-Only Crash Data to Human Benchmarks at 7.1 Million Miles"
+    },
+    "Benchmarks for retrospective automated driving system crash rate analysis using police-reported crash data": {
+      "paper_id": "2312.13228",
+      "how": "title-exact",
+      "corpus_title": "Benchmarks for Retrospective Automated Driving System Crash Rate Analysis Using Police-Reported Crash Data"
+    },
+    "Bridging the gap: Mechanistic-based cyclist injury risk curves using two decades of crash data": {
+      "paper_id": "local:7b943f45c1da",
+      "how": "title-exact",
+      "corpus_title": "Bridging the gap: Mechanistic-based cyclist injury risk curves using two decades of crash data"
+    },
+    "Passenger and heavy vehicle collisions with pedestrians: Assessment of injury mechanisms and risk": {
+      "paper_id": "local:c92c18fe2ac2",
+      "how": "title-exact",
+      "corpus_title": "Passenger and heavy vehicle collisions with pedestrians: Assessment of injury mechanisms and risk"
+    },
+    "Descriptive analysis of cyclist dooring events using data from the National Electronic Injury Surveillance System (NEISS)": {
+      "paper_id": "local:442bfd3211f4",
+      "how": "title-exact",
+      "corpus_title": "Descriptive Analysis of Cyclist Dooring Events Using Data from the National Electronic Injury Surveillance System (NEISS)"
+    },
+    "Representative pedestrian collision injury risk distributions for a dense-urban US ODD using naturalistic dash camera data": {
+      "paper_id": "local:aa069e80dac9",
+      "how": "title-exact",
+      "corpus_title": "Representative Pedestrian Collision Injury Risk Distributions for a Dense-Urban US ODD Using Naturalistic Dash Camera Data"
+    },
+    "Measuring surprise in the wild": {
+      "paper_id": "2305.07733",
+      "how": "arxiv_id",
+      "corpus_title": "Measuring Surprise in the Wild"
+    },
+    "Interpreting safety outcomes: Waymo\u2019s performance evaluation in the context of a broader determination of safety readiness": {
+      "paper_id": "local:c65f8ae0ee73",
+      "how": "title-exact",
+      "corpus_title": "Interpreting Safety Outcomes: Waymo\u2019s Performance Evaluation in the Context of a Broader Determination of Safety Readiness"
+    },
+    "ADS standardization landscape: Making sense of its status and of the associated research questions": {
+      "paper_id": "2306.17682",
+      "how": "arxiv_id",
+      "corpus_title": "ADS Standardization Landscape: Making Sense of its Status and of the Associated Research Questions"
+    },
+    "An active inference model of car following: Advantages and applications": {
+      "paper_id": "2303.15201",
+      "how": "arxiv_id",
+      "corpus_title": "Learning An Active Inference Model of Driver Perception and Control: Application to Vehicle Car-Following"
+    },
+    "World model learning from demonstrations with active inference: Application to driving behavior": {
+      "paper_id": "local:5b903ab148a7",
+      "how": "title-exact",
+      "corpus_title": "World Model Learning from Demonstrations with Active Inference: Application to Driving Behavior"
+    },
+    "Determination of functional scenarios for intersection collisions": {
+      "paper_id": "local:2e47fb1e0308",
+      "how": "title-exact",
+      "corpus_title": "Determination of functional scenarios for intersection collisions"
+    },
+    "Waymo's fatigue risk management framework: prevention, monitoring, and mitigation of fatigue-induced risks while testing automated driving systems": {
+      "paper_id": "2208.12833",
+      "how": "arxiv_id",
+      "corpus_title": "Waymo's Fatigue Risk Management Framework: Prevention, Monitoring, and Mitigation of Fatigue-Induced Risks while Testing Automated Driving Systems"
+    },
+    "Methodology for determining maximum injury potential for automated driving system evaluation": {
+      "paper_id": "local:7bf8bf93e22e",
+      "how": "title-exact",
+      "corpus_title": "Methodology for determining maximum injury potential for automated driving system evaluation"
+    },
+    "An omni-directional model of injury risk in planar crashes with application for autonomous vehicles": {
+      "paper_id": "local:071d15c56158",
+      "how": "title-exact",
+      "corpus_title": "An omni-directional model of injury risk in planar crashes with application for autonomous vehicles"
+    },
+    "Waymo simulated driving behavior in reconstructed fatal crashes within an autonomous vehicle operating domain": {
+      "paper_id": "local:1d8d84d78b21",
+      "how": "title-exact",
+      "corpus_title": "Waymo simulated driving behavior in reconstructed fatal crashes within an autonomous vehicle operating domain"
+    },
+    "Waymo safety report": {
+      "paper_id": "local:2b0e7fb59b39",
+      "how": "title-exact",
+      "corpus_title": "Waymo Safety Report"
+    },
+    "Waymo public road safety performance data": {
+      "paper_id": "2011.00038",
+      "how": "arxiv_id",
+      "corpus_title": "Waymo Public Road Safety Performance Data"
+    },
+    "Waymo's safety methodologies and safety readiness determinations": {
+      "paper_id": "2011.00054",
+      "how": "arxiv_id",
+      "corpus_title": "Waymo's Safety Methodologies and Safety Readiness Determinations"
+    },
+    "Determining Absence of Unreasonable Risk: Approval Guidelines for an Automated Driving System Deployment": {
+      "paper_id": "local:39d37d41dd77",
+      "how": "title-variant (corpus title shortened)"
+    },
+    "Developing a Safety Management System for the Automated Vehicle Industry": {
+      "paper_id": "local:750223d487eb",
+      "how": "title-variant (Automated/Autonomous)"
+    },
+    "Comparative safety performance of autonomous and human drivers: A real-world case study of the Waymo One service": {
+      "paper_id": "local:5fa216c3425a",
+      "how": "title-variant (punctuation)"
+    },
+    "Modeling road user response timing in naturalistic traffic conflicts: A surprise-based framework": {
+      "paper_id": "2208.08651",
+      "how": "preprint-of (corpus holds arXiv v, 'naturalistic settings')"
+    },
+    "RAVE checklist: Recommendations for overcoming challenges in retrospective studies of Automated Driving Systems": {
+      "paper_id": "local:4087ccce4c01",
+      "how": "title-variant (Safety Studies vs studies of ADS)"
+    },
+    "Challenges for the evaluation of automated driving systems using current ADAS and active safety test track protocols": {
+      "paper_id": "local:341648b7a22a",
+      "how": "title-variant (shortened)"
+    },
+    "Safety performance of the waymo rider-only automated driving system at one million miles": {
+      "paper_id": "local:4c3912bd5507",
+      "how": "title-variant ('Waymo RO at 1M miles')"
+    }
+  },
+  "not_ingested": [
+    {
+      "title": "Representative cyclist collision injury risk distributions for a dense-urban US ODD using naturalistic dash camera data",
+      "reason": "no corpus entry; nearest title is the sibling PEDESTRIAN paper (local:aa069e80dac9), which is a different publication"
+    },
+    {
+      "title": "Framework for a conflict typology including contributing factors for use In ADS safety evaluation",
+      "reason": "no corpus entry resembling it (best token-Jaccard 0.20, unrelated)"
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 {
   "_metadata": {
-    "description": "Cross-verified union of the two independently-authored Waymo AV-safety ground-truth sets (GT-A from oxalpha, GT-B from claude), built by ticket GT-X. Only items that survived mechanical excerpt-fidelity checking, independent absence re-verification, answerability review, and numeric grounding audit are included.",
-    "total_items": 73,
+    "description": "Cross-verified union of the two independently-authored Waymo AV-safety ground-truth sets (GT-A from oxalpha, GT-B from claude), built by ticket GT-X. Only items that survived mechanical excerpt-fidelity checking, independent absence re-verification, answerability review, and numeric grounding audit are included. Updated 2026-08-23 (pass 2): the eleven post-merge GT-A items (Q-GTA-034..044) survived independent re-verification and joined the union.",
+    "total_items": 84,
     "generated_at": "2026-08-22",
     "corpus": "waymo_av_safety",
     "sources": {
@@ -10,10 +10,13 @@
         "branch": "GT-A-oxalpha-waymo-groundtruth",
         "commits": [
           "050c011",
-          "de28cbd"
+          "de28cbd",
+          "fecf21d",
+          "163d65e"
         ],
-        "items_survived": 33,
-        "items_total": 33
+        "items_survived": 44,
+        "items_total": 44,
+        "merge": "0d3ab71"
       },
       "GT-B": {
         "fixture": "waymo_gt_b.json",
@@ -31,7 +34,14 @@
     "known_caveats": [
       "Q-WAYB-027 is vision-derived: only its machine-checkable ids/page were verified; the visual claim itself is unverified by the cross-verifier.",
       "Several GT-B absence_search logs record hit counts that do not reproduce under plain SQLite LIKE on the frozen DB (see per-item verification.notes); every qualitative absence nevertheless held up under independent re-search."
-    ]
+    ],
+    "updated_at": "2026-08-23",
+    "verification_dates": {
+      "pass-1": "2026-08-22",
+      "pass-2": "2026-08-23"
+    },
+    "second_pass_report": "docs/eval-reports/2026-08-22-waymo-groundtruth-second-pass.md",
+    "dedup_policy": "Q-GTA-036/Q-GTA-037 are independent rediscoveries of Q-WAYB-034/Q-WAYB-009; kept under their own ids with explicit duplicate_of pointers. Aggregate scoring must count each duplicate_of group once (default: exclude secondaries from denominators, report them separately)."
   },
   "ground_truth": [
     {
@@ -61,7 +71,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -91,7 +102,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -121,7 +133,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -151,7 +164,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -195,7 +209,8 @@
           "supporting_gold_chunk_resolves_under_its_paper",
           "supporting_anchor_block_id_matches_gold_block_id",
           "supporting_excerpt_is_whitespace_normalized_substring_of_chunk_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -225,7 +240,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -255,7 +271,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -299,7 +316,8 @@
           "supporting_gold_chunk_resolves_under_its_paper",
           "supporting_anchor_block_id_matches_gold_block_id",
           "supporting_excerpt_is_whitespace_normalized_substring_of_chunk_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -329,7 +347,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -359,7 +378,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -389,7 +409,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -419,7 +440,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -449,7 +471,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -479,7 +502,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -523,7 +547,8 @@
           "supporting_gold_chunk_resolves_under_its_paper",
           "supporting_anchor_block_id_matches_gold_block_id",
           "supporting_excerpt_is_whitespace_normalized_substring_of_chunk_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -553,7 +578,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -583,7 +609,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -613,7 +640,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -643,7 +671,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -673,7 +702,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -717,7 +747,8 @@
           "supporting_gold_chunk_resolves_under_its_paper",
           "supporting_anchor_block_id_matches_gold_block_id",
           "supporting_excerpt_is_whitespace_normalized_substring_of_chunk_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -747,7 +778,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -777,7 +809,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -810,7 +843,8 @@
         ],
         "notes": [
           "The '5 s of future trajectory' detail in answer_text is grounded at 2510.26125:c2, a sibling chunk of the cited gold chunk (c1) in the same paper."
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -840,7 +874,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -870,7 +905,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -900,7 +936,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -930,7 +967,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -960,7 +998,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -990,7 +1029,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -1023,7 +1063,8 @@
         ],
         "notes": [
           "The '~50 times larger' LLM comparison in answer_text is grounded at 2506.08228:c4 and :c14, sibling chunks of the cited gold chunk (c1) in the same paper."
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -1053,7 +1094,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -1097,7 +1139,8 @@
           "supporting_gold_chunk_resolves_under_its_paper",
           "supporting_anchor_block_id_matches_gold_block_id",
           "supporting_excerpt_is_whitespace_normalized_substring_of_chunk_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -1126,7 +1169,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -1155,7 +1199,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -1184,7 +1229,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -1213,7 +1259,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -1242,7 +1289,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -1271,7 +1319,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -1300,7 +1349,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -1329,7 +1379,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -1355,7 +1406,8 @@
         ],
         "notes": [
           "Absence verdict confirmed, but the recorded search-log hit count does not reproduce: 'wavelength' matches 35 chunks across 20 papers under plain SQLite LIKE today, not the 10 recorded. None of the hits discloses a Waymo-hardware LiDAR wavelength, so the qualitative absence stands. Adversarial probes ('1550', '1550 nm', 'lidar wavelength') found only camera-resolution tables and unrelated FMCW physics."
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -1400,7 +1452,8 @@
           "supporting_gold_chunk_resolves_under_its_paper",
           "supporting_anchor_block_id_matches_gold_block_id",
           "supporting_excerpt_is_whitespace_normalized_substring_of_chunk_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -1445,7 +1498,8 @@
           "supporting_gold_chunk_resolves_under_its_paper",
           "supporting_anchor_block_id_matches_gold_block_id",
           "supporting_excerpt_is_whitespace_normalized_substring_of_chunk_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -1490,7 +1544,8 @@
           "supporting_gold_chunk_resolves_under_its_paper",
           "supporting_anchor_block_id_matches_gold_block_id",
           "supporting_excerpt_is_whitespace_normalized_substring_of_chunk_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -1535,7 +1590,8 @@
           "supporting_gold_chunk_resolves_under_its_paper",
           "supporting_anchor_block_id_matches_gold_block_id",
           "supporting_excerpt_is_whitespace_normalized_substring_of_chunk_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -1564,7 +1620,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -1593,7 +1650,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -1622,7 +1680,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -1651,7 +1710,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -1680,7 +1740,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -1709,7 +1770,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -1738,7 +1800,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -1765,7 +1828,8 @@
         ],
         "notes": [
           "Absence verdict confirmed by re-search: 430 'fatalit*' chunk hits corpus-wide, 29 of them co-occurring with 'waymo' reviewed individually (human benchmarks, severity-tier discussion, mission statements) plus death/died/killed/deaths probes; none reports a Waymo-attributed fatality count broken down by victim category."
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -1792,7 +1856,8 @@
         ],
         "notes": [
           "Absence verdict confirmed, but the recorded search-log hit count does not reproduce: 'disengagement' matches 168 chunks across 75 papers today, not the 10 recorded. No hit gives a hardware-generation-specific disengagement rate for any single operator, so the qualitative absence stands."
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -1821,7 +1886,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -1850,7 +1916,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -1879,7 +1946,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -1908,7 +1976,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -1936,7 +2005,8 @@
         ],
         "notes": [
           "VISION ITEM: only the machine-checkable facts were verified (paper resolves, title matches, gold block id resolves in blocks table, cited page equals the block's stored page). The visual claim itself -- what Figure 19's pillar-x-phase grid shows for practice #9 -- could not be re-rendered or re-read by the cross-verifier and remains unverified, carried forward on the authoring model's reading alone."
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -1960,7 +2030,8 @@
         "checks": [
           "absence_re_established_by_independent_keyword_search_over_all_chunk_and_block_text",
           "adversarial_probes_beyond_the_original_search_log_found_no_counterexample"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -1982,7 +2053,8 @@
         "checks": [
           "absence_re_established_by_independent_keyword_search_over_all_chunk_and_block_text",
           "adversarial_probes_beyond_the_original_search_log_found_no_counterexample"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -2011,7 +2083,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -2040,7 +2113,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -2069,7 +2143,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -2098,7 +2173,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -2124,7 +2200,8 @@
         ],
         "notes": [
           "Absence verdict confirmed: 0 title hits; 11 Zoox chunk mentions across 10 papers (matching the recorded count), all passing mentions -- aggregate comparisons, a disengagement-rate remark citing Zoox's own historical claim, incident anecdotes, and one Zoox-authored validation-methodology paper (2411.03328). None is a dedicated Zoox crashes-per-million-mile safety-performance study."
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -2150,7 +2227,8 @@
         ],
         "notes": [
           "Absence verdict confirmed, but it is a near miss worth flagging: 2312.12675:c11 does report a Cruise-specific reduction (Zhang 2023: 65%, any-property-damage-or-injury, first 1M Cruise RO miles) -- however it was computed against the Flannagan et al. (2023) ride-hailing NDS benchmark, NOT the Blincoe-adjusted police-reported rate the question names, so the question as asked remains unanswerable from this corpus."
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -2179,7 +2257,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -2208,7 +2287,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -2237,7 +2317,8 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -2263,7 +2344,8 @@
         ],
         "notes": [
           "Absence verdict confirmed, but the recorded search log is incomplete: it missed the strongest 100-million-mile hit in the corpus, 2507.17943:c2 ('quickly reached 100 million miles in July 2025'), which the parallel GT-A set uses for its timeline item Q-GTA-015. Adjudication: that is a cited mileage-milestone mention inside a brake-onset paper, not a rider-only crash-rate study at 100M miles reporting reduction figures, so this absence still stands under its precise wording."
-        ]
+        ],
+        "verification_pass": "pass-1"
       }
     },
     {
@@ -2292,6 +2374,641 @@
           "passage_excerpt_is_whitespace_normalized_substring_of_chunk_text",
           "section_path_matches_chunk_section_path",
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
+        ],
+        "verification_pass": "pass-1"
+      }
+    },
+    {
+      "question_id": "Q-GTA-034",
+      "question_text": "What randomized controlled trial design did Waymo use to compare its rider-only automated driver against human benchmark drivers?",
+      "question_type": "Method-Comprehension",
+      "difficulty": "hard",
+      "dimension": "methodological",
+      "tests": "absent",
+      "vision_derived": false,
+      "absence_note": "The corpus's Waymo-versus-human safety comparisons are entirely retrospective/observational (police-reported crash rates at 7.1M and 56.7M rider-only miles, Swiss Re liability-claims analyses, naturalistic benchmarks); no randomized experiment assigning drivers to conditions is described anywhere. The temptation for a false positive is real and specific: local:b716064bc4c9:c20/:c21 say outright that conducting randomized controlled trials in real traffic is unethical and infeasible and propose randomizing confounders inside high-fidelity simulation instead, and 2307.07907:c24 equates RCT logic with simulator domain randomization -- i.e., the corpus explains why such a trial does not exist without ever describing one. Surfacing either paper as if it answers the question is a false positive.",
+      "absence_search": [
+        "Method for all entries: case-insensitive substring over whitespace-normalized chunks.text (1,738 papers / 46,155 chunks), measured 2026-08-22.",
+        "'randomized controlled trial': 3 chunks / 2 papers -- 2307.07907:c24 (RCT-as-domain-randomization inside simulators) and local:b716064bc4c9:c20 (RCTs in traffic 'not only unethical ... but also impossible to conduct properly')",
+        "'randomised controlled': 2 chunks / 1 paper -- local:2b6a7d2ae102:c68/:c241, an RCT on bicycle running lights, not a driving trial",
+        "'randomized trial': 1 chunk / 1 paper -- 2604.13677:c11, counterbalancing 'trial order' in a pedestrian-perception experiment",
+        "adversarial probe 'randomly assigned': 19 chunks / 13 papers -- all ML senses (train/test splits, behavior-model assignment in simulators, participants assigned to simulators in a driving-simulator study); none assigns real drivers to ADS-versus-human experimental conditions",
+        "adversarial co-occurrence 'waymo' AND 'randomized' in one chunk: 6 chunks / 4 papers -- all dataset/benchmark contexts (WOMD splits, WOSAC sim-agent training); no trial design",
+        "'clinical trial': 13 chunks / 7 papers -- medical drug-trial methodology and ML benchmark domains; nothing on road-user trials",
+        "'unethical': 6 chunks / 6 papers -- one is local:b716064bc4c9:c20 (the RCT-infeasibility passage); the rest are unrelated (road-rage behavior, license restrictions on unethical dataset use, scenario ethics)"
+      ],
+      "absence_verification": {
+        "searched_on": "2026-08-22",
+        "scope": "whitespace-normalized full block text of all 1738 papers in waymo/data/papers.db, substring search",
+        "queries": [
+          {
+            "terms": [
+              "randomized controlled trial"
+            ],
+            "papers_with_hits": 2,
+            "note": "2307.07907 discusses applying an RCT-like rule to a simulator mechanism; local:2b6a7d2ae102 (surrogate measures of safety and traffic conflict) describes a randomised controlled trial on bicycle running lights -- neither is a Waymo ADS-versus-human trial"
+          },
+          {
+            "terms": [
+              "randomised controlled"
+            ],
+            "papers_with_hits": 1,
+            "note": "same bicycle running-lights RCT as above"
+          },
+          {
+            "terms": [
+              "control group"
+            ],
+            "papers_with_hits": 12,
+            "note": "all hits are machine-learning/experimental-design senses: Eindhoven University's Dynamics and Control Group (2303.07891), treatment/control groups in causal-inference methodology (1809.04407, 2512.18703), detector baselines used 'as a control group' (2304.02867, 2305.09626), overdispersion validation (2603.20349) -- none describe a driver-comparison trial"
+          }
+        ],
+        "conclusion": "The corpus's Waymo-versus-human comparisons are retrospective/observational; no randomized experiment assigning drivers to conditions exists in it."
+      },
+      "expected_behavior": "A correct response states that the corpus contains no Waymo-run randomized controlled trial comparing its driver against humans; its comparisons are observational (police-reported crash rates, insurance claims, naturalistic benchmarks). Naming closest related content is acceptable; returning passages as if an answer exists is a false positive.",
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json. Absence verified 2026-08-22 by the recorded queries; hit contexts inspected.",
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verification_pass": "pass-2",
+        "verified_at": "2026-08-23",
+        "checks": [
+          "absence_re_established_by_independent_keyword_search_2026-08-23",
+          "all recorded hit-count queries re-run read-only against papers.db (GT-X2 pass 2: 77/78 exact, 1 non-decisive drift on a broad co-occurrence net)",
+          "fresh adversarial probes beyond the recorded log inspected (GT-X2 section 2.2); coordinating session independently reproduced the decisive counts"
+        ],
+        "notes": [
+          "coordinating-session spot-check reproduced the decisive zero-hit queries exactly (randomized controlled trial 3/2, zoox 11/10, wavelength 35/20 with waymo-AND-wavelength 0, fares 7/4, swiss re 16/8 with premium/underwrit 0)"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-035",
+      "question_text": "According to this corpus, what crash rate per million miles has Tesla's Full Self-Driving system achieved compared with human drivers?",
+      "question_type": "Result-Comprehension",
+      "difficulty": "medium",
+      "dimension": "numeric/quantitative",
+      "tests": "absent",
+      "vision_derived": false,
+      "absence_note": "No corpus paper measures Tesla's FSD or Autopilot crash rate per mile, and none compares either against human drivers; Tesla content here is qualitative (deployment plans, NHTSA investigation counts, architecture surveys). One genuine near-miss must be adjudicated correctly if surfaced: local:959c22bd9d85:c16 ('Comparability of Automated Vehicle Crash Databases', section 5.3) quotes Tesla's own self-reported 2022 Impact-Report figures -- 0.31 crashes per million miles with FSD engaged vs 0.18 Autopilot vs 0.68 with no active safety features engaged -- and then argues the FSD figure is biased toward lower rates by Safety-Score-gated rollout (only the safest drivers received FSD early), an undisclosed crash threshold, and recalls. That number therefore (a) is Tesla's self-report, not any corpus author's measurement; (b) is compared against other Tesla configurations, never against human drivers; and (c) is presented by the corpus itself as unreliable. Quoting 0.31 cpmm as the corpus's answer misses the question on all three counts -- but note it is not fabricated from nothing, unlike most false positives.",
+      "absence_search": [
+        "Method for all entries: case-insensitive substring over whitespace-normalized chunks.text (1,738 papers / 46,155 chunks), measured 2026-08-22.",
+        "'full self-driving': 19 chunks / 14 papers -- FSD beta-package timeline (2412.02574:c1), Austin robotaxi plans (2505.02274:c1), Mcity closed-track tests of an FSD-equipped Model 3 (2505.16214:c5/:c10/:c14), monocular-depth attack framing (2411.00192:c7), supervised lane-change context (2607.27085:c2) -- none reports a crash rate",
+        "adversarial co-occurrence 'tesla' AND 'crash rate': 9 chunks / 6 papers -- GPU-cluster and simulator mentions plus the Comparability-paper passages below; no Tesla-vs-human comparison",
+        "'full self-driving' AND 'per million' in one chunk: exactly 1 chunk -- local:959c22bd9d85:c16, the self-reported figures discussed in absence_note",
+        "'autopilot': 114 chunks / 78 papers -- CARLA's built-in autopilot module, generic highway-autopilot policies, NHTSA investigation crash COUNTS (2504.09461:c3), and a sparse-data methods demo built on Tesla's self-published Autopilot rates (local:959c22bd9d85:c5) -- never a benchmarked comparison against human drivers",
+        "adversarial probe 'crashes per million miles': 9 chunks / 6 papers -- the Waymo/Cruise/supervised-AV vs Uber-human CPMM analysis (2403.14648), the US-average police-reported rate (2505.06276:c2), a naturalistic-fleet estimate (2312.13228:c26) -- none involves Tesla",
+        "co-occurrence 'tesla' AND 'human drivers': 26 chunks / 23 papers -- inspection shows camera-only-perception and market-survey contexts; no safety-rate comparison"
+      ],
+      "absence_verification": {
+        "searched_on": "2026-08-22",
+        "scope": "whitespace-normalized full block text of all 1738 papers in waymo/data/papers.db, substring search",
+        "queries": [
+          {
+            "terms": [
+              "Tesla"
+            ],
+            "papers_with_hits": 157,
+            "note": "closest content: FSD robotaxi deployment plans for Austin, Texas by June 2025 (2505.02274); Autopilot scrutiny in a digital-twin framework (2504.09461); adversarial scenario generation referencing Tesla (2408.03200) -- no rate numbers"
+          },
+          {
+            "terms": [
+              "Autopilot"
+            ],
+            "papers_with_hits": 78,
+            "note": "CARLA's built-in autopilot module (2603.03574), fault-injection case studies of a fatal Tesla Autopilot accident (1907.01051), generic ADAS feature lists including highway autopilots (2111.09533)"
+          },
+          {
+            "terms": [
+              "full self-driving"
+            ],
+            "papers_with_hits": 14,
+            "note": "FSD beta-package release timeline (2412.02574), Austin deployment plans (2505.02274), supervised lane-changing experiments citing Tesla FSD (2607.27085), monocular-depth attack context (2411.00192) -- all qualitative"
+          },
+          {
+            "terms": [
+              "FSD"
+            ],
+            "papers_with_hits": 30,
+            "note": "in this corpus the acronym FSD overwhelmingly denotes the Fully Sparse Detector perception family (2301.02562, 2207.10035, 2303.12621, 2304.02867, 2304.12315, 2401.16305), not Tesla's system -- a keyword matcher would be misled here"
+          }
+        ],
+        "conclusion": "No paper measures Tesla's FSD/Autopilot crash rate per mile or compares it to human-driver benchmarks."
+      },
+      "expected_behavior": "A correct response states that the corpus never reports a Tesla FSD/Autopilot crash rate against a human benchmark. Tesla is discussed extensively but always qualitatively; quoting any per-mile number for Tesla is a false positive.",
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json. Absence verified 2026-08-22; note the FSD-acronym trap recorded above.",
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verification_pass": "pass-2",
+        "verified_at": "2026-08-23",
+        "checks": [
+          "absence_re_established_by_independent_keyword_search_2026-08-23",
+          "all recorded hit-count queries re-run read-only against papers.db (GT-X2 pass 2: 77/78 exact, 1 non-decisive drift on a broad co-occurrence net)",
+          "fresh adversarial probes beyond the recorded log inspected (GT-X2 section 2.2); coordinating session independently reproduced the decisive counts"
+        ],
+        "notes": [
+          "coordinating-session spot-check reproduced the decisive zero-hit queries exactly (randomized controlled trial 3/2, zoox 11/10, wavelength 35/20 with waymo-AND-wavelength 0, fares 7/4, swiss re 16/8 with premium/underwrit 0)"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-036",
+      "question_text": "How many crashes per million miles has Zoox's driverless service experienced, compared with human drivers?",
+      "question_type": "Result-Comprehension",
+      "difficulty": "medium",
+      "dimension": "numeric/quantitative",
+      "tests": "absent",
+      "vision_derived": false,
+      "absence_note": "Independent rediscovery of the fact Q-WAYB-034 already covers; kept deliberately (independent rediscovery is itself signal) but flagged so the merged set does not count it twice. Zoox appears in this corpus only as a name: a data-source filter in the San Francisco DMV/CPUC crash-rate analysis, which computes CPMM for Waymo, Cruise, supervised AVs, and Uber human driving but never Zoox (2403.14648:c8/:c12); a 2018-era claimed disengagement rate of 1 per 1900 miles (1912.03618:c11); the affiliation of a Zoox-authored validation-foundation-models paper that reports no safety rates (2411.03328:c0); teleoperation-HMI industry examples (2502.02207:c9); news-style incident narratives -- struck while turning right, two rear-end collisions (local:466c3988963b:c14) -- and a raw DMV table row listing individual Zoox incidents (local:78d07845dba7:c10). Individual events and old disengagement claims are not a crashes-per-million-mile service figure, and nothing compares Zoox with human drivers.",
+      "absence_search": [
+        "Method for all entries: case-insensitive substring over whitespace-normalized chunks.text unless stated otherwise, measured 2026-08-22.",
+        "papers.title LIKE '%Zoox%': 0 hits",
+        "'zoox': 11 chunks / 10 papers -- every hit inspected; roles listed in absence_note",
+        "adversarial co-occurrence 'zoox' AND 'per million': 0 chunks",
+        "co-occurrence 'zoox' AND 'crash': 5 chunks / 4 papers; 'zoox' AND 'collision': 6 chunks / 5 papers -- all are the passing mentions listed in absence_note (filter lists, the old disengagement claim, incident narratives and table rows), never a rate"
+      ],
+      "duplicate_of": "Q-WAYB-034",
+      "absence_verification": {
+        "searched_on": "2026-08-22",
+        "scope": "whitespace-normalized full block text of all 1738 papers in waymo/data/papers.db, substring search",
+        "queries": [
+          {
+            "terms": [
+              "Zoox"
+            ],
+            "papers_with_hits": 10,
+            "note": "2403.14648 filters California DMV autonomous-vehicle reports by companies 'known to operate in San Francisco, namely Waymo, Cruise, Lyft (inactive since June 2021), and Zoox'; 1912.03618 cites Zoox's claimed disengagement rate of 1 per 1900 miles; 2411.03328 is authored at Zoox Inc.; others list Zoox among operators"
+          },
+          {
+            "terms": [
+              "zoox AND crash rate co-occurrence in same paper"
+            ],
+            "papers_with_hits": 1,
+            "note": "only 2403.14648 contains both strings; there Zoox appears solely in the data-source description while the reported CPMM comparisons cover Waymo, Cruise, supervised AVs, and Uber human ride-hail driving"
+          }
+        ],
+        "conclusion": "Zoox is present as a data source and operator name, but the corpus reports crash rates per million miles only for Waymo, Cruise, supervised AVs, and human Uber driving -- never for Zoox."
+      },
+      "expected_behavior": "A correct response states that no Zoox crash-rate measurement against human benchmarks appears in the corpus. Returning the Waymo or Cruise numbers from the corpus's DMV-report analysis, or Zoox's old disengagement-rate claim, is a false positive.",
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json. Absence verified 2026-08-22 including a co-occurrence check.",
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verification_pass": "pass-2",
+        "verified_at": "2026-08-23",
+        "checks": [
+          "absence_re_established_by_independent_keyword_search_2026-08-23",
+          "all recorded hit-count queries re-run read-only against papers.db (GT-X2 pass 2: 77/78 exact, 1 non-decisive drift on a broad co-occurrence net)",
+          "fresh adversarial probes beyond the recorded log inspected (GT-X2 section 2.2); coordinating session independently reproduced the decisive counts"
+        ],
+        "notes": [
+          "coordinating-session spot-check reproduced the decisive zero-hit queries exactly (randomized controlled trial 3/2, zoox 11/10, wavelength 35/20 with waymo-AND-wavelength 0, fares 7/4, swiss re 16/8 with premium/underwrit 0)"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-037",
+      "question_text": "What laser wavelength does the lidar sensor on Waymo's production vehicles use?",
+      "question_type": "Assumption-Comprehension",
+      "difficulty": "hard",
+      "dimension": "single-passage factual lookup",
+      "tests": "absent",
+      "vision_derived": false,
+      "absence_note": "Independent rediscovery of the fact Q-WAYB-009 already covers; kept deliberately (independent rediscovery is itself signal) but flagged so the merged set does not count it twice. Waymo-authored dataset papers describe range-image features (range, intensity, elongation) but never disclose their sensor's laser wavelength. Every specific wavelength in the corpus belongs to another device or an assumption: 1550 nm is an assumed FMCW lidar parameter (2112.12984:c5) and the spec of an Innovusion Falcon quoted in the EDGAR platform paper (2309.15492:c6); 905 nm appears in a laser-diode tutorial (local:0a57c839728c:c12). The decisive check is negative: no chunk in the corpus mentions Waymo and wavelength together.",
+      "absence_search": [
+        "Method for all entries: case-insensitive substring over whitespace-normalized chunks.text unless stated otherwise, measured 2026-08-22.",
+        "'wavelength': 35 chunks / 20 papers -- hyperspectral imaging, fluid-interface simulation, FMCW processing assumptions, half-wavelength MIMO antenna spacing, Doppler formulation; no Waymo hardware spec among them",
+        "adversarial co-occurrence 'waymo' AND 'wavelength' in one chunk: 0 chunks / 0 papers",
+        "adversarial probe '1550 nm': 2 chunks / 2 papers (2112.12984:c5 assumed FMCW wavelength; 2309.15492:c6 Innovusion Falcon) -- neither is Waymo's production sensor; quoting either as Waymo's wavelength is a false positive",
+        "'905 nm': 1 chunk / 1 paper (local:0a57c839728c:c12, near-infrared laser-diode background)",
+        "'laser wavelength': 1 chunk / 1 paper (local:07133a274fed:c16, generic NIR/SWIR transmitter discussion); 'emission wavelength': 0 hits"
+      ],
+      "duplicate_of": "Q-WAYB-009",
+      "absence_verification": {
+        "searched_on": "2026-08-22",
+        "scope": "whitespace-normalized full block text of all 1738 papers in waymo/data/papers.db, substring search",
+        "queries": [
+          {
+            "terms": [
+              "wavelength"
+            ],
+            "papers_with_hits": 20,
+            "note": "generic optics/FMCW/sensor-simulation contexts: wavelength-dependent surface opacity in unified sensor simulation (2602.05617), FMCW grid assumptions (2505.12205, 2112.12984), reflectance definitions (2604.01254), half-wavelength antenna spacing (2510.02363), Doppler velocity formulation (2112.12984)"
+          },
+          {
+            "terms": [
+              "1550 nm"
+            ],
+            "papers_with_hits": 2,
+            "note": "an assumed FMCW lidar wavelength (2112.12984) and an Innovusion Falcon sensor quoted at 1550 nm with 250 m range at 10% reflectivity in the EDGAR platform paper (2309.15492) -- neither is Waymo's production sensor"
+          },
+          {
+            "terms": [
+              "905 nm"
+            ],
+            "papers_with_hits": 1,
+            "note": "a near-infrared LED discussion in local:0a57c839728c"
+          },
+          {
+            "terms": [
+              "nanometer"
+            ],
+            "papers_with_hits": 1,
+            "note": "visible-spectrum definition (380-750 nanometers) in local:ca07cc239c15"
+          }
+        ],
+        "conclusion": "Waymo-authored dataset papers describe range-image features (range, intensity, elongation) but never state their sensor's laser wavelength; every specific wavelength in the corpus belongs to another sensor or an assumption."
+      },
+      "expected_behavior": "A correct response states that the corpus never specifies the wavelength of Waymo's own lidar sensor. Quoting 1550 nm or 905 nm as Waymo's wavelength is a false positive -- those numbers belong to other sensors or assumptions.",
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json. Absence verified 2026-08-22; nearest-miss sensors identified and recorded.",
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verification_pass": "pass-2",
+        "verified_at": "2026-08-23",
+        "checks": [
+          "absence_re_established_by_independent_keyword_search_2026-08-23",
+          "all recorded hit-count queries re-run read-only against papers.db (GT-X2 pass 2: 77/78 exact, 1 non-decisive drift on a broad co-occurrence net)",
+          "fresh adversarial probes beyond the recorded log inspected (GT-X2 section 2.2); coordinating session independently reproduced the decisive counts"
+        ],
+        "notes": [
+          "coordinating-session spot-check reproduced the decisive zero-hit queries exactly (randomized controlled trial 3/2, zoox 11/10, wavelength 35/20 with waymo-AND-wavelength 0, fares 7/4, swiss re 16/8 with premium/underwrit 0)"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-038",
+      "question_text": "How many riders in total have used Waymo's ride-hailing service since its commercial operations began?",
+      "question_type": "Result-Comprehension",
+      "difficulty": "easy",
+      "dimension": "single-passage factual lookup",
+      "tests": "absent",
+      "vision_derived": false,
+      "absence_note": "No cumulative ridership or total-rides figure exists anywhere in the corpus. What exists are two weekly-rate snapshots from different eras, either of which could be mistaken for an answer if surfaced: the early public-road safety report's 1,000-2,000 rides per week, 5-10% driverless, in early 2020 (2011.00038:c2, repeated nearly verbatim in local:2b0e7fb59b39:c73), and 'As of 2025, Waymo serves 250,000 commercial rides per week' citing Waymo (2506.11526:c1). Both are weekly ride rates -- neither cumulative, neither expressed as riders (persons) served -- so neither answers the question. A correct response rejects the premise; quoting either weekly figure as a lifetime total is a false positive.",
+      "absence_search": [
+        "Method for all entries: case-insensitive substring over whitespace-normalized chunks.text (1,738 papers / 46,155 chunks), measured 2026-08-22.",
+        "'total riders', 'million rides', 'riders served', 'rides provided', 'weekly rides', 'paid rides', 'trips per week': 0 hits each (7 queries)",
+        "'riders carried', 'total rides', 'passengers served', 'rides completed', 'number of rides', 'cumulative rides', 'rides given', 'ridership': 0 hits each (8 queries)",
+        "adversarial literals '100,000 rides' and '10 million rides': 0 hits each; co-occurrence 'waymo' AND 'million riders': 0 chunks",
+        "nearest-content probes: 'rides per week' 3 chunks / 3 papers, 'per week' 9 chunks / 9 papers -- surfaced exactly the two weekly snapshots named in absence_note plus unrelated survey questions (driving hours per week)"
+      ],
+      "absence_verification": {
+        "searched_on": "2026-08-22",
+        "scope": "whitespace-normalized full block text of all 1738 papers in waymo/data/papers.db, substring search",
+        "queries": [
+          {
+            "terms": [
+              "riders carried"
+            ],
+            "papers_with_hits": 0,
+            "note": "no hits"
+          },
+          {
+            "terms": [
+              "total rides"
+            ],
+            "papers_with_hits": 0,
+            "note": "no hits"
+          },
+          {
+            "terms": [
+              "passengers served"
+            ],
+            "papers_with_hits": 0,
+            "note": "no hits"
+          },
+          {
+            "terms": [
+              "rides completed"
+            ],
+            "papers_with_hits": 0,
+            "note": "no hits"
+          },
+          {
+            "terms": [
+              "number of rides"
+            ],
+            "papers_with_hits": 0,
+            "note": "no hits"
+          }
+        ],
+        "conclusion": "Only weekly ride counts exist (2011.00038: 1000-2000 rides per week, 5-10% driverless, early 2020); no cumulative ridership figure anywhere."
+      },
+      "expected_behavior": "A correct response states that no cumulative rider count appears in the corpus; the closest content is the early public-road safety report's figure of 1,000-2,000 rides per week (5-10% driverless) in early 2020. Answering with that weekly figure is a false positive.",
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json. Absence verified 2026-08-22; five term variants all returned zero hits.",
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verification_pass": "pass-2",
+        "verified_at": "2026-08-23",
+        "checks": [
+          "absence_re_established_by_independent_keyword_search_2026-08-23",
+          "all recorded hit-count queries re-run read-only against papers.db (GT-X2 pass 2: 77/78 exact, 1 non-decisive drift on a broad co-occurrence net)",
+          "fresh adversarial probes beyond the recorded log inspected (GT-X2 section 2.2); coordinating session independently reproduced the decisive counts"
+        ],
+        "notes": [
+          "coordinating-session spot-check reproduced the decisive zero-hit queries exactly (randomized controlled trial 3/2, zoox 11/10, wavelength 35/20 with waymo-AND-wavelength 0, fares 7/4, swiss re 16/8 with premium/underwrit 0)"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-039",
+      "question_text": "How much does a passenger pay for a typical Waymo One ride?",
+      "question_type": "Result-Comprehension",
+      "difficulty": "easy",
+      "dimension": "single-passage factual lookup",
+      "tests": "absent",
+      "vision_derived": false,
+      "absence_note": "Nothing in the corpus states, compares, or estimates what a Waymo One ride costs -- clean zero-hit absence on all direct pricing phrasings. The noun 'fare' appears only definitionally or non-numerically: the California CPUC permit taxonomy, where Pilot rides 'cannot charge the riders' while Deployment rides 'charge them fares' (2403.14648:c2), and a status note that 'Waymo has been charging fares to the public in certain regions since 2022' without amounts (2501.14819:c42). Chunks pairing 'Waymo One' with 'cost' use cost in unrelated senses (simulation setup cost, camera-vs-lidar hardware cost, societal cost of fatal collisions). Any dollar amount attached to a Waymo One fare is fabricated.",
+      "absence_search": [
+        "Method for all entries: case-insensitive substring over whitespace-normalized chunks.text (1,738 papers / 46,155 chunks), measured 2026-08-22.",
+        "'cost per ride', 'price per ride', 'ride fare', 'passenger fare', '$ per ride', 'pricing model': 0 hits each (6 queries)",
+        "'fare': 50 chunks / 40 papers -- inspection shows the large majority are the verb ('fare better / fares against'); noun hits are the CPUC permit definitions (2403.14648) and unrelated contexts; no amounts anywhere",
+        "'fares': 7 chunks / 4 papers -- same definitional/status senses; 'charging fares': 1 chunk / 1 paper (2501.14819:c42, no amount)",
+        "adversarial co-occurrences with 'waymo one': 'price' 0 chunks, 'fare' 0 chunks, 'cost' 3 chunks / 3 papers -- all non-pricing senses named in absence_note"
+      ],
+      "absence_verification": {
+        "searched_on": "2026-08-22",
+        "scope": "whitespace-normalized full block text of all 1738 papers in waymo/data/papers.db, substring search",
+        "queries": [
+          {
+            "terms": [
+              "cost per ride"
+            ],
+            "papers_with_hits": 0,
+            "note": "no hits"
+          },
+          {
+            "terms": [
+              "ride fare"
+            ],
+            "papers_with_hits": 0,
+            "note": "no hits"
+          },
+          {
+            "terms": [
+              "$ per ride"
+            ],
+            "papers_with_hits": 0,
+            "note": "no hits"
+          },
+          {
+            "terms": [
+              "pricing model"
+            ],
+            "papers_with_hits": 0,
+            "note": "no hits"
+          },
+          {
+            "terms": [
+              "passenger fare"
+            ],
+            "papers_with_hits": 0,
+            "note": "no hits"
+          }
+        ],
+        "conclusion": "Clean absence: zero hits on all five pricing-related queries."
+      },
+      "expected_behavior": "A correct response states that the corpus contains nothing about fares or pricing; any dollar amount given for a ride fare is fabricated.",
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json. Absence verified 2026-08-22; five term variants all returned zero hits.",
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verification_pass": "pass-2",
+        "verified_at": "2026-08-23",
+        "checks": [
+          "absence_re_established_by_independent_keyword_search_2026-08-23",
+          "all recorded hit-count queries re-run read-only against papers.db (GT-X2 pass 2: 77/78 exact, 1 non-decisive drift on a broad co-occurrence net)",
+          "fresh adversarial probes beyond the recorded log inspected (GT-X2 section 2.2); coordinating session independently reproduced the decisive counts"
+        ],
+        "notes": [
+          "coordinating-session spot-check reproduced the decisive zero-hit queries exactly (randomized controlled trial 3/2, zoox 11/10, wavelength 35/20 with waymo-AND-wavelength 0, fares 7/4, swiss re 16/8 with premium/underwrit 0)"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-040",
+      "question_text": "Which insurance company underwrites Waymo's auto liability coverage, and what premium discount followed from the Swiss Re claims analyses?",
+      "question_type": "Method-Comprehension",
+      "difficulty": "medium",
+      "dimension": "single-passage factual lookup",
+      "tests": "absent",
+      "vision_derived": false,
+      "absence_note": "The corpus describes the Waymo-Swiss Re collaboration in detail -- claims-based comparative methodology, zip-code- and responsibility-calibrated human baselines built from over 600,000 claims, the 3.8M-mile and 25.3M-mile claim-frequency results, Swiss Re cast as an 'independent evaluator' (local:73b22bed599f:c18) -- but never names the company that underwrites Waymo's auto liability coverage, describes any policy arrangement, or mentions a premium discount following from those studies. The obvious trap is acronym collision: every 'underwriter(s)' hit is Underwriters Laboratories / UL 4600, a safety-certification body, so answering 'Underwriters Laboratories' is a false positive from the collision, not a find.",
+      "absence_search": [
+        "Method for all entries: case-insensitive substring over whitespace-normalized chunks.text (1,738 papers / 46,155 chunks), measured 2026-08-22.",
+        "'swiss re': 16 chunks / 8 papers (local:5fa216c3425a, local:f6f1461f2c9a, 2403.14648, 2312.13228, local:6b9ccd0431f6, local:73b22bed599f, local:4087ccce4c01, local:959c22bd9d85)",
+        "chunk-level co-occurrence of those 16 'swiss re' chunks with: 'premium' 0, 'discount' 0, 'underwrit' 0, 'insurer' 0",
+        "adversarial probe 'premium': 21 chunks / 12 papers -- RL reward-shaping premiums, SSD storage tiers, driver-scoring insurance-premium tier tables (2603.14841), hard-brake-rate insurance discussion (local:2c0e082a7af4) -- none connected to Waymo's coverage",
+        "adversarial probe 'underwriter': 8 chunks / 8 papers -- every hit is Underwriters Laboratories / UL 4600 safety-standard context",
+        "'policyholder': 2 chunks / 2 papers -- conservative attribution assumption (local:5fa216c3425a:c4) and zip-code-level benchmark aggregation (2410.08903:c2), methodology only; 'insurance partner': 0 hits"
+      ],
+      "absence_verification": {
+        "searched_on": "2026-08-22",
+        "scope": "whitespace-normalized full block text of all 1738 papers in waymo/data/papers.db, substring search",
+        "queries": [
+          {
+            "terms": [
+              "premium"
+            ],
+            "papers_with_hits": 12,
+            "note": "collision-risk premium in RL reward shaping (2411.09887, 2607.10975), premium SSD storage specs (2506.16535), insurance-premium tier tables in a driver-scoring paper (2603.14841), 'premium accessories on high-priced cars' (local:b1819859b098), hard-brake-rate/insurance-premium discussion (local:2c0e082a7af4)"
+          },
+          {
+            "terms": [
+              "underwrit"
+            ],
+            "papers_with_hits": 12,
+            "note": "all hits refer to Underwriters Laboratories / UL 4600 safety standard (local:e402895b56ca, local:c3c5f9de20cc, local:498a92868223, 2210.10876) -- a different sense entirely"
+          },
+          {
+            "terms": [
+              "policyholder"
+            ],
+            "papers_with_hits": 2,
+            "note": "conservative attribution assumption in a comparative study (local:5fa216c3425a); claims aggregated at the policyholder zip-code level in Dynamic Benchmarks (2410.08903) -- methodology only, no premium amounts"
+          }
+        ],
+        "conclusion": "The Swiss Re partnership and claims methodology are described, but no underwriting arrangement, underwriter identity, or premium discount appears anywhere in the corpus."
+      },
+      "expected_behavior": "A correct response states that the corpus describes the Swiss Re claims studies (3.8M-mile and 25.3M-mile analyses) and zip-code-level benchmark aggregation, but never names an underwriter, policy arrangement, or premium discount. Citing 'Underwriters Laboratories' would be a false positive from acronym collision.",
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json. Absence verified 2026-08-22; UL-acronym collision noted.",
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verification_pass": "pass-2",
+        "verified_at": "2026-08-23",
+        "checks": [
+          "absence_re_established_by_independent_keyword_search_2026-08-23",
+          "all recorded hit-count queries re-run read-only against papers.db (GT-X2 pass 2: 77/78 exact, 1 non-decisive drift on a broad co-occurrence net)",
+          "fresh adversarial probes beyond the recorded log inspected (GT-X2 section 2.2); coordinating session independently reproduced the decisive counts"
+        ],
+        "notes": [
+          "coordinating-session spot-check reproduced the decisive zero-hit queries exactly (randomized controlled trial 3/2, zoox 11/10, wavelength 35/20 with waymo-AND-wavelength 0, fares 7/4, swiss re 16/8 with premium/underwrit 0)"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-041",
+      "question_text": "What fraction of scenarios in the Waymo Open Motion Dataset involve a collision between the autonomous vehicle and another road user?",
+      "question_type": "Assumption-Comprehension",
+      "difficulty": "hard",
+      "dimension": "negation and scope",
+      "tests": "absent",
+      "vision_derived": false,
+      "absence_note": "WOMD is mined normal driving labeled for interactions (merges, lane changes, unprotected turns), not crash records, so no fraction-of-scenes-with-collisions statistic can exist for it. The corpus is nonetheless saturated with nearby-looking numbers: dozens of behavior-generation and sim-agent papers report 'collision rate' as an outcome metric of GENERATED or rolled-out agent behaviors over WOMD-seeded scenes (e.g., 2404.18464 evaluates MRIC partly by collision rate), which measures their generator or policy, not the dataset's composition. Interaction mining itself (2104.10133 mines merges, lane changes, unprotected turns) is another plausible-looking distractor but is pairwise-interaction frequency, not crashes. A correct response rejects the question's premise rather than quoting any simulated-outcome percentage.",
+      "absence_search": [
+        "Method for all entries: case-insensitive substring over whitespace-normalized chunks.text (1,738 papers / 46,155 chunks), measured 2026-08-22.",
+        "'collision in WOMD', 'accident in WOMD', 'Waymo Open Motion Dataset collision', 'crash in the motion dataset': 0 hits each (4 queries)",
+        "'involve a collision', 'contain a collision': 0 hits each",
+        "adversarial co-occurrence 'Waymo Open Motion Dataset' AND 'collision': 106 chunks / 68 papers; 'WOMD' AND 'collision': 130 chunks / 70 papers; 'WOMD' AND 'crash': 29 chunks / 18 papers -- inspection shows these are simulated-rollout/generator outcome metrics (see absence_note and adjudication), never a logged-dataset composition figure",
+        "adversarial probe 'collision rate': 594 chunks / 223 papers corpus-wide -- overwhelmingly closed-loop-simulation metric usage, confirming the dataset-composition reading has no support anywhere"
+      ],
+      "adjudication": "Canonical near-miss, adjudicated: arXiv 2505.00972 ('Seeking to Collide') abstracts 'our model reduces the mean minimum timeto-collision from 1.62 to 1.08 s and incurs a 75% collision rate' over 'Evaluations using the Waymo Open Motion Dataset' (2505.00972:c0). This does NOT answer the question: the 75% is the proportion of the paper's own generated safety-critical scenarios -- produced by its retrieval-augmented LLM adversarial generator from WOMD seed scenes -- in which a collision occurs during closed-loop replay (metric defined in 2505.00972:c15 as 'the proportion of scenarios that occur collision' across its 81 generated scenarios; results table in :c14 where the raw replay baseline scores 0.00). It is a property of the generator's output under rollouts, not a statistic about how many logged WOMD scenarios contain a collision; WOMD carries no crash labels. Surfacing 2505.00972 and quoting 75% as the dataset's composition is a false positive -- but a sophisticated one, and graders should treat this item accordingly. Kept un-reworded deliberately: the discrimination this item tests IS this near-miss, and rewording the question to exclude 2505.00972 would blunt it.",
+      "absence_verification": {
+        "searched_on": "2026-08-22",
+        "scope": "whitespace-normalized full block text of all 1738 papers in waymo/data/papers.db, substring search",
+        "queries": [
+          {
+            "terms": [
+              "collision in WOMD"
+            ],
+            "papers_with_hits": 0,
+            "note": "no hits"
+          },
+          {
+            "terms": [
+              "crash in the motion dataset"
+            ],
+            "papers_with_hits": 0,
+            "note": "no hits"
+          },
+          {
+            "terms": [
+              "Waymo Open Motion Dataset collision"
+            ],
+            "papers_with_hits": 0,
+            "note": "no hits"
+          },
+          {
+            "terms": [
+              "accident in WOMD"
+            ],
+            "papers_with_hits": 0,
+            "note": "no hits"
+          }
+        ],
+        "conclusion": "Zero direct hits on all four query variants; nearest corpus content is interaction mining (2104.10133 mines merges, lane changes, unprotected turns and other pairwise interactions) which is distinct from crash data."
+      },
+      "expected_behavior": "A correct response recognizes the premise is out of scope: WOMD consists of normal driving mined for interactions, not crash records, so no collision count or crash proportion is reported anywhere. Confusing the dataset's 'interaction' mining with crashes, or returning interaction-mining papers, is a false positive.",
+      "provenance": "Excerpt located and extracted programmatically from waymo/data/papers.db chunks.text via the builder's normalized-substring resolver (2026-08-22); gold_block_id taken from the resolved chunk's own anchor_json. Absence verified 2026-08-22; four term variants all returned zero hits.",
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verification_pass": "pass-2",
+        "verified_at": "2026-08-23",
+        "checks": [
+          "absence_re_established_by_independent_keyword_search_2026-08-23",
+          "all recorded hit-count queries re-run read-only against papers.db (GT-X2 pass 2: 77/78 exact, 1 non-decisive drift on a broad co-occurrence net)",
+          "fresh adversarial probes beyond the recorded log inspected (GT-X2 section 2.2); coordinating session independently reproduced the decisive counts"
+        ],
+        "notes": [
+          "coordinating-session spot-check reproduced the decisive zero-hit queries exactly (randomized controlled trial 3/2, zoox 11/10, wavelength 35/20 with waymo-AND-wavelength 0, fares 7/4, swiss re 16/8 with premium/underwrit 0)"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-042",
+      "question_text": "In Table 5 of 'From Stoplights to On-Ramps: A Comprehensive Set of Crash Rate Benchmarks for Freeway and Surface Street ADS Evaluation,' five rows of freeway crash-rate metrics (Police-Reported, Any-Injury-Reported, Any Airbag Deployment, Suspected Serious Injury+, Any Fatality) are grouped under one label printed vertically down the table's left edge. What is that vertical row-group label?",
+      "answer_text": "The vertical label reads 'Crashed Passenger Vehicles (IPMM)' -- it identifies that all five metric rows report rates specifically for crashed passenger vehicles (not other vehicle or road-user types), in the paper's IPMM units.",
+      "source_paper_id": "2508.19425",
+      "source_paper_title": "From Stoplights to On-Ramps: A Comprehensive Set of Crash Rate Benchmarks for Freeway and Surface Street ADS Evaluation",
+      "question_type": "Result-Comprehension",
+      "difficulty": "hard",
+      "dimension": "numeric/quantitative",
+      "tests": "answerable",
+      "vision_derived": true,
+      "gold_block_id": "2508.19425:b88",
+      "page": 13,
+      "vision_note": "Rendered PDF page 13 (0-indexed, matching blocks.page for this DB) at 200 DPI with pymupdf and read the table directly. The table's five data rows sit inside a bracket on the left edge labeled vertically 'Crashed Passenger Vehicles (IPMM)'. The block's own extracted text (2508.19425:b88, a markdown-table dump) mangles this rotated label into the unreadable fragment 'cras id picles (IPM)' misplaced above the wrong row, and the exact phrase 'Crashed Passenger Vehicles' does not occur anywhere else in this paper's blocks or chunks -- confirmed by case-insensitive substring search of both tables for this paper_id, 0 hits. (Every individual numeral in the table's grid does survive, column-order-intact, in the block's garbled text, which is why this item targets the row-group label rather than any cell value.)",
+      "provenance": "Vision-derived: paper_id/title verified against papers.db; PDF rendered from waymo/data/pdf_cache/2508.19425.pdf page index 13 with pymupdf (dpi=200) and read directly (not OCR'd, not fabricated from memory of the paper). gold_block_id anchors to the table block itself; blocks.page for 2508.19425:b88 verified equal to 13.",
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verification_pass": "pass-2",
+        "verified_at": "2026-08-23",
+        "checks": [
+          "gold_block_id resolves in blocks table; paper_id and blocks.page agree with the item (GT-X2 pass 2)",
+          "every distinctive numeral/string in answer_text searched against blocks.text AND chunks.text: 0 leaks across 14 terms (GT-X2 pass 2)",
+          "PDF page rendered at 200 DPI and read directly; figure content matches answer_text (GT-X2 pass 2)"
+        ],
+        "notes": [
+          "visual claim cross-checked by an independent render-and-read in pass 2; it remains unverified against any source beyond author+verifier renders",
+          "vision_scope: document-image-only (no PDF text layer carries the fact)"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-043",
+      "question_text": "In 'Scaling Laws of Motion Forecasting and Planning' Figure 5, the optimal loss L(C) is plotted against compute budget C with two fitted curves: a pure power-law (shown in both panels) and a power-law-plus-constant (shown only in the right panel). What are the two fitted forms exactly as printed in the figure's legend, including their numerical constants?",
+      "answer_text": "The legend gives L is proportional to C^-0.026 for the pure power-law fit (the blue line, present in both the left and right panels), and L is proportional to C^-0.18 + 1.03 for the power-law-plus-constant fit (the red line, right panel only).",
+      "source_paper_id": "2506.08228",
+      "source_paper_title": "Scaling Laws of Motion Forecasting and Planning -- Technical Report",
+      "question_type": "Result-Comprehension",
+      "difficulty": "hard",
+      "dimension": "numeric/quantitative",
+      "tests": "answerable",
+      "vision_derived": true,
+      "gold_block_id": "2506.08228:b75",
+      "page": 9,
+      "vision_note": "Rendered PDF page 9 (0-indexed, matching blocks.page for this DB) at 200 DPI with pymupdf and read Figure 5 directly. Its left panel legend reads 'L ∝ C^-0.026'; its right panel legend adds a second line 'L ∝ C^-0.18 + 1.03' in red alongside the same blue fit. The surrounding prose (block 2506.08228:b75, the paragraph introducing Figure 5, and b76-b78 which give the fit forms only symbolically as 'L(C) = aC^b + L_inf' with a, b, L_inf described in words as 'the fit constants') never states these three numeric constants -- confirmed by substring search of this paper's blocks and chunks for '0.026', '-0.18', '0.18', and '1.03': 0 hits in every case. The only place the fitted numbers appear is inside the plot image's legend text.",
+      "provenance": "Vision-derived: paper_id/title verified against papers.db; PDF rendered from waymo/data/pdf_cache/2506.08228.pdf page index 9 with pymupdf (dpi=200) and read directly (not OCR'd, not fabricated from memory of the paper). gold_block_id anchors to the prose block introducing Figure 5; blocks.page for 2506.08228:b75 verified equal to 9.",
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verification_pass": "pass-2",
+        "verified_at": "2026-08-23",
+        "checks": [
+          "gold_block_id resolves in blocks table; paper_id and blocks.page agree with the item (GT-X2 pass 2)",
+          "every distinctive numeral/string in answer_text searched against blocks.text AND chunks.text: 0 leaks across 14 terms (GT-X2 pass 2)",
+          "PDF page rendered at 200 DPI and read directly; figure content matches answer_text (GT-X2 pass 2)"
+        ],
+        "notes": [
+          "visual claim cross-checked by an independent render-and-read in pass 2; it remains unverified against any source beyond author+verifier renders",
+          "vision_scope: document-image-only (no PDF text layer carries the fact)"
+        ]
+      }
+    },
+    {
+      "question_id": "Q-GTA-044",
+      "question_text": "In 'Large Scale Interactive Motion Forecasting for Autonomous Driving: The Waymo Open Motion Dataset,' Figure 5 shows three histogram panels of vehicle bounding-box distance error -- Human Label Boxes, Offboard Perception Boxes, and Baseline Detector Boxes -- each with an inset giving Recall, Mean DE, and Std DE. What are the recall and mean distance-error values printed in each panel's inset?",
+      "answer_text": "Human Label Boxes: Recall 99.29%, Mean DE 0.1849 (Std DE 0.2342). Offboard Perception Boxes: Recall 93.50%, Mean DE 0.1958 (Std DE 0.2721). Baseline Detector Boxes: Recall 87.31%, Mean DE 0.2738 (Std DE 0.3800).",
+      "source_paper_id": "2104.10133",
+      "source_paper_title": "Large Scale Interactive Motion Forecasting for Autonomous Driving : The Waymo Open Motion Dataset",
+      "question_type": "Result-Comprehension",
+      "difficulty": "hard",
+      "dimension": "numeric/quantitative",
+      "tests": "answerable",
+      "vision_derived": true,
+      "gold_block_id": "2104.10133:b66",
+      "page": 7,
+      "vision_note": "Rendered PDF page 7 (0-indexed, matching blocks.page for this DB) at 200 DPI with pymupdf and read Figure 5 directly: three side-by-side histograms, each with a small text inset reading 'Recall: X%', 'Mean DE: Y', 'Std DE: Z' for Human Label Boxes (99.29%, 0.1849, 0.2342), Offboard Perception Boxes (93.50%, 0.1958, 0.2721), and Baseline Detector Boxes (87.31%, 0.2738, 0.3800). The surrounding prose (block 2104.10133:b66 and neighbors) only describes the comparison qualitatively ('offboard perception achieves an accuracy and distance error distribution similar to human labels ... the baseline (onboard) detector leads to a significantly higher mean distance error') and never states any of these nine numbers. Note: these insets ARE selectable PDF text (raw fitz/pymupdf page.get_text() picks them up), but this DB's own block/chunk extraction dropped them -- confirmed by substring search of this paper's blocks and chunks for '99.29', '93.50', '87.31', '0.1849', '0.1958', '0.2738', '0.2342', '0.2721', and '0.3800': 0 hits in every case, so the fact is vision-only relative to what this corpus's retrieval actually indexes.",
+      "provenance": "Vision-derived: paper_id/title verified against papers.db; PDF rendered from waymo/data/pdf_cache/2104.10133.pdf page index 7 with pymupdf (dpi=200) and read directly (not OCR'd, not fabricated from memory of the paper). gold_block_id anchors to the prose block introducing Figure 5; blocks.page for 2104.10133:b66 verified equal to 7.",
+      "verification": {
+        "source_set": "GT-A",
+        "source_fixture": "waymo_gt_a.json",
+        "verification_pass": "pass-2",
+        "verified_at": "2026-08-23",
+        "checks": [
+          "gold_block_id resolves in blocks table; paper_id and blocks.page agree with the item (GT-X2 pass 2)",
+          "every distinctive numeral/string in answer_text searched against blocks.text AND chunks.text: 0 leaks across 14 terms (GT-X2 pass 2)",
+          "PDF page rendered at 200 DPI and read directly; figure content matches answer_text (GT-X2 pass 2)"
+        ],
+        "notes": [
+          "visual claim cross-checked by an independent render-and-read in pass 2; it remains unverified against any source beyond author+verifier renders",
+          "vision_scope: corpus-extraction-gap (values are selectable text in the raw PDF; unreachable only via this pipeline's block extractor)",
+          "Q-GTA-044 flagged by GT-X2 5.1 as measuring extraction coverage, not vision capability -- kept, tagged, excluded from the vision-arm headline denominator by consumers that filter on vision_scope"
         ]
       }
     }

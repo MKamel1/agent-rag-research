@@ -561,3 +561,45 @@ observer**, and a scan written inline in a shell cannot.
 - Nested dispatch was enabled for opencode agents on 2026-08-22 (free model → fan-out costs no
   quota). Watch whether children's work gets verified by their parent before commit; the rule is
   that a child's report is a draft, not evidence.
+
+## 7. The Waymo-priority benchmark programme (2026-08-23)
+
+### 7.1 An image read ends the turn — batch around it
+
+Reading an image file with the Read tool returns the image as a new user message, which ends the
+assistant turn mid-chain. During GT-WMR authoring three image reads (figure renders for vision
+items) landed mid-workflow and the operator experienced each break as the agent "stopping",
+asking twice why. The work was never stalled — but perception is the experience. Rule: batch all
+non-image work into the same turn, do image reads only when nothing else remains, and say once,
+explicitly, that an image read will end the turn before doing it.
+
+### 7.2 Ceiling-check every metric BEFORE freezing a benchmark protocol
+
+The frozen protocol defined Precision@10 as `|top-k ∩ gold| / k` over single-gold-paper queries.
+With a retriever returning k mostly-distinct papers, that quantity is structurally capped near
+`1/k` (measured ceiling 0.1086–0.1132): a literally perfect retrieval system scores ~0.10 against
+a 0.95 target. The failure was caught only at measurement time, costing a dated addendum and two
+"failed" gates that mean nothing. A frozen metric needs an achievability bound computed at freeze
+time — thirty seconds of arithmetic (`max P@10 = min(distinct results, gold count)/k`) would have
+caught it. Definitions get reviewed for vagueness; they also need review for reachability.
+
+### 7.3 Measurement fan-out: N detached processes beat N agent sessions
+
+The six benchmark runs (2 fixtures × 3 sparse-modes) were launched as detached `setsid` processes
+writing independent report files and finished in ~90 s wall clock, with zero supervision. This is
+the same fan-out shape that repeatedly died when done as concurrent opencode agent sessions
+(§6b, the nine silent deaths). The difference is not concurrency — it's that a benchmark run is a
+deterministic process with one input and one output file, needing no judgment mid-flight. Rule:
+fan out *measurements* as processes; spend agent sessions only on the judgment work around them.
+(The one headless agent dispatched this programme — the isolated-XDG_DATA_HOME verifier — did
+complete, and earned its keep: it caught Q-WMR-080's absence note understating a real 41%-vs-24%
+evening/overnight figure in the 56.7M paper's Limitations, the Q-GTA-035 near-miss pattern again.)
+
+### 7.4 Never hand-type verbatim excerpts from terminal dumps
+
+9 of 66 excerpt-bearing GT-WMR items failed verbatim verification on first build: `<sup>` tags
+invisible in trimmed dumps, citation digits ("et al.5"), case drift from a probe transcript. The
+builder's fix — difflib match (≥85% coverage) against the tag-stripped chunk, then substitute the
+exact DB span and log the re-grounding in `_metadata.corrections` — converted all 9 into verified
+verbatim excerpts. The general rule: excerpt fidelity is a build-time machine check, not an
+authoring skill; author intent + programmatic extraction, and log every substitution.

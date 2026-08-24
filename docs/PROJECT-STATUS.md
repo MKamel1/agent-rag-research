@@ -544,3 +544,32 @@ supersedes any earlier count, the repo has moved since any prior analysis.
   describes for the 147 already-deleted stale branches). `origin/worktree-paper-author-org-tagging`
   similarly duplicates all 12 author-org-tagging commits (§3) already on `main` under different SHAs.
   None of these three branches carry work that isn't already on `main`.
+
+### Waymo-priority benchmark programme (shipped 2026-08-23)
+
+Operator goal: recall and precision ≥ 95% on the Waymo corpus, with waymo.com/safety/research
+papers as top priority; **target frozen before any implementation work**. All merged on `main`:
+
+- **Protocol (frozen first, commit `4e14d7b`)** — `docs/eval-reports/2026-08-23-waymo-priority-benchmark-protocol.md`:
+  metric definitions (paper-level Recall@10 / Precision@10 over answerable items, absent arm
+  reported separately per RI-M7's no-separable-floor finding), gates A–D, item-authoring rules,
+  and the no-post-hoc-editing constraint.
+- **Priority list** — `fixtures/eval/waymo_safety_research_55.json` (the full 55-paper page,
+  transcribed verbatim) and its resolution `waymo_safety_research_55_resolution.json`: 53/55
+  ingested, 2 documented missing. Invariants: `test_waymo_safety_research_resolution.py`.
+- **GT-WMR ground truth** — `fixtures/eval/gt_wmr.json`: 82 items (70 answerable / 12 absent),
+  52/53 priority papers grounded; every excerpt machine-verified verbatim against its gold chunk
+  (9 re-groundings logged in `_metadata.corrections`); absence items carry live-run search logs;
+  4 multi-paper synthesis items; 1 leak-checked vision item. Invariants:
+  `test_gt_wmr_invariants.py`.
+- **Verified-set v2 (pass 2)** — `waymo_gt_verified.json` grew 73 → 84 items: Q-GTA-034..044
+  survived independent re-verification (`docs/eval-reports/2026-08-22-waymo-groundtruth-second-pass.md`,
+  11/11 survive; coordinating session reproduced the decisive counts). Q-GTA-036/037 carry
+  `duplicate_of` pointers; `load_questions` excludes secondaries by default so a rediscovered
+  fact cannot move an aggregate denominator twice.
+- **Figures backfill (RI-32) completed** — full 1,738-paper run finished 2026-08-22 23:46
+  (9298.8s, 5.4 s/paper observed — both earlier ETAs wrong): figures 24,708 rows / 1,724 papers,
+  tables 8,266 / 1,586. Protected tables verified byte-identical by content hash against the
+  pre-run backup (`waymo/data/backups/pre-RI32-backfill-20260822T204114Z/`).
+
+Baseline numbers, gates, and the honest verdict: `docs/eval-reports/2026-08-23-waymo-priority-baseline.md`.

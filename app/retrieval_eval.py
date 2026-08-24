@@ -179,9 +179,14 @@ class QuestionResult:
     # known-absent question is never a hit by construction (see load_questions' source_paper_id
     # handling) and still returns a top score every real corpus query is expected to.
     top_score: float | None = None
+    # 2026-08-23 protocol instrumentation: the ordered top-k retrieved ids, so aggregate
+    # precision (|top-k ∩ gold| / k) is computable from the report without re-running.
+    # Purely additive outputs -- no input to any hit/rank/score above.
+    retrieved_paper_ids: tuple[str, ...] = ()
+    retrieved_block_ids: tuple[str, ...] = ()
 
 
-def load_questions(ground_truth_path: Path) -> list[Question]:
+def load_questions(ground_truth_path: Path, include_duplicates: bool = False) -> list[Question]:
     """Loads a ground-truth file into `Question`s. Two supported shapes, distinguished by
     whether a record already carries `question_text`:
 
@@ -189,9 +194,17 @@ def load_questions(ground_truth_path: Path) -> list[Question]:
       * the 210-question set (`eval_ground_truth.json`): `question_text` lives in the sibling
         `eval_questions_blind.json` (same directory), joined here by `question_id` -- mirrors the
         methodology `.phase0-data/teval/resolve_and_score_v2.py` already used for this file.
+
+    Records carrying a truthy `duplicate_of` are independent rewordings of a fact another item
+    already covers (waymo_gt_verified.json's dedup_policy). By default they are EXCLUDED so a
+    double-counted fact cannot move an aggregate denominator; pass include_duplicates=True to
+    score them alongside their primaries.
     """
     data = json.loads(ground_truth_path.read_text())
-    records = data["ground_truth"]
+    records = [
+        r for r in data["ground_truth"]
+        if include_duplicates or not r.get("duplicate_of")
+    ]
 
     text_by_id = {r["question_id"]: r["question_text"] for r in records if "question_text" in r}
     if len(text_by_id) < len(records):
@@ -310,6 +323,8 @@ def score_question(
             None,
         )
     return QuestionResult(
+        retrieved_paper_ids=tuple(r.paper_id for r in truncated),
+        retrieved_block_ids=tuple(r.anchor.block_id for r in truncated),
         question_id=question.question_id,
         question_type=question.question_type,
         paper_rank=paper_rank,
@@ -446,6 +461,8 @@ def _question_row(r: QuestionResult) -> dict:
         "title_leak": r.title_leak,
         # RI-M7: rank-1's score, independent of hit/miss -- see QuestionResult.top_score.
         "top_score": r.top_score,
+        "retrieved_paper_ids": list(r.retrieved_paper_ids),
+        "retrieved_block_ids": list(r.retrieved_block_ids),
         "paper_level": {"hit": r.paper_rank is not None, "rank": r.paper_rank},
         "passage_level": {
             "scored": r.passage_scored,
