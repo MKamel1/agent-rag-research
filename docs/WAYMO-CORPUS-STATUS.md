@@ -568,3 +568,8 @@ title against stored titles **or** opening ~3,500 characters **or** ≥5 shared 
 stored title — then hand-check every fallback hit against its nearest sibling, because word-overlap
 matching confidently pairs C10 with its pedestrian twin.
 
+The general research index (`waymo.com/research/`, 98 entries) was audited the same way on
+2026-08-23: **98/98 present and tagged**, nothing missing — both no-arXiv-link entries resolve to
+their OpenReview-mirror arXiv ids (`2412.12129`, `2411.17826`). The consolidated missing list lives
+in `docs/WAYMO-RESEARCH-MISSING.md` (currently: C10 only).
+
