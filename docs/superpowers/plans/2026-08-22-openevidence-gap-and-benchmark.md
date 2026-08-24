@@ -208,25 +208,86 @@ included because it is directly relevant to how large a target OpenEvidence is a
 independent scrutiny it has actually attracted (comparatively little, on the architecture; more, and
 contested, on accuracy).
 
-### 1.5 Groundedness: unmeasured, not merely unverified
+### 1.5 Groundedness: measured 2026-08-23, provisionally, and it measures something narrower than it looks
 
-`app/judge_eval.py` implements the harness both RI-M2 (fabrication audit) and RI-M6 (groundedness)
-were meant to run on, but `Judge` is only a `Protocol` (`app/judge_eval.py:87`) — no concrete
-implementation exists anywhere in the repo. `--judge-factory` is a required CLI argument
-(`app/judge_eval.py:243`), so the module refuses to run at all without one:
+**Superseded.** This section previously read "unmeasured, not merely unverified" — correct when
+written. JUDGE-1 has since filled the empty `Judge` seam (`app/judge_llm.py::LlmJudge`, a local
+model behind the existing Protocol) and produced the first run.
 
-```
-$ python -m app.judge_eval --rubric docs/eval-rubrics/groundedness-rubric.md
-judge_eval.py: error: the following arguments are required: --judge-factory
-```
+| | |
+|---|---|
+| auditable | 64 of 68 answerable items (the 4 vision-derived carry no text passage) |
+| scored | 63 (1 judge-JSON error) |
+| claims | **210**: 128 supported (0.610), 81 unsupported (0.386), 1 contradicted (0.005) |
+| known-absent arm | **0 of 16 auditable** |
 
-The only thing satisfying the `Judge` protocol anywhere in the repo is `FakeJudge`, a canned-verdict
-test double used exclusively by the unit suite (`app/test_judge_eval.py`). Separately, even a
-working judge would score against a rubric marked, in its own header,
-"**PROVISIONAL — not a baseline.** Nobody has signed off on this rubric yet"
-(`docs/eval-rubrics/groundedness-rubric.md:3`). So this is not "we haven't gotten to it yet" —
-fabrication rate and citation faithfulness, the two axes OpenEvidence's own product claim is
-actually judged on (grounded-or-refuse), have **no number of any kind** for this system. See §6.
+**Three qualifications, all of which matter more than the headline rate:**
+
+1. **This measures the fixture, not the system.** `load_items()` builds its audit items from the
+   ground-truth *file*, so the answers judged are the gold answers, not anything the system
+   generated. The number says how traceable those answers are to their own cited excerpts. It is
+   **not** a fabrication rate for this system, and should not be quoted as one.
+2. **The unsupported rate is largely the rubric working as designed.** Spot-checks split two ways:
+   `Q-GTA-003`'s answer cites "19,002 million VMT", genuinely absent from its cited excerpt though
+   present elsewhere in the same paper — a real citation-scope defect of the class GT-X flagged on
+   `Q-GTA-024`/`Q-GTA-031`; `Q-GTA-004`'s excerpt is one sentence and the answer adds a Poisson
+   model and CRSS standard errors that are not in it — defensible strictness, not judge error.
+3. **The one `contradicted` verdict is a judge error.** On `Q-GTA-021` the judge compared against
+   the wrong one of two supplied passages; 798 + 202 reconciles to the 1,000 the claim asserts.
+   Measured contradiction is effectively **0 of 210**. The judge is hand-audited at n=9 with 8
+   agreements — thin, and stated as thin.
+
+**The known-absent arm returning 0/16 is the structural finding, not a low score.** Those records
+carry no `answer_text` because this repository serves *retrieval only* — no downstream generation
+has ever been captured for them. **A real fabrication measurement requires a generation run first.**
+That is the concrete next step on this axis, and it is named in §6.
+
+The rubric remains **PROVISIONAL and unsigned**; the report stamps `rubric_sha256_12` so runs under
+different wordings cannot be silently compared. Sign-off is an operator decision.
+
+---
+
+## 1.6 The scorecard: how far are we, answered as precisely as the evidence allows
+
+The operator's question is "how far are we from a RAG as good as OpenEvidence." **A percentage
+answer would be fabricated**, and it is worth being exact about why rather than just asserting it:
+the two systems are not measured on the same corpus, the same questions, *or the same metric class*.
+OpenEvidence's published numbers are QA accuracy on medical benchmarks; this system's are retrieval
+recall and groundedness on a bespoke AV-safety set. There is no shared denominator, and inventing
+one would produce a number that looks rigorous and means nothing.
+
+What the evidence does support is a capability-by-capability scorecard, with the empty cells left
+visibly empty:
+
+| capability | this system, measured | OpenEvidence, published | comparable? |
+|---|---|---|---|
+| corpus scale | 1,738 papers (Waymo), 12,390 (causal) | ~35M papers, 300+ licensed journals | **no** — different targets; domain-scoped completeness is not general coverage |
+| corpus access | open sources, fully self-hosted | licensed (NEJM, JAMA network, Cochrane, NCCN) | **no** — not replicable at any effort |
+| retrieval recall on own corpus | **0.969** R@10 dense-only, 0.892 fused (n=65) | no published figure found | **no** — they publish no retrieval metric |
+| QA accuracy on a public benchmark | **none — no external benchmark exists for this corpus** | 31–39.5% MedXpertQA hard subspecialty; wins on point-of-care queries | **no** — this system has no comparable number at all |
+| abstention on known-unanswerable | **0 of 8 detected**; score distributions overlap (`distributions_separate: false`) | product claim is answer-only-from-evidence; no published abstention rate found | **partially** — their claim is qualitative, this system's failure is quantified |
+| groundedness | 0.610 supported / 210 claims, provisional rubric, **measures fixture answers not system output** | no published groundedness rate found | **no** — neither side has a comparable figure |
+| fabrication rate | **no number** — requires a generation run that has never been captured | no published figure found | **no** |
+| figure/table understanding | page-level retrieval 4/4 at n=4; **no VLM in the pipeline**; `vlm_description` populated on 0 of 24,708 figure rows | not described in any source found | **no** |
+| operating cost | ~0, fully local | commercial service | — |
+
+**The three honest conclusions this supports:**
+
+1. **On retrieval into its own corpus, this system is strong** — 0.969 paper-level recall is not a
+   number that needs apologising for, and the shipped fusion config is currently costing 7.7 points
+   of it (§1.2).
+2. **On the capability OpenEvidence is actually sold on — answer only from evidence, refuse
+   otherwise — this system scores zero, and that is measured, not assumed** (§1.3). No retrieval
+   improvement addresses it, because the score distributions carry no signal to threshold on.
+3. **The largest gap is not architecture, it is that most of the scorecard is empty on both sides.**
+   Three of nine rows have no published figure from OpenEvidence at all, and two have no figure
+   from this system. Anyone claiming a percentage between these two systems is filling those cells
+   with invention.
+
+**What would make a real comparison possible**, in the order it becomes possible: capture a
+generation run so fabrication can be measured at all → build or adopt an external benchmark for
+this corpus's domain → only then is there a shared axis, and even then only against whichever
+OpenEvidence numbers exist for the same metric class.
 
 ---
 
@@ -437,23 +498,29 @@ what was actually measured:
 
 Stated explicitly, not left implicit:
 
-- **Groundedness / fabrication rate.** No `Judge` implementation exists (`app/judge_eval.py:87`),
-  `--judge-factory` is required and unfulfilled, and the rubric is unsigned PROVISIONAL
-  (`docs/eval-rubrics/groundedness-rubric.md:3`). Zero data on whether generated answers are
-  faithful to retrieved passages. §1.5, §5 item 3.
+- **Fabrication rate — still zero data, for a structural reason.** Groundedness itself is no longer
+  unmeasured: JUDGE-1 built the missing judge and ran it (§1.5). But that run scores the ground-truth
+  fixture's own answers against their cited excerpts, and the known-absent arm returned **0 of 16
+  auditable** because those records carry no `answer_text` at all — this repository serves retrieval
+  only, so **no generated answer has ever been captured to audit**. Whether *generated* answers are
+  faithful to retrieved passages remains entirely unknown. Capturing a generation run is the
+  prerequisite, and is the single cheapest unblocking step left on this list. §1.5, §5 item 3.
+- **The rubric's sign-off.** Every groundedness number is produced under a rubric whose own header
+  says approval "belongs to a human." Until that happens, no groundedness figure can serve as a
+  baseline or a regression gate, by the rubric's own terms.
 - **Any external, independently-designed benchmark.** Every number in this document is measured
   against ground truth this project authored for its own corpus. No analogue exists to what NYU
   Langone or the Real-POCQi methodology did for OpenEvidence — independent graders, a benchmark this
   project didn't design, ideally real user-style queries rather than authored ones. §1.4.
-- **VLM-based retrieval evaluation.** Vision (PDF page rendering + a vision-capable model) was used
-  to *build* ground-truth items — 1 of the 73 items this baseline measured against
-  (`Q-WAYB-027`), grown to 4 in the current 84-item set — where a chart, ODD map, or table the text
-  layer represents poorly needed to be read to write the question. Vision has never been used to
-  *evaluate* retrieval itself: there is no measurement of whether this system's retrieval (which is
-  entirely text-chunk-based) can find or represent figure/table content at query time, as distinct
-  from whether a human-in-the-loop author could read a figure to write a ground-truth question about
-  it. `PRD.md:657`'s ColPali-based figure retrieval (§5 item 4, folded into the late-interaction
-  item) is the closest planned answer to this gap, and it remains unbuilt.
+- **A VLM inside the pipeline** — no longer "VLM-based retrieval evaluation," which has now been
+  done. The vision arm was measured 2026-08-23: **4/4 paper-level recall@10 at ranks 1, 2, 1, 1**,
+  and every one of the four returned a gold-paper chunk within one page of the answer's page (two
+  exactly on it). So text-chunk retrieval *can* reach the right page for a question whose answer
+  exists only in an image — **page-level retrieval is not the blocker**. What is missing is the step
+  after: nothing in the pipeline reads that page. `figures` carries `page` and `bbox_json` for all
+  24,708 rows but `vlm_description` is populated on **zero** of them, so there is no figure content
+  for a query embedding to match and no VLM re-reading a retrieved page at answer time. n=4 — a
+  direction, not a rate. `PRD.md:657`'s ColPali-based figure retrieval (§5 item 4) remains unbuilt.
 - **The magnitude of the fusion-weight cost**, beyond direction. §1.2's 5-0 asymmetry is solid
   evidence of direction on this one corpus; it does not establish how much recall a re-tuned weight
   would recover, or whether the same direction holds on the causal-methods corpus, which has not
