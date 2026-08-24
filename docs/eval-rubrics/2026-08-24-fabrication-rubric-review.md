@@ -262,3 +262,22 @@ add the sign-off-status header this rubric lacks — every audit report already 
 it; (2) applying any amendment changes the `rubric_sha256_12` stamp, so by the reports' own rule
 the 2026-08-23 numbers become non-comparable and one re-run is owed before any number is treated
 as a trend — the same sequencing note the sibling sign-off carries.
+
+## What this review could not assess
+
+- **Empirical inter-reader agreement.** Single reviewer, textual analysis only; no second human
+  rater, no agreement statistic. Divergence claims are about what the wording admits, not what
+  readers did.
+- **Whether qwen3-14b complies with F-A1–F-A3.** Nothing was re-run; the amendments are judged
+  on their text, not on judge behavior under them.
+- **The exact claims behind `Q-GTA-037`'s and `Q-GTA-040`'s `supported` verdicts.** The audit
+  JSONs itemize only `unsupported_claims`; which subject-stripped or compound claim each answer's
+  supported mass rests on is inferred from those lists plus the report's §2 hand-read, not read
+  off an artifact.
+- **Independent re-adjudication of the run.** The report's hand classification of the six
+  wrong-side answers and its corpus-wide string checks (`905 nm`, `underwrit` + `swiss re`) are
+  cited as evidence, not replicated against `papers.db`. Headline counts *were* re-derived from
+  both committed JSONs and match.
+- **Uncommitted state of the other session's checkout beyond this one file** — the rubric was
+  diffed byte-for-byte against the worktree (identical), but nothing else in the main checkout
+  was compared.
