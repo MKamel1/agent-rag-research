@@ -376,6 +376,35 @@ Two lessons, and the second is the bigger one:
   `/tmp/oc-state-*/opencode/opencode.db`, and until it did, the watch page showed nothing while
   four agents worked normally — a fix in one place breaking observability in another.
 
+### 4.5b "Commit as you go" in a brief does not produce commits
+
+The mitigation in §3.3d works — when it is followed. It frequently is not, and the reason is
+predictable rather than careless: an agent treats a commit as something you make when a *unit of
+work is complete*, so it keeps building until the ticket's deliverable exists. A brief saying
+"commit as you go" does not override that instinct, because the agent does not experience itself as
+about to die.
+
+Measured on one fan-out: three dispatches, 52 model calls between them, **zero commits**. One had
+65 lines of working code on disk — a real design decision, arrived at independently — sitting
+entirely in the worktree an hour in, on a provider that kills roughly one request in three.
+
+What does not work: repeating the instruction more emphatically, or listing the prior deaths as
+motivation. Both were already in those briefs.
+
+What plausibly does, untested here and worth trying next:
+
+- **Name the first commit as a deliverable in its own right**, with its content specified — "commit
+  1 is the plumbing plus its test, before you run anything" — so there is a unit to complete early
+  rather than a discipline to maintain throughout.
+- **Give the ticket an explicit checkpoint list**, each with its own commit, instead of one output
+  and a process note.
+- Accept that the reviewer may need to commit an agent's work for it after a death. That is
+  recoverable when the worktree is clean and the code parses; §3.3d's other half — read the dead
+  agent's transcript — is what recovers the rest.
+
+The transferable point: **a process instruction that competes with the model's own sense of what a
+commit is for will lose.** Restructure the deliverable so the desired behaviour is the natural one.
+
 ### 4.6 Do not resume a session that has accumulated a large context
 
 Continuing GT-A by resuming its existing session (~3.3M accumulated tokens) produced 40 minutes of
