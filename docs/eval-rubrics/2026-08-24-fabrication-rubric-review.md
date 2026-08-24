@@ -134,3 +134,131 @@ either the name narrows or the wording closes the misattribution blind spot (F-A
    consistent with "no conflicts exist" as with "conflicts were sought against the wrong
    passage." The sibling report's caution transfers verbatim: a zero rate "can be too low (a real
    contradiction reported as none) as much as it can be too high."
+
+## Q4. Should this rubric catch subject-misattribution?
+
+**Direct answer: yes — it is legitimately within this rubric's scope, and it is the one defect
+this review would hold sign-off hostage on. But catching it here does not make this rubric the
+abstention instrument, and the two must not be conflated.**
+
+Why it is in scope: misattribution is not a new judgment category — it is the existing
+`supported` test applied to a *whole* claim. "Waymo uses 905 nm sensors" is simply not stated by
+any passage; the passages state a different claim (a generic industry wavelength, in a paper that
+never mentions Waymo). By the rubric's own definition — "**supported** — the passages state this
+claim" — a subject-swapped claim is not supported; it belongs in `unsupported`, retained for
+human inspection like every other unsupported claim. Nothing new is being asked of the judge:
+only that the claim be extracted *with* its subject, so that "the passages state this claim"
+has an unambiguous referent. Today the wording never binds subject to claim, so the judge can
+audit a subject-stripped fragment ("905 nm sensors are commonly used") and score it supported,
+correctly, while the answer's actual assertion sails through. That is how `Q-GTA-037` and
+`Q-GTA-040` scored fully supported and left no trace in `unsupported_claims` — the instrument's
+only channel for suspicion.
+
+The run also shows the instrument is not hopeless even as worded, which sharpens rather than
+softens the finding: **4 of the 6 wrong-side answers did produce `unsupported` claims** —
+`Q-WAYB-021`'s fatality leap, `Q-WAYB-022`'s invented 0.18, both `Q-WAYB-028` claims, and,
+notably, `Q-WAYB-035`: although the report lists it among the three misattributions, the judge
+actually marked its claim `unsupported` with the rationale "The passage mentions a 65% reduction
+… for Waymo, not Cruise." Exactly two passed through clean — the two whose answers phrased the
+assertion without carrying its subject into the audited claim. (`Q-GTA-040`'s precise mechanism
+cannot be verified from the committed artifacts — only `unsupported_claims` are itemized — but
+both candidate mechanisms, subject-stripped extraction and compound-claim averaging, are closed
+by F-A1/F-A2 below.) The human-inspection loop already works where the wording lets the judge
+see the problem; the amendments extend the same net over the blind spot instead of adding a new
+instrument.
+
+What even an amended rubric cannot do, said plainly:
+
+- **It cannot be the abstention signal.** It audits claims against supplied excerpts; a
+  fully-supported rate on questions the corpus cannot answer remains possible, because retrieved
+  text about adjacent subjects grounds many true-but-irrelevant claims — most of the absent arm's
+  20/28 supported are exactly that. Whether the system should have answered at all lives
+  upstream: the generation prompt's missing refusal affordance (report §4) and any retrieval-side
+  answerability signal. Different instruments, complementary jobs; this rubric should catch the
+  misattributed *claim*, not be blamed for the unrefused *answer*.
+- **Wording is not compliance.** Whether qwen3-14b obeys the amended text is unknown until a
+  re-run; nothing was re-run here.
+
+## Recommendation
+
+**Sign with amendments.**
+
+One-line reason: the verdict vocabulary, the fallibility framing, the imported-vs-invented
+disclaimer with its human-inspection loop, and the deliberately lax calibration that gives the
+strict sibling its contrast class are all sound — but the wording's silence on claim subjects and
+multi-passage attribution let 2 of this run's 6 wrong-side answers score fully supported
+invisibly, and closing that costs three paste-in amendments whose wording is already proven in
+the sibling review.
+
+Where I would sign as-is: the three-verdict vocabulary and its definitions' core; "numbers must
+match"; `contradicted`'s "directly conflicts"; the disclaimer that refuses to call `unsupported`
+an accusation of fabrication, plus retaining unsupported claims for human inspection; the
+fallibility header; the output-shape requirement to cite passage text; and the deliberate laxness
+itself — it is the designed counterweight that makes the sibling's stricter calibration
+measurable.
+
+Where I would not sign: no split rule for compound claims; nothing binding a claim's subject to
+the claim; total silence on multi-passage attribution, conflict scoping, and mixed-evidence
+precedence; and the dangling reference every audit report makes to "the rubric file's own header
+for sign-off status," which this file does not have.
+
+### Amendments (exact replacement wording)
+
+Three amendments, each given as location plus paste-in replacement. None touches calibration:
+paraphrase tolerance, hedge tolerance, and the lax pole itself are left exactly as they are —
+that is deliberate design, and flattening it into the sibling would destroy the pair's
+measurement value. None removes or softens any existing line other than the two sentences named.
+
+**F-A1 — Task, replace the decomposition sentence** (kills compound-claim averaging; ports the
+sibling's A2 clause onto this rubric's own sentence):
+
+> Current: "Break the ANSWER into its individual factual claims (a claim is one checkable
+> assertion — a number, a named result, a stated mechanism, a causal or comparative claim, a
+> definition). For each claim, decide:"
+
+> Replacement: "Break the ANSWER into its individual factual claims (a claim is one checkable
+> assertion — a number, a named result, a stated mechanism, a causal or comparative claim, a
+> definition), splitting finely enough that each verdict rests on exactly one assertion: when one
+> sentence contains a part the passages ground and a part they do not, split it and record the
+> parts as separate claims — a single verdict must never average over parts that would score
+> differently. For each claim, decide:"
+
+**F-A2 — Task, replace the `supported` bullet** (binds each claim to its subject — closes the
+misattribution blind spot without importing the sibling's strictness):
+
+> Current: "- **supported** — the passages state this claim, or something a careful reader would
+> treat as the same claim (numbers must match; a paraphrase that preserves the meaning is fine, a
+> paraphrase that changes the meaning is not)."
+
+> Replacement: "- **supported** — the passages state this claim, or something a careful reader
+> would treat as the same claim (numbers must match; a paraphrase that preserves the meaning is
+> fine, a paraphrase that changes the meaning is not). A claim includes the entity it is asserted
+> about: extract and record it with its subject attached — \"Waymo uses 905 nm sensors\", never
+> \"905 nm sensors are commonly used\" — and mark `supported` only if some passage states that
+> same subject-and-content pair. A passage that states the content about a different entity does
+> not support the claim."
+
+**F-A3 — insert a new subsection between the Task list and "## Output shape"** (verbatim port of
+the sibling's A6, which was written against this shared task shape):
+
+> "## Several passages
+>
+> When several PASSAGES are supplied, attribute before you verdict. For each claim, work out
+> which passage it is actually about: a claim that names a specific paper, study, table, or
+> figure belongs to the passage carrying that identity, whichever position it holds in the list.
+> Examine every supplied passage before concluding that none grounds or addresses a claim. A
+> passage conflicts with a claim only if it speaks to the claim's own subject — two sources
+> reporting different numbers about their own versions of a thing do not conflict with a claim
+> scoped to one of them. If one passage supports a claim and another genuinely conflicts with it
+> within the claim's scope, mark `contradicted` and name both passages in the rationale."
+
+**Deliberately NOT proposed:** porting the sibling's A4 (element-level `unsupported`
+enumeration) or A5 (the "weaker or narrower" hinge). Both tighten paraphrase distance — the
+strict sibling's job. Copying them across would flatten the calibration difference that makes
+running both rubrics worth doing.
+
+Operator-side notes, outside this review's write authority: (1) when acting on this decision,
+add the sign-off-status header this rubric lacks — every audit report already points readers to
+it; (2) applying any amendment changes the `rubric_sha256_12` stamp, so by the reports' own rule
+the 2026-08-23 numbers become non-comparable and one re-run is owed before any number is treated
+as a trend — the same sequencing note the sibling sign-off carries.
