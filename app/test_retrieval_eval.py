@@ -1358,3 +1358,160 @@ def test_load_questions_duplicate_of_secondaries_excluded_by_default(tmp_path):
 
     all_ids = [q.question_id for q in load_questions(gt_path, include_duplicates=True)]
     assert all_ids == ["Q-WAYB-034", "Q-GTA-036", "Q-GTA-040"]
+
+
+# --- VARM-1: vision_derived threading ------------------------------------------------------------
+# Four of waymo_gt_verified.json's answerable items (Q-WAYB-027, Q-GTA-042, Q-GTA-043, Q-GTA-044)
+# have answers that exist only inside a figure: the gold chunk's own text does not contain the
+# answer, so a text retriever has nothing to rank it on and the item is a guaranteed passage-level
+# miss. The fixture already marks them `vision_derived: true`; VARM-1 threads that flag onto
+# Question/QuestionResult exactly like doc_type (no second mechanism) so build_report can partition
+# the passage-level metric into text vs vision arms instead of blending guaranteed misses into the
+# headline the >=0.95 target is measured against.
+
+
+def test_load_questions_vision_derived_threaded_with_false_default(tmp_path):
+    """`vision_derived` rides from the fixture record onto Question like doc_type does -- and a
+    record without the key defaults False so every pre-VARM-1 fixture parses unchanged."""
+    gt_path = tmp_path / "eval_ground_truth.json"
+    gt_path.write_text(json.dumps({
+        "_metadata": {},
+        "ground_truth": [
+            {
+                "question_id": "Q-VIS-001",
+                "question_text": "What does the figure show?",
+                "source_paper_id": "P1",
+                "question_type": "Figure-Derived",
+                "gold_block_id": "P1:b5",
+                "vision_derived": True,
+            },
+            {
+                "question_id": "Q-TXT-001",
+                "question_text": "plainly textual",
+                "source_paper_id": "P2",
+                "question_type": "X",
+            },
+        ],
+    }))
+
+    questions = load_questions(gt_path)
+
+    assert questions[0].vision_derived is True
+    assert questions[1].vision_derived is False
+
+
+def test_load_questions_waymo_fixture_marks_exactly_the_four_vision_items():
+    """End-to-end over the real committed fixture: exactly the four figure-grounded items carry
+    vision_derived, every one of them passage-scored (carries a gold_block_id). That combination
+    is what puts them in today's passage-level denominator (64 scored = 60 text + 4 vision) and
+    what will put them in the vision arm once build_report partitions."""
+    fixture = Path(__file__).resolve().parent.parent / "fixtures" / "eval" / "waymo_gt_verified.json"
+
+    questions = load_questions(fixture)
+
+    vision = [q for q in questions if q.vision_derived]
+    assert sorted(q.question_id for q in vision) == [
+        "Q-GTA-042", "Q-GTA-043", "Q-GTA-044", "Q-WAYB-027",
+    ]
+    assert all(q.gold_block_id is not None for q in vision)
+
+
+def test_vision_derived_rides_question_result_error_path_and_report_row():
+    """Threading parity with doc_type, all three hops at once: score_question copies the flag into
+    QuestionResult, run()'s error path preserves it (an errored question must not silently lose its
+    arm membership), and build_report's per-question row emits it -- so any arm number is
+    recomputable from the committed report JSON alone."""
+    question = Question(
+        question_id="Q-VIS-001", question_text="figure?", question_type="X",
+        gold_paper_ids=frozenset({"P1"}), gold_block_id="P1:b5", vision_derived=True,
+    )
+
+    result = score_question(question, [_hit("P1", "P1:b5")], k=10)
+    assert result.vision_derived is True
+
+    # FakeRetriever({}) has no canned response -> retrieve() raises -> run()'s error path.
+    errored = run([question], FakeRetriever({}), k=10)[0]
+    assert errored.error
+    assert errored.vision_derived is True
+
+    report = build_report([result], k=10)
+    assert report["questions"][0]["vision_derived"] is True
+
+
+# --- VARM-1: the passage-level three-arm split -----------------------------------------------------
+# The operator's target is passage-level precision >= 0.95. With the four vision_derived items in
+# the denominator that number is impossible rather than hard: their answers live only inside a
+# figure, so the ceiling is 60/64 = 0.9375 while they sit in it. build_report therefore reports
+# passage_level through THREE arms -- text_answerable (where the target applies), vision (own
+# denominator, own rank-1 rate, plus paper-level recall because that granularity is where vision
+# items already succeed), and overall (untouched, so historical reports stay comparable). Shape
+# follows dd2d9bd's by_gold_status precedent: partition inside build_report, additive alongside.
+
+
+def _arm_result(
+    qid: str, passage_rank: int | None, paper_rank: int | None, *, vision: bool
+) -> "QuestionResult":
+    from app.retrieval_eval import QuestionResult
+
+    return QuestionResult(
+        qid, "Figure-Derived", paper_rank=paper_rank, passage_rank=passage_rank,
+        passage_scored=True, gold_paper_ids=frozenset({f"P:{qid}"}), top_score=0.5,
+        vision_derived=vision,
+    )
+
+
+def test_build_report_passage_level_splits_text_and_vision_arms():
+    results = [
+        _arm_result("T1", 1, 1, vision=False),
+        _arm_result("T2", None, None, vision=False),
+        # the vision story: passage never hits, paper does -- that contrast is the finding
+        _arm_result("V1", None, 1, vision=True),
+        _arm_result("V2", None, 3, vision=True),
+    ]
+
+    report = build_report(results, k=10)
+    arms = report["passage_level"]["by_vision_status"]
+
+    text, vis = arms["text_answerable"], arms["vision"]
+    assert text["n"] == 2
+    assert text["recall_at_k"] == 0.5
+    assert text["mrr"] == pytest.approx(0.5)
+    assert text["rank_1_rate"] == 0.5
+    assert text["paper_level"]["n"] == 2
+    assert text["paper_level"]["recall_at_k"] == 0.5
+
+    assert vis["n"] == 2
+    assert vis["recall_at_k"] == 0.0
+    assert vis["mrr"] == 0.0
+    assert vis["rank_1_rate"] == 0.0
+    assert vis["paper_level"]["n"] == 2
+    assert vis["paper_level"]["recall_at_k"] == 1.0
+    assert vis["paper_level"]["mrr"] == pytest.approx((1 + 1 / 3) / 2)
+
+    # membership is exact and additive: nothing fell out of the passage denominator
+    assert report["passage_level"]["n_scored"] == text["n"] + vis["n"]
+
+
+def test_build_report_no_vision_fixture_text_arm_equals_overall_and_vision_empty():
+    """The non-negotiable regression property: on a fixture with NO vision items the text arm's
+    recall/MRR/n equal passage_level.overall EXACTLY (same items, same hit rule -- only the
+    partition's extra context fields differ) and the vision arm is empty with withheld metrics.
+    This is what makes 210-set/equation-slice reports numerically identical to today's."""
+    results = [
+        _arm_result("T1", 1, 1, vision=False),
+        _arm_result("T2", None, None, vision=False),
+    ]
+
+    report = build_report(results, k=10)
+    pl = report["passage_level"]
+    arms = pl["by_vision_status"]
+
+    assert arms["text_answerable"]["recall_at_k"] == pl["overall"]["recall_at_k"]
+    assert arms["text_answerable"]["mrr"] == pl["overall"]["mrr"]
+    assert arms["text_answerable"]["n"] == pl["n_scored"] == pl["overall"]["n"]
+
+    assert arms["vision"]["n"] == 0
+    assert arms["vision"]["recall_at_k"] is None
+    assert arms["vision"]["mrr"] is None
+    assert arms["vision"]["rank_1_rate"] is None
+    assert arms["vision"]["paper_level"]["recall_at_k"] is None

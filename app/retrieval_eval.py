@@ -101,6 +101,16 @@ emits `paper_level.by_gold_status` -- `answerable` (the false-negative measure) 
 `known_absent` (what came back and at what scores; recall withheld, see
 `_KNOWN_ABSENT_METRIC_NOTE`) -- while `overall` keeps its exact prior definition for backward
 compatibility. `_print_summary` leads with the two arms whenever the absent arm is non-empty.
+
+Passage-level text vs vision arms (VARM-1): four of waymo_gt_verified.json's answerable items are
+`vision_derived` -- their answers exist only inside a figure, so the gold chunk's own text does not
+contain them and a text retriever structurally cannot rank them; blended into one passage-level
+number they cap it below any achievable target (60/64 = 0.9375 on that fixture). `build_report`
+therefore also emits `passage_level.by_vision_status` -- `text_answerable` (the arm the operator's
+>=0.95 passage-precision target applies to) and `vision` (its own denominator, its rank-1 rate,
+and its paper-level recall@k, because paper-level is where those items already succeed and that
+contrast is the finding) -- while `overall` keeps its exact prior definition. See
+`_VISION_ARM_NOTE`. Same shape as BENCH-1's `paper_level.by_gold_status`, not a second convention.
 """
 
 from __future__ import annotations
@@ -176,6 +186,12 @@ class Question:
     gold_block_id: str | None  # None -> not scorable at passage level (e.g. the 210-set today)
     doc_type: str = "paper"  # "paper" | "book" -- default keeps every existing fixture unchanged
     gold_chapter_title: str | None = None  # None -> not scorable at chapter level (papers today)
+    # VARM-1: true when the answer exists only inside a figure -- the gold chunk's own text does
+    # not contain it, so a text retriever has nothing to rank it on and passage-level scoring
+    # against this item measures the fixture, not the retriever. Threaded like doc_type so
+    # build_report can split the passage metric into text vs vision arms; the default keeps every
+    # pre-VARM-1 fixture parsing unchanged.
+    vision_derived: bool = False
 
 
 @dataclass(frozen=True)
@@ -191,6 +207,10 @@ class QuestionResult:
     gold_paper_ids: frozenset[str] = frozenset()
     gold_block_id: str | None = None
     doc_type: str = "paper"
+    # VARM-1: carried from Question like doc_type so build_report's passage-level partition (and
+    # the per-question row) keys on the result itself, not a re-join against the fixture at
+    # report time.
+    vision_derived: bool = False
     chapter_rank: int | None = None  # 1-indexed rank of the first chapter-routing hit, else None
     chapter_scored: bool = False  # whether this question had a gold_chapter_title to score against
     gold_chapter_title: str | None = None
@@ -274,6 +294,7 @@ def load_questions(ground_truth_path: Path, include_duplicates: bool = False) ->
                 gold_paper_ids=frozenset(gold_papers),
                 gold_block_id=r.get("gold_block_id"),
                 doc_type=r.get("doc_type", "paper"),
+                vision_derived=bool(r.get("vision_derived", False)),
                 gold_chapter_title=r.get("gold_chapter_title"),
             )
         )
@@ -356,6 +377,7 @@ def score_question(
         gold_paper_ids=question.gold_paper_ids,
         gold_block_id=question.gold_block_id,
         doc_type=question.doc_type,
+        vision_derived=question.vision_derived,
         chapter_rank=chapter_rank,
         chapter_scored=chapter_scored,
         gold_chapter_title=question.gold_chapter_title,
@@ -404,6 +426,7 @@ def run(questions: list[Question], retriever, k: int) -> list[QuestionResult]:
                     gold_paper_ids=question.gold_paper_ids,
                     gold_block_id=question.gold_block_id,
                     doc_type=question.doc_type,
+                    vision_derived=question.vision_derived,
                     chapter_scored=question.gold_chapter_title is not None,
                     gold_chapter_title=question.gold_chapter_title,
                 )
@@ -447,6 +470,45 @@ _KNOWN_ABSENT_METRIC_NOTE = (
     "the top_score distribution."
 )
 
+# VARM-1: same reasoning as _GOLD_STATUS_NOTE, one partition over -- a fixture can also mix items
+# a text retriever CAN be fairly scored against with items it structurally cannot. The partition
+# lives inside build_report (the artifact others read) for the same reason: a blended number is
+# how an impossible target ships looking merely unmet.
+_VISION_ARM_NOTE = (
+    "Partition by vision-derivation among passage-scored questions (VARM-1): a vision_derived "
+    "item's answer exists only inside a figure -- the gold chunk's own text does not contain it "
+    "-- so no text retriever has anything to rank on, and blending such items into the passage "
+    "headline caps it below any achievable target (60/64 = 0.9375 on waymo_gt_verified.json). "
+    "'text_answerable' is the arm the >=0.95 passage-precision target applies to; 'vision' keeps "
+    "its own denominator and reports paper-level recall@k alongside its passage metrics because "
+    "paper-level retrieval already finds these items -- there the gap is reading figures, not "
+    "finding the page. 'overall' is retained unpartitioned exactly as earlier reports computed "
+    "it, for diff compatibility; when a fixture has no vision-derived items, text_answerable's "
+    "recall/MRR/n equal overall's exactly."
+)
+
+
+def _rank_1_rate(ranks: list[int | None]) -> float | None:
+    """Fraction of scored items whose FIRST result was already the hit -- the precision-at-1
+    reading of a rank list. None for an empty arm (no denominator), mirroring _recall_mrr."""
+    n = len(ranks)
+    if n == 0:
+        return None
+    return sum(1 for r in ranks if r == 1) / n
+
+
+def _vision_arm_summary(results: list[QuestionResult]) -> dict:
+    """One arm of passage_level.by_vision_status (VARM-1): the passage metrics under the same
+    hit rule as 'overall', plus rank_1_rate (the >=0.95 target is a precision-at-1 statement,
+    which recall@k alone cannot answer) and the arm's own paper-level line -- the two
+    granularities side by side is what makes the vision arm's number interpretable."""
+    ranks = [r.passage_rank for r in results]
+    return {
+        **_recall_mrr(ranks),
+        "rank_1_rate": _rank_1_rate(ranks),
+        "paper_level": _recall_mrr([r.paper_rank for r in results]),
+    }
+
 
 def _top_score_summary(scores: list[float]) -> dict:
     """Lightweight distribution summary for build_report's known-absent arm -- what came back and
@@ -475,6 +537,7 @@ def _question_row(r: QuestionResult) -> dict:
         "question_id": r.question_id,
         "question_type": r.question_type,
         "doc_type": r.doc_type,
+        "vision_derived": r.vision_derived,
         "gold_paper_ids": sorted(r.gold_paper_ids),
         "gold_block_id": r.gold_block_id,
         "gold_chapter_title": r.gold_chapter_title,
@@ -538,6 +601,11 @@ def build_report(
     answerable_results = [r for r in results if r.gold_paper_ids]
     absent_results = [r for r in results if not r.gold_paper_ids]
     absent_scores = [r.top_score for r in absent_results if r.top_score is not None]
+    # VARM-1: see _VISION_ARM_NOTE. Same posture as the gold-status partition above -- membership
+    # comes from the results themselves (passage_scored x vision_derived), never from fixture-file
+    # discipline, and 'overall' below stays untouched so existing fixtures' numbers do not move.
+    text_arm_results = [r for r in passage_eligible if not r.vision_derived]
+    vision_arm_results = [r for r in passage_eligible if r.vision_derived]
 
     report = {
         # RI-15: names the hit rule and k in force, so reports produced under different rules are
@@ -592,6 +660,16 @@ def build_report(
         "passage_level": {
             "n_scored": len(passage_eligible),
             "overall": _recall_mrr([r.passage_rank for r in passage_eligible]),
+            # VARM-1: the three arms a passage-level target must be read through. Additive --
+            # 'overall' above is untouched, and on a fixture with no vision_derived items the
+            # text arm's recall/MRR/n equal 'overall' exactly (pinned by
+            # test_build_report_no_vision_fixture_text_arm_equals_overall_and_vision_empty), so
+            # 210-set/equation-slice reports carry numbers identical to pre-VARM-1 runs.
+            "by_vision_status": {
+                "note": _VISION_ARM_NOTE,
+                "text_answerable": _vision_arm_summary(text_arm_results),
+                "vision": _vision_arm_summary(vision_arm_results),
+            },
             "by_question_type": {
                 t: _recall_mrr(
                     [r.passage_rank for r in passage_eligible if r.question_type == t]
