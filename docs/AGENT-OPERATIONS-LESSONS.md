@@ -211,9 +211,30 @@ signature is unambiguous once you know it:
 
 Observed 8+ times across three tickets in one session, at 14-31 minutes in, on `stealth/ox-alpha`.
 
-**It is not quota.** That was the first hypothesis (§3.3 says an empty result is a quota signal) and
-it was wrong. A direct probe of the same model on the same key answered normally, cost 0, while
-three dispatches were dying:
+**ROOT CAUSE FOUND, 2026-08-24 — upstream shared-pool rate limiting, invisible to the client.**
+Probing the endpoint repeatedly rather than once shows it: roughly **one attempt in three** returns
+
+```json
+{"error":{"code":429,"metadata":{"raw":"stealth/ox-alpha is temporarily rate-limited upstream.",
+ "limit_source":"upstream_provider_shared_pool"}}}
+```
+
+while the other two answer normally. That is why the single probe below "disproved" quota — a single
+success proves nothing when availability is intermittent. **Probe an intermittent service N times,
+not once.** A one-shot health check on a 2-in-3 service reports healthy 67% of the time.
+
+This is not the account's own free-tier bucket (§3.4) — `limit_source` names the *provider's shared
+pool*, so other users' traffic determines your availability. Nothing about your own usage predicts
+it. When it lands mid-stream, the connection ends and opencode exits 0 with zeroed token counts,
+which is exactly the signature below.
+
+**Consequences for dispatching:** the model is still worth using — it is free and capable, and its
+corrections in this project were real. But treat every dispatch as *likely to die*, not as possibly
+dying: commit-as-you-go is mandatory rather than advisory, briefs must be resumable from committed
+state, and nothing multi-hour belongs inside one.
+
+**The original wrong hypothesis, kept because the reasoning is the lesson.** A direct probe of the
+same model on the same key answered normally, cost 0, while three dispatches were dying:
 
 ```
 curl -s https://openrouter.ai/api/v1/chat/completions -H "Authorization: Bearer $KEY" \
