@@ -170,3 +170,122 @@ The two supplied passages legitimately state *different* splits — different pa
 own dataset versions — so a naive any-conflict reading fires even with both passages in view. A
 conflict needs a subject-scope test, not just correct attribution; the two amendments have to land
 together.
+
+## Recommendation
+
+**Sign with amendments.**
+
+One-line reason: the verdict vocabulary, the stricter-than-fabrication-audit intent, and the
+fallibility framing are sound and demonstrably bind in practice — but five wording gaps, two of
+which already produced observed misverdicts in the only run under this text, are cheap to close
+and should be closed before this wording becomes the definition of "good" for future runs.
+
+Where I would sign as-is: the three-verdict vocabulary and its definitions' core; the deliberate
+stricter calibration (hedge→assertion, range→extreme, related quantity); the "What this rubric is
+not" self-checks including the drift alarm ("if this rubric and the fabrication-audit rubric
+produce very similar rates... should be revised"); the fallibility header and the PROVISIONAL
+mechanism itself; the output-shape requirement to cite passage text.
+
+Where I would not sign: the undefined `unsupported` threshold ("closely enough") and uncalibrated
+hinge ("meaningfully"); the decomposition silence that lets compound claims average grounded with
+ungrounded halves (observed twice); the total silence on multi-passage attribution, conflict
+scoping, and mixed-evidence precedence (observed once as a false `contradicted`); the dropped
+passages-only instruction its sibling rubric carries; and the fact that nothing in the text warns
+a downstream reader that retrieval shortfall lands in the same bucket as infidelity.
+
+### Amendments (exact replacement wording)
+
+Six amendments, each given as location plus paste-in replacement. None touches the PROVISIONAL
+header or any other line.
+
+**A1 — Task, replace the bolded question sentence** (restores the dropped passages-only
+instruction and narrows "reasoning" to what is actually tested):
+
+> Current: "this rubric asks the stricter question: **is the ANSWER's own reasoning traceable to
+> the PASSAGES**, not merely non-contradictory with them."
+
+> Replacement: "this rubric asks the stricter question: **whether each of the ANSWER's claims, and
+> the framing the answer applies to it, is traceable to the PASSAGES** — the PASSAGES are the only
+> source of truth for this task, not your own knowledge — rather than merely non-contradictory
+> with them."
+
+**A2 — Task, replace the decomposition sentence** (kills compound-claim averaging):
+
+> Current: "Break the ANSWER into its individual claims, as in the fabrication-audit rubric, and
+> give each one of the same three verdicts:"
+
+> Replacement: "Break the ANSWER into its individual claims, as in the fabrication-audit rubric (a
+> claim is one checkable assertion), splitting finely enough that each verdict rests on exactly one
+> assertion: when one sentence contains a part the passages ground and a part they do not, split it
+> and record the parts as separate claims — a single verdict must never average over parts that
+> would score differently. Give each claim one of the same three verdicts:"
+
+**A3 — Task, append to the `supported` bullet** (resolves the strength-asymmetry ambiguity):
+
+> Append after "...not a plausible-sounding neighbor of it.": "Passage strength may exceed answer
+> strength: a passage that asserts outright grounds an answer that merely hedges the same
+> proposition. The strict reading catches answers that overshoot their passage, never answers that
+> undershoot it."
+
+**A4 — Task, replace the `unsupported` bullet** (replaces the undefined "closely enough" with an
+enumerated test, and declares the excerpt-relative scope inside the definition):
+
+> Current: "- **unsupported** — no passage addresses this claim closely enough to ground it, even
+> if the claim happens to be true in general."
+
+> Replacement: "- **unsupported** — some element the answer asserts (a specific number, a
+> direction, a mechanism, a hedge level, or the claim's subject) is absent from every supplied
+> passage, so no supplied passage grounds it — even if the claim happens to be true in general or
+> elsewhere in the same source."
+
+**A5 — Task, in the calibration paragraph, replace the hinge clause** (retires the uncalibrated
+"meaningfully"):
+
+> Current fragment: "if the passage's own wording is meaningfully looser or narrower than the
+> answer's framing of it"
+
+> Replacement fragment: "if the passage's own wording is weaker or narrower than the answer's
+> framing of it — the answer claiming more certainty, more precision, or a broader subject than
+> the passage supports"
+
+**A6 — insert a new subsection between the calibration paragraph and "## Output shape":**
+
+> "## Several passages
+
+> When several PASSAGES are supplied, attribute before you verdict. For each claim, work out which
+> passage it is actually about: a claim that names a specific paper, study, table, or figure
+> belongs to the passage carrying that identity, whichever position it holds in the list. Examine
+> every supplied passage before concluding that none grounds or addresses a claim. A passage
+> conflicts with a claim only if it speaks to the claim's own subject — two sources reporting
+> different numbers about their own versions of a thing do not conflict with a claim scoped to one
+> of them. If one passage supports a claim and another genuinely conflicts with it within the
+> claim's scope, mark `contradicted` and name both passages in the rationale."
+
+**Optional companion (output shape)** — makes rationales carry the element-level discipline A4
+introduces:
+
+> Current: "for each claim, its text, verdict, and a rationale that names the specific passage text
+> the verdict rests on."
+
+> Replacement: "for each claim, its text, verdict, and a rationale that names the specific passage
+> text the verdict rests on — or, for `unsupported`, states plainly which element of the claim no
+> supplied passage contains."
+
+Sequencing note for the operator: applying any amendment changes the rubric sha stamp, so the
+2026-08-23 run's numbers become non-comparable by the report's own rule. Sign-off should therefore
+land on the amended text, followed by one re-run before anything downstream treats numbers as
+comparable across stamps.
+
+## What this review could not assess
+
+- **Empirical inter-reader agreement.** Single reviewer, textual analysis only; no second human
+  rater, no agreement statistic. The divergence claims are about what the wording admits, not what
+  readers did.
+- **Whether qwen3-14b complies with the amended wording.** Nothing was re-run; A1–A6 are judged
+  on their text, not on model behavior under them.
+- **Independent re-adjudication of the run's spot-checks.** The nine hand-checked verdicts and the
+  headline counts are cited from the run report as evidence of failure modes, not replicated here
+  against `papers.db` or the JSON report.
+- **The fabrication-audit rubric beyond what groundedness references.** It was read only to verify
+  the calibration comparison and the inherited-by-reference decomposition definition; it may have
+  gaps of its own that this review does not reach.
