@@ -77,6 +77,11 @@ query is queried `_FUSION_DEPTH_CAP` deep (rag/vector_index.py), so this is not 
 in practice, but it means "dense_only"/"sparse_only" measure "this arm's contribution to ranking,"
 not "retrieval with the other arm physically removed."
 
+Fusion-weight sweep (FUSE-1): `--dense-weight W` pins `hybrid_dense_weight` to any intermediate
+value in [0, 1] for one run -- the modes above can only name the two extremes, and sweeping by
+editing the corpus's own config.yaml would mutate a file other sessions share. The weight actually
+used travels in every emitted report's `scoring_rule`, same as the modes do.
+
 Score-distribution census (RI-M7): `QuestionResult.top_score` (and `_question_row`'s
 `"top_score"`) carry the rank-1 result's own fused/reranked score for EVERY question, hit or
 miss -- a known-absent question (no gold paper, `source_paper_id: null` in
@@ -142,6 +147,24 @@ def sparse_mode_weight(mode: str, configured_weight: float) -> float:
     if mode == "sparse_only":
         return 0.0
     raise ValueError(f"unknown sparse mode {mode!r}, expected one of {SPARSE_MODES}")
+
+
+def resolve_hybrid_weight(
+    mode: str, configured_weight: float, override: float | None
+) -> float:
+    """FUSE-1: the one place a run's effective hybrid_dense_weight is decided -- the loaded
+    config's own value unless something overrides it. The sparse-arm modes above can only name
+    the two RRF extremes; the fusion-weight sweep needs every intermediate step WITHOUT editing
+    the corpus config between points (the live config.yaml is shared with other sessions), so
+    `override` (--dense-weight) wins whenever it is given. Range-checked here rather than left to
+    rrf_fuse's later ContractError so a bad sweep value fails before any retrieval is spent; the
+    weight that was actually used is stamped into every emitted report's scoring_rule either way.
+    """
+    if override is not None:
+        if not (0.0 <= override <= 1.0):
+            raise ValueError(f"--dense-weight must be in [0, 1], got {override}")
+        return override
+    return sparse_mode_weight(mode, configured_weight)
 
 
 @dataclass(frozen=True)
@@ -696,6 +719,12 @@ def _parse_args() -> argparse.Namespace:
              "the RRF extreme that zeroes the other arm's score contribution; 'fused' (default) "
              "uses the loaded config's own hybrid_dense_weight unchanged. See module docstring.",
     )
+    parser.add_argument(
+        "--dense-weight", type=float, default=None,
+        help="FUSE-1 sweep override: pin hybrid_dense_weight to this exact [0, 1] value instead "
+             "of the config's own or --sparse-mode's mapped extreme; wins when both are given. "
+             "The used value is stamped into the report's scoring_rule.",
+    )
     return parser.parse_args()
 
 
@@ -710,13 +739,16 @@ def main() -> None:
     from rag.config import load_config
 
     config = load_config(args.config)
-    # RI-M3: resolve the ablation mode to a concrete hybrid_dense_weight and, for a real
-    # (non-fused) ablation run, rebuild config with that weight -- build_mcp_server reads
-    # config.hybrid_dense_weight to construct its VectorIndex, so this is the one place the
-    # override needs to land. `model_copy` (Config is a frozen pydantic model, contracts/_base.py)
-    # produces a new instance rather than mutating the frozen one build_mcp_server also gets.
-    weight = sparse_mode_weight(args.sparse_mode, config.hybrid_dense_weight)
-    if args.sparse_mode != "fused":
+    # RI-M3: resolve the ablation mode to a concrete hybrid_dense_weight; FUSE-1 extends this
+    # with an explicit --dense-weight that pins any intermediate value (the modes alone can only
+    # name the extremes). build_mcp_server reads config.hybrid_dense_weight to construct its
+    # VectorIndex, so this is the one place the override needs to land. `model_copy` (Config is a
+    # frozen pydantic model, contracts/_base.py) produces a new instance rather than mutating the
+    # frozen one build_mcp_server also gets.
+    weight = resolve_hybrid_weight(
+        args.sparse_mode, config.hybrid_dense_weight, args.dense_weight
+    )
+    if weight != config.hybrid_dense_weight:
         config = config.model_copy(update={"hybrid_dense_weight": weight})
 
     build_kwargs = {}

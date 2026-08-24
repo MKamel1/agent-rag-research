@@ -22,6 +22,7 @@ from app.retrieval_eval import (
     _print_summary,
     build_report,
     load_questions,
+    resolve_hybrid_weight,
     run,
     score_question,
     sparse_mode_weight,
@@ -929,6 +930,36 @@ def test_build_report_stamps_the_sparse_mode_and_weight_into_scoring_rule():
     # scoring_rule stamp carries this, not a second field alongside it.
     assert "sparse_mode" not in fused
     assert "sparse_mode" not in dense
+
+
+# --- FUSE-1: fusion-weight sweep override ---------------------------------------------------------
+# `resolve_hybrid_weight` -- the one place the run's effective hybrid_dense_weight is decided.
+# The three sparse modes can only name {config, 1.0, 0.0}; the sweep needs every intermediate
+# step WITHOUT editing the (shared, live) corpus config between points, so an explicit weight
+# override wins whenever it is given.
+
+
+def test_resolve_hybrid_weight_override_wins_over_sparse_mode_and_config():
+    assert resolve_hybrid_weight("dense_only", 0.5, 0.3) == 0.3
+    assert resolve_hybrid_weight("fused", 0.5, 0.7) == 0.7
+
+
+def test_resolve_hybrid_weight_without_override_delegates_to_sparse_mode():
+    assert resolve_hybrid_weight("fused", 0.73, None) == 0.73
+    assert resolve_hybrid_weight("dense_only", 0.5, None) == 1.0
+    assert resolve_hybrid_weight("sparse_only", 0.5, None) == 0.0
+
+
+def test_resolve_hybrid_weight_rejects_an_out_of_range_override():
+    with pytest.raises(ValueError):
+        resolve_hybrid_weight("fused", 0.5, 1.01)
+    with pytest.raises(ValueError):
+        resolve_hybrid_weight("fused", 0.5, -0.1)
+
+
+def test_resolve_hybrid_weight_allows_the_endpoints():
+    assert resolve_hybrid_weight("fused", 0.5, 0.0) == 0.0
+    assert resolve_hybrid_weight("fused", 0.5, 1.0) == 1.0
 
 
 # --- RI-M3 end-to-end: a real Retriever + the committed FakeVectorStore, not FakeRetriever --------
