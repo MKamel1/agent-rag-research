@@ -31,3 +31,41 @@ Two checks that bound everything below:
   the run reports. If the operator amends or signs, adding a sign-off-status header of the kind
   this report format already points readers to would close that gap; per the brief I have not
   touched the rubric either way.
+
+## Q1. Would two careful readers agree?
+
+**On routine claims, yes — more often than under the pre-amendment sibling. On three identifiable
+loci, systematically no.**
+
+Where they would agree: the verdict vocabulary is small and each verdict has an anchor sentence;
+the `supported` bar is concrete where it matters most ("numbers must match"); and `contradicted`
+is defined by the strictest phrase in either rubric ("directly conflicts"). For near-verbatim
+claims — most of the answerable arm's 245 — both rubrics bind identically and agreement would be
+high.
+
+Where they would diverge:
+
+1. **The lax-calibration hinge is uncalibrated.** `supported` extends to "something a careful
+   reader would treat as the same claim," and the only boundary given is "a paraphrase that
+   preserves the meaning is fine, a paraphrase that changes the meaning is not." How much drift
+   preserves meaning is exactly what careful readers disagree about; nothing bounds it. This is
+   the same structural gap the groundedness review found in its undefined "closely enough"
+   (its locus 1) — but here it sits inside `supported`, not `unsupported`, and it is partially
+   deliberate: strict paraphrase-distance judgment lives in the sibling rubric by design.
+   Deliberate looseness is still uncalibrated looseness; the mitigation this rubric does have —
+   unsupported claims "retained for human inspection rather than just counted" — softens the
+   consequence of a wrong call without removing the disagreement.
+2. **Claim decomposition has no split rule.** "(a claim is one checkable assertion …)" defines
+   the unit but never forbids averaging: when one sentence contains a part the passages ground
+   and a part they do not, nothing tells the judge to split it. The sibling review observed the
+   resulting wobble twice in its run (Q-GTA-004, Q-GTA-007); this rubric carries the identical
+   silence, word-for-word the definition groundedness used before amendment A2 fixed it there.
+3. **Multi-passage items have no attribution rule and no precedence rule.** Same as the sibling's
+   locus 4: `supported` and `contradicted` are existential ("the passages state…"), with no duty
+   to attribute a claim to the passage it is actually about, none to examine every supplied
+   passage before concluding absence, and no subject-scope test for conflict. On this run's
+   evidence the concern is not hypothetical — see Q4.
+
+Net: agreement would be high on clear-cut cases and unpredictable exactly where this run actually
+failed — borderline paraphrase distance and multi-passage attribution. Both are wording gaps, not
+conceptual ones.
