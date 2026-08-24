@@ -620,8 +620,26 @@ the waymo.com/safety/research papers) until another corpus is benchmarked.
 Recall@10 = 0.971, MRR = 0.939 (n=70), with the run's own scoring line confirming
 `hybrid_dense_weight=0.7`.
 
-**Open caveat:** the priority-set sweep only covered w = 0.7–1.0. **0.7 was the lowest point tested
-and it won**, so the optimum may lie below it. Sweep 0.0–0.6 on `gt_wmr.json` before treating 0.7 as
-settled.
+**Caveat resolved 2026-08-24, and it overturns the reason given above.** The lower half was swept
+(FUSE-2). The optimum on the priority set is **not** 0.7 — it is **0.5**, the value that was already
+shipped:
+
+| w | GT-WMR R@10 | GT-WMR block-P@1 | verified-84 R@10 |
+|---|---|---|---|
+| 0.3 | 0.9000 | 0.6364 | 0.7353 |
+| 0.4 | 0.9286 | 0.6212 | 0.8235 |
+| **0.5** | **0.9857** | **0.7273** | 0.8971 ✗ below bar |
+| 0.6 | 0.9714 | 0.7273 | 0.9265 ✗ below bar |
+| **0.7 (live)** | 0.9714 | 0.7273 | **0.9559 ✓** |
+| 0.8–1.0 | 0.9571 | 0.6970 | 0.9706 ✓ |
+
+**The stated justification for 0.7 was wrong; the choice survives on a different one.** "Best on the
+priority set" is false — 0.5 beats it by 1.4 pp of recall at identical block precision. What is true
+is that **0.7 is the lowest weight that clears ≥0.95 on the full Waymo corpus** while staying within
+1.4 pp of the priority peak. 0.5 and 0.6 both fail the full-corpus bar (0.8971, 0.9265).
+
+**If the priority corpus is the only thing that matters, 0.5 is strictly better and should be
+restored.** 0.7 is the right choice only if the full corpus must also clear the bar. That is an
+operator call; 0.7 stays live until it is made.
 
 **Rollback:** `waymo/data/config.yaml.bak-w0.5-20260824T122256`.
