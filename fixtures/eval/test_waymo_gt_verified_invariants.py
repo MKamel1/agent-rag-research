@@ -40,18 +40,19 @@ QUESTION_ID_RES = {
     "GT-B": re.compile(r"^Q-WAYB-\d{3}$"),
 }
 VALID_TESTS = {"answerable", "absent"}
-# The two authors used partially different dimension vocabularies for three of the six
-# dimensions; the merged fixture preserves each label verbatim (see the fixture's own
-# _metadata.dimension_labels_note) so the valid set here is the union, not one style.
+# The two authors originally used partially different dimension vocabularies for three of the
+# six dimensions (GT-A short forms vs. GT-B noun forms), which silently split each of those
+# three into two undersized strata under any dimension-grouped report. Normalized 2026-08-23
+# to GT-A's short form everywhere (see the fixture's own _metadata.dimension_labels_note and
+# docs/eval-reports/2026-08-23-waymo-vision-arm.md). This set is deliberately closed to exactly
+# the six canonical labels -- not a superset covering both stylings -- so it fails loudly if a
+# future author reintroduces one of the retired "claims"/"questions" variants.
 VALID_DIMENSIONS = {
     "single-passage factual lookup",
     "multi-paper synthesis",
-    "numeric/quantitative claims",
     "numeric/quantitative",
-    "methodological questions",
     "methodological",
     "negation and scope",
-    "temporal/versioned claims",
     "temporal/versioned",
 }
 REQUIRED_VERIFICATION_FIELDS = ("source_set", "source_fixture", "verified_at", "checks")
@@ -213,6 +214,26 @@ def test_structural_invariants():
     print("all waymo_gt_verified structural invariants hold")
 
 
+# Labels retired by the 2026-08-23 normalization (docs/eval-reports/2026-08-23-waymo-vision-arm.md):
+# the two source sets used to write these with GT-B's own noun-form wording, splitting each into
+# a second, undersized stratum next to GT-A's short forms under any dimension-grouped report.
+# Checked explicitly (not just via VALID_DIMENSIONS above) so a future widening of
+# VALID_DIMENSIONS to "be safe" can't silently let one of these back in.
+RETIRED_DIMENSION_VARIANTS = {
+    "numeric/quantitative claims",
+    "methodological questions",
+    "temporal/versioned claims",
+}
+
+
+def test_dimension_vocabulary_is_closed():
+    gt = _load()["ground_truth"]
+    used = {item["dimension"] for item in gt}
+    reintroduced = used & RETIRED_DIMENSION_VARIANTS
+    assert not reintroduced, f"retired dimension variant(s) back in the data: {reintroduced}"
+    assert used <= VALID_DIMENSIONS, f"dimension(s) outside the closed vocabulary: {used - VALID_DIMENSIONS}"
+
+
 def _iter_single_paper_checks(gt):
     """Yield (qid, paper_id, title, chunk_id, block_id, excerpt) for every text-grounded claim
     in the fixture: single-paper primaries, every supporting passage, and GT-A's
@@ -317,6 +338,7 @@ def test_gold_ids_resolve_against_corpus_db():
 
 if __name__ == "__main__":
     test_structural_invariants()
+    test_dimension_vocabulary_is_closed()
     if DB_PATH is not None:
         test_gold_ids_resolve_against_corpus_db()
     else:

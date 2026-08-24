@@ -30,7 +30,7 @@
       }
     },
     "verification_method": "Every grounding claim re-checked read-only against waymo/data/papers.db (1,738 papers / 46,155 chunks as of 2026-08-19 mtime): paper existence and title, chunk-to-paper membership, anchor_json block-id agreement, whitespace-normalized substring containment of every excerpt (primary and supporting), section-path agreement, numeral-level audit of every answer_text against the cited paper's text. All 8 absent items re-searched independently with additional adversarial probes beyond the authors' own logs. Full findings and ruled near-misses: docs/eval-reports/2026-08-22-waymo-groundtruth-cross-verification.md.",
-    "dimension_labels_note": "The two source sets use partially different dimension vocabularies (GT-A short forms e.g. 'numeric/quantitative'; GT-B noun forms e.g. 'numeric/quantitative claims'). Labels are preserved verbatim per item rather than normalized -- normalizing them here would silently rewrite the authors' labels; consumers should group via the mapping in the report if they need one bucketing.",
+    "dimension_labels_note": "The two source sets originally used partially different dimension vocabularies for three of the six dimensions (GT-A short forms e.g. 'numeric/quantitative'; GT-B noun forms e.g. 'numeric/quantitative claims'), which silently split each of those three into two undersized strata under any dimension-grouped report. Normalized 2026-08-23 (docs/eval-reports/2026-08-23-waymo-vision-arm.md) to GT-A's short form in all three files (waymo_gt_verified.json, waymo_gt_a.json, waymo_gt_b.json) -- chosen because it was already the unmodified label for the other three dimensions, giving one consistent naming convention instead of a mix. Only the `dimension` field changed; every other field and item order is unchanged. The six canonical labels are: single-passage factual lookup, multi-paper synthesis, numeric/quantitative, methodological, negation and scope, temporal/versioned.",
     "known_caveats": [
       "Q-WAYB-027 is vision-derived: only its machine-checkable ids/page were verified; the visual claim itself is unverified by the cross-verifier.",
       "Several GT-B absence_search logs record hit counts that do not reproduce under plain SQLite LIKE on the frozen DB (see per-item verification.notes); every qualitative absence nevertheless held up under independent re-search."
@@ -1171,7 +1171,8 @@
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
         ],
         "verification_pass": "pass-1"
-      }
+      },
+      "question_type": null
     },
     {
       "question_id": "Q-WAYB-002",
@@ -1201,7 +1202,8 @@
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
         ],
         "verification_pass": "pass-1"
-      }
+      },
+      "question_type": null
     },
     {
       "question_id": "Q-WAYB-003",
@@ -1231,7 +1233,8 @@
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
         ],
         "verification_pass": "pass-1"
-      }
+      },
+      "question_type": null
     },
     {
       "question_id": "Q-WAYB-004",
@@ -1261,7 +1264,8 @@
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
         ],
         "verification_pass": "pass-1"
-      }
+      },
+      "question_type": null
     },
     {
       "question_id": "Q-WAYB-005",
@@ -1291,7 +1295,8 @@
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
         ],
         "verification_pass": "pass-1"
-      }
+      },
+      "question_type": null
     },
     {
       "question_id": "Q-WAYB-006",
@@ -1321,7 +1326,8 @@
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
         ],
         "verification_pass": "pass-1"
-      }
+      },
+      "question_type": null
     },
     {
       "question_id": "Q-WAYB-007",
@@ -1351,7 +1357,8 @@
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
         ],
         "verification_pass": "pass-1"
-      }
+      },
+      "question_type": null
     },
     {
       "question_id": "Q-WAYB-008",
@@ -1381,7 +1388,8 @@
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
         ],
         "verification_pass": "pass-1"
-      }
+      },
+      "question_type": null
     },
     {
       "question_id": "Q-WAYB-009",
@@ -1408,7 +1416,8 @@
           "Absence verdict confirmed, but the recorded search-log hit count does not reproduce: 'wavelength' matches 35 chunks across 20 papers under plain SQLite LIKE today, not the 10 recorded. None of the hits discloses a Waymo-hardware LiDAR wavelength, so the qualitative absence stands. Adversarial probes ('1550', '1550 nm', 'lidar wavelength') found only camera-resolution tables and unrelated FMCW physics."
         ],
         "verification_pass": "pass-1"
-      }
+      },
+      "question_type": null
     },
     {
       "question_id": "Q-WAYB-010",
@@ -1454,7 +1463,8 @@
           "supporting_excerpt_is_whitespace_normalized_substring_of_chunk_text"
         ],
         "verification_pass": "pass-1"
-      }
+      },
+      "question_type": null
     },
     {
       "question_id": "Q-WAYB-011",
@@ -1500,7 +1510,8 @@
           "supporting_excerpt_is_whitespace_normalized_substring_of_chunk_text"
         ],
         "verification_pass": "pass-1"
-      }
+      },
+      "question_type": null
     },
     {
       "question_id": "Q-WAYB-012",
@@ -1546,7 +1557,8 @@
           "supporting_excerpt_is_whitespace_normalized_substring_of_chunk_text"
         ],
         "verification_pass": "pass-1"
-      }
+      },
+      "question_type": null
     },
     {
       "question_id": "Q-WAYB-013",
@@ -1592,11 +1604,12 @@
           "supporting_excerpt_is_whitespace_normalized_substring_of_chunk_text"
         ],
         "verification_pass": "pass-1"
-      }
+      },
+      "question_type": null
     },
     {
       "question_id": "Q-WAYB-014",
-      "dimension": "numeric/quantitative claims",
+      "dimension": "numeric/quantitative",
       "tests": "answerable",
       "vision_derived": false,
       "difficulty": "medium",
@@ -1622,11 +1635,12 @@
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
         ],
         "verification_pass": "pass-1"
-      }
+      },
+      "question_type": "Result-Comprehension"
     },
     {
       "question_id": "Q-WAYB-015",
-      "dimension": "numeric/quantitative claims",
+      "dimension": "numeric/quantitative",
       "tests": "answerable",
       "vision_derived": false,
       "difficulty": "medium",
@@ -1652,11 +1666,12 @@
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
         ],
         "verification_pass": "pass-1"
-      }
+      },
+      "question_type": "Result-Comprehension"
     },
     {
       "question_id": "Q-WAYB-016",
-      "dimension": "numeric/quantitative claims",
+      "dimension": "numeric/quantitative",
       "tests": "answerable",
       "vision_derived": false,
       "difficulty": "medium",
@@ -1682,11 +1697,12 @@
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
         ],
         "verification_pass": "pass-1"
-      }
+      },
+      "question_type": "Result-Comprehension"
     },
     {
       "question_id": "Q-WAYB-017",
-      "dimension": "numeric/quantitative claims",
+      "dimension": "numeric/quantitative",
       "tests": "answerable",
       "vision_derived": false,
       "difficulty": "easy",
@@ -1712,11 +1728,12 @@
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
         ],
         "verification_pass": "pass-1"
-      }
+      },
+      "question_type": "Result-Comprehension"
     },
     {
       "question_id": "Q-WAYB-018",
-      "dimension": "numeric/quantitative claims",
+      "dimension": "numeric/quantitative",
       "tests": "answerable",
       "vision_derived": false,
       "difficulty": "medium",
@@ -1742,11 +1759,12 @@
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
         ],
         "verification_pass": "pass-1"
-      }
+      },
+      "question_type": "Result-Comprehension"
     },
     {
       "question_id": "Q-WAYB-019",
-      "dimension": "numeric/quantitative claims",
+      "dimension": "numeric/quantitative",
       "tests": "answerable",
       "vision_derived": false,
       "difficulty": "hard",
@@ -1772,11 +1790,12 @@
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
         ],
         "verification_pass": "pass-1"
-      }
+      },
+      "question_type": "Result-Comprehension"
     },
     {
       "question_id": "Q-WAYB-020",
-      "dimension": "numeric/quantitative claims",
+      "dimension": "numeric/quantitative",
       "tests": "answerable",
       "vision_derived": false,
       "difficulty": "medium",
@@ -1802,11 +1821,12 @@
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
         ],
         "verification_pass": "pass-1"
-      }
+      },
+      "question_type": "Result-Comprehension"
     },
     {
       "question_id": "Q-WAYB-021",
-      "dimension": "numeric/quantitative claims",
+      "dimension": "numeric/quantitative",
       "tests": "absent",
       "vision_derived": false,
       "difficulty": "hard",
@@ -1830,11 +1850,12 @@
           "Absence verdict confirmed by re-search: 430 'fatalit*' chunk hits corpus-wide, 29 of them co-occurring with 'waymo' reviewed individually (human benchmarks, severity-tier discussion, mission statements) plus death/died/killed/deaths probes; none reports a Waymo-attributed fatality count broken down by victim category."
         ],
         "verification_pass": "pass-1"
-      }
+      },
+      "question_type": "Result-Comprehension"
     },
     {
       "question_id": "Q-WAYB-022",
-      "dimension": "numeric/quantitative claims",
+      "dimension": "numeric/quantitative",
       "tests": "absent",
       "vision_derived": false,
       "difficulty": "hard",
@@ -1858,11 +1879,12 @@
           "Absence verdict confirmed, but the recorded search-log hit count does not reproduce: 'disengagement' matches 168 chunks across 75 papers today, not the 10 recorded. No hit gives a hardware-generation-specific disengagement rate for any single operator, so the qualitative absence stands."
         ],
         "verification_pass": "pass-1"
-      }
+      },
+      "question_type": "Result-Comprehension"
     },
     {
       "question_id": "Q-WAYB-023",
-      "dimension": "methodological questions",
+      "dimension": "methodological",
       "tests": "answerable",
       "vision_derived": false,
       "difficulty": "medium",
@@ -1888,11 +1910,12 @@
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
         ],
         "verification_pass": "pass-1"
-      }
+      },
+      "question_type": "Method-Comprehension"
     },
     {
       "question_id": "Q-WAYB-024",
-      "dimension": "methodological questions",
+      "dimension": "methodological",
       "tests": "answerable",
       "vision_derived": false,
       "difficulty": "medium",
@@ -1918,11 +1941,12 @@
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
         ],
         "verification_pass": "pass-1"
-      }
+      },
+      "question_type": "Method-Comprehension"
     },
     {
       "question_id": "Q-WAYB-025",
-      "dimension": "methodological questions",
+      "dimension": "methodological",
       "tests": "answerable",
       "vision_derived": false,
       "difficulty": "hard",
@@ -1948,11 +1972,12 @@
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
         ],
         "verification_pass": "pass-1"
-      }
+      },
+      "question_type": "Method-Comprehension"
     },
     {
       "question_id": "Q-WAYB-026",
-      "dimension": "methodological questions",
+      "dimension": "methodological",
       "tests": "answerable",
       "vision_derived": false,
       "difficulty": "medium",
@@ -1978,11 +2003,12 @@
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
         ],
         "verification_pass": "pass-1"
-      }
+      },
+      "question_type": "Method-Comprehension"
     },
     {
       "question_id": "Q-WAYB-027",
-      "dimension": "methodological questions",
+      "dimension": "methodological",
       "tests": "answerable",
       "vision_derived": true,
       "difficulty": "hard",
@@ -2007,11 +2033,12 @@
           "VISION ITEM: only the machine-checkable facts were verified (paper resolves, title matches, gold block id resolves in blocks table, cited page equals the block's stored page). The visual claim itself -- what Figure 19's pillar-x-phase grid shows for practice #9 -- could not be re-rendered or re-read by the cross-verifier and remains unverified, carried forward on the authoring model's reading alone."
         ],
         "verification_pass": "pass-1"
-      }
+      },
+      "question_type": "Method-Comprehension"
     },
     {
       "question_id": "Q-WAYB-028",
-      "dimension": "methodological questions",
+      "dimension": "methodological",
       "tests": "absent",
       "vision_derived": false,
       "difficulty": "hard",
@@ -2032,11 +2059,12 @@
           "adversarial_probes_beyond_the_original_search_log_found_no_counterexample"
         ],
         "verification_pass": "pass-1"
-      }
+      },
+      "question_type": "Method-Comprehension"
     },
     {
       "question_id": "Q-WAYB-029",
-      "dimension": "methodological questions",
+      "dimension": "methodological",
       "tests": "absent",
       "vision_derived": false,
       "difficulty": "hard",
@@ -2055,7 +2083,8 @@
           "adversarial_probes_beyond_the_original_search_log_found_no_counterexample"
         ],
         "verification_pass": "pass-1"
-      }
+      },
+      "question_type": "Method-Comprehension"
     },
     {
       "question_id": "Q-WAYB-030",
@@ -2085,7 +2114,8 @@
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
         ],
         "verification_pass": "pass-1"
-      }
+      },
+      "question_type": null
     },
     {
       "question_id": "Q-WAYB-031",
@@ -2115,7 +2145,8 @@
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
         ],
         "verification_pass": "pass-1"
-      }
+      },
+      "question_type": null
     },
     {
       "question_id": "Q-WAYB-032",
@@ -2145,7 +2176,8 @@
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
         ],
         "verification_pass": "pass-1"
-      }
+      },
+      "question_type": null
     },
     {
       "question_id": "Q-WAYB-033",
@@ -2175,7 +2207,8 @@
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
         ],
         "verification_pass": "pass-1"
-      }
+      },
+      "question_type": null
     },
     {
       "question_id": "Q-WAYB-034",
@@ -2202,7 +2235,8 @@
           "Absence verdict confirmed: 0 title hits; 11 Zoox chunk mentions across 10 papers (matching the recorded count), all passing mentions -- aggregate comparisons, a disengagement-rate remark citing Zoox's own historical claim, incident anecdotes, and one Zoox-authored validation-methodology paper (2411.03328). None is a dedicated Zoox crashes-per-million-mile safety-performance study."
         ],
         "verification_pass": "pass-1"
-      }
+      },
+      "question_type": null
     },
     {
       "question_id": "Q-WAYB-035",
@@ -2229,11 +2263,12 @@
           "Absence verdict confirmed, but it is a near miss worth flagging: 2312.12675:c11 does report a Cruise-specific reduction (Zhang 2023: 65%, any-property-damage-or-injury, first 1M Cruise RO miles) -- however it was computed against the Flannagan et al. (2023) ride-hailing NDS benchmark, NOT the Blincoe-adjusted police-reported rate the question names, so the question as asked remains unanswerable from this corpus."
         ],
         "verification_pass": "pass-1"
-      }
+      },
+      "question_type": null
     },
     {
       "question_id": "Q-WAYB-036",
-      "dimension": "temporal/versioned claims",
+      "dimension": "temporal/versioned",
       "tests": "answerable",
       "vision_derived": false,
       "difficulty": "hard",
@@ -2259,11 +2294,12 @@
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
         ],
         "verification_pass": "pass-1"
-      }
+      },
+      "question_type": "Result-Comprehension"
     },
     {
       "question_id": "Q-WAYB-037",
-      "dimension": "temporal/versioned claims",
+      "dimension": "temporal/versioned",
       "tests": "answerable",
       "vision_derived": false,
       "difficulty": "medium",
@@ -2289,11 +2325,12 @@
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
         ],
         "verification_pass": "pass-1"
-      }
+      },
+      "question_type": "Result-Comprehension"
     },
     {
       "question_id": "Q-WAYB-038",
-      "dimension": "temporal/versioned claims",
+      "dimension": "temporal/versioned",
       "tests": "answerable",
       "vision_derived": false,
       "difficulty": "easy",
@@ -2319,11 +2356,12 @@
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
         ],
         "verification_pass": "pass-1"
-      }
+      },
+      "question_type": "Method-Comprehension"
     },
     {
       "question_id": "Q-WAYB-039",
-      "dimension": "temporal/versioned claims",
+      "dimension": "temporal/versioned",
       "tests": "absent",
       "vision_derived": false,
       "difficulty": "medium",
@@ -2346,11 +2384,12 @@
           "Absence verdict confirmed, but the recorded search log is incomplete: it missed the strongest 100-million-mile hit in the corpus, 2507.17943:c2 ('quickly reached 100 million miles in July 2025'), which the parallel GT-A set uses for its timeline item Q-GTA-015. Adjudication: that is a cited mileage-milestone mention inside a brake-onset paper, not a rider-only crash-rate study at 100M miles reporting reduction figures, so this absence still stands under its precise wording."
         ],
         "verification_pass": "pass-1"
-      }
+      },
+      "question_type": "Result-Comprehension"
     },
     {
       "question_id": "Q-WAYB-040",
-      "dimension": "numeric/quantitative claims",
+      "dimension": "numeric/quantitative",
       "tests": "answerable",
       "vision_derived": false,
       "difficulty": "easy",
@@ -2376,7 +2415,8 @@
           "answer_numerals_present_in_or_derivable_from_cited_paper_text"
         ],
         "verification_pass": "pass-1"
-      }
+      },
+      "question_type": "Result-Comprehension"
     },
     {
       "question_id": "Q-GTA-034",

@@ -32,13 +32,20 @@ GT_PATH = FIXTURE_DIR / "waymo_gt_b.json"
 
 TOTAL_ITEMS = 40
 
+        # Normalized 2026-08-23 to GT-A's short forms (docs/eval-reports/
+        # 2026-08-23-waymo-vision-arm.md) -- this fixture used to write these three as
+        # "numeric/quantitative claims", "methodological questions", "temporal/versioned
+        # claims", which silently forked each into a second, undersized stratum in any
+        # dimension-grouped report next to GT-A's short forms. A closed set here (not a
+        # superset covering both stylings) is the guard: it fails loudly if a future author
+        # reintroduces one of the retired "claims"/"questions" variants.
 VALID_DIMENSIONS = {
     "single-passage factual lookup",
     "multi-paper synthesis",
-    "numeric/quantitative claims",
-    "methodological questions",
+    "numeric/quantitative",
+    "methodological",
     "negation and scope",
-    "temporal/versioned claims",
+    "temporal/versioned",
 }
 VALID_TESTS = {"answerable", "absent"}
 
@@ -212,6 +219,26 @@ def test_structural_invariants():
     print("all waymo_gt_b structural invariants hold")
 
 
+# Labels retired by the 2026-08-23 normalization (docs/eval-reports/2026-08-23-waymo-vision-arm.md):
+# this fixture used to write these as GT-B's own noun-form wording, splitting each into a second,
+# undersized stratum next to GT-A's short forms under any dimension-grouped report. Checked
+# explicitly (not just via VALID_DIMENSIONS above) so a future widening of VALID_DIMENSIONS to
+# "be safe" can't silently let one of these back in.
+RETIRED_DIMENSION_VARIANTS = {
+    "numeric/quantitative claims",
+    "methodological questions",
+    "temporal/versioned claims",
+}
+
+
+def test_dimension_vocabulary_is_closed():
+    gt = _load()["ground_truth"]
+    used = {item["dimension"] for item in gt}
+    reintroduced = used & RETIRED_DIMENSION_VARIANTS
+    assert not reintroduced, f"retired dimension variant(s) back in the data: {reintroduced}"
+    assert used <= VALID_DIMENSIONS, f"dimension(s) outside the closed vocabulary: {used - VALID_DIMENSIONS}"
+
+
 def _iter_single_paper_checks(gt):
     """Yield (qid, paper_id, paper_title, chunk_id, block_id, excerpt) for every text-grounded
     single-paper claim in the fixture (answerable, non-vision items)."""
@@ -312,6 +339,7 @@ def test_gold_ids_resolve_against_corpus_db():
 
 if __name__ == "__main__":
     test_structural_invariants()
+    test_dimension_vocabulary_is_closed()
     if DB_PATH is not None:
         test_gold_ids_resolve_against_corpus_db()
     else:
