@@ -324,6 +324,12 @@ Two things fall out, and neither is visible in the headline number:
   answer from the pool entirely, which no amount of reranking can recover. That is a stronger reason
   to retune `hybrid_dense_weight` than the paper-level 5-0 result, and it means the sweep should be
   judged on passage-level pool coverage, not only on paper-level recall.
+- **The vision items do NOT explain the fixture gap — hypothesis tested and ruled out.** verified-84
+  carries 4 vision items and GT-WMR carries 1, so the obvious guess is that the vision arm drags one
+  fixture down. Removing them moves verified-84's block-level P@1 from 0.3750 (24/64) to only 0.4000
+  (24/60), **+2.5 pp of a ~35 pp gap**. Whatever separates 0.400 from 0.727 is something else, and
+  it is still unidentified. Recorded so the next investigator does not spend the same hour on the
+  same dead end.
 - **The two fixtures differ at passage level as sharply as at anchor level** (0.803 vs 0.400 at rank
   1). Whatever separates them is not an artifact of the anchor-identity metric — it survives a
   literal answer-containment test. Until that is explained, a passage-level target set on one fixture
