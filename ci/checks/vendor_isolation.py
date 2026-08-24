@@ -167,6 +167,12 @@ VENDOR_RULES: tuple[VendorRule, ...] = (
     # (see the module's own docstring for the dependency-direction reasoning). Names no other
     # vendor. app/test_judge_llm.py exercises it offline via httpx.MockTransport, same pattern as
     # every other adapter test above.
+    #
+    # FAB-1: app/generation_capture.py is the real generation-run capture harness -- same
+    # injected-httpx.Client + GpuLock + model-name construction as app/judge_llm.py, living in
+    # app/ for the same reason. Names no vendor itself, only httpx as the shared HTTP client.
+    # app/test_generation_capture.py exercises it offline via httpx.MockTransport, same pattern as
+    # every other adapter test above.
     VendorRule(
         "httpx",
         re.compile(r"httpx", re.I),
@@ -195,6 +201,8 @@ VENDOR_RULES: tuple[VendorRule, ...] = (
             "app/exp_author_org_tagging.py",
             "app/judge_llm.py",
             "app/test_judge_llm.py",
+            "app/generation_capture.py",
+            "app/test_generation_capture.py",
         ),
     ),
 )
