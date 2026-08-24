@@ -1,0 +1,36 @@
+{
+  "rubric_path": "docs/eval-rubrics/fabrication-audit-rubric.md",
+  "rubric_sha256_12": "d82bbfa36155",
+  "n_items": 16,
+  "n_errors": 0,
+  "n_claims": 24,
+  "rates": {
+    "supported": 0.875,
+    "unsupported": 0.125,
+    "contradicted": 0.0
+  },
+  "counts": {
+    "supported": 21,
+    "unsupported": 3,
+    "contradicted": 0
+  },
+  "unsupported_claims": [
+    {
+      "question_id": "Q-WAYB-029",
+      "claim": "The information needed to answer the question is not present in the provided passages.",
+      "rationale": "The passages do not explicitly mention the blinding procedure used by Waymo's Fatigue Risk Management Framework to prevent evaluator bias when assessing autonomous specialists' fatigue survey responses."
+    },
+    {
+      "question_id": "Q-GTA-035",
+      "claim": "Tesla's Full Self-Driving system has achieved a crash rate of 0.31 crashes per million miles traveled.",
+      "rationale": "The passage does not mention a crash rate of 0.31 crashes per million miles for Tesla's Full Self-Driving system."
+    },
+    {
+      "question_id": "Q-GTA-035",
+      "claim": "This is compared to 0.18 for Autopilot and 0.68 for Tesla vehicles with no active safety features engaged and running.",
+      "rationale": "The passage does not mention crash rates of 0.18 for Autopilot or 0.68 for Tesla vehicles with no active safety features engaged and running."
+    }
+  ],
+  "contradicted_claims": [],
+  "disclaimer": "A judge model is itself fallible: these rates are one instrument's reading of the answer against the supplied passages, not ground truth. The rubric that produced this report lives at rubric_path (plain text, operator-editable) and is stamped by rubric_sha256_12 below so two reports produced under different rubric wording are never silently compared. This report is not a baseline -- see the rubric file's own header for sign-off status."
+}
