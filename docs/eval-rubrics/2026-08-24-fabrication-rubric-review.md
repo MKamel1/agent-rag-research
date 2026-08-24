@@ -99,3 +99,38 @@ reinterpret §1) has a naming problem. Renaming is not proposed here — the rub
 (`fabrication-audit-rubric.md`, RI-M2) is referenced by code paths and reports — but the operator
 should know that "0.71 fabricated... sorry, supported" will keep needing that defense until
 either the name narrows or the wording closes the misattribution blind spot (F-A2 below).
+
+## Q3. What does it systematically over- or under-penalise?
+
+**Over-penalises:**
+
+1. **Richer answers against thin excerpts — intended, and unusually well managed in text.**
+   Excerpt-relative judging folds "true, but stated elsewhere" into `unsupported`; unlike the
+   pre-amendment sibling, this rubric defends the fold explicitly ("not an accusation of
+   fabrication…") and routes the consequence somewhere useful — unsupported claims "are retained
+   for human inspection rather than just counted." Deliberate mechanism, managed meaning. No
+   amendment needed; this is one place this rubric is *ahead of* where its sibling was.
+2. **Compound claims over-penalise their grounded half.** With no split rule (Q1 locus 2), one
+   ungrounded detail drags a jointly-extracted claim to `unsupported` wholesale. Inherited
+   defect, observed twice in the sibling run; nothing in this run contradicts the inheritance.
+
+**Under-penalises:**
+
+3. **Subject-swapped real text escapes entirely.** The run's central finding restated in rubric
+   terms: `supported` fires on "the passages state this claim," and nothing requires the claim to
+   be extracted with the entity it is asserted about. `Q-GTA-037` ("905 nm", whose only corpus
+   source is a laser tutorial that never mentions Waymo) and `Q-GTA-040` (Swiss Re as underwriter;
+   zero corpus chunks contain `underwrit` and `swiss re`) scored **fully supported** and appear
+   nowhere in the absent arm's `unsupported_claims` — the instrument's only output channel for
+   suspicion. This is the systematic under-penalisation, and it is structural (wording), not
+   judge caprice.
+4. **Cross-claim inference leaps escape unless packed into one claim** — same shape the sibling
+   review called Q2a. The harness audits assertions, never the join between them;
+   `Q-WAYB-021`'s "0 pedestrian, 0 cyclist, and 0 vehicle-occupant fatalities" leap was caught
+   only because the judge happened to extract the leap itself as a claim (and then scored it
+   `unsupported`).
+5. **Contradictions can escape or misfire via single-passage anchoring.** No examine-every-passage
+   duty, no subject-scope conflict test. The absent arm's 0.000 `contradicted` is therefore as
+   consistent with "no conflicts exist" as with "conflicts were sought against the wrong
+   passage." The sibling report's caution transfers verbatim: a zero rate "can be too low (a real
+   contradiction reported as none) as much as it can be too high."
