@@ -523,3 +523,48 @@ recorded there: match a page title against a paper's **opening ~3,500 characters
 text (which matches bibliographies) and never its stored title alone (drop-in titles include
 "February 2021", "PowerPoint Presentation" and "9"). Both shortcuts produced wrong answers first.
 
+---
+
+## 15. Curated labeling closed out for the safety page — 2026-08-23
+
+A fresh per-entry recheck of all **55 `waymo.com/safety/research/` entries** against the live stores
+surfaced four Group-B drop-ins whose `local:` ids had never been added to
+`fixtures/waymo/waymo_authored_ids.txt` — ingested and present, but answering "not Waymo" to every
+curated-only query despite being named on the index page (the same failure class §5's backfill fixed
+for arXiv ids, surviving on the drop-in side):
+
+| site entry | corpus id | stored title (why per-title matching alone misses it) |
+|---|---|---|
+| #42 *Framework for a conflict typology…* (B12) | `local:1023e9edcb19` | "Conflict Typology and Causal Mechanisms Paper - ESV 2023" |
+| #44 *Challenges for the evaluation of ADS…* (B13) | `local:341648b7a22a` | "Challenges in Evaluating ADS using Current Active Safety…" |
+| #45 *Safety performance of the Waymo rider-only ADS at one million miles* (B14) | `local:4c3912bd5507` | "Safety Performance of Waymo RO at 1M miles" |
+| #53 *Waymo safety report* (B15) | `local:2b0e7fb59b39` | — (this one's title is fine) |
+
+All four ids are now on the curated list via `9466ae1` (that commit's message names only three;
+B12's line rode along from a concurrent session's in-progress edit to the same checkout), and the
+full-list backfill was re-run over all **157** ids: every id resolves to a stored paper, and Qdrant
+holds **3,888** points tagged `curated=Waymo`.
+
+Post-fix verification, all measured live:
+
+- **54 / 55 safety-page entries are present in the corpus and carry the curated Waymo tag** in both
+  stores (SQLite `papers.author_orgs` + Qdrant payload keys). Four entries match only under variant
+  titles and need head-text or word-overlap matching to find: #46 → `2303.15201` ("An active
+  inference model of car following…" = *"Learning An Active Inference Model of Driver Perception and
+  Control…"*), #30 → `local:5fa216c3425a` ("…Waymo One service" vs stored "…Waymo Driver"), #31 →
+  `2208.08651` ("…traffic conflicts" vs preprint "…naturalistic settings"), #16 →
+  `local:4087ccce4c01` ("…studies of Automated Driving Systems" vs stored "…Retrospective Safety
+  Studies…").
+- The single absence is unchanged: **C10**, the accepted gap (§9). Confirmed negatively — zero chunks
+  contain its SAE number `2024-01-2645`, and the near-identically-titled *pedestrian* sibling
+  (`local:aa069e80dac9`) is the only close match in the corpus.
+- `scripts/verify_curated_filter.py` → **PASS, 0 leaks** (125/125 curated-only hits on-list;
+  unfiltered control shows 104 non-Waymo hits, so the filter does real work).
+- Corpus-wide: **157 papers** carry the curated tag; no untagged paper matches any of the 55 page
+  entries.
+
+Method note for future re-checks (learned by producing two wrong answers first): match each page
+title against stored titles **or** opening ~3,500 characters **or** ≥5 shared content words with the
+stored title — then hand-check every fallback hit against its nearest sibling, because word-overlap
+matching confidently pairs C10 with its pedestrian twin.
+
