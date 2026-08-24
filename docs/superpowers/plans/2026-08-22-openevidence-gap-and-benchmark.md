@@ -59,7 +59,7 @@ achievability, not one question:
   OpenEvidence's entire product claim is answering only from licensed evidence and rejecting
   unsourced answers. §1.3 measures whether this system can tell an answerable question from an
   unanswerable one. It cannot, currently.
-- **Groundedness/faithfulness parity: unmeasured, not unknown-but-fine.** §1.4.
+- **Groundedness/faithfulness parity: unmeasured, not unknown-but-fine.** §1.5.
 
 ### 1.2 Retrieval architecture: measured, not assumed
 
@@ -143,7 +143,72 @@ when an answer does exist. 0.969 recall on real questions is a genuine strength;
 about the 8/8 rate at which this system also confidently answers questions it has no basis to
 answer. This is why abstention is placed first in the re-ranked list in §5, not fourth or absent.
 
-### 1.4 Groundedness: unmeasured, not merely unverified
+### 1.4 Published evaluations of OpenEvidence's accuracy, and what benchmark this system lacks
+
+Three independent evaluations of OpenEvidence's accuracy were found, and they disagree with each
+other sharply enough that the disagreement itself is the finding:
+
+- **NYU Langone / *Nature Medicine*, June 2026** ("General-purpose large language models outperform
+  specialized clinical AI tools on medical benchmarks," `nature.com/articles/s41591-026-04431-5` —
+  peer-reviewed journal publication, the strongest-form source found here, though the full text sat
+  behind a login wall and this summary is built from search-result/abstract-level reporting, not a
+  full read of the paper). Methodology: OpenEvidence and UpToDate Expert AI vs. three frontier
+  models (GPT-5.2, Gemini 3.1 Pro, Claude Opus 4.6) across 500 MedQA licensing-exam questions, 500
+  HealthBench items (clinician-alignment), and 100 real clinical queries graded by 12 blinded
+  clinicians. **Finding: frontier general-purpose models beat OpenEvidence on all three stages** —
+  Gemini scored 97.4% on MedQA vs. OpenEvidence's 89.6%, and the paper characterizes OpenEvidence's
+  specific weakness as "clarity of communication rather than knowledge." The authors themselves flag
+  a contamination risk: MedQA and HealthBench are public benchmarks the frontier models may have
+  seen during training.
+- **medRxiv pilot study, posted 2025-12-04** ("The accuracy and repeatability of OpenEvidence on
+  complex medical subspecialty scenarios," `medrxiv.org/content/10.64898/2025.11.29.25341091` — a
+  preprint, not peer-reviewed). Methodology: 100 hard subspecialty questions from MedXpertQA
+  (materially harder than MedQA), manually run through OpenEvidence's two modes, two raters. **OE
+  (quick) scored 31% average accuracy, Deep Consult scored 39.5%** — a very different picture from
+  the MedQA number above, on a harder benchmark. The authors note this pilot is "underpowered for
+  subgroup analyses" and had no API access (manual testing only).
+- **"Real-POCQi" preprint** (found only via secondary reporting — the primary preprint itself was
+  not located directly, so this entry carries an extra layer of unverified indirection; treat it as
+  the weakest-sourced of the three). Reported methodology: 620 real point-of-care queries actually
+  submitted to OpenEvidence, 149 specialty-matched physicians grading OpenEvidence against three
+  frontier models blind. **Finding: OpenEvidence scored highest on all five measured dimensions**
+  (accuracy, clinical utility, source quality, verifiability, completeness) — the opposite
+  conclusion from the *Nature Medicine* study.
+
+A secondary source comparing the two contradictory studies
+([iatrox.com, *OpenEvidence vs ChatGPT and the Frontier Models: Why Two 2026 Studies Reached
+Opposite Conclusions*](https://www.iatrox.com/blog/openevidence-vs-chatgpt-why-2026-studies-disagree))
+attributes the disagreement to question type (exam-style vs. real point-of-care queries), query
+provenance (each study's "real queries" originated from the *other* product's user base), grader
+pool size/expertise, and different, already-superseded model versions between the two studies.
+
+**What this means for benchmarking this system:** OpenEvidence is scored, however inconsistently,
+against named external benchmarks (MedQA, HealthBench, MedXpertQA, and now a real-query-based
+methodology) by researchers outside the company. This system has **no analogous external
+benchmark** — every number in this document is measured against ground truth authored for this
+system's own corpus, by this project's own contributors. That is a legitimate and necessary first
+step (you cannot borrow MedQA for an AV-safety corpus — no such benchmark exists), but it is not the
+same claim as "externally validated." The closest available analogue to what NYU Langone or
+Real-POCQi did — independent graders, real user-style queries, a methodology this project did not
+design itself — does not exist for this system and is named explicitly as unmeasured in §6.
+
+**Scale and business context, for calibration, not for the architecture question.** OpenEvidence
+raised $250M in a Series D at a $12B valuation in January 2026, doubling its prior valuation
+([CNBC](https://www.cnbc.com/2026/01/21/openevidence-chatgpt-for-doctors-doubles-valuation-to-12-billion.html);
+[STAT News](https://www.statnews.com/2026/01/21/health-ai-starutup-openevidence-raises-250-million/)
+— both independent journalism, company-sourced figures within the reporting). By July 2026 the
+company was reportedly weighing a further $200M raise at a $20B valuation, with ~$300M ARR (roughly
+double the figure from seven months earlier) and reported acquisition interest from a large tech
+company ([PYMNTS](https://www.pymnts.com/news/artificial-intelligence/2026/medical-ai-startup-openevidence-weighs-200-million-funding-round/)).
+Company-stated adoption (~40% of US physicians) and query volume (18M/month as of Dec 2025) were not
+independently verified by any source found here — the Pebblous report explicitly flags this class of
+number as "company-stated or third-party estimates," advising readers to "read the structure rather
+than the numbers." This context does not bear on the architecture questions in §1.1-1.3; it is
+included because it is directly relevant to how large a target OpenEvidence is and how much
+independent scrutiny it has actually attracted (comparatively little, on the architecture; more, and
+contested, on accuracy).
+
+### 1.5 Groundedness: unmeasured, not merely unverified
 
 `app/judge_eval.py` implements the harness both RI-M2 (fabrication audit) and RI-M6 (groundedness)
 were meant to run on, but `Judge` is only a `Protocol` (`app/judge_eval.py:87`) — no concrete
