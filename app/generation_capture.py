@@ -17,8 +17,8 @@ Writes a JSON file in the exact shape `app/judge_eval.py::load_items` already re
         --rubric docs/eval-rubrics/fabrication-audit-rubric.md --judge-factory app.judge_llm:factory
 
 **Model choice:** generation uses `qwen3:14b` -- the SAME model `app/assembly.py`'s real
-`OllamaSummarizer` wiring uses for production summarization (`_OLLAMA_MODEL`), not the judge's
-`qwen3-14b-16k:latest` variant. Two reasons: (1) it is what this system's own production
+summarizer wiring uses for production summarization, not the judge's `qwen3-14b-16k:latest`
+variant. Two reasons: (1) it is what this system's own production
 generation calls actually run, so this captures the real system's behavior, not a hypothetical
 one; (2) it keeps generator and judge on different models -- sharing one would be a
 self-evaluation bias (the judge grading its own sibling's output), and not sharing it dodges that
@@ -28,8 +28,9 @@ independently validated as an unbiased grader of the other.
 **Context budget:** a real corpus's `passage_text` is full chunk text, not a gold excerpt sentence
 -- a 15-question sample at k=10 measured a MEDIAN of ~12,563 words (~27,600 estimated tokens) of
 concatenated passage text per question, well past `rag/summarizer.py`'s own documented finding
-that this Ollama stack silently truncates somewhere around ~20,500 requested tokens "for reasons
-not root-caused" (see that module's `_fit_for_summarization` comment). Two choices follow from
+that this local generation-LLM serving stack silently truncates somewhere around ~20,500
+requested tokens "for reasons not root-caused" (see that module's `_fit_for_summarization`
+comment). Two choices follow from
 that measured fact, decided before any generation call was made (not tuned toward an outcome):
 
   * retrieval still asks for `--retrieval-k` passages (default 10, matching this corpus's own
@@ -67,8 +68,8 @@ _DEFAULT_GROUND_TRUTH = "fixtures/eval/waymo_gt_verified.json"
 _DEFAULT_RETRIEVAL_K = 10
 
 _GENERATION_LLM_URL = "http://localhost:11434"
-# Production's own summarization model (app/assembly.py::_OLLAMA_MODEL) -- see module docstring
-# for why this, not the judge's qwen3-14b-16k:latest, is used for generation.
+# Production's own summarization model (app/assembly.py) -- see module docstring for why this,
+# not the judge's qwen3-14b-16k:latest, is used for generation.
 _GENERATION_MODEL = "qwen3:14b"
 
 # Passages actually fed to the generator, dropped from the tail by rank -- see module docstring's
