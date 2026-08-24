@@ -666,10 +666,11 @@ class ArtifactsSpyDocStore:
         return dict(self._stats)
 
 
-def _artifact_server(blocks=(), artifacts=(), stats=None):
+def _artifact_server(blocks=(), artifacts=(), stats=None, corpus_label=None):
     from rag.mcp_server import McpServer
     return McpServer(retriever=SpyRetriever(),
-                     document_store=ArtifactsSpyDocStore(blocks, artifacts, stats))
+                     document_store=ArtifactsSpyDocStore(blocks, artifacts, stats),
+                     corpus_label=corpus_label)
 
 
 def test_get_figures_delegates_and_filters_by_kind():
@@ -708,3 +709,35 @@ def test_get_section_unknown_paper_raises_empty_section_is_valid():
 def test_corpus_stats_delegates_whole_dict():
     stats = {"papers": 1738, "figures": 24708}
     assert _artifact_server(stats=stats).corpus_stats() == stats
+
+
+# corpus identity: unknown-id errors / corpus_stats say which server answered (2026-08-23)
+def test_unknown_paper_errors_carry_serving_context_when_labeled():
+    from contracts.errors import ContractError
+    server = _artifact_server(corpus_label="collection=waymo_av_safety db=/x/waymo/data/papers.db")
+    for call in (
+        lambda: server.get_paper("no:such"),
+        lambda: server.get_figures("no:such"),
+        lambda: server.get_section("no:such", "3. Method"),
+    ):
+        with pytest.raises(ContractError, match=r"serving collection=waymo_av_safety"):
+            call()
+
+
+def test_unlabeled_server_errors_and_stats_stay_clean():
+    from contracts.errors import ContractError
+    server = _artifact_server()
+    with pytest.raises(ContractError) as err:
+        server.get_paper("no:such")
+    assert "serving" not in str(err.value)
+    assert "serving" not in server.corpus_stats()
+
+
+def test_corpus_stats_merges_serving_key_without_mutating_store_dict():
+    store_stats = {"papers": 1738}
+    server = _artifact_server(stats=store_stats,
+                              corpus_label="collection=waymo_av_safety db=/x/papers.db")
+    out = server.corpus_stats()
+    assert out["serving"] == "collection=waymo_av_safety db=/x/papers.db"
+    assert out["papers"] == 1738
+    assert "serving" not in store_stats
