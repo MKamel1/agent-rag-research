@@ -1,0 +1,197 @@
+{
+  "rubric_path": "docs/eval-rubrics/fabrication-audit-rubric.md",
+  "rubric_sha256_12": "d82bbfa36155",
+  "n_items": 68,
+  "n_errors": 2,
+  "n_claims": 212,
+  "rates": {
+    "supported": 0.8349056603773585,
+    "unsupported": 0.15566037735849056,
+    "contradicted": 0.009433962264150943
+  },
+  "counts": {
+    "supported": 177,
+    "unsupported": 33,
+    "contradicted": 2
+  },
+  "unsupported_claims": [
+    {
+      "question_id": "Q-GTA-004",
+      "claim": "The study used the exponential bootstrap (EB) method for constructing confidence intervals on the ratio of automated-vehicle to human event rates.",
+      "rationale": "The passage does not mention anything about the ratio of automated-vehicle to human event rates."
+    },
+    {
+      "question_id": "Q-GTA-004",
+      "claim": "It was preferred over a resampling-based alternative because the EB method satisfies a statistical monotonicity property\u2014summing the rates of disjoint types of events should produce not only a higher point estimate but also higher confidence bounds than for the individual rates\u2014which facilitates interpretability in real applications.",
+      "rationale": "The passage does not explicitly state that the EB method was preferred over a resampling-based alternative, nor does it mention the specific monotonicity property in this context."
+    },
+    {
+      "question_id": "Q-GTA-004",
+      "claim": "In contrast, some resampling-based methods, such as the parametric bootstrap (PB), do not satisfy this property and may suffer from undercoverage due to heavy-tailed sampling probabilities.",
+      "rationale": "The passage does not mention the parametric bootstrap (PB) or its potential issues with undercoverage due to heavy-tailed sampling probabilities in this context."
+    },
+    {
+      "question_id": "Q-GTA-005",
+      "claim": "The headline police-reported reduction estimate increased from 55% (22% to 77% 95% confidence interval) in the roughly 7-million-mile analysis to 65% (57% to 72% 95% confidence interval) in the later 56.7-million-mile analysis.",
+      "rationale": "The provided passage does not mention the headline police-reported reduction estimate, nor does it provide specific values for a 7-million-mile analysis or a 56.7-million-mile analysis."
+    },
+    {
+      "question_id": "Q-GTA-005",
+      "claim": "Additionally, the uncertainty around the estimate decreased, as evidenced by the narrower confidence interval in the 56.7-million-mile analysis compared to the 7-million-mile analysis.",
+      "rationale": "The provided passage does not mention the uncertainty around the estimate or compare confidence intervals between a 7-million-mile analysis and a 56.7-million-mile analysis."
+    },
+    {
+      "question_id": "Q-GTA-008",
+      "claim": "The insurance-industry analysis reported reductions of 86% in property damage claims and 90% in bodily injury claims against its newest-vehicle human comparison group.",
+      "rationale": "The provided passages do not mention specific percentages (86% or 90%) of reductions in property damage or bodily injury claims against a newest-vehicle human comparison group."
+    },
+    {
+      "question_id": "Q-GTA-008",
+      "claim": "The 56.7-million-mile crash-rate study says those claim-based figures cannot be compared head-to-head with its own because liability claims are a subset of all crashes where the insured party has some contribution to the cause of the crash, whereas the crash-rate study considers all crashes regardless of contribution to the crash.",
+      "rationale": "The provided passages do not mention a 56.7-million-mile crash-rate study or a specific statement about the inability to compare claim-based figures head-to-head with another study."
+    },
+    {
+      "question_id": "Q-GTA-010",
+      "claim": "The rate of injury-involving collisions for controlled-access highways across the US metro areas benchmarked varied significantly.",
+      "rationale": "The passage discusses collision rates in urban driving environments, not specifically controlled-access highways."
+    },
+    {
+      "question_id": "Q-GTA-010",
+      "claim": "Los Angeles had a lower rate, with the suspected serious injury or worse collision rate for passenger vehicles with pedestrians being approximately 0.0298 per million vehicle miles traveled, which is about one-third of the rate in New York City.",
+      "rationale": "The passage does not provide specific collision rates for Los Angeles or New York City in terms of passenger vehicles with pedestrians."
+    },
+    {
+      "question_id": "Q-GTA-018",
+      "claim": "Within the motion-prediction dataset's scenes, pedestrians are present in 57% of scenes (with 20% having four or more)",
+      "rationale": "The provided passages do not mention any specific percentages of scenes in which pedestrians are present."
+    },
+    {
+      "question_id": "Q-GTA-018",
+      "claim": "Cyclists are present in 16% of scenes",
+      "rationale": "The provided passages do not mention any specific percentages of scenes in which cyclists are present."
+    },
+    {
+      "question_id": "Q-GTA-018",
+      "claim": "In the validation set, 38.3% of scenes require the model to predict more than one agent class at once",
+      "rationale": "The provided passages do not mention any specific percentages related to the validation set or the requirement to predict more than one agent class at once."
+    },
+    {
+      "question_id": "Q-GTA-019",
+      "claim": "The corpus release that pairs motion labels with raw point-cloud returns (WOMD-LiDAR) is roughly 100\u00d7 bigger than the camera-era perception dataset (WOMD) it augments.",
+      "rationale": "The provided passages do not mention the WOMD-LiDAR corpus or its size relative to the WOMD dataset."
+    },
+    {
+      "question_id": "Q-GTA-019",
+      "claim": "Before compression, the raw sensor data of WOMD-LiDAR exceeded 20 TB",
+      "rationale": "The provided passages do not mention the size of the WOMD-LiDAR dataset before compression."
+    },
+    {
+      "question_id": "Q-GTA-019",
+      "claim": "with the use of the delta encoder from RIDDLE, the storage footprint was reduced by \u223c 8\u00d7, resulting in a final size of around 2.3 TB.",
+      "rationale": "The provided passages do not mention the delta encoder from RIDDLE or the final size of the WOMD-LiDAR dataset after compression."
+    },
+    {
+      "question_id": "Q-GTA-022",
+      "claim": "The per-pixel feature beyond raw range that helps the model tell genuine returns from weather clutter is material reflectance.",
+      "rationale": "The passage does not mention 'material reflectance' or any specific per-pixel feature related to distinguishing genuine returns from weather clutter."
+    },
+    {
+      "question_id": "Q-GTA-030",
+      "claim": "The Wayformer model won",
+      "rationale": "The passage does not mention that the Wayformer model 'won' any competition or benchmark."
+    },
+    {
+      "question_id": "Q-GTA-032",
+      "claim": "it is crucial for the development of safe and effective autonomous driving systems",
+      "rationale": "No passage explicitly states that the translation of open-loop improvements to closed-loop performance is 'crucial for the development of safe and effective autonomous driving systems.'"
+    },
+    {
+      "question_id": "Q-WAYB-010",
+      "claim": "The method that achieves the state-of-the-art performance on the NuScenes dataset is ScatterFormer",
+      "rationale": "The provided text does not mention the NuScenes dataset at all."
+    },
+    {
+      "question_id": "Q-WAYB-010",
+      "claim": "ScatterFormer achieves a val NDS of 72.4",
+      "rationale": "The provided text does not mention the NuScenes dataset or val NDS at all."
+    },
+    {
+      "question_id": "Q-WAYB-010",
+      "claim": "ScatterFormer achieves an mAP of 68.3",
+      "rationale": "The provided text does not mention the NuScenes dataset or mAP at all."
+    },
+    {
+      "question_id": "Q-WAYB-011",
+      "claim": "The two methodologies report broadly similar magnitudes of safety improvement, but the third-party auto-liability insurance-claims comparison reports a larger reduction.",
+      "rationale": "The passage does not provide a direct comparison between two methodologies or mention third-party auto-liability insurance-claims comparisons."
+    },
+    {
+      "question_id": "Q-WAYB-011",
+      "claim": "According to the information provided, the police/injury crash-rate comparison reports reductions of 55% for police-reported crashes and 80% for any-injury-reported crashes.",
+      "rationale": "The passage does not mention specific percentages for police-reported or any-injury-reported crash reductions."
+    },
+    {
+      "question_id": "Q-WAYB-011",
+      "claim": "In contrast, the third-party auto-liability insurance-claims comparison reports reductions of 88% for property damage claims and 92% for bodily injury claims.",
+      "rationale": "The passage does not mention specific percentages for property damage or bodily injury claims in a third-party auto-liability insurance-claims comparison."
+    },
+    {
+      "question_id": "Q-WAYB-012",
+      "claim": "The main limiting factor mentioned in the study is that the limiting factor in safety performance assessments are more often going to be in what can be gleaned from the available benchmark data.",
+      "rationale": "The passage does not mention this specific limiting factor. It does, however, mention challenges such as aligning reporting thresholds, accounting for geographical variations, and considering underreporting of crashes, but not the specific claim made in the answer."
+    },
+    {
+      "question_id": "Q-WAYB-013",
+      "claim": "According to the paper, the underlying dataset is large, but the exact size is not specified",
+      "rationale": "No passage explicitly states the size of the underlying dataset or confirms that the size is unspecified."
+    },
+    {
+      "question_id": "Q-WAYB-027",
+      "claim": "The information needed to answer the question is not present in the provided passages.",
+      "rationale": "The passages do not explicitly confirm or deny the absence of information about practice #9, 'Human drowsiness rating,' in Figure 19. The passages mention Figure 19 and describe the mapping of twenty practices, but they do not provide the specific details about which pillar, lifecycle phase, or implementation block practice #9 falls under."
+    },
+    {
+      "question_id": "Q-WAYB-033",
+      "claim": "This is because passenger vehicle collisions with VRUs are rare, and splitting these crashes into more groups based on maneuvers was not supported by the current vehicle miles traveled (VMT).",
+      "rationale": "The passage does not state that passenger vehicle collisions with VRUs are rare or that splitting these crashes into more groups based on maneuvers was not supported by the current VMT."
+    },
+    {
+      "question_id": "Q-WAYB-036",
+      "claim": "The reported Police-Reported crash-rate reduction percentage increased from 55% (22% to 77% 95% confidence interval) in the earlier 7.1-million-mile study to 65% (57% to 72% 95% confidence interval) in the later 56.7-million-mile study.",
+      "rationale": "The passage does not mention any specific numbers or percentages related to the Police-Reported crash-rate reduction in the earlier or later studies."
+    },
+    {
+      "question_id": "Q-WAYB-036",
+      "claim": "Similarly, the Any-Injury-Reported crash-rate reduction percentage increased from 80% (44% to 96% 95% confidence interval) in the earlier study to 79% (72% to 86% 95% confidence interval) in the later study.",
+      "rationale": "The passage does not mention any specific numbers or percentages related to the Any-Injury-Reported crash-rate reduction in the earlier or later studies."
+    },
+    {
+      "question_id": "Q-WAYB-036",
+      "claim": "The confidence intervals in the later study were tighter compared to the earlier study.",
+      "rationale": "The passage does not mention any comparison of confidence intervals between the earlier and later studies."
+    },
+    {
+      "question_id": "Q-GTA-042",
+      "claim": "The vertical row-group label in Table 5 of 'From Stoplights to On-Ramps: A Comprehensive Set of Crash Rate Benchmarks for Freeway and Surface Street ADS Evaluation' is 'Crash Type.'",
+      "rationale": "The provided passages do not mention Table 5 or describe any vertical row-group label in it."
+    },
+    {
+      "question_id": "Q-GTA-044",
+      "claim": "The provided passages do not contain the specific recall and mean distance-error values printed in each panel's inset in Figure 5.",
+      "rationale": "The passages do not mention Figure 5 or any specific recall and mean distance-error values."
+    }
+  ],
+  "contradicted_claims": [
+    {
+      "question_id": "Q-WAYB-020",
+      "claim": "2,860 temporal sequences",
+      "rationale": "Passage [1] states: '2,860 temporal sequences' but passage [3] states: 'the training set consists of 2,800 sequences' and passage [2] states: 'we annotate four sets of five-frame sequences... yielding 2,800 sequences of 25 images'."
+    },
+    {
+      "question_id": "Q-WAYB-026",
+      "claim": "The two axes along which Waymo's Fatigue Risk Management (FRM) framework organizes its recommended practices are fatigue prevention, fatigue monitoring, and fatigue mitigation.",
+      "rationale": "The passages state that the framework is organized around three major building blocks: fatigue prevention, fatigue monitoring, and fatigue mitigation, not two crossed axes."
+    }
+  ],
+  "disclaimer": "A judge model is itself fallible: these rates are one instrument's reading of the answer against the supplied passages, not ground truth. The rubric that produced this report lives at rubric_path (plain text, operator-editable) and is stamped by rubric_sha256_12 below so two reports produced under different rubric wording are never silently compared. This report is not a baseline -- see the rubric file's own header for sign-off status."
+}
