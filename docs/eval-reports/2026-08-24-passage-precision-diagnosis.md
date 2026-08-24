@@ -105,11 +105,77 @@ over today's top-10 does not reach the 95% bar on either fixture** (78.1% best c
 
 ## 4. Q4 — correlation with dimension, difficulty, multi-paper
 
-*(pending)*
+Block-P@1 by the fixture's own metadata fields, headline configs (every cell carries n):
+
+verified-84 dense-only (64 scored):
+
+| stratum | n | block-P@1 |
+|---|---|---|
+| dimension: numeric/quantitative | 20 | 11/20 = 0.550 |
+| dimension: methodological | 16 | 5/16 = 0.313 |
+| dimension: single-passage factual lookup | 13 | 4/13 = 0.308 |
+| dimension: negation and scope | 7 | **1/7 = 0.143** |
+| dimension: temporal/versioned | 6 | 2/6 = 0.333 |
+| dimension: multi-paper synthesis | 2 | 1/2 |
+| difficulty: medium | 27 | 14/27 = 0.519 |
+| difficulty: easy | 13 | 6/13 = 0.462 |
+| difficulty: hard | 24 | **4/24 = 0.167** |
+| multi-paper (gold_paper_ids > 1) | 5 | 1/5 |
+
+GT-WMR fused (66 scored): flat by comparison — numeric 27/36=0.750, methodological 13/19=0.684,
+factual 7/9=0.778, negation 1/2; easy 15/19=0.789, medium 25/35=0.714, **hard 8/12=0.667**;
+multi-paper items: none exist in the scored set.
+
+**Named collapse point: `difficulty=hard` on verified-84** — 0.167 vs 0.519 on its own medium
+stratum, a 3.1× drop that does not exist on GT-WMR. Secondary: `negation and scope` is the worst
+dimension on verified-84 (1/7), driven by C2absent failures (2/7 gold blocks entirely absent from
+the top-10 despite the right rank-1 paper). Multi-paper cannot be assessed: 5 exposed items on one
+fixture, 0 on the other — no denominator worth quoting beyond this sentence.
 
 ## 5. Q5 — why is GT-WMR (0.727) nearly twice verified-84 (0.375)?
 
-*(pending — early note: the two sets' scoreable populations differ structurally; analysis ongoing)*
+Three independent measurements, all pointing the same way:
+
+**(a) The fixtures are structurally different instruments, not two samples of one thing.**
+
+| property (scored answerable items) | verified-84 | GT-WMR |
+|---|---|---|
+| n | 64 | 66 |
+| median question length | 33.5 words | 19 words |
+| difficulty mix | 42% hard (27/64) | 22% hard (18/82 total items) |
+| dominant dimension | numeric 20/64 | numeric 36/66 (55%) |
+| gold-block position in doc (block index p25/p50/p75) | 5 / 29 / 85 | 22 / 44.5 / 70 |
+| items with supporting-source authoring | 9 (incl. multi-paper) | **0** |
+| distinct gold papers | 28 | 21 |
+
+verified-84's gold blocks skew to the front of documents (a quarter sit at block index < 10 —
+title/abstract region), where any topical query matches the paper's own abstract chunk; GT-WMR's
+gold blocks sit mid-document where sibling-chunk competition is weaker.
+
+**(b) Dimension-mix reweighting explains only ~6 of the 35 points.** Applying GT-WMR's dimension
+mix to verified-84's own per-dimension rates predicts block-P@1 ≈ 0.436 (vs actual 0.375). Mix
+moves the number a sixth of the way to 0.727; the rest is within-stratum.
+
+**(c) Head-to-head on identical dimensions and identical papers still shows the full gap.**
+
+Same dimension, both fixtures: numeric 0.550 vs 0.750 · methodological 0.313 vs 0.684 ·
+single-passage factual 0.308 vs 0.778. Same difficulty label: hard 0.167 vs 0.667.
+
+The cleanest control — **papers scored by both fixtures (10 papers, 38 verified-84 vs 16 GT-WMR
+items)**: verified-84 15/38 = **0.395**, GT-WMR 12/16 = **0.750**. On the very same documents the
+gap is undiminished, so it is not which papers each fixture reads.
+
+**Answer to Q5: the difference is a property of how the two sets were authored, not of system
+behaviour on different material.** verified-84 asks longer, harder, more negation/scope-shaped
+questions whose gold spans often live in front-matter; GT-WMR asks short numeric/factual questions
+with mid-document single gold spans. Both numbers are real measurements of *this* retriever against
+*different* instruments: block-P@1 as currently measured is fixture-conditioned, and the two
+fixtures' numbers must not be averaged, compared across, or traded against each other. Any fix
+bought to raise one set's number should be validated against the other set as a held-out control
+before it is believed.
+
+*(One caveat kept explicit: item-level pairing between the two fixtures does not exist — no question
+is asked twice — so the attribution rests on stratum controls (b)/(c), not on matched pairs.)*
 
 ## 6. Ranked candidate fixes
 
