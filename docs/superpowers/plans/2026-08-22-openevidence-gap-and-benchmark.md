@@ -272,6 +272,45 @@ visibly empty:
 | figure/table understanding | page-level retrieval 4/4 at n=4; **no VLM in the pipeline**; `vlm_description` populated on 0 of 24,708 figure rows | not described in any source found | **no** |
 | operating cost | ~0, fully local | commercial service | — |
 
+### 1.6b "How far are we" — answered against the bar the operator actually set
+
+The OpenEvidence comparison has no shared denominator (above). But the operator set a *second*
+target, and that one is fully measurable: **recall and precision ≥ 95% on the Waymo corpus**
+(`docs/eval-reports/2026-08-23-waymo-priority-benchmark-protocol.md`, frozen before any item was
+authored). "How far are we" against **that** bar is a real number, per capability:
+
+| metric | fixture / mode | measured | target | distance |
+|---|---|---|---|---|
+| Recall@10 | GT-WMR priority, fused | **0.9857** | 0.95 | **+3.6 pp — PASS** |
+| Recall@10 | verified-84, dense-only | **0.9706** | 0.95 | **+2.1 pp — PASS** |
+| Recall@10 | verified-84, fused (shipped) | 0.8971 | 0.95 | **−5.3 pp — FAIL** |
+| P@1 | GT-WMR priority, dense-only | 0.9286 | 0.95 | −2.1 pp — FAIL |
+| P@1 | verified-84, fused | 0.7941 | 0.95 | **−15.6 pp — FAIL** |
+| block-level P@1 | GT-WMR priority | 0.7273 | 0.95 | −22.7 pp — FAIL |
+| block-level P@1 | verified-84 | **0.3750** | 0.95 | **−57.5 pp — FAIL** |
+| abstention on known-absent | both fixtures, n=24 | **0 detected** | — (no target set) | cannot abstain at all |
+| wrong-side answers on unanswerable | n=16, with refusal affordance | 1 (0.0625) | — (no target set) | 5 of 6 were prompt artifact |
+
+**Read down that column and the answer to "how far are we" is unambiguous, and it is not the answer
+the recall headline suggests:**
+
+- **Recall is essentially there.** Two of three configurations already clear 95%, and the third
+  clears it the moment the fusion weight is fixed. This is not where the work is.
+- **Precision is far away, and the gap widens as the unit gets smaller.** Paper-level P@1 misses by
+  2–16 points. **Block-level P@1 — did rank 1 point at the right *passage* — misses by up to 57
+  points.** The system finds the right document and then does not find the right paragraph inside
+  it. Every retrieval number reported before block-level precision was measured overstated how close
+  the system is.
+- **Abstention is not near the bar; there is no bar and no capability.** 0 of 24 known-unanswerable
+  questions were detected as unanswerable by score.
+- **Generation-side fabrication is closer than it looked** — 1 wrong-side answer in 16 once the
+  prompt permits refusal, versus 6 without.
+
+So: **for finding the right paper, close. For finding the right passage, roughly half way. For
+knowing when to say nothing, not started.** That is the honest "how far are we", and it is
+measurable precisely because the target is one the operator set against this corpus — not a
+cross-system percentage that no shared benchmark supports.
+
 **The three honest conclusions this supports:**
 
 1. **On retrieval *recall* into its own corpus, this system is strong** — 0.969 paper-level recall
