@@ -308,6 +308,27 @@ does contain the answer, and when it is not, it does not. The gold blocks being 
 (51 of 64 are under 40 characters — `'A BS T R AC T'`, `'Confidence Intervals'`) turns out not to
 distort anything, because the comparison is anchor-to-anchor on both sides.
 
+Extending that recomputation to the other fixture and to fused mode separates two different
+problems that the single 0.375 figure was hiding:
+
+| fixture / mode | answer at rank 1 | answer anywhere in top-10 | ranking headroom |
+|---|---|---|---|
+| verified-84, dense-only | 0.400 | **0.833** | **+43 pp** |
+| verified-84, fused (shipped) | 0.383 | 0.717 | +33 pp |
+| GT-WMR, fused | 0.803 | 0.955 | +15 pp |
+
+Two things fall out, and neither is visible in the headline number:
+
+- **Fusion does not merely re-order on verified-84 — it EVICTS.** Dense-only puts the answer-bearing
+  passage somewhere in the top 10 for 50 of 60 questions; fused manages 43. Seven questions lose the
+  answer from the pool entirely, which no amount of reranking can recover. That is a stronger reason
+  to retune `hybrid_dense_weight` than the paper-level 5-0 result, and it means the sweep should be
+  judged on passage-level pool coverage, not only on paper-level recall.
+- **The two fixtures differ at passage level as sharply as at anchor level** (0.803 vs 0.400 at rank
+  1). Whatever separates them is not an artifact of the anchor-identity metric — it survives a
+  literal answer-containment test. Until that is explained, a passage-level target set on one fixture
+  does not transfer to the other.
+
 **The answer-bearing passage is retrieved 83% of the time and ranked first 40% of the time.** That
 is a *ranking* problem, not a retrieval or chunking problem — the material is already in the pool.
 It makes the passage-level gap far cheaper to close than the −57 pp headline implies, and it points
