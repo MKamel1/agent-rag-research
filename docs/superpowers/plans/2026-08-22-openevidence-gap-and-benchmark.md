@@ -324,18 +324,140 @@ that caught RI-M5's fixture and let it be independently re-verified.
 whether "answerable" items really are, whether the dimension labels hold. Items that survive both
 become the benchmark; items that don't are the interesting ones.
 
+**Update, post-benchmark:** the set this section describes grew from 73 to 84 items in a later
+verified-set v2 pass (`docs/eval-reports/2026-08-22-waymo-groundtruth-second-pass.md`); the
+retrieval numbers in §1.2-1.3 above were measured against the 73-item set (65 answerable / 8
+known-absent), not the current 84-item one. On vision: only **1** of the 73 items measured
+(`Q-WAYB-027`) is `vision_derived`, verified directly against `fixtures/eval/waymo_gt_verified.json`
+— the current 84-item file has grown to 4 vision-derived items, but the other 3
+(`Q-GTA-042/043/044`) were added by the v2 pass and are not part of any number reported in §1.
+Vision was used only to *build* these ground-truth items (rendering a PDF page and reading a chart,
+ODD map, or table the text layer represents poorly); it has never been used to *evaluate* retrieval
+itself — see §6.
+
 ---
 
-## 4. Benchmark
+## 4. Benchmark: run 2026-08-22, and what it says
 
-Only once the ground truth exists:
+The plan below (as written before the benchmark ran) called for the wave-4 instruments to be run
+once ground truth existed and to report false-negative/false-positive rates separately rather than
+blending them into one accuracy number. That run happened
+(`docs/eval-reports/2026-08-22-waymo-baseline.md`, worktree `BENCH-1-waymo-baseline`) and its
+numbers are what §1.2-1.3 above are built from. Restated here as the completed instrument run this
+section originally specified:
 
-1. Run the existing wave-4 instruments against the real corpus — sparse-arm ablation (RI-M3),
-   score-distribution census (RI-M7), truncation census (RI-M4), groundedness harness (RI-M6).
-2. Score retrieval against both GT sets, reporting false-negative and false-positive rates
-   **separately** — a single accuracy number hides exactly the asymmetry this set was built to expose.
-3. RI-M7 settles the relevance-floor question that has been deferred twice. Its verdict already
-   carries its own upper-bound caveat.
+1. **Sparse-arm ablation (RI-M3)** — `app/retrieval_eval.py` run three times (`fused`, `dense_only`,
+   `sparse_only`) against `waymo_gt_verified.json`'s 65 answerable items. Result: §1.2.
+2. **Score-distribution census (RI-M7)** — run against the real 8-item known-absent arm, not the
+   instrument's fabricated-entity default. Result: §1.3 — `distributions_separate: false`, settling
+   the relevance-floor question this document had deferred twice, with **no** upper-bound caveat
+   (that caveat only attaches to the fabricated-entity default arm, which was deliberately not used
+   here).
+3. **Truncation census (RI-M4)** — `scripts.truncation_census` scanned all 1,738 papers
+   (`docs/eval-reports/2026-08-22-waymo-baseline-truncation-census.txt`). Reranker item ceiling
+   binds on 1/46,155 chunks (0.0%, 2,486 tokens — one `REFERENCES` section). Reranker batch-budget
+   pressure binds on 33,958/46,155 chunks (73.6%) but drops nothing by construction — it only forces
+   an extra HTTP call. The **summarizer's whole-document ceiling binds on 1,669/1,738 papers
+   (96.0%)**, truncating each to its first 7,356 words and dropping ~7.98M words in total (worst
+   single paper: over 100,000 words dropped). This sits in the paper-summary pipeline, not in
+   `Retriever.retrieve()` — it does not explain the recall numbers in §1.2, and it is a real,
+   previously-unmeasured cost of the current summarization design, independent of retrieval quality.
+   The token-count-per-word calibration behind these figures is itself unmeasured (`_TOKENS_PER_WORD_ESTIMATE`
+   is never checked against the generation server's real per-response token count) — the bind rates
+   above are measured against an estimate, stated as such in the instrument's own output.
+4. **Groundedness harness (RI-M6)** — could not run at all. §1.5.
 
-Only after that is there a baseline against which ColBERT, multi-hop, or a knowledge graph can be
-judged. Until then any such work is unfalsifiable.
+Only after this baseline is there evidence against which ColBERT, multi-hop, or a knowledge graph
+can be judged — that condition is now satisfied, and §5 uses it.
+
+---
+
+## 5. Re-ranked roadmap, defended against the measurements
+
+The 2026-08-22 draft ranked three architectural upgrades — late interaction, multi-hop, knowledge
+graph — and did not include abstention or groundedness measurement at all. Re-ranked here against
+what was actually measured:
+
+1. **Retune or disable the shipped fusion weight (`hybrid_dense_weight: 0.5`).** Not a build — an
+   operator config change, near-zero cost, and the only item on this list with a *negative* number
+   currently attached to leaving it alone: fusion loses 5-0 to dense-only with no counterexample
+   (§1.2). Ranked first because it is the cheapest and most directly evidenced change available;
+   nothing else on this list should be prioritized ahead of stopping a config from actively costing
+   recall. (This is not the same claim as "sparse is useless" — sparse alone found 0.631 of answers
+   the dense arm didn't need it for; the finding is specifically that RRF at k=60, weight=0.5 is not
+   currently combining the two well on this corpus.)
+2. **Abstention / a relevance floor that isn't a raw score threshold.** Placed first among genuine
+   build items, ahead of any retrieval-architecture upgrade, because §1.3 measured that this system
+   currently cannot distinguish an answerable question from an unanswerable one at all — every
+   known-absent question returns a confident top-10 result, and the score distributions overlap
+   almost completely. This is not a retrieval-quality gap that a better retriever fixes; RI-10's
+   standing conclusion (reaffirmed, not just left unchallenged, by this run) is that abstention has
+   to be a presentation/prompting-layer decision, informed by something other than the retrieval
+   score — plausibly a groundedness check against retrieved passages (which is item 3), an explicit
+   query-answerability classifier, or corpus-coverage metadata the retriever doesn't currently
+   expose. Ranked above the architecture gaps because OpenEvidence's product claim is specifically
+   "answer only from evidence, refuse otherwise," and this system currently cannot do the "refuse"
+   half regardless of how good the "answer" half is.
+3. **Build a real groundedness/fabrication judge and get the rubric signed off.** §1.5 — this is
+   currently a total blank, on the exact axis (grounded-or-refuse) OpenEvidence is judged on in the
+   evaluations found in §1.4. Ranked third, not last, for two reasons: it is comparatively cheap (an
+   LLM-judge harness against an already-drafted rubric, not a new retrieval subsystem), and it is a
+   *prerequisite* for evaluating whether any future architecture change (item 4 onward) actually
+   improves what a user reads, as opposed to only what the retriever returns. Building ColBERT or a
+   knowledge graph without a working groundedness check means being unable to tell whether a
+   retrieval upgrade made real answers better or merely reshuffled which passages get cited.
+4. **Late interaction (ColBERT-style) as a third retrieval pillar.** Now backed by a concrete reason
+   rather than a general architecture-checklist entry: §1.2 shows sparse alone recovers real signal
+   (0.631 recall) that dense doesn't fully cover, but the current coarse RRF fusion is not
+   extracting the best of both — it's currently worse than dense alone. A fine-grained, per-token
+   matching layer is the kind of upgrade that could combine both signals without the current
+   fusion's cost, and `PRD.md:657` already anticipates it for the V2+/VLM phase (ColPali for
+   figure/equation pages). Ranked fourth: it is real, evidenced work, but everything above it is
+   cheaper, more directly measured, or a prerequisite for judging whether this helps.
+5. **Multi-hop / iterative retrieval.** Unchanged from the 2026-08-22 draft's reasoning — a question
+   needing two papers combined is answered today only if one passage happens to contain both halves
+   — but still genuinely unmeasured: this baseline did not isolate multi-hop failure specifically
+   (the GT sets carry multi-paper synthesis items via `additional_gold_paper_ids`/multi-gold
+   scoring, which is a generous measurement, not a targeted one). Ranked fifth: plausible, not yet
+   evidenced as a distinct failure mode the way abstention and the fusion weight are.
+6. **Knowledge-graph traversal.** Last, and more clearly deprioritized than the 2026-08-22 draft
+   argued. That draft called it "OpenEvidence's stated differentiator" and ranked it third on cost
+   grounds alone. §1.4's research adds a second reason to deprioritize it further: OpenEvidence's
+   own graph-RAG claim is unverified by any independent technical audit found in this research pass,
+   and the one independent accuracy measurement on the kind of complex, multi-system reasoning a
+   knowledge graph is supposed to help with (the medRxiv MedXpertQA pilot, §1.4) found OpenEvidence
+   itself scoring only 31-39.5% on exactly that question class. Building the most expensive item on
+   this list to match a competitor's stated differentiator is weaker justification when that
+   differentiator's own real-world payoff is itself unverified and, on the one measurement found, not
+   obviously working well even for the company making the claim.
+
+---
+
+## 6. What remains unmeasured
+
+Stated explicitly, not left implicit:
+
+- **Groundedness / fabrication rate.** No `Judge` implementation exists (`app/judge_eval.py:87`),
+  `--judge-factory` is required and unfulfilled, and the rubric is unsigned PROVISIONAL
+  (`docs/eval-rubrics/groundedness-rubric.md:3`). Zero data on whether generated answers are
+  faithful to retrieved passages. §1.5, §5 item 3.
+- **Any external, independently-designed benchmark.** Every number in this document is measured
+  against ground truth this project authored for its own corpus. No analogue exists to what NYU
+  Langone or the Real-POCQi methodology did for OpenEvidence — independent graders, a benchmark this
+  project didn't design, ideally real user-style queries rather than authored ones. §1.4.
+- **VLM-based retrieval evaluation.** Vision (PDF page rendering + a vision-capable model) was used
+  to *build* ground-truth items — 1 of the 73 items this baseline measured against
+  (`Q-WAYB-027`), grown to 4 in the current 84-item set — where a chart, ODD map, or table the text
+  layer represents poorly needed to be read to write the question. Vision has never been used to
+  *evaluate* retrieval itself: there is no measurement of whether this system's retrieval (which is
+  entirely text-chunk-based) can find or represent figure/table content at query time, as distinct
+  from whether a human-in-the-loop author could read a figure to write a ground-truth question about
+  it. `PRD.md:657`'s ColPali-based figure retrieval (§5 item 4, folded into the late-interaction
+  item) is the closest planned answer to this gap, and it remains unbuilt.
+- **The magnitude of the fusion-weight cost**, beyond direction. §1.2's 5-0 asymmetry is solid
+  evidence of direction on this one corpus; it does not establish how much recall a re-tuned weight
+  would recover, or whether the same direction holds on the causal-methods corpus, which has not
+  been benchmarked with this instrument at all.
+- **Causal-corpus retrieval, entirely.** Every measurement in this document is Waymo-only, per the
+  operator's stated priority (§2). The causal-methods corpus (12,390 papers) has not been re-parsed,
+  backfilled, or run through any of the wave-4 instruments.
