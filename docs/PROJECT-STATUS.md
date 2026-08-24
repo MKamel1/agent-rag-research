@@ -569,8 +569,14 @@ papers as top priority; **target frozen before any implementation work**. All me
   fact cannot move an aggregate denominator twice.
 - **Figures backfill (RI-32) completed** — full 1,738-paper run finished 2026-08-22 23:46
   (9298.8s, 5.4 s/paper observed — both earlier ETAs wrong): figures 24,708 rows / 1,724 papers,
-  tables 8,266 / 1,586. Protected tables verified byte-identical by content hash against the
-  pre-run backup (`waymo/data/backups/pre-RI32-backfill-20260822T204114Z/`).
+  tables 8,266 / 1,586. `blocks`, `chunks` and `summaries` verified byte-identical by content
+  hash against the pre-run backup (`waymo/data/backups/pre-RI32-backfill-20260822T204114Z/`).
+  `papers` did move, by 4 rows in `author_orgs` only (NULL -> the curated Waymo value) — **not**
+  the backfill, whose connection authorizer denies any write to `papers`, but
+  `scripts/backfill_curated_author_orgs.py` running concurrently: those 4 papers carry
+  `author_orgs`/`curated_author_orgs` in Qdrant too, which is that script's signature (it writes
+  both stores) and which the figures backfill never touches. Row counts alone would have missed
+  this — 1738 before and after — so the gate's content hashes are what caught it.
 
 Baseline numbers, gates, and the honest verdict: `docs/eval-reports/2026-08-23-waymo-priority-baseline.md`.
 
