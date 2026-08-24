@@ -18,12 +18,13 @@ One local generation-LLM call per `AuditItem`: the prompt embeds the rubric text
 time (never hardcoded here -- an operator edits `docs/eval-rubrics/*.md`, not this file, to change
 what a verdict means, see `app/judge_eval.py`'s own docstring), the question, the passages
 (numbered), and the answer, and asks for a JSON array of `{claim, verdict, rationale}` objects.
-`think: False` (matches `rag/summarizer.py`/`rag/contextual_header.py`): this Ollama-based v1 stack
-shares one token budget between reasoning and the answer with no way to protect the answer's share
-(see `rag/summarizer.py`'s `_NUM_CTX_CEILING` comment for the measured detail) -- a judge call that
-silently spent its whole budget "thinking" and returned no JSON would look identical to a model that
-just can't do the task, which is a worse failure mode for a *measurement* than losing the reasoning
-trace. Revisit once ADR-09's planned vLLM migration ships a real `thinking_token_budget`.
+`think: False` (matches `rag/summarizer.py`/`rag/contextual_header.py`): this local generation-LLM
+serving stack (v1, ADR-09) shares one token budget between reasoning and the answer with no way to
+protect the answer's share (see `rag/summarizer.py`'s `_NUM_CTX_CEILING` comment for the measured
+detail) -- a judge call that silently spent its whole budget "thinking" and returned no JSON would
+look identical to a model that just can't do the task, which is a worse failure mode for a
+*measurement* than losing the reasoning trace. Revisit once ADR-09's planned v1->later migration
+ships a real `thinking_token_budget`.
 """
 
 from __future__ import annotations
