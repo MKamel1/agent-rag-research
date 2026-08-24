@@ -47,10 +47,19 @@ class McpServer:
     always overrides it).
     """
 
-    def __init__(self, retriever, document_store, default_k: int = 10):
+    def __init__(
+        self, retriever, document_store, default_k: int = 10,
+        *, corpus_label: str | None = None,
+    ):
         self._retriever = retriever
         self._document_store = document_store
         self._default_k = default_k
+        # Each corpus is its own server process; without this label nothing in a tool result
+        # says which one answered (2026-08-23: a session spent an hour diagnosing exactly that).
+        self._corpus_label = corpus_label
+
+    def _serving_suffix(self) -> str:
+        return f" [serving {self._corpus_label}]" if self._corpus_label else ""
 
     @property
     def retriever(self):
@@ -277,7 +286,7 @@ class McpServer:
         one); `markdown` on tables is the extracted table text, which is what makes a table's
         CONTENT answerable without vision."""
         if self._document_store.get(paper_id) is None:
-            raise ContractError(f"get_figures: unknown paper_id {paper_id!r}")
+            raise ContractError(f"get_figures: unknown paper_id {paper_id!r}{self._serving_suffix()}")
         return self._document_store.get_artifacts(paper_id, kind)
 
     def get_section(self, paper_id: str, section_path: str) -> list[Block]:
@@ -289,7 +298,7 @@ class McpServer:
         section paths); raises `ContractError` for an unknown `paper_id`. Blocks are the same
         frozen provenance type `get_span` resolves, so any block here can be cited."""
         if self._document_store.get(paper_id) is None:
-            raise ContractError(f"get_section: unknown paper_id {paper_id!r}")
+            raise ContractError(f"get_section: unknown paper_id {paper_id!r}{self._serving_suffix()}")
         return [b for b in self._document_store.get_blocks(paper_id) if b.section_path == section_path]
 
     def corpus_stats(self) -> dict:
@@ -297,8 +306,12 @@ class McpServer:
         published-date range, doc_type histogram, top categories. Use before searching -- knowing
         the corpus is 1,738 AV-safety papers (not 12,390 causal-methods ones) changes how a
         caller scopes everything else. Plain dict; keys documented in
-        `DocumentStore.corpus_stats`."""
-        return self._document_store.corpus_stats()
+        `DocumentStore.corpus_stats`. When the composition root supplied a `corpus_label`, a
+        `serving` key is merged in identifying the answering process."""
+        stats = self._document_store.corpus_stats()
+        if self._corpus_label:
+            stats = {**stats, "serving": self._corpus_label}
+        return stats
 
     def get_paper(self, paper_id: str) -> PaperSummaryView:
         """Precondition: `paper_id` is a stored paper; else `ContractError`. Postcondition:
@@ -306,7 +319,7 @@ class McpServer:
         """
         record = self._document_store.get(paper_id)
         if record is None:
-            raise ContractError(f"get_paper: unknown paper_id {paper_id!r}")
+            raise ContractError(f"get_paper: unknown paper_id {paper_id!r}{self._serving_suffix()}")
         section_paths = self._distinct_section_paths(record.parsed.blocks)
         return PaperSummaryView(
             paper_id=paper_id,

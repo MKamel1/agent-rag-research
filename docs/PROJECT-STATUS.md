@@ -85,6 +85,7 @@ Every flag below traces to an actual `add_argument`/argv line — no flag is inf
 | `app.corpus_integrity` | none (module-level `main()`, reads `Config` directly) | Standing check: every `done` paper has ≥1 chunk and ≥1 block row (`app/corpus_integrity.py`) |
 | `app.dashboard.server` | `--port` (default 8700), `--data-dir` (required), `--token`, `--host` (default `0.0.0.0`) | Corpus dashboard web server (`app/dashboard/server.py:671-684`) |
 | `app.dashboard.verify_numbers` | `--data-dir` (required), `--host`, `--port` | Independent cross-check of the dashboard's own numbers against ground truth (`app/dashboard/verify_numbers.py:580-583`) |
+| `app.mcp_verify_client` | `QUERY` (positional, optional), `--k`, `--data-dir` (optional — corpus dir for the spawned server) | Full query→citation MCP round trip over real stdio (`app/mcp_verify_client.py`); `--data-dir waymo/data` targets a non-default corpus |
 | `migrations/migrate.py` | `python migrations/migrate.py <path/to/db.sqlite>` (positional, no argparse) | Applies every unapplied `000N_*.sql` file to a DB, idempotently |
 
 ### Traps

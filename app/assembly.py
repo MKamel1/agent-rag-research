@@ -650,4 +650,7 @@ def build_mcp_server(
     rerank_pool_size = config.rerank_depth
     retriever = Retriever(embedder, vector_index, document_store, reranker, rerank_pool_size)
 
-    return McpServer(retriever, document_store, default_k=config.top_k)
+    return McpServer(
+        retriever, document_store, default_k=config.top_k,
+        corpus_label=f"collection={collection} db={db_path}",
+    )

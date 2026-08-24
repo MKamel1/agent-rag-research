@@ -171,6 +171,25 @@ automatically, never touches the MCP server) since it spawns a real subprocess a
 down every ingest run. For a full query -> citation round trip (semantic_search, then get_span on
 the top hit), use `python -m app.mcp_verify_client "some query"` -- see that module's own docstring.
 
+### Which corpus is this MCP connection serving? (2026-08-23)
+
+One server process serves exactly one corpus. A client session wired only to the default
+connection sees the main causal-methods corpus and *nothing else*: Waymo ids answer
+"unknown paper_id", org-filtered scans scan zero papers -- both true of that store, and easy to
+misread as "the Waymo corpus has no data". Three ways to know where you are:
+
+1. Call `corpus_stats()` first: its `serving` key names the answering process
+   (`collection=<name> db=<path>`), and unknown-id errors carry the same suffix.
+2. The server logs its resolution at startup (`serve: resolved db_path=... collection=...`,
+   stderr -- visible in the client's MCP server logs).
+3. To reach BOTH corpora from one client, register two server entries: the default one above, plus
+   a second with `"args": [..., "-m", "app.serve", "--data-dir",
+   "/home/omar/ai-projects/research-system-rag/waymo/data"]`. Same PYTHONPATH rules apply.
+
+`app.mcp_verify_client` takes the same `--data-dir` (e.g. `python -m app.mcp_verify_client "query"
+--data-dir waymo/data`) -- before 2026-08-23 it accepted the flag and silently ignored it,
+reporting main-corpus results for another corpus's question.
+
 ## Running a second corpus
 
 A second corpus is just a second data directory with its own `config.yaml` -- nothing in this

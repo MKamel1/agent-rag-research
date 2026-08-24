@@ -6,23 +6,23 @@ actually run — see `LESSONS-LEARNED.md`'s T-DOC33 entry for the transcript thi
 
 Usage:
 
-    python -m app.mcp_verify_client "your factual query" [--k N]
+    python -m app.mcp_verify_client "your factual query" [--k N] [--data-dir DIR]
 
-Spawns `python -m app.serve` as a real child process over stdio (`cwd=_REPO_ROOT`, fixed below), so
-the child resolves `config.yaml` from THIS repo's root via `app.serve`'s plain `load_config()`
-fallback (T-DOC89 §3 discovery: `RAG_CONFIG` -> `config.yaml` in `_REPO_ROOT` -> walk up -- an
-operator with `RAG_CONFIG` set gets that instead of the repo root), then calls `semantic_search`,
-then calls `get_span` on the top hit's anchor to prove the citation resolves back to real stored
-text — the full query -> citation round trip, over the wire.
+Spawns `python -m app.serve` as a real child process over stdio (`cwd=_REPO_ROOT`, fixed below).
+Without `--data-dir`, the child resolves `config.yaml` from THIS repo's root via `app.serve`'s
+plain `load_config()` fallback (T-DOC89 §3 discovery: `RAG_CONFIG` -> `config.yaml` in `_REPO_ROOT`
+-> walk up -- an operator with `RAG_CONFIG` set gets that instead of the repo root). With
+`--data-dir DIR`, `["--data-dir", DIR]` is appended to the child's argv so it loads that corpus's
+own config.yaml instead -- this is how you round-trip a non-default corpus (e.g. waymo/data).
 
 The RAG_DB_PATH/RAG_BLOB_DIR/RAG_COLLECTION env vars this docstring used to tell you to export no
 longer do anything -- `app.serve` doesn't read the process environment at all now (CONVENTIONS.md
-§3; see its own docstring for the `--data-dir` flag that replaced them). This script always spawns
-against the repo-root config.yaml; it has no `--data-dir` passthrough of its own today, so pointing
-it at a different corpus means adding one (append `["--data-dir", data_dir]` to the spawn `args`
-below) -- not done here since no current manual-verification run needs it.
+§3; see its own docstring for the `--data-dir` flag that replaced them). 2026-08-23: this script
+used to accept `--data-dir` and silently drop it (raw sys.argv scanning, no parser), reporting
+main-corpus results for a Waymo ask; argparse now rejects unknown flags instead of ignoring them.
 """
 
+import argparse
 import asyncio
 import json
 import os
@@ -34,7 +34,7 @@ from mcp.client.stdio import stdio_client
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-async def _run(query: str, k: int) -> None:
+async def _run(query: str, k: int, data_dir: str | None) -> None:
     # No explicit `env`: the SDK then spawns the child with its get_default_environment()
     # (PATH/HOME/SHELL/TERM/USER/LOGNAME on POSIX -- verified in mcp/client/stdio's
     # stdio_client). That is sufficient here because the child reads no configuration from the
@@ -43,8 +43,11 @@ async def _run(query: str, k: int) -> None:
     # spawn against THIS repo root's config.yaml). The previous explicit pass-through of a copy
     # of the parent environment handed all of it to the child by hand, which check (d) rightly
     # flags as pipeline code plumbing env outside Config (RI-23).
+    spawn_args = ["-m", "app.serve"]
+    if data_dir is not None:
+        spawn_args += ["--data-dir", data_dir]
     params = StdioServerParameters(
-        command=sys.executable, args=["-m", "app.serve"], cwd=_REPO_ROOT,
+        command=sys.executable, args=spawn_args, cwd=_REPO_ROOT,
     )
     async with stdio_client(params) as (read, write):
         async with ClientSession(read, write) as session:
@@ -73,13 +76,20 @@ async def _run(query: str, k: int) -> None:
 
 
 def main() -> None:
-    query = sys.argv[1] if len(sys.argv) > 1 else (
-        "how long does DML with dummies take to compute for one dataset"
+    parser = argparse.ArgumentParser(
+        description="Full query->citation MCP round trip against a spawned app.serve.",
     )
-    k = 10
-    if "--k" in sys.argv:
-        k = int(sys.argv[sys.argv.index("--k") + 1])
-    asyncio.run(_run(query, k))
+    parser.add_argument("query", nargs="?", default=(
+        "how long does DML with dummies take to compute for one dataset"
+    ))
+    parser.add_argument("--k", type=int, default=10)
+    parser.add_argument(
+        "--data-dir", default=None,
+        help="Corpus directory whose config.yaml the spawned server should load "
+             "(e.g. waymo/data). Omit for the repo-root default corpus.",
+    )
+    args = parser.parse_args()
+    asyncio.run(_run(args.query, args.k, args.data_dir))
 
 
 if __name__ == "__main__":
