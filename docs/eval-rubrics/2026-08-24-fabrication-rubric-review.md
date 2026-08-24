@@ -69,3 +69,33 @@ Where they would diverge:
 Net: agreement would be high on clear-cut cases and unpredictable exactly where this run actually
 failed — borderline paraphrase distance and multi-passage attribution. Both are wording gaps, not
 conceptual ones.
+
+## Q2. Does it measure what its name says?
+
+The name is *fabrication audit*. What the procedure operationalizes is per-claim support against
+the supplied excerpts: is each claim stated by the passages, denied by them, or untouched by them.
+
+**Partially — and the name-vs-measurement gap runs in the opposite direction from the sibling's.**
+Groundedness promised "reasoning" and delivered claims; this rubric promises *fabrication*
+detection and delivers neither of the two things a reader most plausibly means by the word:
+
+- **Invention is detected only as an undifferentiated subset.** The rubric says so itself:
+  `unsupported` "is not an accusation of fabrication — it may be a true fact the answer imported
+  from outside the passages, or genuine model invention. The rubric cannot tell those apart."
+  That is an honest disclaimer — better than the sibling's pre-amendment silence on the same fold —
+  but it concedes that the headline verb of the rubric's own title is not what the instrument
+  measures.
+- **Misattribution — real retrieved text attached to the wrong subject — is not merely missed; it
+  scores `supported`, by construction**, whenever the extracted claim does not carry its subject.
+  The run receipts are in Q4. The failure mode this corpus actually exhibits dominantly (3 of 6
+  wrong-side answers) is invisible to the construct as worded.
+
+What it does measure cleanly is claim-level grounding against the excerpt set — a coherent,
+useful construct, and the right lax pole underneath groundedness's strict one ("the difference
+from the fabrication-audit rubric is calibration," as the sibling puts it). The defect is naming,
+and it is the sibling's Q2b problem again: a headline number that requires paragraphs of defense
+in its own run report (§1: "looks like good news and is not"; the whole of §2 exists to
+reinterpret §1) has a naming problem. Renaming is not proposed here — the rubric id
+(`fabrication-audit-rubric.md`, RI-M2) is referenced by code paths and reports — but the operator
+should know that "0.71 fabricated... sorry, supported" will keep needing that defense until
+either the name narrows or the wording closes the misattribution blind spot (F-A2 below).
