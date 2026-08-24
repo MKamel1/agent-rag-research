@@ -160,6 +160,13 @@ VENDOR_RULES: tuple[VendorRule, ...] = (
     # above -- this repo's established zero-network adapter-test idiom. The file gained them in
     # RI-18 without the matching entry being added in the same PR, and the enforcement gate went
     # red on lines no check had ever complained about when they landed.
+    #
+    # JUDGE-1: app/judge_llm.py is the real `Judge` adapter for app/judge_eval.py's seam -- same
+    # injected-httpx.Client construction as rag/summarizer.py/rag/contextual_header.py, living in
+    # app/ rather than rag/ because the Judge Protocol it implements is itself defined in app/
+    # (see the module's own docstring for the dependency-direction reasoning). Names no other
+    # vendor. app/test_judge_llm.py exercises it offline via httpx.MockTransport, same pattern as
+    # every other adapter test above.
     VendorRule(
         "httpx",
         re.compile(r"httpx", re.I),
@@ -186,6 +193,8 @@ VENDOR_RULES: tuple[VendorRule, ...] = (
             "app/exp3_hierarchy_sim.py",
             "app/exp_tdoc87_marker_repair.py",
             "app/exp_author_org_tagging.py",
+            "app/judge_llm.py",
+            "app/test_judge_llm.py",
         ),
     ),
 )
