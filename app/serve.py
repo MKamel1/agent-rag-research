@@ -207,6 +207,38 @@ def list_methods() -> list[str]:
 
 
 @mcp.tool()
+@record_usage(_get_usage_log, source="mcp", tool="get_figures")
+def get_figures(paper_id: str, kind: str = "all") -> list[dict]:
+    """The figures and/or tables stored for one paper, ordered by page — the structured artifact
+    surface. `kind`: "figure", "table", or "all" (default). Figure keys: {kind, id, page, caption,
+    image_path, bbox}; table keys: {kind, id, page, caption, markdown, bbox} — a table's
+    `markdown` IS its content, so table facts are answerable without vision. Pair with
+    `get_paper` (section list) and `get_section` (reading). Raises for an unknown paper_id;
+    caption can be empty (parsing does not always recover one)."""
+    return _server.get_figures(paper_id, kind)
+
+
+@mcp.tool()
+@record_usage(_get_usage_log, source="mcp", tool="get_section")
+def get_section(paper_id: str, section_path: str) -> list:
+    """One section of a paper as its blocks in reading order — linear reading over MCP. Get valid
+    `section_path` values from `get_paper`'s `section_paths`. Returns [] for a known paper with
+    no blocks under that path (heading recovery is imperfect); raises for an unknown paper_id.
+    Blocks are the same provenance type `get_span` resolves, so any block here is citable."""
+    return _server.get_section(paper_id, section_path)
+
+
+@mcp.tool()
+@record_usage(_get_usage_log, source="mcp", tool="corpus_stats")
+def corpus_stats() -> dict:
+    """Corpus-level aggregates: paper/block/chunk/figure/table counts, published-date range,
+    doc_type histogram, top categories. Call before searching — knowing which corpus you are
+    talking to (1,738 AV-safety papers vs 12,390 causal-methods ones) changes how to scope
+    everything else."""
+    return _server.corpus_stats()
+
+
+@mcp.tool()
 @record_usage(_get_usage_log, source="mcp", tool="get_paper")
 def get_paper(paper_id: str) -> PaperSummaryView:
     """Fetch a stored paper's summary view by id."""

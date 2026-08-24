@@ -538,6 +538,61 @@ class DocumentStore:
         ).fetchall()
         return [self._row_to_block(r) for r in rows]
 
+
+    def get_artifacts(self, paper_id: str, kind: str = "all") -> list[dict]:
+        """Figures and/or tables stored for one paper, ordered by page then id. `kind` is
+        `"figure"`, `"table"`, or `"all"` (default). Rows are plain dicts -- the MCP layer
+        documents the keys; a typed envelope is a contracts/ (T-F7) change deferred until the
+        figure surface stabilises. Keys: figures -> {kind, id, page, caption, image_path, bbox};
+        tables -> {kind, id, page, caption, markdown, bbox}. Unknown `paper_id` is NOT checked
+        here (an empty list is the honest answer for a paper with no artifacts); the MCP layer
+        does the existence check so a typo'd id errors instead of silently returning []."""
+        if kind not in {"figure", "table", "all"}:
+            raise ValueError(f"kind must be 'figure', 'table', or 'all'; got {kind!r}")
+        out: list[dict] = []
+        if kind in {"figure", "all"}:
+            out += [
+                {"kind": "figure", "id": row[0], "page": row[1], "caption": row[2],
+                 "image_path": row[3], "bbox": json.loads(row[4])}
+                for row in self._con.execute(
+                    "SELECT figure_id, page, caption, image_path, bbox_json FROM figures "
+                    "WHERE paper_id = ? ORDER BY page, figure_id", (paper_id,))
+            ]
+        if kind in {"table", "all"}:
+            out += [
+                {"kind": "table", "id": row[0], "page": row[1], "caption": row[2],
+                 "markdown": row[3], "bbox": json.loads(row[4])}
+                for row in self._con.execute(
+                    "SELECT table_id, page, caption, markdown, bbox_json FROM tables "
+                    "WHERE paper_id = ? ORDER BY page, table_id", (paper_id,))
+            ]
+        return sorted(out, key=lambda a: (a["page"], a["id"]))
+
+    def corpus_stats(self) -> dict:
+        """Corpus-level aggregates for caller calibration: row counts per table, published-date
+        range, doc_type histogram, and the top categories. Read-only, one connection, no
+        per-paper fan-out."""
+        con = self._con
+        papers = con.execute("SELECT COUNT(*), MIN(published), MAX(published) FROM papers").fetchone()
+        doc_types = dict(con.execute(
+            "SELECT doc_type, COUNT(*) FROM papers GROUP BY doc_type ORDER BY COUNT(*) DESC"))
+        cat_counts: dict[str, int] = {}
+        for (cats,) in con.execute("SELECT categories_json FROM papers"):
+            for c in json.loads(cats or "[]"):
+                cat_counts[c] = cat_counts.get(c, 0) + 1
+        top_categories = dict(sorted(cat_counts.items(), key=lambda kv: -kv[1])[:10])
+        return {
+            "papers": papers[0],
+            "published_min": papers[1],
+            "published_max": papers[2],
+            "doc_types": doc_types,
+            "top_categories": top_categories,
+            "blocks": con.execute("SELECT COUNT(*) FROM blocks").fetchone()[0],
+            "chunks": con.execute("SELECT COUNT(*) FROM chunks").fetchone()[0],
+            "figures": con.execute("SELECT COUNT(*) FROM figures").fetchone()[0],
+            "tables": con.execute("SELECT COUNT(*) FROM tables").fetchone()[0],
+        }
+
     def _get_figures(self, paper_id: str) -> list[Figure]:
         """No `get_figure(figure_id)` getter exists (DATA-CONTRACTS.md "figures + tables") --
         figures are only ever read back as the whole per-paper list on `get()`, in insertion

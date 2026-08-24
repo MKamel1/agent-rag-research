@@ -1068,3 +1068,47 @@ def test_table_fingerprints_change_when_content_changes(tmp_path):
     store.put(make_paper_record())  # restore identical content
     restored = _mod.table_fingerprints(db, _PROTECTED_TABLES)
     assert restored == baseline, "identical content must hash identically regardless of insert order"
+
+
+# --- get_artifacts / corpus_stats (2026-08-23 MCP artifact surface) -------------------------
+def test_get_artifacts_round_trips_seeded_figures_and_tables(store):
+    rec = make_paper_record(
+        parsed=make_parsed_doc(figures=[make_figure()], tables=[make_table_item()]),
+    )
+    store.put(rec)
+    arts = store.get_artifacts(PAPER_ID)
+    kinds = [a["kind"] for a in arts]
+    assert kinds == ["figure", "table"]  # same page -> ordered by kind id within page ordering
+    fig = next(a for a in arts if a["kind"] == "figure")
+    assert fig["caption"] and fig["image_path"] and len(fig["bbox"]) == 4
+    tab = next(a for a in arts if a["kind"] == "table")
+    assert "a" in tab["markdown"] and tab["caption"]
+
+
+def test_get_artifacts_kind_filters(store):
+    rec = make_paper_record(
+        parsed=make_parsed_doc(figures=[make_figure()], tables=[make_table_item()]),
+    )
+    store.put(rec)
+    assert [a["kind"] for a in store.get_artifacts(PAPER_ID, kind="figure")] == ["figure"]
+    assert [a["kind"] for a in store.get_artifacts(PAPER_ID, kind="table")] == ["table"]
+    with pytest.raises(ValueError, match="kind"):
+        store.get_artifacts(PAPER_ID, kind="both")
+
+
+def test_get_artifacts_unknown_paper_returns_empty_not_error(store):
+    # the store layer is honest-empty; the MCP layer does the existence check
+    assert store.get_artifacts("no:such") == []
+
+
+def test_corpus_stats_counts_seed(store):
+    store.put(make_paper_record(
+        parsed=make_parsed_doc(figures=[make_figure()], tables=[make_table_item()]),
+    ))
+    stats = store.corpus_stats()
+    assert stats["papers"] == 1
+    assert stats["chunks"] == 1
+    assert stats["figures"] == 1 and stats["tables"] == 1
+    assert stats["doc_types"] == {"paper": 1}
+    assert stats["published_min"] == "2026-06-01" and stats["published_max"] == "2026-06-01"
+    assert set(stats["top_categories"]) <= {"cs.LG", "stat.ME"}

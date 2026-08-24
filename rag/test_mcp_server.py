@@ -639,3 +639,72 @@ def test_list_methods_returns_sorted_canonical_names_without_regex():
     assert names == sorted(names)
     assert any("reciprocal rank fusion" in n for n in names)
     assert all("\\" not in n for n in names), "canonical names must be human-readable"
+
+
+# ---------------------------------------------------------------------------
+# get_figures / get_section / corpus_stats (2026-08-23 artifact + reading surface)
+# ---------------------------------------------------------------------------
+class ArtifactsSpyDocStore:
+    """scan/artifact spy: canned get/get_blocks/get_artifacts/corpus_stats with call log."""
+
+    def __init__(self, blocks=(), artifacts=(), stats=None, known=("2506.01234",)):
+        self._blocks = list(blocks)
+        self._artifacts = list(artifacts)
+        self._stats = stats or {"papers": 1}
+        self._known = set(known)
+
+    def get(self, paper_id):
+        return object() if paper_id in self._known else None
+
+    def get_blocks(self, paper_id):
+        return list(self._blocks)
+
+    def get_artifacts(self, paper_id, kind="all"):
+        return [a for a in self._artifacts if kind == "all" or a["kind"] == kind]
+
+    def corpus_stats(self):
+        return dict(self._stats)
+
+
+def _artifact_server(blocks=(), artifacts=(), stats=None):
+    from rag.mcp_server import McpServer
+    return McpServer(retriever=SpyRetriever(),
+                     document_store=ArtifactsSpyDocStore(blocks, artifacts, stats))
+
+
+def test_get_figures_delegates_and_filters_by_kind():
+    from contracts.mcp_server import BlockMatch  # noqa: F401  (shape import sanity)
+    arts = [{"kind": "figure", "id": 1, "page": 0}, {"kind": "table", "id": 2, "page": 1}]
+    server = _artifact_server(artifacts=arts)
+    assert len(server.get_figures("2506.01234")) == 2
+    assert server.get_figures("2506.01234", kind="table") == [{"kind": "table", "id": 2, "page": 1}]
+
+
+def test_get_figures_unknown_paper_raises_contract_error():
+    from contracts.errors import ContractError
+    with pytest.raises(ContractError, match="unknown paper_id"):
+        _artifact_server().get_figures("no:such")
+
+
+def test_get_section_returns_blocks_in_stored_order_filtered_by_path():
+    from contracts.provenance import Block
+    def _block(bid, page, sec, text, index):
+        return Block(block_id=bid, paper_id="p", page=page, bbox=_BBOX, section_path=sec,
+                     text=text, type="prose", index=index)
+    b0, b1, b2 = _block("p:b0", 0, "3. Method", "first", 0),         _block("p:b1", 0, "4. Results", "later", 1), _block("p:b2", 1, "3. Method", "second", 2)
+    server = _artifact_server(blocks=[b0, b1, b2])
+    out = server.get_section("2506.01234", "3. Method")
+    assert [b.block_id for b in out] == ["p:b0", "p:b2"]
+
+
+def test_get_section_unknown_paper_raises_empty_section_is_valid():
+    from contracts.errors import ContractError
+    server = _artifact_server(blocks=[])
+    with pytest.raises(ContractError, match="unknown paper_id"):
+        server.get_section("no:such", "3. Method")
+    assert server.get_section("2506.01234", "no such section") == []
+
+
+def test_corpus_stats_delegates_whole_dict():
+    stats = {"papers": 1738, "figures": 24708}
+    assert _artifact_server(stats=stats).corpus_stats() == stats
