@@ -176,6 +176,12 @@ class Question:
     gold_block_id: str | None  # None -> not scorable at passage level (e.g. the 210-set today)
     doc_type: str = "paper"  # "paper" | "book" -- default keeps every existing fixture unchanged
     gold_chapter_title: str | None = None  # None -> not scorable at chapter level (papers today)
+    # VARM-1: true when the answer exists only inside a figure -- the gold chunk's own text does
+    # not contain it, so a text retriever has nothing to rank it on and passage-level scoring
+    # against this item measures the fixture, not the retriever. Threaded like doc_type so
+    # build_report can split the passage metric into text vs vision arms; the default keeps every
+    # pre-VARM-1 fixture parsing unchanged.
+    vision_derived: bool = False
 
 
 @dataclass(frozen=True)
@@ -191,6 +197,10 @@ class QuestionResult:
     gold_paper_ids: frozenset[str] = frozenset()
     gold_block_id: str | None = None
     doc_type: str = "paper"
+    # VARM-1: carried from Question like doc_type so build_report's passage-level partition (and
+    # the per-question row) keys on the result itself, not a re-join against the fixture at
+    # report time.
+    vision_derived: bool = False
     chapter_rank: int | None = None  # 1-indexed rank of the first chapter-routing hit, else None
     chapter_scored: bool = False  # whether this question had a gold_chapter_title to score against
     gold_chapter_title: str | None = None
@@ -274,6 +284,7 @@ def load_questions(ground_truth_path: Path, include_duplicates: bool = False) ->
                 gold_paper_ids=frozenset(gold_papers),
                 gold_block_id=r.get("gold_block_id"),
                 doc_type=r.get("doc_type", "paper"),
+                vision_derived=bool(r.get("vision_derived", False)),
                 gold_chapter_title=r.get("gold_chapter_title"),
             )
         )
@@ -356,6 +367,7 @@ def score_question(
         gold_paper_ids=question.gold_paper_ids,
         gold_block_id=question.gold_block_id,
         doc_type=question.doc_type,
+        vision_derived=question.vision_derived,
         chapter_rank=chapter_rank,
         chapter_scored=chapter_scored,
         gold_chapter_title=question.gold_chapter_title,
@@ -404,6 +416,7 @@ def run(questions: list[Question], retriever, k: int) -> list[QuestionResult]:
                     gold_paper_ids=question.gold_paper_ids,
                     gold_block_id=question.gold_block_id,
                     doc_type=question.doc_type,
+                    vision_derived=question.vision_derived,
                     chapter_scored=question.gold_chapter_title is not None,
                     gold_chapter_title=question.gold_chapter_title,
                 )
@@ -475,6 +488,7 @@ def _question_row(r: QuestionResult) -> dict:
         "question_id": r.question_id,
         "question_type": r.question_type,
         "doc_type": r.doc_type,
+        "vision_derived": r.vision_derived,
         "gold_paper_ids": sorted(r.gold_paper_ids),
         "gold_block_id": r.gold_block_id,
         "gold_chapter_title": r.gold_chapter_title,
