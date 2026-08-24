@@ -1,11 +1,21 @@
 # Groundedness rubric (RI-M6)
 
-> **PROVISIONAL — not a baseline.** Nobody has signed off on this rubric yet (see
-> `docs/superpowers/plans/2026-08-22-review-implementation.md` wave 4, "operator decisions" item
-> 6: "RI-M6 judge rubric sign-off"). Do not treat any report produced under this rubric as a
-> baseline for future comparisons until an operator has reviewed and approved this file's wording.
-> A rubric silently becomes the definition of "good" for every future run once it is accepted as
-> one — that decision belongs to a human, not to whoever last edited this file.
+> **SIGNED OFF 2026-08-24 — this wording is now the baseline definition of "grounded".**
+> The operator delegated the decision to an independent review by ox-alpha via opencode, with the
+> instruction to sign off on that basis. That review
+> (`2026-08-24-groundedness-rubric-review.md`) returned **"sign with amendments"** and supplied six
+> amendments as exact replacement wording; all six are applied here, plus the review's optional
+> companion where its anchor existed. Reviewer verification: the three misverdicts the review cites
+> as evidence (`Q-GTA-004`, `Q-GTA-007`, `Q-GTA-021`) were each checked against the committed run
+> JSON and reproduce.
+>
+> **The 2026-08-23 run's numbers do not carry across.** Amending the text changes the rubric hash
+> the reports stamp, so by those reports' own rule the earlier rates are not comparable to anything
+> produced under this version. One re-run is owed before any number is treated as a trend.
+>
+> **A rubric silently becomes the definition of "good" for every future run.** Changing this file
+> again invalidates every comparison made under it — do so deliberately, with a dated note, not as
+> a passing edit.
 
 Read by a judge model, not by code — same mechanism as the fabrication-audit rubric
 (`fabrication-audit-rubric.md`): `app/judge_eval.py` passes this file's text to whatever `Judge`
@@ -19,25 +29,46 @@ of groundedness, not ground truth about the answer's quality.
 
 You will be given the same three inputs as the fabrication-audit rubric: a QUESTION, one or more
 PASSAGES, and an ANSWER. Where the fabrication-audit rubric asks "is each claim contradicted,
-supported, or simply unaddressed by the passages," this rubric asks the stricter question: **is
-the ANSWER's own reasoning traceable to the PASSAGES**, not merely non-contradictory with them.
+supported, or simply unaddressed by the passages," this rubric asks the stricter question: **whether each of the
+ANSWER's claims, and the framing the answer applies to it, is traceable to the PASSAGES** -- the
+PASSAGES are the only source of truth for this task, not your own knowledge -- rather than merely
+non-contradictory with them.
 
-Break the ANSWER into its individual claims, as in the fabrication-audit rubric, and give each one
-of the same three verdicts:
+Break the ANSWER into its individual claims, as in the fabrication-audit rubric (a claim is one
+checkable assertion), splitting finely enough that each verdict rests on exactly one assertion:
+when one sentence contains a part the passages ground and a part they do not, split it and record
+the parts as separate claims -- a single verdict must never average over parts that would score
+differently. Give each claim one of the same three verdicts:
 
 - **supported** — a passage states this claim AND the answer's framing of it (the specific
   numbers, the direction of an effect, the named mechanism) matches what the passage actually
-  says, not a plausible-sounding neighbor of it.
-- **unsupported** — no passage addresses this claim closely enough to ground it, even if the
-  claim happens to be true in general.
+  says, not a plausible-sounding neighbor of it. Passage strength may exceed answer strength: a
+  passage that asserts outright grounds an answer that merely hedges the same proposition. The
+  strict reading catches answers that overshoot their passage, never answers that undershoot it.
+- **unsupported** — some element the answer asserts (a specific number, a direction, a mechanism,
+  a hedge level, or the claim's subject) is absent from every supplied passage, so no supplied
+  passage grounds it — even if the claim happens to be true in general or elsewhere in the same
+  source.
 - **contradicted** — a passage states something that conflicts with this claim.
 
 The difference from the fabrication-audit rubric is calibration, not the verdict vocabulary: apply
 a stricter reading of "supported" here — a claim that a fabrication audit would wave through as a
 reasonable paraphrase should be marked `unsupported` under this rubric if the passage's own wording
-is meaningfully looser or narrower than the answer's framing of it (e.g. the passage hedges with
+is weaker or narrower than the answer's framing of it — the answer claiming more certainty, more
+precision, or a broader subject than the passage supports (e.g. the passage hedges with
 "may" and the answer asserts it outright; the passage gives a range and the answer picks the
 extreme; the passage is about a related-but-different quantity).
+
+## Several passages
+
+When several PASSAGES are supplied, attribute before you verdict. For each claim, work out which
+passage it is actually about: a claim that names a specific paper, study, table, or figure belongs
+to the passage carrying that identity, whichever position it holds in the list. Examine every
+supplied passage before concluding that none grounds or addresses a claim. A passage conflicts with
+a claim only if it speaks to the claim's own subject — two sources reporting different numbers about
+their own versions of a thing do not conflict with a claim scoped to one of them. If one passage
+supports a claim and another genuinely conflicts with it within the claim's scope, mark
+`contradicted` and name both passages in the rationale.
 
 ## Output shape
 
