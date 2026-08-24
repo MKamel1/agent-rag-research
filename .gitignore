@@ -42,3 +42,4 @@ config.yaml
 # filter IS tracked; the generated graph is not. Flip this line off to version the graph across
 # worktrees (a union merge-driver is already registered in .gitattributes for that case).
 graphify-out/
+.omo/
