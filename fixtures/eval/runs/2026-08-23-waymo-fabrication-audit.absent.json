@@ -1,0 +1,61 @@
+{
+  "rubric_path": "docs/eval-rubrics/fabrication-audit-rubric.md",
+  "rubric_sha256_12": "d82bbfa36155",
+  "n_items": 16,
+  "n_errors": 0,
+  "n_claims": 28,
+  "rates": {
+    "supported": 0.7142857142857143,
+    "unsupported": 0.2857142857142857,
+    "contradicted": 0.0
+  },
+  "counts": {
+    "supported": 20,
+    "unsupported": 8,
+    "contradicted": 0
+  },
+  "unsupported_claims": [
+    {
+      "question_id": "Q-WAYB-021",
+      "claim": "Waymo's driverless fleet has caused a total of 0 pedestrian, 0 cyclist, and 0 vehicle-occupant fatalities",
+      "rationale": "The passage states that 'the driverless pilot operation from both Waymo and Cruise did not report any crashes with injuries,' but it does not explicitly mention fatalities, nor does it confirm that no fatalities occurred. The passage only confirms the absence of injuries, not fatalities."
+    },
+    {
+      "question_id": "Q-WAYB-022",
+      "claim": "However, it is mentioned that the disengagement rate for Waymo's 4th-generation platform was 0.18 disengagements per 1,000 miles.",
+      "rationale": "The provided corpus does not mention the disengagement rate for Waymo's 4th-generation platform."
+    },
+    {
+      "question_id": "Q-WAYB-028",
+      "claim": "The RAVE Checklist's working group performed sensitivity analyses and/or underestimated ADS safety as a conservative approach to empirically validate that following its fifteen recommendations improves the accuracy of retrospective ADS safety studies.",
+      "rationale": "The passage does not mention that the RAVE Checklist's working group performed sensitivity analyses or underestimated ADS safety as a conservative approach."
+    },
+    {
+      "question_id": "Q-WAYB-028",
+      "claim": "This approach was undertaken to address potential biases and ensure that the results are reliable and conservative in the face of incomplete or uncertain data.",
+      "rationale": "The passage does not explicitly state that the approach of performing sensitivity analyses or underestimating ADS safety was undertaken to address potential biases or ensure reliability in the face of incomplete or uncertain data."
+    },
+    {
+      "question_id": "Q-WAYB-035",
+      "claim": "Cruise achieved a 65% reduction in the any property damage or injury crash rate when evaluated against the Blincoe-adjusted rate.",
+      "rationale": "The passages do not mention Cruise achieving a 65% reduction in the any property damage or injury crash rate when evaluated against the Blincoe-adjusted rate. The passage mentions a 65% reduction in the any property damage or injury crash rate for Waymo, not Cruise."
+    },
+    {
+      "question_id": "Q-GTA-035",
+      "claim": "Tesla's Full Self-Driving (FSD) system achieved a crash rate of 0.31 crashes per million miles traveled",
+      "rationale": "The provided passages do not mention any specific crash rate for Tesla's Full Self-Driving (FSD) system, nor do they provide any numerical data on crash rates per million miles for any of Tesla's systems."
+    },
+    {
+      "question_id": "Q-GTA-035",
+      "claim": "This is compared to 0.18 crashes per million miles for Tesla's Autopilot system",
+      "rationale": "The provided passages do not mention any specific crash rate for Tesla's Autopilot system, nor do they provide any numerical data on crash rates per million miles for any of Tesla's systems."
+    },
+    {
+      "question_id": "Q-GTA-035",
+      "claim": "0.68 crashes per million miles for Tesla vehicles with no active safety features engaged",
+      "rationale": "The provided passages do not mention any specific crash rate for Tesla vehicles with no active safety features engaged, nor do they provide any numerical data on crash rates per million miles for any of Tesla's systems."
+    }
+  ],
+  "contradicted_claims": [],
+  "disclaimer": "A judge model is itself fallible: these rates are one instrument's reading of the answer against the supplied passages, not ground truth. The rubric that produced this report lives at rubric_path (plain text, operator-editable) and is stamped by rubric_sha256_12 below so two reports produced under different rubric wording are never silently compared. This report is not a baseline -- see the rubric file's own header for sign-off status."
+}
