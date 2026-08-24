@@ -555,3 +555,87 @@ def test_tool_docstrings_state_absence_honesty_and_the_rejected_floor():
         assert tool.__doc__ is not None
         assert "relevance floor" in tool.__doc__
         assert "RI-M7" in tool.__doc__
+
+
+# ---------------------------------------------------------------------------
+# scan_methods / list_methods (2026-08-23 synonym layer) — a doc-store spy that records the
+# compiled pattern scan_methods hands to scan_blocks, plus canned rows for the envelope.
+# ---------------------------------------------------------------------------
+class ScanSpyDocStore:
+    def __init__(self, rows=()):
+        self.scan_calls: list[dict] = []
+        self._rows = list(rows)
+
+    def scan_blocks(self, pattern, *, paper_id=None, curated_org=None, context=200,
+                    max_per_paper=3):
+        self.scan_calls.append({
+            "pattern": pattern, "paper_id": paper_id, "curated_org": curated_org,
+            "context": context, "max_per_paper": max_per_paper,
+        })
+        return list(self._rows), 1738, len({r[0] for r in self._rows}), False
+
+
+def _scan_server(rows=()):
+    from rag.mcp_server import McpServer
+    return McpServer(retriever=SpyRetriever(), document_store=ScanSpyDocStore(rows))
+
+
+def test_scan_methods_expands_known_method_to_alias_alternation():
+    from contracts.mcp_server import ScanResponse
+    server = _scan_server(rows=[("2103.15297", "T", "2103.15297:b0", 0, "2. Method", "...")])
+    out = server.scan_methods("reciprocal rank fusion")
+    assert isinstance(out, ScanResponse)
+    pattern = server._document_store.scan_calls[0]["pattern"]
+    assert "reciprocal rank fusion" in pattern and r"\brrf\b" in pattern, pattern
+    # the whole family is one alternation handed to a single scan_blocks call
+    assert len(server._document_store.scan_calls) == 1
+
+
+def test_scan_methods_stem_alias_matches_inflected_forms():
+    # the reason stems exist: \brerank must match reranking/reranked/reranker, \bmais MAIS3+
+    from rag.method_aliases import build_method_regex, resolve_method
+    import re
+    _, frags = resolve_method("reranking")
+    assert re.search(build_method_regex(frags), "the reranker reranked candidates", re.I)
+    _, frags = resolve_method("MAIS")
+    assert re.search(build_method_regex(frags), "MAIS3+F and MAIS2+F outcomes", re.I)
+
+
+def test_scan_methods_unknown_method_scans_literal_without_error():
+    server = _scan_server()
+    server.scan_methods("totally unknown widget method")
+    pattern = server._document_store.scan_calls[0]["pattern"]
+    assert "totally unknown widget method" in pattern
+
+
+def test_scan_methods_ambiguous_input_raises_instead_of_guessing():
+    server = _scan_server()
+    with pytest.raises(ValueError, match="multiple families"):
+        server.scan_methods("benchmark")
+
+
+def test_scan_methods_passthrough_parameters_reach_scan_blocks():
+    server = _scan_server()
+    server.scan_methods("GIDAS", paper_id="local:bb74867d2259", author_org="Waymo",
+                        max_matches_per_paper=7, context=99)
+    call = server._document_store.scan_calls[0]
+    assert call["paper_id"] == "local:bb74867d2259"
+    assert call["curated_org"] == "Waymo"
+    assert call["max_per_paper"] == 7
+    assert call["context"] == 99
+
+
+def test_scan_methods_plain_fragments_are_word_guardsed():
+    # "lora" must not match "exploratory"/"lorazepam" — the auto-guard is load-bearing
+    from rag.method_aliases import build_method_regex
+    import re
+    pattern = build_method_regex(["lora"])
+    assert re.search(pattern, "we apply LoRA adapters", re.I)
+    assert not re.search(pattern, "exploratory lorazepam analysis", re.I)
+
+
+def test_list_methods_returns_sorted_canonical_names_without_regex():
+    names = _scan_server().list_methods()
+    assert names == sorted(names)
+    assert any("reciprocal rank fusion" in n for n in names)
+    assert all("\\" not in n for n in names), "canonical names must be human-readable"

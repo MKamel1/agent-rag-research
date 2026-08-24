@@ -573,3 +573,20 @@ papers as top priority; **target frozen before any implementation work**. All me
   pre-run backup (`waymo/data/backups/pre-RI32-backfill-20260822T204114Z/`).
 
 Baseline numbers, gates, and the honest verdict: `docs/eval-reports/2026-08-23-waymo-priority-baseline.md`.
+
+### MCP method-synonym layer (shipped 2026-08-23)
+
+`scan_methods(method, paper_id, author_org, max_matches_per_paper, context)` and
+`list_methods()` on the MCP server (`rag/mcp_server.py`, wired in `app/serve.py`), backed by a
+curated alias map (`rag/method_aliases.py`, 50 families across the Waymo AV-safety and
+causal-methods corpora). `scan_methods` resolves a method to its family's surface forms —
+acronyms, long forms, inflection stems (`\brerank` → reranking/reranked; `\bmais` → MAIS3+) —
+and compiles them into one alternation scanned exactly like `scan_corpus` (recall 1.0 for the
+alias group; lexical false positives rejected by reading; `author_org` = curated tier only).
+Unknown methods scan literally; ambiguous inputs raise rather than guess. Scope boundary kept
+explicit in the docstrings: this is lexical enumeration in `scan_corpus`'s mold — the semantic
+tools stay un-rewritten (PRD §11A). Envelope shapes unchanged (`ScanResponse` reused — no
+contracts/ diff, no T-F7). Review plan with the fuller design fork (method taxonomy, argument
+layer): `docs/superpowers/plans/2026-08-23-mcp-review-plan.md`. Live-verified against the Waymo
+corpus: 8/8 method queries surface their known gold papers (NIEON → the CAT pair; GIDAS → the
+GIDAS trio; active inference → all four active-inference papers; …).

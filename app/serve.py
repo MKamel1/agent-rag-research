@@ -176,6 +176,37 @@ def search_papers(
 
 
 @mcp.tool()
+@record_usage(_get_usage_log, source="mcp", tool="scan_methods")
+def scan_methods(
+    method: str, paper_id: str | None = None, author_org: str | None = None,
+    max_matches_per_paper: int = 3, context: int = 200,
+) -> ScanResponse:
+    """`scan_corpus` with the synonym layer built in — "WHICH PAPERS use method X" where X may be
+    known by several names ("RRF" / "reciprocal rank fusion" / "rank fusion"; "GIDAS" / "German
+    in-depth accident study"; "reranking" / "reranked" / "reranker").
+
+    The method is resolved against a curated alias map (see `list_methods` for every known family)
+    and the family's surface forms are scanned exactly like `scan_corpus`: every block examined,
+    recall 1.0 FOR THE ALIAS GROUP, lexical false positives you reject by reading. An unknown
+    method scans its literal name; an input ambiguous between families raises rather than guesses.
+
+    Same scope boundary as `scan_corpus` versus `semantic_search`: this enumerates vocabulary, it
+    does not rank meaning. A paper that uses the method under a name the map has not learned will
+    not match — for that case use `semantic_search` (semantic, non-enumerative) or `scan_corpus`
+    with your own pattern. `author_org` is the curated (enumerated) tier only."""
+    return _server.scan_methods(method, paper_id, author_org, max_matches_per_paper, context)
+
+
+@mcp.tool()
+@record_usage(_get_usage_log, source="mcp", tool="list_methods")
+def list_methods() -> list[str]:
+    """Canonical names of every method family `scan_methods` knows, sorted. Use it to discover
+    what can be asked about (e.g. "NIEON (non-impaired eyes-on driver reference model)") before
+    calling `scan_methods`. Metadata, not evidence."""
+    return _server.list_methods()
+
+
+@mcp.tool()
 @record_usage(_get_usage_log, source="mcp", tool="get_paper")
 def get_paper(paper_id: str) -> PaperSummaryView:
     """Fetch a stored paper's summary view by id."""
