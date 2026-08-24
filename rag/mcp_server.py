@@ -24,6 +24,7 @@ from contracts.mcp_server import (
 from contracts.provenance import Anchor
 from contracts.retriever import Citation, RetrievalCoverage
 from contracts.vector_index import SearchFilters
+from rag.method_aliases import build_method_regex, list_methods as _list_method_families, resolve_method
 from rag.retriever import source_url
 
 # OG-48#5: an unbounded/negative `k` reaches the retriever unclamped -- `?k=-1` makes `results[:k]`
@@ -216,6 +217,51 @@ class McpServer:
             ],
             papers_scanned=scanned, papers_matched=matched, truncated=truncated,
         )
+
+    def scan_methods(
+        self, method: str, paper_id: str | None = None, author_org: str | None = None,
+        max_matches_per_paper: int = 3, context: int = 200,
+    ) -> ScanResponse:
+        """`scan_corpus` with the synonym layer built in: "WHICH PAPERS use method X" where X may
+        be known by several names.
+
+        `method` is resolved against a curated alias map (`rag/method_aliases.py`): the family's
+        surface forms — "RRF"/"reciprocal rank fusion"/"rank fusion", "NIEON"/"non-impaired
+        eyes-on", "GIDAS"/"German in-depth accident study", stems like `\brerank` (reranking/
+        reranked) and `\bmais` (MAIS3+/MAIS2+F) — are compiled into ONE alternation and scanned
+        exactly like `scan_corpus` (`DocumentStore.scan_blocks`): every block examined, recall 1.0
+        for the alias group, no ranking, lexical false positives you reject by reading. An unknown
+        method scans its literal name rather than erroring — the map may not have learned it yet;
+        an input ambiguous between families (e.g. "benchmark") raises rather than guessing.
+
+        Scope honesty: this is an explicitly lexical ENUMERATION tool, `scan_corpus`'s mold — it
+        is not query rewriting. `semantic_search`/`search_papers` remain untouched and
+        un-rewritten (PRD §11A): a paper that uses a method without any of the family's surface
+        forms will not match here, and semantic retrieval remains the tool for that case. To add
+        or correct a family, edit `rag/method_aliases.py` (a normal rag/ change).
+
+        `paper_id`/`author_org`/`max_matches_per_paper`/`context` mean exactly what they mean in
+        `scan_corpus`; `author_org` is the CURATED tier only.
+        """
+        canonical, patterns = resolve_method(method)
+        rows, scanned, matched, truncated = self._document_store.scan_blocks(
+            build_method_regex(patterns), paper_id=paper_id, curated_org=author_org,
+            context=context, max_per_paper=max_matches_per_paper,
+        )
+        return ScanResponse(
+            matches=[
+                BlockMatch(paper_id=p_paper_id, block_id=block_id, page=page,
+                           section_path=section_path, title=title, snippet=snippet)
+                for p_paper_id, title, block_id, page, section_path, snippet in rows
+            ],
+            papers_scanned=scanned, papers_matched=matched, truncated=truncated,
+        )
+
+    def list_methods(self) -> list[str]:
+        """Canonical names of every method family `scan_methods` knows, sorted. Metadata for
+        callers (what can be asked about), not evidence — the enumeration itself is
+        `scan_methods`."""
+        return _list_method_families()
 
     def get_paper(self, paper_id: str) -> PaperSummaryView:
         """Precondition: `paper_id` is a stored paper; else `ContractError`. Postcondition:
