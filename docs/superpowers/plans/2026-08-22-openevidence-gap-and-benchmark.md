@@ -263,7 +263,8 @@ visibly empty:
 |---|---|---|---|
 | corpus scale | 1,738 papers (Waymo), 12,390 (causal) | ~35M papers, 300+ licensed journals | **no** — different targets; domain-scoped completeness is not general coverage |
 | corpus access | open sources, fully self-hosted | licensed (NEJM, JAMA network, Cochrane, NCCN) | **no** — not replicable at any effort |
-| retrieval recall on own corpus | **0.969** R@10 dense-only, 0.892 fused (n=65) | no published figure found | **no** — they publish no retrieval metric |
+| retrieval recall on own corpus | **0.969** R@10 dense-only, 0.892 fused (n=65; 0.9706/0.8971 on the 84-item v2, n=68) | no published figure found | **no** — they publish no retrieval metric |
+| retrieval *precision* on own corpus | **P@1 0.794** (verified-84) / **0.914** (priority set); **block-level P@1 0.375 / 0.727** | no published figure found | **no** |
 | QA accuracy on a public benchmark | **none — no external benchmark exists for this corpus** | 31–39.5% MedXpertQA hard subspecialty; wins on point-of-care queries | **no** — this system has no comparable number at all |
 | abstention on known-unanswerable | **0 of 8 detected**; score distributions overlap (`distributions_separate: false`) | product claim is answer-only-from-evidence; no published abstention rate found | **partially** — their claim is qualitative, this system's failure is quantified |
 | groundedness | 0.610 supported / 210 claims, provisional rubric, **measures fixture answers not system output** | no published groundedness rate found | **no** — neither side has a comparable figure |
@@ -273,9 +274,18 @@ visibly empty:
 
 **The three honest conclusions this supports:**
 
-1. **On retrieval into its own corpus, this system is strong** — 0.969 paper-level recall is not a
-   number that needs apologising for, and the shipped fusion config is currently costing 7.7 points
-   of it (§1.2).
+1. **On retrieval *recall* into its own corpus, this system is strong** — 0.969 paper-level recall
+   needs no apologising for. But **precision is where the operator's ≥95% bar is actually missed**:
+   best P@1 is 0.929, and block-level P@1 — did rank 1 point at the right *passage*, not merely the
+   right paper — is **0.375** on the verified-84 set. That is a reranking and pool-depth problem,
+   not a recall problem, and recall alone was hiding it.
+
+   **On the fusion penalty, one correction to this document's earlier phrasing:** it is
+   fixture-dependent, not universal. On the verified-84 set the direction is strictly one-way
+   (dense-hit/fused-miss = 5, the reverse = 0, reproduced independently on the v2 fixture). On the
+   82-item GT-WMR priority set it reverses (fused-hit/dense-miss = 2, the reverse = 0, fused 0.9857
+   vs dense 0.9571). So "fusion is a net negative" is true of the corpus slice measured, not of the
+   configuration in general — retune it against both sets, do not disable it on one result.
 2. **On the capability OpenEvidence is actually sold on — answer only from evidence, refuse
    otherwise — this system scores zero, and that is measured, not assumed** (§1.3). No retrieval
    improvement addresses it, because the score distributions carry no signal to threshold on.
