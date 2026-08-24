@@ -57,6 +57,17 @@ answerable-only counts.
 
 ### 1.2 Rarest-keyword upper bound (the "grep would answer it" test)
 
+> **Reviewer note, added on merge — the ratio replicates, the absolute rates do not.** An
+> independent reimplementation of this test (rarest term by distinct-paper document frequency,
+> tokens of 4+ characters, substring match over `chunks.text`) produced **19/64 = 0.297** for
+> verified-84 and **38/66 = 0.576** for GT-WMR, against the 0.531 / 0.818 below. The absolute
+> numbers are clearly sensitive to tokenisation and to how "rarest" is defined, so **they should not
+> be quoted as a stable property of either fixture.** What survives both implementations is the
+> comparison this section actually rests on: GT-WMR is roughly 1.5–2x more keyword-findable than
+> verified-84. Read the ratio, not the rates.
+
+
+
 For the 64 answerable items that anchor to a single gold paper (4 multi-paper-synthesis items and
 the vision-derived items are excluded by construction):
 
