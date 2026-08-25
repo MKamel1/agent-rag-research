@@ -1,0 +1,723 @@
+{
+ "seed": 20260825,
+ "frame": "waymo/data/papers.db figures GROUP BY (paper_id, page)",
+ "frame_total_pages_with_any_pdf": 11334,
+ "pages_excluded_pdf_missing": 0,
+ "strata_frame_counts": {
+  "caption-only": 8509,
+  "chart": 1037,
+  "diagram": 1788
+ },
+ "strata_weights_frac_of_frame": {
+  "caption-only": 0.7507,
+  "chart": 0.0915,
+  "diagram": 0.1578
+ },
+ "allocation": {
+  "diagram": 16,
+  "chart": 9,
+  "caption-only": 75
+ },
+ "drawn": [
+  {
+   "paper_id": "2210.07372",
+   "page": 19,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "fig. 7. attention scores and model prediction visualization. blue box: ground truth vehicle. yellow box: vehicle predict"
+  },
+  {
+   "paper_id": "2401.04875",
+   "page": 2,
+   "stratum": "diagram",
+   "n_figures": 1,
+   "caption_sample": "fig. 1. component-based simplex architecture [10]"
+  },
+  {
+   "paper_id": "2509.00624",
+   "page": 47,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "figure 4.15. clf path tracking controller performance."
+  },
+  {
+   "paper_id": "2506.02932",
+   "page": 6,
+   "stratum": "caption-only",
+   "n_figures": 4,
+   "caption_sample": "(a) slam"
+  },
+  {
+   "paper_id": "2203.12683",
+   "page": 6,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "table 6. performance comparison on cityscapes under realtime speed settings. \u2020 denotes our measurements on the same v100"
+  },
+  {
+   "paper_id": "2603.04695",
+   "page": 0,
+   "stratum": "chart",
+   "n_figures": 1,
+   "caption_sample": "fig. 1: a flow chart of our method, with each component marked by its corresponding section number. at each timestep, we"
+  },
+  {
+   "paper_id": "2512.07874",
+   "page": 1,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "fig. 1. traditional av testing isolates normal and risky driving data, hindering the generation of safety-critical scena"
+  },
+  {
+   "paper_id": "local:4e1af272ed8e",
+   "page": 8,
+   "stratum": "chart",
+   "n_figures": 3,
+   "caption_sample": "figure 7. flowchart of the proposed algorithm."
+  },
+  {
+   "paper_id": "2603.14938",
+   "page": 19,
+   "stratum": "diagram",
+   "n_figures": 1,
+   "caption_sample": "fig. 5: our model architecture consists of 7 backbone units (each containing 4 backbone mmdit blocks and 1 cross-view at"
+  },
+  {
+   "paper_id": "2002.06241",
+   "page": 2,
+   "stratum": "chart",
+   "n_figures": 1,
+   "caption_sample": "figure 2: the detailed architecture of social-wagdat, which consists of three key components: (a) a deep feature extract"
+  },
+  {
+   "paper_id": "2603.17652",
+   "page": 32,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "figure 14. streaming outpainting in closed-loop rollout (case study 1). the simulator repeatedly outpaints new lane-agen"
+  },
+  {
+   "paper_id": "local:b716064bc4c9",
+   "page": 6,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "figure 5. an exemplary causal relation."
+  },
+  {
+   "paper_id": "2303.15231",
+   "page": 5,
+   "stratum": "caption-only",
+   "n_figures": 2,
+   "caption_sample": "figure 2. accuracy of detection models on coco test-dev dataset (box ap: bounding box average precision)"
+  },
+  {
+   "paper_id": "2209.13594",
+   "page": 5,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "figure 2 data processing procedure"
+  },
+  {
+   "paper_id": "1811.10486",
+   "page": 40,
+   "stratum": "chart",
+   "n_figures": 2,
+   "caption_sample": "(a) $r = 0 .$"
+  },
+  {
+   "paper_id": "2412.04341",
+   "page": 5,
+   "stratum": "diagram",
+   "n_figures": 1,
+   "caption_sample": "fig. 3. demand settings with the fundamental diagram."
+  },
+  {
+   "paper_id": "2401.01339",
+   "page": 21,
+   "stratum": "caption-only",
+   "n_figures": 2,
+   "caption_sample": "fig. 10: illustration of psnr\\*. we project the 3d tracked boxes to 2d image plane and obtain the mask above. we calcula"
+  },
+  {
+   "paper_id": "2512.04279",
+   "page": 4,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "fig. 1: two-stage training pipeline. left: reward-privileged teacher. an actor-critic interacts with the carla simulator"
+  },
+  {
+   "paper_id": "2502.14706",
+   "page": 14,
+   "stratum": "caption-only",
+   "n_figures": 6,
+   "caption_sample": "figure 6: example rollouts with the best-trained policy. agents controlled by the trained policy are shown in blue, whil"
+  },
+  {
+   "paper_id": "2503.09035",
+   "page": 3,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "fig. 3. time series of vehicle velocities during a j-turn maneuver, showing longitudinal $( v _ { x }$ in m/s), lateral "
+  },
+  {
+   "paper_id": "local:595d2223a0c7",
+   "page": 7,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "figure 2. a network model of iov environment."
+  },
+  {
+   "paper_id": "2605.25021",
+   "page": 1,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "fig. 2. survey participants\u2019 profiles by role for av and c-its domains."
+  },
+  {
+   "paper_id": "2103.05073",
+   "page": 1,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "figure 2. illustration of the complementary views of an object from the point cloud sequence. point clouds (aggregated f"
+  },
+  {
+   "paper_id": "2607.13028",
+   "page": 8,
+   "stratum": "diagram",
+   "n_figures": 1,
+   "caption_sample": "fig. 3. composable configuration axes. a scenario is composed by choosing a subset of options along each of six independ"
+  },
+  {
+   "paper_id": "local:fe4ea59dcac6",
+   "page": 6,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "figure 4. the stage of collecting traffic data."
+  },
+  {
+   "paper_id": "local:3594557c5d87",
+   "page": 59,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "figure 2.3: elementary model of a spring"
+  },
+  {
+   "paper_id": "2310.10424",
+   "page": 0,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "fig. 1: factors, such as observability, state, and scale, impact pedestrian trajectory prediction in an egocentric setti"
+  },
+  {
+   "paper_id": "2605.31177",
+   "page": 28,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "figure 18. attention maps for each head at the ${ \\pmb 6 } ^ { \\mathrm { t h } }$ (middle) layer of our vavit-b model tr"
+  },
+  {
+   "paper_id": "local:1e02e0bbafea",
+   "page": 3,
+   "stratum": "diagram",
+   "n_figures": 2,
+   "caption_sample": "figure 2. collision avoidance/mitigation system architecture diagram."
+  },
+  {
+   "paper_id": "2306.01075",
+   "page": 3,
+   "stratum": "diagram",
+   "n_figures": 2,
+   "caption_sample": "fig. 3: a diagram of the shuffled sequence generation process for keypoints jigsaw puzzle."
+  },
+  {
+   "paper_id": "2409.18343",
+   "page": 0,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "fig. 1: we propose to fine-tune a pre-trained motion prediction model with closed-loop reinforcement learning."
+  },
+  {
+   "paper_id": "2503.04018",
+   "page": 12,
+   "stratum": "caption-only",
+   "n_figures": 2,
+   "caption_sample": "fig. 12. a car-following scenario with the aim of predicting a crash 1s in advance. the full video of this demo can be f"
+  },
+  {
+   "paper_id": "2402.15756",
+   "page": 1,
+   "stratum": "caption-only",
+   "n_figures": 3,
+   "caption_sample": "fig. 1. with 6 lidar sweeps, detections are obtained in pairs: a green bounding box at the current sweep indexed by 0, a"
+  },
+  {
+   "paper_id": "2605.10034",
+   "page": 33,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "figure 21: qualitative comparison of traffic agent models. we visualize rollouts of idm, ppo, smart, expert and the cond"
+  },
+  {
+   "paper_id": "2109.02529",
+   "page": 7,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "test objective category fig. 4: outcome distribution of 50 test cases organized by the main test objective."
+  },
+  {
+   "paper_id": "2605.25021",
+   "page": 2,
+   "stratum": "chart",
+   "n_figures": 2,
+   "caption_sample": "fig. 3. mean impact of each infrastructure attribute on ads operation for sae 1-2 (blue) and sae 3-4 (orange), and their"
+  },
+  {
+   "paper_id": "local:5a2917ce1032",
+   "page": 6,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "figure 5. the ads equipped prius of nagoya university. we have used this vehicle to perform core automated driving opera"
+  },
+  {
+   "paper_id": "2502.21100",
+   "page": 5,
+   "stratum": "chart",
+   "n_figures": 2,
+   "caption_sample": "fig. 5: real and modified estimation distributions of npc vehicles appearing in different regions."
+  },
+  {
+   "paper_id": "local:e1cfbb5bd7bc",
+   "page": 18,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": ""
+  },
+  {
+   "paper_id": "2507.21547",
+   "page": 15,
+   "stratum": "caption-only",
+   "n_figures": 2,
+   "caption_sample": "(a) real cost parameters"
+  },
+  {
+   "paper_id": "2104.09595",
+   "page": 9,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "figure 2: an example of the \u03b4-covering set on $\\phi \\subseteq \\mathbb { r } ^ { 2 }$"
+  },
+  {
+   "paper_id": "local:f6f1461f2c9a",
+   "page": 4,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "figure 1. conceptual illustration of the overall driving population benchmark, the latest-generation hdv benchmark, and "
+  },
+  {
+   "paper_id": "2301.03941",
+   "page": 6,
+   "stratum": "caption-only",
+   "n_figures": 2,
+   "caption_sample": "figure 4: a junction with \ufffd + 1 entrances and exits"
+  },
+  {
+   "paper_id": "2104.11896",
+   "page": 0,
+   "stratum": "diagram",
+   "n_figures": 1,
+   "caption_sample": "figure 1. m3 transformers used in our approach: left: multirepresentation transformers; middle: multi-scale transformers"
+  },
+  {
+   "paper_id": "2403.19918",
+   "page": 20,
+   "stratum": "caption-only",
+   "n_figures": 4,
+   "caption_sample": "figure 8: qualitative results of vehicle-vehicle tilting. we show the evolution of two traffic scenes with the top panel"
+  },
+  {
+   "paper_id": "2107.09918",
+   "page": 0,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "fig. 1: the difficulty of defining safety envelopes in the presence of perception uncertainty. when neglecting perceptio"
+  },
+  {
+   "paper_id": "2003.00789",
+   "page": 43,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "figure 9: the gsn for the outcome of \u2018b) failure response is performed when necessary."
+  },
+  {
+   "paper_id": "2309.15492",
+   "page": 11,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "figure 10. engine [63] components for cyber-physical twin of edgar."
+  },
+  {
+   "paper_id": "2110.08750",
+   "page": 2,
+   "stratum": "diagram",
+   "n_figures": 1,
+   "caption_sample": "fig. 2: diagram of the proposed task-informed prediction model, which includes a state encoder that encodes observed pas"
+  },
+  {
+   "paper_id": "1905.06744",
+   "page": 2,
+   "stratum": "caption-only",
+   "n_figures": 2,
+   "caption_sample": "fig. 1. the traffic demand data is decomposed into daily periodic and aperiodic components."
+  },
+  {
+   "paper_id": "2503.03957",
+   "page": 2,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "fig. 2. the pipeline begins by taking text descriptions of collision scenarios as input. a generator with a language int"
+  },
+  {
+   "paper_id": "2112.12141",
+   "page": 6,
+   "stratum": "caption-only",
+   "n_figures": 4,
+   "caption_sample": "(a) no camera (lidar-only)"
+  },
+  {
+   "paper_id": "2305.13960",
+   "page": 3,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "figure 2. our proposed hierarchy of simulation levels"
+  },
+  {
+   "paper_id": "2506.09217",
+   "page": 3,
+   "stratum": "caption-only",
+   "n_figures": 2,
+   "caption_sample": "object detection, vehicle, clear daylight: grounding dinc (a)"
+  },
+  {
+   "paper_id": "2203.07521",
+   "page": 6,
+   "stratum": "caption-only",
+   "n_figures": 5,
+   "caption_sample": "fig. 11: it is an adversary\u2019s trajectory of cut-in scenario example. the figure depicts the similarity check of trajecto"
+  },
+  {
+   "paper_id": "2607.23045",
+   "page": 232,
+   "stratum": "diagram",
+   "n_figures": 1,
+   "caption_sample": "fig. s48. node-specific workflow pass profile for kilo code / glm 5.1. profile summary. across 96 benchmark trial record"
+  },
+  {
+   "paper_id": "2506.21976",
+   "page": 2,
+   "stratum": "diagram",
+   "n_figures": 2,
+   "caption_sample": "figure 2. multi-tensor diffusion jointly denoises the set of scene elements in a joint fashion. left: the two scene tens"
+  },
+  {
+   "paper_id": "local:18c8242eb6ab",
+   "page": 12,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "fig. 8. mtt data association and advanced techniques."
+  },
+  {
+   "paper_id": "local:d7894a248a86",
+   "page": 5,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "figure 6. regions in relation to road traffic : (a) the lane-following-based region $\\mathcal { a } _ { \\mathrm { r o a "
+  },
+  {
+   "paper_id": "2412.12129",
+   "page": 8,
+   "stratum": "caption-only",
+   "n_figures": 5,
+   "caption_sample": "(m) cut-in"
+  },
+  {
+   "paper_id": "2412.05337",
+   "page": 17,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "figure 13. generation capability of terra. examples of video generation results by terra, showing its ability to generat"
+  },
+  {
+   "paper_id": "local:03e2dfdfa816",
+   "page": 8,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "figure 5. an illustration of a piecewise linear model."
+  },
+  {
+   "paper_id": "2212.03267",
+   "page": 0,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "figure 1. from left to right: we present a single-image nerf synthesis framework for in-the-wild images without 3d super"
+  },
+  {
+   "paper_id": "2406.18360",
+   "page": 12,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "offset-2m offset-1m offset-4m offset-0m figure 9. the ground truth and rendered results by different benchmarking method"
+  },
+  {
+   "paper_id": "2312.09559",
+   "page": 3,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "figure 2: high-level scenario model of the road-and-vehicle environment (rve), capturing the hazardous-behavior-sensitiv"
+  },
+  {
+   "paper_id": "2607.23045",
+   "page": 224,
+   "stratum": "diagram",
+   "n_figures": 1,
+   "caption_sample": "fig. s40. node-specific workflow pass profile for hermes / kimi k2.6. profile summary. across 96 benchmark trial records"
+  },
+  {
+   "paper_id": "2307.04327",
+   "page": 12,
+   "stratum": "caption-only",
+   "n_figures": 7,
+   "caption_sample": ""
+  },
+  {
+   "paper_id": "2502.14706",
+   "page": 2,
+   "stratum": "caption-only",
+   "n_figures": 2,
+   "caption_sample": "figure 2: sample scenario state with corresponding agent observation. $l e f t { \\mathrm { : } }$ : example scenario fro"
+  },
+  {
+   "paper_id": "2504.02420",
+   "page": 1,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "fig. 2. f1tenth car used for dataset colection and performing real-world experiments."
+  },
+  {
+   "paper_id": "2312.04535",
+   "page": 4,
+   "stratum": "chart",
+   "n_figures": 3,
+   "caption_sample": "figure 6: k-means vs. k-disks we plot the average discretization error for multiple template sets sampled from k-means a"
+  },
+  {
+   "paper_id": "2509.13577",
+   "page": 3,
+   "stratum": "diagram",
+   "n_figures": 1,
+   "caption_sample": "fig. 4: observable scene-level information provides unreliable cues for error modes and their transitions. the figure il"
+  },
+  {
+   "paper_id": "2506.19341",
+   "page": 5,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "fig. 2 the feedback loop between dot and tp."
+  },
+  {
+   "paper_id": "2210.10899",
+   "page": 39,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "figure 3.4: the atalante exoskeleton, designed by wandercraft, has 12 actuated joints, 6 on each leg. the experiments ex"
+  },
+  {
+   "paper_id": "2308.09456",
+   "page": 9,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": ""
+  },
+  {
+   "paper_id": "2406.15349",
+   "page": 8,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "figure 5: navsim challenge."
+  },
+  {
+   "paper_id": "2009.08311",
+   "page": 0,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "fig. 1. examples of multimodal safety-critical traffic scenarios. for each vehicle, there is a two-mode distribution of "
+  },
+  {
+   "paper_id": "2312.09501",
+   "page": 5,
+   "stratum": "caption-only",
+   "n_figures": 2,
+   "caption_sample": "figure 6: minimum error (left) and miss rate (right) on original 64 components for each decoder layer."
+  },
+  {
+   "paper_id": "2607.16943",
+   "page": 8,
+   "stratum": "caption-only",
+   "n_figures": 2,
+   "caption_sample": "fig. 10. spatiotemporal vehicle occupancy density for all six intersections. each panel is cropped to the active core ro"
+  },
+  {
+   "paper_id": "2012.11329",
+   "page": 3,
+   "stratum": "caption-only",
+   "n_figures": 3,
+   "caption_sample": "(a) bird\u2019s-eye view"
+  },
+  {
+   "paper_id": "2207.06576",
+   "page": 15,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "(e) motorcycle figure 5 vehicle trajectories for different vehicle classes"
+  },
+  {
+   "paper_id": "2509.00582",
+   "page": 31,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "fig. 11 ego vehicle trajectories for ablation study during the lane-changing scenario (scenario 1)."
+  },
+  {
+   "paper_id": "2509.23922",
+   "page": 14,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "figure 5: uniad\u2019s evaluation results."
+  },
+  {
+   "paper_id": "2506.16535",
+   "page": 3,
+   "stratum": "diagram",
+   "n_figures": 1,
+   "caption_sample": "figure 1: ecav architecture."
+  },
+  {
+   "paper_id": "2607.14005",
+   "page": 13,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "figure 7 qualitative results of multi-view and multimodal generation. from left to right, we show the input control sign"
+  },
+  {
+   "paper_id": "2407.21569",
+   "page": 16,
+   "stratum": "diagram",
+   "n_figures": 2,
+   "caption_sample": "figure 5: overview of the sotif lifecycle [27] (red frames indicate the activities covered in this paper)."
+  },
+  {
+   "paper_id": "2303.12194",
+   "page": 8,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "figure 6: inference latency comparison. the notation $\\mathrm { ^ { * } d e t } + \\mathrm { s e g } ^ { , , }$ refers to"
+  },
+  {
+   "paper_id": "2012.15231",
+   "page": 13,
+   "stratum": "chart",
+   "n_figures": 3,
+   "caption_sample": "(a) pair plot of g1no"
+  },
+  {
+   "paper_id": "local:fded7239c240",
+   "page": 12,
+   "stratum": "caption-only",
+   "n_figures": 5,
+   "caption_sample": "(a) a road without any specific boundaries or lanes."
+  },
+  {
+   "paper_id": "2401.00391",
+   "page": 8,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "fig. 3: framework for partial difusion. we generate proposals based on domain knowledge (e.g., collision types). users c"
+  },
+  {
+   "paper_id": "local:3594557c5d87",
+   "page": 141,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "figure 3.11: basic structure of mpc"
+  },
+  {
+   "paper_id": "local:8e502e34fb01",
+   "page": 8,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": ""
+  },
+  {
+   "paper_id": "local:2b6a7d2ae102",
+   "page": 142,
+   "stratum": "caption-only",
+   "n_figures": 2,
+   "caption_sample": ""
+  },
+  {
+   "paper_id": "2503.03629",
+   "page": 4,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "fig. 2. panoramic view across different simulators with synchronized traffic. (a). terasim traffic generation. (b). mcit"
+  },
+  {
+   "paper_id": "2005.04255",
+   "page": 2,
+   "stratum": "diagram",
+   "n_figures": 2,
+   "caption_sample": "figure 2. the overview of the proposed method. it takes a sequence of point clouds as input, detects pedestrians and pre"
+  },
+  {
+   "paper_id": "local:cc9e490550a8",
+   "page": 3,
+   "stratum": "caption-only",
+   "n_figures": 2,
+   "caption_sample": "fig. 2 ttc distributions of two different segments of expressway: (a) station 1 and (b) station 2"
+  },
+  {
+   "paper_id": "2208.09103",
+   "page": 17,
+   "stratum": "caption-only",
+   "n_figures": 2,
+   "caption_sample": "figure 6 bayesian network of sequence types and crash outcomes"
+  },
+  {
+   "paper_id": "2309.12798",
+   "page": 4,
+   "stratum": "diagram",
+   "n_figures": 1,
+   "caption_sample": "fig. 2. schematic diferences between diferent stems of agent-based models, highlighting their distinct extrapolations of"
+  },
+  {
+   "paper_id": "2504.15541",
+   "page": 18,
+   "stratum": "caption-only",
+   "n_figures": 1,
+   "caption_sample": "fig. 12 scenario 1: risk assessment during ego vehicle lane change"
+  },
+  {
+   "paper_id": "2005.02597",
+   "page": 4,
+   "stratum": "caption-only",
+   "n_figures": 3,
+   "caption_sample": "fig. 5. root mean square error in position and velocity averaged over all cars to benchmark our model (idm ) against oth"
+  },
+  {
+   "paper_id": "2111.01592",
+   "page": 0,
+   "stratum": "chart",
+   "n_figures": 1,
+   "caption_sample": "fig. 1: we consider the driving context as a double-layered graph structure: a drivable area (da) layer and a lane segme"
+  }
+ ]
+}
