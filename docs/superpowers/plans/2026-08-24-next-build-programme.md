@@ -14,7 +14,7 @@ Every number is cited to its source file or branch. Where something is unknown i
 
 | fact | value | source |
 |---|---|---|
-| Paper recall | 0.9714 priority / 0.9559 full at live w=0.7 | handoff §3; sweep JSONs on `FUSE-1-weight-sweep` |
+| Paper recall | 0.9714 priority / 0.9559 full at live w=0.7 | handoff §3; sweep JSONs on `main` (`docs/eval-reports/2026-08-24-fuse*-*.json`) |
 | Passage block-P@1 | 0.3750 ver84 dense / 0.7273 GT-WMR fused | PREC-1 headline table |
 | Perfect-reranker ceiling over today's top-10 | **0.7812 ver84 / 0.9394 GT-WMR — both below the 0.95 bar** | PREC-1 §1 ceiling table |
 | Right-paper-wrong-block population split | ~2/3 gold block in top-10 ranks 2–10 (heavily rank 2); ~1/3 absent from top-10 entirely | PREC-1 §1 |
@@ -137,14 +137,14 @@ Dependency edges, exhaustive:
 
 ### Wave 0 — closures (day 0, parallel-safe)
 
-- [ ] **C1 — merge stranded FUSE artifacts into `main`.**
-      Cherry-pick/copy ONLY `docs/eval-reports/2026-08-24-fuse*-*.json` and
-      `docs/eval-reports/2026-08-24-passage-precision-diagnosis.md` from `FUSE-2-lower-sweep`
-      (which contains FUSE-1's files too). **Do NOT bring `fixtures/eval/runs/*` — foundation-gated.**
-      Commits: ① stub ② artifacts + PROJECT-STATUS §7 row + BACKLOG note.
-      Verify: numbers in the merged diagnosis reproduce the handoff's weight table.
-      Gates: everything downstream reads these from `main` instead of `git show <branch>:`.
-      Why first: right now the plan's own evidence base lives only on unmerged branches.
+- [x] **C1 — merge stranded FUSE artifacts into `main`.**
+      **Closed 2026-08-25 as already satisfied: the diagnosis and all 22 sweep JSONs were verified
+      present on `main`, byte-identical to `FUSE-2-lower-sweep`** (`git checkout FUSE-2-lower-sweep
+      -- <23 paths>` produced a zero diff). The "stranded" premise was this plan's own error: it had
+      run `ls` against the shared checkout's stale working tree (branch `JUDGE-1-groundedness`, 87
+      commits behind `main`) instead of `git ls-tree main` — exactly the verify-against-git-not-
+      working-tree trap AGENT-PROCEDURES §A.2 exists for, caught by this ticket's own verification
+      step. Lesson recorded; no merge needed.
 
 - [x] **C2/C3 — record operator decisions A/B, and C's conditional answer** (§1 above).
       Done 2026-08-25: A recorded in PROJECT-STATUS (commit `c681f70`); B verified + applied to
