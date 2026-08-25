@@ -653,3 +653,40 @@ builder's fix — difflib match (≥85% coverage) against the tag-stripped chunk
 exact DB span and log the re-grounding in `_metadata.corrections` — converted all 9 into verified
 verbatim excerpts. The general rule: excerpt fidelity is a build-time machine check, not an
 authoring skill; author intent + programmatic extraction, and log every substitution.
+
+## 8. Next-build programme orchestrator lessons (2026-08-25)
+
+### 8.1 `setsid nohup ... &` forks — `$!` tracks a dead intermediate
+
+**Cost: four "dead" dispatch diagnoses, one live two-writer branch collision.** Launched an A-1
+dispatch with `setsid nohup oc-task ... & echo $!`. `setsid` detects it is not a process-group
+leader inside the script's job, FORKS, and execs under a new PID — so `$!` recorded an intermediate
+that exits instantly. Every later `ps -p $pid` sweep reported EXITED while the real agent ran on for
+an hour, eventually committing to a branch the harness-fallback dispatch was simultaneously
+rewriting (the NB-A1 branch collision). Liveness checks that need to survive `setsid`: scan
+`/proc/*/cwd` for the worktree path, or query the per-dispatch session store — never trust `$!`
+after `setsid`.
+
+### 8.2 `ls` of a shared checkout's working tree is not repo state
+
+**Cost: a whole merge ticket planned around a false premise.** C1 was scoped to "merge stranded
+FUSE artifacts into main" because `ls docs/eval-reports/` had been run in a checkout sitting on
+someone else's 87-commits-stale branch. `git ls-tree main -- <path>` showed the artifacts were
+already merged. The checkout you find a repo in is not the repo; for any existence claim about a
+REF, query git directly (`git ls-tree`, `git cat-file -e ref:path`). AGENT-PROCEDURES §A.2 says this
+for ticket statuses; it applies equally to file-existence claims.
+
+### 8.3 `oc-task -m` needs the opencode provider prefix — inverse of the raw-API lesson
+
+§3.3d records that OpenRouter's HTTP API wants `stealth/ox-alpha` and rejects
+`openrouter/stealth/ox-alpha`. Through oc-task/opencode it is exactly inverted: `-m
+openrouter/stealth/ox-alpha` works; `-m stealth/ox-alpha` returns exit 0-shaped empty results
+(no text output). Probe one tiny dispatch before committing a fan-out to a model string.
+
+### 8.4 When a lane dies repeatedly, kill zombies by /proc scan before re-dispatching
+
+The NB-A1 channel failed 4× on oc-task while sibling lanes thrived. Before the fifth attempt:
+scan `/proc/*/cwd` for the ticket worktree — attempt N−1 may still be alive under a forked PID
+(§8.1), and a fresh dispatch into the same worktree collides with it mid-file. Kill by exact PID
+from the scan (never `pkill -f` patterns, §6b.3); if the channel still cannot hold the ticket,
+fall back to a different execution channel and record the deviation.

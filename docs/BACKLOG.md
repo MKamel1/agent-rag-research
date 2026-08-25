@@ -562,6 +562,16 @@ Recorded in `docs/BOOK-INTEGRATION-CLOSEOUT.md`; repeated here so they stay visi
 
 ---
 
+## Landed: next-build programme Wave 0–2 (2026-08-25)
+
+All lanes verified by the orchestrator before merge; full ledger with SHAs:
+`docs/PROJECT-STATUS.md` "Next-build programme" section. Summary: C1 closed already-satisfied;
+D1 pool-depth, D2 block-adjacency, D3 abstention census (no separation found), D4 dual-fixture
+runner — merged; R0 fix ranking reviewed+revised — merged; A-1 abstention signal-source design doc
+— merged; X-F fusion shape (eviction gone at production depth) and X-P deep-pool tables (depth =
+serving win, ordering hazard; X-O unblocked) — merged. In flight at write time: X-O ordering
+quality, NB-6 VLM scoping (Decision C gate). Decisions A–D recorded in PROJECT-STATUS.
+
 ## Standing constraints for any agent picking these up
 
 - Never write `research-system-rag-data/papers.db`; read-only via `file:…?mode=ro`.
