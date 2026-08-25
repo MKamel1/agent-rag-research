@@ -215,6 +215,7 @@ def newcomer_effect(baseline: dict, arm: dict) -> dict:
             "lost_rank_count": len(p_lost),
             "lost_rank": p_lost,
             "improved_count": len(p_improved),
+            "improved": p_improved,
         },
         "errored_in_either_run": sorted(set(errored)),
         "note": "ranks are first-hit positions in each run's own returned list (1-based); "

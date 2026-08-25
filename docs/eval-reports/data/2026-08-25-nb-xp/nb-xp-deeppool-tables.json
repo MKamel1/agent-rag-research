@@ -1,7 +1,7 @@
 {
   "ticket": "NB-X-P",
   "generated_by": "scripts/nb_xp_deeppool_tables.py",
-  "generated": "2026-08-25T13:30:03",
+  "generated": "2026-08-25T13:38:28",
   "config": "/home/omar/ai-projects/research-system-rag/waymo/data/config.yaml",
   "collection": "waymo_av_safety",
   "sparse_mode": "fused",
@@ -9,7 +9,8 @@
   "limit": null,
   "ks": [
     10,
-    32
+    32,
+    64
   ],
   "baseline_k": 10,
   "fixtures": [
@@ -118,7 +119,84 @@
             "gold_paper": {
               "lost_rank_count": 0,
               "lost_rank": [],
-              "improved_count": 0
+              "improved_count": 0,
+              "improved": []
+            },
+            "errored_in_either_run": [],
+            "note": "ranks are first-hit positions in each run's own returned list (1-based); 'previously exposed' means the baseline run found the gold item at all."
+          },
+          "same_pool_jitter_check": {
+            "n_compared": 82,
+            "identical": 80,
+            "permutation": 1,
+            "structural": 1,
+            "permutation_ids": [
+              "Q-WMR-094"
+            ],
+            "structural_ids": [
+              "Q-WMR-006"
+            ],
+            "gold_rank_moves": []
+          }
+        },
+        {
+          "k": 64,
+          "row": {
+            "fixture": "gt_wmr",
+            "ground_truth": "fixtures/eval/gt_wmr.json",
+            "k": 64,
+            "scoring_rule": "top-64 truncation; sparse_mode=fused (hybrid_dense_weight=0.7 -- zeroes a score contribution, does not remove that arm's candidates from the fused pool, see module docstring); paper-level hit = first rank r <= 64 with result.paper_id in question.gold_paper_ids; passage-level hit = first rank r <= 64 with result.anchor.block_id == question.gold_block_id; chapter-level hit = first retrieve_papers rank with paper_id in gold_paper_ids and chapter == gold_chapter_title",
+            "n_questions": 82,
+            "n_errors": 0,
+            "answerable": {
+              "recall_at_k": 1.0,
+              "mrr": 0.9409688013136289,
+              "hits": 70,
+              "n": 70
+            },
+            "block_p_at_1": {
+              "rate": 0.7384615384615385,
+              "hits": 48,
+              "n": 65,
+              "definition": "text-answerable passage-scored items whose gold block ranks exactly 1"
+            },
+            "known_absent": {
+              "n": 12,
+              "n_with_top_result": 12,
+              "top_score_median": 0.008755680299385192,
+              "top_score_min": 0.006277216714537201,
+              "top_score_max": 0.016029143897996357
+            }
+          },
+          "top10_restricted": {
+            "recall_at_10": {
+              "hits": 68,
+              "n": 70,
+              "rate": 0.9714285714285714
+            },
+            "mrr_at_10": 0.9392857142857143,
+            "block_p_at_1": {
+              "hits": 48,
+              "n": 65,
+              "rate": 0.7384615384615385,
+              "definition": "identical to the published VARM-1 text_answerable rank_1_rate (rank 1 is inside any top-10); restated, not recomputed"
+            }
+          },
+          "raw_report": "docs/eval-reports/data/2026-08-25-nb-xp/raw/gt_wmr.k64.json",
+          "newcomer": {
+            "gold_block": {
+              "lost_rank_count": 0,
+              "lost_rank": [],
+              "lost_from_top10_ids": [],
+              "gained_into_top10": [],
+              "improved_count": 0,
+              "improved": []
+            },
+            "gold_paper": {
+              "lost_rank_count": 0,
+              "lost_rank": [],
+              "improved_count": 0,
+              "improved": []
             },
             "errored_in_either_run": [],
             "note": "ranks are first-hit positions in each run's own returned list (1-based); 'previously exposed' means the baseline run found the gold item at all."
@@ -244,7 +322,207 @@
             "gold_paper": {
               "lost_rank_count": 0,
               "lost_rank": [],
-              "improved_count": 0
+              "improved_count": 0,
+              "improved": []
+            },
+            "errored_in_either_run": [],
+            "note": "ranks are first-hit positions in each run's own returned list (1-based); 'previously exposed' means the baseline run found the gold item at all."
+          },
+          "same_pool_jitter_check": {
+            "n_compared": 82,
+            "identical": 81,
+            "permutation": 1,
+            "structural": 0,
+            "permutation_ids": [
+              "Q-WAYB-027"
+            ],
+            "structural_ids": [],
+            "gold_rank_moves": []
+          }
+        },
+        {
+          "k": 64,
+          "row": {
+            "fixture": "waymo_gt_verified",
+            "ground_truth": "fixtures/eval/waymo_gt_verified.json",
+            "k": 64,
+            "scoring_rule": "top-64 truncation; sparse_mode=fused (hybrid_dense_weight=0.7 -- zeroes a score contribution, does not remove that arm's candidates from the fused pool, see module docstring); paper-level hit = first rank r <= 64 with result.paper_id in question.gold_paper_ids; passage-level hit = first rank r <= 64 with result.anchor.block_id == question.gold_block_id; chapter-level hit = first retrieve_papers rank with paper_id in gold_paper_ids and chapter == gold_chapter_title",
+            "n_questions": 82,
+            "n_errors": 0,
+            "answerable": {
+              "recall_at_k": 0.9705882352941176,
+              "mrr": 0.8285364145658263,
+              "hits": 66,
+              "n": 68
+            },
+            "block_p_at_1": {
+              "rate": 0.38333333333333336,
+              "hits": 23,
+              "n": 60,
+              "definition": "text-answerable passage-scored items whose gold block ranks exactly 1"
+            },
+            "known_absent": {
+              "n": 14,
+              "n_with_top_result": 14,
+              "top_score_median": 0.009159410511936788,
+              "top_score_min": 0.006281527744415086,
+              "top_score_max": 0.015823235923022094
+            }
+          },
+          "top10_restricted": {
+            "recall_at_10": {
+              "hits": 64,
+              "n": 68,
+              "rate": 0.9411764705882353
+            },
+            "mrr_at_10": 0.8267507002801121,
+            "block_p_at_1": {
+              "hits": 23,
+              "n": 60,
+              "rate": 0.38333333333333336,
+              "definition": "identical to the published VARM-1 text_answerable rank_1_rate (rank 1 is inside any top-10); restated, not recomputed"
+            }
+          },
+          "raw_report": "docs/eval-reports/data/2026-08-25-nb-xp/raw/waymo_gt_verified.k64.json",
+          "newcomer": {
+            "gold_block": {
+              "lost_rank_count": 11,
+              "lost_rank": [
+                {
+                  "question_id": "Q-GTA-007",
+                  "baseline_rank": 4,
+                  "arm_rank": 10
+                },
+                {
+                  "question_id": "Q-GTA-009",
+                  "baseline_rank": 3,
+                  "arm_rank": 4
+                },
+                {
+                  "question_id": "Q-GTA-010",
+                  "baseline_rank": 7,
+                  "arm_rank": 14
+                },
+                {
+                  "question_id": "Q-GTA-013",
+                  "baseline_rank": 7,
+                  "arm_rank": 8
+                },
+                {
+                  "question_id": "Q-GTA-021",
+                  "baseline_rank": 3,
+                  "arm_rank": 4
+                },
+                {
+                  "question_id": "Q-GTA-022",
+                  "baseline_rank": 8,
+                  "arm_rank": 20
+                },
+                {
+                  "question_id": "Q-GTA-024",
+                  "baseline_rank": 2,
+                  "arm_rank": 3
+                },
+                {
+                  "question_id": "Q-GTA-027",
+                  "baseline_rank": 2,
+                  "arm_rank": 4
+                },
+                {
+                  "question_id": "Q-GTA-030",
+                  "baseline_rank": 3,
+                  "arm_rank": 4
+                },
+                {
+                  "question_id": "Q-GTA-032",
+                  "baseline_rank": 5,
+                  "arm_rank": 6
+                },
+                {
+                  "question_id": "Q-WAYB-002",
+                  "baseline_rank": 8,
+                  "arm_rank": 10
+                }
+              ],
+              "lost_from_top10_ids": [
+                "Q-GTA-010",
+                "Q-GTA-022"
+              ],
+              "gained_into_top10": [
+                {
+                  "question_id": "Q-GTA-006",
+                  "arm_rank": 5
+                },
+                {
+                  "question_id": "Q-WAYB-031",
+                  "arm_rank": 1
+                }
+              ],
+              "improved_count": 0,
+              "improved": []
+            },
+            "gold_paper": {
+              "lost_rank_count": 8,
+              "lost_rank": [
+                {
+                  "question_id": "Q-GTA-007",
+                  "baseline_rank": 4,
+                  "arm_rank": 10
+                },
+                {
+                  "question_id": "Q-GTA-015",
+                  "baseline_rank": 2,
+                  "arm_rank": 5
+                },
+                {
+                  "question_id": "Q-GTA-020",
+                  "baseline_rank": 3,
+                  "arm_rank": 7
+                },
+                {
+                  "question_id": "Q-GTA-022",
+                  "baseline_rank": 8,
+                  "arm_rank": 20
+                },
+                {
+                  "question_id": "Q-GTA-029",
+                  "baseline_rank": 5,
+                  "arm_rank": 7
+                },
+                {
+                  "question_id": "Q-WAYB-002",
+                  "baseline_rank": 8,
+                  "arm_rank": 10
+                },
+                {
+                  "question_id": "Q-WAYB-026",
+                  "baseline_rank": 1,
+                  "arm_rank": 2
+                },
+                {
+                  "question_id": "Q-GTA-042",
+                  "baseline_rank": 1,
+                  "arm_rank": 2
+                }
+              ],
+              "improved_count": 3,
+              "improved": [
+                {
+                  "question_id": "Q-GTA-006",
+                  "baseline_rank": 6,
+                  "arm_rank": 1
+                },
+                {
+                  "question_id": "Q-GTA-010",
+                  "baseline_rank": 7,
+                  "arm_rank": 5
+                },
+                {
+                  "question_id": "Q-GTA-021",
+                  "baseline_rank": 2,
+                  "arm_rank": 1
+                }
+              ]
             },
             "errored_in_either_run": [],
             "note": "ranks are first-hit positions in each run's own returned list (1-based); 'previously exposed' means the baseline run found the gold item at all."
