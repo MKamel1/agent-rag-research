@@ -1,0 +1,118 @@
+{
+  "ticket": "NB-X-P",
+  "generated_by": "scripts/nb_xp_deeppool_tables.py",
+  "generated": "2026-08-25T13:10:14",
+  "config": "/home/omar/ai-projects/research-system-rag/waymo/data/config.yaml",
+  "collection": "waymo_av_safety",
+  "sparse_mode": "fused",
+  "dense_weight_override": null,
+  "limit": null,
+  "ks": [
+    10
+  ],
+  "baseline_k": 10,
+  "fixtures": [
+    {
+      "fixture": "gt_wmr",
+      "ground_truth": "fixtures/eval/gt_wmr.json",
+      "arms": [
+        {
+          "k": 10,
+          "row": {
+            "fixture": "gt_wmr",
+            "ground_truth": "fixtures/eval/gt_wmr.json",
+            "k": 10,
+            "scoring_rule": "top-10 truncation; sparse_mode=fused (hybrid_dense_weight=0.7 -- zeroes a score contribution, does not remove that arm's candidates from the fused pool, see module docstring); paper-level hit = first rank r <= 10 with result.paper_id in question.gold_paper_ids; passage-level hit = first rank r <= 10 with result.anchor.block_id == question.gold_block_id; chapter-level hit = first retrieve_papers rank with paper_id in gold_paper_ids and chapter == gold_chapter_title",
+            "n_questions": 82,
+            "n_errors": 0,
+            "answerable": {
+              "recall_at_k": 0.9714285714285714,
+              "mrr": 0.9392857142857143,
+              "hits": 68,
+              "n": 70
+            },
+            "block_p_at_1": {
+              "rate": 0.7384615384615385,
+              "hits": 48,
+              "n": 65,
+              "definition": "text-answerable passage-scored items whose gold block ranks exactly 1"
+            },
+            "known_absent": {
+              "n": 12,
+              "n_with_top_result": 12,
+              "top_score_median": 0.010358828821351338,
+              "top_score_min": 0.008246527777777778,
+              "top_score_max": 0.016029143897996357
+            }
+          },
+          "top10_restricted": {
+            "recall_at_10": {
+              "hits": 68,
+              "n": 70,
+              "rate": 0.9714285714285714
+            },
+            "mrr_at_10": 0.9392857142857143,
+            "block_p_at_1": {
+              "hits": 48,
+              "n": 65,
+              "rate": 0.7384615384615385,
+              "definition": "identical to the published VARM-1 text_answerable rank_1_rate (rank 1 is inside any top-10); restated, not recomputed"
+            }
+          },
+          "raw_report": "docs/eval-reports/data/2026-08-25-nb-xp/raw/gt_wmr.k10.json"
+        }
+      ]
+    },
+    {
+      "fixture": "waymo_gt_verified",
+      "ground_truth": "fixtures/eval/waymo_gt_verified.json",
+      "arms": [
+        {
+          "k": 10,
+          "row": {
+            "fixture": "waymo_gt_verified",
+            "ground_truth": "fixtures/eval/waymo_gt_verified.json",
+            "k": 10,
+            "scoring_rule": "top-10 truncation; sparse_mode=fused (hybrid_dense_weight=0.7 -- zeroes a score contribution, does not remove that arm's candidates from the fused pool, see module docstring); paper-level hit = first rank r <= 10 with result.paper_id in question.gold_paper_ids; passage-level hit = first rank r <= 10 with result.anchor.block_id == question.gold_block_id; chapter-level hit = first retrieve_papers rank with paper_id in gold_paper_ids and chapter == gold_chapter_title",
+            "n_questions": 82,
+            "n_errors": 0,
+            "answerable": {
+              "recall_at_k": 0.9558823529411765,
+              "mrr": 0.8334733893557423,
+              "hits": 65,
+              "n": 68
+            },
+            "block_p_at_1": {
+              "rate": 0.36666666666666664,
+              "hits": 22,
+              "n": 60,
+              "definition": "text-answerable passage-scored items whose gold block ranks exactly 1"
+            },
+            "known_absent": {
+              "n": 14,
+              "n_with_top_result": 14,
+              "top_score_median": 0.00965210593353751,
+              "top_score_min": 0.007717010029148758,
+              "top_score_max": 0.015823235923022094
+            }
+          },
+          "top10_restricted": {
+            "recall_at_10": {
+              "hits": 65,
+              "n": 68,
+              "rate": 0.9558823529411765
+            },
+            "mrr_at_10": 0.8334733893557423,
+            "block_p_at_1": {
+              "hits": 22,
+              "n": 60,
+              "rate": 0.36666666666666664,
+              "definition": "identical to the published VARM-1 text_answerable rank_1_rate (rank 1 is inside any top-10); restated, not recomputed"
+            }
+          },
+          "raw_report": "docs/eval-reports/data/2026-08-25-nb-xp/raw/waymo_gt_verified.k10.json"
+        }
+      ]
+    }
+  ]
+}

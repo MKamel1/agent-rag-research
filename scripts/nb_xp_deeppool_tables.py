@@ -395,8 +395,11 @@ def main(argv: list[str] | None = None) -> int:
             reports[(k, name)] = run_arm_fixture(k, name, gt, report_path, args)
 
     # Hard validity gate BEFORE anything is derived: same-pool arms must agree per question.
-    for name, _gt in FIXTURES:
-        assert_deterministic_pair(reports[(baseline_k, name)], reports[(32, name)])
+    # Applies whenever both arms of the pair are in THIS invocation (a baseline-only or
+    # resumed single-arm run checks nothing here; the full-arm invocation re-checks on reuse).
+    if baseline_k != 32 and 32 in ks:
+        for name, _gt in FIXTURES:
+            assert_deterministic_pair(reports[(baseline_k, name)], reports[(32, name)])
 
     fixtures_out = []
     for name, gt in FIXTURES:
