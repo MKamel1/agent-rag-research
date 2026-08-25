@@ -265,4 +265,67 @@ cosine, k=100, plus a random-10 baseline sample per query), over 164 questions, 
 embedding-model or stack change — the worst REFRESH-POST-RERANK offender of the five candidates,
 since raw-cosine geometry moves on any model swap or re-embed, silently rotting any calibration.
 
-<!-- NB-A1 commit 4 continues: recommendation ordering, method notes -->
+## §2 Method notes
+
+- **Framing refinement** (stated because the ticket framing compresses it): D3 establishes *no usable
+  threshold on retrieval-side observables*, not *no information anywhere* — its own tables retain two
+  direction-replicating tendencies (dense-arm rank score 0.285/0.285; cross-arm disagreement
+  right-signed both fixtures). This doc's mandate is new signal SOURCES; combining weak features into
+  a calibrated composite is mechanism-building and belongs to a later A-series ticket, deliberately
+  not designed here.
+- **Concurrent-dispatch reconciliation**: while this document was being written, a parallel dispatch
+  committed its own §0 framing to this branch (`3e58300`, between stub `3afae04` and this doc's
+  commit 2), which this doc's full-file write initially overwrote. Its two substantive,
+  independently verifiable findings are incorporated above with credit: the RRF rank-geometry
+  observation (verified against `rag/retriever.py`'s header and `census_full.json`'s dense-arm max =
+  1/61 exactly — this doc originally mislabeled the dense-arm score as cosine) and the fixture-
+  denominator discipline below. Nothing else of substance was lost; candidate numbering follows this
+  doc's, not that skeleton's.
+- **Denominator discipline across sources**: D3 partitions dedup (`load_questions`) → ver84
+  68 answerable / 14 absent, gt_wmr 70 / 12; the refusal-affordance A/B used the raw 84-row fixture
+  → 68 / 16. Candidate bars in §1 state which convention they use; anyone executing the
+  feasibility measurements must not mix them within one table.
+- **Provisional-source posture**: the A/B report is PROVISIONAL (unsigned rubrics); this doc cites
+  only its §1–§3 hand classifications, which do not depend on rubric sign-off, never its §4
+  judge-derived rates.
+- **Refresh caveat scope**: candidates C2/C3/C5 inherit D3's REFRESH-POST-RERANK banner wholesale;
+  C1/C4 live above the retrieval layer and survive stack changes by construction — one reason §3
+  orders them first.
+- **What was actually run for this doc**: verification reads only (`rag/retriever.py` module header;
+  `docs/eval-reports/data/2026-08-25-nb-d3/census_full.json` max-score values via a throwaway
+  interpreter session, not committed as a script). No feasibility measurement was executed; every
+  falsifier in §1 was fixed in this file before any of them could run. Cost estimates extrapolate
+  D3/A-B logged timings (~3.5 min/fixture capture; generation passes ~15–25 min) — treat ±50%.
+- **Compliance**: fixtures reported separately everywhere; no foundation path touched
+  (`contracts/`, `migrations/`, `fixtures/`, `rag/config.py`, `ci/`, `.github/`, `pyproject.toml`);
+  no other ticket's files touched; no mechanism, threshold, or prompt changed. Doc-only diff —
+  nothing for `ruff` to check beyond the tree staying clean.
+
+## §3 Recommendation ordering — which candidate to falsify first
+
+1. **C1 stage-1 (refusal-affordance detector) — falsify first.** Half its feasibility evidence
+   already exists committed and free (both generation captures under `fixtures/eval/runs/`); its
+   measured operating point (14/16 detected vs 3/68 false refusals) dominates every census operating
+   point by roughly an order of magnitude; and it is the only candidate whose signal survives
+   retrieval-stack changes (REFRESH-POST-RERANK does not reach it). Cheapest decisive test in this
+   document: classify existing captures (~30–45 min) + one fresh gt_wmr pass (~15–25 min).
+2. **C2 (anchor-coverage probe) — second.** Cheapest genuinely NEW mechanism (minutes, read-only),
+   orthogonal to everything censused *by construction* (term-level content cannot appear in
+   rank-scale records), and it carries its anti-leakage guard pre-committed rather than hoped for.
+3. **C3 (perturbation stability) — third.** Cheap, but it generalizes D3's weakest finding
+   (cross-arm disagreement: right-signed, inconsistent magnitude); run it if C2 dies, expecting it
+   to inherit the weakness.
+4. **C4 (judge screening) — fourth.** Costlier than 1–3, carries correlated-blindness risk with the
+   generator family, and overlaps C1's success region — if C1 clears its bar, C4 is redundant
+   complexity; only worth running if C1 fails AND the failure mode suggests explicit passage-fit
+   judgment would behave differently from answer-shaped behaviour.
+5. **C5 (embedding relative-density) — last, likely never.** Adjacent to the null, bar set high on
+   purpose, expected outcome is permanent closure of the family; run only if everything above died
+   and the operator wants the space formally closed.
+
+**Honest bottom line.** If C1 stage-1 fails its held-out gt_wmr criterion, this doc's prediction is
+that abstention parity is blocked on generation-model capability, not on retrieval engineering — and
+candidates 2–5 are ordered attempts to avoid that conclusion, not expectations of escaping it. The
+programme fork then resolves toward the A/B report's own reading: the affordable abstention win may
+be the *unconditional* affordance clause (already measured: 6/16 → 1/16 wrong-side at one clean
+answerable-arm regression), with any detector on top treated as upside, not prerequisite.
