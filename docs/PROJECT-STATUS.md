@@ -643,3 +643,11 @@ restored.** 0.7 is the right choice only if the full corpus must also clear the 
 operator call; 0.7 stays live until it is made.
 
 **Rollback:** `waymo/data/config.yaml.bak-w0.5-20260824T122256`.
+
+**Resolved 2026-08-25 (operator): 0.7 stays.** The condition above holds — the full Waymo corpus
+must also clear the bar, which 0.5 fails outright (0.8971 < 0.95) and 0.7 clears. The +1.4 pp
+priority advantage of restoring 0.5 does not buy back a failed full-corpus gate. Re-evaluation is
+deferred until the next-build programme's rerank/pool-depth work lands and then measured against
+both fixtures (`docs/superpowers/plans/2026-08-24-next-build-programme.md` §1, decision A) — not
+before, since changing weight mid-programme would invalidate comparability with every baseline
+number collected at 0.7.
