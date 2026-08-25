@@ -18,6 +18,16 @@ died the deaths D3 §4 documents: `distinct_papers_fused` (AUROC 0.866 GT-WMR �
 failed held-out replication) and query length (replicated, AUROC 0.07–0.13 both fixtures, rejected
 as fixture-authoring leakage — it measures how the authors wrote, not what the corpus covers).
 
+**The null's exact scope, sharpened by one structural fact** (verified against source and data):
+the shipped pipeline is `embed-query → hybrid → RRF fuse → rerank → resolve`
+(`rag/retriever.py` module header), so every score recorded in any run output lives on the
+reciprocal-rank scale — the rank-1 value is RRF's 1/(60+1) = 0.016393…, and both fixtures' dense-arm
+distributions cap at exactly that ceiling (`docs/eval-reports/data/2026-08-25-nb-d3/census_full.json`,
+`fixtures.ver84.arms.dense.*.max` = 0.0163934; gt_wmr identical). **D3 therefore measured the rank
+geometry of retrieved lists** — not term-level match content, not embedding-space similarity (no
+cosine survives the fuser into any record), not generation-stage behaviour, and nothing beyond one
+full-question retrieval per item. The candidate spaces below are exactly those unmeasured residues.
+
 **Not ruled out, and load-bearing for this doc:**
 
 1. **The generation layer has never been measured as a signal source.** D3's 17 features are all
@@ -29,8 +39,9 @@ as fixture-authoring leakage — it measures how the authors wrote, not what the
    contain it — otherwise the affordance arm's discrimination could have been read off retrieval scores.
    (That report is PROVISIONAL with unsigned rubrics; this doc cites only its §1–§3 hand
    classifications, which do not depend on rubric sign-off.)
-2. **Two direction-replicating tendencies survive inside the null.** Dense rank-1 cosine came back
-   "absent lower" on *both* fixtures with nearly identical AUROC (0.2852 / 0.2851), and cross-arm
+2. **Two direction-replicating tendencies survive inside the null.** The dense-arm rank-1 score came
+   back "absent lower" on *both* fixtures with nearly identical AUROC (0.2852 / 0.2851 — on the RRF
+   scale per the structural note above, so this is a pure rank-position signal), and cross-arm
    disagreement was right-signed on both (rank-1 agreement 0.40 vs 0.19; `jaccard_fused_dense` 0.38 vs
    0.23). Both are unusable as thresholds at today's operating points — but "no usable cut" is not
    "no information". See Method notes for why this doc still refuses to design composites from them.
@@ -113,8 +124,10 @@ level; does not depend on what ranking later returns.
 `jaccard_fused_sparse` 0.73/0.66 with inconsistent direction) are properties of the *full-query ranked
 result*: BM25 saturates happily on the question's residual common words even when the fact-bearing
 token is absent corpus-wide. An anchor-level probe asks a different question — *does the specific
-token exist anywhere?* — which is exactly zero for a truly absent entity regardless of how BM25 ranks
-what remains. Different quantity, different layer, uncensused.
+token exist anywhere?* — which is exactly zero for a truly absent entity regardless of how ranking
+orders what remains. It is also invisible to every recorded score *by construction*: post-fusion
+values carry rank information only (§0's structural note), so term-level match content cannot appear
+in any quantity the census could compute. Different quantity, different layer, uncensused.
 
 **Leakage guard (adopted from D3 §4's query-length lesson, pre-committed).** The feature must be
 per-anchor normalized (a rate, not a count — absent questions being shorter must not be the signal),
@@ -183,4 +196,73 @@ Second failure: paraphrase templates too timid produce near-identical retrievals
 feature into `jaccard_fused_dense` (censused, weak) and wasting the run while looking like a clean
 negative.
 
-<!-- NB-A1 commit 3 continues: C4, C5 -->
+### C4 — Judge-model sufficiency screening (pre-generation gate)
+
+**Mechanism sketch.** A small local model receives question + top-5 retrieved passages and answers
+only "sufficient / insufficient to answer" *before* generation; abstain on insufficient. Differs from
+C1: an explicit passage-fit judgment rather than refusal-shaped answer behaviour, firing pre-generation
+so unsupported contexts never reach the generator. Same hardware class as the existing judge factory
+(`app.judge_llm:factory`, qwen3-14b-16k per the A/B's §4 setup).
+
+**Why the D3 null does not rule it out — with the adjacent evidence stated, not buried.** The census
+expressed only numeric retrieval observables; model-read sufficiency is not expressible in them.
+But two committed facts pressure this candidate and must shape its falsifier: the claim-level judge
+audits are structurally blind to misattribution (A/B §4), and `Q-GTA-037` shows this model family
+treats a genre-matched wrong-subject passage as answerable. A screener from the same family may
+inherit that exact blindness — its plausible success region is "passages obviously don't address the
+asked entities", which is nonetheless a region no D3 feature covers.
+
+**Falsification criterion (fixed before any run).** Screen-insufficient recall ≥9/12 gt_wmr and
+≥12/16 ver84 absent items, with ≤5 false screens per fixture's answerable arm; labels joined only
+after the protocol line below is written into the run script. PLUS a length-matched control: on the
+slice where absent and answerable query-length distributions overlap (D3's own leakage finding makes
+this the obvious artifact), separation must persist — otherwise the screener learned question length,
+not sufficiency, and it dies as authoring leakage like D3 §4 item 2. Fail either → dead.
+
+**Cheap feasibility measurement.** One screening pass over both fixtures' 164 questions (short
+prompts; ~20–40 min GPU detached by analogy to the generation captures), labels from the fixture
+JSONs, output to a report JSON only — no pipeline change. Decision rule: the criterion verbatim,
+both fixtures reported separately.
+
+**Failure mode it could introduce.** Correlated false screens with the generator on hard/negation
+strata — a double loss where the question loses its answer *and* the abstention error budget spends
+itself on answerable items; plus self-evaluation bias (screener and generator closely related models),
+the caveat both FAB reports carry. Also prompt-sensitivity: a screening clause is a prompt change by
+another name, so during measurement it must stay in experiment harnesses (`app/exp_*`), never a
+shipped default.
+
+### C5 — Embedding-space relative-density features (expected to die; retained deliberately)
+
+**Mechanism sketch.** Quantities of dense cosine space that no stored record contains (§0's structural
+note: RRF leaves only ranks downstream, so these require reading Qdrant vectors directly, bypassing
+fusion — legitimate for a measurement, impossible from replay): (a) *neighbourhood protrusion* =
+mean cosine(query, ranks 1–3) − mean cosine(query, a random-10 corpus baseline) — how far the local
+neighbourhood sticks out of ambient corpus density; (b) absolute query→corpus-centroid distance;
+(c) mass decay = cos(rank-1) − mean(cos ranks 8–10) computed at k=100 depth rather than the shipped 10.
+
+**Why the D3 null probably DOES rule most of it out — said plainly.** The fresh-run features were the
+census's closest approach to profile *shape*, and they came back flat: rank1→rank2 gap AUROC
+0.39/0.47, above-half-of-rank-1 counts 0.51/0.50 — degenerate partly *because* recorded scores are
+rank-scale (half of 1/61 sits near rank 8, so the feature barely varies). That degeneracy means D3
+never actually tested similarity-magnitude shape — but what it did measure of the dense arm
+(direction-replicating at 0.285/0.285 yet unusable at every cut) argues the magnitude axis is weak
+too. Prior: strongly negative. Retained because (a) k=100-depth decay and the random-baseline
+contrast are genuinely unmeasured, (b) writing the expected death down is cheaper than a future
+session rediscovering this family optimistically, and (c) if C1/C2 fail, this is the family a
+next session will reach for anyway — better reached with the falsifier below.
+
+**Falsification criterion (fixed before any run).** Deliberately high, per D3 §4's
+multiple-comparisons reality (17 features × 2 fixtures produced 0.87-class outliers under the global
+null): any of (a)/(b)/(c) must reach AUROC ≥0.80 on ver84 AND ≥0.75 held-out on gt_wmr, with best-cut
+false refusals ≤10% of the answerable arm. Below that → the whole family closes permanently, recorded
+as such in this doc's successor.
+
+**Cheap feasibility measurement.** One capture script reading Qdrant directly (dense vectors +
+cosine, k=100, plus a random-10 baseline sample per query), over 164 questions, services up;
+~15–20 min including the baseline sampling; analysis offline. Decision rule: the criterion verbatim.
+
+**Failure mode it could introduce** (if built on despite a negative): threshold drift with every
+embedding-model or stack change — the worst REFRESH-POST-RERANK offender of the five candidates,
+since raw-cosine geometry moves on any model swap or re-embed, silently rotting any calibration.
+
+<!-- NB-A1 commit 4 continues: recommendation ordering, method notes -->
