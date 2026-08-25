@@ -58,9 +58,23 @@ def rrf_blend_scores(
     """The blend itself, as a pure function over the two rank maps (unit-tested zero-GPU).
 
     score(id) = alpha/(rrf_k + bge_rank) + (1-alpha)/(rrf_k + hybrid_rank); ranks are 1-based.
-    alpha=1.0 reduces to sorting by BGE rank, alpha=0.0 to sorting by hybrid rank.
+    alpha=1.0 reduces to sorting by BGE rank, alpha=0.0 to sorting by hybrid rank. Both rank
+    maps must cover the SAME id set (the wrapper guarantees this: both orderings are
+    permutations of one candidate list).
     """
-    raise NotImplementedError("NB-X-O commit 2 implements the blend math")
+    if not 0.0 <= alpha <= 1.0:
+        raise ValueError(f"alpha must be in [0, 1], got {alpha}")
+    if rrf_k < 0:
+        raise ValueError(f"rrf_k must be >= 0, got {rrf_k}")
+    if set(hybrid_ranks) != set(bge_ranks):
+        raise ValueError(
+            "rank maps cover different id sets — both orderings must be permutations of the "
+            f"same candidates ({len(hybrid_ranks)} hybrid vs {len(bge_ranks)} bge)"
+        )
+    return {
+        cid: alpha / (rrf_k + bge_ranks[cid]) + (1 - alpha) / (rrf_k + hybrid_ranks[cid])
+        for cid in bge_ranks
+    }
 
 
 class RrfBlendingReranker:
@@ -69,10 +83,21 @@ class RrfBlendingReranker:
     drops, or adds candidates — the wrapped contract's length preservation is preserved."""
 
     def __init__(self, inner, alpha: float, rrf_k: int = 60):
-        raise NotImplementedError("NB-X-O commit 2")
+        if not 0.0 <= alpha <= 1.0:
+            raise ValueError(f"alpha must be in [0, 1], got {alpha}")
+        self._inner = inner
+        self._alpha = alpha
+        self._rrf_k = rrf_k
 
     def rerank(self, query: str, candidates):
-        raise NotImplementedError("NB-X-O commit 2")
+        # Inner call first: the cross-encoder sees the candidates EXACTLY as the retriever
+        # handed them over (same query, same texts, same batch packing) — the blend changes
+        # nothing about what is scored, only how the two orderings are merged afterwards.
+        ordered = list(self._inner.rerank(query, candidates))
+        bge_ranks = {c.id: i for i, c in enumerate(ordered, start=1)}
+        hybrid_ranks = {c.id: i for i, c in enumerate(candidates, start=1)}
+        scores = rrf_blend_scores(hybrid_ranks, bge_ranks, self._alpha, self._rrf_k)
+        return sorted(ordered, key=lambda c: (-scores[c.id], hybrid_ranks[c.id]))
 
 
 def parse_args(argv=None) -> argparse.Namespace:
@@ -97,10 +122,62 @@ def parse_args(argv=None) -> argparse.Namespace:
 
 def main(argv=None) -> int:
     args = parse_args(argv)
-    raise NotImplementedError(
-        "NB-X-O commit 2 wires: load_config -> model_copy(rerank_depth) -> build_mcp_server -> "
-        "wrap retriever reranker -> app.retrieval_eval.run/build_report UNMODIFIED -> report"
+
+    # Deferred imports: GPU-backed adapter wiring stays out of import time (same posture as
+    # app/retrieval_eval.main, whose unit tests must never touch it).
+    from app.assembly import build_mcp_server
+    from rag.config import load_config
+
+    # Import the measurement functions UNMODIFIED — this runner re-scores nothing; it only
+    # changes which reranker implementation sits behind the same Retriever seam.
+    import app.retrieval_eval as r_eval
+
+    config = load_config(args.config)
+    effective_pool = config.rerank_depth
+    if args.pool is not None and args.pool != config.rerank_depth:
+        config = config.model_copy(update={"rerank_depth": args.pool})
+        effective_pool = args.pool
+
+    server = build_mcp_server(config, collection=args.collection)
+    # Runtime composition on the injected collaborator (ARCHITECTURE §M7's seam): the shipped
+    # TeiReranker stays INSIDE the wrapper — every candidate still goes through it unchanged;
+    # only the final ordering is merged with the hybrid prior.
+    server.retriever._reranker = RrfBlendingReranker(
+        server.retriever._reranker, alpha=args.alpha, rrf_k=args.rrf_k
     )
+
+    questions = r_eval.load_questions(Path(args.ground_truth))
+    if args.limit is not None:
+        questions = questions[: args.limit]
+
+    results = r_eval.run(questions, server.retriever, args.k)
+    mode = (
+        f"fused+rrf-rank-blend(alpha={args.alpha},rrf_k={args.rrf_k},pool={effective_pool})"
+    )
+    report = r_eval.build_report(
+        results, args.k, mode=mode, hybrid_dense_weight=config.hybrid_dense_weight,
+        include_per_question=True,
+    )
+    report["xo_provenance"] = {
+        "ticket": "NB-X-O",
+        "runner": "scripts/nb_xo_blend_arm.py",
+        "blend": "reciprocal-rank of BGE order vs hybrid pre-rerank order "
+                 "(score = alpha/(rrf_k+bge_rank) + (1-alpha)/(rrf_k+hybrid_rank); "
+                 "ties -> hybrid rank)",
+        "alpha": args.alpha,
+        "rrf_k": args.rrf_k,
+        "rerank_pool_size_effective": effective_pool,
+        "config_rerank_depth": config.rerank_depth,
+        "serve_k": args.k,
+        "config_source": args.config,
+        "collection": args.collection,
+        "note": "numeric BGE scores are discarded by TeiReranker.rerank()'s contract, so the "
+                "blend is rank-scale by construction; see module docstring",
+    }
+    Path(args.report_path).write_text(json.dumps(report, indent=2))
+    print(f"[nb-xo-blend] wrote {args.report_path}")
+    r_eval._print_summary(report)
+    return 0
 
 
 if __name__ == "__main__":
