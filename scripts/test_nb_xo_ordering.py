@@ -25,7 +25,7 @@ def _load(name):
 
 blend_arm = _load("nb_xo_blend_arm")
 rrf_blend_scores = blend_arm.rrf_blend_scores
-RrfBlendingReranker = blend_arm.RrfBlendingReranker
+RrfBlendingOrderPolicy = blend_arm.RrfBlendingOrderPolicy
 
 
 def test_blend_arm_stub_imports_and_parses():
@@ -121,7 +121,7 @@ def test_rrf_validates_inputs():
 
 def test_wrapper_preserves_inner_order_at_alpha_one():
     inner = FakeInner(BGE)
-    wrapped = RrfBlendingReranker(inner, alpha=1.0)
+    wrapped = RrfBlendingOrderPolicy(inner, alpha=1.0)
     out = wrapped.rerank("q", HYBRID)
     assert [c.id for c in out] == [c.id for c in BGE]
     # The inner reranker saw the candidates EXACTLY as handed over (same objects, same order).
@@ -129,12 +129,12 @@ def test_wrapper_preserves_inner_order_at_alpha_one():
 
 
 def test_wrapper_restores_hybrid_order_at_alpha_zero():
-    out = RrfBlendingReranker(FakeInner(BGE), alpha=0.0).rerank("q", HYBRID)
+    out = RrfBlendingOrderPolicy(FakeInner(BGE), alpha=0.0).rerank("q", HYBRID)
     assert [c.id for c in out] == [c.id for c in HYBRID]
 
 
 def test_wrapper_never_fabricates_or_drops():
-    out = RrfBlendingReranker(FakeInner(BGE), alpha=0.4).rerank("q", HYBRID)
+    out = RrfBlendingOrderPolicy(FakeInner(BGE), alpha=0.4).rerank("q", HYBRID)
     assert sorted(c.id for c in out) == sorted(c.id for c in HYBRID)
     assert all(isinstance(c, Cand) for c in out)
 
@@ -145,10 +145,10 @@ def test_wrapper_tie_breaks_toward_hybrid_rank():
     a, b = Cand("x"), Cand("y")
     hybrid = [a, b]
     bge = [b, a]
-    out = RrfBlendingReranker(FakeInner(bge), alpha=0.5).rerank("q", hybrid)
+    out = RrfBlendingOrderPolicy(FakeInner(bge), alpha=0.5).rerank("q", hybrid)
     assert [c.id for c in out] == ["x", "y"]
 
 
 def test_wrapper_rejects_bad_alpha():
     with pytest.raises(ValueError):
-        RrfBlendingReranker(FakeInner(BGE), alpha=-0.1)
+        RrfBlendingOrderPolicy(FakeInner(BGE), alpha=-0.1)

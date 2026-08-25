@@ -77,7 +77,7 @@ def rrf_blend_scores(
     }
 
 
-class RrfBlendingReranker:
+class RrfBlendingOrderPolicy:
     """Wraps any Reranker: delegates the scoring call, then re-orders the returned candidates by
     `rrf_blend_scores` over (input-list position, returned-list position). Never fabricates,
     drops, or adds candidates — the wrapped contract's length preservation is preserved."""
@@ -139,7 +139,7 @@ def main(argv=None) -> int:
     # Runtime composition on the injected collaborator (ARCHITECTURE §M7's seam): the shipped
     # TeiReranker stays INSIDE the wrapper — every candidate still goes through it unchanged;
     # only the final ordering is merged with the hybrid prior.
-    server.retriever._reranker = RrfBlendingReranker(
+    server.retriever._reranker = RrfBlendingOrderPolicy(
         server.retriever._reranker, alpha=args.alpha, rrf_k=args.rrf_k
     )
 
