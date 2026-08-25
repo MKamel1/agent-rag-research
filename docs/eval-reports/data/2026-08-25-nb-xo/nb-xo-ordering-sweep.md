@@ -8,10 +8,10 @@ Config: `/home/omar/ai-projects/research-system-rag/waymo/data/config.yaml` · c
 |---|---|---|---|---|
 | gt_wmr | baseline_pool32 | 68/70 = 0.9714 | 0.9393 | 48/65 = 0.7385 |
 | gt_wmr | r64s10_rerank64 | 68/70 = 0.9714 | 0.9393 | 48/65 = 0.7385 |
-| gt_wmr | b0.3_at_64 | 67/70 = 0.9571 | 0.8580 | 26/65 = 0.4000 |
+| gt_wmr | b0.5_at_64 | 68/70 = 0.9714 | 0.8940 | 33/65 = 0.5077 |
 | waymo_gt_verified | baseline_pool32 | 65/68 = 0.9559 | 0.8335 | 22/60 = 0.3667 |
 | waymo_gt_verified | r64s10_rerank64 | 64/68 = 0.9412 | 0.8268 | 23/60 = 0.3833 |
-| waymo_gt_verified | b0.3_at_64 | 62/68 = 0.9118 | 0.8044 | 15/60 = 0.2500 |
+| waymo_gt_verified | b0.5_at_64 | 63/68 = 0.9265 | 0.8135 | 16/60 = 0.2667 |
 
 ## Newcomer effect vs baseline (gold-block ranks; identities in the JSON)
 
@@ -19,9 +19,9 @@ Config: `/home/omar/ai-projects/research-system-rag/waymo/data/config.yaml` · c
 |---|---|---|---|---|---|
 | gt_wmr | baseline_pool32 | 0 | 0 | 0 | 0 |
 | gt_wmr | r64s10_rerank64 | 0 | 0 | 0 | 0 |
-| gt_wmr | b0.3_at_64 | 32 | 2 | 1 | 7 |
+| gt_wmr | b0.5_at_64 | 26 | 0 | 1 | 7 |
 | waymo_gt_verified | baseline_pool32 | 0 | 0 | 0 | 0 |
 | waymo_gt_verified | r64s10_rerank64 | 11 | 2 | 2 | 0 |
-| waymo_gt_verified | b0.3_at_64 | 18 | 7 | 2 | 10 |
+| waymo_gt_verified | b0.5_at_64 | 15 | 4 | 1 | 9 |
 
 Known-absent arm never blended into any headline (BENCH-1); fixtures never averaged (PREC-1 §5); cross-fixture held-out rule applies to any claimed win.
