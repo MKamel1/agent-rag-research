@@ -247,11 +247,65 @@ is reported as deviated rather than clean.
 
 ## §4 Cost summary
 
-TODO-SECTION-4
+**Pilot GPU-hours (the only spend this ticket asks to authorize):**
+
+| item | estimate | basis |
+|---|---|---|
+| Page rendering (CPU) | minutes | pymupdf pixmap over ≤ ~250 pages |
+| VLM inference | ≈ 150–250 page-describes × ESTIMATE 2–10 s/page ≈ **0.1–0.7 GPU-h** | §3 populations (5 gold items' pages + N=100 sample + Stage-2 reruns) |
+| VRAM profiling + TEI evict/reload cycles | adds < 1 GPU-h wall | T-DOC78 machinery does the moving |
+| **Pilot total** | **≤ 2 GPU-hours** (budget cap) | sum of the above; serialize on `.gpu.lock` per house rules |
+
+**If-success backfill projection — EXTRAPOLATION, labeled twice:** scaling the unmeasured 2–10 s/page
+bracket to all 24,708 figure rows gives ≈ **14–69 GPU-hours**, which is why the projection is staged:
+priority papers first (`fixtures/eval/waymo_safety_research_55.json` resolution — the 53-ingested
+waymo.com/safety/research set, `docs/PROJECT-STATUS.md` Waymo-priority section), remainder only if
+the priority slice demonstrates retrieval value. Both the s/page bracket AND the "all figures are
+worth describing" premise are assumptions; neither is measured until the pilot runs.
+
+**Storage impact (arithmetic on an assumed description length):** ~500 chars average per description
+× 24,708 rows ≈ **~12MB SQLite growth** (call it tens of MB worst case; tables excluded per §2).
+Rendered page caches are discardable intermediates (~100–500KB/page, pilot-scale only).
+
+**Existing machinery reused (named):**
+
+| layer | files/modules |
+|---|---|
+| Landing seam | `migrations/0006_figures_tables.sql` columns; `contracts/parser.py` `Figure.vlm_description`; `rag/document_store.py` put/get figure paths |
+| GPU discipline | `rag/gpu_lock.py` `FileGpuLock`; `app/dashboard/controller.py::free_gpu` / `load_for_mcp`; `app/tei_lifecycle.py::ensure_tei_running` (all T-DOC78) |
+| Figure artifacts | MinerU parse-time extraction → `figures.image_path` populated by the RI-32 backfill (no re-parse needed — PRD frames the VLM exactly as this bolt-on, `PRD.md` figure/table-capture ADR) |
+| Measurement harness | `app/retrieval_eval.py::load_questions` / `score_question`; `scripts/nb_d1_pool_depth.py` as the detached-measurement template; `scripts/nb_eval_runner.py` dual-fixture pattern |
+| Host service | Ollama (already running for summarization; never-auto-started convention respected) |
+
+**New code the pilot would add:** one throwaway enricher script under the `app/exp_*.py`
+convention + its report and JSON data under `docs/eval-reports/` and `docs/eval-reports/data/`
+(programme constraint 9's non-foundation homes). No foundation paths touched; no config changes; no
+service definitions changed. If a future tables-description column is ever wanted, that IS a
+`migrations/` diff → foundation-gated, operator sign-off, batched rider (constraint 9) — noted here
+so it can't be smuggled later.
 
 ## Method notes & disagreement register
 
-TODO-METHOD-NOTES
+Framing accepted as briefed; no disagreement required deviation. Refinements discovered while
+scoping, recorded so the delta from the brief is visible:
+
+1. **"The 15% unreachable slice" resolved to exact fractions.** Programme plan §4's shorthand maps
+   to 4/27 of verified-84's near-miss population (14.8%) and 5/39 across both fixtures (12.8%);
+   this doc cites fractions with denominators throughout rather than the rounded headline.
+2. **Tables dropped out of the vision case mid-scoping.** `tables.markdown` already persists table
+   content as text (`migrations/0006_figures_tables.sql`) — the unique-information gap is
+   figure-shaped only. This *sharpens* the case (a smaller, truer target) rather than weakening it;
+   §1's opportunity numbers still cite both row counts for completeness.
+3. **Q-GTA-044 discount applied but not statically trusted.** Applied as instructed (floor 5→4),
+   then converted into Stage-0 gate G0.3: the pilot re-audits all five items fitz-first, because
+   today's true-vision labels are one reviewer's judgment, not a measured invariant.
+4. **The load-bearing unknown is named, not smoothed.** Operator-demand prevalence (§1 B2) has zero
+   measurement behind it in this repo — no query log exists. Every proxy number is labeled; the
+   pilot is partly designed to produce the first demand-side evidence, which is why CONDITIONAL
+   CLEAR stops at a bounded pilot instead of a build.
+5. **Dependency note for whoever writes the pilot brief:** pymupdf is importable in
+   `agent-rag-research` (v1.28.2, deprecated `fitz` alias) but is not an explicit
+   `environment.yml` line today; pin it explicitly rather than ride a transitive dependency.
 
 *(Docs obligations — BACKLOG row + PROJECT-STATUS ledger entry per AGENT-PROCEDURES §B — are
 deliberately deferred to PR time, same pattern as the NB-D1 report, to keep concurrent lanes'
