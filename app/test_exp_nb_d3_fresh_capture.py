@@ -29,7 +29,7 @@ class _FakeRetriever:
     def retrieve(self, text, filters, k):
         self.calls.append(text)
         if self.explode_for is not None and text == self.explode_for:
-            raise RuntimeError("qdrant exploded")
+            raise RuntimeError("vector store exploded")
         return self.hits_by_text[text][:k], []
 
 
@@ -99,5 +99,5 @@ def test_error_isolated_per_question(fixture_path):
     by_id = {r["question_id"]: r for r in result["questions"]}
     errored = by_id["Q-ANS-1"]
     assert errored["scores"] == [] and errored["paper_ids"] == []
-    assert "qdrant exploded" in errored["error"]
+    assert "vector store exploded" in errored["error"]
     assert by_id["Q-ABS-1"]["scores"]  # sibling question still scored
