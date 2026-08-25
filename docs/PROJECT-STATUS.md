@@ -680,3 +680,26 @@ physically served inside the rank-1 chunk under a sibling anchor — an anchorin
 no reranker reaches. Report: `docs/eval-reports/2026-08-25-nb-d2-block-adjacency.md`; script:
 `docs/eval-reports/data/2026-08-23-waymo-priority/nb_d2_block_adjacency.py` (commits `87bfa51`,
 `d89fa15`, report commit on branch `NB-D2-block-adjacency`). Gates R0.
+
+### Next-build programme — Wave 0–2 ledger (2026-08-25)
+
+Orchestrator-run programme per `docs/superpowers/plans/2026-08-24-next-build-programme.md`; every
+lane verified against artifacts by the orchestrator before merge. Consolidated here because the
+lane agents deferred their rows (sibling files owned concurrently).
+
+| ticket | verdict / deliverable | evidence |
+|---|---|---|
+| C1 | closed as already-satisfied — FUSE sweep JSONs + PREC-1 diagnosis were on `main` byte-identical to `FUSE-2-lower-sweep`; plan's "stranded" premise was a stale-working-tree misread | merge `a956272` |
+| D1 pool depth | all 23/23 non-vision right-paper-wrong-block items on ver84 exposed by K=64; GT-WMR ≥0.95 by K=32; bottomless ceilings 0.8750 all-arm / 0.9333 text-arm @K=128; vision-only items absent everywhere | `docs/eval-reports/2026-08-25-nb-d1-pool-depth.md`, merge `e95825d` |
+| D2 block adjacency | boundary misses 33%/25% of near-misses; anchor/citation artifacts Q-WAYB-027/Q-WMR-094 | section above; merge `93071cb` |
+| D3 abstention census | **no separation found** (17 features × 2 fixtures); distinct_papers_fused died held-out (0.866→0.574); query-length = authoring leakage | `docs/eval-reports/2026-08-25-nb-d3-abstention-census.md`, merge `0b93c72`, fix `de4b32f` |
+| D4 eval runner | dual-fixture standard-table runner over `app/retrieval_eval.py`; SAMPLE reproduces headline numbers exactly | `scripts/nb_eval_runner.py`, merge `e8e46d3` |
+| R0 fix ranking | ranked 1) X-P depth 2) X-F fusion shape 3) X-O gated on X-P 4) X-C citation refinement 5) X-H last; achievability bound stated up front; independent review REVISE → five corrections applied | `docs/eval-reports/2026-08-25-nb-r0-fix-ranking.md`, `6b6f67f`→`ceca9c3` |
+| A-1 abstention design | five candidate signal sources with pre-committed falsifiers; recommendation: falsify C1 refusal-affordance detector first (operating point already dominates census), C5 expected to die | `docs/eval-reports/2026-08-25-nb-a1-abstention-signal-design.md`, merge `f465971` |
+| X-F fusion shape | eviction does NOT survive production depth (net +1, 66/68 vs 65/68); dense_only ≡ w=1.0 bit-identical (schema fact); config stays w=0.7 | `docs/eval-reports/2026-08-25-nb-xf-fusion-shape.md`, merge `f465971` |
+| X-P deep-pool tables | depth = serving win (GT-WMR saturates 70/70) but ordering hazard realized on ver84 (11 gold blocks lose rank at K=64; block-P@1 0.3667→0.3833 vs 0.95 target); **X-O unblocked as binding constraint** | `docs/eval-reports/2026-08-25-nb-xp-deeppool-tables.md`, merge `c139f9c` |
+
+Operator decisions recorded this programme: **A** keep `hybrid_dense_weight`=0.7 (section above);
+**B** fabrication-rubric amendments F-A1..F-A3 applied after verification + SIGNED OFF header
+(`6d0b32b`); **C** VLM conditional on unique-information yield (NB-6 scoping dispatched);
+**D** OpenEvidence head-to-head out of scope this programme.
