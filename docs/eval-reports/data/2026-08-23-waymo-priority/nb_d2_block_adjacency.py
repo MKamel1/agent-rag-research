@@ -145,7 +145,9 @@ class PaperGeometry:
             (paper_id,),
         ):
             self.blocks_by_id[row["block_id"]] = row
-        self.blocks_by_idx: dict[int, sqlite3.Row] = {r["idx"]: r for r in self.blocks_by_id.values()}
+        self.blocks_by_idx: dict[int, sqlite3.Row] = {
+            r["idx"]: r for r in self.blocks_by_id.values()
+        }
         if len(self.blocks_by_idx) != len(self.blocks_by_id):
             raise GateError(f"{paper_id}: duplicate blocks.idx values")
 
@@ -383,7 +385,9 @@ def analyze_config(
             and len(gold_blk["text"].strip()) > 0
         )
         if bucket == "same_chunk" and not in_text:
-            raise GateError(f"{qid}: same_chunk claimed but gold text absent from rank-1 chunk text")
+            raise GateError(
+                f"{qid}: same_chunk claimed but gold text absent from rank-1 chunk body"
+            )
         if bucket != "same_chunk" and in_text:
             textual_overlap_notes += 1
 
@@ -475,9 +479,15 @@ def print_report(results: dict) -> None:
             print(f"  {b:<20} {n:>3}{share}   [in-top10 C1={ct['C1']}, absent C2={ct['C2']}]")
         bd, cd = r["block_distance"], r["chunk_distance"]
         if bd.get("n"):
-            print(f"  block distance |G−B1|: median {bd['median']}, max {bd['max']}, hist {bd['histogram']}")
+            print(
+                f"  block distance |G−B1|: median {bd['median']}, max {bd['max']},"
+                f" hist {bd['histogram']}"
+            )
         if cd.get("n"):
-            print(f"  chunk-position distance: median {cd['median']}, max {cd['max']}, hist {cd['histogram']}")
+            print(
+                f"  chunk-position distance: median {cd['median']}, max {cd['max']},"
+                f" hist {cd['histogram']}"
+            )
         if r["textual_overlap_notes"]:
             print(
                 f"  note: {r['textual_overlap_notes']} non-same-chunk item(s) whose gold text "
