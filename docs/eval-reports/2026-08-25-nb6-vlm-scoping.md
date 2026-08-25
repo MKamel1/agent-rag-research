@@ -200,7 +200,50 @@ Two honest scope notes:
 
 ## §3 Falsification-style build criteria (pre-committed)
 
-TODO-SECTION-3
+House rule: success/failure thresholds are fixed HERE, before any model is downloaded or any prompt
+is written. Post-hoc threshold movement, prompt re-rolling after seeing results, or metric
+redefinition kills the pilot's evidentiary value — so this section is written to be quotable against
+the eventual outcome.
+
+**Pilot population (fixed):**
+- All **5** unreachable items from D1: ver84 Q-GTA-042/043/044 + Q-WAYB-027; GT-WMR Q-WMR-094.
+  These are the only ground-truth items in the repo whose answers are *proven* figure-locked.
+- **N = 100** additional figure-bearing pages, sampled from `figures` rows stratified chart-vs-
+  diagram vs caption-only (exact strata weights recorded in the pilot report when drawn), to get
+  off-gold-ground-truth and measure description fidelity on pages nobody authored questions for.
+
+**Stage 0 — gates that must pass before inference counts (each measured, not modeled, per T-DOC15):**
+
+| gate | criterion | fail action |
+|---|---|---|
+| G0.1 VRAM profile | one of §2's two postures holds under sampled measurement: co-resident with full TEI pair within headroom, or serialized round-trip (evict → batch → reload) completes with serving restored | neither works on this card → project closed without Stage 1 |
+| G0.2 per-page latency | measured ≤ 30 s/page across the N=100 sample | above it, even a priority-subset backfill leaves feasibility (§4) → closed |
+| G0.3 true-vision audit | re-audit all 5 items fitz-first (`get_text()` over the gold page region), Q-GTA-044-style | denominators shrink to the surviving count; if < 3 survive, the unique-information case falls below any interesting bar → operator review before continuing |
+
+**Stage 1 — description fidelity (per-value scoring, n = every asked value across the 5 items' figure
+sets + sampled-page spot checks):**
+The VLM describes each rendered page blind to the gold excerpt; an independent judge session checks
+each stated value/fact against the PDF (same layered-verification discipline the GT sets used:
+openevidence-programme §3).
+- **Success: ≥ 80% of asked values verified correct.**
+- **Failure: < 80%.** One pre-registered retry is allowed ONLY for infrastructure failure (model
+  fails to load, OOM, render error) — never for score disappointment.
+
+**Stage 2 — end-to-end rescue of the unreachable items (n = 5, or G0.3's surviving count):**
+Descriptions are injected into a **pilot-local copy** of the index (never production Qdrant/SQLite),
+and the original questions rerun through the existing scoring path
+(`app/retrieval_eval.py::load_questions` / `score_question`, the D1 harness pattern).
+- **Success: ≥ 4/5 items surface their figure-derived answer at rank 1 with a correct extractable
+  answer** — i.e., the items D1 proved structurally unreachable become reachable.
+- **Failure: ≤ 3/5 → project closed.** Consequences then execute as written: vision items move to
+  their own arm or the target gets rescoped (operator picks among the three accounting options in
+  openevidence-programme §8), and Q-GTA-044-class extraction gaps route to a parser/chunker-fix
+  ticket instead — text-side work, correctly reassigned.
+
+**Anti-goodhart constraints:** both fixtures reported separately, never averaged (programme
+constraint 10); one variable changed per arm; thresholds and populations frozen by THIS document;
+any deviation is recorded in the pilot report's disagreement register with rationale, and the result
+is reported as deviated rather than clean.
 
 ## §4 Cost summary
 
