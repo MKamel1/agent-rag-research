@@ -125,12 +125,9 @@ def main(argv=None) -> int:
 
     # Deferred imports: GPU-backed adapter wiring stays out of import time (same posture as
     # app/retrieval_eval.main, whose unit tests must never touch it).
+    import app.retrieval_eval as r_eval
     from app.assembly import build_mcp_server
     from rag.config import load_config
-
-    # Import the measurement functions UNMODIFIED — this runner re-scores nothing; it only
-    # changes which reranker implementation sits behind the same Retriever seam.
-    import app.retrieval_eval as r_eval
 
     config = load_config(args.config)
     effective_pool = config.rerank_depth

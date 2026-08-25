@@ -72,7 +72,6 @@ from nb_eval_runner import (  # noqa: E402 -- deliberate sibling imports, same p
     load_and_verify_report,
 )
 from nb_xp_deeppool_tables import (  # noqa: E402
-    assert_within_jitter,
     newcomer_effect,
     ordering_divergence,
     top10_restricted,
@@ -294,7 +293,9 @@ def main(argv=None) -> int:
     requested = set(args.arms) if args.arms else None
     known = {a["name"] for a in ARMS}
     if requested is not None and requested - known:
-        raise SystemExit(f"NB-X-O: unknown arms {sorted(requested - known)}; known: {sorted(known)}")
+        raise SystemExit(
+            f"NB-X-O: unknown arms {sorted(requested - known)}; known: {sorted(known)}"
+        )
     arms = [a for a in ARMS if requested is None or a["name"] in requested]
 
     raw_dir = args.out_dir / "raw"
