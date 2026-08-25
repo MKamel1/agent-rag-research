@@ -184,7 +184,13 @@ Dependency edges, exhaustive:
       Gates: A-series design fork (signal exists → threshold/calibration ticket; no signal →
       new-signal-source design doc).
 
-- [ ] **D4 — one-command dual-fixture evaluation runner (the ruler).**
+- [x] **D4 — one-command dual-fixture evaluation runner (the ruler).** **Closed 2026-08-25** on
+      branch `NB-D4-eval-runner`: `scripts/nb_eval_runner.py` (subprocess orchestration of
+      `app/retrieval_eval` per fixture, silent-death artifact guard) + synthetic-input unit tests +
+      committed SAMPLE dual-fixture output pair dated 2026-08-25 under
+      `docs/eval-reports/data/2026-08-25-nb-d4-dual-fixture-SAMPLE.*`. Its gt_wmr R@10 68/70 =
+      0.9714 and ver84 65/68 = 0.9559 reproduce handoff §0's live-w=0.7 headline numbers exactly;
+      block-P@1 denominators are the VARM-1 text arm (65/60, not PREC-1's pre-VARM-1 66/64).
       Reuse-first (constraint from lessons §5.3): **the runner exists — `app/retrieval_eval.py` on
       `main`** (CLI: `--ground-truth`, `--config`, `--k`, `--report-path`, …). The FUSE sweeps were
       driven by it plus per-arm wrappers in branch history. D4 wires a thin dual-fixture orchestrator
@@ -193,7 +199,9 @@ Dependency edges, exhaustive:
       Deliverable: one entry point that takes a config delta and emits BOTH fixtures' standard table
       (R@10/MRR/block-P@1, answerable + absent arms reported separately per protocol) as dated JSON +
       md, plus a README stub. Lives in `scripts/` (not foundation-gated).
-      Commits: ① stub ② runner ③ golden-output test vs stored 2026-08-23 outputs.
+      Commits: ① stub ② runner ③ golden-output test vs stored 2026-08-23 outputs. (As executed:
+      ③ became synthetic-input math tests per the dispatched brief; the SAMPLE pair is the
+      golden-output check against stored baselines.)
       Gates: every X-ticket.
 
 ### Wave 2 — rank the fixes, then implement in parallel
