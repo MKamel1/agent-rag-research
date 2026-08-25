@@ -289,3 +289,23 @@ The programme is done when ALL hold:
   upstream (X-F/X-H classes) — the wave map absorbs this because R0, not this document, picks the
   winners. If D3 finds separation, A-series accelerates ahead of X — allowed; the edge is "benefits
   from", not "requires".
+
+---
+
+## 7. Completion audit (executed 2026-08-25, against §5 above)
+
+| # | criterion | result |
+|---|---|---|
+| 1 | D1/D2 addenda merged; PREC-1 §6 ranking exists with cited ceilings | **met** — D1/D2 merged (e95825d lineage); ranking in `docs/eval-reports/2026-08-25-nb-r0-fix-ranking.md`, reviewed, five corrections applied |
+| 2 | ≥1 X-verdict adopted/rejected with both-fixture evidence | **met ×3** — X-F (eviction does not survive production depth; dense_only ≡ w=1.0 proven bit-identical; config stays w=0.7), X-P (depth = serving win / ordering hazard; ver84 text-arm 0.3833 @K=64), X-O (no cheap ordering lever clears the bar; reranking itself is load-bearing — off ⇒ ver84 0.1667). Each merged with per-branch enforcement PASS |
+| 3 | D3 verdict recorded; A-1 fork resolved with falsification criteria | **met** — census "no separation found"; design doc fixes five falsifiers before any build; C1 refusal-affordance detector recommended first |
+| 4 | Decisions A–D recorded with rationale | **met** — PROJECT-STATUS "Next-build programme" ledger + tuning-decision resolution; B applied in the signed rubric header |
+| 5 | pytest/enforcement green at every merge; no ungated foundation diff | **met** — gates rerun independently by the orchestrator per lane (two false PASS claims caught and fixed: NB-D3 check-(a), NB-X-O check-(f)); all lane diffs scanned CLEAN |
+| 6 | Handoff §5 findings each answered | **met** — F1 passage gap: diagnosed to pool-depth + ordering layers, cheap-lever space exhausted honestly; F2 fusion eviction: measured gone at production settings; F3 vision arm: proven text-unreachable at any depth, scoped CONDITIONAL CLEAR with pilot criteria |
+
+**Disposition of gated items:** X-O executed to its pre-registered second branch (negative verdict);
+**X-H not executed** — its R0 gate ("stratum-shaped residual after X-P/X-O") is arguably met, but
+the honest-ceiling statement already bounds what any ordering-side work could return, so X-H is
+recorded as the successor programme's first candidate alongside the A-series C1 falsification run
+and the NB-6 bounded pilot. **NB-A1 channel deviation recorded:** oc-task failed 4× on that lane;
+completed via harness subagent fallback after zombie-dispatch reconciliation (lessons §8).
