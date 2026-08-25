@@ -122,7 +122,81 @@ proxies.
 
 ## §2 Candidate architecture sketch
 
-TODO-SECTION-2
+Only relevant because §1 cleared conditionally; every choice below is a candidate to be *measured*
+in the pilot, not a commitment. Model-size and latency figures are ESTIMATEs — nothing has been
+downloaded or run for this scoping (ticket constraint).
+
+### Candidate local VLMs
+
+| option | shape | why it fits this machine | risks |
+|---|---|---|---|
+| **Ollama-hosted qwen2.5-VL-class** (~7B instruct, 4-bit GGUF + mmproj vision encoder) | single host daemon; the machine already runs Ollama for summarization (`README.md`; convention: never auto-started) | smallest ops surface; quantized weights ≈ 5–7GB ESTIMATE → the only candidate plausibly co-resident with both TEI services | Ollama's vision stack is less batch-oriented; throughput for a backfill unproven here |
+| **vLLM-hosted Qwen2.5-VL-7B-Instruct** (bf16 or AWQ) | dedicated inference server | real batching for the 24.7k-figure backfill path; first-class Qwen2.5-VL support | bf16 weights ≈ ~16GB ESTIMATE → co-residency dead on arrival; AWQ ≈ ~7GB but vLLM's allocator pre-reserves aggressively (`gpu_memory_utilization`), so effective headroom must be measured, not configured blind |
+
+Either way the model class is "Qwen2.5-VL-7B-or-equivalent local" per the ticket brief; exact
+quantization gets pinned at pilot Stage 0 by measurement. Zero paid API anywhere (house constraint).
+
+### Page-render pipeline
+
+Anchors already exist: every figure row carries `image_path` (MinerU-extracted PNG at parse time),
+caption, page, and `bbox_json [x0,y0,x1,y1]` (`migrations/0006_figures_tables.sql`; `DATA-CONTRACTS.md`
+figures schema). Two render modes for the VLM's input:
+
+1. **Stored PNG directly** — zero render cost; risk: chart-only crops can lose axis labels and
+   surrounding context.
+2. **Full-page render via pymupdf at page+bbox** — one `Page.get_pixmap(clip=bbox-padded)` call per
+   item at ~150–200 DPI ESTIMATE. Preferred default, because the Q-GTA-044 lesson cuts both ways:
+   values that look "visual" are sometimes textual insets near the figure, and a page image lets
+   the VLM see caption + axis + legend together.
+
+pymupdf is verified importable in `agent-rag-research` (v1.28.2; note: import surfaces as deprecated
+`fitz`; it is not an explicit `environment.yml` line today — the pilot should pin it explicitly
+rather than ride a transitive dependency).
+
+### VRAM co-residency plan — the T-DOC15 arithmetic, done pessimistically
+
+Resident baseline: TEI embedder + reranker ≈ **~9.4GB combined**
+(`docs/PROJECT-STATUS.md` §4 T-DOC15). Card: 24GB.
+
+| scenario | naive arithmetic | reading |
+|---|---|---|
+| Quantized ~7B VLM + full TEI pair | 9.4 + ~5–8 ≈ **15–17GB** → 7–9GB headroom | plausible on paper; T-DOC15's whole lesson is that this class of arithmetic already failed once (flat "~6.6GB MinerU" claim vs measured ~13GB routine / ~23.7GB observed peak). Treat as hypothesis; Stage 0 measures it with sampled `nvidia-smi` before any batch runs. |
+| Serialized (VLM excludes TEI) | VLM alone ≈ ≤17GB worst case | safe by construction; reuse existing machinery instead of new scheduling code (below). Costs TEI downtime during batches — acceptable offline, needs the self-healing reload for serving. |
+| Anything overlapping MinerU ingest | 9.4 + ~13 routine = 22.4GB; MinerU *alone* has been observed at 23.7GB (96.4% of card) | **never**. This exact overlap arithmetic is T-DOC15's recorded trap; the pilot schedules against it explicitly. |
+
+Serialization machinery already exists and is dashboard-proven (T-DOC78): `FileGpuLock`
+(`rag/gpu_lock.py`) to exclude, and `free_gpu()` / `load_for_mcp()` +
+`app.tei_lifecycle.ensure_tei_running` (`app/dashboard/controller.py`, `app/tei_lifecycle.py`) to
+evict/reload TEI around a batch with the query path self-healing afterwards. The pilot's default
+posture: **serialize for backfill arms; measure co-residency only as a serving-time question**, and
+only after Stage 0's measured profile says headroom is real.
+
+### Latency
+
+ESTIMATE, unmeasured: a quantized ~7B VLM describing one page image (~300 output tokens) on this
+card should land ~2–10 s/page. At the pilot scale (§3: ~150–250 page-describes) that is minutes of
+GPU time either way; the number matters only for the backfill projection in §4, which is therefore
+labeled an extrapolation twice over. Stage 0 measures real s/page before §4's projection is treated
+as anything better than a bracket.
+
+### Where descriptions land
+
+The designed seam exists and is contract-pinned: `figures.vlm_description TEXT` nullable, always
+NULL in V0, written by nobody today ("filled by the V3 VLM enricher" — `contracts/parser.py`;
+`migrations/0006_figures_tables.sql`; `DATA-CONTRACTS.md`; `rag/document_store.py`'s put path
+already carries the column positionally). A pilot enricher writes through the existing document-store
+figure path behind `ParsedDoc` — exactly ARCHITECTURE.md M2's stated V3 extension point.
+
+Two honest scope notes:
+
+- **Tables need no VLM.** `tables.markdown` already persists table content as text
+  (`migrations/0006_figures_tables.sql` header) — the unique-information gap §1 measured is
+  figure-*shaped* (chart pixels), and any table-content gap would be an indexing decision, not a
+  vision one.
+- **Serving integration is out of scope here.** Indexing descriptions into retrieval touches
+  chunker/embedder paths and re-opens the scoring-protocol question from §1 (which arm do
+  vision-served items live in). That is a post-pilot operator decision, not part of this project's
+  gate.
 
 ## §3 Falsification-style build criteria (pre-committed)
 
