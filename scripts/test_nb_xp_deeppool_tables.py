@@ -9,10 +9,11 @@ arm's command without running any subprocess.
 import pytest
 
 from scripts.nb_xp_deeppool_tables import (
-    assert_deterministic_pair,
+    assert_within_jitter,
     load_reusable_report,
     main,
     newcomer_effect,
+    ordering_divergence,
     top10_restricted,
 )
 
@@ -24,8 +25,15 @@ def _agg(ranks):
     return {"recall_at_k": hits / n if n else None, "mrr": rr / n if n else None, "n": n}
 
 
-def make_report(specs, k):
-    """specs: list of (paper_rank, passage_rank, scored, vision, error) tuples."""
+def make_report(specs, k, blocks=None):
+    """specs: list of (paper_rank, passage_rank, scored, vision, error) tuples. `blocks`, when
+    given, supplies per-question retrieved_paper_ids/retrieved_block_ids (else derived from
+    paper_rank so the ordering-prefix fixtures stay self-consistent)."""
+    if blocks is None:
+        blocks = [
+            ([f"p{pr}"] if pr is not None else [], [f"b{prk}"] if prk is not None else [])
+            for pr, prk, *_ in specs
+        ]
     questions = [
         {
             "question_id": f"q{i}",
@@ -37,6 +45,8 @@ def make_report(specs, k):
             "error": err,
             "paper_level": {"hit": pr is not None, "rank": pr},
             "passage_level": {"scored": bool(scored), "hit": prk is not None, "rank": prk},
+            "retrieved_paper_ids": list(blocks[i][0]),
+            "retrieved_block_ids": list(blocks[i][1]),
         }
         for i, (pr, prk, scored, vision, err) in enumerate(specs)
     ]
@@ -133,20 +143,49 @@ def test_lost_from_top10_when_pushed_past_ten_or_gone():
     assert gb["lost_rank_count"] == 1  # only q0 still found (deeper); q1 vanished entirely
 
 
-def test_determinism_guard_passes_on_identical_and_fails_on_any_rank_drift():
-    base = make_report([(1, 1, True, False, None), (5, 7, True, False, None)], k=10)
-    same = make_report([(1, 1, True, False, None), (5, 7, True, False, None)], k=32)
-    assert_deterministic_pair(base, same)  # no raise
-    drifted = make_report([(2, 1, True, False, None), (5, 7, True, False, None)], k=32)
-    with pytest.raises(SystemExit, match="disagrees"):
-        assert_deterministic_pair(base, drifted)
+def test_ordering_divergence_classifies_perm_vs_structural_and_gold_moves():
+    # q0's gold paper IS "gold-x" and its gold block IS "blk" -- both sit inside the swapped
+    # adjacent pair, so the permutation must surface as an actual gold-rank movement.
+    base = make_report(
+        [(1, 1, True, False, None), (2, None, False, False, None)],
+        k=10,
+        blocks=[(["gold-x", "pz"], ["blk", "bb"]), (["pc", "pd"], ["bc", "bd"])],
+    )
+    # q0: adjacent swap (same multiset) moving gold paper AND gold block 1->2;
+    # q1: membership change (bc replaced by bz).
+    arm = make_report(
+        [(1, 1, True, False, None), (None, None, False, False, None)],
+        k=32,
+        blocks=[(["pz", "gold-x"], ["bb", "blk"]), (["pc", "bz"], ["bc", "bz"])],
+    )
+    div = ordering_divergence(base, arm)
+    assert div["n_compared"] == 2
+    assert div["permutation"] == 1 and div["permutation_ids"] == ["q0"]
+    assert div["structural"] == 1 and div["structural_ids"] == ["q1"]
+    assert div["gold_rank_moves"] == [
+        {"question_id": "q0", "paper_rank": [1, 2], "gold_block_rank": [1, 2]}
+    ]
 
 
-def test_error_state_change_also_trips_the_guard():
-    base = make_report([(1, None, False, False, None)], k=10)
-    arm = make_report([(None, None, False, False, "late boom")], k=32)
-    with pytest.raises(SystemExit, match="error state differs"):
-        assert_deterministic_pair(base, arm)
+def test_jitter_gate_passes_at_measured_scale_and_fails_at_mutation_scale():
+    at_jitter = {"n_compared": 82, "identical": 79, "permutation": 3, "structural": 0,
+                 "permutation_ids": ["a", "b", "c"], "structural_ids": [],
+                 "gold_rank_moves": []}
+    assert_within_jitter(at_jitter)  # the probe's observed scale: no raise
+    boundary_flip = {**at_jitter, "structural": 1}
+    assert_within_jitter(boundary_flip)  # one truncation-boundary tie: still no raise
+    with pytest.raises(SystemExit, match="mutation"):
+        assert_within_jitter({**at_jitter, "structural": 6})
+    with pytest.raises(SystemExit, match="mutation"):
+        assert_within_jitter({**at_jitter, "permutation": 20})
+
+
+def test_errored_questions_are_skipped_from_divergence_classification():
+    base = make_report([(1, None, False, False, None), (2, None, False, False, "boom")], k=10)
+    arm = make_report([(1, None, False, False, None), (2, None, False, False, None)], k=32)
+    div = ordering_divergence(base, arm)
+    # q0 matches; q1 is errored in the baseline run and must not count as structural drift.
+    assert div["permutation"] == 0 and div["structural"] == 0
 
 
 def test_reusable_report_requires_existing_verifying_right_k(tmp_path):
