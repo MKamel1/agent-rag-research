@@ -1,14 +1,14 @@
 {
   "ticket": "NB-X-O",
   "generated_by": "scripts/nb_xo_ordering_sweep.py",
-  "generated": "2026-08-25T14:28:26",
+  "generated": "2026-08-25T14:34:33",
   "config": "/home/omar/ai-projects/research-system-rag/waymo/data/config.yaml",
   "collection": "waymo_av_safety",
   "serve_k": 10,
   "limit": null,
   "xp_raw_dir": "docs/eval-reports/data/2026-08-25-nb-xp/raw",
   "arms_run": [
-    "p128"
+    "b0.0_at_64"
   ],
   "fixtures": [
     {
@@ -232,107 +232,371 @@
           "reuse_note": "computationally identical to 'rerank 64 -> serve 10': retrieve() draws max(k, rerank_depth)=64 candidates, reranks all, truncates to 10"
         },
         {
-          "arm": "p128",
-          "kind": "cli",
+          "arm": "b0.0_at_64",
+          "kind": "blend",
           "fixture": "gt_wmr",
           "ground_truth": "fixtures/eval/gt_wmr.json",
           "row": {
             "fixture": "gt_wmr",
             "ground_truth": "fixtures/eval/gt_wmr.json",
             "k": 10,
-            "scoring_rule": "top-10 truncation; sparse_mode=fused (hybrid_dense_weight=0.7 -- zeroes a score contribution, does not remove that arm's candidates from the fused pool, see module docstring); paper-level hit = first rank r <= 10 with result.paper_id in question.gold_paper_ids; passage-level hit = first rank r <= 10 with result.anchor.block_id == question.gold_block_id; chapter-level hit = first retrieve_papers rank with paper_id in gold_paper_ids and chapter == gold_chapter_title",
+            "scoring_rule": "top-10 truncation; sparse_mode=fused+rrf-rank-blend(alpha=0.0,rrf_k=60,pool=64) (hybrid_dense_weight=0.7 -- zeroes a score contribution, does not remove that arm's candidates from the fused pool, see module docstring); paper-level hit = first rank r <= 10 with result.paper_id in question.gold_paper_ids; passage-level hit = first rank r <= 10 with result.anchor.block_id == question.gold_block_id; chapter-level hit = first retrieve_papers rank with paper_id in gold_paper_ids and chapter == gold_chapter_title",
             "n_questions": 82,
             "n_errors": 0,
             "answerable": {
-              "recall_at_k": 0.9857142857142858,
-              "mrr": 0.9421428571428572,
-              "hits": 69,
+              "recall_at_k": 0.9571428571428572,
+              "mrr": 0.8444047619047619,
+              "hits": 67,
               "n": 70
             },
             "block_p_at_1": {
-              "rate": 0.7384615384615385,
-              "hits": 48,
+              "rate": 0.38461538461538464,
+              "hits": 25,
               "n": 65,
               "definition": "text-answerable passage-scored items whose gold block ranks exactly 1"
             },
             "known_absent": {
               "n": 12,
               "n_with_top_result": 12,
-              "top_score_median": 0.0074284789868022515,
-              "top_score_min": 0.004140074365947056,
+              "top_score_median": 0.013303861111191268,
+              "top_score_min": 0.011475409836065573,
               "top_score_max": 0.016029143897996357
             }
           },
           "top10_restricted": {
             "recall_at_10": {
-              "hits": 69,
+              "hits": 67,
               "n": 70,
-              "rate": 0.9857142857142858
+              "rate": 0.9571428571428572
             },
-            "mrr_at_10": 0.9421428571428572,
+            "mrr_at_10": 0.8444047619047619,
             "block_p_at_1": {
-              "hits": 48,
+              "hits": 25,
               "n": 65,
-              "rate": 0.7384615384615385,
+              "rate": 0.38461538461538464,
               "definition": "identical to the published VARM-1 text_answerable rank_1_rate (rank 1 is inside any top-10); restated, not recomputed"
             }
           },
           "newcomer_vs_baseline": {
             "gold_block": {
-              "lost_rank_count": 0,
-              "lost_rank": [],
-              "lost_from_top10_ids": [],
-              "gained_into_top10": [
+              "lost_rank_count": 32,
+              "lost_rank": [
                 {
-                  "question_id": "Q-WMR-028",
-                  "arm_rank": 7
+                  "question_id": "Q-WMR-001",
+                  "baseline_rank": 1,
+                  "arm_rank": 3
+                },
+                {
+                  "question_id": "Q-WMR-003",
+                  "baseline_rank": 1,
+                  "arm_rank": 2
+                },
+                {
+                  "question_id": "Q-WMR-004",
+                  "baseline_rank": 1,
+                  "arm_rank": 10
+                },
+                {
+                  "question_id": "Q-WMR-005",
+                  "baseline_rank": 1,
+                  "arm_rank": 3
+                },
+                {
+                  "question_id": "Q-WMR-008",
+                  "baseline_rank": 1,
+                  "arm_rank": 8
+                },
+                {
+                  "question_id": "Q-WMR-009",
+                  "baseline_rank": 2,
+                  "arm_rank": 3
+                },
+                {
+                  "question_id": "Q-WMR-013",
+                  "baseline_rank": 1,
+                  "arm_rank": 2
+                },
+                {
+                  "question_id": "Q-WMR-015",
+                  "baseline_rank": 2,
+                  "arm_rank": 5
+                },
+                {
+                  "question_id": "Q-WMR-016",
+                  "baseline_rank": 1,
+                  "arm_rank": 5
+                },
+                {
+                  "question_id": "Q-WMR-018",
+                  "baseline_rank": 1,
+                  "arm_rank": 2
+                },
+                {
+                  "question_id": "Q-WMR-021",
+                  "baseline_rank": 1,
+                  "arm_rank": 4
+                },
+                {
+                  "question_id": "Q-WMR-022",
+                  "baseline_rank": 2,
+                  "arm_rank": 3
+                },
+                {
+                  "question_id": "Q-WMR-024",
+                  "baseline_rank": 1,
+                  "arm_rank": 4
+                },
+                {
+                  "question_id": "Q-WMR-027",
+                  "baseline_rank": 1,
+                  "arm_rank": 2
+                },
+                {
+                  "question_id": "Q-WMR-030",
+                  "baseline_rank": 1,
+                  "arm_rank": 2
+                },
+                {
+                  "question_id": "Q-WMR-031",
+                  "baseline_rank": 1,
+                  "arm_rank": 3
+                },
+                {
+                  "question_id": "Q-WMR-033",
+                  "baseline_rank": 1,
+                  "arm_rank": 2
+                },
+                {
+                  "question_id": "Q-WMR-034",
+                  "baseline_rank": 1,
+                  "arm_rank": 6
+                },
+                {
+                  "question_id": "Q-WMR-035",
+                  "baseline_rank": 1,
+                  "arm_rank": 3
+                },
+                {
+                  "question_id": "Q-WMR-039",
+                  "baseline_rank": 3,
+                  "arm_rank": 4
+                },
+                {
+                  "question_id": "Q-WMR-041",
+                  "baseline_rank": 1,
+                  "arm_rank": 4
+                },
+                {
+                  "question_id": "Q-WMR-042",
+                  "baseline_rank": 2,
+                  "arm_rank": 8
+                },
+                {
+                  "question_id": "Q-WMR-043",
+                  "baseline_rank": 1,
+                  "arm_rank": 5
+                },
+                {
+                  "question_id": "Q-WMR-044",
+                  "baseline_rank": 1,
+                  "arm_rank": 8
+                },
+                {
+                  "question_id": "Q-WMR-047",
+                  "baseline_rank": 1,
+                  "arm_rank": 4
+                },
+                {
+                  "question_id": "Q-WMR-048",
+                  "baseline_rank": 2,
+                  "arm_rank": 3
+                },
+                {
+                  "question_id": "Q-WMR-053",
+                  "baseline_rank": 1,
+                  "arm_rank": 3
+                },
+                {
+                  "question_id": "Q-WMR-055",
+                  "baseline_rank": 2,
+                  "arm_rank": 10
+                },
+                {
+                  "question_id": "Q-WMR-056",
+                  "baseline_rank": 1,
+                  "arm_rank": 5
+                },
+                {
+                  "question_id": "Q-WMR-058",
+                  "baseline_rank": 1,
+                  "arm_rank": 4
+                },
+                {
+                  "question_id": "Q-WMR-063",
+                  "baseline_rank": 1,
+                  "arm_rank": 3
+                },
+                {
+                  "question_id": "Q-WMR-077",
+                  "baseline_rank": 1,
+                  "arm_rank": 5
                 }
               ],
-              "improved_count": 0,
-              "improved": []
+              "lost_from_top10_ids": [
+                "Q-WMR-010",
+                "Q-WMR-020",
+                "Q-WMR-049",
+                "Q-WMR-059"
+              ],
+              "gained_into_top10": [
+                {
+                  "question_id": "Q-WMR-052",
+                  "arm_rank": 4
+                }
+              ],
+              "improved_count": 6,
+              "improved": [
+                {
+                  "question_id": "Q-WMR-025",
+                  "baseline_rank": 3,
+                  "arm_rank": 1
+                },
+                {
+                  "question_id": "Q-WMR-036",
+                  "baseline_rank": 7,
+                  "arm_rank": 3
+                },
+                {
+                  "question_id": "Q-WMR-037",
+                  "baseline_rank": 2,
+                  "arm_rank": 1
+                },
+                {
+                  "question_id": "Q-WMR-045",
+                  "baseline_rank": 2,
+                  "arm_rank": 1
+                },
+                {
+                  "question_id": "Q-WMR-050",
+                  "baseline_rank": 2,
+                  "arm_rank": 1
+                },
+                {
+                  "question_id": "Q-WMR-061",
+                  "baseline_rank": 2,
+                  "arm_rank": 1
+                }
+              ]
             },
             "gold_paper": {
-              "lost_rank_count": 0,
-              "lost_rank": [],
-              "improved_count": 0,
-              "improved": []
+              "lost_rank_count": 10,
+              "lost_rank": [
+                {
+                  "question_id": "Q-WMR-005",
+                  "baseline_rank": 1,
+                  "arm_rank": 3
+                },
+                {
+                  "question_id": "Q-WMR-008",
+                  "baseline_rank": 1,
+                  "arm_rank": 2
+                },
+                {
+                  "question_id": "Q-WMR-031",
+                  "baseline_rank": 1,
+                  "arm_rank": 3
+                },
+                {
+                  "question_id": "Q-WMR-035",
+                  "baseline_rank": 1,
+                  "arm_rank": 3
+                },
+                {
+                  "question_id": "Q-WMR-042",
+                  "baseline_rank": 2,
+                  "arm_rank": 8
+                },
+                {
+                  "question_id": "Q-WMR-047",
+                  "baseline_rank": 1,
+                  "arm_rank": 2
+                },
+                {
+                  "question_id": "Q-WMR-048",
+                  "baseline_rank": 1,
+                  "arm_rank": 3
+                },
+                {
+                  "question_id": "Q-WMR-053",
+                  "baseline_rank": 1,
+                  "arm_rank": 2
+                },
+                {
+                  "question_id": "Q-WMR-077",
+                  "baseline_rank": 1,
+                  "arm_rank": 5
+                },
+                {
+                  "question_id": "Q-WMR-093",
+                  "baseline_rank": 1,
+                  "arm_rank": 5
+                }
+              ],
+              "improved_count": 1,
+              "improved": [
+                {
+                  "question_id": "Q-WMR-020",
+                  "baseline_rank": 2,
+                  "arm_rank": 1
+                }
+              ]
             },
             "errored_in_either_run": [],
             "note": "ranks are first-hit positions in each run's own returned list (1-based); 'previously exposed' means the baseline run found the gold item at all."
           },
           "ordering_divergence_vs_baseline": {
             "n_compared": 82,
-            "identical": 16,
-            "permutation": 1,
-            "structural": 65,
-            "permutation_ids": [
-              "Q-WMR-047"
-            ],
+            "identical": 0,
+            "permutation": 0,
+            "structural": 82,
+            "permutation_ids": [],
             "structural_ids": [
+              "Q-WMR-001",
+              "Q-WMR-002",
               "Q-WMR-003",
+              "Q-WMR-004",
               "Q-WMR-005",
               "Q-WMR-006",
               "Q-WMR-007",
               "Q-WMR-008",
               "Q-WMR-009",
               "Q-WMR-010",
+              "Q-WMR-011",
               "Q-WMR-012",
               "Q-WMR-013",
               "Q-WMR-014",
               "Q-WMR-015",
               "Q-WMR-016",
+              "Q-WMR-017",
               "Q-WMR-018",
               "Q-WMR-019",
               "Q-WMR-020",
+              "Q-WMR-021",
+              "Q-WMR-022",
               "Q-WMR-023",
               "Q-WMR-024",
+              "Q-WMR-025",
               "Q-WMR-026",
               "Q-WMR-027",
               "Q-WMR-028",
+              "Q-WMR-029",
+              "Q-WMR-030",
+              "Q-WMR-031",
               "Q-WMR-032",
               "Q-WMR-033",
               "Q-WMR-034",
               "Q-WMR-035",
+              "Q-WMR-036",
               "Q-WMR-037",
               "Q-WMR-038",
               "Q-WMR-039",
@@ -343,6 +607,7 @@
               "Q-WMR-044",
               "Q-WMR-045",
               "Q-WMR-046",
+              "Q-WMR-047",
               "Q-WMR-048",
               "Q-WMR-049",
               "Q-WMR-050",
@@ -351,6 +616,9 @@
               "Q-WMR-053",
               "Q-WMR-054",
               "Q-WMR-055",
+              "Q-WMR-056",
+              "Q-WMR-057",
+              "Q-WMR-058",
               "Q-WMR-059",
               "Q-WMR-060",
               "Q-WMR-061",
@@ -369,6 +637,7 @@
               "Q-WMR-087",
               "Q-WMR-088",
               "Q-WMR-089",
+              "Q-WMR-094",
               "Q-WMR-090",
               "Q-WMR-091",
               "Q-WMR-092",
@@ -377,19 +646,492 @@
             ],
             "gold_rank_moves": [
               {
-                "question_id": "Q-WMR-028",
+                "question_id": "Q-WMR-001",
                 "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  1,
+                  3
+                ]
+              },
+              {
+                "question_id": "Q-WMR-003",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  1,
+                  2
+                ]
+              },
+              {
+                "question_id": "Q-WMR-004",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  1,
+                  10
+                ]
+              },
+              {
+                "question_id": "Q-WMR-005",
+                "paper_rank": [
+                  1,
+                  3
+                ],
+                "gold_block_rank": [
+                  1,
+                  3
+                ]
+              },
+              {
+                "question_id": "Q-WMR-008",
+                "paper_rank": [
+                  1,
+                  2
+                ],
+                "gold_block_rank": [
+                  1,
+                  8
+                ]
+              },
+              {
+                "question_id": "Q-WMR-009",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  2,
+                  3
+                ]
+              },
+              {
+                "question_id": "Q-WMR-010",
+                "paper_rank": [
+                  1,
+                  null
+                ],
+                "gold_block_rank": [
+                  1,
+                  null
+                ]
+              },
+              {
+                "question_id": "Q-WMR-013",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  1,
+                  2
+                ]
+              },
+              {
+                "question_id": "Q-WMR-015",
+                "paper_rank": [
+                  2,
+                  2
+                ],
+                "gold_block_rank": [
+                  2,
+                  5
+                ]
+              },
+              {
+                "question_id": "Q-WMR-016",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  1,
+                  5
+                ]
+              },
+              {
+                "question_id": "Q-WMR-018",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  1,
+                  2
+                ]
+              },
+              {
+                "question_id": "Q-WMR-020",
+                "paper_rank": [
+                  2,
+                  1
+                ],
+                "gold_block_rank": [
+                  2,
+                  null
+                ]
+              },
+              {
+                "question_id": "Q-WMR-021",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  1,
+                  4
+                ]
+              },
+              {
+                "question_id": "Q-WMR-022",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  2,
+                  3
+                ]
+              },
+              {
+                "question_id": "Q-WMR-024",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  1,
+                  4
+                ]
+              },
+              {
+                "question_id": "Q-WMR-025",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  3,
+                  1
+                ]
+              },
+              {
+                "question_id": "Q-WMR-027",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  1,
+                  2
+                ]
+              },
+              {
+                "question_id": "Q-WMR-030",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  1,
+                  2
+                ]
+              },
+              {
+                "question_id": "Q-WMR-031",
+                "paper_rank": [
+                  1,
+                  3
+                ],
+                "gold_block_rank": [
+                  1,
+                  3
+                ]
+              },
+              {
+                "question_id": "Q-WMR-033",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  1,
+                  2
+                ]
+              },
+              {
+                "question_id": "Q-WMR-034",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  1,
+                  6
+                ]
+              },
+              {
+                "question_id": "Q-WMR-035",
+                "paper_rank": [
+                  1,
+                  3
+                ],
+                "gold_block_rank": [
+                  1,
+                  3
+                ]
+              },
+              {
+                "question_id": "Q-WMR-036",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  7,
+                  3
+                ]
+              },
+              {
+                "question_id": "Q-WMR-037",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  2,
+                  1
+                ]
+              },
+              {
+                "question_id": "Q-WMR-039",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  3,
+                  4
+                ]
+              },
+              {
+                "question_id": "Q-WMR-041",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  1,
+                  4
+                ]
+              },
+              {
+                "question_id": "Q-WMR-042",
+                "paper_rank": [
+                  2,
+                  8
+                ],
+                "gold_block_rank": [
+                  2,
+                  8
+                ]
+              },
+              {
+                "question_id": "Q-WMR-043",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  1,
+                  5
+                ]
+              },
+              {
+                "question_id": "Q-WMR-044",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  1,
+                  8
+                ]
+              },
+              {
+                "question_id": "Q-WMR-045",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  2,
+                  1
+                ]
+              },
+              {
+                "question_id": "Q-WMR-047",
+                "paper_rank": [
+                  1,
+                  2
+                ],
+                "gold_block_rank": [
+                  1,
+                  4
+                ]
+              },
+              {
+                "question_id": "Q-WMR-048",
+                "paper_rank": [
+                  1,
+                  3
+                ],
+                "gold_block_rank": [
+                  2,
+                  3
+                ]
+              },
+              {
+                "question_id": "Q-WMR-049",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  1,
+                  null
+                ]
+              },
+              {
+                "question_id": "Q-WMR-050",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  2,
+                  1
+                ]
+              },
+              {
+                "question_id": "Q-WMR-052",
+                "paper_rank": [
+                  4,
+                  4
+                ],
+                "gold_block_rank": [
                   null,
+                  4
+                ]
+              },
+              {
+                "question_id": "Q-WMR-053",
+                "paper_rank": [
+                  1,
+                  2
+                ],
+                "gold_block_rank": [
+                  1,
+                  3
+                ]
+              },
+              {
+                "question_id": "Q-WMR-055",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  2,
+                  10
+                ]
+              },
+              {
+                "question_id": "Q-WMR-056",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  1,
+                  5
+                ]
+              },
+              {
+                "question_id": "Q-WMR-058",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  1,
+                  4
+                ]
+              },
+              {
+                "question_id": "Q-WMR-059",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  1,
+                  null
+                ]
+              },
+              {
+                "question_id": "Q-WMR-061",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  2,
+                  1
+                ]
+              },
+              {
+                "question_id": "Q-WMR-063",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  1,
+                  3
+                ]
+              },
+              {
+                "question_id": "Q-WMR-077",
+                "paper_rank": [
+                  1,
+                  5
+                ],
+                "gold_block_rank": [
+                  1,
+                  5
+                ]
+              },
+              {
+                "question_id": "Q-WMR-093",
+                "paper_rank": [
+                  1,
                   5
                 ],
                 "gold_block_rank": [
                   null,
-                  7
+                  null
                 ]
               }
             ]
           },
-          "raw_report": "docs/eval-reports/data/2026-08-25-nb-xo/raw/gt_wmr.p128.json"
+          "raw_report": "docs/eval-reports/data/2026-08-25-nb-xo/raw/gt_wmr.b0.0_at_64.json"
         }
       ]
     },
@@ -948,160 +1690,313 @@
           "reuse_note": "computationally identical to 'rerank 64 -> serve 10': retrieve() draws max(k, rerank_depth)=64 candidates, reranks all, truncates to 10"
         },
         {
-          "arm": "p128",
-          "kind": "cli",
+          "arm": "b0.0_at_64",
+          "kind": "blend",
           "fixture": "waymo_gt_verified",
           "ground_truth": "fixtures/eval/waymo_gt_verified.json",
           "row": {
             "fixture": "waymo_gt_verified",
             "ground_truth": "fixtures/eval/waymo_gt_verified.json",
             "k": 10,
-            "scoring_rule": "top-10 truncation; sparse_mode=fused (hybrid_dense_weight=0.7 -- zeroes a score contribution, does not remove that arm's candidates from the fused pool, see module docstring); paper-level hit = first rank r <= 10 with result.paper_id in question.gold_paper_ids; passage-level hit = first rank r <= 10 with result.anchor.block_id == question.gold_block_id; chapter-level hit = first retrieve_papers rank with paper_id in gold_paper_ids and chapter == gold_chapter_title",
+            "scoring_rule": "top-10 truncation; sparse_mode=fused+rrf-rank-blend(alpha=0.0,rrf_k=60,pool=64) (hybrid_dense_weight=0.7 -- zeroes a score contribution, does not remove that arm's candidates from the fused pool, see module docstring); paper-level hit = first rank r <= 10 with result.paper_id in question.gold_paper_ids; passage-level hit = first rank r <= 10 with result.anchor.block_id == question.gold_block_id; chapter-level hit = first retrieve_papers rank with paper_id in gold_paper_ids and chapter == gold_chapter_title",
             "n_questions": 82,
             "n_errors": 0,
             "answerable": {
-              "recall_at_k": 0.8970588235294118,
-              "mrr": 0.8094946311858076,
-              "hits": 61,
+              "recall_at_k": 0.9117647058823529,
+              "mrr": 0.7629901960784313,
+              "hits": 62,
               "n": 68
             },
             "block_p_at_1": {
-              "rate": 0.38333333333333336,
-              "hits": 23,
+              "rate": 0.16666666666666666,
+              "hits": 10,
               "n": 60,
               "definition": "text-answerable passage-scored items whose gold block ranks exactly 1"
             },
             "known_absent": {
               "n": 14,
               "n_with_top_result": 14,
-              "top_score_median": 0.009045596387559423,
-              "top_score_min": 0.004553726211341934,
+              "top_score_median": 0.012770032357992935,
+              "top_score_min": 0.011475409836065573,
               "top_score_max": 0.015823235923022094
             }
           },
           "top10_restricted": {
             "recall_at_10": {
-              "hits": 61,
+              "hits": 62,
               "n": 68,
-              "rate": 0.8970588235294118
+              "rate": 0.9117647058823529
             },
-            "mrr_at_10": 0.8094946311858076,
+            "mrr_at_10": 0.7629901960784313,
             "block_p_at_1": {
-              "hits": 23,
+              "hits": 10,
               "n": 60,
-              "rate": 0.38333333333333336,
+              "rate": 0.16666666666666666,
               "definition": "identical to the published VARM-1 text_answerable rank_1_rate (rank 1 is inside any top-10); restated, not recomputed"
             }
           },
           "newcomer_vs_baseline": {
             "gold_block": {
-              "lost_rank_count": 10,
+              "lost_rank_count": 21,
               "lost_rank": [
                 {
-                  "question_id": "Q-GTA-005",
+                  "question_id": "Q-GTA-001",
                   "baseline_rank": 2,
-                  "arm_rank": 3
+                  "arm_rank": 10
                 },
                 {
-                  "question_id": "Q-GTA-009",
-                  "baseline_rank": 3,
+                  "question_id": "Q-GTA-002",
+                  "baseline_rank": 2,
                   "arm_rank": 5
                 },
                 {
-                  "question_id": "Q-GTA-013",
-                  "baseline_rank": 7,
-                  "arm_rank": 9
+                  "question_id": "Q-GTA-008",
+                  "baseline_rank": 1,
+                  "arm_rank": 4
                 },
                 {
-                  "question_id": "Q-GTA-019",
+                  "question_id": "Q-GTA-012",
                   "baseline_rank": 2,
                   "arm_rank": 3
+                },
+                {
+                  "question_id": "Q-GTA-016",
+                  "baseline_rank": 2,
+                  "arm_rank": 3
+                },
+                {
+                  "question_id": "Q-GTA-017",
+                  "baseline_rank": 1,
+                  "arm_rank": 8
                 },
                 {
                   "question_id": "Q-GTA-021",
                   "baseline_rank": 3,
-                  "arm_rank": 9
+                  "arm_rank": 10
                 },
                 {
                   "question_id": "Q-GTA-024",
                   "baseline_rank": 2,
-                  "arm_rank": 3
+                  "arm_rank": 6
                 },
                 {
-                  "question_id": "Q-GTA-027",
+                  "question_id": "Q-WAYB-001",
+                  "baseline_rank": 1,
+                  "arm_rank": 4
+                },
+                {
+                  "question_id": "Q-WAYB-004",
                   "baseline_rank": 2,
                   "arm_rank": 4
                 },
                 {
-                  "question_id": "Q-GTA-030",
-                  "baseline_rank": 3,
+                  "question_id": "Q-WAYB-005",
+                  "baseline_rank": 1,
+                  "arm_rank": 3
+                },
+                {
+                  "question_id": "Q-WAYB-007",
+                  "baseline_rank": 1,
+                  "arm_rank": 2
+                },
+                {
+                  "question_id": "Q-WAYB-008",
+                  "baseline_rank": 1,
+                  "arm_rank": 2
+                },
+                {
+                  "question_id": "Q-WAYB-014",
+                  "baseline_rank": 1,
+                  "arm_rank": 3
+                },
+                {
+                  "question_id": "Q-WAYB-015",
+                  "baseline_rank": 1,
                   "arm_rank": 4
+                },
+                {
+                  "question_id": "Q-WAYB-016",
+                  "baseline_rank": 1,
+                  "arm_rank": 2
+                },
+                {
+                  "question_id": "Q-WAYB-019",
+                  "baseline_rank": 1,
+                  "arm_rank": 3
+                },
+                {
+                  "question_id": "Q-WAYB-020",
+                  "baseline_rank": 1,
+                  "arm_rank": 2
+                },
+                {
+                  "question_id": "Q-WAYB-023",
+                  "baseline_rank": 1,
+                  "arm_rank": 5
+                },
+                {
+                  "question_id": "Q-WAYB-024",
+                  "baseline_rank": 1,
+                  "arm_rank": 2
+                },
+                {
+                  "question_id": "Q-WAYB-030",
+                  "baseline_rank": 2,
+                  "arm_rank": 6
+                }
+              ],
+              "lost_from_top10_ids": [
+                "Q-GTA-005",
+                "Q-GTA-009",
+                "Q-GTA-010",
+                "Q-GTA-022",
+                "Q-GTA-026",
+                "Q-GTA-027",
+                "Q-GTA-030",
+                "Q-WAYB-002",
+                "Q-WAYB-033",
+                "Q-WAYB-037",
+                "Q-WAYB-038"
+              ],
+              "gained_into_top10": [
+                {
+                  "question_id": "Q-GTA-011",
+                  "arm_rank": 5
+                },
+                {
+                  "question_id": "Q-WAYB-025",
+                  "arm_rank": 8
+                }
+              ],
+              "improved_count": 6,
+              "improved": [
+                {
+                  "question_id": "Q-GTA-004",
+                  "baseline_rank": 3,
+                  "arm_rank": 1
+                },
+                {
+                  "question_id": "Q-GTA-007",
+                  "baseline_rank": 4,
+                  "arm_rank": 3
+                },
+                {
+                  "question_id": "Q-GTA-013",
+                  "baseline_rank": 7,
+                  "arm_rank": 3
+                },
+                {
+                  "question_id": "Q-GTA-019",
+                  "baseline_rank": 2,
+                  "arm_rank": 1
+                },
+                {
+                  "question_id": "Q-GTA-028",
+                  "baseline_rank": 4,
+                  "arm_rank": 3
                 },
                 {
                   "question_id": "Q-GTA-032",
                   "baseline_rank": 5,
-                  "arm_rank": 6
-                },
-                {
-                  "question_id": "Q-WAYB-033",
-                  "baseline_rank": 8,
-                  "arm_rank": 9
+                  "arm_rank": 4
                 }
-              ],
-              "lost_from_top10_ids": [
-                "Q-GTA-007",
-                "Q-GTA-010",
-                "Q-GTA-022",
-                "Q-WAYB-002"
-              ],
-              "gained_into_top10": [
-                {
-                  "question_id": "Q-GTA-006",
-                  "arm_rank": 7
-                },
-                {
-                  "question_id": "Q-WAYB-031",
-                  "arm_rank": 1
-                }
-              ],
-              "improved_count": 0,
-              "improved": []
+              ]
             },
             "gold_paper": {
-              "lost_rank_count": 4,
+              "lost_rank_count": 11,
               "lost_rank": [
                 {
-                  "question_id": "Q-GTA-015",
+                  "question_id": "Q-GTA-001",
                   "baseline_rank": 2,
-                  "arm_rank": 9
+                  "arm_rank": 4
                 },
                 {
-                  "question_id": "Q-GTA-029",
-                  "baseline_rank": 5,
-                  "arm_rank": 8
+                  "question_id": "Q-GTA-002",
+                  "baseline_rank": 1,
+                  "arm_rank": 5
                 },
                 {
-                  "question_id": "Q-GTA-042",
+                  "question_id": "Q-GTA-012",
                   "baseline_rank": 1,
                   "arm_rank": 3
                 },
                 {
-                  "question_id": "Q-GTA-044",
+                  "question_id": "Q-GTA-013",
+                  "baseline_rank": 1,
+                  "arm_rank": 3
+                },
+                {
+                  "question_id": "Q-GTA-026",
+                  "baseline_rank": 1,
+                  "arm_rank": 4
+                },
+                {
+                  "question_id": "Q-GTA-028",
                   "baseline_rank": 1,
                   "arm_rank": 2
+                },
+                {
+                  "question_id": "Q-WAYB-001",
+                  "baseline_rank": 1,
+                  "arm_rank": 2
+                },
+                {
+                  "question_id": "Q-WAYB-003",
+                  "baseline_rank": 1,
+                  "arm_rank": 3
+                },
+                {
+                  "question_id": "Q-WAYB-007",
+                  "baseline_rank": 1,
+                  "arm_rank": 2
+                },
+                {
+                  "question_id": "Q-WAYB-031",
+                  "baseline_rank": 1,
+                  "arm_rank": 2
+                },
+                {
+                  "question_id": "Q-WAYB-038",
+                  "baseline_rank": 1,
+                  "arm_rank": 4
                 }
               ],
-              "improved_count": 2,
+              "improved_count": 7,
               "improved": [
+                {
+                  "question_id": "Q-GTA-004",
+                  "baseline_rank": 3,
+                  "arm_rank": 1
+                },
                 {
                   "question_id": "Q-GTA-006",
                   "baseline_rank": 6,
-                  "arm_rank": 2
+                  "arm_rank": 5
+                },
+                {
+                  "question_id": "Q-GTA-007",
+                  "baseline_rank": 4,
+                  "arm_rank": 3
+                },
+                {
+                  "question_id": "Q-GTA-015",
+                  "baseline_rank": 2,
+                  "arm_rank": 1
+                },
+                {
+                  "question_id": "Q-GTA-016",
+                  "baseline_rank": 2,
+                  "arm_rank": 1
                 },
                 {
                   "question_id": "Q-GTA-021",
                   "baseline_rank": 2,
                   "arm_rank": 1
+                },
+                {
+                  "question_id": "Q-WAYB-002",
+                  "baseline_rank": 8,
+                  "arm_rank": 5
                 }
               ]
             },
@@ -1110,13 +2005,10 @@
           },
           "ordering_divergence_vs_baseline": {
             "n_compared": 82,
-            "identical": 5,
-            "permutation": 2,
-            "structural": 75,
-            "permutation_ids": [
-              "Q-WAYB-027",
-              "Q-WAYB-029"
-            ],
+            "identical": 0,
+            "permutation": 0,
+            "structural": 82,
+            "permutation_ids": [],
             "structural_ids": [
               "Q-GTA-001",
               "Q-GTA-002",
@@ -1163,6 +2055,9 @@
               "Q-WAYB-010",
               "Q-WAYB-011",
               "Q-WAYB-012",
+              "Q-WAYB-013",
+              "Q-WAYB-014",
+              "Q-WAYB-015",
               "Q-WAYB-016",
               "Q-WAYB-017",
               "Q-WAYB-018",
@@ -1173,7 +2068,11 @@
               "Q-WAYB-023",
               "Q-WAYB-024",
               "Q-WAYB-025",
+              "Q-WAYB-026",
+              "Q-WAYB-027",
               "Q-WAYB-028",
+              "Q-WAYB-029",
+              "Q-WAYB-030",
               "Q-WAYB-031",
               "Q-WAYB-032",
               "Q-WAYB-033",
@@ -1196,6 +2095,39 @@
             ],
             "gold_rank_moves": [
               {
+                "question_id": "Q-GTA-001",
+                "paper_rank": [
+                  2,
+                  4
+                ],
+                "gold_block_rank": [
+                  2,
+                  10
+                ]
+              },
+              {
+                "question_id": "Q-GTA-002",
+                "paper_rank": [
+                  1,
+                  5
+                ],
+                "gold_block_rank": [
+                  2,
+                  5
+                ]
+              },
+              {
+                "question_id": "Q-GTA-004",
+                "paper_rank": [
+                  3,
+                  1
+                ],
+                "gold_block_rank": [
+                  3,
+                  1
+                ]
+              },
+              {
                 "question_id": "Q-GTA-005",
                 "paper_rank": [
                   1,
@@ -1203,29 +2135,40 @@
                 ],
                 "gold_block_rank": [
                   2,
-                  3
+                  null
                 ]
               },
               {
                 "question_id": "Q-GTA-006",
                 "paper_rank": [
                   6,
-                  2
+                  5
                 ],
                 "gold_block_rank": [
                   null,
-                  7
+                  null
                 ]
               },
               {
                 "question_id": "Q-GTA-007",
                 "paper_rank": [
                   4,
-                  null
+                  3
                 ],
                 "gold_block_rank": [
                   4,
-                  null
+                  3
+                ]
+              },
+              {
+                "question_id": "Q-GTA-008",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  1,
+                  4
                 ]
               },
               {
@@ -1236,40 +2179,84 @@
                 ],
                 "gold_block_rank": [
                   3,
-                  5
+                  null
                 ]
               },
               {
                 "question_id": "Q-GTA-010",
                 "paper_rank": [
                   7,
-                  7
+                  null
                 ],
                 "gold_block_rank": [
                   7,
                   null
+                ]
+              },
+              {
+                "question_id": "Q-GTA-011",
+                "paper_rank": [
+                  null,
+                  5
+                ],
+                "gold_block_rank": [
+                  null,
+                  5
+                ]
+              },
+              {
+                "question_id": "Q-GTA-012",
+                "paper_rank": [
+                  1,
+                  3
+                ],
+                "gold_block_rank": [
+                  2,
+                  3
                 ]
               },
               {
                 "question_id": "Q-GTA-013",
                 "paper_rank": [
                   1,
-                  1
+                  3
                 ],
                 "gold_block_rank": [
                   7,
-                  9
+                  3
                 ]
               },
               {
                 "question_id": "Q-GTA-015",
                 "paper_rank": [
                   2,
-                  9
+                  1
                 ],
                 "gold_block_rank": [
                   null,
                   null
+                ]
+              },
+              {
+                "question_id": "Q-GTA-016",
+                "paper_rank": [
+                  2,
+                  1
+                ],
+                "gold_block_rank": [
+                  2,
+                  3
+                ]
+              },
+              {
+                "question_id": "Q-GTA-017",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  1,
+                  8
                 ]
               },
               {
@@ -1280,7 +2267,7 @@
                 ],
                 "gold_block_rank": [
                   2,
-                  3
+                  1
                 ]
               },
               {
@@ -1302,7 +2289,7 @@
                 ],
                 "gold_block_rank": [
                   3,
-                  9
+                  10
                 ]
               },
               {
@@ -1324,7 +2311,18 @@
                 ],
                 "gold_block_rank": [
                   2,
-                  3
+                  6
+                ]
+              },
+              {
+                "question_id": "Q-GTA-026",
+                "paper_rank": [
+                  1,
+                  4
+                ],
+                "gold_block_rank": [
+                  3,
+                  null
                 ]
               },
               {
@@ -1335,14 +2333,25 @@
                 ],
                 "gold_block_rank": [
                   2,
-                  4
+                  null
+                ]
+              },
+              {
+                "question_id": "Q-GTA-028",
+                "paper_rank": [
+                  1,
+                  2
+                ],
+                "gold_block_rank": [
+                  4,
+                  3
                 ]
               },
               {
                 "question_id": "Q-GTA-029",
                 "paper_rank": [
                   5,
-                  8
+                  null
                 ],
                 "gold_block_rank": [
                   null,
@@ -1357,7 +2366,7 @@
                 ],
                 "gold_block_rank": [
                   3,
-                  4
+                  null
                 ]
               },
               {
@@ -1368,14 +2377,25 @@
                 ],
                 "gold_block_rank": [
                   5,
-                  6
+                  4
+                ]
+              },
+              {
+                "question_id": "Q-WAYB-001",
+                "paper_rank": [
+                  1,
+                  2
+                ],
+                "gold_block_rank": [
+                  1,
+                  4
                 ]
               },
               {
                 "question_id": "Q-WAYB-002",
                 "paper_rank": [
                   8,
-                  null
+                  5
                 ],
                 "gold_block_rank": [
                   8,
@@ -1383,29 +2403,7 @@
                 ]
               },
               {
-                "question_id": "Q-WAYB-031",
-                "paper_rank": [
-                  1,
-                  1
-                ],
-                "gold_block_rank": [
-                  null,
-                  1
-                ]
-              },
-              {
-                "question_id": "Q-WAYB-033",
-                "paper_rank": [
-                  1,
-                  1
-                ],
-                "gold_block_rank": [
-                  8,
-                  9
-                ]
-              },
-              {
-                "question_id": "Q-GTA-042",
+                "question_id": "Q-WAYB-003",
                 "paper_rank": [
                   1,
                   3
@@ -1416,7 +2414,150 @@
                 ]
               },
               {
-                "question_id": "Q-GTA-044",
+                "question_id": "Q-WAYB-004",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  2,
+                  4
+                ]
+              },
+              {
+                "question_id": "Q-WAYB-005",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  1,
+                  3
+                ]
+              },
+              {
+                "question_id": "Q-WAYB-007",
+                "paper_rank": [
+                  1,
+                  2
+                ],
+                "gold_block_rank": [
+                  1,
+                  2
+                ]
+              },
+              {
+                "question_id": "Q-WAYB-008",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  1,
+                  2
+                ]
+              },
+              {
+                "question_id": "Q-WAYB-014",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  1,
+                  3
+                ]
+              },
+              {
+                "question_id": "Q-WAYB-015",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  1,
+                  4
+                ]
+              },
+              {
+                "question_id": "Q-WAYB-016",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  1,
+                  2
+                ]
+              },
+              {
+                "question_id": "Q-WAYB-019",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  1,
+                  3
+                ]
+              },
+              {
+                "question_id": "Q-WAYB-020",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  1,
+                  2
+                ]
+              },
+              {
+                "question_id": "Q-WAYB-023",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  1,
+                  5
+                ]
+              },
+              {
+                "question_id": "Q-WAYB-024",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  1,
+                  2
+                ]
+              },
+              {
+                "question_id": "Q-WAYB-025",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  null,
+                  8
+                ]
+              },
+              {
+                "question_id": "Q-WAYB-030",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  2,
+                  6
+                ]
+              },
+              {
+                "question_id": "Q-WAYB-031",
                 "paper_rank": [
                   1,
                   2
@@ -1425,10 +2566,43 @@
                   null,
                   null
                 ]
+              },
+              {
+                "question_id": "Q-WAYB-033",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  8,
+                  null
+                ]
+              },
+              {
+                "question_id": "Q-WAYB-037",
+                "paper_rank": [
+                  1,
+                  1
+                ],
+                "gold_block_rank": [
+                  3,
+                  null
+                ]
+              },
+              {
+                "question_id": "Q-WAYB-038",
+                "paper_rank": [
+                  1,
+                  4
+                ],
+                "gold_block_rank": [
+                  1,
+                  null
+                ]
               }
             ]
           },
-          "raw_report": "docs/eval-reports/data/2026-08-25-nb-xo/raw/waymo_gt_verified.p128.json"
+          "raw_report": "docs/eval-reports/data/2026-08-25-nb-xo/raw/waymo_gt_verified.b0.0_at_64.json"
         }
       ]
     }
