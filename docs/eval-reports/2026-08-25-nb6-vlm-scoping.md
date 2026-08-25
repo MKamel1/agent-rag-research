@@ -1,7 +1,7 @@
 # NB-6 — VLM/vision project scoping: does unique figure information justify the project?
 
-**Status: SCOPING IN PROGRESS** (stub — sections filling in numbered commits; this header flips to
-COMPLETE when all four land). Ticket NB-6, standing independent lane of the next-build programme
+**Status: SCOPING COMPLETE** (all four sections landed across numbered commits `e961e30`→HEAD;
+verdict in §1). Ticket NB-6, standing independent lane of the next-build programme
 (`docs/superpowers/plans/2026-08-24-next-build-programme.md` §4, gated only on operator decision C,
 answered conditional 2026-08-25 in that programme's §1). Branch `NB-6-vlm-scoping`. This document
 scopes; it builds nothing — no model downloads, no config changes, no service changes, no foundation
@@ -65,8 +65,8 @@ Vision ground truth is **n = 4 (verified-84) + 1 (GT-WMR) = 5 items ever authore
 
 - Unreachable share of *scored* items: 5/130 = 3.85% measured; after discount 4/130 = 3.08%.
 - Unreachable share of *authored answerable* items: 5/138 = 3.6%; after discount 4/138 = 2.9%.
-- Fixture authoring rates for context: vision = 4/68 answerable on verified-84 (4.8%, openevidence
-  §4), 1/70 on GT-WMR (1.4%).
+- Fixture authoring rates for context: vision = 4 of verified-84's 68 answerable items (5.9%; the
+  source reports 4.8% over all 84 items — openevidence-programme §4), 1/70 on GT-WMR (1.4%).
 
 **EXTRAPOLATION, labeled:** these rates measure what fixture *authors chose to ask*, not what the
 operator actually asks. No organic query log exists in this repo. Extrapolating "≈3–5% of
@@ -273,7 +273,7 @@ Rendered page caches are discardable intermediates (~100–500KB/page, pilot-sca
 |---|---|
 | Landing seam | `migrations/0006_figures_tables.sql` columns; `contracts/parser.py` `Figure.vlm_description`; `rag/document_store.py` put/get figure paths |
 | GPU discipline | `rag/gpu_lock.py` `FileGpuLock`; `app/dashboard/controller.py::free_gpu` / `load_for_mcp`; `app/tei_lifecycle.py::ensure_tei_running` (all T-DOC78) |
-| Figure artifacts | MinerU parse-time extraction → `figures.image_path` populated by the RI-32 backfill (no re-parse needed — PRD frames the VLM exactly as this bolt-on, `PRD.md` figure/table-capture ADR) |
+| Figure artifacts | MinerU parse-time extraction → `figures.image_path` populated by the RI-32 backfill (no re-parse needed — PRD §7's figure/table-capture decision frames the VLM exactly as this bolt-on over stored figures) |
 | Measurement harness | `app/retrieval_eval.py::load_questions` / `score_question`; `scripts/nb_d1_pool_depth.py` as the detached-measurement template; `scripts/nb_eval_runner.py` dual-fixture pattern |
 | Host service | Ollama (already running for summarization; never-auto-started convention respected) |
 
