@@ -84,8 +84,8 @@ def main() -> None:
                         default=Path("docs/eval-reports/data/2026-08-25-nb-d3"))
     args = parser.parse_args()
 
-    from rag.config import load_config
     from app.assembly import build_mcp_server
+    from rag.config import load_config
 
     config = load_config(args.config)
     server = build_mcp_server(config, collection=args.collection)

@@ -15,7 +15,7 @@ Features censused offline (all derivable from stored per-question records):
   top_score_dense / _fused / _sparse   rank-1 score in each arm
   score_max_arms                       max of the three arms' rank-1 scores
   score_gap_dense_minus_sparse         dense rank-1 minus sparse rank-1 (arm-magnitude disagreement)
-  arm_rank1_agreement                  # of pairwise equalities among the three arms' rank-1 papers (0..3)
+  arm_rank1_agreement                  # of pairwise equalities among arms' rank-1 papers (0..3)
   jaccard_fused_dense / _fused_sparse / _dense_sparse   |top-10 paper set intersection| / |union|
     distinct_papers_fused / _dense / _sparse             dedup count of each arm's top-10 paper list
     query_len_chars / _words             question_text length (joined from the eval fixtures)
@@ -377,7 +377,9 @@ def run_census(data_dir: Path, fixtures_root: Path, fresh_dir: Path | None) -> d
         }
         n_ans = sum(1 for it in items if not it.absent)
         n_abs = len(items) - n_ans
-        fx_report["denominators"] = {"n_items": len(items), "n_answerable": n_ans, "n_absent": n_abs}
+        fx_report["denominators"] = {
+            "n_items": len(items), "n_answerable": n_ans, "n_absent": n_abs,
+        }
 
         for arm_file, arm_label in (("dense_only", "dense"), ("fused", "fused"),
                                     ("sparse_only", "sparse")):
@@ -426,12 +428,16 @@ def _census_fresh_feature(records: list[tuple[dict | None, bool]], name: str) ->
 def print_markdown(report: dict) -> None:
     for fx, fx_report in report["fixtures"].items():
         d = fx_report["denominators"]
-        print(f"\n### {fx} — n={d['n_items']} ({d['n_answerable']} answerable / {d['n_absent']} absent)\n")
-        print("| feature | n_ans | n_abs | AUROC | direction | threshold rule | FP (false refusals) | FN (missed absent) | Youden J |")
+        print(f"\n### {fx} — n={d['n_items']} "
+              f"({d['n_answerable']} answerable / {d['n_absent']} absent)\n")
+        header = ("| feature | n_ans | n_abs | AUROC | direction | threshold rule"
+                  " | FP (false refusals) | FN (missed absent) | Youden J |")
+        print(header)
         print("|---|---|---|---|---|---|---|---|---|")
         for name, stats in fx_report["features"].items():
             if stats.get("auroc") is None:
-                print(f"| {name} | {stats['n_answerable']} | {stats['n_absent']} | — | — | — | — | — | — |")
+                print(f"| {name} | {stats['n_answerable']} | {stats['n_absent']}"
+                      " | — | — | — | — | — | — |")
                 continue
             fp, fn = stats["FP_false_refusals"], stats["FN_missed_absent"]
             print(
