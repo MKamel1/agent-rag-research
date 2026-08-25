@@ -9,23 +9,23 @@ measurement.
 
 | input | finding that drives ranking | source |
 |---|---|---|
-| Pool-depth instrumentation | All **23/23 non-vision right-paper-wrong-block items on verified-84 are exposed by K=64**; GT-WMR's 11/11 near-misses were already in top-10 (depth adds nothing there). Bottomless-pool block-P@1 ceilings: GT-WMR 0.9848 (≥0.95 already at K=32); ver84 **0.8750 all-arm / 0.9333 text-arm** | `docs/eval-reports/2026-08-25-nb-d1-pool-depth.md` |
+| Pool-depth instrumentation | All **23/23 non-vision right-paper-wrong-block items on verified-84 are exposed by K=64**; GT-WMR's near-misses were already in top-10 (**11 of the 12 non-vision items** — depth adds nothing there). Bottomless-pool block-P@1 ceilings: GT-WMR 0.9848 (≥0.95 already at K=32); ver84 **0.8750 all-arm / 0.9333 text-arm at K=128** | `docs/eval-reports/2026-08-25-nb-d1-pool-depth.md` |
 | Promotion proof | `Q-WAYB-031`: absent from pool@32 → reranked **#1** at pool@64 — the cross-encoder promotes fusion-buried candidates when the pool lets it see them | same |
 | Newcomer hazard | Deeper pools push already-exposed gold deeper (newcomers outrank it) — depth gains are not free; realized gain depends on reranker ordering quality over the larger pool | same |
 | Boundary misses | same_chunk + adjacent_chunk = **9/27 (33%) of ver84 near-misses, 3/12 (25%) GT-WMR** — chunk-boundary effects are material, not noise | `docs/eval-reports/2026-08-25-nb-d2-block-adjacency.md` |
 | Anchor/citation artifacts | Q-WAYB-027, Q-WMR-094 (+Q-WMR-036 straddle): gold text physically inside the rank-1 served chunk but metric scores miss because anchor ≠ gold block exactly (~1–2 items/fixture) | same |
 | Abstention | No retrieval-score feature separates known-absent from answerable (17 features × 2 fixtures) → abstention needs a new signal source, not retrieval tuning | `docs/eval-reports/2026-08-25-nb-d3-abstention-census.md` |
 | Vision slice | The only items absent from every pool size (4 ver84 + 1 GT-WMR) are the vision-derived ones — structurally unreachable by any text-side fix | NB-D1 report |
-| Baseline context | Reorder-only ceilings over today's top-10: ver84 0.7812 / GT-WMR 0.9394; fusion evicts on full corpus (dense-only top-10 hits 50/60 vs fused 43, one-way) | PREC-1 §1; priority-baseline §2 |
+| Baseline context | Reorder-only ceilings over today's top-10: ver84 0.7812 / GT-WMR 0.9394; fusion evicts on full corpus (dense-only top-10 hits 50/60 vs fused 43, one-way) | PREC-1 §1; priority-baseline §2; `HANDOFF-2026-08-24.md` §5 finding 2 |
 
 ## Ranking
 
 **1. X-P — deep-pool production tables (K ∈ {32, 64}, shipped reranker, w=0.7 frozen).**
-The single biggest measured lever: exposure goes 24→47 of 64 scored ver84 items' worth of
-near-miss population by K=64. Measurement-only (no config flip): run the full standard dual-fixture
+The single biggest measured lever: near-miss exposure rises from **49→55 of 64** scored ver84
+items (population 19/27 → **23/27**) by K=64. Measurement-only (no config flip): run the full standard dual-fixture
 table at each depth using the production retrieve→rerank pipeline. Answers the decision question
 directly: *what do R@10/block-P@1 actually become at depth?* Predicted ceiling per fixture:
-GT-WMR ≥0.95 plausible immediately; ver84 bounded by 0.9333 text-arm even with perfect ordering.
+GT-WMR ≥0.95 plausible immediately; ver84 bounded by 0.9333 text-arm at the K=128 bound even with perfect ordering — one item short of the bar.
 Cost class: scripts-level, zero contracts impact.
 
 **2. X-F — fusion-shape variants (measurement, not flips).**
@@ -53,7 +53,8 @@ residual.
 ## Honest ceiling statement (read before believing any X-series win)
 
 Perfect execution of 1+2+3 combined cannot clear the 95% passage target on verified-84 all-arm:
-bottomless-pool ceiling is 0.8750 all-arm / 0.9333 text-arm. The residual lives upstream
+bottomless-pool ceiling in the fused shape is 0.8750 all-arm / 0.9333 text-arm at K=128 (the
+text-arm figure sits one item short of the bar). The residual lives upstream
 (chunk-boundary long tail: 63–75% of near-misses are same_doc_elsewhere) and in the vision slice
 (unreachable by text). GT-WMR can clear 95%. **The programme should say this now rather than after
 the experiments**: either the operator accepts the two-arm statement (priority ✓, full-corpus
@@ -69,4 +70,13 @@ computed BEFORE the experiments, not discovered after them.
 - No foundation-path changes anticipated by ranks 1–2; rank 4 touches generation/citation code and
   will get its own design note before any dispatch.
 
-— Orchestrator, NB programme. Independent review: appended below when it returns.
+— Orchestrator, NB programme.
+
+## Independent review (2026-08-25)
+
+Reviewer: ox-alpha dispatch (`NB-R0-review`, session `ses_fc5883d51fferwEb3YXeCxW7JF`), adversarial
+verification against every cited source. Verdict: **REVISE — five corrections, all applied above**:
+(i) exposure figures corrected to 49→55 of 64 (population 19/27→23/27); (ii) GT-WMR near-miss count
+corrected to 11-of-12 non-vision; (iii) eviction citation added (HANDOFF §5 finding 2); (iv)
+honest-ceiling bounds scoped to the fused shape with the text-arm one-item margin noted; (v) 0.9333
+labeled as the K=128 bound. No rank reordering was demanded; the ranking stands as published.
