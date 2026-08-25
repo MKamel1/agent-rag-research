@@ -183,9 +183,11 @@ Dependency edges, exhaustive:
       new-signal-source design doc).
 
 - [ ] **D4 — one-command dual-fixture evaluation runner (the ruler).**
-      Reuse-first (constraint from lessons §5.3): the harness that produced the 2026-08-22/23 runs
-      and the FUSE sweeps already exists in branch history — find and wire it, don't rewrite. Grep
-      the FUSE branches for the runner before writing anything new.
+      Reuse-first (constraint from lessons §5.3): **the runner exists — `app/retrieval_eval.py` on
+      `main`** (CLI: `--ground-truth`, `--config`, `--k`, `--report-path`, …). The FUSE sweeps were
+      driven by it plus per-arm wrappers in branch history. D4 wires a thin dual-fixture orchestrator
+      over it (run both fixtures, emit the standard combined table), it does NOT rewrite evaluation
+      logic. Grep the FUSE branches for the sweep wrapper before writing anything new.
       Deliverable: one entry point that takes a config delta and emits BOTH fixtures' standard table
       (R@10/MRR/block-P@1, answerable + absent arms reported separately per protocol) as dated JSON +
       md, plus a README stub. Lives in `scripts/` (not foundation-gated).
