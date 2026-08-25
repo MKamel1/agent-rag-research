@@ -36,9 +36,9 @@ diagnosis completion rather than implementation.
 
 | # | decision | recommendation recorded here | blocks |
 |---|---|---|---|
-| A | `hybrid_dense_weight`: keep 0.7 or restore 0.5 | **Keep 0.7** until the rerank/pool work lands: 0.5 fails the full-corpus gate outright (ver84 R@10 0.8971 < 0.95, FUSE-2 raw), and changing weight now invalidates comparability with every baseline number collected at 0.7. Re-evaluate once, after NB-2x lands, against both fixtures. Rollback stays one line (`waymo/data/config.yaml`, backup `config.yaml.bak-w0.5-20260824T122256`). | nothing — experiments measure, they don't flip config |
-| B | Fabrication rubric amendments F-A1..F-A3: apply or defer | Apply in the next rubric touch (they are reviewed; the PROVISIONAL header is the only thing standing). If deferred, record why on the rubric itself. | NB-4 only |
-| C | VLM/vision project start now or after passage work | After Wave 2 verdicts — the vision arm's case (right paper rank-1, block unreachable) strengthens if pool-depth work also can't reach figure content, which NB-2 will show. | NB-6 |
+| A | `hybrid_dense_weight`: keep 0.7 or restore 0.5 | **DECIDED 2026-08-25: keep 0.7** (operator). Recorded in PROJECT-STATUS.md's tuning-decision section. Re-evaluate once, after NB-2x lands, against both fixtures. Rollback stays one line (`waymo/data/config.yaml`, backup `config.yaml.bak-w0.5-20260824T122256`). | nothing — experiments measure, they don't flip config |
+| B | Fabrication rubric amendments F-A1..F-A3: apply or defer | **DECIDED 2026-08-25: apply, after verifying each amendment first** (operator condition). Done: all three verified against their sources before application (F-A1/A3 are faithful ports of the signed groundedness rubric's proven clauses; F-A2 checked against the review's run evidence) and applied with a SIGNED OFF header on `fabrication-audit-rubric.md`. Consequence recorded there: one judge re-run is owed under the new rubric hash before any fabrication number is treated as a trend — folds into the already-open "build the real Judge" item (programme plan §8), since no non-fake `Judge` exists yet. | NB-4 |
+| C | VLM/vision project start now or after passage work | **DECIDED 2026-08-25: conditional** (operator) — proceed only if VLM earns its cost by information *only it* can reach. NB-6 scoping therefore leads with a unique-information-yield analysis: which operator-relevant questions require figure content no text path can serve (vision arm's rank-1-paper/unreachable-block pattern is the n=4 seed), priced against VRAM co-residency and project size. No build commitment until that number exists. | NB-6 build tickets (scoping itself unblocked) |
 | D | OpenEvidence shared-benchmark head-to-head | Out of scope for this programme (never scoped, externally dependent). Revisit only after abstention exists. | nothing |
 
 If the operator answers differently, only the blocked tickets change — the wave structure does not.
@@ -146,8 +146,10 @@ Dependency edges, exhaustive:
       Gates: everything downstream reads these from `main` instead of `git show <branch>:`.
       Why first: right now the plan's own evidence base lives only on unmerged branches.
 
-- [ ] **C2/C3 — record operator decisions A/B** (§1 above) in PROJECT-STATUS + the rubric header.
-      Orchestrator does this directly; no dispatch warranted. One commit each.
+- [x] **C2/C3 — record operator decisions A/B, and C's conditional answer** (§1 above).
+      Done 2026-08-25: A recorded in PROJECT-STATUS (commit `c681f70`); B verified + applied to
+      `docs/eval-rubrics/fabrication-audit-rubric.md` with SIGNED OFF header; C recorded as
+      conditional in §1. Orchestrator-direct; no dispatch warranted. One commit each.
 
 ### Wave 1 — complete the diagnosis, build the ruler (4 parallel lanes)
 
