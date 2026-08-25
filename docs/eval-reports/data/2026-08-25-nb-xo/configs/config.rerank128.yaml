@@ -1,0 +1,51 @@
+arxiv_categories:
+- cs.RO
+- stat.AP
+- stat.ME
+- cs.LG
+- eess.SY
+- cs.CV
+arxiv_date_from: '2015-01-01'
+arxiv_date_to: null
+batch_size_log_path: null
+blob_dir: /home/omar/ai-projects/research-system-rag/waymo/data/blobs
+child_parent_expansion: true
+collection: waymo_av_safety
+corpus_cap: 30000
+db_path: /home/omar/ai-projects/research-system-rag/waymo/data/papers.db
+drop_in_dir: /home/omar/ai-projects/research-system-rag/waymo/data/drop_in
+focus_area_queries:
+- autonomous vehicle safety
+- automated driving system safety evaluation
+- autonomous driving simulation
+- traffic simulation realism
+- scenario-based testing automated driving
+- safety-critical scenario generation
+- rare event risk estimation autonomous vehicle
+- crash rate benchmark automated driving
+- surrogate safety measures traffic conflict
+- sim-to-real gap autonomous driving
+- driving behavior model calibration
+- motion forecasting evaluation autonomous driving
+- safety case automated driving
+- operational design domain safety
+- responsibility sensitive safety
+- safety of the intended functionality
+- Waymo Open Dataset
+- Waymo Open Motion Dataset
+- autonomous vehicle runtime monitoring
+- reachability analysis vehicle safety
+gpu_lock_path: /home/omar/ai-projects/research-system-rag/.gpu.lock
+hybrid_dense_weight: 0.7
+ingest_paper_ids: null
+ingestion_mode: one_shot_seed
+ordering: relevance
+parse_batch_size: 4
+pdf_cache_dir: /home/omar/ai-projects/research-system-rag/waymo/data/pdf_cache
+prefetch_target: 30000
+relevance_filter: 'off'
+rerank_depth: 128
+sources:
+- arxiv
+stranded_policy: finish_first
+top_k: 10
