@@ -81,6 +81,39 @@ Exactly one retry of an arm is permitted, only for infrastructure failure (model
 OOM, render error), logged as such. Score disappointment never triggers a rerun, prompt change, or
 threshold movement.
 
+### O6 — G0.3 survivor rule
+
+An item is DISCOUNTED (extraction-gap, not true-vision) iff ≥ 50% of its audit tokens are
+recoverable via `page.get_text()` — checked against BOTH the whole page and the gold block's
+bbox padded ±20pt — after normalization (lowercase, U+2212→`-`, whitespace collapse); numeric
+tokens are boundary-guarded so `1.03` cannot match `1.034`. Q-GTA-044 audits all nine inset
+numbers (its three Std DEs included) for a richer token set. Otherwise the item SURVIVES.
+Measured result (commit 60bb5da): 4/5 survive — gate PASS.
+
+### O7 — Stage 1 denominator under G0.3 shrinkage + G0.1 success criteria
+
+Registered before any inference ran:
+
+- Per NB-6 §3 ("denominators shrink to the surviving count"), the **gating** Stage 1 asked-value
+  set is the 4 surviving items' asked values: Q-WAYB-027 (3) + Q-GTA-042 (1) + Q-GTA-043 (2) +
+  Q-WMR-094 (2) = **n = 8**. Q-GTA-044's page is still described and its fidelity reported
+  informationally (6 asked values) but does not enter the gate denominator.
+- **G0.1 posture A (co-resident)** succeeds iff the VLM loads and the describe batch completes
+  while BOTH TEI services stay resident, with nvidia-smi-sampled peak usage leaving ≥ 2 GB free on
+  the 24 GB card and zero OOM events. (≥ 2 GB chosen deliberately above T-DOC15's observed ~1 GB
+  danger margin.) **Posture B (serialized)** succeeds iff TEI evict → full batch → reload
+  completes AND serving is verifiably restored (health check + probe call). A is tried first;
+  B is the recorded fallback if A fails.
+
+## Model acquired
+
+| field | value |
+|---|---|
+| exact tag | `qwen2.5vl:7b` |
+| ollama ID | `5ced39dfa4ba` |
+| size | 6.0 GB |
+| family fit | NB-6 §2 row 1: Ollama-hosted qwen2.5-VL-class ~7B instruct, quantized GGUF + mmproj vision encoder |
+
 ## Stage 0 verdicts
 
 | gate | criterion | measurement | verdict |
