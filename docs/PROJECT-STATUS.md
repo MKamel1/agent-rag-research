@@ -118,6 +118,22 @@ of the 4 tools that support it (trap (b)). The Waymo corpus (§1) is exactly thi
 
 ## 3. Shipped-work ledger
 
+### Next-build programme — NB series (2026-08-…)
+
+- **NB-D4** (2026-08-25, branch `NB-D4-eval-runner`): the dual-fixture evaluation ruler —
+  `scripts/nb_eval_runner.py` runs BOTH Waymo ground-truth fixtures (`gt_wmr.json`,
+  `waymo_gt_verified.json`) against the live config in one command by subprocess-orchestrating
+  `app/retrieval_eval` per fixture (the reuse seam; no evaluation logic rewritten), with a
+  silent-death artifact guard and a never-blend split of the answerable arm
+  (R@10/MRR/block-P@1 with denominators) from the known-absent arm. Unit tests:
+  `scripts/test_nb_eval_runner.py` (synthetic reports, zero-GPU/network). First committed run
+  (`docs/eval-reports/data/2026-08-25-nb-d4-dual-fixture-SAMPLE.*`, tag SAMPLE): gt_wmr 68/70 =
+  0.9714 R@10 / 0.9393 MRR / 48/65 = 0.7385 block-P@1; ver84 65/68 = 0.9559 / 0.8335 / 22/60 =
+  0.3667; absent arms 12 and 14, all with confident top results. The two R@10 figures reproduce
+  handoff §0's live-w=0.7 headline numbers exactly. block-P@1 denominators are VARM-1's
+  text_answerable arm (65/60), so they are NOT directly comparable to PREC-1's pre-VARM-1
+  66/64-denominator figures.
+
 ### V0 core — M1-M9, owners A-F
 
 All six owner tracks landed on `main` during the original build. Ticket-by-ticket detail (PR
