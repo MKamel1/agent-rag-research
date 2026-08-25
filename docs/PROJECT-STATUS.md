@@ -651,3 +651,16 @@ deferred until the next-build programme's rerank/pool-depth work lands and then 
 both fixtures (`docs/superpowers/plans/2026-08-24-next-build-programme.md` §1, decision A) — not
 before, since changing weight mid-programme would invalidate comparability with every baseline
 number collected at 0.7.
+
+### Next-build D2 — block adjacency / chunking-artifact analysis (2026-08-25)
+
+Completes PREC-1 §3, read-only (no retrieval re-run): stored 2026-08-23 per-question records +
+`waymo/data/papers.db` opened `mode=ro`. Among near-misses whose rank-1 **paper** is correct but
+gold **block** not at rank 1 (PREC-1 §1 C1∪C2: verified-84 dense 27/64 scored; GT-WMR fused
+12/66), the gold block is elsewhere-in-document in 17/27 and 9/12 respectively; same-chunk 1+1,
+adjacent-chunk 8+2, cross-gold-paper 1+0. Boundary classes are real but secondary (33%/25% of
+near-misses; ≈14%/≈5% of scored items). Two items (one per headline fixture) had the gold text
+physically served inside the rank-1 chunk under a sibling anchor — an anchoring/citation artifact
+no reranker reaches. Report: `docs/eval-reports/2026-08-25-nb-d2-block-adjacency.md`; script:
+`docs/eval-reports/data/2026-08-23-waymo-priority/nb_d2_block_adjacency.py` (commits `87bfa51`,
+`d89fa15`, report commit on branch `NB-D2-block-adjacency`). Gates R0.

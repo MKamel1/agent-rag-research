@@ -166,12 +166,18 @@ Dependency edges, exhaustive:
       (constraint 11).
       Gates: R0.
 
-- [ ] **D2 — PREC-1 §3: block adjacency / chunking-artifact analysis.**
+- [x] **D2 — PREC-1 §3: block adjacency / chunking-artifact analysis.**
       Question: when rank-1 paper is right and the gold block is near-missed, how far away is it
       (same chunk? adjacent chunk? same section?) — measured via papers.db block adjacency, read-only.
       Owns: `docs/eval-reports/2026-08-24-nb-d2-block-adjacency.md` + script.
       Note: shares NO files with D1 by design (ownership rule); conclusions cross-reference by path.
       Gates: R0.
+      **Done 2026-08-25** (branch `NB-D2-block-adjacency`, analysis commits `87bfa51`/`d89fa15`):
+      report landed as `docs/eval-reports/2026-08-25-nb-d2-block-adjacency.md` (+ reproducible
+      script beside its input data). Verdict: boundary classes are real but secondary
+      (9/27 = 33% of verified-84 near-misses vs 3/12 = 25% GT-WMR; elsewhere-in-document dominates
+      both); sharpest slice = gold content served at rank 1 under a sibling anchor (anchor/citation
+      artifact, invisible to rerankers).
 
 - [ ] **D3 — abstention feasibility census v2.**
       Question: do ANY observable quantities separate answerable from known-absent — fused score,

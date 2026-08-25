@@ -1,0 +1,2143 @@
+{
+  "gt_wmr_dense_only": {
+    "block_distance": {
+      "histogram": {
+        "129": 1,
+        "18": 1,
+        "20": 1,
+        "23": 1,
+        "3": 1,
+        "42": 1,
+        "51": 1,
+        "57": 1,
+        "6": 2,
+        "64": 1,
+        "65": 1,
+        "8": 1,
+        "98": 1
+      },
+      "max": 129,
+      "median": 32.5,
+      "min": 3,
+      "n": 14
+    },
+    "buckets": {
+      "adjacent_chunk": 2,
+      "cross_gold_paper": 0,
+      "same_chunk": 1,
+      "same_doc_elsewhere": 11,
+      "same_section": 0
+    },
+    "chunk_distance": {
+      "histogram": {
+        "0": 1,
+        "1": 2,
+        "10": 1,
+        "14": 1,
+        "17": 2,
+        "21": 1,
+        "27": 1,
+        "28": 1,
+        "3": 1,
+        "4": 1,
+        "5": 2
+      },
+      "max": 28,
+      "median": 7.5,
+      "min": 0,
+      "n": 14
+    },
+    "config": "gt_wmr_dense_only",
+    "crosstab_bucket_x_sub": {
+      "adjacent_chunk": {
+        "C1": 2,
+        "C2": 0
+      },
+      "cross_gold_paper": {
+        "C1": 0,
+        "C2": 0
+      },
+      "same_chunk": {
+        "C1": 0,
+        "C2": 1
+      },
+      "same_doc_elsewhere": {
+        "C1": 10,
+        "C2": 1
+      },
+      "same_section": {
+        "C1": 0,
+        "C2": 0
+      }
+    },
+    "decomposition": {
+      "A": 47,
+      "C1": 12,
+      "C2": 2,
+      "D": 2,
+      "E": 3
+    },
+    "g1_matches_prec1_table": "not_tabulated",
+    "gold_rank_histogram_C1": {
+      "histogram": {
+        "2": 8,
+        "3": 2,
+        "6": 1,
+        "7": 1
+      },
+      "max": 7,
+      "median": 2.0,
+      "min": 2,
+      "n": 12
+    },
+    "items": [
+      {
+        "block_distance": 129,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 28,
+        "gold_paper": "local:0983968f9ec2",
+        "gold_rank_in_top10": 2,
+        "gold_section": "Abstract",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WMR-009",
+        "rank1_paper": "local:0983968f9ec2",
+        "rank1_section": "5. Conclusion",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 65,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 21,
+        "gold_paper": "local:f2811feacd35",
+        "gold_rank_in_top10": 2,
+        "gold_section": "4. Discussion > 4.1. Safe System considerations",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WMR-022",
+        "rank1_paper": "local:f2811feacd35",
+        "rank1_section": "",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 20,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 4,
+        "gold_paper": "2505.14842",
+        "gold_rank_in_top10": 3,
+        "gold_section": "Discussion",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WMR-025",
+        "rank1_paper": "2505.14842",
+        "rank1_section": "Outcome",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 6,
+        "bucket": "adjacent_chunk",
+        "chunk_distance": 1,
+        "gold_paper": "2312.12675",
+        "gold_rank_in_top10": 7,
+        "gold_section": "Table 6",
+        "gold_text_in_rank1_chunk": true,
+        "question_id": "Q-WMR-036",
+        "rank1_paper": "2312.12675",
+        "rank1_section": "RESULTS",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 98,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 27,
+        "gold_paper": "2312.13228",
+        "gold_rank_in_top10": 2,
+        "gold_section": "A.4. Errors When Computing a Vehicle-level Crash Rate",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WMR-037",
+        "rank1_paper": "2312.13228",
+        "rank1_section": "Measuring Vehicle Crash Rates",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 23,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 5,
+        "gold_paper": "local:c92c18fe2ac2",
+        "gold_rank_in_top10": 3,
+        "gold_section": "3. Results > 3.3. Injury risk curves",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WMR-039",
+        "rank1_paper": "local:c92c18fe2ac2",
+        "rank1_section": "Table 3.5",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 8,
+        "bucket": "adjacent_chunk",
+        "chunk_distance": 1,
+        "gold_paper": "local:5b903ab148a7",
+        "gold_rank_in_top10": 2,
+        "gold_section": "4 Results and Discussions",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WMR-045",
+        "rank1_paper": "local:5b903ab148a7",
+        "rank1_section": "3 Implementation > 3.3 Model Comparison",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 6,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 3,
+        "gold_paper": "local:7bf8bf93e22e",
+        "gold_rank_in_top10": 2,
+        "gold_section": "Injury risk function",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WMR-048",
+        "rank1_paper": "local:7bf8bf93e22e",
+        "rank1_section": "Methods",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 64,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 14,
+        "gold_paper": "local:1d8d84d78b21",
+        "gold_rank_in_top10": 2,
+        "gold_section": "3. Results > 3.1. Simulation case set",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WMR-050",
+        "rank1_paper": "local:1d8d84d78b21",
+        "rank1_section": "2. Methods > 2.2. Data source",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 51,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 17,
+        "gold_paper": "local:2b0e7fb59b39",
+        "gold_rank_in_top10": 6,
+        "gold_section": "Functional Safety",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WMR-052",
+        "rank1_paper": "local:2b0e7fb59b39",
+        "rank1_section": "Minimal Risk Condition (Fallback): Ensuring the Vehicle Can Transition to a Safe Stop",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 57,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 17,
+        "gold_paper": "local:39d37d41dd77",
+        "gold_rank_in_top10": 2,
+        "gold_section": "High-Level Structure",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WMR-055",
+        "rank1_paper": "local:39d37d41dd77",
+        "rank1_section": "Conclusions",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 18,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 5,
+        "gold_paper": "local:4087ccce4c01",
+        "gold_rank_in_top10": null,
+        "gold_section": "Ensure data alignment in ADS and benchmark data for both crashes and exposure.",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WMR-059",
+        "rank1_paper": "local:4087ccce4c01",
+        "rank1_section": "INTRODUCTION",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 42,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 10,
+        "gold_paper": "local:4c3912bd5507",
+        "gold_rank_in_top10": 2,
+        "gold_section": "Contribution",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WMR-061",
+        "rank1_paper": "local:4c3912bd5507",
+        "rank1_section": "Introduction",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 3,
+        "bucket": "same_chunk",
+        "chunk_distance": 0,
+        "gold_paper": "2312.12675",
+        "gold_rank_in_top10": null,
+        "gold_section": "Table 6",
+        "gold_text_in_rank1_chunk": true,
+        "question_id": "Q-WMR-094",
+        "rank1_paper": "2312.12675",
+        "rank1_section": "Table 6",
+        "sub_bucket": "C2"
+      }
+    ],
+    "n_near_miss": 14,
+    "n_questions": 82,
+    "n_scored": 66,
+    "near_miss_share_of_scored": 0.2121,
+    "textual_overlap_notes": 1
+  },
+  "gt_wmr_fused": {
+    "block_distance": {
+      "histogram": {
+        "129": 1,
+        "20": 1,
+        "23": 1,
+        "3": 1,
+        "42": 1,
+        "57": 1,
+        "6": 2,
+        "64": 1,
+        "65": 1,
+        "8": 1,
+        "98": 1
+      },
+      "max": 129,
+      "median": 32.5,
+      "min": 3,
+      "n": 12
+    },
+    "buckets": {
+      "adjacent_chunk": 2,
+      "cross_gold_paper": 0,
+      "same_chunk": 1,
+      "same_doc_elsewhere": 9,
+      "same_section": 0
+    },
+    "chunk_distance": {
+      "histogram": {
+        "0": 1,
+        "1": 2,
+        "10": 1,
+        "14": 1,
+        "17": 1,
+        "21": 1,
+        "27": 1,
+        "28": 1,
+        "3": 1,
+        "4": 1,
+        "5": 1
+      },
+      "max": 28,
+      "median": 7.5,
+      "min": 0,
+      "n": 12
+    },
+    "config": "gt_wmr_fused",
+    "crosstab_bucket_x_sub": {
+      "adjacent_chunk": {
+        "C1": 2,
+        "C2": 0
+      },
+      "cross_gold_paper": {
+        "C1": 0,
+        "C2": 0
+      },
+      "same_chunk": {
+        "C1": 0,
+        "C2": 1
+      },
+      "same_doc_elsewhere": {
+        "C1": 9,
+        "C2": 0
+      },
+      "same_section": {
+        "C1": 0,
+        "C2": 0
+      }
+    },
+    "decomposition": {
+      "A": 48,
+      "C1": 11,
+      "C2": 1,
+      "D": 5,
+      "E": 1
+    },
+    "g1_matches_prec1_table": true,
+    "gold_rank_histogram_C1": {
+      "histogram": {
+        "2": 8,
+        "3": 2,
+        "7": 1
+      },
+      "max": 7,
+      "median": 2,
+      "min": 2,
+      "n": 11
+    },
+    "items": [
+      {
+        "block_distance": 129,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 28,
+        "gold_paper": "local:0983968f9ec2",
+        "gold_rank_in_top10": 2,
+        "gold_section": "Abstract",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WMR-009",
+        "rank1_paper": "local:0983968f9ec2",
+        "rank1_section": "5. Conclusion",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 65,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 21,
+        "gold_paper": "local:f2811feacd35",
+        "gold_rank_in_top10": 2,
+        "gold_section": "4. Discussion > 4.1. Safe System considerations",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WMR-022",
+        "rank1_paper": "local:f2811feacd35",
+        "rank1_section": "",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 20,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 4,
+        "gold_paper": "2505.14842",
+        "gold_rank_in_top10": 3,
+        "gold_section": "Discussion",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WMR-025",
+        "rank1_paper": "2505.14842",
+        "rank1_section": "Outcome",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 6,
+        "bucket": "adjacent_chunk",
+        "chunk_distance": 1,
+        "gold_paper": "2312.12675",
+        "gold_rank_in_top10": 7,
+        "gold_section": "Table 6",
+        "gold_text_in_rank1_chunk": true,
+        "question_id": "Q-WMR-036",
+        "rank1_paper": "2312.12675",
+        "rank1_section": "RESULTS",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 98,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 27,
+        "gold_paper": "2312.13228",
+        "gold_rank_in_top10": 2,
+        "gold_section": "A.4. Errors When Computing a Vehicle-level Crash Rate",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WMR-037",
+        "rank1_paper": "2312.13228",
+        "rank1_section": "Measuring Vehicle Crash Rates",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 23,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 5,
+        "gold_paper": "local:c92c18fe2ac2",
+        "gold_rank_in_top10": 3,
+        "gold_section": "3. Results > 3.3. Injury risk curves",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WMR-039",
+        "rank1_paper": "local:c92c18fe2ac2",
+        "rank1_section": "Table 3.5",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 8,
+        "bucket": "adjacent_chunk",
+        "chunk_distance": 1,
+        "gold_paper": "local:5b903ab148a7",
+        "gold_rank_in_top10": 2,
+        "gold_section": "4 Results and Discussions",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WMR-045",
+        "rank1_paper": "local:5b903ab148a7",
+        "rank1_section": "3 Implementation > 3.3 Model Comparison",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 6,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 3,
+        "gold_paper": "local:7bf8bf93e22e",
+        "gold_rank_in_top10": 2,
+        "gold_section": "Injury risk function",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WMR-048",
+        "rank1_paper": "local:7bf8bf93e22e",
+        "rank1_section": "Methods",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 64,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 14,
+        "gold_paper": "local:1d8d84d78b21",
+        "gold_rank_in_top10": 2,
+        "gold_section": "3. Results > 3.1. Simulation case set",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WMR-050",
+        "rank1_paper": "local:1d8d84d78b21",
+        "rank1_section": "2. Methods > 2.2. Data source",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 57,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 17,
+        "gold_paper": "local:39d37d41dd77",
+        "gold_rank_in_top10": 2,
+        "gold_section": "High-Level Structure",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WMR-055",
+        "rank1_paper": "local:39d37d41dd77",
+        "rank1_section": "Conclusions",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 42,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 10,
+        "gold_paper": "local:4c3912bd5507",
+        "gold_rank_in_top10": 2,
+        "gold_section": "Contribution",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WMR-061",
+        "rank1_paper": "local:4c3912bd5507",
+        "rank1_section": "Introduction",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 3,
+        "bucket": "same_chunk",
+        "chunk_distance": 0,
+        "gold_paper": "2312.12675",
+        "gold_rank_in_top10": null,
+        "gold_section": "Table 6",
+        "gold_text_in_rank1_chunk": true,
+        "question_id": "Q-WMR-094",
+        "rank1_paper": "2312.12675",
+        "rank1_section": "Table 6",
+        "sub_bucket": "C2"
+      }
+    ],
+    "n_near_miss": 12,
+    "n_questions": 82,
+    "n_scored": 66,
+    "near_miss_share_of_scored": 0.1818,
+    "textual_overlap_notes": 1
+  },
+  "gt_wmr_sparse_only": {
+    "block_distance": {
+      "histogram": {
+        "129": 1,
+        "17": 2,
+        "20": 1,
+        "23": 1,
+        "24": 1,
+        "25": 2,
+        "28": 1,
+        "3": 1,
+        "32": 1,
+        "57": 1,
+        "59": 1,
+        "6": 1
+      },
+      "max": 129,
+      "median": 24.5,
+      "min": 3,
+      "n": 14
+    },
+    "buckets": {
+      "adjacent_chunk": 1,
+      "cross_gold_paper": 0,
+      "same_chunk": 1,
+      "same_doc_elsewhere": 12,
+      "same_section": 0
+    },
+    "chunk_distance": {
+      "histogram": {
+        "0": 1,
+        "1": 1,
+        "15": 1,
+        "17": 1,
+        "2": 2,
+        "28": 1,
+        "3": 1,
+        "4": 4,
+        "5": 1,
+        "8": 1
+      },
+      "max": 28,
+      "median": 4.0,
+      "min": 0,
+      "n": 14
+    },
+    "config": "gt_wmr_sparse_only",
+    "crosstab_bucket_x_sub": {
+      "adjacent_chunk": {
+        "C1": 0,
+        "C2": 1
+      },
+      "cross_gold_paper": {
+        "C1": 0,
+        "C2": 0
+      },
+      "same_chunk": {
+        "C1": 0,
+        "C2": 1
+      },
+      "same_doc_elsewhere": {
+        "C1": 2,
+        "C2": 10
+      },
+      "same_section": {
+        "C1": 0,
+        "C2": 0
+      }
+    },
+    "decomposition": {
+      "A": 34,
+      "C1": 2,
+      "C2": 12,
+      "D": 3,
+      "E": 15
+    },
+    "g1_matches_prec1_table": "not_tabulated",
+    "gold_rank_histogram_C1": {
+      "histogram": {
+        "2": 1,
+        "3": 1
+      },
+      "max": 3,
+      "median": 2.5,
+      "min": 2,
+      "n": 2
+    },
+    "items": [
+      {
+        "block_distance": 17,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 4,
+        "gold_paper": "local:b12ef27e3cd6",
+        "gold_rank_in_top10": null,
+        "gold_section": "Collision Data",
+        "gold_text_in_rank1_chunk": true,
+        "question_id": "Q-WMR-004",
+        "rank1_paper": "local:b12ef27e3cd6",
+        "rank1_section": "Naturalistic Driving Data",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 129,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 28,
+        "gold_paper": "local:0983968f9ec2",
+        "gold_rank_in_top10": 2,
+        "gold_section": "Abstract",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WMR-009",
+        "rank1_paper": "local:0983968f9ec2",
+        "rank1_section": "5. Conclusion",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 25,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 8,
+        "gold_paper": "2508.19425",
+        "gold_rank_in_top10": null,
+        "gold_section": "Breakdown of Freeway Crash Types",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WMR-013",
+        "rank1_paper": "2508.19425",
+        "rank1_section": "Severity-dependent Freeway Crash Types",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 24,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 3,
+        "gold_paper": "local:e402895b56ca",
+        "gold_rank_in_top10": null,
+        "gold_section": "2. A Layered Approach to Safety > 2.1 Defining Absence of Unreasonable Risk",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WMR-016",
+        "rank1_paper": "local:e402895b56ca",
+        "rank1_section": "1. Introduction",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 6,
+        "bucket": "adjacent_chunk",
+        "chunk_distance": 1,
+        "gold_paper": "local:f2811feacd35",
+        "gold_rank_in_top10": null,
+        "gold_section": "4. Discussion > 4.1. Safe System considerations",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WMR-022",
+        "rank1_paper": "local:f2811feacd35",
+        "rank1_section": "4. Discussion > 4.2. Comparison to other studies",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 20,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 4,
+        "gold_paper": "2505.14842",
+        "gold_rank_in_top10": 3,
+        "gold_section": "Discussion",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WMR-025",
+        "rank1_paper": "2505.14842",
+        "rank1_section": "Outcome",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 32,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 4,
+        "gold_paper": "2312.12675",
+        "gold_rank_in_top10": null,
+        "gold_section": "Table 6",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WMR-036",
+        "rank1_paper": "2312.12675",
+        "rank1_section": "Matching ofBenchmark and ADS Data",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 23,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 5,
+        "gold_paper": "local:c92c18fe2ac2",
+        "gold_rank_in_top10": null,
+        "gold_section": "3. Results > 3.3. Injury risk curves",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WMR-039",
+        "rank1_paper": "local:c92c18fe2ac2",
+        "rank1_section": "Table 3.5",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 17,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 2,
+        "gold_paper": "2303.15201",
+        "gold_rank_in_top10": null,
+        "gold_section": "VI. CONCLUSIONS",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WMR-043",
+        "rank1_paper": "2303.15201",
+        "rank1_section": "D. Results and Discussion",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 28,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 2,
+        "gold_paper": "2306.17682",
+        "gold_rank_in_top10": null,
+        "gold_section": "Conclusion",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WMR-044",
+        "rank1_paper": "2306.17682",
+        "rank1_section": "ADS Safety Standards Organization Framework",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 57,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 17,
+        "gold_paper": "local:39d37d41dd77",
+        "gold_rank_in_top10": null,
+        "gold_section": "High-Level Structure",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WMR-055",
+        "rank1_paper": "local:39d37d41dd77",
+        "rank1_section": "Conclusions",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 59,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 15,
+        "gold_paper": "local:750223d487eb",
+        "gold_rank_in_top10": null,
+        "gold_section": "Process for comparison and harmonization",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WMR-056",
+        "rank1_paper": "local:750223d487eb",
+        "rank1_section": "SMS and the AV industry",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 25,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 4,
+        "gold_paper": "2208.08651",
+        "gold_rank_in_top10": null,
+        "gold_section": "4. Results > 4.2. Validation against experimental response time data",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WMR-058",
+        "rank1_paper": "2208.08651",
+        "rank1_section": "3. Methods > 3.4. Data annotation",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 3,
+        "bucket": "same_chunk",
+        "chunk_distance": 0,
+        "gold_paper": "2312.12675",
+        "gold_rank_in_top10": null,
+        "gold_section": "Table 6",
+        "gold_text_in_rank1_chunk": true,
+        "question_id": "Q-WMR-094",
+        "rank1_paper": "2312.12675",
+        "rank1_section": "Table 6",
+        "sub_bucket": "C2"
+      }
+    ],
+    "n_near_miss": 14,
+    "n_questions": 82,
+    "n_scored": 66,
+    "near_miss_share_of_scored": 0.2121,
+    "textual_overlap_notes": 1
+  },
+  "ver84_dense_only": {
+    "block_distance": {
+      "histogram": {
+        "11": 1,
+        "115": 1,
+        "136": 1,
+        "14": 3,
+        "184": 1,
+        "2": 3,
+        "21": 1,
+        "26": 1,
+        "3": 2,
+        "4": 2,
+        "40": 1,
+        "46": 1,
+        "58": 1,
+        "59": 1,
+        "6": 1,
+        "62": 1,
+        "70": 1,
+        "74": 2,
+        "80": 1,
+        "90": 1
+      },
+      "max": 184,
+      "median": 26,
+      "min": 2,
+      "n": 27
+    },
+    "buckets": {
+      "adjacent_chunk": 8,
+      "cross_gold_paper": 1,
+      "same_chunk": 1,
+      "same_doc_elsewhere": 17,
+      "same_section": 0
+    },
+    "chunk_distance": {
+      "histogram": {
+        "0": 1,
+        "1": 8,
+        "10": 2,
+        "13": 1,
+        "14": 1,
+        "15": 2,
+        "16": 1,
+        "17": 2,
+        "19": 1,
+        "2": 2,
+        "20": 1,
+        "26": 1,
+        "29": 1,
+        "3": 1,
+        "7": 1
+      },
+      "max": 29,
+      "median": 8.5,
+      "min": 0,
+      "n": 26
+    },
+    "config": "ver84_dense_only",
+    "crosstab_bucket_x_sub": {
+      "adjacent_chunk": {
+        "C1": 6,
+        "C2": 2
+      },
+      "cross_gold_paper": {
+        "C1": 0,
+        "C2": 1
+      },
+      "same_chunk": {
+        "C1": 0,
+        "C2": 1
+      },
+      "same_doc_elsewhere": {
+        "C1": 12,
+        "C2": 5
+      },
+      "same_section": {
+        "C1": 0,
+        "C2": 0
+      }
+    },
+    "decomposition": {
+      "A": 24,
+      "C1": 18,
+      "C2": 9,
+      "D": 11,
+      "E": 2
+    },
+    "g1_matches_prec1_table": true,
+    "gold_rank_histogram_C1": {
+      "histogram": {
+        "10": 2,
+        "2": 7,
+        "3": 5,
+        "4": 1,
+        "5": 1,
+        "6": 2
+      },
+      "max": 10,
+      "median": 3.0,
+      "min": 2,
+      "n": 18
+    },
+    "items": [
+      {
+        "block_distance": 58,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 15,
+        "gold_paper": "2312.12675",
+        "gold_rank_in_top10": 2,
+        "gold_section": "A.2. Resultsfor Los Angeles",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-GTA-002",
+        "rank1_paper": "2312.12675",
+        "rank1_section": "RESULTS",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 14,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 3,
+        "gold_paper": "local:6b9ccd0431f6",
+        "gold_rank_in_top10": null,
+        "gold_section": "Comparisons to Prior Studies",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-GTA-005",
+        "rank1_paper": "local:6b9ccd0431f6",
+        "rank1_section": "Study Conformance to the RAVE Checklist",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 115,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 26,
+        "gold_paper": "local:6b9ccd0431f6",
+        "gold_rank_in_top10": null,
+        "gold_section": "Underreporting and Dynamic Benchmark Sensitivity Study",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-GTA-009",
+        "rank1_paper": "local:6b9ccd0431f6",
+        "rank1_section": "Accepted for publication in Traf ic Injury Prevention",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 40,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 13,
+        "gold_paper": "2011.00038",
+        "gold_rank_in_top10": 2,
+        "gold_section": "Abstract",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-GTA-012",
+        "rank1_paper": "2011.00038",
+        "rank1_section": "3. Results: Collisions and Minor Contacts",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 46,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 14,
+        "gold_paper": "2011.00038",
+        "gold_rank_in_top10": 5,
+        "gold_section": "3. Results: Collisions and Minor Contacts > 3.1 Single Vehicle Events",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-GTA-013",
+        "rank1_paper": "2011.00038",
+        "rank1_section": "Abstract",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 4,
+        "bucket": "cross_gold_paper",
+        "chunk_distance": null,
+        "gold_paper": "2507.17943",
+        "gold_rank_in_top10": null,
+        "gold_section": "Introduction",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-GTA-015",
+        "rank1_paper": "2011.00038",
+        "rank1_section": "Abstract",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 11,
+        "bucket": "adjacent_chunk",
+        "chunk_distance": 1,
+        "gold_paper": "2305.12032",
+        "gold_rank_in_top10": null,
+        "gold_section": "2 Related Work",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-GTA-023",
+        "rank1_paper": "2305.12032",
+        "rank1_section": "1 Introduction",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 3,
+        "bucket": "adjacent_chunk",
+        "chunk_distance": 1,
+        "gold_paper": "2510.26125",
+        "gold_rank_in_top10": 2,
+        "gold_section": "Abstract",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-GTA-024",
+        "rank1_paper": "2510.26125",
+        "rank1_section": "1. Introduction",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 3,
+        "bucket": "adjacent_chunk",
+        "chunk_distance": 1,
+        "gold_paper": "2410.08903",
+        "gold_rank_in_top10": 3,
+        "gold_section": "ABSTRACT",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-GTA-026",
+        "rank1_paper": "2410.08903",
+        "rank1_section": "INTRODUCTION",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 6,
+        "bucket": "adjacent_chunk",
+        "chunk_distance": 1,
+        "gold_paper": "2210.09267",
+        "gold_rank_in_top10": 2,
+        "gold_section": "",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-GTA-027",
+        "rank1_paper": "2210.09267",
+        "rank1_section": "1 Introduction",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 2,
+        "bucket": "adjacent_chunk",
+        "chunk_distance": 1,
+        "gold_paper": "2206.07705",
+        "gold_rank_in_top10": 3,
+        "gold_section": "",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-GTA-028",
+        "rank1_paper": "2206.07705",
+        "rank1_section": "I. INTRODUCTION",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 80,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 16,
+        "gold_paper": "2207.05844",
+        "gold_rank_in_top10": 3,
+        "gold_section": "",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-GTA-030",
+        "rank1_paper": "2207.05844",
+        "rank1_section": "6 Related Work",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 4,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 2,
+        "gold_paper": "2506.08228",
+        "gold_rank_in_top10": 3,
+        "gold_section": "Abstract",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-GTA-031",
+        "rank1_paper": "2506.08228",
+        "rank1_section": "1 Introduction",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 90,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 17,
+        "gold_paper": "2506.08228",
+        "gold_rank_in_top10": 4,
+        "gold_section": "Abstract",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-GTA-032",
+        "rank1_paper": "2506.08228",
+        "rank1_section": "5 Evaluation > 5.2 Closed-loop scaling",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 21,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 2,
+        "gold_paper": "local:4087ccce4c01",
+        "gold_rank_in_top10": 10,
+        "gold_section": "Favor outcomes that are directly measurable.",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WAYB-003",
+        "rank1_paper": "local:4087ccce4c01",
+        "rank1_section": "Ensure data alignment in ADS and benchmark data for both crashes and exposure.",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 2,
+        "bucket": "adjacent_chunk",
+        "chunk_distance": 1,
+        "gold_paper": "2306.17682",
+        "gold_rank_in_top10": 2,
+        "gold_section": "Abstract",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WAYB-004",
+        "rank1_paper": "2306.17682",
+        "rank1_section": "Introduction",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 14,
+        "bucket": "adjacent_chunk",
+        "chunk_distance": 1,
+        "gold_paper": "2403.14648",
+        "gold_rank_in_top10": 2,
+        "gold_section": "Conclusions and Future Study",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WAYB-018",
+        "rank1_paper": "2403.14648",
+        "rank1_section": "Results and Discussion",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 74,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 17,
+        "gold_paper": "2312.12675",
+        "gold_rank_in_top10": 10,
+        "gold_section": "A.3. Example ofNelson (1970) Rate Ratio Confidence Intervals",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WAYB-025",
+        "rank1_paper": "2312.12675",
+        "rank1_section": "Confidence Intervals",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 184,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 19,
+        "gold_paper": "2208.12833",
+        "gold_rank_in_top10": 6,
+        "gold_section": "OVERVIEW AND MAPPING",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WAYB-026",
+        "rank1_paper": "2208.12833",
+        "rank1_section": "Abstract",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 2,
+        "bucket": "same_chunk",
+        "chunk_distance": 0,
+        "gold_paper": "2208.12833",
+        "gold_rank_in_top10": null,
+        "gold_section": "OVERVIEW AND MAPPING",
+        "gold_text_in_rank1_chunk": true,
+        "question_id": "Q-WAYB-027",
+        "rank1_paper": "2208.12833",
+        "rank1_section": "OVERVIEW AND MAPPING",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 136,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 29,
+        "gold_paper": "2605.29818",
+        "gold_rank_in_top10": 2,
+        "gold_section": "2) Outside the ODD of the ADS?",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WAYB-030",
+        "rank1_paper": "2605.29818",
+        "rank1_section": "I. INTRODUCTION",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 74,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 20,
+        "gold_paper": "local:6b9ccd0431f6",
+        "gold_rank_in_top10": null,
+        "gold_section": "Results:",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WAYB-031",
+        "rank1_paper": "local:6b9ccd0431f6",
+        "rank1_section": "Accepted for publication in Traf ic Injury Prevention",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 26,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 7,
+        "gold_paper": "local:6b9ccd0431f6",
+        "gold_rank_in_top10": 6,
+        "gold_section": "Results:",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WAYB-033",
+        "rank1_paper": "local:6b9ccd0431f6",
+        "rank1_section": "Crash Type Analysis",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 59,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 10,
+        "gold_paper": "local:f6f1461f2c9a",
+        "gold_rank_in_top10": 3,
+        "gold_section": "Abstract",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WAYB-037",
+        "rank1_paper": "local:f6f1461f2c9a",
+        "rank1_section": "Discussion",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 70,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 15,
+        "gold_paper": "2508.19425",
+        "gold_rank_in_top10": null,
+        "gold_section": "Freeway Crash Rates",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-GTA-042",
+        "rank1_paper": "2508.19425",
+        "rank1_section": "Defining and Developing Crash Rate Benchmarks",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 14,
+        "bucket": "adjacent_chunk",
+        "chunk_distance": 1,
+        "gold_paper": "2506.08228",
+        "gold_rank_in_top10": null,
+        "gold_section": "4 Scaling Laws > 4.2 Cross-Entropy Loss Scaling",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-GTA-043",
+        "rank1_paper": "2506.08228",
+        "rank1_section": "4 Scaling Laws > 4.1 Estimating Optimal Model and Data Scaling",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 62,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 10,
+        "gold_paper": "2104.10133",
+        "gold_rank_in_top10": null,
+        "gold_section": "5. Experiments > 5.3. Analysis of perception data quality",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-GTA-044",
+        "rank1_paper": "2104.10133",
+        "rank1_section": "1. Introduction",
+        "sub_bucket": "C2"
+      }
+    ],
+    "n_near_miss": 27,
+    "n_questions": 82,
+    "n_scored": 64,
+    "near_miss_share_of_scored": 0.4219,
+    "textual_overlap_notes": 0
+  },
+  "ver84_fused": {
+    "block_distance": {
+      "histogram": {
+        "11": 1,
+        "12": 1,
+        "121": 1,
+        "136": 1,
+        "138": 1,
+        "14": 3,
+        "184": 1,
+        "2": 3,
+        "21": 1,
+        "26": 1,
+        "27": 1,
+        "3": 2,
+        "4": 1,
+        "46": 1,
+        "58": 1,
+        "59": 1,
+        "6": 1,
+        "62": 1,
+        "74": 2,
+        "80": 1,
+        "90": 1
+      },
+      "max": 184,
+      "median": 26,
+      "min": 2,
+      "n": 27
+    },
+    "buckets": {
+      "adjacent_chunk": 9,
+      "cross_gold_paper": 0,
+      "same_chunk": 1,
+      "same_doc_elsewhere": 17,
+      "same_section": 0
+    },
+    "chunk_distance": {
+      "histogram": {
+        "0": 1,
+        "1": 9,
+        "10": 2,
+        "14": 1,
+        "15": 1,
+        "16": 1,
+        "17": 2,
+        "19": 1,
+        "2": 2,
+        "20": 1,
+        "27": 1,
+        "29": 2,
+        "3": 1,
+        "4": 1,
+        "7": 1
+      },
+      "max": 29,
+      "median": 4,
+      "min": 0,
+      "n": 27
+    },
+    "config": "ver84_fused",
+    "crosstab_bucket_x_sub": {
+      "adjacent_chunk": {
+        "C1": 6,
+        "C2": 3
+      },
+      "cross_gold_paper": {
+        "C1": 0,
+        "C2": 0
+      },
+      "same_chunk": {
+        "C1": 0,
+        "C2": 1
+      },
+      "same_doc_elsewhere": {
+        "C1": 10,
+        "C2": 7
+      },
+      "same_section": {
+        "C1": 0,
+        "C2": 0
+      }
+    },
+    "decomposition": {
+      "A": 23,
+      "C1": 16,
+      "C2": 11,
+      "D": 7,
+      "E": 7
+    },
+    "g1_matches_prec1_table": true,
+    "gold_rank_histogram_C1": {
+      "histogram": {
+        "2": 6,
+        "3": 5,
+        "5": 3,
+        "7": 1,
+        "8": 1
+      },
+      "max": 8,
+      "median": 3.0,
+      "min": 2,
+      "n": 16
+    },
+    "items": [
+      {
+        "block_distance": 58,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 15,
+        "gold_paper": "2312.12675",
+        "gold_rank_in_top10": 2,
+        "gold_section": "A.2. Resultsfor Los Angeles",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-GTA-002",
+        "rank1_paper": "2312.12675",
+        "rank1_section": "RESULTS",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 27,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 4,
+        "gold_paper": "local:6b9ccd0431f6",
+        "gold_rank_in_top10": 3,
+        "gold_section": "Comparisons to Prior Studies",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-GTA-005",
+        "rank1_paper": "local:6b9ccd0431f6",
+        "rank1_section": "Underreporting and Dynamic Benchmark Sensitivity Study",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 138,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 29,
+        "gold_paper": "local:6b9ccd0431f6",
+        "gold_rank_in_top10": 5,
+        "gold_section": "Trends in Crash Types",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-GTA-006",
+        "rank1_paper": "local:6b9ccd0431f6",
+        "rank1_section": "INTRODUCTION",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 121,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 27,
+        "gold_paper": "local:6b9ccd0431f6",
+        "gold_rank_in_top10": 5,
+        "gold_section": "Underreporting and Dynamic Benchmark Sensitivity Study",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-GTA-009",
+        "rank1_paper": "local:6b9ccd0431f6",
+        "rank1_section": "INTRODUCTION",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 46,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 14,
+        "gold_paper": "2011.00038",
+        "gold_rank_in_top10": 8,
+        "gold_section": "3. Results: Collisions and Minor Contacts > 3.1 Single Vehicle Events",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-GTA-013",
+        "rank1_paper": "2011.00038",
+        "rank1_section": "Abstract",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 12,
+        "bucket": "adjacent_chunk",
+        "chunk_distance": 1,
+        "gold_paper": "2304.03834",
+        "gold_rank_in_top10": 2,
+        "gold_section": "I. INTRODUCTION",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-GTA-019",
+        "rank1_paper": "2304.03834",
+        "rank1_section": "II. RELATED WORK",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 11,
+        "bucket": "adjacent_chunk",
+        "chunk_distance": 1,
+        "gold_paper": "2305.12032",
+        "gold_rank_in_top10": null,
+        "gold_section": "2 Related Work",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-GTA-023",
+        "rank1_paper": "2305.12032",
+        "rank1_section": "1 Introduction",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 3,
+        "bucket": "adjacent_chunk",
+        "chunk_distance": 1,
+        "gold_paper": "2510.26125",
+        "gold_rank_in_top10": 2,
+        "gold_section": "Abstract",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-GTA-024",
+        "rank1_paper": "2510.26125",
+        "rank1_section": "1. Introduction",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 3,
+        "bucket": "adjacent_chunk",
+        "chunk_distance": 1,
+        "gold_paper": "2410.08903",
+        "gold_rank_in_top10": 3,
+        "gold_section": "ABSTRACT",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-GTA-026",
+        "rank1_paper": "2410.08903",
+        "rank1_section": "INTRODUCTION",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 6,
+        "bucket": "adjacent_chunk",
+        "chunk_distance": 1,
+        "gold_paper": "2210.09267",
+        "gold_rank_in_top10": null,
+        "gold_section": "",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-GTA-027",
+        "rank1_paper": "2210.09267",
+        "rank1_section": "1 Introduction",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 2,
+        "bucket": "adjacent_chunk",
+        "chunk_distance": 1,
+        "gold_paper": "2206.07705",
+        "gold_rank_in_top10": 3,
+        "gold_section": "",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-GTA-028",
+        "rank1_paper": "2206.07705",
+        "rank1_section": "I. INTRODUCTION",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 80,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 16,
+        "gold_paper": "2207.05844",
+        "gold_rank_in_top10": null,
+        "gold_section": "",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-GTA-030",
+        "rank1_paper": "2207.05844",
+        "rank1_section": "6 Related Work",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 4,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 2,
+        "gold_paper": "2506.08228",
+        "gold_rank_in_top10": 3,
+        "gold_section": "Abstract",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-GTA-031",
+        "rank1_paper": "2506.08228",
+        "rank1_section": "1 Introduction",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 90,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 17,
+        "gold_paper": "2506.08228",
+        "gold_rank_in_top10": 5,
+        "gold_section": "Abstract",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-GTA-032",
+        "rank1_paper": "2506.08228",
+        "rank1_section": "5 Evaluation > 5.2 Closed-loop scaling",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 21,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 2,
+        "gold_paper": "local:4087ccce4c01",
+        "gold_rank_in_top10": null,
+        "gold_section": "Favor outcomes that are directly measurable.",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WAYB-003",
+        "rank1_paper": "local:4087ccce4c01",
+        "rank1_section": "Ensure data alignment in ADS and benchmark data for both crashes and exposure.",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 2,
+        "bucket": "adjacent_chunk",
+        "chunk_distance": 1,
+        "gold_paper": "2306.17682",
+        "gold_rank_in_top10": 2,
+        "gold_section": "Abstract",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WAYB-004",
+        "rank1_paper": "2306.17682",
+        "rank1_section": "Introduction",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 14,
+        "bucket": "adjacent_chunk",
+        "chunk_distance": 1,
+        "gold_paper": "2403.14648",
+        "gold_rank_in_top10": 2,
+        "gold_section": "Conclusions and Future Study",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WAYB-018",
+        "rank1_paper": "2403.14648",
+        "rank1_section": "Results and Discussion",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 74,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 17,
+        "gold_paper": "2312.12675",
+        "gold_rank_in_top10": null,
+        "gold_section": "A.3. Example ofNelson (1970) Rate Ratio Confidence Intervals",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WAYB-025",
+        "rank1_paper": "2312.12675",
+        "rank1_section": "Confidence Intervals",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 184,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 19,
+        "gold_paper": "2208.12833",
+        "gold_rank_in_top10": 7,
+        "gold_section": "OVERVIEW AND MAPPING",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WAYB-026",
+        "rank1_paper": "2208.12833",
+        "rank1_section": "Abstract",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 2,
+        "bucket": "same_chunk",
+        "chunk_distance": 0,
+        "gold_paper": "2208.12833",
+        "gold_rank_in_top10": null,
+        "gold_section": "OVERVIEW AND MAPPING",
+        "gold_text_in_rank1_chunk": true,
+        "question_id": "Q-WAYB-027",
+        "rank1_paper": "2208.12833",
+        "rank1_section": "OVERVIEW AND MAPPING",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 136,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 29,
+        "gold_paper": "2605.29818",
+        "gold_rank_in_top10": 2,
+        "gold_section": "2) Outside the ODD of the ADS?",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WAYB-030",
+        "rank1_paper": "2605.29818",
+        "rank1_section": "I. INTRODUCTION",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 74,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 20,
+        "gold_paper": "local:6b9ccd0431f6",
+        "gold_rank_in_top10": null,
+        "gold_section": "Results:",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WAYB-031",
+        "rank1_paper": "local:6b9ccd0431f6",
+        "rank1_section": "Accepted for publication in Traf ic Injury Prevention",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 26,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 7,
+        "gold_paper": "local:6b9ccd0431f6",
+        "gold_rank_in_top10": null,
+        "gold_section": "Results:",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WAYB-033",
+        "rank1_paper": "local:6b9ccd0431f6",
+        "rank1_section": "Crash Type Analysis",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 59,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 10,
+        "gold_paper": "local:f6f1461f2c9a",
+        "gold_rank_in_top10": 3,
+        "gold_section": "Abstract",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WAYB-037",
+        "rank1_paper": "local:f6f1461f2c9a",
+        "rank1_section": "Discussion",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 14,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 3,
+        "gold_paper": "2508.19425",
+        "gold_rank_in_top10": null,
+        "gold_section": "Abstract",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WAYB-038",
+        "rank1_paper": "2508.19425",
+        "rank1_section": "Defining and Developing Crash Rate Benchmarks",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 14,
+        "bucket": "adjacent_chunk",
+        "chunk_distance": 1,
+        "gold_paper": "2506.08228",
+        "gold_rank_in_top10": null,
+        "gold_section": "4 Scaling Laws > 4.2 Cross-Entropy Loss Scaling",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-GTA-043",
+        "rank1_paper": "2506.08228",
+        "rank1_section": "4 Scaling Laws > 4.1 Estimating Optimal Model and Data Scaling",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 62,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 10,
+        "gold_paper": "2104.10133",
+        "gold_rank_in_top10": null,
+        "gold_section": "5. Experiments > 5.3. Analysis of perception data quality",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-GTA-044",
+        "rank1_paper": "2104.10133",
+        "rank1_section": "1. Introduction",
+        "sub_bucket": "C2"
+      }
+    ],
+    "n_near_miss": 27,
+    "n_questions": 82,
+    "n_scored": 64,
+    "near_miss_share_of_scored": 0.4219,
+    "textual_overlap_notes": 0
+  },
+  "ver84_sparse_only": {
+    "block_distance": {
+      "histogram": {
+        "113": 1,
+        "121": 1,
+        "136": 1,
+        "14": 1,
+        "184": 1,
+        "2": 2,
+        "21": 1,
+        "26": 1,
+        "27": 1,
+        "40": 1,
+        "45": 1,
+        "6": 1,
+        "61": 1,
+        "62": 1,
+        "63": 1,
+        "67": 1,
+        "74": 2,
+        "78": 1,
+        "8": 1,
+        "9": 1,
+        "90": 1
+      },
+      "max": 184,
+      "median": 61,
+      "min": 2,
+      "n": 23
+    },
+    "buckets": {
+      "adjacent_chunk": 5,
+      "cross_gold_paper": 0,
+      "same_chunk": 0,
+      "same_doc_elsewhere": 18,
+      "same_section": 0
+    },
+    "chunk_distance": {
+      "histogram": {
+        "1": 5,
+        "10": 1,
+        "13": 3,
+        "15": 2,
+        "17": 2,
+        "19": 1,
+        "2": 2,
+        "20": 2,
+        "27": 1,
+        "29": 1,
+        "4": 1,
+        "5": 1,
+        "7": 1
+      },
+      "max": 29,
+      "median": 13,
+      "min": 1,
+      "n": 23
+    },
+    "config": "ver84_sparse_only",
+    "crosstab_bucket_x_sub": {
+      "adjacent_chunk": {
+        "C1": 1,
+        "C2": 4
+      },
+      "cross_gold_paper": {
+        "C1": 0,
+        "C2": 0
+      },
+      "same_chunk": {
+        "C1": 0,
+        "C2": 0
+      },
+      "same_doc_elsewhere": {
+        "C1": 0,
+        "C2": 18
+      },
+      "same_section": {
+        "C1": 0,
+        "C2": 0
+      }
+    },
+    "decomposition": {
+      "A": 11,
+      "C1": 1,
+      "C2": 22,
+      "D": 5,
+      "E": 25
+    },
+    "g1_matches_prec1_table": "not_tabulated",
+    "gold_rank_histogram_C1": {
+      "histogram": {
+        "2": 1
+      },
+      "max": 2,
+      "median": 2,
+      "min": 2,
+      "n": 1
+    },
+    "items": [
+      {
+        "block_distance": 27,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 4,
+        "gold_paper": "local:6b9ccd0431f6",
+        "gold_rank_in_top10": null,
+        "gold_section": "Comparisons to Prior Studies",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-GTA-005",
+        "rank1_paper": "local:6b9ccd0431f6",
+        "rank1_section": "Underreporting and Dynamic Benchmark Sensitivity Study",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 78,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 13,
+        "gold_paper": "local:6b9ccd0431f6",
+        "gold_rank_in_top10": null,
+        "gold_section": "Trends in Crash Types",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-GTA-006",
+        "rank1_paper": "local:6b9ccd0431f6",
+        "rank1_section": "Limitations",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 121,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 27,
+        "gold_paper": "local:6b9ccd0431f6",
+        "gold_rank_in_top10": null,
+        "gold_section": "Underreporting and Dynamic Benchmark Sensitivity Study",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-GTA-009",
+        "rank1_paper": "local:6b9ccd0431f6",
+        "rank1_section": "INTRODUCTION",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 6,
+        "bucket": "adjacent_chunk",
+        "chunk_distance": 1,
+        "gold_paper": "2210.09267",
+        "gold_rank_in_top10": null,
+        "gold_section": "",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-GTA-027",
+        "rank1_paper": "2210.09267",
+        "rank1_section": "1 Introduction",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 113,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 20,
+        "gold_paper": "2506.08228",
+        "gold_rank_in_top10": null,
+        "gold_section": "Abstract",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-GTA-031",
+        "rank1_paper": "2506.08228",
+        "rank1_section": "8 Related Work",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 90,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 17,
+        "gold_paper": "2506.08228",
+        "gold_rank_in_top10": null,
+        "gold_section": "Abstract",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-GTA-032",
+        "rank1_paper": "2506.08228",
+        "rank1_section": "5 Evaluation > 5.2 Closed-loop scaling",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 40,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 13,
+        "gold_paper": "2011.00038",
+        "gold_rank_in_top10": null,
+        "gold_section": "Abstract",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WAYB-001",
+        "rank1_paper": "2011.00038",
+        "rank1_section": "3. Results: Collisions and Minor Contacts",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 21,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 2,
+        "gold_paper": "local:4087ccce4c01",
+        "gold_rank_in_top10": null,
+        "gold_section": "Favor outcomes that are directly measurable.",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WAYB-003",
+        "rank1_paper": "local:4087ccce4c01",
+        "rank1_section": "Ensure data alignment in ADS and benchmark data for both crashes and exposure.",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 2,
+        "bucket": "adjacent_chunk",
+        "chunk_distance": 1,
+        "gold_paper": "2306.17682",
+        "gold_rank_in_top10": null,
+        "gold_section": "Abstract",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WAYB-004",
+        "rank1_paper": "2306.17682",
+        "rank1_section": "Introduction",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 2,
+        "bucket": "adjacent_chunk",
+        "chunk_distance": 1,
+        "gold_paper": "2310.08710",
+        "gold_rank_in_top10": null,
+        "gold_section": "Abstract",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WAYB-005",
+        "rank1_paper": "2310.08710",
+        "rank1_section": "1 Introduction",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 63,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 13,
+        "gold_paper": "2305.12032",
+        "gold_rank_in_top10": null,
+        "gold_section": "Abstract",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WAYB-008",
+        "rank1_paper": "2305.12032",
+        "rank1_section": "5 Experimental Results > 5.3 Learnings from the 2023 Challenge",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 67,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 15,
+        "gold_paper": "2508.19425",
+        "gold_rank_in_top10": null,
+        "gold_section": "Freeway Crash Rates",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WAYB-016",
+        "rank1_paper": "2508.19425",
+        "rank1_section": "Defining and Developing Crash Rate Benchmarks",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 61,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 15,
+        "gold_paper": "2508.19425",
+        "gold_rank_in_top10": null,
+        "gold_section": "Comparison to Surface Streets",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WAYB-017",
+        "rank1_paper": "2508.19425",
+        "rank1_section": "Defining and Developing Crash Rate Benchmarks",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 14,
+        "bucket": "adjacent_chunk",
+        "chunk_distance": 1,
+        "gold_paper": "2403.14648",
+        "gold_rank_in_top10": 2,
+        "gold_section": "Conclusions and Future Study",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WAYB-018",
+        "rank1_paper": "2403.14648",
+        "rank1_section": "Results and Discussion",
+        "sub_bucket": "C1"
+      },
+      {
+        "block_distance": 8,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 2,
+        "gold_paper": "2308.02273",
+        "gold_rank_in_top10": null,
+        "gold_section": "C. Exclusion criteria",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WAYB-023",
+        "rank1_paper": "2308.02273",
+        "rank1_section": "VI. DISCUSSION",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 45,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 5,
+        "gold_paper": "2503.02498",
+        "gold_rank_in_top10": null,
+        "gold_section": "2.\u2002 Review Methodology > 2.2. Exclusion Criteria",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WAYB-024",
+        "rank1_paper": "2503.02498",
+        "rank1_section": "1. Introduction",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 74,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 17,
+        "gold_paper": "2312.12675",
+        "gold_rank_in_top10": null,
+        "gold_section": "A.3. Example ofNelson (1970) Rate Ratio Confidence Intervals",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WAYB-025",
+        "rank1_paper": "2312.12675",
+        "rank1_section": "Confidence Intervals",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 184,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 19,
+        "gold_paper": "2208.12833",
+        "gold_rank_in_top10": null,
+        "gold_section": "OVERVIEW AND MAPPING",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WAYB-026",
+        "rank1_paper": "2208.12833",
+        "rank1_section": "Abstract",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 136,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 29,
+        "gold_paper": "2605.29818",
+        "gold_rank_in_top10": null,
+        "gold_section": "2) Outside the ODD of the ADS?",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WAYB-030",
+        "rank1_paper": "2605.29818",
+        "rank1_section": "I. INTRODUCTION",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 74,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 20,
+        "gold_paper": "local:6b9ccd0431f6",
+        "gold_rank_in_top10": null,
+        "gold_section": "Results:",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WAYB-031",
+        "rank1_paper": "local:6b9ccd0431f6",
+        "rank1_section": "Accepted for publication in Traf ic Injury Prevention",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 26,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 7,
+        "gold_paper": "local:6b9ccd0431f6",
+        "gold_rank_in_top10": null,
+        "gold_section": "Results:",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WAYB-033",
+        "rank1_paper": "local:6b9ccd0431f6",
+        "rank1_section": "Crash Type Analysis",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 9,
+        "bucket": "adjacent_chunk",
+        "chunk_distance": 1,
+        "gold_paper": "local:f6f1461f2c9a",
+        "gold_rank_in_top10": null,
+        "gold_section": "Abstract",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-WAYB-037",
+        "rank1_paper": "local:f6f1461f2c9a",
+        "rank1_section": "Introduction",
+        "sub_bucket": "C2"
+      },
+      {
+        "block_distance": 62,
+        "bucket": "same_doc_elsewhere",
+        "chunk_distance": 10,
+        "gold_paper": "2104.10133",
+        "gold_rank_in_top10": null,
+        "gold_section": "5. Experiments > 5.3. Analysis of perception data quality",
+        "gold_text_in_rank1_chunk": false,
+        "question_id": "Q-GTA-044",
+        "rank1_paper": "2104.10133",
+        "rank1_section": "1. Introduction",
+        "sub_bucket": "C2"
+      }
+    ],
+    "n_near_miss": 23,
+    "n_questions": 82,
+    "n_scored": 64,
+    "near_miss_share_of_scored": 0.3594,
+    "textual_overlap_notes": 0
+  }
+}
