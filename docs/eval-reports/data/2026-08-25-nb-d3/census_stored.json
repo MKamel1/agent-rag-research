@@ -1,0 +1,547 @@
+{
+  "provenance": {
+    "stored_runs_dir": "docs/eval-reports/data/2026-08-23-waymo-priority",
+    "fixtures_root": "fixtures/eval",
+    "fresh_dir": null,
+    "refresh_post_rerank": "distributions shift if retrieval changes; re-run before reusing thresholds against a changed stack"
+  },
+  "excluded_features": {
+    "title_leak": "leaky-by-construction for this comparison: the flag tests retrieved passages against the question's GOLD papers' titles, and a known-absent question has an empty gold set, so it is False for every absent item regardless of retrieval output (0/14 ver84, 0/12 gt_wmr). It encodes the label, not observable retrieval behaviour."
+  },
+  "fixtures": {
+    "ver84": {
+      "arms": {
+        "dense": {
+          "answerable_dist": {
+            "n": 68,
+            "mean": 0.014873,
+            "min": 0.010869565217391304,
+            "p25": 0.014084507042253521,
+            "median": 0.015625,
+            "p75": 0.016129032258064516,
+            "max": 0.01639344262295082
+          },
+          "absent_dist": {
+            "n": 14,
+            "mean": 0.013353,
+            "min": 0.010869565217391304,
+            "p25": 0.011363636363636364,
+            "median": 0.013157894736842105,
+            "p75": 0.014492753623188406,
+            "max": 0.01639344262295082
+          }
+        },
+        "fused": {
+          "answerable_dist": {
+            "n": 68,
+            "mean": 0.011275,
+            "min": 0.006905199722567141,
+            "p25": 0.008681597783421842,
+            "median": 0.011292212634494514,
+            "p75": 0.013878539493293592,
+            "max": 0.016009221311475412
+          },
+          "absent_dist": {
+            "n": 14,
+            "mean": 0.011018,
+            "min": 0.0071636776839088985,
+            "p25": 0.008627592281207463,
+            "median": 0.010721973836727936,
+            "p75": 0.014389233954451346,
+            "max": 0.015443098123069612
+          }
+        },
+        "sparse": {
+          "answerable_dist": {
+            "n": 68,
+            "mean": 0.01358,
+            "min": 0.010869565217391304,
+            "p25": 0.012195121951219513,
+            "median": 0.013513513513513514,
+            "p75": 0.015151515151515152,
+            "max": 0.01639344262295082
+          },
+          "absent_dist": {
+            "n": 14,
+            "mean": 0.013767,
+            "min": 0.010869565217391304,
+            "p25": 0.012345679012345678,
+            "median": 0.014492753623188406,
+            "p75": 0.014705882352941176,
+            "max": 0.015625
+          }
+        }
+      },
+      "features": {
+        "top_score_dense": {
+          "n_answerable": 68,
+          "n_absent": 14,
+          "n_excluded_null": 0,
+          "auroc": 0.2852,
+          "auroc_direction": "absent lower",
+          "threshold": 0.01459931798806479,
+          "rule": "abstain if < 0.0145993",
+          "FP_false_refusals": 22,
+          "FN_missed_absent": 3,
+          "TP_detected_absent": 11,
+          "TN_correct_answerable": 46,
+          "youden_j": 0.4621848739495798
+        },
+        "top_score_fused": {
+          "n_answerable": 68,
+          "n_absent": 14,
+          "n_excluded_null": 0,
+          "auroc": 0.4674,
+          "auroc_direction": "absent lower",
+          "threshold": 0.011284478728377748,
+          "rule": "abstain if < 0.0112845",
+          "FP_false_refusals": 33,
+          "FN_missed_absent": 4,
+          "TP_detected_absent": 10,
+          "TN_correct_answerable": 35,
+          "youden_j": 0.22899159663865548
+        },
+        "top_score_sparse": {
+          "n_answerable": 68,
+          "n_absent": 14,
+          "n_excluded_null": 0,
+          "auroc": 0.5226,
+          "auroc_direction": "absent higher",
+          "threshold": 0.014185110663983903,
+          "rule": "abstain if > 0.0141851",
+          "FP_false_refusals": 28,
+          "FN_missed_absent": 5,
+          "TP_detected_absent": 9,
+          "TN_correct_answerable": 40,
+          "youden_j": 0.23109243697478998
+        },
+        "score_max_arms": {
+          "n_answerable": 68,
+          "n_absent": 14,
+          "n_excluded_null": 0,
+          "auroc": 0.2988,
+          "auroc_direction": "absent lower",
+          "threshold": 0.015268065268065269,
+          "rule": "abstain if < 0.0152681",
+          "FP_false_refusals": 25,
+          "FN_missed_absent": 3,
+          "TP_detected_absent": 11,
+          "TN_correct_answerable": 43,
+          "youden_j": 0.41806722689075626
+        },
+        "score_gap_dense_minus_sparse": {
+          "n_answerable": 68,
+          "n_absent": 14,
+          "n_excluded_null": 0,
+          "auroc": 0.2957,
+          "auroc_direction": "absent lower",
+          "threshold": 0.001913529431388057,
+          "rule": "abstain if < 0.00191353",
+          "FP_false_refusals": 41,
+          "FN_missed_absent": 1,
+          "TP_detected_absent": 13,
+          "TN_correct_answerable": 27,
+          "youden_j": 0.3256302521008404
+        },
+        "arm_rank1_agreement": {
+          "n_answerable": 68,
+          "n_absent": 14,
+          "n_excluded_null": 0,
+          "auroc": 0.4044,
+          "auroc_direction": "absent lower",
+          "threshold": 0.5,
+          "rule": "abstain if < 0.5",
+          "FP_false_refusals": 4,
+          "FN_missed_absent": 11,
+          "TP_detected_absent": 3,
+          "TN_correct_answerable": 64,
+          "youden_j": 0.15546218487394958
+        },
+        "jaccard_fused_dense": {
+          "n_answerable": 68,
+          "n_absent": 14,
+          "n_excluded_null": 0,
+          "auroc": 0.3834,
+          "auroc_direction": "absent lower",
+          "threshold": 0.3875,
+          "rule": "abstain if < 0.3875",
+          "FP_false_refusals": 23,
+          "FN_missed_absent": 6,
+          "TP_detected_absent": 8,
+          "TN_correct_answerable": 45,
+          "youden_j": 0.23319327731092432
+        },
+        "jaccard_fused_sparse": {
+          "n_answerable": 68,
+          "n_absent": 14,
+          "n_excluded_null": 0,
+          "auroc": 0.7321,
+          "auroc_direction": "absent higher",
+          "threshold": 0.4226190476190476,
+          "rule": "abstain if > 0.422619",
+          "FP_false_refusals": 34,
+          "FN_missed_absent": 0,
+          "TP_detected_absent": 14,
+          "TN_correct_answerable": 34,
+          "youden_j": 0.5
+        },
+        "jaccard_dense_sparse": {
+          "n_answerable": 68,
+          "n_absent": 14,
+          "n_excluded_null": 0,
+          "auroc": 0.604,
+          "auroc_direction": "absent higher",
+          "threshold": 0.225,
+          "rule": "abstain if > 0.225",
+          "FP_false_refusals": 28,
+          "FN_missed_absent": 5,
+          "TP_detected_absent": 9,
+          "TN_correct_answerable": 40,
+          "youden_j": 0.23109243697478998
+        },
+        "distinct_papers_fused": {
+          "n_answerable": 68,
+          "n_absent": 14,
+          "n_excluded_null": 0,
+          "auroc": 0.5735,
+          "auroc_direction": "absent higher",
+          "threshold": 9.5,
+          "rule": "abstain if > 9.5",
+          "FP_false_refusals": 3,
+          "FN_missed_absent": 11,
+          "TP_detected_absent": 3,
+          "TN_correct_answerable": 65,
+          "youden_j": 0.17016806722689073
+        },
+        "distinct_papers_dense": {
+          "n_answerable": 68,
+          "n_absent": 14,
+          "n_excluded_null": 0,
+          "auroc": 0.4942,
+          "auroc_direction": "absent lower",
+          "threshold": 6.5,
+          "rule": "abstain if < 6.5",
+          "FP_false_refusals": 57,
+          "FN_missed_absent": 0,
+          "TP_detected_absent": 14,
+          "TN_correct_answerable": 11,
+          "youden_j": 0.16176470588235292
+        },
+        "distinct_papers_sparse": {
+          "n_answerable": 68,
+          "n_absent": 14,
+          "n_excluded_null": 0,
+          "auroc": 0.5037,
+          "auroc_direction": "absent higher",
+          "threshold": 4.5,
+          "rule": "abstain if < 4.5",
+          "FP_false_refusals": 10,
+          "FN_missed_absent": 11,
+          "TP_detected_absent": 3,
+          "TN_correct_answerable": 58,
+          "youden_j": 0.0672268907563025
+        },
+        "query_len_chars": {
+          "n_answerable": 68,
+          "n_absent": 14,
+          "n_excluded_null": 0,
+          "auroc": 0.125,
+          "auroc_direction": "absent lower",
+          "threshold": 173.5,
+          "rule": "abstain if < 173.5",
+          "FP_false_refusals": 10,
+          "FN_missed_absent": 3,
+          "TP_detected_absent": 11,
+          "TN_correct_answerable": 58,
+          "youden_j": 0.6386554621848739
+        },
+        "query_len_words": {
+          "n_answerable": 68,
+          "n_absent": 14,
+          "n_excluded_null": 0,
+          "auroc": 0.0735,
+          "auroc_direction": "absent lower",
+          "threshold": 27.5,
+          "rule": "abstain if < 27.5",
+          "FP_false_refusals": 14,
+          "FN_missed_absent": 1,
+          "TP_detected_absent": 13,
+          "TN_correct_answerable": 54,
+          "youden_j": 0.7226890756302522
+        }
+      },
+      "denominators": {
+        "n_items": 82,
+        "n_answerable": 68,
+        "n_absent": 14
+      }
+    },
+    "gt_wmr": {
+      "arms": {
+        "dense": {
+          "answerable_dist": {
+            "n": 70,
+            "mean": 0.015426,
+            "min": 0.010869565217391304,
+            "p25": 0.014925373134328358,
+            "median": 0.015873015873015872,
+            "p75": 0.01639344262295082,
+            "max": 0.01639344262295082
+          },
+          "absent_dist": {
+            "n": 12,
+            "mean": 0.013928,
+            "min": 0.01098901098901099,
+            "p25": 0.012345679012345678,
+            "median": 0.014492753623188406,
+            "p75": 0.015873015873015872,
+            "max": 0.01639344262295082
+          }
+        },
+        "fused": {
+          "answerable_dist": {
+            "n": 70,
+            "mean": 0.012386,
+            "min": 0.007413793103448276,
+            "p25": 0.00974579158999523,
+            "median": 0.013095238095238094,
+            "p75": 0.015154994259471873,
+            "max": 0.01639344262295082
+          },
+          "absent_dist": {
+            "n": 12,
+            "mean": 0.009961,
+            "min": 0.00737221494102228,
+            "p25": 0.008615068218298555,
+            "median": 0.00966010733452594,
+            "p75": 0.010565870910698497,
+            "max": 0.016133229247983348
+          }
+        },
+        "sparse": {
+          "answerable_dist": {
+            "n": 70,
+            "mean": 0.014027,
+            "min": 0.010869565217391304,
+            "p25": 0.012658227848101266,
+            "median": 0.014492753623188406,
+            "p75": 0.015384615384615385,
+            "max": 0.01639344262295082
+          },
+          "absent_dist": {
+            "n": 12,
+            "mean": 0.013731,
+            "min": 0.011235955056179775,
+            "p25": 0.011627906976744186,
+            "median": 0.014285714285714285,
+            "p75": 0.015384615384615385,
+            "max": 0.01639344262295082
+          }
+        }
+      },
+      "features": {
+        "top_score_dense": {
+          "n_answerable": 70,
+          "n_absent": 12,
+          "n_excluded_null": 0,
+          "auroc": 0.2851,
+          "auroc_direction": "absent lower",
+          "threshold": 0.01459931798806479,
+          "rule": "abstain if < 0.0145993",
+          "FP_false_refusals": 13,
+          "FN_missed_absent": 5,
+          "TP_detected_absent": 7,
+          "TN_correct_answerable": 57,
+          "youden_j": 0.39761904761904765
+        },
+        "top_score_fused": {
+          "n_answerable": 70,
+          "n_absent": 12,
+          "n_excluded_null": 0,
+          "auroc": 0.2798,
+          "auroc_direction": "absent lower",
+          "threshold": 0.011659246121870904,
+          "rule": "abstain if < 0.0116592",
+          "FP_false_refusals": 29,
+          "FN_missed_absent": 1,
+          "TP_detected_absent": 11,
+          "TN_correct_answerable": 41,
+          "youden_j": 0.5023809523809524
+        },
+        "top_score_sparse": {
+          "n_answerable": 70,
+          "n_absent": 12,
+          "n_excluded_null": 0,
+          "auroc": 0.4542,
+          "auroc_direction": "absent lower",
+          "threshold": 0.012121657361151925,
+          "rule": "abstain if < 0.0121217",
+          "FP_false_refusals": 13,
+          "FN_missed_absent": 7,
+          "TP_detected_absent": 5,
+          "TN_correct_answerable": 57,
+          "youden_j": 0.23095238095238096
+        },
+        "score_max_arms": {
+          "n_answerable": 70,
+          "n_absent": 12,
+          "n_excluded_null": 0,
+          "auroc": 0.3881,
+          "auroc_direction": "absent lower",
+          "threshold": 0.014815627743634766,
+          "rule": "abstain if < 0.0148156",
+          "FP_false_refusals": 7,
+          "FN_missed_absent": 7,
+          "TP_detected_absent": 5,
+          "TN_correct_answerable": 63,
+          "youden_j": 0.31666666666666665
+        },
+        "score_gap_dense_minus_sparse": {
+          "n_answerable": 70,
+          "n_absent": 12,
+          "n_excluded_null": 0,
+          "auroc": 0.3667,
+          "auroc_direction": "absent lower",
+          "threshold": -6.682705159048383e-05,
+          "rule": "abstain if < -6.68271e-05",
+          "FP_false_refusals": 14,
+          "FN_missed_absent": 4,
+          "TP_detected_absent": 8,
+          "TN_correct_answerable": 56,
+          "youden_j": 0.4666666666666666
+        },
+        "arm_rank1_agreement": {
+          "n_answerable": 70,
+          "n_absent": 12,
+          "n_excluded_null": 0,
+          "auroc": 0.1911,
+          "auroc_direction": "absent lower",
+          "threshold": 2.0,
+          "rule": "abstain if < 2",
+          "FP_false_refusals": 20,
+          "FN_missed_absent": 1,
+          "TP_detected_absent": 11,
+          "TN_correct_answerable": 50,
+          "youden_j": 0.6309523809523809
+        },
+        "jaccard_fused_dense": {
+          "n_answerable": 70,
+          "n_absent": 12,
+          "n_excluded_null": 0,
+          "auroc": 0.2321,
+          "auroc_direction": "absent lower",
+          "threshold": 0.35416666666666663,
+          "rule": "abstain if < 0.354167",
+          "FP_false_refusals": 11,
+          "FN_missed_absent": 5,
+          "TP_detected_absent": 7,
+          "TN_correct_answerable": 59,
+          "youden_j": 0.42619047619047623
+        },
+        "jaccard_fused_sparse": {
+          "n_answerable": 70,
+          "n_absent": 12,
+          "n_excluded_null": 0,
+          "auroc": 0.6583,
+          "auroc_direction": "absent higher",
+          "threshold": 0.4226190476190476,
+          "rule": "abstain if > 0.422619",
+          "FP_false_refusals": 32,
+          "FN_missed_absent": 3,
+          "TP_detected_absent": 9,
+          "TN_correct_answerable": 38,
+          "youden_j": 0.29285714285714287
+        },
+        "jaccard_dense_sparse": {
+          "n_answerable": 70,
+          "n_absent": 12,
+          "n_excluded_null": 0,
+          "auroc": 0.4214,
+          "auroc_direction": "absent lower",
+          "threshold": 0.08391608391608392,
+          "rule": "abstain if < 0.0839161",
+          "FP_false_refusals": 5,
+          "FN_missed_absent": 8,
+          "TP_detected_absent": 4,
+          "TN_correct_answerable": 65,
+          "youden_j": 0.26190476190476186
+        },
+        "distinct_papers_fused": {
+          "n_answerable": 70,
+          "n_absent": 12,
+          "n_excluded_null": 0,
+          "auroc": 0.8661,
+          "auroc_direction": "absent higher",
+          "threshold": 5.5,
+          "rule": "abstain if > 5.5",
+          "FP_false_refusals": 14,
+          "FN_missed_absent": 2,
+          "TP_detected_absent": 10,
+          "TN_correct_answerable": 56,
+          "youden_j": 0.6333333333333333
+        },
+        "distinct_papers_dense": {
+          "n_answerable": 70,
+          "n_absent": 12,
+          "n_excluded_null": 0,
+          "auroc": 0.7768,
+          "auroc_direction": "absent higher",
+          "threshold": 4.5,
+          "rule": "abstain if > 4.5",
+          "FP_false_refusals": 15,
+          "FN_missed_absent": 4,
+          "TP_detected_absent": 8,
+          "TN_correct_answerable": 55,
+          "youden_j": 0.45238095238095233
+        },
+        "distinct_papers_sparse": {
+          "n_answerable": 70,
+          "n_absent": 12,
+          "n_excluded_null": 0,
+          "auroc": 0.6798,
+          "auroc_direction": "absent higher",
+          "threshold": 5.5,
+          "rule": "abstain if > 5.5",
+          "FP_false_refusals": 43,
+          "FN_missed_absent": 1,
+          "TP_detected_absent": 11,
+          "TN_correct_answerable": 27,
+          "youden_j": 0.3023809523809523
+        },
+        "query_len_chars": {
+          "n_answerable": 70,
+          "n_absent": 12,
+          "n_excluded_null": 0,
+          "auroc": 0.1,
+          "auroc_direction": "absent lower",
+          "threshold": 113.0,
+          "rule": "abstain if < 113",
+          "FP_false_refusals": 15,
+          "FN_missed_absent": 1,
+          "TP_detected_absent": 11,
+          "TN_correct_answerable": 55,
+          "youden_j": 0.7023809523809523
+        },
+        "query_len_words": {
+          "n_answerable": 70,
+          "n_absent": 12,
+          "n_excluded_null": 0,
+          "auroc": 0.1315,
+          "auroc_direction": "absent lower",
+          "threshold": 16.5,
+          "rule": "abstain if < 16.5",
+          "FP_false_refusals": 17,
+          "FN_missed_absent": 1,
+          "TP_detected_absent": 11,
+          "TN_correct_answerable": 53,
+          "youden_j": 0.6738095238095237
+        }
+      },
+      "denominators": {
+        "n_items": 82,
+        "n_answerable": 70,
+        "n_absent": 12
+      }
+    }
+  }
+}
