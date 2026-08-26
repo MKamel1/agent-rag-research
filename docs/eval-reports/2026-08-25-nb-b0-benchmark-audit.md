@@ -179,7 +179,98 @@ with its own denominator and its own bound.
 
 ## §2 The metric definition for THIS push
 
-*(to land in commit 3)*
+### §2.1 Recommendation
+
+The operator's "precision ≥ 0.95" attaches to **two named metrics, scored per fixture, never
+averaged**, each reported with a five-part qualifier `{metric, fixture, arm (all/text), pool depth,
+config}` — without all five parts a number is meaningless under PREC-1 §5's conditioning finding:
+
+**Primary gate — paper-level P@1, answerable arm, shipped fused config:**
+
+| fixture | achievability bound (arithmetic) | verdict |
+|---|---|---|
+| gt_wmr | max = R@10 = 69/70 = 0.9857; bar = 67/70; current 64/70 → Δ +3 | **feasible in shipped shape** |
+| ver84 | max = R@10 = 61/68 = 0.8971 < 0.95 | **infeasible until the fusion-eviction question (X-F) resolves**; dense-only variant bound 66/68 = 0.9706, bar 65/68, current 54/68 → feasible conditional on X-F + X-O converting +11 |
+
+Rationale for paper-P@1 as primary: it is the metric closest to what a user experiences first ("was
+the right document served first"), its ceiling is exactly R@10 (shown), it is computable from every
+stored run record since the additive-fields fix, and it is the precision half of frozen gates B/D
+done honestly.
+
+**Secondary gate — block-level P@1, text-answerable arm, pool depth stated:**
+
+| fixture | bound @K=32 / K=128 (perfect reranker) | verdict |
+|---|---|---|
+| gt_wmr | 63/65 = 0.9692 / 65/65 = 1.0000 | **feasible now** (all-arm too: 0.9545 @K=32) |
+| ver84 | 56/60 = 0.9333 @K=128 (all-arm 0.8750) | **infeasible as bounded today** — one item short at K=128 |
+
+Rationale for block-P@1-text-arm as secondary rather than primary: passage-level correctness is
+what the grounded-RAG product actually serves (the agent receives chunk text), but on ver84 its
+bound sits below target under today's extraction/pools, so gating the whole push on it would repeat
+gates B/D's failure mode in reverse — freezing a target the instrument cannot reach. NB-R0's
+two-arm statement is the honest formulation: **priority fixture ✓ clearable; full-corpus text-arm
+~0.93 achievable, all-arm bounded by vision/extraction limits.**
+
+**Forbidden as gates:** P@10 (structural ~1/k wall); any full-population precision priced over
+absent queries before abstention exists (cap 0.8537/0.8293, §1.2d); answer-level precision until a
+delivered-rubric judge run exists (§1.2e). The absent arm stays *reported, never blended* (frozen
+protocol's own rule).
+
+### §2.2 What the bounds say the push must actually do
+
+Per fixture, from the arithmetic above plus the failure decomposition:
+
+1. **gt_wmr (priority)**: everything needed is ranking-side. Paper-P@1 needs +3 conversions;
+   block-P@1 needs ordering quality over a ≥32-deep pool (C1 = 11 of 12 near-misses already sit in
+   the shipped top-10 at ranks 2–8, unchanged by depth — NB-D1). No upstream dependency.
+2. **ver84 (full corpus)**: three stacked dependencies, in order — (i) fusion shape (X-F): lifts
+   the paper-P@1 bound from 0.8971 to 0.9706; (ii) reranker ordering (X-O): converts the exposed
+   near-miss population (23/23 reachable by K=64 per NB-D1; promotion proven by Q-WAYB-031,
+   absent-from-pool@32 → reranked #1@64, against the measured newcomer hazard); (iii) only then
+   does the block-bound residual (one text-arm item) become visible work.
+
+### §2.3 The denominator decision that must accompany the target
+
+Because the system cannot abstain, the 0.95 claim must explicitly exclude known-absent queries —
+and the excluded arm must be *displayed next to the headline* (frozen protocol's own semantics),
+not hidden. If the operator wants precision **priced over all served answers** (absent included),
+the honest statement today is that its ceiling is 0.8537 / 0.8293 and the prerequisite ticket is an
+abstention signal source (NB-A1 C1–C5), not retrieval tuning — D3 ruled the retrieval side out.
+
+### §2.4 What upstream changes would have to move FOR THE BOUND ITSELF TO RISE
+
+These are the only levers that change the ceilings in §1.2c — cited to their boundary/extraction
+evidence:
+
+1. **Anchor-membership citation/scoring policy (X-C class).** NB-D2 §2: Q-WAYB-027 (gold block
+   `2208.12833:b188` is a member of the rank-1 chunk anchored `b186`) and Q-WMR-094 (`b66` is the
+   last block of rank-1 chunk span 63–66) had their gold text *physically served at rank 1* while
+   anchor-exact scoring called them misses; Q-WMR-036 is the straddle case. Converting ~1–2
+   items/fixture lifts ver84's all-arm block bound 56/64 → ≤58/64 = 0.9063 — real but does not
+   close the gap (both named artifacts are vision-derived, hence outside the text arms). Cheap,
+   rides with any PR, fixes real mis-groundings.
+2. **Extraction repair for figure/table numerics.** Openevidence-programme §3's recorded finding:
+   Q-GTA-044's nine inset values ARE selectable via `fitz.get_text()` — only this corpus's
+   block/chunk extractor drops them — so part of the "vision-unreachable" slice is an
+   extraction-pipeline artifact, not a true vision requirement. NB-VLM-pilot shows the render-read
+   alternative currently fails its own fidelity bar (Stage 1: 50% < 80%, genuine chart-numerics
+   drops), so extractor-side repair is the honest lever. Each recovered item converts an
+   unreachable into a reachable.
+3. **Chunk-boundary / re-chunking work.** NB-D2: boundary-defined misses (same_chunk +
+   adjacent_chunk) are 9/27 (33%) of ver84-dense near-misses and 3/12 (25%) of gt_wmr-fused, but
+   `same_doc_elsewhere` dominates both fixtures (63% / 75%); gold blocks up to 16–29 chunks away.
+   The ver84 text-arm bound crosses 0.95 exactly when ONE of the four non-vision items unexposed at
+   K=128 becomes exposed (57/60 = 0.95); two make it comfortable. This is the lever NB-R0 flagged
+   as "upstream re-chunking beyond this programme's scope" — it must be commissioned explicitly if
+   the operator wants the ver84 all-arm/text-arm bound itself to rise, rather than accepting the
+   two-arm statement.
+4. **Vision-path success (VLM programme).** Only affects the all-arm reading; gated today behind
+   NB-6 scoping / Decision C unique-information-yield analysis after the pilot's Stage-1 fail.
+5. **Abstention signal (NB-A1).** Does not raise these bounds; it raises the *denominator* a
+   defensible precision claim may use (§2.3).
+
+Sequencing note (lessons §7.2 compliance): all five are stated as bound-movers BEFORE the X-series
+lands its remaining verdicts; none may be retro-fitted as an excuse after numbers disappoint.
 
 ## §3 Gap analysis: agentic-RAG evaluation
 
