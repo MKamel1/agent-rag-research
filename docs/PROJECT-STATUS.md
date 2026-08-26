@@ -704,3 +704,13 @@ Operator decisions recorded this programme: **A** keep `hybrid_dense_weight`=0.7
 **B** fabrication-rubric amendments F-A1..F-A3 applied after verification + SIGNED OFF header
 (`6d0b32b`); **C** VLM conditional on unique-information yield (NB-6 scoping dispatched);
 **D** OpenEvidence head-to-head out of scope this programme.
+
+### Successor queue executed (2026-08-25, same day)
+
+| item | outcome |
+|---|---|
+| A-series C1 refusal-affordance detector | **DROPPED** per pre-committed disjunctive criterion — ver84 fails both halves (10/16 absent covered < 12; 7/68 false refusals > 5); gt_wmr passes clean (11/12, 0 FP). Stage 2 dead with it. No rubric iteration performed or permitted. `docs/eval-reports/2026-08-25-nb-c1-refusal-detector.md`, merge `ba05c85` |
+| Fabrication re-run under amended rubric | **Adverse + qualified**: headline rates are a 38/46 mixture of full-delivery vs NUM_CTX-truncated items (non-comparable by hash AND delivery); F-A2 did NOT surface Q-GTA-037 (wording ≠ compliance, now measured); Q-WAYB-035 lost its old unsupported catch; F-A3 delta sits on a truncated item. Follow-up ticket **NB-JUDGE-CTX** filed (fix harness context window, correct stale comment, re-run owed). `docs/eval-reports/2026-08-25-nb-judge-rerun.md`, merge `5784fa5` |
+| NB-6 bounded VLM pilot | **PROJECT CLOSED** per pre-committed protocol — Stage 0 all PASS (G0.1 posture-A 5.65GB free ≥2GB; G0.2 max 14.4s/page ≤30s; G0.3 4/5 true-vision survivors), Stage 1 FAIL 50.0% (4/8) vs ≥80% bar; misses hand-verified genuine (dense chart/table numerics dropped or paraphrased; sparse figure-text survives). qwen2.5vl:7b acquired for the pilot. `docs/eval-reports/2026-08-25-nb-vlm-pilot.md`, merge `2f401f5` |
+| X-H (hard/negation strata) | Gate fired (residual is stratum-shaped per X-P/X-O) but **execution deferred**: no pre-committed falsifier exists (R0 deferred its definition), honest-ceiling bounds already cap ordering-side work below target, and cost/certainty profile is worst-of-rank. First candidate of any future retrieval-quality programme; evidence cited (ver84 hard 0.167, negation-and-scope 1/7, PREC-1 §4) |
+| A-series C2 anchor-coverage probe | Dispatched same day (next in A-1 ordering after C1's drop; fully pre-committed criteria incl. length-leakage guard) — outcome recorded on landing |
