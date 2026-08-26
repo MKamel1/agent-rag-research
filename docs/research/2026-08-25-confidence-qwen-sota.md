@@ -86,7 +86,7 @@ hallucination detection) vs **[passage/claim-level]** (support or factuality per
 The family our MCP surface maps onto most directly: score each generated claim against the served
 passages with an entailment model.
 
-- **TRUE** (Honovich et al., NAACL 2022 findings lineage, arXiv 2204.04991,
+- **TRUE** (Honovich et al., 2022, arXiv 2204.04991,
   <https://arxiv.org/abs/2204.04991>): standardized meta-benchmark over 11 factual-consistency
   datasets; large-scale **NLI** and question-generation-and-answering metrics are the strongest
   families (best NLI systems avg AUC ≈ 81.5 across datasets), and they are complementary in
@@ -124,8 +124,8 @@ passages with an entailment model.
   seed-arbitrary wrongness — "**it does not guarantee factuality because it does not help when
   LLM outputs are systematically bad**" (same source). Long-form mode decomposes passages into
   factoids and scores each — i.e., it degrades gracefully toward claim granularity.
-- Cost: k samples (paper uses 5–10) + k² pairwise NLI calls per answer — cheap locally except for
-  the k× generation latency multiplier.
+- Cost: k samples (10 per question in the ICLR paper's experiments) + pairwise NLI calls across
+  them — cheap locally except for the k× generation latency multiplier.
 
 ### 1.3 Self-consistency / sample-and-agree [sentence/passage-level detection]
 
@@ -314,10 +314,176 @@ vLLM server cannot share the card gracefully with the TEI pair either — the vL
 capability (§2.2) is therefore available inside the same stop-TEI maintenance windows, not
 alongside retrieval.
 
+## §3 Recommendation (a) — top-3 confidence mechanisms for the 5-level MCP surface
+
+Ranking criterion: honest implementability on THIS stack — what can start producing signal
+without data we don't have, what each mechanism demands before its numbers mean anything, and
+how each fails. The 5-level target is stated but NOT assumed achievable today (§3.4).
+
+### Rank 1 — Support-checking of generated answers against served passages (MiniCheck-class) [passage/claim-level]
+
+- Mechanism: run a small entailment fact-checker (MiniCheck-FT5, 770M; §1.1) over each answer
+  sentence × the passages actually returned for that answer; aggregate to a support fraction.
+- Why first here: our MCP product *is* grounded passages, so faithfulness-to-context is the
+  quantity callers need flagged; it is the only mechanism that yields **per-passage/per-claim**
+  granularity matching the citation surface; the model is supervised-by-construction (usable
+  directionally on day one, zero new labels); 770M params co-resident cost is small; TRUE gives
+  the family the strongest cross-task meta-evidence (§1.1). It also composes with the repo's
+  dead-candidate history: C1/C2 died as *retrieval-side* detectors; this lives at the generation
+  layer, which NB-A1 §0 flagged as never-measured (table above).
+- Calibration-data requirement: thresholds need graded (answer-claim ↔ served-passage) pairs.
+  None exist today. Target: an initial ~200–300-pair graded set drawn from real query traffic
+  across both fixtures' strata before ANY level label is published; until then ship the raw
+  score only.
+- Honest failure mode: measures support, not truth — wrong-but-consistently-retrieved content
+  scores high; absence-of-evidence questions (our known-absent arm) are invisible to it and must
+  stay with abstention logic.
+- Per-level semantics: deferred to §3.4 (shared across all mechanisms).
+
+### Rank 2 — Conformal / Learn-then-Test wrapper turning any score into levels [answer-level]
+
+- Mechanism: hold out labeled outcomes; use split-conformal quantiles or LTT multiple testing to
+  pick cut-points on whatever continuous score wins (support fraction from Rank 1, semantic
+  entropy from Rank 3, or a combination) such that "level ≥ Lᵢ ⇒ error rate ≤ εᵢ" holds at
+  chosen confidence 1−δ (§1.5: Gentle Introduction; Quach et al. for LLM-native calibration via
+  stopping/rejection rules; CRC for monotone-loss variants like bounded FNR of abstention).
+- Why second: it is the *only* machinery on the list that makes five discrete levels statistically
+  meaningful rather than decorative, it costs almost nothing at inference, and it is
+  score-agnostic — it will upgrade whichever Rank-1/Rank-3 signal we settle on.
+- Calibration-data requirement (the binding constraint): exchangeable labeled outcomes. B0 sizes
+  five-level fitting at **≥100 graded anchors vs the 26 absence-GT items that exist** (~4× gap;
+  NB-B0 §1 #7, §4); split-conformal quantile stability at five cut-points argues for the several-
+  hundred range in practice, and Kumar et al.'s cross-subject coverage collapse (~83% vs 90%,
+  §1.5) means the set must be **re-drawn and re-fit after any corpus refresh or model swap** —
+  guarantees do not survive drift unrefreshed. Guarantees are marginal-only; per-stratum level
+  semantics would need stratified calibration sets (more data again).
+- Honest failure mode: garbage-in — conformal faithfully guarantees the error rate OF THE SCORE'S
+  calibration distribution; if the anchor set misrepresents production traffic, the guarantee
+  transfers perfectly to the wrong distribution.
+- Interim honest surface (today's data): two states only — an UNVALIDATED support flag (raw
+  score, no level language) plus the existing abstain path — explicitly labeled prototype until
+  the anchor pool exists.
+
+### Rank 3 — Discrete semantic entropy over k samples [answer-level]
+
+- Mechanism: sample k≈5–10 answers per query, bidirectional-NLI cluster them, compute discrete
+  semantic entropy / cluster-count agreement (Kuhn et al.; Farquhar et al.; §1.2). The discrete
+  variant needs no token probabilities → runs through Ollama unchanged.
+- Why third and not first: strongest published answer-level evidence in the family (Nature 2024,
+  AUROC/AURAC across six datasets without task-specific training), genuinely complementary to
+  Rank 1 (it detects seed-arbitrary wrongness — including wrong answers that happen to be
+  well-supported by a misleading context — while being blind to systematic errors by the authors'
+  own scope statement); ranked below support-checking only because k× generation latency on a
+  shared 14B is a real serving cost and because its output is answer-level, coarser than our
+  passage-citation surface.
+- Calibration-data requirement: none to produce the signal (unsupervised); mapping entropy bands
+  to published levels requires the SAME graded-anchor pool as Rank 2 (it is a second score for
+  the same wrapper).
+- Per-level semantics: shared pool, same story as §3.4.
+
+### Explicitly not top-3: verbalized confidence
+
+Cheapest add (one prompt field) and decently calibrated on RLHF models per Tian et al., but
+documented overconfidence (Xiong et al.) plus prompt sensitivity make it the least honest
+*primary* driver of user-facing levels. Keep as an auxiliary feature fed into the Rank-2 wrapper.
+
+### §3.4 What five levels may honestly mean — now vs after calibration
+
+| Level | Semantics allowed TODAY | Semantics once ≥~100 graded anchors exist (B0 sizing; realistically several hundred) |
+|---|---|---|
+| L5 | nothing publishable | empirical upper-bound error ≤ ε₅ measured on held-out set, refreshed per corpus/model change |
+| L4–L2 | nothing publishable | same form, per-bin measured rates (reliability-diagram practice, Guo et al.) |
+| L1 | existing abstention path only | "abstain/insufficient-evidence" with bounded false-abstention cost via LTT/CRC |
+| Any level | raw MiniCheck score + "unvalidated prototype" label; no probability language | per-bin error rates PUBLISHED alongside the levels — a level without a measured rate is decoration |
+
+The ~4× anchor gap is the gating fact: 26 absence GT exist, ≥100 are needed for five thresholds
+(NB-B0), and support-grading adds a second anchor type (answer-claim pairs, currently zero) on
+top. Authoring those anchors is upstream work this report recommends but does not include.
+
+## §4 Recommendation (b) — model + serving posture for the agentic loop
+
+**Adopt now (posture P0): keep `qwen3-14b-16k` co-resident with the TEI pair; num_ctx envelope
+16384; `think: false`.**
+
+- VRAM arithmetic: 9.3 GB weights beside ~11.1 GB TEI ≈ 20.4 GB committed, ~3.7 GB slack;
+  proven end-to-end by NB-NUMCTX (two full audit arms through a 16384 window with sentinel
+  verification and the truncation guard landed at commits `5a74d7a`/`96dc650` — table above).
+- Thinking mode stays off under ADR-09: Ollama v0.31.2 shares one budget between reasoning and
+  answer and upstream still has no shipped token budget (open issue #17561 / PR #17566, §2.2);
+  `think:false` remains the honest setting for judge/summarizer/header adapters.
+- Function-calling is NOT on this posture's critical path: the loop is driven by the MCP client
+  (external agent), so Qwen3-14B's weak public FC numbers (§2.3) don't bite the product path.
+
+**Pilot next (posture P1): Qwen3.8-27B UD-Q4_K_S in stop-TEI maintenance windows.**
+
+- Arithmetic: 15.4 GB weights cannot co-reside with the TEI pair (15.4 > 13.0 free, before any
+  KV — §2.4); inside a maintenance window the whole card is available, leaving roughly 8–9 GB
+  for KV + contexts at fp16 KV (tens-of-k tokens class; extend via q8_0 KV, avoiding q4_0 KV per
+  the documented repetition hazard). This is estimate-class arithmetic, clearly labeled.
+- Why it's worth the window: generational gains where the operator cares — agentic execution,
+  tool-call parsing, native 262k context, `reasoning_effort` control, vision (§2.1) — and
+  materially stronger public FC scores for the 27B class (0.685 BFCL-V4 mirror row for
+  Qwen3.5-27B vs 34.75% multi-turn for Qwen3-14B; Qwen3.8 itself UNKNOWN on boards at write
+  time). Pilot protocol mirrors house style: A/B against P0 on judge-quality and loop tasks
+  before any standing infra change.
+- If per-request thinking-budget economics become real requirements, serve the pilot through
+  **vLLM** (`--reasoning-parser qwen3` + `thinking_token_budget` shipping today, §2.2) inside the
+  same windows — vLLM cannot share the card with TEI either (`gpu_memory_utilization` claims
+  total VRAM), so this does not change the residency constraint, only the control surface.
+
+**Rejected:** `qwen38:160k` for interactive use — the 163840 num_ctx Modelfile wants ~50 GB fp16
+KV by rule-of-thumb arithmetic regardless of weights residency; it will spill hard to CPU and be
+slow (its own artifact inspection, §2.1). Co-resident 27B in any quant we hold — arithmetically
+impossible beside the TEI pair (§2.4).
+
+## §5 Sources index
+
+Primary papers (arXiv abs unless noted): Angelopoulos & Bates gentle introduction
+<https://arxiv.org/abs/2107.07511> (journal doi 10.1561/2200000101) · Learn-then-Test
+<https://arxiv.org/abs/2110.01052> (AOAS doi 10.1214/24-aoas1998) · Conformal Risk Control
+<https://arxiv.org/abs/2208.02814> · Quach et al. Conformal Language Modeling
+<https://arxiv.org/abs/2306.10193> · Kumar et al. conformal MCQA <https://arxiv.org/abs/2305.18404>
+· Kuhn et al. semantic uncertainty <https://arxiv.org/abs/2302.09664> (+ code
+<https://github.com/lorenzkuhn/semantic_uncertainty>) · Farquhar et al. Nature 2024
+<https://www.nature.com/articles/s41586-024-07421-0> · Manakul et al. SelfCheckGPT
+<https://aclanthology.org/2023.emnlp-main.557/> · Tang et al. MiniCheck
+<https://arxiv.org/abs/2404.10774> (+ <https://github.com/Liyan06/MiniCheck>,
+<https://llm-aggrefact.github.io>) · Honovich et al. TRUE <https://arxiv.org/abs/2204.04991>
+· Tian et al. Just Ask for Calibration <https://arxiv.org/abs/2305.14975> (+ EMNLP PDF
+<https://aclanthology.org/2023.emnlp-main.330.pdf>) · Xiong et al. confidence elicitation
+<https://arxiv.org/abs/2306.13063> · Guo et al. calibration/ECE <https://arxiv.org/abs/1706.04599>
+
+Vendor / official docs: unsloth Qwen3.8-27B GGUF card <https://huggingface.co/unsloth/Qwen3.8-27B-GGUF>
+· base model <https://huggingface.co/unsloth/Qwen3.8-27B> · unsloth Qwen3.8 guide
+<https://unsloth.ai/docs/models/qwen3.8> · Dynamic V3.0 quants
+<https://unsloth.ai/docs/basics/dynamic-3.0-ggufs> · Ollama thinking docs
+<https://docs.ollama.com/capabilities/thinking> · Ollama thinking-budget proposal
+<https://github.com/ollama/ollama/issues/17561> + implementation PR
+<https://github.com/ollama/ollama/pull/17566> · vLLM reasoning outputs
+<https://docs.vllm.ai/en/latest/features/reasoning_outputs/> · vLLM qwen3 parser API note
+<https://docs.vllm.ai/en/v0.22.1/api/vllm/reasoning/qwen3_reasoning_parser/> · Qwen vLLM deploy
+guide <https://qwen.readthedocs.io/en/latest/deployment/vllm.html> · BFCL official
+<https://gorilla.cs.berkeley.edu/leaderboard.html>
+
+Secondary / mirrors (indicative only, labeled in text): explainx Qwen3.8 quant coverage
+<https://explainx.ai/blog/unsloth-qwen3-8-27b-dynamic-v3-ggufs-august-2026> · llm-stats BFCL-V4
+mirror <https://llm-stats.com/benchmarks/bfcl-v4> · benchmarklist BFCL-v3 multi-turn mirror
+<https://benchmarklist.com/benchmarks/bfcl_v3_multiturn/>
+
+Local / repo (verified directly, no URL): stub ground-truth table above; `ollama show qwen38:160k`
+Modelfile inspection; NB-NUMCTX measurements (branch `NB-NUMCTX-fix`, commits `cdf4c5f`,
+`5a74d7a`, `96dc650`); [`../eval-reports/2026-08-25-nb-b0-benchmark-audit.md`](../eval-reports/2026-08-25-nb-b0-benchmark-audit.md)
+(merge `0646ff0`) for the 26-absence-GT sizing fact; sibling NB-R1 report for Self-RAG/CRAG
+citations reuse ([`2026-08-25-agentic-rag-sota.md`](2026-08-25-agentic-rag-sota.md)).
+
+Per-claim gaps: vendor confidence-bucket documentation survey and RAGTruth/HaluEval-class
+benchmark details were NOT re-verified at write time (lost lane, §1.6) — marked incomplete
+rather than cited from memory; Qwen3.8's own BFCL standing UNKNOWN (§2.3).
+
 ## Status
 
 - [x] Stub committed (this commit)
-- [ ] §1 Part 1 written
-- [ ] §2 Part 2 written
-- [ ] §§3–4 recommendations written
-- [ ] Sources index complete; report final
+- [x] §1 Part 1 written
+- [x] §2 Part 2 written
+- [x] §§3–4 recommendations written
+- [x] Sources index complete; report final
