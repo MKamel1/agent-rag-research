@@ -1,0 +1,152 @@
+[
+  {
+    "claim": "The page is from a research paper.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 2 contains the running header 'P. Sun et al.' and line 1 the page number '20'; the render shows the same header '20  P. Sun et al.' at top, plus a numbered figure caption, i.e., a paper page."
+  },
+  {
+    "claim": "The caption reads 'Fig. 7. Attention scores and model prediction visualization.'",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 9: 'Fig. 7. Attention scores and model prediction visualization. Blue box: ground truth' — exact match (case/punctuation-insensitive); the render shows 'Fig. 7.' in bold followed by the same sentence."
+  },
+  {
+    "claim": "The caption states 'Blue box: ground truth vehicle.'",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 9-10: 'Blue box: ground truth vehicle.' — verbatim; also legible in the render's caption."
+  },
+  {
+    "claim": "The caption states 'Yellow box: vehicle prediction.'",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 10: 'Yellow box: vehicle prediction.' — verbatim; also legible in the render's caption."
+  },
+  {
+    "claim": "The caption states 'Green box: ground truth pedestrian.'",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 10: 'Green box: ground truth pedestrian.' — verbatim; also legible in the render's caption."
+  },
+  {
+    "claim": "The caption states 'Purple box: pedestrian detection.'",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 10-11: 'Purple box: pedestrian detection.' — verbatim; also legible in the render's caption."
+  },
+  {
+    "claim": "The caption states points are colored with the bwr colormap (0: blue, 1: red), where red points mean attention scores close to 1.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 11-12: 'Points are colored with the bwr colormap (0: blue, 1: red), where red points mean attention scores close to 1.' — verbatim; also legible in the render's caption."
+  },
+  {
+    "claim": "The caption states 'As red points are distributed differently in each subfigure, it is clear that different layers are attending to different locations.'",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 12-13: 'As red points are distributed diﬀerently in each subﬁgure, it is clear that diﬀerent layers are attending to diﬀerent locations.' — matches modulo the ligature 'ﬀ'/'ff'; also legible in the render."
+  },
+  {
+    "claim": "The page contains a series of six subfigures arranged vertically.",
+    "verdict": "CONFIRMED",
+    "evidence": "The render shows six stacked panels separated by thick black bars; pagetext.txt lists exactly six panel labels (lines 3-8: 'Stride 1 Fused', 'Stride 2 Fused', 'Stride 1', 'Stride 2', 'Stride 4', 'Stride 16')."
+  },
+  {
+    "claim": "The subfigures are visualizations at different strides, with labels including 'Stride 1 Fused', 'Stride 2 Fused', and 'Stride 4'.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 3, 4, 7: 'Stride 1 Fused', 'Stride 2 Fused', 'Stride 4' — exact matches; each label is also legible beneath its panel in the render."
+  },
+  {
+    "claim": "A subfigure is labeled 'Stride 1 Fused'.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 3: 'Stride 1 Fused'; the render shows this label under the first (top) panel."
+  },
+  {
+    "claim": "A subfigure is labeled 'Stride 2 Fused'.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 4: 'Stride 2 Fused'; the render shows this label under the second panel."
+  },
+  {
+    "claim": "A subfigure is labeled 'Stride 4'.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 7: 'Stride 4'; the render shows this label under the fifth panel."
+  },
+  {
+    "claim": "A subfigure is labeled 'Stride 16'.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 8: 'Stride 16'; the render shows this label under the sixth (bottom) panel."
+  },
+  {
+    "claim": "Each subfigure is labeled with 'Stride' followed by a number indicating the stride.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 3-8 list six labels, all of the form 'Stride <number>' (with 'Fused' appended for two of them); the render shows the same six labels, one per panel."
+  },
+  {
+    "claim": "Blue boxes represent ground truth vehicles.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 9-10: 'Blue box: ground truth vehicle.' — the caption itself defines this mapping; the render's panels contain blue box outlines among the blue point cloud."
+  },
+  {
+    "claim": "Yellow boxes represent vehicle predictions by the model.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 10: 'Yellow box: vehicle prediction.' — caption-defined mapping; yellow box outlines are clearly visible in the render (e.g., around vehicle clusters in each panel)."
+  },
+  {
+    "claim": "Green boxes represent ground truth pedestrians.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 10: 'Green box: ground truth pedestrian.' — caption-defined mapping; green box outlines are clearly visible in the render around pedestrian-sized clusters."
+  },
+  {
+    "claim": "Purple boxes represent pedestrian detections by the model.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 10-11: 'Purple box: pedestrian detection.' — the mapping is stated verbatim in the caption text layer; individual purple outlines are hard to isolate at render resolution but the described legend mapping matches the caption."
+  },
+  {
+    "claim": "Blue indicates lower attention scores (close to 0).",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 11: 'bwr colormap (0: blue, 1: red)' — 0 maps to blue, i.e., blue = score close to 0; consistent with the mostly blue points in the render."
+  },
+  {
+    "claim": "Red indicates higher attention scores (close to 1).",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 11-12: '(0: blue, 1: red), where red points mean attention scores close to 1.' — verbatim."
+  },
+  {
+    "claim": "In the Stride 1 Fused subfigure, points are distributed across various locations.",
+    "verdict": "CONFIRMED",
+    "evidence": "The render's first panel shows points spread across the whole scene width (left vehicle cluster through right-side structures), not confined to one region; no text-layer contradiction."
+  },
+  {
+    "claim": "Stride 1 Fused 'shows the initial fusion of predictions from different strides, reflecting attention scores for vehicles and pedestrians'.",
+    "verdict": "UNVERIFIABLE",
+    "evidence": "Interpretive characterization ('initial fusion', what the attention 'reflects') with no checkable content in either source; the text layer only gives the panel label and the generic caption."
+  },
+  {
+    "claim": "Stride 2 Fused represents a further stage where more refined predictions are made based on fused data from previous strides.",
+    "verdict": "UNVERIFIABLE",
+    "evidence": "Subjective interpretation of the model's processing; neither pagetext.txt nor the render can confirm or refute 'more refined predictions' or 'fused data from previous strides'."
+  },
+  {
+    "claim": "In the Stride 4 subfigure, some regions show higher attention scores (red points).",
+    "verdict": "CONFIRMED",
+    "evidence": "The render's fifth panel (labeled 'Stride 4') visibly contains scattered red/orange points (e.g., near the center cluster and on the right side), i.e., regions of higher attention; consistent with the caption's color mapping in pagetext.txt lines 11-12."
+  },
+  {
+    "claim": "Stride 16 is the final subfigure in the series.",
+    "verdict": "CONFIRMED",
+    "evidence": "The render's bottommost (sixth) panel is labeled 'Stride 16'; pagetext.txt line 8 lists 'Stride 16' as the last panel label before the Fig. 7 caption."
+  },
+  {
+    "claim": "Stride 16 represents a later stage where the model has made more detailed predictions based on accumulated data from previous strides.",
+    "verdict": "UNVERIFIABLE",
+    "evidence": "Subjective narrative about the model's processing stages; no checkable content resolvable from the text layer or the pixels."
+  },
+  {
+    "claim": "The axes of the subfigures are not labeled in this image.",
+    "verdict": "CONFIRMED",
+    "evidence": "The render shows no axis labels, ticks, or numerical scales on any of the six panels; pagetext.txt contains no axis text — only the page header, six stride labels, and the caption."
+  },
+  {
+    "claim": "The focus is on the visual representation of attention scores and model predictions rather than numerical data.",
+    "verdict": "UNVERIFIABLE",
+    "evidence": "Subjective statement about intent/focus; the checkable part (no numerical axis data on the page) is covered by the axis-labels claim, and the rest is not resolvable from either source."
+  },
+  {
+    "claim": "The page provides a visualization of how an attention-based model processes multi-stride data to make predictions about vehicles and pedestrians, highlighting where different layers attend during prediction.",
+    "verdict": "UNVERIFIABLE",
+    "evidence": "Interpretive summary paragraph; its concrete components (six stride panels, box legend, attention-score color mapping) are verified as separate claims, but the sentence as a whole is a subjective characterization with no independently checkable content."
+  }
+]

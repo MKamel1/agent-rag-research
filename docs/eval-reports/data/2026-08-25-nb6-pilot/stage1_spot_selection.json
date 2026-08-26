@@ -1,0 +1,15 @@
+{
+ "rule": "uniform seeded draw, random.Random(20260825).sample(sampled_100, 10), frozen before judging",
+ "pages": [
+  "2002.06241_p2",
+  "2104.11896_p0",
+  "2109.02529_p7",
+  "2203.07521_p6",
+  "2210.07372_p19",
+  "2509.23922_p14",
+  "2603.14938_p19",
+  "2605.25021_p2",
+  "2607.13028_p8",
+  "local:fe4ea59dcac6_p6"
+ ]
+}

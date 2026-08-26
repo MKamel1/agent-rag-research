@@ -1,0 +1,137 @@
+[
+  {
+    "claim": "The page contains a figure and several paragraphs of text discussing traffic data collection methods using software tools.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 9: 'Figure 4. The Stage of Collecting Traffic Data.' followed by sections 2.5, 2.5.1 (VISSIM) and 2.5.2 (SSAM) about traffic-simulation software; the render shows the figure at top plus several full paragraphs."
+  },
+  {
+    "claim": "The figure is titled/captioned 'Figure 4. The Stage of Collecting Traffic Data.'",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 9 verbatim: 'Figure 4. The Stage of Collecting Traffic Data.' The render shows the same bold caption directly beneath the figure."
+  },
+  {
+    "claim": "The figure shows an intersection with labeled streets and directional arrows indicating traffic flow directions.",
+    "verdict": "CONFIRMED",
+    "evidence": "Render: a schematic four-arm intersection diagram with green arrow-headed movement arrows, street names '4O Street' (top), 'AL-Jameea' (left, rotated), 'AL-Jabal' (right, rotated), 'AL-Zaraah' (bottom). (The figure's internal text is not in pagetext.txt, so the render is the only source.)"
+  },
+  {
+    "claim": "An arrow label in the figure reads '1020'.",
+    "verdict": "CONFIRMED",
+    "evidence": "Render: '1020' is clearly printed on the upper-left approach arrow just below the '4O Street' label. Not present in pagetext.txt (figure-internal text), so verified from the render."
+  },
+  {
+    "claim": "An arrow label in the figure reads '161'.",
+    "verdict": "CONFIRMED",
+    "evidence": "Render: '161' is legible on the small diagonal arrow at the upper left of the diagram. Not present in pagetext.txt, so verified from the render."
+  },
+  {
+    "claim": "An arrow label in the figure reads '956'.",
+    "verdict": "REFUTED",
+    "evidence": "Render: the rotated label on the left (AL-Jameea) arrow reads '976', not '956'. The visible arrow numerals are 1020, 1255, 161, 225, 976, 1086, 426, 335, 286, 429, 555, 334, 260, 178, 1161, 1066 — no '956' appears anywhere in the figure."
+  },
+  {
+    "claim": "The section heading '2.5. The software used in the study' appears on the page.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 10 verbatim: '2.5. The software used in the study'; the render shows the same heading."
+  },
+  {
+    "claim": "Section 2.5 discusses traffic simulation models, particularly VISSIM and SSAM, for traffic safety analysis.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 11-14: 'All traffic simulation models including VISSIM do not measure traffic safety measures, but it needs support from the surrogate safety assessment model SSAM.'"
+  },
+  {
+    "claim": "There was increased use of traffic simulation models due to advancements (massive development) in computer software.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 11: 'In the last decade, increased use of traffic simulation models due to the massive development of computer software contributed to simulation models' development.'"
+  },
+  {
+    "claim": "VISSIM is a microscopic multi-modal traffic flow simulation software package developed by PTV Planung Transport Verkehr AG at the University of Karlsruhe, Germany.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 16-17: 'VISSIM is a microscopic multi-modal traffic flow simulation software package developed by PTV Planung Transport Verkehr AG at the University of Karlsruhe in Germany.'"
+  },
+  {
+    "claim": "VISSIM was (initially) designed to simulate traffic in cities, and a mode for freeway simulation was added later.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 17-19: 'It was initially designed to simulate traffic in cities. ... but mode for freeway simulation is also added later.'"
+  },
+  {
+    "claim": "The latest update of the software allows pedestrian flows besides private transportation and can also model rail public transportation.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 19-20: 'The latest update of the software allows pedestrian flows besides private transportation. It can also model rail public transportation.'"
+  },
+  {
+    "claim": "The section heading '2.5.1. VISSIM micro-simulation Software' appears on the page.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 15 verbatim: '2.5.1. VISSIM micro-simulation Software'; visible in the render as an italic heading."
+  },
+  {
+    "claim": "The section heading '2.5.2. SSAM Software' appears on the page.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 30 verbatim: '2.5.2. SSAM  Software' (double space only difference); visible in the render as an italic heading."
+  },
+  {
+    "claim": "SSAM is the Surrogate Safety Assessment Model, developed by the Federal Highway Administration (FHWA).",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 31-32: 'The Federal Highway Administration (FHWA) developed a software application called the Surrogate Safety Assessment Model (SSAM)...'"
+  },
+  {
+    "claim": "FHWA developed SSAM to conduct a statistical study of traffic flow data created from microscopic traffic numerical simulation.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 31-33: '...to conduct a statistical study of traffic flow data created from the microscopic traffic numerical simulation. [12].'"
+  },
+  {
+    "claim": "SSAM reads simulation software-generated trajectory files and calculates protection surrogate steps.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 33-34: 'SSAM reads simulation software-generated trajectory files and calculates protection surrogate steps.'"
+  },
+  {
+    "claim": "The program's algorithm and logic were based on 2003 research (methodology) by Gettman and Head.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 34-35: 'The program's algorithm and logic were based on 2003 research performed by Gettman and Head [13].'"
+  },
+  {
+    "claim": "This methodology avoids the subjectivity involved with the traditional method of conflict analysis.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 35-36: 'This methodology avoids the subjectivity involved with the traditional method of conflict analysis.'"
+  },
+  {
+    "claim": "Using VISSIM (simulation software) and SSAM consumes less time than other traditional safety analysis methods that involve a long wait time for data collection.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 37-38: 'Using simulation software and SSAM consumes less time than other traditional safety analysis methods that a long wait time for data collection.' (Description's 'VISSIM and SSAM' is a semantically equivalent paraphrase of 'simulation software and SSAM' in context.)"
+  },
+  {
+    "claim": "SSAM can classify conflicts according to the conflict angle that SSAM extracts from path files constructed using VISSIM for each pair of conflicting vehicles.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 38-40: 'SSAM can classify conflicts according to the conflict angle that SSAM extracts from path files constructed using the VISSIM for each pair of conflicting vehicles (Pu & Joshi, 2008).'"
+  },
+  {
+    "claim": "SSAM calculates the number and severity of conflicts.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 40: 'SSAM calculates the number and severity of conflicts.'"
+  },
+  {
+    "claim": "Conflicts are classified into the categories Crossing, Rear end, Lane change, and Unclassified.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 41: 'The conflict is classified into (Crossing, Rear end, Lane change. Unclassified).' (period vs comma inside the parenthetical is a punctuation-only difference)."
+  },
+  {
+    "claim": "The figure labels a street '40 Street'.",
+    "verdict": "CONFIRMED",
+    "evidence": "Render: '4O Street' is printed at the top of the diagram; the third glyph is ambiguous between '0' and 'O' at this resolution, consistent with the transcribed '40 Street'. Not present in pagetext.txt (figure-internal text)."
+  },
+  {
+    "claim": "The figure labels a street 'AL-Jameaha'.",
+    "verdict": "REFUTED",
+    "evidence": "Render: the rotated street label along the left edge reads 'AL-Jameea' (J-a-m-e-e-a); the description's spelling 'AL-Jameaha' does not match any label in the figure. Not present in pagetext.txt, so judged from the render."
+  },
+  {
+    "claim": "The figure labels a street 'AL-Zaraah'.",
+    "verdict": "CONFIRMED",
+    "evidence": "Render: 'AL-Zaraah' is clearly printed at the bottom of the intersection diagram. Not present in pagetext.txt (figure-internal text), so verified from the render."
+  },
+  {
+    "claim": "The numbers on the arrows represent specific data points/metrics related to traffic volume or other parameters.",
+    "verdict": "UNVERIFIABLE",
+    "evidence": "Interpretive/hedged claim ('likely represent', 'related to traffic volume or other parameters'): pagetext.txt never states what the figure's arrow numbers denote, and the render shows bare numerals with no unit or legend, so the meaning cannot be confirmed or refuted from this page."
+  }
+]

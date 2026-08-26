@@ -1,0 +1,127 @@
+[
+  {
+    "claim": "The page contains a section discussing additional results comparing open-loop versus closed-loop approaches in evaluating different UniAD models.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 7-9: 'IX ADDITIONAL RESULTS: OPEN-LOOP VS. CLOSED-LOOP In this section, we evaluate different UniAD models using both open-loop and closed-loop approaches'; the numbered heading and opening sentence are clearly legible in the PNG render."
+  },
+  {
+    "claim": "The section is numbered IX and titled 'ADDITIONAL RESULTS: OPEN-LOOP VS. CLOSED-LOOP'.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 7-8: 'IX' / 'ADDITIONAL RESULTS: OPEN-LOOP VS. CLOSED-LOOP'; same heading legible in the render."
+  },
+  {
+    "claim": "The section states: 'In this section, we evaluate different UniAD models using both open-loop and closed-loop approaches.'",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 9-10: 'In this section, we evaluate different UniAD models using both open-loop and closed-loop ap-proaches.'; same sentence legible in the render."
+  },
+  {
+    "claim": "The section states: 'We provide extra collision rate evaluation results for open-loop evaluation.'",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 10: 'We provide extra collision rate evaluation results for open-loop evaluation.'; legible in the render."
+  },
+  {
+    "claim": "The section states: 'we save intermediate checkpoint models during the training of UniAD and assess these checkpoint models through both open-loop and closed-loop evaluations.'",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 11-12: 'we save intermediate checkpoint models during the training of UniAD and assess these checkpoint models through both open-loop and closed-loop evaluations.'; legible in the render."
+  },
+  {
+    "claim": "The figure is captioned 'Figure 5: UniAD's Evaluation Results.'",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 26: 'Figure 5: UniAD's Evaluation Results.'; caption clearly legible beneath the chart in the render."
+  },
+  {
+    "claim": "The figure is a line graph with four lines representing different metrics over three epochs (Epoch 1, Epoch 2, Epoch 3).",
+    "verdict": "CONFIRMED",
+    "evidence": "The render clearly shows four colored lines (blue, orange, gray, yellow) plotted across three x positions labeled 'Epoch 1', 'Epoch 2', 'Epoch 3'; pagetext.txt lines 19-21 contain 'Epoch 1', 'Epoch 2', 'Epoch 3' and lines 22-25 the four metric names."
+  },
+  {
+    "claim": "The figure's x-axis is labeled with 'Epoch 1', 'Epoch 2', 'Epoch 3' (epochs).",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 19-21: 'Epoch 1' / 'Epoch 2' / 'Epoch 3'; the render shows these three tick labels beneath the plot."
+  },
+  {
+    "claim": "The figure's y-axis is labeled 'Avg L2 Error (m)', 'Avg Col. Rate (%)', 'Success Rate', 'Driving Score'.",
+    "verdict": "REFUTED",
+    "evidence": "In the render the y-axis carries only numeric tick labels 0, 0.5, 1, 1.5, 2, 2.5 (pagetext.txt lines 13-18) and no text labels; the four metric names appear as legend entries below the plot (pagetext.txt lines 22-25), not as y-axis labels. The strings themselves exist but the axis attribution is wrong."
+  },
+  {
+    "claim": "Legend entry: blue line for 'Avg L2 Error (m)'.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 22: 'Avg L2 Error (m)'; in the render the legend's leftmost entry shows a blue line segment followed by 'Avg L2 Error (m)', matching the blue plotted line at roughly 1.2 down to 1.05."
+  },
+  {
+    "claim": "Legend entry: orange line for 'Avg Col. Rate (%)'.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 23: 'Avg Col. Rate (%)'; in the render the legend's second entry shows an orange line segment followed by 'Avg Col. Rate (%)', matching the top orange plotted line peaking near 2."
+  },
+  {
+    "claim": "Legend entry: gray line for 'Success Rate'.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 24: 'Success Rate'; in the render the legend's third entry shows a gray line segment followed by 'Success Rate', matching the lowest gray plotted line near 0.45-0.33."
+  },
+  {
+    "claim": "Legend entry: yellow line for 'Driving Score'.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 25: 'Driving Score'; in the render the legend's fourth entry shows a yellow line segment followed by 'Driving Score', matching the yellow plotted line near 0.75-0.67."
+  },
+  {
+    "claim": "The page contains a section numbered X titled 'STATIC INTERSECTION CONSTRUCTION DETAILS'.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 31-32: 'X' / 'STATIC INTERSECTION CONSTRUCTION DETAILS'; heading legible in the render."
+  },
+  {
+    "claim": "The page contains a subsection numbered X.1 titled 'CONSTRUCTION PROCESS'.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 33-34: 'X.1' / 'CONSTRUCTION PROCESS'; heading legible in the render."
+  },
+  {
+    "claim": "The subsection states: 'We provide more details to illustrate how to construct the static intersection assets in Figure 6.'",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 35: 'We provide more details to illustrate how to construct the static intersection assets in Figure 6.'; legible in the render."
+  },
+  {
+    "claim": "RoadRunner (MathWorks 2023) is described as a 3D environment editing tool used for designing and editing road and traffic scenes.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 36-37: 'RoadRunner MathWorks (2023) is a 3D environment editing tool used for designing and editing road and traffic scenes for simulation and testing of autonomous driving systems.' The description omits the trailing clause but does not contradict it; legible in the render."
+  },
+  {
+    "claim": "OpenStreetMap (OSM contributors 2023) is described as a global, user-contributed, open-source map database.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 37-38: 'OpenStreetMap OSM contributors (2023) is a global, user-contributed, open-source map database.'; legible in the render."
+  },
+  {
+    "claim": "Blender (Blender Studio 2023) is described as an open-source 3D creation suite for modeling, animation, and rendering.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 38-39: 'Blender Blender Studio (2023) is an open-source 3D creation suite for modeling, animation, and rendering.'; legible in the render."
+  },
+  {
+    "claim": "The page contains a subsection numbered X.2 titled 'INTERSECTION ASSETS VISUALIZATION'.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 40-41: 'X.2' / 'INTERSECTION ASSETS VISUALIZATION'; heading legible in the render."
+  },
+  {
+    "claim": "DriveE2E presents 15 digital twins of urban intersections.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 42: 'DriveE2E presents 15 digital twins of urban intersections'; the numeral '15' matches exactly and is legible in the render."
+  },
+  {
+    "claim": "The digital twins incorporate detailed roadside and road features including traffic light poles, signage, lanes, crosswalks, stop lines, and surrounding buildings.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 42-44: 'each carefully designed to incorporate detailed roadside and road features, including traffic light poles, signage, lanes, crosswalks, stop lines, and surrounding buildings.'; legible in the render."
+  },
+  {
+    "claim": "These constructed twin intersections are presented in Figure 7.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 44: 'These constructed twin intersections are presented in Figure 7.'; legible in the render."
+  },
+  {
+    "claim": "The page contains a section numbered XI titled 'SIMULATION-TO-REAL (SIM2REAL) DISCUSSION'.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 45-46: 'XI' / 'SIMULATION-TO-REAL (SIM2REAL) DISCUSSION'; heading legible in the render."
+  },
+  {
+    "claim": "The section states DriveE2E addresses the Sim2Real gap from three perspectives: fidelity of digital-twin scenarios, perception performance when evaluated on real-world datasets, and end-to-end model performance in real-world driving.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 47-49: 'We examine how DriveE2E addresses the Sim2Real gap from three perspectives: fidelity of digital-twin scenarios, perception performance when evaluated on real-world datasets, and end-to-end model performance in real-world driving.'; legible in the render."
+  }
+]

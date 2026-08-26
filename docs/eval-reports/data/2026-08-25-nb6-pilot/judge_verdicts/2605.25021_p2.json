@@ -1,0 +1,252 @@
+[
+  {
+    "claim": "The page is from a research paper discussing the impact of various infrastructure attributes on Automated Driving System (ADS) operation for SAE levels 1-2 and 3-4.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt: \"Fig. 3. Mean impact of each infrastructure attribute on ADS operation for SAE 1–2 (blue) and SAE 3–4 (orange), and their mean impact difference for SAE-level groups (green).\" The render shows this caption under the top bar chart."
+  },
+  {
+    "claim": "Figure 3's caption reads: \"Mean impact of each infrastructure attribute on ADS operation for SAE 1–2 (blue) and SAE 3–4 (orange), and their mean impact difference for SAE-level groups (green).\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 39-40 verbatim: \"Fig. 3. Mean impact of each infrastructure attribute on ADS operation for SAE 1–2 (blue) and SAE 3–4 (orange), and their mean impact difference for SAE-level groups (green).\" Clearly legible in the render."
+  },
+  {
+    "claim": "Figure 3 groups the attributes under four macro-category headers: \"Road Marking & Signage\", \"Road Maint. & Management\", \"Roadway Design & Safety Features\", and \"HD Maps\".",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 32-35 contain exactly these four strings; the render shows them as labeled boxes above the Fig. 3 chart."
+  },
+  {
+    "claim": "Figure 3's x-axis carries the printed axis title \"Infrastructure Attributes\".",
+    "verdict": "REFUTED",
+    "evidence": "The string \"Infrastructure Attributes\" appears nowhere in pagetext.txt (the only axis-title strings are \"Mean impact (0=min, 2=max)\" and \"Impact Difference (SAE 3–4 - SAE 1–2)\"). The render shows the Fig. 3 x-axis with only the rotated attribute-name tick labels; there is no axis title beneath them."
+  },
+  {
+    "claim": "Figure 3's y-axis is labeled \"Mean impact (0 = min., 2 = max)\".",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 30: \"Mean impact (0=min, 2=max)\" — exact match modulo case/punctuation. Legible as the rotated y-axis label in the render."
+  },
+  {
+    "claim": "In Figure 3's legend, blue bars represent SAE 1–2.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 36: \"SAE 1–2\"; the render's legend shows a blue swatch next to \"SAE 1–2\", and the caption states \"(blue)\"."
+  },
+  {
+    "claim": "In Figure 3's legend, orange bars represent SAE 3–4.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 37: \"SAE 3–4\"; the render's legend shows an orange swatch next to \"SAE 3–4\", and the caption states \"(orange)\"."
+  },
+  {
+    "claim": "In Figure 3's legend, green bars represent the difference between SAE 3–4 and SAE 1–2.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 38 legend entry: \"Diff.\"; line 31 right-side axis label: \"Impact Difference (SAE 3–4 - SAE 1–2)\"; caption states \"(green)\". The render shows a green swatch labeled \"Diff.\" and green difference bars."
+  },
+  {
+    "claim": "Figure 3 is a bar chart with three bars (one per series) for each infrastructure attribute.",
+    "verdict": "CONFIRMED",
+    "evidence": "The render clearly shows triplets of blue, orange, and green bars at each of the 23 attribute positions along the x-axis."
+  },
+  {
+    "claim": "\"Lane mark retrorefl.\" appears as an x-axis attribute label in Figure 3.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 1: \"Lane mark retrorefl.\"; legible as the first rotated tick label in the render."
+  },
+  {
+    "claim": "\"Lane mark contrast\" appears as an x-axis attribute label in Figure 3.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 3: \"Lane mark contrast\"; legible among the rotated tick labels in the render."
+  },
+  {
+    "claim": "\"Sign retrorefl.\" appears as an x-axis attribute label in Figure 3.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 14: \"Sign retrorefl.\"; legible among the rotated tick labels in the render."
+  },
+  {
+    "claim": "\"Variable message signs\" appears as an x-axis attribute label in Figure 3.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 16: \"Variable message signs\"; legible among the rotated tick labels in the render."
+  },
+  {
+    "claim": "\"Lane mark width\" appears as an x-axis attribute label in Figure 3.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 2: \"Lane mark width\"; legible among the rotated tick labels in the render."
+  },
+  {
+    "claim": "\"Roadwork sign compl.\" appears as an x-axis attribute label in Figure 3.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 20: \"Roadwork sign compl.\"; legible among the rotated tick labels in the render."
+  },
+  {
+    "claim": "\"Pavement maint.\" appears as an x-axis attribute label in Figure 3.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 11: \"Pavement maint.\"; legible among the rotated tick labels in the render."
+  },
+  {
+    "claim": "\"Vegetation maint.\" appears as an x-axis attribute label in Figure 3.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 18: \"Vegetation maint.\"; legible among the rotated tick labels in the render."
+  },
+  {
+    "claim": "\"Lane mark consistency\" appears as an x-axis attribute label in Figure 3.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 5: \"Lane mark consistency\"; legible among the rotated tick labels in the render."
+  },
+  {
+    "claim": "\"Lane mark maint.\" appears as an x-axis attribute label in Figure 3.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 4: \"Lane mark maint.\"; legible among the rotated tick labels in the render."
+  },
+  {
+    "claim": "\"Sign maintenance\" appears as an x-axis attribute label in Figure 3.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 15: \"Sign maintenance\"; legible among the rotated tick labels in the render."
+  },
+  {
+    "claim": "\"Dedicated AV lane\" appears as an x-axis attribute label in Figure 3.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 22: \"Dedicated AV lane\"; legible among the rotated tick labels in the render."
+  },
+  {
+    "claim": "\"Emergency lane\" appears as an x-axis attribute label in Figure 3.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 9: \"Emergency lane\"; legible among the rotated tick labels in the render."
+  },
+  {
+    "claim": "\"Lane width\" appears as an x-axis attribute label in Figure 3.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 6: \"Lane width\"; legible among the rotated tick labels in the render."
+  },
+  {
+    "claim": "\"Road studs\" appears as an x-axis attribute label in Figure 3.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 17: \"Road studs\"; legible among the rotated tick labels in the render."
+  },
+  {
+    "claim": "\"Lay by\" appears as an x-axis attribute label in Figure 3.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 12: \"Lay by\"; legible among the rotated tick labels in the render."
+  },
+  {
+    "claim": "\"Vertical curvature\" appears as an x-axis attribute label in Figure 3.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 8: \"Vertical curvature\"; legible among the rotated tick labels in the render."
+  },
+  {
+    "claim": "\"Draining pavement\" appears as an x-axis attribute label in Figure 3.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 10: \"Draining pavement\"; legible among the rotated tick labels in the render."
+  },
+  {
+    "claim": "\"Guard rail\" appears as an x-axis attribute label in Figure 3.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 19: \"Guard rail\"; legible among the rotated tick labels in the render."
+  },
+  {
+    "claim": "\"Lighting\" appears as an x-axis attribute label in Figure 3.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 21: \"Lighting\"; legible among the rotated tick labels in the render."
+  },
+  {
+    "claim": "\"Rumble stripes\" appears as an x-axis attribute label in Figure 3.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 13: \"Rumble stripes\"; legible among the rotated tick labels in the render."
+  },
+  {
+    "claim": "\"Horizontal curvature\" appears as an x-axis attribute label in Figure 3.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 7: \"Horizontal curvature\"; legible among the rotated tick labels in the render."
+  },
+  {
+    "claim": "\"HD maps\" appears as an x-axis attribute label in Figure 3.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 23: \"HD maps\"; legible as the last rotated tick label in the render."
+  },
+  {
+    "claim": "The 23 attributes appear on Figure 3's x-axis in the order: Lane mark retrorefl., Lane mark contrast, Sign retrorefl., Variable message signs, Lane mark width, Roadwork sign compl., Pavement maint., Vegetation maint., Lane mark consistency, Lane mark maint., Sign maintenance, Dedicated AV lane, Emergency lane, Lane width, Road studs, Lay by, Vertical curvature, Draining pavement, Guard rail, Lighting, Rumble stripes, Horizontal curvature, HD maps.",
+    "verdict": "CONFIRMED",
+    "evidence": "Reading the rotated tick labels left-to-right in the render yields exactly this sequence, with the macro-category boundaries falling after \"Lane mark width\", \"Sign maintenance\", and \"Horizontal curvature\"; all 23 names also appear in pagetext.txt lines 1-23."
+  },
+  {
+    "claim": "Figure 3's y-axis represents a mean impact score where 0 = minimal impact and 2 = strong impact.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 41-42: \"scores of 0 (minimal impact), 1 (moderate impact), and 2 (strong impact)\"; line 30: \"Mean impact (0=min, 2=max)\"."
+  },
+  {
+    "claim": "The paper's text discusses the infrastructure attributes as categorized into the macro-categories Road Marking & Signage, Road Maint. & Management, Roadway Design & Safety Features, and HD Maps.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 32-35 list all four category names, and line 40 states: \"Above the chart are the macro-categories used to group the attributes in the questionnaire.\""
+  },
+  {
+    "claim": "The text states participants were selected based on their direct involvement in AV and smart-road technologies to ensure technically informed responses.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 45-47: \"Participants were selected based on their direct involvement in AV and smart-road technologies to ensure technically informed responses.\""
+  },
+  {
+    "claim": "Figure 4's caption reads: \"Perceived impact of C-ITS Day 1–3 services on extending ADS capabilities, by region.\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 85-87: \"Fig. 4. Perceived impact of C-ITS Day 1–3 services on extending ADS capabilities, by region.\" Clearly legible in the render."
+  },
+  {
+    "claim": "Figure 4 shows mean impact scores for C-ITS Day 1, Day 2, and Day 3 services in Europe and the USA.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 74-75 (\"Europe\", \"USA\") and lines 82-84 (\"C-ITS Day 3\", \"C-ITS Day 2\", \"C-ITS Day 1\"); the render shows two bar groups (Europe, USA) with three bars each, y-axis \"Mean impact\"."
+  },
+  {
+    "claim": "Figure 4's x-axis shows two region categories labeled \"Europe\" and \"USA\".",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 74-75: \"Europe\" and \"USA\"; the render shows these labels beneath the two bar groups."
+  },
+  {
+    "claim": "Figure 4's x-axis carries the printed axis title \"Regions\".",
+    "verdict": "REFUTED",
+    "evidence": "The string \"Regions\" appears nowhere in pagetext.txt; the render shows only the tick labels \"Europe\" and \"USA\" under Fig. 4 with no axis title."
+  },
+  {
+    "claim": "Figure 4's y-axis is labeled \"Mean impact\".",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 81: \"Mean impact\"; legible as the rotated y-axis label of Fig. 4 in the render. (The longer gloss \"(0=min, 2=max)\" is printed only on Fig. 3's y-axis, not Fig. 4's.)"
+  },
+  {
+    "claim": "Figure 4's y-axis scale runs from 0 to 2 (0 = minimal, 2 = maximal impact).",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 76-80 give the tick labels \"0, 0.5, 1, 1.5, 2\"; the min/max semantics match line 30 (\"Mean impact (0=min, 2=max)\") and lines 41-42 (\"0 (minimal impact) ... 2 (strong impact)\"). The render's Fig. 4 axis shows the same 0-2 tick range."
+  },
+  {
+    "claim": "In Figure 4's legend, blue bars represent C-ITS Day 1.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 84: \"C-ITS Day 1\"; the render's legend shows a blue swatch next to \"C-ITS Day 1\"."
+  },
+  {
+    "claim": "In Figure 4's legend, orange bars represent C-ITS Day 2.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 83: \"C-ITS Day 2\"; the render's legend shows an orange swatch next to \"C-ITS Day 2\"."
+  },
+  {
+    "claim": "In Figure 4's legend, green bars represent C-ITS Day 3.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 82: \"C-ITS Day 3\"; the render's legend shows a green swatch next to \"C-ITS Day 3\"."
+  },
+  {
+    "claim": "A section heading \"III. Framework and Methodology\" appears on the page.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 88: \"III. FRAMEWORK AND METHODOLOGY\" (case-insensitive match); legible in the render."
+  },
+  {
+    "claim": "The section describes a framework that translates static infrastructure characteristics into a quantitative measure of automation compatibility.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 89-91: \"The proposed HRI translates static infrastructure characteristics into a quantitative and operational measure of automation compatibility.\""
+  },
+  {
+    "claim": "The framework is structured into three stages.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 91-93: \"The framework is structured into three consecutive stages, progressively converting qualitative infrastructure conditions into actionable SAE-level guidance.\""
+  },
+  {
+    "claim": "A subsection is titled \"Stage 1 – Attribute Operationalization and Weighting\".",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 94: \"A. Stage 1 – Attribute Operationalization and Weighting\"; legible in the render."
+  },
+  {
+    "claim": "The text states each selected ODD attribute is operationalized through measurable criteria derived from national highway design and safety standards.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 95-97: \"each selected ODD attribute is operationalized through measurable criteria derived from national highway design and safety standards.\""
+  }
+]

@@ -1,0 +1,232 @@
+{
+ "rule": "group verified iff all patterns stated in blind description AND covered by a judge CONFIRMED claim (O1/O2/O3); gate denominator = survivors' n=8 (O7)",
+ "g03_survivors": [
+  "Q-WAYB-027",
+  "Q-GTA-042",
+  "Q-GTA-043",
+  "Q-WMR-094"
+ ],
+ "gating_stage1": {
+  "n": 8,
+  "k_verified": 4,
+  "fidelity_pct": 50.0,
+  "not_itemized_by_judge": 4
+ },
+ "informational_qgta044": {
+  "n": 6,
+  "k_verified": 6,
+  "fidelity_pct": 100.0,
+  "not_itemized_by_judge": 0
+ },
+ "spot_check_precision": {
+  "pages_judged": 10,
+  "confirmed": 337,
+  "refuted": 27,
+  "unverifiable": 15,
+  "precision_pct": 92.6,
+  "per_page": {
+   "2002.06241_p2": {
+    "claims": 36,
+    "confirmed": 30,
+    "refuted": 0,
+    "unverifiable": 6
+   },
+   "2104.11896_p0": {
+    "claims": 31,
+    "confirmed": 30,
+    "refuted": 1,
+    "unverifiable": 0
+   },
+   "2109.02529_p7": {
+    "claims": 52,
+    "confirmed": 35,
+    "refuted": 17,
+    "unverifiable": 0
+   },
+   "2203.07521_p6": {
+    "claims": 36,
+    "confirmed": 34,
+    "refuted": 2,
+    "unverifiable": 0
+   },
+   "2210.07372_p19": {
+    "claims": 30,
+    "confirmed": 25,
+    "refuted": 0,
+    "unverifiable": 5
+   },
+   "2509.23922_p14": {
+    "claims": 25,
+    "confirmed": 24,
+    "refuted": 1,
+    "unverifiable": 0
+   },
+   "2603.14938_p19": {
+    "claims": 33,
+    "confirmed": 30,
+    "refuted": 0,
+    "unverifiable": 3
+   },
+   "2605.25021_p2": {
+    "claims": 50,
+    "confirmed": 48,
+    "refuted": 2,
+    "unverifiable": 0
+   },
+   "2607.13028_p8": {
+    "claims": 59,
+    "confirmed": 57,
+    "refuted": 2,
+    "unverifiable": 0
+   },
+   "local:fe4ea59dcac6_p6": {
+    "claims": 27,
+    "confirmed": 24,
+    "refuted": 2,
+    "unverifiable": 1
+   }
+  }
+ },
+ "per_value": [
+  {
+   "item": "Q-WAYB-027",
+   "key": "2208.12833_p35",
+   "label": "pillar = \"Monitoring\"",
+   "gate": true,
+   "stated_all_patterns": true,
+   "judge_best": "CONFIRMED",
+   "judge_evidence": "Render shows row labels 'PREVENTION', 'MONITORING', 'MITIGATION' spanning all three columns.",
+   "verified": true
+  },
+  {
+   "item": "Q-WAYB-027",
+   "key": "2208.12833_p35",
+   "label": "lifecycle phase = \"While in Driver's Seat\"",
+   "gate": true,
+   "stated_all_patterns": true,
+   "judge_best": "CONFIRMED",
+   "judge_evidence": "Render shows column headers 'BEFORE DRIVING', 'WHILE IN DRIVER'S SEAT', 'AFTER DRIVING'.",
+   "verified": true
+  },
+  {
+   "item": "Q-WAYB-027",
+   "key": "2208.12833_p35",
+   "label": "implementation block = \"RT Vigilance Assessment\"",
+   "gate": true,
+   "stated_all_patterns": true,
+   "judge_best": "CONFIRMED",
+   "judge_evidence": "Render: 'RT Vigilance Assessment' box in While in Driver's Seat / Monitoring cell.",
+   "verified": true
+  },
+  {
+   "item": "Q-GTA-042",
+   "key": "2508.19425_p13",
+   "label": "vertical row-group label = \"Crashed Passenger Vehicles (IPMM)\"",
+   "gate": true,
+   "stated_all_patterns": false,
+   "judge_best": "NO_JUDGE_FILE",
+   "judge_evidence": "",
+   "verified": false
+  },
+  {
+   "item": "Q-GTA-043",
+   "key": "2506.08228_p9",
+   "label": "power-law-form constant = \"-0.026\"",
+   "gate": true,
+   "stated_all_patterns": true,
+   "judge_best": "CONFIRMED",
+   "judge_evidence": "Caption: '(Left) The solid line represents a power-law fit to the points'; legend in figure render (not in text layer) reads 'L \u221d C^\u22120.026' \u2014 verified at 4x zoom of the PDF.",
+   "verified": true
+  },
+  {
+   "item": "Q-GTA-043",
+   "key": "2506.08228_p9",
+   "label": "power-law-plus-constant constants = \"-0.18\", \"+1.03\"",
+   "gate": true,
+   "stated_all_patterns": false,
+   "judge_best": "NO_JUDGE_FILE",
+   "judge_evidence": "",
+   "verified": false
+  },
+  {
+   "item": "Q-WMR-094",
+   "key": "2312.12675_p9",
+   "label": "Any-Injury-Reported reduction, San Francisco = 86%",
+   "gate": true,
+   "stated_all_patterns": false,
+   "judge_best": "NO_JUDGE_FILE",
+   "judge_evidence": "",
+   "verified": false
+  },
+  {
+   "item": "Q-WMR-094",
+   "key": "2312.12675_p9",
+   "label": "Any-Injury-Reported reduction, All Locations/national = 54%",
+   "gate": true,
+   "stated_all_patterns": false,
+   "judge_best": "NO_JUDGE_FILE",
+   "judge_evidence": "",
+   "verified": false
+  },
+  {
+   "item": "Q-GTA-044",
+   "key": "2104.10133_p7",
+   "label": "panel value 99.29",
+   "gate": false,
+   "stated_all_patterns": true,
+   "judge_best": "CONFIRMED",
+   "judge_evidence": "pagetext.txt lines 1-2: \"Recall: 99.29%\"; render shows \"Recall: 99.29%\" in the first panel's annotation.",
+   "verified": true
+  },
+  {
+   "item": "Q-GTA-044",
+   "key": "2104.10133_p7",
+   "label": "panel value 0.1849",
+   "gate": false,
+   "stated_all_patterns": true,
+   "judge_best": "CONFIRMED",
+   "judge_evidence": "pagetext.txt line 3: \"Mean DE:  0.1849\"; render shows \"Mean DE: 0.1849\" in the first panel.",
+   "verified": true
+  },
+  {
+   "item": "Q-GTA-044",
+   "key": "2104.10133_p7",
+   "label": "panel value 93.50",
+   "gate": false,
+   "stated_all_patterns": true,
+   "judge_best": "CONFIRMED",
+   "judge_evidence": "pagetext.txt lines 5-6: \"Recall: 93.50%\"; render shows \"Recall: 93.50%\" in the middle panel.",
+   "verified": true
+  },
+  {
+   "item": "Q-GTA-044",
+   "key": "2104.10133_p7",
+   "label": "panel value 0.1958",
+   "gate": false,
+   "stated_all_patterns": true,
+   "judge_best": "CONFIRMED",
+   "judge_evidence": "pagetext.txt line 7: \"Mean DE:  0.1958\"; render shows \"Mean DE: 0.1958\" in the middle panel.",
+   "verified": true
+  },
+  {
+   "item": "Q-GTA-044",
+   "key": "2104.10133_p7",
+   "label": "panel value 87.31",
+   "gate": false,
+   "stated_all_patterns": true,
+   "judge_best": "CONFIRMED",
+   "judge_evidence": "pagetext.txt lines 9-10: \"Recall: 87.31%\"; render shows \"Recall: 87.31%\" in the right panel.",
+   "verified": true
+  },
+  {
+   "item": "Q-GTA-044",
+   "key": "2104.10133_p7",
+   "label": "panel value 0.2738",
+   "gate": false,
+   "stated_all_patterns": true,
+   "judge_best": "CONFIRMED",
+   "judge_evidence": "pagetext.txt line 11: \"Mean DE:  0.2738\"; render shows \"Mean DE: 0.2738\" in the right panel.",
+   "verified": true
+  }
+ ]
+}
