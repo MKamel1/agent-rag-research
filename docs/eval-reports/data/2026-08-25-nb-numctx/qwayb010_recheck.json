@@ -1,0 +1,27 @@
+{
+  "qid": "Q-WAYB-010",
+  "arm": "answerable",
+  "model": "qwen3-14b-16k:latest",
+  "requested_num_ctx": 16384,
+  "requested_num_predict_in_run": 1024,
+  "attempts": [
+    {
+      "attempt": 1,
+      "chars": 36343,
+      "prompt_eval_count": 8194,
+      "wall_s": 5.3
+    },
+    {
+      "attempt": 2,
+      "chars": 36343,
+      "prompt_eval_count": 8194,
+      "wall_s": 0.2
+    },
+    {
+      "attempt": 3,
+      "chars": 36343,
+      "prompt_eval_count": 8194,
+      "wall_s": 0.2
+    }
+  ]
+}

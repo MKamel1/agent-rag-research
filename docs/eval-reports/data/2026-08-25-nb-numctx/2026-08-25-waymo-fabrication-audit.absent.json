@@ -1,0 +1,20 @@
+{
+  "rubric_path": "docs/eval-rubrics/fabrication-audit-rubric.md",
+  "rubric_sha256_12": "4add354fe464",
+  "n_items": 16,
+  "n_errors": 0,
+  "n_claims": 29,
+  "rates": {
+    "supported": 1.0,
+    "unsupported": 0.0,
+    "contradicted": 0.0
+  },
+  "counts": {
+    "supported": 29,
+    "unsupported": 0,
+    "contradicted": 0
+  },
+  "unsupported_claims": [],
+  "contradicted_claims": [],
+  "disclaimer": "A judge model is itself fallible: these rates are one instrument's reading of the answer against the supplied passages, not ground truth. The rubric that produced this report lives at rubric_path (plain text, operator-editable) and is stamped by rubric_sha256_12 below so two reports produced under different rubric wording are never silently compared. This report is not a baseline -- see the rubric file's own header for sign-off status."
+}

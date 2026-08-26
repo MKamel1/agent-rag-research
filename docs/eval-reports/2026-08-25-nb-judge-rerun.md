@@ -188,4 +188,8 @@ deliberately out of this ticket's scope.
 - [x] Answerable arm run + hash verified (`4add354fe464`)
 - [x] Context-window measurement closed (46/84 truncated; §3)
 - [x] Analysis written (this document)
-- [ ] Corrected re-run under a truncation-safe harness (NB-JUDGE-CTX)
+- [x] Corrected re-run under a truncation-safe harness (**delivered**: NB-NUMCTX /
+      `2026-08-25-nb-numctx-clean-delivery.md` — window raised to the artifact-declared 40,960
+      after the interim 16384 itself caught Q-WAYB-010 silently truncating; delivery proven 84/84
+      from per-call telemetry; outcome adverse — unsupported rates collapsed and F-A2 surfaced
+      neither target item on clean tests)
