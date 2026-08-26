@@ -572,6 +572,37 @@ runner — merged; R0 fix ranking reviewed+revised — merged; A-1 abstention si
 serving win, ordering hazard; X-O unblocked) — merged. In flight at write time: X-O ordering
 quality, NB-6 VLM scoping (Decision C gate). Decisions A–D recorded in PROJECT-STATUS.
 
+## NB-JUDGE-CTX — judge prompts are silently truncated at num_ctx; amended rubric undelivered on 46/84 items
+
+**Found 2026-08-25 closing NB-JUDGE-RERUN** (`docs/eval-reports/2026-08-25-nb-judge-rerun.md` §3;
+probe + per-item census committed beside it).
+
+`app/judge_llm.py` requests `num_ctx=8192`. Measured against Ollama v0.31.2 / `qwen3-14b-16k`: the
+window is honored as capacity (≤8,192 true tokens evaluate whole), but past it Ollama **silently
+keeps only the final 4,098 tokens** of the prompt — no error, no metadata flag. `_JUDGE_PROMPT`
+puts the rubric FIRST, so every oversized item was judged with zero rubric text delivered. The
+fabrication re-run's real prompts run 15–53K chars (k=5 full retrieved passages from the captured
+generation run — not the short GT-fixture excerpts behind `judge_llm.py`'s stale "max 228 words"
+comment): **46/84 items truncated**, including Q-GTA-040 — one of the two items F-A2 was amended to
+catch. Consequence: no fabrication-audit number under the amended signed rubric exists yet.
+
+### Proposed fix
+
+1. Per-item context sizing (mirror `rag/summarizer.py`'s estimate-and-clamp pattern) or raise
+   `_NUM_CTX` toward the Modelfile's own `num_ctx 16384` default.
+2. Add a loud estimated-tokens-vs-window assertion (fail or log a measured warning per item) so
+   silent truncation can never again masquerade as a completed judgment.
+3. Correct `app/judge_llm.py`'s safety comment — its 228-word measurement does not transfer from
+   GT-fixture excerpts to generation-run passages.
+4. Re-run both arms under the fixed harness; only then amend the NON-COMPARABLE-BY-DELIVERY
+   headline in `2026-08-25-nb-judge-rerun.md`.
+
+### Severity
+
+High for any judge-side measurement: the failure mode is invisible in artifacts (parseable JSON,
+valid verdict literals, plausible rates) and silently converts a signed instrument into
+instructions-only judging.
+
 ## Standing constraints for any agent picking these up
 
 - Never write `research-system-rag-data/papers.db`; read-only via `file:…?mode=ro`.
