@@ -10,7 +10,7 @@ import httpx
 import pytest
 
 from app.judge_eval import AuditItem, Claim
-from app.judge_llm import LlmJudge
+from app.judge_llm import _NUM_CTX, _NUM_PREDICT, LlmJudge, _estimated_prompt_tokens
 from contracts.errors import PermanentError, TransientError
 from rag.fakes.fake_gpu_lock import FakeGpuLock
 
@@ -223,3 +223,71 @@ def test_unknown_verdict_literal_maps_to_permanent_error_not_a_raw_value_error()
     judge = LlmJudge(_client(handler), FakeGpuLock(), "m")
     with pytest.raises(PermanentError, match="unknown verdict"):
         judge(_item(), _RUBRIC)
+
+
+# ---------------------------------------------------------------------------
+# NB-NUMCTX: the generation window and its pre-send truncation guard. The old
+# num_ctx=8192 silently left-truncated oversized prompts (keeping only their final ~half),
+# losing the rubric that sits FIRST in _JUDGE_PROMPT on 46/84 items of the 2026-08-25
+# fabrication re-run -- with parseable output and no error anywhere.
+# ---------------------------------------------------------------------------
+
+
+def test_call_requests_the_served_artifact_declared_generation_window():
+    captured = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured["body"] = json.loads(request.content)
+        return _ok_handler_returning(_ONE_SUPPORTED_CLAIM)(request)
+
+    judge = LlmJudge(_client(handler), FakeGpuLock(), "m")
+    judge(_item(), _RUBRIC)
+
+    # The served artifact's own declared capability (qwen3.context_length=40960 via /api/show),
+    # NOT the Modelfile's 16384 config default: the 16384 window was measured still silently
+    # truncating one real prompt (Q-WAYB-010, true count 17,452).
+    assert _NUM_CTX == 40960
+    assert captured["body"]["options"]["num_ctx"] == _NUM_CTX
+
+
+def test_estimator_never_underestimates_a_measured_true_count():
+    # (prompt_chars, TRUE prompt_eval_count) -- the four densest known-full pairs from the
+    # round-1 census (docs/eval-reports/data/2026-08-25-nb-judge-rerun/ctx_probe_results.json).
+    # The guard's safety direction requires estimate >= true on every one of them.
+    measured = [(23_887, 6_798), (26_782, 6_951), (15_352, 3_243), (34_137, 8_140)]
+    for chars, true_tokens in measured:
+        assert _estimated_prompt_tokens("x" * chars) >= true_tokens
+
+
+def test_both_measured_largest_prompts_fit_the_usable_window():
+    usable_window = _NUM_CTX - _NUM_PREDICT
+
+    # Q-WAYB-011: largest prompt by chars; evaluated WHOLE at 10,878 tokens.
+    assert usable_window >= 10_878
+    assert _estimated_prompt_tokens("x" * 52_901) <= usable_window
+
+    # Q-WAYB-010: densest prompt measured (37,029 chars but TRUE count 17,452 -- it overflowed
+    # the interim 16384 window and was caught by delivery telemetry). Both the estimator's pass
+    # and the window itself must cover it.
+    assert 17_452 <= _NUM_CTX
+    assert _estimated_prompt_tokens("x" * 37_029) <= usable_window
+
+
+def test_oversized_prompt_is_refused_before_any_post_and_any_gpu_lock():
+    requests = []
+    lock = FakeGpuLock()
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return _ok_handler_returning(_ONE_SUPPORTED_CLAIM)(request)
+
+    oversized = AuditItem(
+        question_id="Q-BIG", question_text="q", passages=("word " * 30_000,), answer="a"
+    )
+    judge = LlmJudge(_client(handler), lock, "m")
+
+    with pytest.raises(PermanentError, match="Q-BIG"):
+        judge(oversized, _RUBRIC)
+
+    assert requests == []  # nothing reached the wire to be silently truncated
+    assert lock.acquired == []  # a refusal never queues behind real GPU work

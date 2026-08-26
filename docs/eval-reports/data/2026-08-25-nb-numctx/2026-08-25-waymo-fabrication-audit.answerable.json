@@ -1,0 +1,107 @@
+{
+  "rubric_path": "docs/eval-rubrics/fabrication-audit-rubric.md",
+  "rubric_sha256_12": "4add354fe464",
+  "n_items": 68,
+  "n_errors": 1,
+  "n_claims": 262,
+  "rates": {
+    "supported": 0.9351145038167938,
+    "unsupported": 0.05343511450381679,
+    "contradicted": 0.011450381679389313
+  },
+  "counts": {
+    "supported": 245,
+    "unsupported": 14,
+    "contradicted": 3
+  },
+  "unsupported_claims": [
+    {
+      "question_id": "Q-GTA-008",
+      "claim": "In contrast, the crash-rate study examines all crashes regardless of who is at fault, making the two approaches fundamentally different in scope and methodology.",
+      "rationale": "No passage explicitly states that the crash-rate study examines all crashes regardless of who is at fault. The passage mentions that the current study examines all crashes, but it does not directly compare this to the claim-based study in the way the answer suggests."
+    },
+    {
+      "question_id": "Q-GTA-010",
+      "claim": "The rate of injury-involving collisions for controlled-access highways varied across the US metro areas benchmarked.",
+      "rationale": "No passage explicitly addresses the variation in injury-involving collision rates across US metro areas for controlled-access highways."
+    },
+    {
+      "question_id": "Q-GTA-015",
+      "claim": "The milestone reported as reached in July 2025 is 71.5 million miles.",
+      "rationale": "No passage explicitly states that the milestone reached in July 2025 is 71.5 million miles. The figure is inferred but not confirmed by any passage."
+    },
+    {
+      "question_id": "Q-GTA-020",
+      "claim": "This selection process ensures that the model is robust and can handle a wider range of real-world scenarios.",
+      "rationale": "No passage directly addresses the claim that the selection process ensures the model is robust and can handle a wider range of real-world scenarios."
+    },
+    {
+      "question_id": "Q-GTA-022",
+      "claim": "The original detection dataset was recorded using a LiDAR sensor payload.",
+      "rationale": "None of the provided passages explicitly state which sensor payload recorded the original detection dataset."
+    },
+    {
+      "question_id": "Q-GTA-032",
+      "claim": "teams would need to rely on more computationally expensive and less scalable closed-loop evaluations to iterate on models if open-loop performance were not a good indicator of closed-loop performance",
+      "rationale": "No passage directly supports or contradicts this claim."
+    },
+    {
+      "question_id": "Q-GTA-033",
+      "claim": "The model that converted future waypoints into plain decimal text is the text-based model.",
+      "rationale": "The passages do not explicitly state which model converted future waypoints into plain decimal text or which model used discrete symbols for trajectory deltas."
+    },
+    {
+      "question_id": "Q-GTA-033",
+      "claim": "The reason given for this choice was that using plain decimal text allows for a more direct and unambiguous representation of future waypoints, which can be more easily processed and understood by the system without the need for additional decoding steps that might be required with discrete symbols.",
+      "rationale": "The passages do not mention any reasoning behind the choice of converting future waypoints into plain decimal text or using discrete symbols for trajectory deltas."
+    },
+    {
+      "question_id": "Q-WAYB-010",
+      "claim": "ScatterFormer demonstrates a significant improvement of 2.8% in mAP compared to TransFusion [2].",
+      "rationale": "No passage explicitly states that ScatterFormer improves mAP by 2.8% compared to TransFusion [2]."
+    },
+    {
+      "question_id": "Q-WAYB-026",
+      "claim": "These two axes intersect to form a matrix that organizes the framework's methodologies and countermeasures.",
+      "rationale": "The passages do not mention or describe a matrix formed by two crossed axes. The structure of the framework is described as being organized around three building blocks, but there is no mention of axes or their intersection forming a matrix."
+    },
+    {
+      "question_id": "Q-WAYB-027",
+      "claim": "practice #9, 'Human drowsiness rating,' falls under the Monitoring pillar",
+      "rationale": "None of the provided passages explicitly state that practice #9 falls under the Monitoring pillar."
+    },
+    {
+      "question_id": "Q-WAYB-027",
+      "claim": "practice #9, 'Human drowsiness rating,' falls under the while-in-seat lifecycle phase",
+      "rationale": "None of the provided passages explicitly state that practice #9 falls under the while-in-seat lifecycle phase."
+    },
+    {
+      "question_id": "Q-WAYB-027",
+      "claim": "practice #9, 'Human drowsiness rating,' is grouped under the named implementation block 'Driver state assessment'",
+      "rationale": "None of the provided passages explicitly mention the implementation block 'Driver state assessment' or associate it with practice #9."
+    },
+    {
+      "question_id": "Q-GTA-042",
+      "claim": "The vertical row-group label in Table 5 of 'From Stoplights to On-Ramps: A Comprehensive Set of Crash Rate Benchmarks for Freeway and Surface Street ADS Evaluation' is 'Crash Type'.",
+      "rationale": "None of the provided passages mention Table 5 or describe the vertical row-group label in Table 5."
+    }
+  ],
+  "contradicted_claims": [
+    {
+      "question_id": "Q-WAYB-020",
+      "claim": "2,860 temporal sequences",
+      "rationale": "Passage [1] states: '2,860 temporal sequences' but Passage [3] states: 'the training set consists of 2,800 sequences' and Passage [2] states: 'we annotate four sets of five-frame sequences, starting at frame indices {25, 50, 125, 150}' and 'resulting in 2,800 sequences of 25 images'."
+    },
+    {
+      "question_id": "Q-WAYB-026",
+      "claim": "The two axes of Waymo's Fatigue Risk Management (FRM) framework are fatigue prevention, fatigue monitoring, and fatigue mitigation.",
+      "rationale": "Passage [1] states that the framework revolves around three major building blocks: (1) fatigue prevention; (2) fatigue monitoring; and (3) fatigue mitigation. However, the question asks for two crossed axes, each with three categories, and the answer incorrectly identifies these three building blocks as the axes rather than the categories within the axes."
+    },
+    {
+      "question_id": "Q-WAYB-026",
+      "claim": "The two axes are: 1. Time of operation (before, during, and after driving). 2. Type of strategy (prevention, monitoring, and mitigation).",
+      "rationale": "Passage [1] and [3] describe the framework as being organized around three major building blocks: (1) fatigue prevention; (2) fatigue monitoring; and (3) fatigue mitigation. These are not described as axes or categories of axes, but rather as core components of the framework. The claim about 'time of operation' is not mentioned in the passages."
+    }
+  ],
+  "disclaimer": "A judge model is itself fallible: these rates are one instrument's reading of the answer against the supplied passages, not ground truth. The rubric that produced this report lives at rubric_path (plain text, operator-editable) and is stamped by rubric_sha256_12 below so two reports produced under different rubric wording are never silently compared. This report is not a baseline -- see the rubric file's own header for sign-off status."
+}

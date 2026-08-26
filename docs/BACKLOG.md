@@ -588,6 +588,18 @@ quality, NB-6 VLM scoping (Decision C gate). Decisions A–D recorded in PROJECT
 
 ## NB-JUDGE-CTX — judge prompts are silently truncated at num_ctx; amended rubric undelivered on 46/84 items
 
+**RESOLVED 2026-08-25** by NB-NUMCTX (branch `NB-NUMCTX-fix`, commits through `96dc650`): window
+raised to the served model artifact's declared 40,960 (after the interim 16384 was itself caught
+truncating Q-WAYB-010, true count 17,452 tok), loud pre-send estimate-vs-window guard +
+per-call `prompt_eval_count` delivery telemetry added in `app/judge_llm.py` (the one choke point;
+`rag/contextual_header.py` deliberately untouched — its input is chunker-bounded), stale
+"max 228 words" comment corrected. Clean-delivery re-run delivered and verified 84/84; report:
+`docs/eval-reports/2026-08-25-nb-numctx-clean-delivery.md`. Outcome adverse: amended-rubric
+unsupported rates collapsed vs both priors and F-A2 surfaced neither target item on its clean
+tests — follow-up (seeded/repeated judge sampling) noted there, not ticketed here.
+
+Original finding, kept for the record:
+
 **Found 2026-08-25 closing NB-JUDGE-RERUN** (`docs/eval-reports/2026-08-25-nb-judge-rerun.md` §3;
 probe + per-item census committed beside it).
 

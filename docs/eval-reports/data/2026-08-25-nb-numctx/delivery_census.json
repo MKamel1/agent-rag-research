@@ -1,0 +1,429 @@
+{
+  "source_log": "/tmp/opencode/nbnumctx_rerun_final.log",
+  "items_logged": 84,
+  "truncated_signature": [],
+  "no_telemetry_parse_errors": [],
+  "over_window": [],
+  "per_item": {
+    "Q-WAYB-009": {
+      "prompt_eval_count": 10022,
+      "estimated": 12446,
+      "window": 40960
+    },
+    "Q-WAYB-021": {
+      "prompt_eval_count": 10731,
+      "estimated": 14226,
+      "window": 40960
+    },
+    "Q-WAYB-022": {
+      "prompt_eval_count": 11088,
+      "estimated": 13648,
+      "window": 40960
+    },
+    "Q-WAYB-028": {
+      "prompt_eval_count": 9056,
+      "estimated": 12445,
+      "window": 40960
+    },
+    "Q-WAYB-029": {
+      "prompt_eval_count": 6078,
+      "estimated": 9126,
+      "window": 40960
+    },
+    "Q-WAYB-034": {
+      "prompt_eval_count": 8655,
+      "estimated": 10834,
+      "window": 40960
+    },
+    "Q-WAYB-035": {
+      "prompt_eval_count": 8007,
+      "estimated": 9662,
+      "window": 40960
+    },
+    "Q-WAYB-039": {
+      "prompt_eval_count": 9546,
+      "estimated": 12288,
+      "window": 40960
+    },
+    "Q-GTA-034": {
+      "prompt_eval_count": 10176,
+      "estimated": 13797,
+      "window": 40960
+    },
+    "Q-GTA-035": {
+      "prompt_eval_count": 9494,
+      "estimated": 10668,
+      "window": 40960
+    },
+    "Q-GTA-036": {
+      "prompt_eval_count": 8977,
+      "estimated": 10290,
+      "window": 40960
+    },
+    "Q-GTA-037": {
+      "prompt_eval_count": 7665,
+      "estimated": 9668,
+      "window": 40960
+    },
+    "Q-GTA-038": {
+      "prompt_eval_count": 7887,
+      "estimated": 10697,
+      "window": 40960
+    },
+    "Q-GTA-039": {
+      "prompt_eval_count": 9276,
+      "estimated": 12538,
+      "window": 40960
+    },
+    "Q-GTA-040": {
+      "prompt_eval_count": 8816,
+      "estimated": 10868,
+      "window": 40960
+    },
+    "Q-GTA-041": {
+      "prompt_eval_count": 11229,
+      "estimated": 14806,
+      "window": 40960
+    },
+    "Q-GTA-001": {
+      "prompt_eval_count": 8554,
+      "estimated": 10779,
+      "window": 40960
+    },
+    "Q-GTA-002": {
+      "prompt_eval_count": 6555,
+      "estimated": 7854,
+      "window": 40960
+    },
+    "Q-GTA-003": {
+      "prompt_eval_count": 8140,
+      "estimated": 9754,
+      "window": 40960
+    },
+    "Q-GTA-004": {
+      "prompt_eval_count": 10603,
+      "estimated": 13058,
+      "window": 40960
+    },
+    "Q-GTA-005": {
+      "prompt_eval_count": 9923,
+      "estimated": 13118,
+      "window": 40960
+    },
+    "Q-GTA-006": {
+      "prompt_eval_count": 10266,
+      "estimated": 13116,
+      "window": 40960
+    },
+    "Q-GTA-007": {
+      "prompt_eval_count": 9986,
+      "estimated": 12489,
+      "window": 40960
+    },
+    "Q-GTA-008": {
+      "prompt_eval_count": 9265,
+      "estimated": 12309,
+      "window": 40960
+    },
+    "Q-GTA-009": {
+      "prompt_eval_count": 8656,
+      "estimated": 11917,
+      "window": 40960
+    },
+    "Q-GTA-010": {
+      "prompt_eval_count": 9621,
+      "estimated": 12226,
+      "window": 40960
+    },
+    "Q-GTA-011": {
+      "prompt_eval_count": 8051,
+      "estimated": 9940,
+      "window": 40960
+    },
+    "Q-GTA-012": {
+      "prompt_eval_count": 6928,
+      "estimated": 8590,
+      "window": 40960
+    },
+    "Q-GTA-013": {
+      "prompt_eval_count": 6198,
+      "estimated": 8078,
+      "window": 40960
+    },
+    "Q-GTA-014": {
+      "prompt_eval_count": 6431,
+      "estimated": 7944,
+      "window": 40960
+    },
+    "Q-GTA-015": {
+      "prompt_eval_count": 10003,
+      "estimated": 12599,
+      "window": 40960
+    },
+    "Q-GTA-016": {
+      "prompt_eval_count": 8615,
+      "estimated": 9931,
+      "window": 40960
+    },
+    "Q-GTA-017": {
+      "prompt_eval_count": 6652,
+      "estimated": 8026,
+      "window": 40960
+    },
+    "Q-GTA-018": {
+      "prompt_eval_count": 9782,
+      "estimated": 12674,
+      "window": 40960
+    },
+    "Q-GTA-019": {
+      "prompt_eval_count": 10984,
+      "estimated": 13396,
+      "window": 40960
+    },
+    "Q-GTA-020": {
+      "prompt_eval_count": 10154,
+      "estimated": 11029,
+      "window": 40960
+    },
+    "Q-GTA-021": {
+      "prompt_eval_count": 9098,
+      "estimated": 11361,
+      "window": 40960
+    },
+    "Q-GTA-022": {
+      "prompt_eval_count": 10297,
+      "estimated": 14254,
+      "window": 40960
+    },
+    "Q-GTA-023": {
+      "prompt_eval_count": 7123,
+      "estimated": 8742,
+      "window": 40960
+    },
+    "Q-GTA-024": {
+      "prompt_eval_count": 7646,
+      "estimated": 10264,
+      "window": 40960
+    },
+    "Q-GTA-025": {
+      "prompt_eval_count": 5111,
+      "estimated": 6406,
+      "window": 40960
+    },
+    "Q-GTA-026": {
+      "prompt_eval_count": 7792,
+      "estimated": 10629,
+      "window": 40960
+    },
+    "Q-GTA-027": {
+      "prompt_eval_count": 8544,
+      "estimated": 11079,
+      "window": 40960
+    },
+    "Q-GTA-028": {
+      "prompt_eval_count": 4683,
+      "estimated": 6212,
+      "window": 40960
+    },
+    "Q-GTA-029": {
+      "prompt_eval_count": 10849,
+      "estimated": 12963,
+      "window": 40960
+    },
+    "Q-GTA-030": {
+      "prompt_eval_count": 11402,
+      "estimated": 14268,
+      "window": 40960
+    },
+    "Q-GTA-031": {
+      "prompt_eval_count": 4982,
+      "estimated": 6800,
+      "window": 40960
+    },
+    "Q-GTA-032": {
+      "prompt_eval_count": 6160,
+      "estimated": 8784,
+      "window": 40960
+    },
+    "Q-GTA-033": {
+      "prompt_eval_count": 8878,
+      "estimated": 11484,
+      "window": 40960
+    },
+    "Q-WAYB-001": {
+      "prompt_eval_count": 4701,
+      "estimated": 6438,
+      "window": 40960
+    },
+    "Q-WAYB-002": {
+      "prompt_eval_count": 4779,
+      "estimated": 5854,
+      "window": 40960
+    },
+    "Q-WAYB-003": {
+      "prompt_eval_count": 9649,
+      "estimated": 13309,
+      "window": 40960
+    },
+    "Q-WAYB-004": {
+      "prompt_eval_count": 6150,
+      "estimated": 8475,
+      "window": 40960
+    },
+    "Q-WAYB-005": {
+      "prompt_eval_count": 3893,
+      "estimated": 5035,
+      "window": 40960
+    },
+    "Q-WAYB-006": {
+      "prompt_eval_count": 8918,
+      "estimated": 12906,
+      "window": 40960
+    },
+    "Q-WAYB-007": {
+      "prompt_eval_count": 8481,
+      "estimated": 11986,
+      "window": 40960
+    },
+    "Q-WAYB-008": {
+      "prompt_eval_count": 6798,
+      "estimated": 6825,
+      "window": 40960
+    },
+    "Q-WAYB-010": {
+      "prompt_eval_count": 17452,
+      "estimated": 10580,
+      "window": 40960
+    },
+    "Q-WAYB-011": {
+      "prompt_eval_count": 10878,
+      "estimated": 15115,
+      "window": 40960
+    },
+    "Q-WAYB-012": {
+      "prompt_eval_count": 9092,
+      "estimated": 12499,
+      "window": 40960
+    },
+    "Q-WAYB-013": {
+      "prompt_eval_count": 5256,
+      "estimated": 6484,
+      "window": 40960
+    },
+    "Q-WAYB-014": {
+      "prompt_eval_count": 6951,
+      "estimated": 7652,
+      "window": 40960
+    },
+    "Q-WAYB-015": {
+      "prompt_eval_count": 6252,
+      "estimated": 7666,
+      "window": 40960
+    },
+    "Q-WAYB-016": {
+      "prompt_eval_count": 6921,
+      "estimated": 8509,
+      "window": 40960
+    },
+    "Q-WAYB-017": {
+      "prompt_eval_count": 3243,
+      "estimated": 4387,
+      "window": 40960
+    },
+    "Q-WAYB-018": {
+      "prompt_eval_count": 7716,
+      "estimated": 9612,
+      "window": 40960
+    },
+    "Q-WAYB-019": {
+      "prompt_eval_count": 8111,
+      "estimated": 10277,
+      "window": 40960
+    },
+    "Q-WAYB-020": {
+      "prompt_eval_count": 4972,
+      "estimated": 6314,
+      "window": 40960
+    },
+    "Q-WAYB-023": {
+      "prompt_eval_count": 5436,
+      "estimated": 7524,
+      "window": 40960
+    },
+    "Q-WAYB-024": {
+      "prompt_eval_count": 6803,
+      "estimated": 9560,
+      "window": 40960
+    },
+    "Q-WAYB-025": {
+      "prompt_eval_count": 8979,
+      "estimated": 11379,
+      "window": 40960
+    },
+    "Q-WAYB-026": {
+      "prompt_eval_count": 8270,
+      "estimated": 12322,
+      "window": 40960
+    },
+    "Q-WAYB-027": {
+      "prompt_eval_count": 8130,
+      "estimated": 11875,
+      "window": 40960
+    },
+    "Q-WAYB-030": {
+      "prompt_eval_count": 3794,
+      "estimated": 5081,
+      "window": 40960
+    },
+    "Q-WAYB-031": {
+      "prompt_eval_count": 9650,
+      "estimated": 12591,
+      "window": 40960
+    },
+    "Q-WAYB-032": {
+      "prompt_eval_count": 8538,
+      "estimated": 11228,
+      "window": 40960
+    },
+    "Q-WAYB-033": {
+      "prompt_eval_count": 8980,
+      "estimated": 11285,
+      "window": 40960
+    },
+    "Q-WAYB-036": {
+      "prompt_eval_count": 9275,
+      "estimated": 11878,
+      "window": 40960
+    },
+    "Q-WAYB-037": {
+      "prompt_eval_count": 7584,
+      "estimated": 9518,
+      "window": 40960
+    },
+    "Q-WAYB-038": {
+      "prompt_eval_count": 10933,
+      "estimated": 14442,
+      "window": 40960
+    },
+    "Q-WAYB-040": {
+      "prompt_eval_count": 11793,
+      "estimated": 8906,
+      "window": 40960
+    },
+    "Q-GTA-042": {
+      "prompt_eval_count": 7330,
+      "estimated": 9550,
+      "window": 40960
+    },
+    "Q-GTA-043": {
+      "prompt_eval_count": 6272,
+      "estimated": 8072,
+      "window": 40960
+    },
+    "Q-GTA-044": {
+      "prompt_eval_count": 9582,
+      "estimated": 11163,
+      "window": 40960
+    }
+  }
+}

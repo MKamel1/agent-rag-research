@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import re
 from pathlib import Path
 
@@ -50,21 +51,54 @@ logger = logging.getLogger(__name__)
 # request's fault.
 _RETRYABLE_STATUSES = {429, 500, 502, 503, 504}
 
-# Fixed, generous ceiling rather than dynamic per-item sizing (rag/contextual_header.py's own
-# reasoning applies harder here): a real measurement over fixtures/eval/waymo_gt_verified.json's
-# 64 auditable items found a max of 228 words across question + all passages + answer combined
-# (~500 tokens at rag/summarizer.py's measured ~2.2 tokens/word) -- an order of magnitude under
-# this ceiling even before the rubric text (~500 words) is added. One fixed ceiling generous
-# enough to cover the largest real item plus the rubric plus prompt overhead is simpler and just
-# as safe as computing a per-item budget.
-_NUM_CTX = 8192
+# Fixed window rather than dynamic per-item sizing (rag/contextual_header.py's own reasoning
+# applies harder here: one fixed number plus a loud pre-send check plus post-hoc delivery
+# telemetry below beats per-item budget arithmetic). The value is the served model artifact's own
+# declared capability (`qwen3.context_length` = 40,960, read off /api/show -- the Modelfile's
+# `num_ctx 16384` is a config default, not a bound), honored empirically against this server
+# build: docs/eval-reports/data/2026-08-25-nb-numctx/ holds the probes. Past a window's capacity
+# the serving stack silently left-truncates prompts to their final ~half-window (4,098 tokens
+# measured under an 8192 request; 8,194 under 16384), returning a normal 200 either way.
+#
+# History: _NUM_CTX was 8192 behind a stale "max 228 words" comment whose measurement covered
+# only the SHORT GT-fixture excerpts -- real judge inputs carry k=5 full retrieved passages
+# (15-53K chars), and the silent consequence, measured on the 2026-08-25 fabrication-audit
+# re-run, was 46/84 items judged with the rubric (FIRST in _JUDGE_PROMPT) truncated away entirely
+# (docs/eval-reports/2026-08-25-nb-judge-rerun.md §3). The first amendment here (16384, the
+# Modelfile default) was still insufficient: its own clean-delivery re-run caught Q-WAYB-010 --
+# true count 17,452 tokens at 2.12 chars/token, by far the densest prompt measured -- hitting the
+# 16384 cliff, detected live by the prompt_eval_count telemetry line below, which is what makes
+# any residual truncation LOUD instead of silent. 40,960 covers every measured prompt with the
+# num_predict reserve intact, including a hypothetical rerun of the largest prompt (52,901 chars)
+# at Q-WAYB-010's density.
+_NUM_CTX = 40960
 # An answer can carry several claims, each with a rationale that quotes passage text -- more
 # headroom than rag/contextual_header.py's single-sentence header needs.
 _NUM_PREDICT = 1024
 
+# Conservative chars->tokens ratio for the pre-send guard below, calibrated on the round-1
+# census's 38 known-full prompts (docs/eval-reports/data/2026-08-25-nb-judge-rerun/
+# ctx_probe_results.json): true tokens-per-char peaked at 0.285 (Q-WAYB-008, 23,887 chars ->
+# 6,798 tokens = 3.51 chars/token), so dividing by 3.5 and rounding up never underestimates any
+# measured pair IN THAT CENSUS. Measured blind spot: that census was censored above 8,192 true
+# tokens, and the one later-measured outlier is denser still (Q-WAYB-010: 37,029 chars ->
+# 17,452 tokens = 2.12 chars/token), so this estimate can UNDERCOUNT pathological prompts -- the
+# pre-send guard is therefore the coarse filter and the per-call prompt_eval_count log line the
+# binding delivery evidence, not vice versa.
+_CHARS_PER_TOKEN_CONSERVATIVE = 3.5
+
+
+def _estimated_prompt_tokens(prompt: str) -> int:
+    """Rough token count of `prompt`, erring deliberately HIGH -- the safe direction for a
+    truncation guard (an overestimate refuses an item that might have fit; an underestimate
+    silently loses the rubric). Every prompt whose true count was measured estimates at or
+    above it; see the constant's comment for the calibration."""
+    return math.ceil(len(prompt) / _CHARS_PER_TOKEN_CONSERVATIVE)
+
 _JUDGE_LLM_URL = "http://localhost:11434"
 # JUDGE-1's chosen model -- see docs/eval-reports/2026-08-23-waymo-groundedness-provisional.md
-# for the justification (context budget measured against this fixture, not guessed).
+# for the original selection justification; its context-budget claim was superseded by
+# measurement (docs/eval-reports/2026-08-25-nb-judge-rerun.md §3, harness fixed under NB-NUMCTX).
 _JUDGE_MODEL = "qwen3-14b-16k:latest"
 
 _JUDGE_PROMPT = (
@@ -158,6 +192,21 @@ class LlmJudge:
             answer=item.answer,
         )
 
+        # Pre-send guard (NB-NUMCTX): sent oversized, only the final ~half-window of this prompt
+        # reaches the model -- i.e. the rubric at the front is exactly what gets lost -- with a
+        # normal 200 and parseable output to show for it (both measured, see _NUM_CTX above).
+        # Refusing here turns that silent corruption into a counted error in run_audit; checked
+        # before the lock so a refusal never queues behind real GPU work.
+        estimated_tokens = _estimated_prompt_tokens(prompt)
+        usable_window = _NUM_CTX - _NUM_PREDICT
+        if estimated_tokens > usable_window:
+            raise PermanentError(
+                f"{item.question_id}: judge prompt estimated at {estimated_tokens} tokens "
+                f"(conservative {_CHARS_PER_TOKEN_CONSERVATIVE} chars/token) exceeds the usable "
+                f"window {_NUM_CTX} - {_NUM_PREDICT} = {usable_window}; refusing to send it to "
+                f"be silently truncated"
+            )
+
         with self._gpu_lock.acquire("judge"):
             try:
                 response = self._client.post(
@@ -186,6 +235,19 @@ class LlmJudge:
                 ) from error
 
             raw = decode_or_classify(response, f"{item.question_id}: judge generation LLM")
+
+            # Delivery telemetry: what the server actually evaluated for THIS prompt, logged so a
+            # run's transcript proves full delivery post-hoc (the 2026-08-25 re-run needed a
+            # whole second probe to reconstruct exactly this). Deliberately AFTER
+            # decode_or_classify: a body it would classify as transient/permanent never reaches
+            # this parse, so the telemetry line adds no new failure mode.
+            logger.info(
+                "%s: judge prompt_eval_count=%s (estimated %d, window %d)",
+                item.question_id,
+                response.json().get("prompt_eval_count"),
+                estimated_tokens,
+                _NUM_CTX,
+            )
 
         return _parse_claims(item.question_id, raw)
 
