@@ -1,0 +1,98 @@
+{
+  "probe_date": "2026-08-25",
+  "server": {
+    "url": "http://localhost:11434",
+    "model": "qwen3-14b-16k:latest"
+  },
+  "P0_model_capability": {
+    "qwen3.context_length": 40960,
+    "parameters_head": [
+      "num_ctx                        16384",
+      "repeat_penalty                 1",
+      "stop                           \"<|im_start|>\""
+    ]
+  },
+  "P1_calibration": {
+    "input_chars": 1285,
+    "prompt_eval_count": 244,
+    "chars_per_token": 5.266
+  },
+  "P2_old_boundary_repro": {
+    "label": "P2 old-cliff sentinel x390 @8192",
+    "num_ctx": 8192,
+    "input_chars": 49371,
+    "prompt_eval_count": 4098,
+    "response_head": "MANGOVOLT6 Mem",
+    "wall_s": 4.1,
+    "A_present": false,
+    "B_present": true
+  },
+  "P3_capacity_sweep_16384": [
+    {
+      "label": "P3 filler x700 @16384",
+      "num_ctx": 16384,
+      "input_chars": 88200,
+      "prompt_eval_count": 15417,
+      "response_head": "It seems like you",
+      "wall_s": 9.8,
+      "estimated_true_tokens": 16749
+    },
+    {
+      "label": "P3 filler x760 @16384",
+      "num_ctx": 16384,
+      "input_chars": 95760,
+      "prompt_eval_count": 8194,
+      "response_head": "It looks like you",
+      "wall_s": 3.8,
+      "estimated_true_tokens": 18185
+    },
+    {
+      "label": "P3 filler x1000 @16384",
+      "num_ctx": 16384,
+      "input_chars": 126000,
+      "prompt_eval_count": 8194,
+      "response_head": "It looks like you",
+      "wall_s": 0.2,
+      "estimated_true_tokens": 23927
+    },
+    {
+      "label": "P3 filler x2400 @16384",
+      "num_ctx": 16384,
+      "input_chars": 302400,
+      "prompt_eval_count": 8194,
+      "response_head": "It looks like you",
+      "wall_s": 0.3,
+      "estimated_true_tokens": 57425
+    }
+  ],
+  "P3_sentinel_pair_16384": [
+    {
+      "label": "P3 sentinel x700 @16384",
+      "num_ctx": 16384,
+      "input_chars": 88431,
+      "prompt_eval_count": 15472,
+      "response_head": "ZEBRAPRINT9 MANGOVOLT6",
+      "wall_s": 7.8,
+      "A_present": true,
+      "B_present": true
+    },
+    {
+      "label": "P3 sentinel x1000 @16384",
+      "num_ctx": 16384,
+      "input_chars": 126231,
+      "prompt_eval_count": 8194,
+      "response_head": "MANGOVOLT6 Mem",
+      "wall_s": 3.9,
+      "A_present": false,
+      "B_present": true
+    }
+  ],
+  "P4_worst_real_item": {
+    "label": "P4 real-item Q-WAYB-011 @16384",
+    "num_ctx": 16384,
+    "input_chars": 52901,
+    "prompt_eval_count": 10878,
+    "response_head": "[{\"claim\":",
+    "wall_s": 5.1
+  }
+}
