@@ -143,7 +143,8 @@ def test_two_sentence_window_admits_second_sentence_refusal():
 def test_generation_error_forces_non_refusal_and_is_surfaced():
     record = _classify_item(
         "Q-X",
-        {"answer_text": _CLASS_PHRASES["bare-no-information"], "error": "ollama timeout"},
+        {"answer_text": _CLASS_PHRASES["bare-no-information"],
+         "error": "generation backend timeout"},
         arm="answerable",
     )
     assert record["generation_error"] is True
