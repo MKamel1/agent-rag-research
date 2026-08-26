@@ -690,3 +690,13 @@ scan `/proc/*/cwd` for the ticket worktree — attempt N−1 may still be alive 
 (§8.1), and a fresh dispatch into the same worktree collides with it mid-file. Kill by exact PID
 from the scan (never `pkill -f` patterns, §6b.3); if the channel still cannot hold the ticket,
 fall back to a different execution channel and record the deviation.
+
+### 8.5 Dispatch timeouts on input-reading: split read-phase from write-phase
+
+Two consecutive doc-lanes (P02 3600 s, P03 4800 s) consumed their entire budgets reading large input
+documents — multi-section audit reports plus multi-file precedents — before writing a byte; P03 left
+ZERO output on disk. A writer agent's reading volume is part of its time budget: set timeout ≥
+expected reading volume, or better, remove the reading phase entirely. Options in order of
+preference: (a) pre-extract the needed inputs into a compact notes file the writer reads instead;
+(b) split into an extraction ticket and a writing ticket; (c) when the orchestrator already holds
+the context, go orchestrator-direct rather than re-buying it inside a dispatch.

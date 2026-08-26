@@ -528,6 +528,11 @@ authored project docs — excluded from classification.
 | `docs/RESEARCH-book-rag-established-methods.md` | REFERENCE | External literature pressure-testing the book design; background evidence. |
 | `docs/METHODS-books-and-chunk-quality.md` | REFERENCE | Living methods log for book/chunk-quality work; largely folded into `BOOK-INTEGRATION-CLOSEOUT.md`. |
 | `docs/eval-reports/*.md` | AUTHORITATIVE | Primary source for every book-RAG experiment verdict (§5) and several measurement claims (§1). |
+| `docs/research/2026-08-25-agentic-rag-sota.md` | REFERENCE | Web-research SOTA survey (URLs cited): agentic/iterative RAG families + retrieval levers, ranked top-5 adoptable mapped to measured failure buckets F1–F7 (precision-95 programme R1). |
+| `docs/research/2026-08-25-confidence-qwen-sota.md` | REFERENCE | Web-research SOTA survey: answer-confidence mechanisms (top-3 ranked for a 5-level MCP surface; verbalized confidence rejected) + Qwen reasoning-model lineup and serving posture P0 (precision-95 programme R2). |
+| `docs/design-notes/2026-08-28-xc-member-citation-adoption.md` | REFERENCE | Adoption design note for member-block citation (Variant A recommended); rider-PR diff sketch awaiting T-F7 sign-off — no implementation dispatched (precision-95 programme QW-1). |
+| `docs/eval-reports/2026-08-26-precision95-metric-ratification.md` | DRAFT (awaiting operator sign-off) | Frozen metric definitions for the 0.95 push, quoted from B0 §2 verbatim; five-part qualifier rule; retired gates; two-arm statement. Unsigned = not a ratified gate (precision-95 programme P0-2). |
+| `docs/eval-reports/2026-08-27-multihop-gt-authoring-plan.md` | AUTHORITATIVE (plan) | Multi-hop GT authoring spec: W-A1..A5 sized by shown power arithmetic (~130 items, MDE ≈22–26 pts paired); regime checklist; ~300 graded pairs close B0 §4 anchor gap; execution = SB-2 behind GPU-freeze gate (P0-3). |
 | `docs/superpowers/plans/*.md`, `docs/superpowers/specs/*.md` | REFERENCE | Per-feature design/implementation plans (superpowers workflow artifacts); the newest, `2026-08-05-paper-author-org-tagging-design.md` and `2026-08-06-waymo-av-safety-corpus-expansion-v2.md`, are the only source for those two efforts' design (§3). The original `2026-08-05-waymo-corpus-expansion.md` is superseded by the v2 plan — kept for its own historical record of what v1 intended, per `docs/WAYMO-CORPUS-STATUS.md`. |
 
 ## 8. Preserved-but-unmerged work index
@@ -725,3 +730,18 @@ Merge `cc6a0c3` (branch `NB-NUMCTX-fix`): Ollama serving-stack silent front-trun
 ### GPU freeze gate (operator, 2026-08-26)
 
 Operator directive: no GPU work until lifted. Held at freeze: QW-2 confidence v0 (stub committed, pre-download), QW-3 reranker-seat A/B (blocked entirely), Wave P2/P3 execution, GT authoring execution. Proceeding docs-only: P0-1 ledger (this entry), P0-2 ratification draft (sign-off header deferred to operator), P0-3 multi-hop authoring PLAN, QW-1 design note (landed `cff3b53`, recommends Variant A; rider PR awaits T-F7 sign-off).
+
+
+### Precision-95 programme precursors (2026-08-25/26)
+
+Benchmark-first groundwork for the 0.95 push, executed under the operator GPU-freeze gate
+(docs-only). Consolidated ledger; every lane verified by the orchestrator before merge.
+
+| item | outcome | evidence |
+|---|---|---|
+| NB-B0 benchmark audit | instrument inventory with achievability ceilings shown as arithmetic; P@10 retired (~1/k wall); agentic-GT deficit enumerated (W-A1..W-A5, none authored); confidence-anchor deficit (~4×) quantified | `docs/eval-reports/2026-08-25-nb-b0-benchmark-audit.md`, merge `0646ff0` |
+| NB-R1 agentic SOTA research | top-5 adoptable ranked to failure buckets F1–F7: reranker-seat upgrade (Qwen3-Reranker-0.6B), depth-first reranking, contextual chunk enrichment, CRAG-pattern evaluator, stratum routing | `docs/research/2026-08-25-agentic-rag-sota.md`, merge `5ede2e7` |
+| NB-R2 confidence+Qwen research | confidence top-3: MiniCheck-class support-checking, conformal/LTT (gated on anchors), semantic entropy; verbalized rejected. Posture P0: qwen3-14b @16384 co-resident; Qwen3.8-27B UD-Q4_K_S pilot in stop-TEI windows (vLLM thinking_token_budget) | `docs/research/2026-08-25-confidence-qwen-sota.md`, merge `a8e2181` |
+| NB-P02 metric ratification | DRAFT addendum (definitions quoted verbatim from B0 §2; qualifier rule; retired gates; two-arm statement) — **operator sign-off header unsigned** | `docs/eval-reports/2026-08-26-precision95-metric-ratification.md`, merge `ee11e85` |
+| NB-P03 multi-hop GT authoring plan | W-A1..A5 sized via shown power arithmetic (~130 items; MDE ≈22–26 pts paired); ~300 graded pairs close B0 §4 gap; regime checklist enumerated; execution = SB-2 behind GPU gate | `docs/eval-reports/2026-08-27-multihop-gt-authoring-plan.md`, merge `15f678d`; orchestrator-direct after two dispatch timeouts on input-reading |
+| NB-QW1 citation adoption note | Variant A recommended (GroundedResult.metadata slot + DATA-CONTRACTS §M7 paragraph); rider-PR sketch filed for T-F7 batch | `docs/design-notes/2026-08-28-xc-member-citation-adoption.md`, merge `cff3b53` |
