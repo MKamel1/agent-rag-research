@@ -1,0 +1,243 @@
+{
+  "gt_wmr_dense_only": {
+    "baseline_hit_rate": 0.9242,
+    "config": "gt_wmr_dense_only",
+    "conversions": [
+      {
+        "at_rank_1": true,
+        "baseline_rank_if_C1": null,
+        "gold_block_id": "2312.12675:b66",
+        "joint_bucket": "C2",
+        "question_id": "Q-WMR-094",
+        "serving_anchor": "2312.12675:b63",
+        "serving_position": 0,
+        "span": [
+          63,
+          67
+        ]
+      }
+    ],
+    "k": 10,
+    "member_hit_rate": 0.9394,
+    "n_baseline_hits": 61,
+    "n_converted_anywhere_top_k": 1,
+    "n_converted_at_rank_1": 1,
+    "n_member_hits": 62,
+    "n_scored": 66,
+    "watch_items": {
+      "Q-WMR-036": "Q-WMR-036: baseline_hit=True pl_rank=7 member=pos 6 anchor 2312.12675:b63",
+      "Q-WMR-094": "Q-WMR-094: baseline_hit=False pl_rank=None member=pos 0 anchor 2312.12675:b63"
+    }
+  },
+  "gt_wmr_fused": {
+    "baseline_hit_rate": 0.9394,
+    "config": "gt_wmr_fused",
+    "conversions": [
+      {
+        "at_rank_1": true,
+        "baseline_rank_if_C1": null,
+        "gold_block_id": "2312.12675:b66",
+        "joint_bucket": "C2",
+        "question_id": "Q-WMR-094",
+        "serving_anchor": "2312.12675:b63",
+        "serving_position": 0,
+        "span": [
+          63,
+          67
+        ]
+      }
+    ],
+    "k": 10,
+    "member_hit_rate": 0.9545,
+    "n_baseline_hits": 62,
+    "n_converted_anywhere_top_k": 1,
+    "n_converted_at_rank_1": 1,
+    "n_member_hits": 63,
+    "n_scored": 66,
+    "watch_items": {
+      "Q-WMR-036": "Q-WMR-036: baseline_hit=True pl_rank=7 member=pos 6 anchor 2312.12675:b63",
+      "Q-WMR-094": "Q-WMR-094: baseline_hit=False pl_rank=None member=pos 0 anchor 2312.12675:b63"
+    }
+  },
+  "gt_wmr_sparse_only": {
+    "baseline_hit_rate": 0.5455,
+    "config": "gt_wmr_sparse_only",
+    "conversions": [
+      {
+        "at_rank_1": true,
+        "baseline_rank_if_C1": null,
+        "gold_block_id": "2312.12675:b66",
+        "joint_bucket": "C2",
+        "question_id": "Q-WMR-094",
+        "serving_anchor": "2312.12675:b63",
+        "serving_position": 0,
+        "span": [
+          63,
+          67
+        ]
+      }
+    ],
+    "k": 10,
+    "member_hit_rate": 0.5606,
+    "n_baseline_hits": 36,
+    "n_converted_anywhere_top_k": 1,
+    "n_converted_at_rank_1": 1,
+    "n_member_hits": 37,
+    "n_scored": 66,
+    "watch_items": {
+      "Q-WMR-036": "Q-WMR-036: baseline_hit=False pl_rank=None member=none",
+      "Q-WMR-094": "Q-WMR-094: baseline_hit=False pl_rank=None member=pos 0 anchor 2312.12675:b63"
+    }
+  },
+  "ver84_dense_only": {
+    "baseline_hit_rate": 0.7812,
+    "config": "ver84_dense_only",
+    "conversions": [
+      {
+        "at_rank_1": true,
+        "baseline_rank_if_C1": null,
+        "gold_block_id": "2208.12833:b188",
+        "joint_bucket": "C2",
+        "question_id": "Q-WAYB-027",
+        "serving_anchor": "2208.12833:b186",
+        "serving_position": 0,
+        "span": [
+          186,
+          191
+        ]
+      },
+      {
+        "at_rank_1": false,
+        "baseline_rank_if_C1": null,
+        "gold_block_id": "2508.19425:b88",
+        "joint_bucket": "C2",
+        "question_id": "Q-GTA-042",
+        "serving_anchor": "2508.19425:b85",
+        "serving_position": 4,
+        "span": [
+          85,
+          89
+        ]
+      },
+      {
+        "at_rank_1": false,
+        "baseline_rank_if_C1": null,
+        "gold_block_id": "2506.08228:b75",
+        "joint_bucket": "C2",
+        "question_id": "Q-GTA-043",
+        "serving_anchor": "2506.08228:b74",
+        "serving_position": 2,
+        "span": [
+          74,
+          80
+        ]
+      },
+      {
+        "at_rank_1": false,
+        "baseline_rank_if_C1": null,
+        "gold_block_id": "2104.10133:b66",
+        "joint_bucket": "C2",
+        "question_id": "Q-GTA-044",
+        "serving_anchor": "2104.10133:b64",
+        "serving_position": 1,
+        "span": [
+          64,
+          67
+        ]
+      }
+    ],
+    "k": 10,
+    "member_hit_rate": 0.8438,
+    "n_baseline_hits": 50,
+    "n_converted_anywhere_top_k": 4,
+    "n_converted_at_rank_1": 1,
+    "n_member_hits": 54,
+    "n_scored": 64,
+    "watch_items": {
+      "Q-WAYB-027": "Q-WAYB-027: baseline_hit=False pl_rank=None member=pos 0 anchor 2208.12833:b186"
+    }
+  },
+  "ver84_fused": {
+    "baseline_hit_rate": 0.6719,
+    "config": "ver84_fused",
+    "conversions": [
+      {
+        "at_rank_1": true,
+        "baseline_rank_if_C1": null,
+        "gold_block_id": "2208.12833:b188",
+        "joint_bucket": "C2",
+        "question_id": "Q-WAYB-027",
+        "serving_anchor": "2208.12833:b186",
+        "serving_position": 0,
+        "span": [
+          186,
+          191
+        ]
+      },
+      {
+        "at_rank_1": false,
+        "baseline_rank_if_C1": null,
+        "gold_block_id": "2508.19425:b88",
+        "joint_bucket": "D",
+        "question_id": "Q-GTA-042",
+        "serving_anchor": "2508.19425:b85",
+        "serving_position": 6,
+        "span": [
+          85,
+          89
+        ]
+      },
+      {
+        "at_rank_1": false,
+        "baseline_rank_if_C1": null,
+        "gold_block_id": "2506.08228:b75",
+        "joint_bucket": "C2",
+        "question_id": "Q-GTA-043",
+        "serving_anchor": "2506.08228:b74",
+        "serving_position": 2,
+        "span": [
+          74,
+          80
+        ]
+      },
+      {
+        "at_rank_1": false,
+        "baseline_rank_if_C1": null,
+        "gold_block_id": "2104.10133:b66",
+        "joint_bucket": "C2",
+        "question_id": "Q-GTA-044",
+        "serving_anchor": "2104.10133:b64",
+        "serving_position": 1,
+        "span": [
+          64,
+          67
+        ]
+      }
+    ],
+    "k": 10,
+    "member_hit_rate": 0.7344,
+    "n_baseline_hits": 43,
+    "n_converted_anywhere_top_k": 4,
+    "n_converted_at_rank_1": 1,
+    "n_member_hits": 47,
+    "n_scored": 64,
+    "watch_items": {
+      "Q-WAYB-027": "Q-WAYB-027: baseline_hit=False pl_rank=None member=pos 0 anchor 2208.12833:b186"
+    }
+  },
+  "ver84_sparse_only": {
+    "baseline_hit_rate": 0.2188,
+    "config": "ver84_sparse_only",
+    "conversions": [],
+    "k": 10,
+    "member_hit_rate": 0.2188,
+    "n_baseline_hits": 14,
+    "n_converted_anywhere_top_k": 0,
+    "n_converted_at_rank_1": 0,
+    "n_member_hits": 14,
+    "n_scored": 64,
+    "watch_items": {
+      "Q-WAYB-027": "Q-WAYB-027: baseline_hit=False pl_rank=None member=none"
+    }
+  }
+}
