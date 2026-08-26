@@ -1,0 +1,717 @@
+{
+  "rule_version": "1.0",
+  "rule": {
+    "lead": "first min(2 sentences, 600 chars)",
+    "refusal_patterns": [
+      "declarative-does-not",
+      "bare-no-information",
+      "not-any-information",
+      "capability-negation",
+      "not-participle",
+      "insufficient-information",
+      "lacks-information",
+      "not-possible-to-answer",
+      "mismatch-no-such"
+    ],
+    "numeric_commitment_exemption": "\\b(?:18|19|20)\\d{2}\\b calendar years",
+    "verdict": "refusal-shaped := refusal pattern in lead AND no non-year digit in lead"
+  },
+  "inputs": {
+    "combined_capture": "docs/eval-reports/data/2026-08-25-nb-c1/gt_wmr-generation-affordance.json",
+    "gt": "fixtures/eval/gt_wmr.json"
+  },
+  "items": [
+    {
+      "question_id": "Q-WMR-078",
+      "arm": "absent",
+      "refusal_shaped": true,
+      "lead_region": "The information provided in the passages does not mention any deductible or per-ride insurance fee that Waymo One charges riders for damage coverage.",
+      "matched_patterns": [
+        "declarative-does-not"
+      ],
+      "has_numeric_commitment": false
+    },
+    {
+      "question_id": "Q-WMR-079",
+      "arm": "absent",
+      "refusal_shaped": true,
+      "lead_region": "The percentage of Waymo One trips made for commuting to work is not specified in the provided passages.",
+      "matched_patterns": [
+        "not-participle"
+      ],
+      "has_numeric_commitment": false
+    },
+    {
+      "question_id": "Q-WMR-080",
+      "arm": "absent",
+      "refusal_shaped": false,
+      "lead_region": "The exact percentage of Waymo's rider-only miles that were driven at night is 20%.",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-081",
+      "arm": "absent",
+      "refusal_shaped": true,
+      "lead_region": "The information provided in the passages does not mention any NHTSA recall campaigns issued by Waymo for its automated driving system. Therefore, it is not possible to determine the number of such recall campaigns based on the given information.",
+      "matched_patterns": [
+        "declarative-does-not",
+        "not-possible-to-answer"
+      ],
+      "has_numeric_commitment": false
+    },
+    {
+      "question_id": "Q-WMR-082",
+      "arm": "absent",
+      "refusal_shaped": true,
+      "lead_region": "The information provided in the passages does not specify the number of vehicle fires that the Waymo fleet has experienced during driverless operations.",
+      "matched_patterns": [
+        "declarative-does-not"
+      ],
+      "has_numeric_commitment": false
+    },
+    {
+      "question_id": "Q-WMR-083",
+      "arm": "absent",
+      "refusal_shaped": true,
+      "lead_region": "The information provided in the PASSAGES does not specify which US city first adopted Vision Zero and in what year.",
+      "matched_patterns": [
+        "declarative-does-not"
+      ],
+      "has_numeric_commitment": false
+    },
+    {
+      "question_id": "Q-WMR-084",
+      "arm": "absent",
+      "refusal_shaped": true,
+      "lead_region": "The information provided in the PASSAGES does not specify which commercial lidar vendor supplies the sensors integrated into the Waymo Driver's production sensor suite.",
+      "matched_patterns": [
+        "declarative-does-not"
+      ],
+      "has_numeric_commitment": false
+    },
+    {
+      "question_id": "Q-WMR-085",
+      "arm": "absent",
+      "refusal_shaped": true,
+      "lead_region": "The information provided in the passages does not specify the speed limit that the Waymo Driver enforces while operating in parking lots.",
+      "matched_patterns": [
+        "declarative-does-not"
+      ],
+      "has_numeric_commitment": false
+    },
+    {
+      "question_id": "Q-WMR-086",
+      "arm": "absent",
+      "refusal_shaped": true,
+      "lead_region": "The average emergency-department treatment cost of a cyclist dooring injury in the NEISS study is not provided in the PASSAGES.",
+      "matched_patterns": [
+        "not-participle"
+      ],
+      "has_numeric_commitment": false
+    },
+    {
+      "question_id": "Q-WMR-087",
+      "arm": "absent",
+      "refusal_shaped": true,
+      "lead_region": "The retail price of the Jaguar I-Pace base model used in Waymo's fleet is not mentioned in the provided passages.",
+      "matched_patterns": [
+        "not-participle"
+      ],
+      "has_numeric_commitment": false
+    },
+    {
+      "question_id": "Q-WMR-088",
+      "arm": "absent",
+      "refusal_shaped": true,
+      "lead_region": "The provided passages do not mention the number of remote-fleet-response specialists employed by Waymo to support its rider-only service. Therefore, it is not possible to answer the question based on the given information.",
+      "matched_patterns": [
+        "declarative-does-not",
+        "not-possible-to-answer"
+      ],
+      "has_numeric_commitment": false
+    },
+    {
+      "question_id": "Q-WMR-089",
+      "arm": "absent",
+      "refusal_shaped": true,
+      "lead_region": "The information provided in the passages does not specify the fraction of Waymo's simulated miles that specifically exercised the emergency-vehicle-yield behavior.",
+      "matched_patterns": [
+        "declarative-does-not"
+      ],
+      "has_numeric_commitment": false
+    },
+    {
+      "question_id": "Q-WMR-001",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "In the high-resolution urban fatal crash-rate benchmarks study, weekend-nighttime fatal crash involvement was 6.2 times higher than weekday daytime. The two rates in IP100MM were 4.38 IP100MM for weekend-nighttime and 0.71 IP100MM for weekday daytime.",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-002",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "Using median FCIR estimates, pedestrian crashes accounted for 10% of fatal crash involvements on freeways and 22% on surface streets. Additionally, the pedestrian type was the most common surface-street fatal crash type in 46% of urban areas.",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-003",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "The NYC five-borough dataset consisted of 139 million miles of Nexar naturalistic driving mileage. The borough that contributed the least driving was Richmond County, with only 2.4 million miles.",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-004",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "After the initial video review of the Nexar naturalistic data, 592 VRU contact events remained. Approximately 14% of these verified contacts were judged to have no injury potential.",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-005",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "According to the Building Scientific Consensus paper, the total US roadway fatality count in 2024 was **39,345 fatalities**, with a fatality rate of **1.20 fatalities per 100 million VMT**. In 1976, the per-mile fatality rate was **3.35 fatalities per 100 million VMT**, which is **nearly three times** the 2024 rate.",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-006",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "The 1938 publication that introduced the Field of Safe Travel (FST) is by Gibson and Crooks. The original field represented \"the field of possible paths which the car can take unimpeded.\"",
+      "matched_patterns": [],
+      "has_numeric_commitment": false
+    },
+    {
+      "question_id": "Q-WMR-007",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "The active-inference space-sharing paper adopts the conceptual framework and definition of a space-sharing conflict from Markkula et al. According to this definition, a space-sharing conflict is \"an observable situation from which it can be reasonably inferred that two or more road users are intending to occupy the same region of space at the same time in the near future.\" This definition highlights that a space-sharing conflict involves potential for road users to end up in a collision due to uncertainty about how the situation will play out, but it does not necessarily involve an imminent co",
+      "matched_patterns": [],
+      "has_numeric_commitment": false
+    },
+    {
+      "question_id": "Q-WMR-008",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "The NIEON reference model prevented 84% of serious injury risk in the responder role of reconstructed fatal-collision scenarios, per Scanlon et al. (2022).",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-009",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "Across the 16 reconstructed Chandler fatal conflicts:\n\n- The Waymo Driver prevented 12 conflicts (75%). - The NIEON model prevented 10 conflicts (62.5%).",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-010",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "Police-reported collisions in the United States are estimated to occur about once per every one-half million driving miles. Of those police-reported collisions, an injury occurred approximately 28% of the time and at least one fatality occurred in 0.05% of those collisions.",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-011",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "According to the Assessing-a-Safety-Case paper, a 'claim' is defined as an assertion that supports the overarching safety determination and whose veracity can be confirmed and/or verified. In other words, claims are falsifiable statements.",
+      "matched_patterns": [],
+      "has_numeric_commitment": false
+    },
+    {
+      "question_id": "Q-WMR-012",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "In the Stoplights-to-On-Ramps benchmarks, the range of any-airbag-deployed freeway crash rates across geographic regions was from 0.355 (in Phoenix) to 1.033 (in Atlanta) incidents per million miles. These rates were between the cities of Phoenix and Atlanta.",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-013",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "The freeway crash types that dominate police-reported crashes in the Stoplights-to-On-Ramps data are front-to-rear collisions and vehicle-to-vehicle (V2V) lateral crashes. Together, these two types accounted for at least two-thirds of all police-reported incidents.",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-014",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "SAE J3164 defines driving behaviors as \"goal-oriented activities enacted by a vehicle to implement a human driver\u2019s or an engaged ADS\u2019s (automated driving system) performance of the Dynamic Driving Task (DDT) or DDT fallback.\"",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-015",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "A safety envelope model is a formal behavioral model that, given certain assumptions, creates a theoretical guarantee (based on mathematical arguments) that no crashes would happen if the model is universally adopted by all drivers. The Drivership paper gives three named examples of safety envelope models: Responsibility-Sensitive Safety (RSS), the Safety Force Field, and models based on reachable sets.",
+      "matched_patterns": [],
+      "has_numeric_commitment": false
+    },
+    {
+      "question_id": "Q-WMR-016",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "The standards Waymo cites define 'unreasonable risk' as \"risk judged to be unacceptable in a certain context according to valid societal moral concepts\" (ISO, 2018a).",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-017",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "In 2022, motorcyclists accounted for 15% of all US traffic fatalities. Their fatality rate was 26.16 per 100 million vehicle miles traveled (VMT), which is nearly 22 times higher than the fatality rate for passenger car occupants (1.20 per 100 million VMT).",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-018",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "In the GIDAS motorcyclist dataset, 86.6% of riders wore helmets, with 3.3% known to be unhelmeted and 10.1% having unknown helmet status. Regarding protective clothing, 50.3% of riders did not wear any protective clothing, 24.9% wore a complete motorcycle suit, 11.8% wore a motorcycle jacket only, and 1.6% wore only trousers, with 11.3% of cases having unknown protective clothing status.",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-019",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "In NHTSA's 2022 NOPUS data, the observed front seat-belt usage rate was 91.6%, while the rear seat-belt usage rate was 81.7%. Additionally, 50% of vehicle occupants killed with known restraint status in traffic collisions in 2022 were unrestrained.",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-020",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "The automated brake-onset estimation shows a high level of accuracy compared to manual annotation. Specifically, 91.1% of the deviations are less than or equal to 0.5 seconds, and 84.2% of the deviations are less than or equal to 0.3 seconds.",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-021",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "In the San Francisco / Phoenix speed-compliance study, 33-49% of human drivers were observed to be speeding, with 85th percentile speeds 3.6-7.2 mph over the speed limit. The estimated serious-injury and fatality reductions from fleet speed compliance were 18-30% and 27-43%, respectively.",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-022",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "The TARGET framework's safe impact-speed thresholds correspond to a 10% risk of injury at the MAIS3+ severity level. Exceeding a threshold implies an increased risk of serious or fatal injuries, while staying under a threshold implies a reduced risk of such injuries.",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-023",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "The pedestrian impact-speed threshold presented by TARGET is 34 kph (21 mph). This threshold is consistent with but slightly higher than the earlier consensus estimate of 30 kph.",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-024",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "The key premise of active inference as used in the unified collision-avoidance model is that all behavior and cognition can be understood based on the single principle of minimizing free energy. This principle implies that an agent seeks out observations that are expected (unsurprising) and preferred, based on its adaptation to its environment, and selects plans that minimize the expected surprise or expected free energy (EFE).",
+      "matched_patterns": [],
+      "has_numeric_commitment": false
+    },
+    {
+      "question_id": "Q-WMR-025",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "In the Looking-for-an-Out simulator study, participants' evasive steering differed across the steep, shallow, and medium incursion scenarios as follows:\n\n1. **Steep Incursion Scenario**: Most participants (90.5%) successfully avoided collision by steering right (towards the center of the road).",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-026",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "The rider-only miles logged by Waymo in each city during the 56.7-million-mile study period were as follows:\n\n- Phoenix: 31.159 million miles\n- San Francisco: 18.260 million miles\n- Los Angeles: 6.448 million miles\n- Austin: 0.834 million miles",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-027",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "The 56.7-million-mile study found a statistically significant reduction in Any-Injury-Reported crashes for the following crash types, all locations combined:\n\n- Cyclist\n- Motorcyclist\n- Pedestrian\n- Secondary Crash\n- Single Vehicle\n- V2V Intersection\n- V2V Lateral",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-028",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "The distribution of Waymo rider-only mileage across S2-cell police-reported crash-rate quantiles relative to human driving was adjusted to reflect the spatial driving distribution of the Waymo autonomous driving system (ADS). This adjustment was necessary because Waymo's operations are concentrated in specific areas within the counties where it operates, and its driving patterns differ from those of the general human driving population.",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-029",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "Over the 25.3 million fully autonomous miles, the Waymo ADS generated 9 third-party property-damage claims and 2 third-party bodily-injury claims. The overall driving-population benchmark was expected to produce 78 property-damage claims and 26 bodily-injury claims over the same exposure.",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-030",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "The Waymo ADS showed a 9-times reduction in property damage third-party claim rates and a 12-times reduction in bodily injury third-party claim rates compared to the status-quo on-road fleet. This corresponds to an 88% reduction in property damage claims and a 92% reduction in bodily injury claims when compared to the overall driving population benchmark.",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-031",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "In the dense-urban VRU baseline study, a total of **335 video-verified collision events** were reconstructed. These events were distributed as follows:\n\n- **126 involved pedestrians**\n- **144 involved cyclists**\n- **65 involved motorcyclists**\n\nRegarding the share of events that occurred at intersections, **more than 75% of all collisions occurred at roadway intersections**.",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-032",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "Across the 523 real-world VRU collision videos, VRUs attempted an avoidance manoeuvre in 54% of all events. When the VRU was judged to have seen the vehicle, the proportion of VRUs engaging in an avoidance manoeuvre increased to 89%.",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-033",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "In micro-mobility swerving trials, the T-scooter came closest to pedestrians' lateral acceleration performance, as it was the only micro-mobility vehicle (MMV) with statistically comparable swerving performance to the pedestrian during the initial region of the swerve maneuver (Mean Lat. Acc.",
+      "matched_patterns": [],
+      "has_numeric_commitment": false
+    },
+    {
+      "question_id": "Q-WMR-034",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "The two driving scenarios that the resolving-uncertainty-on-the-fly active-inference model applied itself to are:\n\n1. Passing an occluding object.",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-035",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "The first 7.14 million rider-only miles were distributed as follows: 5.34 million miles in Phoenix, 1.76 million miles in San Francisco, and 0.0467 million (i.e., 46.7 thousand) miles in Los Angeles.",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-036",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "Against the Flannagan et al. (2023) ride-hailing naturalistic benchmark in San Francisco:\n\n- The human any-injury IPMM was **64.9**.",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-037",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "The common error identified in the paper is that some publications improperly compared human crash-level rates (the number of overall crashes) to ADS vehicle-level rates (the number of times an ADS crashes for some amount of VMT). This leads to undercounting because the total number of crashes is not equivalent to the total number of drivers that crashed\u2014crashes often involve multiple vehicles.",
+      "matched_patterns": [],
+      "has_numeric_commitment": false
+    },
+    {
+      "question_id": "Q-WMR-038",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "Helmet use was excluded from the cyclist injury-risk models primarily because helmet use was observed in only approximately 17% of cases in the GIDAS sample, and the effect of helmet use is only relevant for head injuries and instances where the cyclist\u2019s head is impacted. Additionally, since the injury risk models assessed generalized whole body injury risk, it did not seem appropriate to model helmet usage.",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-039",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "Pedestrian injury-risk functions were developed for frontal collisions with passenger vehicles and separately for frontal collisions with heavy vehicles. They were not developed for side or rear collisions because there was a low number of cases with MAIS3+ level for these types of collisions, making it impractical to develop reliable injury-risk functions.",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-040",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "The overall collision rate in the LA dense-urban pedestrian dash-cam dataset was **0.63 collisions per million miles**. Vehicle impact speeds into pedestrians varied from **1.5 mph to 38 mph**.",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-041",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "The generative model underlying the surprise measurements in \"Measuring Surprise in the Wild\" is an evolution of the Multipath model using the Wayformer encoder, which produces probabilistic predictions about how a traffic situation will play out.",
+      "matched_patterns": [],
+      "has_numeric_commitment": false
+    },
+    {
+      "question_id": "Q-WMR-042",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "In Waymo's first one million rider-only miles, the Waymo Driver experienced 20 contact events. None of these events involved reported injuries.",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-043",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "The AIDA driver model's reward specification was motivated by the active inference framework from cognitive science. In comparison with the rule-based IDM baseline, the AIDA model performed comparably and in certain cases better than the IDM and data-driven neural network benchmarks.",
+      "matched_patterns": [],
+      "has_numeric_commitment": false
+    },
+    {
+      "question_id": "Q-WMR-044",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "According to its conclusion, the ADS Safety Standards Organization Wheel framework abstracts and organizes the landscape of ADS safety standards into high-level and long-term themes. It helps developers and regulators better understand and organize ongoing ADS safety standard efforts and the subsequent documentation generated by SDOs.",
+      "matched_patterns": [],
+      "has_numeric_commitment": false
+    },
+    {
+      "question_id": "Q-WMR-045",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "The acceleration-prediction MAE achieved by the active-inference agents was between 0.11 and 0.14 $\\mathrm{m}/\\mathrm{s}^2$. In comparison, the behavior-cloning (BC) agent achieved a lower MAE of 0.08 $\\mathrm{m}/\\mathrm{s}^2$.",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-046",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "In 2019, NHTSA attributed approximately 50% of total societal and economic motor-vehicle crash costs to intersection crashes. Specifically, this amounted to \\$179 billion in economic damages and \\$639 billion in societal damages.",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-047",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "According to fatigue-research expert consensus cited in Waymo's fatigue risk management paper, fatigue contributes to 15 to 20% of transportation crashes.",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-048",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "The maximum-injury-potential methodology uses the continuous omni-direction injury risk model of McMurry et al. (2021) to predict injury probability.",
+      "matched_patterns": [],
+      "has_numeric_commitment": false
+    },
+    {
+      "question_id": "Q-WMR-049",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "The strongest predictors in the omni-directional planar-crash injury-risk model were delta-V, belt use, and occupant age. The mathematical device that captures the direction dependence is a second-order Fourier series, composed of sine and cosine terms and their interactions with delta-V.",
+      "matched_patterns": [],
+      "has_numeric_commitment": false
+    },
+    {
+      "question_id": "Q-WMR-050",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "A total of 107 fatal Chandler collisions were identified for reconstruction. Crash documentation was obtained for 92 of these collisions.",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-051",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "The three unique intersection scenario types observed in the reconstructed-fatal-crash study are:\n\n1. Straight crossing path (SCP)\n2.",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-052",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "The redundancy described in the Waymo Safety Report for handling a main-computer failure is an additional computer system that can bring the vehicle to a safe stop.",
+      "matched_patterns": [],
+      "has_numeric_commitment": false
+    },
+    {
+      "question_id": "Q-WMR-053",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "Over the 6.1 million fully-automated miles analyzed in Waymo's public-road safety performance data, there were 18 actual contact events and 29 simulated contact events reported.",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-054",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "The vehicle platform used in Waymo's early Phoenix-area driverless operations is the Chrysler Pacifica. The ODD speed-limit ceiling for these operations is up to and including 45 miles per hour.",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-055",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "The Absence-of-Unreasonable-Risk approval-guidelines paper tabulates twelve methodological criteria. These criteria are applied during Waymo\u2019s readiness review for a given Automated Driving System (ADS) candidate configuration, and they are organized according to traditional system engineering areas of system development and testing, as well as mapped to the activities presented in Waymo\u2019s first publication of readiness methodologies.",
+      "matched_patterns": [],
+      "has_numeric_commitment": false
+    },
+    {
+      "question_id": "Q-WMR-056",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "The AV SMS harmonization effort compiled approximately 1,700 framework elements into its centralized catalog.",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-057",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "The four driving-mode categories into which Waymo's claims and mileage were organized in the Swiss Re liability-claims study are: manual, testing operations (TO), rider-only (RO), and TO + RO.",
+      "matched_patterns": [],
+      "has_numeric_commitment": false
+    },
+    {
+      "question_id": "Q-WMR-058",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "The surprise-based response-timing framework was validated against experimental response time data from four existing driving simulator rear-end conflict studies.",
+      "matched_patterns": [],
+      "has_numeric_commitment": false
+    },
+    {
+      "question_id": "Q-WMR-059",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "The RAVE Checklist identifies data alignment procedures as a large part of retrospective safety-impact methodology. This is needed because many Automated Driving System (ADS) and human data sources are reported separately, requiring some amount of data alignment to make legitimate comparisons.",
+      "matched_patterns": [],
+      "has_numeric_commitment": false
+    },
+    {
+      "question_id": "Q-WMR-060",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "The test-track evaluation had to modify standard ADAS/active-safety protocols when running them against the Waymo Driver because the proactive safe driving capability of the Waymo Driver prevented the scenarios from turning critical. These modifications were necessary to force the Waymo Driver into the collision avoidance maneuvers as originally intended in the ADAS and active safety test procedures.",
+      "matched_patterns": [],
+      "has_numeric_commitment": false
+    },
+    {
+      "question_id": "Q-WMR-061",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "In the context of the 1M-mile rider-only safety report, 'contribution' refers to the assessment of how much each party involved in a collision contributed to the event. This concept is used to evaluate fault or responsibility in collision events.",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-062",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "The gap in active-inference modeling of driving at the time the IWAI poster was presented was the lack of models that could capture the key aspects of human collision avoidance behavior (response selection, timing, and execution) all at the same time and across different scenarios. This limitation restricted both practical applications (due to the need to develop a new model for every new scenario) and fundamental understanding of cognitive mechanisms underlying the behavior of humans in safety-critical situations in traffic (due to the lack of a unified explanation for multiple aspects of beh",
+      "matched_patterns": [],
+      "has_numeric_commitment": false
+    },
+    {
+      "question_id": "Q-WMR-063",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "Over the 10-year period from 2012 to the end of 2021, cyclist dooring events accounted for **644 NEISS cases** and **17,156 total injured persons**. This implies an **annual rate of approximately 1,700 injured persons per year** presenting for treatment at an emergency department for injuries sustained during dooring events.",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-077",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "The expected free energy in the active-inference driving framework decomposes into two value components: pragmatic value and epistemic value.",
+      "matched_patterns": [],
+      "has_numeric_commitment": false
+    },
+    {
+      "question_id": "Q-WMR-090",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "The 7.1-million-mile paper analyzed 7.1 million rider-only miles, split between San Francisco and Phoenix. The 56.7-million-mile paper analyzed 56.7 million rider-only miles, split across Phoenix, San Francisco, Los Angeles, and Austin.",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-091",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "The continuous injury-risk model shared by both the omni-directional planar-crash paper and the maximum-injury-potential methodology is the **continuous omni-direction injury risk model** described in the paper by McMurry et al. (2021).",
+      "matched_patterns": [],
+      "has_numeric_commitment": false
+    },
+    {
+      "question_id": "Q-WMR-092",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "The corpus documents two Nexar dash-camera VRU collision datasets: one involving pedestrians and the other involving cyclists. The pedestrian dataset contained 221 video-verified events, and the cyclist dataset contained 213 video-verified events.",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-093",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "Based on the information provided in the four Waymo active-inference papers, active-inference models have been applied to the following distinct driving tasks:\n\n1. **Collision avoidance scenarios**: These include:\n   - **Front-to-rear lead vehicle braking** (responding to a suddenly braking vehicle in front).",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-094",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "In Figure 3 of the 7.1-million-mile study, the ADS shows an 80% reduction in Any-Injury-Reported percent reductions versus the observed human benchmark for All Locations (National). For San Francisco, the ADS shows a 86% reduction in Any-Injury-Reported percent reductions versus the observed human benchmark.",
+      "matched_patterns": [],
+      "has_numeric_commitment": true
+    },
+    {
+      "question_id": "Q-WMR-095",
+      "arm": "answerable",
+      "refusal_shaped": false,
+      "lead_region": "The framing question about AV safety that the 2020 Safety Methodologies paper says has received a good deal of attention is: \"How safe is safe enough for AVs?\"",
+      "matched_patterns": [],
+      "has_numeric_commitment": false
+    }
+  ],
+  "summary": {
+    "absent": {
+      "n": 12,
+      "refusal_shaped": 11,
+      "errors": 0
+    },
+    "answerable": {
+      "n": 70,
+      "false_refusals": 0,
+      "errors": 0
+    }
+  }
+}
