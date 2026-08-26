@@ -1,0 +1,148 @@
+{
+  "fixtures": {
+    "gt_wmr": {
+      "data_file": "docs/eval-reports/data/2026-08-25-nb-c2/gt_wmr_anchors.json",
+      "n_used": 81,
+      "n_zero_anchor_excluded": 1,
+      "n_answerable": 69,
+      "n_absent": 12,
+      "auroc_oriented_answerable_higher": 0.3563,
+      "raw_direction_auroc_P_absent_higher": 0.6437,
+      "best_cut": {
+        "threshold": 0.0,
+        "FP": 0,
+        "FN": 12,
+        "TP_caught": 0,
+        "TPR": 0.0,
+        "FPR": 0.0,
+        "youden_j": 0.0
+      },
+      "fp_within_le_10": true,
+      "fn_fraction": 1.0,
+      "fn_within_le_25pct": false,
+      "spearman_len_chars": -0.2966,
+      "spearman_len_words": -0.1608,
+      "rule_breakdown_by_arm": {
+        "answerable": {
+          "acronym": {
+            "hits": 35,
+            "n": 37,
+            "rate": 0.9459
+          },
+          "entity": {
+            "hits": 75,
+            "n": 87,
+            "rate": 0.8621
+          },
+          "numeric": {
+            "hits": 20,
+            "n": 31,
+            "rate": 0.6452
+          },
+          "rare_proxy": {
+            "hits": 71,
+            "n": 104,
+            "rate": 0.6827
+          }
+        },
+        "absent": {
+          "acronym": {
+            "hits": 3,
+            "n": 3,
+            "rate": 1.0
+          },
+          "entity": {
+            "hits": 18,
+            "n": 18,
+            "rate": 1.0
+          },
+          "rare_proxy": {
+            "hits": 3,
+            "n": 7,
+            "rate": 0.4286
+          }
+        }
+      }
+    },
+    "ver84": {
+      "data_file": "docs/eval-reports/data/2026-08-25-nb-c2/ver84_anchors.json",
+      "n_used": 81,
+      "n_zero_anchor_excluded": 1,
+      "n_answerable": 67,
+      "n_absent": 14,
+      "auroc_oriented_answerable_higher": 0.4824,
+      "raw_direction_auroc_P_absent_higher": 0.5176,
+      "best_cut": {
+        "threshold": 0.6,
+        "FP": 12,
+        "FN": 10,
+        "TP_caught": 4,
+        "TPR": 0.2857,
+        "FPR": 0.1791,
+        "youden_j": 0.1066
+      },
+      "fp_within_le_10": false,
+      "fn_fraction": 0.7143,
+      "fn_within_le_25pct": false,
+      "spearman_len_chars": -0.1549,
+      "spearman_len_words": -0.0923,
+      "rule_breakdown_by_arm": {
+        "answerable": {
+          "acronym": {
+            "hits": 28,
+            "n": 31,
+            "rate": 0.9032
+          },
+          "entity": {
+            "hits": 118,
+            "n": 131,
+            "rate": 0.9008
+          },
+          "numeric": {
+            "hits": 25,
+            "n": 42,
+            "rate": 0.5952
+          },
+          "rare_proxy": {
+            "hits": 100,
+            "n": 137,
+            "rate": 0.7299
+          }
+        },
+        "absent": {
+          "acronym": {
+            "hits": 2,
+            "n": 2,
+            "rate": 1.0
+          },
+          "entity": {
+            "hits": 28,
+            "n": 30,
+            "rate": 0.9333
+          },
+          "numeric": {
+            "hits": 1,
+            "n": 6,
+            "rate": 0.1667
+          },
+          "rare_proxy": {
+            "hits": 11,
+            "n": 15,
+            "rate": 0.7333
+          }
+        }
+      }
+    }
+  },
+  "checks": {
+    "criterion": [
+      "AUROC(hit_rate) >= 0.75 on BOTH fixtures (absent-lower orientation)",
+      "best-cut FP <=10/68 (ver84) and <=10/70 (gt_wmr) at FN <=25%",
+      "Spearman |rho|(hit_rate, query length) <= 0.8 for chars AND words, both fixtures"
+    ],
+    "auroc_both_fixtures_ge_075": false,
+    "best_cut_fp_and_fn_both_fixtures": false,
+    "leakage_guard_ok": true
+  },
+  "verdict": "DEAD"
+}
