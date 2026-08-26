@@ -52,23 +52,26 @@ logger = logging.getLogger(__name__)
 _RETRYABLE_STATUSES = {429, 500, 502, 503, 504}
 
 # Fixed window rather than dynamic per-item sizing (rag/contextual_header.py's own reasoning
-# applies harder here: one fixed number plus a loud pre-send check below beats per-item budget
-# arithmetic). The value is the served model artifact's own Modelfile default (`num_ctx 16384`,
-# read off `/api/show` for qwen3-14b-16k -- whose architecture context_length is 40,960),
-# verified empirically against this server build:
-# docs/eval-reports/data/2026-08-25-nb-numctx/ctx_probe_16384_results.json shows capacity honored
-# up to 16,384 true tokens, and past it Ollama silently left-truncates the prompt to its final
-# ~half-window (8,194 tokens measured; the old 8192 window's tail was 4,098 -- same mechanism).
+# applies harder here: one fixed number plus a loud pre-send check plus post-hoc delivery
+# telemetry below beats per-item budget arithmetic). The value is the served model artifact's own
+# declared capability (`qwen3.context_length` = 40,960, read off /api/show -- the Modelfile's
+# `num_ctx 16384` is a config default, not a bound), honored empirically against this server
+# build: docs/eval-reports/data/2026-08-25-nb-numctx/ holds the probes. Past a window's capacity
+# the serving stack silently left-truncates prompts to their final ~half-window (4,098 tokens
+# measured under an 8192 request; 8,194 under 16384), returning a normal 200 either way.
 #
-# History this replaces: _NUM_CTX was 8192 behind a "max 228 words" comment whose measurement
-# covered the SHORT GT-fixture excerpts (fixtures/eval/waymo_gt_verified.json) only. That does
-# not transfer to what this judge actually audits -- the captured generation run carries k=5
-# full retrieved passages per item, so real prompts run 15-53K chars (largest true count
-# measured: 10,878 tokens, Q-WAYB-011) -- and the silent consequence, measured on the 2026-08-25
-# fabrication-audit re-run, was 46/84 items judged with the rubric (which sits FIRST in
-# _JUDGE_PROMPT) truncated away entirely while responses stayed parseable.
-# docs/eval-reports/2026-08-25-nb-judge-rerun.md §3 has the per-item census.
-_NUM_CTX = 16384
+# History: _NUM_CTX was 8192 behind a stale "max 228 words" comment whose measurement covered
+# only the SHORT GT-fixture excerpts -- real judge inputs carry k=5 full retrieved passages
+# (15-53K chars), and the silent consequence, measured on the 2026-08-25 fabrication-audit
+# re-run, was 46/84 items judged with the rubric (FIRST in _JUDGE_PROMPT) truncated away entirely
+# (docs/eval-reports/2026-08-25-nb-judge-rerun.md §3). The first amendment here (16384, the
+# Modelfile default) was still insufficient: its own clean-delivery re-run caught Q-WAYB-010 --
+# true count 17,452 tokens at 2.12 chars/token, by far the densest prompt measured -- hitting the
+# 16384 cliff, detected live by the prompt_eval_count telemetry line below, which is what makes
+# any residual truncation LOUD instead of silent. 40,960 covers every measured prompt with the
+# num_predict reserve intact, including a hypothetical rerun of the largest prompt (52,901 chars)
+# at Q-WAYB-010's density.
+_NUM_CTX = 40960
 # An answer can carry several claims, each with a rationale that quotes passage text -- more
 # headroom than rag/contextual_header.py's single-sentence header needs.
 _NUM_PREDICT = 1024
@@ -77,8 +80,11 @@ _NUM_PREDICT = 1024
 # census's 38 known-full prompts (docs/eval-reports/data/2026-08-25-nb-judge-rerun/
 # ctx_probe_results.json): true tokens-per-char peaked at 0.285 (Q-WAYB-008, 23,887 chars ->
 # 6,798 tokens = 3.51 chars/token), so dividing by 3.5 and rounding up never underestimates any
-# measured pair. Filler-text calibration (~5.3 chars/token) would underestimate -- retrieved
-# passages tokenize denser than filler prose.
+# measured pair IN THAT CENSUS. Measured blind spot: that census was censored above 8,192 true
+# tokens, and the one later-measured outlier is denser still (Q-WAYB-010: 37,029 chars ->
+# 17,452 tokens = 2.12 chars/token), so this estimate can UNDERCOUNT pathological prompts -- the
+# pre-send guard is therefore the coarse filter and the per-call prompt_eval_count log line the
+# binding delivery evidence, not vice versa.
 _CHARS_PER_TOKEN_CONSERVATIVE = 3.5
 
 

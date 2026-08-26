@@ -233,7 +233,7 @@ def test_unknown_verdict_literal_maps_to_permanent_error_not_a_raw_value_error()
 # ---------------------------------------------------------------------------
 
 
-def test_call_requests_the_measured_16k_generation_window():
+def test_call_requests_the_served_artifact_declared_generation_window():
     captured = {}
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -243,7 +243,10 @@ def test_call_requests_the_measured_16k_generation_window():
     judge = LlmJudge(_client(handler), FakeGpuLock(), "m")
     judge(_item(), _RUBRIC)
 
-    assert _NUM_CTX == 16384  # the Modelfile default, capacity verified by ctx_probe_16384
+    # The served artifact's own declared capability (qwen3.context_length=40960 via /api/show),
+    # NOT the Modelfile's 16384 config default: the 16384 window was measured still silently
+    # truncating one real prompt (Q-WAYB-010, true count 17,452).
+    assert _NUM_CTX == 40960
     assert captured["body"]["options"]["num_ctx"] == _NUM_CTX
 
 
@@ -256,13 +259,18 @@ def test_estimator_never_underestimates_a_measured_true_count():
         assert _estimated_prompt_tokens("x" * chars) >= true_tokens
 
 
-def test_largest_measured_real_prompt_fits_the_usable_window():
-    # Q-WAYB-011: 52,901 chars, evaluated WHOLE at 10,878 tokens (ctx_probe_16384_results.json
-    # P4) -- the largest real prompt of either census. The raise must cover it with the
-    # num_predict reserve intact, AND the estimator must not refuse what measurably fits.
+def test_both_measured_largest_prompts_fit_the_usable_window():
     usable_window = _NUM_CTX - _NUM_PREDICT
+
+    # Q-WAYB-011: largest prompt by chars; evaluated WHOLE at 10,878 tokens.
     assert usable_window >= 10_878
     assert _estimated_prompt_tokens("x" * 52_901) <= usable_window
+
+    # Q-WAYB-010: densest prompt measured (37,029 chars but TRUE count 17,452 -- it overflowed
+    # the interim 16384 window and was caught by delivery telemetry). Both the estimator's pass
+    # and the window itself must cover it.
+    assert 17_452 <= _NUM_CTX
+    assert _estimated_prompt_tokens("x" * 37_029) <= usable_window
 
 
 def test_oversized_prompt_is_refused_before_any_post_and_any_gpu_lock():
@@ -274,7 +282,7 @@ def test_oversized_prompt_is_refused_before_any_post_and_any_gpu_lock():
         return _ok_handler_returning(_ONE_SUPPORTED_CLAIM)(request)
 
     oversized = AuditItem(
-        question_id="Q-BIG", question_text="q", passages=("word " * 20_000,), answer="a"
+        question_id="Q-BIG", question_text="q", passages=("word " * 30_000,), answer="a"
     )
     judge = LlmJudge(_client(handler), lock, "m")
 
