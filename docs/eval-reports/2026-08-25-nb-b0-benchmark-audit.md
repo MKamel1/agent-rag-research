@@ -274,12 +274,137 @@ lands its remaining verdicts; none may be retro-fitted as an excuse after number
 
 ## §3 Gap analysis: agentic-RAG evaluation
 
-*(to land in commit 4)*
+### §3.1 What today's instruments can and cannot see
+
+Every retrieval-side instrument in this repo scores **one question → one retrieval pass → one
+ranked list**. The scoring semantics are end-state-only: paper hit-any (`eval_ground_truth.json`
+fold), rank-1 paper correctness (P@1), or anchor-block position (block-P@1). Consequences:
+
+- **Multi-paper exposure is thin and half-unscored**: ver84 exposes 9 multi-gold items at paper
+  level, of which 5 are passage-scored; gt_wmr exposes 4, of which 0 are passage-scored
+  (Q-WMR-090..093 carry `supporting_passages` but no single gold block — they fall out of the
+  block-P@1 denominator entirely). The causal corpus's `eval_ground_truth.json` holds 60
+  multi-paper items, but scored single-shot with hit-on-ANY-gold semantics — a system that finds
+  one of five gold papers scores identically to one that synthesizes all five.
+- **Nothing measures process**: no instrument records or scores decomposition quality,
+  reformulation/retrieval iterations, hop counts, sub-goal coverage, or cross-document conflict
+  handling. An agentic layer that decomposes, retrieves iteratively, and negotiates contradictions
+  would score *identically* to today's single-pass retriever on every fixture we own whenever both
+  happen to surface the right final evidence — and could score *worse* on P@1-style metrics while
+  being better (a decomposition pass that correctly refuses one unsupported sub-claim "loses"
+  against a confidently-wrong single answer under every current metric).
+- **Zero partial-absence ground truth**: absence GT is whole-question binary (26 scored Waymo
+  absent items). Agentic abstention ("this answer is 2/3 supported; the third sub-part isn't in the
+  corpus") has no scoring path.
+
+### §3.2 The missing authoring, enumerated (shapes × counts — NOT authored here)
+
+| set | shape | what it must require of the system | suggested initial floor | notes |
+|---|---|---|---|---|
+| W-A1 | **decomposition-required** | answer computable ONLY by combining ≥2 independently retrievable sub-results (numeric composition across passages, conjunction of constraints held by different sections) | n ≈ 30–40 scored | each item carries a gold sub-goal graph (see W-A5); sizing derived by the house power-calculation precedent before authoring freezes |
+| W-A2 | **iterative-retrieval-required** | first-hop results necessarily underdetermine the query; a correct answer requires reading hop-1 output to formulate hop-2 (entity resolution, citation chasing, parameter lookup feeding a second query) | n ≈ 30–40 | graded on hops-to-answer AND final correctness; single-pass retriever must have a measurable failure rate on these by construction |
+| W-A3 | **cross-document synthesis / conflict** | ≥2 papers must be read; includes deliberate conflicting-figures items where two sources disagree and the correct behaviour is reporting both with provenance | extend multi-paper from 13 exposed / 5 scored today to n ≥ 30 SCORED, spread across BOTH fixtures | current exposure is lopsided (5 scored all on ver84) — violates PREC-1 §5 symmetry if used alone |
+| W-A4 | **partial-absent** | multi-sub-part questions where ≥1 sub-part is genuinely absent from the corpus; correct behaviour is answering the supported parts and refusing the absent one | n ≈ 15–20 | doubles as graded anchors for the confidence surface (§4); requires per-sub-part absence logs |
+| W-A5 | **trajectory/process GT** (annotation layer over W-A1/W-A2) | gold sub-goal graph per item: expected sub-queries, intermediate evidence blocks, stop condition | authoring-cost multiplier ≈ 2–3× on W-A1/A2 | enables decomposition-coverage rate, hop-efficiency, and end-vs-path gain metrics; without it only end-state scoring exists |
+
+Sizing discipline: the floors above are order-of-magnitude starting points, not commitments. House
+precedent for benchmark sizing is T-DOC-BOOK-EVAL-115 (115 items sized by an explicit power
+calculation to resolve an 18-point swing at α = 0.05 / power = 0.80 — `eval_book_questions_tdoc87`
+metadata). Each W-A set must get the same derivation for its own expected effect size before
+authoring starts; lessons §7.2 applies to *new metrics* too (e.g., a hop-efficiency metric needs
+its achievability bound computed against real collection statistics at freeze time).
+
+### §3.3 Authoring discipline (method precedent)
+
+All W-A sets must be built under the openevidence-programme §3 regime, which is the repo's proven
+method for GT that survives audit:
+
+1. Two independent model authors build separate item sets without seeing each other's work
+   (GT-A/GT-B precedent: 44 + 40 items, ox-alpha and Claude);
+2. a third session cross-verifies read-only against the corpus; mechanical checks re-run
+   independently (precedent: 519 then 536 checks, 0 failures);
+3. an adversarial second pass re-checks the riskiest items (absence claims, vision items)
+   over stated probe denominators (precedent: 11/11 survived, over 78 logged hit-count queries +
+   29 adversarial probes);
+4. a fourth agent spot-checks the checker rather than trusting it;
+5. discovered drift and near-misses are disclosed, not smoothed (the Q-GTA-035 correction and the
+   disclosed 29/18-vs-31/17 drift are the precedent's credibility argument);
+6. duplicates kept under `duplicate_of` with a dedup policy rather than silently dropped; excerpt
+   fidelity machine-checked (substring resolution, never retyped — lessons §7.4's difflib rule);
+   corrections only via `_metadata.corrections`; no item edited after its author has seen any
+   retrieval output for it (frozen protocol §5.8).
+
+For W-A5 specifically, verification extends per graph node: every asserted sub-goal/intermediate
+evidence gets the same substring/anchor treatment as a top-level gold block, else trajectory
+scoring inherits unverifiable links.
+
+---
 
 ## §4 Confidence-benchmark gap
 
-*(to land in commit 4)*
+Goal under audit: calibrate a **5-level confidence surface** (e.g., certain → likely → uncertain →
+likely-absent → refuse) over the system's answers. What exists, what it can and cannot support:
+
+### §4.1 Ground truth that EXISTS today
+
+| asset | size | what it supports |
+|---|---|---|
+| Known-absent arms, Waymo: gt_wmr 12 (absence_search logs 12/12) + ver84 16 file / 14 scored (adversarially re-verified, logs 16/16) | **26 scored** | the "refuse" extreme's positive examples; abstention-feasibility measurement (NB-D3 ran on exactly these) |
+| `eval_known_absent.json`, causal corpus: 24 fabricated entities | 24 | airtight-by-construction absence (zero exact-term matches verified against the DB); sparse-arm upper-bound caveat self-recorded; wrong corpus for Waymo claims but same mechanism |
+| Generation captures: `runs/2026-08-23-waymo-generation-run.{answerable(68),absent(16)}.json` (qwen3:14b, greedy, prompt verbatim; `answer_text` present 84/84 including generated wrong-side answers) + 08-24 affordance arms | 84 × 2 prompt variants | reusable calibration material WITHOUT regenerating; already consumed once by the fabrication-audit judge runs |
+| Refusal-affordance A/B hand classifications (report §1–§3, rubric-independent) | 16 + 16 + 68 | the only observed generation-side discrimination: wrong-side 6/16 → 1/16 when refusal is permitted, cost one clean regression out of 68 (Q-WAYB-026). Binary only. |
+| Fabrication-audit judge labels (supported/unsupported/contradicted at claim level): 08-23 run hash `d82bbfa36155`, 08-25 amended-rubric run hash `4add354fe464` | ~248 answerable + 28 absent claims | would be the natural 3-of-5 levels' training signal — **except NB-JUDGE-RERUN §3 proved the amended rubric was delivered on only 38/84 items** (Ollama silent front-truncation): every existing rate is non-comparable-by-hash AND non-comparable-by-delivery. NB-JUDGE-CTX filed (ledger `d62fb87`). |
+
+Signal families already ruled out for driving such a surface (so nobody re-measures them):
+retrieval-side observables (RI-M7 pass-1; NB-D3: 17 features × both fixtures, no thresholdable
+separation; query length replicates but is fixture-authoring leakage); entity-anchor presence
+(NB-C2 DEAD: AUROC 0.4824/0.3563 vs ≥ 0.75 pre-committed bar). NB-A1's surviving candidates
+(generation-side behavioural signals C1/C4; perturbed-view/index-level families C2/C3) are designed
+but unmeasured.
+
+### §4.2 What is MISSING for a 5-level surface
+
+1. **Graded anchors (count today: 0).** Existing GT is binary (answerable / absent). A 5-level
+   surface needs authored intermediate anchors: partially-covered topics, ambiguous/multi-answer
+   facts, versioned/superseded figures, near-miss confusables. W-A4 partial-absent items (§3.2) are
+   the natural bridge — one authoring pass serves both gaps.
+2. **A delivered-rubric judged corpus.** The material exists (~276 captured claims ready to
+   re-judge) and is blocked only on the NB-JUDGE-CTX delivery fix plus one clean re-run. Until then
+   no calibration number may be quoted from any existing judge output.
+3. **Multi-sample captures.** Consistency-based confidence (NB-A1 C1 stage 2, SelfCheckGPT-style
+   cross-sample agreement) requires n ≈ 5 samples/question at moderate temperature. Today's
+   captures are greedy n=1 only: 0 multi-sample records exist.
+4. **Denominator arithmetic for threshold fitting** (lessons §7.2, applied): 26 scored Waymo
+   absent items cannot fit 5 thresholds × 2 error directions with any stability. Rule-of-thumb
+   ≥ 20 items per level ⇒ ≥ 100 absence-arm items ⇒ roughly **4× the current Waymo absence GT**
+   must be authored before 5-level thresholds are estimable — or the programme accepts a coarse
+   2–3-level surface first (which the affordance A/B already demonstrates value for).
+5. **Frozen level definitions + adjudication protocol.** Level boundaries and their operational
+   tests need pre-registering in a protocol document BEFORE calibration measurement (the priority-
+   protocol pattern, plus a §7.2 reachability check per level), with disputed assignments resolved
+   by the openevidence §3 layering (independent re-check, disclosed drift) rather than by the
+   author of the level.
+
+---
 
 ## Verdict
 
-*(to land in commit 4)*
+1. **We do not currently have a benchmark problem for single-passage precision — we have a
+   definition and dependency problem, now fully mapped.** The honest 0.95 push attaches to
+   paper-P@1 (gt_wmr feasible now, +3 items; ver84 conditional on X-F) with block-P@1 text-arm as
+   the stretch gate (gt_wmr clearable; ver84 bounded one item short until upstream extraction/
+   chunking work moves its ceiling). P@10 stays retired; full-population pricing waits for
+   abstention.
+2. **The ver84 two-arm statement should be said to the operator now** (NB-R0's language, endorsed
+   with arithmetic): priority ✓ clearable; full-corpus text-arm ~0.93 achievable, all-arm bounded
+   by vision/extraction limits unless §2.4's levers are commissioned.
+3. **For the agentic half we have essentially nothing**: 13 multi-paper items exposed / 5 scored on
+   one fixture, 0 anywhere score process, 0 partial-absent items. Five set shapes (§3.2) totalling
+   roughly 105–135 new scored items + a trajectory annotation layer are the minimum credible
+   agentic benchmark, each sized by explicit power calculation and authored under the
+   openevidence §3 regime. None of it exists yet.
+4. **The confidence surface has raw material but no instrument**: captures and absence arms exist;
+   the judge channel is broken-by-delivery (NB-JUDGE-CTX), graded anchors number zero, and absence
+   GT is 4× too small for 5-level fitting.
+
+TICKET COMPLETE: NB-B0
