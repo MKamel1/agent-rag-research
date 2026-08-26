@@ -562,6 +562,20 @@ Recorded in `docs/BOOK-INTEGRATION-CLOSEOUT.md`; repeated here so they stay visi
 
 ---
 
+## Landed: NB-C1 refusal-affordance detector falsification (2026-08-25)
+
+A-series C1 stage 1 (mandate: A-1 abstention design doc §C1), branch `NB-C1-refusal-detector`.
+One frozen blind classification rule committed before any classification
+(`app/exp_nb_c1_refusal_classifier.py` v1.0); applied mechanically to the ver84 affordance-arm
+captures and to one fresh gt_wmr capture (82 items, 0 errors, GPU-lock serialized). **verdict:
+DROPPED** — ver84 fails both halves of the pre-committed criterion (10/16 absent covered, bar ≥12;
+7/68 false refusals, bar ≤5) while gt_wmr passes clean (11/12, 0/70); the criterion is disjunctive.
+What died: mechanical extractability of the refusal signal by a fixed lead-region rule — not the
+generation-layer behavioural separation itself. Successor reading recorded in the report
+(`docs/eval-reports/2026-08-25-nb-c1-refusal-detector.md`): the affordable generation-layer
+abstention win remains A-1 §3's unconditional-affordance fallback; C1 stages and detector-family
+attempts are closed.
+
 ## Landed: next-build programme Wave 0–2 (2026-08-25)
 
 All lanes verified by the orchestrator before merge; full ledger with SHAs:
