@@ -1,0 +1,556 @@
+{
+  "probe_date": "2026-08-25",
+  "server": {
+    "software": "Ollama",
+    "version": "0.31.2",
+    "url": "http://localhost:11434",
+    "model": "qwen3-14b-16k:latest",
+    "request_options": {
+      "num_ctx": 8192,
+      "num_predict": "<small>",
+      "stream": false,
+      "think": false
+    }
+  },
+  "method": "Reconstructed each item's judge prompt verbatim (app.judge_eval.load_items over the captured generation run + app.judge_llm._JUDGE_PROMPT with the amended rubric), re-sent it to the same server/model/options the re-run used, and read prompt_eval_count from the API response -- what the server ACTUALLY evaluated. Saturation of that counter while input grows = truncation; sentinel words at char 0 vs the final lines identify the kept side. GpuLock honored per call.",
+  "calibration_P1": {
+    "input_chars": 1285,
+    "prompt_eval_count": 244,
+    "chars_per_token": 5.266
+  },
+  "saturation_sweep_P3": [
+    {
+      "reps": 100,
+      "input_chars": 12600,
+      "prompt_eval_count": 2217
+    },
+    {
+      "reps": 300,
+      "input_chars": 37800,
+      "prompt_eval_count": 6617
+    },
+    {
+      "reps": 330,
+      "input_chars": 41580,
+      "prompt_eval_count": 7277
+    },
+    {
+      "reps": 350,
+      "input_chars": 44100,
+      "prompt_eval_count": 7717
+    },
+    {
+      "reps": 370,
+      "input_chars": 46620,
+      "prompt_eval_count": 8157
+    },
+    {
+      "reps": 390,
+      "input_chars": 49140,
+      "prompt_eval_count": 4098
+    },
+    {
+      "reps": 410,
+      "input_chars": 51660,
+      "prompt_eval_count": 4098
+    },
+    {
+      "reps": 430,
+      "input_chars": 54180,
+      "prompt_eval_count": 4098
+    },
+    {
+      "reps": 450,
+      "input_chars": 56700,
+      "prompt_eval_count": 4098
+    },
+    {
+      "reps": 500,
+      "input_chars": 63000,
+      "prompt_eval_count": 4098
+    },
+    {
+      "reps": 600,
+      "input_chars": 75600,
+      "prompt_eval_count": 4098
+    },
+    {
+      "reps": 1000,
+      "input_chars": 126000,
+      "prompt_eval_count": 4098
+    },
+    {
+      "reps": 2400,
+      "input_chars": 302400,
+      "prompt_eval_count": 4098
+    }
+  ],
+  "sentinel_side_test_P4": [
+    {
+      "reps": 370,
+      "prompt_eval_count": 4098,
+      "start_sentinel_survived": false,
+      "end_sentinel_survived": true
+    },
+    {
+      "reps": 500,
+      "prompt_eval_count": 4098,
+      "start_sentinel_survived": false,
+      "end_sentinel_survived": true
+    },
+    {
+      "reps": 1000,
+      "prompt_eval_count": 4098,
+      "start_sentinel_survived": false,
+      "end_sentinel_survived": true
+    },
+    {
+      "reps": 2400,
+      "prompt_eval_count": 4098,
+      "start_sentinel_survived": false,
+      "end_sentinel_survived": true
+    }
+  ],
+  "findings": {
+    "capacity_tokens": 8192,
+    "capacity_evidence": "true counts up to 8157 tokens evaluate whole (filler x370); the next step x390 (>8192 true) truncates. Several real items evaluated at 8007-8151, just under.",
+    "overflow_behavior": "SILENT left-truncation: only the FINAL 4098 tokens are evaluated regardless of overshoot magnitude (measured to ~60K input tokens); no API error or warning; response shape stays normal so downstream parsing cannot detect it.",
+    "kept_side": "tail (end sentinel survives at every overshoot size; start sentinel never)",
+    "consequence_for_judge_prompt": "_JUDGE_PROMPT puts the rubric FIRST: every truncated item was judged with zero rubric text delivered -- neither amendments F-A1/F-A2/F-A3 nor the base verdict definitions. The trailing instruction block ('give each one a verdict under the rubric above') survives at the tail, which is why outputs remained parseable JSON with valid verdict literals.",
+    "retained_window_mechanism": "why the overflow tail is 4098 rather than the full requested window is internal to this Ollama build; server process env unreadable under systemd (permission denied). Reported as measured behavior."
+  },
+  "per_item_census_P5": {
+    "absent": {
+      "Q-WAYB-009": {
+        "prompt_chars": 43560,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-WAYB-021": {
+        "prompt_chars": 49789,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-WAYB-022": {
+        "prompt_chars": 47766,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-WAYB-028": {
+        "prompt_chars": 43556,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-WAYB-029": {
+        "prompt_chars": 31940,
+        "prompt_eval_count": 6078,
+        "exposure": "FULL_amended_rubric_delivered"
+      },
+      "Q-WAYB-034": {
+        "prompt_chars": 37916,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-WAYB-035": {
+        "prompt_chars": 33816,
+        "prompt_eval_count": 8007,
+        "exposure": "FULL_amended_rubric_delivered"
+      },
+      "Q-WAYB-039": {
+        "prompt_chars": 43005,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-GTA-034": {
+        "prompt_chars": 48289,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-GTA-035": {
+        "prompt_chars": 37337,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-GTA-036": {
+        "prompt_chars": 36014,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-GTA-037": {
+        "prompt_chars": 33835,
+        "prompt_eval_count": 7665,
+        "exposure": "FULL_amended_rubric_delivered"
+      },
+      "Q-GTA-038": {
+        "prompt_chars": 37437,
+        "prompt_eval_count": 7887,
+        "exposure": "FULL_amended_rubric_delivered"
+      },
+      "Q-GTA-039": {
+        "prompt_chars": 43882,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-GTA-040": {
+        "prompt_chars": 38038,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-GTA-041": {
+        "prompt_chars": 51818,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      }
+    },
+    "answerable": {
+      "Q-GTA-001": {
+        "prompt_chars": 37725,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-GTA-002": {
+        "prompt_chars": 27489,
+        "prompt_eval_count": 6555,
+        "exposure": "FULL_amended_rubric_delivered"
+      },
+      "Q-GTA-003": {
+        "prompt_chars": 34137,
+        "prompt_eval_count": 8140,
+        "exposure": "FULL_amended_rubric_delivered"
+      },
+      "Q-GTA-004": {
+        "prompt_chars": 45700,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-GTA-005": {
+        "prompt_chars": 45912,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-GTA-006": {
+        "prompt_chars": 45903,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-GTA-007": {
+        "prompt_chars": 43711,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-GTA-008": {
+        "prompt_chars": 43080,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-GTA-009": {
+        "prompt_chars": 41708,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-GTA-010": {
+        "prompt_chars": 42791,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-GTA-011": {
+        "prompt_chars": 34789,
+        "prompt_eval_count": 8051,
+        "exposure": "FULL_amended_rubric_delivered"
+      },
+      "Q-GTA-012": {
+        "prompt_chars": 30065,
+        "prompt_eval_count": 6928,
+        "exposure": "FULL_amended_rubric_delivered"
+      },
+      "Q-GTA-013": {
+        "prompt_chars": 28272,
+        "prompt_eval_count": 6198,
+        "exposure": "FULL_amended_rubric_delivered"
+      },
+      "Q-GTA-014": {
+        "prompt_chars": 27802,
+        "prompt_eval_count": 6431,
+        "exposure": "FULL_amended_rubric_delivered"
+      },
+      "Q-GTA-015": {
+        "prompt_chars": 44095,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-GTA-016": {
+        "prompt_chars": 34757,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-GTA-017": {
+        "prompt_chars": 28090,
+        "prompt_eval_count": 6652,
+        "exposure": "FULL_amended_rubric_delivered"
+      },
+      "Q-GTA-018": {
+        "prompt_chars": 44359,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-GTA-019": {
+        "prompt_chars": 46885,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-GTA-020": {
+        "prompt_chars": 38601,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-GTA-021": {
+        "prompt_chars": 39762,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-GTA-022": {
+        "prompt_chars": 49889,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-GTA-023": {
+        "prompt_chars": 30594,
+        "prompt_eval_count": 7123,
+        "exposure": "FULL_amended_rubric_delivered"
+      },
+      "Q-GTA-024": {
+        "prompt_chars": 35921,
+        "prompt_eval_count": 7646,
+        "exposure": "FULL_amended_rubric_delivered"
+      },
+      "Q-GTA-025": {
+        "prompt_chars": 22419,
+        "prompt_eval_count": 5111,
+        "exposure": "FULL_amended_rubric_delivered"
+      },
+      "Q-GTA-026": {
+        "prompt_chars": 37200,
+        "prompt_eval_count": 7792,
+        "exposure": "FULL_amended_rubric_delivered"
+      },
+      "Q-GTA-027": {
+        "prompt_chars": 38774,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-GTA-028": {
+        "prompt_chars": 21740,
+        "prompt_eval_count": 4683,
+        "exposure": "FULL_amended_rubric_delivered"
+      },
+      "Q-GTA-029": {
+        "prompt_chars": 45368,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-GTA-030": {
+        "prompt_chars": 49937,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-GTA-031": {
+        "prompt_chars": 23798,
+        "prompt_eval_count": 4982,
+        "exposure": "FULL_amended_rubric_delivered"
+      },
+      "Q-GTA-032": {
+        "prompt_chars": 30742,
+        "prompt_eval_count": 6160,
+        "exposure": "FULL_amended_rubric_delivered"
+      },
+      "Q-GTA-033": {
+        "prompt_chars": 40192,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-WAYB-001": {
+        "prompt_chars": 22533,
+        "prompt_eval_count": 4701,
+        "exposure": "FULL_amended_rubric_delivered"
+      },
+      "Q-WAYB-002": {
+        "prompt_chars": 20487,
+        "prompt_eval_count": 4779,
+        "exposure": "FULL_amended_rubric_delivered"
+      },
+      "Q-WAYB-003": {
+        "prompt_chars": 46579,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-WAYB-004": {
+        "prompt_chars": 29662,
+        "prompt_eval_count": 6150,
+        "exposure": "FULL_amended_rubric_delivered"
+      },
+      "Q-WAYB-005": {
+        "prompt_chars": 17621,
+        "prompt_eval_count": 3893,
+        "exposure": "FULL_amended_rubric_delivered"
+      },
+      "Q-WAYB-006": {
+        "prompt_chars": 45170,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-WAYB-007": {
+        "prompt_chars": 41950,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-WAYB-008": {
+        "prompt_chars": 23887,
+        "prompt_eval_count": 6798,
+        "exposure": "FULL_amended_rubric_delivered"
+      },
+      "Q-WAYB-010": {
+        "prompt_chars": 37029,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-WAYB-011": {
+        "prompt_chars": 52901,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-WAYB-012": {
+        "prompt_chars": 43746,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-WAYB-013": {
+        "prompt_chars": 22694,
+        "prompt_eval_count": 5256,
+        "exposure": "FULL_amended_rubric_delivered"
+      },
+      "Q-WAYB-014": {
+        "prompt_chars": 26782,
+        "prompt_eval_count": 6951,
+        "exposure": "FULL_amended_rubric_delivered"
+      },
+      "Q-WAYB-015": {
+        "prompt_chars": 26830,
+        "prompt_eval_count": 6252,
+        "exposure": "FULL_amended_rubric_delivered"
+      },
+      "Q-WAYB-016": {
+        "prompt_chars": 29779,
+        "prompt_eval_count": 6921,
+        "exposure": "FULL_amended_rubric_delivered"
+      },
+      "Q-WAYB-017": {
+        "prompt_chars": 15352,
+        "prompt_eval_count": 3243,
+        "exposure": "FULL_amended_rubric_delivered"
+      },
+      "Q-WAYB-018": {
+        "prompt_chars": 33639,
+        "prompt_eval_count": 7716,
+        "exposure": "FULL_amended_rubric_delivered"
+      },
+      "Q-WAYB-019": {
+        "prompt_chars": 35968,
+        "prompt_eval_count": 8111,
+        "exposure": "FULL_amended_rubric_delivered"
+      },
+      "Q-WAYB-020": {
+        "prompt_chars": 22099,
+        "prompt_eval_count": 4972,
+        "exposure": "FULL_amended_rubric_delivered"
+      },
+      "Q-WAYB-023": {
+        "prompt_chars": 26331,
+        "prompt_eval_count": 5436,
+        "exposure": "FULL_amended_rubric_delivered"
+      },
+      "Q-WAYB-024": {
+        "prompt_chars": 33457,
+        "prompt_eval_count": 6803,
+        "exposure": "FULL_amended_rubric_delivered"
+      },
+      "Q-WAYB-025": {
+        "prompt_chars": 39826,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-WAYB-026": {
+        "prompt_chars": 43126,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-WAYB-027": {
+        "prompt_chars": 41561,
+        "prompt_eval_count": 8130,
+        "exposure": "FULL_amended_rubric_delivered"
+      },
+      "Q-WAYB-030": {
+        "prompt_chars": 17782,
+        "prompt_eval_count": 3794,
+        "exposure": "FULL_amended_rubric_delivered"
+      },
+      "Q-WAYB-031": {
+        "prompt_chars": 44068,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-WAYB-032": {
+        "prompt_chars": 39295,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-WAYB-033": {
+        "prompt_chars": 39495,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-WAYB-036": {
+        "prompt_chars": 41571,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-WAYB-037": {
+        "prompt_chars": 33313,
+        "prompt_eval_count": 7584,
+        "exposure": "FULL_amended_rubric_delivered"
+      },
+      "Q-WAYB-038": {
+        "prompt_chars": 50544,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-WAYB-040": {
+        "prompt_chars": 31170,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      },
+      "Q-GTA-042": {
+        "prompt_chars": 33424,
+        "prompt_eval_count": 7330,
+        "exposure": "FULL_amended_rubric_delivered"
+      },
+      "Q-GTA-043": {
+        "prompt_chars": 28251,
+        "prompt_eval_count": 6272,
+        "exposure": "FULL_amended_rubric_delivered"
+      },
+      "Q-GTA-044": {
+        "prompt_chars": 39068,
+        "prompt_eval_count": 4098,
+        "exposure": "TRUNCATED_to_4098_tail"
+      }
+    }
+  },
+  "census_totals": {
+    "absent_truncated": 12,
+    "absent_total": 16,
+    "answerable_truncated": 34,
+    "answerable_total": 68,
+    "total_truncated": 46,
+    "total_items": 84
+  }
+}
