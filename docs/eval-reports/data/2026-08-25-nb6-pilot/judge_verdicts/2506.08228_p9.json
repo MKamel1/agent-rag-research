@@ -1,0 +1,112 @@
+[
+  {
+    "claim": "The page discusses scaling of models for motion forecasting tasks in autonomous vehicles using a validation dataset grouped into iso-FLOP bands",
+    "verdict": "CONFIRMED",
+    "evidence": "Text layer: 'validation dataset grouped in iso-FLOP bands in Figure 3'; 'the optimal models required for the motion forecasting task'; 'motion forecasting in the autonomous vehicles domain'."
+  },
+  {
+    "claim": "The authors fit these bands to parabolas and power-law functions to derive optimal model sizes based on compute budgets",
+    "verdict": "CONFIRMED",
+    "evidence": "Page: 'We fit the bands using a parabola' and 'we derive the exponents N_opt ∝ C^0.63±0.08 and D_opt ∝ C^0.44±0.06' (power-law fits of the extracted optima; description's summary compresses the two-step procedure but matches it substantively)."
+  },
+  {
+    "claim": "The text discusses the use of a validation dataset grouped in iso-FLOP bands as shown in Figure 3",
+    "verdict": "CONFIRMED",
+    "evidence": "Text layer: 'validation dataset grouped in iso-FLOP bands in Figure 3.'"
+  },
+  {
+    "claim": "The bands are fitted using a parabola parameterized as L_C(x) = a (log x − log x_C^opt)^2 + L_C^opt",
+    "verdict": "CONFIRMED",
+    "evidence": "Text layer: 'We fit the bands using a parabola parameterized as: L_C(x) = a (log x − log x_C^opt)^2 + L_C^opt' (rendered as 'LC(x) = a logx−logxopt_C 2 +Lopt_C')."
+  },
+  {
+    "claim": "x represents either the number of parameters or number of data points",
+    "verdict": "CONFIRMED",
+    "evidence": "Text layer: 'where x is either number of parameters or number of data points.'"
+  },
+  {
+    "claim": "The optimal values for each compute budget C, denoted as a, x_C^opt, and L_C^opt, are extracted from these fits",
+    "verdict": "CONFIRMED",
+    "evidence": "Text layer: 'a, x_C^opt, and L_C^opt are the fit parameters. The latter two are the optimal values we are extracting for each compute budget C.' (Minor nuance: page calls a a fit parameter and only the latter two 'optimal values'; description lumps all three, but symbols and extraction match.)"
+  },
+  {
+    "claim": "The standard deviations in N_opt, D_opt, and L_opt are reported directly from the fit parameter variances",
+    "verdict": "CONFIRMED",
+    "evidence": "Text layer: 'We report the 3 standard deviations in N_opt, D_opt, and L_opt directly from the fit parameter variances.'"
+  },
+  {
+    "claim": "Figure 4 shows the N_opt(C) and D_opt(C) obtained from parabola fits, along with a power-law fit of the form ax^b",
+    "verdict": "CONFIRMED",
+    "evidence": "Text layer: 'Figure 4 shows the N_opt(C) and D_opt(C) obtained from the parabola fits, along with a power-law fit of the form ax^b.'"
+  },
+  {
+    "claim": "N_opt ∝ C^(0.63 ± 0.08)",
+    "verdict": "CONFIRMED",
+    "evidence": "Text layer: 'N_opt ∝ C^0.63±0.08'."
+  },
+  {
+    "claim": "D_opt ∝ C^(0.44 ± 0.06)",
+    "verdict": "CONFIRMED",
+    "evidence": "Text layer: 'D_opt ∝ C^0.44±0.06'."
+  },
+  {
+    "claim": "The optimal models for motion forecasting are 50 times smaller in the number of parameters than a large-language model at the same compute budget, as noted by Hoffmann et al. (2022)",
+    "verdict": "CONFIRMED",
+    "evidence": "Text layer: 'the optimal models required for the motion forecasting task are 50 times smaller in the number of parameters than a large-language model at the same compute budget, for example, see Hoffmann et al. (2022).'"
+  },
+  {
+    "claim": "Other studies on autoregressive model scaling across non-language domains have similarly observed these trends",
+    "verdict": "CONFIRMED",
+    "evidence": "Text layer: 'Other studies of autoregressive model scaling on non-language domains have observed similar trends'."
+  },
+  {
+    "claim": "Henighan et al. (2020) systematically studied scaling in different modalities and found a 1-2 orders of magnitude difference in optimal model sizes between different domains",
+    "verdict": "CONFIRMED",
+    "evidence": "Text layer: 'notably Henighan et al. (2020), where they systematically studied scaling on different modalities. There we observe a 1-2 orders of magnitude difference in the optimal model size between different domains.'"
+  },
+  {
+    "claim": "Section on Cross-Entropy Loss Scaling appears on the page",
+    "verdict": "CONFIRMED",
+    "evidence": "Text layer: '4.2 Cross-Entropy Loss Scaling' (section heading; description gives the name without the 4.2 number)."
+  },
+  {
+    "claim": "From the iso-FLOP bands, the authors obtain the optimal loss L_opt(C) for a fixed compute budget",
+    "verdict": "CONFIRMED",
+    "evidence": "Text layer: 'From the iso-FLOP bands, we obtain the optimal loss L_opt(C) for a fixed compute budget.'"
+  },
+  {
+    "claim": "As illustrated in Figure 5 (Left), the optimal loss improves as a power-law when scaling model size, data, and compute together",
+    "verdict": "CONFIRMED",
+    "evidence": "Text layer: 'As illustrated in Figure 5, the optimal loss improves as a power-law when we scale the model size, data, and compute in tandem.' (Left panel is indeed the pure power-law fit per caption/legend.)"
+  },
+  {
+    "claim": "This trend is consistent with empirical findings by Kaplan et al. (2020) on autoregressive language models and Henighan et al. (2020) across various modalities",
+    "verdict": "CONFIRMED",
+    "evidence": "Text layer: 'the empirical power-law scaling trend studied in Kaplan et al. (2020) for autoregressive language models, and shown in Henighan et al. (2020) to hold for autoregressive generative models across a wide range of modalities, also applies to the task of motion forecasting'."
+  },
+  {
+    "claim": "The authors also observe curvature in the data points, suggesting they might be close to an irreducible term",
+    "verdict": "CONFIRMED",
+    "evidence": "Text layer: 'However, we also observe a curvature in the data points, indicating, that we could be close to an irreducible term.'"
+  },
+  {
+    "claim": "Figure 5 shows training compute-optimal loss as a function of total compute budget",
+    "verdict": "CONFIRMED",
+    "evidence": "Text layer caption: 'Figure 5: Training compute-optimal loss as a function of total compute budget.'"
+  },
+  {
+    "claim": "The L_opt points are extracted from iso-FLOP bands",
+    "verdict": "CONFIRMED",
+    "evidence": "Text layer caption: 'The L_opt points were extracted from from iso-FLOP bands.' (page has a duplicated 'from' typo; claim matches)."
+  },
+  {
+    "claim": "(Left): A solid line represents a power-law fit to the data, with an exponent of −0.026",
+    "verdict": "CONFIRMED",
+    "evidence": "Caption: '(Left) The solid line represents a power-law fit to the points'; legend in figure render (not in text layer) reads 'L ∝ C^−0.026' — verified at 4x zoom of the PDF."
+  },
+  {
+    "claim": "(Right): The authors fit the points using a power-law plus a constant term, capturing curvature in the data points",
+    "verdict": "CONFIRMED",
+    "evidence": "Caption: '(Right) We fit the points with a power-law plus a constant, we observe that adding a constant captures the curvature in the data points.' (Description sentence is truncated mid-way but the claim it makes is on the page; right-panel legend 'L ∝ C^−0.18 + 1.03' visible in render, not claimed by description.)"
+  }
+]

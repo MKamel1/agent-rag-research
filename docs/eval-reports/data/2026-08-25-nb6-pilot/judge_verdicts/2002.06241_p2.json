@@ -1,0 +1,182 @@
+[
+  {
+    "claim": "The page shows 'Figure 2: The detailed architecture of Social-WaGDAT, which consists of three key components:'",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 69 verbatim: \"Figure 2: The detailed architecture of Social-WaGDAT, which consists of three key components: (a) A deep feature extractor which\"; the same caption is clearly legible in the PNG render below the figure."
+  },
+  {
+    "claim": "Caption component (a) reads: 'A deep feature extractor which extracts state, relation and context features from the trajectories of agents, the sequences of occupancy density maps and velocity fields.'",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 69-71: \"(a) A deep feature extractor which extracts state, relation and context features from the trajectories of agents, the sequences of occupancy density maps and velocity ﬁelds.\" (ﬁ ligature is a text-extraction artifact of 'fields')."
+  },
+  {
+    "claim": "Caption states: 'The red dashed lines indicate sharing parameters.'",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 71: \"The red dashed lines indicate sharing parameters.\" The render also shows a red dashed vertical line linking the H-branch and F-branch State MLP / Relation MLP / Context CNN box pairs."
+  },
+  {
+    "claim": "Caption component (b) reads: 'An encoder which includes a graph double-attention network that processes spatio-temporal graphs and generates abstract node attributes containing interaction information, and an encoding function which maps the node attributes to a latent space.'",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 71-73: \"(b) An encoder which includes a graph double-attention network that processes spatio- temporal graphs and generates abstract node attributes containing interaction information, and an encoding function which maps the node attributes to a latent space.\""
+  },
+  {
+    "claim": "Caption states: 'During the testing phase, the encoding function is not used.'",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 73: \"During the testing phase, the encoding function is not used.\""
+  },
+  {
+    "claim": "Caption component (c) reads: 'A decoder which samples future trajectory hypotheses satisfying physical constraints for each agent.'",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 73-74: \"(c) A decoder which samples future trajectory hypotheses satisfying physical constraints for each agent.\""
+  },
+  {
+    "claim": "Caption states: 'The bottom portion of the figure presents some details of (a)-(c).'",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 74: \"The bottom portion of the ﬁgure presents some details of (a)-(c).\""
+  },
+  {
+    "claim": "Caption states: '|| denotes the concatenation operation.'",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 74: \"|| denotes the concatenation operation.\""
+  },
+  {
+    "claim": "Caption states: 'MLP refers to multi-layer perceptron.'",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 75: \"MLP refers to multi-layer perceptron.\""
+  },
+  {
+    "claim": "Social-WaGDAT is expanded as 'Social-Wasserstein Generative Deep Attention Trajectory Prediction'.",
+    "verdict": "UNVERIFIABLE",
+    "evidence": "Neither source expands the acronym: pagetext.txt and the render use only the string \"Social-WaGDAT\" (Figure 2 caption; §4 heading \"4. Social-WaGDAT\"; §4.1). The expansion is neither confirmed nor contradicted anywhere on this page."
+  },
+  {
+    "claim": "The system is for predicting future trajectories in multi-agent systems.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 94-95: \"The goal of this work is to predict future trajectories for multiple interactive agents based on their historical states and context information\"."
+  },
+  {
+    "claim": "The architecture targets trajectories in social systems, 'such as pedestrians or vehicles moving together'.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 110-111: \"ψ is the heading angle, which is not necessary for pedestrian prediction\" confirms the pedestrian setting; the render's bottom-left context thumbnail depicts a roundabout/road scene with moving-agent dots, consistent with vehicles. No source contradicts the vehicle example, though the word 'vehicle' itself does not appear on this page."
+  },
+  {
+    "claim": "The figure is divided into three main components.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 69 (\"three key components\") and lines 45-48/62/67: \"(a) Deep Feature Extractor\", \"(b) Encoder\", \"(c) Decoder\"; §4.1 line 131: \"There are three key components\". The render shows the three labeled blocks."
+  },
+  {
+    "claim": "The deep feature extractor's inputs are labeled 'History Info' and 'Future Info'.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 41-44: \"History\", \"Info\", \"Future\", \"Info\"; the render shows two ovals labeled \"History Info\" and \"Future Info\" with arrows into the \"(a) Deep Feature Extractor\" block."
+  },
+  {
+    "claim": "The feature extractor includes/outputs modules labeled 'State MLP', 'Relation MLP', and 'Context CNN'.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 1-3 (\"State MLP\", \"Context CNN\", \"Relation MLP\") and repeated at lines 36-38; the render shows these three boxes in both the H (history) and F (future) branches of the bottom detail row, fed from the feature extractor."
+  },
+  {
+    "claim": "MLP is expanded as 'Multi-Layer Perceptron' (for State MLP, Relation MLP, and the encoding MLP).",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 75 (caption): \"MLP refers to multi-layer perceptron.\""
+  },
+  {
+    "claim": "CNN is expanded as 'Convolutional Neural Network' (for 'Context CNN').",
+    "verdict": "UNVERIFIABLE",
+    "evidence": "The label \"Context CNN\" is confirmed (pagetext.txt lines 3 and 38), but neither the text layer nor the render expands CNN; 'Convolutional Neural Network' is a standard expansion that is not stated on this page and not contradicted."
+  },
+  {
+    "claim": "The feature extractor processes historical and future information of agents, occupancy density maps, and velocity fields to extract state, relation, and context features.",
+    "verdict": "CONFIRMED",
+    "evidence": "Caption (a), pagetext.txt lines 69-71 (\"extracts state, relation and context features from the trajectories of agents, the sequences of occupancy density maps and velocity ﬁelds\"); corroborated by §4.1 lines 134-138: \"the feature extractor outputs state, relation and context feature embeddings from both history and future information, which includes the trajectories of the involved interactive agents and a sequence of context density maps and mean velocity ﬁelds.\""
+  },
+  {
+    "claim": "The encoder includes a 'Graph Double-Attention Network' that processes spatio-temporal graphs.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 49-50: \"Graph Double-Attention Network\"; caption (b) lines 71-72: \"a graph double-attention network that processes spatio-temporal graphs\"; the render shows this box inside the \"(b) Encoder\" region."
+  },
+  {
+    "claim": "The encoder includes an 'Encoding Function' that maps node attributes into a latent space using encoding MLPs.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 55-58: \"Encoding Function\", \"Latent Variable\"; lines 5-11 contain \"Enc\" + \"MLP\" three times; the render shows three \"Enc MLP\" boxes feeding a gray latent-variable node labeled \"Latent Variable\"."
+  },
+  {
+    "claim": "Node attributes in the bottom detail are labeled v_h and v_f (rendered as ṽ_h1, ṽ_h2, ṽ_h3 and ṽ_f1, ṽ_f2, ṽ_f3).",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 24-29: \"˜vh1 ˜vh2 ˜vh3 ˜vf3 ˜vf2 ˜vf1\" (tilde+v with h/f subscripts 1-3); the render shows oval nodes labeled ṽh1-ṽh3 on the history branch and ṽf1-ṽf3 on the future branch."
+  },
+  {
+    "claim": "The encoder generates abstract node attributes containing interaction information, mapped to a latent representation.",
+    "verdict": "CONFIRMED",
+    "evidence": "Caption (b), pagetext.txt lines 71-73: \"generates abstract node attributes containing interaction information, and an encoding function which maps the node attributes to a latent space.\""
+  },
+  {
+    "claim": "The decoder outputs 'Predicted Future Trajectories'.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 59-61: \"Predicted Future Trajectories\"; the render shows an oval so labeled at the right end of the \"(c) Decoder\" block."
+  },
+  {
+    "claim": "The decoder includes a 'Decoding Function' that uses Dec RNNs.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 63-64: \"Decoding Function\"; lines 12-17 contain \"Dec RNN\" three times; the render shows a \"Decoding Function\" box and three \"Dec RNN\" boxes inside \"(c) Decoder\"."
+  },
+  {
+    "claim": "The Dec RNNs are paired with 'Kinematic Cell' modules (three of each).",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 18-23 contain \"Kinematic Cell\" three times; the render shows three green \"Kinematic Cell\" boxes, one following each Dec RNN."
+  },
+  {
+    "claim": "RNN is expanded as 'Recurrent Neural Networks' (for 'Dec RNNs').",
+    "verdict": "UNVERIFIABLE",
+    "evidence": "\"Dec RNN\" is confirmed (pagetext.txt lines 12-17), but neither the text layer nor the render expands RNN; 'Recurrent Neural Networks' is a standard expansion not stated on this page and not contradicted."
+  },
+  {
+    "claim": "The decoder generates future trajectory hypotheses satisfying physical constraints for each agent.",
+    "verdict": "CONFIRMED",
+    "evidence": "Caption (c), pagetext.txt lines 73-74: \"samples future trajectory hypotheses satisfying physical constraints for each agent\"; §4.1 line 133: \"a decoder with kinematic constraint layer\"."
+  },
+  {
+    "claim": "The decoder includes a 'Constraint Layer'.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 65-66: \"Constraint Layer\"; the render shows the box between \"Decoding Function\" and \"Predicted Future Trajectories\"."
+  },
+  {
+    "claim": "The Constraint Layer ensures generated trajectories adhere to predefined rules or constraints.",
+    "verdict": "CONFIRMED",
+    "evidence": "The page's own wording is \"physical constraints\" (caption (c), pagetext.txt lines 73-74) and \"kinematic constraint layer\" (§4.1 line 133); the description's 'predefined rules or constraints' is a semantically equivalent paraphrase of the constraint role."
+  },
+  {
+    "claim": "The bottom section of the figure provides a detailed view of the (a)-(c) components (encoder and decoder internals).",
+    "verdict": "CONFIRMED",
+    "evidence": "Caption, pagetext.txt line 74: \"The bottom portion of the ﬁgure presents some details of (a)-(c).\"; the render's bottom detail row shows the State/Relation/Context boxes, HG/FG graphs, ṽ nodes, Enc MLPs, KL/MMD, Dec RNNs and Kinematic Cells."
+  },
+  {
+    "claim": "The bottom detail labels the two spatio-temporal graphs 'HG' and 'FG'.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 4 and 7: \"HG\", \"FG\"; the render shows \"HG\" above the history-branch graph and \"FG\" above the future-branch graph."
+  },
+  {
+    "claim": "'HG' stands for 'High Graph'.",
+    "verdict": "UNVERIFIABLE",
+    "evidence": "Neither source defines the acronym HG. The page context points the other way: in the render HG sits over the H (history) branch (History Info → H → graph labeled HG), and §4.1 (pagetext.txt lines 139-140) speaks of \"a spatio-temporal graph for both the history and the future respectively\", so 'High Graph' finds no support on the page — but no printed string affirmatively contradicts it, so it cannot be REFUTED from these sources alone."
+  },
+  {
+    "claim": "'FG' stands for 'Future Graph'.",
+    "verdict": "UNVERIFIABLE",
+    "evidence": "Neither source defines FG. The label sits over the F (future) branch graph in the render, consistent with 'Future Graph', but the expansion itself is not printed on the page (pagetext.txt contains only the bare strings \"HG\"/\"FG\")."
+  },
+  {
+    "claim": "The figure includes '||' concatenation symbols at multiple points.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 31-35 contain \"||\" five times; caption line 74: \"|| denotes the concatenation operation\"; the render shows ||-marked concatenation nodes before the Enc MLP column and before the Dec RNN column."
+  },
+  {
+    "claim": "The figure includes the labels 'KL' and 'MMD'.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 68: \"KL\"; line 30: \"MMD\"; the render shows \"KL ↔ MMD\" placed between the two latent-distribution surface plots following the Enc MLP column."
+  },
+  {
+    "claim": "KL and MMD are likely used as loss functions or metrics in the training phase, possibly related to divergence between distributions.",
+    "verdict": "UNVERIFIABLE",
+    "evidence": "Hedged interpretation. That the labels KL and MMD appear is confirmed (pagetext.txt lines 68 and 30), and the render places \"KL ↔ MMD\" between two distribution surfaces, which is consistent with a divergence reading — but this page never states their role (loss/metric/training phase), so the interpretive claim is not resolvable from these sources."
+  }
+]

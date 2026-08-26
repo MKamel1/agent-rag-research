@@ -1,0 +1,157 @@
+[
+  {
+    "claim": "The page is a research paper titled 'M3DETR: Multi-representation, Multi-scale, Mutual-relation 3D Object Detection with Transformers'.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 1-2 verbatim: \"M3DETR: Multi-representation, Multi-scale, Mutual-relation 3D Object Detection with Transformers\"; the same title is clearly legible as the two-line heading at the top of the PNG render."
+  },
+  {
+    "claim": "The author list includes 'Tianrui Guan' with superscript '1*'.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 3: \"Tianrui Guan1*\"; render shows \"Tianrui Guan1*\" as the first author."
+  },
+  {
+    "claim": "The author list includes 'Jun Wang' with superscript '1*'.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 3: \"Jun Wang1*\"; render shows \"Jun Wang1*\" as the second author."
+  },
+  {
+    "claim": "The author list includes 'Shiyi Lan' with superscript '1\u2020'.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 4: \"Shiyi Lan1\u2020\"; render shows \"Shiyi Lan1\u2020\" as the third author."
+  },
+  {
+    "claim": "The author list includes 'Rohan Chandra' with superscript '1'.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 5: \"Rohan Chandra1\"; render shows \"Rohan Chandra1\" as the fourth author."
+  },
+  {
+    "claim": "The author list includes 'Zuxuan Wu' with superscript '2'.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 6: \"Zuxuan Wu 2\"; render shows \"Zuxuan Wu 2\" as the fifth author."
+  },
+  {
+    "claim": "The author list includes 'Larry Davis' with superscript '1'.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 7: \"Larry Davis 1\"; render shows \"Larry Davis 1\" on the second author line."
+  },
+  {
+    "claim": "The author list includes 'Dinesh Manocha' with superscript '1'.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 8: \"Dinesh Manocha1\"; render shows \"Dinesh Manocha1\" as the last author."
+  },
+  {
+    "claim": "Affiliation '1' is 'University of Maryland, College Park'.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 9: \"1University of Maryland, College Park\"; render shows \"1University of Maryland, College Park\" beneath the authors."
+  },
+  {
+    "claim": "Affiliation '2' is 'Fudan University'.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 10: \"2Fudan University\"; render shows \"2Fudan University\" to the right of the Maryland affiliation."
+  },
+  {
+    "claim": "The page lists the email group '{rayguan, sylan, rohan}@cs.umd.edu'.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 11: \"{rayguan, sylan, rohan}@cs.umd.edu\"; the same string is clearly legible in the render's email line."
+  },
+  {
+    "claim": "The page lists the email group '{junwang, lsl}@umiacs.umd.edu'.",
+    "verdict": "REFUTED",
+    "evidence": "pagetext.txt line 11 reads \"{junwang,lsd}@umiacs.umd.edu\" \u2014 the second alias is 'lsd', not 'lsl' as the description states; the render likewise clearly shows \"{junwang,lsd}@umiacs.umd.edu\" in monospace type. Near-miss string error."
+  },
+  {
+    "claim": "The page lists the email 'zxwu@fudan.edu.cn'.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 12: \"zxwu@fudan.edu.cn\"; same string legible in the render's second email line."
+  },
+  {
+    "claim": "The page lists the email 'dmanocha@umd.edu'.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 12: \"dmanocha@umd.edu\"; same string legible in the render's second email line."
+  },
+  {
+    "claim": "The abstract presents M3DETR as a novel architecture for 3D object detection that combines point cloud representations '(raw, voxels, bird-eye view)' with different feature scales based on multi-scale feature pyramids.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 14-17: \"We present a novel architecture for 3D object detec-tion, M3DETR, which combines different point cloud representations (raw, voxels, bird-eye view) with differ-ent feature scales based on multi-scale feature pyramids.\"; same text legible in the render's Abstract column."
+  },
+  {
+    "claim": "The abstract states M3DETR is the first approach that unifies multiple point cloud representations, feature scales, and models mutual relationships between point clouds simultaneously using transformers.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 18-21: \"M3DETR is the \ufb01rst approach that uni\ufb01es multiple point cloud representations, feature scales, as well as models mu-tual relationships between point clouds simultaneously us-ing transformers.\"; same text legible in the render."
+  },
+  {
+    "claim": "The abstract states that extensive ablation experiments highlight the benefits of fusing representation and scale, and modeling the relationships.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 21-23: \"We perform extensive ablation experi-ments that highlight the bene\ufb01ts of fusing representation and scale, and modeling the relationships.\"; same text legible in the render."
+  },
+  {
+    "claim": "The introduction describes 3D object detection as a fundamental problem in computer vision with applications including autonomous driving, augmented reality, and robotics.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 36-38: \"3D object detection is a fundamental problem in com-puter vision and many applications, including autonomous driving [11, 44], augmented reality [33] and robotics [31].\"; same text legible in the render."
+  },
+  {
+    "claim": "The introduction states that different methods have been proposed for various sensors, including monocular cameras, depth cameras, LiDAR, and radars.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 39-41: \"different methods have been proposed for vari-ous sensors, including monocular cameras, depth cameras, LiDAR, and radars [35, 36, 34, 56, 57, 55, 39, 58].\"; same text legible in the render."
+  },
+  {
+    "claim": "The paper identifies 'Ineffective point cloud representations' as one of two key limitations.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 64-65: \"there are two key limitations: Ineffective point cloud representations:\"; the bold run-in heading \"Ineffective point cloud representations:\" is legible in the render's right column."
+  },
+  {
+    "claim": "Voxel-based point cloud processing methods are cited as [62, 52].",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 66-67: \"are based on vox-els [62, 52]\"; the render shows \"voxels [62, 52]\" in the right column."
+  },
+  {
+    "claim": "Raw point cloud methods are cited as [35, 36, 34, 40, 56, 26, 37].",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 67: \"raw point clouds [35, 36, 34, 40, 56, 26, 37]\"; the identical bracketed digit string is legible in the render."
+  },
+  {
+    "claim": "Bird's-eye-view approaches are cited as [6, 17, 53].",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 67-68: \"and bird\u2019s-eye-view [6, 17, 53]\"; the render shows \"bird\u2019s-eye-view [6, 17, 53]\"."
+  },
+  {
+    "claim": "The paper states that combining these representations can improve detection accuracy but that fusing them is non-trivial.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 69-72: \"it has been shown that combining these representations can result in terms of detection ac-curacy [34, 39, 7]. However, fusing these representations is non-trivial.\"; semantically equivalent to the description's paraphrase; legible in the render."
+  },
+  {
+    "claim": "The paper identifies 'Insufficient modeling of multi-scale features' as the second key limitation and states that fusing multi-scale feature maps is a well-known technique.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 84-87: \"Insuf\ufb01cient modeling of multi-scale features: Fusing multi-scale feature maps is a well-known technique used\" \u2014 the sentence is cut off at the page break at the word 'used', so the description's trailing words ('in the field') fall on the next page, but every verified portion matches; the bold heading and sentence start are legible at the bottom of the render's right column."
+  },
+  {
+    "claim": "Figure 1 illustrates three transformer types labeled 'Multi-representation Transformer', 'Multi-scale Transformer', and 'Mutual-relation Transformer'.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 49-54 contain exactly these three two-line labels (\"Multi-representation / Transformer\", \"Multi-scale / Transformer\", \"Mutual-relation / Transformer\"), and the render shows all three labels beneath the three figure panels, with the Figure 1 caption (lines 55-58) naming them again as Left/Middle/Right."
+  },
+  {
+    "claim": "Each transformer type in Figure 1 is drawn with different shapes and colors.",
+    "verdict": "CONFIRMED",
+    "evidence": "Text layer carries no shape information; in the PNG render the three panels are visually distinct: magenta circle cluster + blue voxel-grid cube + stacked colored planes (left), tall-to-short colored vertical slabs (middle), and blue dots connected by lines (right), using differing colors (magenta, blue, green, orange). Clearly legible at render resolution."
+  },
+  {
+    "claim": "In Figure 1, the multi-representation transformer uses circles (raw point clouds), squares (voxel-based representation), and rectangles (bird's-eye view).",
+    "verdict": "CONFIRMED",
+    "evidence": "In the PNG render the left panel shows, left to right: a cluster of magenta circles with small dots (raw point cloud), a blue 3D cube drawn as a grid of squares (voxel representation), and a stack of flat colored rectangles (bird's-eye-view planes) \u2014 matching the paper's representation order '(raw, voxels, bird-eye view)' from pagetext.txt line 16. 'Squares' is a fair 2D reading of the voxel-grid cube's faces."
+  },
+  {
+    "claim": "In Figure 1, the multi-scale transformer uses stacked blocks of varying sizes to represent feature scales.",
+    "verdict": "CONFIRMED",
+    "evidence": "In the PNG render the middle panel shows vertical rectangular slabs of clearly differing heights (tall blue, medium green, short orange/yellow) beneath stacked translucent blocks, with upward arrows \u2014 i.e., blocks of varying sizes. Text layer has no graphic content; verified from the render."
+  },
+  {
+    "claim": "In Figure 1, the mutual-relation transformer uses arrows connecting nodes to represent relationships between points.",
+    "verdict": "CONFIRMED",
+    "evidence": "In the PNG render the right panel shows blue dot nodes joined by connecting lines (a triangular linkage), with vertical arrows rising from the nodes to stacked blocks above \u2014 semantically equivalent to 'arrows connecting nodes'. Verified from the render."
+  },
+  {
+    "claim": "The paper states M3DETR achieves state-of-the-art performance on the KITTI 3D object detection dataset and Waymo Open Dataset.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 24-26: \"Our method achieves state-of-the-art performance on the KITTI 3D ob-ject detection dataset and Waymo Open Dataset.\"; the same sentence is legible in the render's Abstract column. (The description's text is cut off mid-word at \"Way\", consistent with \"Waymo\".)"
+  }
+]

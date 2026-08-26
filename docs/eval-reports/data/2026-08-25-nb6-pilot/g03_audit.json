@@ -1,0 +1,145 @@
+{
+ "rule": "discounted iff >=50% of audit tokens text-reachable (O6)",
+ "items": [
+  {
+   "question_id": "Q-WAYB-027",
+   "paper_id": "2208.12833",
+   "page": 35,
+   "gold_block_id": "2208.12833:b188",
+   "tokens": {
+    "human drowsiness rating": {
+     "whole_page": false,
+     "gold_region": false
+    },
+    "vigilance assessment": {
+     "whole_page": false,
+     "gold_region": false
+    }
+   },
+   "tokens_hit": 0,
+   "tokens_total": 2,
+   "text_reachable_frac": 0.0,
+   "survives_as_true_vision": true
+  },
+  {
+   "question_id": "Q-GTA-042",
+   "paper_id": "2508.19425",
+   "page": 13,
+   "gold_block_id": "2508.19425:b88",
+   "tokens": {
+    "crashed passenger vehicles": {
+     "whole_page": false,
+     "gold_region": false
+    },
+    "ipmm": {
+     "whole_page": false,
+     "gold_region": false
+    }
+   },
+   "tokens_hit": 0,
+   "tokens_total": 2,
+   "text_reachable_frac": 0.0,
+   "survives_as_true_vision": true
+  },
+  {
+   "question_id": "Q-GTA-043",
+   "paper_id": "2506.08228",
+   "page": 9,
+   "gold_block_id": "2506.08228:b75",
+   "tokens": {
+    "0.026": {
+     "whole_page": false,
+     "gold_region": false
+    },
+    "-0.18": {
+     "whole_page": false,
+     "gold_region": false
+    },
+    "1.03": {
+     "whole_page": false,
+     "gold_region": false
+    }
+   },
+   "tokens_hit": 0,
+   "tokens_total": 3,
+   "text_reachable_frac": 0.0,
+   "survives_as_true_vision": true
+  },
+  {
+   "question_id": "Q-GTA-044",
+   "paper_id": "2104.10133",
+   "page": 7,
+   "gold_block_id": "2104.10133:b66",
+   "tokens": {
+    "99.29": {
+     "whole_page": true,
+     "gold_region": false
+    },
+    "93.50": {
+     "whole_page": true,
+     "gold_region": false
+    },
+    "87.31": {
+     "whole_page": true,
+     "gold_region": false
+    },
+    "0.1849": {
+     "whole_page": true,
+     "gold_region": false
+    },
+    "0.1958": {
+     "whole_page": true,
+     "gold_region": false
+    },
+    "0.2738": {
+     "whole_page": true,
+     "gold_region": false
+    },
+    "0.2342": {
+     "whole_page": true,
+     "gold_region": false
+    },
+    "0.2721": {
+     "whole_page": true,
+     "gold_region": false
+    },
+    "0.3800": {
+     "whole_page": true,
+     "gold_region": false
+    }
+   },
+   "tokens_hit": 9,
+   "tokens_total": 9,
+   "text_reachable_frac": 1.0,
+   "survives_as_true_vision": false
+  },
+  {
+   "question_id": "Q-WMR-094",
+   "paper_id": "2312.12675",
+   "page": 9,
+   "gold_block_id": "2312.12675:b66",
+   "tokens": {
+    "86%": {
+     "whole_page": false,
+     "gold_region": false
+    },
+    "54%": {
+     "whole_page": false,
+     "gold_region": false
+    }
+   },
+   "tokens_hit": 0,
+   "tokens_total": 2,
+   "text_reachable_frac": 0.0,
+   "survives_as_true_vision": true
+  }
+ ],
+ "survivors": [
+  "Q-WAYB-027",
+  "Q-GTA-042",
+  "Q-GTA-043",
+  "Q-WMR-094"
+ ],
+ "n_survivors": 4,
+ "gate": "PASS (continue)"
+}

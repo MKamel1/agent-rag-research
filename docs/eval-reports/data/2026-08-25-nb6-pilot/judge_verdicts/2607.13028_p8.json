@@ -1,0 +1,297 @@
+[
+  {
+    "claim": "The paper is titled \"TerraZero: Procedural Driving Simulation for Zero-Demonstration Self-Play at Scale\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 1: \"TerraZero: Procedural Driving Simulation for Zero-Demonstration Self-Play at Scale\"; the PNG render shows the same title in the running header at the top of the page."
+  },
+  {
+    "claim": "The page's content focuses on the configuration and simulation substrate of TerraZero, detailing how scenarios are composed by selecting subsets of options along six independent axes",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 45-48 (Fig. 3 caption: \"choosing a subset of options along each of six independent axes\") and lines 49-59 (Section 3.2 \"Composable Simulation Substrate\"); the render shows the six-axis figure at top and Section 3.2 below it."
+  },
+  {
+    "claim": "Figure 3 is captioned \"Composable configuration axes.\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 45: \"Fig. 3. Composable configuration axes.\"; the render shows \"Fig. 3. Composable configuration axes.\" in blue/black caption text below the diagram."
+  },
+  {
+    "claim": "The Figure 3 caption states a scenario is composed/assembled by choosing a subset of options along each of six independent axes: agent classes, per-class dynamics, initialization, signal control, rule-based road users, and per-episode randomization",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 45-47: \"A scenario is composed by choosing a subset of options along each of six independent axes: agent classes, per-class dynamics, initialization, signal control, rule-based road users, and per-episode randomization.\" The description's \"assembled\" is a semantically equivalent paraphrase of \"composed\"; the axis list matches exactly."
+  },
+  {
+    "claim": "The Figure 3 caption states the axes compose freely, leading to a combinatorially large space of scenarios",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 47-48: \"Because the axes compose freely, a single map seeds a combinatorially large space of scenarios.\" Semantically equivalent to the description's phrasing."
+  },
+  {
+    "claim": "The figure contains six independent configuration axes",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 2-44 contain six axis headers (Agent classes, Dynamics, Initialization, Signal control, Road users, Randomization); the render shows six colored header pills, each labeled \"any subset\"."
+  },
+  {
+    "claim": "Axis 1 is labeled \"Agent classes\" with subtitle \"any subset\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 2-3: \"Agent classes\" / \"any subset\"; the render's leftmost blue header pill reads \"Agent classes / any subset\"."
+  },
+  {
+    "claim": "Agent classes axis options include \"Car\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 4: \"Car\"; the render shows a box labeled \"Car\" under the Agent classes header."
+  },
+  {
+    "claim": "Agent classes axis options include \"Truck\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 5: \"Truck\"; the render shows a box labeled \"Truck\" under the Agent classes header."
+  },
+  {
+    "claim": "Agent classes axis options include \"Cyclist\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 6: \"Cyclist\"; the render shows a box labeled \"Cyclist\" under the Agent classes header."
+  },
+  {
+    "claim": "Agent classes axis options include \"Pedestrian\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 7: \"Pedestrian\"; the render shows a box labeled \"Pedestrian\" under the Agent classes header."
+  },
+  {
+    "claim": "Axis 2 is labeled \"Dynamics\" with subtitle \"any subset\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 9-10: \"Dynamics\" / \"any subset\"; the render's second (teal) header pill reads \"Dynamics / any subset\"."
+  },
+  {
+    "claim": "Dynamics axis options include \"Unicycle\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 11: \"Unicycle\"; the render shows a box labeled \"Unicycle\" under the Dynamics header."
+  },
+  {
+    "claim": "Dynamics axis options include \"Bicycle (with tire forces)\"",
+    "verdict": "REFUTED",
+    "evidence": "No option printed \"Bicycle (with tire forces)\" exists. pagetext.txt lines 11-13 list the Dynamics options as \"Unicycle\", \"Bicycle\", \"Bicycle with tire forces\"; the render shows exactly three boxes (Unicycle, Bicycle, Bicycle with tire forces). The description's \"Bicycle (with tire forces)\" is a phantom duplicate of the printed \"Bicycle with tire forces\", and the standalone printed option \"Bicycle\" is missing from the description's list."
+  },
+  {
+    "claim": "Dynamics axis options include \"Bicycle with tire forces\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 13: \"Bicycle with tire forces\"; the render shows a box labeled \"Bicycle with tire forces\" under the Dynamics header."
+  },
+  {
+    "claim": "Dynamics axis options include \"Hybrid\"",
+    "verdict": "REFUTED",
+    "evidence": "\"Hybrid\" is not a Dynamics option. pagetext.txt lines 9-14 (Dynamics axis) contain only Unicycle, Bicycle, Bicycle with tire forces; \"Hybrid\" appears at line 19 under the Initialization axis, and the render shows the \"Hybrid\" box in the Initialization column. This is a wrong axis assignment."
+  },
+  {
+    "claim": "Axis 3 is labeled \"Initialization\" with subtitle \"any subset\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 15-16: \"Initialization\" / \"any subset\"; the render's third (green) header pill reads \"Initialization / any subset\"."
+  },
+  {
+    "claim": "Initialization axis options include \"Log\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 17: \"Log\"; the render shows a box labeled \"Log\" under the Initialization header."
+  },
+  {
+    "claim": "Initialization axis options include \"Random\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 18: \"Random\"; the render shows a box labeled \"Random\" under the Initialization header."
+  },
+  {
+    "claim": "Initialization axis options include \"Hybrid\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 19: \"Hybrid\"; the render shows a box labeled \"Hybrid\" under the Initialization header."
+  },
+  {
+    "claim": "Axis 4 is labeled \"Signal control\" with subtitle \"any subset\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 21-22: \"Signal control\" / \"any subset\"; the render's fourth (orange) header pill reads \"Signal control / any subset\"."
+  },
+  {
+    "claim": "Signal control axis options include \"NEMA dual-ring\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 23: \"NEMA dual-ring\"; the render shows a box labeled \"NEMA dual-ring\" under the Signal control header."
+  },
+  {
+    "claim": "Signal control axis options include \"Per-stop-line\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 24: \"Per-stop-line\"; the render shows a box labeled \"Per-stop-line\" under the Signal control header."
+  },
+  {
+    "claim": "Signal control axis options include \"Round-robin\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 25: \"Round-robin\"; the render shows a box labeled \"Round-robin\" under the Signal control header."
+  },
+  {
+    "claim": "Signal control axis options include \"Stop signs\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 26: \"Stop signs\"; the render shows a box labeled \"Stop signs\" under the Signal control header."
+  },
+  {
+    "claim": "Axis 5 is labeled \"Road users\" with subtitle \"any subset\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 28-29: \"Road users\" / \"any subset\"; the render's fifth (purple) header pill reads \"Road users / any subset\"."
+  },
+  {
+    "claim": "Road users axis options include \"Reactive IDM vehicles\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 30: \"Reactive IDM vehicles\"; the render shows a box labeled \"Reactive IDM vehicles\" under the Road users header."
+  },
+  {
+    "claim": "Road users axis options include \"PDM planner vehicles\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 31: \"PDM planner vehicles\"; the render shows a box labeled \"PDM planner vehicles\" under the Road users header."
+  },
+  {
+    "claim": "Road users axis options include \"Parked vehicles\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 32: \"Parked vehicles\"; the render shows a box labeled \"Parked vehicles\" under the Road users header."
+  },
+  {
+    "claim": "Road users axis options include \"Crashed-vehicle clusters\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 33: \"Crashed-vehicle clusters\"; the render shows a box labeled \"Crashed-vehicle clusters\" under the Road users header."
+  },
+  {
+    "claim": "Road users axis options include \"Construction zones\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 34: \"Construction zones\"; the render shows a box labeled \"Construction zones\" under the Road users header."
+  },
+  {
+    "claim": "Road users axis options include \"Static obstacles\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 35: \"Static obstacles\"; the render shows a box labeled \"Static obstacles\" under the Road users header."
+  },
+  {
+    "claim": "Road users axis options include \"Crosswalk pedestrians (ORCA)\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 36: \"Crosswalk pedestrians (ORCA)\"; the render shows a box labeled \"Crosswalk pedestrians (ORCA)\" under the Road users header."
+  },
+  {
+    "claim": "Road users axis options include \"Jaywalking pedestrians\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 37: \"Jaywalking pedestrians\"; the render shows a box labeled \"Jaywalking pedestrians\" under the Road users header."
+  },
+  {
+    "claim": "Axis 6 is labeled \"Randomization\" with subtitle \"any subset\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 39-40: \"Randomization\" / \"any subset\"; the render's rightmost (pink) header pill reads \"Randomization / any subset\"."
+  },
+  {
+    "claim": "Randomization axis options include \"Reward weights\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 41: \"Reward weights\"; the render shows a box labeled \"Reward weights\" under the Randomization header."
+  },
+  {
+    "claim": "Randomization axis options include \"Kinematic coeffs.\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 42: \"Kinematic coeffs.\"; the render shows a box labeled \"Kinematic coeffs.\" under the Randomization header."
+  },
+  {
+    "claim": "Randomization axis options include \"Bounding-box dims\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 43: \"Bounding-box dims\"; the render shows a box labeled \"Bounding-box dims\" under the Randomization header."
+  },
+  {
+    "claim": "Randomization axis options include \"Count/density\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 44: \"Count / density\"; the render shows a box labeled \"Count / density\". The description's \"Count/density\" matches case- and punctuation-insensitively (spacing around the slash differs only)."
+  },
+  {
+    "claim": "The page contains a section numbered 3.2 titled \"Composable Simulation Substrate\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 49-50: \"3.2\" / \"Composable Simulation Substrate\"; the render shows the bold heading \"3.2 Composable Simulation Substrate\"."
+  },
+  {
+    "claim": "Section 3.2 states every subsystem in the engine is independently configurable, and options compose",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 51: \"Every subsystem in the engine is independently configurable, and the options compose.\" The description drops only the article \"the\"."
+  },
+  {
+    "claim": "Section 3.2 states a scenario is assembled by choosing a subset of options along each axis in Figure 3: agent classes, per-class dynamics, initialization, signal control, rule-based road users, and per-episode randomization",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 51-53: \"A scenario is assembled by choosing a subset of options along each axis in Figure 3: agent classes, per-class dynamics, initialization, signal control, rule-based road users, and per-episode randomization.\" Near-verbatim match."
+  },
+  {
+    "claim": "Section 3.2 states the axes compose independently",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 54: \"The axes compose independently, so the reachable scenario space grows combinatorially in the per-axis choices\"."
+  },
+  {
+    "claim": "Section 3.2 states the reachable scenario space grows combinatorially based on the per-axis choices",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 54-55: \"so the reachable scenario space grows combinatorially in the per-axis choices\". The description's \"based on\" is semantically equivalent to \"in\"."
+  },
+  {
+    "claim": "Section 3.2 states the road-user axis admits any subset of its eight generators (Section 4.4)",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 55: \"the road-user axis, for instance, admits any subset of its eight generators (Section 4.4)\". Consistent with the figure, which shows eight road-user option boxes (pagetext.txt lines 30-37)."
+  },
+  {
+    "claim": "Section 3.2 states a new combination is a configuration change rather than a code change, allowing a single map to seed the scenario distributions in Section 4",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 56-57: \"A new combination is a configuration change rather than a code change, which is what lets a single map seed the scenario distributions of Section 4.\" Semantically equivalent."
+  },
+  {
+    "claim": "Section 3.2 states the observation, reward, and kinematic subsystems expose the same switchable control",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 57: \"The observation, reward, and kinematic subsystems expose the same switchable control\"."
+  },
+  {
+    "claim": "Section 3.2 states the policy network resizes automatically to the enabled feature set (Section 5)",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 58-59: \"the policy network resizes automatically to the enabled feature set (Section 5)\"."
+  },
+  {
+    "claim": "The page contains a section numbered 3.3 titled \"Traffic Rule Enforcement\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 65-66: \"3.3\" / \"Traffic Rule Enforcement\"; the render shows the bold heading \"3.3 Traffic Rule Enforcement\"."
+  },
+  {
+    "claim": "Section 3.3 states TerraZero enforces principal driving rules directly at the simulation layer",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 67: \"TerraZero enforces the principal driving rules directly at the simulation layer\". The description drops only the article \"the\"."
+  },
+  {
+    "claim": "Section 3.3 states each violation drives a reward penalty (Section 5)",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 67-68: \"each violation drives a reward penalty (Section 5)\"."
+  },
+  {
+    "claim": "Section 3.3 states each violation enters the evaluation metrics",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 68: \"enters the evaluation metrics\"."
+  },
+  {
+    "claim": "Section 3.3 states violations can trigger configurable consequences such as stopping or removing the offending agent",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 68-69: \"can trigger a configurable consequence such as stopping or removing the offending agent\"."
+  },
+  {
+    "claim": "The \"Collisions and off-road\" paragraph states collisions are resolved by a separating-axis test over oriented bounding boxes",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 70-71: \"Collisions between agents and between an agent and an obstacle are resolved by a separating-axis test over oriented bounding boxes.\" The render shows the italic run-in heading \"Collisions and off-road.\" followed by this text."
+  },
+  {
+    "claim": "The \"Collisions and off-road\" paragraph states off-road excursions are caught by testing the agent's footprint against road-edge and sidewalk boundaries, with an elevation gate to ignore overpasses",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 71-73: \"Off-road excursions are caught by testing the agent’s footprint against road-edge and sidewalk boundaries, with an elevation gate so that overpasses are ignored.\" Semantically equivalent."
+  },
+  {
+    "claim": "The \"Lane direction\" paragraph states compliance is measured from the heading residual between the agent and its current lane",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 74-75: \"Lane-direction compliance is measured from the heading residual between the agent and its current lane\". The render shows the italic run-in heading \"Lane direction.\" followed by this text."
+  },
+  {
+    "claim": "The \"Lane direction\" paragraph states reversed travel is penalized but never masked",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 75: \"so reversed travel is penalized but never masked\"."
+  },
+  {
+    "claim": "The \"Lane direction\" paragraph states map handedness (left- versus right-hand drive) is fixed per map and carried in the lane geometry rather than a separate check",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 75-76: \"Map handedness (left- versus right-hand drive) is fixed per map and carried in the lane geometry rather than in a separate check\". The description's \"left-versus right-hand drive\" differs only in hyphen spacing."
+  },
+  {
+    "claim": "A page number appears at the bottom-right corner of the page",
+    "verdict": "CONFIRMED",
+    "evidence": "The description's sentence is truncated (\"The page number at the bottom-right corner of\"), but its checkable content holds: the render shows the numeral \"9\" at the bottom-right corner, and pagetext.txt's final line (line 78) is \"9\"."
+  }
+]

@@ -1,0 +1,162 @@
+[
+  {
+    "claim": "The image contains a table comparing crash rates of passenger vehicles across different geographic regions in the United States.",
+    "verdict": "CONFIRMED",
+    "evidence": "Render shows a table whose row-group label is 'Crashed Passenger Vehicles (IPMM)' with columns Atlanta, Austin, Los Angeles, Phoenix, and San Francisco to San Jose — all US metropolitan regions."
+  },
+  {
+    "claim": "Table Title: Comparison to Surface Streets",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 3: 'Comparison to Surface Streets'; the render shows this exact heading directly below the table (it functions as the section heading for the table's topic)."
+  },
+  {
+    "claim": "The table compares crash rates for various categories such as police-reported crashes, any-injury reported crashes, airbag deployment, suspected serious injury cases, and fatal crashes.",
+    "verdict": "CONFIRMED",
+    "evidence": "Render shows row labels 'Police-Reported', 'Any-Injury-Reported', 'Any Airbag Deployment', 'Suspected Serious Injury+', and 'Any Fatality'."
+  },
+  {
+    "claim": "The data is presented per million miles (PMM) traveled.",
+    "verdict": "CONFIRMED",
+    "evidence": "Substantively confirmed: render row-group label reads 'Crashed Passenger Vehicles (IPMM)' (incidents per million miles, not 'PMM' as the description glosses it), and the parenthesized rate values equal counts divided by mileage — e.g. Atlanta police-reported 57,103 / 10,180 Mmi = 5.609, matching the printed '(5.609)'."
+  },
+  {
+    "claim": "Column 1 of the table is 'Geo' (geographic region).",
+    "verdict": "CONFIRMED",
+    "evidence": "Render shows the first column header cell 'Geo'."
+  },
+  {
+    "claim": "Column 2 of the table is 'Atlanta'.",
+    "verdict": "CONFIRMED",
+    "evidence": "Render shows the column header cell 'Atlanta'."
+  },
+  {
+    "claim": "Column 3 of the table is 'Austin'.",
+    "verdict": "CONFIRMED",
+    "evidence": "Render shows the column header cell 'Austin'."
+  },
+  {
+    "claim": "Column 4 of the table is 'Los Angeles'.",
+    "verdict": "CONFIRMED",
+    "evidence": "Render shows the column header cell 'Los Angeles'."
+  },
+  {
+    "claim": "Column 5 of the table is 'Phoenix'.",
+    "verdict": "CONFIRMED",
+    "evidence": "Render shows the column header cell 'Phoenix'."
+  },
+  {
+    "claim": "Column 6 of the table is 'San Francisco to San Jose'.",
+    "verdict": "CONFIRMED",
+    "evidence": "Render shows the column header cell 'San Francisco to San Jose'."
+  },
+  {
+    "claim": "A row labeled 'Counties' lists specific counties within each geographic region.",
+    "verdict": "CONFIRMED",
+    "evidence": "Render shows a row labeled 'Counties' whose cells list county names for each region column."
+  },
+  {
+    "claim": "Counties for Atlanta: Fulton, DeKalb, Clayton.",
+    "verdict": "CONFIRMED",
+    "evidence": "Render shows 'Fulton, DeKalb, Clayton' in the Counties cell under the Atlanta column."
+  },
+  {
+    "claim": "Counties for Austin: Travis.",
+    "verdict": "CONFIRMED",
+    "evidence": "Render shows 'Travis' in the Counties cell under the Austin column."
+  },
+  {
+    "claim": "Counties for Los Angeles: Los Angeles.",
+    "verdict": "CONFIRMED",
+    "evidence": "Render shows 'Los Angeles' in the Counties cell under the Los Angeles column."
+  },
+  {
+    "claim": "Counties for Phoenix: Maricopa.",
+    "verdict": "CONFIRMED",
+    "evidence": "Render shows 'Maricopa' in the Counties cell under the Phoenix column."
+  },
+  {
+    "claim": "Counties for San Francisco to San Jose: San Francisco, San Mateo, Santa Clara.",
+    "verdict": "CONFIRMED",
+    "evidence": "Render shows 'San Francisco, San Mateo, Santa Clara' in the Counties cell under the San Francisco to San Jose column."
+  },
+  {
+    "claim": "A row labeled 'Mileage (Mmi)' gives miles traveled.",
+    "verdict": "CONFIRMED",
+    "evidence": "Render shows row label 'Mileage (Mmi)' with values 10,180 (Atlanta), 4,279 (Austin), 30,700 (Los Angeles), 31,285 (Phoenix), 9,965 (San Francisco to San Jose)."
+  },
+  {
+    "claim": "A row is labeled 'Police-Reported'.",
+    "verdict": "CONFIRMED",
+    "evidence": "Render shows the row label 'Police-Reported' (italic)."
+  },
+  {
+    "claim": "A row is labeled 'Any-Injury-Reported'.",
+    "verdict": "CONFIRMED",
+    "evidence": "Render shows the row label 'Any-Injury-Reported'."
+  },
+  {
+    "claim": "A row is labeled 'Any Airbag Deployment'.",
+    "verdict": "CONFIRMED",
+    "evidence": "Render shows the row label 'Any Airbag Deployment'."
+  },
+  {
+    "claim": "A row is labeled 'Suspected Serious Injury+'.",
+    "verdict": "CONFIRMED",
+    "evidence": "Render shows the row label 'Suspected Serious Injury+'."
+  },
+  {
+    "claim": "A row is labeled 'Any Fatality'.",
+    "verdict": "CONFIRMED",
+    "evidence": "Render shows the row label 'Any Fatality'."
+  },
+  {
+    "claim": "The table includes numerical values for each category, such as the number of crashes and fatalities per million miles traveled.",
+    "verdict": "CONFIRMED",
+    "evidence": "Render shows a count and a parenthesized per-million-mile rate for every severity row and region column (e.g. Austin Police-Reported '6,722' over '(1.571)'; Phoenix Any Fatality '169' over '(0.005)')."
+  },
+  {
+    "claim": "Atlanta Police-Reported count: 57,103.",
+    "verdict": "CONFIRMED",
+    "evidence": "Render shows '57,103' in the Atlanta column of the Police-Reported row, with '(5.609)' beneath it."
+  },
+  {
+    "claim": "Atlanta Any-Injury-Reported count: 23,398.",
+    "verdict": "CONFIRMED",
+    "evidence": "Render shows '23,398' in the Atlanta column of the Any-Injury-Reported row, with '(2.298)' beneath it."
+  },
+  {
+    "claim": "Atlanta Any Airbag Deployment count: 10,519.",
+    "verdict": "CONFIRMED",
+    "evidence": "Render shows '10,519' in the Atlanta column of the Any Airbag Deployment row, with '(1.033)' beneath it."
+  },
+  {
+    "claim": "Atlanta Suspected Serious Injury+ count: 812.",
+    "verdict": "CONFIRMED",
+    "evidence": "Render shows '812' in the Atlanta column of the Suspected Serious Injury+ row, with '(0.080)' beneath it."
+  },
+  {
+    "claim": "Atlanta Any Fatality count: 140.",
+    "verdict": "CONFIRMED",
+    "evidence": "Render shows '140' in the Atlanta column of the Any Fatality row, with '(0.014)' beneath it."
+  },
+  {
+    "claim": "The text below the table discusses a comparison of crash rates between freeways and surface streets.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 4: 'Figure 2 shows a crash rate comparison between freeways and surface streets for all severity outcomes.'; the render shows this paragraph below the table under the 'Comparison to Surface Streets' heading."
+  },
+  {
+    "claim": "The text states that surface street crash rates were higher than freeway crash rates across all geographic regions and severity outcomes.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 5-6: 'Surface street crash rates were considerably higher than freeways across all geographic regions and severity outcomes.'"
+  },
+  {
+    "claim": "For any-injury reported crashes, surface street rates were 1.7- to 2.8-times the freeway rate.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 6-7: 'for any-injury reported crashes, surface street rates were 1.7- to 2.8-times the freeway crash rate.'"
+  },
+  {
+    "claim": "For fatal crashes, surface street rates were 1.2- to 5.3-times the freeway rate.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 8-9: 'surface street fatal crash rates were 1.2- to 5.3-times higher than freeway fatal crash rates.'"
+  }
+]

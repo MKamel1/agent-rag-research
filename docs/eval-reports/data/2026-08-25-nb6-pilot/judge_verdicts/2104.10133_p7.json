@@ -1,0 +1,242 @@
+[
+  {
+    "claim": "The page contains a section presenting an analysis of perception data quality.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 23: \"5.3. Analysis of perception data quality\"; the render shows the same heading."
+  },
+  {
+    "claim": "The page contains a section comparing minADE and mAP.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 44: \"5.4. Comparing mAP with minADE\", with body text analyzing minADE vs. mAP (lines 44-100); render shows the same heading."
+  },
+  {
+    "claim": "The page contains only these two main sections (analysis of perception data quality, and minADE vs mAP comparison).",
+    "verdict": "REFUTED",
+    "evidence": "The page also contains a third section: pagetext.txt line 101: \"6. Discussion\" followed by the full Discussion text (lines 101-117); the render shows the \"6. Discussion\" heading and two paragraphs."
+  },
+  {
+    "claim": "minADE stands for \"Minimum Average Distance Error\".",
+    "verdict": "UNVERIFIABLE",
+    "evidence": "Neither pagetext.txt nor the render expands the acronym minADE anywhere on this page; the expansion cannot be confirmed or contradicted from the two ground-truth sources."
+  },
+  {
+    "claim": "mAP stands for \"Mean Average Precision\".",
+    "verdict": "UNVERIFIABLE",
+    "evidence": "Neither pagetext.txt nor the render expands the acronym mAP on this page (line 111 only says \"a novel mAP metric\"); the expansion cannot be confirmed or contradicted from the two sources."
+  },
+  {
+    "claim": "Figure 5 caption title reads \"Distance error statistics of vehicle bounding boxes.\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 13-14: \"Figure 5: Distance error statistics of vehicle bounding boxes.\"; render shows the same bolded caption opening."
+  },
+  {
+    "claim": "Figure 5 caption states three sets of vehicle bounding boxes are compared with the Waymo Open Dataset (WOD) ground truth boxes.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 14-15: \"We compare three sets of vehicle bounding boxes with the Waymo Open Dataset (WOD) ground truth boxes\"."
+  },
+  {
+    "claim": "Figure 5 caption states the comparison is \"on the 5 selected run segments from the val set\".",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 15-16: \"on the 5 selected run segments from the val set\"."
+  },
+  {
+    "claim": "Figure 5 caption states the histogram of distance errors is capped at 0.8m.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 17-18: \"the histogram of distance errors (capped at 0.8m)\"; render histograms also span 0.0-0.8 on the x-axis."
+  },
+  {
+    "claim": "Figure 5 caption states the box recall uses a 3D IoU threshold of 0.03.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 18: \"the box recall (using a 3D IoU threshold of 0.03)\"."
+  },
+  {
+    "claim": "Figure 5 caption states the statistics include mean distance error and standard deviation (std) of the distance error.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 19-20: \"mean distance error and standard deviation (std) of the distance error\" (dehyphenated from \"dis-tance\")."
+  },
+  {
+    "claim": "Figure 5 caption states \"Only boxes with at least one point inside are considered.\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 20: \"Only boxes with at least one point inside are considered.\""
+  },
+  {
+    "claim": "Figure 5 caption states the DE from different boxes are not directly comparable as the recalls are different.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 21-22: \"Note that the DE from different boxes are not directly comparable as the recalls are different.\""
+  },
+  {
+    "claim": "The first Figure 5 histogram panel is titled \"Human Label Boxes\".",
+    "verdict": "CONFIRMED",
+    "evidence": "Render clearly shows \"Human Label Boxes\" above the leftmost histogram panel (panel titles are not in the text layer)."
+  },
+  {
+    "claim": "Human Label Boxes panel shows Recall = 99.29%.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 1-2: \"Recall: 99.29%\"; render shows \"Recall: 99.29%\" in the first panel's annotation."
+  },
+  {
+    "claim": "Human Label Boxes panel shows Mean DE = 0.1849.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 3: \"Mean DE:  0.1849\"; render shows \"Mean DE: 0.1849\" in the first panel."
+  },
+  {
+    "claim": "Human Label Boxes panel shows Std DE = 0.2342.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 4: \"Std DE:     0.2342\"; render shows \"Std DE: 0.2342\" in the first panel."
+  },
+  {
+    "claim": "The second Figure 5 histogram panel is titled \"Offboard Perception Boxes\".",
+    "verdict": "CONFIRMED",
+    "evidence": "Render clearly shows \"Offboard Perception Boxes\" above the middle histogram panel."
+  },
+  {
+    "claim": "Offboard Perception Boxes panel shows Recall = 93.50%.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 5-6: \"Recall: 93.50%\"; render shows \"Recall: 93.50%\" in the middle panel."
+  },
+  {
+    "claim": "Offboard Perception Boxes panel shows Mean DE = 0.1958.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 7: \"Mean DE:  0.1958\"; render shows \"Mean DE: 0.1958\" in the middle panel."
+  },
+  {
+    "claim": "Offboard Perception Boxes panel shows Std DE = 0.2721.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 8: \"Std DE:     0.2721\"; render shows \"Std DE: 0.2721\" in the middle panel."
+  },
+  {
+    "claim": "The third Figure 5 histogram panel is titled \"Baseline Detector Boxes\".",
+    "verdict": "CONFIRMED",
+    "evidence": "Render clearly shows \"Baseline Detector Boxes\" above the rightmost histogram panel."
+  },
+  {
+    "claim": "Baseline Detector Boxes panel shows Recall = 87.31%.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 9-10: \"Recall: 87.31%\"; render shows \"Recall: 87.31%\" in the right panel."
+  },
+  {
+    "claim": "Baseline Detector Boxes panel shows Mean DE = 0.2738.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 11: \"Mean DE:  0.2738\"; render shows \"Mean DE: 0.2738\" in the right panel."
+  },
+  {
+    "claim": "Baseline Detector Boxes panel shows Std DE = 0.3800.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 12: \"Std DE:     0.3800\"; render shows \"Std DE: 0.3800\" in the right panel."
+  },
+  {
+    "claim": "Figure 5 x-axis label reads \"Distance Error (m)\".",
+    "verdict": "CONFIRMED",
+    "evidence": "Render clearly shows \"Distance Error (m)\" beneath each of the three histogram panels (not present in the text layer, which captured only the stats annotations)."
+  },
+  {
+    "claim": "Figure 5 y-axis label reads \"Fraction of Boxes\".",
+    "verdict": "CONFIRMED",
+    "evidence": "Render clearly shows \"Fraction of Boxes\" as the vertical y-axis label on the left of the histogram row (not present in the text layer)."
+  },
+  {
+    "claim": "Figure 6 caption title reads \"Comparison of minADE and mAP across increasing numbers of predictions.\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 86-87: \"Figure 6: Comparison of minADE and mAP across increasing numbers of predictions.\"; render shows the same bolded caption opening."
+  },
+  {
+    "claim": "Figure 6 caption states \"Using the best LSTM baseline model in Section 5.1\".",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 87-88: \"Using the best LSTM baseline model in Section 5.1\"."
+  },
+  {
+    "claim": "Figure 6 caption states the minADE (top) artificially improves as one allows for increasing numbers of predictions.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 88-89: \"the minADE (top) artiﬁcially improves as one allows for increasing numbers of predictions\" (ligature ﬁ)."
+  },
+  {
+    "claim": "Figure 6 caption states the mAP (bottom) saturates as the model must produce high quality confidence estimates in addition to accurate trajectories.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 90-92: \"the mAP (bottom) saturates as the model must produce high quality conﬁdence estimates in addition to accurate trajectories.\""
+  },
+  {
+    "claim": "Figure 6 consists of a top chart showing minADE and a bottom chart showing mAP.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt caption lines 88 and 90 explicitly say \"minADE (top)\" and \"the mAP (bottom)\"; the render shows the minADE panel above the mAP panel."
+  },
+  {
+    "claim": "Figure 6 top chart y-axis label reads \"minADE (Vehicles)\".",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 68: \"minADE (Vehicles)\"; render shows it as the y-axis label of the top panel."
+  },
+  {
+    "claim": "Figure 6 bottom chart y-axis label reads \"mAP (Vehicles)\".",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 82: \"mAP (Vehicles)\"; render shows it as the y-axis label of the bottom panel."
+  },
+  {
+    "claim": "The top (minADE) chart's x-axis is \"Number of Predictions (K)\".",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 78: \"Number of Predictions (K)\" — printed once beneath the bottom panel as the shared x-axis label for both stacked panels; the top panel carries the same K tick values 1 3 6 12 18 24 (lines 56-61). Semantically correct for the top chart, though the label string itself is printed only under the bottom panel."
+  },
+  {
+    "claim": "The bottom (mAP) chart's x-axis label reads \"Number of Predictions (K)\".",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 78: \"Number of Predictions (K)\"; render shows it centered beneath the bottom panel."
+  },
+  {
+    "claim": "The top chart legend contains the entry \"minADE@3s\".",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 69: \"minADE@3s\"; render shows it in the top panel legend (green circle marker)."
+  },
+  {
+    "claim": "The top chart legend contains the entry \"minADE@5s\".",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 70: \"minADE@5s\"; render shows it in the top panel legend (orange square marker)."
+  },
+  {
+    "claim": "The top chart legend contains the entry \"minADE@8s\".",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 71: \"minADE@8s\"; render shows it in the top panel legend (blue diamond marker)."
+  },
+  {
+    "claim": "The bottom chart legend contains the entry \"mAP@3s\".",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 83: \"mAP@3s\"; render shows it in the bottom panel legend (green circle marker)."
+  },
+  {
+    "claim": "The bottom chart legend contains the entry \"mAP@5s\".",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 84: \"mAP@5s\"; render shows it in the bottom panel legend (orange square marker)."
+  },
+  {
+    "claim": "The bottom chart legend contains the entry \"mAP@8s\".",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 85: \"mAP@8s\"; render shows it in the bottom panel legend (blue diamond marker)."
+  },
+  {
+    "claim": "minADE@3s takes the values ~0.5, ~1.0, ~1.2, ~1.4, ~1.6 (listed as legend-entry values in the description).",
+    "verdict": "REFUTED",
+    "evidence": "Render shows the green minADE@3s curve monotonically DECREASING from ≈0.8 at K=1 to ≈0.2 at K=24; it never reaches 1.0-1.6 anywhere (y-axis ticks run 0.5-3.0). The claimed ascending list contradicts the plotted curve; the printed legend (pagetext lines 69-71) also carries no numeric values."
+  },
+  {
+    "claim": "minADE@5s takes the values ~0.7, ~1.0, ~1.2, ~1.4, ~1.6 (listed as legend-entry values in the description).",
+    "verdict": "REFUTED",
+    "evidence": "Render shows the orange minADE@5s curve DECREASING from ≈1.65 at K=1 to ≈0.5 at K=24; the claimed ascending sequence 0.7→1.6 does not match any consistent reading of the curve (only the single K=1 point is ≈1.6). Printed legend (pagetext line 70) carries no numbers."
+  },
+  {
+    "claim": "minADE@8s takes the values ~1.0, ~1.3, ~1.5, ~1.7, ~1.9 (listed as legend-entry values in the description).",
+    "verdict": "REFUTED",
+    "evidence": "Render shows the blue minADE@8s curve starting at ≈3.1 at K=1 — far above every claimed value (max 1.9) — then decreasing ≈1.8, ≈1.4, ≈1.2, ≈1.05, ≈0.95; the claimed ascending list contradicts the plotted curve. Printed legend (pagetext line 71) carries no numbers."
+  },
+  {
+    "claim": "mAP@3s takes the values ~0.2, ~0.4, ~0.6, ~0.8, ~1.0 (listed as legend-entry values in the description).",
+    "verdict": "REFUTED",
+    "evidence": "Render shows the green mAP@3s curve peaking at ≈0.37 (K=3) and ending ≈0.22; the bottom panel's y-axis ticks only span 0.1-0.3, so values of 0.6-1.0 are impossible on this chart. Printed legend (pagetext line 83) carries no numbers."
+  },
+  {
+    "claim": "mAP@5s takes the values ~0.2, ~0.4, ~0.6, ~0.8, ~1.0 (listed as legend-entry values in the description).",
+    "verdict": "REFUTED",
+    "evidence": "Render shows the orange mAP@5s curve peaking at ≈0.31 (K=3) and ending ≈0.20; claimed values 0.4-1.0 exceed anything plotted (y-axis ticks 0.1-0.3). Printed legend (pagetext line 84) carries no numbers."
+  },
+  {
+    "claim": "mAP@8s takes a value ~0.1 (the description's list is truncated after this entry).",
+    "verdict": "CONFIRMED",
+    "evidence": "Render shows the blue mAP@8s curve starting at ≈0.08 at K=1 (its minimum), consistent with \"~0.1\" within half a minor gridline (≈0.025-0.05). The description truncates mid-list (\"mAP@8s: ~0.1,\"), so only this first value is checkable; it passes."
+  }
+]

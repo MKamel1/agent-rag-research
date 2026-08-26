@@ -1,0 +1,167 @@
+[
+  {
+    "claim": "The page contains a figure captioned \"Fig. 5\".",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 31: \"Fig. 5: Our model architecture consists of 7 backbone units (each containing 4 back-\"; the render clearly shows the bold caption \"Fig. 5:\" below the architecture diagram."
+  },
+  {
+    "claim": "The Fig. 5 caption states the model architecture consists of 7 backbone units.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 31: \"Our model architecture consists of 7 backbone units (each containing 4 back-\"; legible verbatim in the render caption."
+  },
+  {
+    "claim": "The Fig. 5 caption states each backbone unit contains 4 backbone MMDiT blocks and 1 cross-view attention block.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 31-32: \"7 backbone units (each containing 4 back-\" + \"bone MMDiT blocks and 1 cross-view attention block) and 3 control units\" (\"back-bone\" is line-break hyphenation of \"backbone\"); matches the render."
+  },
+  {
+    "claim": "The Fig. 5 caption states the architecture also has 3 control units.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 32: \"and 3 control units. We have\"; legible verbatim in the render."
+  },
+  {
+    "claim": "The Fig. 5 caption states: \"We have provided a detailed description of a single backbone unit and its corresponding control unit.\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 32-33: \"We have / provided a detailed description of a single backbone unit and its corresponding control / unit.\"; matches the render."
+  },
+  {
+    "claim": "The Fig. 5 caption states: \"In this design, every four backbone blocks are alternately arranged with a cross-view attention block.\"",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 34-35: \"In this design, every four backbone blocks are alternately arranged with a cross- / view attention block.\" (\"cross-view\" hyphenated across the line break); matches the render."
+  },
+  {
+    "claim": "The figure provides a detailed/enlarged view of a single backbone unit and its corresponding control unit.",
+    "verdict": "CONFIRMED",
+    "evidence": "The render shows an enlarged two-unit diagram (left unit built around a \"Multiview Backbone DiT Block\", right unit around a \"Multiview Control DiT Block\") connected by dashed expansion lines to one highlighted unit pair in the full-model strip; caption (pagetext lines 32-33) confirms the single backbone unit + corresponding control unit are detailed."
+  },
+  {
+    "claim": "Each backbone unit contains 4 backbone MMDiT blocks followed by one cross-view attention block (i.e., four backbone blocks alternately arranged with cross-view attention).",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 31-32 (\"4 back-bone MMDiT blocks and 1 cross-view attention block\") and lines 34-35 (\"every four backbone blocks are alternately arranged with a cross-view attention block\"); the enlarged unit in the render also shows 4 stacked \"Video Backbone DiT Block\" boxes."
+  },
+  {
+    "claim": "The 3 control units are part of the overall model structure.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 32: \"and 3 control units\"; the render's full-model strip shows a bottom row of 3 control units alongside the 7 backbone units."
+  },
+  {
+    "claim": "The control units are not detailed in this description (they are only said to be part of the overall structure).",
+    "verdict": "UNVERIFIABLE",
+    "evidence": "Self-referential statement about the description text itself, not a page-content claim, so neither source can confirm or refute it as phrased. (For reference, the page's figure does render a detailed control unit containing \"Multiview Control DiT Block\" and 4 \"Video Control DiT Block\" boxes, pagetext lines 3-7, and the caption says a corresponding control unit is described.)"
+  },
+  {
+    "claim": "The full-model strip in the figure depicts 7 backbone units.",
+    "verdict": "CONFIRMED",
+    "evidence": "The render's horizontal strip shows exactly 7 repeated backbone units in its top row (one pair enclosed in a dashed detail box); matches the caption's \"7 backbone units\" (pagetext line 31)."
+  },
+  {
+    "claim": "The full-model strip in the figure depicts 3 control units.",
+    "verdict": "CONFIRMED",
+    "evidence": "The render's strip shows exactly 3 control units in its bottom row; matches the caption's \"3 control units\" (pagetext line 32)."
+  },
+  {
+    "claim": "There is a section headed \"Multi-view Video\".",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 36: \"Multi-view Video. For each scene we use 6 synchronized camera streams over\"; the render shows the bold run-in heading \"Multi-view Video.\""
+  },
+  {
+    "claim": "For each scene, 6 synchronized camera streams over 16 frames are used.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 36-37: \"For each scene we use 6 synchronized camera streams over / 16 frames.\" — numerals \"6\" and \"16\" exact; legible in the render."
+  },
+  {
+    "claim": "The RGB images are encoded into a latent representation using a pretrained VAE.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 37-38: \"The RGB images are encoded into a latent representation using a / pretrained VAE, which serves as the input and prediction target of the DiT.\"; legible in the render."
+  },
+  {
+    "claim": "The VAE latent serves as the input and prediction target of the DiT.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 38: \"pretrained VAE, which serves as the input and prediction target of the DiT.\"; legible in the render."
+  },
+  {
+    "claim": "The page expands \"VAE\" as \"Variational Autoencoder\".",
+    "verdict": "UNVERIFIABLE",
+    "evidence": "The expansion appears only in the description's parenthetical; pagetext.txt uses only the abbreviation \"VAE\" (line 38) and no such expansion is legible anywhere in the render, so it can be neither confirmed nor refuted from this page."
+  },
+  {
+    "claim": "The page expands \"DiT\" as \"DiViNet Transformer\".",
+    "verdict": "UNVERIFIABLE",
+    "evidence": "The string \"DiViNet\" appears nowhere in pagetext.txt nor anywhere legible in the render; the page uses only \"DiT\" (e.g., line 38), so this expansion is neither confirmed nor contradicted by the page's own ground truth."
+  },
+  {
+    "claim": "The latent tensor represents a temporally downsampled and spatially compressed version of the original multi-view video.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 39-40: \"The latent tensor therefore represents a temporally downsampled and spatially / compressed version of the original multi-view video.\"; legible in the render."
+  },
+  {
+    "claim": "There is a section headed \"Camera Parameters\".",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 41: \"Camera Parameters. Each camera is associated with its intrinsic and ex-\"; the render shows the bold run-in heading \"Camera Parameters.\""
+  },
+  {
+    "claim": "Each camera is associated with its intrinsic and extrinsic parameters.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 41-42: \"Each camera is associated with its intrinsic and ex- / trinsic parameters.\" (\"ex-trinsic\" hyphenated across the line break); legible in the render."
+  },
+  {
+    "claim": "The camera intrinsics describe the projection from camera coordinates to the image plane.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 42-43: \"The camera intrinsics describe the projection from camera / coordinates to the image plane\"; legible in the render."
+  },
+  {
+    "claim": "The camera extrinsics specify the camera pose with respect to the ego vehicle and global coordinate system through a rotation and translation.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 43-45: \"while the extrinsics specify the camera pose with / respect to the ego vehicle and global coordinate system through a rotation and / translation.\"; legible in the render."
+  },
+  {
+    "claim": "These camera parameters are used to maintain geometric consistency across camera views.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 45-46: \"These parameters are used to maintain geometric consistency across / camera views.\"; legible in the render."
+  },
+  {
+    "claim": "There is a section headed \"BEV Semantic Map\".",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 47: \"BEV Semantic Map. Bird’s-eye-view (BEV) semantic map of the environment\"; the render shows the bold run-in heading \"BEV Semantic Map.\""
+  },
+  {
+    "claim": "A bird's-eye-view (BEV) semantic map of the environment centered at the ego vehicle is described.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 47-48: \"Bird’s-eye-view (BEV) semantic map of the environment / centered at the ego vehicle.\"; legible in the render."
+  },
+  {
+    "claim": "The BEV map contains multiple binary channels representing different map elements such as road regions and pedestrian crossings.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt lines 48-49: \"The BEV map contains multiple binary channels rep- / resenting different map elements such as road regions and pedestrian crossings.\"; legible in the render."
+  },
+  {
+    "claim": "This representation provides a compact spatial description of the scene layout.",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 50: \"This representation provides a compact spatial description of the scene layout.\"; legible in the render."
+  },
+  {
+    "claim": "The figure includes a block labeled \"Multiview Backbone DiT Block\".",
+    "verdict": "CONFIRMED",
+    "evidence": "pagetext.txt line 8: \"Multiview Backbone DiT Block\"; the render shows this as the bold central block of the enlarged backbone unit."
+  },
+  {
+    "claim": "The \"Multiview Backbone DiT Block\" is a block in the backbone unit containing MMDiT blocks followed by cross-view attention.",
+    "verdict": "CONFIRMED",
+    "evidence": "Consistent with the caption, pagetext.txt lines 31-35: units contain \"4 back-bone MMDiT blocks and 1 cross-view attention block\" with \"every four backbone blocks ... alternately arranged with a cross-view attention block\"; the enlarged unit in the render shows the Multiview Backbone DiT Block with 4 \"Video Backbone DiT Block\" boxes inside it."
+  },
+  {
+    "claim": "\"Video Reshape\" is defined as the transformation from [B, T', (VH'W'), C] to [B, V, (T'H'W'), C].",
+    "verdict": "CONFIRMED",
+    "evidence": "The equation appears in pagetext.txt lines 27-28: \"𝐵, 𝑇′, 𝑉𝐻′𝑊′ , 𝐶 / →[𝐵, 𝑉, (𝑇′𝐻′𝑊′), 𝐶]\" (i.e., [B,T',VH'W',C] -> [B,V,(T'H'W'),C]; source brackets/parens dropped by extraction, punctuation-insensitive match). In the render this equation sits directly beneath the bold label \"Video Reshape:\" on the figure's right-hand legend, matching the description's label-to-equation pairing."
+  },
+  {
+    "claim": "\"Multiview Reshape\" is defined as the transformation from [B, V, (T'H'W'), C] to [B, T', (VH'W'), C].",
+    "verdict": "CONFIRMED",
+    "evidence": "The equation appears in pagetext.txt lines 25-26: \"𝐵, 𝑉, 𝑇′𝐻′𝑊′ , 𝐶 / →[𝐵, 𝑇′, (𝑉𝐻′𝑊′), 𝐶]\" (i.e., [B,V,T'H'W',C] -> [B,T',(VH'W'),C]). In the render this equation sits directly beneath the bold label \"Multiview Reshape:\" on the figure's right-hand legend, matching the description's label-to-equation pairing."
+  },
+  {
+    "claim": "The figure shows the flow of data through these blocks and transformations.",
+    "verdict": "CONFIRMED",
+    "evidence": "The render shows directional arrows through the enlarged units (up-arrows at top labeled \"to next block...\", dashed connectors labeled \"from previous block...\", input/output labels x, x_c, y_video, y_multiview, y_c^video, y_c^multiview); pagetext.txt lines 17-18 contain \"to next block…\" and \"from previous block…\"."
+  }
+]
