@@ -1,0 +1,2348 @@
+{
+  "fixture": "gt_wmr",
+  "fixture_path": "fixtures/eval/gt_wmr.json",
+  "collection": "waymo_av_safety",
+  "n_questions": 82,
+  "n_absent": 12,
+  "n_answerable": 70,
+  "n_distinct_anchor_tokens_probed": 204,
+  "elapsed_seconds": 0.1,
+  "questions": [
+    {
+      "question_id": "Q-WMR-001",
+      "absent": false,
+      "query_len_chars": 187,
+      "query_len_words": 27,
+      "anchors": [
+        {
+          "token": "high-resolution",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "weekend-nighttime",
+          "rule": "rare_proxy",
+          "hit": false
+        },
+        {
+          "token": "involvement",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "ip100mm?",
+          "rule": "numeric",
+          "hit": false
+        }
+      ],
+      "n_anchors": 4,
+      "n_hits": 2,
+      "hit_rate": 0.5
+    },
+    {
+      "question_id": "Q-WMR-002",
+      "absent": false,
+      "query_len_chars": 232,
+      "query_len_words": 36,
+      "anchors": [
+        {
+          "token": "fcir",
+          "rule": "acronym",
+          "hit": true
+        },
+        {
+          "token": "involvements",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "surface-street",
+          "rule": "rare_proxy",
+          "hit": false
+        }
+      ],
+      "n_anchors": 3,
+      "n_hits": 2,
+      "hit_rate": 0.6666666666666666
+    },
+    {
+      "question_id": "Q-WMR-003",
+      "absent": false,
+      "query_len_chars": 146,
+      "query_len_words": 22,
+      "anchors": [
+        {
+          "token": "nexar",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "naturalistic",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "nyc",
+          "rule": "acronym",
+          "hit": true
+        },
+        {
+          "token": "five-borough",
+          "rule": "rare_proxy",
+          "hit": false
+        },
+        {
+          "token": "contributed",
+          "rule": "rare_proxy",
+          "hit": true
+        }
+      ],
+      "n_anchors": 5,
+      "n_hits": 4,
+      "hit_rate": 0.8
+    },
+    {
+      "question_id": "Q-WMR-004",
+      "absent": false,
+      "query_len_chars": 160,
+      "query_len_words": 26,
+      "anchors": [
+        {
+          "token": "nexar",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "naturalistic",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "vru",
+          "rule": "acronym",
+          "hit": true
+        }
+      ],
+      "n_anchors": 3,
+      "n_hits": 3,
+      "hit_rate": 1.0
+    },
+    {
+      "question_id": "Q-WMR-005",
+      "absent": false,
+      "query_len_chars": 191,
+      "query_len_words": 33,
+      "anchors": [
+        {
+          "token": "building",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "scientific",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "consensus",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "us",
+          "rule": "acronym",
+          "hit": true
+        },
+        {
+          "token": "100m",
+          "rule": "numeric",
+          "hit": true
+        },
+        {
+          "token": "vmt",
+          "rule": "acronym",
+          "hit": true
+        },
+        {
+          "token": "2024,",
+          "rule": "numeric",
+          "hit": true
+        },
+        {
+          "token": "1976",
+          "rule": "numeric",
+          "hit": true
+        },
+        {
+          "token": "2024?",
+          "rule": "numeric",
+          "hit": false
+        }
+      ],
+      "n_anchors": 9,
+      "n_hits": 8,
+      "hit_rate": 0.8888888888888888
+    },
+    {
+      "question_id": "Q-WMR-006",
+      "absent": false,
+      "query_len_chars": 155,
+      "query_len_words": 24,
+      "anchors": [
+        {
+          "token": "1938",
+          "rule": "numeric",
+          "hit": true
+        },
+        {
+          "token": "publication",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "field",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "safe",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "travel",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "motion",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "operationalizes,",
+          "rule": "rare_proxy",
+          "hit": false
+        }
+      ],
+      "n_anchors": 7,
+      "n_hits": 6,
+      "hit_rate": 0.8571428571428571
+    },
+    {
+      "question_id": "Q-WMR-007",
+      "absent": false,
+      "query_len_chars": 157,
+      "query_len_words": 21,
+      "anchors": [
+        {
+          "token": "space-sharing",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "active-inference",
+          "rule": "rare_proxy",
+          "hit": true
+        }
+      ],
+      "n_anchors": 2,
+      "n_hits": 2,
+      "hit_rate": 1.0
+    },
+    {
+      "question_id": "Q-WMR-008",
+      "absent": false,
+      "query_len_chars": 206,
+      "query_len_words": 31,
+      "anchors": [
+        {
+          "token": "collision",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "avoidance",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "testing",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "nieon",
+          "rule": "acronym",
+          "hit": true
+        },
+        {
+          "token": "reconstructed",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "fatal-collision",
+          "rule": "rare_proxy",
+          "hit": false
+        },
+        {
+          "token": "scanlon",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "(2022)?",
+          "rule": "numeric",
+          "hit": false
+        }
+      ],
+      "n_anchors": 8,
+      "n_hits": 6,
+      "hit_rate": 0.75
+    },
+    {
+      "question_id": "Q-WMR-009",
+      "absent": false,
+      "query_len_chars": 182,
+      "query_len_words": 26,
+      "anchors": [
+        {
+          "token": "16",
+          "rule": "numeric",
+          "hit": true
+        },
+        {
+          "token": "reconstructed",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "chandler",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "waymo",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "driver",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "nieon",
+          "rule": "acronym",
+          "hit": true
+        },
+        {
+          "token": "serious-injury-risk",
+          "rule": "rare_proxy",
+          "hit": false
+        }
+      ],
+      "n_anchors": 7,
+      "n_hits": 6,
+      "hit_rate": 0.8571428571428571
+    },
+    {
+      "question_id": "Q-WMR-010",
+      "absent": false,
+      "query_len_chars": 135,
+      "query_len_words": 23,
+      "anchors": [
+        {
+          "token": "police-reported",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "us,",
+          "rule": "acronym",
+          "hit": true
+        }
+      ],
+      "n_anchors": 2,
+      "n_hits": 2,
+      "hit_rate": 1.0
+    },
+    {
+      "question_id": "Q-WMR-011",
+      "absent": false,
+      "query_len_chars": 120,
+      "query_len_words": 16,
+      "anchors": [
+        {
+          "token": "assessing-a-safety-case",
+          "rule": "entity",
+          "hit": false
+        },
+        {
+          "token": "falsifiable",
+          "rule": "rare_proxy",
+          "hit": true
+        }
+      ],
+      "n_anchors": 2,
+      "n_hits": 1,
+      "hit_rate": 0.5
+    },
+    {
+      "question_id": "Q-WMR-012",
+      "absent": false,
+      "query_len_chars": 160,
+      "query_len_words": 21,
+      "anchors": [
+        {
+          "token": "stoplights-to-on-ramps",
+          "rule": "entity",
+          "hit": false
+        },
+        {
+          "token": "any-airbag-deployed",
+          "rule": "rare_proxy",
+          "hit": false
+        }
+      ],
+      "n_anchors": 2,
+      "n_hits": 0,
+      "hit_rate": 0.0
+    },
+    {
+      "question_id": "Q-WMR-013",
+      "absent": false,
+      "query_len_chars": 148,
+      "query_len_words": 21,
+      "anchors": [
+        {
+          "token": "police-reported",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "stoplights-to-on-ramps",
+          "rule": "entity",
+          "hit": false
+        }
+      ],
+      "n_anchors": 2,
+      "n_hits": 1,
+      "hit_rate": 0.5
+    },
+    {
+      "question_id": "Q-WMR-014",
+      "absent": false,
+      "query_len_chars": 70,
+      "query_len_words": 11,
+      "anchors": [
+        {
+          "token": "sae",
+          "rule": "acronym",
+          "hit": true
+        },
+        {
+          "token": "j3164",
+          "rule": "numeric",
+          "hit": true
+        },
+        {
+          "token": "drivership",
+          "rule": "entity",
+          "hit": true
+        }
+      ],
+      "n_anchors": 3,
+      "n_hits": 3,
+      "hit_rate": 1.0
+    },
+    {
+      "question_id": "Q-WMR-015",
+      "absent": false,
+      "query_len_chars": 95,
+      "query_len_words": 16,
+      "anchors": [
+        {
+          "token": "drivership",
+          "rule": "entity",
+          "hit": true
+        }
+      ],
+      "n_anchors": 1,
+      "n_hits": 1,
+      "hit_rate": 1.0
+    },
+    {
+      "question_id": "Q-WMR-016",
+      "absent": false,
+      "query_len_chars": 114,
+      "query_len_words": 14,
+      "anchors": [
+        {
+          "token": "waymo",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "'unreasonable",
+          "rule": "rare_proxy",
+          "hit": false
+        },
+        {
+          "token": "absence-of-unreasonable-risk",
+          "rule": "entity",
+          "hit": false
+        }
+      ],
+      "n_anchors": 3,
+      "n_hits": 1,
+      "hit_rate": 0.3333333333333333
+    },
+    {
+      "question_id": "Q-WMR-017",
+      "absent": false,
+      "query_len_chars": 185,
+      "query_len_words": 32,
+      "anchors": [
+        {
+          "token": "us",
+          "rule": "acronym",
+          "hit": true
+        },
+        {
+          "token": "motorcyclists",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "2022,",
+          "rule": "numeric",
+          "hit": true
+        },
+        {
+          "token": "100m",
+          "rule": "numeric",
+          "hit": true
+        },
+        {
+          "token": "vmt,",
+          "rule": "acronym",
+          "hit": true
+        }
+      ],
+      "n_anchors": 5,
+      "n_hits": 5,
+      "hit_rate": 1.0
+    },
+    {
+      "question_id": "Q-WMR-018",
+      "absent": false,
+      "query_len_chars": 109,
+      "query_len_words": 17,
+      "anchors": [
+        {
+          "token": "gidas",
+          "rule": "acronym",
+          "hit": true
+        },
+        {
+          "token": "motorcyclist",
+          "rule": "rare_proxy",
+          "hit": true
+        }
+      ],
+      "n_anchors": 2,
+      "n_hits": 2,
+      "hit_rate": 1.0
+    },
+    {
+      "question_id": "Q-WMR-019",
+      "absent": false,
+      "query_len_chars": 168,
+      "query_len_words": 27,
+      "anchors": [
+        {
+          "token": "nhtsa's",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "2022",
+          "rule": "numeric",
+          "hit": true
+        },
+        {
+          "token": "nopus",
+          "rule": "acronym",
+          "hit": false
+        },
+        {
+          "token": "unrestrained?",
+          "rule": "rare_proxy",
+          "hit": false
+        }
+      ],
+      "n_anchors": 4,
+      "n_hits": 2,
+      "hit_rate": 0.5
+    },
+    {
+      "question_id": "Q-WMR-020",
+      "absent": false,
+      "query_len_chars": 109,
+      "query_len_words": 17,
+      "anchors": [
+        {
+          "token": "0.5",
+          "rule": "numeric",
+          "hit": true
+        },
+        {
+          "token": "0.3",
+          "rule": "numeric",
+          "hit": true
+        }
+      ],
+      "n_anchors": 2,
+      "n_hits": 2,
+      "hit_rate": 1.0
+    },
+    {
+      "question_id": "Q-WMR-021",
+      "absent": false,
+      "query_len_chars": 243,
+      "query_len_words": 35,
+      "anchors": [
+        {
+          "token": "san",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "francisco",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "phoenix",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "speed-compliance",
+          "rule": "rare_proxy",
+          "hit": false
+        },
+        {
+          "token": "85th-percentile",
+          "rule": "numeric",
+          "hit": false
+        },
+        {
+          "token": "serious-injury",
+          "rule": "rare_proxy",
+          "hit": true
+        }
+      ],
+      "n_anchors": 6,
+      "n_hits": 4,
+      "hit_rate": 0.6666666666666666
+    },
+    {
+      "question_id": "Q-WMR-022",
+      "absent": false,
+      "query_len_chars": 152,
+      "query_len_words": 22,
+      "anchors": [
+        {
+          "token": "target",
+          "rule": "acronym",
+          "hit": true
+        },
+        {
+          "token": "impact-speed",
+          "rule": "rare_proxy",
+          "hit": true
+        }
+      ],
+      "n_anchors": 2,
+      "n_hits": 2,
+      "hit_rate": 1.0
+    },
+    {
+      "question_id": "Q-WMR-023",
+      "absent": false,
+      "query_len_chars": 119,
+      "query_len_words": 17,
+      "anchors": [
+        {
+          "token": "impact-speed",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "target",
+          "rule": "acronym",
+          "hit": true
+        }
+      ],
+      "n_anchors": 2,
+      "n_hits": 2,
+      "hit_rate": 1.0
+    },
+    {
+      "question_id": "Q-WMR-024",
+      "absent": false,
+      "query_len_chars": 93,
+      "query_len_words": 15,
+      "anchors": [
+        {
+          "token": "collision-avoidance",
+          "rule": "rare_proxy",
+          "hit": true
+        }
+      ],
+      "n_anchors": 1,
+      "n_hits": 1,
+      "hit_rate": 1.0
+    },
+    {
+      "question_id": "Q-WMR-025",
+      "absent": false,
+      "query_len_chars": 147,
+      "query_len_words": 19,
+      "anchors": [
+        {
+          "token": "looking-for-an-out",
+          "rule": "entity",
+          "hit": false
+        },
+        {
+          "token": "participants'",
+          "rule": "rare_proxy",
+          "hit": true
+        }
+      ],
+      "n_anchors": 2,
+      "n_hits": 1,
+      "hit_rate": 0.5
+    },
+    {
+      "question_id": "Q-WMR-026",
+      "absent": false,
+      "query_len_chars": 141,
+      "query_len_words": 22,
+      "anchors": [
+        {
+          "token": "waymo",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "phoenix,",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "san",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "francisco,",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "los",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "angeles,",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "austin",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "56.7-million-mile",
+          "rule": "numeric",
+          "hit": false
+        }
+      ],
+      "n_anchors": 8,
+      "n_hits": 7,
+      "hit_rate": 0.875
+    },
+    {
+      "question_id": "Q-WMR-027",
+      "absent": false,
+      "query_len_chars": 176,
+      "query_len_words": 22,
+      "anchors": [
+        {
+          "token": "56.7-million-mile",
+          "rule": "numeric",
+          "hit": false
+        },
+        {
+          "token": "statistically",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "significant",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "any-injury-reported",
+          "rule": "entity",
+          "hit": true
+        }
+      ],
+      "n_anchors": 4,
+      "n_hits": 3,
+      "hit_rate": 0.75
+    },
+    {
+      "question_id": "Q-WMR-028",
+      "absent": false,
+      "query_len_chars": 166,
+      "query_len_words": 22,
+      "anchors": [
+        {
+          "token": "waymo",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "distributed",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "s2-cell",
+          "rule": "numeric",
+          "hit": true
+        },
+        {
+          "token": "police-reported",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "benchmarking?",
+          "rule": "rare_proxy",
+          "hit": false
+        }
+      ],
+      "n_anchors": 5,
+      "n_hits": 4,
+      "hit_rate": 0.8
+    },
+    {
+      "question_id": "Q-WMR-029",
+      "absent": false,
+      "query_len_chars": 242,
+      "query_len_words": 35,
+      "anchors": [
+        {
+          "token": "25.3",
+          "rule": "numeric",
+          "hit": true
+        },
+        {
+          "token": "property-damage",
+          "rule": "rare_proxy",
+          "hit": false
+        },
+        {
+          "token": "bodily-injury",
+          "rule": "rare_proxy",
+          "hit": false
+        },
+        {
+          "token": "waymo",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "ads",
+          "rule": "acronym",
+          "hit": true
+        },
+        {
+          "token": "driving-population",
+          "rule": "rare_proxy",
+          "hit": false
+        }
+      ],
+      "n_anchors": 6,
+      "n_hits": 3,
+      "hit_rate": 0.5
+    },
+    {
+      "question_id": "Q-WMR-030",
+      "absent": false,
+      "query_len_chars": 156,
+      "query_len_words": 23,
+      "anchors": [
+        {
+          "token": "multiplicative",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "waymo",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "ads",
+          "rule": "acronym",
+          "hit": true
+        }
+      ],
+      "n_anchors": 3,
+      "n_hits": 3,
+      "hit_rate": 1.0
+    },
+    {
+      "question_id": "Q-WMR-031",
+      "absent": false,
+      "query_len_chars": 208,
+      "query_len_words": 28,
+      "anchors": [
+        {
+          "token": "vru",
+          "rule": "acronym",
+          "hit": true
+        },
+        {
+          "token": "video-verified",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "reconstructed",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "pedestrians,",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "motorcyclists?",
+          "rule": "rare_proxy",
+          "hit": false
+        },
+        {
+          "token": "intersections?",
+          "rule": "rare_proxy",
+          "hit": true
+        }
+      ],
+      "n_anchors": 6,
+      "n_hits": 5,
+      "hit_rate": 0.8333333333333334
+    },
+    {
+      "question_id": "Q-WMR-032",
+      "absent": false,
+      "query_len_chars": 173,
+      "query_len_words": 30,
+      "anchors": [
+        {
+          "token": "523",
+          "rule": "numeric",
+          "hit": true
+        },
+        {
+          "token": "vru",
+          "rule": "acronym",
+          "hit": true
+        },
+        {
+          "token": "vrus",
+          "rule": "entity",
+          "hit": true
+        }
+      ],
+      "n_anchors": 3,
+      "n_hits": 3,
+      "hit_rate": 1.0
+    },
+    {
+      "question_id": "Q-WMR-033",
+      "absent": false,
+      "query_len_chars": 110,
+      "query_len_words": 13,
+      "anchors": [
+        {
+          "token": "micro-mobility",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "pedestrians'",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "acceleration",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "performance?",
+          "rule": "rare_proxy",
+          "hit": true
+        }
+      ],
+      "n_anchors": 4,
+      "n_hits": 4,
+      "hit_rate": 1.0
+    },
+    {
+      "question_id": "Q-WMR-034",
+      "absent": false,
+      "query_len_chars": 108,
+      "query_len_words": 12,
+      "anchors": [
+        {
+          "token": "resolving-uncertainty-on-the-fly",
+          "rule": "rare_proxy",
+          "hit": false
+        },
+        {
+          "token": "active-inference",
+          "rule": "rare_proxy",
+          "hit": true
+        }
+      ],
+      "n_anchors": 2,
+      "n_hits": 1,
+      "hit_rate": 0.5
+    },
+    {
+      "question_id": "Q-WMR-035",
+      "absent": false,
+      "query_len_chars": 108,
+      "query_len_words": 16,
+      "anchors": [
+        {
+          "token": "7.14",
+          "rule": "numeric",
+          "hit": true
+        },
+        {
+          "token": "distributed",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "phoenix,",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "san",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "francisco,",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "los",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "angeles?",
+          "rule": "entity",
+          "hit": false
+        }
+      ],
+      "n_anchors": 7,
+      "n_hits": 6,
+      "hit_rate": 0.8571428571428571
+    },
+    {
+      "question_id": "Q-WMR-036",
+      "absent": false,
+      "query_len_chars": 177,
+      "query_len_words": 27,
+      "anchors": [
+        {
+          "token": "flannagan",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "(2023)",
+          "rule": "numeric",
+          "hit": true
+        },
+        {
+          "token": "ride-hailing",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "naturalistic",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "san",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "francisco,",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "ipmm,",
+          "rule": "acronym",
+          "hit": true
+        },
+        {
+          "token": "waymo",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "ro",
+          "rule": "acronym",
+          "hit": true
+        },
+        {
+          "token": "ads-to-human",
+          "rule": "entity",
+          "hit": false
+        }
+      ],
+      "n_anchors": 10,
+      "n_hits": 9,
+      "hit_rate": 0.9
+    },
+    {
+      "question_id": "Q-WMR-037",
+      "absent": false,
+      "query_len_chars": 129,
+      "query_len_words": 18,
+      "anchors": [
+        {
+          "token": "police-reported-benchmarks",
+          "rule": "rare_proxy",
+          "hit": false
+        },
+        {
+          "token": "publications",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "ads",
+          "rule": "acronym",
+          "hit": true
+        }
+      ],
+      "n_anchors": 3,
+      "n_hits": 2,
+      "hit_rate": 0.6666666666666666
+    },
+    {
+      "question_id": "Q-WMR-038",
+      "absent": false,
+      "query_len_chars": 64,
+      "query_len_words": 10,
+      "anchors": [],
+      "n_anchors": 0,
+      "n_hits": 0,
+      "hit_rate": null
+    },
+    {
+      "question_id": "Q-WMR-039",
+      "absent": false,
+      "query_len_chars": 141,
+      "query_len_words": 18,
+      "anchors": [
+        {
+          "token": "configurations",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "passenger/heavy-vehicle",
+          "rule": "rare_proxy",
+          "hit": false
+        }
+      ],
+      "n_anchors": 2,
+      "n_hits": 1,
+      "hit_rate": 0.5
+    },
+    {
+      "question_id": "Q-WMR-040",
+      "absent": false,
+      "query_len_chars": 157,
+      "query_len_words": 24,
+      "anchors": [
+        {
+          "token": "la",
+          "rule": "acronym",
+          "hit": true
+        },
+        {
+          "token": "pedestrians",
+          "rule": "rare_proxy",
+          "hit": true
+        }
+      ],
+      "n_anchors": 2,
+      "n_hits": 2,
+      "hit_rate": 1.0
+    },
+    {
+      "question_id": "Q-WMR-041",
+      "absent": false,
+      "query_len_chars": 92,
+      "query_len_words": 13,
+      "anchors": [
+        {
+          "token": "measurements",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "measuring",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "surprise",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "wild?",
+          "rule": "entity",
+          "hit": false
+        }
+      ],
+      "n_anchors": 4,
+      "n_hits": 3,
+      "hit_rate": 0.75
+    },
+    {
+      "question_id": "Q-WMR-042",
+      "absent": false,
+      "query_len_chars": 198,
+      "query_len_words": 29,
+      "anchors": [
+        {
+          "token": "waymo's",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "waymo",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "driver",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "ciss-reported",
+          "rule": "entity",
+          "hit": false
+        }
+      ],
+      "n_anchors": 4,
+      "n_hits": 3,
+      "hit_rate": 0.75
+    },
+    {
+      "question_id": "Q-WMR-043",
+      "absent": false,
+      "query_len_chars": 120,
+      "query_len_words": 19,
+      "anchors": [
+        {
+          "token": "aida",
+          "rule": "acronym",
+          "hit": true
+        },
+        {
+          "token": "specification",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "idm",
+          "rule": "acronym",
+          "hit": true
+        }
+      ],
+      "n_anchors": 3,
+      "n_hits": 3,
+      "hit_rate": 1.0
+    },
+    {
+      "question_id": "Q-WMR-044",
+      "absent": false,
+      "query_len_chars": 96,
+      "query_len_words": 14,
+      "anchors": [
+        {
+          "token": "ads",
+          "rule": "acronym",
+          "hit": true
+        },
+        {
+          "token": "safety",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "standards",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "organization",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "wheel",
+          "rule": "entity",
+          "hit": true
+        }
+      ],
+      "n_anchors": 5,
+      "n_hits": 5,
+      "hit_rate": 1.0
+    },
+    {
+      "question_id": "Q-WMR-045",
+      "absent": false,
+      "query_len_chars": 144,
+      "query_len_words": 17,
+      "anchors": [
+        {
+          "token": "acceleration-prediction",
+          "rule": "rare_proxy",
+          "hit": false
+        },
+        {
+          "token": "mae",
+          "rule": "acronym",
+          "hit": true
+        },
+        {
+          "token": "active-inference",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "behavior-cloning",
+          "rule": "rare_proxy",
+          "hit": true
+        }
+      ],
+      "n_anchors": 4,
+      "n_hits": 3,
+      "hit_rate": 0.75
+    },
+    {
+      "question_id": "Q-WMR-046",
+      "absent": false,
+      "query_len_chars": 136,
+      "query_len_words": 21,
+      "anchors": [
+        {
+          "token": "motor-vehicle",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "nhtsa",
+          "rule": "acronym",
+          "hit": true
+        },
+        {
+          "token": "intersection",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "2019,",
+          "rule": "numeric",
+          "hit": true
+        }
+      ],
+      "n_anchors": 4,
+      "n_hits": 4,
+      "hit_rate": 1.0
+    },
+    {
+      "question_id": "Q-WMR-047",
+      "absent": false,
+      "query_len_chars": 148,
+      "query_len_words": 19,
+      "anchors": [
+        {
+          "token": "fatigue-research",
+          "rule": "rare_proxy",
+          "hit": false
+        },
+        {
+          "token": "waymo's",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "transportation",
+          "rule": "rare_proxy",
+          "hit": true
+        }
+      ],
+      "n_anchors": 3,
+      "n_hits": 2,
+      "hit_rate": 0.6666666666666666
+    },
+    {
+      "question_id": "Q-WMR-048",
+      "absent": false,
+      "query_len_chars": 126,
+      "query_len_words": 16,
+      "anchors": [
+        {
+          "token": "maximum-injury-potential",
+          "rule": "rare_proxy",
+          "hit": false
+        },
+        {
+          "token": "methodology",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "probability,",
+          "rule": "rare_proxy",
+          "hit": true
+        }
+      ],
+      "n_anchors": 3,
+      "n_hits": 2,
+      "hit_rate": 0.6666666666666666
+    },
+    {
+      "question_id": "Q-WMR-049",
+      "absent": false,
+      "query_len_chars": 151,
+      "query_len_words": 18,
+      "anchors": [
+        {
+          "token": "omni-directional",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "planar-crash",
+          "rule": "rare_proxy",
+          "hit": false
+        },
+        {
+          "token": "mathematical",
+          "rule": "rare_proxy",
+          "hit": true
+        }
+      ],
+      "n_anchors": 3,
+      "n_hits": 2,
+      "hit_rate": 0.6666666666666666
+    },
+    {
+      "question_id": "Q-WMR-050",
+      "absent": false,
+      "query_len_chars": 121,
+      "query_len_words": 17,
+      "anchors": [
+        {
+          "token": "chandler",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "reconstruction,",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "documentation",
+          "rule": "rare_proxy",
+          "hit": true
+        }
+      ],
+      "n_anchors": 3,
+      "n_hits": 3,
+      "hit_rate": 1.0
+    },
+    {
+      "question_id": "Q-WMR-051",
+      "absent": false,
+      "query_len_chars": 192,
+      "query_len_words": 26,
+      "anchors": [
+        {
+          "token": "intersection",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "reconstructed-fatal-crash",
+          "rule": "rare_proxy",
+          "hit": false
+        },
+        {
+          "token": "fatal-intersection",
+          "rule": "rare_proxy",
+          "hit": false
+        }
+      ],
+      "n_anchors": 3,
+      "n_hits": 1,
+      "hit_rate": 0.3333333333333333
+    },
+    {
+      "question_id": "Q-WMR-052",
+      "absent": false,
+      "query_len_chars": 91,
+      "query_len_words": 13,
+      "anchors": [
+        {
+          "token": "waymo",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "safety",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "report",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "main-computer",
+          "rule": "rare_proxy",
+          "hit": false
+        }
+      ],
+      "n_anchors": 4,
+      "n_hits": 3,
+      "hit_rate": 0.75
+    },
+    {
+      "question_id": "Q-WMR-053",
+      "absent": false,
+      "query_len_chars": 162,
+      "query_len_words": 22,
+      "anchors": [
+        {
+          "token": "6.1",
+          "rule": "numeric",
+          "hit": true
+        },
+        {
+          "token": "fully-automated",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "waymo's",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "performance",
+          "rule": "rare_proxy",
+          "hit": true
+        }
+      ],
+      "n_anchors": 4,
+      "n_hits": 4,
+      "hit_rate": 1.0
+    },
+    {
+      "question_id": "Q-WMR-054",
+      "absent": false,
+      "query_len_chars": 134,
+      "query_len_words": 18,
+      "anchors": [
+        {
+          "token": "odd",
+          "rule": "acronym",
+          "hit": true
+        },
+        {
+          "token": "waymo's",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "phoenix-area",
+          "rule": "entity",
+          "hit": false
+        }
+      ],
+      "n_anchors": 3,
+      "n_hits": 2,
+      "hit_rate": 0.6666666666666666
+    },
+    {
+      "question_id": "Q-WMR-055",
+      "absent": false,
+      "query_len_chars": 134,
+      "query_len_words": 15,
+      "anchors": [
+        {
+          "token": "methodological",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "absence-of-unreasonable-risk",
+          "rule": "entity",
+          "hit": false
+        },
+        {
+          "token": "approval-guidelines",
+          "rule": "rare_proxy",
+          "hit": false
+        }
+      ],
+      "n_anchors": 3,
+      "n_hits": 1,
+      "hit_rate": 0.3333333333333333
+    },
+    {
+      "question_id": "Q-WMR-056",
+      "absent": false,
+      "query_len_chars": 101,
+      "query_len_words": 15,
+      "anchors": [
+        {
+          "token": "av",
+          "rule": "acronym",
+          "hit": true
+        },
+        {
+          "token": "sms",
+          "rule": "acronym",
+          "hit": true
+        },
+        {
+          "token": "harmonization",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "centralized",
+          "rule": "rare_proxy",
+          "hit": true
+        }
+      ],
+      "n_anchors": 4,
+      "n_hits": 4,
+      "hit_rate": 1.0
+    },
+    {
+      "question_id": "Q-WMR-057",
+      "absent": false,
+      "query_len_chars": 120,
+      "query_len_words": 17,
+      "anchors": [
+        {
+          "token": "driving-mode",
+          "rule": "rare_proxy",
+          "hit": false
+        },
+        {
+          "token": "waymo's",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "swiss",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "re",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "liability-claims",
+          "rule": "rare_proxy",
+          "hit": false
+        }
+      ],
+      "n_anchors": 5,
+      "n_hits": 3,
+      "hit_rate": 0.6
+    },
+    {
+      "question_id": "Q-WMR-058",
+      "absent": false,
+      "query_len_chars": 85,
+      "query_len_words": 11,
+      "anchors": [
+        {
+          "token": "surprise-based",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "response-timing",
+          "rule": "rare_proxy",
+          "hit": false
+        }
+      ],
+      "n_anchors": 2,
+      "n_hits": 1,
+      "hit_rate": 0.5
+    },
+    {
+      "question_id": "Q-WMR-059",
+      "absent": false,
+      "query_len_chars": 119,
+      "query_len_words": 19,
+      "anchors": [
+        {
+          "token": "rave",
+          "rule": "acronym",
+          "hit": true
+        },
+        {
+          "token": "checklist",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "retrospective",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "safety-impact",
+          "rule": "rare_proxy",
+          "hit": false
+        },
+        {
+          "token": "methodology,",
+          "rule": "rare_proxy",
+          "hit": true
+        }
+      ],
+      "n_anchors": 5,
+      "n_hits": 4,
+      "hit_rate": 0.8
+    },
+    {
+      "question_id": "Q-WMR-060",
+      "absent": false,
+      "query_len_chars": 130,
+      "query_len_words": 18,
+      "anchors": [
+        {
+          "token": "adas/active-safety",
+          "rule": "entity",
+          "hit": false
+        },
+        {
+          "token": "waymo",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "driver?",
+          "rule": "entity",
+          "hit": true
+        }
+      ],
+      "n_anchors": 3,
+      "n_hits": 2,
+      "hit_rate": 0.6666666666666666
+    },
+    {
+      "question_id": "Q-WMR-061",
+      "absent": false,
+      "query_len_chars": 118,
+      "query_len_words": 18,
+      "anchors": [
+        {
+          "token": "'contribution'",
+          "rule": "rare_proxy",
+          "hit": false
+        },
+        {
+          "token": "1m-mile",
+          "rule": "numeric",
+          "hit": false
+        },
+        {
+          "token": "assessments?",
+          "rule": "rare_proxy",
+          "hit": true
+        }
+      ],
+      "n_anchors": 3,
+      "n_hits": 1,
+      "hit_rate": 0.3333333333333333
+    },
+    {
+      "question_id": "Q-WMR-062",
+      "absent": false,
+      "query_len_chars": 118,
+      "query_len_words": 19,
+      "anchors": [
+        {
+          "token": "iwai",
+          "rule": "acronym",
+          "hit": false
+        },
+        {
+          "token": "active-inference",
+          "rule": "rare_proxy",
+          "hit": true
+        }
+      ],
+      "n_anchors": 2,
+      "n_hits": 1,
+      "hit_rate": 0.5
+    },
+    {
+      "question_id": "Q-WMR-063",
+      "absent": false,
+      "query_len_chars": 139,
+      "query_len_words": 23,
+      "anchors": [
+        {
+          "token": "neiss",
+          "rule": "acronym",
+          "hit": true
+        },
+        {
+          "token": "2012-2021,",
+          "rule": "numeric",
+          "hit": false
+        }
+      ],
+      "n_anchors": 2,
+      "n_hits": 1,
+      "hit_rate": 0.5
+    },
+    {
+      "question_id": "Q-WMR-077",
+      "absent": false,
+      "query_len_chars": 109,
+      "query_len_words": 15,
+      "anchors": [
+        {
+          "token": "active-inference",
+          "rule": "rare_proxy",
+          "hit": true
+        }
+      ],
+      "n_anchors": 1,
+      "n_hits": 1,
+      "hit_rate": 1.0
+    },
+    {
+      "question_id": "Q-WMR-078",
+      "absent": true,
+      "query_len_chars": 91,
+      "query_len_words": 14,
+      "anchors": [
+        {
+          "token": "waymo",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "one",
+          "rule": "entity",
+          "hit": true
+        }
+      ],
+      "n_anchors": 2,
+      "n_hits": 2,
+      "hit_rate": 1.0
+    },
+    {
+      "question_id": "Q-WMR-079",
+      "absent": true,
+      "query_len_chars": 112,
+      "query_len_words": 19,
+      "anchors": [
+        {
+          "token": "waymo",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "one",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "trip-purpose",
+          "rule": "rare_proxy",
+          "hit": false
+        }
+      ],
+      "n_anchors": 3,
+      "n_hits": 2,
+      "hit_rate": 0.6666666666666666
+    },
+    {
+      "question_id": "Q-WMR-080",
+      "absent": true,
+      "query_len_chars": 71,
+      "query_len_words": 11,
+      "anchors": [
+        {
+          "token": "waymo's",
+          "rule": "entity",
+          "hit": true
+        }
+      ],
+      "n_anchors": 1,
+      "n_hits": 1,
+      "hit_rate": 1.0
+    },
+    {
+      "question_id": "Q-WMR-081",
+      "absent": true,
+      "query_len_chars": 82,
+      "query_len_words": 13,
+      "anchors": [
+        {
+          "token": "nhtsa",
+          "rule": "acronym",
+          "hit": true
+        },
+        {
+          "token": "waymo",
+          "rule": "entity",
+          "hit": true
+        }
+      ],
+      "n_anchors": 2,
+      "n_hits": 2,
+      "hit_rate": 1.0
+    },
+    {
+      "question_id": "Q-WMR-082",
+      "absent": true,
+      "query_len_chars": 84,
+      "query_len_words": 12,
+      "anchors": [
+        {
+          "token": "waymo",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "experienced",
+          "rule": "rare_proxy",
+          "hit": true
+        }
+      ],
+      "n_anchors": 2,
+      "n_hits": 2,
+      "hit_rate": 1.0
+    },
+    {
+      "question_id": "Q-WMR-083",
+      "absent": true,
+      "query_len_chars": 58,
+      "query_len_words": 11,
+      "anchors": [
+        {
+          "token": "us",
+          "rule": "acronym",
+          "hit": true
+        },
+        {
+          "token": "vision",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "zero,",
+          "rule": "entity",
+          "hit": true
+        }
+      ],
+      "n_anchors": 3,
+      "n_hits": 3,
+      "hit_rate": 1.0
+    },
+    {
+      "question_id": "Q-WMR-084",
+      "absent": true,
+      "query_len_chars": 110,
+      "query_len_words": 15,
+      "anchors": [
+        {
+          "token": "waymo",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "driver's",
+          "rule": "entity",
+          "hit": true
+        }
+      ],
+      "n_anchors": 2,
+      "n_hits": 2,
+      "hit_rate": 1.0
+    },
+    {
+      "question_id": "Q-WMR-085",
+      "absent": true,
+      "query_len_chars": 79,
+      "query_len_words": 13,
+      "anchors": [
+        {
+          "token": "waymo",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "driver",
+          "rule": "entity",
+          "hit": true
+        }
+      ],
+      "n_anchors": 2,
+      "n_hits": 2,
+      "hit_rate": 1.0
+    },
+    {
+      "question_id": "Q-WMR-086",
+      "absent": true,
+      "query_len_chars": 104,
+      "query_len_words": 16,
+      "anchors": [
+        {
+          "token": "emergency-department",
+          "rule": "rare_proxy",
+          "hit": false
+        },
+        {
+          "token": "neiss",
+          "rule": "acronym",
+          "hit": true
+        }
+      ],
+      "n_anchors": 2,
+      "n_hits": 1,
+      "hit_rate": 0.5
+    },
+    {
+      "question_id": "Q-WMR-087",
+      "absent": true,
+      "query_len_chars": 79,
+      "query_len_words": 15,
+      "anchors": [
+        {
+          "token": "jaguar",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "i-pace",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "waymo's",
+          "rule": "entity",
+          "hit": true
+        }
+      ],
+      "n_anchors": 3,
+      "n_hits": 3,
+      "hit_rate": 1.0
+    },
+    {
+      "question_id": "Q-WMR-088",
+      "absent": true,
+      "query_len_chars": 95,
+      "query_len_words": 12,
+      "anchors": [
+        {
+          "token": "remote-fleet-response",
+          "rule": "rare_proxy",
+          "hit": false
+        },
+        {
+          "token": "specialists",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "waymo",
+          "rule": "entity",
+          "hit": true
+        }
+      ],
+      "n_anchors": 3,
+      "n_hits": 2,
+      "hit_rate": 0.6666666666666666
+    },
+    {
+      "question_id": "Q-WMR-089",
+      "absent": true,
+      "query_len_chars": 126,
+      "query_len_words": 15,
+      "anchors": [
+        {
+          "token": "waymo's",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "specifically",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "emergency-vehicle-yield",
+          "rule": "rare_proxy",
+          "hit": false
+        }
+      ],
+      "n_anchors": 3,
+      "n_hits": 2,
+      "hit_rate": 0.6666666666666666
+    },
+    {
+      "question_id": "Q-WMR-094",
+      "absent": false,
+      "query_len_chars": 192,
+      "query_len_words": 28,
+      "anchors": [
+        {
+          "token": "figure",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "3",
+          "rule": "numeric",
+          "hit": true
+        },
+        {
+          "token": "7.1-million-mile",
+          "rule": "numeric",
+          "hit": false
+        },
+        {
+          "token": "any-injury-reported",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "ads",
+          "rule": "acronym",
+          "hit": true
+        },
+        {
+          "token": "san",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "francisco",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "all",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "locations",
+          "rule": "entity",
+          "hit": true
+        }
+      ],
+      "n_anchors": 9,
+      "n_hits": 8,
+      "hit_rate": 0.8888888888888888
+    },
+    {
+      "question_id": "Q-WMR-090",
+      "absent": false,
+      "query_len_chars": 230,
+      "query_len_words": 35,
+      "anchors": [
+        {
+          "token": "retrospective",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "7.1-million-mile",
+          "rule": "numeric",
+          "hit": false
+        },
+        {
+          "token": "56.7-million-mile",
+          "rule": "numeric",
+          "hit": false
+        }
+      ],
+      "n_anchors": 3,
+      "n_hits": 1,
+      "hit_rate": 0.3333333333333333
+    },
+    {
+      "question_id": "Q-WMR-091",
+      "absent": false,
+      "query_len_chars": 180,
+      "query_len_words": 23,
+      "anchors": [
+        {
+          "token": "omni-directional",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "planar-crash",
+          "rule": "rare_proxy",
+          "hit": false
+        },
+        {
+          "token": "maximum-injury-potential",
+          "rule": "rare_proxy",
+          "hit": false
+        },
+        {
+          "token": "methodology",
+          "rule": "rare_proxy",
+          "hit": true
+        }
+      ],
+      "n_anchors": 4,
+      "n_hits": 2,
+      "hit_rate": 0.5
+    },
+    {
+      "question_id": "Q-WMR-092",
+      "absent": false,
+      "query_len_chars": 128,
+      "query_len_words": 19,
+      "anchors": [
+        {
+          "token": "nexar",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "vru",
+          "rule": "acronym",
+          "hit": true
+        },
+        {
+          "token": "video-verified",
+          "rule": "rare_proxy",
+          "hit": true
+        }
+      ],
+      "n_anchors": 3,
+      "n_hits": 3,
+      "hit_rate": 1.0
+    },
+    {
+      "question_id": "Q-WMR-093",
+      "absent": false,
+      "query_len_chars": 137,
+      "query_len_words": 19,
+      "anchors": [
+        {
+          "token": "active-inference",
+          "rule": "rare_proxy",
+          "hit": true
+        },
+        {
+          "token": "waymo",
+          "rule": "entity",
+          "hit": true
+        }
+      ],
+      "n_anchors": 2,
+      "n_hits": 2,
+      "hit_rate": 1.0
+    },
+    {
+      "question_id": "Q-WMR-095",
+      "absent": false,
+      "query_len_chars": 121,
+      "query_len_words": 20,
+      "anchors": [
+        {
+          "token": "av",
+          "rule": "acronym",
+          "hit": true
+        },
+        {
+          "token": "2020",
+          "rule": "numeric",
+          "hit": true
+        },
+        {
+          "token": "safety",
+          "rule": "entity",
+          "hit": true
+        },
+        {
+          "token": "methodologies",
+          "rule": "entity",
+          "hit": true
+        }
+      ],
+      "n_anchors": 4,
+      "n_hits": 4,
+      "hit_rate": 1.0
+    }
+  ]
+}
