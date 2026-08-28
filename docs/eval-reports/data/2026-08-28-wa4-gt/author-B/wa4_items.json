@@ -1,0 +1,11 @@
+{
+  "metadata": {
+    "author_id": "GT-B",
+    "set_name": "W-A4",
+    "description": "Partial-absent ground truth set: multi-sub-part questions where at least one sub-part is genuinely absent from the corpus",
+    "target_items": 22,
+    "corpus": "waymo_av_safety",
+    "authored_at": "2026-08-28"
+  },
+  "items": []
+}
