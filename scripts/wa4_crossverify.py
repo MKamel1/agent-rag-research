@@ -60,6 +60,24 @@ def corpus_chunk_count(con):
     return con.execute("SELECT COUNT(*) FROM chunks").fetchone()[0]
 
 
+def recount_lexical_hits(con, query, scope, item_papers):
+    """Re-run a lexical probe's own query against chunks.text (case-insensitive
+    substring, matching the LIKE convention both authors used) and return the
+    actual hit count, or None if the scope can't be resolved to a paper_id."""
+    like = f"%{query}%"
+    if scope == "corpus":
+        return con.execute("SELECT COUNT(*) FROM chunks WHERE text LIKE ? COLLATE NOCASE", (like,)).fetchone()[0]
+    if scope == "paper":
+        if len(item_papers) != 1:
+            return None
+        paper_id = next(iter(item_papers))
+    else:
+        paper_id = scope
+    return con.execute(
+        "SELECT COUNT(*) FROM chunks WHERE paper_id = ? AND text LIKE ? COLLATE NOCASE",
+        (paper_id, like)).fetchone()[0]
+
+
 def normalize_probes(sub_part):
     """Return list of dicts: {kind: lexical|semantic, query, hits, denominator, scope}
     scope is either 'corpus' or a paper_id string, or None if not determinable."""
@@ -206,6 +224,27 @@ def check_item(con, item, author_hint):
                 ok = False
             result["checks"].append({
                 "check": f"{tag}:denominator_arithmetic", "pass": denom_all_ok, "detail": denom_results,
+            })
+
+            # Hit-count re-check: re-run each probe's own query and compare to its
+            # stated hit count. Catches a probe that under/over-reports how many
+            # chunks actually matched (independent of whether the denominator is right).
+            hit_results = []
+            for p in lexical:
+                if p["hits"] is None or p["query"] is None:
+                    continue
+                actual_hits = recount_lexical_hits(con, p["query"], p["scope"], item_papers)
+                if actual_hits is None:
+                    continue
+                hit_results.append({
+                    "query": p["query"], "scope": p["scope"], "stated_hits": p["hits"],
+                    "actual_hits": actual_hits, "pass": actual_hits == p["hits"],
+                })
+            hits_all_ok = all(h["pass"] for h in hit_results)
+            if not hits_all_ok:
+                ok = False
+            result["checks"].append({
+                "check": f"{tag}:probe_hit_counts", "pass": hits_all_ok, "detail": hit_results,
             })
         else:
             ok = False

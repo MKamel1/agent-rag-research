@@ -1,0 +1,1286 @@
+[
+  {
+    "id": "Q-WA4-B-FINAL-001",
+    "checks": [
+      {
+        "check": "frozen_after_retrieval",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:excerpt_verbatim_substring",
+        "pass": true,
+        "detail": {
+          "block_id": "2312.12675:b12",
+          "block_id_resolves": true,
+          "block_match": true,
+          "chunk_id": "2312.12675:c1",
+          "chunk_id_resolves": true,
+          "chunk_match": true
+        }
+      },
+      {
+        "check": "sub_part[0]:supported:gold_block_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:gold_chunk_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[1]:absent:probe_structure",
+        "pass": true,
+        "detail": {
+          "n_lexical": 4,
+          "n_semantic": 1,
+          "has_lexical_with_denominator": true
+        }
+      },
+      {
+        "check": "sub_part[1]:absent:denominator_arithmetic",
+        "pass": true,
+        "detail": [
+          {
+            "query": "Los Angeles",
+            "scope": "paper",
+            "stated": 26,
+            "actual": 26,
+            "pass": true
+          },
+          {
+            "query": "significance",
+            "scope": "paper",
+            "stated": 26,
+            "actual": 26,
+            "pass": true
+          },
+          {
+            "query": "significant",
+            "scope": "paper",
+            "stated": 26,
+            "actual": 26,
+            "pass": true
+          },
+          {
+            "query": "LA significant",
+            "scope": "paper",
+            "stated": 26,
+            "actual": 26,
+            "pass": true
+          }
+        ]
+      },
+      {
+        "check": "sub_part[1]:absent:probe_hit_counts",
+        "pass": false,
+        "detail": [
+          {
+            "query": "Los Angeles",
+            "scope": "paper",
+            "stated_hits": 1,
+            "actual_hits": 6,
+            "pass": false
+          },
+          {
+            "query": "significance",
+            "scope": "paper",
+            "stated_hits": 12,
+            "actual_hits": 4,
+            "pass": false
+          },
+          {
+            "query": "significant",
+            "scope": "paper",
+            "stated_hits": 8,
+            "actual_hits": 8,
+            "pass": true
+          },
+          {
+            "query": "LA significant",
+            "scope": "paper",
+            "stated_hits": 0,
+            "actual_hits": 0,
+            "pass": true
+          }
+        ]
+      }
+    ],
+    "pass": false
+  },
+  {
+    "id": "Q-WA4-B-FINAL-002",
+    "checks": [
+      {
+        "check": "frozen_after_retrieval",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:excerpt_verbatim_substring",
+        "pass": true,
+        "detail": {
+          "block_id": "2312.12675:b58",
+          "block_id_resolves": true,
+          "block_match": true,
+          "chunk_id": "2312.12675:c8",
+          "chunk_id_resolves": true,
+          "chunk_match": true
+        }
+      },
+      {
+        "check": "sub_part[0]:supported:gold_block_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:gold_chunk_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[1]:absent:probe_structure",
+        "pass": true,
+        "detail": {
+          "n_lexical": 4,
+          "n_semantic": 1,
+          "has_lexical_with_denominator": true
+        }
+      },
+      {
+        "check": "sub_part[1]:absent:denominator_arithmetic",
+        "pass": true,
+        "detail": [
+          {
+            "query": "time of day",
+            "scope": "paper",
+            "stated": 26,
+            "actual": 26,
+            "pass": true
+          },
+          {
+            "query": "daytime",
+            "scope": "paper",
+            "stated": 26,
+            "actual": 26,
+            "pass": true
+          },
+          {
+            "query": "night",
+            "scope": "paper",
+            "stated": 26,
+            "actual": 26,
+            "pass": true
+          },
+          {
+            "query": "hour",
+            "scope": "paper",
+            "stated": 26,
+            "actual": 26,
+            "pass": true
+          }
+        ]
+      },
+      {
+        "check": "sub_part[1]:absent:probe_hit_counts",
+        "pass": false,
+        "detail": [
+          {
+            "query": "time of day",
+            "scope": "paper",
+            "stated_hits": 1,
+            "actual_hits": 1,
+            "pass": true
+          },
+          {
+            "query": "daytime",
+            "scope": "paper",
+            "stated_hits": 0,
+            "actual_hits": 0,
+            "pass": true
+          },
+          {
+            "query": "night",
+            "scope": "paper",
+            "stated_hits": 0,
+            "actual_hits": 0,
+            "pass": true
+          },
+          {
+            "query": "hour",
+            "scope": "paper",
+            "stated_hits": 0,
+            "actual_hits": 1,
+            "pass": false
+          }
+        ]
+      }
+    ],
+    "pass": false
+  },
+  {
+    "id": "Q-WA4-B-FINAL-003",
+    "checks": [
+      {
+        "check": "frozen_after_retrieval",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:excerpt_verbatim_substring",
+        "pass": true,
+        "detail": {
+          "block_id": "2312.12675:b58",
+          "block_id_resolves": true,
+          "block_match": true,
+          "chunk_id": "2312.12675:c8",
+          "chunk_id_resolves": true,
+          "chunk_match": true
+        }
+      },
+      {
+        "check": "sub_part[0]:supported:gold_block_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:gold_chunk_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[1]:absent:probe_structure",
+        "pass": true,
+        "detail": {
+          "n_lexical": 4,
+          "n_semantic": 1,
+          "has_lexical_with_denominator": true
+        }
+      },
+      {
+        "check": "sub_part[1]:absent:denominator_arithmetic",
+        "pass": true,
+        "detail": [
+          {
+            "query": "p-value",
+            "scope": "paper",
+            "stated": 26,
+            "actual": 26,
+            "pass": true
+          },
+          {
+            "query": "test statistic",
+            "scope": "paper",
+            "stated": 26,
+            "actual": 26,
+            "pass": true
+          },
+          {
+            "query": "p value",
+            "scope": "paper",
+            "stated": 26,
+            "actual": 26,
+            "pass": true
+          },
+          {
+            "query": "statistical test",
+            "scope": "paper",
+            "stated": 26,
+            "actual": 26,
+            "pass": true
+          }
+        ]
+      },
+      {
+        "check": "sub_part[1]:absent:probe_hit_counts",
+        "pass": false,
+        "detail": [
+          {
+            "query": "p-value",
+            "scope": "paper",
+            "stated_hits": 0,
+            "actual_hits": 0,
+            "pass": true
+          },
+          {
+            "query": "test statistic",
+            "scope": "paper",
+            "stated_hits": 0,
+            "actual_hits": 0,
+            "pass": true
+          },
+          {
+            "query": "p value",
+            "scope": "paper",
+            "stated_hits": 0,
+            "actual_hits": 0,
+            "pass": true
+          },
+          {
+            "query": "statistical test",
+            "scope": "paper",
+            "stated_hits": 0,
+            "actual_hits": 1,
+            "pass": false
+          }
+        ]
+      }
+    ],
+    "pass": false
+  },
+  {
+    "id": "Q-WA4-B-FINAL-004",
+    "checks": [
+      {
+        "check": "frozen_after_retrieval",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:excerpt_verbatim_substring",
+        "pass": true,
+        "detail": {
+          "block_id": "2312.12675:b116",
+          "block_id_resolves": true,
+          "block_match": true,
+          "chunk_id": "2312.12675:c23",
+          "chunk_id_resolves": true,
+          "chunk_match": true
+        }
+      },
+      {
+        "check": "sub_part[0]:supported:gold_block_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:gold_chunk_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[1]:absent:probe_structure",
+        "pass": true,
+        "detail": {
+          "n_lexical": 4,
+          "n_semantic": 1,
+          "has_lexical_with_denominator": true
+        }
+      },
+      {
+        "check": "sub_part[1]:absent:denominator_arithmetic",
+        "pass": true,
+        "detail": [
+          {
+            "query": "standard error",
+            "scope": "paper",
+            "stated": 26,
+            "actual": 26,
+            "pass": true
+          },
+          {
+            "query": "variance",
+            "scope": "paper",
+            "stated": 26,
+            "actual": 26,
+            "pass": true
+          },
+          {
+            "query": "SE",
+            "scope": "paper",
+            "stated": 26,
+            "actual": 26,
+            "pass": true
+          },
+          {
+            "query": "uncertainty",
+            "scope": "paper",
+            "stated": 26,
+            "actual": 26,
+            "pass": true
+          }
+        ]
+      },
+      {
+        "check": "sub_part[1]:absent:probe_hit_counts",
+        "pass": false,
+        "detail": [
+          {
+            "query": "standard error",
+            "scope": "paper",
+            "stated_hits": 0,
+            "actual_hits": 1,
+            "pass": false
+          },
+          {
+            "query": "variance",
+            "scope": "paper",
+            "stated_hits": 0,
+            "actual_hits": 1,
+            "pass": false
+          },
+          {
+            "query": "SE",
+            "scope": "paper",
+            "stated_hits": 0,
+            "actual_hits": 19,
+            "pass": false
+          },
+          {
+            "query": "uncertainty",
+            "scope": "paper",
+            "stated_hits": 1,
+            "actual_hits": 2,
+            "pass": false
+          }
+        ]
+      }
+    ],
+    "pass": false
+  },
+  {
+    "id": "Q-WA4-B-FINAL-005",
+    "checks": [
+      {
+        "check": "frozen_after_retrieval",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:excerpt_verbatim_substring",
+        "pass": true,
+        "detail": {
+          "block_id": "2312.13228:b68",
+          "block_id_resolves": true,
+          "block_match": true,
+          "chunk_id": "2312.13228:c17",
+          "chunk_id_resolves": true,
+          "chunk_match": true
+        }
+      },
+      {
+        "check": "sub_part[0]:supported:gold_block_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:gold_chunk_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[1]:absent:probe_structure",
+        "pass": true,
+        "detail": {
+          "n_lexical": 4,
+          "n_semantic": 1,
+          "has_lexical_with_denominator": true
+        }
+      },
+      {
+        "check": "sub_part[1]:absent:denominator_arithmetic",
+        "pass": true,
+        "detail": [
+          {
+            "query": "confidence interval",
+            "scope": "paper",
+            "stated": 52,
+            "actual": 52,
+            "pass": true
+          },
+          {
+            "query": "uncertainty",
+            "scope": "paper",
+            "stated": 52,
+            "actual": 52,
+            "pass": true
+          },
+          {
+            "query": "standard error",
+            "scope": "paper",
+            "stated": 52,
+            "actual": 52,
+            "pass": true
+          },
+          {
+            "query": "precision",
+            "scope": "paper",
+            "stated": 52,
+            "actual": 52,
+            "pass": true
+          }
+        ]
+      },
+      {
+        "check": "sub_part[1]:absent:probe_hit_counts",
+        "pass": true,
+        "detail": [
+          {
+            "query": "confidence interval",
+            "scope": "paper",
+            "stated_hits": 1,
+            "actual_hits": 1,
+            "pass": true
+          },
+          {
+            "query": "uncertainty",
+            "scope": "paper",
+            "stated_hits": 2,
+            "actual_hits": 2,
+            "pass": true
+          },
+          {
+            "query": "standard error",
+            "scope": "paper",
+            "stated_hits": 0,
+            "actual_hits": 0,
+            "pass": true
+          },
+          {
+            "query": "precision",
+            "scope": "paper",
+            "stated_hits": 0,
+            "actual_hits": 0,
+            "pass": true
+          }
+        ]
+      }
+    ],
+    "pass": true
+  },
+  {
+    "id": "Q-WA4-B-FINAL-006",
+    "checks": [
+      {
+        "check": "frozen_after_retrieval",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:excerpt_verbatim_substring",
+        "pass": true,
+        "detail": {
+          "block_id": "2312.13228:b74",
+          "block_id_resolves": true,
+          "block_match": true,
+          "chunk_id": "2312.13228:c19",
+          "chunk_id_resolves": true,
+          "chunk_match": true
+        }
+      },
+      {
+        "check": "sub_part[0]:supported:gold_block_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:gold_chunk_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[1]:absent:probe_structure",
+        "pass": true,
+        "detail": {
+          "n_lexical": 4,
+          "n_semantic": 1,
+          "has_lexical_with_denominator": true
+        }
+      },
+      {
+        "check": "sub_part[1]:absent:denominator_arithmetic",
+        "pass": true,
+        "detail": [
+          {
+            "query": "any-injury-reported",
+            "scope": "paper",
+            "stated": 52,
+            "actual": 52,
+            "pass": true
+          },
+          {
+            "query": "million miles",
+            "scope": "paper",
+            "stated": 52,
+            "actual": 52,
+            "pass": true
+          },
+          {
+            "query": "table 3",
+            "scope": "paper",
+            "stated": 52,
+            "actual": 52,
+            "pass": true
+          },
+          {
+            "query": "required mileage",
+            "scope": "paper",
+            "stated": 52,
+            "actual": 52,
+            "pass": true
+          }
+        ]
+      },
+      {
+        "check": "sub_part[1]:absent:probe_hit_counts",
+        "pass": true,
+        "detail": [
+          {
+            "query": "any-injury-reported",
+            "scope": "paper",
+            "stated_hits": 13,
+            "actual_hits": 13,
+            "pass": true
+          },
+          {
+            "query": "million miles",
+            "scope": "paper",
+            "stated_hits": 7,
+            "actual_hits": 7,
+            "pass": true
+          },
+          {
+            "query": "table 3",
+            "scope": "paper",
+            "stated_hits": 2,
+            "actual_hits": 2,
+            "pass": true
+          },
+          {
+            "query": "required mileage",
+            "scope": "paper",
+            "stated_hits": 1,
+            "actual_hits": 1,
+            "pass": true
+          }
+        ]
+      }
+    ],
+    "pass": true
+  },
+  {
+    "id": "Q-WA4-B-FINAL-007",
+    "checks": [
+      {
+        "check": "frozen_after_retrieval",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:excerpt_verbatim_substring",
+        "pass": true,
+        "detail": {
+          "block_id": "2508.19425:b86",
+          "block_id_resolves": true,
+          "block_match": true,
+          "chunk_id": "2508.19425:c19",
+          "chunk_id_resolves": true,
+          "chunk_match": true
+        }
+      },
+      {
+        "check": "sub_part[0]:supported:gold_block_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:gold_chunk_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[1]:absent:probe_structure",
+        "pass": true,
+        "detail": {
+          "n_lexical": 4,
+          "n_semantic": 1,
+          "has_lexical_with_denominator": true
+        }
+      },
+      {
+        "check": "sub_part[1]:absent:denominator_arithmetic",
+        "pass": true,
+        "detail": [
+          {
+            "query": "airbag deployment",
+            "scope": "paper",
+            "stated": 38,
+            "actual": 38,
+            "pass": true
+          },
+          {
+            "query": "required mileage",
+            "scope": "paper",
+            "stated": 38,
+            "actual": 38,
+            "pass": true
+          },
+          {
+            "query": "vmt required",
+            "scope": "paper",
+            "stated": 38,
+            "actual": 38,
+            "pass": true
+          },
+          {
+            "query": "figure 4",
+            "scope": "paper",
+            "stated": 38,
+            "actual": 38,
+            "pass": true
+          }
+        ]
+      },
+      {
+        "check": "sub_part[1]:absent:probe_hit_counts",
+        "pass": true,
+        "detail": [
+          {
+            "query": "airbag deployment",
+            "scope": "paper",
+            "stated_hits": 3,
+            "actual_hits": 3,
+            "pass": true
+          },
+          {
+            "query": "required mileage",
+            "scope": "paper",
+            "stated_hits": 3,
+            "actual_hits": 3,
+            "pass": true
+          },
+          {
+            "query": "vmt required",
+            "scope": "paper",
+            "stated_hits": 1,
+            "actual_hits": 1,
+            "pass": true
+          },
+          {
+            "query": "figure 4",
+            "scope": "paper",
+            "stated_hits": 2,
+            "actual_hits": 2,
+            "pass": true
+          }
+        ]
+      }
+    ],
+    "pass": true
+  },
+  {
+    "id": "Q-WA4-B-FINAL-008",
+    "checks": [
+      {
+        "check": "frozen_after_retrieval",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:excerpt_verbatim_substring",
+        "pass": true,
+        "detail": {
+          "block_id": "2508.19425:b111",
+          "block_id_resolves": true,
+          "block_match": true,
+          "chunk_id": "2508.19425:c26",
+          "chunk_id_resolves": true,
+          "chunk_match": true
+        }
+      },
+      {
+        "check": "sub_part[0]:supported:gold_block_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:gold_chunk_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[1]:absent:probe_structure",
+        "pass": true,
+        "detail": {
+          "n_lexical": 4,
+          "n_semantic": 1,
+          "has_lexical_with_denominator": true
+        }
+      },
+      {
+        "check": "sub_part[1]:absent:denominator_arithmetic",
+        "pass": true,
+        "detail": [
+          {
+            "query": "underreporting",
+            "scope": "paper",
+            "stated": 38,
+            "actual": 38,
+            "pass": true
+          },
+          {
+            "query": "unreported",
+            "scope": "paper",
+            "stated": 38,
+            "actual": 38,
+            "pass": true
+          },
+          {
+            "query": "reporting rate",
+            "scope": "paper",
+            "stated": 38,
+            "actual": 38,
+            "pass": true
+          },
+          {
+            "query": "completeness",
+            "scope": "paper",
+            "stated": 38,
+            "actual": 38,
+            "pass": true
+          }
+        ]
+      },
+      {
+        "check": "sub_part[1]:absent:probe_hit_counts",
+        "pass": true,
+        "detail": [
+          {
+            "query": "underreporting",
+            "scope": "paper",
+            "stated_hits": 5,
+            "actual_hits": 5,
+            "pass": true
+          },
+          {
+            "query": "unreported",
+            "scope": "paper",
+            "stated_hits": 1,
+            "actual_hits": 1,
+            "pass": true
+          },
+          {
+            "query": "reporting rate",
+            "scope": "paper",
+            "stated_hits": 0,
+            "actual_hits": 0,
+            "pass": true
+          },
+          {
+            "query": "completeness",
+            "scope": "paper",
+            "stated_hits": 2,
+            "actual_hits": 2,
+            "pass": true
+          }
+        ]
+      }
+    ],
+    "pass": true
+  },
+  {
+    "id": "Q-WA4-B-FINAL-009",
+    "checks": [
+      {
+        "check": "frozen_after_retrieval",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:excerpt_verbatim_substring",
+        "pass": true,
+        "detail": {
+          "block_id": "2604.03827:b117",
+          "block_id_resolves": true,
+          "block_match": true,
+          "chunk_id": "2604.03827:c7",
+          "chunk_id_resolves": true,
+          "chunk_match": true
+        }
+      },
+      {
+        "check": "sub_part[0]:supported:gold_block_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:gold_chunk_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[1]:absent:probe_structure",
+        "pass": true,
+        "detail": {
+          "n_lexical": 4,
+          "n_semantic": 1,
+          "has_lexical_with_denominator": true
+        }
+      },
+      {
+        "check": "sub_part[1]:absent:denominator_arithmetic",
+        "pass": true,
+        "detail": [
+          {
+            "query": "mileage",
+            "scope": "paper",
+            "stated": 14,
+            "actual": 14,
+            "pass": true
+          },
+          {
+            "query": "exposure",
+            "scope": "paper",
+            "stated": 14,
+            "actual": 14,
+            "pass": true
+          },
+          {
+            "query": "denominator",
+            "scope": "paper",
+            "stated": 14,
+            "actual": 14,
+            "pass": true
+          },
+          {
+            "query": "normalization",
+            "scope": "paper",
+            "stated": 14,
+            "actual": 14,
+            "pass": true
+          }
+        ]
+      },
+      {
+        "check": "sub_part[1]:absent:probe_hit_counts",
+        "pass": true,
+        "detail": [
+          {
+            "query": "mileage",
+            "scope": "paper",
+            "stated_hits": 1,
+            "actual_hits": 1,
+            "pass": true
+          },
+          {
+            "query": "exposure",
+            "scope": "paper",
+            "stated_hits": 0,
+            "actual_hits": 0,
+            "pass": true
+          },
+          {
+            "query": "denominator",
+            "scope": "paper",
+            "stated_hits": 1,
+            "actual_hits": 1,
+            "pass": true
+          },
+          {
+            "query": "normalization",
+            "scope": "paper",
+            "stated_hits": 1,
+            "actual_hits": 1,
+            "pass": true
+          }
+        ]
+      }
+    ],
+    "pass": true
+  },
+  {
+    "id": "Q-WA4-B-FINAL-010",
+    "checks": [
+      {
+        "check": "frozen_after_retrieval",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:excerpt_verbatim_substring",
+        "pass": true,
+        "detail": {
+          "block_id": "2604.03827:b106",
+          "block_id_resolves": true,
+          "block_match": true,
+          "chunk_id": "2604.03827:c6",
+          "chunk_id_resolves": true,
+          "chunk_match": true
+        }
+      },
+      {
+        "check": "sub_part[0]:supported:gold_block_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:gold_chunk_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[1]:absent:probe_structure",
+        "pass": true,
+        "detail": {
+          "n_lexical": 4,
+          "n_semantic": 1,
+          "has_lexical_with_denominator": true
+        }
+      },
+      {
+        "check": "sub_part[1]:absent:denominator_arithmetic",
+        "pass": true,
+        "detail": [
+          {
+            "query": "coverage error",
+            "scope": "paper",
+            "stated": 14,
+            "actual": 14,
+            "pass": true
+          },
+          {
+            "query": "figure 6.1",
+            "scope": "paper",
+            "stated": 14,
+            "actual": 14,
+            "pass": true
+          },
+          {
+            "query": "exact percentage",
+            "scope": "paper",
+            "stated": 14,
+            "actual": 14,
+            "pass": true
+          },
+          {
+            "query": "numeric value",
+            "scope": "paper",
+            "stated": 14,
+            "actual": 14,
+            "pass": true
+          }
+        ]
+      },
+      {
+        "check": "sub_part[1]:absent:probe_hit_counts",
+        "pass": true,
+        "detail": [
+          {
+            "query": "coverage error",
+            "scope": "paper",
+            "stated_hits": 3,
+            "actual_hits": 3,
+            "pass": true
+          },
+          {
+            "query": "figure 6.1",
+            "scope": "paper",
+            "stated_hits": 1,
+            "actual_hits": 1,
+            "pass": true
+          },
+          {
+            "query": "exact percentage",
+            "scope": "paper",
+            "stated_hits": 0,
+            "actual_hits": 0,
+            "pass": true
+          },
+          {
+            "query": "numeric value",
+            "scope": "paper",
+            "stated_hits": 0,
+            "actual_hits": 0,
+            "pass": true
+          }
+        ]
+      }
+    ],
+    "pass": true
+  },
+  {
+    "id": "Q-WA4-B-FINAL-011",
+    "checks": [
+      {
+        "check": "frozen_after_retrieval",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:excerpt_verbatim_substring",
+        "pass": true,
+        "detail": {
+          "block_id": "2212.08148:b77",
+          "block_id_resolves": true,
+          "block_match": true,
+          "chunk_id": "2212.08148:c21",
+          "chunk_id_resolves": true,
+          "chunk_match": true
+        }
+      },
+      {
+        "check": "sub_part[0]:supported:gold_block_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:gold_chunk_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[1]:absent:probe_structure",
+        "pass": true,
+        "detail": {
+          "n_lexical": 4,
+          "n_semantic": 1,
+          "has_lexical_with_denominator": true
+        }
+      },
+      {
+        "check": "sub_part[1]:absent:denominator_arithmetic",
+        "pass": true,
+        "detail": [
+          {
+            "query": "safety group",
+            "scope": "paper",
+            "stated": 26,
+            "actual": 26,
+            "pass": true
+          },
+          {
+            "query": "35 safety groups",
+            "scope": "paper",
+            "stated": 26,
+            "actual": 26,
+            "pass": true
+          },
+          {
+            "query": "scenario count",
+            "scope": "paper",
+            "stated": 26,
+            "actual": 26,
+            "pass": true
+          },
+          {
+            "query": "per group",
+            "scope": "paper",
+            "stated": 26,
+            "actual": 26,
+            "pass": true
+          }
+        ]
+      },
+      {
+        "check": "sub_part[1]:absent:probe_hit_counts",
+        "pass": true,
+        "detail": [
+          {
+            "query": "safety group",
+            "scope": "paper",
+            "stated_hits": 6,
+            "actual_hits": 6,
+            "pass": true
+          },
+          {
+            "query": "35 safety groups",
+            "scope": "paper",
+            "stated_hits": 1,
+            "actual_hits": 1,
+            "pass": true
+          },
+          {
+            "query": "scenario count",
+            "scope": "paper",
+            "stated_hits": 0,
+            "actual_hits": 0,
+            "pass": true
+          },
+          {
+            "query": "per group",
+            "scope": "paper",
+            "stated_hits": 0,
+            "actual_hits": 0,
+            "pass": true
+          }
+        ]
+      }
+    ],
+    "pass": true
+  },
+  {
+    "id": "Q-WA4-B-FINAL-012",
+    "checks": [
+      {
+        "check": "frozen_after_retrieval",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:excerpt_verbatim_substring",
+        "pass": true,
+        "detail": {
+          "block_id": "2212.08148:b78",
+          "block_id_resolves": true,
+          "block_match": true,
+          "chunk_id": "2212.08148:c21",
+          "chunk_id_resolves": true,
+          "chunk_match": true
+        }
+      },
+      {
+        "check": "sub_part[0]:supported:gold_block_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:gold_chunk_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[1]:absent:probe_structure",
+        "pass": true,
+        "detail": {
+          "n_lexical": 4,
+          "n_semantic": 1,
+          "has_lexical_with_denominator": true
+        }
+      },
+      {
+        "check": "sub_part[1]:absent:denominator_arithmetic",
+        "pass": true,
+        "detail": [
+          {
+            "query": "chd",
+            "scope": "paper",
+            "stated": 26,
+            "actual": 26,
+            "pass": true
+          },
+          {
+            "query": "chandler",
+            "scope": "paper",
+            "stated": 26,
+            "actual": 26,
+            "pass": true
+          },
+          {
+            "query": "responder role",
+            "scope": "paper",
+            "stated": 26,
+            "actual": 26,
+            "pass": true
+          },
+          {
+            "query": "419",
+            "scope": "paper",
+            "stated": 26,
+            "actual": 26,
+            "pass": true
+          }
+        ]
+      },
+      {
+        "check": "sub_part[1]:absent:probe_hit_counts",
+        "pass": true,
+        "detail": [
+          {
+            "query": "chd",
+            "scope": "paper",
+            "stated_hits": 5,
+            "actual_hits": 5,
+            "pass": true
+          },
+          {
+            "query": "chandler",
+            "scope": "paper",
+            "stated_hits": 4,
+            "actual_hits": 4,
+            "pass": true
+          },
+          {
+            "query": "responder role",
+            "scope": "paper",
+            "stated_hits": 12,
+            "actual_hits": 12,
+            "pass": true
+          },
+          {
+            "query": "419",
+            "scope": "paper",
+            "stated_hits": 1,
+            "actual_hits": 1,
+            "pass": true
+          }
+        ]
+      }
+    ],
+    "pass": true
+  }
+]
