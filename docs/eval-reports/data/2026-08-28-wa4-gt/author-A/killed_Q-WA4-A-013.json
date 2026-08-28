@@ -1,0 +1,69 @@
+{
+  "id": "Q-WA4-A-013",
+  "question": "What maximum operating speed and permit conditions does this survey attribute to Waymo's AV service, and what is that maximum speed limit specifically for Waymo's Phoenix operations?",
+  "sub_parts": [
+    {
+      "text": "Waymo operates under 24/7 service, inclement weather, and speeds up to 65 mph -- the toughest permit conditions among AV companies.",
+      "status": "supported",
+      "gold_ref": {
+        "paper_id": "2503.00077",
+        "block_id": "2503.00077:b7",
+        "excerpt": "Waymo represents the state-of-the-art (SOTA) in AV technology and is the only company operating under the toughest permit conditions [7], [8]— 24/7 service, inclement weather, and speeds up to 65 mph—while maintaining a strong safety record [9]–[11]."
+      }
+    },
+    {
+      "text": "The maximum permitted operating speed specifically for Waymo's Phoenix service.",
+      "status": "absent",
+      "absence_probe_log": {
+        "probes": [
+          {
+            "query": "65 mph",
+            "hits": 4,
+            "denominator": 46155,
+            "table": "chunks"
+          },
+          {
+            "query": "Phoenix mph",
+            "hits": 0,
+            "denominator": 46155,
+            "table": "chunks"
+          },
+          {
+            "query": "65 mph",
+            "hits": 1,
+            "denominator": 28,
+            "table": "chunks",
+            "scope": "paper:2503.00077"
+          },
+          {
+            "query": "Waymo Phoenix maximum permitted operating speed mph",
+            "hits": 1,
+            "denominator": 47893,
+            "table": "qdrant:waymo_av_safety",
+            "method": "semantic_search round trip via app.mcp_verify_client --k 5",
+            "top_result": {
+              "top_paper_id": "2410.08903",
+              "top_score": 0.009065817593465827,
+              "top_snippet": "\nWaymo ADS Mileage\n\nWaymo's autonomous ride-hailing service operates in geographical areas across Phoenix, San Francisco, Los Angeles, and Austin without a human behind the wheel (RO). Waymo’s current"
+            },
+            "relevance_note": "KILLED -- see authoring log. Top-2 hit (2212.08148, 'Collision Avoidance Testing of the Waymo Automated Driving System') states Waymo's East Valley Phoenix ODD operates on roads 'up to a speed limit of 45 mph', a genuine Phoenix-specific Waymo speed figure. This directly answers the claimed-absent sub-part; item killed per the freeze rule rather than reshaped."
+          }
+        ],
+        "verdict": "This survey states one blanket 65 mph figure for Waymo's permit conditions overall; it is a literature-review paper on corner-case generation and never breaks the speed limit out by city, and no other corpus paper gives a Phoenix-specific Waymo speed limit."
+      }
+    }
+  ],
+  "gold_paper_ids": [
+    "2503.00077"
+  ],
+  "gold_block_ids": [
+    "2503.00077:b7"
+  ],
+  "author_id": "GT-A",
+  "frozen_after_retrieval": false,
+  "duplicate_of": null,
+  "_metadata": {
+    "corrections": [],
+    "excerpt_fidelity_vs_served_chunk": 1.0
+  }
+}
