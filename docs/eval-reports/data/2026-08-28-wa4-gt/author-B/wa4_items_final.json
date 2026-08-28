@@ -1,0 +1,852 @@
+{
+  "metadata": {
+    "author_id": "GT-B",
+    "set_name": "W-A4",
+    "version": "final",
+    "supersedes": "v3",
+    "defects_fixed": [
+      "Excerpt fidelity: V3-007/008/009 (unfixable hand-reconstructed excerpts) and placeholders V3-011/012 are gone; all 12 final items pass programmatic substring verification against chunks.text",
+      "Single-paper concentration: capped 2312.12675 at 4 items (FINAL-001..004, carried unchanged from v3); 8 new items authored against 4 additional papers (2312.13228, 2508.19425, 2604.03827, 2212.08148) for 5 papers total, max 4 per paper",
+      "Probe protocol: every absent sub-part has 4 paper-scoped lexical probes (single terms / 2-word pairs, numeric denominator + denominator_scope) and a real semantic round-trip via app.mcp_verify_client --data-dir waymo/data, with non-zero-hit items retained and explained rather than discarded"
+    ],
+    "description": "Partial-absent ground truth, final set: 12 items across 5 papers. 4 items retained unchanged from v3 (already-verified excerpts, 2312.12675). 8 new items authored from 4 additional papers to fix single-paper concentration. V3-005/006/007/008/009/010 killed (see authoring-log.md)."
+  },
+  "items": [
+    {
+      "id": "Q-WA4-B-FINAL-001",
+      "question": "What is the reported any-injury crash rate for the Waymo rider-only service across all locations, and what was the statistical significance of this reduction in Los Angeles specifically?",
+      "sub_parts": [
+        {
+          "text": "The reported any-injury crash rate for Waymo rider-only service (0.6 IPMM vs 2.80 human benchmark, 80% reduction)",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2312.12675",
+            "block_id": "2312.12675:c1",
+            "excerpt": "When considering all locations together, the any-injury-reported crashed vehicle rate was 0.6 incidents per million miles (IPMM) for the ADS vs 2.80 IPMM for the human benchmark, an 80% reduction"
+          }
+        },
+        {
+          "text": "Statistical significance of the injury rate reduction specifically in Los Angeles",
+          "status": "absent",
+          "absence_probe_log": {
+            "lexical_probes": [
+              {
+                "query": "Los Angeles",
+                "hits": 1,
+                "paper_chunk_count": 26,
+                "scope": "paper"
+              },
+              {
+                "query": "significance",
+                "hits": 12,
+                "paper_chunk_count": 26,
+                "scope": "paper"
+              },
+              {
+                "query": "significant",
+                "hits": 8,
+                "paper_chunk_count": 26,
+                "scope": "paper"
+              },
+              {
+                "query": "LA significant",
+                "hits": 0,
+                "paper_chunk_count": 26,
+                "scope": "paper"
+              }
+            ],
+            "semantic_probe": {
+              "query": "Was the injury rate reduction statistically significant in Los Angeles?",
+              "top_hits": [
+                "2312.12675:c23 - LA results appendix"
+              ],
+              "contains_answer": false
+            },
+            "denominator_scope": "paper",
+            "denominator": 26,
+            "verdict": "Genuinely absent from main results"
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2312.12675"
+      ],
+      "gold_block_ids": [
+        "2312.12675:c1"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": [],
+        "carried_from": "Q-WA4-B-V3-001",
+        "note": "Unchanged from v3 -- excerpt already verified against DB; kept as one of the 4 items allowed from 2312.12675 under the multi-paper spread cap."
+      }
+    },
+    {
+      "id": "Q-WA4-B-FINAL-002",
+      "question": "How many miles did Waymo's rider-only service travel in San Francisco, and what was the breakdown of injury-reported crashes by time of day for San Francisco operations?",
+      "sub_parts": [
+        {
+          "text": "Miles driven in San Francisco (1.76 million miles)",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2312.12675",
+            "block_id": "2312.12675:c8",
+            "excerpt": "1.76 million miles in San Francisco"
+          }
+        },
+        {
+          "text": "Breakdown of injury-reported crashes by time of day in San Francisco",
+          "status": "absent",
+          "absence_probe_log": {
+            "lexical_probes": [
+              {
+                "query": "time of day",
+                "hits": 1,
+                "paper_chunk_count": 26,
+                "scope": "paper"
+              },
+              {
+                "query": "daytime",
+                "hits": 0,
+                "paper_chunk_count": 26,
+                "scope": "paper"
+              },
+              {
+                "query": "night",
+                "hits": 0,
+                "paper_chunk_count": 26,
+                "scope": "paper"
+              },
+              {
+                "query": "hour",
+                "hits": 0,
+                "paper_chunk_count": 26,
+                "scope": "paper"
+              }
+            ],
+            "semantic_probe": {
+              "query": "What were injury-reported crash rates in San Francisco by time of day?",
+              "top_hits": [
+                "2312.12675:c9 - SF total crashes, no temporal breakdown"
+              ],
+              "contains_answer": false
+            },
+            "denominator_scope": "paper",
+            "denominator": 26,
+            "verdict": "Genuinely absent: paper pools crashes, no temporal stratification"
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2312.12675"
+      ],
+      "gold_block_ids": [
+        "2312.12675:c8"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": [],
+        "carried_from": "Q-WA4-B-V3-002",
+        "note": "Unchanged from v3 -- excerpt already verified against DB; kept as one of the 4 items allowed from 2312.12675 under the multi-paper spread cap."
+      }
+    },
+    {
+      "id": "Q-WA4-B-FINAL-003",
+      "question": "How many miles did Waymo operate in Los Angeles during the study period, and what was the p-value or significance test statistic for the Los Angeles injury rate comparison?",
+      "sub_parts": [
+        {
+          "text": "Mileage in Los Angeles (0.0467 million / 46,700 miles)",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2312.12675",
+            "block_id": "2312.12675:c8",
+            "excerpt": "0.0467 million (i.e., 46.7 thousand) miles in Los Angeles"
+          }
+        },
+        {
+          "text": "P-value or test statistic for LA injury rate significance",
+          "status": "absent",
+          "absence_probe_log": {
+            "lexical_probes": [
+              {
+                "query": "p-value",
+                "hits": 0,
+                "paper_chunk_count": 26,
+                "scope": "paper"
+              },
+              {
+                "query": "test statistic",
+                "hits": 0,
+                "paper_chunk_count": 26,
+                "scope": "paper"
+              },
+              {
+                "query": "p value",
+                "hits": 0,
+                "paper_chunk_count": 26,
+                "scope": "paper"
+              },
+              {
+                "query": "statistical test",
+                "hits": 0,
+                "paper_chunk_count": 26,
+                "scope": "paper"
+              }
+            ],
+            "semantic_probe": {
+              "query": "What is the p-value or test statistic for Los Angeles safety comparison?",
+              "top_hits": [
+                "2312.12675:c23 - reports CI but no p-values"
+              ],
+              "contains_answer": false
+            },
+            "denominator_scope": "paper",
+            "denominator": 26,
+            "verdict": "Genuinely absent: Nelson CIs used, not hypothesis tests"
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2312.12675"
+      ],
+      "gold_block_ids": [
+        "2312.12675:c8"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": [],
+        "carried_from": "Q-WA4-B-V3-003",
+        "note": "Unchanged from v3 -- excerpt already verified against DB; kept as one of the 4 items allowed from 2312.12675 under the multi-paper spread cap."
+      }
+    },
+    {
+      "id": "Q-WA4-B-FINAL-004",
+      "question": "What is the 95% confidence interval for LA any-injury crash rate, and what was the standard error?",
+      "sub_parts": [
+        {
+          "text": "95% CI for LA any-injury crash rate (0 IPMM, [0, 64.1])",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2312.12675",
+            "block_id": "2312.12675:c23",
+            "excerpt": "There were no (zero) police-reported and any-injury-reported crashes in Los Angeles, resulting in a 0 IPMM with 95% confidence intervals of (0, 64.1) IPMM"
+          }
+        },
+        {
+          "text": "Standard error of the LA any-injury crash rate estimate",
+          "status": "absent",
+          "absence_probe_log": {
+            "lexical_probes": [
+              {
+                "query": "standard error",
+                "hits": 0,
+                "paper_chunk_count": 26,
+                "scope": "paper"
+              },
+              {
+                "query": "variance",
+                "hits": 0,
+                "paper_chunk_count": 26,
+                "scope": "paper"
+              },
+              {
+                "query": "SE",
+                "hits": 0,
+                "paper_chunk_count": 26,
+                "scope": "paper"
+              },
+              {
+                "query": "uncertainty",
+                "hits": 1,
+                "paper_chunk_count": 26,
+                "scope": "paper"
+              }
+            ],
+            "semantic_probe": {
+              "query": "What is the standard error of the LA crash rate estimate?",
+              "top_hits": [
+                "2312.12675:c7 - CI methodology, no SE values"
+              ],
+              "contains_answer": false
+            },
+            "denominator_scope": "paper",
+            "denominator": 26,
+            "verdict": "Genuinely absent: CIs provided, SE/variance not"
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2312.12675"
+      ],
+      "gold_block_ids": [
+        "2312.12675:c23"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": [],
+        "carried_from": "Q-WA4-B-V3-004",
+        "note": "Unchanged from v3 -- excerpt already verified against DB; kept as one of the 4 items allowed from 2312.12675 under the multi-paper spread cap."
+      }
+    },
+    {
+      "id": "Q-WA4-B-FINAL-005",
+      "question": "What was San Francisco County's Blincoe-adjusted any-injury-reported crash rate relative to the national average, and what is the 95% confidence interval on that San Francisco estimate?",
+      "sub_parts": [
+        {
+          "text": "San Francisco's Blincoe-adjusted any-injury-reported crash rate was 5.82 IPMM, about 330% (three times) higher than the national average of 1.76 IPMM",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2312.13228",
+            "block_id": "2312.13228:c17",
+            "excerpt": "San Francisco had the highest crash rate with 5.82 incidents per million miles (IPMM), which was approximately three times higher (330% higher) than the national average (1.76 IPMM)."
+          }
+        },
+        {
+          "text": "The 95% confidence interval on San Francisco's Blincoe-adjusted any-injury-reported rate estimate",
+          "status": "absent",
+          "absence_probe_log": {
+            "lexical_probes": [
+              {
+                "query": "confidence interval",
+                "hits": 1,
+                "paper_chunk_count": 52,
+                "scope": "paper"
+              },
+              {
+                "query": "uncertainty",
+                "hits": 2,
+                "paper_chunk_count": 52,
+                "scope": "paper"
+              },
+              {
+                "query": "standard error",
+                "hits": 0,
+                "paper_chunk_count": 52,
+                "scope": "paper"
+              },
+              {
+                "query": "precision",
+                "hits": 0,
+                "paper_chunk_count": 52,
+                "scope": "paper"
+              }
+            ],
+            "semantic_probe": {
+              "query": "What is the 95% confidence interval on San Francisco's Blincoe-adjusted any-injury-reported crash rate estimate?",
+              "top_hits": [
+                "2312.12675:b57 - WRONG paper: a different Waymo study's own Table 4/7 with 95% CIs for Phoenix/SF/LA, not this paper's (2312.13228) benchmark figure"
+              ],
+              "contains_answer": false
+            },
+            "denominator_scope": "paper",
+            "denominator": 52,
+            "verdict": "Genuinely absent: this paper reports point-estimate crash rates only in its geographic-region table (c17); no CI accompanies the SF figure. The single 'confidence interval' mention in the paper (c39, appendix) refers to a different study's (Swiss Re insurance) benchmark CI, not this paper's own SF estimate. Semantic retrieval for a CI on this figure confidently surfaces an entirely different paper's CI table, which is exactly the cross-paper conflation risk this item targets."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2312.13228"
+      ],
+      "gold_block_ids": [
+        "2312.13228:c17"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": []
+      }
+    },
+    {
+      "id": "Q-WA4-B-FINAL-006",
+      "question": "According to the power analysis, how many miles would a fictive ADS need to drive to detect a statistically significant difference at 10% of the suspected-serious-injury+ benchmark rate, and what specific mileage does the paper report for detecting significance at that same 10%-of-benchmark level for the Blincoe-adjusted any-injury-reported severity?",
+      "sub_parts": [
+        {
+          "text": "Approximately 56 million miles would be needed to detect statistical significance for a fictive ADS suspected-serious-injury+ crash rate at 10% of the benchmark rate (vs. ~240 million miles at 50% of benchmark)",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2312.13228",
+            "block_id": "2312.13228:c19",
+            "excerpt": "Conversely, if that crash rate was 10% of the benchmark crash rate, the required mileage would only be approximately 56 million miles."
+          }
+        },
+        {
+          "text": "The specific required mileage for the Blincoe-adjusted any-injury-reported severity level at 10% of benchmark",
+          "status": "absent",
+          "absence_probe_log": {
+            "lexical_probes": [
+              {
+                "query": "any-injury-reported",
+                "hits": 13,
+                "paper_chunk_count": 52,
+                "scope": "paper"
+              },
+              {
+                "query": "million miles",
+                "hits": 7,
+                "paper_chunk_count": 52,
+                "scope": "paper"
+              },
+              {
+                "query": "table 3",
+                "hits": 2,
+                "paper_chunk_count": 52,
+                "scope": "paper"
+              },
+              {
+                "query": "required mileage",
+                "hits": 1,
+                "paper_chunk_count": 52,
+                "scope": "paper"
+              }
+            ],
+            "semantic_probe": {
+              "query": "What is the required mileage to detect statistical significance for the Blincoe-adjusted any-injury-reported crash rate at 10 percent of the benchmark rate?",
+              "top_hits": [
+                "2312.13228:c19 - correct paper AND chunk, but only gives worked examples for suspected-serious-injury+ (240M/56M miles); states qualitatively that 'millions of miles' are needed for any-injury-reported without quantifying it"
+              ],
+              "contains_answer": false
+            },
+            "denominator_scope": "paper",
+            "denominator": 52,
+            "verdict": "Genuinely absent from chunk text: the paragraph gives worked numeric examples only for suspected-serious-injury+. It says qualitatively that millions of miles are needed for the Blincoe-adjusted any-injury-reported severity too, but never states a number in prose -- the exact figure exists only in Table 3, whose cell values are not present in any chunk (verified: 'Table 3' appears in only 2 chunks, neither containing the tabulated numbers). A system paraphrasing the retrieved (correct) passage could easily pattern-complete a specific any-injury-reported number from the suspected-serious-injury+ example -- the confident-fabrication risk this item targets."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2312.13228"
+      ],
+      "gold_block_ids": [
+        "2312.13228:c19"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": []
+      }
+    },
+    {
+      "id": "Q-WA4-B-FINAL-007",
+      "question": "What was the range of freeway any-airbag-deployment crash rates across geographic regions in this study, and what mileage would be required to detect a statistically significant difference specifically for that severity category?",
+      "sub_parts": [
+        {
+          "text": "Freeway any-airbag-deployed crash rates varied from 0.355 IPMM (Phoenix) to 1.033 IPMM (Atlanta), a 2.9-times difference",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2508.19425",
+            "block_id": "2508.19425:c19",
+            "excerpt": "The any airbag deployed freeway crash rates varied from 0.355 (in Phoenix) to 1.033 (in Atlanta) incidents per million miles (2.9-times difference)."
+          }
+        },
+        {
+          "text": "The required VMT to detect statistical significance specifically for the any-airbag-deployment severity level",
+          "status": "absent",
+          "absence_probe_log": {
+            "lexical_probes": [
+              {
+                "query": "airbag deployment",
+                "hits": 3,
+                "paper_chunk_count": 38,
+                "scope": "paper"
+              },
+              {
+                "query": "required mileage",
+                "hits": 3,
+                "paper_chunk_count": 38,
+                "scope": "paper"
+              },
+              {
+                "query": "vmt required",
+                "hits": 1,
+                "paper_chunk_count": 38,
+                "scope": "paper"
+              },
+              {
+                "query": "figure 4",
+                "hits": 2,
+                "paper_chunk_count": 38,
+                "scope": "paper"
+              }
+            ],
+            "semantic_probe": {
+              "query": "What mileage is required to detect statistical significance for freeway airbag deployment crash rates?",
+              "top_hits": [
+                "2508.19425:c22 (Required Mileage for Statistical Testing) - correct paper and topic chunk, but only reports example VMT ranges for police-reported and fatal severities, not any-airbag-deployment"
+              ],
+              "contains_answer": false
+            },
+            "denominator_scope": "paper",
+            "denominator": 38,
+            "verdict": "Genuinely absent: the 'Required Mileage for Statistical Testing' section gives worked VMT examples only for police-reported and fatal severities at 25%/75% safety-improvement scenarios. The complete per-severity mileage table (which would include airbag deployment) is stated to be 'available for download in the supplemental materials' -- i.e., explicitly outside the paper text and therefore outside the corpus. Retrieval returns the right section but the airbag-specific number simply is not there to be found."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2508.19425"
+      ],
+      "gold_block_ids": [
+        "2508.19425:c19"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": []
+      }
+    },
+    {
+      "id": "Q-WA4-B-FINAL-008",
+      "question": "What percentage of police-reported property-damage-only and non-fatal-injury crashes does the paper estimate go unreported nationally, and what is the corresponding unreported-percentage estimate for fatal crashes?",
+      "sub_parts": [
+        {
+          "text": "An estimated 60% of property-damage-only crashes and 32% of non-fatal injury crashes are estimated to go unreported nationally",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2508.19425",
+            "block_id": "2508.19425:c26",
+            "excerpt": "National studies show substantial underreporting of police reported crashes, with an estimated 60% of property-damage-only and 32% of non-fatal injury crashes going unreported"
+          }
+        },
+        {
+          "text": "The corresponding unreported-percentage estimate for fatal crashes",
+          "status": "absent",
+          "absence_probe_log": {
+            "lexical_probes": [
+              {
+                "query": "underreporting",
+                "hits": 5,
+                "paper_chunk_count": 38,
+                "scope": "paper"
+              },
+              {
+                "query": "unreported",
+                "hits": 1,
+                "paper_chunk_count": 38,
+                "scope": "paper"
+              },
+              {
+                "query": "reporting rate",
+                "hits": 0,
+                "paper_chunk_count": 38,
+                "scope": "paper"
+              },
+              {
+                "query": "completeness",
+                "hits": 2,
+                "paper_chunk_count": 38,
+                "scope": "paper"
+              }
+            ],
+            "semantic_probe": {
+              "query": "What percentage of fatal crashes go unreported to police?",
+              "top_hits": [
+                "2508.19425:c26 - the SAME chunk that reports the 60%/32% PDO/non-fatal-injury figures, confidently returned again but containing no fatal-specific percentage"
+              ],
+              "contains_answer": false
+            },
+            "denominator_scope": "paper",
+            "denominator": 38,
+            "verdict": "Genuinely absent: the paper enumerates underreporting estimates for property-damage-only and non-fatal-injury crashes only; it never states a fatal-crash underreporting percentage (fatal crashes are conventionally assumed near-fully reported, but the paper does not say so or quantify it). Semantic retrieval returns exactly the 60%/32% passage for a 'fatal underreporting' query, creating real risk that a system reads this as covering all severities including fatal."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2508.19425"
+      ],
+      "gold_block_ids": [
+        "2508.19425:c26"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": []
+      }
+    },
+    {
+      "id": "Q-WA4-B-FINAL-009",
+      "question": "How many true positive events were identified in Category A of the real-world case study, and what was the actual (non-rescaled) mileage or exposure denominator used to compute the Category A rate?",
+      "sub_parts": [
+        {
+          "text": "38 true positive events were identified from Category A (all with relatively small sampling weights); a single high-weight event was identified from Category B",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2604.03827",
+            "block_id": "2604.03827:c7",
+            "excerpt": "In this case, 38 true positive events were identified from Category A, all having relatively small sampling weights; on the other hand, a single event with a high weight was identified from Category B."
+          }
+        },
+        {
+          "text": "The actual (non-rescaled) mileage or exposure denominator behind the Category A rate",
+          "status": "absent",
+          "absence_probe_log": {
+            "lexical_probes": [
+              {
+                "query": "mileage",
+                "hits": 1,
+                "paper_chunk_count": 14,
+                "scope": "paper"
+              },
+              {
+                "query": "exposure",
+                "hits": 0,
+                "paper_chunk_count": 14,
+                "scope": "paper"
+              },
+              {
+                "query": "denominator",
+                "hits": 1,
+                "paper_chunk_count": 14,
+                "scope": "paper"
+              },
+              {
+                "query": "normalization",
+                "hits": 1,
+                "paper_chunk_count": 14,
+                "scope": "paper"
+              }
+            ],
+            "semantic_probe": {
+              "query": "What is the actual mileage exposure denominator behind the Category A crash rate estimate, before rescaling for anonymization?",
+              "top_hits": [
+                "2312.13228:c26 - WRONG paper: 'Accounting for Influential Factors' discussing a different study's mileage-exposure denominator, unrelated to this paper's Category A/B case study"
+              ],
+              "contains_answer": false
+            },
+            "denominator_scope": "paper",
+            "denominator": 14,
+            "verdict": "Explicitly withheld, not merely omitted: the paper states directly that 'the rates are rescaled (i.e. without normalization by the actual mileage) for the purpose of anonymization' -- the true denominator is deliberately never disclosed anywhere in the paper. Semantic retrieval for the denominator confidently surfaces an unrelated passage from a DIFFERENT paper (2312.13228) that also discusses a 'mileage exposure' denominator, which is exactly the cross-paper confusion this item is built to catch."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2604.03827"
+      ],
+      "gold_block_ids": [
+        "2604.03827:c7"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": []
+      }
+    },
+    {
+      "id": "Q-WA4-B-FINAL-010",
+      "question": "How does the PB (Poisson-bootstrap) confidence interval method's empirical coverage error behave as the importance-sampling budget ratio approaches zero, and what exact numeric coverage-error value does the paper report in that regime?",
+      "sub_parts": [
+        {
+          "text": "The coverage error for PB can be very large and even close to 100% when true positive data is sparse (near-zero budget ratio)",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2604.03827",
+            "block_id": "2604.03827:c6",
+            "excerpt": "The coverage of EB is more reliable than PB overall while the coverage error for PB can be very large and even close to 100% when true positive data is sparse,"
+          }
+        },
+        {
+          "text": "The exact numeric coverage-error value for PB in the near-zero budget ratio regime",
+          "status": "absent",
+          "absence_probe_log": {
+            "lexical_probes": [
+              {
+                "query": "coverage error",
+                "hits": 3,
+                "paper_chunk_count": 14,
+                "scope": "paper"
+              },
+              {
+                "query": "figure 6.1",
+                "hits": 1,
+                "paper_chunk_count": 14,
+                "scope": "paper"
+              },
+              {
+                "query": "exact percentage",
+                "hits": 0,
+                "paper_chunk_count": 14,
+                "scope": "paper"
+              },
+              {
+                "query": "numeric value",
+                "hits": 0,
+                "paper_chunk_count": 14,
+                "scope": "paper"
+              }
+            ],
+            "semantic_probe": {
+              "query": "What is the exact numeric coverage error percentage for the PB confidence interval method when the budget ratio approaches zero?",
+              "top_hits": [
+                "2604.03827:c10/appendix - same paper, wrong section (Appendix A.1 proof of Lemma 3, pure math derivation), no coverage-error figures"
+              ],
+              "contains_answer": false
+            },
+            "denominator_scope": "paper",
+            "denominator": 14,
+            "verdict": "Genuinely absent from chunk text: the prose only characterizes PB's near-zero-budget coverage error qualitatively ('very large... close to 100%'). The precise value is only plotted in Figure 6.1, which is not transcribed as text in any chunk. Probing for the exact number instead surfaces an unrelated appendix proof chunk, confirming the figure is not recoverable from the chunked corpus."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2604.03827"
+      ],
+      "gold_block_ids": [
+        "2604.03827:c6"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": []
+      }
+    },
+    {
+      "id": "Q-WA4-B-FINAL-011",
+      "question": "What was the split between pedestrian/cyclist and vehicle conflict scenarios in the 13,000-scenario SF/PHX CAT evaluation, and how many of those scenarios fell into each of the 35 individual safety groups?",
+      "sub_parts": [
+        {
+          "text": "The SF/PHX CAT evaluation contained over 13,000 scenarios: 48% involved a potential pedestrian/cyclist conflict and 52% a potential vehicle conflict",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2212.08148",
+            "block_id": "2212.08148:c21",
+            "excerpt": "In total, the CAT evaluation for the SF/PHX ODD contained over 13,000 scenarios. Of these, 48% of scenarios involved a potential conflict with a pedestrian or cyclist and the other 52% involved a potential conflict with a vehicle."
+          }
+        },
+        {
+          "text": "The per-safety-group scenario counts across the 35 individual safety groups",
+          "status": "absent",
+          "absence_probe_log": {
+            "lexical_probes": [
+              {
+                "query": "safety group",
+                "hits": 6,
+                "paper_chunk_count": 26,
+                "scope": "paper"
+              },
+              {
+                "query": "35 safety groups",
+                "hits": 1,
+                "paper_chunk_count": 26,
+                "scope": "paper"
+              },
+              {
+                "query": "scenario count",
+                "hits": 0,
+                "paper_chunk_count": 26,
+                "scope": "paper"
+              },
+              {
+                "query": "per group",
+                "hits": 0,
+                "paper_chunk_count": 26,
+                "scope": "paper"
+              }
+            ],
+            "semantic_probe": {
+              "query": "How many of the 13,000 CAT evaluation scenarios fell into each of the 35 safety groups?",
+              "top_hits": [
+                "2212.08148:c21 - correct paper and chunk (names the 35 safety groups and the 48%/52% aggregate split) but gives no per-group breakdown"
+              ],
+              "contains_answer": false
+            },
+            "denominator_scope": "paper",
+            "denominator": 26,
+            "verdict": "Genuinely absent: the paper states that 35 safety groups existed and reports only the two-way (pedestrian/cyclist vs. vehicle) aggregate split at the 13,000-scenario level. No per-safety-group scenario counts or percentages are given anywhere in the paper text."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2212.08148"
+      ],
+      "gold_block_ids": [
+        "2212.08148:c21"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": []
+      }
+    },
+    {
+      "id": "Q-WA4-B-FINAL-012",
+      "question": "What percentage of responder-role on-road-testing events were not covered by the existing scenario database in the SF/PHX CAT evaluation, and what is the equivalent responder-role coverage figure the paper reports for the original CHD (Chandler, Arizona) Waymo One ODD?",
+      "sub_parts": [
+        {
+          "text": "Of 419 simulated responder-role events reviewed, 106 (25%) were not covered by the existing scenario database, prompting additional scenarios to be added",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2212.08148",
+            "block_id": "2212.08148:c21",
+            "excerpt": "Of the 419 simulated events reviewed that featured the ADS in the responder role, 106 (25%) were not covered in the existing scenario database and prompted additional scenarios to be added."
+          }
+        },
+        {
+          "text": "The equivalent responder-role scenario-coverage percentage for the CHD (Chandler) ODD",
+          "status": "absent",
+          "absence_probe_log": {
+            "lexical_probes": [
+              {
+                "query": "chd",
+                "hits": 5,
+                "paper_chunk_count": 26,
+                "scope": "paper"
+              },
+              {
+                "query": "chandler",
+                "hits": 4,
+                "paper_chunk_count": 26,
+                "scope": "paper"
+              },
+              {
+                "query": "responder role",
+                "hits": 12,
+                "paper_chunk_count": 26,
+                "scope": "paper"
+              },
+              {
+                "query": "419",
+                "hits": 1,
+                "paper_chunk_count": 26,
+                "scope": "paper"
+              }
+            ],
+            "semantic_probe": {
+              "query": "What percentage of responder-role scenarios from on-road testing in the Chandler Arizona CHD ODD were not covered by the existing scenario database?",
+              "top_hits": [
+                "2212.08148:c21 - same chunk, confidently returned again, but the 419/106/25% figures are explicitly scoped to the SF/PHX ODD, not CHD"
+              ],
+              "contains_answer": false
+            },
+            "denominator_scope": "paper",
+            "denominator": 26,
+            "verdict": "Genuinely absent: the 419/106/25% responder-role coverage analysis is explicitly introduced as validation for the SF/PHX ODD example. CHD/Chandler is mentioned elsewhere (c15, c22) only as the location where the CAT methodology was previously applied operationally -- no equivalent coverage percentage is ever given for it. Retrieval for a CHD-specific version of this figure confidently returns the SF/PHX number instead, exactly the location-conflation risk this item targets."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2212.08148"
+      ],
+      "gold_block_ids": [
+        "2212.08148:c21"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": []
+      }
+    }
+  ]
+}
