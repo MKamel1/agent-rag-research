@@ -242,27 +242,211 @@ it should be read as exactly that: informative evidence, not a failed attempt.
 
 ## 4. Arm (a) — late-chunking-style section-scoped embedding
 
-*(Filled in once the solo re-embed run completes — see §9's live status note if this section
-still reads as a placeholder when read mid-run.)*
+### 4.1 Mechanism and honesty corrections to the ticket's own framing
+
+Each chunk's dense embedding text is the chunk's own text plus a bounded word window (100 words,
+default) pulled from its position-adjacent siblings (same paper, chunk-id numeric suffix ±1) --
+`app/exp_chunk_boundary_latechunk_embed.py::build_section_context_text`. `payload.text` (the
+sparse/keyword channel) stays the chunk's own unmodified text throughout, isolating the dense-only
+effect (`app/reembed_experiment.py`'s own established discipline, reused unchanged).
+
+**Correction to the ticket brief**: the deployed embedding server's `max_input_length` is
+**4096 tokens** (`GET /info` on the live TEI-style embed endpoint, measured directly), not the
+32k the ticket text assumed. This did not block the experiment (4096 tokens comfortably covers a
+~440-word median chunk plus two 100-word windows, with `auto_truncate` as the safety net for the
+long tail), but the claimed headroom was 8x smaller than stated.
+
+### 4.2 Dry-run cost projection vs. actual
+
+Offline count (`price_corpus`, zero-GPU): **1,738 papers, 46,155 chunks, 1,452 multi-chunk
+sections** (~3.1% of chunks belong to a section split across multiple chunks — the literal
+`same_section`-eligible case). Arm-text word count **24,484,408 vs. baseline 16,959,863 — a
+1.444x ratio** (most chunks gain two ~100-word windows; single-chunk-section papers with no
+siblings are identical to baseline).
+
+Real timed sample (6 median-sized papers, 126 chunks, real embed+upsert into a throwaway
+collection `sb1_latechunk_dryrun_sample`): **16.05s, 0.1274 s/chunk**. Projected full-corpus time:
+**46,155 × 0.1274s ≈ 5,878s ≈ 98.0 minutes**.
+
+**Actual** (solo run, no concurrent GPU contention, `docs/AGENT-OPERATIONS-LESSONS.md` §9.1's
+fix applied): started 11:02:45, finished 12:24:35 (log mtime; 1,443 `/embed` HTTP calls =
+`ceil(46155/32)` exactly) — **81.8 minutes (4,910s), ~17% faster than projected**, plausibly
+because the projection's small 126-chunk sample carried more fixed per-invocation overhead
+(proportionally) than the full run, and/or the solo run had zero lock contention the sample run
+also didn't have.
+
+### 4.3 The confound this arm almost shipped with, and its fix
+
+`app/reembed_experiment.py::reembed()` only ever embeds `kind="chunk"` points -- the freshly
+built `waymo_av_safety_sb1_latechunk` collection therefore held **46,155 points, zero
+`kind="summary"`** vectors after the re-embed, against the baseline's 46,155 chunk + **1,738**
+summary (one per paper). Evaluating against that collection as-is would have changed two
+variables at once (the intended chunk-embedding treatment, plus an unintended shrinkage of the
+candidate pool for any summary-kind hybrid search) -- exactly the kind of silent confound this
+ticket's own measurement discipline exists to catch, and structurally the same shape as the
+`n_errors>0` case §0's VOID guard catches.
+
+**Fixed by copying, not re-embedding**: `rag/vector_index.py::copy_kind_into(dest, kind)` (new,
+§9) does a server-side-filtered scroll-then-upsert of only `kind="summary"` points, verbatim (no
+re-embedding -- summaries are unaffected by this arm's chunk-text treatment, so copying is exact
+and costs no GPU time). Real caller: `app/exp_chunk_boundary_latechunk_embed.py
+--copy-summaries-into waymo_av_safety_sb1_latechunk` (§9) -- copied exactly 1,738 points.
+**Verified both invariants before evaluating**: `waymo_av_safety` unchanged at 47,893/green
+throughout (read-only scroll only, confirmed before and after); `waymo_av_safety_sb1_latechunk`
+now totals 47,893 (46,155 chunk + 1,738 summary via a direct server-side count-by-kind), matching
+the baseline collection's composition exactly.
+
+### 4.4 Results — clean, error-free, both fixtures
+
+| metric | fixture | arm | pool depth | config | before | after | delta |
+|---|---|---|---|---|---|---|---|
+| R@10 (answerable) | gt_wmr | section-context | rerank_depth=32, k=10 | fused, waymo_av_safety_sb1_latechunk | 68/70 = 0.9714 | 69/70 = 0.9857 | +1 item |
+| R@10 (answerable) | waymo_gt_verified | section-context | rerank_depth=32, k=10 | fused, waymo_av_safety_sb1_latechunk | 65/68 = 0.9559 | 64/68 = 0.9412 | **−1 item** |
+| MRR | gt_wmr | section-context | rerank_depth=32, k=10 | fused, waymo_av_safety_sb1_latechunk | 0.9393 | 0.9431 | +0.0038 |
+| MRR | waymo_gt_verified | section-context | rerank_depth=32, k=10 | fused, waymo_av_safety_sb1_latechunk | 0.8335/0.8261 | 0.8354 | inside/at the edge of the 0.0074 noise band |
+| block-P@1 | gt_wmr | section-context | rerank_depth=32, k=10 | fused, waymo_av_safety_sb1_latechunk | 48/65 = 0.7385 | 49/65 = 0.7538 | +1.54pp |
+| block-P@1 | waymo_gt_verified | section-context | rerank_depth=32, k=10 | fused, waymo_av_safety_sb1_latechunk | 22/60 = 0.3667 | 24/60 = 0.4000 | +3.33pp |
+
+`n_errors=0` on both fixtures (verified — not assumed).
+
+### 4.5 D2 boundary-stratum bucket table, before/after, both fixtures
+
+| fixture | bucket | before | after |
+|---|---|---|---|
+| gt_wmr | same_chunk | 1 | 1 |
+| gt_wmr | adjacent_chunk | 2 | 2 |
+| gt_wmr | same_doc_elsewhere | 9 | 9 |
+| ver84 | same_chunk | 1 | 1 |
+| ver84 | adjacent_chunk | 9 | 9 |
+| ver84 | same_doc_elsewhere | 16 | 16 |
+
+**Boundary-class bucket counts are byte-identical to baseline on both fixtures** — the same
+result as arm (b), despite a completely different mechanism (embedding-text context vs.
+score-level neighbour blending).
+
+### 4.6 Where the metric movement actually came from (per-item trace, not asserted from the aggregate)
+
+Traced every item whose PREC-1 joint-decomposition bucket (A/C1/C2/D/E) changed between the clean
+baseline and arm (a) reports:
+
+**ver84 — the two items that converted to hits**: `Q-GTA-012` (C1→A, block rank 2→1) and
+`Q-WAYB-031` (C2→A, block rank absent→1). Checked directly against the "before" bucket analysis's
+per-item records: **both are `same_doc_elsewhere`, chunk distances 13 and 20** — neither is a
+`same_chunk`/`adjacent_chunk` (boundary-class) item. This is the same conclusion the frozen
+bucket table already implies (§4.5's boundary counts are unchanged), now confirmed at the
+individual-item level: **zero of arm (a)'s gains are boundary-class conversions.**
+
+**ver84 — where the net R@10 loss came from**: `Q-GTA-011` entered the top-10 (paper rank
+None→10, a genuine gain — the identical item that also entered under arm (b), suggesting a
+corpus-level "most fragile" item near the R@10=10 threshold rather than anything specific to
+either treatment); `Q-GTA-020` (rank 3→None) and `Q-GTA-022` (rank 8→None) both dropped OUT of
+the top-10 entirely. Net: +1 −2 = **−1**, matching the observed 65→64.
+
+**gt_wmr — the item that converted to a hit**: `Q-WMR-015` and `Q-WMR-020` both moved D→A (paper
+rank 2→1, block rank 2→1 in both cases) — genuine paper-level re-ranking wins, not
+within-paper boundary fixes (a D-bucket item, by definition, already had the right answer
+retrievable somewhere in the pool; the fix here is which PAPER's chunk sits at rank 1, not where
+within one paper's own chunk sequence the gold sits). One item (`Q-WMR-028`) entered the top-10
+that hadn't been before (paper rank None→6), a genuine R@10 gain. **Two real costs on this
+fixture, both worth naming even though neither flips the headline number as badly as it could
+have**: `Q-WMR-035` **lost** a previously-perfect hit (paper rank 1→1 unchanged, but block rank
+1→None — the gold passage is no longer found in the pool at all); `Q-WMR-048`'s correct paper
+**collapsed from rank 1 to rank 10** (block rank 2→None) — it was already a near-miss before
+(C1), so this doesn't move the binary block-P@1 count, but it is a real, large degradation a
+binary metric hides.
+
+### 4.7 The four persistently-unreachable ver84 items — checked again
+
+Same check as §3.5, against arm (a)'s clean report. **None exposed** — all four
+(`Q-GTA-042`, `Q-GTA-043`, `Q-GTA-044`, `Q-WAYB-027`) have `paper_level.rank == 1` and
+`passage_level.rank == None` identically before and after. Expected, for the same reason as arm
+(b): three are genuinely vision-only content and the fourth (`Q-GTA-044`) is missing from the
+corpus's own extracted block/chunk text (a corpus-extraction defect, confirmed via substring
+search — §3.5) — no change to how existing extracted text is embedded, by any mechanism, can
+reach text that was never extracted in the first place. **The 57/60=0.95 trigger did not fire
+under either arm.**
+
+### 4.8 Verdict: arm (a)
+
+**REJECT for this ticket's actual target (chunk-boundary near-miss mitigation), on both fixtures,
+never averaged** — despite arm (a) being the one arm that moved a headline metric at all.
+
+The distinction matters and is the whole point of §4.6's per-item trace: block-P@1 improved on
+both fixtures (+1.54pp gt_wmr, +3.33pp ver84 — the latter clears arm (b)'s own pre-registered
++2pp bar), but **every single converted item is `same_doc_elsewhere` or a paper-level (D/E→A)
+re-rank, and zero are boundary-class** (§4.5's bucket table is byte-identical to baseline; §4.6
+names the two ver84 conversions explicitly and both check out as `same_doc_elsewhere`). A
+metric improvement whose gains are provably not where the ticket is aimed is not evidence for
+adopting this technique as a *boundary* mitigation, whatever its incidental value elsewhere might
+be. This is the section-context analogue of "track anchor-exactness artifacts separately"
+(measurement discipline) — the artifact here is "gains from paper-level re-ranking", not
+re-anchoring, but the discipline is identical: verify the mechanism before crediting the metric.
+
+Separately, and worth weighing on its own: this is **not a clean win even ignoring
+target-alignment** — ver84's R@10 regressed by one item (a real, net change, not noise: two
+paper-level exits against one entry), and gt_wmr lost one previously-perfect block-P@1 hit
+(`Q-WMR-035`) while gaining two elsewhere. A treatment that reshuffles a broad swath of vectors
+(the arm's own word-count ratio, 1.444x, touches most chunks' text, not only the ~3.1% in genuinely
+split sections) plausibly produces exactly this shape of result: real but essentially undirected
+churn, net-positive on one fixture and net-negative-on-one-metric on the other, with the actual
+target (boundary near-misses) completely unmoved on either.
+
+**Convergent finding across both arms, independently**: two structurally different mechanisms —
+arm (b)'s score-level ±1-chunk blend and arm (a)'s ±100-word embedding-context window — both
+leave the D2 boundary-class bucket counts byte-identical to baseline on both fixtures. Two
+independent negative results on the same target, via unrelated mechanisms, is stronger evidence
+than either alone that this corpus's `same_chunk`/`adjacent_chunk` near-misses (already a minority
+of near-misses per D2's own framing — 25%/33%) are not reachable by a local, bounded-reach
+intervention of either kind measured here.
 
 ## 9. Deviations from the owned-files list (recorded, not buried in a diff)
 
 SB-1's owned files are `app/exp_chunk_boundary_*.py`, this report, its data directory, and
-sibling tests. Two shared, non-owned files were touched, both minimally and additively, both with
-their own regression proof run and pasted here rather than only asserted:
+sibling tests. By the end of this ticket, **four shared, non-owned files were touched** — worth
+naming as drift up front, even though each one is individually defensible: an experiment ticket
+that ends up patching four pieces of shared infrastructure is a real cost, not a free action, and
+a future reader should be able to see that at a glance rather than discover it file-by-file.
+
+| file | change | why this ticket couldn't avoid it |
+|---|---|---|
+| `app/reembed_experiment.py` | `embed_text_fn` hook + `--section-context-window` flag | needed a real embedder/vector-store client; a new file doing that directly would trip `ci/checks/vendor_isolation.py`'s vendor-token allowlist, and `ci/` is foundation-gated |
+| `scripts/nb_eval_runner.py` | `n_errors>0` → VOID row/stdout warning | a real incident (§0) showed a contaminated run rendering identically to a clean one; the fix belongs at the one place every fixture row is rendered |
+| `rag/vector_index.py` | `copy_kind_into(dest, kind)` | `qdrant_client` is importable only in this one file (CONVENTIONS.md §1); no other file can copy vectors without it |
+| `docs/AGENT-OPERATIONS-LESSONS.md` | appended §9.1 | orchestrator's explicit request; purely additive by that file's own convention |
+
+Each is minimal, additive, and defaults to reproducing prior behavior byte-for-byte when unused.
+Regression proof for every one, pasted below rather than only asserted:
 
 1. **`app/reembed_experiment.py`** (T-DOC41's spike script) — added an optional `embed_text_fn`
    keyword parameter to `reembed()` (default `None`, mutually exclusive with `with_headers`,
-   reproduces prior behavior byte-for-byte when omitted) and a `--sb1-section-context-window` CLI
+   reproduces prior behavior byte-for-byte when omitted) and a `--section-context-window` CLI
    flag that deferred-imports arm (a)'s text-transform function only when used. Reason: arm (a)
    needs a real embedder/vector-store client to price and run its re-embed, and constructing one
    in a brand-new `app/` file would name a vendor HTTP-client token that
    `ci/checks/vendor_isolation.py` only allowlists in specific paths — `ci/` itself is a
    foundation-gated path this ticket must not touch to add an entry. Extending the one
    already-allowlisted composition root this shape belongs to was the smaller, correct move.
-   **Regression proof**: `app/test_reembed_experiment.py` (23 tests) + `app/test_exp1_outline_
-   split.py` — both pass unchanged, verified twice (once directly, once independently by the
-   orchestrator against the same commit).
+
+   **Naming fix applied on review**: the flag was originally `--sb1-section-context-window` —
+   baking an ephemeral ticket ID into a shared, general-purpose CLI that predates this ticket and
+   will outlive it. Renamed to `--section-context-window`; provenance now lives only in the
+   docstring, where it belongs (same reasoning QW-3 hit naming `RrfBlendingReranker` — a
+   ticket-scoped name on a piece of durable interface over-claims permanence).
+
+   **Regression proof** (run directly for this report):
+
+   ```
+   $ python -m pytest app/test_reembed_experiment.py -v
+   collected 17 items
+   app/test_reembed_experiment.py .................                         [100%]
+   ============================== 17 passed in 0.45s ==============================
+   ```
+
+   14 pre-existing tests unchanged + 3 new (`embed_text_fn` override applies while `payload.text`
+   stays original; mutual-exclusion with `with_headers` raises `ReembedError`; `None`-default
+   reproduces pre-SB-1 behavior byte-for-byte — this coverage was missing until this review pass).
+   `app/test_exp1_outline_split.py` (the module's other real consumer) also still passes unchanged
+   — 26 tests combined.
 
 2. **`scripts/nb_eval_runner.py`** (NB-D4's dual-fixture runner, QW-3's own dependency) — §0's
    incident showed `extract_row()` already carried `n_errors` through but nothing surfaced it:
@@ -270,7 +454,7 @@ their own regression proof run and pasted here rather than only asserted:
    produced a headline table indistinguishable from a clean one. `render_markdown()` now labels
    any row with `n_errors>0` as `⚠️ VOID (n errored)` plus a bold warning naming which fixture(s)
    and why; `main()` echoes the same warning to stdout. Zero behavior change for the `errors==0`
-   path. **Regression proof** (`scripts/test_nb_eval_runner.py`, run directly for this report):
+   path. **Regression proof** (run directly for this report):
 
    ```
    $ python -m pytest scripts/test_nb_eval_runner.py -v
@@ -284,6 +468,84 @@ their own regression proof run and pasted here rather than only asserted:
    `app/test_exp_nb_rr_qwen_reranker.py` (QW-3) and `app/test_exp_chunk_boundary_neighbor_
    smooth.py` (this ticket's own arm (b)) — 41 tests total across all three files, all green.
 
-3. **`docs/AGENT-OPERATIONS-LESSONS.md`** — appended §9.1, the `.gpu.lock`-has-no-priority
+3. **`rag/vector_index.py`** — added `copy_kind_into(dest_collection, kind)`: a server-side-
+   filtered scroll-then-upsert (same shape as the existing `clone_points_into`, deliberately NOT
+   built on top of it — cloning every point would overwrite the destination's own `kind="chunk"`
+   points with the source's, destroying arm (a)'s treatment) that copies only points of one
+   `kind`, verbatim, no re-embedding. Reason: §4.3's confound — arm (a)'s re-embed only touches
+   `kind="chunk"` points, so its destination collection held zero `kind="summary"` vectors, an
+   unintended second variable. `qdrant_client` is importable only in this one file
+   (CONVENTIONS.md §1), so there is no way to copy the missing vectors without touching it.
+
+   **Reproducibility fix applied on review**: the actual copy was first performed ad hoc from a
+   shell one-liner — reproducible in principle (the method was tested) but not from anything
+   committed. `app/exp_chunk_boundary_latechunk_embed.py` gained `copy_summary_vectors()` and a
+   `--copy-summaries-into DEST_COLLECTION` CLI mode as `copy_kind_into`'s real, committed caller,
+   so the confound-fix step is now part of the reproducible tool and anyone repeating arm (a)
+   hits it as a documented step, not a trap.
+
+   **Regression proof** (run directly for this report, including a new real-adapter test against
+   a live vector-store service):
+
+   ```
+   $ python -m pytest rag/test_vector_index.py -q
+   ........................................................................ [ 91%]
+   .......                                                                  [100%]
+   79 passed
+   ```
+
+   1 new test (`copy_kind_into` copies only the matching kind and never overwrites an existing
+   point at the same id, verified against a live service) + all 78 pre-existing tests unchanged.
+   `app/test_exp_chunk_boundary_latechunk_embed.py`'s own new test (`copy_summary_vectors` wiring,
+   zero-network, `VectorIndex` faked) also passes — 11 tests in that file total.
+
+4. **`docs/AGENT-OPERATIONS-LESSONS.md`** — appended §9.1, the `.gpu.lock`-has-no-priority
    incident writeup, at the orchestrator's explicit request. Purely additive (append-only file by
    its own stated convention).
+
+## 10. Collections created and their final state
+
+| collection | purpose | points | status | disposition |
+|---|---|---|---|---|
+| `waymo_av_safety` | live production (baseline for every comparison in this report) | 47,893 | green | **never written to** — read-only (search + one filtered scroll) throughout this ticket, verified before and after every risky step |
+| `waymo_av_safety_sb1_latechunk` | arm (a)'s section-context re-embed | 47,893 (46,155 chunk + 1,738 summary) | green | complete, evaluated, kept |
+| `sb1_latechunk_dryrun_sample` | arm (a)'s 6-paper timing sample (§4.2) | 126 | green | throwaway, kept (not cleaned up — harmless, small) |
+
+## 11. Overall verdict
+
+**REJECT, both arms, both fixtures, never averaged.** Neither arm converts a boundary-class
+(`same_chunk`/`adjacent_chunk`) near-miss to a hit on either fixture — the D2 stratum bucket
+counts are byte-identical to baseline in every case measured (§3.3, §4.5), across two
+structurally unrelated mechanisms. This is the strongest form of null this ticket could have
+produced: not "we didn't find an effect," but "we found real effects (arm (a) moved metrics on
+both fixtures; arm (b) reordered 79-82/82 result lists) that are demonstrably not the effect this
+ticket set out to find," traced to the individual item on both arms rather than inferred from an
+aggregate. The 57/60=0.95 ver84 text-arm trigger did not fire under either arm — verified
+directly, all four candidate items unchanged in both cases, and (§3.5) three of the four are
+vision-only and the fourth is a corpus-extraction gap, not a retrieval-ranking problem either arm
+could have reached regardless.
+
+**Per D2's own honest ceiling, stated at the top of this ticket**: boundary classes were always
+only 25% (gt_wmr) / 33% (ver84) of near-misses, with `same_doc_elsewhere` dominating at 75%/63%
+at a median distance of 7.5-32.5 chunks/blocks — an order of magnitude beyond either arm's
+reach (arm (b)'s explicit ±1-chunk blend; arm (a)'s ±100-word embedding context). **A null result
+here was the expected outcome stated in the ticket itself, not a surprise, and this report's job
+was to measure it honestly rather than to manufacture a win.** Three real operational incidents
+were caught and fixed in the process (§0's `.gpu.lock` starvation, §4.3's missing-summary-vector
+confound, and the `n_errors` silent-miscount pattern common to both) — each is now a guarded,
+tested, documented case a future ticket in this repo will not need to rediscover.
+
+## File map (every number above traces here)
+
+- `docs/eval-reports/data/2026-08-28-sb1/2026-08-27-nb-d4-dual-fixture-bge-baseline*` — baseline rep 1
+- `docs/eval-reports/data/2026-08-28-sb1/2026-08-28-nb-d4-dual-fixture-bge-baseline-rep2*` — baseline rep 2 (gt_wmr VOID, ver84 clean)
+- `docs/eval-reports/data/2026-08-28-sb1/2026-08-28-nb-d4-dual-fixture-bge-baseline-rep2-gtwmr-clean/` — clean gt_wmr rerun (baseline)
+- `docs/eval-reports/data/2026-08-28-sb1/2026-08-28-nb-d4-dual-fixture-sb1b-smooth*` — arm (b) (gt_wmr VOID, ver84 clean)
+- `docs/eval-reports/data/2026-08-28-sb1/2026-08-28-nb-d4-dual-fixture-sb1b-smooth-gtwmr-clean/` — clean gt_wmr rerun (arm b)
+- `docs/eval-reports/data/2026-08-28-sb1/2026-08-28-nb-d4-dual-fixture-sb1a-latechunk*` — arm (a), both fixtures, clean
+- `docs/eval-reports/data/2026-08-28-sb1/stratum/` — D2 bucket tables, before/after, both arms, both fixtures
+- `docs/eval-reports/data/2026-08-28-sb1/all_paper_ids.txt` — full corpus paper-id list driving arm (a)
+- `app/exp_chunk_boundary_stratum.py`, `app/test_exp_chunk_boundary_stratum.py` — D2-reuse harness
+- `app/exp_chunk_boundary_neighbor_smooth.py`, `app/test_exp_chunk_boundary_neighbor_smooth.py` — arm (b)
+- `app/exp_chunk_boundary_latechunk_embed.py`, `app/test_exp_chunk_boundary_latechunk_embed.py` — arm (a)
+- `docs/AGENT-OPERATIONS-LESSONS.md` §9.1 — the `.gpu.lock` incident
