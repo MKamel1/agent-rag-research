@@ -700,3 +700,21 @@ expected reading volume, or better, remove the reading phase entirely. Options i
 preference: (a) pre-extract the needed inputs into a compact notes file the writer reads instead;
 (b) split into an extraction ticket and a writing ticket; (c) when the orchestrator already holds
 the context, go orchestrator-direct rather than re-buying it inside a dispatch.
+
+### 8.6 Free preview/stealth models are load-bearing infrastructure with no SLA
+
+**Cost: a whole execution channel built on a model with a 48-hour deprecation notice and none given.**
+
+**Incident:** The `stealth/ox-alpha` model ceased to exist on 2026-08-27. Direct probe of the OpenRouter endpoint returns HTTP 404 with body: `"Thank you for participating in the Stealth Ox Alpha testing period. This model was ZAI's GLM-5.3 Flash."` The stealth testing period ended and the model was withdrawn.
+
+The durable lesson: **a free preview/stealth model is load-bearing infrastructure with no SLA and no deprecation notice.** When a whole execution channel is built on one — as this programme's NB lane built on ox-alpha — its disappearance is a silent, total outage, and the tell is indistinguishable from the rate-limiting you already learned to tolerate (§3.3d).
+
+The 429-tolerance machinery from §3.3d — commit-as-you-go, resumable-from-committed-state, probe-N-times-before-declaring-death — is still correct and still earns its keep. It now protects against a different class of failure (model withdrawal instead of shared-pool throttling), but the mechanics are unchanged: a channel that cannot tell the difference between "temporarily unavailable" and "permanently gone" must treat both as recoverable until the evidence is overwhelming. The difference is that one is recoverable (wait for availability) and the other is not (use a successor model) — both need the same commit discipline to minimize re-work when the diagnosis is made.
+
+**Successor models on the same key:**
+- **`z-ai/glm-5.3-flash`** — the direct successor, 1.31M context window, paid (~$0.075/$0.25 per M tokens input/output).
+- **`z-ai/glm-5.2:free`** — free-tier direct predecessor, 256K context window.
+- **`minimax/minimax-m3:free`** — free-tier option, 1M context window.
+- **`thinkingmachines/inkling:free`** — free-tier option, 1M context window.
+
+**No change to §3.3d.** Leave §3.3d standing — it describes a real rate-limiting problem that was observed independently and the diagnosis was correct at that time. §8.6 supersedes it by adding a second, now-proven failure mode under the same tell. Future dispatches should treat "one request in three fails with 429 or 404" as the operational expected state for free-tier stealth models, commit at every checkpoint, and swap the model string only when confirmation arrives that the endpoint is permanently gone.

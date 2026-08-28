@@ -731,6 +731,25 @@ Merge `cc6a0c3` (branch `NB-NUMCTX-fix`): Ollama serving-stack silent front-trun
 
 Operator directive: no GPU work until lifted. Held at freeze: QW-2 confidence v0 (stub committed, pre-download), QW-3 reranker-seat A/B (blocked entirely), Wave P2/P3 execution, GT authoring execution. Proceeding docs-only: P0-1 ledger (this entry), P0-2 ratification draft (sign-off header deferred to operator), P0-3 multi-hop authoring PLAN, QW-1 design note (landed `cff3b53`, recommends Variant A; rider PR awaits T-F7 sign-off).
 
+### GPU freeze lifted (operator, 2026-08-27)
+
+**Freeze lifted on 2026-08-27.** GPU available in full. Measured GPU state at lift: NVIDIA RTX 3090, 24,576 MiB total, 11,100 MiB resident (the TEI pair — `text-embeddings-router` ×2, containers `rag-tei-embed` and `rag-tei-reranker`), leaving ~13.4 GB free, 0% utilization.
+
+**Lanes dispatched on lift:**
+- **QW-3** (reranker-seat A/B, branch `P95-QW3-reranker-seat`) — reranker confidence surface work.
+- **QW-2** (confidence surface v0, branch `NB-QW2-confidence-v0`) — resumed from its committed stub; pre-download phase complete, execution now live.
+- **SB-2 first slice = W-A4** (partial-absent GT, two blind authors on branches `P95-SB2-WA4-authorA` / `P95-SB2-WA4-authorB`) — multi-hop ground-truth authoring.
+
+**Lanes deliberately NOT dispatched and why:**
+- **SB-1** (chunk-boundary mitigation) held because it requires a full re-embed/reindex that should not race QW-3 for the card.
+- **SB-3** (agentic loop) gated on SB-2's first adjudicated batch; proceeding docs-only until SB-2 delivers.
+- **SB-4** (Qwen3.8-27B pilot) needs a declared stop-TEI maintenance window since 15.4 GB of weights cannot co-reside with TEI; execution deferred to a dedicated card-off window.
+
+**Two items remain blocked on the operator, not on the GPU:**
+- P0-2 metric-ratification sign-off header (`docs/eval-reports/2026-08-26-precision95-metric-ratification.md` is still an unsigned DRAFT, so no headline 0.95 claim is ratifiable).
+- T-F7 sign-off on the batched rider PR that QW-1 recommends (member-block citation adoption, `docs/design-notes/2026-08-28-xc-member-citation-adoption.md`).
+
+**Repo state:** `main` fast-forwarded from `20d2882` to `8dc336e` (the `LEDGER-precision95` tip), so all new lanes branch from current main.
 
 ### Precision-95 programme precursors (2026-08-25/26)
 
