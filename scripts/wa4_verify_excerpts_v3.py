@@ -41,14 +41,17 @@ for item in data["items"]:
     for sp in item["sub_parts"]:
         if sp["status"] == "supported":
             ref = sp["gold_ref"]
-            chunk_id = ref["block_id"]
+            # v3 (bug): "block_id" actually held a chunk id. final (fixed): "chunk_id" holds
+            # the chunk id and "block_id" holds a real blocks.block_id. Fall back so this
+            # script still scores the old v3 file the same way it always did.
+            chunk_id = ref.get("chunk_id", ref["block_id"])
             excerpt = ref["excerpt"]
-            
+
             row = conn.execute(
                 "SELECT text FROM chunks WHERE chunk_id = ?",
                 (chunk_id,)
             ).fetchone()
-            
+
             if not row:
                 results["fail"] += 1
                 results["failures"].append({
@@ -57,7 +60,7 @@ for item in data["items"]:
                     "reason": "chunk_not_found"
                 })
                 continue
-            
+
             passed, coverage, detail = verify_excerpt(row[0], excerpt)
             if passed:
                 results["pass"] += 1
@@ -70,8 +73,6 @@ for item in data["items"]:
                     "detail": detail
                 })
 
-conn.close()
-
 print(f"Excerpt verification results:")
 print(f"  Pass: {results['pass']}")
 print(f"  Fail: {results['fail']}")
@@ -81,7 +82,36 @@ if results["failures"]:
     print(f"\nFailures:")
     for f in results["failures"]:
         print(f"  {f['item']}: {f.get('reason', f.get('detail'))}")
-    sys.exit(1)
-else:
-    print("\n✓ All excerpts verified")
-    sys.exit(0)
+excerpt_ok = not results["failures"]
+
+# gold_block_ids / gold_chunk_ids resolution (final-file only; absent on v3 -> skipped cleanly)
+if any("gold_block_ids" in it or "gold_chunk_ids" in it for it in data["items"]):
+    block_total = block_ok = chunk_total = chunk_ok = 0
+    bad_blocks, bad_chunks = [], []
+    for item in data["items"]:
+        for bid in item.get("gold_block_ids", []):
+            block_total += 1
+            if conn.execute("SELECT 1 FROM blocks WHERE block_id=?", (bid,)).fetchone():
+                block_ok += 1
+            else:
+                bad_blocks.append((item["id"], bid))
+        for cid in item.get("gold_chunk_ids", []):
+            chunk_total += 1
+            if conn.execute("SELECT 1 FROM chunks WHERE chunk_id=?", (cid,)).fetchone():
+                chunk_ok += 1
+            else:
+                bad_chunks.append((item["id"], cid))
+    print(f"\ngold_block_ids resolved in blocks: {block_ok}/{block_total}")
+    if bad_blocks:
+        print("  UNRESOLVED:", bad_blocks)
+    print(f"gold_chunk_ids resolved in chunks: {chunk_ok}/{chunk_total}")
+    if bad_chunks:
+        print("  UNRESOLVED:", bad_chunks)
+    excerpt_ok = excerpt_ok and not bad_blocks and not bad_chunks
+
+conn.close()
+if excerpt_ok:
+    print("\n✓ All checks passed")
+sys.exit(0 if excerpt_ok else 1)
+
+

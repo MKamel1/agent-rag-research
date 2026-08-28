@@ -21,8 +21,9 @@
           "status": "supported",
           "gold_ref": {
             "paper_id": "2312.12675",
-            "block_id": "2312.12675:c1",
-            "excerpt": "When considering all locations together, the any-injury-reported crashed vehicle rate was 0.6 incidents per million miles (IPMM) for the ADS vs 2.80 IPMM for the human benchmark, an 80% reduction"
+            "block_id": "2312.12675:b12",
+            "excerpt": "When considering all locations together, the any-injury-reported crashed vehicle rate was 0.6 incidents per million miles (IPMM) for the ADS vs 2.80 IPMM for the human benchmark, an 80% reduction",
+            "chunk_id": "2312.12675:c1"
           }
         },
         {
@@ -72,16 +73,27 @@
         "2312.12675"
       ],
       "gold_block_ids": [
-        "2312.12675:c1"
+        "2312.12675:b12"
       ],
       "author_id": "GT-B",
       "frozen_after_retrieval": true,
       "duplicate_of": null,
       "_metadata": {
-        "corrections": [],
+        "corrections": [
+          {
+            "field": "gold_ref.block_id",
+            "reason": "Chunk's anchor block did not contain the excerpt text; excerpt lives in a different member block the chunk spans. Used the block whose text actually contains the excerpt instead of the chunk's anchor block.",
+            "chunk_id": "2312.12675:c1",
+            "anchor_block_id": "2312.12675:b9",
+            "actual_block_id": "2312.12675:b12"
+          }
+        ],
         "carried_from": "Q-WA4-B-V3-001",
         "note": "Unchanged from v3 -- excerpt already verified against DB; kept as one of the 4 items allowed from 2312.12675 under the multi-paper spread cap."
-      }
+      },
+      "gold_chunk_ids": [
+        "2312.12675:c1"
+      ]
     },
     {
       "id": "Q-WA4-B-FINAL-002",
@@ -92,8 +104,9 @@
           "status": "supported",
           "gold_ref": {
             "paper_id": "2312.12675",
-            "block_id": "2312.12675:c8",
-            "excerpt": "1.76 million miles in San Francisco"
+            "block_id": "2312.12675:b58",
+            "excerpt": "1.76 million miles in San Francisco",
+            "chunk_id": "2312.12675:c8"
           }
         },
         {
@@ -143,16 +156,27 @@
         "2312.12675"
       ],
       "gold_block_ids": [
-        "2312.12675:c8"
+        "2312.12675:b58"
       ],
       "author_id": "GT-B",
       "frozen_after_retrieval": true,
       "duplicate_of": null,
       "_metadata": {
-        "corrections": [],
+        "corrections": [
+          {
+            "field": "gold_ref.block_id",
+            "reason": "Chunk's anchor block did not contain the excerpt text; excerpt lives in a different member block the chunk spans. Used the block whose text actually contains the excerpt instead of the chunk's anchor block.",
+            "chunk_id": "2312.12675:c8",
+            "anchor_block_id": "2312.12675:b57",
+            "actual_block_id": "2312.12675:b58"
+          }
+        ],
         "carried_from": "Q-WA4-B-V3-002",
         "note": "Unchanged from v3 -- excerpt already verified against DB; kept as one of the 4 items allowed from 2312.12675 under the multi-paper spread cap."
-      }
+      },
+      "gold_chunk_ids": [
+        "2312.12675:c8"
+      ]
     },
     {
       "id": "Q-WA4-B-FINAL-003",
@@ -163,8 +187,9 @@
           "status": "supported",
           "gold_ref": {
             "paper_id": "2312.12675",
-            "block_id": "2312.12675:c8",
-            "excerpt": "0.0467 million (i.e., 46.7 thousand) miles in Los Angeles"
+            "block_id": "2312.12675:b58",
+            "excerpt": "0.0467 million (i.e., 46.7 thousand) miles in Los Angeles",
+            "chunk_id": "2312.12675:c8"
           }
         },
         {
@@ -214,16 +239,27 @@
         "2312.12675"
       ],
       "gold_block_ids": [
-        "2312.12675:c8"
+        "2312.12675:b58"
       ],
       "author_id": "GT-B",
       "frozen_after_retrieval": true,
       "duplicate_of": null,
       "_metadata": {
-        "corrections": [],
+        "corrections": [
+          {
+            "field": "gold_ref.block_id",
+            "reason": "Chunk's anchor block did not contain the excerpt text; excerpt lives in a different member block the chunk spans. Used the block whose text actually contains the excerpt instead of the chunk's anchor block.",
+            "chunk_id": "2312.12675:c8",
+            "anchor_block_id": "2312.12675:b57",
+            "actual_block_id": "2312.12675:b58"
+          }
+        ],
         "carried_from": "Q-WA4-B-V3-003",
         "note": "Unchanged from v3 -- excerpt already verified against DB; kept as one of the 4 items allowed from 2312.12675 under the multi-paper spread cap."
-      }
+      },
+      "gold_chunk_ids": [
+        "2312.12675:c8"
+      ]
     },
     {
       "id": "Q-WA4-B-FINAL-004",
@@ -234,8 +270,9 @@
           "status": "supported",
           "gold_ref": {
             "paper_id": "2312.12675",
-            "block_id": "2312.12675:c23",
-            "excerpt": "There were no (zero) police-reported and any-injury-reported crashes in Los Angeles, resulting in a 0 IPMM with 95% confidence intervals of (0, 64.1) IPMM"
+            "block_id": "2312.12675:b116",
+            "excerpt": "There were no (zero) police-reported and any-injury-reported crashes in Los Angeles, resulting in a 0 IPMM with 95% confidence intervals of (0, 64.1) IPMM",
+            "chunk_id": "2312.12675:c23"
           }
         },
         {
@@ -285,16 +322,27 @@
         "2312.12675"
       ],
       "gold_block_ids": [
-        "2312.12675:c23"
+        "2312.12675:b116"
       ],
       "author_id": "GT-B",
       "frozen_after_retrieval": true,
       "duplicate_of": null,
       "_metadata": {
-        "corrections": [],
+        "corrections": [
+          {
+            "field": "gold_ref.block_id",
+            "reason": "Chunk's anchor block did not contain the excerpt text; excerpt lives in a different member block the chunk spans. Used the block whose text actually contains the excerpt instead of the chunk's anchor block.",
+            "chunk_id": "2312.12675:c23",
+            "anchor_block_id": "2312.12675:b115",
+            "actual_block_id": "2312.12675:b116"
+          }
+        ],
         "carried_from": "Q-WA4-B-V3-004",
         "note": "Unchanged from v3 -- excerpt already verified against DB; kept as one of the 4 items allowed from 2312.12675 under the multi-paper spread cap."
-      }
+      },
+      "gold_chunk_ids": [
+        "2312.12675:c23"
+      ]
     },
     {
       "id": "Q-WA4-B-FINAL-005",
@@ -305,8 +353,9 @@
           "status": "supported",
           "gold_ref": {
             "paper_id": "2312.13228",
-            "block_id": "2312.13228:c17",
-            "excerpt": "San Francisco had the highest crash rate with 5.82 incidents per million miles (IPMM), which was approximately three times higher (330% higher) than the national average (1.76 IPMM)."
+            "block_id": "2312.13228:b68",
+            "excerpt": "San Francisco had the highest crash rate with 5.82 incidents per million miles (IPMM), which was approximately three times higher (330% higher) than the national average (1.76 IPMM).",
+            "chunk_id": "2312.13228:c17"
           }
         },
         {
@@ -356,14 +405,25 @@
         "2312.13228"
       ],
       "gold_block_ids": [
-        "2312.13228:c17"
+        "2312.13228:b68"
       ],
       "author_id": "GT-B",
       "frozen_after_retrieval": true,
       "duplicate_of": null,
       "_metadata": {
-        "corrections": []
-      }
+        "corrections": [
+          {
+            "field": "gold_ref.block_id",
+            "reason": "Chunk's anchor block did not contain the excerpt text; excerpt lives in a different member block the chunk spans. Used the block whose text actually contains the excerpt instead of the chunk's anchor block.",
+            "chunk_id": "2312.13228:c17",
+            "anchor_block_id": "2312.13228:b67",
+            "actual_block_id": "2312.13228:b68"
+          }
+        ]
+      },
+      "gold_chunk_ids": [
+        "2312.13228:c17"
+      ]
     },
     {
       "id": "Q-WA4-B-FINAL-006",
@@ -374,8 +434,9 @@
           "status": "supported",
           "gold_ref": {
             "paper_id": "2312.13228",
-            "block_id": "2312.13228:c19",
-            "excerpt": "Conversely, if that crash rate was 10% of the benchmark crash rate, the required mileage would only be approximately 56 million miles."
+            "block_id": "2312.13228:b74",
+            "excerpt": "Conversely, if that crash rate was 10% of the benchmark crash rate, the required mileage would only be approximately 56 million miles.",
+            "chunk_id": "2312.13228:c19"
           }
         },
         {
@@ -425,14 +486,25 @@
         "2312.13228"
       ],
       "gold_block_ids": [
-        "2312.13228:c19"
+        "2312.13228:b74"
       ],
       "author_id": "GT-B",
       "frozen_after_retrieval": true,
       "duplicate_of": null,
       "_metadata": {
-        "corrections": []
-      }
+        "corrections": [
+          {
+            "field": "gold_ref.block_id",
+            "reason": "Chunk's anchor block did not contain the excerpt text; excerpt lives in a different member block the chunk spans. Used the block whose text actually contains the excerpt instead of the chunk's anchor block.",
+            "chunk_id": "2312.13228:c19",
+            "anchor_block_id": "2312.13228:b72",
+            "actual_block_id": "2312.13228:b74"
+          }
+        ]
+      },
+      "gold_chunk_ids": [
+        "2312.13228:c19"
+      ]
     },
     {
       "id": "Q-WA4-B-FINAL-007",
@@ -443,8 +515,9 @@
           "status": "supported",
           "gold_ref": {
             "paper_id": "2508.19425",
-            "block_id": "2508.19425:c19",
-            "excerpt": "The any airbag deployed freeway crash rates varied from 0.355 (in Phoenix) to 1.033 (in Atlanta) incidents per million miles (2.9-times difference)."
+            "block_id": "2508.19425:b86",
+            "excerpt": "The any airbag deployed freeway crash rates varied from 0.355 (in Phoenix) to 1.033 (in Atlanta) incidents per million miles (2.9-times difference).",
+            "chunk_id": "2508.19425:c19"
           }
         },
         {
@@ -494,14 +567,25 @@
         "2508.19425"
       ],
       "gold_block_ids": [
-        "2508.19425:c19"
+        "2508.19425:b86"
       ],
       "author_id": "GT-B",
       "frozen_after_retrieval": true,
       "duplicate_of": null,
       "_metadata": {
-        "corrections": []
-      }
+        "corrections": [
+          {
+            "field": "gold_ref.block_id",
+            "reason": "Chunk's anchor block did not contain the excerpt text; excerpt lives in a different member block the chunk spans. Used the block whose text actually contains the excerpt instead of the chunk's anchor block.",
+            "chunk_id": "2508.19425:c19",
+            "anchor_block_id": "2508.19425:b85",
+            "actual_block_id": "2508.19425:b86"
+          }
+        ]
+      },
+      "gold_chunk_ids": [
+        "2508.19425:c19"
+      ]
     },
     {
       "id": "Q-WA4-B-FINAL-008",
@@ -512,8 +596,9 @@
           "status": "supported",
           "gold_ref": {
             "paper_id": "2508.19425",
-            "block_id": "2508.19425:c26",
-            "excerpt": "National studies show substantial underreporting of police reported crashes, with an estimated 60% of property-damage-only and 32% of non-fatal injury crashes going unreported"
+            "block_id": "2508.19425:b111",
+            "excerpt": "National studies show substantial underreporting of police reported crashes, with an estimated 60% of property-damage-only and 32% of non-fatal injury crashes going unreported",
+            "chunk_id": "2508.19425:c26"
           }
         },
         {
@@ -563,14 +648,25 @@
         "2508.19425"
       ],
       "gold_block_ids": [
-        "2508.19425:c26"
+        "2508.19425:b111"
       ],
       "author_id": "GT-B",
       "frozen_after_retrieval": true,
       "duplicate_of": null,
       "_metadata": {
-        "corrections": []
-      }
+        "corrections": [
+          {
+            "field": "gold_ref.block_id",
+            "reason": "Chunk's anchor block did not contain the excerpt text; excerpt lives in a different member block the chunk spans. Used the block whose text actually contains the excerpt instead of the chunk's anchor block.",
+            "chunk_id": "2508.19425:c26",
+            "anchor_block_id": "2508.19425:b109",
+            "actual_block_id": "2508.19425:b111"
+          }
+        ]
+      },
+      "gold_chunk_ids": [
+        "2508.19425:c26"
+      ]
     },
     {
       "id": "Q-WA4-B-FINAL-009",
@@ -581,8 +677,9 @@
           "status": "supported",
           "gold_ref": {
             "paper_id": "2604.03827",
-            "block_id": "2604.03827:c7",
-            "excerpt": "In this case, 38 true positive events were identified from Category A, all having relatively small sampling weights; on the other hand, a single event with a high weight was identified from Category B."
+            "block_id": "2604.03827:b117",
+            "excerpt": "In this case, 38 true positive events were identified from Category A, all having relatively small sampling weights; on the other hand, a single event with a high weight was identified from Category B.",
+            "chunk_id": "2604.03827:c7"
           }
         },
         {
@@ -632,14 +729,25 @@
         "2604.03827"
       ],
       "gold_block_ids": [
-        "2604.03827:c7"
+        "2604.03827:b117"
       ],
       "author_id": "GT-B",
       "frozen_after_retrieval": true,
       "duplicate_of": null,
       "_metadata": {
-        "corrections": []
-      }
+        "corrections": [
+          {
+            "field": "gold_ref.block_id",
+            "reason": "Chunk's anchor block did not contain the excerpt text; excerpt lives in a different member block the chunk spans. Used the block whose text actually contains the excerpt instead of the chunk's anchor block.",
+            "chunk_id": "2604.03827:c7",
+            "anchor_block_id": "2604.03827:b115",
+            "actual_block_id": "2604.03827:b117"
+          }
+        ]
+      },
+      "gold_chunk_ids": [
+        "2604.03827:c7"
+      ]
     },
     {
       "id": "Q-WA4-B-FINAL-010",
@@ -650,8 +758,9 @@
           "status": "supported",
           "gold_ref": {
             "paper_id": "2604.03827",
-            "block_id": "2604.03827:c6",
-            "excerpt": "The coverage of EB is more reliable than PB overall while the coverage error for PB can be very large and even close to 100% when true positive data is sparse,"
+            "block_id": "2604.03827:b106",
+            "excerpt": "The coverage of EB is more reliable than PB overall while the coverage error for PB can be very large and even close to 100% when true positive data is sparse,",
+            "chunk_id": "2604.03827:c6"
           }
         },
         {
@@ -701,14 +810,25 @@
         "2604.03827"
       ],
       "gold_block_ids": [
-        "2604.03827:c6"
+        "2604.03827:b106"
       ],
       "author_id": "GT-B",
       "frozen_after_retrieval": true,
       "duplicate_of": null,
       "_metadata": {
-        "corrections": []
-      }
+        "corrections": [
+          {
+            "field": "gold_ref.block_id",
+            "reason": "Chunk's anchor block did not contain the excerpt text; excerpt lives in a different member block the chunk spans. Used the block whose text actually contains the excerpt instead of the chunk's anchor block.",
+            "chunk_id": "2604.03827:c6",
+            "anchor_block_id": "2604.03827:b101",
+            "actual_block_id": "2604.03827:b106"
+          }
+        ]
+      },
+      "gold_chunk_ids": [
+        "2604.03827:c6"
+      ]
     },
     {
       "id": "Q-WA4-B-FINAL-011",
@@ -719,8 +839,9 @@
           "status": "supported",
           "gold_ref": {
             "paper_id": "2212.08148",
-            "block_id": "2212.08148:c21",
-            "excerpt": "In total, the CAT evaluation for the SF/PHX ODD contained over 13,000 scenarios. Of these, 48% of scenarios involved a potential conflict with a pedestrian or cyclist and the other 52% involved a potential conflict with a vehicle."
+            "block_id": "2212.08148:b77",
+            "excerpt": "In total, the CAT evaluation for the SF/PHX ODD contained over 13,000 scenarios. Of these, 48% of scenarios involved a potential conflict with a pedestrian or cyclist and the other 52% involved a potential conflict with a vehicle.",
+            "chunk_id": "2212.08148:c21"
           }
         },
         {
@@ -770,14 +891,25 @@
         "2212.08148"
       ],
       "gold_block_ids": [
-        "2212.08148:c21"
+        "2212.08148:b77"
       ],
       "author_id": "GT-B",
       "frozen_after_retrieval": true,
       "duplicate_of": null,
       "_metadata": {
-        "corrections": []
-      }
+        "corrections": [
+          {
+            "field": "gold_ref.block_id",
+            "reason": "Chunk's anchor block did not contain the excerpt text; excerpt lives in a different member block the chunk spans. Used the block whose text actually contains the excerpt instead of the chunk's anchor block.",
+            "chunk_id": "2212.08148:c21",
+            "anchor_block_id": "2212.08148:b76",
+            "actual_block_id": "2212.08148:b77"
+          }
+        ]
+      },
+      "gold_chunk_ids": [
+        "2212.08148:c21"
+      ]
     },
     {
       "id": "Q-WA4-B-FINAL-012",
@@ -788,8 +920,9 @@
           "status": "supported",
           "gold_ref": {
             "paper_id": "2212.08148",
-            "block_id": "2212.08148:c21",
-            "excerpt": "Of the 419 simulated events reviewed that featured the ADS in the responder role, 106 (25%) were not covered in the existing scenario database and prompted additional scenarios to be added."
+            "block_id": "2212.08148:b78",
+            "excerpt": "Of the 419 simulated events reviewed that featured the ADS in the responder role, 106 (25%) were not covered in the existing scenario database and prompted additional scenarios to be added.",
+            "chunk_id": "2212.08148:c21"
           }
         },
         {
@@ -839,14 +972,25 @@
         "2212.08148"
       ],
       "gold_block_ids": [
-        "2212.08148:c21"
+        "2212.08148:b78"
       ],
       "author_id": "GT-B",
       "frozen_after_retrieval": true,
       "duplicate_of": null,
       "_metadata": {
-        "corrections": []
-      }
+        "corrections": [
+          {
+            "field": "gold_ref.block_id",
+            "reason": "Chunk's anchor block did not contain the excerpt text; excerpt lives in a different member block the chunk spans. Used the block whose text actually contains the excerpt instead of the chunk's anchor block.",
+            "chunk_id": "2212.08148:c21",
+            "anchor_block_id": "2212.08148:b76",
+            "actual_block_id": "2212.08148:b78"
+          }
+        ]
+      },
+      "gold_chunk_ids": [
+        "2212.08148:c21"
+      ]
     }
   ]
 }

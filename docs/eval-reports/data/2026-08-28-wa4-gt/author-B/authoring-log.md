@@ -221,3 +221,33 @@ Every absent sub-part in the 8 new items carries 4 paper-scoped lexical probes (
 - **gold_block_ids resolved in papers.db**: 12/12 ✓
 - **Absent sub-parts with complete probe logs** (≥1 lexical probe w/ numeric denominator + semantic probe): 12/12 ✓
 - **Absent sub-parts with ≥1 non-zero lexical hit**: 11/12 (only FINAL-003's p-value/test-statistic probes are all-zero; the other 11 have real vocabulary overlap that had to be read and reasoned about, not just absence-by-phrasing)
+
+---
+
+## Post-final fix: gold_block_ids were chunk ids, not block ids
+
+Orchestrator caught a real defect: `gold_block_ids` held `chunks.chunk_id` values (`:c<n>`) instead of `blocks.block_id` values (`:b<n>`). The retrieval evaluator and the committed per-item eval output both resolve gold ids against `blocks`, and Author A's set used the block-id space — as shipped, this set would have silently failed to score and could not be adjudicated against Author A's.
+
+Fix: for every cited chunk, pulled `json.loads(chunks.anchor_json)["block_id"]` to get its anchor block, then checked whether the excerpt text actually appears in `blocks.text` for that anchor block.
+
+**Result: 12/12 excerpts did NOT live in their chunk's anchor block.** In every case the excerpt was in a nearby member block the chunk also spans (idx deltas from anchor: 1-5 blocks later in the same section) — e.g. the anchor block for `2312.12675:c1` is `b9` (the "ABSTRACT" heading block), but the actual injury-rate sentence excerpted lives in `b12`, three blocks into the abstract body. Searched all of the paper's blocks (in `idx` order) for the exact excerpt text and used whichever block actually contains it, logging each substitution in `_metadata.corrections` (`chunk_id`, `anchor_block_id`, `actual_block_id`).
+
+This is a **12/12 rate, not an edge case** — worth flagging directly for the X-C member-block citation question: on this sample, a chunk's anchor block essentially never contains the specific factual sentence an excerpt cites (anchors trend toward section-heading/opening blocks; the substantive sentence is downstream in the same chunk's span). Anchor-only block resolution would misattribute the citation for **every** item in this set.
+
+Schema change: `gold_ref` now carries both `chunk_id` (what the excerpt was verified against) and `block_id` (what it resolves to for scoring/citation). Item-level `gold_block_ids` and `gold_chunk_ids` are both populated (previously only the mis-named `gold_block_ids` existed, holding chunk ids). v3 is left untouched (frozen history) and still fails this check by design — the verify script skips the block/chunk section entirely when a file predates these fields, so re-running it against v3 doesn't spuriously "fix" or hide that old bug.
+
+`scripts/wa4_verify_excerpts_v3.py` updated: excerpt check now reads `gold_ref.chunk_id` (falling back to the old `block_id`-as-chunk-id for v3 compatibility), and adds two new counts — `gold_block_ids resolved in blocks` and `gold_chunk_ids resolved in chunks` — skipped cleanly for files without those fields.
+
+### Final verification (re-run after the fix)
+
+```
+Excerpt verification results:
+  Pass: 12
+  Fail: 0
+  Total: 12
+
+gold_block_ids resolved in blocks: 12/12
+gold_chunk_ids resolved in chunks: 12/12
+
+✓ All checks passed
+```
