@@ -1,0 +1,38 @@
+{
+  "_metadata": {
+    "set": "W-A4",
+    "ticket": "SB-2",
+    "author_id": "GT-A",
+    "corpus": "waymo_av_safety",
+    "generated_at": "2026-08-28",
+    "target": "20 items + 2 spares = 22 authored items",
+    "protocol": "docs/eval-reports/data/2026-08-28-wa4-gt/author-A/authoring-log.md",
+    "status": "stub -- no items authored yet",
+    "item_shape": {
+      "id": "Q-WA4-A-NNN",
+      "question": "string, contains N>=2 sub-parts, at least one absent",
+      "sub_parts": [
+        {
+          "text": "string",
+          "status": "supported",
+          "gold_ref": {"paper_id": "string", "block_id": "string", "excerpt": "verbatim substring of blocks.text, never hand-typed"}
+        },
+        {
+          "text": "string",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [{"query": "string", "hits": 0, "denominator": 46155}],
+            "verdict": "string"
+          }
+        }
+      ],
+      "gold_paper_ids": ["..."],
+      "gold_block_ids": ["..."],
+      "author_id": "GT-A",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {"corrections": []}
+    }
+  },
+  "items": []
+}
