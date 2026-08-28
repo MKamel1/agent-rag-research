@@ -6,8 +6,18 @@
     "corpus": "waymo_av_safety",
     "generated_at": "2026-08-28",
     "target": "20 items + 2 spares = 22 authored items",
+    "actual": "22 authored and probed; 1 killed after retrieval (Q-WA4-A-013, id gap preserved deliberately); 21 survive",
     "protocol": "docs/eval-reports/data/2026-08-28-wa4-gt/author-A/authoring-log.md",
-    "status": "stub -- no items authored yet",
+    "status": "final",
+    "counts": {
+      "items_authored_and_probed": 22,
+      "items_killed": 1,
+      "items_surviving": 21,
+      "sub_parts_total": 42,
+      "sub_parts_supported": 21,
+      "sub_parts_absent": 21,
+      "absence_probes_logged": 83
+    },
     "item_shape": {
       "id": "Q-WA4-A-NNN",
       "question": "string, contains N>=2 sub-parts, at least one absent",
@@ -15,24 +25,1484 @@
         {
           "text": "string",
           "status": "supported",
-          "gold_ref": {"paper_id": "string", "block_id": "string", "excerpt": "verbatim substring of blocks.text, never hand-typed"}
+          "gold_ref": {
+            "paper_id": "string",
+            "block_id": "string",
+            "excerpt": "verbatim substring of blocks.text, never hand-typed"
+          }
         },
         {
           "text": "string",
           "status": "absent",
           "absence_probe_log": {
-            "probes": [{"query": "string", "hits": 0, "denominator": 46155}],
+            "probes": [
+              {
+                "query": "string",
+                "hits": 0,
+                "denominator": 46155
+              }
+            ],
             "verdict": "string"
           }
         }
       ],
-      "gold_paper_ids": ["..."],
-      "gold_block_ids": ["..."],
+      "gold_paper_ids": [
+        "..."
+      ],
+      "gold_block_ids": [
+        "..."
+      ],
       "author_id": "GT-A",
       "frozen_after_retrieval": true,
       "duplicate_of": null,
-      "_metadata": {"corrections": []}
+      "_metadata": {
+        "corrections": []
+      }
     }
   },
-  "items": []
+  "items": [
+    {
+      "id": "Q-WA4-A-001",
+      "question": "In Waymo's comparison of rider-only crash data to human benchmarks over 7.14 million miles, what was the any-injury-reported crash rate for the ADS versus the human benchmark, and what was that same any-injury-reported rate specifically for nighttime driving?",
+      "sub_parts": [
+        {
+          "text": "The all-locations any-injury-reported IPMM: 0.6 (ADS) vs 2.80 (human benchmark), an 80% reduction.",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2312.12675",
+            "block_id": "2312.12675:b12",
+            "excerpt": "the any-injury-reported crashed vehicle rate was 0.6 incidents per million miles (IPMM) for the ADS vs 2.80 IPMM for the human benchmark, an 80% reduction or a human crash rate that is 5 times higher than the ADS rate."
+          }
+        },
+        {
+          "text": "The any-injury-reported IPMM restricted specifically to nighttime driving.",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "night",
+                "hits": 544,
+                "denominator": 46155,
+                "table": "chunks"
+              },
+              {
+                "query": "nighttime any-injury",
+                "hits": 0,
+                "denominator": 46155,
+                "table": "chunks"
+              },
+              {
+                "query": "night",
+                "hits": 0,
+                "denominator": 26,
+                "table": "chunks",
+                "scope": "paper:2312.12675"
+              },
+              {
+                "query": "nighttime any-injury-reported crash rate IPMM Waymo 7.14 million miles",
+                "hits": 0,
+                "denominator": 47893,
+                "table": "qdrant:waymo_av_safety",
+                "method": "semantic_search round trip via app.mcp_verify_client --k 5",
+                "top_result": {
+                  "top_paper_id": "2312.12675",
+                  "top_score": 0.009737292975442603,
+                  "top_snippet": "Comparison of Waymo Rider-Only Crash Data to Human Benchmarks at 7.1 Million Miles\nRESULTS\n\nIn total, this study considered the first 7.14 million miles of driving by the Waymo RO service, which drove"
+                },
+                "relevance_note": "Top hit is the same paper's own detailed per-location results table (Table 4-7); it never partitions the any-injury IPMM by day/night either -- confirms absence."
+              }
+            ],
+            "verdict": "2312.12675 reports the any-injury-reported IPMM only aggregated across all locations and all times of day; the paper never partitions this rate by day/night, and no other corpus paper reports a Waymo nighttime-specific any-injury IPMM for this 7.14M-mile study."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2312.12675"
+      ],
+      "gold_block_ids": [
+        "2312.12675:b12"
+      ],
+      "author_id": "GT-A",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": [],
+        "excerpt_fidelity_vs_served_chunk": 1.0
+      }
+    },
+    {
+      "id": "Q-WA4-A-002",
+      "question": "In the DMV supervised-AV crash study covering San Francisco (Dec 2019-Nov 2022), what percentage of crashes occurred in clear weather versus rain, and what percentage occurred in snow?",
+      "sub_parts": [
+        {
+          "text": "Weather breakdown: 91.7% clear, 4.8% cloudy, 2.8% rain, <1% fog.",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2403.14648",
+            "block_id": "2403.14648:b71",
+            "excerpt": "mostly in clear California weather (91.7% clear, with the other 4.8% cloudy, 2.8% rain, and <1% fog), during daylight (78.3%, with the rest being 21% night with streetlight, 3% dusk or dawn), and with a dry road (93.1%, with the rest being 3% wet roads and 4% obstructed roadway conditions)."
+          }
+        },
+        {
+          "text": "The percentage of these crashes that occurred in snow.",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "snow",
+                "hits": 390,
+                "denominator": 46155,
+                "table": "chunks"
+              },
+              {
+                "query": "snow",
+                "hits": 0,
+                "denominator": 17,
+                "table": "chunks",
+                "scope": "paper:2403.14648"
+              },
+              {
+                "query": "percentage of AV crashes occurring in snow",
+                "hits": 0,
+                "denominator": 47893,
+                "table": "qdrant:waymo_av_safety",
+                "method": "semantic_search round trip via app.mcp_verify_client --k 5",
+                "top_result": {
+                  "top_paper_id": null,
+                  "top_score": null,
+                  "top_snippet": ""
+                },
+                "relevance_note": "Top hit is an unrelated SHRP2 driver-demographics table with no weather/snow content at all -- a confidently-returned but topically irrelevant top-1."
+              }
+            ],
+            "verdict": "The paper's weather table (block 2403.14648:b64/b71) enumerates exactly four categories -- Clear, Cloudy, Raining, Fog/Visibility -- and they sum to 100%; snow is not one of the recorded categories for this California DMV dataset, and no snow-specific Waymo crash percentage exists elsewhere in the corpus."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2403.14648"
+      ],
+      "gold_block_ids": [
+        "2403.14648:b71"
+      ],
+      "author_id": "GT-A",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": [],
+        "excerpt_fidelity_vs_served_chunk": 1.0
+      }
+    },
+    {
+      "id": "Q-WA4-A-003",
+      "question": "In that same DMV crash dataset, what fraction of the 145 SF crashes resulted in reported injuries, and of those injured cases, what fraction were classified as serious or fatal?",
+      "sub_parts": [
+        {
+          "text": "Injury Level: No Injuries 122 (84.1%), Injuries Reported 23 (15.9%).",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2403.14648",
+            "block_id": "2403.14648:b64",
+            "excerpt": "| No Injuries | 122 | 84.1% |\n| Injuries Reported | 23 | 15.9% |"
+          }
+        },
+        {
+          "text": "A severity split (e.g. minor/serious/fatal) of the 23 injuries-reported cases.",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "Injuries Reported",
+                "hits": 2,
+                "denominator": 46155,
+                "table": "chunks"
+              },
+              {
+                "query": "serious injur",
+                "hits": 139,
+                "denominator": 46155,
+                "table": "chunks"
+              },
+              {
+                "query": "Injuries Reported",
+                "hits": 1,
+                "denominator": 17,
+                "table": "chunks",
+                "scope": "paper:2403.14648"
+              },
+              {
+                "query": "severity breakdown minor serious fatal of injuries reported in AV crashes San Francisco DMV",
+                "hits": 0,
+                "denominator": 47893,
+                "table": "qdrant:waymo_av_safety",
+                "method": "semantic_search round trip via app.mcp_verify_client --k 5",
+                "top_result": {
+                  "top_paper_id": null,
+                  "top_score": null,
+                  "top_snippet": ""
+                },
+                "relevance_note": "Top hit is the same block (Injury Level table) -- on-topic and correctly retrieved, but still only gives the binary No-Injuries/Injuries-Reported split, no severity subdivision."
+              }
+            ],
+            "verdict": "Table 2's Injury Level field in 2403.14648 is binary (No Injuries vs Injuries Reported) with no further severity subdivision anywhere in the paper -- the text explicitly notes injury counts are inferred narrative mentions, not a graded severity scale."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2403.14648"
+      ],
+      "gold_block_ids": [
+        "2403.14648:b64"
+      ],
+      "author_id": "GT-A",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": [],
+        "excerpt_fidelity_vs_served_chunk": 1.0
+      }
+    },
+    {
+      "id": "Q-WA4-A-004",
+      "question": "How many of the 145 SF crashes involved a vulnerable road user, and how many of those specifically involved a pedestrian versus a bicyclist versus a scooter?",
+      "sub_parts": [
+        {
+          "text": "11 crashes (7.6%) involved a VRU (pedestrian/cyclist/scooter combined).",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2403.14648",
+            "block_id": "2403.14648:b64",
+            "excerpt": "| Involved VRU | 11 | 7.6% |\n| Did Not Involve VRU | 134 | 92.4% |"
+          }
+        },
+        {
+          "text": "A pedestrian-only vs bicyclist-only vs scooter-only count within that group of 11.",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "Involved VRU",
+                "hits": 6,
+                "denominator": 46155,
+                "table": "chunks"
+              },
+              {
+                "query": "scooter",
+                "hits": 93,
+                "denominator": 46155,
+                "table": "chunks"
+              },
+              {
+                "query": "Involved VRU",
+                "hits": 1,
+                "denominator": 17,
+                "table": "chunks",
+                "scope": "paper:2403.14648"
+              },
+              {
+                "query": "pedestrian versus bicyclist versus scooter crash counts vulnerable road user AV",
+                "hits": 0,
+                "denominator": 47893,
+                "table": "qdrant:waymo_av_safety",
+                "method": "semantic_search round trip via app.mcp_verify_client --k 5",
+                "top_result": {
+                  "top_paper_id": null,
+                  "top_score": null,
+                  "top_snippet": ""
+                },
+                "relevance_note": "Top hit is a DIFFERENT paper (local:6b9ccd0431f6, the 56.7M-mile study) which does report separate Cyclist/Motorcyclist/Pedestrian rates by location -- but for a different dataset entirely. It does not answer a pedestrian/bicyclist/scooter split of the 11 VRU cases in the specific 145-crash SF DMV study (2403.14648) this sub-part is scoped to. Flagged as a cross-paper confusion risk in the authoring log."
+              }
+            ],
+            "verdict": "The 'Involved VRU(Ped/Cyclist/Scooter)*' field groups all three road-user types into one count; the paper never disaggregates the 11 VRU crashes by which VRU type was involved."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2403.14648"
+      ],
+      "gold_block_ids": [
+        "2403.14648:b64"
+      ],
+      "author_id": "GT-A",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": [],
+        "excerpt_fidelity_vs_served_chunk": 1.0
+      }
+    },
+    {
+      "id": "Q-WA4-A-005",
+      "question": "For V2V Intersection crashes in the 56.7-million-mile Waymo RO study, what were the observed reductions for the Any-Injury-Reported and Airbag Deployment outcomes, and what was the reduction for the Suspected Serious Injury+ outcome specifically for that same crash type?",
+      "sub_parts": [
+        {
+          "text": "V2V Intersection: 96% reduction Any-Injury-Reported (87-99% CI), 91% reduction Airbag Deployment (76-98% CI).",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "local:6b9ccd0431f6",
+            "block_id": "local:6b9ccd0431f6:b10",
+            "excerpt": "Of the crash types, V2V Intersection crash events represented the largest total crash reduction, with a 96% reduction in Any-injury-reported (87%-99% confidence interval) and a 91% reduction in Airbag Deployment (76%-98% confidence interval) events."
+          }
+        },
+        {
+          "text": "The reduction percentage for V2V Intersection crashes specifically under the Suspected Serious Injury+ outcome.",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "Suspected Serious Injury",
+                "hits": 36,
+                "denominator": 46155,
+                "table": "chunks"
+              },
+              {
+                "query": "V2V Intersection",
+                "hits": 12,
+                "denominator": 46155,
+                "table": "chunks"
+              },
+              {
+                "query": "Suspected Serious Injury",
+                "hits": 17,
+                "denominator": 41,
+                "table": "chunks",
+                "scope": "paper:local:6b9ccd0431f6"
+              },
+              {
+                "query": "Suspected Serious Injury reduction percentage V2V Intersection crash type Waymo",
+                "hits": 0,
+                "denominator": 47893,
+                "table": "qdrant:waymo_av_safety",
+                "method": "semantic_search round trip via app.mcp_verify_client --k 5",
+                "top_result": {
+                  "top_paper_id": null,
+                  "top_score": null,
+                  "top_snippet": ""
+                },
+                "relevance_note": "Top hit (same paper, Interpretation of Results) does not give a V2V-Intersection-specific SSI+ percentage -- it gives an AGGREGATE 85% SSI+ reduction (39-99% CI, across all crash types) and states both observed SSI+ crashes were of the Secondary Crash type, not V2V Intersection. This confirms V2V-Intersection-specific SSI+ has zero observed events to compute a rate from -- strengthens rather than weakens the absence claim; verdict updated with this detail."
+              }
+            ],
+            "verdict": "The paper states plainly that, given the low number of observed Suspected Serious Injury+ ADS crashes, more miles are needed before a by-crash-type reduction can be computed for that outcome. The semantic probe strengthens this: the paper's Interpretation of Results reports an 85% AGGREGATE Suspected Serious Injury+ reduction (39%-99% CI, across all 11 crash-type groups combined) and states both of the two observed Suspected Serious Injury+ crashes were of the Secondary Crash type -- meaning zero V2V Intersection crashes were observed under this outcome at all, so no V2V-Intersection-specific Suspected Serious Injury+ percentage exists to report, not merely one that was omitted."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "local:6b9ccd0431f6"
+      ],
+      "gold_block_ids": [
+        "local:6b9ccd0431f6:b10"
+      ],
+      "author_id": "GT-A",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": [],
+        "excerpt_fidelity_vs_served_chunk": 1.0
+      }
+    },
+    {
+      "id": "Q-WA4-A-006",
+      "question": "In the confidence-interval methods paper's illustrative example, what are the Original Gamma CI bounds for Category A alone and for A union B combined, and what is the corresponding Gamma CI for Category B alone?",
+      "sub_parts": [
+        {
+          "text": "Original Gamma CI: [84, 118] for Category A only (point estimate 100), [68, 565] for A union B (point estimate 200).",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2604.03827",
+            "block_id": "2604.03827:b55",
+            "excerpt": "| Original Gamma CI (Fay and Feuer, 1997) | [84, 118] | [68, 565] |"
+          }
+        },
+        {
+          "text": "A standalone Original Gamma CI / point estimate for Category B alone.",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "Category B",
+                "hits": 23,
+                "denominator": 46155,
+                "table": "chunks"
+              },
+              {
+                "query": "IPMM for B only",
+                "hits": 0,
+                "denominator": 46155,
+                "table": "chunks"
+              },
+              {
+                "query": "Category B",
+                "hits": 3,
+                "denominator": 14,
+                "table": "chunks",
+                "scope": "paper:2604.03827"
+              },
+              {
+                "query": "Gamma confidence interval Category B only IPMM point estimate",
+                "hits": 0,
+                "denominator": 47893,
+                "table": "qdrant:waymo_av_safety",
+                "method": "semantic_search round trip via app.mcp_verify_client --k 5",
+                "top_result": {
+                  "top_paper_id": null,
+                  "top_score": null,
+                  "top_snippet": ""
+                },
+                "relevance_note": "Top hit is the same paper's Poisson-model derivation section, not the Category-B-alone row; no B-only CI appears there either."
+              }
+            ],
+            "verdict": "Table 1 in 2604.03827 reports only two columns -- 'IPMM for A only' and 'IPMM for A union B' -- for every CI method shown; a standalone 'B only' row/column is never given, which is consistent with the paper's own point that these Gamma methods are not additively decomposable (that non-monotonicity is the paper's central finding)."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2604.03827"
+      ],
+      "gold_block_ids": [
+        "2604.03827:b55"
+      ],
+      "author_id": "GT-A",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": [],
+        "excerpt_fidelity_vs_served_chunk": 1.0
+      }
+    },
+    {
+      "id": "Q-WA4-A-007",
+      "question": "For the four-arm signalized intersections studied, what hit rate did the ML-based conflict model achieve during weekday morning peak hours versus the Wiedemann model, and what hit rate did each model achieve during the weekday evening/PM peak?",
+      "sub_parts": [
+        {
+          "text": "Non-pooling: ML 100% (5/5) hit rate vs Wiedemann 0% (0/5); pooling: ML 60% (3/5) vs Wiedemann 0% (0/5).",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2606.12500",
+            "block_id": "2606.12500:b82",
+            "excerpt": "for the non-pooling approach, the ML model achieved a 100% hit rate (5 out of 5), higher than the 0% (0 out of 5) observed for the Wiedemann model. Similarly, in the pooling approach, the ML model maintained a higher hit rate of 60% (3 out of 5) compared to the 0% (0 out of 5) for the Wiedemann model."
+          }
+        },
+        {
+          "text": "The equivalent hit-rate figures for the weekday evening/PM traffic peak.",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "PM peak",
+                "hits": 1,
+                "denominator": 46155,
+                "table": "chunks"
+              },
+              {
+                "query": "evening peak",
+                "hits": 8,
+                "denominator": 46155,
+                "table": "chunks"
+              },
+              {
+                "query": "PM peak",
+                "hits": 0,
+                "denominator": 28,
+                "table": "chunks",
+                "scope": "paper:2606.12500"
+              },
+              {
+                "query": "hit rate ML conflict model evening PM peak traffic intersection",
+                "hits": 0,
+                "denominator": 47893,
+                "table": "qdrant:waymo_av_safety",
+                "method": "semantic_search round trip via app.mcp_verify_client --k 5",
+                "top_result": {
+                  "top_paper_id": null,
+                  "top_score": null,
+                  "top_snippet": ""
+                },
+                "relevance_note": "Top hit is the same paper's Table 2 (per-intersection Wiedemann-vs-ML comparison), which is built entirely from the single AM-peak dataset -- no PM-peak figures."
+              }
+            ],
+            "verdict": "Traffic volume data for every intersection in this study were collected only for the weekday morning peak (8:00-9:00 AM) per the Field Data Collection methodology section; no evening/PM peak data were collected, so no PM-peak hit rate exists to report."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2606.12500"
+      ],
+      "gold_block_ids": [
+        "2606.12500:b82"
+      ],
+      "author_id": "GT-A",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": [],
+        "excerpt_fidelity_vs_served_chunk": 1.0
+      }
+    },
+    {
+      "id": "Q-WA4-A-008",
+      "question": "Which trajectory-prediction model achieved the lowest ADE/FDE across the PRISA study's sites, what were its ADE/FDE values, and what was its ADE/FDE specifically for pedestrians as opposed to vehicles?",
+      "sub_parts": [
+        {
+          "text": "FlowChain ADE/FDE: 0.646/1.111 (Int.2), 0.491/0.710 (Int.3), 0.505/0.928 (Field, Georgia & M.L.K.).",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2607.16156",
+            "block_id": "2607.16156:b70",
+            "excerpt": "| FlowChain | 0.646 / 1.111 | 0.491 / 0.710 | 0.505 / 0.928 | 28 |"
+          }
+        },
+        {
+          "text": "FlowChain's ADE/FDE broken out separately for pedestrians versus vehicles.",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "FlowChain",
+                "hits": 2,
+                "denominator": 46155,
+                "table": "chunks"
+              },
+              {
+                "query": "by road user type",
+                "hits": 1,
+                "denominator": 46155,
+                "table": "chunks"
+              },
+              {
+                "query": "FlowChain",
+                "hits": 2,
+                "denominator": 18,
+                "table": "chunks",
+                "scope": "paper:2607.16156"
+              },
+              {
+                "query": "FlowChain ADE FDE separately for pedestrians versus vehicles",
+                "hits": 0,
+                "denominator": 47893,
+                "table": "qdrant:waymo_av_safety",
+                "method": "semantic_search round trip via app.mcp_verify_client --k 5",
+                "top_result": {
+                  "top_paper_id": null,
+                  "top_score": null,
+                  "top_snippet": ""
+                },
+                "relevance_note": "Top hit is an unrelated systematic-review paper's conclusion section -- topically adjacent (pedestrian trajectory prediction) but not PRISA, and gives no per-road-user ADE/FDE split."
+              }
+            ],
+            "verdict": "FlowChain, MID, and Trajectron++ are explicitly trained on all road user types jointly, and Table II reports ADE/FDE only broken out by site (R-LiViT Int.2/Int.3, Field deployment), never by road-user type; no per-class ADE/FDE appears anywhere else in the paper."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2607.16156"
+      ],
+      "gold_block_ids": [
+        "2607.16156:b70"
+      ],
+      "author_id": "GT-A",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": [],
+        "excerpt_fidelity_vs_served_chunk": 1.0
+      }
+    },
+    {
+      "id": "Q-WA4-A-009",
+      "question": "In the trajectory-based pedestrian crash-prediction framework, what confidence level and Z-value are recommended for computing the expected-crash-count formula, and what is the actual computed 5-year expected crash count at the study's intersection?",
+      "sub_parts": [
+        {
+          "text": "Z_cr = 1.45, representing a 93% confidence level, used as the guideline for the expected-crash-count formula.",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2510.12963",
+            "block_id": "2510.12963:b105",
+            "excerpt": "the parameter $Z _ { c r }$ is assigned a value of 1.45, representing a 93% confidence level, which was carefully chosen to balance confidence and precision, ensuring reliability while avoiding overfitting."
+          }
+        },
+        {
+          "text": "The actual numeric 5-year expected crash count (N) computed for the study's intersection using this formula.",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "expected number of crashes",
+                "hits": 10,
+                "denominator": 46155,
+                "table": "chunks"
+              },
+              {
+                "query": "Z_cr",
+                "hits": 4,
+                "denominator": 46155,
+                "table": "chunks"
+              },
+              {
+                "query": "expected number of crashes",
+                "hits": 1,
+                "denominator": 28,
+                "table": "chunks",
+                "scope": "paper:2510.12963"
+              },
+              {
+                "query": "expected number of pedestrian crashes over 5 years computed at intersection",
+                "hits": 0,
+                "denominator": 47893,
+                "table": "qdrant:waymo_av_safety",
+                "method": "semantic_search round trip via app.mcp_verify_client --k 5",
+                "top_result": {
+                  "top_paper_id": null,
+                  "top_score": null,
+                  "top_snippet": ""
+                },
+                "relevance_note": "Top hit is a different ADAS-effectiveness paper's table, not 2510.12963 -- no applied 5-year expected-crash count for this study's intersection."
+              }
+            ],
+            "verdict": "This section only presents the confidence-level guideline (93%/Z=1.45) for the general formula and advises researchers to calibrate it per-site; no applied numeric N is computed or reported for a specific intersection anywhere else in the paper."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2510.12963"
+      ],
+      "gold_block_ids": [
+        "2510.12963:b105"
+      ],
+      "author_id": "GT-A",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": [],
+        "excerpt_fidelity_vs_served_chunk": 1.0
+      }
+    },
+    {
+      "id": "Q-WA4-A-010",
+      "question": "How is the 'Alertness point' behavioural threshold derived in the Latent Class Logit Kernel framework, and what specific numeric TTC value (in seconds) does the study compute for it?",
+      "sub_parts": [
+        {
+          "text": "Alertness point is derived as the 95th percentile of TTCs from observations where P_HR > 0.5.",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2510.12012",
+            "block_id": "2510.12012:b89",
+            "excerpt": "Alertnesspoint | Upper boundary of the high-risk zone $( P \\_ { H R } > 0 . 5 )$ . Driversmay still remain cautious,though defensive reactionsseem to taper off. | 95% quantile of TTCsfrom observations with $P \\_ { H R } > 0 . 5 .$"
+          }
+        },
+        {
+          "text": "The specific numeric TTC value (in seconds) this study computed for the Alertness point.",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "Alertness",
+                "hits": 49,
+                "denominator": 46155,
+                "table": "chunks"
+              },
+              {
+                "query": "TTC threshold",
+                "hits": 70,
+                "denominator": 46155,
+                "table": "chunks"
+              },
+              {
+                "query": "Alertness",
+                "hits": 5,
+                "denominator": 31,
+                "table": "chunks",
+                "scope": "paper:2510.12012"
+              },
+              {
+                "query": "numeric TTC threshold seconds Alertness point behavioural threshold",
+                "hits": 0,
+                "denominator": 47893,
+                "table": "qdrant:waymo_av_safety",
+                "method": "semantic_search round trip via app.mcp_verify_client --k 5",
+                "top_result": {
+                  "top_paper_id": null,
+                  "top_score": null,
+                  "top_snippet": ""
+                },
+                "relevance_note": "Top hit is the same paper's own Alternate-CBTs section -- confirms only derivation methods are given, no computed numeric TTC threshold."
+              }
+            ],
+            "verdict": "Table 2.5.2 gives only the derivation method (95th percentile of TTC) for each candidate behavioural threshold, not a computed number; no chunk in this paper states a concrete numeric TTC value for any of the five thresholds."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2510.12012"
+      ],
+      "gold_block_ids": [
+        "2510.12012:b89"
+      ],
+      "author_id": "GT-A",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": [],
+        "excerpt_fidelity_vs_served_chunk": 1.0
+      }
+    },
+    {
+      "id": "Q-WA4-A-011",
+      "question": "In the PRISMA case study's sensitivity analysis, why did the authors choose d=4, and what was the quantitative (e.g. RMSE) divergence between the SSM curves computed with d=3 versus d=5?",
+      "sub_parts": [
+        {
+          "text": "d=3 gives comparable, hardly-different results to d=4; d=5 makes the SSM fluctuate more and become less smooth.",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2303.07891",
+            "block_id": "2303.07891:b149",
+            "excerpt": "With $d = 3 .$ , the results are comparable to the results with $d = 4$ and there is hardly any diference noticeable. With $d = 5$ , the derived SSM fluctuates a bit more, which resulted in a less smooth SSM."
+          }
+        },
+        {
+          "text": "A quantitative divergence metric (e.g. RMSE or percent difference) between the d=3 and d=5 SSM curves.",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "d = 3",
+                "hits": 25,
+                "denominator": 46155,
+                "table": "chunks"
+              },
+              {
+                "query": "RMSE",
+                "hits": 323,
+                "denominator": 46155,
+                "table": "chunks"
+              },
+              {
+                "query": "d = 3",
+                "hits": 1,
+                "denominator": 26,
+                "table": "chunks",
+                "scope": "paper:2303.07891"
+              },
+              {
+                "query": "RMSE quantitative difference SSM d=3 versus d=5 PRISMA",
+                "hits": 0,
+                "denominator": 47893,
+                "table": "qdrant:waymo_av_safety",
+                "method": "semantic_search round trip via app.mcp_verify_client --k 5",
+                "top_result": {
+                  "top_paper_id": null,
+                  "top_score": null,
+                  "top_snippet": ""
+                },
+                "relevance_note": "Top hit is the same paper's Introduction (generic road-safety framing), not the d=3/d=5 sensitivity results -- no quantitative divergence metric anywhere."
+              }
+            ],
+            "verdict": "The sensitivity discussion is entirely qualitative ('comparable', 'hardly any difference', 'fluctuates a bit more'); no RMSE, percent-difference, or other quantitative divergence figure between the d=3 and d=5 curves is given anywhere in the paper."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2303.07891"
+      ],
+      "gold_block_ids": [
+        "2303.07891:b149"
+      ],
+      "author_id": "GT-A",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": [],
+        "excerpt_fidelity_vs_served_chunk": 1.0
+      }
+    },
+    {
+      "id": "Q-WA4-A-012",
+      "question": "In the AV-safety domain of the evaluation-failure scaling-law study, what rank-recovery correlation did simple averaging achieve at 60% coverage, and what did it achieve at 80% coverage for that same domain?",
+      "sub_parts": [
+        {
+          "text": "Domain 3 (AV Safety) at 60% coverage: simple averaging rho=0.916+/-0.016 (True Safe AV displaced #1->#2); IRT rho=1.000+/-0.000 (recovers #1).",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2605.11205",
+            "block_id": "2605.11205:b81",
+            "excerpt": "At 60% coverage with extreme dificulty heterogeneity across driving conditions, simple averaging produces $\\rho = 0 . 9 1 6 \\pm 0 . 0 1 6$ . The True Safe $\\mathrm { A V }$ , tested in the most demanding conditions (night, fog, snow), is displaced from $\\# 1$ to $\\# 2$ by simple averaging. IRT correctly ranks all 10 systems $( \\rho = 1 . 0 0 0 \\pm 0 . 0 0 0 )$ , recovering the True Safe AV at rank $\\# 1$ ."
+          }
+        },
+        {
+          "text": "The rho value simple averaging would achieve for the AV Safety domain at 80% coverage.",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "Domain 3",
+                "hits": 4,
+                "denominator": 46155,
+                "table": "chunks"
+              },
+              {
+                "query": "80% coverage",
+                "hits": 101,
+                "denominator": 46155,
+                "table": "chunks"
+              },
+              {
+                "query": "Domain 3",
+                "hits": 3,
+                "denominator": 36,
+                "table": "chunks",
+                "scope": "paper:2605.11205"
+              },
+              {
+                "query": "AV Safety domain rho rank correlation 80% coverage IRT",
+                "hits": 0,
+                "denominator": 47893,
+                "table": "qdrant:waymo_av_safety",
+                "method": "semantic_search round trip via app.mcp_verify_client --k 5",
+                "top_result": {
+                  "top_paper_id": "2605.11205",
+                  "top_score": 0.012617146824019439,
+                  "top_snippet": "The Scaling Law of Evaluation Failure: Why Simple Averaging Collapses Under Data Sparsity and Item Dificulty Gaps, and How Item Response Theory Recovers Ground Truth Across Domains\n5 Results > 5.1 Mai"
+                },
+                "relevance_note": "Top hit is the same paper's Table 1, which gives exactly one coverage value per domain (AV Safety row: 60% coverage only) -- no 80%-coverage row exists for any domain besides the swept NLP control."
+              }
+            ],
+            "verdict": "The study's design fixes each domain's simulated coverage at one value to match a real-world analogue -- Domain 3 (AV Safety) is simulated only at 60% coverage; only the NLP/GLUE control domain is swept across coverage levels. No 80%-coverage result exists for the AV Safety domain anywhere in the paper."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2605.11205"
+      ],
+      "gold_block_ids": [
+        "2605.11205:b81"
+      ],
+      "author_id": "GT-A",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": [],
+        "excerpt_fidelity_vs_served_chunk": 1.0
+      }
+    },
+    {
+      "id": "Q-WA4-A-014",
+      "question": "How many 20-second scenarios has the Waymo Open Motion Dataset contained since its 2021 release, and how many additional scenarios were added in its most recent version?",
+      "sub_parts": [
+        {
+          "text": "WOMD has held the same 103,354 20-second scenarios since its 2021 release; later versions add only new modalities, no new driving episodes.",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2509.03515",
+            "block_id": "2509.03515:b14",
+            "excerpt": "Since the initial public release in 2021, the dataset has contained the same 103,354 20 s scenarios; subsequent versions only add new modalities, including enhanced maps, LiDAR point clouds, camera embeddings, and trafic signals for these existing clips, without introducing new driving episodes."
+          }
+        },
+        {
+          "text": "The number of additional scenarios added in WOMD's most recent version.",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "103,354",
+                "hits": 7,
+                "denominator": 46155,
+                "table": "chunks"
+              },
+              {
+                "query": "new scenarios added",
+                "hits": 0,
+                "denominator": 46155,
+                "table": "chunks"
+              },
+              {
+                "query": "103,354",
+                "hits": 1,
+                "denominator": 30,
+                "table": "chunks",
+                "scope": "paper:2509.03515"
+              },
+              {
+                "query": "Waymo Open Motion Dataset new scenarios added latest version",
+                "hits": 0,
+                "denominator": 47893,
+                "table": "qdrant:waymo_av_safety",
+                "method": "semantic_search round trip via app.mcp_verify_client --k 5",
+                "top_result": {
+                  "top_paper_id": "2509.03515",
+                  "top_score": 0.007946970819137906,
+                  "top_snippet": "Can the Waymo Open Motion Dataset Support Realistic Behavioral Modeling? A Validation Study with Naturalistic Trajectories\n2 Data Description > 2.2 Waymo Open Motion Dataset\n\n2.2 Waymo Open Motion Dat"
+                },
+                "relevance_note": "Top hit is the same paper's WOMD description section -- consistent with 'same 103,354 scenarios since 2021', no newer-version scenario count given."
+              }
+            ],
+            "verdict": "The paper explicitly states subsequent WOMD versions add only new modalities to the existing clips 'without introducing new driving episodes' -- so a nonzero count of newly added scenarios in a later version does not exist to report; the scenario count is unchanged by the paper's own claim."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2509.03515"
+      ],
+      "gold_block_ids": [
+        "2509.03515:b14"
+      ],
+      "author_id": "GT-A",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": [],
+        "excerpt_fidelity_vs_served_chunk": 1.0
+      }
+    },
+    {
+      "id": "Q-WA4-A-015",
+      "question": "What example does UL 4600 give for a post-incident hazard that must be identified under section 10.6.6.1, and what specific time window does the standard require for identifying such hazards after a crash?",
+      "sub_parts": [
+        {
+          "text": "UL 4600 10.6.6.1 example: airbag deployment after the crash sequence has ended, as a post-incident hazard.",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "local:c3c5f9de20cc",
+            "block_id": "local:c3c5f9de20cc:b3647",
+            "excerpt": "EXAMPLE: Airbag deployment after crash sequence has ended NOTE: Airbag deployment might be handled by a subsystem completely independently of the item. However, the safety case needs to establish this independence if true."
+          }
+        },
+        {
+          "text": "A specific numeric time window within which post-incident hazards must be identified.",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "Post-incident hazards",
+                "hits": 5,
+                "denominator": 46155,
+                "table": "chunks"
+              },
+              {
+                "query": "10.6.6",
+                "hits": 7,
+                "denominator": 46155,
+                "table": "chunks"
+              },
+              {
+                "query": "Post-incident hazards",
+                "hits": 5,
+                "denominator": 1440,
+                "table": "chunks",
+                "scope": "paper:local:c3c5f9de20cc"
+              },
+              {
+                "query": "UL 4600 post-incident hazard identification time window seconds",
+                "hits": 0,
+                "denominator": 47893,
+                "table": "qdrant:waymo_av_safety",
+                "method": "semantic_search round trip via app.mcp_verify_client --k 5",
+                "top_result": {
+                  "top_paper_id": null,
+                  "top_score": null,
+                  "top_snippet": ""
+                },
+                "relevance_note": "Top hit is UL 4600's own Table of Clauses (table of contents for a different chapter, 5.1.1-5.7.2) -- confirms no numeric post-incident time window appears in this standard's clause list."
+              }
+            ],
+            "verdict": "Section 10.6.6 and its sub-clauses (10.6.6.1 MANDATORY through 10.6.6.5 CONFORMANCE) are entirely qualitative hazard checklists; conformance is checked 'via inspection of design and validation evidence,' and no numeric time window appears anywhere in this section."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "local:c3c5f9de20cc"
+      ],
+      "gold_block_ids": [
+        "local:c3c5f9de20cc:b3647"
+      ],
+      "author_id": "GT-A",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": [],
+        "excerpt_fidelity_vs_served_chunk": 1.0
+      }
+    },
+    {
+      "id": "Q-WA4-A-016",
+      "question": "What deceleration threshold did Olszewski et al. use to detect abrupt braking in pedestrian-vehicle conflict studies, and what specific DRS values did Fu et al. report when comparing stop-sign-controlled versus unprotected intersections?",
+      "sub_parts": [
+        {
+          "text": "Olszewski et al. used a 4 m/s^2 deceleration threshold to detect abrupt braking behavior in pedestrian-vehicle conflicts.",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2207.14145",
+            "block_id": "2207.14145:b20",
+            "excerpt": "Olszewski et al. [18] used the value of deceleration to identify pedestrian-vehicle conflicts at intersections. A threshold of $4 m / s ^ { 2 }$ was used to detect the abrupt braking behaviors of vehicles."
+          }
+        },
+        {
+          "text": "The specific numeric DRS values Fu et al. reported for stop-sign-controlled versus unprotected intersections.",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "stop signcontrolled",
+                "hits": 1,
+                "denominator": 46155,
+                "table": "chunks"
+              },
+              {
+                "query": "DRS",
+                "hits": 16,
+                "denominator": 46155,
+                "table": "chunks"
+              },
+              {
+                "query": "stop signcontrolled",
+                "hits": 1,
+                "denominator": 15,
+                "table": "chunks",
+                "scope": "paper:2207.14145"
+              },
+              {
+                "query": "DRS numeric values stop sign controlled versus unprotected intersection pedestrian",
+                "hits": 0,
+                "denominator": 47893,
+                "table": "qdrant:waymo_av_safety",
+                "method": "semantic_search round trip via app.mcp_verify_client --k 5",
+                "top_result": {
+                  "top_paper_id": null,
+                  "top_score": null,
+                  "top_snippet": ""
+                },
+                "relevance_note": "Top hit is the same unrelated systematic-review paper as query 008's top hit -- not Fu et al.'s DRS study, no numeric DRS values."
+              }
+            ],
+            "verdict": "The literature-review sentence on Fu et al. is purely qualitative -- 'stop sign-controlled intersections had lower DRS than unprotected intersections' -- with no numeric DRS values given for either intersection type."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2207.14145"
+      ],
+      "gold_block_ids": [
+        "2207.14145:b20"
+      ],
+      "author_id": "GT-A",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": [],
+        "excerpt_fidelity_vs_served_chunk": 1.0
+      }
+    },
+    {
+      "id": "Q-WA4-A-017",
+      "question": "What does the L0 loss level represent in this AV safety-verification framework's loss taxonomy, and what specific dollar-cost threshold distinguishes L0 from L1 ('Major Economic Loss')?",
+      "sub_parts": [
+        {
+          "text": "L0 = Damage to Objects Outside the Vehicle: property damage/objects in the environment, resulting in repair costs and potential liabilities.",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2411.02706",
+            "block_id": "2411.02706:b81",
+            "excerpt": "| Damage toObjects Outsideof the Vehicle | Property damage or objects in the en-vironment, resulting in repair costs andpotential liabilities. |"
+          }
+        },
+        {
+          "text": "The specific dollar-cost threshold that distinguishes L0 from L1 ('Major Economic Loss').",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "Major EconomicLoss",
+                "hits": 1,
+                "denominator": 46155,
+                "table": "chunks"
+              },
+              {
+                "query": "repair costs",
+                "hits": 4,
+                "denominator": 46155,
+                "table": "chunks"
+              },
+              {
+                "query": "Major EconomicLoss",
+                "hits": 1,
+                "denominator": 25,
+                "table": "chunks",
+                "scope": "paper:2411.02706"
+              },
+              {
+                "query": "dollar cost threshold L0 L1 loss level AV safety verification",
+                "hits": 0,
+                "denominator": 47893,
+                "table": "qdrant:waymo_av_safety",
+                "method": "semantic_search round trip via app.mcp_verify_client --k 5",
+                "top_result": {
+                  "top_paper_id": null,
+                  "top_score": null,
+                  "top_snippet": ""
+                },
+                "relevance_note": "Top hit is an unrelated controller-verification paper -- no dollar-cost figures for AV loss-level taxonomies."
+              }
+            ],
+            "verdict": "The Loss Definition table (L0 through L6) describes every level purely qualitatively (repair costs, substantial repair costs, legal/ethical consequences); no dollar figure or numeric cost threshold appears anywhere in the paper to distinguish adjacent loss levels."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2411.02706"
+      ],
+      "gold_block_ids": [
+        "2411.02706:b81"
+      ],
+      "author_id": "GT-A",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": [],
+        "excerpt_fidelity_vs_served_chunk": 1.0
+      }
+    },
+    {
+      "id": "Q-WA4-A-018",
+      "question": "What vehicle types does the ViSTA framework include in its scenario diversity, and what score or ranking did ViSTA achieve in the 2021 IEEE Autonomous Test Driving AI Test Challenge?",
+      "sub_parts": [
+        {
+          "text": "ViSTA's scenario diversity includes cars, trucks, school bus, motorbike, cyclists, and emergency vehicles.",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2109.02529",
+            "block_id": "2109.02529:b37",
+            "excerpt": "Vehicles: cars, trucks, school bus, motorbike, cyclists, emergency vehicles etc."
+          }
+        },
+        {
+          "text": "ViSTA's final score or ranking in the 2021 IEEE Autonomous Test Driving AI Test Challenge.",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "IEEE Autonomous Test Driving",
+                "hits": 2,
+                "denominator": 46155,
+                "table": "chunks"
+              },
+              {
+                "query": "ViSTA score",
+                "hits": 0,
+                "denominator": 46155,
+                "table": "chunks"
+              },
+              {
+                "query": "IEEE Autonomous Test Driving",
+                "hits": 2,
+                "denominator": 16,
+                "table": "chunks",
+                "scope": "paper:2109.02529"
+              },
+              {
+                "query": "ViSTA score ranking 2021 IEEE Autonomous Test Driving AI Test Challenge",
+                "hits": 0,
+                "denominator": 47893,
+                "table": "qdrant:waymo_av_safety",
+                "method": "semantic_search round trip via app.mcp_verify_client --k 5",
+                "top_result": {
+                  "top_paper_id": "local:6f34e2fef9fd",
+                  "top_score": 0.011156237464901724,
+                  "top_snippet": "Intelligent driving intelligence test for autonomous vehicles with naturalistic and adversarial environment\nReferences\n\n"
+                },
+                "relevance_note": "Top hit is a References/bibliography block from an unrelated paper -- confirms no competition score or ranking content for ViSTA exists to retrieve."
+              }
+            ],
+            "verdict": "The paper describes ViSTA's methodology, test-case generation, and identified issues (Table II) but never reports a competition score, rank, or placement result for the challenge it was developed for."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2109.02529"
+      ],
+      "gold_block_ids": [
+        "2109.02529:b37"
+      ],
+      "author_id": "GT-A",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": [],
+        "excerpt_fidelity_vs_served_chunk": 1.0
+      }
+    },
+    {
+      "id": "Q-WA4-A-019",
+      "question": "What score did TerraZero achieve on the nuPlan val14 closed-loop benchmark compared to Gigaflow, and what score did TerraZero achieve on the CARLA leaderboard?",
+      "sub_parts": [
+        {
+          "text": "TerraZero scores 94.19 on nuPlan val14, ahead of Gigaflow (93.8), CaRL (90.60), and PlannerRFT (84.46).",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2607.13028",
+            "block_id": "2607.13028:b87",
+            "excerpt": "TerraZero scores 94.19 on val14, the highest score among the planners we compare against. It leads the reinforcement-learning family, ahead of Gigaflow [13] at 93.8, CaRL [26] at 90.60, and PlannerRFT [30], a difusion planner refined by reinforcement fine-tuning that reaches 84.46."
+          }
+        },
+        {
+          "text": "TerraZero's score on the CARLA leaderboard.",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "CARLA leaderboard",
+                "hits": 46,
+                "denominator": 46155,
+                "table": "chunks"
+              },
+              {
+                "query": "TerraZero CARLA",
+                "hits": 0,
+                "denominator": 46155,
+                "table": "chunks"
+              },
+              {
+                "query": "CARLA leaderboard",
+                "hits": 0,
+                "denominator": 45,
+                "table": "chunks",
+                "scope": "paper:2607.13028"
+              },
+              {
+                "query": "TerraZero CARLA leaderboard score",
+                "hits": 0,
+                "denominator": 47893,
+                "table": "qdrant:waymo_av_safety",
+                "method": "semantic_search round trip via app.mcp_verify_client --k 5",
+                "top_result": {
+                  "top_paper_id": null,
+                  "top_score": null,
+                  "top_snippet": ""
+                },
+                "relevance_note": "Top hit is the same paper's own WOSAC Sim Agent Benchmark section (6.4), not a CARLA leaderboard section -- TerraZero is never scored against CARLA."
+              }
+            ],
+            "verdict": "TerraZero is evaluated only on nuPlan val14, InterPlan, and the WOSAC sim-agent benchmark; CARLA is discussed only as Gigaflow's synthetic training substrate (a stated limitation), never as an evaluation benchmark TerraZero itself is scored on."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2607.13028"
+      ],
+      "gold_block_ids": [
+        "2607.13028:b87"
+      ],
+      "author_id": "GT-A",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": [],
+        "excerpt_fidelity_vs_served_chunk": 1.0
+      }
+    },
+    {
+      "id": "Q-WA4-A-020",
+      "question": "In the Fractional Collisions framework's aggregate verification against SHRP2, what was the total estimated fractional-collision count versus the actual ground truth, and how did that aggregate comparison break down by weather condition?",
+      "sub_parts": [
+        {
+          "text": "Aggregated across all SHRP2 scenes: framework estimates 17.15 fractional collisions vs 17 actual GT collisions (1% over), versus NRM's 34.",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2506.07540",
+            "block_id": "2506.07540:b40",
+            "excerpt": "when aggregated across all scenes and severity, the total fractional collisions is 17.15, only 1% over the actual 17 and 2x closer than using the NRM which predicts 34 collisions (blue)."
+          }
+        },
+        {
+          "text": "The same aggregate fractional-collision comparison broken out by weather condition.",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "weather",
+                "hits": 1905,
+                "denominator": 46155,
+                "table": "chunks"
+              },
+              {
+                "query": "aggregate",
+                "hits": 1324,
+                "denominator": 46155,
+                "table": "chunks"
+              },
+              {
+                "query": "weather",
+                "hits": 0,
+                "denominator": 17,
+                "table": "chunks",
+                "scope": "paper:2506.07540"
+              },
+              {
+                "query": "Fractional Collisions aggregate verification broken down by weather condition",
+                "hits": 0,
+                "denominator": 47893,
+                "table": "qdrant:waymo_av_safety",
+                "method": "semantic_search round trip via app.mcp_verify_client --k 5",
+                "top_result": {
+                  "top_paper_id": "2506.07540",
+                  "top_score": 0.007834699453551914,
+                  "top_snippet": "Fractional Collisions: A Framework for Risk Estimation of Counterfactual Conflicts using Autonomous Driving Behavior Simulations\n4. Framework and Fractional Collision Eval > 4.2. Aggregate Verificatio"
+                },
+                "relevance_note": "Top hit is the same paper's own Aggregate Verification section (already fully reviewed) -- no weather variable anywhere in the paper."
+              }
+            ],
+            "verdict": "The aggregate verification table is organized only by GT-collision status and severity level (L0-L2/Lnone); weather is not a variable used anywhere in this paper's framework or evaluation."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2506.07540"
+      ],
+      "gold_block_ids": [
+        "2506.07540:b40"
+      ],
+      "author_id": "GT-A",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": [],
+        "excerpt_fidelity_vs_served_chunk": 1.0
+      }
+    },
+    {
+      "id": "Q-WA4-A-021",
+      "question": "What TTC threshold did the rare-collision-risk case study set for the lane-change hazard decision, and what was the actual real-time TTC value computed for the ego vehicle at the moment closest to collision during the simulated run?",
+      "sub_parts": [
+        {
+          "text": "The case study sets w_L=3.5m, mu_d=0.6s, and TTC_th=10s as the lane-change hazard decision threshold.",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2405.01011",
+            "block_id": "2405.01011:b148",
+            "excerpt": "In the scenario under study, we set $w _ { L } = 3 . 5 m , \\mu _ { d } = 0 . 6 s$ , and $\\mathrm { T T C } _ { \\mathrm { t h } } = 1 0 s$"
+          }
+        },
+        {
+          "text": "The actual real-time TTC value computed for the ego vehicle at the moment closest to collision during the simulated run.",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "TTC_th",
+                "hits": 96,
+                "denominator": 46155,
+                "table": "chunks"
+              },
+              {
+                "query": "realized TTC",
+                "hits": 1,
+                "denominator": 46155,
+                "table": "chunks"
+              },
+              {
+                "query": "TTC_th",
+                "hits": 0,
+                "denominator": 13,
+                "table": "chunks",
+                "scope": "paper:2405.01011"
+              },
+              {
+                "query": "realized time-to-collision value ego vehicle simulated lane change",
+                "hits": 0,
+                "denominator": 47893,
+                "table": "qdrant:waymo_av_safety",
+                "method": "semantic_search round trip via app.mcp_verify_client --k 5",
+                "top_result": {
+                  "top_paper_id": "2509.00582",
+                  "top_score": 0.011506770906523444,
+                  "top_snippet": "Safe and Efficient Lane-Changing for Autonomous Vehicles: An Improved Double Quintic Polynomial Approach with Time-to-Collision Evaluation\nEgo-state evolution under the mixed-traffic scenario. > 6.6 A"
+                },
+                "relevance_note": "Top hit is a different paper on lane-changing TTC evaluation -- topically adjacent but not 2405.01011's own case study; no realized/observed TTC trace value is reported in the source paper."
+              }
+            ],
+            "verdict": "The paper reports the TTC_th threshold parameter and the resulting collision-probability estimates (Table 2, IPS-FAS vs Monte Carlo), but never reports a specific realized/observed TTC trace value from a simulated run -- only the threshold used for the hazard decision logic."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2405.01011"
+      ],
+      "gold_block_ids": [
+        "2405.01011:b148"
+      ],
+      "author_id": "GT-A",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": [],
+        "excerpt_fidelity_vs_served_chunk": 1.0
+      }
+    },
+    {
+      "id": "Q-WA4-A-022",
+      "question": "How does this criticality-metrics review define Delta-v and connect it to fatality probability via the Joksch model, and what Delta-v threshold does the review say demarcates a 'severe injury' classification specifically for Waymo's rider-only fleet?",
+      "sub_parts": [
+        {
+          "text": "Joksch's model connects Delta-v to fatality probability P(A1) ~= (Delta-v / 31.74 m/s)^4.",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2108.02403",
+            "block_id": "2108.02403:b348",
+            "excerpt": "Joksch [46] presents a model connecting Δv to the probability P of a two vehicle collision leading to a fatality using"
+          }
+        },
+        {
+          "text": "A Delta-v threshold this review states demarcates 'severe injury' specifically for Waymo's rider-only fleet.",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "Joksch",
+                "hits": 3,
+                "denominator": 46155,
+                "table": "chunks"
+              },
+              {
+                "query": "Waymo Delta-v",
+                "hits": 0,
+                "denominator": 46155,
+                "table": "chunks"
+              },
+              {
+                "query": "Joksch",
+                "hits": 1,
+                "denominator": 85,
+                "table": "chunks",
+                "scope": "paper:2108.02403"
+              },
+              {
+                "query": "Waymo rider-only fleet Delta-v threshold severe injury classification",
+                "hits": 0,
+                "denominator": 47893,
+                "table": "qdrant:waymo_av_safety",
+                "method": "semantic_search round trip via app.mcp_verify_client --k 5",
+                "top_result": {
+                  "top_paper_id": null,
+                  "top_score": null,
+                  "top_snippet": ""
+                },
+                "relevance_note": "Top hit is a different Waymo crash-rate paper's RAVE-checklist self-assessment section -- no Delta-v/Joksch content and no Waymo-specific severe-injury Delta-v threshold anywhere."
+              }
+            ],
+            "verdict": "2108.02403 is a generic, vendor-agnostic criticality-metrics review; it gives the generic Joksch fatality-probability formula and constant (31.74 m/s) but never applies it to Waymo specifically or states a Waymo-fleet empirical Delta-v cutoff for 'severe injury' -- that classification never appears in this paper tied to any named AV operator."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2108.02403"
+      ],
+      "gold_block_ids": [
+        "2108.02403:b348"
+      ],
+      "author_id": "GT-A",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": [],
+        "excerpt_fidelity_vs_served_chunk": 1.0
+      }
+    }
+  ]
 }
