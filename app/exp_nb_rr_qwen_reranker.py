@@ -25,10 +25,10 @@ Two responsibilities packed into one file, dispatched by argv SHAPE (see `main()
 
 Mode is picked by argv SHAPE, not an env var: `"--ground-truth"` is `app.retrieval_eval`'s own
 flag and never appears in this module's own orchestrator CLI, so its presence is an unambiguous
-discriminator. Deliberate: `os.environ`/`os.getenv` outside `rag/config.py` is a CI-enforced
-violation in `app/` scope (CONVENTIONS.md §3, `ci/checks/env_leak.py` check (d)) -- an env-var
-handoff between the orchestrator and the shim subprocess was the obvious alternative and is
-exactly what that check exists to catch.
+discriminator. Deliberate: reading the process environment outside `rag/config.py` is a
+CI-enforced violation in `app/` scope (CONVENTIONS.md §3, `ci/checks/env_leak.py` check (d)) -- an
+environment-variable handoff between the orchestrator and the shim subprocess was the obvious
+alternative and is exactly what that check exists to catch.
 
 HOSTING DECISION (ticket-mandated, recorded here): Qwen3-Reranker-0.6B is a `Qwen3ForCausalLM`
 (scores a (query, document) pair by the softmax-normalized logit of a "yes" vs "no" token after a
@@ -94,16 +94,20 @@ class Qwen3Reranker:
     """Candidate `Reranker` adapter (QW-3): Qwen3-Reranker-0.6B run locally in-process via
     `transformers` (see module docstring's HOSTING DECISION) instead of TEI. Same public
     interface as `rag.reranker.TeiReranker` (`rerank(query, candidates) -> list[RerankCandidate]`,
-    reordered by score descending, the same objects returned -- never fabricates new ones) and the
-    same constructor shape (`_client` accepted-and-ignored so `app.assembly.build_mcp_server`'s
-    existing `TeiReranker(httpx.Client(...), gpu_lock, ensure_ready=...)` call site works
-    unmodified once `apply_qwen_patch()` rebinds the class name it constructs).
+    reordered by score descending, the same objects returned -- never fabricates new ones) and a
+    constructor shape compatible with `app.assembly.build_mcp_server`'s existing call site (see
+    the `_client` note below), so `apply_qwen_patch()` can rebind the class name it constructs
+    with no other change needed.
 
     Loads the model lazily, on first `rerank()` call, not in `__init__` -- keeps construction
     cheap and GPU-free, matching `TeiReranker`'s own "the real work happens in rerank(), not
     __init__" shape. `gpu_lock.acquire("rerank")` wraps only the forward pass (module docstring's
     GPU-lock note); enforcement check (f) (`ci/checks/gpu_lock.py`) also requires any class named
     `*Reranker` to declare a `gpu_lock`-named `__init__` parameter.
+
+    Note: `_client` above stands in for the transport object `build_mcp_server` passes as the
+    first positional argument to whatever class name it constructs -- accepted-and-ignored so
+    that composition root's call site needs no edit once `apply_qwen_patch()` rebinds the name.
     """
 
     def __init__(

@@ -104,7 +104,7 @@ def test_rerank_calls_ensure_ready_hook_before_scoring(monkeypatch):
 
 
 def test_qwen3reranker_accepts_tei_reranker_call_shape():
-    # app.assembly.build_mcp_server constructs TeiReranker(httpx.Client(...), gpu_lock,
+    # app.assembly.build_mcp_server constructs TeiReranker(<transport>, gpu_lock,
     # ensure_ready=...) -- Qwen3Reranker must accept that exact call shape once monkeypatched in.
     Qwen3Reranker(object(), FakeGpuLock(), ensure_ready=None)
 
