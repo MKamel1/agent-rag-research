@@ -7,5 +7,454 @@
     "corpus": "waymo_av_safety",
     "authored_at": "2026-08-28"
   },
-  "items": []
+  "items": [
+    {
+      "id": "Q-WA4-B-001",
+      "question": "What are Waymo's reported safety metrics (injury rates, crash statistics) for its Rider-Only services, and what specific details does the research provide about the Waymo taxi service expansion strategy?",
+      "sub_parts": [
+        {
+          "text": "Waymo's reported safety metrics (injury rates, crash statistics) for Rider-Only services across all locations",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2312.12675",
+            "block_id": "2312.12675:b9",
+            "excerpt": "When considering all locations together, the any-injury-reported crashed vehicle rate was 0.6 incidents per million miles (IPMM) for the ADS vs 2.80 IPMM for the human benchmark, an 80% reduction or a human crash rate that is 5 times higher than the ADS rate."
+          }
+        },
+        {
+          "text": "Specific details about Waymo taxi service expansion strategy, commercial rollout timeline, or deployment to new markets",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "taxi service expansion strategy",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "taxi expansion",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "rideshare expansion",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "Waymo commercial deployment timeline",
+                "hits": 0,
+                "denominator": 46155
+              }
+            ],
+            "verdict": "Genuinely absent: zero hits across four distinct lexical probes (taxi/commercial/expansion/deployment) over 46,155 chunks. The corpus focuses on safety studies and technical performance, not commercial roadmaps."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2312.12675"
+      ],
+      "gold_block_ids": [
+        "2312.12675:b9"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": []
+      }
+    },
+    {
+      "id": "Q-WA4-B-002",
+      "question": "How does Waymo's autonomous driving system performance compare across different US geographic regions (San Francisco, Phoenix, Los Angeles), and what performance comparisons exist for Waymo operations in international markets (Europe, Asia)?",
+      "sub_parts": [
+        {
+          "text": "Waymo's ADS performance comparison across US geographic regions (SF, Phoenix, LA)",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2312.12675",
+            "block_id": "2312.12675:b10",
+            "excerpt": "Police-reported crashed vehicle rate reductions for the ADS were statistically significant when compared in San Francisco and Phoenix, as well as combined across all locations"
+          }
+        },
+        {
+          "text": "Performance comparisons for Waymo operations in international markets (Europe, Asia, etc.)",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "international market deployment Europe Asia",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "Waymo Europe",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "Waymo Japan",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "Waymo Germany",
+                "hits": 0,
+                "denominator": 46155
+              }
+            ],
+            "verdict": "Genuinely absent: zero hits across four international-focused lexical probes over 46,155 chunks. The corpus exclusively covers US operations."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2312.12675"
+      ],
+      "gold_block_ids": [
+        "2312.12675:b10"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": []
+      }
+    },
+    {
+      "id": "Q-WA4-B-003",
+      "question": "What collision avoidance scenarios did Waymo test in its systematic validation studies, and what results does the corpus provide about Waymo's performance on extreme weather driving conditions (heavy snow, ice)?",
+      "sub_parts": [
+        {
+          "text": "Collision avoidance scenarios tested in Waymo's validation studies",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2212.08148",
+            "block_id": "2212.08148:b0",
+            "excerpt": "Collision Avoidance Testing of the Waymo Automated Driving System"
+          }
+        },
+        {
+          "text": "Waymo's performance on extreme weather conditions (heavy snow, ice, severe rain)",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "extreme weather snow ice conditions",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "heavy snow autonomous driving",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "ice road testing",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "blizzard weather ADS",
+                "hits": 0,
+                "denominator": 46155
+              }
+            ],
+            "verdict": "Genuinely absent: zero hits across four weather-specific lexical probes over 46,155 chunks. Testing focuses on clear/rain conditions only."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2212.08148"
+      ],
+      "gold_block_ids": [
+        "2212.08148:b0"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": []
+      }
+    },
+    {
+      "id": "Q-WA4-B-004",
+      "question": "What vehicle models and sensor configurations are documented in Waymo's safety testing programs, and what technical specifications does the research provide about Waymo's proprietary self-driving hardware designs and custom chips?",
+      "sub_parts": [
+        {
+          "text": "Vehicle models and sensor configurations in Waymo's safety testing",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2212.08148",
+            "block_id": "2212.08148:b17",
+            "excerpt": "Safety Test Objective"
+          }
+        },
+        {
+          "text": "Technical specifications of Waymo's proprietary self-driving hardware designs and custom chips",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "proprietary hardware design specifications",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "Waymo custom chip",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "TPU tensor processing unit",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "proprietary sensor design",
+                "hits": 0,
+                "denominator": 46155
+              }
+            ],
+            "verdict": "Genuinely absent: zero hits across four hardware-specific lexical probes over 46,155 chunks. Corpus focuses on safety outcomes, not hardware specifications."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2212.08148"
+      ],
+      "gold_block_ids": [
+        "2212.08148:b17"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": []
+      }
+    },
+    {
+      "id": "Q-WA4-B-005",
+      "question": "What are the reported miles traveled and time periods covered in Waymo's rider-only safety studies, and what official deployment timeline does Waymo publicly commit to for achieving full autonomy without any safety drivers?",
+      "sub_parts": [
+        {
+          "text": "Reported miles traveled and time periods in Waymo's rider-only studies",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2312.12675",
+            "block_id": "2312.12675:b9",
+            "excerpt": "ADS crash data were derived from NHTSA's Standing General Order (SGO) reporting over 7.14 million RO miles through the end of October 2023 in Phoenix, AZ, San Francisco, CA, and Los Angeles, CA"
+          }
+        },
+        {
+          "text": "Official deployment timeline for achieving full autonomy without safety drivers",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "full autonomy no safety driver timeline",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "deployment schedule roadmap 2024 2025",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "planned expansion timeline",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "commercial launch date",
+                "hits": 0,
+                "denominator": 46155
+              }
+            ],
+            "verdict": "Genuinely absent: zero hits across four timeline-focused lexical probes over 46,155 chunks. Corpus reports past/current data, not future roadmaps."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2312.12675"
+      ],
+      "gold_block_ids": [
+        "2312.12675:b9"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": []
+      }
+    },
+    {
+      "id": "Q-WA4-B-006",
+      "question": "What data collection methods did researchers use for Waymo's safety studies, and what information does the corpus provide about cybersecurity threats, attacks, or vulnerabilities that could affect autonomous driving systems?",
+      "sub_parts": [
+        {
+          "text": "Data collection methods used in Waymo safety studies",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2403.14648",
+            "block_id": "2403.14648:b55",
+            "excerpt": "NHTSA Standing General Order on ADS Crash Report Data"
+          }
+        },
+        {
+          "text": "Cybersecurity threats, attacks, or vulnerabilities affecting autonomous driving systems",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "cybersecurity threats attacks",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "hacking autonomous vehicle",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "security vulnerability ADS",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "malicious attack autonomous",
+                "hits": 0,
+                "denominator": 46155
+              }
+            ],
+            "verdict": "Genuinely absent: zero hits across four security-focused lexical probes over 46,155 chunks. Corpus addresses functional safety, not cybersecurity."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2403.14648"
+      ],
+      "gold_block_ids": [
+        "2403.14648:b55"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": []
+      }
+    },
+    {
+      "id": "Q-WA4-B-007",
+      "question": "What crash statistics and injury rates are reported in Waymo's studies, and what does the research document about liability insurance coverage and financial responsibility for autonomous vehicle incidents?",
+      "sub_parts": [
+        {
+          "text": "Crash statistics and injury rates in Waymo studies",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2403.14648",
+            "block_id": "2403.14648:b61",
+            "excerpt": "About 16% of AV crashes resulted in reported injuries"
+          }
+        },
+        {
+          "text": "Liability insurance coverage and financial responsibility frameworks for autonomous vehicle incidents",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "liability insurance coverage",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "insurance autonomous vehicle",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "financial responsibility accident",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "liability framework ADS",
+                "hits": 0,
+                "denominator": 46155
+              }
+            ],
+            "verdict": "Genuinely absent: zero hits across four liability-focused lexical probes over 46,155 chunks. Corpus focuses on technical safety, not legal/insurance frameworks."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2403.14648"
+      ],
+      "gold_block_ids": [
+        "2403.14648:b61"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": []
+      }
+    },
+    {
+      "id": "Q-WA4-B-008",
+      "question": "How do Waymo's automated driving systems handle different road surface conditions documented in the corpus, and what regulatory compliance with international safety standards (ISO 26262, ISO 21448) does Waymo commit to?",
+      "sub_parts": [
+        {
+          "text": "Waymo's ADS handling of different road surface conditions (dry, wet, etc.)",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2403.14648",
+            "block_id": "2403.14648:b61",
+            "excerpt": "Dry and No Unusual Conditions 135 93.1%"
+          }
+        },
+        {
+          "text": "Regulatory compliance with international safety standards (ISO 26262, ISO 21448, etc.)",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "regulatory compliance standards",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "ISO 26262 ISO 21448",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "international safety certification",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "regulatory framework compliance",
+                "hits": 0,
+                "denominator": 46155
+              }
+            ],
+            "verdict": "Genuinely absent: zero hits across four regulatory-focused lexical probes over 46,155 chunks. Corpus does not address formal regulatory compliance."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2403.14648"
+      ],
+      "gold_block_ids": [
+        "2403.14648:b61"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": []
+      }
+    }
+  ]
 }
