@@ -5,7 +5,7 @@ config was flipped in the shipped system — every number below comes from a thr
 (`app/exp_nb_rr_qwen_reranker.py`) driving the existing dual-fixture reuse seam
 (`scripts/nb_eval_runner.py` → `app/retrieval_eval.py`), unmodified.
 
-**Verdict: REJECT**, on both fixtures, without averaging. See §5.
+**Verdict: REJECT**, on both fixtures, without averaging. See §8.
 
 Every number in this report is a field of one of the committed JSONs under
 `docs/eval-reports/data/2026-08-28-qw3/` — none is typed by hand. File map at the end.
