@@ -271,3 +271,53 @@ def test_main_dry_run_prints_both_fixture_commands_without_running_anything(caps
     assert "[dry-run] gt_wmr:" in out and "[dry-run] waymo_gt_verified:" in out
     assert "--collection waymo_av_safety" in out
     assert "would write" in out and "2026-08-25-nb-d4-dual-fixture-SMOKE.md" in out
+
+
+# --- VOID flagging: n_errors > 0 must never render as an ordinary clean row ---------------------
+
+
+def test_render_markdown_flags_void_row_when_fixture_has_errors():
+    """Regression for the SB-1 incident (2026-08-28): a fixture whose run hit real failures
+    (e.g. a gpu_lock timeout under concurrent GPU contention) still produces a numeric-looking
+    headline row from extract_row -- render_markdown must make that row impossible to mistake
+    for a trustworthy measurement."""
+    report = make_report(SPECS)
+    report["n_errors"] = 4
+    clean_report = make_report(SPECS)
+    args = _Args()
+    combined = build_combined(
+        [extract_row("gt_wmr", "gt.json", report),
+         extract_row("waymo_gt_verified", "v.json", clean_report)],
+        args, {},
+    )
+
+    md = render_markdown(combined)
+
+    assert "gt_wmr ⚠️ VOID (4 errored)" in md
+    assert "VOID: do not trust the row(s) above" in md
+    assert "waymo_gt_verified" in md and "VOID" not in md.split("waymo_gt_verified")[1].split("\n")[0]
+
+
+def test_render_markdown_no_void_note_when_all_fixtures_clean():
+    md = render_markdown(build_combined(_rows(), _Args(), {}))
+    assert "VOID" not in md
+
+
+def test_main_prints_void_warning_to_stdout_when_errors_present(tmp_path, monkeypatch, capsys):
+    """main() must echo the same VOID condition to the console, not just the .md file, for a
+    reader who only watches process output."""
+    import scripts.nb_eval_runner as runner
+
+    def fake_run_fixture(name, gt, report_path, args):
+        report = make_report(SPECS)
+        if name == "gt_wmr":
+            report["n_errors"] = 3
+        return report
+
+    monkeypatch.setattr(runner, "run_fixture", fake_run_fixture)
+
+    rc = main(["--tag", "VOIDTEST", "--date", "2026-08-25", "--out-dir", str(tmp_path)])
+
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert "*** VOID: gt_wmr had 3 errored question(s)" in out

@@ -257,11 +257,33 @@ def render_markdown(combined: dict) -> str:
         "| fixture | R@10 (answerable) | MRR | block-P@1 |",
         "|---|---|---|---|",
     ]
+    void_fixtures = []
     for row in combined["combined_table"]:
         a, bp = row["answerable"], row["block_p_at_1"]
         mrr = f"{a['mrr']:.4f}" if a["mrr"] is not None else "n/a"
         block = _frac(bp["hits"], bp["n"]) if bp["rate"] is not None else "n/a"
-        lines.append(f"| {row['fixture']} | {_frac(a['hits'], a['n'])} | {mrr} | {block} |")
+        # SILENT-DEATH GUARD, extended: n_errors>0 means some questions never actually ran
+        # (e.g. a gpu_lock timeout under concurrent GPU contention) and were counted as ordinary
+        # misses -- a headline number computed over a partial run is not a weaker number, it is a
+        # WRONG one, and printed no differently from a clean run unless flagged here. VOID, not a
+        # silent asterisk: a reader must not be able to mistake this row for a trustworthy result.
+        n_errors = row.get("n_errors", 0)
+        fixture_label = row["fixture"]
+        if n_errors:
+            fixture_label = f"{row['fixture']} ⚠️ VOID ({n_errors} errored)"
+            void_fixtures.append((row["fixture"], n_errors))
+        lines.append(f"| {fixture_label} | {_frac(a['hits'], a['n'])} | {mrr} | {block} |")
+    if void_fixtures:
+        lines += [
+            "",
+            "**VOID: do not trust the row(s) above.** "
+            + "; ".join(
+                f"{fx}: {n} question(s) never actually ran (see that fixture's raw report's "
+                f"per-question `error` field) and were counted as ordinary misses"
+                for fx, n in void_fixtures
+            )
+            + ". Re-run with no concurrent GPU-lock contention before using this number.",
+        ]
     lines += [
         "",
         "## Known-absent arm (reported separately — never blended)",
@@ -372,6 +394,15 @@ def main(argv: list[str] | None = None) -> int:
     out_md.write_text(render_markdown(combined))
     print(f"[nb-eval] wrote {out_json}")
     print(f"[nb-eval] wrote {out_md}")
+    # Loud stdout echo of the same VOID condition render_markdown() flags in the .md -- a reader
+    # scanning only this process's console output (not opening the file) must see it too.
+    for row in rows:
+        if row.get("n_errors", 0):
+            print(
+                f"[nb-eval] *** VOID: {row['fixture']} had {row['n_errors']} errored question(s) "
+                "-- its numbers count real failures as misses and must not be trusted. Re-run "
+                "with no concurrent GPU-lock contention. ***"
+            )
     return 0
 
 
