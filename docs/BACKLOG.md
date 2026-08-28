@@ -658,3 +658,17 @@ instructions-only judging.
   `number` is optional and falls back to cached-payload mode.
 - A PR is not done until `gh pr checks <n>` shows **both** `enforcement` and `unit-tests` as `pass`.
   Never add a label or weaken a test to make a check go green.
+
+## Landed: Precision-95 lane outcomes (2026-08-28)
+
+GPU freeze lifted 2026-08-27; lanes dispatched immediately. Primary work landed 2026-08-28.
+
+| id | item | status | notes |
+|---|---|---|---|
+| QW-2 | MiniCheck-FT5 confidence surface v0 | **LANDED** | Support score separates answerable/absent ~500× wider than retrieval score, but heavy overlap blocks thresholding. Viable as one candidate signal for IN-2, not alone; sentence-level scoring recommended over per-answer means. Branch `NB-QW2-confidence-v0`, merge `fd05dbf`; report `docs/eval-reports/2026-08-28-confidence-v0.md` |
+| QW-3 | Qwen3-Reranker-0.6B seat A/B | **VERDICT: REJECT** | Block-P@1 collapses 24× (gt_wmr) and 11× (ver84); ver84 falls below no-rerank floor. All three hypotheses tested before measurement trusted. Not attempted: 4B/8B variants, tuned task instruction, PyLate/GTE-ModernColBERT. Branch `P95-QW3-reranker-seat`, merge `825c57b`; report `docs/eval-reports/2026-08-28-qw3-reranker-seat.md` |
+| W-A4 | SB-2 partial-absent ground truth authoring | **LANDED** | 31 usable items across 22 papers. Two blind authors + cross-verification (Stages B/C/D). Falsified 2 absence claims via lexical re-probe; corrected 3 hit-count stale entries. Incidental finding: 12/12 Author B citations sat 1–5 blocks downstream of anchor — supports X-C Variant A. Branches `P95-SB2-WA4-authorA` (7191f8e), `P95-SB2-WA4-authorB` (336d78c), `P95-SB2-WA4-crossverify` (259b007); data `docs/eval-reports/data/2026-08-28-wa4-gt/`; report `docs/eval-reports/data/2026-08-28-wa4-gt/crossverify/cross-verification-report.md` |
+| SB-1 | Chunk-boundary impact measurement | **IN PROGRESS** | Branch `P95-SB1-chunk-boundary` still running. Measurement instrument finding: **ver84 MRR noise floor ~0.0074** (one tied-pair flip = 0.5/68 MRR gap). R@10 and block-P@1 are stable metrics on this corpus. |
+| P0-2 | Metric-ratification sign-off | **BLOCKED** — on operator | `docs/eval-reports/2026-08-26-precision95-metric-ratification.md` remains unsigned DRAFT. Gates IN-1. |
+| T-F7 | X-C member-block citation adoption sign-off | **BLOCKED** — on operator | Batched rider PR for Variant A wiring. Measured effect: gt_wmr 93.9%→95.5%, monotone, zero-risk. Supported by SB-2/W-A4's 12/12 anchor-offset finding. Design note `docs/design-notes/2026-08-28-xc-member-citation-adoption.md`. |
+
