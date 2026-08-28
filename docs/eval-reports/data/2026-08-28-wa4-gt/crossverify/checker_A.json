@@ -1,0 +1,1857 @@
+[
+  {
+    "id": "Q-WA4-A-001",
+    "checks": [
+      {
+        "check": "frozen_after_retrieval",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:excerpt_verbatim_substring",
+        "pass": true,
+        "detail": {
+          "block_id": "2312.12675:b12",
+          "block_id_resolves": true,
+          "block_match": true,
+          "chunk_id": null,
+          "chunk_id_resolves": null,
+          "chunk_match": null
+        }
+      },
+      {
+        "check": "sub_part[0]:supported:gold_block_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[1]:absent:probe_structure",
+        "pass": true,
+        "detail": {
+          "n_lexical": 3,
+          "n_semantic": 1,
+          "has_lexical_with_denominator": true
+        }
+      },
+      {
+        "check": "sub_part[1]:absent:denominator_arithmetic",
+        "pass": true,
+        "detail": [
+          {
+            "query": "night",
+            "scope": "corpus",
+            "stated": 46155,
+            "actual": 46155,
+            "pass": true
+          },
+          {
+            "query": "nighttime any-injury",
+            "scope": "corpus",
+            "stated": 46155,
+            "actual": 46155,
+            "pass": true
+          },
+          {
+            "query": "night",
+            "scope": "2312.12675",
+            "stated": 26,
+            "actual": 26,
+            "pass": true
+          }
+        ]
+      },
+      {
+        "check": "sub_part[1]:absent:probe_hit_counts",
+        "pass": true,
+        "detail": [
+          {
+            "query": "night",
+            "scope": "corpus",
+            "stated_hits": 544,
+            "actual_hits": 544,
+            "pass": true
+          },
+          {
+            "query": "nighttime any-injury",
+            "scope": "corpus",
+            "stated_hits": 0,
+            "actual_hits": 0,
+            "pass": true
+          },
+          {
+            "query": "night",
+            "scope": "2312.12675",
+            "stated_hits": 0,
+            "actual_hits": 0,
+            "pass": true
+          }
+        ]
+      }
+    ],
+    "pass": true
+  },
+  {
+    "id": "Q-WA4-A-002",
+    "checks": [
+      {
+        "check": "frozen_after_retrieval",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:excerpt_verbatim_substring",
+        "pass": true,
+        "detail": {
+          "block_id": "2403.14648:b71",
+          "block_id_resolves": true,
+          "block_match": true,
+          "chunk_id": null,
+          "chunk_id_resolves": null,
+          "chunk_match": null
+        }
+      },
+      {
+        "check": "sub_part[0]:supported:gold_block_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[1]:absent:probe_structure",
+        "pass": true,
+        "detail": {
+          "n_lexical": 2,
+          "n_semantic": 1,
+          "has_lexical_with_denominator": true
+        }
+      },
+      {
+        "check": "sub_part[1]:absent:denominator_arithmetic",
+        "pass": true,
+        "detail": [
+          {
+            "query": "snow",
+            "scope": "corpus",
+            "stated": 46155,
+            "actual": 46155,
+            "pass": true
+          },
+          {
+            "query": "snow",
+            "scope": "2403.14648",
+            "stated": 17,
+            "actual": 17,
+            "pass": true
+          }
+        ]
+      },
+      {
+        "check": "sub_part[1]:absent:probe_hit_counts",
+        "pass": true,
+        "detail": [
+          {
+            "query": "snow",
+            "scope": "corpus",
+            "stated_hits": 390,
+            "actual_hits": 390,
+            "pass": true
+          },
+          {
+            "query": "snow",
+            "scope": "2403.14648",
+            "stated_hits": 0,
+            "actual_hits": 0,
+            "pass": true
+          }
+        ]
+      }
+    ],
+    "pass": true
+  },
+  {
+    "id": "Q-WA4-A-003",
+    "checks": [
+      {
+        "check": "frozen_after_retrieval",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:excerpt_verbatim_substring",
+        "pass": true,
+        "detail": {
+          "block_id": "2403.14648:b64",
+          "block_id_resolves": true,
+          "block_match": true,
+          "chunk_id": null,
+          "chunk_id_resolves": null,
+          "chunk_match": null
+        }
+      },
+      {
+        "check": "sub_part[0]:supported:gold_block_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[1]:absent:probe_structure",
+        "pass": true,
+        "detail": {
+          "n_lexical": 3,
+          "n_semantic": 1,
+          "has_lexical_with_denominator": true
+        }
+      },
+      {
+        "check": "sub_part[1]:absent:denominator_arithmetic",
+        "pass": true,
+        "detail": [
+          {
+            "query": "Injuries Reported",
+            "scope": "corpus",
+            "stated": 46155,
+            "actual": 46155,
+            "pass": true
+          },
+          {
+            "query": "serious injur",
+            "scope": "corpus",
+            "stated": 46155,
+            "actual": 46155,
+            "pass": true
+          },
+          {
+            "query": "Injuries Reported",
+            "scope": "2403.14648",
+            "stated": 17,
+            "actual": 17,
+            "pass": true
+          }
+        ]
+      },
+      {
+        "check": "sub_part[1]:absent:probe_hit_counts",
+        "pass": true,
+        "detail": [
+          {
+            "query": "Injuries Reported",
+            "scope": "corpus",
+            "stated_hits": 2,
+            "actual_hits": 2,
+            "pass": true
+          },
+          {
+            "query": "serious injur",
+            "scope": "corpus",
+            "stated_hits": 139,
+            "actual_hits": 139,
+            "pass": true
+          },
+          {
+            "query": "Injuries Reported",
+            "scope": "2403.14648",
+            "stated_hits": 1,
+            "actual_hits": 1,
+            "pass": true
+          }
+        ]
+      }
+    ],
+    "pass": true
+  },
+  {
+    "id": "Q-WA4-A-004",
+    "checks": [
+      {
+        "check": "frozen_after_retrieval",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:excerpt_verbatim_substring",
+        "pass": true,
+        "detail": {
+          "block_id": "2403.14648:b64",
+          "block_id_resolves": true,
+          "block_match": true,
+          "chunk_id": null,
+          "chunk_id_resolves": null,
+          "chunk_match": null
+        }
+      },
+      {
+        "check": "sub_part[0]:supported:gold_block_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[1]:absent:probe_structure",
+        "pass": true,
+        "detail": {
+          "n_lexical": 3,
+          "n_semantic": 1,
+          "has_lexical_with_denominator": true
+        }
+      },
+      {
+        "check": "sub_part[1]:absent:denominator_arithmetic",
+        "pass": true,
+        "detail": [
+          {
+            "query": "Involved VRU",
+            "scope": "corpus",
+            "stated": 46155,
+            "actual": 46155,
+            "pass": true
+          },
+          {
+            "query": "scooter",
+            "scope": "corpus",
+            "stated": 46155,
+            "actual": 46155,
+            "pass": true
+          },
+          {
+            "query": "Involved VRU",
+            "scope": "2403.14648",
+            "stated": 17,
+            "actual": 17,
+            "pass": true
+          }
+        ]
+      },
+      {
+        "check": "sub_part[1]:absent:probe_hit_counts",
+        "pass": true,
+        "detail": [
+          {
+            "query": "Involved VRU",
+            "scope": "corpus",
+            "stated_hits": 6,
+            "actual_hits": 6,
+            "pass": true
+          },
+          {
+            "query": "scooter",
+            "scope": "corpus",
+            "stated_hits": 93,
+            "actual_hits": 93,
+            "pass": true
+          },
+          {
+            "query": "Involved VRU",
+            "scope": "2403.14648",
+            "stated_hits": 1,
+            "actual_hits": 1,
+            "pass": true
+          }
+        ]
+      }
+    ],
+    "pass": true
+  },
+  {
+    "id": "Q-WA4-A-005",
+    "checks": [
+      {
+        "check": "frozen_after_retrieval",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:excerpt_verbatim_substring",
+        "pass": true,
+        "detail": {
+          "block_id": "local:6b9ccd0431f6:b10",
+          "block_id_resolves": true,
+          "block_match": true,
+          "chunk_id": null,
+          "chunk_id_resolves": null,
+          "chunk_match": null
+        }
+      },
+      {
+        "check": "sub_part[0]:supported:gold_block_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[1]:absent:probe_structure",
+        "pass": true,
+        "detail": {
+          "n_lexical": 3,
+          "n_semantic": 1,
+          "has_lexical_with_denominator": true
+        }
+      },
+      {
+        "check": "sub_part[1]:absent:denominator_arithmetic",
+        "pass": true,
+        "detail": [
+          {
+            "query": "Suspected Serious Injury",
+            "scope": "corpus",
+            "stated": 46155,
+            "actual": 46155,
+            "pass": true
+          },
+          {
+            "query": "V2V Intersection",
+            "scope": "corpus",
+            "stated": 46155,
+            "actual": 46155,
+            "pass": true
+          },
+          {
+            "query": "Suspected Serious Injury",
+            "scope": "local:6b9ccd0431f6",
+            "stated": 41,
+            "actual": 41,
+            "pass": true
+          }
+        ]
+      },
+      {
+        "check": "sub_part[1]:absent:probe_hit_counts",
+        "pass": true,
+        "detail": [
+          {
+            "query": "Suspected Serious Injury",
+            "scope": "corpus",
+            "stated_hits": 36,
+            "actual_hits": 36,
+            "pass": true
+          },
+          {
+            "query": "V2V Intersection",
+            "scope": "corpus",
+            "stated_hits": 12,
+            "actual_hits": 12,
+            "pass": true
+          },
+          {
+            "query": "Suspected Serious Injury",
+            "scope": "local:6b9ccd0431f6",
+            "stated_hits": 17,
+            "actual_hits": 17,
+            "pass": true
+          }
+        ]
+      }
+    ],
+    "pass": true
+  },
+  {
+    "id": "Q-WA4-A-006",
+    "checks": [
+      {
+        "check": "frozen_after_retrieval",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:excerpt_verbatim_substring",
+        "pass": true,
+        "detail": {
+          "block_id": "2604.03827:b55",
+          "block_id_resolves": true,
+          "block_match": true,
+          "chunk_id": null,
+          "chunk_id_resolves": null,
+          "chunk_match": null
+        }
+      },
+      {
+        "check": "sub_part[0]:supported:gold_block_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[1]:absent:probe_structure",
+        "pass": true,
+        "detail": {
+          "n_lexical": 3,
+          "n_semantic": 1,
+          "has_lexical_with_denominator": true
+        }
+      },
+      {
+        "check": "sub_part[1]:absent:denominator_arithmetic",
+        "pass": true,
+        "detail": [
+          {
+            "query": "Category B",
+            "scope": "corpus",
+            "stated": 46155,
+            "actual": 46155,
+            "pass": true
+          },
+          {
+            "query": "IPMM for B only",
+            "scope": "corpus",
+            "stated": 46155,
+            "actual": 46155,
+            "pass": true
+          },
+          {
+            "query": "Category B",
+            "scope": "2604.03827",
+            "stated": 14,
+            "actual": 14,
+            "pass": true
+          }
+        ]
+      },
+      {
+        "check": "sub_part[1]:absent:probe_hit_counts",
+        "pass": true,
+        "detail": [
+          {
+            "query": "Category B",
+            "scope": "corpus",
+            "stated_hits": 23,
+            "actual_hits": 23,
+            "pass": true
+          },
+          {
+            "query": "IPMM for B only",
+            "scope": "corpus",
+            "stated_hits": 0,
+            "actual_hits": 0,
+            "pass": true
+          },
+          {
+            "query": "Category B",
+            "scope": "2604.03827",
+            "stated_hits": 3,
+            "actual_hits": 3,
+            "pass": true
+          }
+        ]
+      }
+    ],
+    "pass": true
+  },
+  {
+    "id": "Q-WA4-A-007",
+    "checks": [
+      {
+        "check": "frozen_after_retrieval",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:excerpt_verbatim_substring",
+        "pass": true,
+        "detail": {
+          "block_id": "2606.12500:b82",
+          "block_id_resolves": true,
+          "block_match": true,
+          "chunk_id": null,
+          "chunk_id_resolves": null,
+          "chunk_match": null
+        }
+      },
+      {
+        "check": "sub_part[0]:supported:gold_block_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[1]:absent:probe_structure",
+        "pass": true,
+        "detail": {
+          "n_lexical": 3,
+          "n_semantic": 1,
+          "has_lexical_with_denominator": true
+        }
+      },
+      {
+        "check": "sub_part[1]:absent:denominator_arithmetic",
+        "pass": true,
+        "detail": [
+          {
+            "query": "PM peak",
+            "scope": "corpus",
+            "stated": 46155,
+            "actual": 46155,
+            "pass": true
+          },
+          {
+            "query": "evening peak",
+            "scope": "corpus",
+            "stated": 46155,
+            "actual": 46155,
+            "pass": true
+          },
+          {
+            "query": "PM peak",
+            "scope": "2606.12500",
+            "stated": 28,
+            "actual": 28,
+            "pass": true
+          }
+        ]
+      },
+      {
+        "check": "sub_part[1]:absent:probe_hit_counts",
+        "pass": true,
+        "detail": [
+          {
+            "query": "PM peak",
+            "scope": "corpus",
+            "stated_hits": 1,
+            "actual_hits": 1,
+            "pass": true
+          },
+          {
+            "query": "evening peak",
+            "scope": "corpus",
+            "stated_hits": 8,
+            "actual_hits": 8,
+            "pass": true
+          },
+          {
+            "query": "PM peak",
+            "scope": "2606.12500",
+            "stated_hits": 0,
+            "actual_hits": 0,
+            "pass": true
+          }
+        ]
+      }
+    ],
+    "pass": true
+  },
+  {
+    "id": "Q-WA4-A-008",
+    "checks": [
+      {
+        "check": "frozen_after_retrieval",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:excerpt_verbatim_substring",
+        "pass": true,
+        "detail": {
+          "block_id": "2607.16156:b70",
+          "block_id_resolves": true,
+          "block_match": true,
+          "chunk_id": null,
+          "chunk_id_resolves": null,
+          "chunk_match": null
+        }
+      },
+      {
+        "check": "sub_part[0]:supported:gold_block_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[1]:absent:probe_structure",
+        "pass": true,
+        "detail": {
+          "n_lexical": 3,
+          "n_semantic": 1,
+          "has_lexical_with_denominator": true
+        }
+      },
+      {
+        "check": "sub_part[1]:absent:denominator_arithmetic",
+        "pass": true,
+        "detail": [
+          {
+            "query": "FlowChain",
+            "scope": "corpus",
+            "stated": 46155,
+            "actual": 46155,
+            "pass": true
+          },
+          {
+            "query": "by road user type",
+            "scope": "corpus",
+            "stated": 46155,
+            "actual": 46155,
+            "pass": true
+          },
+          {
+            "query": "FlowChain",
+            "scope": "2607.16156",
+            "stated": 18,
+            "actual": 18,
+            "pass": true
+          }
+        ]
+      },
+      {
+        "check": "sub_part[1]:absent:probe_hit_counts",
+        "pass": true,
+        "detail": [
+          {
+            "query": "FlowChain",
+            "scope": "corpus",
+            "stated_hits": 2,
+            "actual_hits": 2,
+            "pass": true
+          },
+          {
+            "query": "by road user type",
+            "scope": "corpus",
+            "stated_hits": 1,
+            "actual_hits": 1,
+            "pass": true
+          },
+          {
+            "query": "FlowChain",
+            "scope": "2607.16156",
+            "stated_hits": 2,
+            "actual_hits": 2,
+            "pass": true
+          }
+        ]
+      }
+    ],
+    "pass": true
+  },
+  {
+    "id": "Q-WA4-A-009",
+    "checks": [
+      {
+        "check": "frozen_after_retrieval",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:excerpt_verbatim_substring",
+        "pass": true,
+        "detail": {
+          "block_id": "2510.12963:b105",
+          "block_id_resolves": true,
+          "block_match": true,
+          "chunk_id": null,
+          "chunk_id_resolves": null,
+          "chunk_match": null
+        }
+      },
+      {
+        "check": "sub_part[0]:supported:gold_block_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[1]:absent:probe_structure",
+        "pass": true,
+        "detail": {
+          "n_lexical": 3,
+          "n_semantic": 1,
+          "has_lexical_with_denominator": true
+        }
+      },
+      {
+        "check": "sub_part[1]:absent:denominator_arithmetic",
+        "pass": true,
+        "detail": [
+          {
+            "query": "expected number of crashes",
+            "scope": "corpus",
+            "stated": 46155,
+            "actual": 46155,
+            "pass": true
+          },
+          {
+            "query": "Z_cr",
+            "scope": "corpus",
+            "stated": 46155,
+            "actual": 46155,
+            "pass": true
+          },
+          {
+            "query": "expected number of crashes",
+            "scope": "2510.12963",
+            "stated": 28,
+            "actual": 28,
+            "pass": true
+          }
+        ]
+      },
+      {
+        "check": "sub_part[1]:absent:probe_hit_counts",
+        "pass": true,
+        "detail": [
+          {
+            "query": "expected number of crashes",
+            "scope": "corpus",
+            "stated_hits": 10,
+            "actual_hits": 10,
+            "pass": true
+          },
+          {
+            "query": "Z_cr",
+            "scope": "corpus",
+            "stated_hits": 4,
+            "actual_hits": 4,
+            "pass": true
+          },
+          {
+            "query": "expected number of crashes",
+            "scope": "2510.12963",
+            "stated_hits": 1,
+            "actual_hits": 1,
+            "pass": true
+          }
+        ]
+      }
+    ],
+    "pass": true
+  },
+  {
+    "id": "Q-WA4-A-010",
+    "checks": [
+      {
+        "check": "frozen_after_retrieval",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:excerpt_verbatim_substring",
+        "pass": true,
+        "detail": {
+          "block_id": "2510.12012:b89",
+          "block_id_resolves": true,
+          "block_match": true,
+          "chunk_id": null,
+          "chunk_id_resolves": null,
+          "chunk_match": null
+        }
+      },
+      {
+        "check": "sub_part[0]:supported:gold_block_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[1]:absent:probe_structure",
+        "pass": true,
+        "detail": {
+          "n_lexical": 3,
+          "n_semantic": 1,
+          "has_lexical_with_denominator": true
+        }
+      },
+      {
+        "check": "sub_part[1]:absent:denominator_arithmetic",
+        "pass": true,
+        "detail": [
+          {
+            "query": "Alertness",
+            "scope": "corpus",
+            "stated": 46155,
+            "actual": 46155,
+            "pass": true
+          },
+          {
+            "query": "TTC threshold",
+            "scope": "corpus",
+            "stated": 46155,
+            "actual": 46155,
+            "pass": true
+          },
+          {
+            "query": "Alertness",
+            "scope": "2510.12012",
+            "stated": 31,
+            "actual": 31,
+            "pass": true
+          }
+        ]
+      },
+      {
+        "check": "sub_part[1]:absent:probe_hit_counts",
+        "pass": true,
+        "detail": [
+          {
+            "query": "Alertness",
+            "scope": "corpus",
+            "stated_hits": 49,
+            "actual_hits": 49,
+            "pass": true
+          },
+          {
+            "query": "TTC threshold",
+            "scope": "corpus",
+            "stated_hits": 70,
+            "actual_hits": 70,
+            "pass": true
+          },
+          {
+            "query": "Alertness",
+            "scope": "2510.12012",
+            "stated_hits": 5,
+            "actual_hits": 5,
+            "pass": true
+          }
+        ]
+      }
+    ],
+    "pass": true
+  },
+  {
+    "id": "Q-WA4-A-011",
+    "checks": [
+      {
+        "check": "frozen_after_retrieval",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:excerpt_verbatim_substring",
+        "pass": true,
+        "detail": {
+          "block_id": "2303.07891:b149",
+          "block_id_resolves": true,
+          "block_match": true,
+          "chunk_id": null,
+          "chunk_id_resolves": null,
+          "chunk_match": null
+        }
+      },
+      {
+        "check": "sub_part[0]:supported:gold_block_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[1]:absent:probe_structure",
+        "pass": true,
+        "detail": {
+          "n_lexical": 3,
+          "n_semantic": 1,
+          "has_lexical_with_denominator": true
+        }
+      },
+      {
+        "check": "sub_part[1]:absent:denominator_arithmetic",
+        "pass": true,
+        "detail": [
+          {
+            "query": "d = 3",
+            "scope": "corpus",
+            "stated": 46155,
+            "actual": 46155,
+            "pass": true
+          },
+          {
+            "query": "RMSE",
+            "scope": "corpus",
+            "stated": 46155,
+            "actual": 46155,
+            "pass": true
+          },
+          {
+            "query": "d = 3",
+            "scope": "2303.07891",
+            "stated": 26,
+            "actual": 26,
+            "pass": true
+          }
+        ]
+      },
+      {
+        "check": "sub_part[1]:absent:probe_hit_counts",
+        "pass": true,
+        "detail": [
+          {
+            "query": "d = 3",
+            "scope": "corpus",
+            "stated_hits": 25,
+            "actual_hits": 25,
+            "pass": true
+          },
+          {
+            "query": "RMSE",
+            "scope": "corpus",
+            "stated_hits": 323,
+            "actual_hits": 323,
+            "pass": true
+          },
+          {
+            "query": "d = 3",
+            "scope": "2303.07891",
+            "stated_hits": 1,
+            "actual_hits": 1,
+            "pass": true
+          }
+        ]
+      }
+    ],
+    "pass": true
+  },
+  {
+    "id": "Q-WA4-A-012",
+    "checks": [
+      {
+        "check": "frozen_after_retrieval",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:excerpt_verbatim_substring",
+        "pass": true,
+        "detail": {
+          "block_id": "2605.11205:b81",
+          "block_id_resolves": true,
+          "block_match": true,
+          "chunk_id": null,
+          "chunk_id_resolves": null,
+          "chunk_match": null
+        }
+      },
+      {
+        "check": "sub_part[0]:supported:gold_block_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[1]:absent:probe_structure",
+        "pass": true,
+        "detail": {
+          "n_lexical": 3,
+          "n_semantic": 1,
+          "has_lexical_with_denominator": true
+        }
+      },
+      {
+        "check": "sub_part[1]:absent:denominator_arithmetic",
+        "pass": true,
+        "detail": [
+          {
+            "query": "Domain 3",
+            "scope": "corpus",
+            "stated": 46155,
+            "actual": 46155,
+            "pass": true
+          },
+          {
+            "query": "80% coverage",
+            "scope": "corpus",
+            "stated": 46155,
+            "actual": 46155,
+            "pass": true
+          },
+          {
+            "query": "Domain 3",
+            "scope": "2605.11205",
+            "stated": 36,
+            "actual": 36,
+            "pass": true
+          }
+        ]
+      },
+      {
+        "check": "sub_part[1]:absent:probe_hit_counts",
+        "pass": true,
+        "detail": [
+          {
+            "query": "Domain 3",
+            "scope": "corpus",
+            "stated_hits": 4,
+            "actual_hits": 4,
+            "pass": true
+          },
+          {
+            "query": "80% coverage",
+            "scope": "corpus",
+            "stated_hits": 101,
+            "actual_hits": 101,
+            "pass": true
+          },
+          {
+            "query": "Domain 3",
+            "scope": "2605.11205",
+            "stated_hits": 3,
+            "actual_hits": 3,
+            "pass": true
+          }
+        ]
+      }
+    ],
+    "pass": true
+  },
+  {
+    "id": "Q-WA4-A-014",
+    "checks": [
+      {
+        "check": "frozen_after_retrieval",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:excerpt_verbatim_substring",
+        "pass": true,
+        "detail": {
+          "block_id": "2509.03515:b14",
+          "block_id_resolves": true,
+          "block_match": true,
+          "chunk_id": null,
+          "chunk_id_resolves": null,
+          "chunk_match": null
+        }
+      },
+      {
+        "check": "sub_part[0]:supported:gold_block_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[1]:absent:probe_structure",
+        "pass": true,
+        "detail": {
+          "n_lexical": 3,
+          "n_semantic": 1,
+          "has_lexical_with_denominator": true
+        }
+      },
+      {
+        "check": "sub_part[1]:absent:denominator_arithmetic",
+        "pass": true,
+        "detail": [
+          {
+            "query": "103,354",
+            "scope": "corpus",
+            "stated": 46155,
+            "actual": 46155,
+            "pass": true
+          },
+          {
+            "query": "new scenarios added",
+            "scope": "corpus",
+            "stated": 46155,
+            "actual": 46155,
+            "pass": true
+          },
+          {
+            "query": "103,354",
+            "scope": "2509.03515",
+            "stated": 30,
+            "actual": 30,
+            "pass": true
+          }
+        ]
+      },
+      {
+        "check": "sub_part[1]:absent:probe_hit_counts",
+        "pass": true,
+        "detail": [
+          {
+            "query": "103,354",
+            "scope": "corpus",
+            "stated_hits": 7,
+            "actual_hits": 7,
+            "pass": true
+          },
+          {
+            "query": "new scenarios added",
+            "scope": "corpus",
+            "stated_hits": 0,
+            "actual_hits": 0,
+            "pass": true
+          },
+          {
+            "query": "103,354",
+            "scope": "2509.03515",
+            "stated_hits": 1,
+            "actual_hits": 1,
+            "pass": true
+          }
+        ]
+      }
+    ],
+    "pass": true
+  },
+  {
+    "id": "Q-WA4-A-015",
+    "checks": [
+      {
+        "check": "frozen_after_retrieval",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:excerpt_verbatim_substring",
+        "pass": true,
+        "detail": {
+          "block_id": "local:c3c5f9de20cc:b3647",
+          "block_id_resolves": true,
+          "block_match": true,
+          "chunk_id": null,
+          "chunk_id_resolves": null,
+          "chunk_match": null
+        }
+      },
+      {
+        "check": "sub_part[0]:supported:gold_block_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[1]:absent:probe_structure",
+        "pass": true,
+        "detail": {
+          "n_lexical": 3,
+          "n_semantic": 1,
+          "has_lexical_with_denominator": true
+        }
+      },
+      {
+        "check": "sub_part[1]:absent:denominator_arithmetic",
+        "pass": true,
+        "detail": [
+          {
+            "query": "Post-incident hazards",
+            "scope": "corpus",
+            "stated": 46155,
+            "actual": 46155,
+            "pass": true
+          },
+          {
+            "query": "10.6.6",
+            "scope": "corpus",
+            "stated": 46155,
+            "actual": 46155,
+            "pass": true
+          },
+          {
+            "query": "Post-incident hazards",
+            "scope": "local:c3c5f9de20cc",
+            "stated": 1440,
+            "actual": 1440,
+            "pass": true
+          }
+        ]
+      },
+      {
+        "check": "sub_part[1]:absent:probe_hit_counts",
+        "pass": true,
+        "detail": [
+          {
+            "query": "Post-incident hazards",
+            "scope": "corpus",
+            "stated_hits": 5,
+            "actual_hits": 5,
+            "pass": true
+          },
+          {
+            "query": "10.6.6",
+            "scope": "corpus",
+            "stated_hits": 7,
+            "actual_hits": 7,
+            "pass": true
+          },
+          {
+            "query": "Post-incident hazards",
+            "scope": "local:c3c5f9de20cc",
+            "stated_hits": 5,
+            "actual_hits": 5,
+            "pass": true
+          }
+        ]
+      }
+    ],
+    "pass": true
+  },
+  {
+    "id": "Q-WA4-A-016",
+    "checks": [
+      {
+        "check": "frozen_after_retrieval",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:excerpt_verbatim_substring",
+        "pass": true,
+        "detail": {
+          "block_id": "2207.14145:b20",
+          "block_id_resolves": true,
+          "block_match": true,
+          "chunk_id": null,
+          "chunk_id_resolves": null,
+          "chunk_match": null
+        }
+      },
+      {
+        "check": "sub_part[0]:supported:gold_block_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[1]:absent:probe_structure",
+        "pass": true,
+        "detail": {
+          "n_lexical": 3,
+          "n_semantic": 1,
+          "has_lexical_with_denominator": true
+        }
+      },
+      {
+        "check": "sub_part[1]:absent:denominator_arithmetic",
+        "pass": true,
+        "detail": [
+          {
+            "query": "stop signcontrolled",
+            "scope": "corpus",
+            "stated": 46155,
+            "actual": 46155,
+            "pass": true
+          },
+          {
+            "query": "DRS",
+            "scope": "corpus",
+            "stated": 46155,
+            "actual": 46155,
+            "pass": true
+          },
+          {
+            "query": "stop signcontrolled",
+            "scope": "2207.14145",
+            "stated": 15,
+            "actual": 15,
+            "pass": true
+          }
+        ]
+      },
+      {
+        "check": "sub_part[1]:absent:probe_hit_counts",
+        "pass": true,
+        "detail": [
+          {
+            "query": "stop signcontrolled",
+            "scope": "corpus",
+            "stated_hits": 1,
+            "actual_hits": 1,
+            "pass": true
+          },
+          {
+            "query": "DRS",
+            "scope": "corpus",
+            "stated_hits": 16,
+            "actual_hits": 16,
+            "pass": true
+          },
+          {
+            "query": "stop signcontrolled",
+            "scope": "2207.14145",
+            "stated_hits": 1,
+            "actual_hits": 1,
+            "pass": true
+          }
+        ]
+      }
+    ],
+    "pass": true
+  },
+  {
+    "id": "Q-WA4-A-017",
+    "checks": [
+      {
+        "check": "frozen_after_retrieval",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:excerpt_verbatim_substring",
+        "pass": true,
+        "detail": {
+          "block_id": "2411.02706:b81",
+          "block_id_resolves": true,
+          "block_match": true,
+          "chunk_id": null,
+          "chunk_id_resolves": null,
+          "chunk_match": null
+        }
+      },
+      {
+        "check": "sub_part[0]:supported:gold_block_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[1]:absent:probe_structure",
+        "pass": true,
+        "detail": {
+          "n_lexical": 3,
+          "n_semantic": 1,
+          "has_lexical_with_denominator": true
+        }
+      },
+      {
+        "check": "sub_part[1]:absent:denominator_arithmetic",
+        "pass": true,
+        "detail": [
+          {
+            "query": "Major EconomicLoss",
+            "scope": "corpus",
+            "stated": 46155,
+            "actual": 46155,
+            "pass": true
+          },
+          {
+            "query": "repair costs",
+            "scope": "corpus",
+            "stated": 46155,
+            "actual": 46155,
+            "pass": true
+          },
+          {
+            "query": "Major EconomicLoss",
+            "scope": "2411.02706",
+            "stated": 25,
+            "actual": 25,
+            "pass": true
+          }
+        ]
+      },
+      {
+        "check": "sub_part[1]:absent:probe_hit_counts",
+        "pass": true,
+        "detail": [
+          {
+            "query": "Major EconomicLoss",
+            "scope": "corpus",
+            "stated_hits": 1,
+            "actual_hits": 1,
+            "pass": true
+          },
+          {
+            "query": "repair costs",
+            "scope": "corpus",
+            "stated_hits": 4,
+            "actual_hits": 4,
+            "pass": true
+          },
+          {
+            "query": "Major EconomicLoss",
+            "scope": "2411.02706",
+            "stated_hits": 1,
+            "actual_hits": 1,
+            "pass": true
+          }
+        ]
+      }
+    ],
+    "pass": true
+  },
+  {
+    "id": "Q-WA4-A-018",
+    "checks": [
+      {
+        "check": "frozen_after_retrieval",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:excerpt_verbatim_substring",
+        "pass": true,
+        "detail": {
+          "block_id": "2109.02529:b37",
+          "block_id_resolves": true,
+          "block_match": true,
+          "chunk_id": null,
+          "chunk_id_resolves": null,
+          "chunk_match": null
+        }
+      },
+      {
+        "check": "sub_part[0]:supported:gold_block_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[1]:absent:probe_structure",
+        "pass": true,
+        "detail": {
+          "n_lexical": 3,
+          "n_semantic": 1,
+          "has_lexical_with_denominator": true
+        }
+      },
+      {
+        "check": "sub_part[1]:absent:denominator_arithmetic",
+        "pass": true,
+        "detail": [
+          {
+            "query": "IEEE Autonomous Test Driving",
+            "scope": "corpus",
+            "stated": 46155,
+            "actual": 46155,
+            "pass": true
+          },
+          {
+            "query": "ViSTA score",
+            "scope": "corpus",
+            "stated": 46155,
+            "actual": 46155,
+            "pass": true
+          },
+          {
+            "query": "IEEE Autonomous Test Driving",
+            "scope": "2109.02529",
+            "stated": 16,
+            "actual": 16,
+            "pass": true
+          }
+        ]
+      },
+      {
+        "check": "sub_part[1]:absent:probe_hit_counts",
+        "pass": true,
+        "detail": [
+          {
+            "query": "IEEE Autonomous Test Driving",
+            "scope": "corpus",
+            "stated_hits": 2,
+            "actual_hits": 2,
+            "pass": true
+          },
+          {
+            "query": "ViSTA score",
+            "scope": "corpus",
+            "stated_hits": 0,
+            "actual_hits": 0,
+            "pass": true
+          },
+          {
+            "query": "IEEE Autonomous Test Driving",
+            "scope": "2109.02529",
+            "stated_hits": 2,
+            "actual_hits": 2,
+            "pass": true
+          }
+        ]
+      }
+    ],
+    "pass": true
+  },
+  {
+    "id": "Q-WA4-A-019",
+    "checks": [
+      {
+        "check": "frozen_after_retrieval",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:excerpt_verbatim_substring",
+        "pass": true,
+        "detail": {
+          "block_id": "2607.13028:b87",
+          "block_id_resolves": true,
+          "block_match": true,
+          "chunk_id": null,
+          "chunk_id_resolves": null,
+          "chunk_match": null
+        }
+      },
+      {
+        "check": "sub_part[0]:supported:gold_block_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[1]:absent:probe_structure",
+        "pass": true,
+        "detail": {
+          "n_lexical": 3,
+          "n_semantic": 1,
+          "has_lexical_with_denominator": true
+        }
+      },
+      {
+        "check": "sub_part[1]:absent:denominator_arithmetic",
+        "pass": true,
+        "detail": [
+          {
+            "query": "CARLA leaderboard",
+            "scope": "corpus",
+            "stated": 46155,
+            "actual": 46155,
+            "pass": true
+          },
+          {
+            "query": "TerraZero CARLA",
+            "scope": "corpus",
+            "stated": 46155,
+            "actual": 46155,
+            "pass": true
+          },
+          {
+            "query": "CARLA leaderboard",
+            "scope": "2607.13028",
+            "stated": 45,
+            "actual": 45,
+            "pass": true
+          }
+        ]
+      },
+      {
+        "check": "sub_part[1]:absent:probe_hit_counts",
+        "pass": true,
+        "detail": [
+          {
+            "query": "CARLA leaderboard",
+            "scope": "corpus",
+            "stated_hits": 46,
+            "actual_hits": 46,
+            "pass": true
+          },
+          {
+            "query": "TerraZero CARLA",
+            "scope": "corpus",
+            "stated_hits": 0,
+            "actual_hits": 0,
+            "pass": true
+          },
+          {
+            "query": "CARLA leaderboard",
+            "scope": "2607.13028",
+            "stated_hits": 0,
+            "actual_hits": 0,
+            "pass": true
+          }
+        ]
+      }
+    ],
+    "pass": true
+  },
+  {
+    "id": "Q-WA4-A-020",
+    "checks": [
+      {
+        "check": "frozen_after_retrieval",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:excerpt_verbatim_substring",
+        "pass": true,
+        "detail": {
+          "block_id": "2506.07540:b40",
+          "block_id_resolves": true,
+          "block_match": true,
+          "chunk_id": null,
+          "chunk_id_resolves": null,
+          "chunk_match": null
+        }
+      },
+      {
+        "check": "sub_part[0]:supported:gold_block_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[1]:absent:probe_structure",
+        "pass": true,
+        "detail": {
+          "n_lexical": 3,
+          "n_semantic": 1,
+          "has_lexical_with_denominator": true
+        }
+      },
+      {
+        "check": "sub_part[1]:absent:denominator_arithmetic",
+        "pass": true,
+        "detail": [
+          {
+            "query": "weather",
+            "scope": "corpus",
+            "stated": 46155,
+            "actual": 46155,
+            "pass": true
+          },
+          {
+            "query": "aggregate",
+            "scope": "corpus",
+            "stated": 46155,
+            "actual": 46155,
+            "pass": true
+          },
+          {
+            "query": "weather",
+            "scope": "2506.07540",
+            "stated": 17,
+            "actual": 17,
+            "pass": true
+          }
+        ]
+      },
+      {
+        "check": "sub_part[1]:absent:probe_hit_counts",
+        "pass": true,
+        "detail": [
+          {
+            "query": "weather",
+            "scope": "corpus",
+            "stated_hits": 1905,
+            "actual_hits": 1905,
+            "pass": true
+          },
+          {
+            "query": "aggregate",
+            "scope": "corpus",
+            "stated_hits": 1324,
+            "actual_hits": 1324,
+            "pass": true
+          },
+          {
+            "query": "weather",
+            "scope": "2506.07540",
+            "stated_hits": 0,
+            "actual_hits": 0,
+            "pass": true
+          }
+        ]
+      }
+    ],
+    "pass": true
+  },
+  {
+    "id": "Q-WA4-A-021",
+    "checks": [
+      {
+        "check": "frozen_after_retrieval",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:excerpt_verbatim_substring",
+        "pass": true,
+        "detail": {
+          "block_id": "2405.01011:b148",
+          "block_id_resolves": true,
+          "block_match": true,
+          "chunk_id": null,
+          "chunk_id_resolves": null,
+          "chunk_match": null
+        }
+      },
+      {
+        "check": "sub_part[0]:supported:gold_block_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[1]:absent:probe_structure",
+        "pass": true,
+        "detail": {
+          "n_lexical": 3,
+          "n_semantic": 1,
+          "has_lexical_with_denominator": true
+        }
+      },
+      {
+        "check": "sub_part[1]:absent:denominator_arithmetic",
+        "pass": true,
+        "detail": [
+          {
+            "query": "TTC_th",
+            "scope": "corpus",
+            "stated": 46155,
+            "actual": 46155,
+            "pass": true
+          },
+          {
+            "query": "realized TTC",
+            "scope": "corpus",
+            "stated": 46155,
+            "actual": 46155,
+            "pass": true
+          },
+          {
+            "query": "TTC_th",
+            "scope": "2405.01011",
+            "stated": 13,
+            "actual": 13,
+            "pass": true
+          }
+        ]
+      },
+      {
+        "check": "sub_part[1]:absent:probe_hit_counts",
+        "pass": true,
+        "detail": [
+          {
+            "query": "TTC_th",
+            "scope": "corpus",
+            "stated_hits": 96,
+            "actual_hits": 96,
+            "pass": true
+          },
+          {
+            "query": "realized TTC",
+            "scope": "corpus",
+            "stated_hits": 1,
+            "actual_hits": 1,
+            "pass": true
+          },
+          {
+            "query": "TTC_th",
+            "scope": "2405.01011",
+            "stated_hits": 0,
+            "actual_hits": 0,
+            "pass": true
+          }
+        ]
+      }
+    ],
+    "pass": true
+  },
+  {
+    "id": "Q-WA4-A-022",
+    "checks": [
+      {
+        "check": "frozen_after_retrieval",
+        "pass": true
+      },
+      {
+        "check": "sub_part[0]:supported:excerpt_verbatim_substring",
+        "pass": true,
+        "detail": {
+          "block_id": "2108.02403:b348",
+          "block_id_resolves": true,
+          "block_match": true,
+          "chunk_id": null,
+          "chunk_id_resolves": null,
+          "chunk_match": null
+        }
+      },
+      {
+        "check": "sub_part[0]:supported:gold_block_id_resolves",
+        "pass": true
+      },
+      {
+        "check": "sub_part[1]:absent:probe_structure",
+        "pass": true,
+        "detail": {
+          "n_lexical": 3,
+          "n_semantic": 1,
+          "has_lexical_with_denominator": true
+        }
+      },
+      {
+        "check": "sub_part[1]:absent:denominator_arithmetic",
+        "pass": true,
+        "detail": [
+          {
+            "query": "Joksch",
+            "scope": "corpus",
+            "stated": 46155,
+            "actual": 46155,
+            "pass": true
+          },
+          {
+            "query": "Waymo Delta-v",
+            "scope": "corpus",
+            "stated": 46155,
+            "actual": 46155,
+            "pass": true
+          },
+          {
+            "query": "Joksch",
+            "scope": "2108.02403",
+            "stated": 85,
+            "actual": 85,
+            "pass": true
+          }
+        ]
+      },
+      {
+        "check": "sub_part[1]:absent:probe_hit_counts",
+        "pass": true,
+        "detail": [
+          {
+            "query": "Joksch",
+            "scope": "corpus",
+            "stated_hits": 3,
+            "actual_hits": 3,
+            "pass": true
+          },
+          {
+            "query": "Waymo Delta-v",
+            "scope": "corpus",
+            "stated_hits": 0,
+            "actual_hits": 0,
+            "pass": true
+          },
+          {
+            "query": "Joksch",
+            "scope": "2108.02403",
+            "stated_hits": 1,
+            "actual_hits": 1,
+            "pass": true
+          }
+        ]
+      }
+    ],
+    "pass": true
+  }
+]
