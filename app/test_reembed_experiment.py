@@ -221,6 +221,73 @@ def test_headered_embed_text_starts_with_the_header_then_the_original_text():
     assert stored_payload["text"] == chunk.text
 
 
+# ---------------------------------------------------------------------------
+# SB-1: embed_text_fn -- the generic hook alongside with_headers's True/False.
+# payload.text (sparse channel) must stay the chunk's own unmodified text either way.
+# ---------------------------------------------------------------------------
+
+
+def test_embed_text_fn_overrides_embed_text_but_payload_text_stays_original():
+    records = {"2601.00001": _make_record("2601.00001", n_chunks=1)}
+    embedder = FakeEmbedder()
+    store = FakeVectorStore()
+
+    def transform(record: PaperRecord, chunk: Chunk) -> str:
+        return f"CONTEXT::{chunk.text}"
+
+    reembed(
+        document_store=_FakeDocumentStore(records),
+        embedder=embedder,
+        vector_index=store,
+        header_generator=None,
+        paper_ids=["2601.00001"],
+        with_headers=False,
+        embed_text_fn=transform,
+    )
+
+    original = records["2601.00001"].chunks[0]
+    expected_vector = embedder.embed([f"CONTEXT::{original.text}"])[0]
+    stored_vector, stored_payload = store._store[original.chunk_id]
+    assert stored_vector == expected_vector
+    assert stored_payload["text"] == original.text  # sparse channel: unmodified, always
+
+
+def test_embed_text_fn_and_with_headers_are_mutually_exclusive():
+    records = {"2601.00001": _make_record("2601.00001", n_chunks=1)}
+    with pytest.raises(ReembedError):
+        reembed(
+            document_store=_FakeDocumentStore(records),
+            embedder=FakeEmbedder(),
+            vector_index=FakeVectorStore(),
+            header_generator=_FakeHeaderGenerator(),
+            paper_ids=["2601.00001"],
+            with_headers=True,
+            embed_text_fn=lambda record, chunk: chunk.text,
+        )
+
+
+def test_embed_text_fn_none_by_default_reproduces_baseline_behavior():
+    """The default (`embed_text_fn=None`, the only way every call site before this ticket ever
+    invoked `reembed()`) must still behave byte-for-byte like the pre-SB-1 function."""
+    records = {"2601.00001": _make_record("2601.00001", n_chunks=1)}
+    embedder = FakeEmbedder()
+    store = FakeVectorStore()
+
+    reembed(
+        document_store=_FakeDocumentStore(records),
+        embedder=embedder,
+        vector_index=store,
+        header_generator=None,
+        paper_ids=["2601.00001"],
+        with_headers=False,
+    )
+
+    original = records["2601.00001"].chunks[0]
+    expected_vector = embedder.embed([original.text])[0]
+    stored_vector, _ = store._store[original.chunk_id]
+    assert stored_vector == expected_vector
+
+
 def test_a_chunk_whose_header_generation_fails_still_gets_embedded_with_its_own_text():
     chunk = _make_chunk("2601.00001", 0, "A failing chunk.")
     record = PaperRecord(

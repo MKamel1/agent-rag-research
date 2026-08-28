@@ -273,12 +273,12 @@ def _parse_args() -> argparse.Namespace:
         "--header-model", default="qwen3:14b", help="model name the header generator requests"
     )
     parser.add_argument(
-        "--sb1-section-context-window", type=int, default=None,
-        help="SB-1 (chunk-boundary-mitigation programme) arm (a): use "
-             "app.exp_chunk_boundary_latechunk_embed's position-adjacent-chunk-window embed "
+        "--section-context-window", type=int, default=None,
+        help="use app.exp_chunk_boundary_latechunk_embed's position-adjacent-chunk-window embed "
              "text instead of --with-headers/--no-headers (word count taken from each "
              "neighbour); mutually exclusive with --with-headers (reembed() raises if both "
-             "are given)",
+             "are given). Added for the precision-95 programme's SB-1 ticket (chunk-boundary "
+             "mitigation) -- see that module's docstring for the technique itself.",
     )
     return parser.parse_args()
 
@@ -310,10 +310,10 @@ if __name__ == "__main__":
     # Deferred import (SB-1 arm (a)): keeps this shared T-DOC41 spike script's module-load path
     # unaffected by an unrelated ticket's own module unless the new flag is actually used.
     embed_text_fn = None
-    if args.sb1_section_context_window is not None:
+    if args.section_context_window is not None:
         from app.exp_chunk_boundary_latechunk_embed import make_embed_text_fn
 
-        embed_text_fn = make_embed_text_fn(args.sb1_section_context_window)
+        embed_text_fn = make_embed_text_fn(args.section_context_window)
 
     generated_headers = reembed(
         document_store=document_store,
@@ -328,7 +328,7 @@ if __name__ == "__main__":
     _write_headers_out(args.headers_out, generated_headers)
 
     if embed_text_fn is not None:
-        mode = f"SB-1 section-context (window={args.sb1_section_context_window})"
+        mode = f"section-context (window={args.section_context_window})"
     else:
         mode = "with-headers" if args.with_headers else "baseline (no headers)"
     print(

@@ -165,3 +165,34 @@ def test_price_corpus_counts_multi_chunk_sections():
     result = price_corpus([record])
 
     assert result["multi_chunk_sections"] == 1  # only S1 has >1 chunk
+
+
+# --- copy_summary_vectors: the real caller for rag.vector_index.VectorIndex.copy_kind_into -----
+
+
+def test_copy_summary_vectors_calls_copy_kind_into_with_summary_kind(monkeypatch):
+    """Zero-network: VectorIndex construction/scroll/upsert are stubbed out -- this pins the
+    WIRING (source built from the right args, copy_kind_into called with dest + 'summary'), not
+    a real vector-store round trip (that's rag/test_vector_index.py's own real-adapter test)."""
+    import app.exp_chunk_boundary_latechunk_embed as m
+
+    calls = []
+
+    class _FakeVectorIndex:
+        def __init__(self, host, port, collection_name, dim, hybrid_dense_weight):
+            calls.append(("init", host, port, collection_name, dim, hybrid_dense_weight))
+
+        def copy_kind_into(self, dest_collection, kind):
+            calls.append(("copy_kind_into", dest_collection, kind))
+            return 1738
+
+    monkeypatch.setattr("rag.vector_index.VectorIndex", _FakeVectorIndex)
+
+    copied = m.copy_summary_vectors(
+        source_collection="waymo_av_safety", dest_collection="waymo_av_safety_sb1_latechunk",
+        host="localhost", port=6333, dim=2560, hybrid_dense_weight=0.7,
+    )
+
+    assert copied == 1738
+    assert calls[0] == ("init", "localhost", 6333, "waymo_av_safety", 2560, 0.7)
+    assert calls[1] == ("copy_kind_into", "waymo_av_safety_sb1_latechunk", "summary")

@@ -27,7 +27,7 @@ zero-network, fully unit-testable offline. The actual re-embed run -- constructi
 embedder/vector-store client -- happens entirely inside `app/reembed_experiment.py` (T-DOC41's
 already-allowlisted composition root, `ci/checks/vendor_isolation.py`), which this ticket extended
 with one small, additive, backward-compatible hook (`reembed()`'s `embed_text_fn` parameter,
-`--sb1-section-context-window` CLI flag) rather than duplicating its GPU-adapter wiring into a
+`--section-context-window` CLI flag) rather than duplicating its GPU-adapter wiring into a
 second, un-allowlisted composition root. See that module's own docstring/diff for the extension;
 see this ticket's report for why (a new file constructing the vendor HTTP client itself would trip
 `ci/checks/vendor_isolation.py`'s check (a), and `ci/` is a foundation-gated path this ticket must
@@ -161,6 +161,25 @@ def price_corpus(records: Iterable[PaperRecord], window_words: int = DEFAULT_WIN
     }
 
 
+def copy_summary_vectors(
+    *, source_collection: str, dest_collection: str, host: str, port: int, dim: int,
+    hybrid_dense_weight: float,
+) -> int:
+    """Copies every `kind="summary"` point from `source_collection` into `dest_collection`,
+    verbatim (no re-embedding) -- via `rag.vector_index.VectorIndex.copy_kind_into` (see that
+    method's own docstring for the mechanism). Real caller for arm (a)'s confound fix: this
+    ticket's re-embed only touches `kind="chunk"` points, so a fresh destination collection
+    otherwise holds zero summary vectors -- an unintended second variable (fewer candidates for
+    `retrieve_papers()`/summary-kind hybrid search) alongside the one actually under test (chunk
+    embed text). Deferred import of `rag.vector_index` (this file otherwise imports no vendor-
+    adjacent module at all) -- reused only here, at the one real call site.
+    """
+    from rag.vector_index import VectorIndex
+
+    source = VectorIndex(host, port, source_collection, dim, hybrid_dense_weight)
+    return source.copy_kind_into(dest_collection, "summary")
+
+
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", default=str(REPO_ROOT / "config.yaml"))
@@ -170,6 +189,13 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--window-words", type=int, default=DEFAULT_WINDOW_WORDS,
         help="word count taken from each position-adjacent neighbour",
     )
+    parser.add_argument(
+        "--copy-summaries-into", default=None, metavar="DEST_COLLECTION",
+        help="skip the dry-run pricing path; instead copy every kind=summary point from "
+             "--config's own Config.collection (read-only) into DEST_COLLECTION, verbatim, via "
+             "copy_summary_vectors() -- the confound fix a chunk-only re-embed target needs "
+             "before it can be evaluated on equal footing with the baseline collection",
+    )
     return parser.parse_args(argv)
 
 
@@ -177,12 +203,31 @@ def main(argv: list[str] | None = None) -> int:
     """`python -m app.exp_chunk_boundary_latechunk_embed [--config ...]` -- offline dry-run
     pricing over the WHOLE corpus (every paper `DocumentStore.iter_papers()` yields). Read-only:
     only `DocumentStore.iter_papers()`/`.get()` are used, `papers.db` is never written.
+
+    `--copy-summaries-into DEST_COLLECTION` switches to the confound-fix mode instead
+    (`copy_summary_vectors()`) -- see that function's docstring.
     """
     args = _parse_args(argv)
     from rag.config import load_config
-    from rag.document_store import DocumentStore
 
     cfg = load_config(args.config)
+
+    if args.copy_summaries_into is not None:
+        from app.reembed_experiment import _EMBEDDER_INFO, _VECTOR_STORE_HOST, _VECTOR_STORE_PORT
+
+        copied = copy_summary_vectors(
+            source_collection=cfg.collection, dest_collection=args.copy_summaries_into,
+            host=_VECTOR_STORE_HOST, port=_VECTOR_STORE_PORT, dim=_EMBEDDER_INFO.dim,
+            hybrid_dense_weight=cfg.hybrid_dense_weight,
+        )
+        print(
+            f"SB-1 arm (a): copied {copied} kind=summary point(s) from {cfg.collection!r} "
+            f"into {args.copy_summaries_into!r} (source untouched -- read-only scroll)"
+        )
+        return 0
+
+    from rag.document_store import DocumentStore
+
     db_path = args.db_path or cfg.db_path
     blob_dir = args.blob_dir or cfg.blob_dir
     store = DocumentStore(db_path, blob_dir)
