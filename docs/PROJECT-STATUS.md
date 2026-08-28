@@ -736,8 +736,8 @@ Operator directive: no GPU work until lifted. Held at freeze: QW-2 confidence v0
 **Freeze lifted on 2026-08-27.** GPU available in full. Measured GPU state at lift: NVIDIA RTX 3090, 24,576 MiB total, 11,100 MiB resident (the TEI pair — `text-embeddings-router` ×2, containers `rag-tei-embed` and `rag-tei-reranker`), leaving ~13.4 GB free, 0% utilization.
 
 **Lanes dispatched on lift:**
-- **QW-3** (reranker-seat A/B, branch `P95-QW3-reranker-seat`) — reranker confidence surface work.
-- **QW-2** (confidence surface v0, branch `NB-QW2-confidence-v0`) — resumed from its committed stub; pre-download phase complete, execution now live.
+- **QW-3** (reranker-seat A/B, branch `P95-QW3-reranker-seat`) — BGE cross-encoder versus Qwen3-Reranker-0.6B measured on both fixtures against pre-committed ceilings, targeting F1 (near-misses at rank 2: 7/18 on ver84, 8/12 on gt_wmr).
+- **QW-2** (confidence surface v0, branch `NB-QW2-confidence-v0`) — branch carries stub with scorer-absent plumbing (commit ①), rebased onto main @ `8dc336e` before dispatch.
 - **SB-2 first slice = W-A4** (partial-absent GT, two blind authors on branches `P95-SB2-WA4-authorA` / `P95-SB2-WA4-authorB`) — multi-hop ground-truth authoring.
 
 **Lanes deliberately NOT dispatched and why:**

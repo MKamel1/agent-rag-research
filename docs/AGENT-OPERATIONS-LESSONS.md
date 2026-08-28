@@ -703,13 +703,13 @@ the context, go orchestrator-direct rather than re-buying it inside a dispatch.
 
 ### 8.6 Free preview/stealth models are load-bearing infrastructure with no SLA
 
-**Cost: a whole execution channel built on a model with a 48-hour deprecation notice and none given.**
+**Cost: a whole execution channel built on a model that was withdrawn without notice.**
 
 **Incident:** The `stealth/ox-alpha` model ceased to exist on 2026-08-27. Direct probe of the OpenRouter endpoint returns HTTP 404 with body: `"Thank you for participating in the Stealth Ox Alpha testing period. This model was ZAI's GLM-5.3 Flash."` The stealth testing period ended and the model was withdrawn.
 
 The durable lesson: **a free preview/stealth model is load-bearing infrastructure with no SLA and no deprecation notice.** When a whole execution channel is built on one — as this programme's NB lane built on ox-alpha — its disappearance is a silent, total outage, and the tell is indistinguishable from the rate-limiting you already learned to tolerate (§3.3d).
 
-The 429-tolerance machinery from §3.3d — commit-as-you-go, resumable-from-committed-state, probe-N-times-before-declaring-death — is still correct and still earns its keep. It now protects against a different class of failure (model withdrawal instead of shared-pool throttling), but the mechanics are unchanged: a channel that cannot tell the difference between "temporarily unavailable" and "permanently gone" must treat both as recoverable until the evidence is overwhelming. The difference is that one is recoverable (wait for availability) and the other is not (use a successor model) — both need the same commit discipline to minimize re-work when the diagnosis is made.
+The 429-tolerance machinery from §3.3d — commit-as-you-go, resumable-from-committed-state, probe-N-times-before-declaring-death — is still correct and still earns its keep. It now protects against a different class of failure (model withdrawal instead of shared-pool throttling). The two failures present identically at the call site: both return an error code and no completion. The commit discipline must be identical; what differs is the *remedy*: a 429 with time-based waiting is recoverable, while a persistent 404 across repeated probes indicates permanent withdrawal and requires swapping the model string.
 
 **Successor models on the same key:**
 - **`z-ai/glm-5.3-flash`** — the direct successor, 1.31M context window, paid (~$0.075/$0.25 per M tokens input/output).
@@ -717,4 +717,4 @@ The 429-tolerance machinery from §3.3d — commit-as-you-go, resumable-from-com
 - **`minimax/minimax-m3:free`** — free-tier option, 1M context window.
 - **`thinkingmachines/inkling:free`** — free-tier option, 1M context window.
 
-**No change to §3.3d.** Leave §3.3d standing — it describes a real rate-limiting problem that was observed independently and the diagnosis was correct at that time. §8.6 supersedes it by adding a second, now-proven failure mode under the same tell. Future dispatches should treat "one request in three fails with 429 or 404" as the operational expected state for free-tier stealth models, commit at every checkpoint, and swap the model string only when confirmation arrives that the endpoint is permanently gone.
+**No change to §3.3d.** Leave §3.3d standing — it describes a real rate-limiting problem that was observed independently and the diagnosis was correct at that time. §8.6 adds a second, now-proven failure mode (model withdrawal) under the same observable tell. The 1-in-3 429-failure rate describes the throttle behavior alone; a *persistent* 404 across repeated probes is the signature of permanent withdrawal and requires immediate model-string remediation. Both failures look identical at the call site; commit discipline covers both; only repeated probing distinguishes them and reveals which remedy applies.
