@@ -114,6 +114,48 @@ def test_qwen3reranker_accepts_tei_reranker_call_shape():
 # --- orchestrator: subprocess argv construction (subprocess.run stubbed, never executed) --------
 
 
+def test_ensure_loaded_uses_bfloat16_not_float16(monkeypatch):
+    # Regression pin for the dtype trap (module docstring / _ensure_loaded comment): this model
+    # is calibrated in bfloat16 -- loading it in float16 silently produces near-symmetric,
+    # wrong-direction yes/no logits with no error. Stubs out the real (GPU/network) loads and
+    # just asserts the dtype actually requested.
+    import torch as _torch
+
+    calls = {}
+
+    class _FakeTokenizer:
+        def convert_tokens_to_ids(self, tok):
+            return {"yes": 1, "no": 2}[tok]
+
+        def encode(self, text, add_special_tokens=False):
+            return [0]
+
+    class _FakeModel:
+        def to(self, device):
+            return self
+
+        def eval(self):
+            return self
+
+    monkeypatch.setattr(
+        "app.exp_nb_rr_qwen_reranker.AutoTokenizer.from_pretrained",
+        lambda *a, **k: _FakeTokenizer(),
+    )
+
+    def fake_from_pretrained(model_id, dtype=None, **kwargs):
+        calls["dtype"] = dtype
+        return _FakeModel()
+
+    monkeypatch.setattr(
+        "app.exp_nb_rr_qwen_reranker.AutoModelForCausalLM.from_pretrained", fake_from_pretrained
+    )
+
+    reranker = Qwen3Reranker(None, FakeGpuLock())
+    reranker._ensure_loaded()
+
+    assert calls["dtype"] == _torch.bfloat16
+
+
 def test_run_arm_bge_uses_default_runner_module(monkeypatch):
     captured = {}
 

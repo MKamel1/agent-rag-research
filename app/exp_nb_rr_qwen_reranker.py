@@ -39,7 +39,7 @@ Retrofitting TEI for it would mean either a second TEI container (a new deployme
 -- reconfiguring shared infra other lanes depend on, exactly what the ticket says not to do) or
 fighting TEI's `/rerank` route for a scoring scheme it wasn't built to serve. At 0.6B params it
 fits beside the resident TEI pair on the shared card with room to spare (~13.4GB free; this model
-needs on the order of 1-2GB in fp16), so it runs LOCALLY IN-PROCESS via `transformers` (already
+needs on the order of 1-2GB in bfloat16), so it runs LOCALLY IN-PROCESS via `transformers` (already
 installed in the `agent-rag-research` env) and never touches the `rag-tei-reranker` container --
 the ticket's own suggested route for a model this small.
 
@@ -143,7 +143,22 @@ class Qwen3Reranker:
         if self._model is not None:
             return
         tokenizer = AutoTokenizer.from_pretrained(_MODEL_ID, padding_side="left")
-        model = AutoModelForCausalLM.from_pretrained(_MODEL_ID, torch_dtype=torch.float16)
+        # DTYPE TRAP -- real, but NARROWER than first suspected (see report's Finding section
+        # for the full trail). This model is calibrated in bfloat16 (config.json's torch_dtype);
+        # under float16, a short/simple isolated pair ("Paris is the capital of France" vs.
+        # "bananas are a fruit") scores the irrelevant document higher, both logits collapsed near
+        # the 0.5 coin-flip line -- reproducible, with no error/warning/crash. That result does
+        # NOT generalize to this corpus's actual (longer, more distinguishing) chunk text: an
+        # identical fp16-vs-bfloat16 A/B on the real --limit 5 subset moved block-P@1 by exactly
+        # 0/5 -> 0/5 on both fixtures (MRR moved <0.002). bfloat16 is kept because it is the
+        # model's documented native precision and the only dtype that reproduces the model card's
+        # own worked example -- but it is NOT the explanation for this corpus's measured ranking
+        # behavior. Direct per-candidate score inspection (real queries, real corpus pool, this
+        # exact code path) found well-distributed, correctly-descending-sorted, non-degenerate
+        # scores under bfloat16 -- the low block-P@1 traces to this reranker genuinely preferring
+        # a paper's abstract chunk (which restates the headline finding) over the specific body
+        # paragraph the fixture's gold_block_id points at, not to a coding defect. See the report.
+        model = AutoModelForCausalLM.from_pretrained(_MODEL_ID, dtype=torch.bfloat16)
         model = model.to("cuda").eval()
         self._tokenizer = tokenizer
         self._model = model
