@@ -9,7 +9,7 @@ Flan-T5-Large-class checkpoint (MiniCheck-FT5, 770M) run offline via HuggingFace
 WHAT IT MEASURES (R2 §3 Rank 1 mechanism, verbatim scope from ticket NB-QW2):
 
 * every answer sentence x every ACTUALLY-SERVED passage (the capture's `supporting_passages`,
-  i.e. `n_passages_used`, not the wider retrieved pool) gets one raw support probability;
+  i.e. `n_passages_used`, not the wider retrieved pool) gets one raw support score;
 * per sentence, the score is the max over served passages;
 * per answer, the raw aggregate is the mean of those per-sentence maxima (min/median/max also
   recorded); nothing is ever binarized.
@@ -136,7 +136,7 @@ class CaptureItem:
 
 @dataclass(frozen=True)
 class ScoredSentence:
-    """Per-sentence raw scores. `max_support` is the max passage probability for the sentence;
+    """Per-sentence raw scores. `max_support` is the max passage support score for the sentence;
     `per_passage` keeps every pair's raw value so downstream calibration loses nothing."""
 
     text: str
@@ -276,20 +276,21 @@ class MiniCheckScorer:
     """
 
     def __init__(self, device: str = "cpu"):
-        import os
-
-        # Ticket requirement: zero network calls once the checkpoint is cached (this is an
-        # OFFLINE experiment). `from_pretrained` without this still makes an etag HEAD request
-        # per call; setdefault so an operator's own HF_HUB_OFFLINE choice is never overridden.
-        os.environ.setdefault("HF_HUB_OFFLINE", "1")
-
         import torch
         from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
         self._torch = torch
         self.device = device
-        self.tokenizer = AutoTokenizer.from_pretrained(MINICHECK_CHECKPOINT)
-        self.model = AutoModelForSeq2SeqLM.from_pretrained(MINICHECK_CHECKPOINT)
+        # Ticket requirement: zero network calls once the checkpoint is cached (this is an
+        # OFFLINE experiment). `local_files_only=True` refuses the network outright instead of
+        # an HF_HUB_OFFLINE env var (CONVENTIONS §12(d): process-env reads belong to
+        # rag/config.py only) -- same guarantee, scoped to this one load call.
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            MINICHECK_CHECKPOINT, local_files_only=True
+        )
+        self.model = AutoModelForSeq2SeqLM.from_pretrained(
+            MINICHECK_CHECKPOINT, local_files_only=True
+        )
         self.model.eval()
         self.model.to(device)
 
