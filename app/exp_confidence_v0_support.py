@@ -46,6 +46,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import statistics
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -56,7 +57,35 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 CAPTURE_DIR = REPO_ROOT / "fixtures/eval/runs"
 CAPTURE_ANSWERABLE = CAPTURE_DIR / "2026-08-23-waymo-generation-run.answerable.json"
 CAPTURE_ABSENT = CAPTURE_DIR / "2026-08-23-waymo-generation-run.absent.json"
-OUT_DIR_DEFAULT = REPO_ROOT / "docs/eval-reports/data/2026-08-25-nb-qw2"
+# Second arm (ticket: "worth scoring as a second arm") -- same shape, refusal-permitting prompt.
+CAPTURE_AFFORDANCE_ANSWERABLE = (
+    CAPTURE_DIR / "2026-08-24-waymo-generation-run-affordance.answerable.json"
+)
+CAPTURE_AFFORDANCE_ABSENT = CAPTURE_DIR / "2026-08-24-waymo-generation-run-affordance.absent.json"
+ALL_CAPTURES = (
+    CAPTURE_ANSWERABLE,
+    CAPTURE_ABSENT,
+    CAPTURE_AFFORDANCE_ANSWERABLE,
+    CAPTURE_AFFORDANCE_ABSENT,
+)
+OUT_DIR_DEFAULT = REPO_ROOT / "docs/eval-reports/data/2026-08-28-confidence-v0"
+
+# MiniCheck-FT5 (Tang et al. 2024): Flan-T5-Large fine-tuned as a binary support classifier.
+# Released usage (github.com/Liyan06/MiniCheck, minicheck/inference.py) is reimplemented directly
+# here (no `minicheck` pip dependency -- it pulls in extra runtime deps for model variants and
+# doc-tokenizing paths we don't use) rather than pulled in as a dependency.
+MINICHECK_CHECKPOINT = "lytang/MiniCheck-Flan-T5-Large"
+# MiniCheck's own default word-chunk size for flan-t5-large (inference.py: `500 if
+# model_name=='flan-t5-large'`). A handful of served passages here run past the model's 2048-token
+# window (up to ~4000 words); plain truncation would silently blind the scorer to whatever's past
+# the cut. Chunking + max mirrors the reference implementation instead of inventing our own.
+_CHUNK_WORDS = 500
+# Decoder-step-0 logits read off at these two fixed vocab ids give the (no-support, support)
+# pair for this exact checkpoint (Tang et al. 2024's released inference code, unchanged since
+# fine-tuning fixed this vocabulary mapping).
+_NO_SUPPORT_TOKEN_ID = 3
+_SUPPORT_TOKEN_ID = 209
+_SCORE_BATCH_SIZE = 16
 
 # Sentences shorter than this are degenerate fragments of the split (headers, stray numerals).
 _MIN_SENTENCE_CHARS = 8
@@ -73,6 +102,15 @@ _SENTENCE_BREAK = re.compile(r"[.!?]+[\"'\u201d\u2019)\]]*(?:\s+|$)|\n+")
 
 class CaptureError(RuntimeError):
     """A capture file does not have the shape the instrument requires."""
+
+
+def _infer_arm_from_filename(path: Path) -> str | None:
+    """Fallback arm label for captures with no `_metadata.arm` (see `load_capture`)."""
+    if ".answerable." in path.name:
+        return "answerable"
+    if ".absent." in path.name:
+        return "absent"
+    return None
 
 
 @dataclass(frozen=True)
@@ -115,9 +153,16 @@ def load_capture(path: Path) -> tuple[str, list[CaptureItem]]:
     """
     payload = json.loads(path.read_text())
     meta = payload.get("_metadata")
-    if not isinstance(meta, dict) or "arm" not in meta:
+    arm = meta.get("arm") if isinstance(meta, dict) else None
+    if arm is None:
+        # The affordance-arm captures (2026-08-24-*) carry no `_metadata.arm` field -- fall back
+        # to the filename's own ".answerable."/".absent." split marker rather than reject a
+        # capture the ticket explicitly asks us to score. Only ever a fallback: a file that
+        # doesn't name its arm either way still fails loudly below, same as before.
+        arm = _infer_arm_from_filename(path)
+    if arm is None:
         raise CaptureError(f"{path}: missing _metadata.arm")
-    arm = str(meta["arm"])
+    arm = str(arm)
     records = payload.get("ground_truth")
     if not isinstance(records, list) or not records:
         raise CaptureError(f"{path}: ground_truth missing or empty")
@@ -182,29 +227,248 @@ def build_pairs(items: list[CaptureItem]) -> int:
     return total
 
 
+def chunk_words(text: str, n: int = _CHUNK_WORDS) -> list[str]:
+    """Split `text` into ~`n`-word chunks (whitespace split, MiniCheck's own flan-t5 recipe --
+    see module docstring). A passage past the model's context window gets scored chunk-by-chunk
+    with the max taken, instead of silently truncated."""
+    words = text.split()
+    if not words:
+        return [""]
+    return [" ".join(words[i : i + n]) for i in range(0, len(words), n)]
+
+
+@dataclass(frozen=True)
+class AnswerAggregate:
+    """Per-answer raw-score summary: mean/median/min/max of its sentences' `max_support` values.
+    Never binarized, never leveled -- see module docstring's HONEST SEMANTICS."""
+
+    n_sentences: int
+    mean: float
+    median: float
+    min: float
+    max: float
+
+
+@dataclass(frozen=True)
+class ScoredItem:
+    """One fully-scored capture item: every answer sentence's scores plus the answer-level
+    aggregate. `aggregate` is `None` only if the answer had zero scoreable sentences."""
+
+    question_id: str
+    question_text: str
+    answer_text: str
+    n_passages_used: int
+    sentences: tuple[ScoredSentence, ...]
+    aggregate: AnswerAggregate | None
+
+
+class MiniCheckScorer:
+    """Reimplements MiniCheck-FT5's own scoring recipe (github.com/Liyan06/MiniCheck,
+    minicheck/inference.py, Tang et al. 2024) directly on `transformers` -- not the `minicheck`
+    pip package, which pulls in extra runtime deps for model variants and doc-tokenizing paths
+    this instrument doesn't use. Loads `lytang/MiniCheck-Flan-T5-Large` (770M) once; `score_pair`
+    scores one
+    (served-passage, answer-sentence) pair.
+
+    Input format and the [3, 209] (no-support, support) decoder-logit read are byte-identical to
+    the released inference code -- this is a different harness around the same checkpoint and
+    the same math, not a new scoring method.
+    """
+
+    def __init__(self, device: str = "cpu"):
+        import torch
+        from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+
+        self._torch = torch
+        self.device = device
+        self.tokenizer = AutoTokenizer.from_pretrained(MINICHECK_CHECKPOINT)
+        self.model = AutoModelForSeq2SeqLM.from_pretrained(MINICHECK_CHECKPOINT)
+        self.model.eval()
+        self.model.to(device)
+
+    def score_pair(self, passage_text: str, claim_text: str) -> float:
+        """Raw support score in [0, 1] for one (document, claim) pair: max over the document's
+        word-chunks of softmax([no-support, support])[support]. Not a probability of truth --
+        see module docstring."""
+        torch = self._torch
+        chunks = chunk_words(passage_text)
+        texts = [f"predict: {chunk}{self.tokenizer.eos_token}{claim_text}" for chunk in chunks]
+        best = 0.0
+        for start in range(0, len(texts), _SCORE_BATCH_SIZE):
+            batch = texts[start : start + _SCORE_BATCH_SIZE]
+            enc = self.tokenizer(
+                batch, max_length=2048, truncation=True, padding=True, return_tensors="pt"
+            )
+            enc = {k: v.to(self.device) for k, v in enc.items()}
+            decoder_input_ids = torch.zeros(
+                (enc["input_ids"].size(0), 1), dtype=torch.long, device=self.device
+            )
+            with torch.no_grad():
+                out = self.model(
+                    input_ids=enc["input_ids"],
+                    attention_mask=enc["attention_mask"],
+                    decoder_input_ids=decoder_input_ids,
+                )
+            logits = out.logits.squeeze(1)[:, [_NO_SUPPORT_TOKEN_ID, _SUPPORT_TOKEN_ID]]
+            probs = torch.softmax(logits, dim=-1)[:, 1]
+            best = max(best, probs.max().item())
+        return best
+
+
+def score_item(item: CaptureItem, scorer: MiniCheckScorer) -> ScoredItem | None:
+    """Score every answer sentence x every served passage for one item; `None` if the answer
+    split to zero sentences (nothing to score, not a zero score)."""
+    sentences = split_answer_sentences(item.answer_text)
+    if not sentences:
+        return None
+    scored_sentences = []
+    for sent in sentences:
+        per_passage = [
+            {"paper_id": passage.paper_id, "support": scorer.score_pair(passage.text, sent)}
+            for passage in item.passages
+        ]
+        max_support = max(p["support"] for p in per_passage)
+        scored_sentences.append(
+            ScoredSentence(text=sent, max_support=max_support, per_passage=per_passage)
+        )
+    maxima = [s.max_support for s in scored_sentences]
+    aggregate = AnswerAggregate(
+        n_sentences=len(maxima),
+        mean=statistics.fmean(maxima),
+        median=statistics.median(maxima),
+        min=min(maxima),
+        max=max(maxima),
+    )
+    return ScoredItem(
+        question_id=item.question_id,
+        question_text=item.question_text,
+        answer_text=item.answer_text,
+        n_passages_used=item.n_passages_used,
+        sentences=tuple(scored_sentences),
+        aggregate=aggregate,
+    )
+
+
+def score_items(items: list[CaptureItem], scorer: MiniCheckScorer) -> list[ScoredItem]:
+    return [s for item in items if (s := score_item(item, scorer)) is not None]
+
+
+def scored_item_to_dict(scored: ScoredItem) -> dict:
+    assert scored.aggregate is not None
+    return {
+        "question_id": scored.question_id,
+        "question_text": scored.question_text,
+        "answer_text": scored.answer_text,
+        "n_passages_used": scored.n_passages_used,
+        "n_sentences": scored.aggregate.n_sentences,
+        "sentence_scores": [
+            {"text": s.text, "max_support": s.max_support, "per_passage": s.per_passage}
+            for s in scored.sentences
+        ],
+        "answer_aggregate": {
+            "mean": scored.aggregate.mean,
+            "median": scored.aggregate.median,
+            "min": scored.aggregate.min,
+            "max": scored.aggregate.max,
+        },
+    }
+
+
+def dump_arm(
+    out_path: Path,
+    arm: str,
+    fixture_name: str,
+    n_items_loaded: int,
+    scored: list[ScoredItem],
+) -> dict:
+    """Write one arm's score dump as committed JSON (report numbers are read back from this,
+    never recomputed ad hoc)."""
+    payload = {
+        "_metadata": {
+            "prototype_label": (
+                "UNVALIDATED PROTOTYPE -- raw support score (not a probability, not a truth "
+                "judgment). No calibration data, no confidence levels, no thresholds. Measures "
+                "support-by-served-context only; see NB-QW2 report for the wrong-context-scores-"
+                "high failure mode (Q-GTA-037)."
+            ),
+            "arm": arm,
+            "fixture": fixture_name,
+            "model": MINICHECK_CHECKPOINT,
+            "n_items_loaded": n_items_loaded,
+            "n_items_scored": len(scored),
+        },
+        "items": [scored_item_to_dict(s) for s in scored],
+    }
+    out_path.write_text(json.dumps(payload, indent=2))
+    return payload
+
+
+def _cuda_available() -> bool:
+    try:
+        import torch
+    except ImportError:
+        return False
+    return bool(torch.cuda.is_available())
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
         "--check-plumbing", action="store_true", help="load captures, print counts, exit"
     )
     parser.add_argument("--out-dir", type=Path, default=OUT_DIR_DEFAULT)
+    parser.add_argument(
+        "--config",
+        type=Path,
+        default=None,
+        help="rag config.yaml path (else RAG_CONFIG env var / discovery, see rag/config.py)",
+    )
     args = parser.parse_args(argv)
 
-    captures = [CAPTURE_ANSWERABLE, CAPTURE_ABSENT]
-    loaded = {}
-    for cap_path in captures:
+    loaded: dict[Path, tuple[str, list[CaptureItem]]] = {}
+    for cap_path in ALL_CAPTURES:
         arm, items = load_capture(cap_path)
-        loaded[cap_path.name] = (arm, items)
+        loaded[cap_path] = (arm, items)
 
     print("capture loading OK:")
-    for name, (arm, items) in loaded.items():
-        print(f"  {name}: arm={arm} items={len(items)} pairs={build_pairs(items)}")
+    for cap_path, (arm, items) in loaded.items():
+        print(f"  {cap_path.name}: arm={arm} items={len(items)} pairs={build_pairs(items)}")
 
     if args.check_plumbing:
         return 0
-    # Commit ② wires the scorer here; the stub refuses to fake results past this point.
-    print("scorer integration not present yet (commit ① stub)", file=sys.stderr)
-    return 2
+
+    from rag.config import load_config
+    from rag.gpu_lock import FileGpuLock
+
+    cfg = load_config(args.config)
+    gpu_lock = FileGpuLock(Path(cfg.gpu_lock_path))
+    device = "cuda" if _cuda_available() else "cpu"
+    args.out_dir.mkdir(parents=True, exist_ok=True)
+
+    print(f"\nscoring on device={device} (model={MINICHECK_CHECKPOINT})")
+    dumps: dict[str, dict] = {}
+    # Ticket NB-QW2: "hold the lock only while scoring; release it after" -- one acquire/release
+    # cycle spans model load through the last pair of the last arm, nothing on either side of it.
+    with gpu_lock.acquire("confidence-v0-support-scoring"):
+        scorer = MiniCheckScorer(device=device)
+        for cap_path, (arm, items) in loaded.items():
+            scored = score_items(items, scorer)
+            out_name = cap_path.stem + ".minicheck-v0.json"
+            payload = dump_arm(args.out_dir / out_name, arm, cap_path.name, len(items), scored)
+            dumps[cap_path.name] = payload
+            print(f"  scored {cap_path.name}: {len(scored)}/{len(items)} items -> {out_name}")
+
+    print("\nper-arm answer-aggregate MEAN distribution (reported separately -- never blended):")
+    for name, payload in dumps.items():
+        means = [it["answer_aggregate"]["mean"] for it in payload["items"]]
+        if not means:
+            print(f"  {name}: n=0")
+            continue
+        print(
+            f"  {name}: n={len(means)} mean={statistics.fmean(means):.3f} "
+            f"median={statistics.median(means):.3f} min={min(means):.3f} max={max(means):.3f}"
+        )
+    return 0
 
 
 if __name__ == "__main__":
