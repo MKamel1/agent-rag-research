@@ -39,10 +39,11 @@ import argparse
 import json
 import logging
 from pathlib import Path
-from typing import Protocol
+from typing import Callable, Protocol
 
 import httpx
 
+from contracts.chunker import Chunk
 from contracts.document_store import PaperRecord
 from contracts.embedder import EmbedderInfo, Vector
 from contracts.errors import PermanentError, TransientError
@@ -105,6 +106,7 @@ def reembed(
     header_generator: _HeaderGenerator | None,
     paper_ids: list[str],
     with_headers: bool,
+    embed_text_fn: Callable[[PaperRecord, Chunk], str] | None = None,
 ) -> dict[str, str]:
     """Runs one A/B arm: embeds and upserts every chunk of every paper in `paper_ids` into
     `vector_index`, upserting the SAME `chunk_id`s regardless of `with_headers` -- what varies
@@ -116,16 +118,29 @@ def reembed(
     smaller-than-requested, and therefore no-longer-matched-against-a-prior-run, corpus).
     `header_generator` must be given (non-`None`) when `with_headers=True`; ignored otherwise.
 
+    `embed_text_fn` (SB-1, chunk-boundary-mitigation programme): an optional, purely additive
+    third text-transform arm alongside `with_headers`'s True/False -- when given, it computes
+    `embed_text` for each chunk instead of the header logic below (mutually exclusive with
+    `with_headers=True`, checked below). Kept as a generic `(PaperRecord, Chunk) -> str` hook
+    here, with every actual transform living in the ticket that needs it
+    (`app/exp_chunk_boundary_latechunk_embed.py`'s `build_section_context_text`) -- this function
+    stays the one place that decides what varies (`embed_text`) vs. what never does (`payload.text`,
+    below), the property every text-transform arm through this module relies on. Defaults to
+    `None`, which reproduces this function's pre-SB-1 behavior byte-for-byte.
+
     Postcondition: returns `{chunk_id: header}` for every chunk a header was actually generated
-    for -- empty in `--no-headers` mode. A chunk whose header generation is skipped (empty
-    summary, `ContextualHeaderGenerator`'s own documented precondition) or fails (`PermanentError`
-    or `TransientError` -- e.g. a bad or undecodable generation-LLM response for that one chunk;
-    RI-31: this spike script has no retry loop, so transient degrades to skip-chunk like
-    permanent) is still embedded and upserted with its own unmodified `chunk.text` -- it is never
-    dropped from the matched set, it just has no header entry in the returned dict.
+    for -- empty in `--no-headers` mode and whenever `embed_text_fn` is given. A chunk whose
+    header generation is skipped (empty summary, `ContextualHeaderGenerator`'s own documented
+    precondition) or fails (`PermanentError` or `TransientError` -- e.g. a bad or undecodable
+    generation-LLM response for that one chunk; RI-31: this spike script has no retry loop, so
+    transient degrades to skip-chunk like permanent) is still embedded and upserted with its own
+    unmodified `chunk.text` -- it is never dropped from the matched set, it just has no header
+    entry in the returned dict.
     """
     if with_headers and header_generator is None:
         raise ReembedError("with_headers=True requires a header_generator")
+    if with_headers and embed_text_fn is not None:
+        raise ReembedError("with_headers and embed_text_fn are mutually exclusive text arms")
 
     ids: list[str] = []
     texts: list[str] = []
@@ -138,7 +153,10 @@ def reembed(
             raise ReembedError(f"{paper_id}: not found in the corpus store")
 
         for chunk in record.chunks:
-            embed_text = chunk.text
+            if embed_text_fn is not None:
+                embed_text = embed_text_fn(record, chunk)
+            else:
+                embed_text = chunk.text
             if with_headers:
                 assert header_generator is not None  # checked above; narrows the type for mypy
                 try:
@@ -254,6 +272,14 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--header-model", default="qwen3:14b", help="model name the header generator requests"
     )
+    parser.add_argument(
+        "--sb1-section-context-window", type=int, default=None,
+        help="SB-1 (chunk-boundary-mitigation programme) arm (a): use "
+             "app.exp_chunk_boundary_latechunk_embed's position-adjacent-chunk-window embed "
+             "text instead of --with-headers/--no-headers (word count taken from each "
+             "neighbour); mutually exclusive with --with-headers (reembed() raises if both "
+             "are given)",
+    )
     return parser.parse_args()
 
 
@@ -281,6 +307,13 @@ if __name__ == "__main__":
         if args.with_headers
         else None
     )
+    # Deferred import (SB-1 arm (a)): keeps this shared T-DOC41 spike script's module-load path
+    # unaffected by an unrelated ticket's own module unless the new flag is actually used.
+    embed_text_fn = None
+    if args.sb1_section_context_window is not None:
+        from app.exp_chunk_boundary_latechunk_embed import make_embed_text_fn
+
+        embed_text_fn = make_embed_text_fn(args.sb1_section_context_window)
 
     generated_headers = reembed(
         document_store=document_store,
@@ -289,11 +322,15 @@ if __name__ == "__main__":
         header_generator=header_generator,
         paper_ids=paper_ids,
         with_headers=args.with_headers,
+        embed_text_fn=embed_text_fn,
     )
 
     _write_headers_out(args.headers_out, generated_headers)
 
-    mode = "with-headers" if args.with_headers else "baseline (no headers)"
+    if embed_text_fn is not None:
+        mode = f"SB-1 section-context (window={args.sb1_section_context_window})"
+    else:
+        mode = "with-headers" if args.with_headers else "baseline (no headers)"
     print(
         f"reembed_experiment: upserted {len(paper_ids)} paper(s) into collection "
         f"{args.collection!r} ({mode}); {len(generated_headers)} header(s) generated"
