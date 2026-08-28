@@ -1,0 +1,2189 @@
+{
+  "gt_wmr": {
+    "n_demotions": 59,
+    "n_promoted_same_paper_as_gold": 23,
+    "n_promoted_summary_ish": 14,
+    "n_promoted_same_paper_and_summary_ish": 7,
+    "rate_same_paper": 0.3898305084745763,
+    "rate_summary_ish": 0.23728813559322035,
+    "rate_same_paper_and_summary_ish": 0.11864406779661017,
+    "demotions": [
+      {
+        "question_id": "Q-WMR-001",
+        "bge_rank": 1,
+        "qwen_rank": null,
+        "gold_block_id": "local:79c782071ad2:b80",
+        "gold_paper_ids": [
+          "local:79c782071ad2"
+        ],
+        "qwen_promoted_paper_id": "local:79c782071ad2",
+        "qwen_promoted_block_id": "local:79c782071ad2:b16",
+        "promoted_same_paper_as_gold": true,
+        "promoted_block": {
+          "block_id": "local:79c782071ad2:b16",
+          "paper_id": "local:79c782071ad2",
+          "section_path": "ABSTRACT",
+          "index": 16,
+          "summary_ish": true,
+          "summary_section_match": true,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-002",
+        "bge_rank": 1,
+        "qwen_rank": 4,
+        "gold_block_id": "local:79c782071ad2:b85",
+        "gold_paper_ids": [
+          "local:79c782071ad2"
+        ],
+        "qwen_promoted_paper_id": "local:79c782071ad2",
+        "qwen_promoted_block_id": "local:79c782071ad2:b16",
+        "promoted_same_paper_as_gold": true,
+        "promoted_block": {
+          "block_id": "local:79c782071ad2:b16",
+          "paper_id": "local:79c782071ad2",
+          "section_path": "ABSTRACT",
+          "index": 16,
+          "summary_ish": true,
+          "summary_section_match": true,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-003",
+        "bge_rank": 1,
+        "qwen_rank": null,
+        "gold_block_id": "local:b12ef27e3cd6:b40",
+        "gold_paper_ids": [
+          "local:b12ef27e3cd6"
+        ],
+        "qwen_promoted_paper_id": "local:b12ef27e3cd6",
+        "qwen_promoted_block_id": "local:b12ef27e3cd6:b3",
+        "promoted_same_paper_as_gold": true,
+        "promoted_block": {
+          "block_id": "local:b12ef27e3cd6:b3",
+          "paper_id": "local:b12ef27e3cd6",
+          "section_path": "ABSTRACT",
+          "index": 3,
+          "summary_ish": true,
+          "summary_section_match": true,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-004",
+        "bge_rank": 1,
+        "qwen_rank": 4,
+        "gold_block_id": "local:b12ef27e3cd6:b34",
+        "gold_paper_ids": [
+          "local:b12ef27e3cd6"
+        ],
+        "qwen_promoted_paper_id": "local:d45d629ccad0",
+        "qwen_promoted_block_id": "local:d45d629ccad0:b44",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "local:d45d629ccad0:b44",
+          "paper_id": "local:d45d629ccad0",
+          "section_path": "V. CONCLUSIONS",
+          "index": 44,
+          "summary_ish": true,
+          "summary_section_match": true,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-005",
+        "bge_rank": 1,
+        "qwen_rank": null,
+        "gold_block_id": "local:73b22bed599f:b7",
+        "gold_paper_ids": [
+          "local:73b22bed599f"
+        ],
+        "qwen_promoted_paper_id": "2508.19425",
+        "qwen_promoted_block_id": "2508.19425:b135",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "2508.19425:b135",
+          "paper_id": "2508.19425",
+          "section_path": "Fatality Rates from FHWA 2023 Highway Statistics Series",
+          "index": 135,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-006",
+        "bge_rank": 1,
+        "qwen_rank": null,
+        "gold_block_id": "2604.27168:b4",
+        "gold_paper_ids": [
+          "2604.27168"
+        ],
+        "qwen_promoted_paper_id": "2604.27168",
+        "qwen_promoted_block_id": "2604.27168:b132",
+        "promoted_same_paper_as_gold": true,
+        "promoted_block": {
+          "block_id": "2604.27168:b132",
+          "paper_id": "2604.27168",
+          "section_path": "Extensions and future work",
+          "index": 132,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-007",
+        "bge_rank": 1,
+        "qwen_rank": null,
+        "gold_block_id": "2604.19838:b7",
+        "gold_paper_ids": [
+          "2604.19838"
+        ],
+        "qwen_promoted_paper_id": "2506.02215",
+        "qwen_promoted_block_id": "2506.02215:b180",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "2506.02215:b180",
+          "paper_id": "2506.02215",
+          "section_path": "References",
+          "index": 180,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-008",
+        "bge_rank": 1,
+        "qwen_rank": null,
+        "gold_block_id": "2212.08148:b18",
+        "gold_paper_ids": [
+          "2212.08148"
+        ],
+        "qwen_promoted_paper_id": "local:0983968f9ec2",
+        "qwen_promoted_block_id": "local:0983968f9ec2:b3",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "local:0983968f9ec2:b3",
+          "paper_id": "local:0983968f9ec2",
+          "section_path": "Abstract",
+          "index": 3,
+          "summary_ish": true,
+          "summary_section_match": true,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-009",
+        "bge_rank": 2,
+        "qwen_rank": 3,
+        "gold_block_id": "local:0983968f9ec2:b3",
+        "gold_paper_ids": [
+          "local:0983968f9ec2"
+        ],
+        "qwen_promoted_paper_id": "2312.12675",
+        "qwen_promoted_block_id": "2312.12675:b67",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "2312.12675:b67",
+          "paper_id": "2312.12675",
+          "section_path": "DISCUSSION",
+          "index": 67,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-010",
+        "bge_rank": 1,
+        "qwen_rank": 2,
+        "gold_block_id": "local:0983968f9ec2:b9",
+        "gold_paper_ids": [
+          "local:0983968f9ec2"
+        ],
+        "qwen_promoted_paper_id": "local:b12ef27e3cd6",
+        "qwen_promoted_block_id": "local:b12ef27e3cd6:b8",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "local:b12ef27e3cd6:b8",
+          "paper_id": "local:b12ef27e3cd6",
+          "section_path": "INTRODUCTION",
+          "index": 8,
+          "summary_ish": true,
+          "summary_section_match": true,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-011",
+        "bge_rank": 1,
+        "qwen_rank": 2,
+        "gold_block_id": "2506.09929:b22",
+        "gold_paper_ids": [
+          "2506.09929"
+        ],
+        "qwen_promoted_paper_id": "2506.09929",
+        "qwen_promoted_block_id": "2506.09929:b4",
+        "promoted_same_paper_as_gold": true,
+        "promoted_block": {
+          "block_id": "2506.09929:b4",
+          "paper_id": "2506.09929",
+          "section_path": "1. Introduction",
+          "index": 4,
+          "summary_ish": true,
+          "summary_section_match": true,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-012",
+        "bge_rank": 1,
+        "qwen_rank": null,
+        "gold_block_id": "2508.19425:b85",
+        "gold_paper_ids": [
+          "2508.19425"
+        ],
+        "qwen_promoted_paper_id": "2508.19425",
+        "qwen_promoted_block_id": "2508.19425:b4",
+        "promoted_same_paper_as_gold": true,
+        "promoted_block": {
+          "block_id": "2508.19425:b4",
+          "paper_id": "2508.19425",
+          "section_path": "Abstract",
+          "index": 4,
+          "summary_ish": true,
+          "summary_section_match": true,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-014",
+        "bge_rank": 1,
+        "qwen_rank": null,
+        "gold_block_id": "2502.08121:b15",
+        "gold_paper_ids": [
+          "2502.08121"
+        ],
+        "qwen_promoted_paper_id": "2502.08121",
+        "qwen_promoted_block_id": "2502.08121:b69",
+        "promoted_same_paper_as_gold": true,
+        "promoted_block": {
+          "block_id": "2502.08121:b69",
+          "paper_id": "2502.08121",
+          "section_path": "4. What is the Relationship between Drivership and a Safety Case?",
+          "index": 69,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-016",
+        "bge_rank": 1,
+        "qwen_rank": null,
+        "gold_block_id": "local:e402895b56ca:b50",
+        "gold_paper_ids": [
+          "local:e402895b56ca"
+        ],
+        "qwen_promoted_paper_id": "local:e402895b56ca",
+        "qwen_promoted_block_id": "local:e402895b56ca:b60",
+        "promoted_same_paper_as_gold": true,
+        "promoted_block": {
+          "block_id": "local:e402895b56ca:b60",
+          "paper_id": "local:e402895b56ca",
+          "section_path": "2. A Layered Approach to Safety > 2.2 Decomposing Absence of Unreasonable Risk",
+          "index": 60,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-017",
+        "bge_rank": 1,
+        "qwen_rank": 2,
+        "gold_block_id": "local:bb74867d2259:b24",
+        "gold_paper_ids": [
+          "local:bb74867d2259"
+        ],
+        "qwen_promoted_paper_id": "local:b12ef27e3cd6",
+        "qwen_promoted_block_id": "local:b12ef27e3cd6:b8",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "local:b12ef27e3cd6:b8",
+          "paper_id": "local:b12ef27e3cd6",
+          "section_path": "INTRODUCTION",
+          "index": 8,
+          "summary_ish": true,
+          "summary_section_match": true,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-019",
+        "bge_rank": 1,
+        "qwen_rank": 7,
+        "gold_block_id": "local:0bce58005210:b6",
+        "gold_paper_ids": [
+          "local:0bce58005210"
+        ],
+        "qwen_promoted_paper_id": "local:d45d629ccad0",
+        "qwen_promoted_block_id": "local:d45d629ccad0:b35",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "local:d45d629ccad0:b35",
+          "paper_id": "local:d45d629ccad0",
+          "section_path": "IV. DISCUSSION",
+          "index": 35,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-020",
+        "bge_rank": 2,
+        "qwen_rank": null,
+        "gold_block_id": "2507.17943:b47",
+        "gold_paper_ids": [
+          "2507.17943"
+        ],
+        "qwen_promoted_paper_id": "2407.07324",
+        "qwen_promoted_block_id": "2407.07324:b82",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "2407.07324:b82",
+          "paper_id": "2407.07324",
+          "section_path": "SUPPLEMENTARY MATERIAL",
+          "index": 82,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-021",
+        "bge_rank": 1,
+        "qwen_rank": 2,
+        "gold_block_id": "local:24cb2ca8ce9b:b11",
+        "gold_paper_ids": [
+          "local:24cb2ca8ce9b"
+        ],
+        "qwen_promoted_paper_id": "local:6b9ccd0431f6",
+        "qwen_promoted_block_id": "local:6b9ccd0431f6:b176",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "local:6b9ccd0431f6:b176",
+          "paper_id": "local:6b9ccd0431f6",
+          "section_path": "Study Conformance to the RAVE Checklist",
+          "index": 176,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-022",
+        "bge_rank": 2,
+        "qwen_rank": 9,
+        "gold_block_id": "local:f2811feacd35:b65",
+        "gold_paper_ids": [
+          "local:f2811feacd35"
+        ],
+        "qwen_promoted_paper_id": "local:f2811feacd35",
+        "qwen_promoted_block_id": "local:f2811feacd35:b64",
+        "promoted_same_paper_as_gold": true,
+        "promoted_block": {
+          "block_id": "local:f2811feacd35:b64",
+          "paper_id": "local:f2811feacd35",
+          "section_path": "4. Discussion",
+          "index": 64,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-023",
+        "bge_rank": 1,
+        "qwen_rank": null,
+        "gold_block_id": "local:f2811feacd35:b71",
+        "gold_paper_ids": [
+          "local:f2811feacd35"
+        ],
+        "qwen_promoted_paper_id": "2306.05925",
+        "qwen_promoted_block_id": "2306.05925:b54",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "2306.05925:b54",
+          "paper_id": "2306.05925",
+          "section_path": "4 Application",
+          "index": 54,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-024",
+        "bge_rank": 1,
+        "qwen_rank": null,
+        "gold_block_id": "2506.02215:b12",
+        "gold_paper_ids": [
+          "2506.02215"
+        ],
+        "qwen_promoted_paper_id": "2506.02215",
+        "qwen_promoted_block_id": "2506.02215:b82",
+        "promoted_same_paper_as_gold": true,
+        "promoted_block": {
+          "block_id": "2506.02215:b82",
+          "paper_id": "2506.02215",
+          "section_path": "Discussion",
+          "index": 82,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-025",
+        "bge_rank": 3,
+        "qwen_rank": null,
+        "gold_block_id": "2505.14842:b81",
+        "gold_paper_ids": [
+          "2505.14842"
+        ],
+        "qwen_promoted_paper_id": "2505.14842",
+        "qwen_promoted_block_id": "2505.14842:b2",
+        "promoted_same_paper_as_gold": true,
+        "promoted_block": {
+          "block_id": "2505.14842:b2",
+          "paper_id": "2505.14842",
+          "section_path": "Abstract",
+          "index": 2,
+          "summary_ish": true,
+          "summary_section_match": true,
+          "low_index_match": true
+        }
+      },
+      {
+        "question_id": "Q-WMR-026",
+        "bge_rank": 1,
+        "qwen_rank": 9,
+        "gold_block_id": "local:6b9ccd0431f6:b53",
+        "gold_paper_ids": [
+          "local:6b9ccd0431f6"
+        ],
+        "qwen_promoted_paper_id": "local:5fa216c3425a",
+        "qwen_promoted_block_id": "local:5fa216c3425a:b36",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "local:5fa216c3425a:b36",
+          "paper_id": "local:5fa216c3425a",
+          "section_path": "4. Methods",
+          "index": 36,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-027",
+        "bge_rank": 1,
+        "qwen_rank": null,
+        "gold_block_id": "local:6b9ccd0431f6:b57",
+        "gold_paper_ids": [
+          "local:6b9ccd0431f6"
+        ],
+        "qwen_promoted_paper_id": "2312.12675",
+        "qwen_promoted_block_id": "2312.12675:b63",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "2312.12675:b63",
+          "paper_id": "2312.12675",
+          "section_path": "Table 6",
+          "index": 63,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-029",
+        "bge_rank": 1,
+        "qwen_rank": 3,
+        "gold_block_id": "local:f6f1461f2c9a:b55",
+        "gold_paper_ids": [
+          "local:f6f1461f2c9a"
+        ],
+        "qwen_promoted_paper_id": "local:5fa216c3425a",
+        "qwen_promoted_block_id": "local:5fa216c3425a:b22",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "local:5fa216c3425a:b22",
+          "paper_id": "local:5fa216c3425a",
+          "section_path": "2. Framework",
+          "index": 22,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-030",
+        "bge_rank": 1,
+        "qwen_rank": 3,
+        "gold_block_id": "local:f6f1461f2c9a:b66",
+        "gold_paper_ids": [
+          "local:f6f1461f2c9a"
+        ],
+        "qwen_promoted_paper_id": "local:5fa216c3425a",
+        "qwen_promoted_block_id": "local:5fa216c3425a:b45",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "local:5fa216c3425a:b45",
+          "paper_id": "local:5fa216c3425a",
+          "section_path": "5. Results",
+          "index": 45,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-031",
+        "bge_rank": 1,
+        "qwen_rank": 3,
+        "gold_block_id": "local:bc031ecd9224:b62",
+        "gold_paper_ids": [
+          "local:bc031ecd9224"
+        ],
+        "qwen_promoted_paper_id": "local:d45d629ccad0",
+        "qwen_promoted_block_id": "local:d45d629ccad0:b35",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "local:d45d629ccad0:b35",
+          "paper_id": "local:d45d629ccad0",
+          "section_path": "IV. DISCUSSION",
+          "index": 35,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-032",
+        "bge_rank": 1,
+        "qwen_rank": null,
+        "gold_block_id": "local:d45d629ccad0:b28",
+        "gold_paper_ids": [
+          "local:d45d629ccad0"
+        ],
+        "qwen_promoted_paper_id": "local:d45d629ccad0",
+        "qwen_promoted_block_id": "local:d45d629ccad0:b11",
+        "promoted_same_paper_as_gold": true,
+        "promoted_block": {
+          "block_id": "local:d45d629ccad0:b11",
+          "paper_id": "local:d45d629ccad0",
+          "section_path": "Data Source",
+          "index": 11,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-033",
+        "bge_rank": 1,
+        "qwen_rank": null,
+        "gold_block_id": "local:03e2dfdfa816:b70",
+        "gold_paper_ids": [
+          "local:03e2dfdfa816"
+        ],
+        "qwen_promoted_paper_id": "local:03e2dfdfa816",
+        "qwen_promoted_block_id": "local:03e2dfdfa816:b57",
+        "promoted_same_paper_as_gold": true,
+        "promoted_block": {
+          "block_id": "local:03e2dfdfa816:b57",
+          "paper_id": "local:03e2dfdfa816",
+          "section_path": "3.Results > 3.1. Braking Trials > 3.1.1. Experiment results and statistical analysis",
+          "index": 57,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-034",
+        "bge_rank": 1,
+        "qwen_rank": null,
+        "gold_block_id": "2311.06417:b65",
+        "gold_paper_ids": [
+          "2311.06417"
+        ],
+        "qwen_promoted_paper_id": "2604.19838",
+        "qwen_promoted_block_id": "2604.19838:b112",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "2604.19838:b112",
+          "paper_id": "2604.19838",
+          "section_path": "References",
+          "index": 112,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-035",
+        "bge_rank": 1,
+        "qwen_rank": 3,
+        "gold_block_id": "2312.12675:b57",
+        "gold_paper_ids": [
+          "2312.12675"
+        ],
+        "qwen_promoted_paper_id": "local:6b9ccd0431f6",
+        "qwen_promoted_block_id": "local:6b9ccd0431f6:b49",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "local:6b9ccd0431f6:b49",
+          "paper_id": "local:6b9ccd0431f6",
+          "section_path": "RESULTS",
+          "index": 49,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-036",
+        "bge_rank": 7,
+        "qwen_rank": null,
+        "gold_block_id": "2312.12675:b63",
+        "gold_paper_ids": [
+          "2312.12675"
+        ],
+        "qwen_promoted_paper_id": "local:6b9ccd0431f6",
+        "qwen_promoted_block_id": "local:6b9ccd0431f6:b176",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "local:6b9ccd0431f6:b176",
+          "paper_id": "local:6b9ccd0431f6",
+          "section_path": "Study Conformance to the RAVE Checklist",
+          "index": 176,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-037",
+        "bge_rank": 2,
+        "qwen_rank": null,
+        "gold_block_id": "2312.13228:b177",
+        "gold_paper_ids": [
+          "2312.13228"
+        ],
+        "qwen_promoted_paper_id": "local:6b9ccd0431f6",
+        "qwen_promoted_block_id": "local:6b9ccd0431f6:b162",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "local:6b9ccd0431f6:b162",
+          "paper_id": "local:6b9ccd0431f6",
+          "section_path": "Comparisons to Prior Studies",
+          "index": 162,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-038",
+        "bge_rank": 1,
+        "qwen_rank": null,
+        "gold_block_id": "local:7b943f45c1da:b111",
+        "gold_paper_ids": [
+          "local:7b943f45c1da"
+        ],
+        "qwen_promoted_paper_id": "local:7b943f45c1da",
+        "qwen_promoted_block_id": "local:7b943f45c1da:b114",
+        "promoted_same_paper_as_gold": true,
+        "promoted_block": {
+          "block_id": "local:7b943f45c1da:b114",
+          "paper_id": "local:7b943f45c1da",
+          "section_path": "Limitations",
+          "index": 114,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-039",
+        "bge_rank": 3,
+        "qwen_rank": 7,
+        "gold_block_id": "local:c92c18fe2ac2:b67",
+        "gold_paper_ids": [
+          "local:c92c18fe2ac2"
+        ],
+        "qwen_promoted_paper_id": "local:c92c18fe2ac2",
+        "qwen_promoted_block_id": "local:c92c18fe2ac2:b90",
+        "promoted_same_paper_as_gold": true,
+        "promoted_block": {
+          "block_id": "local:c92c18fe2ac2:b90",
+          "paper_id": "local:c92c18fe2ac2",
+          "section_path": "Table 3.5",
+          "index": 90,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-040",
+        "bge_rank": 1,
+        "qwen_rank": 4,
+        "gold_block_id": "local:aa069e80dac9:b41",
+        "gold_paper_ids": [
+          "local:aa069e80dac9"
+        ],
+        "qwen_promoted_paper_id": "local:d45d629ccad0",
+        "qwen_promoted_block_id": "local:d45d629ccad0:b11",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "local:d45d629ccad0:b11",
+          "paper_id": "local:d45d629ccad0",
+          "section_path": "Data Source",
+          "index": 11,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-041",
+        "bge_rank": 1,
+        "qwen_rank": null,
+        "gold_block_id": "2305.07733:b22",
+        "gold_paper_ids": [
+          "2305.07733"
+        ],
+        "qwen_promoted_paper_id": "2603.21104",
+        "qwen_promoted_block_id": "2603.21104:b106",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "2603.21104:b106",
+          "paper_id": "2603.21104",
+          "section_path": "References",
+          "index": 106,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-042",
+        "bge_rank": 2,
+        "qwen_rank": 3,
+        "gold_block_id": "local:c65f8ae0ee73:b5",
+        "gold_paper_ids": [
+          "local:c65f8ae0ee73"
+        ],
+        "qwen_promoted_paper_id": "local:4c3912bd5507",
+        "qwen_promoted_block_id": "local:4c3912bd5507:b3",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "local:4c3912bd5507:b3",
+          "paper_id": "local:4c3912bd5507",
+          "section_path": "Abstract",
+          "index": 3,
+          "summary_ish": true,
+          "summary_section_match": true,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-043",
+        "bge_rank": 1,
+        "qwen_rank": 5,
+        "gold_block_id": "2303.15201:b133",
+        "gold_paper_ids": [
+          "2303.15201"
+        ],
+        "qwen_promoted_paper_id": "2303.15201",
+        "qwen_promoted_block_id": "2303.15201:b88",
+        "promoted_same_paper_as_gold": true,
+        "promoted_block": {
+          "block_id": "2303.15201:b88",
+          "paper_id": "2303.15201",
+          "section_path": "V. APPLICATION: LEARNING A MODEL OF PERCEPTION AND CONTROL IN CAR FOLLOWING BEHAVIOR",
+          "index": 88,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-044",
+        "bge_rank": 1,
+        "qwen_rank": 5,
+        "gold_block_id": "2306.17682:b39",
+        "gold_paper_ids": [
+          "2306.17682"
+        ],
+        "qwen_promoted_paper_id": "2011.00054",
+        "qwen_promoted_block_id": "2011.00054:b39",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "2011.00054:b39",
+          "paper_id": "2011.00054",
+          "section_path": "Approaches to Assessing Automated Vehicle Safety",
+          "index": 39,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-045",
+        "bge_rank": 2,
+        "qwen_rank": null,
+        "gold_block_id": "local:5b903ab148a7:b63",
+        "gold_paper_ids": [
+          "local:5b903ab148a7"
+        ],
+        "qwen_promoted_paper_id": "2303.15201",
+        "qwen_promoted_block_id": "2303.15201:b88",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "2303.15201:b88",
+          "paper_id": "2303.15201",
+          "section_path": "V. APPLICATION: LEARNING A MODEL OF PERCEPTION AND CONTROL IN CAR FOLLOWING BEHAVIOR",
+          "index": 88,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-046",
+        "bge_rank": 1,
+        "qwen_rank": null,
+        "gold_block_id": "local:2e47fb1e0308:b10",
+        "gold_paper_ids": [
+          "local:2e47fb1e0308"
+        ],
+        "qwen_promoted_paper_id": "local:2e47fb1e0308",
+        "qwen_promoted_block_id": "local:2e47fb1e0308:b5",
+        "promoted_same_paper_as_gold": true,
+        "promoted_block": {
+          "block_id": "local:2e47fb1e0308:b5",
+          "paper_id": "local:2e47fb1e0308",
+          "section_path": "A B S T R A C T",
+          "index": 5,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-047",
+        "bge_rank": 1,
+        "qwen_rank": null,
+        "gold_block_id": "2208.12833:b27",
+        "gold_paper_ids": [
+          "2208.12833"
+        ],
+        "qwen_promoted_paper_id": "2208.12833",
+        "qwen_promoted_block_id": "2208.12833:b29",
+        "promoted_same_paper_as_gold": true,
+        "promoted_block": {
+          "block_id": "2208.12833:b29",
+          "paper_id": "2208.12833",
+          "section_path": "THE NOTION OF FATIGUE",
+          "index": 29,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-048",
+        "bge_rank": 2,
+        "qwen_rank": 4,
+        "gold_block_id": "local:7bf8bf93e22e:b36",
+        "gold_paper_ids": [
+          "local:7bf8bf93e22e"
+        ],
+        "qwen_promoted_paper_id": "local:7b943f45c1da",
+        "qwen_promoted_block_id": "local:7b943f45c1da:b102",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "local:7b943f45c1da:b102",
+          "paper_id": "local:7b943f45c1da",
+          "section_path": "Discussion",
+          "index": 102,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-049",
+        "bge_rank": 1,
+        "qwen_rank": 4,
+        "gold_block_id": "local:071d15c56158:b40",
+        "gold_paper_ids": [
+          "local:071d15c56158"
+        ],
+        "qwen_promoted_paper_id": "local:071d15c56158",
+        "qwen_promoted_block_id": "local:071d15c56158:b21",
+        "promoted_same_paper_as_gold": true,
+        "promoted_block": {
+          "block_id": "local:071d15c56158:b21",
+          "paper_id": "local:071d15c56158",
+          "section_path": "Introduction",
+          "index": 21,
+          "summary_ish": true,
+          "summary_section_match": true,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-050",
+        "bge_rank": 2,
+        "qwen_rank": null,
+        "gold_block_id": "local:1d8d84d78b21:b101",
+        "gold_paper_ids": [
+          "local:1d8d84d78b21"
+        ],
+        "qwen_promoted_paper_id": "local:1d8d84d78b21",
+        "qwen_promoted_block_id": "local:1d8d84d78b21:b58",
+        "promoted_same_paper_as_gold": true,
+        "promoted_block": {
+          "block_id": "local:1d8d84d78b21:b58",
+          "paper_id": "local:1d8d84d78b21",
+          "section_path": "2. Methods > 2.4. Collision reconstruction",
+          "index": 58,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-051",
+        "bge_rank": 1,
+        "qwen_rank": null,
+        "gold_block_id": "local:1d8d84d78b21:b108",
+        "gold_paper_ids": [
+          "local:1d8d84d78b21"
+        ],
+        "qwen_promoted_paper_id": "local:2e47fb1e0308",
+        "qwen_promoted_block_id": "local:2e47fb1e0308:b57",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "local:2e47fb1e0308:b57",
+          "paper_id": "local:2e47fb1e0308",
+          "section_path": "4. Discussion",
+          "index": 57,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-053",
+        "bge_rank": 1,
+        "qwen_rank": 3,
+        "gold_block_id": "2011.00038:b127",
+        "gold_paper_ids": [
+          "2011.00038"
+        ],
+        "qwen_promoted_paper_id": "2212.08148",
+        "qwen_promoted_block_id": "2212.08148:b76",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "2212.08148:b76",
+          "paper_id": "2212.08148",
+          "section_path": "Safety Evaluation",
+          "index": 76,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-054",
+        "bge_rank": 1,
+        "qwen_rank": null,
+        "gold_block_id": "2011.00038:b20",
+        "gold_paper_ids": [
+          "2011.00038"
+        ],
+        "qwen_promoted_paper_id": "2212.08148",
+        "qwen_promoted_block_id": "2212.08148:b65",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "2212.08148:b65",
+          "paper_id": "2212.08148",
+          "section_path": "Overview of Scenario Identification",
+          "index": 65,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-055",
+        "bge_rank": 2,
+        "qwen_rank": null,
+        "gold_block_id": "local:39d37d41dd77:b15",
+        "gold_paper_ids": [
+          "local:39d37d41dd77"
+        ],
+        "qwen_promoted_paper_id": "local:39d37d41dd77",
+        "qwen_promoted_block_id": "local:39d37d41dd77:b47",
+        "promoted_same_paper_as_gold": true,
+        "promoted_block": {
+          "block_id": "local:39d37d41dd77:b47",
+          "paper_id": "local:39d37d41dd77",
+          "section_path": "Discussion",
+          "index": 47,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-056",
+        "bge_rank": 1,
+        "qwen_rank": 6,
+        "gold_block_id": "local:750223d487eb:b115",
+        "gold_paper_ids": [
+          "local:750223d487eb"
+        ],
+        "qwen_promoted_paper_id": "local:750223d487eb",
+        "qwen_promoted_block_id": "local:750223d487eb:b93",
+        "promoted_same_paper_as_gold": true,
+        "promoted_block": {
+          "block_id": "local:750223d487eb:b93",
+          "paper_id": "local:750223d487eb",
+          "section_path": "Recognizing lexical ambiguity",
+          "index": 93,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-057",
+        "bge_rank": 1,
+        "qwen_rank": 3,
+        "gold_block_id": "local:5fa216c3425a:b36",
+        "gold_paper_ids": [
+          "local:5fa216c3425a"
+        ],
+        "qwen_promoted_paper_id": "local:6b9ccd0431f6",
+        "qwen_promoted_block_id": "local:6b9ccd0431f6:b162",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "local:6b9ccd0431f6:b162",
+          "paper_id": "local:6b9ccd0431f6",
+          "section_path": "Comparisons to Prior Studies",
+          "index": 162,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-058",
+        "bge_rank": 1,
+        "qwen_rank": null,
+        "gold_block_id": "2208.08651:b84",
+        "gold_paper_ids": [
+          "2208.08651"
+        ],
+        "qwen_promoted_paper_id": "2305.07733",
+        "qwen_promoted_block_id": "2305.07733:b87",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "2305.07733:b87",
+          "paper_id": "2305.07733",
+          "section_path": "References",
+          "index": 87,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-059",
+        "bge_rank": 1,
+        "qwen_rank": 3,
+        "gold_block_id": "local:4087ccce4c01:b42",
+        "gold_paper_ids": [
+          "local:4087ccce4c01"
+        ],
+        "qwen_promoted_paper_id": "local:4087ccce4c01",
+        "qwen_promoted_block_id": "local:4087ccce4c01:b17",
+        "promoted_same_paper_as_gold": true,
+        "promoted_block": {
+          "block_id": "local:4087ccce4c01:b17",
+          "paper_id": "local:4087ccce4c01",
+          "section_path": "Methods",
+          "index": 17,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-060",
+        "bge_rank": 1,
+        "qwen_rank": null,
+        "gold_block_id": "local:341648b7a22a:b33",
+        "gold_paper_ids": [
+          "local:341648b7a22a"
+        ],
+        "qwen_promoted_paper_id": "local:c65f8ae0ee73",
+        "qwen_promoted_block_id": "local:c65f8ae0ee73:b26",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "local:c65f8ae0ee73:b26",
+          "paper_id": "local:c65f8ae0ee73",
+          "section_path": "Conclusions",
+          "index": 26,
+          "summary_ish": true,
+          "summary_section_match": true,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-061",
+        "bge_rank": 2,
+        "qwen_rank": null,
+        "gold_block_id": "local:4c3912bd5507:b47",
+        "gold_paper_ids": [
+          "local:4c3912bd5507"
+        ],
+        "qwen_promoted_paper_id": "local:a265a79504fe",
+        "qwen_promoted_block_id": "local:a265a79504fe:b75",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "local:a265a79504fe:b75",
+          "paper_id": "local:a265a79504fe",
+          "section_path": "CRediT contribution statement",
+          "index": 75,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-063",
+        "bge_rank": 1,
+        "qwen_rank": 2,
+        "gold_block_id": "local:442bfd3211f4:b22",
+        "gold_paper_ids": [
+          "local:442bfd3211f4"
+        ],
+        "qwen_promoted_paper_id": "local:2b6a7d2ae102",
+        "qwen_promoted_block_id": "local:2b6a7d2ae102:b1131",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "local:2b6a7d2ae102:b1131",
+          "paper_id": "local:2b6a7d2ae102",
+          "section_path": "Assessment of factors leading to near-accidents: an example",
+          "index": 1131,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-077",
+        "bge_rank": 1,
+        "qwen_rank": 5,
+        "gold_block_id": "local:b3dd74970ec8:b10",
+        "gold_paper_ids": [
+          "local:b3dd74970ec8"
+        ],
+        "qwen_promoted_paper_id": "2311.06417",
+        "qwen_promoted_block_id": "2311.06417:b107",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "2311.06417:b107",
+          "paper_id": "2311.06417",
+          "section_path": "Simulations",
+          "index": 107,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WMR-095",
+        "bge_rank": 1,
+        "qwen_rank": null,
+        "gold_block_id": "2011.00054:b27",
+        "gold_paper_ids": [
+          "2011.00054"
+        ],
+        "qwen_promoted_paper_id": "2505.16214",
+        "qwen_promoted_block_id": "2505.16214:b9",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "2505.16214:b9",
+          "paper_id": "2505.16214",
+          "section_path": "Introduction",
+          "index": 9,
+          "summary_ish": true,
+          "summary_section_match": true,
+          "low_index_match": false
+        }
+      }
+    ]
+  },
+  "waymo_gt_verified": {
+    "n_demotions": 44,
+    "n_promoted_same_paper_as_gold": 16,
+    "n_promoted_summary_ish": 6,
+    "n_promoted_same_paper_and_summary_ish": 5,
+    "rate_same_paper": 0.36363636363636365,
+    "rate_summary_ish": 0.13636363636363635,
+    "rate_same_paper_and_summary_ish": 0.11363636363636363,
+    "demotions": [
+      {
+        "question_id": "Q-GTA-001",
+        "bge_rank": 2,
+        "qwen_rank": 5,
+        "gold_block_id": "2312.12675:b9",
+        "gold_paper_ids": [
+          "2312.12675"
+        ],
+        "qwen_promoted_paper_id": "local:f6f1461f2c9a",
+        "qwen_promoted_block_id": "local:f6f1461f2c9a:b93",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "local:f6f1461f2c9a:b93",
+          "paper_id": "local:f6f1461f2c9a",
+          "section_path": "References",
+          "index": 93,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-GTA-002",
+        "bge_rank": 2,
+        "qwen_rank": null,
+        "gold_block_id": "2312.12675:b115",
+        "gold_paper_ids": [
+          "2312.12675"
+        ],
+        "qwen_promoted_paper_id": "local:4c3912bd5507",
+        "qwen_promoted_block_id": "local:4c3912bd5507:b77",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "local:4c3912bd5507:b77",
+          "paper_id": "local:4c3912bd5507",
+          "section_path": "Comparison with CISS \u201cride hailing environment\u201d collisions",
+          "index": 77,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-GTA-003",
+        "bge_rank": 1,
+        "qwen_rank": null,
+        "gold_block_id": "2312.12675:b31",
+        "gold_paper_ids": [
+          "2312.12675"
+        ],
+        "qwen_promoted_paper_id": "local:6b9ccd0431f6",
+        "qwen_promoted_block_id": "local:6b9ccd0431f6:b53",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "local:6b9ccd0431f6:b53",
+          "paper_id": "local:6b9ccd0431f6",
+          "section_path": "Aggregate Crash Rate Comparison",
+          "index": 53,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-GTA-004",
+        "bge_rank": 3,
+        "qwen_rank": null,
+        "gold_block_id": "2312.12675:b45",
+        "gold_paper_ids": [
+          "2312.12675"
+        ],
+        "qwen_promoted_paper_id": "local:4087ccce4c01",
+        "qwen_promoted_block_id": "local:4087ccce4c01:b107",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "local:4087ccce4c01:b107",
+          "paper_id": "local:4087ccce4c01",
+          "section_path": "Present rates in incidents per exposure units",
+          "index": 107,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-GTA-005",
+        "bge_rank": 2,
+        "qwen_rank": null,
+        "gold_block_id": "local:6b9ccd0431f6:b162",
+        "gold_paper_ids": [
+          "2312.12675",
+          "local:6b9ccd0431f6"
+        ],
+        "qwen_promoted_paper_id": "local:f6f1461f2c9a",
+        "qwen_promoted_block_id": "local:f6f1461f2c9a:b93",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "local:f6f1461f2c9a:b93",
+          "paper_id": "local:f6f1461f2c9a",
+          "section_path": "References",
+          "index": 93,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-GTA-008",
+        "bge_rank": 1,
+        "qwen_rank": null,
+        "gold_block_id": "local:6b9ccd0431f6:b162",
+        "gold_paper_ids": [
+          "local:6b9ccd0431f6",
+          "local:f6f1461f2c9a"
+        ],
+        "qwen_promoted_paper_id": "local:f6f1461f2c9a",
+        "qwen_promoted_block_id": "local:f6f1461f2c9a:b0",
+        "promoted_same_paper_as_gold": true,
+        "promoted_block": {
+          "block_id": "local:f6f1461f2c9a:b0",
+          "paper_id": "local:f6f1461f2c9a",
+          "section_path": "",
+          "index": 0,
+          "summary_ish": true,
+          "summary_section_match": false,
+          "low_index_match": true
+        }
+      },
+      {
+        "question_id": "Q-GTA-009",
+        "bge_rank": 3,
+        "qwen_rank": null,
+        "gold_block_id": "local:6b9ccd0431f6:b135",
+        "gold_paper_ids": [
+          "local:6b9ccd0431f6"
+        ],
+        "qwen_promoted_paper_id": "local:f6f1461f2c9a",
+        "qwen_promoted_block_id": "local:f6f1461f2c9a:b93",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "local:f6f1461f2c9a:b93",
+          "paper_id": "local:f6f1461f2c9a",
+          "section_path": "References",
+          "index": 93,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-GTA-010",
+        "bge_rank": 7,
+        "qwen_rank": 9,
+        "gold_block_id": "2508.19425:b4",
+        "gold_paper_ids": [
+          "2508.19425"
+        ],
+        "qwen_promoted_paper_id": "local:aa069e80dac9",
+        "qwen_promoted_block_id": "local:aa069e80dac9:b14",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "local:aa069e80dac9:b14",
+          "paper_id": "local:aa069e80dac9",
+          "section_path": "METHODOLOGY",
+          "index": 14,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-GTA-012",
+        "bge_rank": 2,
+        "qwen_rank": null,
+        "gold_block_id": "2011.00038:b2",
+        "gold_paper_ids": [
+          "2011.00038"
+        ],
+        "qwen_promoted_paper_id": "local:1d8d84d78b21",
+        "qwen_promoted_block_id": "local:1d8d84d78b21:b184",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "local:1d8d84d78b21:b184",
+          "paper_id": "local:1d8d84d78b21",
+          "section_path": "References",
+          "index": 184,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-GTA-013",
+        "bge_rank": 7,
+        "qwen_rank": null,
+        "gold_block_id": "2011.00038:b48",
+        "gold_paper_ids": [
+          "2011.00038"
+        ],
+        "qwen_promoted_paper_id": "2212.08148",
+        "qwen_promoted_block_id": "2212.08148:b11",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "2212.08148:b11",
+          "paper_id": "2212.08148",
+          "section_path": "Methodology",
+          "index": 11,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-GTA-014",
+        "bge_rank": 1,
+        "qwen_rank": null,
+        "gold_block_id": "2011.00038:b42",
+        "gold_paper_ids": [
+          "2011.00038"
+        ],
+        "qwen_promoted_paper_id": "2011.00054",
+        "qwen_promoted_block_id": "2011.00054:b95",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "2011.00054:b95",
+          "paper_id": "2011.00054",
+          "section_path": "Simulated Deployments",
+          "index": 95,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-GTA-016",
+        "bge_rank": 2,
+        "qwen_rank": 4,
+        "gold_block_id": "2104.10133:b2",
+        "gold_paper_ids": [
+          "2104.10133"
+        ],
+        "qwen_promoted_paper_id": "2407.02797",
+        "qwen_promoted_block_id": "2407.02797:b94",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "2407.02797:b94",
+          "paper_id": "2407.02797",
+          "section_path": "B.1 Dataset",
+          "index": 94,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-GTA-017",
+        "bge_rank": 1,
+        "qwen_rank": 10,
+        "gold_block_id": "2104.10133:b21",
+        "gold_paper_ids": [
+          "2104.10133"
+        ],
+        "qwen_promoted_paper_id": "2104.10133",
+        "qwen_promoted_block_id": "2104.10133:b61",
+        "promoted_same_paper_as_gold": true,
+        "promoted_block": {
+          "block_id": "2104.10133:b61",
+          "paper_id": "2104.10133",
+          "section_path": "5. Experiments > 5.2. Quantifying interactivity",
+          "index": 61,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-GTA-018",
+        "bge_rank": 1,
+        "qwen_rank": 8,
+        "gold_block_id": "2104.10133:b27",
+        "gold_paper_ids": [
+          "2104.10133"
+        ],
+        "qwen_promoted_paper_id": "2206.13387",
+        "qwen_promoted_block_id": "2206.13387:b69",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "2206.13387:b69",
+          "paper_id": "2206.13387",
+          "section_path": "4. Experiments > 4.1. Pedestrian Motion Prediction",
+          "index": 69,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-GTA-019",
+        "bge_rank": 2,
+        "qwen_rank": null,
+        "gold_block_id": "2304.03834:b4",
+        "gold_paper_ids": [
+          "2304.03834"
+        ],
+        "qwen_promoted_paper_id": "2303.12535",
+        "qwen_promoted_block_id": "2303.12535:b58",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "2303.12535:b58",
+          "paper_id": "2303.12535",
+          "section_path": "4 SEMI-SUPERVISED LIDAR SOT",
+          "index": 58,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-GTA-022",
+        "bge_rank": 8,
+        "qwen_rank": 9,
+        "gold_block_id": "1912.04838:b45",
+        "gold_paper_ids": [
+          "1912.04838"
+        ],
+        "qwen_promoted_paper_id": "2312.12772",
+        "qwen_promoted_block_id": "2312.12772:b53",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "2312.12772:b53",
+          "paper_id": "2312.12772",
+          "section_path": "V. EXPERIMENTS",
+          "index": 53,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-GTA-024",
+        "bge_rank": 2,
+        "qwen_rank": null,
+        "gold_block_id": "2510.26125:b3",
+        "gold_paper_ids": [
+          "2510.26125"
+        ],
+        "qwen_promoted_paper_id": "2510.26125",
+        "qwen_promoted_block_id": "2510.26125:b6",
+        "promoted_same_paper_as_gold": true,
+        "promoted_block": {
+          "block_id": "2510.26125:b6",
+          "paper_id": "2510.26125",
+          "section_path": "1. Introduction",
+          "index": 6,
+          "summary_ish": true,
+          "summary_section_match": true,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-GTA-025",
+        "bge_rank": 1,
+        "qwen_rank": null,
+        "gold_block_id": "2510.26125:b6",
+        "gold_paper_ids": [
+          "2510.26125"
+        ],
+        "qwen_promoted_paper_id": "2504.11521",
+        "qwen_promoted_block_id": "2504.11521:b138",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "2504.11521:b138",
+          "paper_id": "2504.11521",
+          "section_path": "Map Metric:",
+          "index": 138,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-GTA-026",
+        "bge_rank": 3,
+        "qwen_rank": null,
+        "gold_block_id": "2410.08903:b4",
+        "gold_paper_ids": [
+          "2410.08903"
+        ],
+        "qwen_promoted_paper_id": "2312.12675",
+        "qwen_promoted_block_id": "2312.12675:b31",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "2312.12675:b31",
+          "paper_id": "2312.12675",
+          "section_path": "Matching ofBenchmark and ADS Data",
+          "index": 31,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-GTA-027",
+        "bge_rank": 2,
+        "qwen_rank": null,
+        "gold_block_id": "2210.09267:b0",
+        "gold_paper_ids": [
+          "2210.09267"
+        ],
+        "qwen_promoted_paper_id": "2203.08195",
+        "qwen_promoted_block_id": "2203.08195:b74",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "2203.08195:b74",
+          "paper_id": "2203.08195",
+          "section_path": "A. Appendix",
+          "index": 74,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-GTA-028",
+        "bge_rank": 4,
+        "qwen_rank": 10,
+        "gold_block_id": "2206.07705:b0",
+        "gold_paper_ids": [
+          "2206.07705"
+        ],
+        "qwen_promoted_paper_id": "2206.07705",
+        "qwen_promoted_block_id": "2206.07705:b99",
+        "promoted_same_paper_as_gold": true,
+        "promoted_block": {
+          "block_id": "2206.07705:b99",
+          "paper_id": "2206.07705",
+          "section_path": "REFERENCES",
+          "index": 99,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-GTA-030",
+        "bge_rank": 3,
+        "qwen_rank": null,
+        "gold_block_id": "2207.05844:b0",
+        "gold_paper_ids": [
+          "2207.05844"
+        ],
+        "qwen_promoted_paper_id": "2207.05844",
+        "qwen_promoted_block_id": "2207.05844:b74",
+        "promoted_same_paper_as_gold": true,
+        "promoted_block": {
+          "block_id": "2207.05844:b74",
+          "paper_id": "2207.05844",
+          "section_path": "5 Results > 5.4 Benchmark Results",
+          "index": 74,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-GTA-031",
+        "bge_rank": 3,
+        "qwen_rank": null,
+        "gold_block_id": "2506.08228:b3",
+        "gold_paper_ids": [
+          "2506.08228"
+        ],
+        "qwen_promoted_paper_id": "2207.03586",
+        "qwen_promoted_block_id": "2207.03586:b111",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "2207.03586:b111",
+          "paper_id": "2207.03586",
+          "section_path": "I Comparison across models",
+          "index": 111,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WAYB-001",
+        "bge_rank": 1,
+        "qwen_rank": null,
+        "gold_block_id": "2011.00038:b2",
+        "gold_paper_ids": [
+          "2011.00038"
+        ],
+        "qwen_promoted_paper_id": "local:4c3912bd5507",
+        "qwen_promoted_block_id": "local:4c3912bd5507:b77",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "local:4c3912bd5507:b77",
+          "paper_id": "local:4c3912bd5507",
+          "section_path": "Comparison with CISS \u201cride hailing environment\u201d collisions",
+          "index": 77,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WAYB-002",
+        "bge_rank": 8,
+        "qwen_rank": null,
+        "gold_block_id": "2104.10133:b2",
+        "gold_paper_ids": [
+          "2104.10133"
+        ],
+        "qwen_promoted_paper_id": "2407.02797",
+        "qwen_promoted_block_id": "2407.02797:b94",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "2407.02797:b94",
+          "paper_id": "2407.02797",
+          "section_path": "B.1 Dataset",
+          "index": 94,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WAYB-007",
+        "bge_rank": 1,
+        "qwen_rank": null,
+        "gold_block_id": "local:4087ccce4c01:b73",
+        "gold_paper_ids": [
+          "local:4087ccce4c01"
+        ],
+        "qwen_promoted_paper_id": "2306.17682",
+        "qwen_promoted_block_id": "2306.17682:b0",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "2306.17682:b0",
+          "paper_id": "2306.17682",
+          "section_path": "",
+          "index": 0,
+          "summary_ish": true,
+          "summary_section_match": false,
+          "low_index_match": true
+        }
+      },
+      {
+        "question_id": "Q-WAYB-008",
+        "bge_rank": 1,
+        "qwen_rank": 7,
+        "gold_block_id": "2305.12032:b9",
+        "gold_paper_ids": [
+          "2305.12032"
+        ],
+        "qwen_promoted_paper_id": "2607.13028",
+        "qwen_promoted_block_id": "2607.13028:b94",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "2607.13028:b94",
+          "paper_id": "2607.13028",
+          "section_path": "6 Experiments & Results > 6.4 Sim Agent Benchmark",
+          "index": 94,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WAYB-014",
+        "bge_rank": 1,
+        "qwen_rank": 6,
+        "gold_block_id": "2312.12675:b9",
+        "gold_paper_ids": [
+          "2312.12675"
+        ],
+        "qwen_promoted_paper_id": "2312.12675",
+        "qwen_promoted_block_id": "2312.12675:b63",
+        "promoted_same_paper_as_gold": true,
+        "promoted_block": {
+          "block_id": "2312.12675:b63",
+          "paper_id": "2312.12675",
+          "section_path": "Table 6",
+          "index": 63,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WAYB-015",
+        "bge_rank": 1,
+        "qwen_rank": 9,
+        "gold_block_id": "local:f6f1461f2c9a:b83",
+        "gold_paper_ids": [
+          "local:f6f1461f2c9a"
+        ],
+        "qwen_promoted_paper_id": "local:5fa216c3425a",
+        "qwen_promoted_block_id": "local:5fa216c3425a:b22",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "local:5fa216c3425a:b22",
+          "paper_id": "local:5fa216c3425a",
+          "section_path": "2. Framework",
+          "index": 22,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WAYB-016",
+        "bge_rank": 1,
+        "qwen_rank": null,
+        "gold_block_id": "2508.19425:b85",
+        "gold_paper_ids": [
+          "2508.19425"
+        ],
+        "qwen_promoted_paper_id": "2508.19425",
+        "qwen_promoted_block_id": "2508.19425:b4",
+        "promoted_same_paper_as_gold": true,
+        "promoted_block": {
+          "block_id": "2508.19425:b4",
+          "paper_id": "2508.19425",
+          "section_path": "Abstract",
+          "index": 4,
+          "summary_ish": true,
+          "summary_section_match": true,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WAYB-017",
+        "bge_rank": 1,
+        "qwen_rank": 2,
+        "gold_block_id": "2508.19425:b89",
+        "gold_paper_ids": [
+          "2508.19425"
+        ],
+        "qwen_promoted_paper_id": "local:79c782071ad2",
+        "qwen_promoted_block_id": "local:79c782071ad2:b78",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "local:79c782071ad2:b78",
+          "paper_id": "local:79c782071ad2",
+          "section_path": "Road type efects",
+          "index": 78,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WAYB-018",
+        "bge_rank": 2,
+        "qwen_rank": 6,
+        "gold_block_id": "2403.14648:b88",
+        "gold_paper_ids": [
+          "2403.14648"
+        ],
+        "qwen_promoted_paper_id": "local:6b9ccd0431f6",
+        "qwen_promoted_block_id": "local:6b9ccd0431f6:b49",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "local:6b9ccd0431f6:b49",
+          "paper_id": "local:6b9ccd0431f6",
+          "section_path": "RESULTS",
+          "index": 49,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WAYB-019",
+        "bge_rank": 1,
+        "qwen_rank": 8,
+        "gold_block_id": "local:6b9ccd0431f6:b53",
+        "gold_paper_ids": [
+          "local:6b9ccd0431f6"
+        ],
+        "qwen_promoted_paper_id": "local:6b9ccd0431f6",
+        "qwen_promoted_block_id": "local:6b9ccd0431f6:b57",
+        "promoted_same_paper_as_gold": true,
+        "promoted_block": {
+          "block_id": "local:6b9ccd0431f6:b57",
+          "paper_id": "local:6b9ccd0431f6",
+          "section_path": "Crash Rate Comparison by Crash Type",
+          "index": 57,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WAYB-020",
+        "bge_rank": 1,
+        "qwen_rank": 2,
+        "gold_block_id": "2206.07704:b3",
+        "gold_paper_ids": [
+          "2206.07704"
+        ],
+        "qwen_promoted_paper_id": "1912.04838",
+        "qwen_promoted_block_id": "1912.04838:b21",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "1912.04838:b21",
+          "paper_id": "1912.04838",
+          "section_path": "3. Waymo Open Dataset",
+          "index": 21,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WAYB-023",
+        "bge_rank": 1,
+        "qwen_rank": 5,
+        "gold_block_id": "2308.02273:b32",
+        "gold_paper_ids": [
+          "2308.02273"
+        ],
+        "qwen_promoted_paper_id": "2503.02498",
+        "qwen_promoted_block_id": "2503.02498:b62",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "2503.02498:b62",
+          "paper_id": "2503.02498",
+          "section_path": "2.\u2002 Review Methodology > 2.3. Selection Process",
+          "index": 62,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WAYB-024",
+        "bge_rank": 1,
+        "qwen_rank": null,
+        "gold_block_id": "2503.02498:b59",
+        "gold_paper_ids": [
+          "2503.02498"
+        ],
+        "qwen_promoted_paper_id": "2503.02498",
+        "qwen_promoted_block_id": "2503.02498:b220",
+        "promoted_same_paper_as_gold": true,
+        "promoted_block": {
+          "block_id": "2503.02498:b220",
+          "paper_id": "2503.02498",
+          "section_path": "Contact Information",
+          "index": 220,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WAYB-026",
+        "bge_rank": 7,
+        "qwen_rank": null,
+        "gold_block_id": "2208.12833:b186",
+        "gold_paper_ids": [
+          "2208.12833"
+        ],
+        "qwen_promoted_paper_id": "2208.12833",
+        "qwen_promoted_block_id": "2208.12833:b29",
+        "promoted_same_paper_as_gold": true,
+        "promoted_block": {
+          "block_id": "2208.12833:b29",
+          "paper_id": "2208.12833",
+          "section_path": "THE NOTION OF FATIGUE",
+          "index": 29,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WAYB-030",
+        "bge_rank": 2,
+        "qwen_rank": null,
+        "gold_block_id": "2605.29818:b146",
+        "gold_paper_ids": [
+          "2605.29818"
+        ],
+        "qwen_promoted_paper_id": "2605.29818",
+        "qwen_promoted_block_id": "2605.29818:b234",
+        "promoted_same_paper_as_gold": true,
+        "promoted_block": {
+          "block_id": "2605.29818:b234",
+          "paper_id": "2605.29818",
+          "section_path": "4) Resulting consideration",
+          "index": 234,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WAYB-032",
+        "bge_rank": 1,
+        "qwen_rank": null,
+        "gold_block_id": "local:6b9ccd0431f6:b162",
+        "gold_paper_ids": [
+          "local:6b9ccd0431f6"
+        ],
+        "qwen_promoted_paper_id": "local:6b9ccd0431f6",
+        "qwen_promoted_block_id": "local:6b9ccd0431f6:b156",
+        "promoted_same_paper_as_gold": true,
+        "promoted_block": {
+          "block_id": "local:6b9ccd0431f6:b156",
+          "paper_id": "local:6b9ccd0431f6",
+          "section_path": "Trends in Crash Types",
+          "index": 156,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WAYB-033",
+        "bge_rank": 8,
+        "qwen_rank": null,
+        "gold_block_id": "local:6b9ccd0431f6:b9",
+        "gold_paper_ids": [
+          "local:6b9ccd0431f6"
+        ],
+        "qwen_promoted_paper_id": "local:6b9ccd0431f6",
+        "qwen_promoted_block_id": "local:6b9ccd0431f6:b4",
+        "promoted_same_paper_as_gold": true,
+        "promoted_block": {
+          "block_id": "local:6b9ccd0431f6:b4",
+          "paper_id": "local:6b9ccd0431f6",
+          "section_path": "ABSTRACT",
+          "index": 4,
+          "summary_ish": true,
+          "summary_section_match": true,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WAYB-036",
+        "bge_rank": 1,
+        "qwen_rank": 2,
+        "gold_block_id": "local:6b9ccd0431f6:b162",
+        "gold_paper_ids": [
+          "local:6b9ccd0431f6"
+        ],
+        "qwen_promoted_paper_id": "2312.12675",
+        "qwen_promoted_block_id": "2312.12675:b63",
+        "promoted_same_paper_as_gold": false,
+        "promoted_block": {
+          "block_id": "2312.12675:b63",
+          "paper_id": "2312.12675",
+          "section_path": "Table 6",
+          "index": 63,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WAYB-037",
+        "bge_rank": 3,
+        "qwen_rank": null,
+        "gold_block_id": "local:f6f1461f2c9a:b7",
+        "gold_paper_ids": [
+          "local:f6f1461f2c9a"
+        ],
+        "qwen_promoted_paper_id": "local:f6f1461f2c9a",
+        "qwen_promoted_block_id": "local:f6f1461f2c9a:b38",
+        "promoted_same_paper_as_gold": true,
+        "promoted_block": {
+          "block_id": "local:f6f1461f2c9a:b38",
+          "paper_id": "local:f6f1461f2c9a",
+          "section_path": "Study Objectives and Research Questions",
+          "index": 38,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WAYB-038",
+        "bge_rank": 1,
+        "qwen_rank": 5,
+        "gold_block_id": "2508.19425:b4",
+        "gold_paper_ids": [
+          "2508.19425"
+        ],
+        "qwen_promoted_paper_id": "2508.19425",
+        "qwen_promoted_block_id": "2508.19425:b105",
+        "promoted_same_paper_as_gold": true,
+        "promoted_block": {
+          "block_id": "2508.19425:b105",
+          "paper_id": "2508.19425",
+          "section_path": "Comparison to Surface Streets",
+          "index": 105,
+          "summary_ish": false,
+          "summary_section_match": false,
+          "low_index_match": false
+        }
+      },
+      {
+        "question_id": "Q-WAYB-040",
+        "bge_rank": 1,
+        "qwen_rank": 8,
+        "gold_block_id": "2106.13365:b65",
+        "gold_paper_ids": [
+          "2106.13365"
+        ],
+        "qwen_promoted_paper_id": "2106.13365",
+        "qwen_promoted_block_id": "2106.13365:b0",
+        "promoted_same_paper_as_gold": true,
+        "promoted_block": {
+          "block_id": "2106.13365:b0",
+          "paper_id": "2106.13365",
+          "section_path": "",
+          "index": 0,
+          "summary_ish": true,
+          "summary_section_match": false,
+          "low_index_match": true
+        }
+      }
+    ]
+  }
+}

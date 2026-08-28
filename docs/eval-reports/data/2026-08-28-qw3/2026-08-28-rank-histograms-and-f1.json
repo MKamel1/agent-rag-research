@@ -1,0 +1,189 @@
+{
+  "gt_wmr": {
+    "n_scored_text_answerable": 65,
+    "bge_rank_histogram": {
+      "1": 48,
+      "2": 11,
+      "3": 2,
+      "7": 1,
+      "miss": 3
+    },
+    "qwen_rank_histogram": {
+      "1": 2,
+      "2": 6,
+      "3": 9,
+      "4": 5,
+      "5": 3,
+      "6": 1,
+      "7": 2,
+      "9": 2,
+      "miss": 35
+    },
+    "f1_rank2_population_n": 11,
+    "f1_conversions_to_rank1": 0,
+    "f1_detail": [
+      {
+        "question_id": "Q-WMR-009",
+        "bge_rank": 2,
+        "qwen_rank": 3,
+        "converted_to_rank1": false
+      },
+      {
+        "question_id": "Q-WMR-015",
+        "bge_rank": 2,
+        "qwen_rank": 2,
+        "converted_to_rank1": false
+      },
+      {
+        "question_id": "Q-WMR-020",
+        "bge_rank": 2,
+        "qwen_rank": null,
+        "converted_to_rank1": false
+      },
+      {
+        "question_id": "Q-WMR-022",
+        "bge_rank": 2,
+        "qwen_rank": 9,
+        "converted_to_rank1": false
+      },
+      {
+        "question_id": "Q-WMR-037",
+        "bge_rank": 2,
+        "qwen_rank": null,
+        "converted_to_rank1": false
+      },
+      {
+        "question_id": "Q-WMR-042",
+        "bge_rank": 2,
+        "qwen_rank": 3,
+        "converted_to_rank1": false
+      },
+      {
+        "question_id": "Q-WMR-045",
+        "bge_rank": 2,
+        "qwen_rank": null,
+        "converted_to_rank1": false
+      },
+      {
+        "question_id": "Q-WMR-048",
+        "bge_rank": 2,
+        "qwen_rank": 4,
+        "converted_to_rank1": false
+      },
+      {
+        "question_id": "Q-WMR-050",
+        "bge_rank": 2,
+        "qwen_rank": null,
+        "converted_to_rank1": false
+      },
+      {
+        "question_id": "Q-WMR-055",
+        "bge_rank": 2,
+        "qwen_rank": null,
+        "converted_to_rank1": false
+      },
+      {
+        "question_id": "Q-WMR-061",
+        "bge_rank": 2,
+        "qwen_rank": null,
+        "converted_to_rank1": false
+      }
+    ]
+  },
+  "waymo_gt_verified": {
+    "n_scored_text_answerable": 60,
+    "bge_rank_histogram": {
+      "1": 22,
+      "2": 11,
+      "3": 7,
+      "4": 2,
+      "5": 1,
+      "7": 3,
+      "8": 3,
+      "miss": 11
+    },
+    "qwen_rank_histogram": {
+      "1": 2,
+      "2": 5,
+      "3": 2,
+      "4": 1,
+      "5": 3,
+      "6": 2,
+      "7": 2,
+      "8": 3,
+      "9": 3,
+      "10": 2,
+      "miss": 35
+    },
+    "f1_rank2_population_n": 11,
+    "f1_conversions_to_rank1": 1,
+    "f1_detail": [
+      {
+        "question_id": "Q-GTA-001",
+        "bge_rank": 2,
+        "qwen_rank": 5,
+        "converted_to_rank1": false
+      },
+      {
+        "question_id": "Q-GTA-002",
+        "bge_rank": 2,
+        "qwen_rank": null,
+        "converted_to_rank1": false
+      },
+      {
+        "question_id": "Q-GTA-005",
+        "bge_rank": 2,
+        "qwen_rank": null,
+        "converted_to_rank1": false
+      },
+      {
+        "question_id": "Q-GTA-012",
+        "bge_rank": 2,
+        "qwen_rank": null,
+        "converted_to_rank1": false
+      },
+      {
+        "question_id": "Q-GTA-016",
+        "bge_rank": 2,
+        "qwen_rank": 4,
+        "converted_to_rank1": false
+      },
+      {
+        "question_id": "Q-GTA-019",
+        "bge_rank": 2,
+        "qwen_rank": null,
+        "converted_to_rank1": false
+      },
+      {
+        "question_id": "Q-GTA-024",
+        "bge_rank": 2,
+        "qwen_rank": null,
+        "converted_to_rank1": false
+      },
+      {
+        "question_id": "Q-GTA-027",
+        "bge_rank": 2,
+        "qwen_rank": null,
+        "converted_to_rank1": false
+      },
+      {
+        "question_id": "Q-WAYB-004",
+        "bge_rank": 2,
+        "qwen_rank": 1,
+        "converted_to_rank1": true
+      },
+      {
+        "question_id": "Q-WAYB-018",
+        "bge_rank": 2,
+        "qwen_rank": 6,
+        "converted_to_rank1": false
+      },
+      {
+        "question_id": "Q-WAYB-030",
+        "bge_rank": 2,
+        "qwen_rank": null,
+        "converted_to_rank1": false
+      }
+    ]
+  }
+}

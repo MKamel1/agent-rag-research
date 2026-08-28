@@ -1,0 +1,37 @@
+{
+  "purpose": "Orchestrator-requested sanity check before trusting the full-run verdict: does the Qwen3Reranker adapter, on this exact code path (Qwen3Reranker._compute_scores, bfloat16, real corpus text via DocumentStore), rank a verbatim gold passage above obviously-unrelated passages from other papers?",
+  "method": "For each trial: score the gold block (verbatim text) plus 3 blocks drawn from other, topically distinct papers against the fixture's own question text, using the same _compute_scores() method the real eval harness calls. Pass criterion (orchestrator's): gold ranks above all 3 unrelated candidates.",
+  "trials": [
+    {
+      "fixture": "gt_wmr",
+      "question_id": "Q-WMR-001",
+      "gold_block_id": "local:79c782071ad2:b80",
+      "unrelated_block_ids": ["2508.19425:b10", "2606.00261:b10", "local:2b6a7d2ae102:b51"],
+      "scores": {
+        "GOLD": 0.636719,
+        "unrelated_1 (2606.00261:b10)": 0.585938,
+        "unrelated_0 (2508.19425:b10)": 0.566406,
+        "unrelated_2 (local:2b6a7d2ae102:b51)": 0.217773
+      },
+      "gold_rank": 1,
+      "margin_over_closest_unrelated": 0.050781,
+      "pass": true
+    },
+    {
+      "fixture": "gt_wmr",
+      "question_id": "Q-WMR-003",
+      "gold_block_id": "local:b12ef27e3cd6:b40",
+      "unrelated_block_ids": ["2508.19425:b40", "2606.00261:b10", "local:2b6a7d2ae102:b300"],
+      "scores": {
+        "GOLD": 0.867188,
+        "unrelated_2 (local:2b6a7d2ae102:b300)": 0.789062,
+        "unrelated_1 (2606.00261:b10)": 0.250000,
+        "unrelated_0 (2508.19425:b40)": 0.239258
+      },
+      "gold_rank": 1,
+      "margin_over_closest_unrelated": 0.078126,
+      "pass": true
+    }
+  ],
+  "conclusion": "2/2 trials pass: gold ranks first both times. But margins over the closest unrelated candidate (0.051, 0.078 on the model's own [0,1] yes-probability scale) are narrow compared to the wide margins on an out-of-domain toy pair tested earlier (Paris/France vs bananas: 0.996 vs 0.0000275, bfloat16) -- the adapter is not broken (correct top-1 twice, real separation from the two weakest negatives), but its resolving power within this specialized safety-research corpus is much smaller than its resolving power on an easy, generic pair. This is consistent with, and does not contradict, the aggregate finding: real but much weaker signal than the shipped BGE cross-encoder."
+}
