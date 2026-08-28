@@ -1,0 +1,479 @@
+{
+  "metadata": {
+    "author_id": "GT-B",
+    "set_name": "W-A4",
+    "version": "v3",
+    "defects_fixed": [
+      "Excerpt verification: 6/12 failed in v2; v3 repairs 5 with exact DB spans, kills 1 (unfixable table row)",
+      "Lexical probes: all 36 now include actual denominator_scope value (paper chunk count)",
+      "Probe vocabulary: broadened from single-phrasing to concept-vocabulary (e.g., time-of-day, daytime, night, hour)",
+      "Multi-paper spread: IN PROGRESS — v3 currently 10/12 from 2312.12675; 2 new items from other papers to reach 5-paper requirement"
+    ],
+    "description": "Partial-absent ground truth v3: defects from v2 fixed. Excerpts verified and repaired. Probes include denominators. V2-005 killed (table row unfixable). Vocabulary broadened. Multi-paper span TBD in follow-up."
+  },
+  "items": [
+    {
+      "id": "Q-WA4-B-V3-001",
+      "question": "What is the reported any-injury crash rate for the Waymo rider-only service across all locations, and what was the statistical significance of this reduction in Los Angeles specifically?",
+      "sub_parts": [
+        {
+          "text": "The reported any-injury crash rate for Waymo rider-only service (0.6 IPMM vs 2.80 human benchmark, 80% reduction)",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2312.12675",
+            "block_id": "2312.12675:c1",
+            "excerpt": "When considering all locations together, the any-injury-reported crashed vehicle rate was 0.6 incidents per million miles (IPMM) for the ADS vs 2.80 IPMM for the human benchmark, an 80% reduction"
+          }
+        },
+        {
+          "text": "Statistical significance of the injury rate reduction specifically in Los Angeles",
+          "status": "absent",
+          "absence_probe_log": {
+            "lexical_probes": [
+              {"query": "Los Angeles", "hits": 1, "paper_chunk_count": 26, "scope": "paper"},
+              {"query": "significance", "hits": 12, "paper_chunk_count": 26, "scope": "paper"},
+              {"query": "significant", "hits": 8, "paper_chunk_count": 26, "scope": "paper"},
+              {"query": "LA significant", "hits": 0, "paper_chunk_count": 26, "scope": "paper"}
+            ],
+            "semantic_probe": {
+              "query": "Was the injury rate reduction statistically significant in Los Angeles?",
+              "top_hits": ["2312.12675:c23 - LA results appendix"],
+              "contains_answer": false
+            },
+            "denominator_scope": "paper",
+            "denominator": 26,
+            "verdict": "Genuinely absent from main results"
+          }
+        }
+      ],
+      "gold_paper_ids": ["2312.12675"],
+      "gold_block_ids": ["2312.12675:c1"],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {"corrections": []}
+    },
+    {
+      "id": "Q-WA4-B-V3-002",
+      "question": "How many miles did Waymo's rider-only service travel in San Francisco, and what was the breakdown of injury-reported crashes by time of day for San Francisco operations?",
+      "sub_parts": [
+        {
+          "text": "Miles driven in San Francisco (1.76 million miles)",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2312.12675",
+            "block_id": "2312.12675:c8",
+            "excerpt": "1.76 million miles in San Francisco"
+          }
+        },
+        {
+          "text": "Breakdown of injury-reported crashes by time of day in San Francisco",
+          "status": "absent",
+          "absence_probe_log": {
+            "lexical_probes": [
+              {"query": "time of day", "hits": 1, "paper_chunk_count": 26, "scope": "paper"},
+              {"query": "daytime", "hits": 0, "paper_chunk_count": 26, "scope": "paper"},
+              {"query": "night", "hits": 0, "paper_chunk_count": 26, "scope": "paper"},
+              {"query": "hour", "hits": 0, "paper_chunk_count": 26, "scope": "paper"}
+            ],
+            "semantic_probe": {
+              "query": "What were injury-reported crash rates in San Francisco by time of day?",
+              "top_hits": ["2312.12675:c9 - SF total crashes, no temporal breakdown"],
+              "contains_answer": false
+            },
+            "denominator_scope": "paper",
+            "denominator": 26,
+            "verdict": "Genuinely absent: paper pools crashes, no temporal stratification"
+          }
+        }
+      ],
+      "gold_paper_ids": ["2312.12675"],
+      "gold_block_ids": ["2312.12675:c8"],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {"corrections": []}
+    },
+    {
+      "id": "Q-WA4-B-V3-003",
+      "question": "How many miles did Waymo operate in Los Angeles during the study period, and what was the p-value or significance test statistic for the Los Angeles injury rate comparison?",
+      "sub_parts": [
+        {
+          "text": "Mileage in Los Angeles (0.0467 million / 46,700 miles)",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2312.12675",
+            "block_id": "2312.12675:c8",
+            "excerpt": "0.0467 million (i.e., 46.7 thousand) miles in Los Angeles"
+          }
+        },
+        {
+          "text": "P-value or test statistic for LA injury rate significance",
+          "status": "absent",
+          "absence_probe_log": {
+            "lexical_probes": [
+              {"query": "p-value", "hits": 0, "paper_chunk_count": 26, "scope": "paper"},
+              {"query": "test statistic", "hits": 0, "paper_chunk_count": 26, "scope": "paper"},
+              {"query": "p value", "hits": 0, "paper_chunk_count": 26, "scope": "paper"},
+              {"query": "statistical test", "hits": 0, "paper_chunk_count": 26, "scope": "paper"}
+            ],
+            "semantic_probe": {
+              "query": "What is the p-value or test statistic for Los Angeles safety comparison?",
+              "top_hits": ["2312.12675:c23 - reports CI but no p-values"],
+              "contains_answer": false
+            },
+            "denominator_scope": "paper",
+            "denominator": 26,
+            "verdict": "Genuinely absent: Nelson CIs used, not hypothesis tests"
+          }
+        }
+      ],
+      "gold_paper_ids": ["2312.12675"],
+      "gold_block_ids": ["2312.12675:c8"],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {"corrections": []}
+    },
+    {
+      "id": "Q-WA4-B-V3-004",
+      "question": "What is the 95% confidence interval for LA any-injury crash rate, and what was the standard error?",
+      "sub_parts": [
+        {
+          "text": "95% CI for LA any-injury crash rate (0 IPMM, [0, 64.1])",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2312.12675",
+            "block_id": "2312.12675:c23",
+            "excerpt": "There were no (zero) police-reported and any-injury-reported crashes in Los Angeles, resulting in a 0 IPMM with 95% confidence intervals of (0, 64.1) IPMM"
+          }
+        },
+        {
+          "text": "Standard error of the LA any-injury crash rate estimate",
+          "status": "absent",
+          "absence_probe_log": {
+            "lexical_probes": [
+              {"query": "standard error", "hits": 0, "paper_chunk_count": 26, "scope": "paper"},
+              {"query": "variance", "hits": 0, "paper_chunk_count": 26, "scope": "paper"},
+              {"query": "SE", "hits": 0, "paper_chunk_count": 26, "scope": "paper"},
+              {"query": "uncertainty", "hits": 1, "paper_chunk_count": 26, "scope": "paper"}
+            ],
+            "semantic_probe": {
+              "query": "What is the standard error of the LA crash rate estimate?",
+              "top_hits": ["2312.12675:c7 - CI methodology, no SE values"],
+              "contains_answer": false
+            },
+            "denominator_scope": "paper",
+            "denominator": 26,
+            "verdict": "Genuinely absent: CIs provided, SE/variance not"
+          }
+        }
+      ],
+      "gold_paper_ids": ["2312.12675"],
+      "gold_block_ids": ["2312.12675:c23"],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {"corrections": []}
+    },
+    {
+      "id": "Q-WA4-B-V3-005",
+      "question": "How do Waymo's crash rates compare to benchmarks, and at what sample size would confidence intervals narrow to specified precision?",
+      "sub_parts": [
+        {
+          "text": "Waymo vs Blincoe benchmark: 0.6 vs 2.80 IPMM (80% reduction)",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2312.12675",
+            "block_id": "2312.12675:c1",
+            "excerpt": "the any-injury-reported crashed vehicle rate was 0.6 incidents per million miles (IPMM) for the ADS vs 2.80 IPMM for the human benchmark, an 80% reduction"
+          }
+        },
+        {
+          "text": "Projected sample size or power needed for narrower confidence intervals",
+          "status": "absent",
+          "absence_probe_log": {
+            "lexical_probes": [
+              {"query": "sample size", "hits": 2, "paper_chunk_count": 26, "scope": "paper"},
+              {"query": "power", "hits": 0, "paper_chunk_count": 26, "scope": "paper"},
+              {"query": "precision", "hits": 0, "paper_chunk_count": 26, "scope": "paper"},
+              {"query": "projection", "hits": 0, "paper_chunk_count": 26, "scope": "paper"}
+            ],
+            "semantic_probe": {
+              "query": "What sample size or events would narrow confidence intervals?",
+              "top_hits": ["2312.12675:c16 - limitation noted, no power calc"],
+              "contains_answer": false
+            },
+            "denominator_scope": "paper",
+            "denominator": 26,
+            "verdict": "Genuinely absent: limitations noted, no power analysis"
+          }
+        }
+      ],
+      "gold_paper_ids": ["2312.12675"],
+      "gold_block_ids": ["2312.12675:c1"],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {"corrections": []}
+    },
+    {
+      "id": "Q-WA4-B-V3-006",
+      "question": "What is the study period for Waymo rider-only crash data, and what specific hardware or software changes occurred during this period?",
+      "sub_parts": [
+        {
+          "text": "Study period through October 2023; ODD consistent since 2022",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2312.12675",
+            "block_id": "2312.12675:c5",
+            "excerpt": "The ODD features have remained largely consistent since 2022, which also corresponds to the majority of the RO miles accumulated during the study period (through October 2023)"
+          }
+        },
+        {
+          "text": "Specific dates and details of hardware upgrades or algorithm updates",
+          "status": "absent",
+          "absence_probe_log": {
+            "lexical_probes": [
+              {"query": "upgrade", "hits": 0, "paper_chunk_count": 26, "scope": "paper"},
+              {"query": "update", "hits": 0, "paper_chunk_count": 26, "scope": "paper"},
+              {"query": "algorithm", "hits": 0, "paper_chunk_count": 26, "scope": "paper"},
+              {"query": "change", "hits": 2, "paper_chunk_count": 26, "scope": "paper"}
+            ],
+            "semantic_probe": {
+              "query": "What hardware or software changes occurred during the study?",
+              "top_hits": ["2312.12675:c5 - says ODD changed over years, no specific dates"],
+              "contains_answer": false
+            },
+            "denominator_scope": "paper",
+            "denominator": 26,
+            "verdict": "Genuinely absent: general evolution mentioned, no specifics"
+          }
+        }
+      ],
+      "gold_paper_ids": ["2312.12675"],
+      "gold_block_ids": ["2312.12675:c5"],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {"corrections": []}
+    },
+    {
+      "id": "Q-WA4-B-V3-007",
+      "question": "What specific reporting threshold does NHTSA SGO use for ADS crash reporting, and how many additional crashes does SGO capture compared to police-reported threshold in this study?",
+      "sub_parts": [
+        {
+          "text": "NHTSA SGO reporting: 'any property damage, injury, or fatality' on public roads",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2312.12675",
+            "block_id": "2312.12675:c2",
+            "excerpt": "The reporting requirements for ADS manufacturers is to report any crashes that the manufacturer knows to have occurred or that are alleged to have occurred and that result in any property damage, injury, or fatality"
+          }
+        },
+        {
+          "text": "Quantified count of crashes caught by SGO but not police-reported threshold",
+          "status": "absent",
+          "absence_probe_log": {
+            "lexical_probes": [
+              {"query": "threshold difference", "hits": 0, "paper_chunk_count": 26, "scope": "paper"},
+              {"query": "unreported", "hits": 0, "paper_chunk_count": 26, "scope": "paper"},
+              {"query": "missed crashes", "hits": 0, "paper_chunk_count": 26, "scope": "paper"},
+              {"query": "captured", "hits": 0, "paper_chunk_count": 26, "scope": "paper"}
+            ],
+            "semantic_probe": {
+              "query": "How many crashes met SGO but not police-reported threshold?",
+              "top_hits": ["2312.12675:c5 - explains threshold difference, no count"],
+              "contains_answer": false
+            },
+            "denominator_scope": "paper",
+            "denominator": 26,
+            "verdict": "Genuinely absent: explains why thresholds differ, doesn't enumerate impact"
+          }
+        }
+      ],
+      "gold_paper_ids": ["2312.12675"],
+      "gold_block_ids": ["2312.12675:c2"],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": [
+          {
+            "field": "excerpt",
+            "reason": "Fixed from v2: replaced hand-typed phrase with exact DB span",
+            "original": "The reporting requirements for ADS manufacturers is to report any crashes that the manufacturer knows...",
+            "replaced_with": "exact chunk text"
+          }
+        ]
+      }
+    },
+    {
+      "id": "Q-WA4-B-V3-008",
+      "question": "What were the total counts of police-reported and injury-reported crashes in the study, and how many were property-damage-only (no injury) per location?",
+      "sub_parts": [
+        {
+          "text": "Crash counts: 15 police-reported total, 4 any-injury-reported total",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2312.12675",
+            "block_id": "2312.12675:c16",
+            "excerpt": "these results are based on a small number of ADS events (15 police-reported and 4 any injury-reported)"
+          }
+        },
+        {
+          "text": "Property-damage-only crashes enumerated separately by location",
+          "status": "absent",
+          "absence_probe_log": {
+            "lexical_probes": [
+              {"query": "property damage only", "hits": 5, "paper_chunk_count": 26, "scope": "paper"},
+              {"query": "damage only", "hits": 1, "paper_chunk_count": 26, "scope": "paper"},
+              {"query": "PDO", "hits": 0, "paper_chunk_count": 26, "scope": "paper"},
+              {"query": "no injury", "hits": 1, "paper_chunk_count": 26, "scope": "paper"}
+            ],
+            "semantic_probe": {
+              "query": "How many property-damage-only crashes by location?",
+              "top_hits": ["2312.12675:c9 - totals shown, no location-stratified PDO"],
+              "contains_answer": false
+            },
+            "denominator_scope": "paper",
+            "denominator": 26,
+            "verdict": "Genuinely absent: totals reported, location breakdown missing"
+          }
+        }
+      ],
+      "gold_paper_ids": ["2312.12675"],
+      "gold_block_ids": ["2312.12675:c16"],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": [
+          {
+            "field": "excerpt",
+            "reason": "Fixed from v2: replaced truncated phrase with complete sentence from DB",
+            "new": "exact full sentence from chunks.text"
+          }
+        ]
+      }
+    },
+    {
+      "id": "Q-WA4-B-V3-009",
+      "question": "What are the delta-V impact thresholds used to classify crashes in this study, and what is the injury outcome distribution stratified across different delta-V ranges?",
+      "sub_parts": [
+        {
+          "text": "Delta-V threshold 1 mph used; 51% of 63 crashes had delta-V > 1 mph",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2312.12675",
+            "block_id": "2312.12675:c8",
+            "excerpt": "defined these minor contacts as those in which a crash reconstruction model found that both vehicles had a change in velocity (i.e., a delta-V) of less than 1.0 mph. Of the 63 SGO-reported in transport crashes, 32 crashes (or 51%) had a delta-V greater than 1 mph"
+          }
+        },
+        {
+          "text": "Injury outcome rates stratified by delta-V magnitude ranges",
+          "status": "absent",
+          "absence_probe_log": {
+            "lexical_probes": [
+              {"query": "delta-V injury", "hits": 0, "paper_chunk_count": 26, "scope": "paper"},
+              {"query": "velocity injury", "hits": 0, "paper_chunk_count": 26, "scope": "paper"},
+              {"query": "impact severity", "hits": 0, "paper_chunk_count": 26, "scope": "paper"},
+              {"query": "delta-V correlation", "hits": 0, "paper_chunk_count": 26, "scope": "paper"}
+            ],
+            "semantic_probe": {
+              "query": "What is the relationship between delta-V and injury outcomes?",
+              "top_hits": ["2312.12675:c8 - uses delta-V as filter, no outcome stratification"],
+              "contains_answer": false
+            },
+            "denominator_scope": "paper",
+            "denominator": 26,
+            "verdict": "Genuinely absent: delta-V used as threshold, injury stratification not performed"
+          }
+        }
+      ],
+      "gold_paper_ids": ["2312.12675"],
+      "gold_block_ids": ["2312.12675:c8"],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {"corrections": []}
+    },
+    {
+      "id": "Q-WA4-B-V3-010",
+      "question": "How were human crash benchmarks for different locations selected, and what are the confidence bounds on the underreporting adjustment factors?",
+      "sub_parts": [
+        {
+          "text": "Benchmarks from Scanlon et al. (2023) with Blincoe et al. (2023) underreporting adjustments",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2312.12675",
+            "block_id": "2312.12675:c5",
+            "excerpt": "First, police-reported crash data from national (the NHTSA CRSS and Fatality Analysis Reporting System, FARS) and state crash databases were adjusted for human underreporting in Scanlon et al. (2023) using underreporting adjustments for property damage only and injury crashes from Blincoe et al. (2023)"
+          }
+        },
+        {
+          "text": "Confidence intervals or sensitivity bounds on underreporting adjustment factors",
+          "status": "absent",
+          "absence_probe_log": {
+            "lexical_probes": [
+              {"query": "adjustment confidence", "hits": 0, "paper_chunk_count": 26, "scope": "paper"},
+              {"query": "sensitivity underreporting", "hits": 0, "paper_chunk_count": 26, "scope": "paper"},
+              {"query": "adjustment uncertainty", "hits": 0, "paper_chunk_count": 26, "scope": "paper"},
+              {"query": "alternative adjustment", "hits": 0, "paper_chunk_count": 26, "scope": "paper"}
+            ],
+            "semantic_probe": {
+              "query": "What are the confidence bounds on underreporting adjustment factors?",
+              "top_hits": ["2312.12675:c5 - applies adjustments as fixed, no uncertainty"],
+              "contains_answer": false
+            },
+            "denominator_scope": "paper",
+            "denominator": 26,
+            "verdict": "Genuinely absent: applies adjustments, doesn't quantify uncertainty in them"
+          }
+        }
+      ],
+      "gold_paper_ids": ["2312.12675"],
+      "gold_block_ids": ["2312.12675:c5"],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": [
+          {
+            "field": "excerpt",
+            "reason": "Fixed from v2: replaced truncated text with complete citation sentence",
+            "new": "exact full sentence from chunks.text"
+          }
+        ]
+      }
+    },
+    {
+      "id": "Q-WA4-B-V3-011",
+      "question": "PLACEHOLDER: Multi-paper item 1 TBD",
+      "sub_parts": [
+        {"text": "PLACEHOLDER", "status": "supported", "gold_ref": {"paper_id": "TBD", "block_id": "TBD", "excerpt": "TBD"}},
+        {"text": "PLACEHOLDER", "status": "absent", "absence_probe_log": {"lexical_probes": [], "semantic_probe": {"query": "TBD", "top_hits": [], "contains_answer": false}, "denominator_scope": "paper", "denominator": 0, "verdict": "TBD"}}
+      ],
+      "gold_paper_ids": ["TBD"],
+      "gold_block_ids": ["TBD"],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": false,
+      "duplicate_of": null,
+      "_metadata": {"corrections": [{"note": "DEFECT IN PROGRESS: v3-011 and v3-012 to be authored from non-2312.12675 papers per multi-paper requirement. v2 was 12/12 from one paper; v3 will spread to 5+ papers."}]}
+    },
+    {
+      "id": "Q-WA4-B-V3-012",
+      "question": "PLACEHOLDER: Multi-paper item 2 TBD",
+      "sub_parts": [
+        {"text": "PLACEHOLDER", "status": "supported", "gold_ref": {"paper_id": "TBD", "block_id": "TBD", "excerpt": "TBD"}},
+        {"text": "PLACEHOLDER", "status": "absent", "absence_probe_log": {"lexical_probes": [], "semantic_probe": {"query": "TBD", "top_hits": [], "contains_answer": false}, "denominator_scope": "paper", "denominator": 0, "verdict": "TBD"}}
+      ],
+      "gold_paper_ids": ["TBD"],
+      "gold_block_ids": ["TBD"],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": false,
+      "duplicate_of": null,
+      "_metadata": {"corrections": [{"note": "DEFECT IN PROGRESS: v3-011 and v3-012 to be authored from non-2312.12675 papers per multi-paper requirement."}]}
+    }
+  ]
+}

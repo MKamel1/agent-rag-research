@@ -1,0 +1,1244 @@
+{
+  "metadata": {
+    "author_id": "GT-B",
+    "set_name": "W-A4",
+    "description": "Partial-absent ground truth set: multi-sub-part questions where at least one sub-part is genuinely absent from the corpus",
+    "target_items": 22,
+    "corpus": "waymo_av_safety",
+    "authored_at": "2026-08-28"
+  },
+  "items": [
+    {
+      "id": "Q-WA4-B-001",
+      "question": "What are Waymo's reported safety metrics (injury rates, crash statistics) for its Rider-Only services, and what specific details does the research provide about the Waymo taxi service expansion strategy?",
+      "sub_parts": [
+        {
+          "text": "Waymo's reported safety metrics (injury rates, crash statistics) for Rider-Only services across all locations",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2312.12675",
+            "block_id": "2312.12675:b9",
+            "excerpt": "When considering all locations together, the any-injury-reported crashed vehicle rate was 0.6 incidents per million miles (IPMM) for the ADS vs 2.80 IPMM for the human benchmark, an 80% reduction or a human crash rate that is 5 times higher than the ADS rate."
+          }
+        },
+        {
+          "text": "Specific details about Waymo taxi service expansion strategy, commercial rollout timeline, or deployment to new markets",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "taxi service expansion strategy",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "taxi expansion",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "rideshare expansion",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "Waymo commercial deployment timeline",
+                "hits": 0,
+                "denominator": 46155
+              }
+            ],
+            "verdict": "Genuinely absent: zero hits across four distinct lexical probes (taxi/commercial/expansion/deployment) over 46,155 chunks. The corpus focuses on safety studies and technical performance, not commercial roadmaps."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2312.12675"
+      ],
+      "gold_block_ids": [
+        "2312.12675:b9"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": []
+      }
+    },
+    {
+      "id": "Q-WA4-B-002",
+      "question": "How does Waymo's autonomous driving system performance compare across different US geographic regions (San Francisco, Phoenix, Los Angeles), and what performance comparisons exist for Waymo operations in international markets (Europe, Asia)?",
+      "sub_parts": [
+        {
+          "text": "Waymo's ADS performance comparison across US geographic regions (SF, Phoenix, LA)",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2312.12675",
+            "block_id": "2312.12675:b10",
+            "excerpt": "Police-reported crashed vehicle rate reductions for the ADS were statistically significant when compared in San Francisco and Phoenix, as well as combined across all locations"
+          }
+        },
+        {
+          "text": "Performance comparisons for Waymo operations in international markets (Europe, Asia, etc.)",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "international market deployment Europe Asia",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "Waymo Europe",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "Waymo Japan",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "Waymo Germany",
+                "hits": 0,
+                "denominator": 46155
+              }
+            ],
+            "verdict": "Genuinely absent: zero hits across four international-focused lexical probes over 46,155 chunks. The corpus exclusively covers US operations."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2312.12675"
+      ],
+      "gold_block_ids": [
+        "2312.12675:b10"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": []
+      }
+    },
+    {
+      "id": "Q-WA4-B-003",
+      "question": "What collision avoidance scenarios did Waymo test in its systematic validation studies, and what results does the corpus provide about Waymo's performance on extreme weather driving conditions (heavy snow, ice)?",
+      "sub_parts": [
+        {
+          "text": "Collision avoidance scenarios tested in Waymo's validation studies",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2212.08148",
+            "block_id": "2212.08148:b0",
+            "excerpt": "Collision Avoidance Testing of the Waymo Automated Driving System"
+          }
+        },
+        {
+          "text": "Waymo's performance on extreme weather conditions (heavy snow, ice, severe rain)",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "extreme weather snow ice conditions",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "heavy snow autonomous driving",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "ice road testing",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "blizzard weather ADS",
+                "hits": 0,
+                "denominator": 46155
+              }
+            ],
+            "verdict": "Genuinely absent: zero hits across four weather-specific lexical probes over 46,155 chunks. Testing focuses on clear/rain conditions only."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2212.08148"
+      ],
+      "gold_block_ids": [
+        "2212.08148:b0"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": []
+      }
+    },
+    {
+      "id": "Q-WA4-B-004",
+      "question": "What vehicle models and sensor configurations are documented in Waymo's safety testing programs, and what technical specifications does the research provide about Waymo's proprietary self-driving hardware designs and custom chips?",
+      "sub_parts": [
+        {
+          "text": "Vehicle models and sensor configurations in Waymo's safety testing",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2212.08148",
+            "block_id": "2212.08148:b17",
+            "excerpt": "Safety Test Objective"
+          }
+        },
+        {
+          "text": "Technical specifications of Waymo's proprietary self-driving hardware designs and custom chips",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "proprietary hardware design specifications",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "Waymo custom chip",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "TPU tensor processing unit",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "proprietary sensor design",
+                "hits": 0,
+                "denominator": 46155
+              }
+            ],
+            "verdict": "Genuinely absent: zero hits across four hardware-specific lexical probes over 46,155 chunks. Corpus focuses on safety outcomes, not hardware specifications."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2212.08148"
+      ],
+      "gold_block_ids": [
+        "2212.08148:b17"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": []
+      }
+    },
+    {
+      "id": "Q-WA4-B-005",
+      "question": "What are the reported miles traveled and time periods covered in Waymo's rider-only safety studies, and what official deployment timeline does Waymo publicly commit to for achieving full autonomy without any safety drivers?",
+      "sub_parts": [
+        {
+          "text": "Reported miles traveled and time periods in Waymo's rider-only studies",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2312.12675",
+            "block_id": "2312.12675:b9",
+            "excerpt": "ADS crash data were derived from NHTSA's Standing General Order (SGO) reporting over 7.14 million RO miles through the end of October 2023 in Phoenix, AZ, San Francisco, CA, and Los Angeles, CA"
+          }
+        },
+        {
+          "text": "Official deployment timeline for achieving full autonomy without safety drivers",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "full autonomy no safety driver timeline",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "deployment schedule roadmap 2024 2025",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "planned expansion timeline",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "commercial launch date",
+                "hits": 0,
+                "denominator": 46155
+              }
+            ],
+            "verdict": "Genuinely absent: zero hits across four timeline-focused lexical probes over 46,155 chunks. Corpus reports past/current data, not future roadmaps."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2312.12675"
+      ],
+      "gold_block_ids": [
+        "2312.12675:b9"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": []
+      }
+    },
+    {
+      "id": "Q-WA4-B-006",
+      "question": "What data collection methods did researchers use for Waymo's safety studies, and what information does the corpus provide about cybersecurity threats, attacks, or vulnerabilities that could affect autonomous driving systems?",
+      "sub_parts": [
+        {
+          "text": "Data collection methods used in Waymo safety studies",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2403.14648",
+            "block_id": "2403.14648:b55",
+            "excerpt": "NHTSA Standing General Order on ADS Crash Report Data"
+          }
+        },
+        {
+          "text": "Cybersecurity threats, attacks, or vulnerabilities affecting autonomous driving systems",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "cybersecurity threats attacks",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "hacking autonomous vehicle",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "security vulnerability ADS",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "malicious attack autonomous",
+                "hits": 0,
+                "denominator": 46155
+              }
+            ],
+            "verdict": "Genuinely absent: zero hits across four security-focused lexical probes over 46,155 chunks. Corpus addresses functional safety, not cybersecurity."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2403.14648"
+      ],
+      "gold_block_ids": [
+        "2403.14648:b55"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": []
+      }
+    },
+    {
+      "id": "Q-WA4-B-007",
+      "question": "What crash statistics and injury rates are reported in Waymo's studies, and what does the research document about liability insurance coverage and financial responsibility for autonomous vehicle incidents?",
+      "sub_parts": [
+        {
+          "text": "Crash statistics and injury rates in Waymo studies",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2403.14648",
+            "block_id": "2403.14648:b61",
+            "excerpt": "About 16% of AV crashes resulted in reported injuries"
+          }
+        },
+        {
+          "text": "Liability insurance coverage and financial responsibility frameworks for autonomous vehicle incidents",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "liability insurance coverage",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "insurance autonomous vehicle",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "financial responsibility accident",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "liability framework ADS",
+                "hits": 0,
+                "denominator": 46155
+              }
+            ],
+            "verdict": "Genuinely absent: zero hits across four liability-focused lexical probes over 46,155 chunks. Corpus focuses on technical safety, not legal/insurance frameworks."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2403.14648"
+      ],
+      "gold_block_ids": [
+        "2403.14648:b61"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": []
+      }
+    },
+    {
+      "id": "Q-WA4-B-008",
+      "question": "How do Waymo's automated driving systems handle different road surface conditions documented in the corpus, and what regulatory compliance with international safety standards (ISO 26262, ISO 21448) does Waymo commit to?",
+      "sub_parts": [
+        {
+          "text": "Waymo's ADS handling of different road surface conditions (dry, wet, etc.)",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2403.14648",
+            "block_id": "2403.14648:b61",
+            "excerpt": "Dry and No Unusual Conditions 135 93.1%"
+          }
+        },
+        {
+          "text": "Regulatory compliance with international safety standards (ISO 26262, ISO 21448, etc.)",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "regulatory compliance standards",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "ISO 26262 ISO 21448",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "international safety certification",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "regulatory framework compliance",
+                "hits": 0,
+                "denominator": 46155
+              }
+            ],
+            "verdict": "Genuinely absent: zero hits across four regulatory-focused lexical probes over 46,155 chunks. Corpus does not address formal regulatory compliance."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2403.14648"
+      ],
+      "gold_block_ids": [
+        "2403.14648:b61"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": []
+      }
+    },
+    {
+      "id": "Q-WA4-B-009",
+      "question": "What disengagement or human intervention events are documented in Waymo studies, and what data exists regarding real-time remote monitoring or remote operation capabilities of Waymo's autonomous system?",
+      "sub_parts": [
+        {
+          "text": "Disengagement or human intervention events documented in Waymo studies",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2403.14648",
+            "block_id": "2403.14648:b61",
+            "excerpt": "18% were under the conventional mode, but the autonomous system was disengaged right before the crash"
+          }
+        },
+        {
+          "text": "Real-time remote monitoring or remote operation capabilities of Waymo's system",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "real-time monitoring remote operation",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "remote driver oversight",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "teleoperations capabilities",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "remote takeover safety",
+                "hits": 0,
+                "denominator": 46155
+              }
+            ],
+            "verdict": "Genuinely absent: zero hits across four remote-operation-focused lexical probes over 46,155 chunks. Corpus reports autonomous-only or disengagement, not remote operations."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2403.14648"
+      ],
+      "gold_block_ids": [
+        "2403.14648:b61"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": []
+      }
+    },
+    {
+      "id": "Q-WA4-B-010",
+      "question": "What testing scenarios and evaluation methods are described in Waymo safety research, and what benefits does the corpus quantify regarding employment disruption impacts or labor market effects of autonomous vehicles?",
+      "sub_parts": [
+        {
+          "text": "Testing scenarios and evaluation methods in Waymo safety research",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2212.08148",
+            "block_id": "2212.08148:b64",
+            "excerpt": "Test Scenarios"
+          }
+        },
+        {
+          "text": "Quantified benefits or employment disruption impacts on labor market from autonomous vehicles",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "employment impact drivers",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "labor market effects autonomous",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "job displacement autonomous vehicles",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "economic impact employment",
+                "hits": 0,
+                "denominator": 46155
+              }
+            ],
+            "verdict": "Genuinely absent: zero hits across four employment-focused lexical probes over 46,155 chunks. Corpus focuses on technical safety, not socioeconomic impacts."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2212.08148"
+      ],
+      "gold_block_ids": [
+        "2212.08148:b64"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": []
+      }
+    },
+    {
+      "id": "Q-WA4-B-011",
+      "question": "What are the reported sensor configurations and detection capabilities of Waymo's autonomous driving system, and what environmental emissions reduction or sustainability benefits does the corpus document from autonomous vehicle adoption?",
+      "sub_parts": [
+        {
+          "text": "Sensor configurations and detection capabilities of Waymo's ADS",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2212.08148",
+            "block_id": "2212.08148:b0",
+            "excerpt": "Collision Avoidance Testing of the Waymo Automated Driving System"
+          }
+        },
+        {
+          "text": "Environmental emissions reduction or sustainability benefits from autonomous vehicle adoption",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "environmental emissions reduction",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "carbon footprint autonomous",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "sustainability environmental impact",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "green autonomous driving",
+                "hits": 0,
+                "denominator": 46155
+              }
+            ],
+            "verdict": "Genuinely absent: zero hits across four environmental-focused lexical probes over 46,155 chunks. Corpus addresses safety, not environmental impact."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2212.08148"
+      ],
+      "gold_block_ids": [
+        "2212.08148:b0"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": []
+      }
+    },
+    {
+      "id": "Q-WA4-B-012",
+      "question": "What performance data does Waymo report comparing its system to human drivers, and what quantified benefits exist regarding traffic congestion reduction or transportation efficiency improvements from autonomous vehicles?",
+      "sub_parts": [
+        {
+          "text": "Performance data comparing Waymo ADS to human driver baseline",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2312.12675",
+            "block_id": "2312.12675:b9",
+            "excerpt": "the human crash rate that is 5 times higher than the ADS rate"
+          }
+        },
+        {
+          "text": "Quantified benefits from traffic congestion reduction or transportation efficiency improvements from autonomous vehicles",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "traffic congestion reduction benefits",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "transportation efficiency improvements",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "traffic flow optimization",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "congestion mitigation autonomous",
+                "hits": 0,
+                "denominator": 46155
+              }
+            ],
+            "verdict": "Genuinely absent: zero hits across four traffic-efficiency-focused lexical probes over 46,155 chunks. Corpus focuses on safety metrics, not traffic optimization."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2312.12675"
+      ],
+      "gold_block_ids": [
+        "2312.12675:b9"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": []
+      }
+    },
+    {
+      "id": "Q-WA4-B-013",
+      "question": "What statistical analysis methods and confidence intervals are used in Waymo's safety studies, and what cost-effectiveness analysis or cost-per-mile metrics does the corpus provide for autonomous ride-hailing services?",
+      "sub_parts": [
+        {
+          "text": "Statistical analysis methods and confidence intervals in Waymo safety studies",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2312.12675",
+            "block_id": "2312.12675:b9",
+            "excerpt": "95% confidence intervals of (0, 64.1) IPMM"
+          }
+        },
+        {
+          "text": "Cost-effectiveness analysis or cost-per-mile metrics for autonomous ride-hailing services",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "cost per mile autonomous driving",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "cost-effectiveness analysis",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "pricing economic model",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "operational cost autonomous",
+                "hits": 0,
+                "denominator": 46155
+              }
+            ],
+            "verdict": "Genuinely absent: zero hits across four cost/economics-focused lexical probes over 46,155 chunks. Corpus documents safety, not economics."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2312.12675"
+      ],
+      "gold_block_ids": [
+        "2312.12675:b9"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": []
+      }
+    },
+    {
+      "id": "Q-WA4-B-014",
+      "question": "What specific intersection or urban driving scenarios did Waymo test and document, and what guidance does the research provide regarding ethical decision-making frameworks or trolley-problem-style scenarios in autonomous vehicles?",
+      "sub_parts": [
+        {
+          "text": "Specific intersection or urban driving scenarios tested by Waymo",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2403.14648",
+            "block_id": "2403.14648:b61",
+            "excerpt": "The most common types of collision for the other vehicle involved are also rear-end"
+          }
+        },
+        {
+          "text": "Ethical decision-making frameworks or trolley-problem-style guidance for autonomous vehicles",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "ethical decision making trolley problem",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "moral dilemma autonomous vehicle",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "ethical framework ADS",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "responsibility allocation accident",
+                "hits": 0,
+                "denominator": 46155
+              }
+            ],
+            "verdict": "Genuinely absent: zero hits across four ethics-focused lexical probes over 46,155 chunks. Corpus reports empirical safety data, not ethical frameworks."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2403.14648"
+      ],
+      "gold_block_ids": [
+        "2403.14648:b61"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": []
+      }
+    },
+    {
+      "id": "Q-WA4-B-015",
+      "question": "What vehicle types and passenger configurations are covered in Waymo safety studies, and what accessibility features or services does Waymo document for disabled or elderly passengers?",
+      "sub_parts": [
+        {
+          "text": "Vehicle types and passenger configurations covered in Waymo safety studies",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2312.12675",
+            "block_id": "2312.12675:b9",
+            "excerpt": "ride-hailing application without a human driver"
+          }
+        },
+        {
+          "text": "Accessibility features or services for disabled or elderly passengers",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "disabled passenger accessibility",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "elderly transportation services",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "wheelchair accessibility autonomous",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "mobility impaired transportation",
+                "hits": 0,
+                "denominator": 46155
+              }
+            ],
+            "verdict": "Genuinely absent: zero hits across four accessibility-focused lexical probes over 46,155 chunks. Corpus focuses on technical safety, not accessibility services."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2312.12675"
+      ],
+      "gold_block_ids": [
+        "2312.12675:b9"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": []
+      }
+    },
+    {
+      "id": "Q-WA4-B-016",
+      "question": "What data collection and recording practices does Waymo use in its safety studies, and what privacy protection or data deletion policies does the corpus describe for passenger tracking and surveillance?",
+      "sub_parts": [
+        {
+          "text": "Data collection and recording practices in Waymo safety studies",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2403.14648",
+            "block_id": "2403.14648:b55",
+            "excerpt": "NHTSA Standing General Order on ADS Crash Report Data"
+          }
+        },
+        {
+          "text": "Privacy protection or data deletion policies for passenger tracking and surveillance",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "privacy surveillance tracking",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "data retention deletion policy",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "privacy protection autonomous vehicle",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "personal data passenger tracking",
+                "hits": 0,
+                "denominator": 46155
+              }
+            ],
+            "verdict": "Genuinely absent: zero hits across four privacy-focused lexical probes over 46,155 chunks. Corpus documents safety/technical data, not privacy policies."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2403.14648"
+      ],
+      "gold_block_ids": [
+        "2403.14648:b55"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": []
+      }
+    },
+    {
+      "id": "Q-WA4-B-017",
+      "question": "What performance benchmarks and comparison studies does Waymo conduct, and what information exists in the corpus regarding open-source alternatives or vendor lock-in risks in autonomous driving systems?",
+      "sub_parts": [
+        {
+          "text": "Performance benchmarks and comparison studies conducted by Waymo",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2312.12675",
+            "block_id": "2312.12675:b9",
+            "excerpt": "compared to human benchmarks from the literature"
+          }
+        },
+        {
+          "text": "Open-source alternatives or vendor lock-in risks in autonomous driving systems",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "vendor lock-in proprietary systems",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "open source ADS competition",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "proprietary lock-in risk",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "open-source autonomous driving",
+                "hits": 0,
+                "denominator": 46155
+              }
+            ],
+            "verdict": "Genuinely absent: zero hits across four vendor/open-source-focused lexical probes over 46,155 chunks. Corpus reports Waymo research only, not vendor comparison."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2312.12675"
+      ],
+      "gold_block_ids": [
+        "2312.12675:b9"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": []
+      }
+    },
+    {
+      "id": "Q-WA4-B-018",
+      "question": "What neural network models and machine learning architectures are described in Waymo's research, and what model interpretability or explainability analysis does the corpus provide for understanding decision-making in autonomous vehicles?",
+      "sub_parts": [
+        {
+          "text": "Neural network models and machine learning architectures in Waymo research",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "local:6da7de3a6af9",
+            "block_id": "local:6da7de3a6af9:b0",
+            "excerpt": "machine learning performance"
+          }
+        },
+        {
+          "text": "Model interpretability or explainability analysis for autonomous vehicle decision-making",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "machine learning model interpretability",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "explainability neural network",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "interpretable machine learning",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "model transparency autonomous",
+                "hits": 0,
+                "denominator": 46155
+              }
+            ],
+            "verdict": "Genuinely absent: zero hits across four interpretability-focused lexical probes over 46,155 chunks. Corpus reports performance metrics, not model explanations."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "local:6da7de3a6af9"
+      ],
+      "gold_block_ids": [
+        "local:6da7de3a6af9:b0"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": []
+      }
+    },
+    {
+      "id": "Q-WA4-B-019",
+      "question": "What are Waymo's reported mileage accumulation rates and testing timeline progression in their safety studies, and what predictions or projections does the corpus provide regarding full commercialization timelines and business viability of autonomous vehicles?",
+      "sub_parts": [
+        {
+          "text": "Waymo's mileage accumulation rates and testing timeline progression in safety studies",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2312.12675",
+            "block_id": "2312.12675:b9",
+            "excerpt": "7.14 million RO miles through the end of October 2023"
+          }
+        },
+        {
+          "text": "Predictions or projections regarding full commercialization timelines and business viability of autonomous vehicles",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "commercialization timeline business viability",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "profitability projection autonomous",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "market readiness forecast",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "business case analysis autonomous",
+                "hits": 0,
+                "denominator": 46155
+              }
+            ],
+            "verdict": "Genuinely absent: zero hits across four commercialization-focused lexical probes over 46,155 chunks. Corpus reports performance data, not business projections."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2312.12675"
+      ],
+      "gold_block_ids": [
+        "2312.12675:b9"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": []
+      }
+    },
+    {
+      "id": "Q-WA4-B-020",
+      "question": "What testing locations and urban environments are covered in Waymo's evaluation studies, and what safety considerations exist for operating autonomous vehicles in rural, unpaved, or underdeveloped infrastructure areas?",
+      "sub_parts": [
+        {
+          "text": "Testing locations and urban environments covered in Waymo evaluation studies",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2312.12675",
+            "block_id": "2312.12675:b9",
+            "excerpt": "Phoenix, AZ, San Francisco, CA, and Los Angeles, CA"
+          }
+        },
+        {
+          "text": "Safety considerations for autonomous vehicles in rural, unpaved, or underdeveloped infrastructure areas",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "rural underdeveloped infrastructure",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "unpaved road testing",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "off-road autonomous capability",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "non-urban environment ADS",
+                "hits": 0,
+                "denominator": 46155
+              }
+            ],
+            "verdict": "Genuinely absent: zero hits across four rural-infrastructure-focused lexical probes over 46,155 chunks. Corpus covers only urban and well-developed areas."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2312.12675"
+      ],
+      "gold_block_ids": [
+        "2312.12675:b9"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": []
+      }
+    },
+    {
+      "id": "Q-WA4-B-021",
+      "question": "What incident categorization or crash classification methodologies does Waymo employ, and what training or certification requirements does the research document for operators or passengers using autonomous vehicles?",
+      "sub_parts": [
+        {
+          "text": "Incident categorization or crash classification methodologies in Waymo research",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2403.14648",
+            "block_id": "2403.14648:b61",
+            "excerpt": "Rear End | 42 | 29.0%"
+          }
+        },
+        {
+          "text": "Training or certification requirements for operators or passengers using autonomous vehicles",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "operator training certification requirements",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "passenger safety briefing education",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "licensing autonomous vehicle operation",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "qualification rider requirements",
+                "hits": 0,
+                "denominator": 46155
+              }
+            ],
+            "verdict": "Genuinely absent: zero hits across four training/certification-focused lexical probes over 46,155 chunks. Corpus reports safety data, not training protocols."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2403.14648"
+      ],
+      "gold_block_ids": [
+        "2403.14648:b61"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": []
+      }
+    },
+    {
+      "id": "Q-WA4-B-022",
+      "question": "What pedestrian and vulnerable road user interaction scenarios are documented in Waymo's collision analysis, and what customer support or emergency response protocols does Waymo implement for passengers experiencing system failures or safety incidents?",
+      "sub_parts": [
+        {
+          "text": "Pedestrian and vulnerable road user interaction scenarios in Waymo collision analysis",
+          "status": "supported",
+          "gold_ref": {
+            "paper_id": "2403.14648",
+            "block_id": "2403.14648:b61",
+            "excerpt": "11 crash cases involved vulnerable road users (pedestrians, bicyclists, or scooters)"
+          }
+        },
+        {
+          "text": "Customer support or emergency response protocols for passengers experiencing system failures or safety incidents",
+          "status": "absent",
+          "absence_probe_log": {
+            "probes": [
+              {
+                "query": "customer support emergency response protocols",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "passenger assistance system failure",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "crisis management protocol",
+                "hits": 0,
+                "denominator": 46155
+              },
+              {
+                "query": "incident response passenger safety",
+                "hits": 0,
+                "denominator": 46155
+              }
+            ],
+            "verdict": "Genuinely absent: zero hits across four support/response-focused lexical probes over 46,155 chunks. Corpus reports incidents/data, not operational support procedures."
+          }
+        }
+      ],
+      "gold_paper_ids": [
+        "2403.14648"
+      ],
+      "gold_block_ids": [
+        "2403.14648:b61"
+      ],
+      "author_id": "GT-B",
+      "frozen_after_retrieval": true,
+      "duplicate_of": null,
+      "_metadata": {
+        "corrections": []
+      }
+    }
+  ]
+}
