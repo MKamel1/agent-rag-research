@@ -420,6 +420,60 @@ class VectorIndex:
                 break
         return total
 
+    def copy_kind_into(self, dest_collection: str, kind: str) -> int:
+        """SB-1: copies only the points whose `payload["kind"] == kind` (server-side filtered
+        scroll, `_qdrant_filter`'s own `models.FieldCondition(key="kind", ...)` shape) from this
+        collection into `dest_collection` VERBATIM -- same no-re-embedding, byte-identical-vector
+        guarantee as `clone_points_into` (see that method's own docstring), just scoped to one
+        `kind` instead of the whole collection.
+
+        Motivating case: an experiment that re-embeds every `kind="chunk"` point into a fresh
+        collection (e.g. `app/reembed_experiment.py`'s `--sb1-section-context-window`) never
+        touches `kind="summary"` points at all -- they'd otherwise be silently absent from the
+        new collection, changing the candidate pool for `retrieve_papers()`/summary-kind hybrid
+        search as an unintended SECOND variable alongside the one actually under test. This copies
+        the untouched kind across so the destination collection's composition matches the source's,
+        without spending GPU time re-embedding vectors nothing about the experiment changed.
+
+        Does NOT call `clone_points_into` (which copies every point and would overwrite any
+        `kind="chunk"` points the destination already holds with the SOURCE's chunk vectors --
+        exactly the unwanted overwrite this method exists to avoid) -- same scroll-then-batched-
+        upsert shape, independently, with a server-side filter added. Returns the number of points
+        copied.
+        """
+        dest = VectorIndex(
+            self._host, self._port, dest_collection, self._dim, self._hybrid_dense_weight
+        )
+        kind_filter = models.Filter(
+            must=[models.FieldCondition(key="kind", match=models.MatchValue(value=kind))]
+        )
+        offset = None
+        total = 0
+        while True:
+            page, offset = self._call(
+                self._client.scroll,
+                self._collection,
+                scroll_filter=kind_filter,
+                limit=_SCROLL_PAGE_SIZE,
+                offset=offset,
+                with_payload=True,
+                with_vectors=True,
+            )
+            for i in range(0, len(page), _CLONE_UPSERT_BATCH_SIZE):
+                batch = page[i : i + _CLONE_UPSERT_BATCH_SIZE]
+                self._call(
+                    dest._client.upsert,
+                    dest._collection,
+                    points=[
+                        models.PointStruct(id=p.id, vector=p.vector, payload=p.payload)
+                        for p in batch
+                    ],
+                )
+                total += len(batch)
+            if offset is None:
+                break
+        return total
+
     def migrate_via_clone_and_swap(self, *, temp_collection: str | None = None) -> int:
         """Non-destructive alternative to `rebuild()` for retrofitting a schema change (e.g.
         T-DOC27's IDF modifier) onto a large LIVE collection — see `rebuild()`'s own docstring for
