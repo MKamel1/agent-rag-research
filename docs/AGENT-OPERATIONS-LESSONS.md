@@ -718,3 +718,46 @@ The 429-tolerance machinery from §3.3d — commit-as-you-go, resumable-from-com
 - **`thinkingmachines/inkling:free`** — free-tier option, 1M context window.
 
 **No change to §3.3d.** Leave §3.3d standing — it describes a real rate-limiting problem that was observed independently and the diagnosis was correct at that time. §8.6 adds a second, now-proven failure mode (model withdrawal) under the same observable tell. The 1-in-3 429-failure rate describes the throttle behavior alone; a *persistent* 404 across repeated probes is the signature of permanent withdrawal and requires immediate model-string remediation. Both failures look identical at the call site; commit discipline covers both; only repeated probing distinguishes them and reveals which remedy applies.
+
+## 9. Precision-95 programme (SB-1, 2026-08-28)
+
+### 9.1 `.gpu.lock` serializes correctly but has no priority — order GPU jobs cheapest-first
+
+**Cost: ~20 minutes of two five-minute measurements sleeping behind a multi-hour job that had
+already been launched, on a branch whose own ticket brief explicitly said to run the cheap job
+first.**
+
+**Incident:** SB-1 launched three GPU-touching jobs concurrently: a full-corpus re-embed
+(`app/reembed_experiment.py`, projected ~98 minutes) and two dual-fixture retrieval evals
+(`scripts/nb_eval_runner.py`, each normally minutes). The re-embed happened to acquire
+`rag/gpu_lock.py`'s `FileGpuLock` first. Both eval jobs' actual work (`retrieval_eval`/
+`exp_chunk_boundary_neighbor_smooth` subprocesses) then sat in `TeiEmbedder`/`TeiReranker`'s
+per-call `gpu_lock.acquire(...)` retry loop — `wchan=hrtimer_nanosleep`, 0.00 CPU consumed across
+20+ minutes — while their `nb_eval_runner.py` parents just waited on the blocked children
+(`wchan=poll_schedule_timeout`). The lock was never stuck; it was doing exactly what it's for. The
+**ordering** was wrong: whichever process calls `.acquire()` first wins the file lock, regardless
+of how cheap or informative its own job is, because `filelock.FileLock` (this lock's real
+mechanism) has no priority/fairness policy — it is a mutex, not a scheduler.
+
+**Diagnosis, not guesswork:** confirmed via a real `/proc` scan (state, wchan, cumulative CPU time
+per PID), not by staring at silent log files — the two eval jobs produced NO incremental log
+output at all while blocked, because `nb_eval_runner.py` uses `subprocess.run(...,
+capture_output=True)` and only prints the child's stdout/stderr on a non-zero exit; a blocked-but-
+alive child is indistinguishable from a slow one by log-tailing alone. `fuser <lock-path>` names
+the actual holder PID directly — faster and more certain than reading log timestamps.
+
+**Fix applied:** killed the re-embed process by exact PID (verified first via
+`readlink /proc/<pid>/cwd`, matching the pattern in §6b.3 — never `pkill -f` a pattern the kill
+command's own command line might itself contain) and its `wait-and-report` shell sibling. It had
+written zero points to its (separately-named, non-production) target collection, so nothing was
+lost — 20 minutes of warm-up was discarded, not results. The lock freed immediately; both eval
+jobs' blocked children picked it up within the same second (confirmed by `fuser` naming a new
+PID). The expensive job was relaunched alone, afterward, with the card to itself.
+
+**Rule:** `FileGpuLock` composes correctly across processes (that part of its contract holds), but
+composing N processes that each independently acquire it is only safe in the cost order you
+intend, because the file gives no priority to a cheap, high-information job launched after an
+expensive one already holds it. Order GPU-touching launches cheapest/most-informative first, one
+at a time if their relative cost differs by an order of magnitude or more, and diagnose a
+suspiciously-quiet parallel batch with `/proc` state + `fuser <lock-path>` before assuming a
+process has produced nothing because it is doing nothing.

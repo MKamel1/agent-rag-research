@@ -652,6 +652,59 @@ def test_clone_points_into_batches_the_upsert_side(monkeypatch):
         src._client.delete_collection(dest_name)
 
 
+@pytest.mark.enable_socket
+def test_copy_kind_into_copies_only_the_matching_kind_and_never_overwrites_others():
+    """SB-1: copies only `kind="summary"` points across, verbatim -- a destination collection
+    that already holds DIFFERENT `kind="chunk"` points at the SAME ids must keep those chunk
+    vectors unchanged (the whole reason this isn't just `clone_points_into`, which would
+    overwrite them with the source's)."""
+    real = pytest.importorskip("rag.vector_index")
+
+    src_name = "sb1_copy_kind_src"
+    dest_name = "sb1_copy_kind_dest"
+    try:
+        src = real.VectorIndex(
+            host="localhost", port=6333, collection_name=src_name, dim=2, hybrid_dense_weight=0.5
+        )
+    except TransientError as e:
+        pytest.skip(f"no live vector-store service reachable at localhost:6333: {e}")
+
+    try:
+        src.upsert("2506.01234:c0", [1.0, 0.0], _payload(kind="chunk", text="chunk body"))
+        src.upsert("2506.01234:summary", [0.0, 1.0], _payload(kind="summary", text="paper summary"))
+
+        dest = real.VectorIndex(
+            host="localhost", port=6333, collection_name=dest_name, dim=2, hybrid_dense_weight=0.5
+        )
+        # Destination already has ITS OWN chunk vector at the same id -- must survive untouched.
+        dest.upsert("2506.01234:c0", [0.5, 0.5], _payload(kind="chunk", text="treatment chunk body"))
+
+        copied = src.copy_kind_into(dest_name, "summary")
+        assert copied == 1
+
+        # Direct retrieve (not hybrid_search, which returns every point in a 2-point collection
+        # regardless of relevance at k=10) -- exact membership and vector identity both matter
+        # here. Qdrant's own point id is a UUID5 derived from the external string id
+        # (`_point_id`, rag/vector_index.py) -- the raw external id is never a valid Qdrant id.
+        points = dest._client.retrieve(
+            dest_name,
+            ids=[real._point_id("2506.01234:c0"), real._point_id("2506.01234:summary")],
+            with_vectors=True,
+        )
+        by_ext_id = {p.payload[real._EXT_ID_KEY]: p for p in points}
+        assert set(by_ext_id) == {"2506.01234:c0", "2506.01234:summary"}
+        assert by_ext_id["2506.01234:summary"].vector["dense"] == pytest.approx([0.0, 1.0])
+        # The destination's OWN chunk vector must survive untouched -- not overwritten with the
+        # source's [1.0, 0.0]. `upsert()` L2-normalizes on write, so [0.5, 0.5] -> [1/sqrt2, 1/sqrt2].
+        assert by_ext_id["2506.01234:c0"].vector["dense"] == pytest.approx([0.70710678, 0.70710678])
+    finally:
+        src._client.delete_collection(src_name)
+        dest_client = real.VectorIndex(
+            host="localhost", port=6333, collection_name=dest_name, dim=2, hybrid_dense_weight=0.5
+        )
+        dest_client._client.delete_collection(dest_name)
+
+
 # ==================================================================================================
 # T-DOC27 — sparse-channel IDF weighting (ADR-01: the vector store treats sparse vectors as
 # first-class beside dense).
