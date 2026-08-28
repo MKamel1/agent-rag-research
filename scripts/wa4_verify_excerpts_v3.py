@@ -8,21 +8,31 @@ from difflib import SequenceMatcher
 DB_PATH = "/home/omar/ai-projects/research-system-rag/waymo/data/papers.db"
 
 def verify_excerpt(chunk_text, excerpt):
-    """Check if excerpt is a substring of chunk_text (whitespace-normalized)"""
+    """Excerpt must be an EXACT (whitespace-normalized) substring of chunk_text.
+
+    ponytail note: v3 of this script accepted a >=85% difflib ratio as a "pass" for
+    non-exact matches. That is precisely the hole that let V3-007/008/009's hand-typed
+    excerpts through -- a paraphrase can score 85%+ similar without being present in
+    the DB at all. The rule this GT set needs is "the excerpt is a real DB span", which
+    is binary: exact substring or fail. The ratio is still reported (diagnostic only,
+    e.g. to help find the nearest real span when repairing a failure) but never used
+    to pass an item.
+    """
     chunk_norm = " ".join(chunk_text.split())
     excerpt_norm = " ".join(excerpt.split())
-    
+
     if excerpt_norm in chunk_norm:
         return True, 1.0, "exact"
-    
-    matcher = SequenceMatcher(None, excerpt_norm, chunk_norm)
-    ratio = matcher.ratio()
-    status = "pass" if ratio >= 0.85 else "fail"
-    return ratio >= 0.85, ratio, status
+
+    ratio = SequenceMatcher(None, excerpt_norm, chunk_norm).ratio()
+    return False, ratio, "fail"
 
 conn = sqlite3.connect(f'file:{DB_PATH}?mode=ro', uri=True)
 
-with open("docs/eval-reports/data/2026-08-28-wa4-gt/author-B/wa4_items_v3.json") as f:
+DEFAULT_TARGET = "docs/eval-reports/data/2026-08-28-wa4-gt/author-B/wa4_items_v3.json"
+target = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_TARGET
+
+with open(target) as f:
     data = json.load(f)
 
 results = {"pass": 0, "fail": 0, "failures": []}

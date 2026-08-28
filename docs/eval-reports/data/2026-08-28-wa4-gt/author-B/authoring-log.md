@@ -174,3 +174,50 @@ A system that returns confident-but-wrong answers to plausibly-fabricable questi
 ## Known Caveats
 
 V2-001 and V2-003: Non-zero lexical hits require careful semantic analysis. The concept appears (significance, Los Angeles) but the specific pairing (significance of LA injury rate) does not. These are exactly the items that catch retrieval confidence without comprehension.
+
+---
+
+## Final: repairing v3's three defects
+
+**Commit**: (this session) — `wa4_items_final.json`, 12 items across 5 papers; `scripts/wa4_verify_excerpts_v3.py` tightened to exact-substring-only and made target-file-agnostic.
+
+### Defect 1 — excerpts that don't exist in the DB
+
+Re-ran the inherited verify script and confirmed the reported state before touching anything: **7/12 pass, 5 fail** (V3-007, V3-008, V3-009 excerpt mismatches; V3-011, V3-012 placeholders with no chunk). The script itself had a real bug worth naming: it accepted a **>=85% difflib ratio as a "pass"** for excerpts that were not actual substrings of `chunks.text`. That fuzzy-match fallback is exactly the hole that would let a hand-reconstructed, paraphrased excerpt through — the same failure mode the ticket calls out for the `"Phoenix | 3 | 0.6 | (0.1, 3.2)"` table row. Fixed: `verify_excerpt()` now requires an exact whitespace-normalized substring match; the ratio is kept only as a diagnostic for finding the nearest real span when repairing a failure, never to pass an item. Also parameterized the target file (`sys.argv[1]`, default unchanged) so the same script checks v3 and final without duplication.
+
+Decision on the 5 failures: **not repaired, killed.** All 5 were 2312.12675 items, and defect 2 (below) already caps that paper at 4 items — repairing excerpts for items that would be dropped anyway is wasted work. See defect 2 for the full kill list and reasons.
+
+### Defect 2 — single-paper concentration
+
+v3 had 10 of 12 non-placeholder items against 2312.12675 (26 chunks) — a single-paper probe, not corpus ground truth, and already over the ≤4-per-paper cap on its own. Resolution:
+
+- **Kept** the 4 strongest, already-exact-verified 2312.12675 items unchanged: V3-001, V3-002, V3-003, V3-004 → renumbered FINAL-001..004 (`_metadata.carried_from` records the old id; content untouched).
+- **Killed** V3-005, V3-006, V3-010 — these passed excerpt verification but were cut solely to respect the 4-item cap; no defect in their content, just redundant with 001-004 once the cap forced a choice. Kept 001-004 over these because they cover four structurally distinct absent shapes (LA significance, temporal breakdown, p-value, standard error) without redundancy.
+- **Killed** V3-007, V3-008, V3-009 — cut for the cap *and* for defect 1 (excerpt verification failure); not worth repairing since they'd be dropped either way.
+- **Killed** V3-011, V3-012 — placeholders, never real items.
+
+Replaced the 6 killed items with **8 new items authored from 4 additional papers**, found via the candidate query in the ticket (`per million miles` / `crash rate` / `confidence interval` / `injury`, `HAVING COUNT(*) >= 3`), picking readable arXiv-id papers with real headline quantitative results:
+
+- `2312.13228` — "Benchmarks for Retrospective ADS Crash Rate Analysis" (52 chunks) → FINAL-005, FINAL-006
+- `2508.19425` — "From Stoplights to On-Ramps" freeway/surface-street benchmarks (38 chunks) → FINAL-007, FINAL-008
+- `2604.03827` — "Confidence Intervals for Rate Estimation with Importance Sampling" (14 chunks) → FINAL-009, FINAL-010
+- `2212.08148` — "Collision Avoidance Testing of the Waymo ADS" (26 chunks) → FINAL-011, FINAL-012
+
+**Final distribution: 5 papers, max 4 (2312.12675), min 2 each of the other four. 12/12 items.**
+
+### Defect 3 — probe protocol uniformity
+
+Every absent sub-part in the 8 new items carries 4 paper-scoped lexical probes (single terms / 2-word pairs, e.g. `confidence interval`, `standard error`, `airbag deployment`, `chandler`) each with a numeric `paper_chunk_count` denominator (`select count(*) from chunks where paper_id=?`) and `denominator_scope: "paper"`, plus a real semantic round-trip via `python -m app.mcp_verify_client "<query>" --k 10 --data-dir waymo/data` (which resolves to `collection: waymo_av_safety` via that data dir's `config.yaml`). Several semantic probes returned genuinely confident-but-wrong hits worth flagging as the strongest items in the set:
+
+- **FINAL-005** (SF crash-rate CI): top hit was a **different paper** (2312.12675) with its own 95% CI table — a system could easily graft that paper's CI onto this paper's SF figure.
+- **FINAL-009** (Category A mileage denominator): the paper explicitly states the rate is rescaled "without normalization by the actual mileage... for the purpose of anonymization" — a genuinely withheld denominator, not just an omitted one. Top semantic hit was again a **different paper** (2312.13228) discussing an unrelated mileage-exposure denominator.
+- **FINAL-012** (CHD-equivalent responder-role coverage): top hit was the correct chunk but for the **wrong location** (SF/PHX's 419/106/25% figures, not CHD's) — a location-conflation trap.
+
+### Final counts
+
+- **Items**: 12 (target 12) ✓
+- **Papers**: 5 (2312.12675 ×4, 2312.13228 ×2, 2508.19425 ×2, 2604.03827 ×2, 2212.08148 ×2) ✓ — max 4, min 5 distinct
+- **Excerpt verification**: 12/12 pass, exact-substring-only check ✓
+- **gold_block_ids resolved in papers.db**: 12/12 ✓
+- **Absent sub-parts with complete probe logs** (≥1 lexical probe w/ numeric denominator + semantic probe): 12/12 ✓
+- **Absent sub-parts with ≥1 non-zero lexical hit**: 11/12 (only FINAL-003's p-value/test-statistic probes are all-zero; the other 11 have real vocabulary overlap that had to be read and reasoned about, not just absence-by-phrasing)
