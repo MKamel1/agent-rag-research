@@ -267,15 +267,22 @@ class MiniCheckScorer:
     minicheck/inference.py, Tang et al. 2024) directly on `transformers` -- not the `minicheck`
     pip package, which pulls in extra runtime deps for model variants and doc-tokenizing paths
     this instrument doesn't use. Loads `lytang/MiniCheck-Flan-T5-Large` (770M) once; `score_pair`
-    scores one
-    (served-passage, answer-sentence) pair.
+    scores one (served-passage, answer-sentence) pair.
 
-    Input format and the [3, 209] (no-support, support) decoder-logit read are byte-identical to
-    the released inference code -- this is a different harness around the same checkpoint and
-    the same math, not a new scoring method.
+    Verified against the checkpoint's own published demo (its README's two-sentence example):
+    this reimplementation reproduces its published raw probabilities (0.9806 / 0.0071) to 4
+    decimal places -- the input format and the [3, 209] (no-support, support) decoder-logit read
+    are byte-identical to the released inference code, not a new scoring method.
     """
 
     def __init__(self, device: str = "cpu"):
+        import os
+
+        # Ticket requirement: zero network calls once the checkpoint is cached (this is an
+        # OFFLINE experiment). `from_pretrained` without this still makes an etag HEAD request
+        # per call; setdefault so an operator's own HF_HUB_OFFLINE choice is never overridden.
+        os.environ.setdefault("HF_HUB_OFFLINE", "1")
+
         import torch
         from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 

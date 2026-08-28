@@ -1,0 +1,1020 @@
+{
+  "_metadata": {
+    "prototype_label": "UNVALIDATED PROTOTYPE -- raw support score (not a probability, not a truth judgment). No calibration data, no confidence levels, no thresholds. Measures support-by-served-context only; see NB-QW2 report for the wrong-context-scores-high failure mode (Q-GTA-037).",
+    "arm": "absent",
+    "fixture": "2026-08-23-waymo-generation-run.absent.json",
+    "model": "lytang/MiniCheck-Flan-T5-Large",
+    "n_items_loaded": 16,
+    "n_items_scored": 16
+  },
+  "items": [
+    {
+      "question_id": "Q-WAYB-009",
+      "question_text": "What LiDAR wavelength does Waymo's autonomous-driving hardware platform use, according to the corpus's own papers?",
+      "answer_text": "The information provided in the passages does not specify the LiDAR wavelength used by Waymo's autonomous-driving hardware platform.",
+      "n_passages_used": 5,
+      "n_sentences": 1,
+      "sentence_scores": [
+        {
+          "text": "The information provided in the passages does not specify the LiDAR wavelength used by Waymo's autonomous-driving hardware platform.",
+          "max_support": 0.9077953100204468,
+          "per_passage": [
+            {
+              "paper_id": "2111.09799",
+              "support": 0.7822359204292297
+            },
+            {
+              "paper_id": "2112.12984",
+              "support": 0.46824270486831665
+            },
+            {
+              "paper_id": "2312.12772",
+              "support": 0.9077953100204468
+            },
+            {
+              "paper_id": "2009.14349",
+              "support": 0.10523206740617752
+            },
+            {
+              "paper_id": "local:007c79776d54",
+              "support": 0.35839328169822693
+            }
+          ]
+        }
+      ],
+      "answer_aggregate": {
+        "mean": 0.9077953100204468,
+        "median": 0.9077953100204468,
+        "min": 0.9077953100204468,
+        "max": 0.9077953100204468
+      }
+    },
+    {
+      "question_id": "Q-WAYB-021",
+      "question_text": "How many pedestrian, cyclist, and vehicle-occupant fatalities has Waymo's driverless fleet caused in total, broken down by category, according to the corpus's papers?",
+      "answer_text": "According to the corpus's papers, Waymo's driverless fleet has caused a total of **0 pedestrian, 0 cyclist, and 0 vehicle-occupant fatalities**. This information is derived from the passage that states: \"the driverless pilot operation from both Waymo and Cruise did not report any crashes with injuries.\" This indicates that there were no fatalities involving pedestrians, cyclists, or vehicle occupants caused by Waymo's driverless fleet.",
+      "n_passages_used": 5,
+      "n_sentences": 3,
+      "sentence_scores": [
+        {
+          "text": "According to the corpus's papers, Waymo's driverless fleet has caused a total of 0 pedestrian, 0 cyclist, and 0 vehicle-occupant fatalities.",
+          "max_support": 0.07532516121864319,
+          "per_passage": [
+            {
+              "paper_id": "2011.00054",
+              "support": 0.007517525926232338
+            },
+            {
+              "paper_id": "2403.14648",
+              "support": 0.010814121924340725
+            },
+            {
+              "paper_id": "local:466c3988963b",
+              "support": 0.039695676416158676
+            },
+            {
+              "paper_id": "2011.00054",
+              "support": 0.008721396327018738
+            },
+            {
+              "paper_id": "2403.14648",
+              "support": 0.07532516121864319
+            }
+          ]
+        },
+        {
+          "text": "This information is derived from the passage that states: \"the driverless pilot operation from both Waymo and Cruise did not report any crashes with injuries.\"",
+          "max_support": 0.9668896794319153,
+          "per_passage": [
+            {
+              "paper_id": "2011.00054",
+              "support": 0.009934327565133572
+            },
+            {
+              "paper_id": "2403.14648",
+              "support": 0.9668896794319153
+            },
+            {
+              "paper_id": "local:466c3988963b",
+              "support": 0.036276716738939285
+            },
+            {
+              "paper_id": "2011.00054",
+              "support": 0.014038880355656147
+            },
+            {
+              "paper_id": "2403.14648",
+              "support": 0.18230099976062775
+            }
+          ]
+        },
+        {
+          "text": "This indicates that there were no fatalities involving pedestrians, cyclists, or vehicle occupants caused by Waymo's driverless fleet.",
+          "max_support": 0.8202168345451355,
+          "per_passage": [
+            {
+              "paper_id": "2011.00054",
+              "support": 0.013335848227143288
+            },
+            {
+              "paper_id": "2403.14648",
+              "support": 0.06158963218331337
+            },
+            {
+              "paper_id": "local:466c3988963b",
+              "support": 0.0804222971200943
+            },
+            {
+              "paper_id": "2011.00054",
+              "support": 0.014579541981220245
+            },
+            {
+              "paper_id": "2403.14648",
+              "support": 0.8202168345451355
+            }
+          ]
+        }
+      ],
+      "answer_aggregate": {
+        "mean": 0.6208105583985647,
+        "median": 0.8202168345451355,
+        "min": 0.07532516121864319,
+        "max": 0.9668896794319153
+      }
+    },
+    {
+      "question_id": "Q-WAYB-022",
+      "question_text": "What is the reported disengagement rate per 1,000 miles specifically for Waymo's 5th-generation ('Gen 5') hardware platform, as distinct from its 4th-generation platform, according to the corpus?",
+      "answer_text": "The reported disengagement rate per 1,000 miles for Waymo's 5th-generation ('Gen 5') hardware platform is not explicitly stated in the provided corpus. However, it is mentioned that the disengagement rate for Waymo's 4th-generation platform was 0.18 disengagements per 1,000 miles. No specific disengagement rate is provided for the Gen 5 platform in the corpus.",
+      "n_passages_used": 5,
+      "n_sentences": 3,
+      "sentence_scores": [
+        {
+          "text": "The reported disengagement rate per 1,000 miles for Waymo's 5th-generation ('Gen 5') hardware platform is not explicitly stated in the provided corpus.",
+          "max_support": 0.06496288627386093,
+          "per_passage": [
+            {
+              "paper_id": "2403.14648",
+              "support": 0.04969959706068039
+            },
+            {
+              "paper_id": "local:6b9ccd0431f6",
+              "support": 0.06496288627386093
+            },
+            {
+              "paper_id": "local:f0cecc4764d6",
+              "support": 0.027172446250915527
+            },
+            {
+              "paper_id": "local:4c3912bd5507",
+              "support": 0.04352835565805435
+            },
+            {
+              "paper_id": "2312.12675",
+              "support": 0.03248082101345062
+            }
+          ]
+        },
+        {
+          "text": "However, it is mentioned that the disengagement rate for Waymo's 4th-generation platform was 0.18 disengagements per 1,000 miles.",
+          "max_support": 0.019779030233621597,
+          "per_passage": [
+            {
+              "paper_id": "2403.14648",
+              "support": 0.018222330138087273
+            },
+            {
+              "paper_id": "local:6b9ccd0431f6",
+              "support": 0.019779030233621597
+            },
+            {
+              "paper_id": "local:f0cecc4764d6",
+              "support": 0.014616988599300385
+            },
+            {
+              "paper_id": "local:4c3912bd5507",
+              "support": 0.01887134648859501
+            },
+            {
+              "paper_id": "2312.12675",
+              "support": 0.018329543992877007
+            }
+          ]
+        },
+        {
+          "text": "No specific disengagement rate is provided for the Gen 5 platform in the corpus.",
+          "max_support": 0.0643850788474083,
+          "per_passage": [
+            {
+              "paper_id": "2403.14648",
+              "support": 0.0643850788474083
+            },
+            {
+              "paper_id": "local:6b9ccd0431f6",
+              "support": 0.04093610867857933
+            },
+            {
+              "paper_id": "local:f0cecc4764d6",
+              "support": 0.03122563287615776
+            },
+            {
+              "paper_id": "local:4c3912bd5507",
+              "support": 0.04715561494231224
+            },
+            {
+              "paper_id": "2312.12675",
+              "support": 0.057506974786520004
+            }
+          ]
+        }
+      ],
+      "answer_aggregate": {
+        "mean": 0.04970899845163027,
+        "median": 0.0643850788474083,
+        "min": 0.019779030233621597,
+        "max": 0.06496288627386093
+      }
+    },
+    {
+      "question_id": "Q-WAYB-028",
+      "question_text": "What statistical power analysis did the RAVE Checklist's working group perform to empirically validate that following its fifteen recommendations improves the accuracy of retrospective ADS safety studies?",
+      "answer_text": "The RAVE Checklist's working group performed sensitivity analyses and/or underestimated ADS safety as a conservative approach to empirically validate that following its fifteen recommendations improves the accuracy of retrospective ADS safety studies. This approach was undertaken to address potential biases and ensure that the results are reliable and conservative in the face of incomplete or uncertain data.",
+      "n_passages_used": 5,
+      "n_sentences": 2,
+      "sentence_scores": [
+        {
+          "text": "The RAVE Checklist's working group performed sensitivity analyses and/or underestimated ADS safety as a conservative approach to empirically validate that following its fifteen recommendations improves the accuracy of retrospective ADS safety studies.",
+          "max_support": 0.2574957013130188,
+          "per_passage": [
+            {
+              "paper_id": "local:4087ccce4c01",
+              "support": 0.2574957013130188
+            },
+            {
+              "paper_id": "local:4087ccce4c01",
+              "support": 0.01874295249581337
+            },
+            {
+              "paper_id": "local:4087ccce4c01",
+              "support": 0.062471285462379456
+            },
+            {
+              "paper_id": "local:f6f1461f2c9a",
+              "support": 0.02911541610956192
+            },
+            {
+              "paper_id": "local:4087ccce4c01",
+              "support": 0.021747253835201263
+            }
+          ]
+        },
+        {
+          "text": "This approach was undertaken to address potential biases and ensure that the results are reliable and conservative in the face of incomplete or uncertain data.",
+          "max_support": 0.965331494808197,
+          "per_passage": [
+            {
+              "paper_id": "local:4087ccce4c01",
+              "support": 0.19538065791130066
+            },
+            {
+              "paper_id": "local:4087ccce4c01",
+              "support": 0.07339583337306976
+            },
+            {
+              "paper_id": "local:4087ccce4c01",
+              "support": 0.965331494808197
+            },
+            {
+              "paper_id": "local:f6f1461f2c9a",
+              "support": 0.049356572329998016
+            },
+            {
+              "paper_id": "local:4087ccce4c01",
+              "support": 0.06131381541490555
+            }
+          ]
+        }
+      ],
+      "answer_aggregate": {
+        "mean": 0.6114135980606079,
+        "median": 0.6114135980606079,
+        "min": 0.2574957013130188,
+        "max": 0.965331494808197
+      }
+    },
+    {
+      "question_id": "Q-WAYB-029",
+      "question_text": "What blinding procedure does Waymo's Fatigue Risk Management Framework paper use to prevent evaluator bias when assessing autonomous specialists' fatigue survey responses?",
+      "answer_text": "The passage does not mention a specific blinding procedure used by Waymo's Fatigue Risk Management Framework paper to prevent evaluator bias when assessing autonomous specialists' fatigue survey responses.",
+      "n_passages_used": 5,
+      "n_sentences": 1,
+      "sentence_scores": [
+        {
+          "text": "The passage does not mention a specific blinding procedure used by Waymo's Fatigue Risk Management Framework paper to prevent evaluator bias when assessing autonomous specialists' fatigue survey responses.",
+          "max_support": 0.39588800072669983,
+          "per_passage": [
+            {
+              "paper_id": "2208.12833",
+              "support": 0.39588800072669983
+            },
+            {
+              "paper_id": "local:94bdd3d09df1",
+              "support": 0.39588800072669983
+            },
+            {
+              "paper_id": "2208.12833",
+              "support": 0.2874611020088196
+            },
+            {
+              "paper_id": "local:94bdd3d09df1",
+              "support": 0.2874611020088196
+            },
+            {
+              "paper_id": "2208.12833",
+              "support": 0.29779118299484253
+            }
+          ]
+        }
+      ],
+      "answer_aggregate": {
+        "mean": 0.39588800072669983,
+        "median": 0.39588800072669983,
+        "min": 0.39588800072669983,
+        "max": 0.39588800072669983
+      }
+    },
+    {
+      "question_id": "Q-WAYB-034",
+      "question_text": "Which paper in this corpus reports Zoox's own crashes-per-million-mile safety performance figure from a dedicated Zoox safety study?",
+      "answer_text": "The paper that reports Zoox's own crashes-per-million-mile safety performance figure from a dedicated Zoox safety study is not mentioned in the provided passages.",
+      "n_passages_used": 2,
+      "n_sentences": 1,
+      "sentence_scores": [
+        {
+          "text": "The paper that reports Zoox's own crashes-per-million-mile safety performance figure from a dedicated Zoox safety study is not mentioned in the provided passages.",
+          "max_support": 0.07742969691753387,
+          "per_passage": [
+            {
+              "paper_id": "2403.14648",
+              "support": 0.07742969691753387
+            },
+            {
+              "paper_id": "local:007c79776d54",
+              "support": 0.025957319885492325
+            }
+          ]
+        }
+      ],
+      "answer_aggregate": {
+        "mean": 0.07742969691753387,
+        "median": 0.07742969691753387,
+        "min": 0.07742969691753387,
+        "max": 0.07742969691753387
+      }
+    },
+    {
+      "question_id": "Q-WAYB-035",
+      "question_text": "Using the same underreporting-adjusted police-reported human benchmark rate (the Blincoe-adjusted rate) that Waymo's 7.1-million-mile rider-only crash study used, what crash-rate reduction did Cruise achieve when evaluated against that identical benchmark?",
+      "answer_text": "Using the Blincoe-adjusted rate (the underreporting-adjusted police-reported human benchmark rate), Cruise achieved a **65% reduction** in the any property damage or injury crash rate when evaluated against that identical benchmark.",
+      "n_passages_used": 5,
+      "n_sentences": 1,
+      "sentence_scores": [
+        {
+          "text": "Using the Blincoe-adjusted rate (the underreporting-adjusted police-reported human benchmark rate), Cruise achieved a 65% reduction in the any property damage or injury crash rate when evaluated against that identical benchmark.",
+          "max_support": 0.13545142114162445,
+          "per_passage": [
+            {
+              "paper_id": "local:6b9ccd0431f6",
+              "support": 0.008194119669497013
+            },
+            {
+              "paper_id": "2312.12675",
+              "support": 0.13545142114162445
+            },
+            {
+              "paper_id": "2312.12675",
+              "support": 0.020305605605244637
+            },
+            {
+              "paper_id": "local:6b9ccd0431f6",
+              "support": 0.01833355985581875
+            },
+            {
+              "paper_id": "2312.12675",
+              "support": 0.010992229916155338
+            }
+          ]
+        }
+      ],
+      "answer_aggregate": {
+        "mean": 0.13545142114162445,
+        "median": 0.13545142114162445,
+        "min": 0.13545142114162445,
+        "max": 0.13545142114162445
+      }
+    },
+    {
+      "question_id": "Q-WAYB-039",
+      "question_text": "What crash-rate reduction figures did Waymo report in a rider-only crash-rate study at the 100-million-mile milestone?",
+      "answer_text": "The information provided does not specify the crash-rate reduction figures reported by Waymo at the 100-million-mile milestone. The passages only mention data up to 56.7 million miles and do not include figures for the 100-million-mile milestone.",
+      "n_passages_used": 5,
+      "n_sentences": 2,
+      "sentence_scores": [
+        {
+          "text": "The information provided does not specify the crash-rate reduction figures reported by Waymo at the 100-million-mile milestone.",
+          "max_support": 0.7612111568450928,
+          "per_passage": [
+            {
+              "paper_id": "local:6b9ccd0431f6",
+              "support": 0.6283585429191589
+            },
+            {
+              "paper_id": "local:6b9ccd0431f6",
+              "support": 0.7612111568450928
+            },
+            {
+              "paper_id": "local:6b9ccd0431f6",
+              "support": 0.38472720980644226
+            },
+            {
+              "paper_id": "local:6b9ccd0431f6",
+              "support": 0.6609376668930054
+            },
+            {
+              "paper_id": "local:6b9ccd0431f6",
+              "support": 0.5096288323402405
+            }
+          ]
+        },
+        {
+          "text": "The passages only mention data up to 56.7 million miles and do not include figures for the 100-million-mile milestone.",
+          "max_support": 0.967609703540802,
+          "per_passage": [
+            {
+              "paper_id": "local:6b9ccd0431f6",
+              "support": 0.9364624619483948
+            },
+            {
+              "paper_id": "local:6b9ccd0431f6",
+              "support": 0.9554731249809265
+            },
+            {
+              "paper_id": "local:6b9ccd0431f6",
+              "support": 0.9593706130981445
+            },
+            {
+              "paper_id": "local:6b9ccd0431f6",
+              "support": 0.9662315845489502
+            },
+            {
+              "paper_id": "local:6b9ccd0431f6",
+              "support": 0.967609703540802
+            }
+          ]
+        }
+      ],
+      "answer_aggregate": {
+        "mean": 0.8644104301929474,
+        "median": 0.8644104301929474,
+        "min": 0.7612111568450928,
+        "max": 0.967609703540802
+      }
+    },
+    {
+      "question_id": "Q-GTA-034",
+      "question_text": "What randomized controlled trial design did Waymo use to compare its rider-only automated driver against human benchmark drivers?",
+      "answer_text": "The passage does not explicitly describe a randomized controlled trial (RCT) design used by Waymo to compare its rider-only automated driver against human benchmark drivers. Instead, it outlines methods such as simulated deployments, counterfactual simulations, and comparative analyses using real-world data and human benchmarks. These approaches are not randomized controlled trials. Therefore, based on the information provided, it cannot be concluded that Waymo used a randomized controlled trial design for this comparison.",
+      "n_passages_used": 5,
+      "n_sentences": 4,
+      "sentence_scores": [
+        {
+          "text": "The passage does not explicitly describe a randomized controlled trial (RCT) design used by Waymo to compare its rider-only automated driver against human benchmark drivers.",
+          "max_support": 0.8876920342445374,
+          "per_passage": [
+            {
+              "paper_id": "2011.00054",
+              "support": 0.6297135353088379
+            },
+            {
+              "paper_id": "local:6b9ccd0431f6",
+              "support": 0.8876920342445374
+            },
+            {
+              "paper_id": "local:6b9ccd0431f6",
+              "support": 0.8734391927719116
+            },
+            {
+              "paper_id": "local:6b9ccd0431f6",
+              "support": 0.8475862741470337
+            },
+            {
+              "paper_id": "local:6b9ccd0431f6",
+              "support": 0.7779027819633484
+            }
+          ]
+        },
+        {
+          "text": "Instead, it outlines methods such as simulated deployments, counterfactual simulations, and comparative analyses using real-world data and human benchmarks.",
+          "max_support": 0.925424337387085,
+          "per_passage": [
+            {
+              "paper_id": "2011.00054",
+              "support": 0.925424337387085
+            },
+            {
+              "paper_id": "local:6b9ccd0431f6",
+              "support": 0.06077124923467636
+            },
+            {
+              "paper_id": "local:6b9ccd0431f6",
+              "support": 0.0319601371884346
+            },
+            {
+              "paper_id": "local:6b9ccd0431f6",
+              "support": 0.10698302835226059
+            },
+            {
+              "paper_id": "local:6b9ccd0431f6",
+              "support": 0.022847836837172508
+            }
+          ]
+        },
+        {
+          "text": "These approaches are not randomized controlled trials.",
+          "max_support": 0.8901548385620117,
+          "per_passage": [
+            {
+              "paper_id": "2011.00054",
+              "support": 0.7640690803527832
+            },
+            {
+              "paper_id": "local:6b9ccd0431f6",
+              "support": 0.7902973294258118
+            },
+            {
+              "paper_id": "local:6b9ccd0431f6",
+              "support": 0.8901548385620117
+            },
+            {
+              "paper_id": "local:6b9ccd0431f6",
+              "support": 0.7064532041549683
+            },
+            {
+              "paper_id": "local:6b9ccd0431f6",
+              "support": 0.5442906618118286
+            }
+          ]
+        },
+        {
+          "text": "Therefore, based on the information provided, it cannot be concluded that Waymo used a randomized controlled trial design for this comparison.",
+          "max_support": 0.6358421444892883,
+          "per_passage": [
+            {
+              "paper_id": "2011.00054",
+              "support": 0.37942153215408325
+            },
+            {
+              "paper_id": "local:6b9ccd0431f6",
+              "support": 0.6358421444892883
+            },
+            {
+              "paper_id": "local:6b9ccd0431f6",
+              "support": 0.5651791095733643
+            },
+            {
+              "paper_id": "local:6b9ccd0431f6",
+              "support": 0.6253261566162109
+            },
+            {
+              "paper_id": "local:6b9ccd0431f6",
+              "support": 0.12391017377376556
+            }
+          ]
+        }
+      ],
+      "answer_aggregate": {
+        "mean": 0.8347783386707306,
+        "median": 0.8889234364032745,
+        "min": 0.6358421444892883,
+        "max": 0.925424337387085
+      }
+    },
+    {
+      "question_id": "Q-GTA-035",
+      "question_text": "According to this corpus, what crash rate per million miles has Tesla's Full Self-Driving system achieved compared with human drivers?",
+      "answer_text": "According to the information in the PASSAGES, Tesla's Full Self-Driving (FSD) system achieved a crash rate of **0.31 crashes per million miles traveled**. This is compared to **0.18 crashes per million miles** for Tesla's Autopilot system and **0.68 crashes per million miles** for Tesla vehicles with no active safety features engaged.",
+      "n_passages_used": 5,
+      "n_sentences": 2,
+      "sentence_scores": [
+        {
+          "text": "According to the information in the PASSAGES, Tesla's Full Self-Driving (FSD) system achieved a crash rate of 0.31 crashes per million miles traveled.",
+          "max_support": 0.9438637495040894,
+          "per_passage": [
+            {
+              "paper_id": "local:959c22bd9d85",
+              "support": 0.9438637495040894
+            },
+            {
+              "paper_id": "local:959c22bd9d85",
+              "support": 0.038312964141368866
+            },
+            {
+              "paper_id": "local:466c3988963b",
+              "support": 0.04069477692246437
+            },
+            {
+              "paper_id": "local:1d27d7fac441",
+              "support": 0.011816962622106075
+            },
+            {
+              "paper_id": "local:1d27d7fac441",
+              "support": 0.008732686750590801
+            }
+          ]
+        },
+        {
+          "text": "This is compared to 0.18 crashes per million miles for Tesla's Autopilot system and 0.68 crashes per million miles for Tesla vehicles with no active safety features engaged.",
+          "max_support": 0.7559500336647034,
+          "per_passage": [
+            {
+              "paper_id": "local:959c22bd9d85",
+              "support": 0.7559500336647034
+            },
+            {
+              "paper_id": "local:959c22bd9d85",
+              "support": 0.07581527531147003
+            },
+            {
+              "paper_id": "local:466c3988963b",
+              "support": 0.06003803759813309
+            },
+            {
+              "paper_id": "local:1d27d7fac441",
+              "support": 0.030806753784418106
+            },
+            {
+              "paper_id": "local:1d27d7fac441",
+              "support": 0.024409404024481773
+            }
+          ]
+        }
+      ],
+      "answer_aggregate": {
+        "mean": 0.8499068915843964,
+        "median": 0.8499068915843964,
+        "min": 0.7559500336647034,
+        "max": 0.9438637495040894
+      }
+    },
+    {
+      "question_id": "Q-GTA-036",
+      "question_text": "How many crashes per million miles has Zoox's driverless service experienced, compared with human drivers?",
+      "answer_text": "Based on the information provided in the passages, Zoox's driverless service is not directly mentioned. However, the passage does provide data on Waymo's driverless service, which experienced **0.78 property damage claims per million miles (CPMM)** compared to **3.26 CPMM** for human drivers. Since the question asks about Zoox specifically and no data on Zoox is provided in the passages, it is not possible to directly answer the question with the given information.",
+      "n_passages_used": 5,
+      "n_sentences": 3,
+      "sentence_scores": [
+        {
+          "text": "Based on the information provided in the passages, Zoox's driverless service is not directly mentioned.",
+          "max_support": 0.8701480031013489,
+          "per_passage": [
+            {
+              "paper_id": "2403.14648",
+              "support": 0.5501207113265991
+            },
+            {
+              "paper_id": "2403.14648",
+              "support": 0.6054655909538269
+            },
+            {
+              "paper_id": "2403.14648",
+              "support": 0.8701480031013489
+            },
+            {
+              "paper_id": "local:959c22bd9d85",
+              "support": 0.6413485407829285
+            },
+            {
+              "paper_id": "local:1d27d7fac441",
+              "support": 0.08665444701910019
+            }
+          ]
+        },
+        {
+          "text": "However, the passage does provide data on Waymo's driverless service, which experienced 0.78 property damage claims per million miles (CPMM) compared to 3.26 CPMM for human drivers.",
+          "max_support": 0.9735022783279419,
+          "per_passage": [
+            {
+              "paper_id": "2403.14648",
+              "support": 0.9735022783279419
+            },
+            {
+              "paper_id": "2403.14648",
+              "support": 0.02218635007739067
+            },
+            {
+              "paper_id": "2403.14648",
+              "support": 0.030659563839435577
+            },
+            {
+              "paper_id": "local:959c22bd9d85",
+              "support": 0.11637812107801437
+            },
+            {
+              "paper_id": "local:1d27d7fac441",
+              "support": 0.012903079390525818
+            }
+          ]
+        },
+        {
+          "text": "Since the question asks about Zoox specifically and no data on Zoox is provided in the passages, it is not possible to directly answer the question with the given information.",
+          "max_support": 0.03415452688932419,
+          "per_passage": [
+            {
+              "paper_id": "2403.14648",
+              "support": 0.024247629567980766
+            },
+            {
+              "paper_id": "2403.14648",
+              "support": 0.014425558038055897
+            },
+            {
+              "paper_id": "2403.14648",
+              "support": 0.020258333534002304
+            },
+            {
+              "paper_id": "local:959c22bd9d85",
+              "support": 0.03415452688932419
+            },
+            {
+              "paper_id": "local:1d27d7fac441",
+              "support": 0.015688184648752213
+            }
+          ]
+        }
+      ],
+      "answer_aggregate": {
+        "mean": 0.625934936106205,
+        "median": 0.8701480031013489,
+        "min": 0.03415452688932419,
+        "max": 0.9735022783279419
+      }
+    },
+    {
+      "question_id": "Q-GTA-037",
+      "question_text": "What laser wavelength does the lidar sensor on Waymo's production vehicles use?",
+      "answer_text": "The lidar sensor on Waymo's production vehicles uses a laser wavelength of **905 nm**.",
+      "n_passages_used": 5,
+      "n_sentences": 1,
+      "sentence_scores": [
+        {
+          "text": "The lidar sensor on Waymo's production vehicles uses a laser wavelength of 905 nm.",
+          "max_support": 0.026790428906679153,
+          "per_passage": [
+            {
+              "paper_id": "local:0a57c839728c",
+              "support": 0.012421667575836182
+            },
+            {
+              "paper_id": "2508.02858",
+              "support": 0.026790428906679153
+            },
+            {
+              "paper_id": "2112.12984",
+              "support": 0.012795258313417435
+            },
+            {
+              "paper_id": "2206.05961",
+              "support": 0.011813204735517502
+            },
+            {
+              "paper_id": "2312.12772",
+              "support": 0.020036235451698303
+            }
+          ]
+        }
+      ],
+      "answer_aggregate": {
+        "mean": 0.026790428906679153,
+        "median": 0.026790428906679153,
+        "min": 0.026790428906679153,
+        "max": 0.026790428906679153
+      }
+    },
+    {
+      "question_id": "Q-GTA-038",
+      "question_text": "How many riders in total have used Waymo's ride-hailing service since its commercial operations began?",
+      "answer_text": "The passage does not provide the total number of riders who have used Waymo's ride-hailing service since its commercial operations began.",
+      "n_passages_used": 5,
+      "n_sentences": 1,
+      "sentence_scores": [
+        {
+          "text": "The passage does not provide the total number of riders who have used Waymo's ride-hailing service since its commercial operations began.",
+          "max_support": 0.7383778691291809,
+          "per_passage": [
+            {
+              "paper_id": "local:e402895b56ca",
+              "support": 0.5165427923202515
+            },
+            {
+              "paper_id": "local:4c3912bd5507",
+              "support": 0.7383778691291809
+            },
+            {
+              "paper_id": "local:f6f1461f2c9a",
+              "support": 0.607715368270874
+            },
+            {
+              "paper_id": "local:6b9ccd0431f6",
+              "support": 0.5703151226043701
+            },
+            {
+              "paper_id": "local:2b0e7fb59b39",
+              "support": 0.49990057945251465
+            }
+          ]
+        }
+      ],
+      "answer_aggregate": {
+        "mean": 0.7383778691291809,
+        "median": 0.7383778691291809,
+        "min": 0.7383778691291809,
+        "max": 0.7383778691291809
+      }
+    },
+    {
+      "question_id": "Q-GTA-039",
+      "question_text": "How much does a passenger pay for a typical Waymo One ride?",
+      "answer_text": "The provided passages do not mention the cost of a typical Waymo One ride.",
+      "n_passages_used": 5,
+      "n_sentences": 1,
+      "sentence_scores": [
+        {
+          "text": "The provided passages do not mention the cost of a typical Waymo One ride.",
+          "max_support": 0.9564491510391235,
+          "per_passage": [
+            {
+              "paper_id": "local:e402895b56ca",
+              "support": 0.9564491510391235
+            },
+            {
+              "paper_id": "2011.00054",
+              "support": 0.9041854739189148
+            },
+            {
+              "paper_id": "local:6b9ccd0431f6",
+              "support": 0.8711941242218018
+            },
+            {
+              "paper_id": "local:6b9ccd0431f6",
+              "support": 0.9517790079116821
+            },
+            {
+              "paper_id": "local:4c3912bd5507",
+              "support": 0.9086973667144775
+            }
+          ]
+        }
+      ],
+      "answer_aggregate": {
+        "mean": 0.9564491510391235,
+        "median": 0.9564491510391235,
+        "min": 0.9564491510391235,
+        "max": 0.9564491510391235
+      }
+    },
+    {
+      "question_id": "Q-GTA-040",
+      "question_text": "Which insurance company underwrites Waymo's auto liability coverage, and what premium discount followed from the Swiss Re claims analyses?",
+      "answer_text": "The insurance company that underwrites Waymo's auto liability coverage is **Swiss Re**. Based on the analysis by Swiss Re, the premium discount that followed from their claims analyses was a **significant reduction in third-party property damage and bodily injury claims rates** compared to a mileage and zip-code matched human driver benchmark. Specifically, the analysis detected a statistically significant reduction in these claim rates for Waymo's autonomous vehicles.",
+      "n_passages_used": 5,
+      "n_sentences": 3,
+      "sentence_scores": [
+        {
+          "text": "The insurance company that underwrites Waymo's auto liability coverage is Swiss Re.",
+          "max_support": 0.9387977123260498,
+          "per_passage": [
+            {
+              "paper_id": "local:f6f1461f2c9a",
+              "support": 0.9137661457061768
+            },
+            {
+              "paper_id": "local:f6f1461f2c9a",
+              "support": 0.01012665405869484
+            },
+            {
+              "paper_id": "local:5fa216c3425a",
+              "support": 0.9387977123260498
+            },
+            {
+              "paper_id": "local:959c22bd9d85",
+              "support": 0.6695258617401123
+            },
+            {
+              "paper_id": "2312.13228",
+              "support": 0.22292327880859375
+            }
+          ]
+        },
+        {
+          "text": "Based on the analysis by Swiss Re, the premium discount that followed from their claims analyses was a significant reduction in third-party property damage and bodily injury claims rates compared to a mileage and zip-code matched human driver benchmark.",
+          "max_support": 0.38154298067092896,
+          "per_passage": [
+            {
+              "paper_id": "local:f6f1461f2c9a",
+              "support": 0.016321437433362007
+            },
+            {
+              "paper_id": "local:f6f1461f2c9a",
+              "support": 0.01870047301054001
+            },
+            {
+              "paper_id": "local:5fa216c3425a",
+              "support": 0.012874355539679527
+            },
+            {
+              "paper_id": "local:959c22bd9d85",
+              "support": 0.033976174890995026
+            },
+            {
+              "paper_id": "2312.13228",
+              "support": 0.38154298067092896
+            }
+          ]
+        },
+        {
+          "text": "Specifically, the analysis detected a statistically significant reduction in these claim rates for Waymo's autonomous vehicles.",
+          "max_support": 0.990342378616333,
+          "per_passage": [
+            {
+              "paper_id": "local:f6f1461f2c9a",
+              "support": 0.8098994493484497
+            },
+            {
+              "paper_id": "local:f6f1461f2c9a",
+              "support": 0.990342378616333
+            },
+            {
+              "paper_id": "local:5fa216c3425a",
+              "support": 0.03863172233104706
+            },
+            {
+              "paper_id": "local:959c22bd9d85",
+              "support": 0.04657703638076782
+            },
+            {
+              "paper_id": "2312.13228",
+              "support": 0.9252419471740723
+            }
+          ]
+        }
+      ],
+      "answer_aggregate": {
+        "mean": 0.7702276905377706,
+        "median": 0.9387977123260498,
+        "min": 0.38154298067092896,
+        "max": 0.990342378616333
+      }
+    },
+    {
+      "question_id": "Q-GTA-041",
+      "question_text": "What fraction of scenarios in the Waymo Open Motion Dataset involve a collision between the autonomous vehicle and another road user?",
+      "answer_text": "The provided passages do not specify the fraction of scenarios in the Waymo Open Motion Dataset that involve a collision between the autonomous vehicle and another road user.",
+      "n_passages_used": 5,
+      "n_sentences": 1,
+      "sentence_scores": [
+        {
+          "text": "The provided passages do not specify the fraction of scenarios in the Waymo Open Motion Dataset that involve a collision between the autonomous vehicle and another road user.",
+          "max_support": 0.7983406782150269,
+          "per_passage": [
+            {
+              "paper_id": "2212.08148",
+              "support": 0.6552879214286804
+            },
+            {
+              "paper_id": "local:007c79776d54",
+              "support": 0.7983406782150269
+            },
+            {
+              "paper_id": "local:1d8d84d78b21",
+              "support": 0.7254424095153809
+            },
+            {
+              "paper_id": "2605.01485",
+              "support": 0.5571855306625366
+            },
+            {
+              "paper_id": "2510.12206",
+              "support": 0.1379370540380478
+            }
+          ]
+        }
+      ],
+      "answer_aggregate": {
+        "mean": 0.7983406782150269,
+        "median": 0.7983406782150269,
+        "min": 0.7983406782150269,
+        "max": 0.7983406782150269
+      }
+    }
+  ]
+}
