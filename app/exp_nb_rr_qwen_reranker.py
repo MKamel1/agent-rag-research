@@ -76,8 +76,18 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 _MODEL_ID = "Qwen/Qwen3-Reranker-0.6B"
 _TASK_INSTRUCTION = "Given a web search query, retrieve relevant passages that answer the query"
 # Generous vs. the corpus's ~400-566 estimated-token median chunk (rag/reranker.py's own
-# _MAX_BATCH_TOKENS measurement) -- truncation only bites the long tail.
-_MAX_LENGTH = 2048
+# _MAX_BATCH_TOKENS measurement) -- truncation only bites the long tail. Kept well under the
+# model card recipe's own 8192: at this model's 151,669-token vocab, naively materializing
+# per-position logits for a whole sub-batch (the model card's own `model(**inputs).logits`) scales
+# as batch*seq_len*vocab -- measured OOM at batch=32/seq_len~2048 (an 18.5GB single allocation on a
+# 24GB card already sharing ~11GB with the resident TEI pair). `_score_batch` below never computes
+# those per-position logits at all (see its docstring), so this constant only bounds attention
+# cost now, not a vocab-sized tensor -- still kept modest to stay a good citizen on a shared card.
+_MAX_LENGTH = 1024
+# Candidates scored per forward pass. rag/reranker.py's rerank_pool_size (config.rerank_depth) is
+# 32 -- scoring all 32 in one batch is what produced the OOM above; sub-batching bounds peak
+# attention memory (O(batch * seq_len^2)) to a small, safe slice instead of the whole pool at once.
+_SUB_BATCH_SIZE = 8
 # Verbatim from the model card's "Using Transformers" recipe (Qwen/Qwen3-Reranker-0.6B) -- the
 # documented, non-negotiable prompt shape this model was trained to score against.
 _PREFIX = (
@@ -161,24 +171,44 @@ class Qwen3Reranker:
         order = sorted(range(len(candidates)), key=lambda i: (-scores[i], i))
         return [candidates[i] for i in order]
 
-    @torch.no_grad()
     def _compute_scores(self, pairs: list[str]) -> list[float]:
-        """Model card's `compute_logits` recipe, verbatim: score = P(token="yes") after a
-        binary yes/no log-softmax over the last position's logits."""
+        """Sub-batches `pairs` (see `_SUB_BATCH_SIZE`'s docstring comment) and scores each slice
+        with `_score_batch`, concatenating results back into the caller's original order."""
+        scores: list[float] = []
+        for start in range(0, len(pairs), _SUB_BATCH_SIZE):
+            scores.extend(self._score_batch(pairs[start : start + _SUB_BATCH_SIZE]))
+        return scores
+
+    @torch.no_grad()
+    def _score_batch(self, pairs: list[str]) -> list[float]:
+        """One forward pass, memory-bounded: score = P(token="yes") after a binary yes/no
+        log-softmax -- same math as the model card's `compute_logits` recipe, but computed from
+        the LAST hidden state projected through only the two rows of the LM head this needs
+        (`true`/`false`), never the model card's own `model(**inputs).logits` (every position's
+        full 151,669-vocab distribution) -- that shape is what produced the measured OOM this
+        module's constants comment documents; scoring 2 vocab rows instead of 151,669 sidesteps it
+        entirely rather than just shrinking the batch further.
+        """
         tokenizer = self._tokenizer
         budget = _MAX_LENGTH - len(self._prefix_tokens) - len(self._suffix_tokens)
         inputs = tokenizer(
             pairs, padding=False, truncation="longest_first",
-            return_attention_mask=False, max_length=budget,
+            return_attention_mask=True, max_length=budget,
         )
         for i, ids in enumerate(inputs["input_ids"]):
             inputs["input_ids"][i] = self._prefix_tokens + ids + self._suffix_tokens
         inputs = tokenizer.pad(inputs, padding=True, return_tensors="pt", max_length=_MAX_LENGTH)
         inputs = {k: v.to(self._model.device) for k, v in inputs.items()}
-        logits = self._model(**inputs).logits[:, -1, :]
-        true_scores = logits[:, self._token_true_id]
-        false_scores = logits[:, self._token_false_id]
-        stacked = torch.stack([false_scores, true_scores], dim=1)
+
+        # `padding_side="left"` (set at load time) means every sequence's real last token sits at
+        # position -1 regardless of that row's own length -- same assumption the model card's own
+        # `logits[:, -1, :]` relies on.
+        backbone = self._model.model
+        last_hidden = backbone(**inputs).last_hidden_state[:, -1, :]  # (batch, hidden)
+        lm_head_weight = self._model.lm_head.weight  # (vocab, hidden), no bias (tied embeddings)
+        true_logits = last_hidden @ lm_head_weight[self._token_true_id]
+        false_logits = last_hidden @ lm_head_weight[self._token_false_id]
+        stacked = torch.stack([false_logits, true_logits], dim=1)
         log_probs = torch.nn.functional.log_softmax(stacked, dim=1)
         return log_probs[:, 1].exp().tolist()
 
@@ -201,7 +231,12 @@ def _looks_like_retrieval_eval_argv(argv: list[str]) -> bool:
 
 
 def _arm_tag(arm: str) -> str:
-    return {"bge": "bge-baseline", "qwen": "qwen3-0.6b"}[arm]
+    # No '.' in either tag: nb_eval_runner.py's output_paths() builds each output name via
+    # Path.with_suffix(".json"/".md"), which replaces from the LAST '.' in the stem -- a tag like
+    # "qwen3-0.6b" would get silently truncated to "...-qwen3-0" + ".json". Not our file to fix
+    # (scripts/nb_eval_runner.py isn't in QW-3's owned-files list); picking a dot-free tag sidesteps
+    # it instead.
+    return {"bge": "bge-baseline", "qwen": "qwen3-0pt6b"}[arm]
 
 
 def run_arm(arm: str, args: argparse.Namespace) -> int:

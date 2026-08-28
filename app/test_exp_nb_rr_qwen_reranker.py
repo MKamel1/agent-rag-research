@@ -42,7 +42,9 @@ def test_looks_like_retrieval_eval_argv_false_for_orchestrator_flags():
 
 def test_arm_tag_maps_both_arms():
     assert _arm_tag("bge") == "bge-baseline"
-    assert _arm_tag("qwen") == "qwen3-0.6b"
+    assert _arm_tag("qwen") == "qwen3-0pt6b"
+    # no '.' allowed -- see _arm_tag's docstring comment on nb_eval_runner.py's with_suffix quirk
+    assert "." not in _arm_tag("qwen")
 
 
 # --- the monkeypatch itself ---------------------------------------------------------------------
@@ -146,7 +148,7 @@ def test_run_arm_qwen_overrides_runner_module(monkeypatch):
     cmd = captured["cmd"]
     assert "--runner-module" in cmd
     assert cmd[cmd.index("--runner-module") + 1] == "app.exp_nb_rr_qwen_reranker"
-    assert cmd[cmd.index("--tag") + 1] == "qwen3-0.6b"
+    assert cmd[cmd.index("--tag") + 1] == "qwen3-0pt6b"
 
 
 def test_run_arm_raises_on_nonzero_exit(monkeypatch):
