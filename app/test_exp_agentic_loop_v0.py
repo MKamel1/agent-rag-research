@@ -12,14 +12,22 @@ import pytest
 from app.exp_agentic_loop_v0 import (
     CragEvaluator,
     EvaluatorScore,
+    SelfAskDecomposer,
+    Wa4Item,
+    Wa4SubPart,
     _RawResponse,
     analyze_crag,
+    analyze_route,
+    analyze_wa4,
     auroc_pos_higher,
     evaluator_action,
     load_raw_records,
     load_wa4_usable,
-    run_crag_capture,
+    merge_hits,
     route_to_decompose,
+    run_crag_capture,
+    run_route_capture,
+    run_wa4_capture,
 )
 from contracts.errors import PermanentError
 from contracts.provenance import Anchor
@@ -355,3 +363,196 @@ def test_load_wa4_usable_real_fixture_is_31_items_with_31_required_subgoals():
     items = load_wa4_usable(real_path)
     assert len(items) == 31
     assert sum(len(it.required_sub_parts) for it in items) == 31
+
+
+# ---------------------------------------------------------------------------
+# merge_hits: union of sub-question hit lists, deduped by block id, max score wins
+# ---------------------------------------------------------------------------
+
+
+def test_merge_hits_dedupes_by_block_id_keeping_max_score():
+    a = _hit("p1", 0.5, block_id="b1")
+    b = _hit("p1", 0.9, block_id="b1")  # same block, higher score from a different sub-question
+    c = _hit("p2", 0.7, block_id="b2")
+
+    merged = merge_hits([[a, c], [b]], k=10)
+
+    by_block = {h.anchor.block_id: h.score for h in merged}
+    assert by_block == {"b1": 0.9, "b2": 0.7}
+
+
+def test_merge_hits_sorts_descending_and_truncates_to_k():
+    hits = [_hit("p1", 0.1, "b1"), _hit("p1", 0.9, "b2"), _hit("p1", 0.5, "b3")]
+
+    merged = merge_hits([hits], k=2)
+
+    assert [h.anchor.block_id for h in merged] == ["b2", "b3"]
+
+
+# ---------------------------------------------------------------------------
+# SelfAskDecomposer: fake `post` injection, no network, no GPU
+# ---------------------------------------------------------------------------
+
+
+def _ok_decompose_post(subquestions: list[str]):
+    def post(url, model, prompt, num_predict, item_id):
+        return _RawResponse(json.dumps({"response": json.dumps(subquestions)}).encode())
+
+    return post
+
+
+def test_self_ask_decomposer_parses_subquestions():
+    decomposer = SelfAskDecomposer(FakeGpuLock(), "m", post=_ok_decompose_post(["a?", "b?"]))
+    subqs = decomposer("Q-1", "what is a and b?")
+    assert subqs == ("a?", "b?")
+
+
+def test_self_ask_decomposer_truncates_to_max_n():
+    decomposer = SelfAskDecomposer(FakeGpuLock(), "m", max_n=2, post=_ok_decompose_post(["a?", "b?", "c?", "d?"]))
+    subqs = decomposer("Q-1", "q?")
+    assert subqs == ("a?", "b?")
+
+
+def test_self_ask_decomposer_acquires_gpu_lock():
+    lock = FakeGpuLock()
+    decomposer = SelfAskDecomposer(lock, "m", post=_ok_decompose_post(["a?"]))
+    decomposer("Q-1", "q?")
+    assert lock.acquired == ["self-ask"]
+
+
+def test_self_ask_decomposer_rejects_malformed_json():
+    def post(url, model, prompt, num_predict, item_id):
+        return _RawResponse(json.dumps({"response": "not json"}).encode())
+
+    decomposer = SelfAskDecomposer(FakeGpuLock(), "m", post=post)
+    with pytest.raises(PermanentError):
+        decomposer("Q-1", "q?")
+
+
+def test_self_ask_decomposer_rejects_empty_list():
+    decomposer = SelfAskDecomposer(FakeGpuLock(), "m", post=_ok_decompose_post([]))
+    with pytest.raises(PermanentError):
+        decomposer("Q-1", "q?")
+
+
+# ---------------------------------------------------------------------------
+# run_route_capture / analyze_route: fake retriever + fake decomposer
+# ---------------------------------------------------------------------------
+
+
+def _fake_decomposer(subqs_by_id: dict[str, tuple[str, ...]]):
+    def decomposer(question_id: str, question_text: str) -> tuple[str, ...]:
+        return subqs_by_id[question_id]
+
+    return decomposer
+
+
+def test_run_route_capture_scopes_to_answerable_and_tags_routed(tmp_path: Path):
+    gt = {
+        "ground_truth": [
+            {
+                "question_id": "Q-1", "question_text": "routed question?", "source_paper_id": "p1",
+                "gold_block_id": "b1", "dimension": "negation and scope", "difficulty": "medium",
+            },
+            {
+                "question_id": "Q-2", "question_text": "plain question?", "source_paper_id": "p1",
+                "gold_block_id": "b1", "dimension": "single-passage factual lookup", "difficulty": "medium",
+            },
+            {"question_id": "Q-3", "question_text": "absent question?"},  # excluded: not answerable
+        ]
+    }
+    fixture_path = tmp_path / "gt.json"
+    fixture_path.write_text(json.dumps(gt))
+    out_path = tmp_path / "route.jsonl"
+
+    retriever = _FakeRetriever(
+        {
+            "routed question?": [_hit("p1", 1.0, "b1")],
+            "plain question?": [_hit("p1", 1.0, "b1")],
+            "sub-a": [_hit("p1", 0.9, "b1")],
+        }
+    )
+    decomposer = _fake_decomposer({"Q-1": ("sub-a",), "Q-2": ("sub-a",)})
+
+    run_route_capture("gt_wmr", fixture_path, out_path, retriever, decomposer)
+
+    records = {json.loads(line)["question_id"]: json.loads(line) for line in out_path.read_text().splitlines()}
+    assert set(records) == {"Q-1", "Q-2"}  # Q-3 (absent) never captured by arm (b)-1
+    assert records["Q-1"]["routed"] is True
+    assert records["Q-2"]["routed"] is False
+    assert records["Q-1"]["baseline_passage_rank"] == 1
+    assert records["Q-1"]["hops_to_answer"] == 1
+
+
+def test_analyze_route_reports_three_policies():
+    records = [
+        {
+            "question_id": "Q-1", "routed": True, "passage_scored": True, "error": None,
+            "baseline_passage_rank": None, "decomposed_passage_rank": 1, "hops_to_answer": 2,
+        },
+        {
+            "question_id": "Q-2", "routed": False, "passage_scored": True, "error": None,
+            "baseline_passage_rank": 1, "decomposed_passage_rank": None, "hops_to_answer": 1,
+        },
+    ]
+    summary = analyze_route(records)
+    assert summary["void"] is False
+    # routed policy: Q-1 uses decomposed (hit), Q-2 uses baseline (hit) -> 2/2
+    assert summary["policy_routed"]["recall_at_k"] == 1.0
+    # never-decompose policy: Q-1 baseline is None (miss), Q-2 baseline hit -> 1/2
+    assert summary["policy_never_decompose"]["recall_at_k"] == 0.5
+    # global-decompose policy: Q-1 decomposed hit, Q-2 decomposed None (miss) -> 1/2
+    assert summary["policy_global_decompose"]["recall_at_k"] == 0.5
+
+
+def test_analyze_route_is_void_when_any_error_present():
+    records = [{"question_id": "Q-1", "routed": True, "passage_scored": True, "error": "boom"}]
+    summary = analyze_route(records)
+    assert summary["void"] is True
+
+
+# ---------------------------------------------------------------------------
+# run_wa4_capture / analyze_wa4: fake retriever + fake decomposer, required-subgoal coverage
+# ---------------------------------------------------------------------------
+
+
+def test_run_wa4_capture_counts_required_subgoal_hits(tmp_path: Path, monkeypatch):
+    item = Wa4Item(
+        item_id="Q-WA4-1", question="top-level question?",
+        sub_parts=(
+            Wa4SubPart(text="s1", status="supported", gold_block_id="b1"),
+            Wa4SubPart(text="s2", status="absent", gold_block_id=None),
+        ),
+    )
+    monkeypatch.setattr("app.exp_agentic_loop_v0.load_wa4_usable", lambda: [item])
+
+    out_path = tmp_path / "wa4.jsonl"
+    retriever = _FakeRetriever(
+        {"top-level question?": [_hit("p1", 1.0, "b2")], "sub-a": [_hit("p1", 0.9, "b1")]}
+    )
+    decomposer = _fake_decomposer({"Q-WA4-1": ("sub-a",)})
+
+    run_wa4_capture(out_path, retriever, decomposer)
+
+    record = json.loads(out_path.read_text())
+    assert record["n_required_subparts"] == 1
+    assert record["baseline_required_hits"] == 0  # baseline never retrieved b1
+    assert record["decomposed_required_hits"] == 1  # sub-question did
+
+
+def test_analyze_wa4_computes_pooled_coverage():
+    records = [
+        {"question_id": "Q-1", "n_required_subparts": 2, "baseline_required_hits": 1, "decomposed_required_hits": 2, "hops_to_answer": 2, "error": None},
+        {"question_id": "Q-2", "n_required_subparts": 1, "baseline_required_hits": 0, "decomposed_required_hits": 1, "hops_to_answer": 3, "error": None},
+    ]
+    summary = analyze_wa4(records)
+    assert summary["void"] is False
+    assert summary["total_required_subgoals"] == 3
+    assert summary["decomposition_coverage_baseline"] == pytest.approx(1 / 3)
+    assert summary["decomposition_coverage_decomposed"] == 1.0
+
+
+def test_analyze_wa4_is_void_when_any_error_present():
+    records = [{"question_id": "Q-1", "error": "boom"}]
+    summary = analyze_wa4(records)
+    assert summary["void"] is True
