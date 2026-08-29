@@ -69,11 +69,12 @@ never presented as this ticket's own.
 | n_errors | gt_wmr | ″ | ″ | ″ | **0/82** |
 | n_errors | ver84 | ″ | ″ | ″ | **0/82** |
 
-**Both clear the frozen 0.75 bar.** gt_wmr misses only 4 items into a wrong bucket at the
-illustrative cut points (§1.1); ver84 is closer to the bar (0.8025) but still clears it cleanly.
-Both captures are clean (`n_errors=0` on both — neither run is VOID). Denominators: gt_wmr 82
-(70 answerable / 12 absent, matching NB-C2's own reported partition exactly); ver84 82 (68/14,
-also matching NB-C2). Source: `docs/eval-reports/data/2026-08-28-sb3/crag_{gt_wmr,ver84}.jsonl`.
+**Both clear the frozen 0.75 bar as point estimates** — the pre-registered rule, satisfied
+exactly as written (statistical precision on each estimate, which differs materially by fixture,
+is in §1.1; do not read this line as "both cleanly established", see §1.1 for why). Both captures
+are clean (`n_errors=0` on both — neither run is VOID). Denominators: gt_wmr 82 (70 answerable /
+12 absent, matching NB-C2's own reported partition exactly); ver84 82 (68/14, also matching
+NB-C2). Source: `docs/eval-reports/data/2026-08-28-sb3/crag_{gt_wmr,ver84}.jsonl`.
 
 **This is a real, non-trivial finding relative to what came before it.** NB-C2 tried a different
 pre-generation signal (lexical anchor coverage) for this exact separation and failed by a wide
@@ -83,18 +84,76 @@ separation NB-C2 couldn't find. The mechanism difference is the likely explanati
 judging "do these 5 passages, read as prose, answer this question" has access to semantic content
 NB-C2's token-presence probe structurally could not use.
 
-### 1.1 Action mapping — illustrative, uncalibrated, reported honestly as such
+### 1.1 Statistical precision — the point estimate meets the bar; ver84 is not yet established
 
-`sufficiency >= 0.66` → `proceed`; `< 0.33` → `abstain`; otherwise `decompose`. These cut points
-are arbitrary tertile splits fixed in commit 1 to exercise the {proceed, decompose, abstain} seam
-end-to-end — **no threshold fit, no IN-2-style graded-anchor calibration backs them.** The scores
-themselves are strongly bimodal (most land at or near 0.0 or 1.0), so the mapping's practical
-effect is close to a step function regardless of exactly where the two cuts sit:
+The frozen criterion (§1, above) is a point-estimate rule and it is satisfied on both fixtures
+exactly as pre-registered — that verdict does not move. But a point estimate alone hides how much
+each number can be trusted, and with only 12-14 absent items per fixture that matters. Hanley-
+McNeil 95% CIs, computed directly from the committed per-item scores:
 
-| fixture | answerable → proceed | answerable → decompose | answerable → abstain | absent → proceed | absent → abstain |
-|---|---|---|---|---|---|
-| gt_wmr (70/12) | 67 | 1 | 2 | 1 | 11 |
-| ver84 (68/14) | 51 | 3 | 14 | 3 | 11 |
+| fixture | AUROC | n_answerable / n_absent | 95% CI (Hanley-McNeil) | lower bound ≥ 0.75? |
+|---|---|---|---|---|
+| gt_wmr | 0.9411 | 70 / 12 | [0.890, 0.992] | **yes** |
+| ver84 | 0.8025 | 68 / 14 | [0.696, 0.909] | **no** |
+
+**Say this precisely, not as a clean pass on both:** the pre-registered point-estimate criterion
+is met on both fixtures, full stop — that is the rule that was frozen in commit 1, and it is the
+rule this report's ADOPT verdict rests on. Separately and additionally: gt_wmr's result is
+statistically well-established (its whole CI sits above 0.75). ver84's result is directionally
+positive but NOT statistically established at n=14 absent items — its CI's lower bound (0.696)
+sits below the bar, so a resample of this same underlying effect could plausibly land below
+0.75. This is precision the frozen rule didn't ask for and doesn't retroactively fail on, but a
+reader deciding how much weight to put on ver84 specifically should have it.
+
+### 1.2 Distribution shape — a near-binary detector, not a graded confidence score
+
+The sufficiency scores are not continuous in practice. Full per-fixture, per-label distributions
+(committed JSONL, `crag_{gt_wmr,ver84}.jsonl`):
+
+| fixture / label | distribution |
+|---|---|
+| gt_wmr answerable (n=70) | {1.0: 63, 0.8: 3, 0.7: 1, 0.5: 1, 0.0: 2} |
+| gt_wmr absent (n=12) | {0.0: 11, 1.0: 1} |
+| ver84 answerable (n=68) | {1.0: 45, 0.8: 6, 0.6: 3, 0.0: 14} |
+| ver84 absent (n=14) | {0.0: 11, 0.8: 1, 1.0: 2} |
+
+Four to five distinct values across 82 items per fixture; the overwhelming majority of mass sits
+at exactly 0.0 or exactly 1.0. **This is a near-binary detector that occasionally emits an
+intermediate value, not a graded confidence score.** Three consequences follow directly:
+
+- **Threshold tuning inside the current mapping is close to meaningless.** Any cut placed between
+  two adjacent OBSERVED values produces identical behavior on this data — the `0.66`/`0.33` cut
+  points in §1.4 are one of a very small number of distinct achievable policies here, not a
+  continuously tunable knob, regardless of how they're worded.
+- **This score, as measured, cannot support a five-level MCP confidence surface** (the R2-designed
+  target IN-2 is building toward) without materially more resolution than four-to-five near-binary
+  values provide. This is a direct, load-bearing constraint on IN-2's own plans and should be
+  flagged there now rather than discovered after calibration work starts on it.
+- **AUROC is the right headline statistic here precisely because it is rank-based and
+  tie-tolerant** — it handles the 77-78 tied values per fixture correctly by construction (this
+  module's own `auroc_pos_higher` uses average-rank Mann-Whitney, cross-checked against brute
+  force on every call). A threshold-accuracy number would have been more intuitive but would also
+  have hidden exactly the tie structure that matters here; AUROC surfaces it.
+
+### 1.3 Operating cost — the fixture asymmetry is the headline, not a footnote
+
+The illustrative mapping's real behavior, computed directly from the committed per-item actions
+(never averaged across fixtures — programme constraint 10):
+
+| fixture | abstains (total) | correct abstentions (truly absent) | **false abstentions (answerable, wrongly refused)** | absent items that still proceed |
+|---|---|---|---|---|
+| gt_wmr | 13 | 11 / 12 | **2 / 70 = 2.9%** | 1 / 12 |
+| ver84 | 25 | 11 / 14 | **14 / 68 = 20.6%** | 3 / 14 |
+
+**These are two results, not one.** On gt_wmr this is an excellent operating point: it refuses
+under 3% of questions it could actually answer while catching 11 of 12 truly absent ones. On
+ver84 the SAME illustrative mapping refuses **one in five** answerable questions — a system that
+abstains on 20.6% of what it could answer is not self-evidently an improvement over one that never
+abstains; that is a product trade a reader must see the number for, not infer from the word
+"uncalibrated". Paired with the recall side, ver84 also still lets 3 of 14 absent questions
+through — weaker on both discrimination (§1, §1.1) and operating cost than gt_wmr. State the
+asymmetry directly: **the evaluator is strong on gt_wmr and materially weaker on ver84**, on every
+axis measured in this report.
 
 Two honest failure classes worth naming plainly, not just counting:
 
@@ -106,18 +165,35 @@ Two honest failure classes worth naming plainly, not just counting:
   the top-5 actually served to the evaluator (`_SERVED_PASSAGES=5`, matching what a real
   generation call would see) — again a correct "insufficient" call given what it was actually
   shown, not a bug. This is evidence the evaluator responds to real context quality rather than
-  rubber-stamping every answerable-labeled item.
-- **`absent` items scoring `proceed` are the false-alarm mode that matters for an abstain
-  action**: gt_wmr `Q-WMR-080` (sufficiency 1.0); ver84 `Q-WAYB-021`, `Q-WAYB-039`, `Q-GTA-035`
-  (0.8, 1.0, 1.0). 4 of 26 absent items across both fixtures combined would wrongly proceed under
-  this illustrative mapping — the AUROC bar is about ranking quality, not this specific cut's
-  operating point, and no false-alarm-rate target was pre-committed for the illustrative mapping
-  (only the AUROC bar was frozen). Flagged here rather than left implicit.
+  rubber-stamping every answerable-labeled item, and it is also a plausible partial explanation
+  for WHY ver84's false-abstention rate is so much higher: ver84's own retrieval baselines
+  (block-P@1 22/60 = 0.3667) are measurably worse than gt_wmr's (48/65 = 0.7385), so more of its
+  answerable items genuinely arrive at the evaluator under-served.
+- **`absent` items scoring `proceed` are the false-alarm mode on the other side**: gt_wmr
+  `Q-WMR-080` (sufficiency 1.0); ver84 `Q-WAYB-021`, `Q-WAYB-039`, `Q-GTA-035` (0.8, 1.0, 1.0) —
+  the 1/12 and 3/14 counts in the table above. No false-alarm-rate target was pre-committed for
+  the illustrative mapping (only the AUROC bar was frozen); these are named here rather than left
+  implicit.
 
-**Verdict: ADOPT.** The pre-committed criterion passes on both fixtures with margin. This is a
-genuinely usable pre-generation sufficiency signal; the illustrative action mapping is not
-calibrated and should not ship as-is (IN-2's graded-anchor gate applies here exactly as it does to
-QW-2's score family).
+### 1.4 Action mapping — illustrative, uncalibrated, reported honestly as such
+
+`sufficiency >= 0.66` → `proceed`; `< 0.33` → `abstain`; otherwise `decompose`. These cut points
+are arbitrary tertile splits fixed in commit 1 to exercise the {proceed, decompose, abstain} seam
+end-to-end — **no threshold fit, no IN-2-style graded-anchor calibration backs them**, and §1.2
+shows precisely why tuning them further would not materially change behavior on this data:
+
+| fixture | answerable → proceed | answerable → decompose | answerable → abstain | absent → proceed | absent → abstain |
+|---|---|---|---|---|---|
+| gt_wmr (70/12) | 67 | 1 | 2 | 1 | 11 |
+| ver84 (68/14) | 51 | 3 | 14 | 3 | 11 |
+
+**Verdict: ADOPT.** The pre-committed point-estimate criterion passes on both fixtures — that
+verdict stands unchanged. This is a genuinely usable pre-generation sufficiency signal on gt_wmr;
+on ver84 it is directionally positive but statistically less certain (§1.1) and materially more
+expensive to operate (§1.3). The illustrative action mapping is not calibrated, is near-binary
+rather than graded (§1.2), and should not ship as-is — IN-2's graded-anchor gate applies here
+exactly as it does to QW-2's score family, and IN-2 should additionally be told that this score's
+resolution does not support a five-level surface without further work.
 
 ## 2. Arm (b) — IRCoT/Self-Ask decomposition: **REJECT (routed AND global), on both fixtures**
 
@@ -306,5 +382,5 @@ route_ver84,wa4}.jsonl`.
 
 | arm | mechanism | verdict |
 |---|---|---|
-| (a) CRAG-style pre-generation evaluator | LLM sufficiency judgment over top-5 served passages | **ADOPT** — AUROC 0.9411 (gt_wmr) / 0.8025 (ver84), both ≥ the frozen 0.75 bar, both clean (n_errors=0). Action-mapping thresholds are illustrative only and are NOT ready to ship uncalibrated. |
+| (a) CRAG-style pre-generation evaluator | LLM sufficiency judgment over top-5 served passages | **ADOPT** — AUROC 0.9411 (gt_wmr) / 0.8025 (ver84), both ≥ the frozen 0.75 bar as point estimates, both clean (n_errors=0). gt_wmr is statistically well-established (CI [0.890, 0.992]) and cheap to operate (2.9% false abstention); ver84 is directionally positive but not established at n=14 absent (CI [0.696, 0.909]) and expensive to operate (20.6% false abstention) — two results, not one. Scores are near-binary (4-5 distinct values/fixture), so AUROC (rank-based, tie-tolerant) is the right summary and the illustrative action-mapping thresholds are barely tunable; not ready to ship uncalibrated, and not sufficient resolution for a five-level surface without further work. |
 | (b) Self-Ask/IRCoT decomposition, routed | LLM sub-question generation + merged retrieval | **REJECT** (both routed and global policy) — decomposition reduces recall@10/MRR on every measured slice on both control fixtures, INCLUDING the routed (hard/multi-hop/negation) stratum it targets, and produces zero coverage improvement on the primary W-A4 fixture (0.0 in both baseline and decomposed conditions, a genuine block-level near-miss, not a bug). Routing limits damage relative to a global policy; it does not make the mechanism positive. |
