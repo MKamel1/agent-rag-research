@@ -230,22 +230,22 @@ def _long_prose_block(index: int, words: int, section_path: str = _LONG_SECTION_
 
 
 def test_oversized_section_is_split_into_multiple_chunks():
-    blocks = [_long_prose_block(0, 900), _long_prose_block(1, 900)]  # 1,800 words > the cap
+    blocks = [_long_prose_block(0, 130), _long_prose_block(1, 130)]  # 260 words > the cap
     chunks = _chunk(_parsed_doc(blocks=blocks))
     assert len(chunks) == 2, "a section over the size cap must split into more than one chunk"
 
 
 def test_section_within_the_cap_is_not_split():
-    blocks = [_long_prose_block(0, 500), _long_prose_block(1, 500)]  # 1,000 words, under the cap
+    blocks = [_long_prose_block(0, 80), _long_prose_block(1, 80)]  # 160 words, under the cap
     chunks = _chunk(_parsed_doc(blocks=blocks))
     assert len(chunks) == 1, "a section under the size cap must stay one chunk"
 
 
 def test_oversized_section_split_still_keeps_equation_glued_to_its_prose():
     blocks = [
-        _long_prose_block(0, 1600),  # already over the cap alone
+        _long_prose_block(0, 240),  # already over the cap alone
         _block(1, EQUATION_LATEX, "equation", _LONG_SECTION_PATH),
-        _long_prose_block(2, 200),
+        _long_prose_block(2, 50),
     ]
     chunks = _chunk(_parsed_doc(blocks=blocks))
     # A split point may never fall directly before an equation -- it stays with whatever prose
@@ -257,7 +257,7 @@ def test_oversized_section_split_still_keeps_equation_glued_to_its_prose():
 
 
 def test_split_sub_chunks_anchor_to_their_own_first_block_not_the_sections_first_block():
-    blocks = [_long_prose_block(0, 900), _long_prose_block(1, 900)]
+    blocks = [_long_prose_block(0, 130), _long_prose_block(1, 130)]
     chunks = _chunk(_parsed_doc(blocks=blocks))
     assert len(chunks) == 2
     assert chunks[0].anchor.block_id == blocks[0].block_id
@@ -267,11 +267,13 @@ def test_split_sub_chunks_anchor_to_their_own_first_block_not_the_sections_first
     )
 
 
-def test_single_block_bigger_than_the_cap_is_still_emitted_whole():
+def test_single_oversized_prose_block_is_split_with_all_content_and_raw_anchors():
     blocks = [_long_prose_block(0, 5000)]
     chunks = _chunk(_parsed_doc(blocks=blocks))
-    assert len(chunks) == 1, "a single oversized block is not split within itself"
-    assert len(chunks[0].text.split()) >= 5000
+    assert len(chunks) > 1
+    assert sum(c.text.split().count("word") for c in chunks) == 5000
+    assert all(c.anchor.block_id == blocks[0].block_id for c in chunks)
+    assert all(c.anchor.snippet in blocks[0].text for c in chunks)
 
 
 # ---------------------------------------------------------------------------
@@ -335,8 +337,9 @@ def _sentinel_prose_block(
 
 def test_split_sub_chunk_borrows_preceding_blocks_last_block():
     blocks = [
-        _sentinel_prose_block(0, 100, "ALPHA"),  # small -- under _OVERLAP_MAX_WORDS, borrowable
-        _sentinel_prose_block(1, 1400, "BETA"),  # pushes the section over _MAX_CHUNK_WORDS
+        _sentinel_prose_block(4, 170, "BASE"),
+        _sentinel_prose_block(0, 25, "ALPHA"),  # small -- under _OVERLAP_MAX_WORDS, borrowable
+        _sentinel_prose_block(1, 80, "BETA"),  # pushes the section over the cap; overlap still fits
     ]
     chunks = _chunk(_parsed_doc(blocks=blocks))
     assert len(chunks) == 2
@@ -346,8 +349,8 @@ def test_split_sub_chunk_borrows_preceding_blocks_last_block():
 
 def test_first_split_sub_chunk_has_no_overlap():
     blocks = [
-        _sentinel_prose_block(0, 100, "ALPHA"),
-        _sentinel_prose_block(1, 1400, "BETA"),
+        _sentinel_prose_block(0, 25, "ALPHA"),
+        _sentinel_prose_block(1, 200, "BETA"),
     ]
     chunks = _chunk(_parsed_doc(blocks=blocks))
     assert "BETA" not in chunks[0].text, "the first sub-chunk has no predecessor to borrow from"
@@ -355,22 +358,23 @@ def test_first_split_sub_chunk_has_no_overlap():
 
 def test_overlap_does_not_move_anchor_or_parent_id():
     blocks = [
-        _sentinel_prose_block(0, 100, "ALPHA"),
-        _sentinel_prose_block(1, 1400, "BETA"),
+        _sentinel_prose_block(4, 170, "BASE"),
+        _sentinel_prose_block(0, 25, "ALPHA"),
+        _sentinel_prose_block(1, 80, "BETA"),
     ]
     chunks = _chunk(_parsed_doc(blocks=blocks))
     assert "ALPHA" in chunks[1].text, "sanity check: this fixture must actually trigger a borrow"
-    assert chunks[1].anchor.block_id == blocks[1].block_id
-    assert chunks[1].parent_id == blocks[1].block_id
-    assert chunks[1].section_path == blocks[1].section_path
+    assert chunks[1].anchor.block_id == blocks[2].block_id
+    assert chunks[1].parent_id == blocks[2].block_id
+    assert chunks[1].section_path == blocks[2].section_path
     # Despite blocks[0]'s text appearing in chunks[1].text via overlap, provenance stays pinned
     # to chunks[1]'s own true start -- never the borrowed block.
 
 
 def test_overlap_skipped_when_preceding_block_exceeds_threshold():
     blocks = [
-        _sentinel_prose_block(0, 1600, "ALPHA"),  # exceeds _OVERLAP_MAX_WORDS on its own
-        _sentinel_prose_block(1, 900, "BETA"),
+        _sentinel_prose_block(0, 240, "ALPHA"),  # exceeds _OVERLAP_MAX_WORDS on its own
+        _sentinel_prose_block(1, 130, "BETA"),
     ]
     chunks = _chunk(_parsed_doc(blocks=blocks))
     assert "ALPHA" not in chunks[1].text, "an oversized preceding block is skipped, not truncated"
@@ -378,8 +382,8 @@ def test_overlap_skipped_when_preceding_block_exceeds_threshold():
 
 def test_no_overlap_across_section_boundaries():
     blocks = [
-        _sentinel_prose_block(0, 500, "ALPHA", section_path="A"),
-        _sentinel_prose_block(1, 500, "BETA", section_path="B"),
+        _sentinel_prose_block(0, 80, "ALPHA", section_path="A"),
+        _sentinel_prose_block(1, 80, "BETA", section_path="B"),
     ]
     chunks = _chunk(_parsed_doc(blocks=blocks))
     assert len(chunks) == 2, "two separate under-cap sections stay two separate chunks"
@@ -390,9 +394,9 @@ def test_no_overlap_across_section_boundaries():
 
 def test_borrowed_equation_kept_whole_primary_copy_keeps_prose():
     blocks = [
-        _sentinel_prose_block(0, 1400, "ALPHA"),
+        _sentinel_prose_block(0, 200, "ALPHA"),
         _block(1, EQUATION_LATEX, "equation", _LONG_SECTION_PATH),
-        _sentinel_prose_block(2, 900, "BETA"),
+        _sentinel_prose_block(2, 130, "BETA"),
     ]
     chunks = _chunk(_parsed_doc(blocks=blocks))
     assert len(chunks) == 2
@@ -406,8 +410,8 @@ def test_borrowed_equation_kept_whole_primary_copy_keeps_prose():
 
 def test_overlap_inert_under_expansion_off():
     blocks = [
-        _sentinel_prose_block(0, 900, "ALPHA"),
-        _sentinel_prose_block(1, 900, "BETA"),
+        _sentinel_prose_block(0, 130, "ALPHA"),
+        _sentinel_prose_block(1, 130, "BETA"),
     ]
     chunks = _chunk(_parsed_doc(blocks=blocks), _config(child_parent_expansion=False))
     assert len(chunks) == 2, "off => one chunk per block, regardless of size"
@@ -433,10 +437,10 @@ def test_overlap_carrying_the_section_heading_is_not_duplicated_in_the_next_sub_
         # already exceeds the cap -- forcing a split right after the heading, with nothing else
         # in that first sub-group.
         _block(0, heading_path, "prose", heading_path),
-        _long_prose_block(1, 1600, heading_path),
+        _long_prose_block(1, 240, heading_path),
     ]
     chunks = _chunk(_parsed_doc(blocks=blocks))
-    assert len(chunks) == 2, "sanity check: this fixture must actually trigger a split"
+    assert len(chunks) >= 2, "the oversized single prose block is itself split too"
     # chunks[0] is the heading-only sub-chunk: correctly stripped down to no body.
     # chunks[1] borrows chunks[0]'s only block (the heading) forward as overlap -- that borrowed
     # heading must be deduped against the title+section_path prefix exactly like a real first
@@ -453,13 +457,13 @@ def test_a_sub_groups_own_first_block_can_independently_duplicate_the_heading_to
     # duplicate unchecked -- `overlap` and `first` must be deduped independently.
     heading_path = "6 Numerical Simulations"  # exactly 3 words
     blocks = [
-        _long_prose_block(0, 1251, heading_path),
-        _long_prose_block(1, 247, heading_path),  # short enough to become the next overlap
+        _long_prose_block(0, 170, heading_path),
+        _long_prose_block(1, 30, heading_path),  # short enough to become the next overlap
         _block(2, heading_path, "prose", heading_path),  # duplicate heading, becomes sole `first`
-        _long_prose_block(3, 1600, heading_path),
+        _long_prose_block(3, 210, heading_path),
     ]
     chunks = _chunk(_parsed_doc(blocks=blocks))
-    assert len(chunks) == 3, "sanity check: this fixture must actually trigger two splits"
+    assert len(chunks) == 2, "the body splits after the first short blocks"
     assert chunks[1].text.count(heading_path) == 1, (
         "the sub-group's own first block duplicated the section heading, unchecked because "
         "overlap sat at body's index 0"
@@ -537,8 +541,9 @@ def test_duplicate_heading_block_in_group_tail_is_stripped_even_when_overlap_is_
     # WORK-BREAKDOWN.md entry / PR description for the trace.
     heading_path = "6 Numerical Simulations"
     blocks = [
-        _sentinel_prose_block(0, 200, "ALPHA", heading_path),  # -> becomes the next overlap
-        _sentinel_prose_block(1, 1400, "BETA", heading_path),  # forces the first split
+        _sentinel_prose_block(4, 170, "BASE", heading_path),
+        _sentinel_prose_block(0, 25, "ALPHA", heading_path),  # -> becomes the next overlap
+        _sentinel_prose_block(1, 180, "BETA", heading_path),  # forces the first split
         _block(2, heading_path, "prose", heading_path),  # group[1:][0] of the BETA sub-chunk
         _sentinel_prose_block(3, 100, "GAMMA", heading_path),  # forces the second split
     ]
@@ -555,11 +560,153 @@ def test_duplicate_heading_block_in_group_tail_is_stripped_even_when_overlap_is_
 
 def test_chunk_ids_stay_sequential_and_unique_with_overlap():
     blocks = [
-        _sentinel_prose_block(0, 100, "ALPHA"),
-        _sentinel_prose_block(1, 1400, "BETA"),
+        _sentinel_prose_block(4, 170, "BASE"),
+        _sentinel_prose_block(0, 25, "ALPHA"),
+        _sentinel_prose_block(1, 80, "BETA"),
     ]
     chunks = _chunk(_parsed_doc(blocks=blocks))
     assert "ALPHA" in chunks[1].text, "sanity check: this fixture must actually trigger a borrow"
     ids = [c.chunk_id for c in chunks]
     assert ids == [f"{PAPER_ID}:c{i}" for i in range(len(ids))]
     assert len(ids) == len(set(ids))
+
+
+def test_definition_term_and_acronym_stay_with_the_definition_in_reading_order():
+    blocks = [
+        _block(5, "3 Terms and definitions", "prose", "3 Terms and definitions"),
+        _block(0, "3.6", "prose", "audit > 3.6"),
+        _block(1, "automotive safety integrity level", "prose",
+               "automotive safety integrity level"),
+        _block(2, "ASIL", "prose", "ASIL"),
+        _block(3, "one of four levels to specify necessary safety requirements", "prose", "ASIL"),
+    ]
+    doc = _parsed_doc(blocks=blocks)
+    before = doc.model_dump()
+    chunks = _chunk(doc)
+    assert len(chunks) == 2
+    assert "automotive safety integrity level" in chunks[1].text
+    assert "ASIL" in chunks[1].text and "one of four levels" in chunks[1].text
+    assert chunks[1].anchor.block_id == blocks[1].block_id
+    assert doc.model_dump() == before
+
+
+def test_tiny_completed_definition_does_not_absorb_the_next_numbered_term():
+    blocks = [
+        _block(5, "3 Terms and definitions", "prose", "3 Terms and definitions"),
+        _block(0, "audit", "prose", "audit"),
+        _block(1, "examination of an implemented process", "prose", "audit"),
+        _block(2, "3.6", "prose", "audit > 3.6"),
+        _block(3, "automotive safety integrity level", "prose",
+               "automotive safety integrity level"),
+        _block(4, "one of four levels used to specify safety requirements", "prose", "ASIL"),
+    ]
+    chunks = _chunk(_parsed_doc(blocks=blocks))
+    assert "one of four" not in chunks[0].text
+    assert "examination" not in chunks[1].text
+    assert "automotive safety integrity level" in chunks[1].text
+
+
+def test_unrelated_tiny_headings_are_not_merged_across_sections():
+    blocks = [_block(0, "Results", "prose", "Results"),
+              _block(1, "The method has several limitations.", "prose", "Discussion")]
+    assert len(_chunk(_parsed_doc(blocks=blocks))) == 2
+
+
+def test_ocr_repairs_are_derived_only_and_leave_math_code_and_numeric_separators_alone():
+    raw = ("Light and moderateinjuries; Controllable ingeneral; "
+           "lifecycle,such datasets.This is text.")
+    blocks = [_block(0, raw, "prose", "Results"),
+              _block(1, r"$x,y=1$", "equation", "Equation"),
+              _block(2, "dataset.This(x,y)", "code", "Code")]
+    doc = _parsed_doc(blocks=blocks)
+    chunks = _chunk(doc)
+    assert "moderate injuries" in chunks[0].text
+    assert "in general" in chunks[0].text
+    assert "lifecycle, such datasets. This" in chunks[0].text
+    assert blocks[0].text == raw and chunks[0].anchor.snippet in raw
+    assert r"$x,y=1$" in chunks[1].text
+    assert "dataset.This(x,y)" in chunks[2].text
+    assert _mod._normalize_text("3,000 $x,y$ `foo.Bar(x,y)`") == "3,000 $x,y$ `foo.Bar(x,y)`"
+    assert "| S0 | S1 | E0 | E1 | C0 | C1 |" == _mod._normalize_text(
+        "| SO | S1 | EO | E1 | CO | C1 |"
+    )
+    assert _mod._normalize_text("SO EO CO") == "SO EO CO"
+    formula = "| Gas | Formula |\n| carbon monoxide | CO |"
+    assert _mod._normalize_text(formula) == formula
+    assert _mod._normalize_text(r"\(x,y\)") == r"\(x,y\)"
+    names = "PyTorch NumPy TensorFlow McMurry"
+    assert _mod._normalize_text(names) == names
+
+
+def test_numeric_scientific_subsection_is_not_mistaken_for_a_definition_marker():
+    blocks = [_block(0, "3.1", "prose", "3 Methods > 3.1"),
+              _block(1, "An unrelated results paragraph in another section.", "prose", "4 Results")]
+    assert len(_chunk(_parsed_doc(blocks=blocks))) == 2
+
+
+@pytest.mark.parametrize("expansion", [False, True])
+def test_text_normalization_also_covers_prose_defining_an_equation(expansion):
+    raw = "These datasets.This is the defining context."
+    blocks = [_block(0, raw, "prose", "Methods"),
+              _block(1, r"$x,y$", "equation", "Methods")]
+    doc = _parsed_doc(blocks=blocks)
+    before = doc.model_dump()
+    chunks = _chunk(doc, _config(child_parent_expansion=expansion))
+    assert "datasets. This" in chunks[0].text
+    assert chunks[0].anchor.snippet == raw
+    assert r"$x,y$" in "\n".join(c.text for c in chunks)
+    assert doc.model_dump() == before
+
+
+def test_oversized_table_repeats_caption_and_header_and_preserves_every_row():
+    header = "| Method | Description |\n| --- | --- |"
+    rows = [f"| row{i} | " + "description " * 24 + "|" for i in range(20)]
+    caption = "Table 7 — Recommended verification methods"
+    block = _block(1, header + "\n" + "\n".join(rows), "table", "9 Verification")
+    doc = _parsed_doc(blocks=[_block(0, caption, "caption", "9 Verification"), block])
+    before = doc.model_dump()
+    chunks = _chunk(doc)
+    tables = [c for c in chunks if "| row" in c.text]
+    assert len(tables) > 1
+    for chunk in tables:
+        assert caption in chunk.text and header in chunk.text
+        assert len(chunk.text) < 1500
+        assert chunk.anchor.block_id == block.block_id
+        assert chunk.anchor.snippet in block.text
+    for row in rows:
+        assert sum(row in c.text for c in tables) == 1
+    assert doc.model_dump() == before
+
+
+def test_single_huge_row_and_header_are_bounded_without_losing_content():
+    header = "| " + "HEADER " * 400 + " |"
+    row = "| row1 | " + "x" * 4500 + " |"
+    pieces = _mod._table_parts(header + "\n| --- | --- |\n" + row, "caption " * 200)
+    assert 1 < len(pieces) < 100
+    assert all(len(p) <= 1200 and len(p.split()) <= 220 for p in pieces)
+    # The overlong token is continued, never discarded or silently truncated.
+    payload_x = sum(p.count("x") for p in pieces)
+    assert payload_x == 4500
+    assert sum(p.count("HEADER") for p in pieces) >= 400
+
+
+def test_regular_table_cells_survive_row_splitting_including_late_mcdc_answer():
+    header = "| Method | A | B | C | D |\n| --- | --- | --- | --- | --- |"
+    rows = [f"| method{i} | + | + | + | ++ |" for i in range(150)]
+    rows.append("| MC/DC (Modified Condition/Decision Coverage) | + | + | + | ++ |")
+    table = _block(0, header + "\n" + "\n".join(rows), "table", "9.4 Unit verification")
+    chunks = _chunk(_parsed_doc(blocks=[table]))
+    hit = next(c for c in chunks if "MC/DC" in c.text)
+    assert header in hit.text
+    assert "| MC/DC (Modified Condition/Decision Coverage) | + | + | + | ++ |" in hit.text
+    assert len(hit.text) < 1800
+
+
+def test_blank_pdf_table_header_does_not_repeat_short_data_rows_as_column_labels():
+    header = "| | |\n| --- | --- |\n| Name | Value |"
+    rows = [f"| alpha{i} | {i} |" for i in range(150)]
+    pieces = _mod._table_parts(header + "\n" + "\n".join(rows), "Table 2 — Results")
+    assert len(pieces) > 1
+    assert all(header in p for p in pieces)
+    for row in rows:
+        assert sum(row in p for p in pieces) == 1

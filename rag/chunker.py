@@ -8,6 +8,8 @@ here in V0. Do NOT add contextual-header generation (PRD ADR-07, V1-only) — se
 `contextual_header=None`.
 """
 
+import re
+
 from contracts.chunker import Chunk
 from contracts.config import Config
 from contracts.parser import ParsedDoc
@@ -15,33 +17,133 @@ from contracts.provenance import Anchor, Block
 
 _SNIPPET_MAX_CHARS = 200
 
-# A whole section becomes one chunk (see `_group_blocks`) with no size cap -- fine for most
-# sections, but a real corpus check found long unbroken proof/appendix sections with no internal
-# sub-headings routinely produce one giant chunk: 7.6% of real chunks across a 34-paper sample
-# exceeded ~4,000 tokens, in 71% of papers, up to a real 29,844-word (~65,700-token) single chunk
-# -- larger than the embedding model's own 40,960-token capacity. Silently truncated by the
-# embedding server today rather than ever reaching it whole, and even where it wouldn't be
-# truncated, cramming an entire multi-page proof into one embedding vector defeats the point of
-# chunking for retrieval regardless. 1,500 words sits at roughly this corpus's real p90 chunk size
-# (measured, not guessed) -- most sections already fit; only the real long tail gets split.
-# ponytail: a plain module constant, not a `Config` field -- `contracts/config.py` is a
-# CODEOWNERS-protected foundation path (needs the foundation-change process), and this is a
-# technical safety ceiling like `rag/summarizer.py`'s `_NUM_CTX_CEILING`, not a scope lever.
-_MAX_CHUNK_WORDS = 1500
+# Derived retrieval text is deliberately smaller than the production MCP excerpt limit.
+# These are implementation ceilings, not new frozen Config fields. Equation/code context
+# remains atomic, so a scientific defining block can exceed the ceiling intentionally.
+_MAX_CHUNK_WORDS = 220
+_MAX_CHUNK_CHARS = 1200
+_OVERLAP_MAX_WORDS = 40
+_OVERLAP_MAX_CHARS = 200
+_TINY_HEADING_WORDS = 25
 
-# A sub-chunk born from splitting an oversized section can open mid-argument ("as established
-# above, we then have...") with "above" now in a *different* chunk -- carrying the immediately
-# preceding sub-chunk's last block forward closes that gap, the same way `child_parent_expansion`
-# already merges multiple blocks' text into one `Chunk.text` while `anchor`/`parent_id` stay
-# pinned to only the first block (DATA-CONTRACTS.md "Provenance & structure": anchor is for
-# citation display, not the source of the passage content). Gated by size, not block type -- the
-# split point is always right before a *prose* block, and that prose often refers back to the
-# *equation* just before it, so restricting to prose-only would exclude the useful case. 250 words
-# comfortably covers a typical lead-in paragraph (real corpus median chunk is ~440 words) while
-# skipping oversized trailing blocks, which are skipped rather than truncated -- truncating could
-# bisect an equation, exactly the failure mode the split-point rule above exists to avoid.
-# ponytail: a retrieval-quality tuning knob, not a semantic contract; reasonable range 150-300.
-_OVERLAP_MAX_WORDS = 250
+
+def _normalize_text(text: str) -> str:
+    """Repair conservative extraction artifacts in derived prose/table text only.
+
+    Raw Blocks and citation snippets are never rewritten. Protected code/math spans are
+    copied verbatim. Lowercase word joins are repaired only for observed unambiguous
+    compounds; guessing arbitrary segmentation would corrupt technical vocabulary.
+    """
+    protected = re.compile(
+        r"(```.*?```|`[^`]*`|\$\$.*?\$\$|\$[^$\n]*\$|\\\[.*?\\\]|\\\(.*?\\\))", re.S
+    )
+    repairs = {
+        "moderateinjuries": "moderate injuries",
+        "life-threateninginjuries": "life-threatening injuries",
+        "injuries(survival": "injuries (survival",
+        "ingeneral": "in general",
+        "Simplycontrollable": "Simply controllable",
+        "Normallycontrollable": "Normally controllable",
+        "oruncontrollable": "or uncontrollable",
+        "controlor": "control or",
+        "andlife-threatening": "and life-threatening",
+        "survivalprobable": "survival probable",
+    }
+    parts = protected.split(text)
+    for i in range(0, len(parts), 2):
+        part = parts[i]
+        for old, new in repairs.items():
+            part = re.sub(r"(?<![A-Za-z])" + re.escape(old) + r"(?![A-Za-z])", new, part)
+        part = re.sub(r"(?<=[a-z]),(?=[A-Za-z])", ", ", part)
+        part = re.sub(r"(?<=[a-z])\.(?=[A-Z][a-z])", ". ", part)
+        # Only a class sequence on the same row disambiguates CO from carbon monoxide.
+        lines = []
+        for line in part.splitlines(keepends=True):
+            def class_label(match: re.Match[str]) -> str:
+                family = match.group(2)
+                if re.search(r"\|\s*" + family + r"[123]\s*(?=\|)", line):
+                    return match.group(1) + family + "0"
+                return match.group(0)
+            line = re.sub(r"(?<=\|)([ \t]*)([SEC])O(?=[ \t]*\|)", class_label, line)
+            lines.append(line)
+        part = "".join(lines)
+        parts[i] = part
+    return "".join(parts)
+
+
+def _bounded_parts(text: str, words: int, chars: int) -> list[str]:
+    """Lossless content windows, including a progress guarantee for a single huge token."""
+    result: list[str] = []
+    rest = text.strip()
+    while rest:
+        if len(rest) <= chars and len(rest.split()) <= words:
+            result.append(rest)
+            break
+        matches = list(re.finditer(r"\S+", rest))
+        end = min(chars, matches[min(words, len(matches)) - 1].end())
+        boundary = rest.rfind(" ", 0, end + 1)
+        if boundary > 0:
+            end = boundary
+        result.append(rest[:end])
+        rest = rest[end:].lstrip()
+    return result
+
+
+def _table_parts(text: str, caption: str) -> list[str]:
+    """Pack Markdown rows with repeated caption/header; never drop a data row.
+
+    Ordinary headers/captions repeat in full. If the header or caption itself exceeds
+    the ceiling, repeat a bounded preview and retain its complete content in the payload.
+    An oversized single row is continued in bounded pieces instead of defeating the cap.
+    """
+    lines = text.splitlines()
+    separator = next((i for i, line in enumerate(lines)
+                      if re.fullmatch(r"[\s|:\-]+", line) and "---" in line), None)
+    header_end = separator + 1 if separator is not None else 0
+    # PDF table parsers often put an empty row before the separator and real column labels
+    # immediately afterwards. Keep those short label rows, but not an entire long data row.
+    if header_end and not re.search(r"[A-Za-z0-9]", lines[0]):
+        while header_end < min(len(lines), separator + 4):
+            line = lines[header_end]
+            if len(line) > 160 or len(line.split()) > 25:
+                break
+            cells = [c.strip() for c in line.split("|") if c.strip()]
+            labels = all(re.fullmatch(r"(?:[SEC](?:O|[0-9])|[ABCD])", c) for c in cells)
+            named_header = bool(re.search(
+                r"\b(?:class|methods?|ASIL|name|value|description|parameter|units?|date|type)\b",
+                line, re.I,
+            ))
+            if not cells or not (labels or named_header):
+                break
+            header_end += 1
+    full_header = "\n".join(lines[:header_end])
+    context = "\n".join(t for t in [caption, full_header] if t)
+    if len(context) > 400 or len(context.split()) > 65:
+        short = _bounded_parts(context, 65, 400)[0]
+        rows = lines
+        # The caption lives in its own source block too; retain it here for a standalone table.
+        if caption:
+            rows = [caption] + rows
+        context = short
+    else:
+        rows = lines[header_end:]
+    if not rows:
+        rows = [text]
+        context = caption[:200]
+    budget_words = max(1, _MAX_CHUNK_WORDS - len(context.split()))
+    budget_chars = max(1, _MAX_CHUNK_CHARS - len(context) - 2)
+    payloads: list[str] = []
+    current: list[str] = []
+    for row in rows:
+        for part in _bounded_parts(row, budget_words, budget_chars):
+            candidate = "\n".join(current + [part])
+            if current and (len(candidate) > budget_chars or len(candidate.split()) > budget_words):
+                payloads.append("\n".join(current))
+                current = []
+            current.append(part)
+    if current:
+        payloads.append("\n".join(current))
+    return ["\n".join(t for t in [context, body] if t) for body in payloads]
 
 
 def _extract_title(markdown: str) -> str:
@@ -92,9 +194,14 @@ class Chunker:
     def chunk(self, doc: ParsedDoc) -> list[Chunk]:
         title = _extract_title(doc.markdown)
         groups = self._group_blocks(doc.blocks)
+        if self._config.child_parent_expansion:
+            groups = self._merge_tiny_headings(groups)
+        sources = {block.block_id: block for block in doc.blocks}
         sized_groups = [sub for group in groups for sub in self._split_oversized(group)]
         return [
-            self._build_chunk(doc.paper_id, title, index, group, overlap)
+            self._build_chunk(
+                doc.paper_id, title, index, group, overlap, sources[group[0].block_id]
+            )
             for index, (group, overlap) in enumerate(sized_groups)
         ]
 
@@ -120,40 +227,102 @@ class Chunker:
                 groups.append([block])
         return groups
 
+    def _merge_tiny_headings(self, groups: list[list[Block]]) -> list[list[Block]]:
+        """Attach orphan heading/term groups to their immediate definition in reading order.
+
+        A numeric terms-clause marker can be followed by a term then an acronym whose parser
+        section paths have lost their common parent. That narrow shape is recognized without
+        merging arbitrary unrelated short sections or completed short definitions.
+        """
+        merged: list[list[Block]] = []
+        index = 0
+        definitions_active = False
+        while index < len(groups):
+            current = list(groups[index])
+            path = current[0].section_path
+            if re.search(r"terms and definitions", path, re.I):
+                definitions_active = True
+            elif re.match(r"^\d+\s", path) and not re.match(r"^3\s", path):
+                definitions_active = False
+            index += 1
+            while (index < len(groups)
+                   and sum(len(b.text.split()) for b in current) < _TINY_HEADING_WORDS):
+                heading_only = all(
+                    " ".join(b.text.split()) == " ".join(b.section_path.split(" > ")[-1].split())
+                    or re.fullmatch(r"\d+(?:\.\d+)+", b.text.strip())
+                    for b in current
+                )
+                if not heading_only:
+                    break
+                following = groups[index]
+                left = current[0].section_path
+                right = following[0].section_path
+                same_parent = (" > " in left and " > " in right
+                               and left.rsplit(" > ", 1)[0] == right.rsplit(" > ", 1)[0])
+                definition_marker = definitions_active and any(
+                    re.fullmatch(r"3\.\d+(?:\.\d+)*", b.text.strip()) for b in current
+                )
+                definition_context = bool(re.search(r"terms and definitions", left, re.I))
+                if not (same_parent or definition_marker or definition_context):
+                    break
+                # Never swallow the next numbered term into the preceding definition.
+                if re.fullmatch(r"\d+(?:\.\d+)+", following[0].text.strip()):
+                    break
+                current.extend(following)
+                index += 1
+            merged.append(current)
+        return merged
+
     def _split_oversized(
         self, group: list[Block]
     ) -> list[tuple[list[Block], Block | None]]:
-        """Splits a `_group_blocks` group once it exceeds `_MAX_CHUNK_WORDS`, in reading order.
-        Each returned sub-group is paired with an overlap block (the immediately preceding
-        sub-group's last block, carried forward -- see `_OVERLAP_MAX_WORDS`) or `None` for the
-        first sub-group of a split and for the non-split fast path.
+        """Bound derived prose/tables while retaining source block identity and scientific context.
 
-        A split point may only fall directly before a `type == "prose"` block -- never before an
-        equation/code/table/caption block -- so a split can never separate one of those from the
-        prose that introduces it (ARCHITECTURE.md §M3: "equations/code never split from defining
-        context"). A single block bigger than the cap on its own is left whole either way (blocks
-        are this module's atomic unit; that's a Parser-level anomaly, not this function's job).
+        Equation/code blocks and their immediately defining prose stay atomic. Tables are
+        independently row-split with repeated header/caption. All fragments retain the real
+        source block id; _build_chunk takes its citation snippet from the untouched source.
         """
-        if sum(len(block.text.split()) for block in group) <= _MAX_CHUNK_WORDS:
+        if not self._config.child_parent_expansion:
             return [(group, None)]
+        expanded: list[Block] = []
+        for index, block in enumerate(group):
+            text = block.text
+            next_type = group[index + 1].type if index + 1 < len(group) else None
+            previous = group[index - 1] if index else None
+            if block.type == "table":
+                caption = (previous.text if previous and (
+                    previous.type == "caption" or re.match(r"^Table\s+\w+", previous.text)
+                ) else "")
+                pieces = _table_parts(_normalize_text(text), _normalize_text(caption))
+            elif block.type == "prose" and next_type not in ("equation", "code"):
+                pieces = _bounded_parts(_normalize_text(text), _MAX_CHUNK_WORDS, _MAX_CHUNK_CHARS)
+            else:
+                pieces = [text]
+            expanded.extend(block.model_copy(update={"text": part}) for part in pieces)
         sub_groups: list[list[Block]] = []
         current: list[Block] = []
-        current_words = 0
-        for block in group:
-            block_words = len(block.text.split())
-            over_cap_if_added = current_words + block_words > _MAX_CHUNK_WORDS
-            if current and over_cap_if_added and block.type == "prose":
+        for block in expanded:
+            candidate = current + [block]
+            over = (sum(len(b.text.split()) for b in candidate) > _MAX_CHUNK_WORDS
+                    or sum(len(b.text) + 2 for b in candidate) > _MAX_CHUNK_CHARS)
+            table_boundary = block.type == "table" or (current and current[-1].type == "table")
+            if current and ((over and block.type not in ("equation", "code")) or table_boundary):
                 sub_groups.append(current)
                 current = []
-                current_words = 0
             current.append(block)
-            current_words += block_words
-        sub_groups.append(current)
-
-        result: list[tuple[list[Block], Block | None]] = [(sub_groups[0], None)]
-        for prev, sub in zip(sub_groups, sub_groups[1:]):
-            last = prev[-1]
-            overlap = last if len(last.text.split()) <= _OVERLAP_MAX_WORDS else None
+        if current:
+            sub_groups.append(current)
+        result: list[tuple[list[Block], Block | None]] = []
+        for index, sub in enumerate(sub_groups):
+            overlap = None
+            if index and sub[0].type != "table" and sub_groups[index - 1][-1].type != "table":
+                last = sub_groups[index - 1][-1]
+                if (len(last.text.split()) <= _OVERLAP_MAX_WORDS
+                        and len(last.text) <= _OVERLAP_MAX_CHARS
+                        and len(last.text) + sum(len(b.text) + 2 for b in sub) <= _MAX_CHUNK_CHARS
+                        and len(last.text.split()) + sum(len(b.text.split()) for b in sub)
+                        <= _MAX_CHUNK_WORDS):
+                    overlap = last
             result.append((sub, overlap))
         return result
 
@@ -164,6 +333,7 @@ class Chunker:
         index: int,
         group: list[Block],
         overlap: Block | None = None,
+        source_first: Block | None = None,
     ) -> Chunk:
         # Multi-block anchoring rule: anchor/parent_id always pin the FIRST block in the group
         # (reading order) — never an average or the last block (DATA-CONTRACTS.md "Provenance &
@@ -171,6 +341,7 @@ class Chunker:
         # `_split_oversized`) is prepended into the body text only -- it never becomes `first`,
         # so anchor/parent_id/section_path stay pinned to this chunk's own true start.
         first = group[0]
+        source_first = source_first or first
         # The duplicate-heading check (`_strip_duplicate_heading`) must run on `overlap`, `first`,
         # AND every block in `group[1:]` INDEPENDENTLY -- any of them can independently be a
         # heading-duplicate block (T-DOC95: a PDF extractor can emit a section heading as two (or
@@ -184,11 +355,14 @@ class Chunker:
         # sub-chunk's `overlap`) OR the next sub-group's own opening block can independently
         # duplicate `section_path`. `first.text` itself (used for `anchor.snippet` below) is
         # untouched either way -- this only affects what goes into `body`.
-        raw_body_blocks = (
-            ([_strip_duplicate_heading(overlap.text, first.section_path)] if overlap else [])
-            + [_strip_duplicate_heading(first.text, first.section_path)]
-            + [_strip_duplicate_heading(b.text, first.section_path) for b in group[1:]]
-        )
+        body_blocks = ([overlap] if overlap else []) + group
+        raw_body_blocks = [
+            _strip_duplicate_heading(
+                _normalize_text(b.text) if b.type in ("prose", "table", "caption") else b.text,
+                first.section_path,
+            )
+            for b in body_blocks
+        ]
         body = "\n\n".join(t for t in raw_body_blocks if t)
         text = f"{title}\n{first.section_path}\n\n{body}"
         anchor = Anchor(
@@ -196,7 +370,7 @@ class Chunker:
             block_id=first.block_id,
             page=first.page,
             bbox=first.bbox,
-            snippet=_snippet(first.text),
+            snippet=_snippet(source_first.text),
             section_path=first.section_path,
         )
         return Chunk(
