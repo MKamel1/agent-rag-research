@@ -612,6 +612,20 @@ def test_unrelated_tiny_headings_are_not_merged_across_sections():
     assert len(_chunk(_parsed_doc(blocks=blocks))) == 2
 
 
+def test_complete_definition_retains_its_term_path_after_a_stale_numeric_marker():
+    blocks = [
+        _block(0, "3 Terms and definitions", "prose", "3 Terms and definitions"),
+        _block(1, "3.15", "prose", "previous term > 3.15"),
+        _block(2, "target term", "prose", "target term"),
+        _block(3, "the complete explanation of this term", "prose", "target term"),
+    ]
+    chunks = _chunk(_parsed_doc(blocks=blocks))
+    term = next(c for c in chunks if "complete explanation" in c.text)
+    assert term.section_path == "target term"
+    assert term.anchor.block_id == blocks[2].block_id
+    assert term.anchor.section_path == blocks[2].section_path
+
+
 def test_ocr_repairs_are_derived_only_and_leave_math_code_and_numeric_separators_alone():
     raw = ("Light and moderateinjuries; Controllable ingeneral; "
            "lifecycle,such datasets.This is text.")

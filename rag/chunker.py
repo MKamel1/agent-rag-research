@@ -255,6 +255,15 @@ class Chunker:
                 if not heading_only:
                     break
                 following = groups[index]
+                # A complete term/definition group already has the correct term path.
+                # Do not prepend a bare clause number whose parser path still names the
+                # preceding term; that would hide the real heading in citation/search metadata.
+                if (len(current) == 1
+                        and re.fullmatch(r"\d+(?:\.\d+)+", current[0].text.strip())
+                        and any(" ".join(b.text.split()) != " ".join(
+                            b.section_path.split(" > ")[-1].split()
+                        ) for b in following)):
+                    break
                 left = current[0].section_path
                 right = following[0].section_path
                 same_parent = (" > " in left and " > " in right
