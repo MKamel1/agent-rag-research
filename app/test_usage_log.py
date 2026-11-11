@@ -150,7 +150,9 @@ def _tool_rows(tmp_path, calls):
         except ValueError:
             pass
     conn = sqlite3.connect(tmp_path / "mcp_usage.db")
-    rows = conn.execute("SELECT tool, query, paper_id, error, error_message FROM requests ORDER BY id").fetchall()
+    rows = conn.execute(
+        "SELECT tool, query, paper_id, error, error_message FROM requests ORDER BY id"
+    ).fetchall()
     conn.close()
     return rows
 
@@ -182,7 +184,8 @@ def test_scan_and_get_tools_record_their_arguments_and_errors(tmp_path):
     assert rows[3][:3] == ("get_section", "3. Method", "p1")
     assert rows[4][:3] == ("get_figures", None, "p2")
     assert rows[5][:3] == ("get_span", "p1:b3", "p1")
-    assert rows[6] == ("get_paper", None, "x", "ValueError", "unknown paper_id 'x' [serving collection=c]")
+    assert rows[6] == (
+        "get_paper", None, "x", "ValueError", "unknown paper_id 'x' [serving collection=c]")
 
 
 def test_error_message_is_truncated_to_200_chars(tmp_path):
@@ -195,7 +198,8 @@ def test_a_log_created_by_the_old_schema_is_upgraded_in_place_and_old_rows_stay_
     conn = sqlite3.connect(db)
     conn.executescript(  # the pre-MC-3 schema, verbatim, plus one old row
         "CREATE TABLE requests (id INTEGER PRIMARY KEY, ts TEXT NOT NULL, source TEXT NOT NULL, "
-        "tool TEXT NOT NULL, query TEXT, k INTEGER, filters_json TEXT, doc_type TEXT, paper_id TEXT, "
+        "tool TEXT NOT NULL, query TEXT, k INTEGER, filters_json TEXT, doc_type TEXT, "
+        "paper_id TEXT, "
         "latency_ms REAL NOT NULL, result_count INTEGER, candidates INTEGER, error TEXT);"
         "INSERT INTO requests (ts, source, tool, latency_ms, error) "
         "VALUES ('2026-08-01T00:00:00+00:00', 'mcp', 'get_paper', 1.0, 'ContractError');"
@@ -210,7 +214,9 @@ def test_a_log_created_by_the_old_schema_is_upgraded_in_place_and_old_rows_stay_
                    error_message="unknown paper_id", paper_id="p")
 
     conn = sqlite3.connect(db)
-    rows = conn.execute("SELECT error, error_message, paper_id FROM requests ORDER BY id").fetchall()
+    rows = conn.execute(
+        "SELECT error, error_message, paper_id FROM requests ORDER BY id").fetchall()
     conn.close()
-    assert rows == [("ContractError", None, None)] + [("ContractError", "unknown paper_id", "p")] * 2
+    new = ("ContractError", "unknown paper_id", "p")
+    assert rows == [("ContractError", None, None), new, new]
     assert usage_log.read_usage_summary(db)["total"] == 3  # the dashboard's read side still works

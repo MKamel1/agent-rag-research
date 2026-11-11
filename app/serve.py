@@ -117,15 +117,18 @@ mcp = FastMCP("research-system-rag", instructions=build_instructions(_server.cor
 # so the retriever receives exactly the same object as before. Texts carry no corpus facts or
 # digits (those belong in `instructions`, generated from `corpus_stats`).
 _FILTER_DESCRIPTIONS = {
-    "categories": "Keep documents carrying ANY of these category tags (see corpus_stats top_categories).",
+    "categories": "Keep documents carrying ANY of these category tags "
+                  "(see corpus_stats top_categories).",
     "published_after": "Inclusive lower bound on the document's published date (ISO date).",
     "published_before": "Inclusive upper bound on the document's published date (ISO date).",
     "kind": "Match passages (chunk) or whole-document summaries (summary); leave unset normally.",
-    "doc_type": "Restrict to one document kind: paper or book. Books suit definitions and foundations.",
-    "paper_id": "Scope to ONE document, by its stored id exactly as get_paper accepts it (no arxiv: "
-                "prefix). An unknown id raises an error instead of returning nothing.",
+    "doc_type": "Restrict to one document kind: paper or book. Books suit definitions "
+                "and foundations.",
+    "paper_id": "Scope to ONE document, by its stored id exactly as get_paper accepts it "
+                "(no arxiv: prefix). An unknown id raises an error instead of returning nothing.",
     "author_org": "Restrict to documents tagged as authored by this organisation. Without "
-                  "author_org_curated_only this also matches heuristic tags, which are often wrong.",
+                  "author_org_curated_only this also matches heuristic tags, "
+                  "which are often wrong.",
     "author_org_curated_only": "With author_org: match only the exact, enumerated tier. "
                                "No effect without author_org.",
     "max_hits_per_paper": "Subtractive cap on passages per document in one result set; useful for "

@@ -752,7 +752,8 @@ def test_unknown_paper_id_filter_raises_and_never_reaches_the_retriever(tool):
     retriever = SpyRetriever()
     server = _artifact_server(corpus_label="collection=c db=/x")
     server._retriever = retriever
-    with pytest.raises(ContractError, match=rf"{tool}: unknown paper_id 'no:such'.*serving collection=c"):
+    expected = rf"{tool}: unknown paper_id 'no:such'.*serving collection=c"
+    with pytest.raises(ContractError, match=expected):
         getattr(server, tool)("q", SearchFilters(paper_id="no:such"))
     assert retriever.retrieve_calls == retriever.retrieve_papers_calls == []
 
@@ -793,13 +794,15 @@ _MAIN_STATS = {
 }
 
 
-@pytest.mark.parametrize("stats", [_STANDARDS_STATS, _MAIN_STATS, {**_MAIN_STATS, "doc_types": {"paper": 5}}])
+@pytest.mark.parametrize(
+    "stats", [_STANDARDS_STATS, _MAIN_STATS, {**_MAIN_STATS, "doc_types": {"paper": 5}}])
 def test_instructions_are_bounded_and_every_number_comes_from_stats(stats):
     import re
     text = _mod.build_instructions(stats)
     assert len(text.split()) <= 190  # ~250 tokens
     haystack = " ".join(str(v) for v in stats.values())
-    haystack += " " + " ".join(str(x) for v in stats.values() if isinstance(v, dict) for x in (*v, *v.values()))
+    nested = [v for v in stats.values() if isinstance(v, dict)]
+    haystack += " " + " ".join(str(x) for v in nested for x in (*v, *v.values()))
     for number in re.findall(r"\d+", text):
         assert number in haystack, number
 

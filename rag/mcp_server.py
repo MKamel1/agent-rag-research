@@ -62,7 +62,8 @@ def build_instructions(stats: dict) -> str:
         parts.append("filters.doc_type narrows to one document kind.")
     tags = list(stats.get("top_categories", {}).items())[:5]
     parts.append(
-        "filters.categories tags (top, with counts): " + ", ".join(f"{t} {n}" for t, n in tags) + "."
+        "filters.categories tags (top, with counts): "
+        + ", ".join(f"{t} {n}" for t, n in tags) + "."
         if tags else "No category tags are stored here, so filters.categories matches nothing."
     )
     return "\n".join(parts)
@@ -205,7 +206,8 @@ class McpServer:
         `filters.author_org` restricts to papers tagged as authored by that org — see
         `semantic_search`'s docstring for the full tier breakdown: `author_org_curated_only=True`
         demands the exact, enumerated `curated` tier; without it, a hit may be the derived
-        `email_domain`/`keyword` heuristic (precision 0.706 / recall 0.783, measured on the Waymo corpus), not confirmed
+        `email_domain`/`keyword` heuristic (precision 0.706 / recall 0.783, measured on the Waymo
+        corpus), not confirmed
         authorship.
         """
         self._require_known_paper_filter("search_papers", filters)
@@ -343,7 +345,8 @@ class McpServer:
     def corpus_stats(self) -> dict:
         """Corpus-level aggregates for query calibration: paper/block/chunk/figure/table counts,
         published-date range, doc_type histogram, top categories. Use before searching -- knowing
-        which corpus this is and how big changes how a caller scopes everything else. Plain dict; keys documented in
+        which corpus this is and how big changes how a caller scopes everything else. Plain dict;
+        keys documented in
         `DocumentStore.corpus_stats`. When the composition root supplied a `corpus_label`, a
         `serving` key is merged in identifying the answering process."""
         stats = self._document_store.corpus_stats()

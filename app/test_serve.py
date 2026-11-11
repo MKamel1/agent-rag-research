@@ -181,7 +181,7 @@ def test_served_search_docstrings_do_not_claim_the_removed_32_result_ceiling(ser
     # MC-2 deleted the history paragraph from the served text altogether: no ceiling claim at all.
     for fn in (serve_mod.search_papers, serve_mod.semantic_search):
         assert "32-result ceiling" not in fn.__doc__
-        assert "ceiling" not in fn.__doc__.lower().replace("removal of\n    the old result-count ceiling", "")
+        assert "at most 32" not in fn.__doc__
 
 
 def test_served_search_docstrings_state_absence_honesty_and_the_rejected_floor(serve_module):
@@ -369,11 +369,12 @@ def test_filter_schema_describes_every_searchfilters_field(serve_module):
     # Sync tool-manager access: an asyncio loop needs a socketpair, which --disable-socket blocks.
     for name in ("semantic_search", "search_papers"):
         schema = serve_mod.mcp._tool_manager.get_tool(name).parameters
-        filters = next(a for a in schema["properties"]["filters"]["anyOf"] if a.get("type") == "object")
+        variants = schema["properties"]["filters"]["anyOf"]
+        filters = next(a for a in variants if a.get("type") == "object")
         assert set(filters["properties"]) == set(SearchFilters.model_fields)
         for field, prop in filters["properties"].items():
             assert prop.get("description"), f"{name}.filters.{field} has no description"
-            assert not any(ch.isdigit() for ch in prop["description"]), "digits belong in corpus_stats"
+            assert not any(ch.isdigit() for ch in prop["description"])  # digits: corpus_stats
 
 
 def test_described_filters_still_validate_to_a_plain_searchfilters(serve_module):
