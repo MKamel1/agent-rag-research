@@ -1,0 +1,26 @@
+db: /home/omar/ai-projects/research-system-rag-standards/data/papers.db
+papers with chunks: 119  (papers table rows: 119)
+total chunks: 35714  total chunk chars: 28394030
+
+== SUMMARY
+title-equal groups: 0  redundant docs: 0
+prefix-equal (exact 2000 chars) groups: 0  redundant docs: 0
+prefix-equal after lowercase+whitespace collapse, not exact: 0  redundant docs: 0
+
+== TITLE-EQUAL GROUPS
+== PREFIX-EQUAL GROUPS (exact)
+== PREFIX-EQUAL GROUPS (loose, not exact)
+== PAIR CHECKS (full text, 5-word shingles)
+local:216b19db6b0e vs local:5eadc6bef925: jaccard=0.802 contain(a in b)=0.869 contain(b in a)=0.912 shingles=1317/1254
+    A: ISO IEC IEEE 15026-2 2022 — Systems and software assurance, Part 2 Assurance case (VDE preview)
+    B: ISO IEC IEEE 15026-2 2022 — Systems and software assurance, Part 2 Assurance case (ANSI preview)
+local:fff17ed80281 vs local:b6c10359d954: jaccard=0.370 contain(a in b)=0.571 contain(b in a)=0.513 shingles=7297/8124
+    A: AVSC00005 Best Practice for First Responder Interactions with Fleet-Managed ADS-DVs (2020-12)
+    B: AVSC-I-01-2024 Best Practice for First Responder Interactions with Fleet-Managed ADS-DVs (revised 20
+local:c0d3ca177aaf vs local:d4ceb75c64ab: jaccard=0.061 contain(a in b)=0.234 contain(b in a)=0.077 shingles=17508/53474
+    A: ISO PAS 21448-2019 — SOTIF (BSI)
+    B: ISO 21448-2022 — Road vehicles, Safety of the Intended Functionality (SOTIF), full text
+local:fe96edbde0ee vs local:7bfd4a363756: jaccard=0.059 contain(a in b)=0.090 contain(b in a)=0.147 shingles=8962/5511
+    A: ISO 31000-2009 — Risk Management Principles and Guidelines
+    B: ISO 31000-2018 — Risk Management Guidelines
+

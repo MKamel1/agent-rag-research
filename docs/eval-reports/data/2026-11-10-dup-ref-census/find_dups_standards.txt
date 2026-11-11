@@ -1,0 +1,13 @@
+119 papers, 1309 candidate pairs -> 4 duplicate pairs
+
+  0.827  local:216b19db6b0e     local:5eadc6bef925      neither curated
+          ISO IEC IEEE 15026-2 2022 — Systems and software assurance, Part 2 Ass
+  0.525  local:6a34133ea7e6     local:82d7244d048b      neither curated
+          ISO 26262-6-2018 — Product Development at the Software Level
+  0.501  local:82d7244d048b     local:c35c19975827      neither curated
+          ISO 26262-5-2018 — Product Development at the Hardware Level
+  0.493  local:6a34133ea7e6     local:c35c19975827      neither curated
+          ISO 26262-6-2018 — Product Development at the Software Level
+
+both curated: 0 | one curated: 0 | neither: 4
+

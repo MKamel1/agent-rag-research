@@ -1,0 +1,54 @@
+== waymo  db=/home/omar/ai-projects/research-system-rag/waymo/data/papers.db
+total chunks=47771 total chars=99499771
+-- SECTION (verified against section_path)
+chunks=1645 (3.44%)  chars=880128 (0.88%)
+  heading-only stubs (<= 80 chars): 329 chunks, 22384 chars
+  real bibliography text: 1316 chunks, 857744 chars
+  documents with real bibliography text: 1286
+-- HEURISTIC (content, any section; >= 5 citation lines and year density >= 0.5)
+chunks=35 (0.07%)  chars=119221 (0.12%)
+  heuristic-only (not section-matched): 15 chunks, 56375 chars
+-- UNION (section OR heuristic)
+chunks=1660 (3.47%)  chars=936503 (0.94%)
+documents with any reference chunk: 1611
+
+-- TOP 15 DOCUMENTS BY REFERENCE CHARS (union)
+  local:2b6a7d2ae102       ref_chunks=7    ref_chars=35734    Surrogate measures of safety and traffic conflict observations
+  local:86a350b887b5       ref_chunks=1    ref_chars=31460    Wali, B., Khattak, A., Karnowski, T., 2020. The relationship between driving vol
+  2406.18360               ref_chunks=1    ref_chars=19529    XLD: A Cross-Lane Dataset for Benchmarking Novel Driving View Synthesis
+  2405.03709               ref_chunks=1    ref_chars=10680    ScenicNL: Generating Probabilistic Scenario Programs from Natural Language
+  2202.02818               ref_chunks=1    ref_chars=10065    Formal Certification Methods for Automated Vehicle Safety Assessment
+  local:1d27d7fac441       ref_chunks=1    ref_chars=9740     Driving to Safety: How Many Miles of Driving Would It Take to Demonstrate Autono
+  2509.02871               ref_chunks=1    ref_chars=9637     Learning from geometry-aware near misses to real-time COR: A corridor-wide group
+  2201.07881               ref_chunks=1    ref_chars=9175     Analysis of lane-change conflict between cars and trucks at merging section usin
+  2506.07696               ref_chunks=1    ref_chars=8936     A Communication-Latency-Aware Co-Simulation Platform for Safety and Comfort Eval
+  local:0b6d0c77d0ed       ref_chunks=2    ref_chars=8684     Associating Vehicles Automation With Drivers Functional State Assessment Systems
+  2506.11526               ref_chunks=1    ref_chars=8617     Foundation Models in Autonomous Driving: A Survey on Scenario Generation and Sce
+  2304.02269               ref_chunks=1    ref_chars=8526     Distributed Logistic Regression for Massive Data with Rare Events
+  local:fded7239c240       ref_chunks=1    ref_chars=8449     Vision-Based Semantic Segmentation in Scene Understanding for Autonomous Driving
+  2309.08254               ref_chunks=1    ref_chars=8226     Autonomous and Human-Driven Vehicles Interacting in a Roundabout: A Quantitative
+  local:01eeae2ed714       ref_chunks=2    ref_chars=8005     Investigating the transferability of Bayesian hierarchical extreme value model f
+
+-- EXAMPLES: section-matched real bibliography (chunk_id | section_path | first 60 chars)
+  2606.12500:c27 | References | Improving Crash Frequency Prediction from Simulated Traffic 
+  2405.01011:c12 | References | Rare Collision Risk Estimation of Autonomous Vehicles with M
+  2510.12963:c26 | References | Trajectory-based real-time pedestrian crash prediction at in
+  2303.07891:c25 | References | PRISMA: A Novel Approach for Deriving Probabilistic Surrogat
+  2607.16156:c17 | REFERENCES | PRISA: Proactive Infrastructure LiDAR Framework for Intersec
+-- EXAMPLES: section-matched heading-only stubs
+  2403.14648:c16 | References | References
+  2508.00384:c20 | REFERENCES | On Learning Closed-Loop Probabilistic Multi-Agent Simulator
+
+  2603.03574:c11 | REFERENCES | Safety-Centered Scenario Generation for Autonomous Vehicles
+
+  1912.03618:c13 | References | Eficient Black-box Assessment of Autonomous Vehicle Safety
+R
+  2206.03418:c24 | REFERENCES | Responsibility-Sensitive Safety
+REFERENCES
+-- EXAMPLES: heuristic-only (not section-matched)
+  1909.06041:c3 | 2 Data Sets | LSTM-Based Anomaly Detection: Detection Rules from Extreme V
+  2201.07881:c15 | 5 Conclusion and findings | Analysis of lane-change conflict between cars and trucks at 
+  2205.08942:c13 | Limitations of the study | Efectiveness of a time to fixate for fitness to drive evalua
+  2303.15231:c40 | REFERENCE | Advances and Applications of Computer Vision Techniques in V
+  2509.23922:c20 | VIII BASELINE MODELS | DRIVEE2E: CLOSED-LOOP BENCHMARK FOR END-TO-END AUTONOMOUS DR
+

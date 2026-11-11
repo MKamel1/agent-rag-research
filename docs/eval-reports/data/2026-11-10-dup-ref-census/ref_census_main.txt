@@ -1,0 +1,53 @@
+== main  db=/home/omar/ai-projects/research-system-rag-data/papers.db
+total chunks=399676 total chars=1080386685
+-- SECTION (verified against section_path)
+chunks=12069 (3.02%)  chars=9517224 (0.88%)
+  heading-only stubs (<= 80 chars): 3158 chunks, 209776 chars
+  real bibliography text: 8911 chunks, 9307448 chars
+  documents with real bibliography text: 8453
+-- HEURISTIC (content, any section; >= 5 citation lines and year density >= 0.5)
+chunks=640 (0.16%)  chars=2828209 (0.26%)
+  heuristic-only (not section-matched): 180 chunks, 735659 chars
+-- UNION (section OR heuristic)
+chunks=12249 (3.06%)  chars=10252883 (0.95%)
+documents with any reference chunk: 11552
+
+-- TOP 15 DOCUMENTS BY REFERENCE CHARS (union)
+  1208.4360                ref_chunks=1    ref_chars=472146   An XMM-Newton Survey of the Soft X-ray Background. II. An All-Sky Catalog of Dif
+  2212.05874               ref_chunks=9    ref_chars=98445    Whole Brain Network Dynamics of Epileptic Seizures at Single Cell Resolution
+  2504.17166               ref_chunks=2    ref_chars=90248    Causal rule ensemble approach for multi-arm data
+  1101.2185                ref_chunks=5    ref_chars=84380    Luminosity Determination in pp Collisions at sqrt(s)=7 TeV Using the ATLAS Detec
+  2607.07765               ref_chunks=3    ref_chars=67295    Sub-Torque-Balance Upper Limits on Continuous Gravitational Waves from Scorpius 
+  2204.07672               ref_chunks=9    ref_chars=66482    Abadie's Kappa and Weighting Estimators of the Local Average Treatment Effect
+  1808.04246               ref_chunks=12   ref_chars=65418    Semiparametric Bayesian causal inference
+  2312.07610               ref_chunks=4    ref_chars=61442    Interpretational errors in statistical causal inference
+  2601.15479               ref_chunks=1    ref_chars=61426    Benchmarking LLMs for Pairwise Causal Discovery in Biomedical and Multi-Domain C
+  2605.02050               ref_chunks=2    ref_chars=57530    Principles and Guidelines for Randomized Controlled Trials in AI Evaluation
+  2509.23963               ref_chunks=6    ref_chars=56654    Evaluating the Robustness of Chinchilla Compute-Optimal Scaling
+  2412.19507               ref_chunks=1    ref_chars=53693    Hybrid Local Causal Discovery
+  2305.11561               ref_chunks=9    ref_chars=47878    Causal Inference on Process Graphs, Part I: The Structural Equation Process Repr
+  2204.05023               ref_chunks=5    ref_chars=45709    Machine Learning and Deep Learning -- A review for Ecologists
+  2606.16058               ref_chunks=2    ref_chars=44697    Jeffreys-Type Penalized GEE for Correlated Binary Data with an Odds-Ratio Parame
+
+-- EXAMPLES: section-matched real bibliography (chunk_id | section_path | first 60 chars)
+  2403.14573:c16 | References | A Transfer Learning Causal Approach to Evaluate Racial/Ethni
+  2403.16283:c32 | REFERENCES | Sample Empirical Likelihood Methods for Causal Inference | REF
+  2403.16584:c14 | References | Can Large Language Models (or Humans) Disentangle Text? | Refe
+  2403.18039:c26 | References | DOUBLY ROBUST CAUSAL INFERENCE THROUGH PENALIZED BIAS-REDUCE
+  2403.18039:c47 | References | DOUBLY ROBUST CAUSAL INFERENCE THROUGH PENALIZED BIAS-REDUCE
+-- EXAMPLES: section-matched heading-only stubs
+  2403.09580:c15 | References | Algorithmic syntactic causal identification
+References
+  2403.09606:c22 | References | Large Language Models and Causal Inference in Collaboration:
+  2403.10184:c16 | References | Lifted Causal Inference in Relational Domains
+References
+  2403.10618:c23 | References | Limits of Approximating the Median Treatment Effect<sup>\*</
+  2403.14696:c19 | References | MOTIV: Visual Exploration of Moral Framing in Social Media
+R
+-- EXAMPLES: heuristic-only (not section-matched)
+  2405.03579:c11 | Introduction > 1.4 Publications | Some Statistical and Data Challenges When Building Early-Sta
+  2405.07910:c73 | References for Online Supplementary Materials (Appendices) | Improving Causal Inference with Measurement Errors in Exposu
+  2406.19958:c44 | A Literature summary for BART posterior concentration results | On the Computational Eficiency of Bayesian Additive Regressi
+  2409.14593:c21 | A.2 Related Work | Testing Causal Models with Hidden Variables in Polynomial De
+  2504.12345:c10 | 3 UrbanCIA framework > 3.2 Framework structure and agent modes | Reimagining Urban Science: Scaling Causal Inference with Lar
+

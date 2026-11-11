@@ -1,0 +1,57 @@
+db: /home/omar/ai-projects/research-system-rag/waymo/data/papers.db
+papers with chunks: 1861  (papers table rows: 1861)
+total chunks: 47771  total chunk chars: 99499771
+
+== SUMMARY
+title-equal groups: 6  redundant docs: 6
+prefix-equal (exact 2000 chars) groups: 5  redundant docs: 5
+prefix-equal after lowercase+whitespace collapse, not exact: 0  redundant docs: 0
+
+== TITLE-EQUAL GROUPS
+[title] group of 2
+    2205.02911               chunks=15    chars=69574     prefix_sha1=f19446fc39  A Driver-Vehicle Model for ADS Scenario-based Testing
+    local:fa85983cd3c7       chunks=20    chars=69328     prefix_sha1=498ffb2dfb  A Driver-Vehicle Model for ADS Scenario-Based Testing
+
+[title] group of 2
+    2208.12833               chunks=23    chars=78413     prefix_sha1=d2004c8049  Waymo's Fatigue Risk Management Framework: Prevention, Monitoring, and Mitigation of Fatig
+    local:94bdd3d09df1       chunks=23    chars=78413     prefix_sha1=d2004c8049  Waymo’s Fatigue Risk Management Framework: Prevention, Monitoring, and Mitigation of Fatig
+
+[title] group of 2
+    2312.06371               chunks=24    chars=47902     prefix_sha1=fe206fd5c2  BAT: Behavior-Aware Human-Like Trajectory Prediction for Autonomous Driving
+    local:9e227ca73ba3       chunks=23    chars=44765     prefix_sha1=149c1e1ceb  BAT: Behavior-Aware Human-Like Trajectory Prediction for Autonomous Driving
+
+[title] group of 2
+    2502.08121               chunks=12    chars=49095     prefix_sha1=d6e599a3df  Being good (at driving): Characterizing behavioral expectations on automated and human dri
+    local:2c0e082a7af4       chunks=12    chars=49095     prefix_sha1=d6e599a3df  Being good (at driving): Characterizing behavioral expectations on automated and human dri
+
+[title] group of 2
+    2507.17943               chunks=16    chars=50439     prefix_sha1=215647c5eb  Automated Brake Onset Detection in Naturalistic Driving Data
+    local:ac6107f22da9       chunks=16    chars=50439     prefix_sha1=215647c5eb  Automated Brake Onset Detection in Naturalistic Driving Data
+
+[title] group of 2
+    local:52b5fc5d767d       chunks=33    chars=120852    prefix_sha1=889563868c  This may be the author’s version of a work that was submitted/accepted
+    local:ba4d800ccb3f       chunks=13    chars=38406     prefix_sha1=e066ef202d  This may be the author’s version of a work that was submitted/accepted
+
+== PREFIX-EQUAL GROUPS (exact)
+[prefix] group of 2
+    1901.07849               chunks=20    chars=56744     prefix_sha1=7f55a280f2  AADS: Augmented Autonomous Driving Simulation using Data-driven Algorithms
+    local:f978147cb261       chunks=20    chars=56744     prefix_sha1=7f55a280f2  Science Journals — AAAS
+
+[prefix] group of 2
+    1911.01207               chunks=25    chars=61864     prefix_sha1=03b0ef314d  Autonomous Vehicles Meet the Physical World: RSS, Variability, Uncertainty, and Proving Sa
+    local:0ab5bb1007c7       chunks=25    chars=61864     prefix_sha1=03b0ef314d  Autonomous Vehicles Meet the Physical World: RSS, Variability, Uncertainty, and Proving Sa
+
+[prefix] group of 2
+    2208.12833               chunks=23    chars=78413     prefix_sha1=d2004c8049  Waymo's Fatigue Risk Management Framework: Prevention, Monitoring, and Mitigation of Fatig
+    local:94bdd3d09df1       chunks=23    chars=78413     prefix_sha1=d2004c8049  Waymo’s Fatigue Risk Management Framework: Prevention, Monitoring, and Mitigation of Fatig
+
+[prefix] group of 2
+    2502.08121               chunks=12    chars=49095     prefix_sha1=d6e599a3df  Being good (at driving): Characterizing behavioral expectations on automated and human dri
+    local:2c0e082a7af4       chunks=12    chars=49095     prefix_sha1=d6e599a3df  Being good (at driving): Characterizing behavioral expectations on automated and human dri
+
+[prefix] group of 2
+    2507.17943               chunks=16    chars=50439     prefix_sha1=215647c5eb  Automated Brake Onset Detection in Naturalistic Driving Data
+    local:ac6107f22da9       chunks=16    chars=50439     prefix_sha1=215647c5eb  Automated Brake Onset Detection in Naturalistic Driving Data
+
+== PREFIX-EQUAL GROUPS (loose, not exact)
+
