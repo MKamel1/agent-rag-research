@@ -30,8 +30,10 @@ import argparse
 import logging
 import sys
 from pathlib import Path
+from typing import Annotated
 
 from mcp.server.fastmcp import FastMCP
+from pydantic import WithJsonSchema
 
 from app.assembly import build_mcp_server
 from app.usage_log import UsageLog, record_usage
@@ -45,6 +47,7 @@ from contracts.mcp_server import (
 from contracts.provenance import Anchor
 from contracts.vector_index import SearchFilters
 from rag.config import load_config
+from rag.mcp_server import build_instructions
 
 logger = logging.getLogger(__name__)
 
@@ -104,7 +107,45 @@ except TransientError as _error:
         "container and does not need the GPU: run `python -m app.doctor --cpu-only`, then "
         "reconnect the MCP client."
     )
-mcp = FastMCP("research-system-rag")
+# MC-2: self-describing server. `instructions` come from the live corpus facts (SQLite only, via
+# `corpus_stats`), never hand-written per corpus -- five corpora share this entry point.
+mcp = FastMCP("research-system-rag", instructions=build_instructions(_server.corpus_stats()))
+
+# MC-2: `SearchFilters` (contracts/, protected) has no field descriptions, so a cold agent sees bare
+# names in the tool schema. The descriptions live here instead and are injected into the schema of
+# the `filters` parameter only (`WithJsonSchema`); validation still uses the real `SearchFilters`,
+# so the retriever receives exactly the same object as before. Texts carry no corpus facts or
+# digits (those belong in `instructions`, generated from `corpus_stats`).
+_FILTER_DESCRIPTIONS = {
+    "categories": "Keep documents carrying ANY of these category tags (see corpus_stats top_categories).",
+    "published_after": "Inclusive lower bound on the document's published date (ISO date).",
+    "published_before": "Inclusive upper bound on the document's published date (ISO date).",
+    "kind": "Match passages (chunk) or whole-document summaries (summary); leave unset normally.",
+    "doc_type": "Restrict to one document kind: paper or book. Books suit definitions and foundations.",
+    "paper_id": "Scope to ONE document, by its stored id exactly as get_paper accepts it (no arxiv: "
+                "prefix). An unknown id raises an error instead of returning nothing.",
+    "author_org": "Restrict to documents tagged as authored by this organisation. Without "
+                  "author_org_curated_only this also matches heuristic tags, which are often wrong.",
+    "author_org_curated_only": "With author_org: match only the exact, enumerated tier. "
+                               "No effect without author_org.",
+    "max_hits_per_paper": "Subtractive cap on passages per document in one result set; useful for "
+                          "which-documents questions, but it can leave fewer than k results.",
+    "min_distinct_papers": "Additive: append passages until at least this many distinct documents "
+                           "appear (the result can exceed k).",
+}
+
+
+def _described_filters_schema() -> dict:
+    schema = SearchFilters.model_json_schema()
+    for name, description in _FILTER_DESCRIPTIONS.items():
+        schema["properties"][name]["description"] = description
+    return schema
+
+
+_Filters = Annotated[
+    SearchFilters | None,
+    WithJsonSchema({"anyOf": [_described_filters_schema(), {"type": "null"}], "default": None}),
+]
 
 # Request telemetry (T-DOC-usage-telemetry): a dedicated <data_dir>/mcp_usage.db, sibling to the
 # resolved db_path -- never a table in papers.db itself, which would need a migrations/ entry.
@@ -127,16 +168,11 @@ def _get_usage_log() -> UsageLog:
 @mcp.tool()
 @record_usage(_get_usage_log, source="mcp", tool="semantic_search")
 def semantic_search(
-    query: str, filters: SearchFilters | None = None, k: int | None = None
+    query: str, filters: _Filters = None, k: int | None = None
 ) -> SearchResponse:
     """Passage-level search over the ingested corpus. Returns cited, grounded passages
     (`GroundedResult`s) plus a `Coverage` note — never bare text. `k` left unset uses the
     server's configured default (`Config.top_k`, `_cfg` above); pass it explicitly to override.
-
-    The old "at most 32 results ever" ceiling is GONE (2026-08-19): the reranker used to truncate
-    any batch over TEI's 32-item vendor limit, so the candidate pool was pinned to 32 no matter
-    what `k` asked for. It now chunks oversized batches and merges them by score, and the pool
-    follows `Config.rerank_depth`.
 
     No stage of this pipeline rejects a candidate for scoring low in absolute terms -- there is
     no relevance floor. A full `k`-sized result set is the `k` best-available passages, not `k`
@@ -178,7 +214,7 @@ def scan_corpus(
 @mcp.tool()
 @record_usage(_get_usage_log, source="mcp", tool="search_papers")
 def search_papers(
-    query: str, filters: SearchFilters | None = None, k: int | None = None
+    query: str, filters: _Filters = None, k: int | None = None
 ) -> PaperSearchResponse:
     """Whole-paper/summary-level search over the ingested corpus. `k` left unset uses the
     server's configured default (`Config.top_k`); pass it explicitly to override.
@@ -248,8 +284,7 @@ def get_section(paper_id: str, section_path: str) -> list:
 def corpus_stats() -> dict:
     """Corpus-level aggregates: paper/block/chunk/figure/table counts, published-date range,
     doc_type histogram, top categories. Call before searching — knowing which corpus you are
-    talking to (1,738 AV-safety papers vs 12,390 causal-methods ones) changes how to scope
-    everything else."""
+    talking to and how large it is changes how to scope everything else."""
     return _server.corpus_stats()
 
 

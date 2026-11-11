@@ -776,3 +776,47 @@ def test_valid_inputs_reach_the_retriever_with_unchanged_arguments(tool, calls):
     for f in (None, other, known):
         getattr(server, tool)("q", f, 7)
     assert getattr(retriever, calls) == [("q", None, 7), ("q", other, 7), ("q", known, 7)]
+
+
+# ---------------------------------------------------------------------------
+# MC-2: generated instructions -- derived from corpus_stats only, bounded, true for any corpus
+# ---------------------------------------------------------------------------
+_STANDARDS_STATS = {
+    "papers": 119, "published_min": "2000-01-01", "published_max": "2026-11-03",
+    "doc_types": {"paper": 109, "book": 10}, "top_categories": {},
+    "blocks": 52113, "chunks": 20481, "figures": 640, "tables": 910,
+    "serving": "collection=av_standards db=/d/papers.db",
+}
+_MAIN_STATS = {
+    **_STANDARDS_STATS, "papers": 12385, "doc_types": {"paper": 12000, "book": 385},
+    "top_categories": {f"stat.T{i}": 1000 + i for i in range(10)}, "blocks": 236000,
+}
+
+
+@pytest.mark.parametrize("stats", [_STANDARDS_STATS, _MAIN_STATS, {**_MAIN_STATS, "doc_types": {"paper": 5}}])
+def test_instructions_are_bounded_and_every_number_comes_from_stats(stats):
+    import re
+    text = _mod.build_instructions(stats)
+    assert len(text.split()) <= 190  # ~250 tokens
+    haystack = " ".join(str(v) for v in stats.values())
+    haystack += " " + " ".join(str(x) for v in stats.values() if isinstance(v, dict) for x in (*v, *v.values()))
+    for number in re.findall(r"\d+", text):
+        assert number in haystack, number
+
+
+def test_instructions_adapt_to_the_corpus_facts():
+    std = _mod.build_instructions(_STANDARDS_STATS)
+    assert "collection=av_standards" in std and "119 documents (109 paper, 10 book)" in std
+    assert "No category tags" in std and "filters.doc_type" in std
+    main = _mod.build_instructions(_MAIN_STATS)
+    assert "stat.T4 1004" in main and "stat.T5" not in main  # first five tags only
+    one_kind = _mod.build_instructions({**_STANDARDS_STATS, "doc_types": {"paper": 119}})
+    assert "filters.doc_type" not in one_kind
+
+
+def test_instructions_state_the_known_limits_and_name_every_tool():
+    text = _mod.build_instructions(_STANDARDS_STATS)
+    assert "cannot abstain" in text and "paper_id" in text
+    for tool in ("semantic_search", "search_papers", "scan_corpus", "scan_methods", "get_paper",
+                 "get_section", "get_span", "get_figures", "corpus_stats", "list_methods"):
+        assert tool in text

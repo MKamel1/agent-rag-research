@@ -54,6 +54,14 @@ class _FakeMcpServer:
         self.get_span_calls.append(anchor)
         return "verbatim source text"
 
+    def corpus_stats(self):
+        return {
+            "papers": 7, "published_min": "2001-01-01", "published_max": "2026-05-05",
+            "doc_types": {"paper": 5, "book": 2}, "top_categories": {"stat.ME": 3},
+            "blocks": 900, "chunks": 400, "figures": 11, "tables": 4,
+            "serving": "collection=fake db=/x/papers.db",
+        }
+
 
 @pytest.fixture
 def serve_module(monkeypatch, tmp_path):
@@ -161,8 +169,10 @@ def test_served_search_docstrings_do_not_claim_the_removed_32_result_ceiling(ser
     # itself. An MCP client introspects tool docstrings to decide usage; a stale cap claim makes
     # it never ask for k > 32 while the server would honor it.
     serve_mod, _ = serve_module
-    assert "32-result ceiling" not in serve_mod.search_papers.__doc__
-    assert "ceiling is GONE" in serve_mod.semantic_search.__doc__  # the correct note survives
+    # MC-2 deleted the history paragraph from the served text altogether: no ceiling claim at all.
+    for fn in (serve_mod.search_papers, serve_mod.semantic_search):
+        assert "32-result ceiling" not in fn.__doc__
+        assert "ceiling" not in fn.__doc__.lower().replace("removal of\n    the old result-count ceiling", "")
 
 
 def test_served_search_docstrings_state_absence_honesty_and_the_rejected_floor(serve_module):
@@ -332,3 +342,33 @@ def test_vector_store_down_at_startup_exits_with_one_actionable_message(tmp_path
             importlib.reload(sys.modules["app.serve"])
         else:
             importlib.import_module("app.serve")
+
+
+# --- MC-2: the server describes itself ------------------------------------------------------------
+
+
+def test_server_instructions_are_generated_from_corpus_stats(serve_module):
+    serve_mod, _ = serve_module
+    text = serve_mod.mcp.instructions
+    assert "collection=fake" in text and "7 documents (5 paper, 2 book)" in text
+    assert "2001-01-01..2026-05-05" in text
+    assert "cannot abstain" in text
+
+
+def test_filter_schema_describes_every_searchfilters_field(serve_module):
+    serve_mod, _ = serve_module
+    # Sync tool-manager access: an asyncio loop needs a socketpair, which --disable-socket blocks.
+    for name in ("semantic_search", "search_papers"):
+        schema = serve_mod.mcp._tool_manager.get_tool(name).parameters
+        filters = next(a for a in schema["properties"]["filters"]["anyOf"] if a.get("type") == "object")
+        assert set(filters["properties"]) == set(SearchFilters.model_fields)
+        for field, prop in filters["properties"].items():
+            assert prop.get("description"), f"{name}.filters.{field} has no description"
+            assert not any(ch.isdigit() for ch in prop["description"]), "digits belong in corpus_stats"
+
+
+def test_described_filters_still_validate_to_a_plain_searchfilters(serve_module):
+    serve_mod, _ = serve_module
+    arg_model = serve_mod.mcp._tool_manager.get_tool("semantic_search").fn_metadata.arg_model
+    filters = arg_model.model_validate({"query": "q", "filters": {"doc_type": "book"}}).filters
+    assert type(filters) is SearchFilters and filters.doc_type == "book"
