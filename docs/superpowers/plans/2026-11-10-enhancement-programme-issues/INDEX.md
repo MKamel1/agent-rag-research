@@ -74,7 +74,7 @@ conditions: `docs/eval-reports/EXPERIMENT-REGISTER.md`.
 |---|---|---|
 | EV-14 | done | CQ-9 TRIGGER MET: `papers` F1 0.988 < 0.99; kill clause (0 short lists) also literally met, ambiguity recorded (`2026-11-11-filtered-search-result.md`) |
 | EV-19 | done | CANDIDATE (focus, standards pass; legacy fails length control) (`2026-11-11-rerank-score-census-result.md`) |
-| EV-20 | done | papers: no change (G-1 not met); books: G-1 met; open operator decision (`2026-11-11-rerank-depth-result.md`) |
+| EV-20 | done | papers: no change (G-1 not met); books: G-1 met; operator decided 2026-11-11: main `rerank_depth` 32 -> 128, not a rule outcome (`2026-11-11-rerank-depth-result.md` section 8) |
 | EV-21 | done | KILLED by its own ceiling rule, no arm run (`2026-11-11-stub-filter-result.md`) |
 | EV-22 | done | REJECT, clause (a) fails 22 vs 22 (`2026-11-11-ligature-repair-result.md`) |
 | CQ-7 | done | clone `papers__ligrepair_20261111` built (412,167 points, 138,484 sparse vectors changed); not deleted |

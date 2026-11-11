@@ -65,11 +65,11 @@ same `gpu_lock_path`. The levers that differ (values as of 2026-11-10; read each
 
 | corpus | `rerank_depth` | `hybrid_dense_weight` | status of the choice |
 |---|---|---|---|
-| main | 32 | 0.5 | default; not tuned for this corpus |
+| main | **128** (was 32 until 2026-11-11) | 0.5 | **operator decision 2026-11-11**, from the depth A/B (`docs/eval-reports/2026-11-11-rerank-depth-result.md` section 8: papers +2, books +3, about 1.9x wall-clock accepted); the frozen 2026-11-11 baseline was measured at depth 32, so name the depth in comparisons |
 | Waymo | 32 | **0.7** | **measured, operator decision 2026-08-24** (`docs/PROJECT-STATUS.md` "Operator tuning decision, 2026-08-24"; reports in `docs/eval-reports/` 2026-08-22..28). Config backup `config.yaml.bak-w0.5-*` holds the 0.5 state |
-| standards | **128** | 0.5 | **unexplained** (no recorded reason). Waymo evidence points the other way (pool 32/64/128 gave Recall@10 65/64/61 of 68, NB-X-O). Frozen decision rule in `docs/eval-reports/2026-11-10-standards-benchmark-protocol.md`; not yet run |
-| Motional | 32 | 0.5 | default |
-| Waabi | 32 | 0.5 | default |
+| standards | **128** | 0.5 | kept by rule D-1 in the 2026-11-11 standards baseline (84/94 at 128 vs 81/94 at 32). Waymo evidence from 2026-08 points the other way (pool 32/64/128 gave Recall@10 65/64/61 of 68, NB-X-O) |
+| Motional | 32 | 0.5 | default; depth not measured (no ground truth) |
+| Waabi | 32 | 0.5 | default; depth not measured (no ground truth) |
 
 Other per-corpus config: main `corpus_cap` 30,000, `ordering: freshest_first`, 33 harvest queries; Waymo
 `ordering: relevance`, 20 queries, arXiv categories cs.RO/stat.AP/stat.ME/cs.LG/eess.SY/cs.CV;

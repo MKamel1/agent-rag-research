@@ -4,7 +4,7 @@
 **papers: PREFER 128 (provisional) by the >= 2 rule, but G-1 NOT met, so NO default change recommended.
 books: PREFER 128 (provisional) by the >= 2 rule AND G-1 met, so a default change to 128 is RECOMMENDED by the rule.**
 The two sets give different recommendations. Whether to change the main-corpus `rerank_depth` (one value serves both
-sets) is an OPEN OPERATOR DECISION; this report does not choose. Nothing was changed.
+sets) was left to the operator; this report does not choose. The operator changed it to 128 on 2026-11-11 (section 8).
 
 Pre-registration: `docs/eval-reports/data/2026-11-11-session2/PREREGISTRATION.md` section 1 (rule) and section 0 (gates,
 minimum detectable effect). Register: `EXPERIMENT-REGISTER.md`.
@@ -117,3 +117,21 @@ table and costs about 47 GPU minutes. Re-run only if one of these has changed:
 
 Cheap pre-check: compare `git rev-parse HEAD:rag/` between the run commit `03cfd18` and now (`git diff --stat 03cfd18 -- rag app`);
 if empty and the fixture hashes and collection point count match, the answer is already here.
+
+## 8. Operator decision 2026-11-11
+
+**Decision.** The operator decided "whatever makes best results for each corpus type" and the main-corpus `rerank_depth` was
+changed from 32 to 128 on 2026-11-11, in the per-corpus data-directory config (not a tracked file and not foundation-protected; a
+backup of the previous config was kept beside it). Standards already ran at 128 (rule D-1 held). The Waymo, Motional and Waabi
+corpora stay at 32 because depth was not measured on them (follow-on ticket EV-23).
+
+**Rationale.** 128 was never worse overall on either main-corpus set: papers +2 (2:0), books +3 (4:1), and the title-ablated arms
+agree in sign (+5, +3). The cost, about 1.9x wall-clock per query batch, is accepted.
+
+**What this is not.** It is not a rule outcome. The papers set alone did not meet G-1 (net +2 < +3), the pre-registration says nothing
+about combining two sets that share one config value, and none of the comparisons is significant (section 5). The decision is an
+operator choice on a materiality-floor result.
+
+**Consequence for comparisons.** The frozen 2026-11-11 main-corpus baseline (`2026-11-11-main-corpus-baseline.md`) was measured at depth
+32. Any future main-corpus comparison must name the rerank depth of each arm; a run at the new default is not comparable to the
+frozen baseline rows without a depth-32 arm beside it. The depth-128 arm of this report is the reference for the new default.
