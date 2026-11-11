@@ -1,0 +1,25 @@
+Hodrick.Prescott	3	{'on': 3}
+Nerlove	3	{'on': 3}
+Lewbel	131	{'on': 128, 'borderline': 3}
+Baron.Kenny	14	{'on': 14}
+Tinbergen|Haavelmo|Cowles	104	{'on': 88, 'borderline': 13, '?': 3}
+Wright.s path|path analysis	179	{'on': 158, 'borderline': 10, 'off': 10, '?': 1}
+tetrad	388	{'on': 264, 'off': 111, 'borderline': 8, '?': 5}
+John Snow|cholera	55	{'on': 49, 'borderline': 4, 'off': 2}
+Semmelweis|scurvy|tasting tea	14	{'on': 12, '?': 2}
+Hausman	250	{'on': 212, 'borderline': 20, 'off': 17, '?': 1}
+time.invariant	1399	{'on': 1164, 'borderline': 101, 'off': 126, '?': 8}
+system GMM|difference GMM|dynamic panel	215	{'on': 199, 'borderline': 11, 'off': 4, '?': 1}
+Arellano	154	{'on': 138, 'borderline': 15, 'off': 1}
+long.run restriction	2	{'on': 2}
+structural VAR|SVAR	810	{'on': 592, 'borderline': 87, 'off': 131}
+postulates?	964	{'on': 714, 'borderline': 51, 'off': 190, '?': 9}
+germ theory|pathogen	255	{'on': 192, 'off': 51, 'borderline': 12}
+local linear matching|kernel matching	77	{'on': 64, 'off': 5, 'borderline': 4, '?': 4}
+Heckman	833	{'on': 738, 'borderline': 66, 'off': 26, '?': 3}
+multilevel|hierarchical model	1517	{'on': 773, 'borderline': 406, 'off': 336, '?': 2}
+Coase|Pigou|externalit	190	{'on': 122, 'off': 31, 'borderline': 36, '?': 1}
+Stuart Mill|John Stuart	2	{'on': 2}
+instrumental variable.*(telescope|detector|spectrograph)	0	{}
+glitch	94	{'off': 88, 'on': 4, '?': 1, 'borderline': 1}
+Hubble.*(causal|instrument)	9	{'off': 9}
