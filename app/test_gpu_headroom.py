@@ -77,11 +77,11 @@ from app.gpu_headroom import GpuProcess, gpu_compute_processes, parse_compute_ap
 
 
 def test_parse_compute_apps_reads_rows_and_tolerates_junk():
-    out = "1234, python, 512\n77, /usr/bin/my, app, 9000\nbad row\n5, ollama, [N/A]\n\n"
+    out = "1234, python, 512\n77, /usr/bin/my, app, 9000\nbad row\n5, llmhost, [N/A]\n\n"
     assert parse_compute_apps(out) == [
         GpuProcess(1234, "python", 512),
         GpuProcess(77, "/usr/bin/my, app", 9000),
-        GpuProcess(5, "ollama", None),
+        GpuProcess(5, "llmhost", None),
     ]
 
 

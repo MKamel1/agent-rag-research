@@ -30,7 +30,7 @@ normal non-zero exit) is the intended failure signal, not a bug to guard against
 `PRAGMA quick_check` on the written copy; anything but `ok` fails the snapshot and leaves it
 `.partial`) and `sha256` per artifact (SQLite file, every blob file, vector-store file).
 `--verify PATH` re-checks an existing snapshot without a config or a vector store -- a
-`snapshot-*/` dir (manifest.json), a `MANIFEST.sha256` dir (qdrant file copy) or a single
+`snapshot-*/` dir (manifest.json), a `MANIFEST.sha256` dir (vector-store file copy) or a single
 `papers.db.snapshot-*` file with its `.sha256`. `--sqlite-only` takes a consistent SQLite backup
 (stdlib backup API, read-only source) with integrity check, row-count comparison and a `.sha256`
 file, with no vector store needed. **OP-6:** a missing `db_path` is refused, never created.

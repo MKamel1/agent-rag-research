@@ -381,7 +381,7 @@ def test_verify_old_manifest_without_checksums_reports_a_note_not_a_failure(tmp_
 
 
 def test_verify_checks_a_MANIFEST_sha256_directory(tmp_path):
-    d = tmp_path / "qdrant-copy"
+    d = tmp_path / "vs-copy"
     (d / "collections").mkdir(parents=True)
     (d / "collections" / "a.json").write_text("{}")
     import hashlib
