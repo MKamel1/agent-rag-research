@@ -251,6 +251,10 @@ def analyze(report, gt, k, chunk_anchor, members, stub_anchors, labels=None) -> 
     out = {
         "n_questions": len(rows),
         "gt_items_not_in_report": len(gt) - len(rows),
+        # An errored question has empty retrieved lists and is scored as a miss everywhere below;
+        # an EV-10 report marks `run_valid: false`. Both must be visible next to the numbers.
+        "n_errored_rows": sum(1 for r in rows if r.get("error")),
+        "run_valid": report.get("run_valid"),
         "per_dimension": dimension_table(pairs, k, chunk_anchor, members),
         "stub": stub_analysis(rows, k, stub_anchors),
         "authority_commentary_outranks_gold": outranked(pairs, "commentary_paper_ids", k),
@@ -296,6 +300,12 @@ def render(path: str, res: dict, k: int) -> str:
         f"\n=== {path}  (k={k}, questions={res['n_questions']}, GT items not in"
         f" report={res['gt_items_not_in_report']})"
     ]
+    if res["run_valid"] is False or res["n_errored_rows"]:
+        L.append(
+            f"  WARNING: {res['n_errored_rows']} errored question(s) are scored as misses below"
+            + ("; report is marked run_valid=false (INVALID RUN: do not quote these numbers)"
+               if res["run_valid"] is False else "")
+        )
     L.append("per dimension (answerable only):")
     for d, t in res["per_dimension"].items():
         L.append(
