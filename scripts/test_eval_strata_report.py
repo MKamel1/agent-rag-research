@@ -353,3 +353,20 @@ def test_hand_computed_example_reproduces_every_number(tmp_path):
     assert bd["edition"]["n"] == 1 and bd["edition"]["mean_off_share_topk"] == pytest.approx(0.0)
     # offtopic-legit g9: lookalike P at rank 1, gold O at rank 2 -> outranks.
     assert f["offtopic_legit_lookalike_outranks_gold"] == r(1, 1)
+
+
+def test_errored_rows_and_invalid_runs_are_surfaced_not_silently_scored_as_misses(db, capsys):
+    """Review finding: a report row that errored (empty retrieved lists) was scored as an ordinary
+    miss in every table with no mention in the strata output, and an EV-10 `run_valid: false`
+    report was analysed as if valid."""
+    gt = {"a": item("a", gold_block_id="P:b0"), "b": item("b", gold_block_id="P:b0")}
+    bad = row("b", [], [])
+    bad["error"] = "gpu lock x not acquired within 300s"
+    report = {"run_valid": False, "questions": [row("a", ["P"], ["P:b0"]), bad]}
+    res = analyze(report, gt, 10, *build_db_maps(db, {"P"}))
+    assert res["n_errored_rows"] == 1
+    assert res["run_valid"] is False
+    from scripts.eval_strata_report import render
+
+    text = render("r.json", res, 10)
+    assert "WARNING" in text and "INVALID" in text
