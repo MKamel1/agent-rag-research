@@ -164,3 +164,32 @@
 - aford -> afford (145 vs 210)
 - amplifcation -> amplification (1 vs 1444)
 - coefcients -> coefficients (3 vs 7976)
+
+## Review and acceptance (appended by hand; the builder overwrites everything above)
+
+Real-word check used: /usr/share/dict/words (104,334 lines). Corpora: main + waymo + standards.
+
+Pre-registered check: 300-mapping sample, false-repair rate <= 1%. Each run produced fewer than 300
+mappings, so ALL were read (census, not sample).
+- Run 1 (min_len 3, no denylist; 264 mappings): 9 clear false repairs (fca, fnn, tif, wif, bif, jef,
+  clif, fap, fetcher) = 3.4% -> FAIL. Short tokens are mostly acronyms the dictionary lacks.
+- Run 2 (min_len 4; 229 mappings): 2 false (fips = FIPS standard, fres) plus surnames hofman /
+  jefrey / grifin / fetcher / fint / feets / fash / fies / reft / difs / clif flagged -> ~5%, FAIL
+  before denylisting.
+- Final (min_len 4 + NEVER_REPAIR denylist; 227 mappings): 0 known false repairs in 227 reviewed.
+  Caveat: the denylist was derived from this same review, so this is not a held-out rate; the
+  unbiased figure is run 1/2 above. Residual risk is a rare real token absent from the dictionary
+  (surnames, acronyms >= 4 letters).
+- 2,000 random main-corpus chunks (seed 1): 2,708 tokens repaired, 0 of which were recognised by
+  the dictionary as correctly spelled.
+
+## Corpus measurement (main corpus, 399,676 chunks, CPU, read-only)
+
+- Chunks with >= 1 census-pattern broken token: before 129,566 (matches census), after repair 1,332
+  (residual: low-frequency inflections / compounds not in the map, e.g. diferentiability).
+- Chunks whose sparse vector would change: 138,451 (34.6%).
+- Distinct sparse terms changed: 4,653 damaged whitespace-tokens collapse onto 4,640 repaired terms.
+- Cost: ~7.8 s per 100k chunks.
+
+Applying this to the live index requires recomputing sparse vectors (ticket CQ-2). The retrieval
+effect is UNMEASURED until the GPU/stack is available.
