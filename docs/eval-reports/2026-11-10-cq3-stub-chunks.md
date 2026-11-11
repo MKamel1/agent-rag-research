@@ -102,3 +102,41 @@ the ADOPT conjunction across fixtures is applied by the reader. Per-question row
 not pass `--no-per-question`). Note: `retrieved_block_ids` identifies stubs by anchor block, which
 is exact as long as no heading block anchors both a stub and a non-stub chunk (verify with the
 `--out` file if in doubt).
+
+## Addendum 2026-11-11 (EV-12): fixtures, minimum effect, ceiling, stub identity
+
+Appended before any stub A/B report exists (no `2026-11-1*-stub-filter-ab*` file or run directory is
+older than this addendum's commit). The text above is unchanged. The review's criticism it answers: the
+original pre-registration named fixtures with no passage gold, had no minimum effect (one noise flip would
+ADOPT), identified stubs by anchor (ambiguous for 7.5% of standards chunks) and left three tools with
+different stub thresholds. Full context and the other session-2 pre-registrations:
+`docs/eval-reports/data/2026-11-11-session2/PREREGISTRATION.md` section 2.
+
+1. Fixtures of record (hashes in `docs/eval-reports/data/2026-11-10-FIXTURE-HASHES.json`):
+   `docs/eval-reports/data/2026-11-10-standards-gt/standards_gt.json` (collection `av_standards`, shipped
+   config, rerank depth 128; 128 questions, 94 scored answerable),
+   `docs/eval-reports/data/2026-11-10-papers-passage-gt/papers_passage_gt.json` (collection `papers`; 61 / 61),
+   `docs/eval-reports/data/2026-11-10-causal-books-gt/causal_books_gt.json` (collection `papers`; 74 questions,
+   69 scored answerable). These replace `fixtures/eval/eval_ground_truth.json` and `eval_book_questions.json`
+   named above, which have no passage gold. Sets are decided separately, never averaged.
+2. Metric of record: member-passage hit@10 (`scripts/eval_strata_report.py`), with the excerpt metric
+   (`passage_excerpt_level`, `app.retrieval_eval`) reported beside it. Arms: baseline vs `--drop-stub-chunks`,
+   run back to back at one commit, baseline re-run (not reused).
+3. Stub identity: by chunk id (`retrieved_chunk_ids`, EV-9). The single binding definition is the
+   retriever's, `len(body_of(text)) < _MIN_BODY_CHARS` = 40 characters. A rank is a stub only if every
+   candidate chunk id at that rank is a stub. The 60- and 80-character thresholds in other tools are
+   non-binding. No threshold is changed in code.
+4. Minimum effect and ADOPT rule (replaces criteria 1-3 above for the A/B run tonight): ADOPT only if ALL
+   hold: (a) stub-at-rank-1 at baseline is > 0 on a set S; (b) member-passage hit@10 improves by at least 2
+   questions (net, paired) on that set S; (c) no stratum with n >= 10 on any of the three sets loses more than
+   one question (net <= -2) in member-passage hit@10. Otherwise REJECT; the default stays off. Adoption
+   itself still needs the sign-off rider.
+5. Ceiling and kill criterion: first-order, a question can gain only if it misses member-passage hit@10 at
+   baseline AND has at least one stub in its baseline top 10. Ceiling C per set = the count of such questions,
+   computed from the baseline rows (they now carry `retrieved_chunk_ids`) before any GPU use, printed with the
+   stub-at-rank-1 count and the stub share of top-10 slots. A set with C < 2 is skipped (the minimum effect is
+   unreachable); if stub-at-rank-1 occurs on fewer than 3 answerable items on every set the whole A/B is
+   killed (minimizer section 4; EV-21 parked-until). Second-order movement (the filter hands the reranker a
+   refilled pool) is not bounded by C because rows carry only the top 10; the report says so.
+6. Minimum detectable effect: a net +2 is a materiality floor, not a significance claim; the smallest paired
+   result with exact two-sided p < 0.05 is 6 wins to 0 losses (or 8 to 1) on a set.
