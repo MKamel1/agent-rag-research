@@ -1322,7 +1322,7 @@ def test_drop_flag_does_not_affect_retrieve_papers():
 # ===========================================================================
 # RQ-2: relevance_demotion -- below-tau results move down after reranking (default OFF)
 # ===========================================================================
-class _IdOrderReranker:
+class _IdOrderRerank:
     """Deterministic rerank order = ascending chunk id, so tests control the pre-demotion order."""
 
     def rerank(self, query, candidates):
@@ -1346,7 +1346,7 @@ def _rq2_setup(scores, extra_chunks=()):
 
 def _rq2(store, docstore, embedder, k=10, filters=None, pool=50, **kw):
     r = _mod.Retriever(embedder=embedder, vector_store=store, document_store=docstore,
-                       reranker=_IdOrderReranker(), rerank_pool_size=pool, **kw)
+                       reranker=_IdOrderRerank(), rerank_pool_size=pool, **kw)
     results, cov = r.retrieve("causal", filters, k)
     return [x.paper_id for x in results], cov, r
 
@@ -1357,8 +1357,7 @@ def test_demotion_default_off_is_inert_same_calls_same_results():
     b = _rq2_setup(scores)
     ids_default, cov_default, _ = _rq2(*a)
     ids_none, cov_none, _ = _rq2(*b, relevance_demotion=None, relevance_tau=0.99, relevance_penalty=3)
-    expected = [c.id.split(":")[0] for c in _IdOrderReranker().rerank(
-        "causal", [_mod.RerankCandidate(id=f"p{i}:c0", text="") for i in range(6)])]
+    expected = [f"p{i}" for i in range(6)]                # the rerank stub orders by ascending chunk id
     assert ids_default == ids_none == expected          # reranker order untouched, whatever tau is
     assert a[1].calls == b[1].calls                      # identical document-store call sequence
     assert a[1].method_names().count("get") == 6         # no extra per-result lookup was added
@@ -1427,7 +1426,7 @@ def test_demotion_with_drop_stub_chunks_keeps_stubs_out_and_still_demotes():
     _seed_stub_corpus(store, docstore, embedder, n_real=3, n_stub=2)
     docstore._records["r0"] = docstore._records["r0"].model_copy(update={"relevance_score": 0.1})
     r = _mod.Retriever(embedder=embedder, vector_store=store, document_store=docstore,
-                       reranker=_IdOrderReranker(), rerank_pool_size=10, drop_stub_chunks=True,
+                       reranker=_IdOrderRerank(), rerank_pool_size=10, drop_stub_chunks=True,
                        relevance_demotion="tail", relevance_tau=0.3)
     results, _ = r.retrieve(_Q, None, 10)
     assert [x.paper_id for x in results] == ["r1", "r2", "r0"]
@@ -1438,7 +1437,7 @@ def test_demotion_does_not_affect_retrieve_papers():
     for i in range(3):
         _seed_summary(store, docstore, embedder, paper_id=f"p{i}", summary_id=f"p{i}:summary", summary_text=f"s{i}")
     docstore._records["p0"] = docstore._records["p0"].model_copy(update={"relevance_score": 0.0})
-    kw = dict(embedder=embedder, vector_store=store, document_store=docstore, reranker=_IdOrderReranker())
+    kw = dict(embedder=embedder, vector_store=store, document_store=docstore, reranker=_IdOrderRerank())
     base, _ = _mod.Retriever(**kw).retrieve_papers("s", None, 5)
     dem, _ = _mod.Retriever(**kw, relevance_demotion="tail", relevance_tau=0.9).retrieve_papers("s", None, 5)
     assert [x.view.paper_id for x in base] == [x.view.paper_id for x in dem]
@@ -1446,7 +1445,7 @@ def test_demotion_does_not_affect_retrieve_papers():
 
 def test_demotion_rejects_unknown_mode_and_negative_penalty():
     kw = dict(embedder=FakeEmbedder(), vector_store=FakeVectorStore(), document_store=RecordingDocStore(),
-              reranker=_IdOrderReranker())
+              reranker=_IdOrderRerank())
     with pytest.raises(ValueError):
         _mod.Retriever(**kw, relevance_demotion="drop")
     with pytest.raises(ValueError):
