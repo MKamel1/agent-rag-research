@@ -216,15 +216,35 @@ misread as "the Waymo corpus has no data". Three ways to know where you are:
    (`collection=<name> db=<path>`), and unknown-id errors carry the same suffix.
 2. The server logs its resolution at startup (`serve: resolved db_path=... collection=...`,
    stderr -- visible in the client's MCP server logs).
-3. To reach BOTH corpora from one client, register two server entries: the default one above, plus
-   a second with `"args": [..., "-m", "app.serve", "--data-dir",
-   "/home/omar/ai-projects/research-system-rag/waymo/data"]`. Same PYTHONPATH rules apply.
+3. To reach more than one corpus from one client, register one server entry per corpus: the default
+   one above, plus one per extra corpus with `"args": [..., "-m", "app.serve", "--data-dir",
+   "<data dir from the table in "Running a second corpus" below>"]` (for example
+   `/home/omar/ai-projects/research-system-rag/waymo/data`). Same PYTHONPATH rules apply.
 
 `app.mcp_verify_client` takes the same `--data-dir` (e.g. `python -m app.mcp_verify_client "query"
 --data-dir waymo/data`) -- before 2026-08-23 it accepted the flag and silently ignored it,
 reporting main-corpus results for another corpus's question.
 
 ## Running a second corpus
+
+**Five corpora are registered today** (counts, per-corpus settings, build provenance and evaluation status
+are in `docs/PROJECT-STATUS.md` §1.1 — deliberately not repeated here). Each is a data directory with its
+own `config.yaml`; pass the directory to `app.serve --data-dir`, or `cd` into it for ingest-side tools:
+
+| corpus | data directory | `collection` |
+|---|---|---|
+| main (causal methods) | `/home/omar/ai-projects/research-system-rag-data` | `papers` |
+| Waymo AV safety | `/home/omar/ai-projects/research-system-rag/waymo/data` (gitignored, inside the main checkout) | `waymo_av_safety` |
+| AV standards | `/home/omar/ai-projects/research-system-rag-standards/data` | `av_standards` |
+| Motional | `/home/omar/ai-projects/research-system-rag-motional/data` | `motional_av` |
+| Waabi | `/home/omar/ai-projects/research-system-rag-waabi/data` | `waabi_safety` |
+
+The three sibling directories are not git repositories, and none of the five can be rebuilt from tracked
+files. A new data directory also needs its own `collection`; and `app.init_config` writes a **private**
+`gpu_lock_path` (the template default `.gpu.lock`, resolved under the new directory) that must be edited to
+the shared lock `/home/omar/ai-projects/research-system-rag/.gpu.lock`, which all five existing configs
+use — otherwise two corpora can hold the GPU at once. Do not ingest into a live collection from the
+`EP-programme-20261110` branch (it mixes chunker generations; `docs/PROJECT-STATUS.md` §6.1).
 
 A second corpus is just a second data directory with its own `config.yaml` -- nothing in this
 repo's pipeline is hardcoded to one corpus. Bootstrap it with

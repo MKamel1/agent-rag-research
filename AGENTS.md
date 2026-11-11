@@ -21,6 +21,7 @@ No claims, no reconciliation, no evidence tiers beyond a pinned `"A"`, no Obsidi
 | **docs/AGENT-OPERATIONS-LESSONS.md** | Living log of what has actually gone wrong running agents on this repo — verification claims that were false, review methods that failed, dispatch and parallelism traps, and repo-specific gotchas. Each entry carries its incident. Append, don't rewrite. Read before orchestrating multi-agent work. |
 | **docs/AGENT-PROCEDURES.md** | Onboarding checklist for a new agent/session, the per-PR documentation obligation (what to update when a ticket ships, a module lands, a decision is made), and the periodic drift-correction procedure. Read early — before you start acting on any ticket status. |
 | **docs/PROJECT-STATUS.md** | Current system state: what shipped (with commit SHAs/PR#s), what was tried and rejected, what's open. Every numeric/status claim is re-derived against live source/git, not copied — start here for "what actually exists today." |
+| **docs/superpowers/plans/2026-11-10-enhancement-programme.md** | The current forward plan (enhancement programme, 2026-11-10), resting on the adjudicated system review `docs/eval-reports/2026-11-10-system-review.md`. Being written in parallel with the docs pass — check the file exists before relying on it. |
 | **docs/BACKLOG.md** | The live work queue (D/T/B/O ticket series) — what's open right now, updated as items land. |
 | **CONTEXT.md** | Vocabulary and V0–V3 phase definitions. **Wins any terminology dispute.** |
 | **DATA-CONTRACTS.md** | Every frozen data shape, ID format, SQLite schema, `Config` fields. **Wins any shape conflict** with ARCHITECTURE.md or PRD.md — never fork a type, fix the other doc to match. |
@@ -30,7 +31,7 @@ No claims, no reconciliation, no evidence tiers beyond a pinned `"A"`, no Obsidi
 | **WORK-BREAKDOWN.md** | Milestones, ticket IDs (T-A1, T-F1, …), Definition of Done, dependency graph. |
 | **TEST-STRATEGY.md** | Fakes, golden fixtures, contract tests, the retrieval eval set. |
 | **PHASE0-RUNBOOK.md** | The de-risking spikes (S0 bring-up, Spike 1 parser, Spike 2 retrieval) that must run before certain tickets can start. |
-| **docs/RUNBOOK.md** | Operator bring-up after a reboot: `nvidia-smi` → `python -m app.doctor` → `scripts/dashboard.sh start`, where the dashboard token lives, reaching it over Tailscale. Not to be confused with PHASE0-RUNBOOK.md above (Phase-0 spikes, a different thing). |
+| **docs/RUNBOOK.md** | Operator bring-up after a reboot: `nvidia-smi` → `python -m app.doctor` → `scripts/dashboard.sh start`, GPU-busy / CPU-only operation, where the dashboard token lives, reaching it over Tailscale. Not to be confused with PHASE0-RUNBOOK.md above (Phase-0 spikes, a different thing). |
 | **GIT-WORKFLOW.md** | Branch naming, PR flow, CI gating, the foundation-freeze mechanism. **Read before your first commit.** |
 | **EXECUTION-READINESS-REVIEW.md** | Historical principal design review; its fixes are already applied to the docs above. Reference only. |
 | **owners/OWNER-\<X>.md** | Frozen build briefs from the original V0 owner-track (module boundaries, invariants) — background, not a live task assignment. See "How work is tracked now" below for what is. |
@@ -82,22 +83,25 @@ dashboard/telemetry, T = ad hoc test/tooling, B = book-programme carryover, O = 
 which is the queue of what's *open*. For what has already shipped — grouped by programme, each item
 with its commit SHA(s)/PR#(s) — see `docs/PROJECT-STATUS.md` §3 (shipped-work ledger). The record of
 closed PRs runs well past the original #31-#46 range this table used to cite — `docs/BACKLOG.md`
-alone references PRs through #227, and the live PR list (`gh pr list --state all`) tops out at #235
-as of 2026-08-05; treat any PR-number ceiling as a snapshot, not a fact to hardcode.
+alone references PRs through #227; treat any PR-number ceiling as a snapshot, not a fact to hardcode
+(ask `gh pr list --state all` for the live one).
 
 **Foundation sign-off authority (T-F7, CONVENTIONS §0.2):** the human operator, GitHub `@MKamel1`. Any PR
 touching a foundation-protected path (`.github/CODEOWNERS` — currently `contracts/`, `rag/config.py`,
 `config.example.yaml`, `migrations/`, `rag/fakes/`, `fixtures/`, `ci/`, `.github/`) requires their explicit
 approval before merge — mechanized via `.github/CODEOWNERS` + branch protection, see GIT-WORKFLOW.md.
 
-## A second corpus is just a second directory
+## A second corpus is just a second directory (five exist)
 
 The pipeline is not hardwired to one corpus. `python -m app.init_config --data-dir <dir>` scaffolds a
 new corpus's own `config.yaml` under `<dir>`; select it either by running an ingest-side tool (no
 `--data-dir` flag — cwd is the data dir) from inside `<dir>`, or by passing `--data-dir <dir>` to one
 of the 4 tools that support it (`app.init_config`, `app.serve`, `app.dashboard.server`,
 `app.dashboard.verify_numbers`) — see `docs/PROJECT-STATUS.md` §2 for the full flag table and traps.
-The Waymo AV-safety corpus (`docs/PROJECT-STATUS.md` §1) is exactly this pattern, live today.
+Five corpora run this way today — main (`papers`), Waymo (`waymo_av_safety`), AV standards
+(`av_standards`), Motional (`motional_av`), Waabi (`waabi_safety`); the table of data directories,
+collections, counts and per-corpus settings is `docs/PROJECT-STATUS.md` §1.1. Three of them live outside
+the repo, in sibling directories that are not git repositories.
 
 ## If you're picking up work right now
 
