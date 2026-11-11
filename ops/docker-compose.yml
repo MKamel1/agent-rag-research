@@ -1,0 +1,71 @@
+# RECORD of the four service containers as inspected with `docker inspect` on 2026-11-10.
+# The running containers were NOT created from this file and this file has never been applied.
+# See ops/README.md before using it. Mirror, not source of truth: re-inspect before trusting it.
+#
+# No `restart:` policy anywhere, by design (docs/RUNBOOK.md "Why manual, on-demand startup"):
+# TEI holds several GB of VRAM and an auto-restart on a contended GPU is how a foreign holder
+# (e.g. an Ollama model) causes CUDA OOM. Do not add one.
+#
+# Host paths come from env vars (see ops/README.md for the real values on this machine):
+#   QDRANT_STORAGE_DIR  default ../.phase0-data/qdrant  (relative to ops/, i.e. the MAIN checkout's
+#                       gitignored .phase0-data/; wrong inside a git worktree -- set it explicitly)
+#   TEI_HF_CACHE        default $HOME/docker-volumes/tei-data-hf
+# Env values inside the containers are all image-baked defaults (checked: no secrets/tokens).
+
+services:
+  rag-qdrant:
+    container_name: rag-qdrant
+    # `qdrant/qdrant:latest` was running; it resolved to label v1.18.2, built 2026-06-03.
+    # Pinned by digest to exactly that image. A different version can migrate the on-disk store.
+    image: qdrant/qdrant@sha256:75eab8c4ba42096724fdcfde8b4de0b5713d529dde32f285a1f86fdcb2c9e50c
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - ${QDRANT_STORAGE_DIR:-../.phase0-data/qdrant}:/qdrant/storage
+    # entrypoint/command: image defaults (./entrypoint.sh, no args)
+    restart: "no"
+
+  rag-grobid:
+    container_name: rag-grobid
+    image: lfoppiano/grobid@sha256:72ea75c660304ee005027f417beb7c695abf0a62f5c64d5d793027984e7bbd2c  # tag 0.8.0
+    ports:
+      - "8070:8070"
+    # no volumes; entrypoint/command: image defaults
+    restart: "no"
+
+  rag-tei-embed:
+    container_name: rag-tei-embed
+    image: ghcr.io/huggingface/text-embeddings-inference@sha256:a7d82dfef16c3bf1a95e93f5b226f358312512dbb0d585b48c3cf886f9d470a9  # tag 86-1.9
+    # --max-batch-tokens 4096 is ALSO the effective per-input limit: TEI silently truncates every
+    # embedded text to 4,096 tokens (model max is 40,960; auto_truncate defaults to true).
+    # See docs/eval-reports/data/2026-11-10-embed-truncation/report.md. Changing it only affects
+    # newly embedded text and needs the re-embed plan; do not "fix" it here.
+    command: ["--model-id", "Qwen/Qwen3-Embedding-4B", "--max-batch-tokens", "4096"]
+    ports:
+      - "8080:80"
+    volumes:
+      - ${TEI_HF_CACHE:-${HOME}/docker-volumes/tei-data-hf}:/data
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+              count: all  # was `--gpus all`
+    restart: "no"
+
+  rag-tei-reranker:
+    container_name: rag-tei-reranker
+    image: ghcr.io/huggingface/text-embeddings-inference@sha256:a7d82dfef16c3bf1a95e93f5b226f358312512dbb0d585b48c3cf886f9d470a9  # tag 86-1.9
+    command: ["--model-id", "BAAI/bge-reranker-v2-m3"]
+    ports:
+      - "8082:80"
+    volumes:
+      - ${TEI_HF_CACHE:-${HOME}/docker-volumes/tei-data-hf}:/data
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+              count: all
+    restart: "no"

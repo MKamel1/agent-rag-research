@@ -101,6 +101,8 @@ active), not unconditionally. That needs design, not a constant edit.
 
 ### 3. IDF reindex — **+0.075 paper AND passage recall — NEEDS OPERATOR APPROVAL**
 
+> **Closed 2026-11-10:** the IDF modifier is already on all five production collections (on-disk collection configs); nothing is pending. See `docs/DECISIONS-PENDING-operator.md` Decision 1.
+
 Production `papers` has **no sparse IDF modifier** (`sparse: {}`); it was created before T-DOC27 and
 `_ensure_collection` only sets the modifier at creation time. Every freshly-created collection gets
 it automatically — which is how this was discovered (it silently confounded Experiment 1).
@@ -138,7 +140,7 @@ clone. The +0.075 is measured on 40 book questions only.
 
 ## Open decisions for the operator
 
-1. **Approve or decline the IDF reindex.** Destructive-in-place on the live collection; snapshot-
+1. ~~Approve or decline the IDF reindex.~~ **Closed 2026-11-10: already applied.** Destructive-in-place on the live collection; snapshot-
    first, point-count invariant, IDF post-check. Needs sign-off. Validate on the 210-question paper
    eval set first — the +0.075 is measured on 40 book questions only.
 2. **Relax the per-paper cap when results are already scoped.** Design work, not a constant edit:

@@ -109,6 +109,13 @@ http://<this-machine's-tailscale-IP>:8700/
 nothing outside the tailnet can reach this port at all. Within the tailnet, `X-Dashboard-Token`
 (below) is what stops any other device on it from issuing `POST /api/control` commands.
 
+## Container definitions
+
+The four service containers are recorded (not applied) in `ops/docker-compose.yml`, with images
+pinned by digest; `ops/README.md` has the recreate commands and the warning about recreating the
+vector store with a different Qdrant version. Verify with `docker compose config` and a diff against
+`docker inspect` before any recreate.
+
 ## Where the token lives
 
 `app/dashboard/server.py` manages its own token file at `<data-dir>/.dashboard_token` (T-DOC78):
