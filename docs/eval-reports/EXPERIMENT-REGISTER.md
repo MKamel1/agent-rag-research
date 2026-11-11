@@ -1,0 +1,43 @@
+# Experiment register
+
+**Check here before you propose or run an experiment.** If your question is in the table, read its report and its "Do not re-run
+unless" section first; a re-run is justified only when the stated condition has changed, and the "Re-run only if" column gives
+the short form. **Add a row in the same commit as any new result** (and a dated report in this directory named
+`<date>-<slug>-result.md`). A verdict here is what the pre-registered rule gave, not an adoption: no default or config was changed by
+any row. Numbers are member-passage hit@10 unless stated; sets are never averaged. Fixture hashes: `data/2026-11-10-FIXTURE-HASHES.json`.
+
+Run directories (small result files) are committed under `docs/eval-reports/data/<experiment>/runs*/`; the large console logs are in
+the operator's scratchpad and are not durable.
+
+## A. Measured retrieval experiments (2026-11-11, GPU)
+
+| date | id / ticket | question | corpus / fixtures | commit | verdict | headline numbers | report | re-run only if |
+|---|---|---|---|---|---|---|---|---|
+| 2026-11-11 | EV-16 baseline | where does the shipped system stand on passage retrieval? | `papers`: papers 61, books 69 answerable (+ legacy) | `626fac3` | baseline (no gate fired) | papers 52/61, books 54/69; BM25 floor equal (52/61, 54/69); title-ablated 41/61, 47/69 | [main-corpus-baseline](2026-11-11-main-corpus-baseline.md) | code, corpus, models or fixtures changed |
+| 2026-11-11 | EV-17 baseline | does retrieval stay on the causal-methods focus? | `papers`: focus 49, papers-set topic splits | `626fac3` | "stays on focus" band met; R-demote rule not evaluated | on-gold contamination@10 0.100 (n 26), off at rank 1 0/26; papers-set 0.118; BM25 floor 0.023 / 0.042 | [topic-focus-baseline](2026-11-11-topic-focus-baseline.md) | same as above |
+| 2026-11-11 | EV-18 baseline (partly) | standards baseline; keep depth 128? sparse arm needed? | `av_standards`: 128 items, 94 scored | `626fac3` | D-1: keep 128; S-1: unresolved; structure-gate count not produced | depth128 fused 84/94, depth32 81/94; dense_only 84/94; sparse_only 65/94; BM25 62/94 | [standards-baseline](2026-11-11-standards-baseline.md) | same as above |
+| 2026-11-10 | EV-15 BM25 floor | what does plain BM25 over stored text score? | standards, papers, books sets (CPU) | `84261a2` | floor measured (used as comparator) | papers 52/61, books 54/69, standards 61/94 (62/94 after the EV-11 refreeze) | [bm25-floor](2026-11-10-bm25-floor.md) | sets or stored chunk text changed |
+| 2026-11-11 | EV-20 (shrunk) | rerank depth 32 vs 128 at weight 0.5 | `papers` collection: papers 61, books 69 | `03cfd18` | papers: prefer 128 provisional, G-1 not met, no change; books: prefer 128 provisional, G-1 met, change recommended. OPEN OPERATOR DECISION | papers 52 -> 54 (+2, 2:0); books 54 -> 57 (+3, 4:1); ablated +5 (6:1) and +3 (4:1); wall-clock about 1.9x | [rerank-depth-result](2026-11-11-rerank-depth-result.md) | re-chunk/re-embed, reranker or weight change, new fixture with more headroom |
+| 2026-11-11 | EV-19 | does the cross-encoder score separate absent from answerable queries? | focus 9/40, standards 22/106, legacy 24/250 (absent/answerable) | `03cfd18` | CANDIDATE (focus, standards pass; legacy fails length control) | rerank_top1 AUROC focus 0.942 [0.861, 0.994], standards 0.801 [0.715, 0.879], legacy 0.874 vs question length 0.974 | [rerank-score-census-result](2026-11-11-rerank-score-census-result.md) | reranker/corpus change, or a new >= 60-item length-matched absent set (calibration study) |
+| 2026-11-11 | RQ-3 (RQ-2 lever) | does demoting low-`relevance_score` papers cut off-topic results? | focus 49, papers 61 by topic, books 74 | `03cfd18` | REJECT (all 3 arms) | baseline contam 0.100; tail-0.25 0.112, tail-0.30 0.154, penalty-0.30-p5 0.112; legit off-topic recall 14 -> 8, 8, 14 | [relevance-demotion-result](2026-11-11-relevance-demotion-result.md) | new relevance score or fixture with baseline contamination well above 0.100; new arms need new prereg |
+| 2026-11-11 | EV-21 (+EV-12) | does `--drop-stub-chunks` raise hit@10? | papers 61, books 69, standards 106 answerable | `03cfd18` | KILLED (no arm run) | stub at rank 1: standards 1, papers 0, books 0 (need >= 3); ceiling 0 on all sets | [stub-filter-result](2026-11-11-stub-filter-result.md) | `stub-ceiling` on new baseline rows shows stub-at-rank-1 >= 3 and ceiling >= 2 |
+| 2026-11-11 | CQ-7 + EV-22 | does repairing stored sparse vectors (ligatures) help? | clone `papers__ligrepair_20261111`; papers 61, books 69, legacy 210 | `03cfd18` (clone), `9179c0d` (A/B) | REJECT (clause (a) fails; (b) holds) | papers `sparse_only` paper R@10 22 vs 22; fused 52 vs 52; books fused 54 vs 53; 138,484 sparse vectors changed | [ligature-repair-result](2026-11-11-ligature-repair-result.md) | re-chunk, map or sparse path changed, or a fixture with many more damaged-gold items |
+| 2026-11-11 | EV-14 (shrunk) | does filtered HNSW search lose neighbours vs exact? | `papers` 412,167 pts, `av_standards` 36,031 pts; no fixtures | `03cfd18` | CQ-9 TRIGGER MET (F1 0.988 < 0.99); kill clause (0 short lists) also literally satisfied: ambiguity | `papers` F1 0.988, F2 0.993, F3 1.000, F4 1.000, F6 1.000; standards F4 0.886, F6 0.939 (informational) | [filtered-search-result](2026-11-11-filtered-search-result.md) | collection, store version or index params changed; F1 confirmation with more seeds |
+| 2026-11-11 | open finding (post-hoc) | why is system `sparse_only` far below BM25 on `papers`? | same A/B runs | `9179c0d` | OPEN, uninvestigated | member hit@10 papers 9/61 vs BM25 52/61; books 5/69 vs 54/69 | [ligature-repair-result section 6](2026-11-11-ligature-repair-result.md) | n/a: investigate before any sparse-side experiment |
+
+## B. GPU-free audits and censuses (2026-11-10)
+
+| date | id | question | corpus | verdict / finding | headline | where | re-run only if |
+|---|---|---|---|---|---|---|---|
+| 2026-11-10 | chunk-quality census (stub chunks) | how many heading-only chunks (body < 40 chars)? | all corpora | measured | main 9.1% (36,364), standards 6.95%, Waymo 9.87% | `scripts/chunk_quality_census.py`; `PROJECT-STATUS.md` section 1.2 | chunker or corpus changed |
+| 2026-11-10 | ligature census | how many chunks hold broken ligature words? | all corpora | measured | main 32.42% of chunks (129,566 of 399,676; 52.9% of papers); standards 2.79% | `data/2026-11-10-ligature-census/` | chunker/parser or corpus changed |
+| 2026-11-10 | embed truncation | how many chunks exceed the 4,096-token embedding limit? | main, Waymo, standards | measured | main 3,138 (0.79%), Waymo 126, standards 0 | `data/2026-11-10-embed-truncation/report.md` | TEI flags, chunk size or corpus changed |
+| 2026-11-10 | truncation re-chunk plan (CQ-4) | what would a targeted re-chunk cost? | main, Waymo | plan only, not run | main 3,136 chunks / 1,490 papers / 60,888 chunks replaced | `data/2026-11-10-truncation-rechunk/report.md` | before running it, re-derive the id lists |
+| 2026-11-10 | duplicate / reference census | duplicate documents and reference lists indexed as content? | main, Waymo, standards | measured | candidate duplicate groups main 8, Waymo 8, standards 1; reference text about 0.9 to 1.0% of characters | `data/2026-11-10-dup-ref-census/report.md` | corpus changed |
+| 2026-11-10 | off-topic census | what share of main papers is off-topic for causal methods? | main, 400-paper sample | estimate superseded by the full labelling | 38.5% (sample) | `data/2026-11-10-offtopic-census/report.md` | superseded by topic labels |
+| 2026-11-10 | topic labels + audit (EV-1/2/3) | label all 12,385 main papers on/borderline/off | main | measured; audit kappa 0.901 (same-family auditor) | off 4,630 (37.4%), borderline 1,044, on 6,711; relevance_score AUROC 0.923 | `2026-11-10-topic-labels-audit.md`, `data/2026-11-10-topic-labels/` | papers added or rubric changed |
+
+## C. Not yet run, pre-registered
+
+CQ-18 (BM25 weighting), CQ-12/13/16 (standards structure), RQ-4 (expose rerank score) and the weight grid at depth 128 have
+no result; see `docs/BACKLOG.md` for their triggers. The open `sparse_only` finding above is relevant to CQ-18's trigger.
