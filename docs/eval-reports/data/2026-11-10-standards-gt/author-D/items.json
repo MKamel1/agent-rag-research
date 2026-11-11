@@ -272,7 +272,10 @@
    "gold_chunk_id": "local:7e8fdc2246cc:c232",
    "gold_block_id": "local:7e8fdc2246cc:b458",
    "excerpt_block_id": "local:7e8fdc2246cc:b459",
-   "n_chunks_containing_excerpt": 1
+   "n_chunks_containing_excerpt": 1,
+   "alternative_gold_chunk_ids": [
+    "local:7e8fdc2246cc:c210"
+   ]
   },
   {
    "question_id": "Q-STD-D-015",
@@ -517,7 +520,10 @@
    "gold_chunk_id": "local:8eeb4887a4dc:c117",
    "gold_block_id": "local:8eeb4887a4dc:b256",
    "excerpt_block_id": "local:8eeb4887a4dc:b257",
-   "n_chunks_containing_excerpt": 1
+   "n_chunks_containing_excerpt": 1,
+   "alternative_gold_chunk_ids": [
+    "local:8eeb4887a4dc:c49"
+   ]
   },
   {
    "question_id": "Q-STD-D-028",
@@ -535,7 +541,10 @@
    "gold_chunk_id": "local:8eeb4887a4dc:c347",
    "gold_block_id": "local:8eeb4887a4dc:b855",
    "excerpt_block_id": "local:8eeb4887a4dc:b858",
-   "n_chunks_containing_excerpt": 1
+   "n_chunks_containing_excerpt": 1,
+   "alternative_gold_chunk_ids": [
+    "local:8eeb4887a4dc:c58"
+   ]
   },
   {
    "question_id": "Q-STD-D-029",

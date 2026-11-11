@@ -6,20 +6,20 @@
   "sources": [
    "author/items.json"
   ],
-  "n": 50,
+  "n": 49,
   "by_tests": {
    "answerable": 40,
-   "absent": 10
+   "absent": 9
   },
   "by_paper_topic": {
    "on": 26,
    "off": 14,
-   "absent": 10
+   "absent": 9
   },
   "by_dimension": {
    "collision": 26,
    "offtopic-legit": 14,
-   "focus-absent": 10
+   "focus-absent": 9
   },
   "regrounding": "chunk ids move on a rechunk; excerpt_block_id + passage_excerpt do not. Re-run merge_gt.py after any rechunk to refresh gold_chunk_id/gold_block_id."
  },
@@ -685,10 +685,7 @@
    "gold_block_id": "2506.01191:b30",
    "excerpt_block_id": "2506.01191:b31",
    "n_chunks_containing_excerpt": 1,
-   "trap_strength": "moderate",
-   "alternative_gold_chunk_ids": [
-    "2506.01191:c6"
-   ]
+   "trap_strength": "moderate"
   },
   {
    "question_id": "Q-FOC-017",
@@ -1608,29 +1605,6 @@
    "nearest_distractor_paper_id": "2506.19191",
    "paper_topic": "absent",
    "question_id": "Q-FOC-045"
-  },
-  {
-   "tests": "absent",
-   "dimension": "focus-absent",
-   "difficulty": "hard",
-   "question_type": "Procedure",
-   "question_text": "In the Cochrane-Orcutt correction for AR(1) errors, what quasi-difference transformation is applied to the outcome and regressors before the treatment coefficient is re-estimated?",
-   "answer_text": "Not in the corpus: no paper explains this; the only vocabulary matches are off-topic or passing citations.",
-   "absence_evidence": [
-    {
-     "pattern": "Cochrane.Orcutt",
-     "hits": 2,
-     "note": "2 passing mentions: 2603.17281:c12 lists it among error-structure options; 2403.08130:c7 says feasible BLUP needs iterative Cochrane-Orcutt or Prais-Winsten estimation of phi_1; neither gives the transformation"
-    },
-    {
-     "pattern": "quasi.differenc.{0,250}(autocorrel|serial correl|AR\\(1\\))",
-     "hits": 0,
-     "note": "no chunk describes quasi-differencing for AR(1) errors"
-    }
-   ],
-   "nearest_distractor_paper_id": "2403.08130",
-   "paper_topic": "absent",
-   "question_id": "Q-FOC-046"
   },
   {
    "tests": "absent",
