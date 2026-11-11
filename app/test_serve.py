@@ -312,3 +312,23 @@ def test_data_dir_with_missing_db_fails_loudly(tmp_path, monkeypatch):
             importlib.reload(sys.modules["app.serve"])
         else:
             importlib.import_module("app.serve")
+
+
+def test_vector_store_down_at_startup_exits_with_one_actionable_message(tmp_path, monkeypatch):
+    """OP-1: build_mcp_server raising TransientError (vector store down) must become a clear
+    SystemExit naming the fix, not a raw traceback an MCP client sees as 'Connection closed'."""
+    from contracts.errors import TransientError
+
+    def _down(*a, **k):
+        raise TransientError("Qdrant call failed: connection refused")
+
+    monkeypatch.setattr(rag.config, "load_config", lambda *a, **k: Config(
+        focus_area_queries=["x"], gpu_lock_path=str(tmp_path / ".gpu.lock")))
+    monkeypatch.setattr(app.assembly, "build_mcp_server", _down)
+    monkeypatch.setattr(sys, "argv", ["app.serve"])
+
+    with pytest.raises(SystemExit, match=r"vector store is unreachable.*app\.doctor --cpu-only"):
+        if "app.serve" in sys.modules:
+            importlib.reload(sys.modules["app.serve"])
+        else:
+            importlib.import_module("app.serve")

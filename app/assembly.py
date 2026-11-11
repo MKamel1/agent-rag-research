@@ -617,9 +617,14 @@ def build_mcp_server(
     _pass1_lock_path = tei_lifecycle.pass1_lock_path(db_path)
     _QUERY_PATH_TEI_POLL_TIMEOUT_S = 15.0
 
+    corpus_label = f"collection={collection} db={db_path}"
+
     def _ensure_query_tei_ready() -> None:
+        # OP-1: strict -- a TEI that is still down after the recovery attempt raises one
+        # actionable TeiUnavailableError here instead of a connection error after retries.
         tei_lifecycle.ensure_tei_running(
             lock_path=_pass1_lock_path, poll_timeout_s=_QUERY_PATH_TEI_POLL_TIMEOUT_S,
+            strict=True, serving=corpus_label,
         )
 
     embedder = TeiEmbedder(
@@ -652,5 +657,5 @@ def build_mcp_server(
 
     return McpServer(
         retriever, document_store, default_k=config.top_k,
-        corpus_label=f"collection={collection} db={db_path}",
+        corpus_label=corpus_label,
     )

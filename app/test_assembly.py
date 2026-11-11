@@ -965,6 +965,10 @@ def test_build_mcp_server_wires_ensure_ready_into_embedder_and_reranker(monkeypa
         Path(effective_db_path).resolve().parent / ".pass1.lock"
     ), "must derive the lock path from the EFFECTIVE db_path build_mcp_server was actually given, not config.db_path"
     assert fake_tei_lifecycle.ensure_kwargs["poll_timeout_s"] == 15.0
+    assert fake_tei_lifecycle.ensure_kwargs["strict"] is True  # OP-1: query path fails loudly
+    assert fake_tei_lifecycle.ensure_kwargs["serving"] == (
+        f"collection=papers db={effective_db_path}"
+    )
 
 
 def test_build_ingestion_orchestrator_embedder_has_no_ensure_ready_hook(monkeypatch, tmp_path):

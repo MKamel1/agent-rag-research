@@ -23,6 +23,8 @@ from pathlib import Path
 import filelock
 import httpx
 
+from contracts.errors import TransientError
+
 logger = logging.getLogger(__name__)
 
 # Confirmed real container names via `docker ps` this session -- no docker-compose file exists
@@ -35,6 +37,34 @@ _TEI_CONTAINERS = ("rag-tei-embed", "rag-tei-reranker")
 # constants, since assembly.py is the one wiring *this* module, not the other way around.
 _TEI_EMBED_HEALTH_URL = "http://localhost:8080/health"
 _TEI_RERANK_HEALTH_URL = "http://localhost:8082/health"
+
+# OP-1: single source of truth for which MCP tools need TEI and which run from SQLite alone --
+# used by the query-path error below and by `app.doctor --cpu-only`'s availability table.
+TEI_TOOLS = ("semantic_search", "search_papers")
+SQLITE_ONLY_TOOLS = (
+    "scan_corpus", "scan_methods", "list_methods", "get_paper", "get_span", "get_section",
+    "get_figures", "corpus_stats",
+)
+GPU_BUSY_CHECK_COMMAND = "nvidia-smi --query-compute-apps=pid,name,used_memory --format=csv"
+RECOVERY_COMMAND = "python -m app.doctor"
+
+
+class TeiUnavailableError(TransientError):
+    """OP-1: raised by `ensure_tei_running(strict=True)` when the embedder/reranker are not
+    healthy -- one actionable message instead of a connection error after a retry loop."""
+
+
+def _unavailable_message(reason: str, serving: str) -> str:
+    suffix = f" [serving {serving}]" if serving else ""
+    return (
+        f"{' and '.join(TEI_TOOLS)} unavailable: {reason} "
+        "This is expected while another process holds the GPU (the containers fail to start "
+        f"with CUDA out of memory); see who with `{GPU_BUSY_CHECK_COMMAND}`. Still working "
+        f"without the GPU: {', '.join(SQLITE_ONLY_TOOLS)}. To recover once the GPU is free, "
+        f"run `{RECOVERY_COMMAND}` (or `{RECOVERY_COMMAND} --cpu-only` to bring up only the "
+        f"CPU services).{suffix}"
+    )
+
 
 _TEI_START_POLL_INTERVAL_SECONDS = 0.25  # matches summarizer.py's existing constant exactly
 # Conservative starting value, not a measured one -- a real-Docker validation step (separate, after
@@ -172,8 +202,12 @@ def pass1_is_active(lock_path: Path) -> bool:
 def ensure_tei_running(
     client: httpx.Client | None = None, *,
     lock_path: Path | None = None, poll_timeout_s: float | None = None,
+    strict: bool = False, serving: str = "",
 ) -> None:
-    """Best-effort, never raises (same contract as `stop_tei_containers`/`start_tei_containers`).
+    """Best-effort, never raises (same contract as `stop_tei_containers`/`start_tei_containers`)
+    -- unless `strict=True` (OP-1, the MCP query path): then it raises `TeiUnavailableError`, with
+    one actionable message (`serving` = the corpus label appended, as `McpServer`'s own errors
+    do), if TEI is still not healthy after the recovery attempt, or Pass 1 is holding the GPU.
     If both containers are ALREADY healthy, this is two fast `GET /health` calls and nothing else
     -- no `docker` command. Otherwise falls through to `start_tei_containers` (docker start + the
     same bounded health poll that function already does).
@@ -197,6 +231,10 @@ def ensure_tei_running(
     not up to a full minute; phase-transition callers (Pass 2's own explicit `start_tei_containers()`
     call) keep the original, more patient default by never passing this."""
     if lock_path is not None and pass1_is_active(lock_path):
+        if strict:
+            raise TeiUnavailableError(_unavailable_message(
+                "an ingest Pass 1 is running and the TEI containers are stopped on purpose to "
+                "leave the GPU to the parser.", serving))
         return
 
     if client is None:
@@ -207,6 +245,11 @@ def ensure_tei_running(
         return
 
     start_tei_containers(client=client, poll_timeout_s=poll_timeout_s)
+    if strict and not all(_is_healthy(client, url) for url in urls):
+        raise TeiUnavailableError(_unavailable_message(
+            f"the TEI embedder/reranker ({', '.join(_TEI_CONTAINERS)}) are not healthy at "
+            f"{_TEI_EMBED_HEALTH_URL} / {_TEI_RERANK_HEALTH_URL} and could not be started.",
+            serving))
 
 
 def _is_healthy(client: httpx.Client, url: str) -> bool:
