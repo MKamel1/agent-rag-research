@@ -144,7 +144,7 @@ import sqlite3
 import statistics
 import subprocess
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -227,6 +227,12 @@ class Question:
     # the gold-id preflight; `alternative_gold_chunk_ids` also feeds the excerpt metric (EV-8).
     gold_chunk_id: str | None = None
     alternative_gold_chunk_ids: tuple[str, ...] = ()
+    # EV-8: the fixture's verbatim excerpt text and the block it sits in (None for an item whose
+    # excerpt spans blocks -> excerpt metric falls back to the anchor rule). `alt_chunk_texts` is
+    # the DB text of the gold + alternative chunks, filled in by CorpusLookup.attach_gold_texts.
+    passage_excerpt: str | None = None
+    excerpt_block_id: str | None = None
+    alt_chunk_texts: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -262,6 +268,10 @@ class QuestionResult:
     # Purely additive outputs -- no input to any hit/rank/score above.
     retrieved_paper_ids: tuple[str, ...] = ()
     retrieved_block_ids: tuple[str, ...] = ()
+    # EV-8: rank of the first excerpt-containment hit (see `excerpt_hit`); for an item with a null
+    # `excerpt_block_id` the anchor rule's rank is copied here and `excerpt_fallback` is True.
+    excerpt_rank: int | None = None
+    excerpt_fallback: bool = False
 
 
 def load_questions(ground_truth_path: Path, include_duplicates: bool = False) -> list[Question]:
@@ -333,6 +343,8 @@ def load_questions(ground_truth_path: Path, include_duplicates: bool = False) ->
                 gold_chapter_title=r.get("gold_chapter_title"),
                 gold_chunk_id=r.get("gold_chunk_id"),
                 alternative_gold_chunk_ids=tuple(r.get("alternative_gold_chunk_ids") or ()),
+                passage_excerpt=r.get("passage_excerpt"),
+                excerpt_block_id=r.get("excerpt_block_id"),
             )
         )
     return questions
@@ -361,6 +373,35 @@ def code_commit(repo_dir: Path | None = None) -> tuple[str | None, bool | None]:
     return head, bool(dirty)
 
 
+def excerpt_hit(question: Question, passage_text: str) -> bool:
+    """EV-8: does one returned `passage_text` contain the question's gold excerpt?
+
+    True when the normalised (`_normalized`: casefold + whitespace collapse) `passage_excerpt` is a
+    substring of the normalised passage, or the normalised passage EQUALS the text of the gold or
+    an `alternative_gold_chunk_ids` chunk (`alt_chunk_texts`, resolved through the DB -- covers an
+    excerpt the chunker re-rendered, e.g. a table). Chunk identity and anchor block never enter, so
+    the rule survives a re-chunk and credits an alternative chunk the anchor rule misses.
+
+    Ceiling: the gold chunk's own text satisfies this for every item with a non-null
+    `excerpt_block_id` whose excerpt is verbatim in it (pinned by test).
+
+    Relation to the frozen protocols' member-passage metric (scripts/eval_strata_report.py): that
+    metric is anchor-based -- a result counts if its ANCHOR block is the gold block, anchors an
+    alternative/gold chunk, or its member-block span contains `excerpt_block_id`. It answers "did
+    retrieval land on a chunk covering the right block", independent of what text was served, and
+    over-counts when chunks share an anchor. This metric asks "was the excerpt text actually in the
+    served passage", independent of chunk identity. They agree where the chunk body is served in
+    full and anchors are unique (the main corpus), and can differ for shared-anchor chunks (member
+    counts, excerpt does not unless the text matches) and truncated/re-rendered bodies. The names do
+    not collide (`passage_excerpt_level` vs `member_hit`); the protocols' metric of record stays
+    member-passage and this one is reported beside it, never in place of it.
+    """
+    served = _normalized(passage_text)
+    if question.passage_excerpt and _normalized(question.passage_excerpt) in served:
+        return True
+    return any(served == _normalized(t) for t in question.alt_chunk_texts if t)
+
+
 class CorpusLookup:
     """Read-only (`mode=ro`) view of the corpus DB for the measurement side: the gold-id preflight
     (EV-7). Never writes; opened separately from the retriever's own store."""
@@ -384,6 +425,22 @@ class CorpusLookup:
                 )
             }
         return sorted(ids - found)
+
+    def chunk_text(self, chunk_id: str) -> str | None:
+        row = self._con.execute(
+            "SELECT text FROM chunks WHERE chunk_id = ?", (chunk_id,)
+        ).fetchone()
+        return row[0] if row else None
+
+    def attach_gold_texts(self, questions: list[Question]) -> list[Question]:
+        """Questions with `alt_chunk_texts` = DB text of each gold / alternative chunk (EV-8).
+        Ids that do not resolve are skipped here (the preflight is what fails on them)."""
+        out = []
+        for q in questions:
+            ids = [c for c in (q.gold_chunk_id, *q.alternative_gold_chunk_ids) if c]
+            texts = tuple(t for t in (self.chunk_text(c) for c in ids) if t is not None)
+            out.append(replace(q, alt_chunk_texts=texts) if texts else q)
+        return out
 
     def unresolved_gold_ids(self, questions: list[Question]) -> dict[str, list[str]]:
         """{kind: sorted unresolved ids} for gold paper / block / chunk ids absent from this DB
@@ -458,6 +515,21 @@ def score_question(
             ),
             None,
         )
+    # EV-8: additive excerpt-containment rank; items without an excerpt block fall back to the
+    # anchor rule (and are flagged so build_report can list them).
+    excerpt_fallback = passage_scored and (
+        question.excerpt_block_id is None or not question.passage_excerpt
+    )
+    excerpt_rank = None
+    if passage_scored:
+        excerpt_rank = passage_rank if excerpt_fallback else next(
+            (
+                i
+                for i, r in enumerate(truncated, start=1)
+                if excerpt_hit(question, r.passage_text)
+            ),
+            None,
+        )
     chapter_scored = question.gold_chapter_title is not None
     chapter_rank = None
     if chapter_scored and chapter_results is not None:
@@ -473,6 +545,8 @@ def score_question(
     return QuestionResult(
         retrieved_paper_ids=tuple(r.paper_id for r in truncated),
         retrieved_block_ids=tuple(r.anchor.block_id for r in truncated),
+        excerpt_rank=excerpt_rank,
+        excerpt_fallback=excerpt_fallback,
         question_id=question.question_id,
         question_type=question.question_type,
         paper_rank=paper_rank,
@@ -664,7 +738,24 @@ def _question_row(r: QuestionResult) -> dict:
             "hit": r.chapter_rank is not None,
             "rank": r.chapter_rank,
         },
+        # EV-8: additive; `passage_level` above is the unchanged anchor rule.
+        "passage_excerpt_level": {
+            "scored": r.passage_scored,
+            "hit": r.excerpt_rank is not None,
+            "rank": r.excerpt_rank,
+            "fallback": r.excerpt_fallback,
+        },
     }
+
+
+_EXCERPT_SCORING_RULE = (
+    "top-{k} truncation; passage_excerpt hit = first rank r <= {k} whose passage_text (casefolded, "
+    "whitespace collapsed) contains the question's passage_excerpt or equals the text of its gold "
+    "/ alternative_gold_chunk_ids chunk; questions with a null excerpt_block_id use the anchor "
+    "rule (result.anchor.block_id == gold_block_id) and are listed in fallback_question_ids. "
+    "Reported beside, never in place of, passage_level (anchor rule) and the protocols' "
+    "member-passage metric (scripts/eval_strata_report.py)."
+)
 
 
 def _scoring_rule(k: int, mode: str, hybrid_dense_weight: float) -> str:
@@ -713,6 +804,7 @@ def build_report(
     # discipline, and 'overall' below stays untouched so existing fixtures' numbers do not move.
     text_arm_results = [r for r in passage_eligible if not r.vision_derived]
     vision_arm_results = [r for r in passage_eligible if r.vision_derived]
+    excerpt_fallbacks = [r for r in passage_eligible if r.excerpt_fallback]
 
     report = {
         # RI-15: names the hit rule and k in force, so reports produced under different rules are
@@ -794,6 +886,26 @@ def build_report(
                 for dt in sorted({r.doc_type for r in passage_eligible})
             },
         },
+        # EV-8: excerpt-containment passage metric, BESIDE the anchor `passage_level` (which is
+        # untouched). Same denominator (questions with a gold_block_id); items without an excerpt
+        # block use the anchor rule and are listed so the mix is never hidden.
+        "passage_excerpt_level": {
+            "scoring_rule": _EXCERPT_SCORING_RULE.format(k=k),
+            "n_scored": len(passage_eligible),
+            "n_fallback_anchor": len(excerpt_fallbacks),
+            "fallback_question_ids": [r.question_id for r in excerpt_fallbacks],
+            "overall": _recall_mrr([r.excerpt_rank for r in passage_eligible]),
+            "by_question_type": {
+                t: _recall_mrr(
+                    [r.excerpt_rank for r in passage_eligible if r.question_type == t]
+                )
+                for t in sorted({r.question_type for r in passage_eligible})
+            },
+            "by_doc_type": {
+                dt: _recall_mrr([r.excerpt_rank for r in passage_eligible if r.doc_type == dt])
+                for dt in sorted({r.doc_type for r in passage_eligible})
+            },
+        },
         # Chapter-routing accuracy (search_papers) -- distinct from passage_level (semantic_search)
         # per the design doc: "This is what chapter summaries exist for" vs. "whether chapter work
         # affects retrieval at all, or only navigation." Empty/all-n=0 for any fixture with no
@@ -856,6 +968,10 @@ def _print_summary(report: dict) -> None:
     else:
         print("Passage-level: no question in this ground-truth file carries a gold_block_id "
               "-- nothing to score (this is expected for the 210-question set)")
+    pe = report["passage_excerpt_level"]
+    if pe["n_scored"]:
+        print(f"Passage-excerpt {_fmt(pe['overall'])}  [{pe['n_fallback_anchor']} of "
+              f"{pe['n_scored']} fell back to the anchor rule: null excerpt_block_id]")
     cl = report["chapter_level"]
     if cl["n_scored"]:
         print(f"Chapter-level {_fmt(cl['overall'])}  [{cl['n_scored']}/{report['n_questions']} "
@@ -929,10 +1045,6 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO)
     args = _parse_args()
 
-    # Deferred import: these pull in the real (GPU-backed) adapter wiring, which unit tests must
-    # never touch (they exercise load_questions/score_question/run/build_report against a fake
-    # retriever instead) -- see app/test_retrieval_eval.py.
-    from app.assembly import build_mcp_server
     from rag.config import load_config
 
     questions = load_questions(Path(args.ground_truth))
@@ -953,7 +1065,14 @@ def main() -> None:
                 file=sys.stderr,
             )
         sys.exit(EXIT_PREFLIGHT_FAILED)
+    questions = lookup.attach_gold_texts(questions)
     lookup.close()
+    # Deferred import: pulls in the real (GPU-backed) adapter wiring, which unit tests must never
+    # touch (they exercise load_questions/score_question/run/build_report against a fake
+    # retriever instead) -- see app/test_retrieval_eval.py. After the preflight so a bad fixture
+    # or DB fails before any adapter is imported.
+    from app.assembly import build_mcp_server
+
     config = load_config(args.config)
     # RI-M3: resolve the ablation mode to a concrete hybrid_dense_weight; FUSE-1 extends this
     # with an explicit --dense-weight that pins any intermediate value (the modes alone can only
