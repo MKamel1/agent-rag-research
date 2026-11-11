@@ -6,6 +6,8 @@ Nothing here has been posted to GitHub. Each file below is the body of one propo
 
 Label set is closed: `wave:*`, `area:*`, `needs-gpu`, `needs-signoff`, `needs-services`, `size:S|M`, and `parked` (parked files only).
 
+> **Update 2026-11-11.** The current list proposed for posting is in [`to-post-20261111/`](to-post-20261111/README.md) (six issues: RIDER-1, RQ-6, EV-23, EV-24, CQ-9, EV-18b). The tables below are the original list and are kept unchanged.
+
 ## ACTIVE (22 issues)
 
 Waves: W1 do now, no GPU = 17, W2 first GPU session, measurements only = 4, W3 gated changes after baselines = 0, W4 rider and what it unblocks = 1. Rows are in minimal-critical-path-first order (plan section 6).
