@@ -62,6 +62,40 @@ Run these from the repo root (`/home/omar/ai-projects/research-system-rag`), in 
 
 That's the whole sequence: `nvidia-smi` → `python -m app.doctor` → `scripts/dashboard.sh start`.
 
+## GPU busy / CPU-only operation (OP-1)
+
+When another process holds the GPU, the TEI containers (`rag-tei-embed`, `rag-tei-reranker`) fail
+to start with CUDA out of memory. The vector store (`rag-qdrant`) and the reference-resolution
+service (`rag-grobid`) are CPU-only and do not care. The restart-policy decision above is
+unchanged: nothing starts on its own, this is still a command you run.
+
+```bash
+python -m app.doctor --cpu-only
+```
+
+Checks disk headroom and starts/health-checks only the vector store and GROBID; skips TEI, the
+VRAM-headroom check and the `.gpu.lock` check. Exit 0 and a tool table when they are ready.
+
+| Tool | With the GPU busy |
+|---|---|
+| `scan_corpus`, `scan_methods`, `list_methods`, `get_paper`, `get_span`, `get_section`, `get_figures`, `corpus_stats` | works (SQLite only) |
+| `semantic_search`, `search_papers` | fails at once with one message naming TEI, why, what still works, and the recovery command |
+
+The MCP server itself still needs the vector store to start (its constructor connects to it), so
+run `--cpu-only` *before* connecting/reconnecting the MCP client. With the vector store down,
+`python -m app.serve` now exits with a message saying exactly that instead of a raw traceback.
+
+Who holds the GPU:
+
+```bash
+nvidia-smi --query-compute-apps=pid,name,used_memory --format=csv
+```
+
+Back to full operation: once that process has exited (or been stopped by you), run
+`python -m app.doctor` (no flag). It starts the TEI containers, checks VRAM and `.gpu.lock`, and
+exits 0 when everything, including the summarizer host service, is ready; then reconnect the MCP
+client (`/mcp` in Claude Code).
+
 ## Reaching the dashboard over Tailscale
 
 The dashboard binds `0.0.0.0` by default (not just `127.0.0.1`) specifically so a Tailscale IP can

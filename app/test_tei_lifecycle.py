@@ -13,15 +13,13 @@ import filelock
 import httpx
 import pytest
 
-from contracts.errors import TransientError
-
+import app.tei_lifecycle as _mod
 from app.tei_lifecycle import (
     _TEI_CONTAINERS,
     start_tei_containers,
     stop_tei_containers,
 )
-import app.tei_lifecycle as _mod
-
+from contracts.errors import TransientError
 
 # ---------------------------------------------------------------------------
 # stop_tei_containers()

@@ -14,6 +14,7 @@ import sys
 from pathlib import Path
 
 import filelock
+import pytest
 
 import app.doctor as doctor_mod
 from app.doctor import (
@@ -399,6 +400,114 @@ def test_check_services_no_auto_start_never_attempts_health_only_recovery(monkey
 
 
 # ---------------------------------------------------------------------------
+# OP-1: --cpu-only -- only the CPU services; no TEI, no GPU-headroom, no .gpu.lock
+# ---------------------------------------------------------------------------
+
+
+def _forbid_gpu_paths(monkeypatch):
+    def _boom(*a, **k):
+        raise AssertionError("cpu-only must not touch TEI/GPU")
+
+    monkeypatch.setattr(doctor_mod.tei_lifecycle, "start_tei_containers", _boom)
+    monkeypatch.setattr(doctor_mod.gpu_headroom, "free_vram_mib", _boom)
+    monkeypatch.setattr(doctor_mod, "check_gpu_lock_free", _boom)
+
+
+def test_check_services_cpu_only_ignores_tei_and_summarizer_being_down(monkeypatch):
+    cpu_urls = {s.health_url for s in doctor_mod._HEALTH_ONLY_SERVICES if not s.needs_gpu}
+    probed = []
+
+    def fake_is_healthy(url: str) -> bool:
+        probed.append(url)
+        return url in cpu_urls
+
+    monkeypatch.setattr(doctor_mod, "_is_healthy", fake_is_healthy)
+    _forbid_gpu_paths(monkeypatch)
+
+    assert check_services(cpu_only=True) == []
+    assert set(probed) == cpu_urls, "must probe the CPU services and nothing else"
+    assert len(cpu_urls) == 2  # vector store + reference-resolution
+
+
+def test_check_services_cpu_only_still_starts_and_reports_a_down_cpu_service(monkeypatch):
+    vec = doctor_mod._HEALTH_ONLY_SERVICES[1]
+    monkeypatch.setattr(doctor_mod, "_is_healthy", lambda url: url != vec.health_url)
+    _forbid_gpu_paths(monkeypatch)
+    calls = []
+    monkeypatch.setattr(
+        doctor_mod._parser_adapter, "start_reference_resolution_container", lambda: None
+    )
+    monkeypatch.setattr(
+        doctor_mod._vector_index_adapter, "start_container", lambda: calls.append("vec")
+    )
+
+    issues = check_services(cpu_only=True)
+
+    assert calls == ["vec"]
+    assert [i.check for i in issues] == [vec.name]
+
+
+def test_run_preflight_cpu_only_skips_gpu_and_lock_checks(monkeypatch, tmp_path):
+    monkeypatch.setattr(shutil, "disk_usage", lambda path: _FakeUsage(100 * 1024**3))
+    monkeypatch.setattr(doctor_mod, "_is_healthy", lambda url: "11434" not in url
+                        and "8080" not in url and "8082" not in url)
+    _forbid_gpu_paths(monkeypatch)
+
+    assert run_preflight(_cfg(tmp_path), cpu_only=True) == []
+
+
+def test_run_preflight_default_mode_still_checks_gpu_and_tei(monkeypatch, tmp_path):
+    """Default behaviour must not change."""
+    monkeypatch.setattr(shutil, "disk_usage", lambda path: _FakeUsage(100 * 1024**3))
+    monkeypatch.setattr(doctor_mod.gpu_headroom, "free_vram_mib", lambda: 10)
+    monkeypatch.setattr(doctor_mod, "_is_healthy", lambda url: False)
+    monkeypatch.setattr(doctor_mod.tei_lifecycle, "start_tei_containers", lambda: None)
+
+    checks = {i.check for i in run_preflight(_cfg(tmp_path), auto_start=False)}
+
+    assert {"gpu", "TEI embedder", "TEI reranker"} <= checks
+
+
+def test_main_cpu_only_prints_tool_table_and_exits_zero(monkeypatch, tmp_path, capsys):
+    cfg = _cfg(tmp_path)
+    seen = {}
+
+    def fake_preflight(cfg, auto_start=True, cpu_only=False):
+        seen["cpu_only"] = cpu_only
+        return []
+
+    monkeypatch.setattr("rag.config.load_config", lambda: cfg)
+    monkeypatch.setattr(doctor_mod, "run_preflight", fake_preflight)
+    monkeypatch.setattr(sys, "argv", ["doctor", "--cpu-only"])
+
+    main()  # returns normally == exit 0
+
+    out = capsys.readouterr().out
+    assert seen["cpu_only"] is True
+    assert "OK (--cpu-only)" in out
+    for tool in ("scan_corpus", "get_span", "corpus_stats"):
+        assert f"{tool}" in out
+    assert any("semantic_search" in line and "NOT available" in line for line in out.splitlines())
+    assert any("scan_corpus" in line and "  available" in line for line in out.splitlines())
+
+
+def test_main_cpu_only_exits_one_when_a_cpu_service_is_down(monkeypatch, tmp_path, capsys):
+    cfg = _cfg(tmp_path)
+    monkeypatch.setattr("rag.config.load_config", lambda: cfg)
+    monkeypatch.setattr(
+        doctor_mod, "run_preflight",
+        lambda cfg, auto_start=True, cpu_only=False: [PreflightIssue("vector store", "down")],
+    )
+    monkeypatch.setattr(sys, "argv", ["doctor", "--cpu-only"])
+
+    with pytest.raises(SystemExit) as excinfo:
+        main()
+
+    assert excinfo.value.code == 1
+    assert "vector store: down" in capsys.readouterr().out
+
+
+# ---------------------------------------------------------------------------
 # check_mcp_server (T-DOC66) -- always driven through the `_list_tools` injection seam; never
 # spawns a real `python -m app.serve` subprocess here (TEST-STRATEGY: zero-GPU, zero-network).
 # ---------------------------------------------------------------------------
@@ -434,7 +543,9 @@ def test_main_logs_resolved_paths(tmp_path, monkeypatch, caplog):
     # Docker/network health checks.
     cfg = _cfg(tmp_path)
     monkeypatch.setattr("rag.config.load_config", lambda: cfg)
-    monkeypatch.setattr(doctor_mod, "run_preflight", lambda cfg, auto_start=True: [])
+    monkeypatch.setattr(
+        doctor_mod, "run_preflight", lambda cfg, auto_start=True, cpu_only=False: []
+    )
     monkeypatch.setattr(sys, "argv", ["doctor"])
     caplog.set_level("INFO")
 

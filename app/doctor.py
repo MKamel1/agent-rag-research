@@ -83,6 +83,8 @@ class _Service:
     # below via `app.tei_lifecycle`. `None` means health-check only, no recovery path exists (the
     # summarizer's host-service endpoint, by design -- see module docstring).
     start: Callable[[], None] | None = None
+    # OP-1: True if the service needs the GPU to be useful; `--cpu-only` skips it.
+    needs_gpu: bool = False
 
 
 # Confirmed real ports via a live health probe this session -- see each URL's owning adapter
@@ -107,6 +109,7 @@ _HEALTH_ONLY_SERVICES = (
     _Service(
         "summarizer model-serving endpoint (rag/summarizer.py, host service)",
         "http://localhost:11434/api/ps",
+        needs_gpu=True,
         # start=None: a host service, not a container -- health-check only, never auto-started
         # (T-DOC43's original scope note, unaffected by this ticket's fix for the other two).
     ),
@@ -185,7 +188,7 @@ def _is_healthy(url: str) -> bool:
         return False
 
 
-def check_services(*, auto_start: bool = True) -> list[PreflightIssue]:
+def check_services(*, auto_start: bool = True, cpu_only: bool = False) -> list[PreflightIssue]:
     """Health-ping every required service. T-DOC52/T-DOC78: if a service is unhealthy and carries
     a recovery path, one attempt goes through it (docker start + bounded health poll) before being
     reported as an issue -- a stopped-but-startable container (the OG-12 power-cycle case) is
@@ -194,10 +197,15 @@ def check_services(*, auto_start: bool = True) -> list[PreflightIssue]:
     go through their own adapter's `start` (T-DOC78 -- see module docstring for why that recovery
     code lives there, not here). The summarizer's host-service endpoint has no recovery path
     (`start=None`) and stays health-check only. `auto_start=False` skips every recovery attempt.
+
+    `cpu_only=True` (OP-1) checks/starts only the services that do not need the GPU: TEI and the
+    summarizer's endpoint are skipped entirely.
     """
     issues = []
 
-    tei_healthy = _is_healthy(_TEI_EMBED_HEALTH_URL) and _is_healthy(_TEI_RERANK_HEALTH_URL)
+    tei_healthy = cpu_only or (
+        _is_healthy(_TEI_EMBED_HEALTH_URL) and _is_healthy(_TEI_RERANK_HEALTH_URL)
+    )
     if not tei_healthy and auto_start:
         tei_lifecycle.start_tei_containers()
         tei_healthy = _is_healthy(_TEI_EMBED_HEALTH_URL) and _is_healthy(_TEI_RERANK_HEALTH_URL)
@@ -210,6 +218,8 @@ def check_services(*, auto_start: bool = True) -> list[PreflightIssue]:
             issues.append(PreflightIssue("TEI reranker", detail))
 
     for service in _HEALTH_ONLY_SERVICES:
+        if cpu_only and service.needs_gpu:
+            continue
         healthy = _is_healthy(service.health_url)
         if not healthy and auto_start and service.start is not None:
             service.start()
@@ -291,19 +301,30 @@ def check_mcp_server(
     return None
 
 
-def run_preflight(cfg: Config, *, auto_start: bool = True) -> list[PreflightIssue]:
+def run_preflight(
+    cfg: Config, *, auto_start: bool = True, cpu_only: bool = False
+) -> list[PreflightIssue]:
     """Every T-DOC43/T-DOC52/T-DOC78 check in one call -- disk, GPU/VRAM, `.gpu.lock`, every
     required service (auto-starting each stopped-but-startable container first). Returns the full
     list of unresolved issues; empty means the environment is ready.
+
+    `cpu_only=True` (OP-1): disk headroom and the CPU services only -- no VRAM or `.gpu.lock`
+    check, no TEI.
     """
-    basic_checks = (
-        check_disk_headroom(),
-        check_gpu_headroom(),
-        check_gpu_lock_free(cfg.gpu_lock_path),
-    )
+    basic_checks = [check_disk_headroom()]
+    if not cpu_only:
+        basic_checks += [check_gpu_headroom(), check_gpu_lock_free(cfg.gpu_lock_path)]
     issues = [issue for issue in basic_checks if issue is not None]
-    issues.extend(check_services(auto_start=auto_start))
+    issues.extend(check_services(auto_start=auto_start, cpu_only=cpu_only))
     return issues
+
+
+def format_cpu_only_tool_table() -> str:
+    """Which MCP tools work with the GPU services down (OP-1)."""
+    rows = [(tool, "available") for tool in tei_lifecycle.SQLITE_ONLY_TOOLS]
+    rows += [(tool, "NOT available (needs TEI/GPU)") for tool in tei_lifecycle.TEI_TOOLS]
+    width = max(len(tool) for tool, _ in rows)
+    return "\n".join(f"  {tool:<{width}}  {status}" for tool, status in rows)
 
 
 def format_issues(issues: list[PreflightIssue]) -> str:
@@ -327,6 +348,12 @@ def _parse_args() -> argparse.Namespace:
         "the default path below) never touches the MCP server and shouldn't pay for this on "
         "every ingest run.",
     )
+    parser.add_argument(
+        "--cpu-only", action="store_true",
+        help="OP-1: bring up / check only the CPU services (vector store, reference-resolution) "
+        "and skip TEI, the GPU-headroom check and the .gpu.lock check -- for when another process "
+        "holds the GPU. Prints which MCP tools work in this mode; exit 0 when ready.",
+    )
     return parser.parse_args()
 
 
@@ -342,12 +369,19 @@ def main() -> None:
         cfg.db_path, cfg.blob_dir, cfg.collection,
     )
     args = _parse_args()
-    issues = run_preflight(cfg, auto_start=not args.no_auto_start)
+    issues = run_preflight(cfg, auto_start=not args.no_auto_start, cpu_only=args.cpu_only)
     if args.check_mcp:
         mcp_issue = check_mcp_server()
         if mcp_issue is not None:
             issues.append(mcp_issue)
 
+    if not issues and args.cpu_only:
+        print(
+            "doctor: OK (--cpu-only) -- vector store and reference-resolution service ready; "
+            "TEI/GPU checks skipped.\nMCP tools in this mode:\n" + format_cpu_only_tool_table()
+            + f"\nFull operation once the GPU is free: {tei_lifecycle.RECOVERY_COMMAND}"
+        )
+        return
     if not issues:
         print("doctor: OK -- disk/GPU/lock/all required services healthy.")
         return
