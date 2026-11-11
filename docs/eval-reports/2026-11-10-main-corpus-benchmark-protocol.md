@@ -206,3 +206,11 @@ beside), `strata-books.txt`; the ablated files as control. Results land in
 Gates stand as measured. Any change to a definition, threshold or fixture is a dated addendum below this line
 stating what changed and why; the measured results above it are not edited, and a re-run after a fixture change
 is a new baseline, not a replacement.
+
+---
+
+## ADDENDUM 2026-11-11 (EV-11; stub, completed in the final commit of this ticket)
+
+Intent, recorded before any fixture edit and before any retrieval output exists: record same-document duplicate
+gold chunks as `alternative_gold_chunk_ids`, finish the independent re-check of the repaired focus set, and
+re-freeze the fixture hashes in `data/2026-11-10-FIXTURE-HASHES.json`. Details, counts and hashes follow here.
