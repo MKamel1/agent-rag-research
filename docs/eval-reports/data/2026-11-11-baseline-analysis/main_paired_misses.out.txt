@@ -1,0 +1,20 @@
+papers n 61 sys member hits 52 bm hits 52
+ both 5 ['Q-PAPG-009', 'Q-PAPG-016', 'Q-PF-F-004', 'Q-PF-F-015', 'Q-PF-F-022']
+ sys only 4 ['Q-PAPG-006', 'Q-PAPG-023', 'Q-PF-F-016', 'Q-PF-F-030']
+ bm only 4 ['Q-PAPG-005', 'Q-PAPG-024', 'Q-PF-F-023', 'Q-PF-F-025']
+ sys p1 45 bm p1 34 sys anchor 51 bm anchor 52
+   equation-context 11 sys 9 bm 7 sysP1 6 bmP1 4
+   method-detail 20 sys 17 bm 17 sysP1 16 bmP1 10
+   numeric-result 16 sys 16 bm 16 sysP1 15 bmP1 10
+   paper-passage 14 sys 10 bm 12 sysP1 8 bmP1 10
+ paper miss sys ['Q-PAPG-009', 'Q-PF-F-015', 'Q-PF-F-016', 'Q-PF-F-022'] bm ['Q-PF-F-025']
+books n 69 sys member hits 54 bm hits 54
+ both 5 ['Q-CB-H-001', 'Q-CB-H-007', 'Q-CB-H-025', 'Q-CB-J-007', 'Q-CB-J-009']
+ sys only 10 ['Q-CB-H-005', 'Q-CB-H-023', 'Q-CB-H-024', 'Q-CB-H-029', 'Q-CB-I-006', 'Q-CB-I-010', 'Q-CB-I-014', 'Q-CB-I-016', 'Q-CB-I-020', 'Q-CB-I-027']
+ bm only 10 ['Q-CB-H-011', 'Q-CB-H-028', 'Q-CB-I-021', 'Q-CB-I-022', 'Q-CB-I-024', 'Q-CB-J-001', 'Q-CB-J-003', 'Q-CB-J-005', 'Q-CB-J-006', 'Q-CB-J-014']
+ sys p1 43 bm p1 28 sys anchor 54 bm anchor 54
+   book-passage 52 sys 41 bm 39 sysP1 34 bmP1 22
+   equation-context 12 sys 10 bm 11 sysP1 7 bmP1 5
+   table-requirement 5 sys 3 bm 4 sysP1 2 bmP1 1
+ paper miss sys ['Q-CB-H-005', 'Q-CB-H-007', 'Q-CB-H-023', 'Q-CB-H-024', 'Q-CB-H-029', 'Q-CB-I-006', 'Q-CB-I-016', 'Q-CB-I-027', 'Q-CB-J-009'] bm ['Q-CB-H-007', 'Q-CB-I-021', 'Q-CB-J-003', 'Q-CB-J-005', 'Q-CB-J-006']
+

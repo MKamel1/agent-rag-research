@@ -1,0 +1,147 @@
+{
+  "docs/eval-reports/data/2026-11-10-bm25-floor/focus-standard.report.json": {
+    "n_questions": 49,
+    "gt_items_not_in_report": 0,
+    "n_errored_rows": 0,
+    "run_valid": true,
+    "per_dimension": {
+      "collision": {
+        "n": 26,
+        "paper_recall": {
+          "hits": 24,
+          "n": 26
+        },
+        "paper_p1": {
+          "hits": 20,
+          "n": 26
+        },
+        "anchor_hit": {
+          "hits": 20,
+          "n": 26
+        },
+        "anchor_p1": {
+          "hits": 10,
+          "n": 26
+        },
+        "member_hit": {
+          "hits": 20,
+          "n": 26
+        },
+        "member_p1": {
+          "hits": 10,
+          "n": 26
+        }
+      },
+      "offtopic-legit": {
+        "n": 14,
+        "paper_recall": {
+          "hits": 14,
+          "n": 14
+        },
+        "paper_p1": {
+          "hits": 11,
+          "n": 14
+        },
+        "anchor_hit": {
+          "hits": 12,
+          "n": 14
+        },
+        "anchor_p1": {
+          "hits": 4,
+          "n": 14
+        },
+        "member_hit": {
+          "hits": 12,
+          "n": 14
+        },
+        "member_p1": {
+          "hits": 4,
+          "n": 14
+        }
+      }
+    },
+    "stub": {
+      "rank1": {
+        "hits": 0,
+        "n": 49
+      },
+      "topk_slots": {
+        "hits": 11,
+        "n": 490
+      }
+    },
+    "authority_commentary_outranks_gold": {
+      "hits": 0,
+      "n": 0
+    },
+    "edition_other_outranks_gold": {
+      "hits": 0,
+      "n": 0
+    },
+    "cross_document": {
+      "all_gold_in_topk": {
+        "hits": 0,
+        "n": 0
+      },
+      "any_gold_in_topk": {
+        "hits": 0,
+        "n": 0
+      }
+    },
+    "absent_arm": {
+      "n_absent": 9,
+      "top_score_absent": {
+        "n": 9,
+        "min": 23.947676181853645,
+        "median": 39.16690052664244,
+        "max": 47.33897318118872
+      },
+      "top_score_answerable": {
+        "n": 40,
+        "min": 29.058052529514935,
+        "median": 48.4408033071115,
+        "max": 80.53312309749849
+      },
+      "nearest_distractor_at_rank1": {
+        "hits": 0,
+        "n": 9
+      }
+    },
+    "focus": {
+      "on_gold_answerable": {
+        "n": 26,
+        "mean_off_share_topk": 0.023076923076923075,
+        "off_at_rank1": {
+          "hits": 0,
+          "n": 26
+        },
+        "distractor_outranks_gold": {
+          "hits": 0,
+          "n": 26
+        }
+      },
+      "by_dimension": {
+        "collision": {
+          "n": 26,
+          "mean_off_share_topk": 0.023076923076923075,
+          "off_at_rank1": {
+            "hits": 0,
+            "n": 26
+          },
+          "distractor_outranks_gold": {
+            "hits": 0,
+            "n": 26
+          }
+        }
+      },
+      "offtopic_legit_lookalike_outranks_gold": {
+        "hits": 0,
+        "n": 14
+      },
+      "chance_baseline_off_share": {
+        "hits": 4630,
+        "n": 12385
+      }
+    }
+  }
+}

@@ -1,0 +1,31 @@
+== papers
+sys n_q 61 gt 58cdbf47f08b
+  pooled       n=61 member 52/61=0.852 P1 45/61=0.738 anchor 51/61=0.836 paperR 57/61=0.934
+  topic=on     n=38 member 30/38=0.789 P1 25/38=0.658 anchor 29/38=0.763 paperR 34/38=0.895
+  topic=off    n=17 member 16/17=0.941 P1 15/17=0.882 anchor 16/17=0.941 paperR 17/17=1.000
+  topic=borderline n=6 member 6/6=1.000 P1 5/6=0.833 anchor 6/6=1.000 paperR 6/6=1.000
+sys-abl n_q 61 gt 2fe52dd44df5
+  pooled       n=61 member 41/61=0.672 P1 35/61=0.574 anchor 41/61=0.672 paperR 47/61=0.770
+  topic=on     n=38 member 25/38=0.658 P1 20/38=0.526 anchor 25/38=0.658 paperR 28/38=0.737
+  topic=off    n=17 member 12/17=0.706 P1 11/17=0.647 anchor 12/17=0.706 paperR 15/17=0.882
+  topic=borderline n=6 member 4/6=0.667 P1 4/6=0.667 anchor 4/6=0.667 paperR 4/6=0.667
+bm n_q 61 gt None
+  pooled       n=61 member 52/61=0.852 P1 34/61=0.557 anchor 52/61=0.852 paperR 60/61=0.984
+  topic=on     n=38 member 31/38=0.816 P1 20/38=0.526 anchor 31/38=0.816 paperR 37/38=0.974
+  topic=off    n=17 member 15/17=0.882 P1 12/17=0.706 anchor 15/17=0.882 paperR 17/17=1.000
+  topic=borderline n=6 member 6/6=1.000 P1 2/6=0.333 anchor 6/6=1.000 paperR 6/6=1.000
+bm-abl n_q 61 gt None
+  pooled       n=61 member 48/61=0.787 P1 30/61=0.492 anchor 48/61=0.787 paperR 53/61=0.869
+  topic=on     n=38 member 30/38=0.789 P1 17/38=0.447 anchor 30/38=0.789 paperR 33/38=0.868
+  topic=off    n=17 member 13/17=0.765 P1 12/17=0.706 anchor 13/17=0.765 paperR 15/17=0.882
+  topic=borderline n=6 member 5/6=0.833 P1 1/6=0.167 anchor 5/6=0.833 paperR 5/6=0.833
+== books
+sys n_q 74 gt 3c21d57bb6cb
+  pooled       n=69 member 54/69=0.783 P1 43/69=0.623 anchor 54/69=0.783 paperR 60/69=0.870
+sys-abl n_q 69 gt dc43b3e43edc
+  pooled       n=69 member 47/69=0.681 P1 34/69=0.493 anchor 47/69=0.681 paperR 51/69=0.739
+bm n_q 74 gt None
+  pooled       n=69 member 54/69=0.783 P1 28/69=0.406 anchor 54/69=0.783 paperR 64/69=0.928
+bm-abl n_q 69 gt None
+  pooled       n=69 member 50/69=0.725 P1 28/69=0.406 anchor 50/69=0.725 paperR 56/69=0.812
+

@@ -1,0 +1,4 @@
+sys member misses ['Q-FOC-007', 'Q-FOC-010', 'Q-FOC-011', 'Q-FOC-014', 'Q-FOC-020', 'Q-FOC-035'] paper misses ['Q-FOC-011', 'Q-FOC-020']
+bm member misses ['Q-FOC-007', 'Q-FOC-011', 'Q-FOC-012', 'Q-FOC-014', 'Q-FOC-017', 'Q-FOC-024', 'Q-FOC-037', 'Q-FOC-039'] paper misses ['Q-FOC-007', 'Q-FOC-017']
+both ['Q-FOC-007', 'Q-FOC-011', 'Q-FOC-014'] sys only ['Q-FOC-010', 'Q-FOC-020', 'Q-FOC-035'] bm only ['Q-FOC-012', 'Q-FOC-017', 'Q-FOC-024', 'Q-FOC-037', 'Q-FOC-039']
+

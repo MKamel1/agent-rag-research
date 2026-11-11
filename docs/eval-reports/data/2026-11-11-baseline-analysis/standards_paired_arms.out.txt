@@ -1,0 +1,22 @@
+depth128-fused n 94 H 84 P1 52
+depth128-fused-repeat n 94 H 84 P1 52
+depth64-fused n 94 H 83 P1 52
+depth32-fused n 94 H 81 P1 52
+depth128-dense_only n 94 H 84 P1 52
+depth128-sparse_only n 94 H 65 P1 47
+depth128-fused.abl n 86 H 68 P1 47
+depth64-fused.abl n 86 H 69 P1 47
+depth32-fused.abl n 86 H 65 P1 49
+depth128-dense_only.abl n 86 H 68 P1 46
+depth128-sparse_only.abl n 86 H 52 P1 41
+bm n 94 H 62 P1 25
+depth128-fused vs depth128-fused-repeat: only-depth128-fused 0 [] | only-depth128-fused-repeat 0 []
+depth128-fused vs depth32-fused: only-depth128-fused 4 ['Q-STD-A-014', 'Q-STD-B-022', 'Q-STD-D-020', 'Q-STD-D-022'] | only-depth32-fused 1 ['Q-STD-A-021']
+depth128-fused vs depth64-fused: only-depth128-fused 1 ['Q-STD-A-014'] | only-depth64-fused 0 []
+depth128-fused.abl vs depth32-fused.abl: only-depth128-fused.abl 4 ['Q-STD-A-013', 'Q-STD-A-014', 'Q-STD-A-020', 'Q-STD-B-017'] | only-depth32-fused.abl 1 ['Q-STD-D-011']
+depth128-dense_only vs depth128-fused: only-depth128-dense_only 1 ['Q-STD-C-017'] | only-depth128-fused 1 ['Q-STD-A-022']
+depth128-dense_only.abl vs depth128-fused.abl: only-depth128-dense_only.abl 4 ['Q-STD-A-012', 'Q-STD-B-007', 'Q-STD-D-010', 'Q-STD-D-020'] | only-depth128-fused.abl 4 ['Q-STD-A-009', 'Q-STD-B-004', 'Q-STD-B-017', 'Q-STD-B-019']
+depth128-sparse_only vs depth128-fused: only-depth128-sparse_only 1 ['Q-STD-D-008'] | only-depth128-fused 20 ['Q-STD-A-016', 'Q-STD-A-018', 'Q-STD-A-020', 'Q-STD-A-022', 'Q-STD-B-011', 'Q-STD-B-022', 'Q-STD-C-004', 'Q-STD-C-005', 'Q-STD-C-010', 'Q-STD-C-011', 'Q-STD-C-018', 'Q-STD-D-003', 'Q-STD-D-010', 'Q-STD-D-011', 'Q-STD-D-014', 'Q-STD-D-015', 'Q-STD-D-020', 'Q-STD-D-021', 'Q-STD-D-022', 'Q-STD-D-026']
+depth128-fused vs bm: only-depth128-fused 22 ['Q-STD-A-011', 'Q-STD-A-022', 'Q-STD-B-004', 'Q-STD-B-008', 'Q-STD-B-011', 'Q-STD-B-022', 'Q-STD-C-018', 'Q-STD-D-001', 'Q-STD-D-004', 'Q-STD-D-007', 'Q-STD-D-010', 'Q-STD-D-011', 'Q-STD-D-014', 'Q-STD-D-015', 'Q-STD-D-016', 'Q-STD-D-017', 'Q-STD-D-018', 'Q-STD-D-020', 'Q-STD-D-021', 'Q-STD-D-022', 'Q-STD-D-023', 'Q-STD-D-026'] | only-bm 0 []
+repeat top10 id lists differ on 7 of 128
+

@@ -1,0 +1,16 @@
+
+=== docs/eval-reports/data/2026-11-10-bm25-floor/focus-standard.report.json  (k=10, questions=49, GT items not in report=0)
+per dimension (answerable only):
+  collision            n=26  paperR@k 24/26 = 0.923 | paperP@1 20/26 = 0.769 | anchor hit@k 20/26 = 0.769 | anchor P@1 10/26 = 0.385 | member hit@k 20/26 = 0.769 | member P@1 10/26 = 0.385
+  offtopic-legit       n=14  paperR@k 14/14 = 1.000 | paperP@1 11/14 = 0.786 | anchor hit@k 12/14 = 0.857 | anchor P@1 4/14 = 0.286 | member hit@k 12/14 = 0.857 | member P@1 4/14 = 0.286
+stub chunks: rank-1 0/49 = 0.000; top-k slots 11/490 = 0.022
+authority, commentary outranks gold: 0/0 = n/a
+edition, other edition outranks gold: 0/0 = n/a
+cross-document: all gold in top-k 0/0 = n/a; any 0/0 = n/a
+absent arm (n=9): top-score absent {'n': 9, 'min': 23.947676181853645, 'median': 39.16690052664244, 'max': 47.33897318118872} vs answerable {'n': 40, 'min': 29.058052529514935, 'median': 48.4408033071115, 'max': 80.53312309749849}
+  nearest distractor at rank 1: 0/9 = 0.000
+focus (chance baseline: corpus off share 4630/12385 = 0.374):
+  on-gold answerable   n=26  mean off share of top-k 0.023 | off at rank 1 0/26 = 0.000 | distractor outranks gold 0/26 = 0.000
+  collision            n=26  mean off share of top-k 0.023 | off at rank 1 0/26 = 0.000 | distractor outranks gold 0/26 = 0.000
+  offtopic-legit: lookalike outranks gold 0/14 = 0.000
+
