@@ -21,7 +21,8 @@ yet: `SearchFilters` (contracts/, protected) has no such fields -- see the CQ-2 
 
 Safety (same shape as `app.resparse`, whose guard it reuses): `--collection` required;
 `--only-fields` required (the allow-list of keys this run may write; anything else in the mapping
-is dropped); dry run by default, `--apply` plus `--i-have-a-snapshot` or `--target-is-clone --clone-of X`;
+is dropped); dry run by default, `--apply` plus `--i-have-a-snapshot` or `--target-is-clone`
+`--clone-of X`;
 points-per-paper counts must be identical before and after, and a random read-back sample must show
 the mapped values.
 """
