@@ -35,6 +35,7 @@ from contracts.parser import Figure, ParsedDoc, TableItem
 from contracts.provenance import Anchor, Block
 from migrations.migrate import migrate
 from rag.atomic_write import staged_write
+from rag.ligatures import repair_with_offsets
 
 # Spot-check, NOT a full schema audit: every (table, column) `put()` itself writes that was added
 # by a migration LATER than the table's own creation -- i.e. a column `migrate()` could plausibly
@@ -631,6 +632,15 @@ class DocumentStore:
         (measured ~1s over 236k blocks) and keeps the pattern language a plain Python regex the
         caller already knows.
 
+        Ligature repair (CQ-1): PDF extraction dropped fi/ff/fl glyphs, so stored text says "efect".
+        A block that does not match the pattern as stored is retried against its ligature-repaired
+        text (`rag.ligatures`), so `effect` finds "efect". Stored text is never changed and the
+        snippet is ALWAYS sliced from the ORIGINAL text -- it quotes what is on the page, damaged
+        spelling included. The repaired-text match span is mapped back to original offsets and
+        snapped outward to whole original words, so the snippet never shows a repaired spelling
+        and never cuts a word. A pattern that matches the stored text directly behaves exactly as
+        before (a regex for the damaged form "efect" still works).
+
         `max_per_paper` bounds evidence per paper, never papers: a paper with more matches still
         appears, it just contributes fewer rows, and `truncated` says so.
         """
@@ -675,15 +685,25 @@ class DocumentStore:
                 if not curated_cache[r_paper_id]:
                     continue
             scanned.add(r_paper_id)
-            match = regex.search(text or "")
-            if match is None:
+            text = text or ""
+            match = regex.search(text)
+            snippet_src, start_at, end_at = text, None, None
+            if match is None and text:
+                # CQ-1: retry on the ligature-repaired text so `effect` finds "efect".
+                repaired, to_original = repair_with_offsets(text)
+                match = regex.search(repaired) if repaired != text else None
+                if match is None:
+                    continue
+                start_at, end_at = to_original(match.start()), to_original(match.end(), end=True)
+            elif match is None:
                 continue
             if per_paper.get(r_paper_id, 0) >= max_per_paper:
                 truncated = True
                 continue
             per_paper[r_paper_id] = per_paper.get(r_paper_id, 0) + 1
-            start = max(0, match.start() - context)
-            snippet = " ".join((text or "")[start:match.end() + context].split())
+            m_start = match.start() if start_at is None else start_at
+            m_end = match.end() if end_at is None else end_at
+            snippet = " ".join(text[max(0, m_start - context):m_end + context].split())
             rows.append((r_paper_id, title or "", block_id, page, section_path or "", snippet))
         return rows, len(scanned), len(per_paper), truncated
 
