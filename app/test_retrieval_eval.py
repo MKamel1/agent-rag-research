@@ -19,6 +19,7 @@ import pytest
 from app.retrieval_eval import (
     SPARSE_MODES,
     Question,
+    QuestionResult,
     _print_summary,
     build_report,
     load_questions,
@@ -1614,3 +1615,146 @@ def test_main_exits_2_naming_unresolved_gold_ids_before_any_retrieval(
     assert exc.value.code == 2
     err = capsys.readouterr().err
     assert "GHOST" in err and "GHOST:b0" in err
+
+
+# --- EV-8: excerpt-containment passage metric --------------------------------------------------
+
+_EXCERPT = "The stump has the smallest pointwise RMSE near the centre."
+
+
+def _excerpt_q(qid="Q", *, excerpt_block_id="P1:b3", alt_texts=(), excerpt=_EXCERPT, **kw):
+    return Question(
+        qid, f"text {qid}", "t", frozenset({"P1"}), "P1:b0",
+        passage_excerpt=excerpt, excerpt_block_id=excerpt_block_id,
+        gold_chunk_id="P1:c0", alternative_gold_chunk_ids=("P1:c1",),
+        alt_chunk_texts=tuple(alt_texts), **kw,
+    )
+
+
+def test_alternative_chunk_is_an_excerpt_hit_and_an_anchor_miss():
+    """The ticket's acceptance test: an alternative gold chunk (different anchor block) that
+    contains the excerpt is a hit under the excerpt rule and a miss under the anchor rule."""
+    q = _excerpt_q()
+    alt = _hit("P1", "P1:b7", passage_text=f"Title\n\nIntro. {_EXCERPT} Outro.")
+    r = score_question(q, [alt], k=10)
+    assert r.passage_rank is None  # anchor rule: b7 != gold_block_id b0
+    assert r.excerpt_rank == 1
+    assert r.excerpt_fallback is False
+
+
+def test_excerpt_match_is_casefolded_and_whitespace_collapsed():
+    q = _excerpt_q()
+    spaced = _hit("P1", "P1:b9", passage_text=_EXCERPT.upper().replace(" ", "\n  "))
+    assert score_question(q, [spaced], k=10).excerpt_rank == 1
+
+
+def test_sibling_chunk_sharing_the_gold_anchor_is_anchor_hit_but_excerpt_miss():
+    """RV-1 F-1.3: a fragment chunk anchored on the gold block but lacking the excerpt is a
+    lenient anchor hit; the excerpt rule does not credit it."""
+    q = _excerpt_q()
+    fragment = _hit("P1", "P1:b0", passage_text="Title\n\nunrelated first half of the block")
+    r = score_question(q, [fragment], k=10)
+    assert r.passage_rank == 1
+    assert r.excerpt_rank is None
+
+
+def test_alternative_chunk_text_equality_covers_rerendered_excerpts():
+    """If the excerpt is not verbatim in the served text (table re-rendered), a result whose text
+    equals an alternative/gold chunk's DB text still counts."""
+    q = _excerpt_q(alt_texts=("Title\n\n| a | b |\n| 1 | 2 |",))
+    served = _hit("P1", "P1:b8", passage_text="title\n\n| a | b |   \n| 1 | 2 |")
+    assert score_question(q, [served], k=10).excerpt_rank == 1
+
+
+def test_gold_chunk_passes_its_own_excerpt_check_for_every_non_null_excerpt_item():
+    """Ceiling check from the ticket: serving the gold chunk itself is always an excerpt hit."""
+    items = [
+        _excerpt_q(f"Q{i}", excerpt=f"excerpt number {i} of the fixture")
+        for i in range(5)
+    ]
+    for q in items:
+        gold_chunk = _hit("P1", "P1:b0", passage_text=f"Title\n\nlead {q.passage_excerpt} tail")
+        assert score_question(q, [gold_chunk], k=10).excerpt_rank == 1
+
+
+def test_null_excerpt_block_id_falls_back_to_anchor_rule_and_is_listed():
+    q = _excerpt_q("SPAN", excerpt_block_id=None)
+    hit = _hit("P1", "P1:b0", passage_text="no excerpt text here")
+    r = score_question(q, [hit], k=10)
+    assert r.excerpt_fallback is True
+    assert r.excerpt_rank == r.passage_rank == 1
+    report = build_report([r], 10)
+    assert report["passage_excerpt_level"]["fallback_question_ids"] == ["SPAN"]
+    assert report["passage_excerpt_level"]["n_fallback_anchor"] == 1
+
+
+def test_question_without_gold_block_id_is_not_excerpt_scored():
+    q = Question("N", "t", "t", frozenset({"P1"}), None, passage_excerpt=_EXCERPT,
+                 excerpt_block_id="P1:b3")
+    r = score_question(q, [_hit("P1", "P1:b3", passage_text=_EXCERPT)], k=10)
+    assert r.excerpt_rank is None
+    assert build_report([r], 10)["passage_excerpt_level"]["n_scored"] == 0
+
+
+def test_report_carries_excerpt_level_beside_unchanged_anchor_level():
+    hit_alt = score_question(
+        _excerpt_q("A"), [_hit("P1", "P1:b7", passage_text=f"x {_EXCERPT}")], k=10
+    )
+    miss = score_question(_excerpt_q("B"), [_hit("P1", "P1:b7", passage_text="nope")], k=10)
+    report = build_report([hit_alt, miss], 10)
+    assert report["passage_level"]["overall"] == {"recall_at_k": 0.0, "mrr": 0.0, "n": 2}
+    pe = report["passage_excerpt_level"]
+    assert pe["n_scored"] == 2
+    assert pe["overall"] == {"recall_at_k": 0.5, "mrr": 0.5, "n": 2}
+    assert pe["by_question_type"]["t"]["n"] == 2
+    assert pe["by_doc_type"]["paper"]["n"] == 2
+    assert "passage_excerpt" in pe["scoring_rule"] and "anchor" in pe["scoring_rule"]
+    row = report["questions"][0]["passage_excerpt_level"]
+    assert row == {"scored": True, "hit": True, "rank": 1, "fallback": False}
+
+
+def test_load_questions_reads_excerpt_and_alternative_fields(tmp_path):
+    gt = tmp_path / "gt.json"
+    gt.write_text(json.dumps({"ground_truth": [{
+        "question_id": "Q1", "question_text": "q", "source_paper_id": "P1",
+        "gold_block_id": "P1:b0", "gold_chunk_id": "P1:c0", "excerpt_block_id": "P1:b3",
+        "passage_excerpt": "ex", "alternative_gold_chunk_ids": ["P1:c1"],
+    }]}))
+    (q,) = load_questions(gt)
+    assert (q.gold_chunk_id, q.excerpt_block_id, q.passage_excerpt) == ("P1:c0", "P1:b3", "ex")
+    assert q.alternative_gold_chunk_ids == ("P1:c1",)
+
+
+def test_attach_gold_texts_resolves_gold_and_alternative_chunk_text(tmp_path):
+    from app.retrieval_eval import CorpusLookup
+
+    lookup = CorpusLookup(_corpus_db(tmp_path))
+    (q,) = lookup.attach_gold_texts([_excerpt_q()])
+    assert q.alt_chunk_texts == ("title\n\nalpha beta", "gamma")
+
+
+def test_anchor_metric_is_byte_identical_over_a_stored_report():
+    """Regression (EV-8): rebuild QuestionResults from a stored pre-EV-8 report's rows and
+    re-run build_report; every anchor/paper/chapter subtree must serialise byte-for-byte as stored.
+    The excerpt metric is purely additive."""
+    stored_path = (
+        Path(__file__).resolve().parent.parent
+        / "docs/eval-reports/data/2026-08-25-nb-d4-dual-fixture-SAMPLE/waymo_gt_verified.json"
+    )
+    stored = json.loads(stored_path.read_text())
+    results = [
+        QuestionResult(
+            question_id=r["question_id"], question_type=r["question_type"],
+            paper_rank=r["paper_level"]["rank"], passage_rank=r["passage_level"]["rank"],
+            passage_scored=r["passage_level"]["scored"], error=r["error"],
+            gold_paper_ids=frozenset(r["gold_paper_ids"]), gold_block_id=r["gold_block_id"],
+            doc_type=r["doc_type"], vision_derived=r["vision_derived"],
+            chapter_rank=r["chapter_level"]["rank"], chapter_scored=r["chapter_level"]["scored"],
+            gold_chapter_title=r["gold_chapter_title"], title_leak=r["title_leak"],
+            top_score=r["top_score"],
+        )
+        for r in stored["questions"]
+    ]
+    rebuilt = build_report(results, stored["k"])
+    for key in ("k", "n_questions", "n_errors", "paper_level", "passage_level", "chapter_level"):
+        assert json.dumps(rebuilt[key], sort_keys=True) == json.dumps(stored[key], sort_keys=True)
