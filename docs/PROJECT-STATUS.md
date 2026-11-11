@@ -167,6 +167,9 @@ Every flag below traces to an actual `add_argument`/argv line — no flag is inf
 | `app.reindex_idf` | `--collection` (required), `--config`, `--dry-run`, `--i-have-a-snapshot`, `--backup-root`, `--keep N`, `--use-clone-swap`, `--vector-store-host/-port` | Adds the sparse IDF modifier to an existing collection (`app/reindex_idf.py:204-238`) |
 | `app.resparse` (CQ-2) | `--collection` (required, no default), `--config`, `--dry-run` (default) / `--apply`, `--i-have-a-snapshot`, `--target-is-clone` + `--clone-of`, `--verify-sample N`, `--batch-size`, `--backup-root`, `--vector-store-host/-port` | Recomputes the sparse vector of every point in place from stored chunk text, without re-embedding; needed after CQ-1's ligature repair. Never run against a live index (`app/resparse.py:184-199`; runbook `docs/eval-reports/2026-11-10-cq2-index-maintenance.md`) |
 | `app.set_payload_fields` (CQ-2) | `--collection` and `--only-fields` (required), `--build relevance_score\|topic_label` or `--mapping-file`, `--db`, `--labels`, `--dry-run` (default) / `--apply`, `--i-have-a-snapshot`, `--target-is-clone`, `--clone-of`, `--config`, `--backup-root`, `--vector-store-host/-port` | Writes allow-listed payload keys on existing points without re-embedding (`app/set_payload_fields.py:193-210`). Never run against a live index |
+| `scripts/bm25_floor.py` (EV-15) | `--ground-truth`, `--db`, `--k`, `--report-path` (required), `--variant {standard,title-ablated,body-only}` | Plain BM25 floor over stored chunk text, CPU, DB opened read-only (`scripts/bm25_floor.py` argparse block) |
+| `scripts/rerank_score_census.py` (EV-13) | `--set NAME REPORT GT` (repeatable, required), `--secondary`, `--no-pooled`, `--json-out` | Reranker-score census on absent arms from reports recorded with `--record-rerank-scores`; unrun |
+| `scripts/session2_ab_tools.py` | subcommands `headroom`, `stub-ceiling`, `paired` (each with its own flags) | Offline arithmetic for the session-2 A/B runs; no retrieval |
 | `app.delete_docs` | `PAPER_ID [PAPER_ID ...]` (positional), `--yes` (required to actually delete) | Cascade-deletes papers (chunks/blocks/summaries/vectors) (`app/delete_docs.py:54-58`) |
 | `app.snapshot` | `--config`, `--backup-root`, `--keep N`, `--vector-store-host/-port` | Takes/prunes Qdrant collection snapshots (`app/snapshot.py:222-235`) |
 | `app.obsidian_export` | `--config`, `--out-dir`, `--limit N` | Exports papers as an Obsidian vault (`app/obsidian_export.py:187-195`) |
@@ -417,9 +420,10 @@ test rather than assumed.
 ### Enhancement programme — 2026-11-10 (branch `EP-programme-20261110`, `git log --oneline main..HEAD`)
 
 All of this exists as committed code, data and reports on the integration branch `EP-programme-20261110`
-(not on `main`; nothing pushed). **No retrieval benchmark, index change or GPU job from this programme has
-been run** — the embedder, reranker and Qdrant are down and the GPU is held (§1.3) — so every "not yet
-applied/measured" below is literally true on 2026-11-10. Orientation: `docs/eval-reports/2026-11-10-system-review.md`
+(not on `main`; nothing pushed). **As of 2026-11-10 no retrieval benchmark, index change or GPU job from this
+programme had been run** (services down, GPU held, §1.3); the three first baselines ran overnight on 2026-11-11 at
+`626fac3` (ledger continuation below), so rows below that say "never run against retrieval" or "nothing has been run"
+describe 2026-11-10 and are superseded for those sets by the 2026-11-11 reports. No index change has been made. Orientation: `docs/eval-reports/2026-11-10-system-review.md`
 (adjudicated review, below) ranks the follow-up work; `docs/eval-reports/2026-11-10-GPU-DAY-RUNBOOK.md`
 sequences the first GPU session. The programme plan is `docs/superpowers/plans/2026-11-10-enhancement-programme.md`
 (being written in parallel with this pass; referenced by path only).
@@ -443,6 +447,30 @@ sequences the first GPU session. The programme plan is `docs/superpowers/plans/2
 (`EP-CQ4-truncation-rechunk-plan`), EP-2 ticket set (`EP-EP2-ticket-set`). Merge commits for CQ-4 (`bb6520a`)
 and CQ-5 (`3df5c8b`) appeared on the integration branch while this pass was running; their content was not
 reviewed, ledgered or doc-mapped here and the figures in §1 do not depend on it.
+
+### Enhancement programme — ledger continued 2026-11-11 (same branch; merges after `626fac3` and the first measurements)
+
+Status is what `git log` and the run directories show on 2026-11-11. Rows for tickets merged before `626fac3` that
+the table above predates are included. "Unrun" means no benchmark of that item exists.
+
+| item | what exists (SHA) | status / not yet done |
+|---|---|---|
+| **Focus ground truth** (EV-4, EV-4b) | EV-4 set merged `cf65a32`; repaired by EV-4b `5973770` (4 items replaced, collision questions reworded) | Done. EV-11 then dropped Q-FOC-046 (absence falsified), trimmed one alternative and froze the hash: 49 items (`626fac3`) |
+| **Ticket set** (EP-2, EP-2b) | plan, issue files and BACKLOG section `9550d80`; minimizer verdicts applied `ff9e693` (22 active, 21 parked) | Done; nothing posted to GitHub |
+| **Ops guards** (OP-3, OP-5, OP-6) | snapshot integrity check, checksums, `--verify`, `--sqlite-only`; doctor corpus-pairing, disk and GPU-contention checks; gpu-lock holder record; runbook backup/restore/verify and GPU-contention diagnosis (`1d4aa02`, `799a199`, `b7a17ec`, `5a86e45`; merge `3c257c4`) | Done as merged. Behaviour against live services not exercised by this entry |
+| **Containers and corpora doc** (OP-7, EP-6) | `ops/` tracked container definitions (`9babfbc`), `docs/CORPORA.md` and no-ingest rules (`d75ceb9`); merge `066185b` | Done |
+| **MCP surface** (MC-1, MC-2, MC-3) | unknown `filters.paper_id` raises `ContractError` (`3949ed4`), self-describing server (`19b5f64`), arguments and errors logged for scan/get tools (`1ee26e7`); merge `8c657a0` | Done as merged |
+| **Eval hardening** (EV-7, EV-8, EV-9, EV-10) | `--collection` required, fixture hash and code commit stamped, clean-tree guard (`083c696`, `a24261a`); excerpt-containment metric `passage_excerpt_level` (`2e61427`); `retrieved_chunk_ids` in rows (`0b46386`); invalid run on GPU-lock timeout (`db3fc5e`, `7c5b45d`); merge `f0643c9` | Done |
+| **Alternatives and re-freeze** (EV-11) | 3 standards alternatives, focus re-check, hashes re-frozen (`82bffac`, `b4f5a09`, `7830ce5`; merge `626fac3`); dated addenda in the three protocols | Done; this is the code and fixture state the baselines ran at |
+| **BM25 floor** (EV-15) | `scripts/bm25_floor.py`, tests, runs and report (`8847822`..`38ddd1f`; merge `84261a2`; `docs/eval-reports/2026-11-10-bm25-floor.md`) | Done. The committed standards floor predates the refreeze by one alternative (61/94 vs 62/94 member); re-run in `docs/eval-reports/data/2026-11-10-bm25-floor/standards-standard-refrozen-fixture.*`. A focus-set floor was added on 2026-11-11 |
+| **Rerank-score census tooling** (EV-13) | opt-in `--record-rerank-scores` (`bd01017`), `scripts/rerank_score_census.py` and run script, verdict rule pre-registered (`f15fef8`, `04764bd`; merge `1763006`) | Code only; parked ticket, census unrun |
+| **Session-2 A/B scripts** (EV-12, EV-20, EV-21) | pre-registration and CQ-3 stub-A/B addendum (`5321150`), run scripts and launch sheet in `docs/eval-reports/data/2026-11-11-session2/` (`a45c4ff`, `b025226`), `scripts/session2_ab_tools.py` and filtered-search check (`e057aae`); merge `cc1ad6c` | Scripts only; none has been run |
+| **Relevance demotion** (RQ-2, RQ-3 prep) | opt-in `tail` / `penalty` demotion in `rag/retriever.py` (`d0c7f86`), what-if and A/B-table scripts, pre-registration and run script (`627fd56`, `52a30d2`, `2509428`; merge `03cfd18`) | Code and pre-registration only; default off; the RQ-3 A/B has not run |
+| **OP-4 backups** | `backups/papers.db.snapshot-20261110` + `.sha256` (re-checked 2026-11-11, OK) and `backups/qdrant-storage-20261110` (5 production collections, 7.2 GB, container stopped; experiment collections excluded) | **Done** (2026-11-10). Everything is still on the same device; off-device copy and any deletion remain F1, not done |
+| **Main-corpus baseline** (EV-16) | run at `626fac3`, report `docs/eval-reports/2026-11-11-main-corpus-baseline.md`; member hit@10 papers 52/61, books 69-answerable 54/69; equal to the BM25 floor in both (52/61, 54/69); P@1 45/61 vs 34/61 and 43/69 vs 28/69; title-ablated 41/61 and 47/69 | **Done** (first measurement; no gate fired; the ablated-headline rule applies) |
+| **Topic-focus baseline** (EV-17) | run at `626fac3`, report `docs/eval-reports/2026-11-11-topic-focus-baseline.md`; on-gold contamination@10 0.100 (n = 26), off at rank 1 0/26; papers-set 0.118 (n = 38); BM25 floor 0.023 / 0.042 | **Done**; verdict band "stays on focus" met; R-demote adoption rule not evaluated (no arm run) |
+| **Standards baseline** (EV-18, partly) | run at `626fac3`, report `docs/eval-reports/2026-11-11-standards-baseline.md`; shipped depth128-fused member hit@10 84/94, depth32 81/94; D-1: all four conditions hold, keep 128; S-1: unresolved (dense_only 84/94 = fused 84/94 authored; 68/86 = 68/86 ablated); BM25 floor 62/94 | D-1 and S-1 **done**. The EV-18 structure-gate count (CQ-12 trigger) is **not produced**; parked CQ-8/12/13/14/16 triggers not evaluated |
+
 
 ## 4. Problems faced → solution landed
 
@@ -729,7 +757,13 @@ authored project docs — excluded from classification.
 | `docs/eval-rubrics/groundedness-rubric.md`, `docs/eval-rubrics/fabrication-audit-rubric.md` | AUTHORITATIVE | The signed-off baseline definitions of "grounded" (2026-08-24) and "fabricated" (2026-08-25, amended). The `*-rubric-review.md` files beside them are REFERENCE. |
 | `docs/eval-reports/2026-11-10-system-review.md` | AUTHORITATIVE | Adjudicated system review (RV-1..6): ranked work list S-01..S-26, wave map, operator questions F1-F8. Wins over its lane reports where they disagree. |
 | `docs/eval-reports/data/2026-11-10-system-review/RV-{1..6}-*.md` | REFERENCE | The six lane reports the review adjudicates; RV-6 carries the doc-drift punch list this pass applied. Some lane claims are corrected in §6.2 "Closed". |
-| `docs/eval-reports/2026-11-10-{standards,main-corpus,topic-focus}-benchmark-protocol.md` | AUTHORITATIVE | FROZEN pre-registered benchmark protocols (EV-5); changes only by dated addendum. Nothing run against them yet. |
+| `docs/eval-reports/2026-11-10-{standards,main-corpus,topic-focus}-benchmark-protocol.md` | AUTHORITATIVE | FROZEN pre-registered benchmark protocols (EV-5); changes only by dated addendum. Baselines run 2026-11-11 (reports listed below). |
+| `docs/eval-reports/2026-11-10-bm25-floor.md` | AUTHORITATIVE | EV-15: the plain BM25 floor on the standards, papers-passage and causal-books sets, with data in `data/2026-11-10-bm25-floor/`. The standards floor there predates the refreeze by one alternative; see the standards baseline. |
+| `docs/eval-reports/2026-11-11-main-corpus-baseline.md` | AUTHORITATIVE | EV-16: first main-corpus (`papers`) passage baseline at `626fac3`: papers 61 / books 69 member hit@10, topic splits, title-ablated control, BM25 comparison and per-question miss overlap, legacy sets. Measured against the frozen protocol. |
+| `docs/eval-reports/2026-11-11-topic-focus-baseline.md` | AUTHORITATIVE | EV-17: first topic-focus baseline at `626fac3`: contamination@10, off-at-rank-1, collision and lookalike rates, verdict band, BM25 floor for the focus set. |
+| `docs/eval-reports/2026-11-11-standards-baseline.md` | AUTHORITATIVE | EV-18 (partly): first standards baseline at `626fac3`: six arms authored and ablated, D-1 and S-1 verdicts, BM25 comparison. The structure-gate count is not in it. |
+| `docs/eval-reports/data/2026-11-11-baseline-analysis/` | REFERENCE | Scripts and outputs behind the paired per-question comparisons and the ablated topic splits in the three baseline reports. |
+| `docs/eval-reports/2026-11-11-{ev19-rerank-score-census,rq3-relevance-demotion}-prereg.md`, `docs/eval-reports/data/2026-11-11-session2/` | AUTHORITATIVE | Pre-registrations and run scripts for the reranker-score census, the relevance-demotion A/B and the session-2 A/B runs; none has been run. |
 | `docs/eval-reports/2026-11-10-GPU-DAY-RUNBOOK.md` | AUTHORITATIVE | The first GPU session, jobs serialized cheapest-first with prerequisites and index effects (EV-5). |
 | `docs/eval-reports/2026-11-10-cq2-index-maintenance.md` | AUTHORITATIVE | Runbook for `app.resparse` / `app.set_payload_fields` and the CQ-1 deployment hazard; unrun, estimates only. |
 | `docs/eval-reports/2026-11-10-cq3-stub-chunks.md` | AUTHORITATIVE | Stub-chunk filter design and its pre-registered A/B (unrun; amend per review S-05). |
