@@ -221,8 +221,65 @@ new baseline, not a replacement.
 
 ---
 
-## ADDENDUM 2026-11-11 (EV-11; stub, completed in the final commit of this ticket)
+## ADDENDUM 2026-11-11 (EV-11)
 
-Intent, recorded before any fixture edit and before any retrieval output exists: record same-document duplicate
-gold chunks as `alternative_gold_chunk_ids`, finish the independent re-check of the repaired focus set, and
-re-freeze the fixture hashes in `data/2026-11-10-FIXTURE-HASHES.json`. Details, counts and hashes follow here.
+**What changed (focus set).** `focus_gt.json` was repaired after cross-verification (EV-4b: 4 items replaced, most
+collision questions reworded so the collision term is in the question text) and has not had a retrieval run. EV-11
+did a focused independent second read of every changed item (gold excerpt inside the gold chunk, collision term in
+the question, distractor chunks read for a genuine non-causal use of the term, alternative chunks read, replaced
+absent items re-scanned corpus-wide with ligature-tolerant patterns in one batched pass). Result:
+
+- Passed unchanged: all 26 collision items (term present in the question in 26/26; every distractor chunk is a
+  genuine non-causal use, e.g. measurement instruments, keyword matching, MHD and contact discontinuities, nova
+  shocks, backdoor attacks, particle colliders; the excerpt sits in the gold chunk for every item; alternatives
+  Q-FOC-001 c16, -020 c2, -021 c2, -023 c2 read and support the answer), the 14 offtopic-legit items (untouched by the repair) and the
+  absent items Q-FOC-042, -047, -048, -049, -050 (tolerant patterns for the Blanchard-Quah long-run output restriction, regression kink
+  with galaxies, Hirshleifer-Shumway sunshine returns, sunspot-stock links, lunar-birth/crime links: 0 true hits;
+  the few hits are citations, an astronomy "kink in the M-sigma relation", "lunar new year").
+- **Q-FOC-046 dropped.** Its absence was falsified: `2606.12596:c7` (Prais-Winsten extension to AR(k) panels) writes the
+  quasi-differenced transformation y~ = y - rho*y(t-1) (the Cochrane-Orcutt transformation for AR(1)); the earlier scan
+  missed it because the corpus spells it "quasi-diferenced" (lost ligature). The item cannot be made sound by
+  rewording, so it is removed rather than replaced.
+- **Q-FOC-016: alternative `2506.01191:c6` removed.** It names the category (conditioning on colliders) but not the
+  second half of the answer (the spurious association), so it is not an independent full answer.
+
+Final composition: 49 items = collision 26 / offtopic-legit 14 / focus-absent 9 (answerable 40, absent 9;
+paper_topic on 26 / off 14 / absent 9). Alternatives: 4 items (Q-FOC-001, -020, -021, -023). Trap strength over the 26
+collision items, re-counted from the items: 3 strong (Q-019, Q-021, Q-026) / 20 moderate / 3 weak (Q-011, Q-012, Q-024),
+matching the repair's report. The protocol's "filled in at freeze" counts are therefore: collision 26, offtopic-legit 14,
+focus-absent 9 (the 10 expected before this re-check; n = 49 replaces "~50"). Freeze-time conditions re-checked:
+every offtopic-legit item has non-empty `causal_lookalike_paper_ids`, every collision item non-empty
+`distractor_paper_ids`, every gold paper is labelled, collision gold is `on` for 26/26, `verify` reports 0 failures.
+The hash is no longer null; the run script's `focus` set can run once services are up. The focus-absent stratum now has
+n = 9 < 10, so under the frozen small-strata rule (section 7) it is descriptive only and cannot gate.
+
+**What the focus set can and cannot detect (stated honestly).** Only 3 of 26 collision traps are strong; 20 are moderate
+(the term is prominent but the rest of the question is clearly causal) and 3 are weak (Q-011/-012 use "discontinuity" only
+inside "regression discontinuity"; Q-024 "synthetic control" is not confusable with control theory). A retriever that
+reads the causal context of a moderate question is hardly tempted by the off-topic distractor, so a low
+contamination rate on this set is weak evidence of topic robustness, and a lever that merely reduces contamination
+on moderate items will be hard to distinguish from noise (n = 26 gives +-0.19 at p = 0.5, one item = 3.8 points).
+What the set can show is a gross failure: contamination from the strong items, the offtopic-legit items being
+pushed down by a topic-based demotion (the main harm R-demote could do, n = 14, +-0.26 at p = 0.5), and whether absent
+questions are answered from near-vocabulary chunks (descriptive, n = 9). It cannot show that topic-demotion helps in
+general, that gold-paper recall is unaffected beyond these 40 answerable items, or anything about answer quality.
+All distractor and label judgements are textual; none has been checked against a retrieval run.
+
+**No retrieval output of any kind existed when these changes were made** (no embedder, reranker or vector store has
+run against these sets), so every edit below sits inside the freeze rule: it was made blind to retrieval results.
+Nothing was changed after seeing a score; a fixture edit after a run would void that run and be a new baseline.
+
+Hash procedure: every fixture of record was re-hashed with SHA-256 (`scripts/eval_protocol_tools.py`
+`sha256_of`), the file was rewritten in one commit (`b4f5a09`, after the fixture commit `82bffac`), and
+`scripts/eval_protocol_tools.py check-hash data/2026-11-10-FIXTURE-HASHES.json <10 fixtures>` passes
+(`hash check OK (10 fixtures)`). Both run scripts were exercised up to their service check: the hash check and the
+read-only `gt_tools.py verify` (standards 128 items, papers 61, books 74; 0 failures) pass, then each stops at
+`app.doctor` because the services are down, as expected. The merged files were regenerated with each set's own
+`merge_gt.py` (no FAIL line) and load with `app.retrieval_eval.load_questions` (128 / 74 / 61 / 49).
+
+| fixture | SHA-256 (first 12 hex; full values in `data/2026-11-10-FIXTURE-HASHES.json`) | changed? |
+|---|---|---|
+| `standards_gt.json` | `09b1061198c9` (was `87b241af55d4`) | yes, 3 alternatives added |
+| `causal_books_gt.json` | `3c21d57bb6cb` | no |
+| `papers_passage_gt.json` | `58cdbf47f08b` | no |
+| `focus_gt.json` | `c68210e06a9f` (was `null`) | first freeze; repaired set, 49 items |

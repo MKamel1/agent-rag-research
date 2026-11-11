@@ -247,8 +247,45 @@ are not edited, and a re-run after a fixture change is a new baseline, not a rep
 
 ---
 
-## ADDENDUM 2026-11-11 (EV-11; stub, completed in the final commit of this ticket)
+## ADDENDUM 2026-11-11 (EV-11)
 
-Intent, recorded before any fixture edit and before any retrieval output exists: record same-document duplicate
-gold chunks as `alternative_gold_chunk_ids`, finish the independent re-check of the repaired focus set, and
-re-freeze the fixture hashes in `data/2026-11-10-FIXTURE-HASHES.json`. Details, counts and hashes follow here.
+**What changed.** Three same-document duplicate gold chunks that cross-verification had recorded only in free text
+("Survive; ... also states ...") are now machine-readable `alternative_gold_chunk_ids`, because otherwise a correct
+answer taken from the duplicate chunk scores a miss under chunk-identity scoring (review S-03, RV-3 F-1.5). Each
+was read in the standards corpus (read-only) and states the answer: Q-STD-D-014 + `local:7e8fdc2246cc:c210` (Leveson,
+Ch. 3: emergent properties such as safety are controlled by constraints; accidents come from missing constraints);
+Q-STD-D-027 + `local:8eeb4887a4dc:c49` (NASA SE Handbook phase table row: Phase C purpose, same wording);
+Q-STD-D-028 + `local:8eeb4887a4dc:c58` (same handbook, section 2.4: "Validation relates back to the ConOps
+document", same sentence as gold c347). Standards alternatives: 1 item before (Q-STD-B-014), 4 items now. A sweep
+of every `crossverify*/verdicts.json` and `fixes-applied.md` of all four sets found no other note-only duplicate;
+suggestions not added: Q-STD-B-013's R2P2 passage (other document, lacks the single-plant framing, verifier itself
+did not add it) and Q-STD-E-004's HSE document (does not state the compliance test). No question, answer, excerpt
+or gold chunk changed; the item counts are unchanged (128 = 106 answerable + 22 absent).
+
+**No retrieval output of any kind existed when these changes were made** (no embedder, reranker or vector store has
+run against these sets), so every edit below sits inside the freeze rule: it was made blind to retrieval results.
+Nothing was changed after seeing a score; a fixture edit after a run would void that run and be a new baseline.
+
+Hash procedure: every fixture of record was re-hashed with SHA-256 (`scripts/eval_protocol_tools.py`
+`sha256_of`), the file was rewritten in one commit (`b4f5a09`, after the fixture commit `82bffac`), and
+`scripts/eval_protocol_tools.py check-hash data/2026-11-10-FIXTURE-HASHES.json <10 fixtures>` passes
+(`hash check OK (10 fixtures)`). Both run scripts were exercised up to their service check: the hash check and the
+read-only `gt_tools.py verify` (standards 128 items, papers 61, books 74; 0 failures) pass, then each stops at
+`app.doctor` because the services are down, as expected. The merged files were regenerated with each set's own
+`merge_gt.py` (no FAIL line) and load with `app.retrieval_eval.load_questions` (128 / 74 / 61 / 49).
+
+| fixture | SHA-256 (first 12 hex; full values in `data/2026-11-10-FIXTURE-HASHES.json`) | changed? |
+|---|---|---|
+| `standards_gt.json` | `09b1061198c9` (was `87b241af55d4`) | yes, 3 alternatives added |
+| `causal_books_gt.json` | `3c21d57bb6cb` | no |
+| `papers_passage_gt.json` | `58cdbf47f08b` | no |
+| `focus_gt.json` | `c68210e06a9f` (was `null`) | first freeze; repaired set, 49 items |
+
+**Caveat (RV-3 F-1.12).** The chapter-level metric is a heading-string match against the gold chapter title (a
+label that the corpus heading hierarchy only sometimes carries; `gold_chapter_title` was deleted from the items
+where it was a subsection or a stray fragment), so it measures heading agreement, not chapter understanding, and
+is reported descriptively only.
+
+Metric note (EV-8): `app/retrieval_eval.py` now emits one additional metric, `passage_excerpt_level`, reported
+BESIDE the member-passage metric of record defined in section 3. It gates nothing and replaces nothing; the
+gates and decision rules above are unchanged.
