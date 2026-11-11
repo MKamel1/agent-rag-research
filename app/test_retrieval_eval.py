@@ -2015,3 +2015,15 @@ def test_parse_args_record_rerank_scores_flag_defaults_off(monkeypatch):
     monkeypatch.setattr(
         "sys.argv", ["retrieval_eval", "--collection", "c", "--record-rerank-scores"])
     assert retrieval_eval._parse_args().record_rerank_scores is True
+
+
+def test_parse_args_relevance_demotion_flags_default_off(monkeypatch):
+    from app import retrieval_eval
+    base = ["retrieval_eval", "--collection", "c"]
+    monkeypatch.setattr("sys.argv", base)
+    a = retrieval_eval._parse_args()
+    assert (a.relevance_demotion, a.relevance_tau, a.relevance_penalty) == (None, 0.30, 5)
+    monkeypatch.setattr("sys.argv", base + ["--relevance-demotion", "penalty", "--relevance-tau", "0.25",
+                                            "--relevance-penalty", "4"])
+    a = retrieval_eval._parse_args()
+    assert (a.relevance_demotion, a.relevance_tau, a.relevance_penalty) == ("penalty", 0.25, 4)

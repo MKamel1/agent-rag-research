@@ -530,18 +530,21 @@ def _rerank_fields(truncated: list, capture: list) -> dict:
         "aligned": True, "scores": [], "max": None, "mean_top3": None, "margin_12": None,
         "pool_best": pool[0] if pool else None, "pool_size": len(pool),
     }
-    cursor, scores = 0, []
+    # RQ-2 demotion reorders results AFTER reranking, so returned order is not a subsequence of
+    # pool order: match each result to the first not-yet-used pool entry with the same text,
+    # anywhere in the pool (the recorded scores are the pre-demotion cross-encoder scores).
+    used, scores = set(), []
     for result in truncated:
-        while cursor < len(capture) and capture[cursor][0].text != result.passage_text:
-            cursor += 1
-        if cursor == len(capture):
+        idx = next((i for i, (c, _s) in enumerate(capture)
+                    if i not in used and c.text == result.passage_text), None)
+        if idx is None:
             fields["aligned"] = False
             return fields
-        scores.append(capture[cursor][1])
-        cursor += 1
+        used.add(idx)
+        scores.append(capture[idx][1])
     fields["scores"] = scores
     if scores:
-        fields["max"] = scores[0]  # rerank order is score-descending
+        fields["max"] = max(scores)  # == scores[0] unless RQ-2 demotion reordered the results
         fields["mean_top3"] = sum(scores[:3]) / len(scores[:3])  # mean of what exists if < 3
         fields["margin_12"] = scores[0] - scores[1] if len(scores) > 1 else None
     return fields
@@ -1171,6 +1174,16 @@ def _parse_args() -> argparse.Namespace:
              "returned top-k (max, mean-top-3, top1-minus-top2 margin) and the pool's best score. "
              "Capture only: ordering, results and every other field are unchanged. Default off.",
     )
+    parser.add_argument(
+        "--relevance-demotion", choices=["tail", "penalty"], default=None,
+        help="RQ-2 A/B arm: after reranking, move results whose paper relevance_score < "
+             "--relevance-tau down (never dropped). tail = behind all others; penalty = down "
+             "--relevance-penalty ranks. Default off = baseline.",
+    )
+    parser.add_argument("--relevance-tau", type=float, default=0.30,
+                        help="RQ-2: relevance_score threshold (only with --relevance-demotion).")
+    parser.add_argument("--relevance-penalty", type=int, default=5,
+                        help="RQ-2: rank positions a below-tau result drops (penalty mode only).")
     return parser.parse_args()
 
 
@@ -1228,6 +1241,11 @@ def main() -> None:
         build_kwargs["drop_stub_chunks"] = True
     if args.record_rerank_scores:
         build_kwargs["record_rerank_scores"] = True
+    if args.relevance_demotion is not None:
+        build_kwargs.update(
+            relevance_demotion=args.relevance_demotion, relevance_tau=args.relevance_tau,
+            relevance_penalty=args.relevance_penalty,
+        )
     server = build_mcp_server(config, **build_kwargs)
 
     results = run(

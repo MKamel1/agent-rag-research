@@ -605,6 +605,7 @@ def build_mcp_server(
     config: Config, *, db_path: str | None = None, blob_dir: str | None = None,
     collection: str = "papers", drop_stub_chunks: bool = False,
     record_rerank_scores: bool = False,
+    relevance_demotion: str | None = None, relevance_tau: float = 0.30, relevance_penalty: int = 5,
 ) -> McpServer:
     gpu_lock = FileGpuLock(Path(config.gpu_lock_path))  # same path as the ingest root -> same file
     db_path, blob_dir = _resolve_store_paths(config, db_path, blob_dir)
@@ -658,6 +659,9 @@ def build_mcp_server(
     retriever = Retriever(
         embedder, vector_index, document_store, reranker, rerank_pool_size,
         drop_stub_chunks=drop_stub_chunks,  # CQ-3 A/B switch; production wiring leaves it off
+        # RQ-2 A/B switches; production wiring leaves demotion off (None)
+        relevance_demotion=relevance_demotion, relevance_tau=relevance_tau,
+        relevance_penalty=relevance_penalty,
     )
 
     return McpServer(

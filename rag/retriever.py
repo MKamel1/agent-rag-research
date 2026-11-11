@@ -203,6 +203,17 @@ def source_url(paper_id: str, pdf_url: str) -> str:
     return pdf_url if paper_id.startswith("local:") else f"https://arxiv.org/abs/{paper_id}"
 
 
+_DEMOTION_MODES = (None, "tail", "penalty")
+
+
+def _demote(results: list, below: list[bool], mode: str, penalty: int) -> list:
+    """RQ-2: stable reorder, never a drop. `below[i]` marks `results[i]` as under the relevance floor."""
+    if mode == "tail":
+        return [r for r, b in zip(results, below) if not b] + [r for r, b in zip(results, below) if b]
+    order = sorted(range(len(results)), key=lambda i: i + (penalty if below[i] else 0))  # ties: stable
+    return [results[i] for i in order]
+
+
 class Retriever:
     """Constructor-injected collaborators only (CONVENTIONS §2): `embedder`, `vector_store`,
     `document_store`, `reranker`. Never constructs a vendor client itself — that stays inside
@@ -214,10 +225,31 @@ class Retriever:
 
     `drop_stub_chunks` (CQ-3, default OFF): `retrieve()` drops heading-only chunks before they reach
     the reranker and refills the pool from deeper hybrid hits. `retrieve_papers()` is unaffected.
+
+    `relevance_demotion` (RQ-2, default None = OFF, output identical to before): after reranking and
+    before the per-paper cap / top-k cut, results whose paper `relevance_score` is below
+    `relevance_tau` are moved down -- never dropped, so the pool's set and size are unchanged, but a
+    demoted result can fall past the top-k cut (that is the point). Papers with a NULL score are
+    never demoted. `"tail"`: all at-or-above-tau results first, then all below-tau ones (stable).
+    `"penalty"`: each below-tau result moves down `relevance_penalty` rank positions (stable).
+    The score is read from the `PaperRecord` this method already loads per result: no extra query.
+    CLI: `app/retrieval_eval.py --relevance-demotion/--relevance-tau/--relevance-penalty`.
+    `retrieve_papers()` is unaffected.
     """
 
     def __init__(self, embedder, vector_store, document_store, reranker,
-                 rerank_pool_size: int = _RERANK_POOL_SIZE, drop_stub_chunks: bool = False):
+                 rerank_pool_size: int = _RERANK_POOL_SIZE, drop_stub_chunks: bool = False,
+                 relevance_demotion: str | None = None, relevance_tau: float = 0.30,
+                 relevance_penalty: int = 5):
+        if relevance_demotion not in _DEMOTION_MODES:
+            raise ValueError(
+                f"relevance_demotion must be one of {_DEMOTION_MODES}, got {relevance_demotion!r}"
+            )
+        if relevance_penalty < 0:
+            raise ValueError(f"relevance_penalty must be >= 0, got {relevance_penalty!r}")
+        self._relevance_demotion = relevance_demotion
+        self._relevance_tau = relevance_tau
+        self._relevance_penalty = relevance_penalty
         self._embedder = embedder
         self._vector_store = vector_store
         self._document_store = document_store
@@ -281,6 +313,7 @@ class Retriever:
         ]
 
         results = []
+        below_tau = []  # RQ-2: parallel to `results`
         for candidate in self._reranker.rerank(query, candidates):
             chunk = chunks[candidate.id]
             # T-DOC38: an orphaned/stale chunk (parent paper row deleted without cascading —
@@ -320,6 +353,11 @@ class Retriever:
                     citation=citation,
                 )
             )
+            below_tau.append(
+                record.relevance_score is not None and record.relevance_score < self._relevance_tau
+            )
+        if self._relevance_demotion is not None:
+            results = _demote(results, below_tau, self._relevance_demotion, self._relevance_penalty)
         # 2026-08-19: opt-in per-paper diversity for ENUMERATION queries
         # (`SearchFilters.max_hits_per_paper` -- see its contract comment). Deliberately not a
         # default: passage search is often a deep dive within one paper, and a blanket cap would
