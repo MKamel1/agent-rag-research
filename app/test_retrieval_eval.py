@@ -1758,3 +1758,72 @@ def test_anchor_metric_is_byte_identical_over_a_stored_report():
     rebuilt = build_report(results, stored["k"])
     for key in ("k", "n_questions", "n_errors", "paper_level", "passage_level", "chapter_level"):
         assert json.dumps(rebuilt[key], sort_keys=True) == json.dumps(stored[key], sort_keys=True)
+
+
+# --- EV-9: retrieved_chunk_ids in the per-question rows ----------------------------------------
+
+
+def _dup_anchor_db(tmp_path):
+    """P1: c0 (anchor b0, text 'alpha'), c1+c2 share anchor b1 with DIFFERENT text, c3+c4 share
+    anchor b2 with IDENTICAL text (indistinguishable by (paper, anchor, text))."""
+    import sqlite3
+
+    path = tmp_path / "dup.db"
+    con = sqlite3.connect(path)
+    con.executescript(
+        "CREATE TABLE papers(paper_id);"
+        "CREATE TABLE chunks(chunk_id, paper_id, text, anchor_json);"
+        "CREATE TABLE blocks(block_id, paper_id, idx, text);"
+    )
+    con.execute("INSERT INTO papers VALUES('P1')")
+    for cid, anchor, text in [
+        ("P1:c0", "P1:b0", "alpha"), ("P1:c1", "P1:b1", "beta one"), ("P1:c2", "P1:b1", "beta two"),
+        ("P1:c3", "P1:b2", "same"), ("P1:c4", "P1:b2", "same"),
+    ]:
+        con.execute("INSERT INTO chunks VALUES(?,?,?,?)", (cid, "P1", text, json.dumps({"block_id": anchor})))
+    con.commit()
+    con.close()
+    return path
+
+
+def test_chunk_ids_for_recovers_unique_chunk_even_when_anchor_is_shared(tmp_path):
+    from app.retrieval_eval import CorpusLookup
+
+    lookup = CorpusLookup(_dup_anchor_db(tmp_path))
+    assert lookup.chunk_ids_for("P1", "P1:b0", "alpha") == ["P1:c0"]
+    assert lookup.chunk_ids_for("P1", "P1:b1", "beta two") == ["P1:c2"]  # not c1: text decides
+
+
+def test_chunk_ids_for_records_both_when_text_is_duplicated_and_nothing_when_unmatched(tmp_path):
+    from app.retrieval_eval import CorpusLookup
+
+    lookup = CorpusLookup(_dup_anchor_db(tmp_path))
+    assert lookup.chunk_ids_for("P1", "P1:b2", "same") == ["P1:c3", "P1:c4"]  # never silently one
+    assert lookup.chunk_ids_for("P1", "P1:b2", "different text") == []
+    assert lookup.chunk_ids_for("GHOST", "GHOST:b0", "alpha") == []
+
+
+def test_run_fills_chunk_ids_and_marks_ambiguous_rows(tmp_path):
+    from app.retrieval_eval import CorpusLookup
+
+    q = Question("Q1", "query", "t", frozenset({"P1"}), "P1:b0")
+    hits = [
+        _hit("P1", "P1:b1", passage_text="beta two"),
+        _hit("P1", "P1:b2", passage_text="same"),
+        _hit("P1", "P1:b9", passage_text="orphan"),
+    ]
+    results = run([q], FakeRetriever({"query": hits}), 10, chunk_lookup=CorpusLookup(_dup_anchor_db(tmp_path)))
+    report = build_report(results, 10)
+    row = report["questions"][0]
+    assert row["retrieved_chunk_ids"] == [["P1:c2"], ["P1:c3", "P1:c4"], []]
+    assert row["chunk_id_ambiguous"] is True
+    assert report["n_chunk_id_ambiguous_rows"] == 1
+    assert report["n_chunk_id_unresolved_ranks"] == 1
+
+
+def test_rows_without_a_lookup_keep_empty_chunk_ids_and_other_fields_unchanged():
+    q = Question("Q1", "query", "t", frozenset({"P1"}), "P1:b0")
+    results = run([q], FakeRetriever({"query": [_hit("P1", "P1:b0")]}), 10)
+    row = build_report(results, 10)["questions"][0]
+    assert row["retrieved_chunk_ids"] == [] and row["chunk_id_ambiguous"] is False
+    assert row["retrieved_block_ids"] == ["P1:b0"]
