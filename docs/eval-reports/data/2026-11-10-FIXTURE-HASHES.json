@@ -1,0 +1,15 @@
+{
+ "_note": "Frozen 2026-11-10 BEFORE any retrieval was run. Paths are repo-relative. null = not yet frozen (focus_gt.json is still being authored; freeze it by replacing null with its sha256sum in a dated commit, then check-hash passes). scripts/eval_protocol_tools.py check-hash fails on any mismatch or null. A changed hash is never fixed by editing it back silently: record a dated addendum in the matching protocol first.",
+ "fixtures": {
+  "docs/eval-reports/data/2026-11-10-standards-gt/standards_gt.json": "87b241af55d4a5c2a9d780c58bc533ce475a43a56058598fd4b9080dcf239bfb",
+  "docs/eval-reports/data/2026-11-10-causal-books-gt/causal_books_gt.json": "3c21d57bb6cb8949092a57cc0f4879f24f6f1f338993be24196e35a52195a0a8",
+  "docs/eval-reports/data/2026-11-10-papers-passage-gt/papers_passage_gt.json": "58cdbf47f08b00fa0ec289c8fd299dd07570a07a695e56c2526a931cd83faf81",
+  "docs/eval-reports/data/2026-11-10-focus-gt/focus_gt.json": null,
+  "docs/eval-reports/data/2026-11-10-topic-labels/topic_labels.tsv": "c14cf1ebafc010f45e4e377f18d67994183b3d8696859b7c4ded55659956e8d1",
+  "fixtures/eval/eval_ground_truth.json": "61e52db8957cde90267b46814164a9e4e47ca97809659b96e013abb14e8e50b6",
+  "fixtures/eval/eval_questions_blind.json": "7813ac0efe3f40724b9883e8eee67661ae3f533a632df7a50b6642654b36a615",
+  "fixtures/eval/eval_book_questions.json": "747420e97d23b14a270825ea2bb4ce37dc5e816e74834ed35ffa062c02c64586",
+  "fixtures/eval/eval_known_absent.json": "8c80ee4095fbdddd952e3ac34bcbfd3fb0f50724f12e641fa00986777cf3002f",
+  "fixtures/eval/eval_equation_slice.json": "d3fbe4ad94b9fbaafdabe264edebb077d804e411ea65124a1a4847e9935e82a8"
+ }
+}
