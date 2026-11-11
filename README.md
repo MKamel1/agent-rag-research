@@ -11,12 +11,15 @@ can quote, each anchored to a page and block in a real PDF. No claims, no reconc
 tiers beyond a pinned `"A"` — those are V1–V3 (`CONTEXT.md`).
 
 The pipeline isn't tied to one corpus: a second data directory with its own `config.yaml` is a second,
-independent corpus. A Waymo AV-safety corpus exists today this way.
+independent corpus. Five exist today this way — main causal-methods, Waymo AV safety, AV standards,
+Motional and Waabi (registry, data directories and collection names: `docs/PROJECT-STATUS.md` §1.1).
 
 **Doc index: [`AGENTS.md`](AGENTS.md)** (or [`CLAUDE.md`](CLAUDE.md), same content) — it tells you which
 doc is authoritative for what. **Current state — what's shipped, what's open, live corpus numbers:**
 [`docs/PROJECT-STATUS.md`](docs/PROJECT-STATUS.md). This README deliberately states no numbers and no
-ticket statuses; those live in one place so they can't drift.
+ticket statuses; those live in one place so they can't drift. The forward plan for the current
+enhancement programme is `docs/superpowers/plans/2026-11-10-enhancement-programme.md`; the adjudicated
+system review it rests on is `docs/eval-reports/2026-11-10-system-review.md`.
 
 ## What's in the box
 
@@ -29,7 +32,7 @@ ticket statuses; those live in one place so they can't drift.
 | Embed | `rag/embedder.py` | Qwen3-Embedding-4B over TEI; dense + sparse IDF |
 | Store | `rag/document_store.py`, `rag/vector_index.py` | SQLite is the source of truth, Qdrant is a rebuildable projection |
 | Retrieve | `rag/retriever.py`, `rag/reranker.py` | Hybrid search + BGE reranker |
-| Serve | `rag/mcp_server.py`, `app/serve.py` | MCP tools: `semantic_search`, `search_papers`, `get_paper`, `get_span` |
+| Serve | `rag/mcp_server.py`, `app/serve.py` | Ten MCP tools: `semantic_search`, `scan_corpus`, `search_papers`, `scan_methods`, `list_methods`, `get_figures`, `get_section`, `corpus_stats`, `get_paper`, `get_span` (the `@mcp.tool()` decorators in `app/serve.py` are the authority) |
 | Operate | `app/dashboard/` | Local web dashboard: run control, live telemetry, consistency checks, reachable over Tailscale |
 
 Module boundaries, invariants, and extensibility seams: [`ARCHITECTURE.md`](ARCHITECTURE.md) (M1–M9).
@@ -114,8 +117,7 @@ Real-adapter tests need live vendor infra and are deselected by default (`-m rea
 Before pushing, run the actual CI enforcement over your diff — the unit tests are not the same check:
 
 ```bash
-echo '{}' > /tmp/fake_push_event.json
-GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH=/tmp/fake_push_event.json python -m ci.run_enforcement
+python -m ci.run_enforcement --local main   # RI-23: same checks CI runs, against the merge-base with main
 ```
 
 **The guardrails are mechanical, not cultural.** Vendor-import isolation, no `os.getenv` outside the

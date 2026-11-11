@@ -1,9 +1,16 @@
 # Project Status — single source of truth
 
-*Written 2026-08-05. Every claim below was re-derived against live source/git on that date — see the
-citation next to each one (commit SHA, `file:line`, or report path). This doc supersedes any status
-claim in `AGENTS.md`'s old owner table or any doc listed §7 as HISTORICAL. If this doc and another doc
-disagree on a *fact* (not a frozen shape — `DATA-CONTRACTS.md` still wins those), this one wins; fix
+*Written 2026-08-05; partially re-verified 2026-11-10 (ticket EP-1). **Re-derived on 2026-11-10 against
+live read-only SQLite, git and the on-disk state:** the §1 corpus registry and known-state tables (every
+corpus count, config lever and chunker attribution), the entry-point rows in §2 for `app.serve`,
+`app.doctor`, `app.resparse`, `app.set_payload_fields`, the Precision-95 lane statuses in §3b, the new
+2026-11-10 ledger in §3, §6 (open items and pending operator decisions) and the §7 doc map. **Not
+re-verified since 2026-08-05 and may be stale:** the rest of §2 (flag table rows other than those named),
+§3 entries dated before 2026-08-28, §4, §5 and §8's branch index (§8's trailing sub-sections are ledger
+entries, now headed §3b). Where a section carries its own date or query, that date governs. Every claim
+carries its evidence (commit SHA, `file:line`, report path, or the query used). This doc supersedes any
+status claim in `AGENTS.md`'s old owner table or any doc listed §7 as HISTORICAL. If this doc and another
+doc disagree on a *fact* (not a frozen shape — `DATA-CONTRACTS.md` still wins those), this one wins; fix
 the other doc.*
 
 ---
@@ -18,40 +25,118 @@ didn't have: **books** (PDF, chapter-summarized, chapter-routable — `contracts
 `doc_type: Literal["paper","book"]`, T-DOC80) alongside arXiv papers in the same corpus, and a
 **drop-in folder** (`drop_in/`) for ingesting PDFs that didn't come from arXiv at all.
 
-A second, experimental corpus now also exists: **Waymo AV-safety**, a from-scratch causal-inference-
-style corpus scoped to autonomous-vehicle safety research, built with the same pipeline pointed at a
-separate data directory. It is much smaller and mid-build, not production-grade — see
-`docs/WAYMO-CORPUS-STATUS.md` for the detailed state (a parallel workstream owns that doc; if the link
-404s, it hasn't been written yet as of this doc's writing).
+### 1.1 Corpus registry — five corpora (re-measured 2026-11-10)
 
-**Live main-corpus numbers** (measured 2026-08-05 via read-only SQLite against
-`/home/omar/ai-projects/research-system-rag-data/papers.db`, path read from that dir's
-`config.yaml`, and a `GET /collections/papers` call to the local Qdrant on `localhost:6333`):
+The same pipeline is pointed at five data directories, each with its own `config.yaml`, SQLite
+`papers.db` and vector collection (§2 "Second corpus = second directory"). Before this pass this
+section described two; the other three had no top-level doc footprint at all (RV-6 B.1 row 12,
+`docs/eval-reports/data/2026-11-10-system-review/RV-6-ops-docs.md`).
 
-| metric | value | how measured |
+**How every number below was measured (2026-11-10).** SQLite only, opened read-only
+(`sqlite3.connect("file:<db>?mode=ro", uri=True)`): `select doc_type, count(*) from papers group by 1`;
+`select stage, count(*) from ingest_state group by 1`; `select count(*) from chunks | blocks |
+summaries | quarantine`. Config levers read from each `config.yaml` (`rerank_depth`,
+`hybrid_dense_weight`, `collection`). The three corpora outside the repo are sibling directories of the
+checkout (`/home/omar/ai-projects/research-system-rag-standards`, `-motional`, `-waabi`, each with a
+`data/` subdirectory); main is `/home/omar/ai-projects/research-system-rag-data`; Waymo is `waymo/data`
+inside the main checkout (gitignored, `.gitignore:19` — a git worktree does not contain it).
+
+| corpus | data directory | vector collection | documents (`papers.doc_type`) | `ingest_state` stages | chunks | blocks | summaries | quarantine |
+|---|---|---|---|---|---|---|---|---|
+| **main** (causal methods) | `research-system-rag-data/` | `papers` | 12,390 = 12,385 paper + 5 book | `done` 12,390 | 399,676 | 2,720,572 | 12,491 | 80 |
+| **Waymo AV safety** | `research-system-rag/waymo/data/` | `waymo_av_safety` | 1,861 paper | `done` 1,861; `chunked` 2 (`1203.5986`, `1009.1191`, both stranded since 2026-08-06) | 47,771 | 245,045 | 1,861 | 1 (`2601.05653`, PDF 404) |
+| **AV standards** | `research-system-rag-standards/data/` | `av_standards` | 119 = 109 paper + 10 book | `done` 119 | 35,714 | 107,521 | 317 | 0 |
+| **Motional** | `research-system-rag-motional/data/` | `motional_av` | 65 paper | `done` 65 | 2,013 | 9,478 | 65 | 0 |
+| **Waabi** | `research-system-rag-waabi/data/` | `waabi_safety` | 29 paper | `done` 29 | 566 | 3,129 | 29 | 0 |
+
+The main-corpus row is unchanged from the 2026-08-05 measurement (12,390 / 12,385+5 / 399,676 /
+2,720,572 / 12,491 / 80): nothing has been ingested into main since 2026-08-01 (`select max(updated_at)
+from ingest_state` = `2026-08-01T17:40:07+00:00`). Waymo grew: 123 `ingest_state` rows carry an
+`updated_at` after 2026-08-28 (the Oct 31 – Nov 3 drop-in batches; `select count(*) from ingest_state
+where updated_at > '2026-08-29'`); the earlier "mid-build, 221 papers, 4,745 chunks" snapshot
+(2026-08-07) is superseded. Standards, Motional and Waabi were built 2026-10-27 .. 2026-11-03 (their
+`ingest_state` ranges).
+
+**Vector-store point counts cannot be measured today** — `rag-qdrant` is stopped (§1.3), so the
+`GET /collections/<name>` numbers from the earlier version of this section were not re-read and are
+not restated as current. For reference only, the last recorded values were: `papers` 412,167 points on
+2026-08-05 (equals chunks + summaries, 399,676 + 12,491, so it was consistent with SQLite then) and
+`waymo_av_safety` 47,893 points on 2026-08-28 (`docs/eval-reports/2026-08-28-sb1-chunk-boundary.md`
+header; SQLite then held fewer papers than now). **Index-vs-SQLite agreement is therefore unverified for
+all five corpora** until Qdrant is up. What IS verified, from the Qdrant storage on disk
+(`.phase0-data/qdrant/collections/<name>/config.json`): all five collections exist and carry
+`sparse_vectors.sparse.modifier = "idf"` — the IDF reindex (the old "Decision 1") is applied on all five
+(see §6); the store is 31 GB (`du -sh`) and holds 39 collection directories, most of them throwaway
+experiment/scratch collections.
+
+#### Per-corpus levers, chunker generation, provenance and evaluation
+
+| corpus | `rerank_depth` | `hybrid_dense_weight` | chunker that produced the stored chunks | how built (evidence in the data directory) | evaluation status |
+|---|---|---|---|---|---|
+| main | 32 | 0.5 | **legacy** (pre-`8301342`): 299 of 300 sampled papers reproduce byte-for-byte under the old chunker, 0 under the new | arXiv harvest by `focus_area_queries` + drop-in PDFs, driven by `app.build_corpus`; run logs `ingest_run-*.log` 2026-07-14 .. 08-01, `config_run-*.yaml`, `run_manifest.json`, `rechunk_run.log` (2026-07-28 rechunk of `rechunk_targets.txt`). Reproducible from tracked code + `config.example.yaml` in principle, not from tracked files. | legacy fixtures only: `eval_ground_truth.json` (210, paper-level), `eval_book_questions.json` (115), `eval_known_absent.json` (24), `eval_equation_slice.json`; two new passage sets (61 papers, 74 causal books) **authored, never run**; protocol frozen (`docs/eval-reports/2026-11-10-main-corpus-benchmark-protocol.md`) |
+| Waymo | 32 | **0.7** (operator decision 2026-08-24, §3b) | **legacy**: 299 of 300 sampled papers reproduce under the old chunker (1 matches both), 0 under the new | v2 plan harvest + drop-in batches; `waymo/data/{run_batches.sh,run_phases.sh,chain_phases.sh,run_b2_topup.sh,run_manifest.json,*.log}`; later `drop_in_risk_20261030`, `drop_in_mindmap_20261101`, `drop_in_20261102`, `drop_in_20261102b`; 370 of 1,861 ids are `local:` (non-arXiv). `fixtures/waymo/` (tracked) preserves the candidate list and id lists. | best evaluated: `gt_wmr.json` (82) and `waymo_gt_verified.json` (84), `scripts/nb_eval_runner.py`, many reports in `docs/eval-reports/` 2026-08-22 .. 08-28 |
+| standards | **128** (only corpus not at 32; no recorded reason) | 0.5 | **new** (bounded, post-`8301342`): 119 of 119 reproduce under the new chunker, 0 under the old | `_tools/build_standards.sh` (pinned `all_ids.txt`, 33 ids, → `app.ingest`) then batch scripts `ingest_mindmap_20261101*.sh`, `ingest_completion_20261102{,c,d}.sh`, `ingest_blog_20261102.sh`, `ingest_completion_20261103e.sh` (each backs up `papers.db` to `backups/` and runs `app.snapshot` then `app.ingest_local`); 114 of 119 ids are `local:`; `rag_fix_ids.txt` lists the pre-fix documents re-chunked after `8301342` (RV-2 F-2.2) | `standards_gt.json` (128 items) **authored, never run**; protocol frozen incl. the depth-128-vs-32 decision rule (`docs/eval-reports/2026-11-10-standards-benchmark-protocol.md`) |
+| Motional | 32 | 0.5 | **legacy**: 65 of 65 reproduce under the old chunker | `_tools/fetch_motional.py` (reads `catalog.json`, downloads PDFs, keeps OpenAlex-only arXiv hits only if page 1 names Motional/nuTonomy/Aptiv, else `held_back/`), `manifest.tsv`, `status.json`, `_tools/build_motional.sh` (→ `app.ingest --paper-ids-file all_ids.txt`, 65 ids; 20 are `local:`) | **none of record.** Ad-hoc question files `_tools/questions.json`, `qa.json`, `q2..q4.json` + `query_batch.py` exist; no fixture in the repo, no report |
+| Waabi | 32 | 0.5 | **legacy**: 29 of 29 reproduce under the old chunker | `_tools/build_waabi.sh` only (→ `app.ingest --paper-ids-file all_ids.txt`, 29 ids; 18 are `local:`); **no acquisition script survives** — how the PDFs/ids were gathered is not recorded | **none of record** |
+
+**Chunker attribution method (re-run 2026-11-10).** Read-only: for 300 random papers per corpus (all
+papers for standards, Motional, Waabi), rebuild each paper's `Block` list from the `blocks` table,
+run the pre-`8301342` chunker (`git show 8301342^:rag/chunker.py`) and the current `rag/chunker.py`,
+and compare the chunk texts with the stored `chunks.text`. This reproduces RV-2 F-2.2's main and
+standards results and extends it to Waymo, Motional and Waabi
+(`docs/eval-reports/data/2026-11-10-system-review/RV-2-parse-chunk.md` F-2.2). **Consequence:** the
+chunker has no version stamp anywhere (`grep -rn chunker_version` finds nothing), `chunk_id` is
+positional (`{paper_id}:c{n}`, `rag/chunker.py:386`), so any main/Waymo-vs-standards comparison
+confounds corpus with chunker (on a 400-paper main sample the new chunker gives 3.4× the chunks and a p95 chunk length of 1,405 vs 6,635 characters, RV-2 F-2.2), and any ingest into a live
+collection from this branch would mix chunker generations. The new chunker's commits (`8301342`,
+`5eadd35`, 2026-11-01) are on `EP-programme-20261110`, **not on `main`**
+(`git branch --contains 8301342` lists only EP branches).
+
+**Reproducibility (review finding).** None of the five corpora can be rebuilt from tracked files. The
+three sibling directories are **not git repositories at all** (`git rev-parse` fails in
+`research-system-rag-waabi/data`'s parents); their `_tools/*.sh` build scripts, id lists, config files
+and backups exist only on this disk; Waymo's `data/` is gitignored; main's is outside the repo.
+Qdrant itself is not reproducible from tracked files either: unpinned `qdrant:latest`, container
+arguments and ports only visible via `docker inspect`, collections in the gitignored `.phase0-data/`
+(RV-6 F-A2). SQLite is the source of truth; the vector index is a projection that can be rebuilt from
+it, but only by re-embedding on the GPU.
+
+### 1.2 Known state of the data (measured 2026-11-10; every number has its source)
+
+| fact | value | source |
 |---|---|---|
-| papers at `ingest_state.stage='done'` | **12,390** | `select stage, count(*) from ingest_state group by stage` — all 12,390 rows are `done`, no other stage present |
-| `papers.doc_type` breakdown | **12,385 paper / 5 book** | `select doc_type, count(*) from papers group by doc_type` |
-| `chunks` rows | **399,676** | `select count(*) from chunks` |
-| `blocks` rows | **2,720,572** | `select count(*) from blocks` |
-| `summaries` rows | **12,491** | `select count(*) from summaries` (12,385 one-per-paper + 106 book chapter/overview summaries across the 5 books) |
-| `quarantine` rows | **80** | `select count(*) from quarantine` |
-| Qdrant `papers` collection | **412,167 points**, 823,956 indexed vectors (dense 2560-dim + sparse IDF), 8 segments, status `green` | `curl localhost:6333/collections/papers` |
+| main-corpus papers off-topic for causal methods | **37.4%** = 4,630 of 12,385 labelled (`off` 4,630 / `borderline` 1,044 / `on` 6,711). All 12,385 papers labelled (Haiku, title + abstract, `RUBRIC.md`); the 300-paper audit passes (Cohen's kappa 0.901, binary agreement 0.975), but the auditor is the same model family, so it shows consistency, not correctness. **Operator decision: KEEP the off-topic papers and measure whether retrieval stays on focus** (do not filter). `papers.relevance_score` separates on/off at AUROC 0.923 (thresholds proposed, none applied) | `cut -f2 docs/eval-reports/data/2026-11-10-topic-labels/topic_labels.tsv \| sort \| uniq -c`; `docs/eval-reports/2026-11-10-topic-labels-audit.md` §5; the earlier 400-paper sample estimate was 38.5% (`docs/eval-reports/data/2026-11-10-offtopic-census/report.md`) |
+| chunks containing ligature-broken words ("efect", "diference") | main **32.42%** (129,566 of 399,676; 52.9% of papers); Waymo 9.97%; standards 2.79%; Motional 5.02%; Waabi 7.07%. CQ-1 repairs the sparse arm (227-entry map) but no collection has been resparsed; the dense arm is not repaired | `docs/eval-reports/data/2026-11-10-ligature-census/results.json` (`corpora.<name>.affected_chunks_pct`); `docs/eval-reports/data/2026-11-10-ligature-census/repair-map-report.md` |
+| heading-only "stub" chunks (body < 40 chars) | main **9.1%** (36,364), Waymo 9.87% (4,717), standards 6.95% (2,483; 400 bare-number), Motional 9.99% (201), Waabi 10.25% (58) — 7-10% in every corpus. The chunker emits them (RV-2 F-2.6); CQ-3's `drop_stub_chunks` filter hides them at query time (default off, A/B not run) | `python scripts/chunk_quality_census.py <db>` per corpus, re-run 2026-11-10 |
+| chunks cut at the 4,096-token embedding limit | main **3,138** = 0.79% of chunks (1.51% of characters); Waymo 126 (0.26%); standards 0. TEI truncates every input silently at `--max-batch-tokens 4096`; the client sends no truncate flag. Motional and Waabi not censused (oversized chunks 22 and 6 by the census above) | `docs/eval-reports/data/2026-11-10-embed-truncation/report.md` (exposure table; container flags read from `docker inspect`/logs, not a live request) |
+| book section paths without chapter hierarchy | the 15 books (5 main, 10 standards) carry ≈12,500 chunks whose `section_path` is not a chapter (every `Chapter N` heading becomes a depth-1 root); standards also has running headers and stale clause numbers in paths (UL 4600, 1,384 chunks, has a wrong path for most clauses; 1,678 standards chunks, 4.7%, have a running-furniture string as their path root) | RV-2 F-2.1, F-2.5, F-2.11 (`docs/eval-reports/data/2026-11-10-system-review/RV-2-parse-chunk.md`) |
+| duplicate documents / reference lists indexed as content | candidate duplicate groups: main 8, Waymo 8, standards 1 confirmed; reference-section text is ≈0.9-1.0% of characters in main and Waymo (0.33% standards) | `docs/eval-reports/data/2026-11-10-dup-ref-census/report.md` (A3, Part B) |
+| raw parser structure not persisted for main | `figures` and `tables` tables hold 0 rows in main (Waymo 26,087 / 8,390; standards 3,544 / 2,189; Motional 775 / 278; Waabi 433 / 139): main was parsed before RI-18 (`f92bd8f`) persisted them | `select count(*) from figures`, `from tables` per corpus, 2026-11-10 |
 
-**Waymo corpus** (`waymo/data/config.yaml`, `db_path: waymo/data/papers.db`, collection
-`waymo_av_safety` — this directory is gitignored, `.gitignore:19`, but present on disk).
-**Mid-build under the v2 plan as of 2026-08-07** — these are a snapshot of a run in progress, not a
-finished corpus; re-measure rather than quoting them:
+### 1.3 Backups, disk and services (checked 2026-11-10, read-only)
 
-| metric | value | how measured |
-|---|---|---|
-| `ingest_state` stages | `done`=221, `chunked`=606 | `select stage, count(*) from ingest_state group by stage` |
-| `papers` rows | 221, all `doc_type='paper'` | `select doc_type, count(*) from papers group by doc_type` |
-| `chunks` / `blocks` / `summaries` | 4,745 / 24,093 / 221 | `select count(*) from <table>` |
-| `quarantine` rows | 1 | `2601.05653`, a 404 on the PDF fetch |
-| Qdrant `waymo_av_safety` | 4,966 points / 4,966 indexed | `curl localhost:6333/collections/waymo_av_safety` |
-| `pdf_cache` | 1,097 PDFs, 37 `.json` sidecars | `ls pdf_cache/*.pdf \| wc -l` |
-| drop-in tray | 449 PDFs staged, awaiting Phase B | `ls waymo/data/drop_in/papers/*.pdf \| wc -l` |
+- **Disk:** `/dev/nvme0n1p2` 3.6T, 3.4T used, **90G free, 98% full** (`df -h /home/omar`). Every backup
+  sits on this same disk; nothing is off-disk (RV-6 F-A1).
+- **Main-corpus backups:** the newest is **`backups/snapshot-20260730T021052Z`** (manifest + `papers.db`
+  + Qdrant `papers.snapshot`; dated 2026-07-29/30 local). The live `papers.db` was last modified
+  2026-09-07 (3.55 GB). Also in `backups/`: `papers-pre-0004-20260726T054148Z.db`, snapshot
+  directories named 20260717, 20260729, two 20260730 and a `.partial` 20260728 (UTC stamps), and five July `papers.db.bak-*` in the data root
+  (~1.28 GB each). No scheduler, retention rule or restore procedure exists (RV-6 F-A1). Waymo and
+  standards have recent snapshots (`snapshot-20261103T0318xxZ`, standards `…T0540xxZ`, plus per-batch
+  `papers.db.pre-batch*` copies); Motional and Waabi have **no backup directory**.
+- **Services (all down):** `rag-qdrant`, `rag-tei-reranker` and `rag-grobid` exited 255 together at
+  2026-11-08T17:08:06Z (`docker inspect`: not OOM-killed; the common cause is not recorded in any
+  log read). `rag-tei-embed` exited 1 at 2026-11-09T09:50Z — its last log lines end `Could not start
+  backend: Could not start a suitable backend` — and cannot restart while an **Ollama
+  `qwen3.8:27b-mtp-q4_K_M` runner (18,586 MiB of the 24,576 MiB card, state "Stopping…") holds the
+  GPU** (`nvidia-smi --query-compute-apps`, `ollama ps`). Ownership of that process is an open
+  operator question (§6). Nothing in this pass started or stopped any service.
+- **What works without them:** SQLite-only reads and the CPU-only mode (`python -m app.doctor
+  --cpu-only`, `docs/RUNBOOK.md` "GPU busy / CPU-only operation", OP-1). Anything needing the embedder,
+  reranker or a live index (every retrieval benchmark, resparse/set-payload `--apply`, CQ-3's A/B) is
+  blocked until the GPU is free.
+
+### 1.4 Earlier Waymo build notes (2026-08-05..08, history)
 
 Config changes from the v1 state, all applied by plan Task 3: `ingest_paper_ids` cleared (it held a
 hand-pasted 1,437-id allowlist, duplicating what `--paper-ids-file` already does), `prefetch_target`
@@ -61,7 +146,8 @@ broadened-scope list, and `arxiv_date_from: '2015-01-01'` for the operator's cut
 The sidecar count is worth watching: it was **0** for the whole v1 era, because sidecars are written
 by the downloader and v1 had neutered it. Every missing sidecar costs an arXiv metadata re-fetch at
 ingest time, which is what produced the multi-minute per-batch stalls observed on 2026-08-07 before
-`49b966a` got the downloader working again.
+`49b966a` got the downloader working again. (The 2026-08-07 `pdf_cache` and drop-in-tray counts that
+used to sit here — 1,097 PDFs / 37 sidecars / 449 staged — were not re-measured and are not current.)
 
 ## 2. How to actually run it
 
@@ -74,11 +160,13 @@ Every flag below traces to an actual `add_argument`/argv line — no flag is inf
 | `app.parse_phase` | `--shard-index`, `--shard-count` | Runs Pass-1 parsing for one shard of a sharded run (`app/parse_phase.py:76-78`) |
 | `app.prefetch_pdfs` | `--max-idle N`, `--log-every N` | Standalone PDF-backlog downloader, runs forever unless `--max-idle` bounds it (`app/prefetch_pdfs.py:344-364`) |
 | `app.ingest_local` | `--stage-only`, `--drop-dir PATH`, `--dry-run` | Stages `drop_in/` PDFs into `pdf_cache` + a manifest, then normally invokes `app.ingest` (`app/ingest_local.py:340-354`) |
-| `app.serve` | `--data-dir` (optional) | MCP server (`semantic_search`, `search_papers`, `get_paper`, `get_span`) (`app/serve.py:47-58`) |
-| `app.doctor` | `--no-auto-start`, `--check-mcp` | Readiness check for TEI/vector-store/GROBID, auto-starts stopped containers by default (`app/doctor.py:311-318`) |
+| `app.serve` | `--data-dir` (optional) | MCP server, **ten tools** registered by the `@mcp.tool()` decorators at `app/serve.py:127-263`: `semantic_search`, `scan_corpus`, `search_papers`, `scan_methods`, `list_methods`, `get_figures`, `get_section`, `corpus_stats`, `get_paper`, `get_span` (argparse `app/serve.py:52-64`). One process serves exactly one corpus; `--data-dir` is the only guard against serving the wrong one and it is the only tool path that refuses a missing DB (system review S-07) |
+| `app.doctor` | `--no-auto-start`, `--check-mcp`, `--cpu-only` (OP-1) | Readiness check for TEI/vector-store/GROBID, auto-starts stopped containers by default; `--cpu-only` checks only the vector store and reference service and skips TEI, GPU headroom and the `.gpu.lock` check (`app/doctor.py:336-358`). It does not detect a foreign process holding the GPU (system review S-06) |
 | `app.init_config` | `--data-dir` (required), `--force`, `--link` | Scaffolds a new corpus's `config.yaml` from `config.example.yaml` (`app/init_config.py:46-61`) |
 | `app.rechunk` | `--config`, `--paper-ids`, `--paper-ids-file`, `--dry-run` | Re-chunks-from-blocks for already-ingested papers without a full re-ingest (`app/rechunk.py:262-275`) |
 | `app.reindex_idf` | `--collection` (required), `--config`, `--dry-run`, `--i-have-a-snapshot`, `--backup-root`, `--keep N`, `--use-clone-swap`, `--vector-store-host/-port` | Adds the sparse IDF modifier to an existing collection (`app/reindex_idf.py:204-238`) |
+| `app.resparse` (CQ-2) | `--collection` (required, no default), `--config`, `--dry-run` (default) / `--apply`, `--i-have-a-snapshot`, `--target-is-clone` + `--clone-of`, `--verify-sample N`, `--batch-size`, `--backup-root`, `--vector-store-host/-port` | Recomputes the sparse vector of every point in place from stored chunk text, without re-embedding; needed after CQ-1's ligature repair. Never run against a live index (`app/resparse.py:184-199`; runbook `docs/eval-reports/2026-11-10-cq2-index-maintenance.md`) |
+| `app.set_payload_fields` (CQ-2) | `--collection` and `--only-fields` (required), `--build relevance_score\|topic_label` or `--mapping-file`, `--db`, `--labels`, `--dry-run` (default) / `--apply`, `--i-have-a-snapshot`, `--target-is-clone`, `--clone-of`, `--config`, `--backup-root`, `--vector-store-host/-port` | Writes allow-listed payload keys on existing points without re-embedding (`app/set_payload_fields.py:193-210`). Never run against a live index |
 | `app.delete_docs` | `PAPER_ID [PAPER_ID ...]` (positional), `--yes` (required to actually delete) | Cascade-deletes papers (chunks/blocks/summaries/vectors) (`app/delete_docs.py:54-58`) |
 | `app.snapshot` | `--config`, `--backup-root`, `--keep N`, `--vector-store-host/-port` | Takes/prunes Qdrant collection snapshots (`app/snapshot.py:222-235`) |
 | `app.obsidian_export` | `--config`, `--out-dir`, `--limit N` | Exports papers as an Obsidian vault (`app/obsidian_export.py:187-195`) |
@@ -113,8 +201,12 @@ Every flag below traces to an actual `add_argument`/argv line — no flag is inf
 A second corpus is nothing more than a second directory holding its own `config.yaml`. Create one
 with `python -m app.init_config --data-dir <dir>`, then select it either by `cd`-ing into it before
 running an ingest-side tool (cwd-is-data-dir, trap (a) above) or by passing `--data-dir <dir>` to one
-of the 4 tools that support it (trap (b)). The Waymo corpus (§1) is exactly this pattern — see
-`waymo/data/config.yaml`.
+of the 4 tools that support it (trap (b)). All five corpora in §1.1 follow this pattern — see each directory's
+`config.yaml`. Two things `app.init_config` does not do for you: it writes a private `gpu_lock_path`
+(`config.example.yaml:108` default `.gpu.lock`, resolved under the new directory), which must be edited to
+the shared `/home/omar/ai-projects/research-system-rag/.gpu.lock` that all five existing configs use, and
+it leaves `collection` at the template value, which must be made distinct (`docs/RUNBOOK.md` "Running a
+second corpus").
 
 ## 3. Shipped-work ledger
 
@@ -322,6 +414,36 @@ test rather than assumed.
 (no `waymo/data/` writes, no ingest run) — and the real challenge-paper false positive `2006.15505`
 ("1st Place Solution"-style, not Waymo-authored) correctly gets no curated match.
 
+### Enhancement programme — 2026-11-10 (branch `EP-programme-20261110`, `git log --oneline main..HEAD`)
+
+All of this exists as committed code, data and reports on the integration branch `EP-programme-20261110`
+(not on `main`; nothing pushed). **No retrieval benchmark, index change or GPU job from this programme has
+been run** — the embedder, reranker and Qdrant are down and the GPU is held (§1.3) — so every "not yet
+applied/measured" below is literally true on 2026-11-10. Orientation: `docs/eval-reports/2026-11-10-system-review.md`
+(adjudicated review, below) ranks the follow-up work; `docs/eval-reports/2026-11-10-GPU-DAY-RUNBOOK.md`
+sequences the first GPU session. The programme plan is `docs/superpowers/plans/2026-11-10-enhancement-programme.md`
+(being written in parallel with this pass; referenced by path only).
+
+| item | what exists (SHA) | NOT yet applied / measured |
+|---|---|---|
+| **Ground-truth sets** (EP-0) | Three LLM-authored, blind-authored, cross-verified passage-level sets: standards 128 items (`173fe4e`, with `AUTHORING-PROTOCOL.md`), causal books 74 (`f119f30`), main-paper passages 61 (`0c9483e`), under `docs/eval-reports/data/2026-11-10-{standards,causal-books,papers-passage}-gt/`. SHA-256 of every fixture of record frozen before any run (`9236e7a`, `docs/eval-reports/data/2026-11-10-FIXTURE-HASHES.json`; `focus_gt.json` still `null`) | Never run against retrieval. Not instruments of record yet: the scorer ignores `alternative_gold_chunk_ids` (up to 13% under-count), gold is chunk identity bound to one chunker, authors and verifiers share a model family, questions are ~2× longer than logged queries (system review §2). Not promoted to `fixtures/eval/` (foundation-protected) |
+| **Topic labels + audit** (EV-1/2/3) | on/borderline/off label for all 12,385 main papers (`5f54fb4`, `docs/eval-reports/data/2026-11-10-topic-labels/topic_labels.tsv`); blind 300-paper audit, kappa 0.901, binary agreement 0.975, ACCEPTED; `relevance_score` AUROC 0.923 on on-vs-off (`9a2c6fb`, `4766c8c`, `1975b81`, merge `eb4d993`; `docs/eval-reports/2026-11-10-topic-labels-audit.md`) | Labels are not in the vector payload and nothing filters or demotes on them (operator keeps the off-topic papers). Proposed `relevance_score` thresholds 0.25/0.30 not applied. Auditor is the same model family: consistency, not truth |
+| **Benchmark protocols + GPU-day runbook** (EV-5) | Frozen protocols for standards (`7782a0f`; includes the rerank-depth 128 vs 32 decision rule), main (`2a017de`), topic focus (`ba78d4a`), `scripts/eval_protocol_tools.py` (hash check, point-count guard, title ablation, split, Wilson; `6d4526d`, `0728e16`), cheapest-first runbook (`882a086`); merge `b9be4c8` | Nothing in them has been run. The relevance-demotion adoption rule is pre-registered, not applied. System review S-02/S-03/S-05 amend them before the first run |
+| **Ligature repair** (CQ-1) | `rag/ligatures.py` + `rag/ligature_map.json` (227 mappings) + builder `scripts/build_ligature_map.py` (`ca65f68`), applied inside `_sparse_vector` (index and query side) and `scan_blocks` (`05b34ee`), review runs (`5906f2e`); merge `56d24d0`. Measured: changes none of 1,217 recorded queries, improves `scan_corpus` (system review §4) | No collection has been resparsed, so query-side repair against unrepaired stored sparse vectors is a deployment hazard until `app.resparse` runs (`docs/eval-reports/2026-11-10-cq2-index-maintenance.md` §1). Dense side not repaired. Retrieval gain unmeasured |
+| **Index-maintenance methods** (CQ-2) | `VectorIndex.resparse`, `set_payload` and read-only sampling helpers (`79d44d3`), `relevance_score` added to the shared vector payload (`79d29a0`, new ingests only), CLIs `app.resparse` / `app.set_payload_fields` with apply guards (`586095a`), runbook (`9ce36dc`); merge `655b384` | Mocked-client unit tests only; never run against a live index; time and size figures are estimates |
+| **Stub-chunk filter** (CQ-3) | `scripts/list_stub_chunks.py`, `drop_stub_chunks` flag on `Retriever` and `--drop-stub-chunks` on `app.retrieval_eval`, default off, reversible (`e984fb9`, `d39a094`, pre-registration `de520e4`; merge `720f77d`; `docs/eval-reports/2026-11-10-cq3-stub-chunks.md`) | A/B not run; stubs still sit in every index (7-10% of chunks). System review S-05 tightens the pre-registration (no minimum effect size; three different stub thresholds) |
+| **CPU-only mode** (OP-1) | `python -m app.doctor --cpu-only` and fail-fast on TEI/Qdrant down (`2e51b4f`, `8de3ad3`; merge `564582a`); runbook section "GPU busy / CPU-only operation" | Covers "TEI down" only; does not detect a foreign GPU holder or a held lock (300 s wait) — system review S-06 |
+| **Censuses** (EP-0, CQ-6) | Chunk-quality census instrument (`368ce55`, `scripts/chunk_quality_census.py`); off-topic, ligature and embed-truncation censuses (`09cb847`); duplicate-document and reference-content census (`4a8feae`, merge `23fc2d2`); per-stratum report script `scripts/eval_strata_report.py` (EV-6, `e4f2fed`, merge `c06b411`) | Figures are in §1.2. EV-6's script has tests but no recorded run on real retrieval output. Embed truncation is not fixed (needs `--max-batch-tokens` change and re-embed); no duplicate has been removed |
+| **Chunker repair on standards** (T-RAG) | `8301342`, `5eadd35` (2026-11-01): extraction joins, definition boundaries, oversized-table bounding; the whole standards corpus (119 docs) was built with it | On `EP-programme-20261110` only, not `main`; main, Waymo, Motional and Waabi still hold legacy-chunker chunks (§1.1) |
+| **System review** (RV-1..6 + adjudication) | Lane findings `b4c2b43`, `e796cc9`; adjudicated findings and ranked work list `364aa13` (`docs/eval-reports/2026-11-10-system-review.md`) | Its groups (A)-(F) are recommendations; none is implemented. Group (F) operator questions are in §6 |
+| **This pass** (EP-1) | Drift correction of this file, README, AGENTS.md, RUNBOOK corpus facts (branch `EP-EP1-docs-drift`) | Plan checkboxes in `docs/superpowers/plans/2026-08-25-precision95-programme.md`, `docs/DECISIONS-PENDING-operator.md`'s contradictory line and the stale `docs/BACKLOG.md` rows were out of this ticket's ownership — see the hand-over list in its report |
+
+**In progress on other branches (mentioned only; not verified here):** EV-4 focus ground truth
+(`EP-EV4-focus-gt`), CQ-5 standards metadata (`EP-CQ5-standards-metadata`), CQ-4 truncation re-chunk plan
+(`EP-CQ4-truncation-rechunk-plan`), EP-2 ticket set (`EP-EP2-ticket-set`). Merge commits for CQ-4 (`bb6520a`)
+and CQ-5 (`3df5c8b`) appeared on the integration branch while this pass was running; their content was not
+reviewed, ledgered or doc-mapped here and the figures in §1 do not depend on it.
+
 ## 4. Problems faced → solution landed
 
 **MinerU VRAM peak measurement correction (T-DOC15).** `ARCHITECTURE.md`/`CONVENTIONS.md` originally
@@ -436,26 +558,93 @@ reports: `docs/eval-reports/2026-07-29-exp{1..5}-*.md`.
 
 ## 6. Open and known-broken
 
-Live queue, as of 2026-08-05, from `docs/BACKLOG.md` — not edited by this workstream, reflected as
-found (a parallel workstream may be correcting some of these concurrently):
+*Re-derived 2026-11-10 (ticket EP-1) from `docs/BACKLOG.md`, git, and the adjudicated system review
+`docs/eval-reports/2026-11-10-system-review.md` (cited below as "review"); where the review and its lane
+reports (RV-1..6) disagree, the review wins. `docs/BACKLOG.md` was not edited by this pass.*
 
-- **D-8** — bound retries for repeatedly-failing quarantined papers (OPEN, lower priority since O-2's
-  fix removed the main cause).
-- **D-9** — land the orphaned unexpected-exception safety net. The only genuinely unmerged branch in
-  the repo per `docs/BACKLOG.md`'s own audit (`T-SEED-combined-fixes`, see §8) — `main` has no
-  catch-all for an unforeseen exception today.
-- **D-11 / D-12** — listed OPEN in `docs/BACKLOG.md`, but both fixes are already on `main` (§3/§4
-  above document the actual landed commits: `4e07eb4` and `f351a27`). `BACKLOG.md`'s status for these
-  two rows appears stale relative to `main`.
-- **B-1** — TOC pages mis-classified as headings (inflates book chapter-unit counts).
-- **B-2** — Strategy-B junk chapter titles (some titles are page furniture, not real headings).
-- **B-3** — T-DOC87 boundary change will not ship as-is (§5 above).
-- **B-4** — unused outline splitter not yet removed (review date 2026-08-29 per the operator).
-- **B-5** — `reindex_idf`'s non-destructive `--use-clone-swap` path exists (PR #203) but is not yet
-  the default; the destructive rebuild path still is.
-- **O-2b** — GROBID "unparseable TEI" (6 papers, a *different* failure from the 500s in §4) — open,
-  worth checking whether it shares the same deterministic-but-labelled-transient pattern.
-- **O-3** — a stale `git stash` entry of unknown provenance; do not touch without the owner.
+### 6.1 Known-broken or unmeasured (the system's open problems)
+
+Measured facts live in §1.2; this list is what is broken or unknown *because of* them, ranked by the review
+(§3 groups (A)-(C), item ids S-nn).
+
+- **No current, off-disk backup of the source-of-truth SQLite.** Newest main snapshot 2026-07-30; disk 98%
+  full; no scheduler/retention/restore procedure (§1.3; review S-01, RV-6 F-A1). The only finding whose
+  downside is unrecoverable.
+- **The first GPU run would not yet be a baseline.** The eval harness rewrites its own fixture, measures
+  whichever checkout is current, records no hash, defaults `--collection` to `papers`
+  (`app/retrieval_eval.py:780`), and the scorer ignores `alternative_gold_chunk_ids` (review S-02, S-03).
+  Fixtures were hashed (`9236e7a`) but the harness does not yet enforce it.
+- **Every quality question on the new sets is unmeasured:** passage-level recall, whether stubs or
+  ligatures cost results, whether off-topic papers enter answers, whether per-corpus depth/weight settings
+  help (standards `rerank_depth` 128 vs 32 is an untested transplant), whether the cross-encoder score
+  separates answerable from absent (the earlier "no floor" verdict tested rank arithmetic only; the reranker
+  score is discarded at `rag/reranker.py:231`), and whether filtered searches lose results with no payload
+  indexes (review §1 a, b; S-04, S-15, S-16).
+- **Silent wrong answers:** an unknown `filters.paper_id` returns an empty result (review S-08); wrong-corpus
+  guards cover only `app.serve --data-dir` (S-07); a held GPU lock looks like "service down" and a query
+  waits up to 300 s (S-06).
+- **Structure:** broken section paths for the standards and the 15 books, 7-10% stub chunks, 32% ligature
+  damage in main, 0.79% truncated embeddings in main (§1.2). All have designed fixes (S-17, S-18, S-23,
+  S-24); none is applied, and several need a GPU re-embed.
+- **Chunker mix:** main, Waymo, Motional, Waabi hold legacy-chunker chunks, standards holds new-chunker
+  chunks, with no version stamp. **Standing rule (review S-13): do not ingest into any live collection from
+  this branch until S-17 and S-23 have decided** — it would mix chunker generations and sparse versions.
+- **Containers cannot be recreated from tracked files**; Qdrant is unpinned `latest` over a 31 GB store
+  (review S-12, RV-6 F-A2). The nightly real-adapter workflow has no runner (review §3 D(6), RV-6 F-A5).
+
+Older queue items, from `docs/BACKLOG.md`, re-checked against git:
+
+- **D-8** — bound retries for repeatedly-failing quarantined papers (OPEN, lower priority since O-2's fix).
+- **D-9** — land the orphaned unexpected-exception safety net (`T-SEED-combined-fixes`, §8) — real
+  unmerged work, but no longer "the only genuinely unmerged branch" (`docs/BACKLOG.md:222` already says so;
+  `worktree-waymo-corpus-expansion` also has unmerged commits). `main` has no catch-all for an unforeseen
+  exception.
+- **D-11 / D-12** — **DONE**, and `docs/BACKLOG.md:224-225` already says so (`4e07eb4`, `f351a27`, both
+  ancestors of the integration branch). The previous version of this section called BACKLOG's rows stale;
+  that was itself stale and is withdrawn.
+- **B-1, B-2** — TOC pages as headings; junk chapter titles (OPEN).
+- **B-3** — T-DOC87 boundary change will not ship as-is (§5).
+- **B-4** — remove the unused outline splitter: review date 2026-08-29 is **73 days overdue**; operator to
+  remove or extend.
+- **B-5** — `reindex_idf` default flip: the underlying need is moot (sparse IDF is on all five collections,
+  §1.1; review §3 E marks the tool historical).
+- **O-2b** — GROBID "unparseable TEI" (6 papers); **O-3** — a stale `git stash` entry of unknown provenance.
+- **FD-1 (figure images lost)** — resolved *going forward*: RI-18 (`f92bd8f`, `migrations/0006_figures_tables.sql`)
+  persists figures/tables, and Waymo, standards, Motional and Waabi hold them (§1.2). **Not resolved for
+  main**: its `figures`/`tables` tables hold 0 rows and the 12,390-paper parse's images are gone; only a
+  re-parse (GPU) recovers them.
+
+### 6.2 Pending operator decisions (not agent work)
+
+| # | decision | recorded in | what it blocks |
+|---|---|---|---|
+| 1 | **Ratify (sign) the metric ratification, P0-2 — or retire it** in favour of the review's S-02 addenda (review F8). Unsigned `Signed: ___` | `docs/eval-reports/2026-08-26-precision95-metric-ratification.md:3-9`; BACKLOG P0-2 row; §3b | IN-1; any headline "0.95" claim |
+| 2 | **T-F7: approve the member-block citation rider PR** (Variant A; touches `contracts/` and DATA-CONTRACTS §M7, foundation-protected). Review §3 D batches it with the other foundation changes into one rider after the S-16 baselines | `docs/design-notes/2026-08-28-xc-member-citation-adoption.md`; BACKLOG T-F7 row | QW-1 implementation (gt_wmr passage hit 93.9% → 95.5%, measured); IN-1 |
+| 3 | **Claim-layer design sign-off** — `docs/DESIGN-claim-layer-v1.md` is headed "Foundation change — needs sign-off before build"; no sign-off is recorded anywhere | `docs/DESIGN-claim-layer-v1.md:3`; `PRD.md` ADR-12 | every V1 claim-layer ticket (nothing is built) |
+| 4 | **MinerU `vlm` backend spike** (the one parser option judged worth a Spike-1-style validation) never adjudicated — "Recommendation, not yet a decision" since 2026-07-16 | `reviews/PARSER-ALTERNATIVES-EVAL.md` (gitignored, on disk); §5 | any parser swap; also the OCR/ligature damage that the parser, not the chunker, causes |
+| 5 | Backups: is there any device or remote for an off-disk copy? After a fresh verified snapshot, may the five July `.bak` files (6.4 GB), the 07-28 `.partial` and two of the three July snapshots be deleted? (review F1) | review §3 F1; §1.3 | S-01; any re-embed on a 98%-full disk |
+| 6 | May Qdrant (CPU only) be started for clone measurements (S-15, S-17)? ~6-8 GB per clone of the 90 GB free (review F2) | review F2 | Wave 1 of the review's wave map |
+| 7 | Who owns the Ollama `qwen3.8:27b-mtp-q4_K_M` process (18.6 GB, wedged "Stopping…")? May it be stopped? It is what blocks the GPU and `rag-tei-embed` (review F3) | review F3; §1.3 | every GPU job (S-16 and everything after) |
+| 8 | Push the local commits so CI judges them: yes or no? (review F4) | review F4 | CI evidence for the whole programme |
+| 9 | May the MCP wire be a projection of the frozen envelope (drop `bbox`, duplicate `snippet`/`paper_id`)? (review F5) | review F5, S-26 | envelope slimming |
+| 10 | Focus lever: is "demote, never drop, opt-in" the only acceptable form, and what off-topic share in the top 10 counts as material? (review F6) | review F6; `docs/eval-reports/2026-11-10-topic-focus-benchmark-protocol.md` | S-21 |
+| 11 | If S-24's gate passes, may stored `Block.section_path` be rewritten for standards (and a ~35k re-embed run), or must the corrected path live in a derived column? (review F7) | review F7; RV-2 open question 1 | S-24 |
+| 12 | Decision 4 — duplicate chapter titles: option A (disambiguate) was never built; marker regex repair shipped but its boundary change does not (B-3) | `docs/DECISIONS-PENDING-operator.md` banner + §Decision 4 | addressability of 16 of 101 chapter units |
+| 13 | Operator rulings still open from the 2026-08-22 review series: self-hosted CI runner, corpus-target conflict (15k/30k/12.4k), reviewer findings R4/R5, RI-2 empty-token policy | `docs/superpowers/plans/2026-08-22-review-implementation.md:246-252` | closing the RI series |
+
+**Closed — do not re-ask (verified 2026-11-10; two lane claims withdrawn):**
+- **IDF reindex ("Decision 1" of `docs/DECISIONS-PENDING-operator.md`) is closed:** every collection's
+  `config.json` carries `sparse.modifier = "idf"` (§1.1), and the review adjudicates it as already applied on
+  all five. RV-6 B.3 row 3 listing it as pending is wrong, as is §7's earlier "Decision 1 still genuinely
+  open". What `DECISIONS-PENDING` still lacks is the recorded evidence; this paragraph is it.
+- `hybrid_dense_weight` on Waymo: **decided 0.7** by the operator on 2026-08-24 (§3b "Operator tuning
+  decision"), "until another corpus is benchmarked". RV-6 B.3 row 5 / punch-list row 16(a) call it still
+  undecided; it is decided, and the other four corpora deliberately stay at 0.5.
+- Fabrication/groundedness rubric: groundedness rubric **SIGNED OFF 2026-08-24**
+  (`docs/eval-rubrics/groundedness-rubric.md:3`); fabrication rubric **SIGNED OFF 2026-08-25 with
+  amendments F-A1..F-A3** (`docs/eval-rubrics/fabrication-audit-rubric.md:12`, `6d0b32b`). RV-6 B.3 row 6 is
+  wrong on both counts. OpenEvidence head-to-head: operator decision D "out of scope this programme" (§3b).
+- Off-topic papers: **kept**, labelled (§1.2).
 
 ## 7. Doc map
 
@@ -467,7 +656,7 @@ Every markdown file at repo root (`find . -maxdepth 2 -name '*.md'`) and under `
 | Doc | Class | Notes |
 |---|---|---|
 | `AGENTS.md` | AUTHORITATIVE | Entry-point index — start here. |
-| `CLAUDE.md` | AUTHORITATIVE | Same content as `AGENTS.md`, for Claude Code's auto-load. |
+| `CLAUDE.md` | AUTHORITATIVE | A five-line pointer to `AGENTS.md` (no second copy of the content), so Claude Code's auto-load finds the index. |
 | `CONTEXT.md` | AUTHORITATIVE | Vocabulary and V0-V3 phase definitions; wins any terminology dispute. |
 | `DATA-CONTRACTS.md` | AUTHORITATIVE | Frozen data shapes/schema/`Config` fields; wins any shape conflict. Current with T-DOC80/82 book fields as of 2026-08-05; does not yet describe `mcp_usage.db` or `contracts/author_orgs.py` (those aren't frozen contracts). |
 | `PRD.md` | AUTHORITATIVE | Vision + 18 settled ADRs. |
@@ -502,7 +691,7 @@ authored project docs — excluded from classification.
 | `docs/BACKLOG.md` | AUTHORITATIVE | The live work queue (D/T/B/O series) — see §6. |
 | `docs/AGENT-PROCEDURES.md` | AUTHORITATIVE | Onboarding checklist, per-PR/per-trigger doc obligations, periodic drift-correction procedure — read this, and this file, before your first commit. |
 | `docs/WAYMO-CORPUS-STATUS.md` | AUTHORITATIVE | Post-mortem + recovery runbook for the stalled v1 Waymo corpus attempt (17/1437 done, 810 stranded at `chunked`). Superseded as the forward-looking plan by `docs/superpowers/plans/2026-08-06-waymo-av-safety-corpus-expansion-v2.md`, but still the authoritative record of what actually happened and why. |
-| `docs/RUNBOOK.md` | AUTHORITATIVE | Operator bring-up after a reboot; dashboard token location; Tailscale access. |
+| `docs/RUNBOOK.md` | AUTHORITATIVE | Operator bring-up after a reboot; GPU-busy / CPU-only operation (OP-1); dashboard token location; Tailscale access; MCP client wiring; running a second corpus (the five registered corpora are tabulated in §1.1 of this file). |
 | `docs/GRAPHIFY-ROADMAP.md` | AUTHORITATIVE | T-G agent-tooling plan + outcome ledger; refresh procedure for the enriched graph. New. |
 | `docs/GRAPHIFY-SCIP-SPIKE.md` | REFERENCE | T-G13 spike verdict (SCIP precision upgrade feasibility). New. |
 | `docs/GRAPHIFY.md` | AUTHORITATIVE | Knowledge-graph dev-tooling setup/usage (not product scope). |
@@ -514,7 +703,7 @@ authored project docs — excluded from classification.
 | `docs/ROADMAP-AND-PRIORITIES-PLAIN-ENGLISH.md` | HISTORICAL | 2026-07-17 plain-English roadmap/reprioritization opinion piece; superseded as a status source by this doc. |
 | `docs/THE-DECISION-plain-english.md` | HISTORICAL | A single 2026-07-17 decision clarification, resolved. |
 | `docs/YOUR-USE-CASES-can-the-system-do-this.md` | HISTORICAL | 2026-07-17 capability Q&A snapshot; capabilities have moved on since. |
-| `docs/DECISIONS-PENDING-operator.md` | REFERENCE | 4 book-RAG decisions from 2026-07-29; Decisions 2-4 actioned (see its status banner for SHAs), Decision 1 (IDF reindex) still genuinely open — not fully historical. |
+| `docs/DECISIONS-PENDING-operator.md` | REFERENCE | 4 book-RAG decisions from 2026-07-29. Decisions 2 and 3 shipped; Decision 4 only partly (marker-regex repair shipped, title disambiguation never built — §6.2 #12); Decision 1 (IDF reindex) is **closed**: every collection already carries the IDF modifier (§1.1, §6.2). Its body line "Nothing here has been actioned" is stale. |
 | `docs/DECISION-book-rag-what-to-ship.md` | HISTORICAL | Book-RAG shipping decision, absorbed into `docs/BOOK-INTEGRATION-CLOSEOUT.md`. |
 | `docs/DECISION-t-doc62-duplicate-chunk-headers.md` | HISTORICAL | Decision record for the T-DOC62 fix (§4); superseded by the shipped fix. |
 | `docs/DESIGN-book-chapters-and-hierarchy.md` | HISTORICAL | Original book-hierarchy design; pressure-tested and partly falsified by Exp 1/3 (§5). |
@@ -527,12 +716,26 @@ authored project docs — excluded from classification.
 | `docs/PLAN-book-rag-experiments.md` | HISTORICAL | The experiment plan Exp 1-5 executed against (§5) — plan, now executed. |
 | `docs/RESEARCH-book-rag-established-methods.md` | REFERENCE | External literature pressure-testing the book design; background evidence. |
 | `docs/METHODS-books-and-chunk-quality.md` | REFERENCE | Living methods log for book/chunk-quality work; largely folded into `BOOK-INTEGRATION-CLOSEOUT.md`. |
-| `docs/eval-reports/*.md` | AUTHORITATIVE | Primary source for every book-RAG experiment verdict (§5) and several measurement claims (§1). |
+| `docs/eval-reports/*.md` | AUTHORITATIVE | Primary source for every book-RAG experiment verdict (§5) and measurement claim (§1). Specific 2026-11-10 reports are listed individually below. |
 | `docs/research/2026-08-25-agentic-rag-sota.md` | REFERENCE | Web-research SOTA survey (URLs cited): agentic/iterative RAG families + retrieval levers, ranked top-5 adoptable mapped to measured failure buckets F1–F7 (precision-95 programme R1). |
 | `docs/research/2026-08-25-confidence-qwen-sota.md` | REFERENCE | Web-research SOTA survey: answer-confidence mechanisms (top-3 ranked for a 5-level MCP surface; verbalized confidence rejected) + Qwen reasoning-model lineup and serving posture P0 (precision-95 programme R2). |
 | `docs/design-notes/2026-08-28-xc-member-citation-adoption.md` | REFERENCE | Adoption design note for member-block citation (Variant A recommended); rider-PR diff sketch awaiting T-F7 sign-off — no implementation dispatched (precision-95 programme QW-1). |
 | `docs/eval-reports/2026-08-26-precision95-metric-ratification.md` | DRAFT (awaiting operator sign-off) | Frozen metric definitions for the 0.95 push, quoted from B0 §2 verbatim; five-part qualifier rule; retired gates; two-arm statement. Unsigned = not a ratified gate (precision-95 programme P0-2). |
 | `docs/eval-reports/2026-08-27-multihop-gt-authoring-plan.md` | AUTHORITATIVE (plan) | Multi-hop GT authoring spec: W-A1..A5 sized by shown power arithmetic (~130 items, MDE ≈22–26 pts paired); regime checklist; ~300 graded pairs close B0 §4 anchor gap; execution = SB-2 behind GPU-freeze gate (P0-3). |
+| `docs/HANDOFF-2026-08-24.md` | HISTORICAL | OpenEvidence-programme handoff written at `main` `8e63cec`; its operator decisions were since made (§6.2 "Closed"). Banner added 2026-11-10. |
+| `docs/AGENT-OPERATIONS-LESSONS.md` | REFERENCE | Append-only log of what went wrong running agents on this repo (incident-first entries). Read before orchestrating multi-agent work. |
+| `docs/BOOTSTRAP-VARIANTS-CHEATSHEET.md`, `docs/RATE-INTERVALS-AND-PVALUES-TOOLKIT.md`, `docs/NELSON-RATE-RATIO-IMPLEMENTATION.md`, `docs/EVT-CONFLICT-CRASH-ESTIMATION-REPORT.md` | REFERENCE | Statistics learning references written for the Waymo safety-benchmarking material (2026-08-31 onward); tracked by `17b48ec`. Not system status. |
+| `docs/WAYMO-MISSING-DATA-METHODS-REPORT.md`, `docs/WAYMO-SAMPLING-METHODS-REPORT.md`, `docs/WAYMO-UNCERTAINTY-METHODS-REPORT.md`, `docs/WAYMO-SURVIVAL-ANALYSIS-REVIEW.md`, `docs/WAYMO-SAFETY-STACK-REPORT.md`, `docs/WAYMO-SAFETY-METHODS-INTERVIEW-BRIEF.md`, `docs/WAYMO-RESEARCH-MISSING.md` | REFERENCE | Corpus-grounded Waymo method reports and interview-preparation briefs, each citing verbatim passages from `waymo_av_safety` as of its own date; not re-verified against today's corpus. `WAYMO-RESEARCH-MISSING.md` is the 2026-08-23 audit of papers absent from the corpus. |
+| `docs/eval-rubrics/groundedness-rubric.md`, `docs/eval-rubrics/fabrication-audit-rubric.md` | AUTHORITATIVE | The signed-off baseline definitions of "grounded" (2026-08-24) and "fabricated" (2026-08-25, amended). The `*-rubric-review.md` files beside them are REFERENCE. |
+| `docs/eval-reports/2026-11-10-system-review.md` | AUTHORITATIVE | Adjudicated system review (RV-1..6): ranked work list S-01..S-26, wave map, operator questions F1-F8. Wins over its lane reports where they disagree. |
+| `docs/eval-reports/data/2026-11-10-system-review/RV-{1..6}-*.md` | REFERENCE | The six lane reports the review adjudicates; RV-6 carries the doc-drift punch list this pass applied. Some lane claims are corrected in §6.2 "Closed". |
+| `docs/eval-reports/2026-11-10-{standards,main-corpus,topic-focus}-benchmark-protocol.md` | AUTHORITATIVE | FROZEN pre-registered benchmark protocols (EV-5); changes only by dated addendum. Nothing run against them yet. |
+| `docs/eval-reports/2026-11-10-GPU-DAY-RUNBOOK.md` | AUTHORITATIVE | The first GPU session, jobs serialized cheapest-first with prerequisites and index effects (EV-5). |
+| `docs/eval-reports/2026-11-10-cq2-index-maintenance.md` | AUTHORITATIVE | Runbook for `app.resparse` / `app.set_payload_fields` and the CQ-1 deployment hazard; unrun, estimates only. |
+| `docs/eval-reports/2026-11-10-cq3-stub-chunks.md` | AUTHORITATIVE | Stub-chunk filter design and its pre-registered A/B (unrun; amend per review S-05). |
+| `docs/eval-reports/2026-11-10-topic-labels-audit.md` | AUTHORITATIVE | EV-2/EV-3: label audit (kappa 0.901) and `relevance_score` as a focus signal (AUROC 0.923). |
+| `docs/eval-reports/data/2026-11-10-*/` (`standards-gt`, `causal-books-gt`, `papers-passage-gt`, `topic-labels`, `offtopic-census`, `ligature-census`, `embed-truncation`, `dup-ref-census`, `FIXTURE-HASHES.json`) | REFERENCE | The ground-truth sets, labels and censuses with their scripts; `standards-gt/AUTHORING-PROTOCOL.md` is AUTHORITATIVE for how GT items are authored. Figures from them are restated in §1.2. |
+| `docs/superpowers/plans/2026-11-10-enhancement-programme.md` | REFERENCE (plan) | The forward plan for this programme; being written in parallel with EP-1 and **not present on this branch when this row was added** — check it exists before citing it. |
 | `docs/superpowers/plans/*.md`, `docs/superpowers/specs/*.md` | REFERENCE | Per-feature design/implementation plans (superpowers workflow artifacts); the newest, `2026-08-05-paper-author-org-tagging-design.md` and `2026-08-06-waymo-av-safety-corpus-expansion-v2.md`, are the only source for those two efforts' design (§3). The original `2026-08-05-waymo-corpus-expansion.md` is superseded by the v2 plan — kept for its own historical record of what v1 intended, per `docs/WAYMO-CORPUS-STATUS.md`. |
 
 ## 8. Preserved-but-unmerged work index
@@ -566,6 +769,12 @@ supersedes any earlier count, the repo has moved since any prior analysis.
   describes for the 147 already-deleted stale branches). `origin/worktree-paper-author-org-tagging`
   similarly duplicates all 12 author-org-tagging commits (§3) already on `main` under different SHAs.
   None of these three branches carry work that isn't already on `main`.
+
+## 3b. Shipped-work ledger, continued (2026-08-23 onward)
+
+*These sub-sections were appended after §8 without a heading of their own; they are §3 ledger
+entries and are headed here so the section numbering matches `docs/AGENT-PROCEDURES.md` §B. Entries below
+that predate 2026-11-10 are history and were not re-derived, except where a correction is stated inline.*
 
 ### Waymo-priority benchmark programme (shipped 2026-08-23)
 
@@ -741,9 +950,9 @@ Operator directive: no GPU work until lifted. Held at freeze: QW-2 confidence v0
 - **SB-2 first slice = W-A4** (partial-absent GT, two blind authors on branches `P95-SB2-WA4-authorA` / `P95-SB2-WA4-authorB`) — multi-hop ground-truth authoring.
 
 **Lanes deliberately NOT dispatched and why:**
-- **SB-1** (chunk-boundary mitigation) held because it requires a full re-embed/reindex that should not race QW-3 for the card.
-- **SB-3** (agentic loop) gated on SB-2's first adjudicated batch; proceeding docs-only until SB-2 delivers.
-- **SB-4** (Qwen3.8-27B pilot) needs a declared stop-TEI maintenance window since 15.4 GB of weights cannot co-reside with TEI; execution deferred to a dedicated card-off window.
+- **SB-1** (chunk-boundary mitigation) held because it requires a full re-embed/reindex that should not race QW-3 for the card. *(Outcome, verified 2026-11-10: dispatched 2026-08-28, verdict REJECT on both arms, merge `7b679f7`, `docs/eval-reports/2026-08-28-sb1-chunk-boundary.md` §3.7 — see the lane-outcomes table below.)*
+- **SB-3** (agentic loop) gated on SB-2's first adjudicated batch; proceeding docs-only until SB-2 delivers. *(Outcome, verified 2026-11-10: landed 2026-08-28 — arm (a) CRAG-style evaluator ADOPT-as-candidate, arm (b) decomposition REJECT; commits `8d7c478`..`901a108` on `main`; see the lane-outcomes table below. The 2026-08-28 ledger did not record it.)*
+- **SB-4** (Qwen3.8-27B pilot) needs a declared stop-TEI maintenance window since 15.4 GB of weights cannot co-reside with TEI; execution deferred to a dedicated card-off window. *(Verified 2026-11-10: no SB-4 commit or report exists — `git log --all --grep=SB-4` finds only ledger commits `54e1141`, `d8b95d7`, and `ls docs/eval-reports \| grep qwen38` is empty. A `qwen3.8:27b-mtp-q4_K_M` Ollama process is currently resident on the GPU (§1.3); whether it is this pilot is unknown.)*
 
 **Two items remain blocked on the operator, not on the GPU:**
 - P0-2 metric-ratification sign-off header (`docs/eval-reports/2026-08-26-precision95-metric-ratification.md` is still an unsigned DRAFT, so no headline 0.95 claim is ratifiable).
@@ -767,19 +976,42 @@ Benchmark-first groundwork for the 0.95 push, executed under the operator GPU-fr
 
 ### Precision-95 programme lane outcomes (2026-08-28)
 
-Lanes dispatched on freeze lift (2026-08-27) have landed their primary work. SB-1 remains in-flight; two operator-gated items remain blocked.
+Lanes dispatched on freeze lift (2026-08-27) landed their primary work by 2026-08-28. *Corrected 2026-11-10 (this sentence used to say "SB-1 remains in-flight"): SB-1 landed as REJECT (`7b679f7`) and SB-3 landed (arm (a) ADOPT-as-candidate, arm (b) REJECT, `901a108`); two operator-gated items remain blocked and are still unsigned as of 2026-11-10.*
 
 | lane | outcome | notes |
 |---|---|---|
 | **QW-2** — MiniCheck-FT5 confidence surface v0 | **LANDED** — support score is real separator, ~500× wider margin than retrieval score, but heavily overlapping distributions block threshold fitting | Per-arm answer-aggregate means (never blended): primary-prompt answerable n=68 mean 0.747 median 0.822 range [0.044, 0.988]; primary-prompt absent n=16 mean 0.579 median 0.682 range [0.027, 0.956]; affordance-prompt answerable n=68 mean 0.794 median 0.884 range [0.315, 0.988]; affordance-prompt absent n=16 mean 0.667 median 0.737 range [0.027, 0.951]. Separation confirmed real but 15/16 absent items fall inside the answerable arm's range. Retrieval score gap only 0.00026 (verified against `docs/eval-reports/2026-08-25-nb-d3-abstention-census.md`'s ver84-fused row), so support score's gap is roughly 500× wider. `Q-GTA-037` ("905 nm" misattribution) scored lowest of all 16 absent items at 0.0268, contradicting prior expectation; ablation stripping "Waymo" raised score to ~0.98, showing sensitivity to subject substitution — same failure mode appears in `Q-GTA-040` (invented "Swiss Re underwrites Waymo" scores 0.9388 against passage discussing both entities separately). Affordance arm's absent mean rose (0.579→0.667) while producing more correct refusals — refusal sentences are themselves scored. **Viable as one candidate signal for IN-2, not alone; conformal fit should use sentence-level scores rather than per-answer means.** Branch `NB-QW2-confidence-v0`, merge `fd05dbf`; report `docs/eval-reports/2026-08-28-confidence-v0.md` |
 | **QW-3** — reranker-seat A/B | **VERDICT: REJECT** Qwen3-Reranker-0.6B on block-P@1 | BGE baseline reproduced committed NB-D4 SAMPLE exactly to four decimals. Both fixtures, k=10, sparse-mode fused, collection `waymo_av_safety`: block-P@1 collapses 24.0× on gt_wmr (48/65 → 2/65 = 0.7385 → 0.0308) and 11.0× on ver84 (22/60 → 2/60 = 0.3667 → 0.0333). Ver84's 0.0333 sits below no-rerank floor of 0.1667 — adopting would regress against disabling reranking. Full metrics table in report. R@10 MRR block-P@1 comparison: gt_wmr: BGE 0.9714/0.9393/0.7385 vs Qwen 0.9429/0.5968/0.0308; ver84: BGE 0.9559/0.8335/0.3667 vs Qwen 0.8971/0.5429/0.0333. Three hypotheses tested before measurement trusted — dtype fp16→bf16 (ruled out), wrong prompt template (falsified by token inspection), abstract/summary-block preference (~12% same-paper-and-summary against 61–64% promoting a different paper). Hosting: in-process via `transformers` in bfloat16, structurally incompatible with TEI classification-head route; swap via monkeypatch in harness. R1 survey's vendor +8.8 MTEB-R claim did not reproduce on this corpus domain. Not attempted: Qwen3-Reranker 4B/8B, corpus-tuned task instruction, PyLate/GTE-ModernColBERT. Branch `P95-QW3-reranker-seat`, merge `825c57b`; report `docs/eval-reports/2026-08-28-qw3-reranker-seat.md` |
 | **SB-2 / W-A4** — partial-absent ground truth authoring | **LANDED** — 31 usable items across 22 distinct papers, max 4 per paper | Two blind authors (Author A: 21 items/19 papers, 1 killed on probe; Author B: 12 items/5 papers) → third-session cross-verification (Stages B/C/D). Adjudicated: 33 entries → 28 accepted, 3 accepted_with_correction, 2 rejected. Cross-verifier added sixth mechanical check (re-running lexical probes and diffing logged hit counts) — found **4 of 12 Set-B items carrying stale counts**. Main falsification: `Q-WA4-B-FINAL-001` claimed Los Angeles statistical-significance verdict absent, but `2312.12675:b118` states verbatim "The result in Los Angeles was not statistically significant due to low mileage"; probe logged 1 hit when true count is 6 of paper's 26 chunks. Second rejection: `Q-WA4-B-FINAL-006`, where `2312.13228:b66`'s power-analysis table supplies required-mileage value (3.5M miles) item claimed absent. Stage D self-test: three deliberate corruptions (word-swapped excerpt, wrong-but-real block_id, inflated denominator) — checker caught 3/3. Both authors' self-flagged doubts re-probed hard and confirmed. One item (`Q-WA4-A-014`) accepted with disclosure note for operator judgement — "absent" claim is arguably directly-stated zero in same gold block. **Incidental finding:** 12 of 12 Author B's cited passages sat 1–5 blocks downstream of anchor block, never in anchor itself — independent supporting evidence for X-C member-block citation's Variant A recommendation. Branches `P95-SB2-WA4-authorA` (merge `7191f8e`), `P95-SB2-WA4-authorB` (merge `336d78c`), `P95-SB2-WA4-crossverify` (merge `259b007`); data `docs/eval-reports/data/2026-08-28-wa4-gt/`; report `docs/eval-reports/data/2026-08-28-wa4-gt/crossverify/cross-verification-report.md`; checker `scripts/wa4_crossverify.py` |
+| **SB-1** — chunk-boundary mitigation | **VERDICT: REJECT (both arms)** — merge `7b679f7` (2026-08-28) | Neighbour smoothing is a flat null (reach vs distance mismatch); section-context embedding trades fixtures with zero boundary-class conversions; "no detectable effect, on both fixtures independently, never averaged." The ver84 MRR tie-break noise floor (~0.0074, below) is the instrument finding that survives. Report `docs/eval-reports/2026-08-28-sb1-chunk-boundary.md` §3.7 |
+| **SB-3** — agentic loop | **LANDED: arm (a) CRAG-style pre-generation evaluator ADOPT-as-candidate, never wired; arm (b) IRCoT/Self-Ask decomposition REJECT** — commits `8d7c478`..`901a108` on `main` (fast-forwarded, no merge commit) | (a) AUROC answerable-vs-absent 0.9411 on gt_wmr (95% CI [0.890, 0.992], n 70/12, 2.9% false abstention) and 0.8025 on ver84 (CI [0.696, 0.909], n 68/14, 20.6% false abstention): both clear the frozen 0.75 bar as point estimates; gt_wmr is established, ver84 is directional and not established. The evaluator exists only as the experiment `app/exp_agentic_loop_v0.py` — it is not in `app/serve.py`, `rag/retriever.py` or any serving path (grep, 2026-11-10) — and is not ready to ship uncalibrated. (b) Decomposition lowers recall@10/MRR on every measured slice on both fixtures, including the routed hard/multi-hop/negation stratum it targets, and adds zero coverage on the W-A4 fixture. Report `docs/eval-reports/2026-08-28-sb3-agentic-loop.md` §1, §2, §5 |
 
-### In-progress and blocked (2026-08-28)
+### Precision-95 plan ticket status (`docs/superpowers/plans/2026-08-25-precision95-programme.md`, verified 2026-11-10)
+
+The plan's 12 checkboxes are all still unchecked; actual status, each merge SHA confirmed an ancestor of
+the integration branch with `git merge-base --is-ancestor`:
+
+| ticket | actual status | evidence |
+|---|---|---|
+| P0-1 NUMCTX merge | DONE | `cc6a0c3` |
+| P0-2 metric ratification | DRAFT, operator signature blank | `ee11e85`; `docs/eval-reports/2026-08-26-precision95-metric-ratification.md:3-9` |
+| P0-3 multi-hop GT plan | DONE | `15f678d` |
+| QW-1 citation adoption note | note DONE; adoption BLOCKED on T-F7 | `cff3b53` |
+| QW-2 confidence v0 | LANDED (real separator, heavy overlap, no threshold) | `fd05dbf` |
+| QW-3 reranker seat | REJECT | `825c57b` |
+| SB-1 chunk boundary | REJECT both arms | `7b679f7` |
+| SB-2 multi-hop GT | first slice W-A4 LANDED (31 items / 22 papers); W-A1, W-A2, W-A3, W-A5 not authored | `7191f8e`, `336d78c`, `259b007`; plan `docs/eval-reports/2026-08-27-multihop-gt-authoring-plan.md` (~130 items) |
+| SB-3 agentic loop | LANDED: arm (a) ADOPT-as-candidate (not wired), arm (b) REJECT | `8d7c478`..`901a108`; report §5 |
+| SB-4 Qwen3.8-27B pilot | NOT STARTED as a recorded ticket (no commit, no report) | `git log --all --grep=SB-4` finds only ledger commits |
+| IN-1 integration | NOT STARTED; gated on P0-2 signature | no implementation commit (`git log --all --grep=IN-1` hits only SB-3 and ledger commits) |
+| IN-2 calibration | NOT STARTED; gated on anchors | same |
+
+### In-progress and blocked (2026-08-28; re-checked 2026-11-10)
+
+*SB-1 was listed here as IN PROGRESS; it is merged as REJECT (row moved to the lane-outcomes table). Its instrument finding, kept for every future ticket: **ver84 MRR carries a tie-break noise floor of ~0.0074** — two identical-configuration BGE baseline runs differed on exactly one item of 82 (`Q-WAYB-026`, two near-equal papers swapped ranks 1 and 2, 0.5/68 = 0.00735 MRR); R@10 and block-P@1 were bit-identical, so a ver84 MRR movement below ~0.0074 is indistinguishable from one tied pair flipping. Both operator-gated rows below are still unsigned on 2026-11-10.*
 
 | lane / item | status | notes |
 |---|---|---|
-| **SB-1** — chunk-boundary measurement | **IN PROGRESS** — not merged, branch `P95-SB1-chunk-boundary` still running | Measurement instrument finding already solid and worth ledgering: **ver84 MRR carries a tie-break noise floor of ~0.0074.** Two independent BGE baseline runs of identical configuration differed on exactly one item of 82 — `Q-WAYB-026`, where two near-equally-scored papers swapped ranks 1 and 2 (reciprocal rank 1/1→1/2, i.e. 0.5/68 = 0.00735 MRR gap). R@10 and block-P@1 were bit-identical across both runs. **Consequence for every future ticket: a ver84 MRR movement below ~0.0074 is indistinguishable from one tied pair flipping; R@10 and block-P@1 are the stable metrics on this corpus.** |
-| **P0-2** — metric-ratification sign-off | **BLOCKED** — on operator signature | `docs/eval-reports/2026-08-26-precision95-metric-ratification.md` remains DRAFT; no headline 0.95 claim is ratifiable until signed. Gates IN-1. |
-| **T-F7** — X-C member-block citation adoption | **BLOCKED** — on operator sign-off | Batched rider PR for Variant A wiring. Measured effect: gt_wmr passage hit-rate 93.9%→95.5%, monotone, zero-risk by construction. Now additionally supported by the 12/12 anchor-offset finding from SB-2/W-A4 above. Design note: `docs/design-notes/2026-08-28-xc-member-citation-adoption.md`. |
+| **P0-2** — metric-ratification sign-off | **BLOCKED** — on operator signature (still unsigned 2026-11-10: `Signed: ___` at `docs/eval-reports/2026-08-26-precision95-metric-ratification.md:3-9`) | `docs/eval-reports/2026-08-26-precision95-metric-ratification.md` remains DRAFT; no headline 0.95 claim is ratifiable until signed. Gates IN-1. |
+| **T-F7** — X-C member-block citation adoption | **BLOCKED** — on operator sign-off (still pending 2026-11-10; foundation-protected paths: `contracts/`, DATA-CONTRACTS §M7) | Batched rider PR for Variant A wiring. Measured effect: gt_wmr passage hit-rate 93.9%→95.5%, monotone, zero-risk by construction. Now additionally supported by the 12/12 anchor-offset finding from SB-2/W-A4 above. Design note: `docs/design-notes/2026-08-28-xc-member-citation-adoption.md`. |
 
