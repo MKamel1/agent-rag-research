@@ -84,8 +84,10 @@ class McpServer:
         needed and can check this tool's results (each carries its own `paper_id`) against that
         expectation instead of trusting an unscoped search alone. This project's agent-as-reasoner
         design (CONTEXT.md, PRD.md §11A) puts that sequencing decision on the calling agent; this
-        server never auto-rewrites or narrows a query on its own. Postcondition: on an empty
-        corpus/no hits, `results == []` — empty is a valid answer, not an error.
+        server never auto-rewrites or narrows a query on its own. Precondition: a `filters.paper_id`
+        must be a stored paper id, else `ContractError` (same as `get_paper`) — an unknown id is a
+        typo, not "this paper says nothing". Stored ids carry no `arxiv:` prefix. Postcondition:
+        on an empty corpus/no hits, `results == []` — empty is a valid answer, not an error.
 
         `k=None` (a caller that omits it entirely) resolves to `self._default_k` (`Config.top_k`,
         wired via `app/assembly.py::build_mcp_server`); an explicit `k` always overrides it.
@@ -147,7 +149,9 @@ class McpServer:
         it ranks whole papers by their summary — cheaply, before any chunk-level retrieval or
         reranking runs — so you can confirm which paper(s) actually matter, or find that a
         confirmed match's `get_paper` summary already answers the question without needing a
-        broader `semantic_search` chunk search at all. Postcondition: on no hits, `results == []`.
+        broader `semantic_search` chunk search at all. Precondition: a `filters.paper_id` must be
+        a stored paper id, else `ContractError` (see `semantic_search`). Postcondition: on no
+        hits, `results == []`.
 
         `k=None` resolves to `self._default_k`, same as `semantic_search` — see its docstring
         for the `[_MIN_K, _MAX_K]` clamp (OG-48#5) and why there is no further cap on how many
