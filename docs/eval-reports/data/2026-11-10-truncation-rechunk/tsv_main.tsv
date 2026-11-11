@@ -1,0 +1,1491 @@
+paper_id	title	truncated_chunks	total_chunks	truncated_chars	paper_chars	est_new_chunks_lo	est_new_chunks_hi
+2403.02467	Applied Causal Inference Powered by ML and AI	113	370	1607963	2593488	2162	2351
+2607.07980	3100 Opinions on Code Review in an AI World: Building Causal Theory from Practitioner Discourse	1	37	709987	794523	663	685
+2405.03579	Some Statistical and Data Challenges When Building Early-Stage Digital Experimentation and Measurement Capabilities	44	145	574484	1078098	899	972
+1208.4360	An XMM-Newton Survey of the Soft X-ray Background. II. An All-Sky Catalog of Diffuse O VII and O VIII Emission Intensities	2	40	485170	626050	522	541
+2303.10112	Causal Discovery from Temporal Data: An Overview and New Perspectives	21	40	282061	360999	301	320
+2005.14409	A Causal Machine Learning Framework for Predicting Preventable Hospital Readmissions	13	24	218042	257510	215	228
+2002.02770	A Survey on Causal Inference	15	37	216682	296964	248	267
+2602.07915	CausalCompass: Evaluating the Robustness of Time-Series Causal Discovery in Misspecified Scenarios	2	49	207268	293933	245	269
+2604.00504	Conformal Inference for Experimental Attrition in Social Science Research	14	57	206844	338959	283	315
+2511.05424	Investigating the imprints of tidal features on simulated galaxy outskirts in LSST-like mock observations	14	38	191247	292521	244	264
+2606.24415	Novel Triple-Based Problems for the Construction of Phylogenetic Networks via Least Common Ancestors	16	45	186330	357582	298	323
+2601.07668	The Role of Confounders and Linearity in Ecological Inference: A Reassessment	14	42	185905	257463	215	237
+2606.13393	Direct detection of cool molecular gas in a star-forming galaxy at $z=7.31$	15	32	184360	255692	214	229
+2505.07323	Causal mediation analysis with one or multiple mediators: a comparative study	19	62	183239	286969	240	274
+2201.13094	Designing Universal Causal Deep Learning Models: The Geometric (Hyper)Transformer	16	50	182164	373468	312	336
+2108.10890	Hardness of ionizing radiation fields in MaNGA star-forming galaxies	14	30	170572	213972	179	194
+2607.09637	Network Analysis with Parametric NetKAT	14	34	170065	243280	203	221
+2306.10590	Assumption-lean falsification tests of rate double-robustness of double-machine-learning estimators	16	65	169823	430234	359	392
+2607.07813	Scaling Relations for Binary Black Hole Merger Times from Cosmological Initial Conditions	12	49	164817	280804	235	257
+2406.00827	Comparing Experimental and Nonexperimental Methods: What Lessons Have We Learned Four Decades After LaLonde (1986)?	12	24	163174	212256	177	188
+2002.06060	Causality in cognitive neuroscience: concepts, challenges, and distributional robustness	12	25	162167	212480	178	192
+2505.16532	Causal-Invariant Cross-Domain Out-of-Distribution Recommendation	11	35	161956	232667	194	213
+2007.12769	A unified survey of treatment effect heterogeneity modeling and uplift modeling	11	30	161609	259925	217	233
+2606.10322	Game-Theoretic Multi-Agent Control for Robust Contextual Reasoning in LLMs	12	43	159814	314553	263	283
+2607.05510	Constraints on the population level distribution of nearby Dark Matter halo shapes with extragalactic streams	12	24	158494	186322	156	166
+2410.23322	From Average Effects to Targeted Assignment: A Causal Machine Learning Analysis of Swiss Active Labor Market Policies	5	42	156580	257668	215	241
+2408.14604	Co-factor analysis of citation networks	6	48	155199	249979	209	236
+2607.05494	Uncertainty-Aware Deep Learning for the Ly$α$ Forest: CNN-Based Absorber Detection and Characterization	10	24	155088	207598	173	188
+2410.14127	Estimating the Causal Effects of T Cell Receptors	12	62	153686	342952	286	317
+2407.11336	Redistricting Reforms Reduce Gerrymandering by Constraining Partisan Actors	5	74	147365	310077	259	297
+2204.05793	Coarse Personalization	11	46	147040	302851	253	276
+2507.10140	The Effects of Flipped Classrooms in Higher Education: A Causal Machine Learning Analysis	8	22	141670	184266	154	166
+2405.10198	Comprehensive Causal Machine Learning	2	73	140495	355956	297	336
+2606.08497	Explaining Black-Box Language Models: Learning to Optimize Linguistically-Structured Word Subsets	10	45	138326	252119	211	233
+2510.18719	Causally Perturbed Fairness Testing	9	43	136776	244124	204	230
+2606.23191	Modelling the diffuse continuum emission: the NLS1 Mrk 110	11	42	135813	255289	213	237
+2607.10905	A Beta-Based Heteroskedasticity-Consistent Covariance Matrix Estimator	10	18	135519	163824	137	145
+2606.25089	The Multi-phase HI of the Milky Way and Nearby Galaxies	10	31	133956	227991	190	206
+2606.09485	Quantifying isochrone-based age uncertainties for rapidly rotating A-type stars	11	42	132618	242271	202	224
+2012.00370	Evaluating (weighted) dynamic treatment effects by double machine learning	1	46	132613	286519	239	264
+2208.02412	Difference-in-Differences with a Misclassified Treatment	9	37	130676	256159	214	234
+2606.22728	When Confidence Takes the Wrong Path: Diagnosing Retrieval-State Lock-In in RAG	9	77	124942	340621	284	326
+2606.07402	M$^3$Exam: Benchmarking Multimodal Memory for Realistic User-Agent Interactions	9	40	124459	219622	184	204
+2510.22809	A Theory of the Mechanics of Information: Generalization Through Measurement of Uncertainty (Learning is Measuring)	10	95	122776	341961	285	337
+2606.15023	Multiscale Hypersonic Boundary Layer Reconstruction via Spectral Binning and Subdomain-wise Conditional Diffusion	8	24	122695	183158	153	165
+2506.11960	Evaluating Program Sequences with Double Machine Learning: An Application to Labor Market Policies	3	54	122075	292993	245	276
+2601.18801	Design-Robust Event-Study Estimation under Staggered Adoption Diagnostics, Sensitivity, and Orthogonalisation	10	68	122020	364312	304	339
+2504.14530	Causality for Natural Language Processing	9	274	120422	944292	787	934
+2010.09911	Causal Network Motifs: Identifying Heterogeneous Spillover Effects in A/B Tests	8	14	114937	127787	107	113
+2606.23780	Signatures of $^{56}$Ni Mixing and Neutron-rich Ejecta in Supernovae	9	25	114736	181316	152	166
+2601.12117	Offline Policy Learning with Weight Clipping and Heaviside Composite Optimization	10	66	114299	343049	286	322
+2212.07379	The finite sample performance of instrumental variable-based estimators of the Local Average Treatment Effect when controlling for covariates	2	25	113854	186515	156	168
+2607.07188	Mixing efficiency of trans-model Markov chain Monte Carlo algorithms with applications in Bayesian phylogenetics	10	44	113194	262635	219	238
+2606.12536	Getting to know the Stellar Clusters in NGC 1569: Bayesian inference of stellar cluster properties in a dwarf starburst galaxy	9	35	112899	188728	158	179
+2601.16715	Dynamic Expert-Guided Model Averaging for Causal Discovery	3	49	112811	173148	145	176
+2606.23926	Detection of relativistic orbital deformation from improved timing of PSR J1757$-$1854	8	25	112231	174288	146	157
+2112.06833	Beyond Ads: Sequential Decision-Making Algorithms in Law and Public Policy	9	22	111137	153113	128	137
+2606.26613	EcoTable: Cost-effective Table Integration in Data Lakes for Natural Language Queries	9	45	109559	225802	189	213
+2203.10002	A Comparison of Different Methods to Adjust Survival Curves for Confounders	2	36	109355	175821	147	166
+2605.20003	Estimating treatment duration effects via clone-censor-weight: a breast cancer case study	9	40	107243	229547	192	212
+2208.00114	Outcome Adaptive Propensity Score Methods for Handling Censoring and High-Dimensionality: Application to Insurance Claims	1	28	105676	177395	148	164
+2302.09540	Upvotes? Downvotes? No Votes? Understanding the relationship between reaction mechanisms and political discourse on Reddit	7	46	104313	238829	200	226
+2606.22432	Tracing Large-scale Structure with the MeerKLASS On-the-Fly Survey: Angular Clustering of Radio Sources at 816 MHz	8	31	102363	192112	161	174
+2310.20468	An Introduction to Causal Inference Methods for Observational Human-Robot Interaction Research	7	35	100909	201479	168	189
+2604.17843	Learning from AVA: Early Lessons from a Curated and Trustworthy Generative AI for Policy and Development Research	8	72	98973	297036	248	290
+2009.02841	Fairness in Risk Assessment Instruments: Post-Processing to Achieve Counterfactual Equalized Odds	9	42	98939	211185	176	198
+2607.06491	A parameterised approach to disequilibrium retrievals in the JWST era: Application to NIRCam observations of HD 189733b	7	18	98589	127364	107	116
+2212.05874	Whole Brain Network Dynamics of Epileptic Seizures at Single Cell Resolution	8	112	97443	549602	459	513
+2607.09241	Coherence does not always imply causality in wall-bounded turbulence	6	19	96837	149410	125	134
+2304.04037	Benign Overfitting of Non-Sparse High-Dimensional Linear Regression with Correlated Noise	8	59	96250	401210	335	364
+1710.10139	INTEGRAL/SPI $γ$-ray line spectroscopy	1	20	94546	164101	137	147
+2606.10648	Star-formation variability on the star-forming main sequence during the Epoch of Reionization	7	23	93833	127655	107	118
+2607.10983	Fast(er)PM and Moving Mesh: JAX-native Geometric Multigrid Methods	7	45	93616	216916	181	204
+2507.19596	Sequential Decision Problems with Missing Feedback	8	69	90932	323272	270	308
+2504.17166	Causal rule ensemble approach for multi-arm data	2	36	90248	201675	169	188
+2510.08438	Estimands and doubly robust estimation for cluster-randomized trials with survival outcomes	2	38	89823	214876	180	200
+2004.14800	Methods for Population Adjustment with Limited Access to Individual Patient Data: A Review and Simulation Study	2	52	89322	225827	189	215
+2404.04707	Breaking New Ground, Reinforcing Old Gaps: Gender Disparities in Access to Emerging Research Frontiers	5	34	87201	187492	157	177
+2104.04601	The Effect of Sport in Online Dating: Evidence from Causal Machine Learning	2	33	86312	176606	148	165
+2605.24358	Treatment Effect Estimation with Differentiated Networked Effect on Graph Data	7	53	86130	243750	204	230
+2209.10339	Structural mean models for instrumented difference-in-differences	8	36	85880	186871	156	177
+2212.01403	Properties and observables of massive galaxies in self-interacting dark matter cosmologies	6	17	85668	123534	103	112
+1101.2185	Luminosity Determination in pp Collisions at sqrt(s)=7 TeV Using the ATLAS Detector at the LHC	5	52	85497	197584	165	194
+2302.05260	Policy Learning with Rare Outcomes	3	34	84964	176256	147	166
+1810.13237	Machine Learning Estimation of Heterogeneous Causal Effects: Empirical Monte Carlo Evidence	9	64	84807	217492	182	214
+2511.00748	Finding Non-Redundant Simpson's Paradox from Multidimensional Data	7	47	84382	256503	214	237
+2412.14497	Disentangled Graph Autoencoder for Treatment Effect Estimation	7	22	83794	144560	121	133
+2012.12908	Measuring the topology of reionization with Betti numbers	6	33	82511	181110	151	166
+2602.03187	Causal structures of turbulent skin-friction drag in wall-bounded turbulent flows	6	21	82013	127181	106	117
+2607.07068	Unveiling the Milky Way with a Gaia DR3 census of OB-type stars within 2 kpc. I. Tracing local Galactic structure, massive star-forming regions and core-collapse supernova progenitors	6	48	81909	219999	184	209
+2203.17118	Doubly-Robust Estimation for Correcting Position-Bias in Click Feedback for Unbiased Learning to Rank	8	46	81900	227367	190	213
+2606.20510	Efficient and Sound Probabilistic Verification for AI Agents	7	28	81339	170451	143	155
+2606.01539	Scalable Counterfactual Risk Estimation for Rare Events in Longitudinal Data	7	24	80797	128659	108	121
+2606.22490	Bayesian Model Pursuit and Near-Oracle Sparse Signal Discovery Under Dependence	6	45	80611	218227	182	205
+2003.03789	Influence of Initialization on the Performance of Metaheuristic Optimizers	4	36	80414	144797	121	142
+2607.11086	Rethinking MCP Security: A Large-Scale Study of Runtime MCP Servers and Security Scanner Reliability	5	41	80231	195339	163	183
+2606.20419	Spectral Query-Key Product Weight Steering for Training-Free VLM Hallucination Mitigation	5	46	79815	185194	155	175
+2606.09526	When Types Intersect and Effects Get Handled	6	88	78630	526156	439	482
+2202.12339	Crises and Political Polarization: Towards a Better Understanding of the Timing and Impact of Shocks and Media	9	45	78529	204606	171	196
+2306.02822	Discovering Dynamic Causal Space for DAG Structure Learning	6	22	78345	125975	105	119
+2607.05708	Akashic: A Low-Overhead LLM Inference Service with MemAttention	6	22	78296	128551	108	120
+2312.07610	Interpretational errors in statistical causal inference	3	42	76658	185630	155	177
+2403.02692	Uplift Modeling for Target User Attacks on Recommender Systems	6	38	76610	175484	147	168
+2606.17165	Statistical Foundations of LLM-based A/B Testing: A Surrogacy Framework for Human Causal Inference	6	30	76597	170210	142	156
+2505.06502	PC-SRGAN: Physically Consistent Super-Resolution Generative Adversarial Network for General Transient Simulations	5	20	76593	135006	113	122
+2401.01253	Deplatforming Norm-Violating Influencers on Social Media Reduces Overall Online Attention Toward Them	5	14	76058	116698	98	105
+2602.18762	Bounds and Identification of Joint Probabilities of Potential Outcomes and Observed Variables under Monotonicity Assumptions	1	47	75975	219955	184	209
+2509.10370	The Language of Approval: Identifying the Drivers of Positive Feedback Online	6	47	75911	232236	194	216
+2606.05006	A Measurement of the Thermal and Ionization State of the IGM at $z < 0.5$	6	29	75279	178074	149	165
+1702.04690	Simple rules for complex decisions	7	17	74318	110502	93	101
+2508.09265	Over-Squashing in GNNs and Causal Inference of Rewiring Strategies	5	23	74296	145404	122	133
+2109.02444	Top-N Recommendation with Counterfactual User Preference Simulation	7	26	74263	120886	101	115
+2405.15242	Causal machine learning methods and use of cross-fitting in settings with high-dimensional confounding	3	49	74208	152246	127	154
+2208.06746	Contrastive Counterfactual Learning for Causality-aware Interpretable Recommender Systems	7	21	74023	100046	84	96
+2606.13740	Efficient On-Device Diffusion LLM Inference with Mobile NPU	6	24	73994	130923	110	120
+2010.07343	Causal Multi-Level Fairness	5	21	73411	129862	109	120
+2503.14492	Cosmos-Transfer1: Conditional World Generation with Adaptive Multimodal Control	6	24	72746	126946	106	121
+2607.27867	Orca: Neural Operators for Causal Reasoning in Continuous Time	6	15	72560	104098	87	94
+2606.08372	SoK: Reconstruction Attacks on Synthetic Tabular Data (Insights from Winning the NIST CRC)	6	60	72302	235846	197	231
+2606.24970	Don't Go Breaking My LLM: The Impact of Pruning Attention Layers on Explanation Faithfulness and Confidence Calibration	2	29	71356	128077	107	122
+2606.23917	Trustworthy Image Authentication using Forensic Knowledge Graphs	1	58	71340	170765	143	172
+2105.07959	Choice Set Confounding in Discrete Choice	6	27	70912	131335	110	124
+2606.15755	A Multiplex Network Hawkes Model for Systemic Risk Measurement	6	55	70393	199711	167	195
+2505.05670	Estimation and Inference in Boundary Discontinuity Designs: Location-Based Methods	6	166	68447	619400	517	598
+2409.06593	Advancing Causal Inference: A Nonparametric Approach to ATE and CATE Estimation with Continuous Treatments	8	28	67216	122234	102	120
+2412.17717	Fast Causal Discovery by Approximate Kernel-based Generalized Score Functions with Linear Computational Complexity	6	31	67073	156443	131	147
+2607.07765	Sub-Torque-Balance Upper Limits on Continuous Gravitational Waves from Scorpius X-1	1	18	66695	128478	108	116
+2606.27952	Robust estimation of occupation probabilities for coarsened multistate processes	6	55	65463	225466	188	217
+2606.17540	TaFD: Threat-Aware Frequency Decoupling for Adversarial Robustness against Heterogeneous Attacks	5	28	65451	151202	127	140
+2603.03805	Relational In-Context Learning via Synthetic Pre-training with Structural Prior	2	66	64985	191669	160	196
+2606.13776	Dynamo Simulations Confirm Predominantly Toroidal Fields in Near-Core Region of an Intermediate-Mass Star	5	12	64908	84081	71	78
+2504.14937	Causal DAG Summarization (Full Version)	5	38	64800	219530	183	205
+2210.14080	Learning Individual Treatment Effects under Heterogeneous Interference in Networks	5	18	64522	121187	101	112
+2507.17191	Quotas for scholarship recipients: an efficient race-neutral alternative to affirmative action?	4	99	64477	236553	198	256
+2509.06806	MachineLearningLM: Scaling Many-shot In-context Learning via Continued Pretraining	3	36	64198	129755	109	126
+2106.10141	Active labour market policies for the long-term unemployed: New evidence from causal machine learning	1	29	64194	149402	125	140
+2607.06202	UBEP: Re-architecting Expert Parallelism Communication Library for Production Superpods	4	34	63934	168980	141	159
+2407.05001	Treatment effect estimation under covariate-adaptive randomization with heavy-tailed outcomes	3	62	63324	280308	234	266
+2502.13731	Robust Counterfactual Inference in Markov Decision Processes	6	80	63274	445835	372	415
+2102.11545	Accelerating Recursive Partition-Based Causal Structure Learning	5	16	62717	102009	86	94
+2302.05052	Debiasing Recommendation by Learning Identifiable Latent Confounders	5	27	62197	136587	114	127
+2601.06359	Long-Term Causal Inference with Many Noisy Proxies	5	19	62175	109183	91	103
+2606.07923	Larch: Learned Query Optimization for Semantic Predicates	4	25	61668	146180	122	136
+2601.15479	Benchmarking LLMs for Pairwise Causal Discovery in Biomedical and Multi-Domain Contexts	1	58	61426	134045	112	150
+2407.06038	Comparing Causal Inference Methods for Point Exposures with Missing Confounders: A Simulation Study	3	37	61239	135798	114	135
+2510.22953	Manifold Approximation leads to Robust Kernel Alignment	2	55	61195	121354	102	135
+2209.03744	Modified Causal Forest	4	49	60208	233393	195	224
+2606.27114	Cross-Head Attention Uplift Network with Inverse Propensity Score under Unobserved Confounding	5	27	60061	122367	102	116
+2307.08232	Learning for Counterfactual Fairness from Observational Data	5	31	59805	130303	109	126
+2311.18093	Shared Control Individuals in Health Policy Evaluations with Application to Medical Cannabis Laws	6	36	59730	188101	157	176
+2104.09107	Causal Program Dependence Analysis	5	27	59729	132175	111	124
+2606.23595	SPIRAL: Learning to Search and Aggregate	4	24	59170	144373	121	134
+2006.07756	Enabling Counterfactual Survival Analysis with Balanced Representations	5	30	58963	116859	98	113
+2204.01266	CIRS: Bursting Filter Bubbles by Counterfactual Interactive Recommender System	4	26	58768	150018	126	139
+2507.05995	PromiseTune: Unveiling Causally Promising and Explainable Configuration Tuning	5	37	58391	134089	112	133
+1905.11386	Large Sample Properties of Matching for Balance	5	29	58206	168514	141	158
+2504.08301	Enhanced Marginal Sensitivity Model and Bounds	2	66	57724	279049	233	271
+2501.09546	Bacterial proliferation pattern formation	5	30	57588	139165	116	132
+2605.02050	Principles and Guidelines for Randomized Controlled Trials in AI Evaluation	2	22	57530	91190	76	88
+2106.13946	Outlier-Resistant Estimators for Average Treatment Effect in Causal Inference	5	49	57067	166775	139	166
+2107.00848	Systematic Evaluation of Causal Discovery in Visual Model Based Reinforcement Learning	4	46	56941	118547	99	124
+2606.05348	Incremental Computation for Efficient Programmable Inference in Probabilistic Programs	4	59	56890	337659	282	311
+2406.08311	Causality for Tabular Data Synthesis: A High-Order Structure Causal Benchmark Framework	5	37	56737	131154	110	129
+2606.23489	MeshFlow: Mesh Generation with Equivariant Flow Matching	5	34	56608	133969	112	132
+2009.07055	Causal Inference of General Treatment Effects using Neural Networks with A Diverging Number of Confounders	2	75	56426	333214	278	318
+2508.20259	Latent Variable Modeling for Robust Causal Effect Estimation	5	30	55940	142802	120	137
+2011.15007	RealCause: Realistic Causal Inference Benchmarking	3	32	55540	114078	96	115
+2104.12370	Weak Instrumental Variables: Limitations of Traditional 2SLS and Exploring Alternative Instrumental Variable Estimators	4	34	55531	138739	116	134
+2510.12503	The Robustness of Differentiable Causal Discovery in Misspecified Scenarios	1	52	55492	157346	132	159
+2606.26273	Equivariance and Augmentation for Bayesian Neural Networks	5	33	55307	182550	153	168
+1903.03690	Transporting stochastic direct and indirect effects to new populations	1	36	55209	149802	125	145
+2402.18496	Language Models Represent Beliefs of Self and Others	2	35	55043	131597	110	128
+2405.17139	Synergy and Diversity in CLIP: Enhancing Performance Through Adaptive Backbone Ensembling	3	31	54678	110407	93	108
+1901.07469	Estimating Buildings' Parameters over Time Including Prior Knowledge	4	18	54600	108316	91	97
+1812.09487	Modified Causal Forests for Estimating Heterogeneous Causal Effects	4	38	54578	163538	137	156
+2105.13881	CausCF: Causal Collaborative Filtering for RecommendationEffect Estimation	4	26	54300	119028	100	112
+2606.10807	The Thousand-Pulsar-Array programme on MeerKAT XIX: Single-pulse data analysis, nulling and pulse energy distributions	4	24	54297	117134	98	112
+2206.13908	A Catalog of Molecular Clumps and Cores with Infall Signatures	1	18	54241	109135	91	100
+1801.03147	"Robust-squared" Imputation Models Using BART	1	30	54204	125216	105	120
+2305.08741	Causal Data Integration	4	13	54017	82312	69	76
+2412.19507	Hybrid Local Causal Discovery	1	31	53693	129859	109	126
+2408.00490	Graph Representation Learning via Causal Diffusion for Out-of-Distribution Recommendation	4	36	53278	146428	123	142
+2408.09748	Revisiting Reciprocal Recommender Systems: Metrics, Formulation, and Method	4	24	53003	105480	88	101
+2112.10274	Estimating Causal Effects of Multi-Aspect Online Reviews with Multi-Modal Proxies	5	22	52804	104743	88	97
+2305.11465	Counterfactual Fairness Filter for Fair-Delay Multi-Robot Navigation	5	23	52697	109513	92	104
+2301.03354	Action needed to make carbon offsets from tropical forest conservation work for climate change mitigation	2	19	52528	92247	77	86
+2606.22615	Stochastic Volatility in Mean Models with Heavy Tails: A Fast Approximate Bayesian Inference Using Hidden Markov Models	5	41	52475	154741	129	146
+2602.14456	Traceable Latent Variable Discovery Based on Multi-Agent Collaboration	5	35	52320	134841	113	131
+2606.16392	Towards UAV Image Dehazing: A UAV Atmospheric Scattering Model, Benchmark, and Geometry-Aware Deep Unfolding Network	4	13	52186	86753	73	79
+2501.06534	Dynamic Causal Structure Discovery and Causal Effect Estimation	4	33	52143	136690	114	132
+2402.10870	Best of Three Worlds: Adaptive Experimentation for Digital Marketing in Practice	4	32	52131	163872	137	153
+2603.02678	Causal Discovery Should Embrace the Wisdom of the Crowd	4	31	51969	160419	134	152
+2606.09401	Benchmarking Empirical Privacy Protection for Adaptations of Large Language Models	4	50	51899	142322	119	146
+2402.01929	Sample, estimate, aggregate: A recipe for causal discovery foundation models	2	50	51514	180003	151	177
+2607.26599	Uncertainty-Guided LLM Semantic Augmentation for Heterogeneous Treatment Effect Estimation	5	45	50991	144186	121	144
+2606.08241	Biased sampling reduces particle settling velocities in turbidity currents	5	13	50819	71052	60	67
+2402.07425	Debiasing Recommendation with Personal Popularity	5	23	50674	102060	86	96
+2606.19364	Closing the Social-Semantic Gap: SPSD for Edge-Based Prompt Compression in Cloud LLM Inference	1	55	50472	102807	86	116
+2408.11623	End-to-End Cost-Effective Incentive Recommendation under Budget Constraint with Uplift Modeling	4	28	50156	115534	97	112
+2109.11271	Design-based theory for Lasso adjustment in randomized block experiments and rerandomized experiments	4	69	50128	267471	223	257
+2607.07467	SpaCellAgent: A Self-Evolving LLM-Based Multi-Agent Framework for Trajectory Analysis	4	44	49975	147420	123	149
+2607.27290	EvoCause: LLM-Guided Evolution of Causal Graphs for Root Cause Analysis	4	25	49594	117914	99	113
+2410.23155	QWO: Speeding Up Permutation-Based Causal Discovery in LiGAMs	5	25	49545	115202	97	108
+2312.11582	Shapley-PC: Constraint-based Causal Structure Learning with a Shapley Inspired Framework	2	31	49525	127660	107	125
+2606.08196	Beyond Additivity: Causal Discovery in Location-Scale Noise Models with Hidden Variables	5	48	49396	239226	200	225
+2604.22979	Towards Causally Interpretable Wi-Fi CSI-Based Human Activity Recognition with Discrete Latent Compression and LTL Rule Extraction	4	19	49380	106828	90	100
+2308.16000	Hypothesis-driven mediation analysis for compositional data: an application to gut microbiome	3	40	49376	161876	135	162
+2606.25689	Tracing the Star Formation History of the Universe through Thermal Free-Free Emission with the SKA	4	16	48967	101642	85	92
+2308.04011	Generalization bound for estimating causal effects from observational network data	4	30	48789	138598	116	134
+2605.05051	Impossibility of Distribution-Free Predictive Inference for Individual Treatment Effects	5	32	48277	134698	113	131
+2511.03424	The moment is here: a generalized class of estimators for fuzzy regression discontinuity designs	1	37	47902	185921	155	175
+1909.00066	Counterfactual Risk Assessments, Evaluation, and Fairness	3	34	47893	159534	133	152
+2510.22031	Differentiable Constraint-Based Causal Discovery	1	77	47878	235629	197	242
+2606.13571	Existence Precedes Value: Joint Modeling of Observational Existence and Evolving States in Time Series Forecasting	3	28	46940	99732	84	101
+2606.16135	SwiftCache: Efficient LLM Serving for Multi-turn Conversations with Heterogeneous KV Cache Sharing	3	25	46857	128174	107	120
+2112.05274	Handling missing data when estimating causal effects with Targeted Maximum Likelihood Estimation	2	26	46584	96519	81	95
+2604.02656	Transfer Learning for Meta-analysis Under Covariate Shift	1	45	46407	151769	127	147
+2606.15633	Formalizing and Mitigating Structural Distortion in LLM Attention for Graph Reasoning	4	39	46212	146578	123	144
+2407.01004	CURLS: Causal Rule Learning for Subgroups with Significant Treatment Effect	4	26	45983	122910	103	115
+2606.16080	Bayesian joint modelling using semiparametric accelerated failure time approaches	3	30	45917	113151	95	110
+2102.11724	Causal Mediation Analysis with Hidden Confounders	4	27	45899	111217	93	106
+2307.03315	Assisting Clinical Decisions for Scarcely Available Treatment via Disentangled Latent Representation	4	32	45899	133724	112	126
+2202.01562	Doubly Robust Off-Policy Evaluation for Ranking Policies under the Cascade Behavior Model	4	27	45582	108038	91	105
+2205.15462	Causal Explanations for Sequential Decision Making Under Uncertainty	4	25	45285	104675	88	101
+2006.13036	Vocational Training Programs and Youth Labor Market Outcomes: Evidence from Nepal	3	57	44952	147664	124	155
+2402.05336	Treatment Effect Estimation Amidst Dynamic Network Interference in Online Gaming Experiments	3	18	44885	87178	73	82
+2606.26686	Do Safety Guardrails Need to Reason? LeanGuard: A Fast and Light Approach for Robust Moderation	4	12	44743	78611	66	73
+2208.06707	Applying the Estimand and Target Trial frameworks to external control analyses using observational data: a case study in the solid tumor setting	1	18	44718	77675	65	76
+2201.06056	Debiased Recommendation with User Feature Balancing	4	25	44634	136429	114	128
+2104.12840	AdaGNN: Graph Neural Networks with Adaptive Frequency Response Filter	3	20	44610	111257	93	102
+2606.16058	Jeffreys-Type Penalized GEE for Correlated Binary Data with an Odds-Ratio Parameterization	1	46	44313	132775	111	137
+2606.12212	Mind your key: An Empirical Study of LLM API Credential Leakage in iOS Apps	3	24	44235	124005	104	115
+2407.01765	A General Framework for Design-Based Treatment Effect Estimation in Paired Cluster-Randomized Experiments	3	68	44210	215435	180	214
+2604.19186	Inductive Subgraphs as Shortcuts: Causal Disentanglement for Heterophilic Graph Learning	4	26	44032	122974	103	117
+2007.01754	Differentiable Causal Discovery from Interventional Data	3	63	44008	217498	182	214
+2106.02881	Graph Infomax Adversarial Learning for Treatment Effect Estimation with Networked Observational Data	3	21	43793	117985	99	111
+2209.05916	Workplace Breastfeeding Legislation and Female Labor Force Participation in the United States	1	31	43747	119531	100	118
+2607.08662	WebSwarm: Recursive Multi-Agent Orchestration for Deep-and-Wide Web Search	3	28	43642	117386	98	116
+2508.20798	Addressing Personalized Bias for Unbiased Learning to Rank	3	27	43516	115859	97	112
+2508.10061	Regression adjustment in covariate-adaptive randomized experiments with missing covariates	2	45	43427	192859	161	185
+2402.14781	Effective Bayesian Causal Inference via Structural Marginalisation and Autoregressive Orders	2	37	43247	137686	115	136
+2606.05146	Early Multiwavelength Observations of AT 2026fgk: The Luminous Afterglow to Sub-luminous GRB 260310A, Identified Independently of a Gamma-ray Trigger	3	55	43192	173369	145	172
+2604.02250	Smoothing the Landscape: Causal Structure Learning via Diffusion Denoising Objectives	2	37	42838	103538	87	108
+2001.05699	Combining Offline Causal Inference and Online Bandit Learning for Data Driven Decision	4	59	42641	294804	246	281
+2405.12387	Conformal Counterfactual Inference under Hidden Confounding	4	35	42547	188309	157	175
+2406.05855	Self-Distilled Disentangled Learning for Counterfactual Prediction	3	26	42543	109644	92	107
+2006.06053	Causal Feature Selection for Algorithmic Fairness	3	31	42464	129375	108	125
+2404.16047	From "AI" to Probabilistic Automation: How Does Anthropomorphization of Technical Systems Descriptions Influence Trust?	3	38	42162	118936	100	116
+2412.12401	Causally Consistent Normalizing Flow	4	30	42054	137984	115	129
+2006.08832	A Taxonomy and Review of Algorithms for Modeling and Predicting Human Driver Behavior	2	25	41768	104272	87	100
+2111.15233	Contrasting Identifying Assumptions of Average Causal Effects: Robustness and Semiparametric Efficiency	3	70	41622	249496	208	246
+2106.07587	Limited-Information Maximum Likelihood based Model Selection Procedures for Binary Outcomes	4	28	41398	93738	79	95
+2607.08672	Statistical inference of dynamical processes on networks	3	43	41042	127245	107	134
+2206.02722	Vicious Cycle of Poverty in Haor Region of Bangladesh- Impact of Formal and Informal Credits	2	125	41002	316334	264	333
+2605.03319	A joint longitudinal-survival framework for dynamic treatment regimen evaluation in sequential multiple assignment randomized trials	2	36	40631	152606	128	147
+2606.24937	The Hitchhiker's Guide to Agentic AI: From Foundations to Systems	2	1444	40546	1092029	911	1740
+2606.13989	Mask, Sample, Revise: A Revisable CTMC Inference Stack for Guided Discrete Flow Matching Text-to-Speech	4	11	40409	75812	64	70
+2311.04590	Rethinking Cross-Domain Sequential Recommendation under Open-World Assumptions	3	38	39972	154256	129	150
+2303.07329	Application of targeted maximum likelihood estimation in public health and epidemiological studies: a systematic review	1	27	39969	97480	82	97
+2005.03294	Expressing Accountability Patterns using Structural Causal Models	3	17	39823	122611	103	111
+2210.02836	Heterogeneous Treatment Effect Estimation for Observational Data using Model-based Forests	2	39	39525	134595	113	134
+1905.03297	Interpretable Subgroup Discovery in Treatment Effect Estimation with Application to Opioid Prescribing Guidelines	3	30	39309	122958	103	117
+2606.21633	HERALD: High-Throughput Block Diffusion LLM Serving via CPU-GPU Cooperative KV Cache Retrieval	3	26	39279	107629	90	103
+2607.14781	Curvature-Constrained and Constant-Speed Distributed Simultaneous Arrival Control for Multi-Robot Systems	3	15	39119	81409	68	75
+2606.10734	SPACR: Single-Pass Adaptive Training of Uncertainty-Aware Conformal Regressors	4	25	38995	79167	66	78
+2510.21333	CausalRec: A CausalBoost Attention Model for Sequential Recommendation	3	27	38959	111948	94	111
+2007.02852	Cross-Fitting and Averaging for Machine Learning Estimation of Heterogeneous Treatment Effects	3	25	38874	88538	74	89
+2502.06536	Sample-efficient Learning of Concepts with Theoretical Guarantees: from Data to Concepts without Interventions	2	43	38527	181097	151	175
+2605.15702	Re-examining and calibrating weighted survival analysis for causal inference	2	64	38452	292213	244	281
+2412.14019	Retrieving Classes of Causal Orders with Inconsistent Knowledge Bases	2	25	38365	93087	78	93
+2210.10256	Causal Structure Learning with Recommendation System	3	20	38250	104334	87	95
+2607.05355	Faithfulness to Refusal: A Causal Audit of Neuron Selectors	3	47	38214	119476	100	127
+2507.12257	Robust Causal Discovery in Real-World Time Series with Power-Laws	1	41	38141	122416	103	124
+2606.17539	Reinforcing Dual-Path Reasoning in Spatial Vision Language Models	3	24	37982	125220	105	118
+2605.08197	ReplaySCM: A Benchmark for Executable Causal Mechanism Induction from Interventions	5	49	37911	154671	129	156
+2206.12689	Improving Data-driven Heterogeneous Treatment Effect Estimation Under Structure Uncertainty	3	30	37717	120496	101	115
+2406.16728	CausalMMM: Learning Causal Structure for Marketing Mix Modeling	3	29	37559	120285	101	115
+2606.16974	The Shift Toward Open and Reproducible AI Research	2	34	37326	101764	85	103
+2405.18206	Multi-CATE: Multi-Accurate Conditional Average Treatment Effect Estimation Robust to Unknown Covariate Shifts	1	34	37324	151182	126	140
+2106.08161	Contrastive Mixture of Posteriors for Counterfactual Inference, Data Integration and Fairness	2	47	37214	156667	131	156
+2206.03387	Spatial Analysis of the Association between School Proximity and Crime in Philadelphia	4	30	37127	93644	79	95
+2202.11089	Counterfactual Phenotyping with Censored Time-to-Events	3	30	36942	92588	78	92
+2207.07005	Causal Inference with Ranking Data: Application to Blame Attribution in Police Violence and Ballot Order Effects in Ranked-Choice Voting	3	76	36863	288708	241	278
+2210.06566	Developing a general-purpose clinical language inference model from a large corpus of clinical notes	1	30	36781	74870	63	79
+2202.00436	ROCK: Causal Inference Principles for Reasoning about Commonsense Causality	1	35	36756	95471	80	100
+1805.03273	Nothing to See Here? A non-inferiority approach to parallel trends	2	58	36571	195174	163	195
+2112.03096	Visual Inference and Graphical Representation in Regression Discontinuity Designs	3	64	36534	214525	179	216
+1110.1987	Cross identification between X-ray and Optical Clusters of Galaxies in the SDSS DR7 Field	1	22	36430	114557	96	108
+2002.00208	Variable-lag Granger Causality and Transfer Entropy for Time Series Analysis	3	33	36412	132656	111	130
+2402.09891	Do causal predictors generalize better to new domains?	2	71	36408	171007	143	186
+2606.26411	A Spitzer Space Telescope Exploration Science Program to Search for Y Dwarf Variability	1	21	36127	85073	71	83
+2605.28089	BuddyBench: A Privacy-Constrained Multi-Task Benchmark for Pediatric Social-Communication Personalization	3	74	36124	129173	108	149
+1802.04918	Prophit: Causal inverse classification for multiple continuously valued treatment policies	3	18	36103	88458	74	84
+2506.20377	The Role of Partisan Culture in Mental Health Language Online	4	45	35963	158365	132	159
+2310.17679	Fast Scalable and Accurate Discovery of DAGs Using the Best Order Score Search and Grow-Shrink Trees	1	22	35841	71940	60	71
+2607.09932	Faithful by Design: Evaluating and Improving LLM-Generated Clinical Trial Summaries for Multi-Stakeholder Audiences	3	20	35488	92358	77	89
+2204.05023	Machine Learning and Deep Learning -- A review for Ecologists	3	42	35411	119538	100	120
+2211.14594	Direct-Effect Risk Minimization for Domain Generalization	2	23	35246	71101	60	73
+2504.09144	Magnetic energies (and some other parameters) in solar active regions of different Hale and McIntosh classes: statistical analysis for 2010-2024	1	12	35180	69893	59	66
+2601.14071	How Disruptive is Financial Technology?	2	28	35154	92912	78	94
+1902.10199	Chemical Abundances of Main-Sequence, Turnoff, Subgiant and red giant Stars from APOGEE spectra II: Atomic Diffusion in M67 Stars	1	23	35130	102249	86	97
+2006.06807	A flexible parametric accelerated failure time model	1	16	35023	75057	63	70
+2605.31156	TabCausal: Pretraining Across Causal Environments for Tabular Causal Discovery	2	66	35022	129160	108	141
+1702.07527	An ALMA survey of submillimetre galaxies in the COSMOS field: The extent of the radio-emitting region revealed by 3 GHz imaging with the Very Large Array	2	43	34793	192250	161	184
+1910.08273	Large Dimensional Latent Factor Modeling with Missing Observations and Applications to Causal Inference	4	163	34776	640886	535	622
+2504.13629	Divergent LLM Adoption and Heterogeneous Convergence Paths in Research Writing	3	23	34530	103523	87	98
+2506.11719	Automatic differentiation for performing the Cauchy-Kovalevskaya procedure in Lax-Wendroff type discretizations	3	20	34378	111121	93	104
+2606.14502	From Chatbot to Digital Colleague: The Paradigm Shift Toward Persistent Autonomous AI	2	80	34237	222751	186	230
+2408.13047	Difference-in-differences with as few as two cross-sectional units -- A new perspective to the democracy-growth debate	2	79	33758	254834	213	254
+2209.05598	Learning domain-specific causal discovery from time series	3	35	33744	99237	83	104
+1309.4054	Data-driven Algorithms for Dimension Reduction in Causal Inference	2	21	33678	88405	74	85
+2403.16616	Magnetic Moments of Hidden-Bottom Pentaquark States	3	16	33511	67371	57	64
+2605.17528	CasualSynth: Generating Structurally Sound Synthetic Data	3	40	33344	171863	144	166
+2508.01296	FedCD: A Fairness-aware Federated Cognitive Diagnosis Framework	2	30	33243	96692	81	96
+local:54d6ca71dda9	Causal Inference and Machine Learning in Economics, Social, and Health Sciences	3	671	33158	1866501	1556	1893
+2506.07517	Addressing Correlated Latent Exogenous Variables in Debiased Recommender Systems	3	31	33116	112732	94	113
+2409.05484	CRADLE-VAE: Enhancing Single-Cell Gene Perturbation Modeling with Counterfactual Reasoning-based Artifact Disentanglement	3	54	33106	88978	75	102
+2412.15012	Assessing treatment effects in observational data with missing confounders: A comparative study of practical doubly-robust and traditional missing data methods	3	66	33104	164974	138	177
+2210.03696	LLMEffiChecker: Understanding and Testing Efficiency Degradation of Large Language Models	2	34	33042	122427	103	121
+2105.07775	Be Causal: De-biasing Social Network Confounding in Recommendation	3	31	33003	114639	96	116
+2502.01575	Heterogeneous Treatment Effect in Time-to-Event Outcomes: Harnessing Censored Data with Recursively Imputed Trees	1	26	32951	83024	70	84
+1812.06537	Fuzzy Difference-in-Discontinuities: Identification Theory and Application to the Affordable Care Act	2	20	32871	104778	88	99
+2606.13209	Understanding helpfulness and harmless tension in reward models	1	31	32772	74746	63	82
+2506.07962	Correlated Errors in Large Language Models	1	26	32765	80852	68	84
+2103.14521	A comparative study of the strength of flickering in cataclysmic variables	2	57	32756	323720	270	303
+2606.23968	Empirical prior distributions for treatment-by-subgroup interaction heterogeneity in random-effects meta-analysis	3	16	32687	80199	67	75
+2404.14786	RealTCD: Temporal Causal Discovery from Interventional Data with Large Language Model	3	38	32586	119149	100	119
+2606.16429	Taylor-Calibrate: Principled Initialization for Hybrid Linear Attention Distillation	2	34	32542	93908	79	96
+2202.12078	Confidence Intervals of Treatment Effects in Panel Data Models with Interactive Fixed Effects	1	63	32517	274949	230	264
+2105.00455	Synthesized Difference in Differences	3	23	32466	96386	81	95
+2607.10987	[AAFLOW+] Stateful Operator Abstraction with Zero-Copy Distributed KV Cache Orchestration for Multi-Agent Workflows	3	67	32358	214323	179	215
+1906.02226	Gradient-Based Neural DAG Learning	2	32	32310	106177	89	107
+2009.14061	GraphITE: Estimating Individual Effects of Graph-structured Treatments	3	22	32131	97419	82	93
+2310.02854	Multi-Domain Causal Representation Learning via Weak Distributional Invariances	2	40	31948	156159	131	152
+2605.28190	The Harder Text Embedding Benchmark (HTEB): Beyond One-dimensional Static Robustness	2	56	31927	84423	71	104
+2607.08547	Potential Functions as Types	3	35	31846	186621	156	173
+2511.11575	Detecting Statistically Significant Fairness Violations in Recidivism Forecasting Algorithms	3	21	31631	108298	91	102
+1607.03197	Semiparametric Estimation with Data Missing Not at Random Using an Instrumental Variable	3	38	31607	178526	149	167
+2606.12494	Net-Ev$^2$: A Generative Simulator for Network Event Evolution	3	43	31496	130699	109	138
+1910.01288	Towards Efficient Local Causal Structure Learning	4	19	31396	84257	71	80
+2510.03422	Multivariate Zero-Inflated Causal Model for Regional Mobility Restriction Effects on Consumer Spending	2	43	31381	161151	135	160
+2607.27633	Doubly Robust Estimators of Quantile Treatment Effects With Semiparametric Cumulative Probability Models	1	51	31293	163274	137	163
+2506.10452	Towards Robust Multimodal Emotion Recognition under Missing Modalities and Distribution Shifts	1	34	31247	97936	82	99
+2503.19949	Automated Video-EEG Analysis in Epilepsy Studies: Advances and Challenges	1	23	31219	66796	56	70
+2607.07748	Selective Left-Shift: Turning Test-Time Compute and Difficulty-based Curation into Training Data for Low-Resource Code Generation	2	36	31006	108195	91	111
+2310.11962	Machine Learning for Staggered Difference-in-Differences and Dynamic Treatment Effect Heterogeneity	3	13	30963	87571	73	78
+2606.13607	Reasoning as Pattern Matching: Shared Mechanisms in Human and LLM Everyday Reasoning	1	56	30958	135030	113	146
+2406.02310	Disentangled Representation via Variational AutoEncoder for Continuous Treatment Effect Estimation	2	20	30896	89172	75	86
+1805.03313	Computational tools for solving a marginal problem with applications in Bell non-locality and causal modeling	2	64	30889	170978	143	177
+2111.11979	Measurement That Matches Theory: Theory-Driven Identification in IRT Models	3	31	30812	155457	130	144
+2607.07186	Enhanced sampling and cryo-EM data resolve magnesium binding to RNA	1	34	30702	104157	87	104
+2201.12585	LBCF: A Large-Scale Budget-Constrained Causal Forest Algorithm	2	25	30509	92250	77	88
+2411.10009	Semiparametric inference for impulse response functions using double/debiased machine learning	1	49	30294	189968	159	187
+2603.19713	Learning from Similarity/Dissimilarity and Pairwise Comparison	1	61	30219	229120	191	222
+2603.22368	When Visuals Aren't the Problem: Evaluating Vision-Language Models on Misleading Data Visualizations	2	38	30103	91515	77	94
+2203.15308	Information criteria for sparse methods in causal inference	3	45	29987	174341	146	170
+2606.25039	LLM-ACES: Closed-Loop Discovery of Dynamical Systems with LLM-Guided Adaptive Search	1	37	29970	104360	87	108
+2001.03780	Intelligence, physics and information -- the tradeoff between accuracy and simplicity in machine learning	2	267	29919	749386	625	771
+2208.11047	Regression discontinuity design in perinatal epidemiology and birth cohort research	1	27	29893	81259	68	81
+2607.18503	Adaptive Penalization and Bootstrap-Smoothed Inference for Two-Sample Mendelian Randomization with Summary Data	2	29	29594	130588	109	123
+2404.05746	Causality for Earth Science -- A Review on Time-series and Spatiotemporal Causality Methods	2	59	29578	255270	213	244
+1506.04452	Modeling the Association Structure in Doubly Robust GEE for Longitudinal Ordinal Missing Data	2	26	29365	104582	88	102
+2311.13410	Navigating Unmeasured Confounding in Quantitative Sociology: A Sensitivity Framework	2	41	29339	126416	106	127
+2511.01641	Cross-Treatment Effect Estimation for Multi-Category, Multi-Valued Causal Inference via Dynamic Neural Masking	3	39	29206	122285	102	121
+2604.14856	ClimateCause: Complex and Implicit Causal Structures in Climate Reports	1	65	28800	124779	104	139
+2405.16225	Local Causal Structure Learning in the Presence of Latent Variables	2	29	28694	89804	75	90
+2606.09238	Detectability to extreme mass ratio inspirals with alternative space-based detector networks	3	12	28685	71999	60	67
+1811.11512	Simple Local Polynomial Density Estimators	1	67	28657	201232	168	204
+1901.10550	Personalized Treatment Selection using Causal Heterogeneity	2	28	28630	118857	100	114
+2401.01645	Model Averaging and Double Machine Learning	2	23	28594	122860	103	116
+2406.18936	Credit Ratings: Heterogeneous Effect on Capital Structure	1	17	28557	157598	132	141
+2601.05647	Transformer Is Inherently a Causal Learner	1	37	28512	108997	91	114
+2508.17497	Multimodal Representation Learning Conditioned on Semantic Relations	1	25	28465	73428	62	77
+2606.22375	ARIA: A Causal-Aware Framework for Rescuing LLM Reasoning in Trustworthy Materials Discovery	2	34	28359	96956	81	96
+2305.04174	Root-n consistent semiparametric learning with high-dimensional nuisance functions under minimal sparsity	4	61	28182	227242	190	219
+2405.01078	Does Financial Literacy Impact Investment Participation and Retirement Planning in Japan?	1	11	28130	67400	57	61
+2211.11482	Applications of statistical causal inference in software engineering	2	52	28078	108844	91	121
+2211.09099	Selecting Subpopulations for Causal Inference in Regression Discontinuity Designs	2	45	27983	238438	199	222
+2402.03183	Predicting Configuration Performance in Multiple Environments with Sequential Meta-learning	2	33	27905	128483	108	123
+2312.01266	A unified framework for covariate adjustment under stratified randomization	2	45	27746	168061	141	164
+2606.09692	Observability for Delegated Execution in Agentic AI Systems	2	42	27571	157043	131	154
+2505.06542	dcFCI: Robust Causal Discovery Under Latent Confounding, Unfaithfulness, and Mixed Data	1	53	27413	179474	150	181
+2212.00888	Decisions that Explain Themselves: A User-Centric Deep Reinforcement Learning Explanation System	2	28	27262	113855	95	110
+2606.10620	Can Image Models Imagine Time? ImageTime: A Novel Benchmark for Probing Visual World Modeling Through Spatiotemporal Consistency	1	91	27231	147127	123	185
+2401.11842	Subgroup analysis methods for time-to-event outcomes in heterogeneous randomized controlled trials	1	29	27197	107975	90	105
+2307.07960	Did the Roll-Out of Community Notes Reduce Engagement With Misinformation on X/Twitter?	2	29	27158	132829	111	127
+2310.00489	Interpretable Imitation Learning with Dynamic Causal Relations	2	32	27127	117907	99	116
+2603.05483	SurvHTE-Bench: A Benchmark for Heterogeneous Treatment Effect Estimation in Survival Analysis	2	63	27094	217458	182	216
+1801.00369	Resource Abundance and Life Expectancy	2	29	26967	75222	63	82
+2207.05019	Covariate-adaptive randomization inference in matched designs	2	36	26895	151719	127	146
+2311.03002	Estimating treatment effects from single-arm trials via latent-variable modeling	2	50	26782	157411	132	157
+2507.22312	Dimension Reduction for Conditional Density Estimation with Applications to High-Dimensional Causal Inference	3	61	26774	235786	197	228
+2606.09942	Anomaly Detection and Root Cause Analysis for Microservice Systems	2	200	26518	462216	386	492
+2103.12478	Absorption Lines in the 0.91-1.33 $μ$m Spectra of Red Giants for Measuring Abundances of Mg, Si, Ca, Ti, Cr, and Ni	1	21	26460	87789	74	84
+2606.26234	Lyman-Alpha Forest and its Cross-Correlation with High-Redshift Galaxies in Effective Field Theory at the Field Level	3	36	26457	158374	132	152
+2506.17718	Learning Time-Aware Causal Representation for Model Generalization in Evolving Domains	1	53	26338	136560	114	144
+2607.05792	Estimating Causal Effects from Data Generated by Stochastic Algorithms	2	41	26319	173950	145	166
+2604.09898	Evaluating the impact of longitudinal treatment strategies in the presence of informative monitoring and time-dependent confounding	3	37	26317	119803	100	120
+2204.02872	Cluster randomized trials designed to support generalizable inferences	3	38	26300	134342	112	135
+2606.17421	Bifrost: Hybrid TEE-FHE Inference for Privacy-Preserving Transformer and LLM Serving	2	37	26288	130353	109	127
+2410.01159	Partially Identified Heterogeneous Treatment Effect with Selection: An Application to Gender Gaps	2	35	26211	153400	128	149
+2606.06104	A Sliced-Wasserstein Framework on Correlation Matrices for EEG Decoding	2	37	26128	147773	124	140
+2506.19459	Tagged for Direction: Pinning Down Causal Edge Directions with Precision	1	32	26065	107915	90	106
+2606.09293	One Model, Multiple Goals: Adaptive Multi-Objective Learning for E-commerce Dialogue Systems	2	27	26052	94546	79	92
+2108.09946	Pull Request Latency Explained: An Empirical Overview	1	36	26040	81772	69	87
+1007.5029	Infrared Period-Luminosity Relations of Evolved Variable Stars in the Large Magellanic Cloud	2	23	25963	80770	68	80
+2606.14129	BoRAD: Bootstrap your Own Representations for Multi-class Anomaly Detection	1	33	25951	92026	77	93
+2607.11250	Multi-Agent LLMs Fail to Explore Each Other	1	57	25894	128792	108	142
+2301.05995	Collective Privacy Recovery: Data-sharing Coordination via Decentralized Artificial Intelligence	2	53	25865	149526	125	151
+2403.10339	Generation is better than Modification: Combating High Class Homophily Variance in Graph Anomaly Detection	2	35	25824	148825	125	141
+1803.04929	Structural Agnostic Modeling: Adversarial Learning of Causal Graphs	2	51	25724	149748	125	148
+2110.10216	A Bayesian Analysis of Two-Stage Randomized Experiments in the Presence of Interference, Treatment Nonadherence, and Missing Outcomes	3	44	25699	167836	140	162
+2607.05794	From Passive Retrieval to Active Memory Navigation: Learning to Use Memory as a Structured Action Space	2	30	25651	103179	86	100
+2501.04853	Identification of dynamic treatment effects when treatment histories are partially observed	3	72	25642	240813	201	241
+2107.05884	Auto IV: Counterfactual Prediction via Automatic Instrumental Variable Decomposition	2	20	25584	76345	64	72
+2511.20985	Two-stage Estimation for Causal Inference Involving a Semi-continuous Exposure	3	69	25512	181227	152	192
+2205.08643	Targeted learning: Towards a future informed by real-world evidence	1	29	25388	93402	78	91
+2606.12689	Observable Patterns Are Not Explanations: A Causal-Geometric Analysis of Latent Reasoning Models	1	28	25325	85995	72	89
+2109.14048	Evaluating the Robustness of Targeted Maximum Likelihood Estimators via Realistic Simulations in Nutrition Intervention Trials	2	51	25318	114394	96	123
+2606.20953	Variables in S-PLUS: I. Multiband period-luminosity relations and reddening maps of the Magellanic Clouds using classical Cepheids	2	24	25286	102380	86	99
+2211.06919	Towards Privacy-Aware Causal Structure Learning in Federated Setting	1	37	25181	94439	79	98
+2212.00795	Causal Selection of Covariates in Regression Calibration for Mismeasured Continuous Exposure	2	47	25149	147632	124	152
+2401.06919	Pseudo-Empirical Likelihood Methods for Causal Inference	1	47	24984	171891	144	167
+2407.19078	Practical Marketplace Optimization at Uber Using Causally-Informed Machine Learning	2	24	24967	102258	86	98
+2510.11633	The Role of Congeniality in Multiple Imputation for Doubly Robust Causal Estimation	2	22	24952	69940	59	68
+1606.03729	Robust instrumental variable methods using multiple candidate instruments with application to Mendelian randomization	2	43	24876	102133	86	110
+2404.13356	How do applied researchers use the Causal Forest? A methodological review of a method	2	35	24809	114597	96	116
+2606.22999	Black-Box Continual Learning for Vision-Language Models	1	23	24793	87197	73	84
+2606.05403	Trust, but Don't Verify: Epistemic Blind Spots in LLM Source Evaluation	1	56	24756	121492	102	130
+2410.08283	Adaptive sparsening and smoothing of the treatment model for longitudinal causal inference using outcome-adaptive LASSO and marginal fused LASSO	2	63	24660	162735	136	171
+2605.18633	Stable Causal Discovery via Directed Acyclic Graph Aggregation	3	29	24550	106834	90	105
+2504.01509	PROPHET: An Inferable Future Forecasting Benchmark with Causal Intervened Likelihood Estimation	2	37	24545	120126	101	121
+2607.06338	SN 2022erq: A Superluminous Thermonuclear Supernova with Escalating Pre-Explosion Mass Loss	2	27	24512	98107	82	97
+2404.02584	Moran's I 2-Stage Lasso: for Models with Spatial Correlation and Endogenous Variables	3	29	24335	110885	93	110
+2607.10388	The evolution of AI from image interpretation toward scientific inference in nanoparticle electron microscopy	2	35	24299	134300	112	131
+2606.11023	Generative Archetype-Grounded Item Representations for Sequential Recommendation	2	32	24208	116707	98	116
+0811.3289	On the frequency of N2H+ and N2D+	1	12	24006	52523	44	51
+2606.11831	From Uniform to Learned Graph Priors: Diffusion for Structure Discovery	2	46	23993	166726	139	161
+2607.26521	From Unsupervised Subgroups to Hypothetical State-Intervention Policies: An Evaluation of Selected Subgrouping Methods in Observational Health Data	1	45	23992	142007	119	140
+2111.04434	SOFIA observations of far-IR fine-structure lines in galaxies to measure metallicity	2	28	23871	96730	81	93
+2507.21491	Evaluating the effect of different non-informative prior specifications on the Bayesian proportional odds model in randomised controlled trials: a simulation study	2	28	23858	74153	62	78
+2606.10466	UPLOTS: A Unified Pretrained Language Model for Constrained Time-series Generation	2	27	23809	90580	76	91
+2012.14735	Skyrme-Hartree-Fock calculations of nuclear properties in the drip-point region of neutron star crust	1	22	23800	86188	72	82
+2508.18157	Matching-Based Nonparametric Estimation of Group Average Treatment Effects	2	46	23793	133434	112	136
+1910.03531	Causal Inference for Comprehensive Cohort Studies	2	42	23733	130090	109	131
+2606.25265	Variational Inference via Entropic Transport Descent	1	27	23717	101781	85	100
+2607.06597	Reconfigurable Radiology Labels Without Relabeling	1	17	23655	70322	59	69
+2606.23112	Self-Evolution for Multi-Turn Tool-Calling Agents via Divergence-Point Preference Learning	2	19	23597	71912	60	70
+2606.11293	A systematic survey for hypervelocity runaways from thermonuclear supernovae	3	55	23496	119863	100	129
+2105.02379	Targeted Quality Measurement of Health Care Providers	2	35	23451	111914	94	113
+2602.23602	Moment Matters: Mean and Variance Causal Graph Discovery from Heteroscedastic Observational Data	2	46	23431	178750	149	174
+2509.13869	Do LLMs Align Human Values Regarding Social Biases? Judging and Explaining Social Biases with LLMs	1	41	23339	94268	79	98
+2505.12209	Estimation of Treatment Harm Rate via Partitioning	1	32	23218	106617	89	107
+2606.17710	Vision-language models for chest radiography do not always need the image	1	28	23192	104505	88	101
+2404.12969	Disentangling ID and Modality Effects for Session-based Recommendation	2	33	23102	97847	82	101
+2506.23374	When Additive Noise Meets Unobserved Mediators: Bivariate Denoising Diffusion for Causal Discovery	2	70	23059	183961	154	195
+2006.00737	Do Public Program Benefits Crowd Out Private Transfers in Developing Countries? A Critical Review of Recent Evidence	2	16	22900	77072	65	73
+2601.20451	MuVaC: A Variational Causal Framework for Multimodal Sarcasm Understanding in Dialogues	2	39	22842	116566	98	120
+2006.02900	Short-Run Health Consequences of Retirement and Pension Benefits: Evidence from China	2	24	22833	89899	75	89
+2604.25767	The Short- and Long-Term Impacts of Expanding Public Education for Disabled Students	1	38	22715	191567	160	179
+2607.07500	TimEE: End-to-end Time Series Classification via In-Context Learning	1	52	22590	82684	69	100
+2508.21536	Triply Robust Panel Estimators	2	33	22268	129001	108	124
+2507.06650	Deep Disentangled Representation Network for Treatment Effect Estimation	2	29	22165	89330	75	90
+2606.04874	Agent Planning Benchmark: A Diagnostic Framework for Planning Capabilities in LLM Agents	2	72	22141	100723	84	120
+2606.11646	Tree-Structured Orthonormal Decomposition of the Aitchison Simplex	1	41	22106	109448	92	113
+2606.23419	GRINQH: Graded Input-based Quantization Hierarchy for Efficient LLM Generation	2	35	22054	85654	72	88
+1407.8307	Optical and infrared emission of H II complexes as a clue to the PAH life cycle	1	18	22050	83435	70	77
+2405.15289	Learning Invariant Causal Mechanism from Vision-Language Models	2	60	22045	126570	106	142
+2311.16984	FedECA: Federated External Control Arms for Causal Inference with Time-To-Event Data in Distributed Settings	1	85	22031	177776	149	195
+2606.13054	TWLA: Achieving Ternary Weights and Low-Bit Activations for LLMs via Post-Training Quantization	2	53	22024	139378	117	143
+2403.00817	Doubly Calibrated Estimator for Recommendation on Data Missing Not At Random	2	35	21998	121271	102	122
+2405.13888	Marrying Causal Representation Learning with Dynamical Systems for Science	1	27	21971	88736	74	91
+2202.07079	Synthetically Controlled Bandits	2	38	21929	187139	156	179
+2506.15103	How does online shopping affect offline price sensitivity?	1	59	21865	153680	129	165
+2404.09414	General Bayesian inference for causal effects using covariate balancing procedure	2	28	21801	88002	74	88
+1610.09037	Model Criticism for Bayesian Causal Inference	2	20	21755	83793	70	82
+1808.10278	Spherical cosmological models: an alternative cosmology	1	140	21728	442635	369	444
+2104.06911	Causal Inference with Invalid Instruments: Post-selection Problems and A Solution Using Searching and Sampling	2	80	21702	298256	249	289
+2606.24142	CHEX-MATE: AMALGAM weak-lensing analysis of 41 Planck Sunyaev-Zel'dovich-selected galaxy clusters	2	44	21698	182314	152	174
+2607.06860	Auditable Machine Unlearning for Privacy-Compliant Ransomware Detection Using Multi-Shard SISA and Deep Reinforcement Learning	2	38	21691	87001	73	92
+2010.01772	Empirical Likelihood-Based Estimation and Inference in Randomized Controlled Trials with High-Dimensional Covariates	1	37	21678	125802	105	127
+2606.14943	Simplifying the Modeling of Arbitrary Conditionals in Natural Language	2	44	21670	115679	97	123
+2405.18902	A Causal Framework for Evaluating Deferring Systems	1	32	21662	108674	91	110
+2607.09534	Higher-Order Programs with Indefinite Causal Orders: a Linear Approach to Coherent Control of Quantum Processes	2	59	21623	280755	234	267
+2607.05405	CCBENCH: Assessing LLM Cultural Competence via Implicitly Signaled Norms using Health Queries	1	27	21618	70756	59	75
+2606.12876	Multi-Bitwidth Quantization for LLMs Using Additive Codebooks	3	42	21601	121190	101	126
+1904.07408	How to apply multiple imputation in propensity score matching with partially observed confounders: a simulation study and practical recommendations	2	26	21571	79244	67	80
+2504.08263	A roadmap for systematic identification and analysis of multiple biases in causal inference	1	36	21395	81098	68	88
+2607.19925	Efficient difference-in-differences estimation under partial interference with incremental propensity score policies	1	35	21339	142997	120	136
+2606.29076	Doubly cross-fit debiased machine learning of heterogeneous treatment effects under principal stratification	1	76	21278	244011	204	245
+2010.03792	The Adaptive Doubly Robust Estimator for Policy Evaluation in Adaptive Experiments and a Paradox Concerning Logging Policy	1	41	21251	146661	123	143
+2606.07696	Adversarial Robustness of Activation Steering in Large Language Models	1	33	21243	78487	66	85
+2007.15991	Causal inference methods for small non-randomized studies: Methods and an application in COVID-19	2	29	21207	75536	63	79
+1901.10296	Minimax Linear Estimation of the Retargeted Mean	1	39	21061	110188	92	111
+2606.05812	FORTE: FOL-guided Optimal Refinement for Text-audio rEtrieval	2	52	21002	145172	121	145
+2309.17216	The long-term impact of (un)conditional cash transfers on labour market outcomes in Ecuador	2	19	20988	94417	79	88
+2606.23857	Bias-Aware Confidence Intervals for Synthetic Control via Placebo-in-Time Bootstrap	2	22	20938	81448	68	78
+2401.04863	Estimands and cumulative incidence function regression in clinical trials: some new results on interpretability and robustness	1	40	20867	154347	129	152
+2607.08646	UltraX: Refining Pre-Training Data at Scale with Adaptive Programmatic Editing	1	56	20787	113698	95	125
+2606.11026	MINDS survey of silicates in T Tauri disks: Correlation between dust and gas	2	32	20768	123374	103	122
+2111.08741	Practical Guidance on Modeling Choices for the Virtual Twins Method	1	21	20657	60622	51	62
+2308.12888	Inducing Causal Structure for Abstractive Text Summarization	2	32	20638	124295	104	121
+2210.04389	DeepMed: Semiparametric Causal Mediation Analysis with Debiased Deep Learning	1	27	20633	96872	81	95
+1711.06399	Average treatment effects in the presence of unknown interference	1	83	20609	354968	296	338
+2512.09430	Model-robust Inference for Seamless II/III Trials with Covariate Adaptive Randomization	3	58	20565	192384	161	188
+2505.11444	A Generative Framework for Causal Estimation via Importance-Weighted Diffusion Distillation	1	26	20518	81257	68	85
+2606.03227	Learning Temporal Causal Structure via Smooth Differentiable Optimization	3	33	20518	99880	84	99
+2606.26794	ReasonCLIP-58M: Visually Grounded Commonsense Reasoning Supervision for CLIP	2	46	20328	91436	77	103
+2502.08587	Causal Analysis of ASR Errors for Children: Quantifying the Impact of Physiological, Cognitive, and Extrinsic Factors	2	42	20324	116223	97	121
+2307.16353	Single Proxy Synthetic Control	1	71	20305	283143	236	272
+2607.10033	Tracing the space-time causal origins of Earth system extremes	2	24	20287	103272	87	100
+1806.00352	Too Fast Causal Inference under Causal Insufficiency	1	20	20272	80935	68	79
+1906.02712	Dust properties and star formation of approximately a thousand local galaxies	1	22	20106	87153	73	85
+2409.20052	Mitigating Propensity Bias of Large Language Models for Recommender Systems	2	26	20087	78304	66	78
+2607.10541	RecRec: Recursive Refinement for Sequential Recommendation	2	16	20047	55529	47	56
+2407.01111	Proximity Matters: Local Proximity Enhanced Balancing for Treatment Effect Estimation	2	29	20039	107670	90	109
+2601.21014	Efficient Causal Structure Learning via Modular Subgraph Integration	2	35	20033	127319	107	125
+2207.10192	Building Human Values into Recommender Systems: An Interdisciplinary Synthesis	1	43	19988	157583	132	154
+1711.02903	The Prime Grid. Introducing a geometric representation of natural numbers	1	18	19983	94673	79	89
+2606.17682	From Trainee to Trainer: LLM-Designed Training Environment for RL with Multi-Agent Reasoning	2	22	19969	70193	59	70
+2309.01334	Average treatment effect on the treated, under lack of positivity	2	36	19937	123198	103	124
+2606.11846	SheafStain: Sheaf-Theoretic Schrödinger Bridge for Spatially and Biologically Coherent Virtual Staining	2	38	19935	103373	87	106
+2409.17814	Impact of Shared E-scooter Introduction on Public Transport Demand: A Case Study in Santiago, Chile	2	26	19935	75216	63	74
+2606.06631	From Pixels to Newtons: Predicting In Vivo Joint Contact Forces from Monocular Video	1	30	19903	93205	78	94
+2605.16919	CAST: Causal Anchored Simplex Transport for Distribution-Valued Time Series	1	50	19900	111113	93	115
+2302.09457	Attacks in Adversarial Machine Learning: A Systematic Survey from the Life-cycle Perspective	1	58	19876	185297	155	186
+2606.09659	End-to-End Context Compression at Scale	1	46	19857	110192	92	115
+2207.07174	Attribute Graphs Underlying Molecular Generative Models: Path to Learning with Limited Data	1	25	19833	67189	56	69
+2606.08161	AttentionCap: Transformer Based Capacitance Matrix Learning Toward Full-Chip Extraction	2	22	19813	65253	55	69
+2606.04711	ABCD: The Nuclear Structure of the Little Red Dots Revealted through Absorption, Break, Continuum, and Decrement	2	38	19805	119147	100	122
+2309.14581	Assessing Utility of Differential Privacy for RCTs	1	35	19759	149456	125	142
+2511.09759	Distributional Treatment Effect Estimation across Heterogeneous Sites via Optimal Transport	2	52	19751	179598	150	178
+1304.7762	Coevolution (Or Not) of Supermassive Black Holes and Host Galaxies	1	106	19713	524436	438	487
+2607.11089	OS-Pruner: Pruning Chains-of-Thought of Reasoning Models via Optimal Stopping	3	23	19660	59480	50	64
+2606.12732	X-ray Emission and Stellar Ages of Sun-Like Stars	2	18	19578	66311	56	65
+2506.11034	CausalVLBench: Benchmarking Visual Causal Reasoning in Large Vision-Language Models	2	28	19477	70918	60	74
+2606.13891	TetraRL: A Self-Adaptive Runtime for On-Device Deep Reinforcement Learning Systems	2	43	19438	105083	88	111
+2503.15967	Integrative Analysis of High-dimensional RCT and RWD Subject to Censoring and Hidden Confounding	2	28	19438	114611	96	110
+1705.09874	Targeted Learning with Daily EHR Data	2	34	19433	114664	96	115
+2507.14717	Does Private Equity Hurt or Improve Healthcare Value? New Evidence and Mechanisms	2	41	19400	123217	103	127
+2406.02241	Enabling Decision-Making with the Modified Causal Forest: Policy Trees for Treatment Assignment	1	16	19386	65115	55	65
+2103.04277	Estimating Heterogeneous Treatment Effects for General Responses	1	47	19353	156683	131	158
+2606.21512	Bayesian model selection of vine copulas: a loss-based perspective	2	23	19308	78137	66	77
+2209.10742	Variance estimation for the average treatment effects on the treated and on the controls	1	28	19304	113615	95	112
+2506.16234	Sequential Causal Discovery with Noisy Language Model Priors	2	44	19246	109801	92	120
+2408.03659	Firms' Risk Adjustments to Minimum Wage: Financial Leverage and Labor Share Trade-off	2	48	19242	125740	105	130
+2402.04674	Hyperparameter Tuning for Causal Inference with Double Machine Learning: A Simulation Study	2	42	19152	81272	68	93
+2607.02785	Inside the Kin Network: Consanguineous Marriage, Patriarchal Bargaining, and Women's Acceptance of Intimate Partner Violence in Pakistan	2	20	19149	127744	107	119
+2101.00878	The Value Added of Machine Learning to Causal Inference: Evidence from Revisited Studies	1	28	19117	134570	113	127
+2402.08941	Local-Polynomial Estimation for Multivariate Regression Discontinuity Designs	2	48	19074	177061	148	175
+2607.08412	Relativistic Mean Field Approach with Chiral Symmetry Breaking and Quark Confinement in the light of Astrophysical Observations	2	27	19064	114271	96	112
+2103.00378	Towards Efficient Local Causal Structure Learning	2	28	19025	85456	72	88
+2204.07672	Abadie's Kappa and Weighting Estimators of the Local Average Treatment Effect	1	33	19008	160612	134	151
+2405.12608	A 22 percent increase in the German minimum wage: nothing crazy!	2	30	18993	87409	73	93
+2403.01964	The Heterogeneous Productivity Effects of Generative AI	2	27	18902	74818	63	76
+2211.01939	Empirical Analysis of Model Selection for Heterogeneous Causal Effect Estimation	2	36	18828	106493	89	110
+2203.00768	Privacy-Preserving, Communication-Efficient, and Target-Flexible Hospital Quality Measurement	1	53	18820	167123	140	166
+2105.09893	A flexible Bayesian non-confounding spatial model for analysis of dispersed count data in clinical studies	2	13	18790	59380	50	59
+2606.15359	DiRecT: Safe Diffusion-Based Planning via Receding-Horizon Denoising	1	37	18775	132861	111	130
+2210.17516	Degree of Interference: A General Framework For Causal Inference Under Interference	1	35	18751	145173	121	141
+2606.18011	Fast Nonparametric Conditional Independence Testing via Two-Stage Regression	2	33	18749	97130	81	104
+2508.08975	Nonparametric Bayesian Multi-Treatment Mixture Cure Survival Model with Application in Pediatric Oncology	2	42	18735	136712	114	139
+2411.03489	A Bayesian nonparametric approach to mediation and spillover effects with multiple mediators in cluster-randomized trials	1	81	18718	246404	206	248
+2408.16708	Effect Aliasing in Observational Studies	2	30	18706	93980	79	99
+1601.05099	Radio and Gamma-ray Properties of Extragalactic Jets from the TANAMI Sample	1	19	18662	68847	58	67
+2606.24850	Heterogeneous Peer Effects with Endogenous Network Formation	1	40	18651	164620	138	161
+2011.09734	A general theory of regression adjustment for covariate-adaptive randomization: OLS, Lasso, and beyond	2	44	18609	169440	142	162
+2206.06169	Causal Representation Learning for Instantaneous and Temporal Effects in Interactive Systems	2	76	18552	205711	172	215
+2502.03569	Controllable Sequence Editing for Biological and Clinical Trajectories	1	52	18547	118228	99	124
+2410.17691	Longitudinal Causal Image Synthesis	2	34	18515	95541	80	97
+2212.05198	The IGRINS YSO Survey III: Stellar parameters of pre-main sequence stars in Ophiuchus and Upper Scorpius	2	20	18488	67791	57	67
+2606.06961	Causal inference of Plackett-Burman designs in applications	2	24	18481	91434	77	91
+2606.16981	Decoupling Inference from State Updates in Low-Latency Feature Engines via Probabilistic Thinning	2	36	18430	134749	113	131
+2011.09815	A scoping review of causal methods enabling predictions under hypothetical interventions	1	32	18420	65255	55	75
+2606.26769	ResilPhase: Plug-and-Play Phase Mapping and Noise-Resilient Macro-Trajectory Extrapolation for Diffusion Acceleration	1	41	18331	105618	89	109
+2202.03602	US Salary History Bans -- Strategic Disclosure by Job Applicants and the Gender Pay Gap	2	65	18282	208350	174	205
+2409.05665	K-Fold Causal BART for CATE Estimation	2	48	18271	127357	107	134
+2310.17816	Local Discovery by Partitioning: Polynomial-Time Causal Discovery Around Exposure-Outcome Pairs	1	34	18254	112326	94	112
+2606.01635	AlphaToken: Decoupling Adaptation and Stability for Path-Aware Response Token Valuation in LLM Post-Training	2	58	18058	130958	110	139
+2306.01943	NLPositionality: Characterizing Design Biases of Datasets and Models	2	28	18055	62666	53	67
+2410.03380	Identifying biological perturbation targets through causal differential networks	1	31	18037	88918	75	93
+2301.01843	Peace Dividends: The Economic Effects of Colombia's Peace Agreement	1	65	18020	240749	201	237
+2009.02776	Matching Bounds: How Choice of Matching Algorithm Impacts Treatment Effects Estimates and What to Do about It	2	29	18010	108415	91	106
+2011.03541	Identifying Latent Structures in Maternal Employment: Evidence on the German Parental Benefit Reform	1	38	17967	118866	100	123
+2307.11127	Asymptotically Unbiased Synthetic Control Methods by Moment Matching	1	35	17876	106348	89	105
+2305.05017	A Bayesian Non-parametric Approach for Causal Mediation with a Post-treatment Confounder	1	21	17779	79813	67	77
+2601.09561	Institutions, Education, and Religious Change: Evidence from Colombia	2	20	17779	80665	68	80
+2607.07010	Fast Dynamical Modelling of Milky Way Globular Clusters -- I. Implications for Initial Cluster Densities	1	34	17762	112849	95	116
+2502.05319	Semiparametric Inference for Partially Identifiable Data Fusion Estimands via Double Machine Learning	2	56	17718	167696	140	170
+2606.13202	The first hours and days of the 2021 explosion of the recurrent symbiotic nova RS Ophiuchii	1	40	17714	127162	106	130
+2312.12853	CORECODE: A Common Sense Annotated Dialogue Dataset with Benchmark Tasks for Chinese Large Language Models	1	30	17698	59815	50	67
+1608.05606	Propensity score analysis with partially observed confounders: how should multiple imputation be used?	1	44	17693	110230	92	117
+2001.02804	Institutions and China's comparative development	2	35	17686	88540	74	96
+2308.13047	Federated Causal Inference from Observational Data	2	89	17677	285105	238	284
+2511.06808	Design and Analysis Considerations for Causal Inference under Two-Phase Sampling in Observational Studies	2	61	17666	168773	141	177
+2606.25070	A Look at Eight Outbursts of Comet 7P/Pons-Winnecke	1	18	17649	64834	55	66
+2606.27286	Simulation-based inference for rapid Bayesian parameter estimation in epidemiological models: a comparison with MCMC	1	35	17627	90085	76	91
+2309.13005	Towards Counterfactual Fairness-aware Domain Generalization in Changing Environments	1	40	17597	83174	70	92
+2606.11562	GraphInfer-Bench: Benchmarking LLM's Inference Capability on Graphs	2	59	17568	102021	86	115
+2606.16034	Inference-Time Decision Calibration for Temporal Classification	2	52	17514	122251	102	128
+2412.07352	Inference after discretizing time-varying unobserved heterogeneity	2	46	17498	156633	131	155
+2510.12416	Geopolitics, Geoeconomics, and Sovereign Risk: Different Shocks, Different Channels	2	54	17494	148216	124	150
+2606.04775	Activation Steering of Video Generation Models via Reduced-Order Linear Optimal Control	2	55	17421	94392	79	106
+2403.16283	Sample Empirical Likelihood Methods for Causal Inference	1	33	17395	129067	108	128
+2606.06077	3D Underwater Path Planning via Generative Flow Field Surrogates	1	59	17359	148116	124	157
+2502.00279	Improving realistic semi-supervised learning with doubly robust estimation	2	24	17357	68198	57	69
+2510.08762	Spatial Deconfounder: Interference-Aware Deconfounding for Spatial Causal Inference	1	41	17268	141660	119	138
+2606.02795	Recovering Direct Price Effects of Environmental Amenities in Housing Markets: Regression and Causal Machine Learning Model Assessment with Empirical Monte Carlo Simulation	2	46	17224	138766	116	138
+2505.20536	Covariate-Adjusted Deep Causal Learning for Heterogeneous Panel Data Models	1	21	17201	76364	64	76
+2407.03082	Stable Heterogeneous Treatment Effect Estimation across Out-of-Distribution Populations	2	24	17192	78415	66	78
+2606.16525	Scalable Bayesian data curation for next-generation radio experiments	1	33	17170	125832	105	123
+2512.21547	Structure, Risk, and Access to Credit: Reassessment of the Paycheck Protection Program Effectiveness	2	39	17153	89506	75	98
+2406.17056	Efficient two-sample instrumental variable estimators with change points and near-weak identification	2	72	16986	219182	183	226
+2602.07825	Estimation Strategies for Causal Decomposition Analysis with Allowability Specifications	2	91	16937	255795	214	266
+2606.05858	ReverseEOL: Improving Training-free Text Embeddings via Text Reversal in Decoder-only LLMs	2	30	16910	63310	53	70
+2606.05321	Hot Degenerate Components in Blue Stragglers: A Multi-Wavelength SED Analysis of Nine Open Clusters with Swift/UVOT	2	27	16870	91938	77	91
+2508.01848	Causal Discovery in Multivariate Time Series through Mutual Information Featurization	2	59	16837	131032	110	140
+2509.00429	An adaptive design for optimizing treatment assignment in randomized clinical trials	2	53	16778	174706	146	173
+2509.03636	CausalARC: Abstract Reasoning with Causal World Models	1	31	16735	70505	59	77
+2606.07816	High Dimensional Change Point Models for Two-Directional Data	2	45	16728	187421	157	180
+2602.10370	Causal Effect Estimation with Learned Instrument Representations	1	19	16725	55420	47	57
+2211.10595	Explainable Artificial Intelligence and Causal Inference based ATM Fraud Detection	1	70	16703	102280	86	123
+2606.13176	Mental-R1: Aligning LLM Reasoning for Mental Health Assessment	2	25	16697	67153	56	70
+2606.21014	BayesFP: Posterior Estimation for Flow-Based Policies via Feynman-Kac Sampling	1	42	16679	128039	107	130
+2510.03658	Who benefits the most? Direct and indirect effects of a free cesarean section policy in Benin	1	20	16632	68339	57	66
+2607.06150	Enhanced Seam Segmentation for Automated Welding Robot in Construction Through Transfer Learning: Addressing Limitations of Bilateral Segmentation Network	1	38	16609	76970	65	83
+2606.03602	CauTion: Knowing When to Trust LLMs for Ensemble Causal Discovery	1	47	16581	75113	63	94
+2510.17318	CausalMamba: Scalable Conditional State Space Models for Neural Causal Inference	1	43	16570	71068	60	81
+2311.01206	How Does China's Household Portfolio Selection Vary with Financial Inclusion?	2	21	16477	86693	73	83
+2605.06059	Correcting heterogeneous diagnostic bias when developing clinical prediction models using causal hidden Markov models	2	34	16447	108931	91	102
+2403.10766	ODE Discovery for Longitudinal Heterogeneous Treatment Effects Inference	2	49	16408	148339	124	152
+2306.10340	Ultrahigh-fidelity composite quantum phase gates	1	15	16393	50129	42	52
+2404.05021	Context-dependent Causality (the Non-Nonotonic Case)	2	39	16384	168556	141	161
+2503.17290	Calibration Strategies for Robust Causal Estimation: Theoretical and Empirical Insights on Propensity Score-Based Estimators	2	54	16383	144709	121	150
+2303.14665	Achieving Counterfactual Fairness with Imperfect Structural Causal Model	1	20	16333	72296	61	70
+2304.03265	Causal Discovery with Score Matching on Additive Models with Arbitrary Noise	1	29	16292	83501	70	84
+2401.08290	Causal Machine Learning for Moderation Effects	1	71	16233	202722	169	208
+2606.12737	PI-Hunter: Automated Red-Teaming for Exposing and Localizing Prompt Injections	1	29	16201	88558	74	90
+1906.00685	Revealing the chemical structure of the Class I disc Oph-IRS 67	2	24	16197	56893	48	61
+2110.14525	Doubly Robust Criterion for Causal Inference	2	33	16183	123569	103	121
+2604.16221	Network Meta-analysis and Diffusion	1	37	16149	88996	75	98
+1612.03920	SDSS IV MaNGA: Deep observations of extra-planar, diffuse ionized gas around late-type galaxies from stacked IFU spectra	2	20	16145	85699	72	82
+0807.0534	An extensive photometric study of the Blazhko RR Lyrae star MW Lyr: I. Light curve solution	1	15	16104	70195	59	67
+2009.05711	Doubly robust estimation for conditional treatment effect: a study on asymptotics	2	47	16102	169551	142	165
+2607.07330	Hypergraph Neural Stochastic Diffusion: An SDE Framework for Uncertainty Estimation	1	51	16075	160342	134	160
+2503.11477	Heterogeneous Causal Discovery of Repeated Undesirable Health Outcomes	2	42	16072	128551	108	131
+2105.10060	Profile Matching for the Generalization and Personalization of Causal Inferences	1	33	16044	88275	74	95
+2606.07715	Causality versus Serial Correlation: an Asymmetric Portmanteau Test	1	52	15987	187553	157	184
+1603.01990	Perspective: How good is DFT for water?	1	33	15914	173498	145	162
+2106.00456	Federated Estimation of Causal Effects from Observational Data	2	33	15902	92459	78	95
+2311.11321	Bounds on Representation-Induced Confounding Bias for Treatment Effect Estimation	2	30	15872	95757	80	97
+2211.10008	Confounder Balancing for Instrumental Variable Regression with Latent Variable	2	35	15864	103135	86	106
+2603.15928	Prior-Data Fitted Networks for Causal Inference: a Simulation Study with Real-World Scenarios	1	33	15850	58003	49	68
+2310.16626	Scalable Causal Structure Learning via Amortized Conditional Independence Testing	1	19	15845	68613	58	67
+2607.10517	Conditional Optimal Bridge for Riemannian Activation Steering	2	31	15845	87934	74	90
+2202.07234	Long-term Causal Inference Under Persistent Confounding via Data Combination	1	83	15843	295014	246	288
+2201.12692	Meta-Learners for Estimation of Causal Effects: Finite Sample Cross-Fit Performance	2	61	15757	183189	153	185
+2510.10437	Women's inheritance rights reforms and impact on women's empowerment: evidence from India	1	24	15749	68239	57	71
+2406.05633	Heterogeneous Treatment Effects in Panel Data	1	47	15728	189992	159	180
+2606.06959	OpenHalDet: A Unified Benchmark for Hallucination Detection across Diverse Generation Scenarios	2	62	15723	125875	105	139
+1711.05243	Regularization and Hierarchical Prior Distributions for Adjustment with Health Care Claims Data: Rethinking Comorbidity Scores	1	23	15713	68754	58	70
+2602.20383	Detecting and Mitigating Group Bias in Heterogeneous Treatment Effects	1	49	15641	164999	138	163
+2606.20404	FlowBender: Feedback-Aware Training for Self-Correcting Conditional Flows	1	28	15580	71470	60	76
+1603.08149	Understanding transport simulations of heavy-ion collisions at 100 and 400 AMeV: Comparison of heavy ion transport codes under controlled conditions	1	18	15574	87622	74	80
+2606.09080	Beyond FLOPs: Benchmarking Real Inference Acceleration of LLM Pruning under a GEMM-Centric Taxonomy	1	20	15493	61811	52	62
+2606.08417	Hacking Generative Perplexity: Why Unconditional Text Evaluation Needs Distributional Metrics	1	14	15470	52414	44	52
+2605.05125	Joint Treatment Effect Estimation from Incomplete Healthcare Data: Temporal Causal Normalizing Flows with LLM-driven Evolutionary MNAR Imputation	2	52	15386	118882	100	128
+2606.05298	Dynamical models of cluster members to probe the total mass properties of cluster subhalos. I. A comparison with parametric strong lensing models	1	24	15383	96928	81	93
+2211.13447	On the Complexity of Counterfactual Reasoning	1	30	15361	89820	75	93
+2508.06337	Decorrelated feature importance from local sample weighting	1	34	15339	126735	106	121
+2501.09052	Continual Test-Time Adaptation for Single Image Defocus Deblurring via Causal Siamese Networks	2	32	15334	88498	74	93
+2407.18607	Using GPT-4 to guide causal machine learning	1	13	15312	58327	49	56
+2307.00251	Local Eviction Moratoria and the Spread of COVID-19	1	14	15285	71440	60	67
+2606.10071	Temporal Sheaf Neural Networks with Dynamic Orthogonal Transport	2	60	15246	176271	147	177
+2107.07942	Flexible Covariate Adjustments in Regression Discontinuity Designs	1	39	15242	179187	150	167
+1601.05565	SMA Observations of the Extended CO(6-5) Emission in the Starburst Galaxy NGC253	1	23	15147	91130	76	89
+2604.26729	Flexible semiparametric modeling with application to Causal Inference	1	32	15128	124989	105	120
+2606.25688	Choosing What to Calibrate and What to Estimate in Structural Models	1	49	15088	191407	160	184
+2410.06017	Evacuation patterns and socioeconomic stratification in the context of wildfires in Chile	1	23	15072	59928	50	65
+1506.03880	Causal inference via algebraic geometry: feasibility tests for functional causal structures with two binary observed variables	1	29	15071	111989	94	108
+2312.05400	Generalized difference-in-differences	2	39	15065	109584	92	116
+2203.13364	Calibration Error for Heterogeneous Treatment Effects	1	26	15053	83805	70	84
+2511.06474	Boundary Discontinuity Designs: Theory and Practice	1	20	15003	104176	87	98
+2005.10879	Automatic Detection of Influential Actors in Disinformation Networks	1	16	14990	103469	87	95
+2606.23209	Parametrizing the projected wind fields of ultra-hot Jupiters in thermal emission: an application to GCM spectra of WASP-76b	1	27	14975	89150	75	89
+2408.02667	An Online Meta-Level Adaptive Design Framework with Targeted Learning Inference: Applications to Evaluating and Utilizing Surrogate Outcomes in Adaptive Designs	2	44	14956	167107	140	162
+2606.05910	Modeling Gamma-Ray Burst Spectra with Convolutional Neural Networks: Fast-Cooling Synchrotron Emission in a Decaying Magnetic Field	1	22	14938	65606	55	69
+2306.07652	Inactivated COVID-19 Vaccination did not affect In vitro fertilization (IVF) / Intra-Cytoplasmic Sperm Injection (ICSI) cycle outcomes	1	14	14894	40058	34	42
+2606.08250	On the effect of higher order symmetry energy corrections in Skyrme models for neutron star matter	1	30	14892	90157	76	95
+2410.23521	Healthy Live Births Should be Considered as Competing Events when Estimating the Total Effect of Prenatal Medication Use on Pregnancy Outcomes	1	31	14891	53476	45	64
+2606.11282	The Statistical Compass	1	478	14890	1766125	1472	1710
+1711.09179	Distance Metrics for Measuring Joint Dependence with Application to Causal Inference	1	43	14827	172239	144	168
+2201.00468	A General Framework for Treatment Effect Estimation in Semi-Supervised and High Dimensional Settings	1	62	14783	352818	295	326
+2602.02777	Disentangling spatial interference and spatial confounding biases in causal inference	2	37	14775	108423	91	112
+2404.09358	Two-stage Estimators for Spatial Confounding with Point-Referenced Data	1	37	14751	136887	115	133
+1211.4000	The Performance of Betting Lines for Predicting the Outcome of NFL Games	1	8	14702	42792	36	39
+2606.14210	From Prompts to Responses: Dual-Sided Data Leakage and Defense in Split Large Language Models	1	32	14663	69909	59	76
+1911.12430	Propensity score matching for estimating a marginal hazard ratio	1	41	14653	125045	105	129
+1606.04086	Inference in Regression Discontinuity Designs with a Discrete Running Variable	2	49	14597	183532	153	181
+2202.01336	Exploring Transformer Backbones for Heterogeneous Treatment Effect Estimation	1	37	14582	113919	95	117
+2208.10163	Identification and estimation of treatment effects on long-term outcomes in clinical trials with external observational data	2	33	14515	130653	109	125
+2103.15098	Amplitude analysis and branching-fraction measurement of \boldmath $D_{s}^{+} \to K^0_{S}π^{+}π^{0}$	1	27	14437	80604	68	82
+2007.07881	Statistical analysis of two arm randomized pre-post design with one post-treatment measurement	1	23	14391	88318	74	84
+2507.03898	Deconfounding Causal Inference through Two-Branch Framework with Early-Forking for Sensor-Based Cross-Domain Activity Recognition	2	36	14388	102037	86	103
+2305.09499	Energy and Angle Dependence of Neutrino Scattering Rates in Proto-Neutron Star and Supernova Matter within Skyrme RPA	1	20	14388	95754	80	91
+2606.07414	Sparsely gated tiny linear experts	1	34	14339	59878	50	72
+2311.15458	Causal Models for Longitudinal and Panel Data: A Survey	1	86	14257	282230	236	280
+2103.02909	Understanding Vaccine Hesitancy: Empirical Evidence from India	1	44	14249	182256	152	175
+2509.23424	What influenced the lack of diversity in CSR after the company's losses: evidence from topic modeling	1	47	14198	81531	68	99
+2407.13313	Sortability of Time Series Data	1	22	14154	61437	52	66
+1503.01845	Hadronic decays of the highly excited $2D$ $D_s$ resonances	2	13	14132	51572	43	50
+2302.12504	Recovering Sparse and Interpretable Subgroups with Heterogeneous Treatment Effects with Censored Time-to-Event Outcomes	1	22	14127	55160	46	58
+1911.10524	Causally Denoise Word Embeddings Using Half-Sibling Regression	2	15	14101	44816	38	44
+2606.23920	Catastrophic Compositional Generation: Why Vanilla Diffusion Models Fail to Extrapolate	2	41	14090	115217	97	118
+2606.20781	World Action Models: A Survey	1	60	14080	193161	161	193
+1802.06698	Analysis of cause-effect inference by comparing regression errors	1	30	14078	89842	75	90
+2308.05637	The Fast and the Private: Task-based Dataset Search	1	14	14069	68266	57	66
+2605.07280	Mask2Cause: Causal Discovery via Adjacency Constrained Causal Attention	1	55	14061	112188	94	125
+2405.14848	Local Causal Discovery for Structural Evidence of Direct Discrimination	1	35	14006	90435	76	97
+2004.03081	Nuclear modification factor in Pb-Pb and p-Pb collisions using Boltzmann transport equation	1	11	14003	45257	38	44
+2303.03187	Boosting Differentiable Causal Discovery via Adaptive Sample Reweighting	1	34	13995	91286	77	95
+2212.01437	Identifying Heterogeneous Treatment Effects in Multiple Outcomes using Joint Confidence Intervals	1	45	13988	66764	56	79
+2504.11740	A cautionary note for plasmode simulation studies in the setting of causal inference	2	46	13916	102388	86	112
+2307.07250	Mitigating Adversarial Vulnerability through Causal Parameter Estimation by Adversarial Double Machine Learning	2	19	13861	51013	43	55
+2606.15733	Vernier: Probing Representational Misalignment Behind Lexical Gaps in Causal Reasoning	1	30	13834	81148	68	82
+2607.11091	Adapting Evidential Neural Networks to Test-Time Neighbor Fusion Improves Molecular Property Prediction	1	53	13807	168165	141	170
+2606.25152	Hitting a Moving Target: Test-Time Adaptation for AI Text Detection under Continual Distribution Shift	1	34	13804	104200	87	108
+2507.19693	The Impact of Shared Telecom Infrastructure on Digital Connectivity and Inclusion	1	25	13729	68418	58	71
+1708.07326	Dwarf Galaxy Discoveries from the KMTNet Supernova Program I. The NGC 2784 Galaxy Group	1	15	13727	51935	44	53
+2606.06334	Quantifying the Privacy of Counterfactuals by Leveraging Membership Inference Attacks Against Synthetic Data	2	25	13714	75593	63	74
+2606.07157	Think Fast: Estimating No-CoT Task-Completion Time Horizons of Frontier AI Models	2	181	13711	240708	201	299
+2606.16540	MultiMolecule: a modular ecosystem for biomolecular sequence-model workflows	1	30	13674	96721	81	97
+2607.05605	Patch Knowledge Transfer for Efficient AI-Generated Image Quality Assessment	1	18	13649	51363	43	51
+2111.14524	From homemakers to breadwinners? How mandatory kindergarten affects maternal labour market outcomes	1	26	13641	111574	93	108
+2604.14575	Generative Augmented Inference	1	38	13639	108260	91	115
+1907.00222	Relaxing the Exclusion Restriction in Shift-Share Instrumental Variable Estimation	1	65	13632	134113	112	151
+2509.26378	MR$^2$-Bench: Going Beyond Matching to Reasoning in Multimodal Retrieval	2	50	13604	69489	58	92
+0706.2689	Long-range forces between two excited mercury atoms and associative ionization	1	12	13597	51422	43	48
+2607.10984	EquiFusion: Kinematics-Agnostic Human Motion Prediction via Equivariant Latent Diffusion	1	58	13592	155889	130	162
+2607.09308	Structural Diversity Among the Milky Way's Dwarf Spheroidal Satellites	1	29	13566	120219	101	117
+2606.25758	Dual Distribution Estimation for Zero-shot Noisy Test-Time Adaptation with VLMs	2	19	13494	59843	50	57
+2408.10459	Distinct Numerical Solutions for Elliptic Cross-Interface Problems Using Finite Element and Finite Difference Methods	1	11	13436	41861	35	40
+2307.02735	Decomposing Triple-Differences Regression under Staggered Adoption	1	32	13416	125801	105	122
+1712.08626	Obtaining Accurate Probabilistic Causal Inference by Post-Processing Calibration	1	11	13370	38517	33	38
+2410.18147	MEC-IP: Efficient Discovery of Markov Equivalent Classes via Integer Programming	1	17	13344	51799	44	52
+2011.01388	A framework for causal inference in the presence of extreme inverse probability weights: the role of overlap weights	1	64	13334	225351	188	225
+2607.19866	Local Causal Structure Learning in the Presence of Latent Variables and Selection Bias	2	55	13307	160768	134	164
+2607.04036	B-CALM: Bias-Limited Bayesian Borrowing for RCT-Anchored Treatment Effects under Covariate Mismatch	1	52	13306	141200	118	150
+2606.21160	Star Formation at the Periphery of a Molecular Superbubble: The Case of G12.79+0.43	1	29	13300	78253	66	80
+1810.10164	Outcome-wide longitudinal designs for causal inference: a new template for empirical studies	1	41	13262	158134	132	154
+1212.3559	A Dynamic Network Approach to Breakthrough Innovation	1	28	13226	97270	82	97
+2605.21793	Targeted maximum likelihood estimation of vaccine effectiveness and immune correlates in test-negative design studies with missing data	1	38	13215	118836	100	121
+2605.04639	Cognitive Alignment Drives Attention: Modeling and Supporting Socially Shared Regulation in Pair Programming	1	47	13205	114029	96	119
+2203.10975	GCF: Generalized Causal Forest for Heterogeneous Treatment Effect Estimation in Online Marketplace	1	28	13190	86619	73	87
+2102.00473	The impact of prior knowledge on causal structure learning	1	20	13168	94982	80	89
+2507.14161	Complex Dynamics in Psychological Data: Mapping Individual Symptom Trajectories to Group-Level Patterns	1	17	13147	65568	55	63
+2509.03050	Covariate Adjustment Cannot Hurt: Treatment Effect Estimation under Interference with Low-Order Outcome Interactions	1	70	13139	237348	198	236
+2509.13176	Semiparametric Causal Inference for Right-Censored Outcomes with Many Weak Invalid Instruments	1	84	13083	310229	259	301
+2407.15073	Multi-Agent Causal Discovery Using Large Language Models	1	30	13030	58988	50	68
+2607.11022	When the Reward Suite Is Leaky: A Preregistered Causal Contrast of Natural Verifier False Positives in RLVR	1	41	13001	137882	115	138
+1906.04631	Bias-Aware Inference in Fuzzy Regression Discontinuity Designs	1	40	12990	165947	139	157
+2606.10537	Prefilling-dLLM: Predictive Prefilling for Long-Context Inference in Diffusion Language Models	1	32	12985	53376	45	60
+2007.10183	Overlapping-sample Mendelian randomisation with multiple exposures: A Bayesian approach	1	19	12979	50565	43	53
+2112.14946	A causal inference framework for spatial confounding	1	43	12948	150309	126	144
+2309.04957	Winner's Curse Free Robust Mendelian Randomization with Summary Data	1	113	12938	389323	325	392
+2312.08107	Causal Optimal Transport of Abstractions	1	40	12937	116459	98	119
+1805.10300	A Double Machine Learning Approach to Estimate the Effects of Musical Practice on Student's Skills	1	40	12935	141113	118	140
+2009.05688	Spectroscopic study of the HII regions in the NGC 1232 galaxy	1	19	12844	64202	54	64
+1609.06052	Choosing the observational likelihood in state-space stock assessment models	1	23	12826	61728	52	67
+2505.00113	Doubly robust augmented weighting estimators for the analysis of externally controlled single-arm trials and unanchored indirect treatment comparisons	1	49	12812	147828	124	151
+2202.01650	Exposure Effects on Count Outcomes with Observational Data, with Application to Incarcerated Women	1	37	12790	111540	93	114
+2605.04510	Predictive and Prescriptive AI toward Optimizing Wildfire Suppression	1	61	12790	190073	159	196
+2307.05276	Unbiased Scene Graph Generation via Two-stage Causal Modeling	1	31	12774	113000	95	113
+2606.25160	Toward Low-Latency Vision-Language Models with Doubly-Correct Predictions in Egocentric Visual Understanding	1	20	12767	51066	43	55
+2205.11627	Identifying Patient-Specific Root Causes of Disease	1	24	12703	102508	86	98
+2402.01121	Causal Estimation and Inference in Nonlinear Mendelian Randomization Studies	1	23	12701	76481	64	74
+2605.12832	Digital Twins as Synthetic Controls in Single-Arm Trials	1	37	12700	138575	116	137
+2105.03325	Robust Estimation of Heterogeneous Treatment Effects using Electronic Health Record Data	1	49	12689	164764	138	168
+2606.31954	A Conformal Selection Framework for Individual Treatment Beneficiaries with Auxiliary External Data	1	43	12683	142886	120	144
+2412.11285	Moderating the Mediation Bootstrap for Causal Inference	1	19	12666	94229	79	90
+1810.09179	Causal Tree Estimation of Heterogeneous Household Response to Time-Of-Use Electricity Pricing Schemes	1	20	12652	59129	50	60
+2509.11575	A Survey of Reasoning and Agentic Systems in Time Series with Large Language Models	1	71	12651	144456	121	154
+2606.12088	Debiasing Without Protected Attributes: Latent Concept Erasure from Textual Profiles	1	39	12647	78847	66	84
+2606.21776	A Causal DAG Prior for Synthetic Time-Series Classification Datasets	1	24	12638	51458	43	56
+2402.04472	Healthcare Quality by Specialists under a Mixed Compensation System: an Empirical Analysis	1	24	12617	101165	85	96
+2109.08351	Regression Discontinuity Design with Potentially Many Covariates	1	36	12617	135388	113	132
+2308.01628	Estimating causal quantile exposure response functions via matching	1	19	12611	68747	58	68
+2606.05145	Failed Reasoning Traces Tell You What Is Fixable (But Not by Reading Them)	1	73	12598	156034	131	169
+2306.01969	Individual Causal Inference Using Panel Data With Multiple Outcomes	1	27	12593	105975	89	101
+2307.03074	Consistent Causal Inference for High-Dimensional Time Series	1	77	12582	202078	169	213
+2004.06054	Decomposition of Total Effect with the Notion of Natural Counterfactual Interaction Effect	1	36	12579	146075	122	140
+2312.05771	Hacking Task Confounder in Meta-Learning	1	42	12573	95282	80	100
+2109.07030	Proximal Causal Inference for Complex Longitudinal Studies	1	62	12519	212851	178	204
+2405.08730	A Generalized Difference-in-Differences Estimator for Randomized Stepped-Wedge and Observational Staggered Adoption Settings	1	41	12513	135976	114	135
+1911.00512	Modeling National Latent Socioeconomic Health and Examination of Policy Effects via Causal Inference	1	12	12491	76245	64	69
+2502.15838	A novel approach to the relationships between data features -- based on comprehensive examination of mathematical, technological, and causal methodology	1	58	12479	149362	125	157
+2411.16099	An Empirical Study of Vulnerability Detection using Federated Learning	1	24	12477	76098	64	77
+2404.16166	Double Robust Variance Estimation with Parametric Working Models	1	30	12453	75067	63	80
+2606.25432	Brevity is the Soul of Inference Efficiency: Inducing Concision in VLMs via Data Curation	1	31	12449	96202	81	101
+2606.24691	Learning Nonlinear Dynamics: Improving the Estimation Efficiency and Reliability of Gaussian Process State-Space Models	1	47	12445	134182	112	139
+2606.08262	Causal Semantic Alignment for LLM-based Time Series Forecasting	1	20	12435	61578	52	63
+1408.1706	The Changing Fractions of Type Ia Supernova NUV-Optical Subclasses with Redshift	1	12	12430	62113	52	58
+2603.04534	Invariant Causal Routing for Governing Social Norms in Online Market Economies	1	34	12428	95967	80	97
+2406.11601	Standardizing Structural Causal Models	1	57	12420	155008	130	159
+2207.08603	Abstraction between Structural Causal Models: A Review of Definitions and Properties	1	20	12403	60433	51	63
+2012.05968	Power prior models for treatment effect estimation in a small n, sequential, multiple assignment, randomized trial	1	17	12383	56038	47	58
+2109.11156	Robust models of SARS-CoV-2 heterogeneity and control	1	22	12336	97834	82	95
+2607.10898	Design Choices in Splitting-Based Self-Supervised Sparse-View CT Reconstruction	1	23	12334	81888	69	81
+2307.16427	Causal Inference for Banking Finance and Insurance A Survey	1	42	12320	116688	98	120
+2310.20087	PAM-HC: A Bayesian Nonparametric Construction of Hybrid Control for Randomized Clinical Trials Using External Data	1	22	12313	66092	56	69
+2606.21316	Large Language Model-Assisted Framework for BSM Model Building	1	59	12285	118762	99	132
+2606.25446	Amortized Simulation-Based Inference of Relativistic Mean-Field Couplings for Neutron-Star Equations of State	1	20	12281	48954	41	54
+2601.06205	Towards Public Administration Research Based on Interpretable Machine Learning	1	28	12274	71465	60	75
+2312.11481	Nudging Nutrition: Lessons from the Danish "Fat Tax"	1	41	12264	104592	88	112
+2411.03140	The Impact of Medicaid Expansion on Medicare Quality Measures	1	17	12256	42107	36	44
+2503.22616	A Unified Approach for Estimating Various Treatment Effects in Causal Inference	1	40	12248	124256	104	126
+2606.20995	From inference to prediction: how machine learning is reconfiguring science	1	21	12239	52204	44	54
+2103.09824	Implications of Lithium to Oxygen AMS-02 spectra on our understanding of cosmic-ray diffusion	1	17	12239	87201	73	80
+2607.17750	Assessing the Impact of Model Assumptions in Network Meta-Regression: A Simulation Study	1	41	12229	74266	62	85
+2606.08498	Tests for Independence of High-Dimensional Nonstationary Time Series	1	79	12208	346719	289	331
+1911.11345	High Dimensional M-Estimation with Missing Outcomes: A Semi-Parametric Framework	1	84	12188	428325	357	397
+2411.10634	Drift-Resilient TabPFN: In-Context Learning Temporal Distribution Shifts on Tabular Data	1	74	12141	113554	95	143
+2510.04276	Scalable Causal Discovery from Recursive Nonlinear Data via Truncated Basis Function Scores and Tests	1	36	12083	88177	74	90
+2504.09542	Solar-charge your car: EV charging can be aligned with renewables by providing pro-environmental information on a smartboard	1	25	12072	97799	82	96
+1901.05537	Shared Causal Paths underlying Alzheimer's dementia and Type 2 Diabetes	1	23	12051	70740	59	72
+2311.07645	Probing the CP Structure of the Top Quark Yukawa at the Future Muon Collider	1	19	12046	74720	63	73
+2606.06005	The Multi-phase Biconical Outflow in the local IR-Luminous Merger IRASF01364-1042	1	49	12042	143221	120	146
+2607.10313	Learn2Chat: Rethinking Dyadic Talking Heads via Interaction-Modulated Monologic Priors	1	22	12039	63594	53	64
+2606.27115	Clustering of high-redshift quasars with DESI DR2	1	25	12037	97330	82	94
+1812.05630	Systematic Differences in Spectroscopic Analysis of Red Giants	1	17	12035	68209	57	66
+1705.04506	A causal modelling framework for reference-based imputation and tipping point analysis	1	32	12027	71649	60	78
+2206.02928	Neuro-Symbolic Procedural Planning with Commonsense Prompting	1	50	12027	98229	82	111
+2606.15458	Structured Nonparametric Variational Inference for Dependent Latent Modeling	1	22	11977	132826	111	120
+2305.09574	UOR: Universal Backdoor Attacks on Pre-trained Language Models	1	31	11976	57144	48	66
+2502.10958	Estimation of Treatment Effects based on Kernel Matching	1	39	11950	109065	91	112
+2406.06814	Temporal Link Prediction in Social Networks Based on Agent Behavior Synchrony and a Cognitive Mechanism	1	26	11938	55112	46	61
+2606.14044	Electron-capture Supernova Candidates from Light Curves: Implications for Their Progenitors and Explosion Properties	1	26	11928	81577	68	81
+2401.11263	Estimating Heterogeneous Treatment Effects on Survival Outcomes Using Counterfactual Censoring Unbiased Transformations	1	56	11899	218890	183	210
+2606.13808	The Culture Funnel: You Can't Align What isn't in the Data	1	34	11838	62138	52	68
+2412.20175	An Undergraduate Course on the Statistical Principles of Research Study Design	1	32	11823	76704	64	81
+2408.16039	Generalizing Difference-in-Differences to Non-Canonical Settings: Identifying an Array of Estimands	1	39	11784	140220	117	136
+2511.04469	Towards Causal Market Simulators	1	18	11751	50318	42	53
+2401.16571	Individualized Multi-Treatment Response Curves Estimation using RBF-net with Shared Neurons	1	22	11745	70413	59	71
+2303.13960	Demystifying estimands in cluster-randomised trials	1	40	11736	96270	81	101
+2406.00983	Take its Essence, Discard its Dross! Debiasing for Toxic Language Detection via Counterfactual Causal Effect	1	31	11682	60444	51	67
+2607.06948	Self-Supervised Pretraining Improves Cross-Site and Cross-Scale Robustness of Point Cloud Leaf-Wood Segmentation	1	23	11600	71219	60	72
+2606.15346	DYNA-PRUNER: Input-Adaptive Data-Model Co-Pruning for Efficient and Scalable Spatio-Temporal Media Prediction	1	15	11575	60284	51	59
+2505.05338	A Unified Approach to Covariate Adjustment for Survival Endpoints in Randomized Clinical Trials	1	10	11566	50524	43	47
+2508.12650	Score-informed Neural Operator for Enhancing Ordering-based Causal Discovery	1	41	11544	114590	96	118
+2606.07664	Seq103: A Unified Neuroevolution Framework for Compact Sequence Architecture Discovery	1	35	11538	65519	55	72
+2412.19711	Causal machine learning for heterogeneous treatment effects in the presence of missing outcome data	1	57	11528	141854	119	152
+2510.26700	Assessment of the conditional exchangeability assumption in causal machine learning models: a simulation study	1	24	11507	39462	33	47
+2201.07031	Does built environment influence physical activity and body postures in homework journeys?	1	42	11497	49584	42	66
+2606.13426	Accelerating Speculative Diffusions via Block Verification	1	40	11488	137799	115	137
+2311.11689	Causal Structure Learning Supervised by Large Language Model	1	31	11486	74072	62	78
+2507.07909	Document Similarity Enhanced IPS Estimation for Unbiased Learning to Rank	1	12	11480	30969	26	34
+2206.10013	Measuring the Effect of Training Data on Deep Learning Predictions via Randomized Experiments	1	57	11466	149829	125	155
+2606.07690	HARP: Efficient Data Selection for Finetuning Large Language Models	1	37	11462	102037	86	103
+2601.20725	Comparing causal estimands from sequential nested versus single point target trials: A simulation study	1	29	11444	59033	50	65
+2401.03597	Few-Shot Causal Representation Learning for Out-of-Distribution Generalization on Heterogeneous Graphs	1	30	11443	98566	83	98
+2606.26961	Broad-band Spectral Modeling of Large-Scale X-ray Jets in High-Redshift Quasars: An MHD-Informed Approach	1	25	11408	87657	74	85
+1911.06868	Causal inference with recurrent data via inverse probability treatment weighting method (IPTW)	1	12	11380	41031	35	40
+local:7423c6d63786	Peeking at A/B Tests: Why It Matters, and What to Do About It	1	25	11376	85163	71	86
+2603.10941	Covariate-adjusted statistical dependence representation through partial copulas: bounds and new insights	1	20	11374	62552	53	62
+2305.06651	Robust Inference for Causal Mediation Analysis of Recurrent Event Data	1	43	11364	150090	126	148
+2406.00940	Measurement Error-Robust Causal Inference via Constructed Instrumental Variables	1	42	11336	192263	161	180
+2404.11341	The Causal Chambers: Real Physical Systems as a Testbed for AI Methodology	1	54	11330	128128	107	136
+2407.05287	Model-agnostic meta-learners for estimating heterogeneous treatment effects over time	1	42	11328	139262	117	141
+2603.27010	Bayesian analysis of the causal reference-based model for missing data in clinical trials, accommodating partially observed post-intercurrent event data	1	18	11301	75518	63	73
+2511.06790	Robust Causal Discovery under Imperfect Structural Constraints	1	32	11299	93848	79	97
+2407.02980	Modelling the mitigation of anti-vaccine opinion propagation to suppress epidemic spread: A computational approach	1	21	11285	80442	68	77
+2110.11349	Combining Parametric and Nonparametric Models to Estimate Treatment Effects in Observational Studies	1	17	11273	58240	49	61
+2310.07379	Causal Unsupervised Semantic Segmentation	1	26	11272	58343	49	63
+2411.06862	The Impact of the General Data Protection Regulation (GDPR) on Online Tracking	1	71	11266	182382	152	190
+2505.19355	Estimating Online Influence Needs Causal Modeling! Counterfactual Analysis of Social Media Engagement	1	22	11228	60722	51	63
+2010.02896	Mass Gatherings for Political Expression Had No Discernable Association with the Local Course of the COVID-19 Pandemic in the USA in 2020 and 2021	1	42	11228	132708	111	134
+2402.01454	Integrating Large Language Models in Causal Discovery: A Statistical Causal Approach	1	69	11209	212691	178	212
+2010.07506	EIC (Expert Information Criterion) not AIC: the cautious biologist's guide to model selection	1	27	11197	65086	55	67
+2004.14042	The local and global properties of different types of supernova host galaxies	1	17	11194	47891	40	50
+2607.07296	Euclid Quick Data Release (Q1). Searching for radio-selected \Euclid-dark galaxies in the EDF-N	1	26	11188	89008	75	88
+2406.12995	Essays on Responsible and Sustainable Finance	1	253	11166	616696	514	647
+2307.01413	Identifying Optimal Methods for Addressing Confounding Bias When Estimating the Effects of State-Level Policies	1	21	11160	50189	42	51
+2606.10463	Distributionally Robust PCA with Data-Adaptive Wasserstein Geometry	1	77	11159	277316	232	270
+2606.06726	Natural Language Access Control (NLAC): From Help Desk Requests to Structured Policies	1	34	11142	140819	118	132
+0908.3497	Cooperative Behavior Cascades in Human Social Networks	1	11	11142	59257	50	55
+2606.18304	Attribution-Guided and Coverage-Maximized Pruning for Structural MoE Compression	1	49	11132	110443	93	119
+2310.11059	Causal Feature Selection via Transfer Entropy	1	24	11130	93567	78	92
+2309.11764	Causal inference with outcome dependent sampling and mismeasured outcome	1	35	11107	112054	94	113
+2607.08057	Towards Efficient Large Language Model Serving: A Survey on System-Aware KV Cache Optimization	1	52	11086	79667	67	95
+2006.12269	Estimating the effectiveness of permanent price reductions for competing products using multivariate Bayesian structural time series models	1	42	11084	146897	123	143
+2504.17066	Whence Is A Model Fair? Fixing Fairness Bugs via Propensity Score Matching	1	25	11082	74457	63	78
+2312.04180	AI and Jobs: Has the Inflection Point Arrived? Evidence from an Online Labor Platform	1	34	11076	100828	85	104
+2402.05030	Inference for Two-Stage Extremum Estimators	1	62	11053	197856	165	199
+2606.16925	RAID: Semantic Graph Diffusion for True Cold-Start and Cross-Lingual Forecasting	1	47	11032	77401	65	92
+2607.09335	Clock-noise subtraction in geometric time-delay interferometry for space-based gravitational-wave parameter estimation	1	28	11017	101402	85	100
+2311.06868	Concept-wise Fine-tuning Matters in Preventing Negative Transfer	1	38	10981	73805	62	84
+2201.07072	Who Increases Emergency Department Use? New Insights from the Oregon Health Insurance Experiment	1	23	10977	99927	84	98
+2603.04544	Proximal Learning for Trials With External Controls: A Case Study in HIV Prevention	1	40	10966	144012	121	141
+2607.09424	A Sovereign, Open-Source Foundation Model for German and English	1	41	10955	127671	107	127
+2606.21774	Euclid Quick Data Release (Q1): The geometry of dark matter halos from extragalactic streams	1	71	10949	197226	165	208
+2604.05841	Effect of Cigarette Price and Tax Increases on Smoking in Europe: A Difference-in-Differences Study with Double Machine Learning	1	23	10939	92969	78	90
+2506.22350	Personnel-adjustment for home run park effects in Major League Baseball	1	20	10931	65469	55	66
+2605.06608	DARTS: Targeting Prognostic Covariates in Budget-Constrained Sequential Experiments	1	38	10922	97578	82	104
+2307.05338	Root Causal Inference from Single Cell RNA Sequencing with the Negative Binomial	1	29	10914	113350	95	111
+2110.15484	Cycle-Balanced Representation Learning For Counterfactual Inference	1	11	10896	41553	35	41
+1809.03600	Non-Asymptotic Inference in Instrumental Variables Estimation	1	25	10884	83963	70	86
+2502.10077	Towards Empowerment Gain through Causal Structure Learning in Model-Based RL	1	49	10884	89872	75	104
+2207.07890	Covariate Adjustment in Randomized Clinical Trials with Missing Covariate and Outcome Data	1	21	10880	83411	70	82
+2505.12589	SurveillanceVQA-589K: A Benchmark for Comprehensive Surveillance Video-Language Understanding with Large Models	1	37	10856	63028	53	75
+2504.17318	Skills Beget Skills: Evidence from Historical School Reforms Targeting Health and Further Education	1	33	10846	62118	52	69
+2606.06915	ThinkBooster: A Unified Framework for Seamless Test-Time Scaling of LLM Reasoning	1	18	10837	42454	36	48
+1910.07017	Bayesian variable selection in hierarchical difference-in-differences models	1	32	10832	95583	80	99
+2106.02835	On the Role of Entropy-based Loss for Learning Causal Structures with Continuous Optimization	1	30	10823	86160	72	89
+2606.30470	Swimming in Dark Water: When Cartels Mimic Competition	1	42	10822	109976	92	119
+2606.25488	Distill on a Diet: Efficient Knowledge Distillation via Learnable Data Pruning	1	35	10813	91366	77	95
+2210.14908	Powering Up a Slow Charging Market: How Do Government Subsidies Affect Charging Station Supply?	1	31	10777	92783	78	95
+2511.05801	The Exact Variance of the Average Treatment Effect Estimator in Cluster Randomized Controlled Trials	1	32	10752	144697	121	136
+1809.00236	Optimal Bandwidth Choice for Robust Bias Corrected Inference in Regression Discontinuity Designs	1	52	10742	166144	139	163
+2012.11286	An Empirical Evaluation On The Effectiveness Of Medicaid Expansion Across 49 States	1	18	10736	38177	32	43
+1910.07393	An Instrumental Variable Estimator for Mixed Indicators: Analytic Derivatives and Alternative Parameterizations	1	25	10735	103515	87	101
+2606.06010	Adaptive Oscillatory-State Alignment for Time Series Forecasting	1	20	10731	55022	46	55
+2501.09517	Recovering latent linkage structures and spillover effects with structural breaks in panel data models	1	54	10731	205798	172	200
+2203.10458	TreatmentEstimatoR: a Dashboard for Estimating Treatment Effects from Observational Health Data	1	27	10725	44449	38	52
+2302.03120	Studying Therapy Effects and Disease Outcomes in Silico using Artificial Counterfactual Tissue Samples	1	25	10708	57170	48	60
+2410.19464	LOCAL: Learning with Orientation Matrix to Infer Causal Structure from Time Series Data	1	30	10700	57097	48	63
+2502.18994	Long-term Causal Inference via Modeling Sequential Latent Confounding	1	33	10666	99356	83	100
+2205.14995	Unbiased and Efficient Estimation of Causal Treatment Effects in Cross-over Trials	2	18	10661	73968	62	72
+2606.05073	Learning What Not to Impute: An Uncertainty-Aware Diffusion Framework for Meaningful Missingness	1	28	10643	94792	79	96
+2301.01085	The Chained Difference-in-Differences	1	50	10629	190386	159	180
+2603.03587	Controllable Generative Sandbox for Causal Inference	1	36	10620	111197	93	110
+2506.09871	Optimal Adjustment Sets for Nonparametric Estimation of Weighted Controlled Direct Effect	1	69	10598	249718	209	246
+2308.04963	A Guide to Impact Evaluation under Sample Selection and Missing Data: Teacher's Aides and Adolescent Mental Health	1	41	10593	115638	97	118
+2407.19638	On the Reliability of Large Language Models for Causal Discovery	1	32	10559	76149	64	81
+2212.05925	CausalEGM: a general causal inference framework by encoding generative modeling	1	31	10555	95071	80	96
+2410.00965	Causal Discovery in Astrophysics: Unraveling Supermassive Black Hole and Galaxy Coevolution	1	36	10521	95158	80	100
+2012.00745	Double machine learning for sample selection models	1	49	10506	177116	148	174
+2001.06281	Entropy Balancing for Continuous Treatments	1	15	10500	55464	47	54
+2409.10750	GPT takes the SAT: Tracing changes in Test Difficulty and Math Performance of Students	1	32	10498	91069	76	95
+2501.06873	Causal Claims in Economics	1	59	10497	108465	91	122
+2102.01753	Debiased Inference on Heterogeneous Quantile Treatment Effects with Regression Rank-Scores	1	146	10483	611194	510	582
+2605.03278	Copula-Based Endogeneity Correction for Doubly Robust Estimation of Treatment Effect	1	37	10483	55397	47	70
+2607.21534	Generative AI Availability, Grades, and Student Satisfaction at a Large University	1	80	10476	152602	128	173
+2505.16308	Beyond All-to-All: Causal-Aligned Transformer with Dynamic Structure Learning for Multivariate Time Series Forecasting	1	52	10475	120735	101	126
+2306.15479	Predictive Coding beyond Correlations	1	30	10444	100047	84	98
+2606.13624	Beyond Uniform Tokens: Adaptive Compression for Time Series Language Models	1	45	10440	105311	88	115
+2006.10194	Gender Inequality in Research Productivity During the COVID-19 Pandemic	1	21	10434	68060	57	66
+2505.08960	Modern Causal Inference Approaches to Improve Power for Subgroup Analysis in Randomized Controlled Trials	1	47	10418	136966	115	140
+2402.17637	Learning the Covariance of Treatment Effects Across Many Weak Experiments	1	26	10414	98856	83	96
+2201.09746	Reinforcement Learning Textbook	1	291	10392	1026601	856	1017
+0710.5035	The NIR to UV continuum of radio loud vs. radio quiet quasars	1	14	10390	28712	24	31
+2307.09546	Spatio-temporal quasi-experimental methods for rare disease outcomes: The impact of reformulated gasoline on childhood hematologic cancer	1	29	10388	87492	73	88
+2605.29348	Efficient Inference for Incremental Causal Effects of Time to Treatment	1	46	10357	162958	136	157
+2105.09980	Data-driven discovery of interpretable causal relations for deep learning material laws with uncertainty propagation	1	31	10336	100453	84	102
+2410.05890	Ordering-Based Causal Discovery for Linear and Nonlinear Relations	1	54	10321	99266	83	112
+2510.18281	Online Time Series Forecasting with Theoretical Guarantees	1	64	10320	190028	159	195
+2403.04793	A Data-Driven Two-Phase Multi-Split Causal Ensemble Model for Time Series	1	25	10320	86352	72	83
+1609.06245	Identification and estimation of treatment and interference effects in observational studies on networks	1	66	10305	201024	168	203
+2111.10109	Model-assisted complier average treatment effect estimates in randomized experiments with non-compliance and a binary outcome	1	43	10299	160421	134	156
+2606.26136	Bayesian Predictive Synthesis for Dynamic Networks: Forecasting and Identifying Structural Mechanisms	1	75	10296	277952	232	273
+2409.08781	Community-based fact-checking reduces the spread of misleading posts on social media	1	36	10292	88552	74	95
+2501.14602	Minimax Optimal Design with Spillover and Carryover Effects	1	84	10286	333351	278	324
+2607.07708	Accurate, Interdisciplinary and Transparent Structure-property Understanding with Deep Native Structural Reasoning	1	65	10278	150742	126	163
+2606.08020	Repair Before Veto, When Repair Is Hidden: Quantum-Accessible Features for Repair-Augmented Constraint Learning	1	12	10276	58024	49	55
+2003.03191	Double Machine Learning based Program Evaluation under Unconfoundedness	1	39	10265	104770	88	109
+2209.03936	Shift in house price estimates during COVID-19 reveals effect of crisis on collective speculation	1	12	10253	86388	72	78
+2606.04591	Fine-grained Fragment Retrieval in Multi-modal Long-form Dialogues	1	48	10244	117789	99	127
+2103.06446	Extracting candidate factors affecting long-term trends of student abilities across subjects	1	22	10234	56451	48	58
+2303.09634	Causal Temporal Graph Convolutional Neural Networks (CTGCN)	1	24	10231	84280	71	83
+2606.13787	Reconstructing the orbits of Milky Way dwarf galaxies: An LMC perspective	1	28	10226	119230	100	117
+2605.24808	Disentangled Double Machine Learning for Accurate Causal Effect Estimation	1	26	10217	87058	73	86
+2309.02183	Instrumental variable estimation of the proportional hazards model by presmoothing	1	65	10213	196374	164	200
+2004.13459	Causal Inference on Networks under Continuous Treatment Interference	1	26	10199	116853	98	113
+2506.18187	The Impact of Medication Non-adherence on Adverse Outcomes: Evidence from Schizophrenia Patients via Survival Analysis	1	47	10187	131540	110	135
+2607.11088	CUST: Clustered Unit-level Similarity Transformer for Lightweight Image Super-Resolution	1	20	10185	56811	48	58
+2302.07840	Causally-interpretable meta-analysis: clearly-defined causal effects and two case studies	1	16	10174	52508	44	52
+2503.22369	Inference on effect size after multiple hypothesis testing	1	61	10174	201203	168	200
+2505.00450	Spatial vertical regression for spatial panel data: Evaluating the effect of the Florentine tramway's first line on commercial vitality	1	40	10166	122615	103	123
+2408.15862	Marginal homogeneity tests with panel data	1	33	10158	136328	114	132
+2006.07663	Bayesian causal inference with some invalid instrumental variables	1	17	10157	71168	60	67
+2009.03171	Semantic Discriminability for Visual Communication	1	30	10151	78407	66	84
+2507.05511	Deep Learning of Continuous and Structured Policies for Aggregated Heterogeneous Treatment Effects	1	28	10142	108645	91	108
+1808.07804	Transfer Learning for Estimating Causal Effects using Neural Networks	1	28	10140	57442	48	64
+2607.07914	Beta Regression with Autoregressive Errors for Interrupted Time Series Analysis of Proportion and Rate Outcomes: A Simulation Study	1	39	10130	76874	65	83
+2606.13369	Classification of Compact Stars via Machine Learning and Neural Network Models	1	24	10107	79529	67	79
+2606.15448	EventConnector: Mining Social Event Relations through Temporal Graphs	1	30	10101	60674	51	67
+2606.16996	ActiveSAM: Image-Conditional Class Pruning for Fast and Accurate Open-Vocabulary Segmentation	1	20	10093	49159	41	52
+2208.14329	Tree-based Subgroup Discovery In Electronic Health Records: Heterogeneity of Treatment Effects for DTG-containing Therapies	1	24	10093	84169	71	82
+2104.06667	Double Robust Semi-Supervised Inference for the Mean: Selection Bias under MAR Labeling with Decaying Overlap	1	93	10088	445574	372	417
+2410.16475	Tilt-To-Length Coupling in LISA -- Uncertainty and Biases	1	28	10087	81647	69	85
+2208.07798	Counterfactual Supervision-based Information Bottleneck for Out-of-Distribution Generalization	1	40	10086	101780	85	108
+2505.13072	Orthogonal Survival Learners for Estimating Heterogeneous Treatment Effects from Time-to-Event Data	1	37	10068	120881	101	123
+1907.00287	Estimating Treatment Effect under Additive Hazards Models with High-dimensional Covariates	1	78	10056	267723	224	261
+2004.08510	Causal Effects of Prenatal Drug Exposure on Birth Defects with Missing by Terathanasia	1	38	10049	85054	71	89
+2506.14805	Argus Inspection: Do Multimodal Large Language Models Possess the Eye of Panoptes?	1	29	10043	58428	49	67
+2607.06128	Executable verification through formalized expert reasoning in astronomical spectroscopy	1	29	10033	89686	75	91
+2402.18392	Unveiling the Potential of Robustness in Selecting Conditional Average Treatment Effect Estimators	1	56	10028	152578	128	156
+2305.19180	Prognostic Adjustment with Efficient Estimators to Unbiasedly Leverage Historical Data in Randomized Trials	1	32	10021	79089	66	86
+1405.2376	A Methodology for Information Flow Experiments	1	70	9987	182037	152	190
+2212.13145	Orthogonal Series Estimation for the Ratio of Conditional Expectation Functions	1	44	9981	160257	134	155
+2110.09823	An Empirical Study: Extensive Deep Temporal Point Process	1	66	9973	123854	104	140
+2005.03447	Feature Selection Methods for Uplift Modeling and Heterogeneous Treatment Effect	1	16	9972	44151	37	45
+2506.19973	Quantum Neural Networks for Propensity Score Estimation and Survival Analysis in Observational Biomedical Studies	1	24	9954	105201	88	101
+2401.08534	DiConStruct: Causal Concept-based Explanations through Black-Box Distillation	1	38	9950	73554	62	82
+2204.09450	Who Benefits from Political Connections in Brazilian Municipalities	1	13	9941	73642	62	69
+2606.14132	HSCI: Neyman-Orthogonal Causal Inference under High-Dimensional Proportional Hazards	1	85	9936	337652	282	329
+2607.11256	A General U-Statistic Framework for High-Dimensional Multiple Change-Point Analysis	1	107	9930	407590	340	401
+2209.14391	The Network Propensity Score: Spillovers, Homophily, and Selection into Treatment	1	58	9926	233972	195	226
+2511.10681	Assaults on Judicial Independence under the Pretense of Modernization: Evidence from Venezuela	1	30	9923	136673	114	131
+2409.13888	Causal Feature Selection Method for Contextual Multi-Armed Bandits in Recommender System	1	19	9923	74069	62	73
+2412.16577	A Meta-Learning Approach to Bayesian Causal Discovery	1	27	9916	70354	59	76
+2007.03973	Within-Person Variability Score-Based Causal Inference: A Two-Step Estimation for Joint Effects of Time-Varying Treatments	1	40	9913	152228	127	149
+2606.16073	Stop the Sampler! Classifier-Based Adaptive Stopping for Sampling Kernels	1	36	9897	83353	70	89
+2505.00217	Robust Estimation and Inference in Hybrid Controlled Trials for Binary Outcomes: A Case Study on Non-Small Cell Lung Cancer	1	53	9896	132759	111	140
+2011.05195	Rerandomization in stratified randomized experiments	1	73	9895	207897	174	211
+2410.02844	CAnDOIT: Causal Discovery with Observational and Interventional Data from Time-Series	1	27	9890	78548	66	83
+1301.4564	Protein flexibility upon ligand binding: Docking predictions and statistical analysis	1	58	9883	186401	156	184
+2511.13200	A Price to Enter: Anticipatory Housing Market Sorting and Access Inequality under New York's Congestion Pricing	1	19	9865	72445	61	72
+2103.04907	Generalizing trial evidence to target populations in non-nested designs: Applications to AIDS clinical trials	1	31	9851	104616	88	105
+2509.12981	Causal Discovery via Quantile Partial Effect	1	44	9844	126882	106	130
+1711.09388	Model misspecification and bias for inverse probability weighting and doubly robust estimators	1	22	9842	80874	68	82
+2409.04500	Benchmarking Estimators for Natural Experiments: A Novel Dataset and a Doubly Robust Algorithm	1	34	9839	90287	76	95
+1506.04451	Doubly Robust-Based Generalized Estimating Equations for the Analysis of Longitudinal Ordinal Missing Data	1	20	9831	58098	49	60
+2604.04290	DAGAF: A directed acyclic generative adversarial framework for joint structure learning and tabular data synthesis	1	43	9830	115405	97	120
+2206.00727	(Machine) Learning What Policies Value	1	35	9826	72763	61	81
+2506.02384	Precrop Payoffs: Causal machine learning reveals large but variable yield benefits of crop rotation in major breadbaskets	1	64	9826	196178	164	200
+2606.08454	Beyond Linear Activation Steering: Invertible Latent Transformations for Controlling LLM Behavior	1	62	9825	130370	109	144
+2509.14598	Randomization inference for stepped-wedge designs with noncompliance with application to a palliative care pragmatic trial	1	51	9818	178826	150	179
+2506.23358	Federated Timeline Synthesis: Scalable and Private Methodology For Model Training and Deployment	1	19	9811	65185	55	66
+2202.03413	The Marginal Labor Supply Disincentives of Welfare: Evidence from Administrative Barriers to Participation	1	27	9787	114156	96	112
+2106.04118	Searching for consistent associations with a multi-environment knockoff filter	1	48	9783	154601	129	156
+2205.10198	A New Central Limit Theorem for the Augmented IPW Estimator: Variance Inflation, Cross-Fit Covariance and Beyond	1	109	9778	578226	482	541
+2511.06545	Vibecoding and Digital Entrepreneurship	1	20	9775	83216	70	82
+2102.03151	Reducing the Amortization Gap in Variational Autoencoders: A Bayesian Random Function Approach	1	23	9773	76258	64	77
+2307.09035	COVID-19 Demand Shocks Revisited: Did Advertising Technology Help Mitigate Adverse Consequences for Small and Midsize Businesses?	1	24	9743	85926	72	84
+2110.08807	Estimating returns to special education: combining machine learning and text analysis to address confounding	1	46	9732	159381	133	157
+2502.15704	EMK-KEN: A High-Performance Approach for Assessing Knowledge Value in Citation Network	1	14	9732	51216	43	50
+2505.14748	Cooperative Causal GraphSAGE	1	19	9731	53892	45	57
+2606.12200	Implicit Neural Representations of Individual Behavior	1	13	9728	41945	35	42
+2308.15986	Sensitivity Analysis of Inverse Probability Weighting Estimators of Causal Effects in Observational Studies with Multivalued Treatments	1	15	9717	45666	39	48
+2606.25732	Efficient Real-World Dehazing via Physics-Inspired Global-Local Decoupling	1	18	9707	48306	41	49
+2511.13949	Introducing AI to an Online Petition Platform Changed Outputs but not Outcomes	1	35	9705	119534	100	117
+2605.10430	Real vs. Semi-Simulated: Rethinking Evaluation for Treatment Effect Estimation	1	26	9702	56307	47	60
+2005.14508	Doubly robust estimation of average treatment effect revisited	1	63	9665	236119	197	228
+2110.12145	Prior Intensified Information Criterion	1	29	9660	106026	89	106
+2308.12388	Missing Data Imputation Based on Dynamically Adaptable Structural Equation Modeling with Self-Attention	1	20	9658	53521	45	57
+2607.18677	The Price of Quietness: How a Pandemic Affects City Dwellers' Response to Road Traffic Noise	1	23	9655	60150	51	63
+2606.25185	Neural operator-based digital twins for modeling amyloid-$β$ and tau propagation and treatment optimization in Alzheimer's disease	1	18	9649	64894	55	64
+2606.22511	Breaking the Likelihood Trap: Variance-Calibrated Modulation for Large Language Model Decoding	1	45	9642	86521	73	93
+2606.22893	X-shooter spectroscopy of giant stars in the nuclear star cluster	1	10	9640	32879	28	32
+2504.12085	Semiparametric Causal Discovery and Inference with Invalid Instruments	1	34	9638	114686	96	114
+2002.05308	Efficient Adaptive Experimental Design for Average Treatment Effect Estimation	1	65	9620	203016	170	203
+2603.20791	Neural Autoregressive Flows for Markov Boundary Learning	1	25	9593	78262	66	80
+2510.24714	Machine-Learning-Assisted Comparison of Regression Functions	1	26	9557	95172	80	94
+2605.24377	Trustworthy AI/ML Regression and Unbiased Causal Inference for Real-World Data	1	21	9557	62509	53	64
+2606.24083	CAVEWOMAN: How Large Language Models Behave Under Linguistic Input and Output Compression	1	56	9556	67967	57	89
+2205.01757	XLTime: A Cross-Lingual Knowledge Transfer Framework for Temporal Expression Extraction	1	22	9534	38183	32	42
+2410.17399	An Anatomy of Event Studies: Hypothetical Experiments, Exact Decomposition, and Weighting Diagnostics	1	44	9527	153138	128	152
+2202.11351	A Semi-Synthetic Dataset Generation Framework for Causal Inference in Recommender Systems	1	29	9516	122630	103	116
+2102.03980	Grab the Reins of Crowds: Estimating the Effects of Crowd Movement Guidance Using Causal Inference	1	23	9512	49067	41	54
+2312.05858	Causal inference and policy evaluation without a control group	1	36	9505	140277	117	136
+2606.07335	Defending Jailbreak Attacks on Large Language Models via Manifold Trajectory Kinetics	1	52	9501	103206	87	114
+2607.13428	PUe: Biased Positive-Unlabeled Learning Enhancement by Causal Inference	1	26	9501	47741	40	54
+2606.23071	Understanding the Stealthy BGP Hijacking Risk in the ROV Era	1	51	9495	115055	96	125
+2004.02296	Effects of the Affordable Care Act Dependent Coverage Mandate on Health Insurance Coverage for Individuals in Same-Sex Couples	1	29	9472	106091	89	103
+2511.13915	Mapping the Cosmic-Ray Ionization Rate in the Local Galaxy with H$_3^+$	1	34	9461	93125	78	97
+1611.06217	Specification Tests for the Propensity Score	1	36	9450	147470	123	144
+1604.02642	Program Evaluation with Right-Censored Data	1	28	9448	117570	98	113
+1905.11300	Quantifying and Detecting Individual Level `Always Survivor' Causal Effects Under `Truncation by Death' and Censoring Through Time	1	79	9442	244021	204	243
+1903.04772	Paradox in Deep Neural Networks: Similar yet Different while Different yet Similar	1	25	9416	54098	46	59
+2607.10834	Asteroseismic forward modelling of 36 $β$ Cep pulsators and inferences on their internal differential rotation	1	36	9401	102261	86	103
+2003.06037	A spatial causal analysis of wildland fire-contributed PM2.5 using numerical model output	1	33	9400	83806	70	84
+2606.24162	BehaviorBench: Benchmarking Foundation Models for Behavioral Science Tasks	1	72	9389	105760	89	127
+2606.15837	Learning a Sampling-Free Variational DNN Plugin from Tiny Training Sets to Refine OOD Segmentation With Uncertainty Estimation	1	32	9387	103657	87	102
+2105.03810	The Local Approach to Causal Inference under Network Interference	1	48	9357	143175	120	142
+2505.20003	TabPFN: One Model to Rule Them All?	1	39	9348	93401	78	103
+2405.11250	Argumentative Causal Discovery	1	29	9342	87734	74	88
+2401.00139	Enhancing Causal Reasoning in Large Language Models: A Causal Attribution Model for Precision Fine-Tuning	1	28	9341	86355	72	87
+2607.05312	Locally Private Online Quantile Regression: Estimation and Inference	1	33	9336	123743	104	122
+2301.01817	Evaluation of Induced Expert Knowledge in Causal Structure Learning by NOTEARS	1	20	9335	49223	42	52
+2006.01185	Do Private Household Transfers to the Elderly Respond to Public Pension Benefits? Evidence from Rural China	1	26	9330	83471	70	83
+2606.08850	Intrinsic Selection and Particle Resampling for Inference-Time Scaling Beyond Domain Verifiability	1	88	9316	156339	131	179
+2404.11713	Propensity Score Analysis with Guaranteed Subgroup Balance	1	19	9313	60633	51	61
+2205.08730	Causal Effect Estimation for Multivariate Continuous Treatments	1	39	9309	80297	67	90
+2208.05543	A novel decomposition to explain heterogeneity in observational and randomized studies of causality	1	37	9299	105585	88	107
+2604.07191	Mixture Proportion Estimation and Weakly-supervised Kernel Test for Conditional Independence	1	58	9296	160176	134	165
+2607.05306	Biologically Informed Deep Neural Networks for Multi-Omic Integration, Pathway Activity Inference and Risk Stratification in Cancer	1	40	9277	78407	66	86
+2110.00637	ML4C: Seeing Causality Through Latent Vicinity	1	32	9272	69521	58	76
+2606.24579	Cross-Lingual Exploration for Parametric Knowledge	1	53	9267	113827	95	125
+2402.18185	Quantile Outcome Adaptive Lasso: Covariate Selection for Inverse Probability Weighting Estimator of Quantile Treatment Effects	1	17	9261	55385	47	54
+2606.12555	AudioX-Turbo: A Unified Framework for Efficient Anything-to-Audio Generation	1	33	9254	91322	77	92
+2512.15244	Non-parametric Causal Inference in Dynamic Thresholding Designs	1	68	9253	284127	237	269
+2008.06615	A Calibration Approach to Transportability and Data-Fusion with Observational Data	1	34	9245	135098	113	131
+2302.14784	Evaluación del efecto del PAMI en la cobertura en salud de los adultos mayores en Argentina	1	9	9240	47769	40	44
+1602.08447	A Neutrosophic Recommender System for Medical Diagnosis Based on Algebraic Neutrosophic Measures	1	43	9236	163274	137	158
+2402.07446	Quality Does Matter: A Detailed Look at the Quality and Utility of Web-Mined Parallel Corpora	1	29	9235	71682	60	74
+2312.05549	Multi-granularity Causal Structure Learning	1	24	9223	55821	47	61
+2605.22335	Learning Causal Orderings for In-Context Tabular Prediction	1	32	9223	79056	66	85
+2402.03941	Discovering and Reasoning of Causality in the Hidden World with Large Language Models	1	48	9220	145854	122	145
+2606.23208	Leveraging AutoML for Sustainable Deep Learning: A Multi-Objective HPO Approach on Deep Shift Neural Networks	1	28	9217	67248	57	73
+2110.05430	Density-based interpretable hypercube region partitioning for mixed numeric and categorical data	1	31	9215	87125	73	90
+2207.01848	TabPFN: A Transformer That Solves Small Tabular Classification Problems in a Second	1	51	9215	93179	78	106
+2410.15560	Ablation Studies for Novel Treatment Effect Estimation Models	1	22	9209	55501	47	63
+2312.12844	Effective Causal Discovery under Identifiable Heteroscedastic Noise Model	1	37	9207	87191	73	95
+2602.08592	TFMLinker: Universal Link Predictor by Graph In-Context Learning with Tabular Foundation Models	1	24	9203	59715	50	64
+2204.10426	Marginal Structural Illness-Death Models for Semi-Competing Risks Data	1	29	9200	91565	77	92
+1602.02176	Regularization and confounding in linear regression for treatment effect estimation	1	14	9196	62720	53	62
+1712.03415	Parameterizing the Supernova Engine and its Effects on Remnants and Basic Yields	1	11	9195	47899	40	45
+2403.06783	A doubly robust estimator for the Mann Whitney Wilcoxon Rank Sum Test when applied for causal inference in observational studies	1	29	9192	112794	94	109
+2606.08436	CACR:Reinforcing Temporal Answer Grounding in Instructional Video via Candidate-Aware Causal Reasoning	1	51	9186	119320	100	127
+1609.02334	The interaction between trade and FDI: the CEE countries experience	1	15	9180	59464	50	57
+2606.07710	WhiFlash: Accelerating Speculative Decoding with Token-Level Cross-Paradigm Routing	1	20	9177	49816	42	53
+2204.05961	Quantified Reproducibility Assessment of NLP Results	1	18	9173	50873	43	51
+2606.08027	CausShield: Sample Reconstruction-Resilient Vertical FL via Causal Representation Learning	1	31	9146	103854	87	104
+2206.07364	Seeking Common Ground While Reserving Differences: Multiple Anatomy Collaborative Framework for Undersampled MRI Reconstruction	1	16	9140	40807	35	43
+2512.04980	Learning Causality for Longitudinal Data	1	236	9135	694562	579	698
+2305.02185	Doubly Robust Uniform Confidence Bands for Group-Time Conditional Average Treatment Effects in Difference-in-Differences	1	98	9117	300248	251	296
+2606.27317	OctoSense: Self-Supervised Learning for Multimodal Robot Perception	1	51	9116	119449	100	124
+2506.01533	A Diffusion-Based Method for Learning the Multi-Outcome Distribution of Medical Treatments	1	36	9113	73456	62	80
+2305.12739	The Influence of ChatGPT on Artificial Intelligence Related Crypto Assets: Evidence from a Synthetic Control Analysis	1	18	9100	38863	33	43
+1712.03361	Inforence: Effective Fault Localization Based on Information-Theoretic Analysis and Statistical Causal Inference	1	28	9092	100591	84	95
+2511.00727	Cross-Validated Causal Inference: a Modern Method to Combine Experimental and Observational Data	1	71	9085	199392	167	205
+2209.11924	Interventional Causal Representation Learning	1	47	9082	157311	132	157
+2504.14784	Effects of Price Regulations on Service Utilization and Public Insurance Costs: Evidence from Telehealth Parity Laws	1	23	9070	88002	74	86
+2606.17516	FoundCause: Causal Discovery with Latent Confounders from Observational Data	1	36	9069	120707	101	121
+2502.06398	Learning Counterfactual Outcomes Under Rank Preservation	1	49	9068	114377	96	121
+1104.3714	Weighing neutrinos using high redshift galaxy luminosity functions	1	14	9062	58956	50	56
+2406.02459	Do Cure Violence Programs Reduce Gun Violence? Evidence from New York City	1	30	9061	80946	68	84
+1604.03945	The Kinematics of CIV in Star-Forming Galaxies at z~1.2	1	22	9050	79120	66	75
+2606.04713	Statistical analysis of the relative orientations between filaments and magnetic fields using Herschel and Planck data in star-forming regions	1	45	9047	161317	135	162
+2606.16572	Steering Generative Reinforcement Learning into Stable Robotic Controller	1	31	9042	52910	45	60
+1608.00485	Nonparametric Estimation and Testing on Discontinuity of Positive Supported Densities: A Kernel Truncation Approach	1	41	9040	108696	91	114
+2606.24320	ZONOS2 Technical Report	1	26	9014	51606	44	59
+2606.23036	Gaussian Process Differential Ensembles for Joint Inference on Curves, Derivatives, and Integrals	1	48	9007	204916	171	198
+2606.13303	DuET: Dual Expert Trajectories for Diffusion Image Editing	1	14	9006	42597	36	43
+2509.26380	Joint Inference for the Regression Discontinuity Effect and Its External Validity	1	35	8996	124458	104	122
+2301.05491	Efficient and robust transfer learning of optimal individualized treatment regimes with right-censored survival data	1	52	8964	177547	148	175
+2606.27161	TOPS: First-Principles Visual Token Pruning via Constructing Token Optimal Preservation Sets for Efficient MLLM Inference	1	48	8942	72717	61	84
+2205.02224	Matched Design for Marginal Causal Effect on Restricted Mean Survival Time in Observational Studies	1	42	8937	102140	86	109
+2509.20586	Incorporating External Controls for Estimating the Average Treatment Effect on the Treated with High-Dimensional Data: Retaining Double Robustness and Ensuring Double Safety	1	32	8933	101038	85	102
+2506.21912	Generating Attribute-Aware Human Motions from Textual Prompt	1	18	8922	52356	44	54
+2312.14329	Invariant Anomaly Detection under Distribution Shifts: A Causal Perspective	1	43	8902	82308	69	93
+2505.02212	Exogenous Isomorphism for Counterfactual Identifiability	1	72	8895	281314	235	273
+2606.17462	ResAware: Cross-Environment Website Fingerprinting via Resource-Privileged Distillation	1	34	8894	90865	76	95
+2407.06069	How to Add Baskets to an Ongoing Basket Trial with Information Borrowing	1	36	8880	118852	100	118
+2112.09535	Doubly Robust Estimation of the Hazard Difference for Competing Risks Data	1	81	8880	280806	235	278
+1709.03631	Simultaneous Record Linkage and Causal Inference with Propensity Score Subclassification	1	28	8842	82401	69	84
+2304.12460	Functional Causal Inference with Time-to-Event Data	1	26	8841	65854	55	70
+2309.10069	Sex-based Disparities in Brain Aging: A Focus on Parkinson's Disease	1	30	8830	69816	59	78
+2402.07235	Scientific Talent Leaks Out of Funding Gaps	1	50	8822	119429	100	128
+2210.13376	Comparison of Entropy Calculation Methods for Ransomware Encrypted File Identification	1	26	8814	71658	60	73
+2010.11330	Integrated causal-predictive machine learning models for tropical cyclone epidemiology	1	37	8790	87203	73	92
+2506.04042	Causal Path Alignment: Anchoring the Optimization Trajectory for Controllable In-Parameter Knowledge Editing	1	39	8784	63185	53	74
+2503.20769	Inferring Treatment Effects in Large Panels by Uncovering Latent Similarities	1	32	8774	116660	98	115
+1908.01333	Leveraging Random Assignment to Impute Missing Covariates in Causal Studies	1	32	8772	89813	75	92
+2506.02604	Application of convolutional neural networks in image super-resolution	1	36	8770	56498	48	70
+2601.16595	Bayesian Nonparametric Causal Inference for High-Dimensional Nutritional Data via Factor-Based Exposure Mapping	1	11	8756	67662	57	63
+2512.19861	Causal Inference with the Napkin Graph	1	76	8753	219445	183	227
+2308.08020	Just what the doctor ordered: An evaluation of provider preference-based Instrumental Variable methods in observational studies, with application for comparative effectiveness of type 2 diabetes therapy	1	32	8746	88831	75	89
+2510.08294	Counterfactual Identifiability via Dynamic Optimal Transport	1	48	8737	141377	118	142
+2606.24457	Lite Any Stereo V2: Faster and Stronger Efficient Zero-Shot Stereo Matching	1	21	8734	67729	57	68
+2310.20537	Directed Cyclic Graph for Causal Discovery from Multivariate Functional Data	1	36	8723	103295	87	108
+2502.05037	Leveraging a Simulator for Learning Causal Representations from Post-Treatment Covariates for CATE	1	48	8722	118083	99	127
+2605.05706	Resolving the bias-precision paradox with stochastic causal representation learning for personalized medicine	1	51	8717	173883	145	176
+2306.16520	Nonparametric causal discovery with applications to cancer bioinformatics	1	65	8715	164542	138	172
+2307.02667	Unveiling Causal Mediation Pathways in High-Dimensional Mixed Exposures: A Data-Adaptive Target Parameter Strategy	1	44	8710	128985	108	136
+2607.11436	The Ebb and Flow of Multimodal Focus: Scheduling Visual Relay Windows for Grounded VLM Reasoning	1	28	8706	63098	53	68
+2606.09748	Multi-Turn Evaluation of Deep Research Agents Under Process-Level Feedback	1	36	8704	73067	61	85
+2508.01793	A Relaxation Approach to Synthetic Control	1	50	8701	185547	155	180
+2106.01534	Deconfounded Video Moment Retrieval with Causal Intervention	1	22	8699	62184	52	65
+2311.11749	A causal intervention framework for synthesizing mobility data and evaluating predictive neural networks	1	25	8695	75805	64	76
+2603.19573	Estimating within-cluster and between-cluster spillover effects in randomized saturation designs	1	51	8691	150847	126	155
+2311.07752	Doubly Robust Estimation under Possibly Misspecified Marginal Structural Cox Model	1	61	8691	214866	180	214
+2312.10401	Rethinking Dimensional Rationale in Graph Contrastive Learning from Causal Perspective	1	41	8685	58110	49	71
+1603.03675	Optimal Data Collection for Randomized Control Trials	1	39	8683	154211	129	152
+2606.09025	Continuous Cash-Overlay Filters for a Static Growth--Defensive Risk Sleeve: Slow-Tail Compensation, V-Shape Crash Brakes, Walk-Forward Validation, and Max-Cash Combination	1	29	8678	86346	72	86
+2605.28341	Identification and Inference for Structural Accelerated Failure Time Models via Instrument Interactions	1	43	8670	204048	171	191
+2606.06574	Skip a Layer or Loop It? Learning Program-of-Layers in LLMs	1	37	8666	66638	56	75
+2602.01399	An Odd Estimator for Shapley Values	1	36	8657	86013	72	92
+2606.20889	Temporal Causal Prior-Data Fitted Networks for Panel Data with Learned Reliability Signals	1	62	8654	101601	85	120
+2008.10926	The Impact of Sodomy Law Repeals on Crime	1	18	8647	35611	30	41
+2509.21021	Efficient Ensemble Conditional Independence Test Framework for Causal Discovery	1	37	8640	86464	73	93
+2606.22462	Adaptive Recurrent Message Passing for Test Time Computing on Graphs	1	42	8636	89296	75	99
+2503.09086	Numerical study on hyper parameter settings for neural network approximation to partial differential equations	1	23	8622	90105	76	88
+2411.18875	Know Your Account: Double Graph Inference-based Account De-anonymization on Ethereum	1	24	8617	65127	55	66
+2606.13037	DIG: Oracle-Guided Directed Input Generation for One-Day Vulnerabilities	1	30	8614	82795	69	86
+2606.21869	The Language-Energy Divide: Measuring Energy Costs of Multilingual LLM Inference	1	19	8610	54615	46	56
+1905.12707	Heterogeneous causal effects with imperfect compliance: a Bayesian machine learning approach	1	35	8605	126431	106	127
+2604.12882	A Causal Framework for Evaluating Jointly Longitudinal Outcomes and Surrogate Markers: A State-Space Approach	1	48	8605	135533	113	141
+2607.11327	PRISM Edit: One Vector for All Temporal Answers	1	42	8596	61593	52	75
+2012.02966	Assessing the effects of seasonal tariff-rate quotas on vegetable prices in Switzerland	1	21	8588	70435	59	71
+2202.08388	Generalizable Information Theoretic Causal Representation	1	30	8586	83056	70	88
+2410.04780	Mitigating Modality Prior-Induced Hallucinations in Multimodal Large Language Models via Deciphering Attention Causality	1	48	8569	64298	54	82
+2409.18499	Fairness-aware Multiobjective Evolutionary Learning	1	19	8569	67453	57	66
+2310.16945	Causal Q-Aggregation for CATE Model Selection	1	67	8555	238134	199	235
+2511.02187	Super doubly robust and efficient estimator for informative covariate censoring	1	33	8550	113664	95	114
+2607.18501	SPYCE: A Doubly Robust Estimator for Trials Targeting Early Huntington Disease under Outcome-Dependent Censoring	1	96	8533	390954	326	375
+2606.07915	EditSR: Enhancing Neural Symbolic Regression via Edit-based Rectification	1	48	8525	126429	106	132
+2208.08291	Inference on Strongly Identified Functionals of Weakly Identified Functions	1	103	8520	374652	313	363
+2602.10282	Linear-LLM-SCM: Benchmarking LLMs for Coefficient Elicitation in Linear-Gaussian Causal Models	1	31	8520	43879	37	54
+2606.14251	HiST: A Hierarchical Sparse Transformer for Cross-Modal Spatial Transcriptomics Modeling	1	46	8519	71174	60	85
+2607.07787	Probing the origins. III. Exoplanet demographics across Galactic birth radii	1	27	8511	72161	61	77
+2102.08704	Vaccination and SARS-CoV-2 variants: how much containment is still needed? A quantitative assessment	1	16	8505	48421	41	50
+2011.11878	Counterfactual Fairness with Disentangled Causal Effect Variational Autoencoder	1	28	8489	52858	45	62
+2606.15286	Decoupled Motion Representation Learning for Moving Infrared Small Target Detection	1	22	8487	63677	54	67
+2409.15756	A penalized online sequential test of heterogeneous treatment effects for generalized linear models	1	23	8479	85227	72	84
+2606.19371	ProMUSE: Progressive Multi-modal Uncertainty-guided Staged Evidential Alzheimer Disease Classification	1	26	8470	46287	39	54
+2606.16364	Looking Is Not Picking: An Attention-Segment Account of Tool-Selection Failures in LLM Agents	1	18	8468	49855	42	53
+2209.02637	Do Unions Shape Political Ideologies at Work?	1	34	8468	139263	117	135
+1911.09248	Regression Discontinuity Design under Self-selection	1	49	8466	180466	151	179
+1712.04802	Fisher-Schultz Lecture: Generic Machine Learning Inference on Heterogenous Treatment Effects in Randomized Experiments, with an Application to Immunization in India	1	44	8453	232556	194	215
+2405.16069	IncomeSCM: From tabular data set to time-series simulator and causal estimation benchmark	1	24	8451	66668	56	71
+2606.12412	Reroute, Don't Remove: Recoverable Visual Token Routing for Vision-Language Models	1	30	8447	61290	52	67
+2404.11150	Automated, efficient and model-free inference for randomized clinical trials via data-driven covariate adjustment	1	55	8438	203762	170	201
+2606.07986	Inference for High-Dimensional Sparse Spectral Precision Matrices	1	43	8435	130181	109	134
+1809.00269	Matching Algorithms for Causal Inference with Multiple Treatments	1	29	8430	82354	69	86
+2408.04854	Transportability of aggregate trial results to an external environment in causally interpretable meta-analysis	1	26	8430	84182	71	87
+2607.06120	AEGIS: A Mechanism-Guided Defense against Visual Synonym Jailbreaks in Text-to-Image Models	1	67	8413	96808	81	119
+2607.05533	Multi-Teacher Contrastive Distillation for Edge-Efficient Pathology Foundation Models	1	11	8411	26510	23	29
+2408.05428	Generalized Encouragement-Based Instrumental Variables for Counterfactual Regression	1	25	8407	78119	66	81
+2005.05099	Counterfactual Propagation for Semi-Supervised Individual Treatment Effect Estimation	1	21	8402	49706	42	56
+2606.13864	The Generalized Fisher Transformation: Finite-Sample Properties and Inference	1	42	8389	100777	84	107
+2303.07904	Bayesian Criterion for Re-randomization	1	45	8364	132149	111	135
+2509.17228	Causal Representation Learning from Multimodal Clinical Records under Non-Random Modality Missingness	1	37	8353	65828	55	77
+0902.0208	The Magellanic Bridge as a DLA System: Physical Properties of Cold Gas toward PKS0312-770	1	21	8350	71135	60	69
+1204.6301	A Comparative Study of Local Galaxy Clusters: I. Derived X-ray Observables	1	28	8349	86946	73	91
+2206.00209	The Subtype-Free Average Causal Effect for Heterogeneous Disease Etiology	1	44	8343	122825	103	129
+2206.08503	Semiparametric Single-Index Estimation for Average Treatment Effects	1	50	8314	201355	168	191
+1407.4703	A comparison of multiple imputation methods for bivariate hierarchical outcomes	1	17	8302	41442	35	44
+2206.04133	Bayesian multivariate logistic regression for superiority and inferiority decision-making under observable treatment heterogeneity	1	48	8295	118293	99	123
+2602.15546	CEPAE: Conditional Entropy-Penalized Autoencoders for Time Series Counterfactuals	1	38	8286	106259	89	109
+2606.27205	Smaller Models, Unexpected Costs: Trade-offs in LLM Quantization for Automated Program Repair	1	23	8271	63152	53	64
+2503.17862	A Causal Adjustment Module for Debiasing Scene Graph Generation	1	26	8269	110129	92	106
+2606.24509	A Fair Evaluation of Graph Foundation Models for Node Property Prediction	1	23	8251	62803	53	66
+2606.15129	EyeMVP: OCT-Informed Fundus Representation Learning via Paired CFP--OCT Pretraining	1	30	8232	60646	51	68
+2607.08818	Dark matter density profiles of the Milky Way satellite population: reconciling simulations and observations	1	26	8231	77139	65	76
+2407.13054	Comprehensive Review and Empirical Evaluation of Causal Discovery Algorithms for Numerical Data	1	53	8228	142178	119	146
+2507.11269	Turning Sand to Gold: Recycling Data to Bridge On-Policy and Off-Policy Learning via Causal Bound	1	74	8170	142612	119	158
+2606.27477	From Young to Older Disks: JWST/MIRI Evidence for Fading Molecular Emission and Hints for Elevated C/O in Upper Scorpius	1	34	8169	110983	93	113
+2509.03194	Bayesian Network Propensity Score to Evaluate Treatment Effects in Observational Studies	1	11	8168	33464	28	33
+2606.07116	OffQ: Taming Structured Outliers in LLM Quantization by Offsetting	1	18	8139	46033	39	48
+2606.12900	Zero-source LLM Hallucination Detection with Human-like Criteria Probing	1	54	8127	104858	88	118
+2607.06776	Efficient Bayesian Deep Ensembles via Analytic Predictive Inference	1	27	8117	71620	60	73
+2212.14622	Identifying causal effects with subjective ordinal outcomes	1	99	8112	324633	271	324
+2110.03117	Causal inference in survival analysis using longitudinal observational data: Sequential trials and marginal structural models	1	51	8106	150793	126	152
+2411.12477	Robust Bayesian causal estimation for causal inference in medical diagnosis	1	16	8104	63889	54	63
+2606.08730	Statistical Optimality of Prediction-Powered Inference	1	101	8104	389211	325	387
+2506.17065	Flow based approach for Dynamic Temporal Causal models with non-Gaussian or Heteroscedastic Noises	1	79	8103	201441	168	211
+2606.23243	Unlocking In-Context Learning in Audio-Language Models from Decentralized Medical Audio	1	19	8097	29717	25	34
+2403.09830	Towards the Reusability and Compositionality of Causal Representations	1	27	8087	68860	58	73
+2606.13850	Controller-Augmented Hidden Markov Models: A Computational Framework for Constrained Sequential Inference	1	67	8069	183779	154	185
+2401.00618	Changes-in-Changes for Ordered Choice Models with Underreporting	1	73	8065	324274	271	308
+2310.01937	Causal Inference with Conditional Front-Door Adjustment and Identifiable Variational Autoencoder	1	34	8062	78333	66	82
+2606.06651	Temporal Dynamics of Development Aid in Africa: Evidence from a Staggered Difference-in-Differences Study of China and World Bank Projects	1	38	8058	127985	107	128
+2305.17770	Point Cloud Completion Guided by Prior Knowledge via Causal Inference	1	23	8056	60550	51	63
+2305.16863	Controlling Learned Effects to Reduce Spurious Correlations in Text Classifiers	1	31	8050	72458	61	74
+2606.21961	VegSim: A Geospatial World Model for Scenario-Conditioned Vegetation Simulation	1	28	8042	57759	49	64
+2604.05639	Estimating Dynamic Marginal Policy Effects under Sequential Unconfoundedness	1	30	8041	108333	91	109
+2201.10826	Instrumental variable estimation of dynamic treatment effects on a duration outcome	1	63	8030	176800	148	185
+2108.03726	Improving Inference from Simple Instruments through Compliance Estimation	1	30	8029	122729	103	120
+2601.11845	Reevaluating Causal Estimation Methods with Data from a Product Release	1	36	8027	95581	80	101
+1507.05270	Nonparametric instrumental variable estimation under monotonicity	1	41	8018	202329	169	186
+2110.00901	A causal fused lasso for interpretable heterogeneous treatment effects estimation	1	56	8015	172476	144	175
+2504.10652	Bayesian analysis of regression discontinuity designs with heterogeneous treatment effects	1	24	8002	95263	80	93
+1811.02499	A high-order, conservative integrator with local time-stepping	1	17	7991	86371	72	82
+2606.22496	Enabling Cloud-Level Accuracy in Edge AI through IoT Data Preprocessing	1	28	7986	89199	75	86
+2505.13846	Extension of Dynamic Network Biomarker using the propensity score method: Simulation of causal effects on variance and correlation coefficient	1	24	7978	45359	38	51
+2502.04699	A Meta-learner for Heterogeneous Effects in Difference-in-Differences	1	41	7973	140713	118	141
+1806.07016	Evaluating Ex Ante Counterfactual Predictions Using Ex Post Causal Inference	1	21	7965	79512	67	78
+2510.13307	Novel Class Discovery for Point Cloud Segmentation via Joint Learning of Causal Representation and Reasoning	1	17	7951	41069	35	44
+2503.02073	PanelMatch: Matching Methods for Causal Inference with Time-Series Cross-Section Data	1	41	7949	87025	73	94
+2605.04108	MuCALD-SplitFed: Causal-Latent Diffusion for Privacy-Preserving Multi-Task Split-Federated Medical Image Segmentation	1	13	7938	24490	21	28
+2305.06247	Rethinking the Value of Labels for Instance-Dependent Label Noise Learning	1	17	7936	47885	40	49
+2412.09843	Learning Structural Causal Models from Ordering: Identifiable Flow Models	1	32	7934	71630	60	76
+2210.15829	Estimation of Heterogeneous Treatment Effects Using a Conditional Moment Based Approach	1	53	7931	203562	170	197
+2606.16012	HYPERION. The cold ISM of rapidly growing $z>6$ quasars: diverse gas reservoirs, dust enrichment, and feedback signatures	1	30	7926	122480	103	119
+2401.14355	Multiply Robust Difference-in-Differences Estimation of Causal Effect Curves for Continuous Exposures	1	34	7926	111984	94	114
+2607.10110	Looped State-Space Language Models with Adaptive Exit-State Selection	1	30	7917	74043	62	80
+2606.11640	TAROT: Task-Adaptive Refinement of LLM-prior Graphs for Few-shot Tabular Learning	1	31	7915	61237	52	66
+2606.30159	A Dual-domain Refinement Network with FBP-based Jacobian Learning for Sparse-view Dual-Energy CT Material Decomposition	1	19	7914	81009	68	78
+2404.06969	A Fixed-Point Approach for Causal Generative Modeling	1	62	7904	195982	164	195
+1911.08729	Response Transformation and Profit Decomposition for Revenue Uplift Modeling	1	34	7898	134796	113	132
+1911.10036	Low-variance Black-box Gradient Estimates for the Plackett-Luce Distribution	1	22	7883	57516	48	58
+2409.17686	MoGenTS: Motion Generation based on Spatial-Temporal Joint Modeling	1	29	7881	51492	43	59
+2606.19376	Cost-Optimal LLM Routing with Limited User Feedback under User Satisfaction Guarantees	1	41	7856	116016	97	117
+2607.05316	How Much is Left? LLMs Linearly Encode Their Remaining Output Length	1	31	7854	58239	49	67
+2008.01778	Community Vibrancy and its Relationship with Safety in Philadelphia	1	26	7844	73373	62	75
+2112.08092	Testing Instrument Validity with Covariates	1	63	7834	213894	179	212
+2504.01535	On Robust Empirical Likelihood for Nonparametric Regression with Application to Regression Discontinuity Designs	1	46	7833	146883	123	147
+2606.14192	DRIVE: Distributional and Retrieval-Augmented Bidding with Value Evaluation	1	42	7828	80272	67	88
+2504.12626	Frame Context Packing and Drift Prevention in Next-Frame-Prediction Video Diffusion Models	1	21	7827	43959	37	50
+2302.01269	Adjusting for Incomplete Baseline Covariates in Randomized Controlled Trials: A Cross-World Imputation Framework	1	50	7826	155123	130	156
+2403.01585	Calibrating doubly-robust estimators with unbalanced treatment assignment	1	19	7825	52749	44	53
+2606.06976	Exploring Agentic Tool-Calling Decisions via Uncertainty-Aligned Reinforcement Learning	1	38	7818	70685	59	82
+2206.08271	A new method for clustered survival data]{A new method for clustered survival data: Estimation of treatment effect heterogeneity and variable selection	1	33	7813	100366	84	103
+2006.02423	A Negative Correlation Strategy for Bracketing in Difference-in-Differences	1	37	7807	134627	113	134
+2606.26483	Do more heads imply better performance? An empirical study of team thought leaders' impact on scientific team performance	1	33	7794	73311	62	80
+2310.11436	Sadness, Anger, or Anxiety: Twitter Users' Emotional Responses to Toxicity in Public Conversations	1	15	7788	50397	42	51
+1704.01011	Comparison of Pulsar Positions from Timing and Very Long Baseline Astrometry	1	20	7786	52500	44	54
+2606.25713	Frequency-Aware Self-Supervised Music Representation Learning	1	23	7785	54267	46	59
+2205.15638	Differentiable Invariant Causal Discovery	1	39	7778	104583	88	111
+2507.18118	A Two-armed Bandit Framework for A/B Testing	1	22	7755	121476	102	113
+2209.01396	Small Study Regression Discontinuity Designs: Density Inclusive Study Size Metric and Performance	1	23	7753	82706	69	81
+2512.21617	CausalFSFG: Rethinking Few-Shot Fine-Grained Visual Categorization from Causal Perspective	1	27	7745	58418	49	63
+2606.08302	HACK++: Towards More Effective Head-Aware Key-Value Compression for Efficient Visual Autoregressive Modeling	1	24	7745	81898	69	80
+2601.20610	Causal Inference in Biomedical Imaging via Functional Linear Structural Equation Models	1	38	7735	146033	122	141
+2606.08560	CP-factorization for high dimensional tensor time series and double projection iterations	1	128	7725	493041	411	479
+2606.05743	Membrane: A Self-Evolving Contrastive Safety Memory for LLM Agent Defense	1	49	7716	77351	65	91
+1802.04353	A Data-Driven Approach to Extract Connectivity Structures from Diffusion Tensor Imaging Data	1	22	7715	47712	40	51
+1712.09089	An Exact and Robust Conformal Inference Method for Counterfactual and Synthetic Controls	1	101	7707	317929	265	320
+2212.07056	On the Probability of Necessity and Sufficiency of Explaining Graph Neural Networks: A Lower Bound Optimization Approach	1	48	7702	112737	94	120
+2311.14698	Business Policy Experiments using Fractional Factorial Designs: Consumer Retention on DoorDash	1	45	7690	81752	69	92
+2112.09313	Federated Adaptive Causal Estimation (FACE) of Target Treatment Effects	1	48	7687	162977	136	160
+2507.22344	Risk-inclusive Contextual Bandits for Early Phase Clinical Trials	1	50	7679	143333	120	146
+2103.00527	Covariate balancing for causal inference on categorical and continuous treatments	1	41	7678	140088	117	139
+2606.12243	VIA-SD: Verification via Intra-Model Routing for Speculative Decoding	1	40	7677	113203	95	118
+2309.05639	Forecasted Treatment Effects	1	35	7674	107764	90	107
+2606.11405	Bayesian Causal Machine Learning for Cure Models	1	32	7673	95719	80	96
+2606.05979	World-Language-Action Model for Unified World Modeling, Language Reasoning, and Action Synthesis	1	23	7645	45413	38	50
+2607.14765	Rare Concept Generation via Counterfactual Inference in Diffusion Models	1	21	7642	58305	49	61
+2404.04775	Bipartite causal inference with interference, time series data, and a random network	1	92	7619	270080	226	276
+1611.04350	First-principles study of structural stability, dynamical and mechanical properties of Li2FeSiO4 polymorphs	1	13	7611	45813	39	45
+1910.05600	Partially Pooled Propensity Score Models for Average Treatment Effect Estimation with Multilevel Data	1	29	7607	93265	78	91
+2510.18526	Counterfactual Reasoning for Steerable Pluralistic Value Alignment of Large Language Models	1	70	7594	116267	97	141
+2412.10009	Class flipping for uplift modeling and Heterogeneous Treatment Effect estimation on imbalanced RCT data	1	28	7568	57929	49	62
+2411.02847	Dissecting the Failure of Invariant Learning on Graphs	1	110	7561	246445	206	263
+2601.08352	Impact of Tobacco Advertising Restrictions in Switzerland: A Quasi-Experimental Study on the Effect of Billboard Bans on Smoking	1	20	7557	79521	67	80
+2311.10263	Stable Differentiable Causal Discovery	1	46	7556	97997	82	110
+2204.10739	Group sequential methods for interim monitoring of randomized clinical trials with time-lagged outcome	1	35	7543	133574	112	131
+2606.13818	Uncertainty Estimation and Generalization Bounds for Modern Deep Learning	1	230	7539	850764	709	827
+2402.08500	Covariate selection for the estimation of marginal hazard ratios in high-dimensional data	1	15	7527	47229	40	49
+2607.08234	RhyMix: A Lightweight Adaptive Multi-Rhythm Network for Long-Term Time Series Forecasting	1	37	7527	83534	70	93
+2603.26502	Targeted learning of heterogeneous treatment effect curves for right censored or left truncated time-to-event data	1	47	7525	134101	112	139
+2006.00523	The Effects of Stringent Interventions for Coronavirus Pandemic	1	15	7518	34962	30	39
+2602.22532	Coarse-to-Fine Learning of Dynamic Causal Structures	1	47	7512	83193	70	98
+2606.24020	You Don't Need to Run Every Eval	1	48	7505	135202	113	139
+2508.01865	Structure Maintained Representation Learning Neural Network for Causal Inference	1	29	7503	72074	61	78
+1512.08999	Lithium spectral line formation in stellar atmospheres. The impact of convection and NLTE effects	1	13	7501	49812	42	46
+2412.13574	Revisiting Interactions of Multiple Driver States in Heterogenous Population and Cognitive Tasks	1	25	7490	40979	35	48
+2606.17115	Probing, Fusion, and Trustworthiness: A Systematic Evaluation of Foundation Model Representations for Multimodal Cancer Analysis	1	22	7489	64807	55	65
+2606.12965	EmbodiSteer: Steering Embodiment-Agnostic Visuomotor Policies with Joint-Space Guidance for Zero-Shot Cross-Embodiment Deployment	1	32	7479	63477	53	68
+2605.00374	Advancing Edge Classification through High-Dimensional Causal Modeling of Node-Edge Interplay	1	29	7469	75188	63	78
+2606.10011	A Multi-Wavelength View of the First Type Ic-BL Supernova with an Einstein Probe X-ray Shock Breakout	1	47	7456	120150	101	127
+2208.13382	A Bayesian nonparametric approach for causal inference with multiple mediators	1	37	7448	110293	92	111
+2606.21700	VT-DUDA: Visual Token Conditioning for Diffusion-guided Unsupervised Domain Adaptation	1	45	7437	111396	93	118
+2606.14840	Causal Sufficient Dimension Reduction for Multiple Continuous Exposures with an Application to Environmental Mixtures	1	59	7426	185573	155	186
+1901.10359	GPMatch: A Bayesian Doubly Robust Approach to Causal Inference with Gaussian Process Covariance Function As a Matching Tool	1	25	7416	87358	73	87
+2410.11385	Do LLMs Have the Generalization Ability in Conducting Causal Inference?	1	34	7407	44787	38	59
+2606.14131	G-computation for causal effect estimation from observational hierarchical data with unmeasured cluster context	1	23	7396	52238	44	56
+1905.09751	Learning When-to-Treat Policies	1	38	7387	143929	120	138
+2510.25037	Graph Distance Based on Cause-Effect Estimands with Latents	1	23	7383	59686	50	62
+1611.06304	Testing for unobserved heterogeneous treatment effects	1	34	7377	110266	92	109
+2606.12184	Threshold Regression for Fixed-T Panel Data with Interactive Fixed Effects	1	17	7363	65851	55	62
+2607.11736	MET: Theory-Grounded and Culture-Aware Multilingual Moral Reasoning	1	37	7360	54730	46	66
+2606.15734	Retrievable Gradients: Continual Post-Training Without Cumulative Weight Drift	1	49	7354	73791	62	90
+2601.22782	Optimal Sample Splitting for Observational Studies	1	32	7344	71078	60	73
+2409.12848	Bridging the Gap Between Design and Analysis: Randomization Inference and Sensitivity Analysis for Matched Observational Studies with Treatment Doses	1	23	7331	81779	69	80
+1610.01271	Generalized Random Forests	1	27	7323	165487	138	152
+2606.10829	Attention-Discounted Adaptive Sampler for Masked Diffusion Language Models	1	24	7318	52473	44	57
+2606.14867	Evaluating the Robustness of Proof Autoformalization in Lean 4	1	29	7297	58211	49	67
+2607.10474	Reinforcement Learning with Verifiable Physics: Post-training LLMs with Continuous Rewards	1	34	7297	90525	76	94
+1805.06855	Learning non-smooth models: instrumental variable quantile regressions and related problems	1	47	7294	163739	137	160
+2606.05414	When Evidence is Sparse: Weakly Supervised Early Failure Alerting in Dialogs and LLM-Agent Trajectories	1	71	7292	117403	98	137
+2301.07672	Principal Stratification with Time-to-Event Outcomes	1	18	7291	62225	52	62
+2606.16222	Latent Thought Flow: Efficient Latent Reasoning in Large Language Models	1	24	7289	64056	54	65
+2606.17048	Exact Posterior Score Estimation for Solving Linear Inverse Problems	1	48	7286	118993	100	125
+2112.01574	Dimension-Free Average Treatment Effect Inference with Deep Neural Networks	1	50	7282	174041	146	170
+2303.11721	Using Forests in Multivariate Regression Discontinuity Designs	1	37	7277	102428	86	108
+2606.30648	MediEncoder: Nonlinear Representation Learning for High-Dimensional Causal Mediation Analysis	1	49	7251	170146	142	170
+2212.14857	Nuisance Function Tuning and Sample Splitting for Optimally Estimating a Doubly Robust Functional	1	179	7240	598376	499	603
+2606.25188	Efficient Analytic Uncertainty Quantification for Multi-Modal Regression	1	43	7234	118169	99	121
+2606.26218	Dark Matter in Draco and Boötes I: Hints of a Core in an Ultra-Faint Dwarf from Simulation-Based Inference	1	66	7233	203039	170	205
+2606.06060	ReCache: Learning Budget-Aware Caching Schedules for Diffusion Models via REINFORCE	1	31	7223	60839	51	68
+2008.04257	Using Multiple Imputation to Classify Potential Outcomes Subgroups	1	24	7216	81215	68	83
+2607.07019	SHTA: Semantic Hard Token Correction and Center Alignment for Semi-Supervised Medical Image Segmentation	1	20	7210	38723	33	43
+2606.09367	RT-SDGOD: Real-Time Single-Domain Generalized Object Detection	1	17	7187	50549	43	52
+1803.07951	Testing Continuity of a Density via g-order statistics in the Regression Discontinuity Design	1	30	7179	112961	95	110
+2405.15325	On the Identification of Temporally Causal Representation with Instantaneous Dependence	1	80	7175	166762	139	182
+1805.06432	Doubly Robust Inference with Non-probability Survey Samples	1	26	7167	85825	72	85
+1510.04342	Estimation and Inference of Heterogeneous Treatment Effects using Random Forests	1	40	7156	161963	135	154
+2403.08130	Imputation of Counterfactual Outcomes when the Errors are Predictable	1	29	7140	115688	97	113
+2606.16299	Groups of Dwarf Galaxies in the Local Universe	1	17	7126	39364	33	44
+1911.04663	A Unified Inference Framework for Multiple Imputation Using Martingales	1	26	7126	82397	69	85
+2606.09360	ExDet: Open-Domain Open-Vocabulary Detection with Cross-modal Extrapolation and Rectification	1	22	7122	49649	42	52
+2606.11656	MoGeFlow: Flowing Through Motion Codebook Geometry for Text-to-Motion Generation	1	24	7118	55218	47	57
+1907.06260	Counterfactual Reasoning for Fair Clinical Risk Prediction	1	33	7096	62586	53	69
+2310.02681	Stable accretion in young stars: The cases of EX Lupi and TW Hya	1	32	7096	105699	89	105
+1802.02477	Common solar wind drivers behind magnetic storm-magnetospheric substorm dependency	1	18	7094	40148	34	45
+2606.12939	MAMVI: 3D Test-Time Adaptation via Masked Multi-View Point Clouds	1	17	7089	38664	33	40
+2606.15417	From Frames to Temporal Graphs: In-Context Egocentric Action Recognition with Vision-Language Models	1	23	7058	52288	44	55
+1812.06575	Matching on Generalized Propensity Scores with Continuous Exposures	1	23	7053	96488	81	91
+2210.06201	Diffusion Models for Causal Discovery via Topological Ordering	1	36	7051	59530	50	69
+2201.05773	Automated causal inference in application to randomized controlled clinical trials	1	20	7040	57799	49	58
+2302.12341	Rank-Based Causal Discovery for Post-Nonlinear Models	1	24	7035	92099	77	90
+2606.14921	Flexible Method Comparison with the Probability of Agreement	1	26	7016	79560	67	79
+1910.02170	Donor's Deferral and Return Behavior: Partial Identification from a Regression Discontinuity Design with Manipulation	1	59	7015	139776	117	146
+2203.13619	Answering Should Self-Publishing Video Game Developers Market Their Game on Twitter	1	21	7013	52950	45	57
+2607.26357	High-Order Markov Blanket Discovery via a k-Order Relaxation of the Faithfulness Assumption	1	26	7008	88210	74	89
+2606.06699	Robust inference for cyclic-stress accelerated life tests under interval monitoring with lognormal lifetimes	1	36	7006	115539	97	117
+2603.07055	Integrating Heterogeneous Information in Randomized Experiments: A Unified Calibration Framework	1	105	7005	491371	410	462
+2011.04504	Identifying effects of multiple treatments in the presence of unmeasured confounding	1	52	7004	150892	126	152
+2507.07402	Deterministic simplicial complexes	1	24	7000	79532	67	80
+2606.11382	GLACIER: A Multimodal Student-Teacher Foundation Model for Molecular Property Prediction	1	44	6999	70979	60	86
+2404.06471	Regression Discontinuity Design with Spillovers	1	85	6999	269177	225	269
+1712.04912	Quasi-Oracle Estimation of Heterogeneous Treatment Effects	1	48	6994	170323	142	169
+2606.15892	Scalar-pathway fidelity improves physical accuracy in short-range equivariant interatomic potentials	1	46	6986	124246	104	127
+2306.16902	Integrating Large Language Model for Improved Causal Discovery	1	26	6970	59958	50	64
+2510.26466	Representation-Level Counterfactual Calibration for Debiased Zero-Shot Recognition	1	61	6967	131418	110	143
+2405.09493	C-Learner: Constrained Learning for Causal Inference	1	70	6957	210415	176	211
+2106.04503	Do forecasts of bankruptcy cause bankruptcy? A machine learning sensitivity analysis	1	21	6953	103014	86	97
+1610.07045	pg-Causality: Identifying Spatiotemporal Causal Pathways for Air Pollutants with Urban Big Data	1	30	6946	84998	71	86
+1804.03349	Inference on Local Average Treatment Effects for Misclassified Treatment	1	27	6939	92996	78	91
+2508.05215	DFW: A Novel Weighting Scheme for Covariate Balancing and Treatment Effect Estimation	1	36	6924	64738	54	71
+2601.11135	Context-aware Graph Causality Inference for Few-Shot Molecular Property Prediction	1	31	6917	66143	56	72
+2202.08318	A flexible approach for causal inference with multiple treatments and clustered survival outcomes	1	31	6916	100901	85	101
+2606.22873	SingGuard: A Policy-Adaptive Multimodal LLM Guardrail with Dynamic Reasoning	1	49	6906	107751	90	119
+2310.08672	Machine Learning Who to Nudge: Causal vs Predictive Targeting in a Field Experiment on Student Financial Aid Renewal	1	22	6859	91156	76	88
+2606.28393	Transition-Aware best-of-N sampling for Longitudinal Chest X-ray Reports	1	24	6849	42338	36	48
+2510.01562	Large-Scale Bayesian Causal Discovery with Interventional Data	1	32	6842	71805	60	77
+2502.03600	Type 2 Tobit Sample Selection Models with Bayesian Additive Regression Trees	1	89	6823	268693	224	274
+2606.06947	DREAM: Dynamic Refinement of Early Assignment Mappings	1	26	6816	67696	57	72
+2203.00859	MixSTE: Seq2seq Mixed Spatio-Temporal Encoder for 3D Human Pose Estimation in Video	1	21	6811	40812	35	44
+2508.08883	Position: Causal Machine Learning Requires Rigorous Synthetic Experiments for Broader Adoption	1	32	6810	81333	68	83
+2106.05024	Contamination Bias in Linear Regressions	1	51	6801	201713	169	196
+2509.05922	Predicting Market Troughs: A Machine Learning Approach with Causal Interpretation	1	58	6785	143278	120	146
+2606.06236	Tracing the Oracle: Improving Diffusion Timestep Scheduling for 3D CT Reconstruction	1	34	6776	56807	48	70
+2505.00310	Statistical Learning for Heterogeneous Treatment Effects: Pretraining, Prognosis, and Prediction	1	17	6775	58330	49	58
+2607.07849	The Impact of Publicly Funded Small Business Advisory Services: Firm Take-up and Performance in the United States	1	26	6767	97240	82	97
+2503.21081	Leveraging External Controls in Clinical Trials: Estimands, Estimation, Assumptions	1	38	6759	110439	93	113
+2606.21786	RocketPFN: Accurate Time Series Classification via In-Context Learning	1	18	6757	42082	36	45
+2305.09126	Transfer Learning for Causal Effect Estimation	1	62	6746	169825	142	178
+2606.22215	Accelerating Discovery: Model-Agnostic Likelihoods for the Reinterpretation of Particle Physics Results and their Application to the Belle II $B^{+}\to K^{+}ν\barν$ Measurement	1	195	6743	489616	409	504
+2303.06332	A Differential Effect Approach to Partial Identification of Treatment Effects	1	44	6738	144124	121	144
+2006.05691	On Low Rank Directed Acyclic Graphs and Causal Structure Learning	1	27	6708	74542	63	75
+2606.05988	Compress-Distill: Reasoning Trace Compression for Efficient Knowledge Distillation	1	38	6693	61930	52	71
+1803.04499	On finite-population Bayesian inferences for $2^K$ factorial designs with binary outcomes	1	24	6693	59180	50	62
+2209.01235	Smiles in Profiles: Improving Efficiency While Reducing Disparities in Online Marketplaces	1	65	6685	171030	143	176
+2606.22823	Retrieval-Augmented Multimodal Learning for Enzyme-Substrate Interaction Prediction Under Low-Homology Shift	1	18	6680	61462	52	59
+2402.10063	Balancing the Causal Effects in Class-Incremental Learning	1	33	6635	75850	64	80
+1412.0267	A Simple Adjustment for Bandwidth Snooping	1	79	6627	294748	246	290
+2405.04419	Transportability of Principal Causal Effects	1	65	6599	201015	168	204
+2012.14722	Hybrid Micro/Macro Level Convolution for Heterogeneous Graph Learning	1	28	6585	69948	59	73
+2606.06388	Humans' ALMANAC: A Human Collaboration Dataset of Action-Level Mental Model Annotations for Agent Collaboration	1	95	6578	87502	73	130
+2505.15023	Towards a Science of Causal Interpretability in Deep Learning for Software Engineering	1	167	6575	544854	455	533
+2103.07274	Multimodal EEG and Keystroke Dynamics Based Biometric System Using Machine Learning Algorithms	1	30	6552	85562	72	88
+2502.10883	Learning Identifiable Structures Helps Avoid Bias in DNN-based Supervised Causal Learning	1	42	6530	94901	80	100
+1502.05938	Incorporating Spontaneous Reporting System Data to Aid Causal Inference in Longitudinal Healthcare Data	1	19	6526	47019	40	50
+2604.07513	SYN-DIGITS: A Synthetic Control Framework for Calibrated Digital Twin Simulation	1	38	6524	100890	85	106
+1604.07125	Approximate Residual Balancing: De-Biased Inference of Average Treatment Effects in High Dimensions	1	37	6523	132769	111	134
+2502.16988	A tutorial on optimal dynamic treatment regimes	1	37	6518	136625	114	134
+2208.06836	Doubly Robust Estimation under Covariate-Induced Dependent Left Truncation	1	79	6501	275556	230	270
+2606.10694	REAL: A Reasoning-Enhanced Graph Framework for Long-Term Memory Management of LLMs	1	26	6496	71707	60	75
+2607.10196	Generative Augmentation of Raman Spectra for Glioma Classification	1	28	6487	55815	47	59
+2606.20471	The impact of FRB dispersion measure probability distribution functions on cosmographic estimates	1	16	6472	49740	42	50
+2203.12808	Robustness Against Weak or Invalid Instruments: Exploring Nonlinear Treatment Models with Machine Learning	1	85	6453	262701	219	259
+2501.08958	Kolmogorov-Arnold Networks for Time Series Granger Causality Inference	1	26	6441	43290	37	50
+1706.07328	Targeted Undersmoothing	1	22	6379	112221	94	106
+0910.5803	Planetary Nebulae Detected in the Spitzer Space Telescope GLIMPSE II Legacy Survey	1	22	6368	89829	75	87
+1912.06853	The Tarantula Massive Binary Monitoring. IV. Double-lined photometric binaries	1	28	6348	49592	42	57
+2510.26106	Causal Inference with Groupwise Matching	1	48	6320	195961	164	186
+2606.26332	DiskMINT-GARDEN: Self-consistent Models to Estimate Disk Masses	1	36	6310	79237	67	87
+2301.11336	Causal Structural Learning from Time Series: A Convex Optimization Approach	1	25	6270	56695	48	59
+2511.10320	PITE: Multi-Prototype Alignment for Individual Treatment Effect Estimation	1	25	6264	51570	43	57
+2405.08687	Latent group structure in linear panel data models with endogenous regressors	1	93	6243	322491	269	319
+2306.06024	Self-Interpretable Time Series Prediction with Counterfactual Explanations	1	29	6232	69887	59	75
+2505.08065	Asymptotically Efficient Data-adaptive Penalized Shrinkage Estimation with Application to Causal Inference	1	36	6227	115983	97	117
+2607.07610	Gamma-ray bursts reveal the history and faint contributors of cosmic reionization	1	11	6186	42894	36	40
+2606.15652	MosaicQuant: Inlier-Outlier Disaggregation for Unified 4-Bit LLM Quantization	1	24	6177	56746	48	62
+1407.7566	Dependence versus Conditional Dependence in Local Causal Discovery from Gene Expression Data	1	22	6176	50323	42	53
+2209.11383	Model-assisted sensitivity analysis for treatment effects under unmeasured confounding via regularized calibrated estimation	1	77	6169	319165	266	306
+2606.24460	The African Language Tax: Quantifying the Cost, Latency, and Context Penalty of Tokenizing African Languages in Frontier LLMs	1	84	6139	114269	96	142
+2606.23961	Forget Without Compromise: Nexus Sampling for Streaming KV-Cache Eviction Under Fixed Budgets	1	31	6129	83962	70	86
+2606.13338	Navigating the Safety-Fidelity Trade-off: Massive-Variate Time Series Forecasting for Power Systems via Probabilistic Scenarios	1	57	6122	80558	68	100
+1803.07514	Testing for Unobserved Heterogeneous Treatment Effects with Observational Data	1	43	6055	142075	119	144
+2009.03151	Doubly Robust Semiparametric Difference-in-Differences Estimators with High-Dimensional Data	1	46	6011	188468	158	183
+1609.00288	A Unified View of Multi-Label Performance Measures	1	29	6008	62673	53	72
+2605.26029	CausaLab: A Scalable Environment for Interactive Causal Discovery Toward AI Scientists	1	39	5942	53798	45	67
+2606.23566	LangMAP: A Language-Adaptive Approach to Tokenization	1	34	5922	71715	60	77
+2012.03330	Better Experimental Design by Hybridizing Binary Matching with Imbalance Optimization	1	17	5919	46064	39	49
+2607.11212	PREF-Gate: Provenance-Constrained Relational Evidence Fusion with Validation-Gated Selection for Graph Fraud Detection	1	54	5915	80943	68	90
+2211.08573	Realization of Causal Representation Learning to Adjust Confounding Bias in Latent Space	1	24	5872	61234	52	64
+2310.15796	Testing for equivalence of pre-trends in Difference-in-Differences estimation	1	33	5807	94665	79	98
+1910.06772	Counterfactual diagnosis	1	38	5790	146741	123	141
+2606.15967	CRIS: Cross-Plane Self-Supervised Isotropic Restoration for Anisotropic Volumetric Imaging Across Modalities	1	53	5759	103542	87	115
+2310.11969	Survey calibration for causal inference: a simple method to balance covariate distributions	1	24	5745	71038	60	73
+1211.1019	Unifying static analysis of gravitational structures with a scale-dependent scalar field gravity as an alternative to dark matter	1	24	5733	100520	84	96
+2410.07135	Causal Inference with Double/Debiased Machine Learning for Evaluating the Health Effects of Multiple Mismeasured Pollutants	1	26	5719	89372	75	88
+2305.19582	Causal Discovery with Latent Confounders Based on Higher-Order Cumulants	1	49	5706	135189	113	136
+2308.09735	CTP:A Causal Interpretable Model for Non-Communicable Disease Progression Prediction	1	37	5617	81530	68	88
+1012.2547	The Exact String Matching Problem: a Comprehensive Experimental Evaluation	1	22	5615	76629	64	76
+2607.09982	Multimodal Routing for Interpretable, Robust, and Auditable Clinical Prediction	1	31	5225	67276	57	74

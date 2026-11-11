@@ -1,0 +1,326 @@
+{
+ "rule": "exact token count > 4096 (truncated_chunk_ids_<corpus>.txt from exact_truncated_ids.py); fallback approximation: chars > 14000 when that file is absent",
+ "new_chunk_chars": 1200,
+ "corpora": {
+  "main": {
+   "papers_total": 12390,
+   "chunks_total": 399676,
+   "affected_papers": 1490,
+   "truncated_chunks_approx": 3136,
+   "truncated_chunks_exact_results_json": 3138,
+   "truncated_chars_approx": 42008974,
+   "chunks_to_replace": 60888,
+   "chars_to_replace": 203586718,
+   "papers_for_50pct_truncated_chars": 192,
+   "papers_for_90pct_truncated_chars": 978,
+   "est_new_chunks_lo": 170397,
+   "est_new_chunks_hi": 202839,
+   "top20": [
+    {
+     "paper_id": "2403.02467",
+     "title": "Applied Causal Inference Powered by ML and AI",
+     "truncated_chunks": 113,
+     "total_chunks": 370,
+     "truncated_chars": 1607963
+    },
+    {
+     "paper_id": "2607.07980",
+     "title": "3100 Opinions on Code Review in an AI World: Building Causal Theory from Practitioner Discourse",
+     "truncated_chunks": 1,
+     "total_chunks": 37,
+     "truncated_chars": 709987
+    },
+    {
+     "paper_id": "2405.03579",
+     "title": "Some Statistical and Data Challenges When Building Early-Stage Digital Experimentation and Measurement Capabilities",
+     "truncated_chunks": 44,
+     "total_chunks": 145,
+     "truncated_chars": 574484
+    },
+    {
+     "paper_id": "1208.4360",
+     "title": "An XMM-Newton Survey of the Soft X-ray Background. II. An All-Sky Catalog of Diffuse O VII and O VIII Emission Intensiti",
+     "truncated_chunks": 2,
+     "total_chunks": 40,
+     "truncated_chars": 485170
+    },
+    {
+     "paper_id": "2303.10112",
+     "title": "Causal Discovery from Temporal Data: An Overview and New Perspectives",
+     "truncated_chunks": 21,
+     "total_chunks": 40,
+     "truncated_chars": 282061
+    },
+    {
+     "paper_id": "2005.14409",
+     "title": "A Causal Machine Learning Framework for Predicting Preventable Hospital Readmissions",
+     "truncated_chunks": 13,
+     "total_chunks": 24,
+     "truncated_chars": 218042
+    },
+    {
+     "paper_id": "2002.02770",
+     "title": "A Survey on Causal Inference",
+     "truncated_chunks": 15,
+     "total_chunks": 37,
+     "truncated_chars": 216682
+    },
+    {
+     "paper_id": "2602.07915",
+     "title": "CausalCompass: Evaluating the Robustness of Time-Series Causal Discovery in Misspecified Scenarios",
+     "truncated_chunks": 2,
+     "total_chunks": 49,
+     "truncated_chars": 207268
+    },
+    {
+     "paper_id": "2604.00504",
+     "title": "Conformal Inference for Experimental Attrition in Social Science Research",
+     "truncated_chunks": 14,
+     "total_chunks": 57,
+     "truncated_chars": 206844
+    },
+    {
+     "paper_id": "2511.05424",
+     "title": "Investigating the imprints of tidal features on simulated galaxy outskirts in LSST-like mock observations",
+     "truncated_chunks": 14,
+     "total_chunks": 38,
+     "truncated_chars": 191247
+    },
+    {
+     "paper_id": "2606.24415",
+     "title": "Novel Triple-Based Problems for the Construction of Phylogenetic Networks via Least Common Ancestors",
+     "truncated_chunks": 16,
+     "total_chunks": 45,
+     "truncated_chars": 186330
+    },
+    {
+     "paper_id": "2601.07668",
+     "title": "The Role of Confounders and Linearity in Ecological Inference: A Reassessment",
+     "truncated_chunks": 14,
+     "total_chunks": 42,
+     "truncated_chars": 185905
+    },
+    {
+     "paper_id": "2606.13393",
+     "title": "Direct detection of cool molecular gas in a star-forming galaxy at $z=7.31$",
+     "truncated_chunks": 15,
+     "total_chunks": 32,
+     "truncated_chars": 184360
+    },
+    {
+     "paper_id": "2505.07323",
+     "title": "Causal mediation analysis with one or multiple mediators: a comparative study",
+     "truncated_chunks": 19,
+     "total_chunks": 62,
+     "truncated_chars": 183239
+    },
+    {
+     "paper_id": "2201.13094",
+     "title": "Designing Universal Causal Deep Learning Models: The Geometric (Hyper)Transformer",
+     "truncated_chunks": 16,
+     "total_chunks": 50,
+     "truncated_chars": 182164
+    },
+    {
+     "paper_id": "2108.10890",
+     "title": "Hardness of ionizing radiation fields in MaNGA star-forming galaxies",
+     "truncated_chunks": 14,
+     "total_chunks": 30,
+     "truncated_chars": 170572
+    },
+    {
+     "paper_id": "2607.09637",
+     "title": "Network Analysis with Parametric NetKAT",
+     "truncated_chunks": 14,
+     "total_chunks": 34,
+     "truncated_chars": 170065
+    },
+    {
+     "paper_id": "2306.10590",
+     "title": "Assumption-lean falsification tests of rate double-robustness of double-machine-learning estimators",
+     "truncated_chunks": 16,
+     "total_chunks": 65,
+     "truncated_chars": 169823
+    },
+    {
+     "paper_id": "2607.07813",
+     "title": "Scaling Relations for Binary Black Hole Merger Times from Cosmological Initial Conditions",
+     "truncated_chunks": 12,
+     "total_chunks": 49,
+     "truncated_chars": 164817
+    },
+    {
+     "paper_id": "2406.00827",
+     "title": "Comparing Experimental and Nonexperimental Methods: What Lessons Have We Learned Four Decades After LaLonde (1986)?",
+     "truncated_chunks": 12,
+     "total_chunks": 24,
+     "truncated_chars": 163174
+    }
+   ]
+  },
+  "waymo": {
+   "papers_total": 1861,
+   "chunks_total": 47771,
+   "affected_papers": 72,
+   "truncated_chunks_approx": 126,
+   "truncated_chunks_exact_results_json": 126,
+   "truncated_chars_approx": 1477359,
+   "chunks_to_replace": 3882,
+   "chars_to_replace": 7947980,
+   "papers_for_50pct_truncated_chars": 14,
+   "papers_for_90pct_truncated_chars": 53,
+   "est_new_chunks_lo": 6656,
+   "est_new_chunks_hi": 8929,
+   "top20": [
+    {
+     "paper_id": "2512.07661",
+     "title": "Optimization-Guided Diffusion for Interactive Scene Generation",
+     "truncated_chunks": 8,
+     "total_chunks": 36,
+     "truncated_chars": 98294
+    },
+    {
+     "paper_id": "2401.11876",
+     "title": "First-principles Based 3D Virtual Simulation Testing for Discovering SOTIF Corner Cases of Autonomous Driving",
+     "truncated_chunks": 5,
+     "total_chunks": 23,
+     "truncated_chars": 75068
+    },
+    {
+     "paper_id": "2105.02851",
+     "title": "Algorithmic Ethics: Formalization and Verification of Autonomous Vehicle Obligations",
+     "truncated_chunks": 6,
+     "total_chunks": 25,
+     "truncated_chars": 73745
+    },
+    {
+     "paper_id": "2506.07150",
+     "title": "Improving Traffic Signal Data Quality for the Waymo Open Motion Dataset",
+     "truncated_chunks": 6,
+     "total_chunks": 29,
+     "truncated_chars": 66190
+    },
+    {
+     "paper_id": "2510.10937",
+     "title": "Neutral Agent-based Adversarial Policy Learning against Deep Reinforcement Learning in Multi-party Open Systems",
+     "truncated_chunks": 5,
+     "total_chunks": 43,
+     "truncated_chars": 59263
+    },
+    {
+     "paper_id": "2605.31243",
+     "title": "Safe Arrival Scheduling at Constraint Waypoints in UAM Corridors",
+     "truncated_chunks": 4,
+     "total_chunks": 16,
+     "truncated_chars": 56320
+    },
+    {
+     "paper_id": "2203.14355",
+     "title": "Robust and Efficient Bayesian Inference for Non-Probability Samples",
+     "truncated_chunks": 6,
+     "total_chunks": 39,
+     "truncated_chars": 54200
+    },
+    {
+     "paper_id": "2208.02232",
+     "title": "GAS: Generating Fast and Accurate Surrogate Models for Autonomous Vehicle Systems",
+     "truncated_chunks": 4,
+     "total_chunks": 25,
+     "truncated_chars": 49080
+    },
+    {
+     "paper_id": "2111.05534",
+     "title": "Verifying Controllers with Convolutional Neural Network-based Perception: A Case for Intelligible, Safe, and Precise Abs",
+     "truncated_chunks": 4,
+     "total_chunks": 24,
+     "truncated_chars": 47884
+    },
+    {
+     "paper_id": "2205.14523",
+     "title": "Risk of Stochastic Systems for Temporal Logic Specifications",
+     "truncated_chunks": 4,
+     "total_chunks": 43,
+     "truncated_chars": 45965
+    },
+    {
+     "paper_id": "2009.00738",
+     "title": "A Deontic Logic Analysis of Autonomous Systems' Safety",
+     "truncated_chunks": 3,
+     "total_chunks": 24,
+     "truncated_chars": 39038
+    },
+    {
+     "paper_id": "2606.07789",
+     "title": "A Framework for Evaluating and Benchmarking Concept Drift Detection Methods",
+     "truncated_chunks": 3,
+     "total_chunks": 29,
+     "truncated_chars": 36956
+    },
+    {
+     "paper_id": "2510.22680",
+     "title": "Uncertainty-Aware Autonomous Vehicles: Predicting the Road Ahead",
+     "truncated_chunks": 3,
+     "total_chunks": 16,
+     "truncated_chars": 36082
+    },
+    {
+     "paper_id": "local:86a350b887b5",
+     "title": "Wali, B., Khattak, A., Karnowski, T., 2020. The relationship between driving volatility in time to collision and crash-i",
+     "truncated_chunks": 1,
+     "total_chunks": 30,
+     "truncated_chars": 31460
+    },
+    {
+     "paper_id": "local:b1819859b098",
+     "title": "Note on the Definition of the Reliability of Links and Paths for Dynamic Route Guidance Applications",
+     "truncated_chunks": 2,
+     "total_chunks": 163,
+     "truncated_chars": 28530
+    },
+    {
+     "paper_id": "2403.18764",
+     "title": "Temporal Logic Formalisation of ISO 34502 Critical Scenarios: Modular Construction with the RSS Safety Distance",
+     "truncated_chunks": 2,
+     "total_chunks": 28,
+     "truncated_chars": 27298
+    },
+    {
+     "paper_id": "2101.05709",
+     "title": "Rule-based Optimal Control for Autonomous Driving",
+     "truncated_chunks": 2,
+     "total_chunks": 33,
+     "truncated_chars": 24560
+    },
+    {
+     "paper_id": "local:007c79776d54",
+     "title": "A SLR about the impact of AI on AV safety",
+     "truncated_chunks": 1,
+     "total_chunks": 21,
+     "truncated_chars": 23904
+    },
+    {
+     "paper_id": "local:52b5fc5d767d",
+     "title": "This may be the author\u2019s version of a work that was submitted/accepted",
+     "truncated_chunks": 1,
+     "total_chunks": 33,
+     "truncated_chars": 21665
+    },
+    {
+     "paper_id": "2506.09217",
+     "title": "Perception Characteristics Distance: Measuring Stability and Robustness of Perception System in Dynamic Conditions under",
+     "truncated_chunks": 2,
+     "total_chunks": 19,
+     "truncated_chars": 21414
+    }
+   ]
+  }
+ },
+ "gt": {
+  "items_per_file": {
+   "docs/eval-reports/data/2026-11-10-papers-passage-gt/papers_passage_gt.json": 61,
+   "docs/eval-reports/data/2026-11-10-causal-books-gt/causal_books_gt.json": 69,
+   "fixtures/eval/eval_book_questions.json": 115
+  },
+  "affected_items": 48
+ }
+}
