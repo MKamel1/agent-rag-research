@@ -1221,3 +1221,99 @@ def test_search_papers_min_distinct_papers_is_a_noop_when_target_already_met():
                                   filters=SearchFilters(min_distinct_papers=2), k=3)
 
     assert [x.view.summary_text for x in topped] == [x.view.summary_text for x in plain]
+
+
+# ===========================================================================
+# CQ-3: drop_stub_chunks -- heading-only chunks are dropped before reranking (default OFF)
+# ===========================================================================
+_STUB_BODY = "computer program used in the development of an item"  # 51 chars: real, kept
+_Q = "computer program development item clause"
+
+
+def _hdr(body, sp="3 Terms"):
+    return f"Standard\n{sp}\n\n{body}"
+
+
+def _seed_stub_corpus(store, docstore, embedder, n_real=6, n_stub=6):
+    for i in range(n_stub):
+        _seed_chunk(store, docstore, embedder, chunk_id=f"s{i}:c0", paper_id=f"s{i}",
+                    block_id=f"s{i}:b0", text=_hdr("3.159" if i % 2 else ""), section_path="3 Terms")
+    for i in range(n_real):
+        _seed_chunk(store, docstore, embedder, chunk_id=f"r{i}:c0", paper_id=f"r{i}",
+                    block_id=f"r{i}:b0", text=_hdr(f"{_STUB_BODY} number {i}"), section_path="3 Terms")
+
+
+class _SpyReranker(FakeReranker):
+    def __init__(self):
+        super().__init__()
+        self.seen: list[list[str]] = []
+
+    def rerank(self, query, candidates):
+        self.seen.append([c.id for c in candidates])
+        return super().rerank(query, candidates)
+
+
+def _stub_retriever(store, docstore, embedder, reranker, drop, pool=4):
+    return _mod.Retriever(embedder=embedder, vector_store=store, document_store=docstore,
+                          reranker=reranker, rerank_pool_size=pool, drop_stub_chunks=drop)
+
+
+def test_is_stub_chunk_text_boundaries():
+    assert _mod.is_stub_chunk_text("T\nS\n\n")
+    assert _mod.is_stub_chunk_text(_hdr("3.159"))          # bare clause number
+    assert _mod.is_stub_chunk_text("no separator at all")
+    assert not _mod.is_stub_chunk_text(_hdr(_STUB_BODY))   # short but real definition
+    assert not _mod.is_stub_chunk_text(_hdr("x" * _mod._MIN_BODY_CHARS))
+    assert _mod.is_stub_chunk_text(_hdr("x" * (_mod._MIN_BODY_CHARS - 1)))
+
+
+def test_default_off_keeps_stubs_and_reranker_sees_them():
+    store, docstore, embedder, spy = FakeVectorStore(), RecordingDocStore(), FakeEmbedder(), _SpyReranker()
+    _seed_stub_corpus(store, docstore, embedder)
+    _stub_retriever(store, docstore, embedder, spy, drop=False, pool=12).retrieve(_Q, None, 4)
+    assert len(spy.seen[0]) == 12 and sum(i.startswith("s") for i in spy.seen[0]) == 6
+
+
+def test_drop_never_shows_stubs_to_reranker_and_fills_pool_with_real_chunks():
+    store, docstore, embedder, spy = FakeVectorStore(), RecordingDocStore(), FakeEmbedder(), _SpyReranker()
+    _seed_stub_corpus(store, docstore, embedder, n_real=6, n_stub=6)
+    results, _ = _stub_retriever(store, docstore, embedder, spy, drop=True, pool=4).retrieve(_Q, None, 3)
+    assert len(spy.seen[0]) == 4                                  # pool still filled to rerank_pool_size
+    assert all(i.startswith("r") for i in spy.seen[0])            # no stub reached the reranker
+    assert len(results) == 3 and all(r.paper_id.startswith("r") for r in results)
+
+
+def test_drop_with_all_candidates_stubs_returns_empty_without_calling_reranker():
+    store, docstore, embedder, spy = FakeVectorStore(), RecordingDocStore(), FakeEmbedder(), _SpyReranker()
+    _seed_stub_corpus(store, docstore, embedder, n_real=0, n_stub=4)
+    results, cov = _stub_retriever(store, docstore, embedder, spy, drop=True).retrieve(_Q, None, 3)
+    assert results == [] and cov.candidate_count > 0 and spy.seen == []
+
+
+def test_drop_removes_a_papers_only_chunk_when_it_is_a_stub():
+    store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
+    _seed_stub_corpus(store, docstore, embedder, n_real=2, n_stub=1)
+    results, _ = _stub_retriever(store, docstore, embedder, FakeReranker(), drop=True).retrieve(_Q, None, 10)
+    assert {r.paper_id for r in results} == {"r0", "r1"}          # paper s0 had only a stub chunk
+
+
+def test_drop_k_larger_than_surviving_pool_returns_all_survivors():
+    store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
+    _seed_stub_corpus(store, docstore, embedder, n_real=3, n_stub=5)
+    results, _ = _stub_retriever(store, docstore, embedder, FakeReranker(), drop=True).retrieve(_Q, None, 50)
+    assert len(results) == 3 and all(r.paper_id.startswith("r") for r in results)
+
+
+def test_drop_keeps_short_real_definition_body():
+    store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
+    _seed_chunk(store, docstore, embedder, chunk_id="d:c0", paper_id="d", block_id="d:b0",
+                text=_hdr(_STUB_BODY))
+    results, _ = _stub_retriever(store, docstore, embedder, FakeReranker(), drop=True).retrieve(_Q, None, 5)
+    assert [r.paper_id for r in results] == ["d"]
+
+
+def test_drop_flag_does_not_affect_retrieve_papers():
+    store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
+    _seed_summary(store, docstore, embedder, paper_id="p1", summary_id="p1:summary", summary_text="x")
+    results, _ = _stub_retriever(store, docstore, embedder, FakeReranker(), drop=True).retrieve_papers(_Q, None, 5)
+    assert [r.view.paper_id for r in results] == ["p1"]            # a 1-char "summary" is not a stub

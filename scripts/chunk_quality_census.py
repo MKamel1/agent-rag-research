@@ -19,14 +19,15 @@ import argparse
 import json
 import re
 import sqlite3
+import sys
 from collections import Counter, defaultdict
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from rag.retriever import _MIN_BODY_CHARS, body_of  # noqa: E402  (after sys.path bootstrap)
 
 _BARE_NUMBER = re.compile(r"\d+(?:\.\d+)+\.?")
-
-
-def body_of(text: str) -> str:
-    """A chunk's text is `title\\nsection_path\\n\\nbody` (rag/chunker.py::_build_chunk)."""
-    return text.split("\n\n", 1)[1].strip() if "\n\n" in text else ""
 
 
 def census(db_path: str, stub_chars: int, oversize_chars: int, thin_chunks: int) -> dict:
@@ -78,7 +79,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawTextHelpFormatter)
     ap.add_argument("db", nargs="+", help="path(s) to a corpus papers.db")
-    ap.add_argument("--stub-chars", type=int, default=40)
+    ap.add_argument("--stub-chars", type=int, default=_MIN_BODY_CHARS)
     ap.add_argument("--oversize-chars", type=int, default=8000)
     ap.add_argument("--thin-chunks", type=int, default=20)
     ap.add_argument("--stub-ids-out", help="write stub chunk ids here (single db only)")
