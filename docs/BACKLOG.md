@@ -200,6 +200,7 @@ two now follow.
 time-sensitive one is **FD-1**: figure images from the 12,390-paper parse went to an OS temp
 directory and are gone; redirecting `output_dir` to persistent storage is cheap *before* the next
 large Waymo parse and a full re-parse after it.
+**Update 2026-11-10:** resolved for new parses by `f92bd8f` (RI-18 persists figures and tables); not backfilled on the main corpus.
 
 ---
 
@@ -517,8 +518,8 @@ Recorded in `docs/BOOK-INTEGRATION-CLOSEOUT.md`; repeated here so they stay visi
 | B-1 | TOC pages mis-classified as headings | **OPEN** | Inflates chapter unit counts. |
 | B-2 | Strategy-B junk chapter titles | **OPEN** | Some chapter titles are page furniture, not headings. |
 | B-3 | T-DOC87 boundary re-ingest | **OPEN / will not ship as-is** | The marker-regex *correctness* fix shipped (PR #204); the boundary change regressed routing 2.8–3.5× past the floor and does not ship. |
-| B-4 | Remove the unused outline splitter | **OPEN** | Review date 2026-08-29. Operator: "merge now, remove later if still unused in a month." |
-| B-5 | Flip `reindex_idf` default to `--use-clone-swap` | **OPEN** | Non-destructive migration path exists (PR #203); the default is still the destructive one. |
+| B-4 | Remove the unused outline splitter | **OPEN** | Review date 2026-08-29. Operator: "merge now, remove later if still unused in a month." The review date 2026-08-29 has passed (checked 2026-11-10); operator: remove or extend. |
+| B-5 | Flip `reindex_idf` default to `--use-clone-swap` | **OPEN** | Non-destructive migration path exists (PR #203); the default is still the destructive one. Moot for the IDF modifier: it is applied on all five collections (on-disk collection configs, checked 2026-11-10); the destructive default of `reindex_idf` remains but is a no-op everywhere. |
 
 ---
 
@@ -668,7 +669,83 @@ GPU freeze lifted 2026-08-27; lanes dispatched immediately. Primary work landed 
 | QW-2 | MiniCheck-FT5 confidence surface v0 | **LANDED** | Support score separates answerable/absent ~500× wider than retrieval score, but heavy overlap blocks thresholding. Viable as one candidate signal for IN-2, not alone; sentence-level scoring recommended over per-answer means. Branch `NB-QW2-confidence-v0`, merge `fd05dbf`; report `docs/eval-reports/2026-08-28-confidence-v0.md` |
 | QW-3 | Qwen3-Reranker-0.6B seat A/B | **VERDICT: REJECT** | Block-P@1 collapses 24× (gt_wmr) and 11× (ver84); ver84 falls below no-rerank floor. All three hypotheses tested before measurement trusted. Not attempted: 4B/8B variants, tuned task instruction, PyLate/GTE-ModernColBERT. Branch `P95-QW3-reranker-seat`, merge `825c57b`; report `docs/eval-reports/2026-08-28-qw3-reranker-seat.md` |
 | W-A4 | SB-2 partial-absent ground truth authoring | **LANDED** | 31 usable items across 22 papers. Two blind authors + cross-verification (Stages B/C/D). Falsified 2 absence claims via lexical re-probe; corrected 3 hit-count stale entries. Incidental finding: 12/12 Author B citations sat 1–5 blocks downstream of anchor — supports X-C Variant A. Branches `P95-SB2-WA4-authorA` (7191f8e), `P95-SB2-WA4-authorB` (336d78c), `P95-SB2-WA4-crossverify` (259b007); data `docs/eval-reports/data/2026-08-28-wa4-gt/`; report `docs/eval-reports/data/2026-08-28-wa4-gt/crossverify/cross-verification-report.md` |
-| SB-1 | Chunk-boundary impact measurement | **IN PROGRESS** | Branch `P95-SB1-chunk-boundary` still running. Measurement instrument finding: **ver84 MRR noise floor ~0.0074** (one tied-pair flip = 0.5/68 MRR gap). R@10 and block-P@1 are stable metrics on this corpus. |
-| P0-2 | Metric-ratification sign-off | **BLOCKED** — on operator | `docs/eval-reports/2026-08-26-precision95-metric-ratification.md` remains unsigned DRAFT. Gates IN-1. |
-| T-F7 | X-C member-block citation adoption sign-off | **BLOCKED** — on operator | Batched rider PR for Variant A wiring. Measured effect: gt_wmr 93.9%→95.5%, monotone, zero-risk. Supported by SB-2/W-A4's 12/12 anchor-offset finding. Design note `docs/design-notes/2026-08-28-xc-member-citation-adoption.md`. |
+| SB-1 | Chunk-boundary impact measurement | **REJECT (both arms) — `7b679f7`** | Report `docs/eval-reports/2026-08-28-sb1-chunk-boundary.md`: neighbour smoothing a flat null, section-context embedding trades fixtures with zero boundary-class conversions. Measurement instrument finding kept: **ver84 MRR noise floor ~0.0074** (one tied-pair flip = 0.5/68 MRR gap). R@10 and block-P@1 are stable metrics on this corpus. |
+| SB-3 | Agentic loop prototype v0 | **LANDED** | Arm (a) CRAG-style evaluator ADOPT-as-candidate (not wired), arm (b) decomposition REJECT. Commits `8d7c478`..`901a108`; report `docs/eval-reports/2026-08-28-sb3-agentic-loop.md`. |
+| P0-2 | Metric-ratification sign-off | **BLOCKED** — on operator | `docs/eval-reports/2026-08-26-precision95-metric-ratification.md` remains unsigned DRAFT. Gates IN-1. Still pending 2026-11-10. |
+| T-F7 | X-C member-block citation adoption sign-off | **BLOCKED** — on operator | Batched rider PR for Variant A wiring. Measured effect: gt_wmr 93.9%→95.5%, monotone, zero-risk. Supported by SB-2/W-A4's 12/12 anchor-offset finding. Design note `docs/design-notes/2026-08-28-xc-member-citation-adoption.md`. Still pending 2026-11-10. |
 
+## Enhancement programme (2026-11-10)
+
+Plan: `docs/superpowers/plans/2026-11-10-enhancement-programme.md` (instruments first, GPU measurements second, gated changes last; 51 tickets, one issue file each in `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/`, list in `INDEX.md`, not yet posted to GitHub). Source: `docs/eval-reports/2026-11-10-system-review.md`. The tickets that edit PROJECT-STATUS.md and this file are EP-3, EP-4 and EP-5, once per wave; other tickets do not. Status BLOCKED means an operator answer (F1-F8) or an upstream gate, named in the notes.
+
+| id | item | status | notes |
+|---|---|---|---|
+| EP-0 | Programme branch; three ground-truth sets (standards 128 items, causal books 74, paper passages 61); chunk-quality census; corpus audits (off-topic, ligature, embed truncation) | **DONE — `0021de1`** | commits `173fe4e` (standards GT), `f119f30` (books GT), `0c9483e` (papers GT), `09cb847` (audits), `368ce55` (census), `17b48ec`, `0021de1` |
+| EV-1 | Topic labels for all 12,385 main-corpus papers | **DONE — `5f54fb4`** | `docs/eval-reports/data/2026-11-10-topic-labels/` |
+| EV-2 | Label audit (weighted kappa 0.90, same model family as the labeller) | **DONE — `eb4d993`** | `docs/eval-reports/2026-11-10-topic-labels-audit.md` |
+| EV-3 | relevance_score against labels (AUROC 0.923) | **DONE — `eb4d993`** | same merge as EV-2; report above |
+| EV-5 | Three frozen protocols, run scripts that verify fixture hashes, fixture hashes, GPU-day runbook | **DONE — `b9be4c8`** | `docs/eval-reports/2026-11-10-*-benchmark-protocol.md`, `2026-11-10-GPU-DAY-RUNBOOK.md`, `data/2026-11-10-FIXTURE-HASHES.json` |
+| EV-6 | Per-stratum evaluation report script | **DONE — `c06b411`** | `scripts/eval_strata_report.py` |
+| CQ-1 | Ligature repair in the sparse arm (merged, applied to no index) | **DONE — `56d24d0`** | `docs/eval-reports/data/2026-11-10-ligature-census/repair-map-report.md` |
+| CQ-2 | `VectorIndex.resparse` / `set_payload` and their CLIs | **DONE — `655b384`** | `docs/eval-reports/2026-11-10-cq2-index-maintenance.md` |
+| CQ-3 | Stub filter (default off) and pre-registered A/B | **DONE — `720f77d`** | `docs/eval-reports/2026-11-10-cq3-stub-chunks.md` |
+| CQ-6 | Duplicate-document and reference-list census | **DONE — `23fc2d2`** | `docs/eval-reports/data/2026-11-10-dup-ref-census/` |
+| CQ-4 | Truncation re-chunk plan: about 177k-212k embeddings, 48 ground-truth items to re-ground; names a server token-limit change as the unassessed alternative | **DONE — `bb6520a`** | `docs/eval-reports/data/2026-11-10-truncation-rechunk/report.md` |
+| CQ-5 | Standards metadata: reviewed table, validator/tag emitter, acquisitions list; specifies the authority/edition follow-up authoring (CQ-19, CQ-20) | **DONE — `3df5c8b`** | `docs/eval-reports/2026-11-10-cq5-standards-metadata.md` |
+| EP-1 | Documentation drift pass over PROJECT-STATUS, README, AGENTS, RUNBOOK | **DONE — `dc70a73`** | commits `2f25a68`..`dc70a73` on the integration branch |
+| OP-1 | `doctor --cpu-only` and fail-fast degraded mode | **DONE — `564582a`** | `app/doctor.py` |
+| RV-1..RV-6 | Six review lanes | **DONE — `b4c2b43`, `e796cc9`** | `docs/eval-reports/data/2026-11-10-system-review/` |
+| RV-S | Adjudicated system review (the primary input of this plan) | **DONE — `364aa13`** | `docs/eval-reports/2026-11-10-system-review.md` |
+| EV-4 | Topic-focus ground truth | **IN PROGRESS** | branch `EP-EV4-focus-gt`; 40 of about 50 items authored |
+| EP-2 | Enhancement programme plan, issue files, BACKLOG section | **READY** | branch `EP-EP2-ticket-set` |
+| CQ-19 | Author 38 more standards authority-stratum ground-truth items | **OPEN** | W1; CQ-5 follow-up; needs EV-11; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/CQ-19-standards-authority-items.md` |
+| CQ-20 | Author 38 more standards edition-stratum ground-truth items | **OPEN** | W1; CQ-5 follow-up; needs CQ-19; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/CQ-20-standards-edition-items.md` |
+| CQ-7 | Build a ligature-repaired clone of the main collection on CPU | **BLOCKED** — on F2 | W1; S-17; needs OP-4; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/CQ-7-ligature-resparse-clone-cpu.md` |
+| CQ-8 | Make rechunk re-embed only chunks whose text changed | **OPEN** | W1; S-14; needs none; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/CQ-8-rechunk-reuse-vectors-by-text-hash.md` |
+| EP-3 | Batch BACKLOG and PROJECT-STATUS updates for wave 1 | **OPEN** | W1; S-13; needs EP-6, EP-7, OP-2, OP-3, OP-4, OP-5, OP-6, OP-7, MC-1, MC-2, MC-3, RQ-1, RQ-2, RQ-5, EV-7, EV-8, EV-9, EV-10, EV-11, EV-12, EV-13, EV-14, EV-15, CQ-7, CQ-8, CQ-19, CQ-20; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EP-3-status-batch-wave-1.md` |
+| EP-6 | Add CORPORA.md and fix drift rows outside EP-1's files | **OPEN** | W1; S-13; needs none; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EP-6-docs-corpora-and-drift-remainder.md` |
+| EP-7 | Add backup, container and GPU-contention sections to RUNBOOK | **OPEN** | W1; S-13; needs OP-3, OP-4, OP-5, OP-7, EP-6; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EP-7-runbook-backup-containers-gpu-contention.md` |
+| EV-10 | Mark an eval run invalid when any error is a GPU lock timeout | **OPEN** | W1; S-06; needs EV-9; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EV-10-invalid-run-on-lock-timeout.md` |
+| EV-11 | Record note-only duplicates as alternatives and re-freeze fixture hashes | **OPEN** | W1; S-03; needs EV-8; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EV-11-record-alternatives-refreeze-hashes.md` |
+| EV-12 | Amend the CQ-3 stub A/B pre-registration (fixtures, minimum effect) | **OPEN** | W1; S-05; needs EV-9, EV-11; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EV-12-cq3-preregistration-addendum.md` |
+| EV-13 | Capture cross-encoder scores and build the absence census tool | **OPEN** | W1; S-04; needs RQ-1; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EV-13-rerank-score-capture-and-census.md` |
+| EV-14 | Measure filtered-search overlap with exact search on a clone | **BLOCKED** — on F2 | W1; S-15; needs RQ-5, OP-4; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EV-14-payload-index-overlap-measurement.md` |
+| EV-15 | Add the plain BM25 floor script named EV-5b in the protocols | **OPEN** | W1; S-02; needs none; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EV-15-bm25-floor-script.md` |
+| EV-7 | Require --collection, stamp the fixture hash, preflight gold ids | **OPEN** | W1; S-02; needs none; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EV-7-eval-entrypoints-explicit-collection.md` |
+| EV-8 | Add an excerpt-containment passage metric that honours alternative gold chunks | **OPEN** | W1; S-03; needs EV-7; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EV-8-passage-excerpt-hit-metric.md` |
+| EV-9 | Record retrieved chunk ids in eval rows; match stubs by chunk id | **OPEN** | W1; S-05; needs EV-8; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EV-9-chunk-ids-in-eval-rows.md` |
+| MC-1 | Raise an error for an unknown paper_id filter instead of returning empty | **OPEN** | W1; S-08; needs none; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/MC-1-unknown-paper-id-raises.md` |
+| MC-2 | Make the MCP server describe its corpus, filters and limits | **OPEN** | W1; S-10; needs MC-1; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/MC-2-self-describing-mcp-server.md` |
+| MC-3 | Record arguments and errors for scan and get tools in the usage log | **OPEN** | W1; S-11; needs MC-2; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/MC-3-scan-tool-telemetry.md` |
+| OP-2 | Construct the vector index lazily so the server starts without it | **OPEN** | W1; S-07; needs OP-5, OP-6, MC-3; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/OP-2-lazy-vector-index-construction.md` |
+| OP-3 | Add integrity check and checksums to snapshot manifests | **OPEN** | W1; S-01; needs none; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/OP-3-snapshot-integrity-and-checksums.md` |
+| OP-4 | Take and verify a fresh main-corpus snapshot | **BLOCKED** — on F1 | W1; S-01; needs none; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/OP-4-take-verify-main-snapshot.md` |
+| OP-5 | Name the GPU lock holder and fail fast on the query path | **OPEN** | W1; S-06; needs OP-6; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/OP-5-gpu-lock-holder-and-fast-fail.md` |
+| OP-6 | Guard every corpus tool against a missing or mismatched database | **OPEN** | W1; S-07; needs OP-3; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/OP-6-wrong-corpus-guards.md` |
+| OP-7 | Track the four container definitions in ops/docker-compose.yml | **OPEN** | W1; S-12; needs none; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/OP-7-tracked-container-definitions.md` |
+| RQ-1 | Fix three one-line retrieval defects (payload, partial rerank, cap) | **OPEN** | W1; S-09; needs none; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/RQ-1-three-retrieval-one-liners.md` |
+| RQ-2 | Add an opt-in, default-off relevance demotion to the Retriever | **OPEN** | W1; S-21; needs RQ-1, EV-10; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/RQ-2-opt-in-relevance-demotion.md` |
+| RQ-5 | Extract one shared sparse_tokens() used by the index | **OPEN** | W1; none: RV-1 F-1.10, prerequisite of RIDER-1 item 4; needs RQ-1; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/RQ-5-shared-sparse-tokens.md` |
+| EP-4 | Batch BACKLOG and PROJECT-STATUS updates for wave 2 | **BLOCKED** — on F3 (GPU) and upstream W1 tickets | W2; S-13; needs EP-3, EV-16, EV-17, EV-18, EV-19, EV-20, EV-21, EV-22; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EP-4-status-batch-wave-2.md` |
+| EV-16 | Run the frozen main-corpus baselines (papers, books, legacy) | **BLOCKED** — on F3 (GPU) and upstream W1 tickets | W2; S-16; needs EV-7, EV-8, EV-10, EV-11, EV-15, RQ-1, OP-5; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EV-16-baseline-main-corpus.md` |
+| EV-17 | Run the frozen topic-focus baseline | **BLOCKED** — on F3 (GPU) and upstream W1 tickets | W2; S-16; needs EV-16; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EV-17-baseline-topic-focus.md` |
+| EV-18 | Run the frozen standards baseline and evaluate the structure gate | **BLOCKED** — on F3 (GPU) and upstream W1 tickets | W2; S-16; needs EV-16, EV-11, EV-15; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EV-18-baseline-standards.md` |
+| EV-19 | Run the reranker-score census on the absent arms | **BLOCKED** — on F3 (GPU) and upstream W1 tickets | W2; S-16; needs EV-13, EV-16, EV-18; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EV-19-rerank-score-absence-census.md` |
+| EV-20 | Run the per-corpus depth and dense-weight grid | **BLOCKED** — on F3 (GPU) and upstream W1 tickets | W2; S-19; needs EV-16, EV-18, EV-19; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EV-20-depth-weight-grid.md` |
+| EV-21 | Run the amended CQ-3 stub-filter A/B | **BLOCKED** — on F3 (GPU) and upstream W1 tickets | W2; S-18; needs EV-12, EV-9, EV-16, EV-18, EV-20; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EV-21-stub-filter-ab.md` |
+| EV-22 | Run the ligature-repair A/B on the repaired clone | **BLOCKED** — on F3 (GPU) and upstream W1 tickets | W2; S-17; needs CQ-7, EV-16, EV-18, EV-21; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EV-22-ligature-resparse-ab.md` |
+| CQ-10 | Assess raising the embedding server's token limit for truncated chunks | **BLOCKED** — on its gate and the W2 verdicts (F3) | W3; S-23; needs EV-16, RQ-3; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/CQ-10-assess-raising-embedder-token-limit.md` |
+| CQ-11 | Decide the truncation fix: limit change or only inside a planned full re-chunk | **BLOCKED** — on its gate and the W2 verdicts | W3; S-23; needs CQ-10; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/CQ-11-truncation-fix-decision.md` |
+| CQ-12 | Add golden tests and rules to the section tracker (standards) | **BLOCKED** — on its gate and the W2 verdicts | W3; S-24; needs EV-18; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/CQ-12-section-tracker-rules-and-golden-tests.md` |
+| CQ-13 | Add the running-furniture pre-pass and table sup/sub and span handling | **BLOCKED** — on its gate and the W2 verdicts | W3; S-24; needs CQ-12, EV-18; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/CQ-13-furniture-prepass-and-table-spans.md` |
+| CQ-14 | Fold heading-only chunks into the next group and guard normalisation regexes | **BLOCKED** — on its gate and the W2 verdicts | W3; S-24; needs EV-18; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/CQ-14-stub-folding-and-regex-guard.md` |
+| CQ-15 | Re-derive standards paths from stored blocks and re-chunk on a clone | **BLOCKED** — on its gate and the W2 verdicts (F2, F3, F7) | W3; S-24; needs CQ-12, CQ-13, CQ-14, CQ-8, CQ-11; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/CQ-15-standards-rederive-and-rechunk-clone.md` |
+| CQ-16 | Measure the standards re-chunk against baseline and decide | **BLOCKED** — on its gate and the W2 verdicts (F3) | W3; S-24; needs CQ-15, EV-18; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/CQ-16-standards-rechunk-verdict.md` |
+| CQ-17 | Add BM25 saturation and length normalisation to the sparse arm behind a flag | **BLOCKED** — on its gate and the W2 verdicts | W3; S-25; needs EV-22, CQ-9, RQ-5; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/CQ-17-bm25-weighting-in-sparse-arm.md` |
+| CQ-18 | Run the BM25-weighting A/B on a repaired clone | **BLOCKED** — on its gate and the W2 verdicts (F2, F3) | W3; S-25; needs CQ-17, EV-22, EV-16, EV-18, CQ-16; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/CQ-18-bm25-weighting-ab.md` |
+| CQ-9 | Add idempotent payload indexes and verify them on a clone | **BLOCKED** — on its gate and the W2 verdicts (F2) | W3; S-22; needs EV-14, RQ-5, RQ-1; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/CQ-9-payload-indexes-on-clone.md` |
+| MC-4 | Slim the MCP wire by projecting duplicated envelope fields away | **BLOCKED** — on its gate and the W2 verdicts (F5) | W3; S-26; needs MC-3; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/MC-4-mcp-wire-projection.md` |
+| RQ-3 | Run the relevance-demotion arms on the focus and passage sets | **BLOCKED** — on its gate and the W2 verdicts (F3, F6) | W3; S-21; needs RQ-2, EV-16, EV-17, EV-22; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/RQ-3-focus-lever-ab.md` |
+| EP-5 | Batch BACKLOG and PROJECT-STATUS updates for waves 3 and 4 | **BLOCKED** — on RIDER-1 / verdicts | W4; S-13; needs EP-4, RQ-3, CQ-9, CQ-11, CQ-16, CQ-17, CQ-18, MC-4, RIDER-1, RQ-4; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EP-5-status-batch-final.md` |
+| RIDER-1 | Raise the single foundation rider PR with only the adopted items | **BLOCKED** — on RIDER-1 / verdicts | W4; review (D); needs EV-11, EV-18, EV-19, EV-20, EV-21, RQ-3, RQ-5, OP-5, CQ-18; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/RIDER-1-foundation-signoff-rider.md` |
+| RQ-4 | Expose the cross-encoder score in result metadata | **BLOCKED** — on RIDER-1 / verdicts | W4; S-20; needs RIDER-1, EV-19, RQ-1; `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/RQ-4-expose-rerank-score-metadata.md` |
