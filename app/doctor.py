@@ -36,6 +36,12 @@ modules; it just calls whatever `start` each `_Service` carries. The summarizer'
 endpoint is a host service per T-DOC43's own scope note -- `start=None`, health-check only, never
 auto-started, regardless of this fix.
 
+**OP-1 `--cpu-only` (stub, implemented in the following commits):** `python -m app.doctor
+--cpu-only` checks/starts only the services that need no GPU (vector store, reference-resolution
+service), skips TEI, the VRAM-headroom check and the `.gpu.lock` check, prints which MCP tools work
+in that mode and which do not, and exits 0 when the CPU services are ready. Default behaviour is
+unchanged.
+
 `app.ingest` calls `run_preflight()` at startup (default on, `--no-preflight`/`--force` to skip
 or downgrade to a warning) and refuses to start with every issue named in one message, instead of
 quarantining papers or crashing partway through a multi-hour run.
