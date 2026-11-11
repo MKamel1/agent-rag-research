@@ -326,7 +326,7 @@ def test_hand_computed_example_reproduces_every_number(tmp_path):
     assert res["edition_other_outranks_gold"] == r(0, 1)
     # cross-document (answerable, >1 gold): g5 {Q,R} subset of top-3 {R,X,Q} yes; g6 top-3 {X} no.
     assert res["cross_document"] == {"all_gold_in_topk": r(1, 2), "any_gold_in_topk": r(1, 2)}
-    # absent arm: absent scores [2, 6] -> min 2, median 4, max 6; answerable scores 1..9 -> median 5.
+    # absent arm: absent scores [2, 6] -> min 2, median 4, max 6; answerable 1..9 -> median 5.
     ab = res["absent_arm"]
     assert ab["n_absent"] == 2
     assert ab["top_score_absent"] == {"n": 2, "min": 2, "median": 4, "max": 6}
@@ -345,9 +345,11 @@ def test_hand_computed_example_reproduces_every_number(tmp_path):
     assert g["off_at_rank1"] == r(2, 8) and g["distractor_outranks_gold"] == r(1, 3)
     bd = f["by_dimension"]
     assert bd["fact"]["n"] == 3 and bd["fact"]["mean_off_share_topk"] == pytest.approx(0.0)
-    assert bd["fact"]["off_at_rank1"] == r(0, 3) and bd["fact"]["distractor_outranks_gold"] == r(0, 1)
+    assert bd["fact"]["off_at_rank1"] == r(0, 3)
+    assert bd["fact"]["distractor_outranks_gold"] == r(0, 1)
     assert bd["span"]["n"] == 3 and bd["span"]["mean_off_share_topk"] == pytest.approx(4 / 9)
-    assert bd["span"]["off_at_rank1"] == r(1, 3) and bd["span"]["distractor_outranks_gold"] == r(1, 2)
+    assert bd["span"]["off_at_rank1"] == r(1, 3)
+    assert bd["span"]["distractor_outranks_gold"] == r(1, 2)
     assert bd["authority"]["mean_off_share_topk"] == pytest.approx(2 / 3)
     assert bd["authority"]["off_at_rank1"] == r(1, 1)
     assert bd["edition"]["n"] == 1 and bd["edition"]["mean_off_share_topk"] == pytest.approx(0.0)

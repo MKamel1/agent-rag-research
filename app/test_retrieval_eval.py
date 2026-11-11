@@ -1544,10 +1544,11 @@ def _corpus_db(tmp_path):
     con.execute("INSERT INTO papers VALUES('P1')")
     for i in range(3):
         con.execute("INSERT INTO blocks VALUES(?,?,?,?)", (f"P1:b{i}", "P1", i, "t"))
-    for cid, anchor, text in [("P1:c0", "P1:b0", "title\n\nalpha beta"), ("P1:c1", "P1:b2", "gamma")]:
-        con.execute(
-            "INSERT INTO chunks VALUES(?,?,?,?)", (cid, "P1", text, json.dumps({"block_id": anchor}))
-        )
+    for cid, anchor, text in [
+        ("P1:c0", "P1:b0", "title\n\nalpha beta"), ("P1:c1", "P1:b2", "gamma"),
+    ]:
+        anchor_json = json.dumps({"block_id": anchor})
+        con.execute("INSERT INTO chunks VALUES(?,?,?,?)", (cid, "P1", text, anchor_json))
     con.commit()
     con.close()
     return path
@@ -1780,7 +1781,8 @@ def _dup_anchor_db(tmp_path):
         ("P1:c0", "P1:b0", "alpha"), ("P1:c1", "P1:b1", "beta one"), ("P1:c2", "P1:b1", "beta two"),
         ("P1:c3", "P1:b2", "same"), ("P1:c4", "P1:b2", "same"),
     ]:
-        con.execute("INSERT INTO chunks VALUES(?,?,?,?)", (cid, "P1", text, json.dumps({"block_id": anchor})))
+        anchor_json = json.dumps({"block_id": anchor})
+        con.execute("INSERT INTO chunks VALUES(?,?,?,?)", (cid, "P1", text, anchor_json))
     con.commit()
     con.close()
     return path
@@ -1812,7 +1814,8 @@ def test_run_fills_chunk_ids_and_marks_ambiguous_rows(tmp_path):
         _hit("P1", "P1:b2", passage_text="same"),
         _hit("P1", "P1:b9", passage_text="orphan"),
     ]
-    results = run([q], FakeRetriever({"query": hits}), 10, chunk_lookup=CorpusLookup(_dup_anchor_db(tmp_path)))
+    lookup = CorpusLookup(_dup_anchor_db(tmp_path))
+    results = run([q], FakeRetriever({"query": hits}), 10, chunk_lookup=lookup)
     report = build_report(results, 10)
     row = report["questions"][0]
     assert row["retrieved_chunk_ids"] == [["P1:c2"], ["P1:c3", "P1:c4"], []]
