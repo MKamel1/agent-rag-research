@@ -1,0 +1,930 @@
+[
+ {
+  "question_id": "Q-CB-H-001",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-CB-H-002",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-CB-H-003",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-CB-H-004",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-CB-H-005",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-CB-H-006",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-CB-H-007",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-CB-H-008",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-CB-H-009",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-CB-H-010",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-CB-H-011",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-CB-H-012",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-CB-H-013",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [
+   "local:dfe850b3281a:c459"
+  ],
+  "reason": "Clean; another chunk also states the answer (listed as alternative)."
+ },
+ {
+  "question_id": "Q-CB-H-014",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-CB-H-015",
+  "verdict": "survive",
+  "checks": {
+   "absence_holds": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Re-scanned with ligature-tolerant and synonym regexes within the named book; no chunk answers the question."
+ },
+ {
+  "question_id": "Q-CB-H-016",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-CB-H-017",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-CB-H-018",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-CB-H-019",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-CB-H-020",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-CB-H-021",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-CB-H-022",
+  "verdict": "kill",
+  "checks": {
+   "support": true,
+   "duplicate_free": false,
+   "specific": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [
+   "local:54d6ca71dda9:c417",
+   "local:54d6ca71dda9:c419"
+  ],
+  "reason": "Same fact as existing QB-037 (local:54d6ca71dda9:c419): Abadie and Imbens developed an analytical SE method because bootstrapping fails on the discrete matched pairs. Gold c408 states it again, c417 too."
+ },
+ {
+  "question_id": "Q-CB-H-023",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-CB-H-024",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-CB-H-025",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-CB-H-026",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [
+   "local:54d6ca71dda9:c566",
+   "local:54d6ca71dda9:c567"
+  ],
+  "reason": "Clean; another chunk also states the answer (listed as alternative)."
+ },
+ {
+  "question_id": "Q-CB-H-027",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-CB-H-028",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-CB-H-029",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-CB-H-030",
+  "verdict": "survive",
+  "checks": {
+   "absence_holds": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Re-scanned with ligature-tolerant and synonym regexes within the named book; no chunk answers the question."
+ },
+ {
+  "question_id": "Q-CB-I-001",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": false
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "gold_chapter_title is a subsection heading inside a chapter (corpus headings are flat), not a chapter heading.",
+  "suggested_fix": "delete gold_chapter_title"
+ },
+ {
+  "question_id": "Q-CB-I-002",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": false
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "gold_chapter_title is a subsection heading inside a chapter (corpus headings are flat), not a chapter heading.",
+  "suggested_fix": "delete gold_chapter_title"
+ },
+ {
+  "question_id": "Q-CB-I-003",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": false
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "gold_chapter_title is a subsection heading inside a chapter (corpus headings are flat), not a chapter heading.",
+  "suggested_fix": "delete gold_chapter_title"
+ },
+ {
+  "question_id": "Q-CB-I-004",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": false
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "gold_chapter_title is a subsection heading inside a chapter (corpus headings are flat), not a chapter heading.",
+  "suggested_fix": "delete gold_chapter_title"
+ },
+ {
+  "question_id": "Q-CB-I-005",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": false
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "gold_chapter_title is a subsection heading inside a chapter (corpus headings are flat), not a chapter heading.",
+  "suggested_fix": "delete gold_chapter_title"
+ },
+ {
+  "question_id": "Q-CB-I-006",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": false
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "gold_chapter_title is a subsection heading inside a chapter (corpus headings are flat), not a chapter heading.",
+  "suggested_fix": "delete gold_chapter_title"
+ },
+ {
+  "question_id": "Q-CB-I-007",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": false
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "gold_chapter_title is a subsection heading inside a chapter (corpus headings are flat), not a chapter heading.",
+  "suggested_fix": "delete gold_chapter_title"
+ },
+ {
+  "question_id": "Q-CB-I-008",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": false
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "gold_chapter_title is a subsection heading inside a chapter (corpus headings are flat), not a chapter heading.",
+  "suggested_fix": "delete gold_chapter_title"
+ },
+ {
+  "question_id": "Q-CB-I-009",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": false
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "gold_chapter_title is a subsection heading inside a chapter (corpus headings are flat), not a chapter heading.",
+  "suggested_fix": "delete gold_chapter_title"
+ },
+ {
+  "question_id": "Q-CB-I-010",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": false
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "gold_chapter_title is a subsection heading inside a chapter (corpus headings are flat), not a chapter heading.",
+  "suggested_fix": "delete gold_chapter_title"
+ },
+ {
+  "question_id": "Q-CB-I-011",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": false
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "gold_chapter_title is a subsection heading inside a chapter (corpus headings are flat), not a chapter heading.",
+  "suggested_fix": "delete gold_chapter_title"
+ },
+ {
+  "question_id": "Q-CB-I-012",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": false
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "gold_chapter_title is a subsection heading inside a chapter (corpus headings are flat), not a chapter heading.",
+  "suggested_fix": "delete gold_chapter_title"
+ },
+ {
+  "question_id": "Q-CB-I-013",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": false
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "gold_chapter_title is a subsection heading inside a chapter (corpus headings are flat), not a chapter heading.",
+  "suggested_fix": "delete gold_chapter_title"
+ },
+ {
+  "question_id": "Q-CB-I-014",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": false
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "gold_chapter_title is a subsection heading inside a chapter (corpus headings are flat), not a chapter heading.",
+  "suggested_fix": "delete gold_chapter_title"
+ },
+ {
+  "question_id": "Q-CB-I-015",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": false
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "gold_chapter_title is a subsection heading inside a chapter (corpus headings are flat), not a chapter heading.",
+  "suggested_fix": "delete gold_chapter_title"
+ },
+ {
+  "question_id": "Q-CB-I-016",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-CB-I-017",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": false
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "gold_chapter_title is a subsection heading inside a chapter (corpus headings are flat), not a chapter heading.",
+  "suggested_fix": "delete gold_chapter_title"
+ },
+ {
+  "question_id": "Q-CB-I-018",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": false
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "gold_chapter_title is a subsection heading inside a chapter (corpus headings are flat), not a chapter heading.",
+  "suggested_fix": "delete gold_chapter_title"
+ },
+ {
+  "question_id": "Q-CB-I-019",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": false
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "gold_chapter_title is a subsection heading inside a chapter (corpus headings are flat), not a chapter heading.",
+  "suggested_fix": "delete gold_chapter_title"
+ },
+ {
+  "question_id": "Q-CB-I-020",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": false
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "gold_chapter_title is a subsection heading inside a chapter (corpus headings are flat), not a chapter heading.",
+  "suggested_fix": "delete gold_chapter_title"
+ },
+ {
+  "question_id": "Q-CB-I-021",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": false
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "gold_chapter_title is a subsection heading inside a chapter (corpus headings are flat), not a chapter heading.",
+  "suggested_fix": "delete gold_chapter_title"
+ },
+ {
+  "question_id": "Q-CB-I-022",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": false
+  },
+  "alternative_gold_chunk_ids": [
+   "local:f0929288d4f3:c180"
+  ],
+  "reason": "gold_chapter_title is a subsection heading inside a chapter (corpus headings are flat), not a chapter heading.",
+  "suggested_fix": "delete gold_chapter_title"
+ },
+ {
+  "question_id": "Q-CB-I-023",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": false
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "gold_chapter_title is a subsection heading inside a chapter (corpus headings are flat), not a chapter heading.",
+  "suggested_fix": "delete gold_chapter_title"
+ },
+ {
+  "question_id": "Q-CB-I-024",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": false
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "gold_chapter_title is a subsection heading inside a chapter (corpus headings are flat), not a chapter heading.",
+  "suggested_fix": "delete gold_chapter_title"
+ },
+ {
+  "question_id": "Q-CB-I-025",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": false
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "gold_chapter_title is a subsection heading inside a chapter (corpus headings are flat), not a chapter heading.",
+  "suggested_fix": "delete gold_chapter_title"
+ },
+ {
+  "question_id": "Q-CB-I-026",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": false
+  },
+  "alternative_gold_chunk_ids": [
+   "local:f0929288d4f3:c285"
+  ],
+  "reason": "gold_chapter_title is a subsection heading inside a chapter (corpus headings are flat), not a chapter heading.",
+  "suggested_fix": "delete gold_chapter_title"
+ },
+ {
+  "question_id": "Q-CB-I-027",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": false
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "gold_chapter_title is a subsection heading inside a chapter (corpus headings are flat), not a chapter heading.",
+  "suggested_fix": "delete gold_chapter_title"
+ },
+ {
+  "question_id": "Q-CB-I-028",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": false
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "gold_chapter_title is a subsection heading inside a chapter (corpus headings are flat), not a chapter heading.",
+  "suggested_fix": "delete gold_chapter_title"
+ },
+ {
+  "question_id": "Q-CB-I-029",
+  "verdict": "survive",
+  "checks": {
+   "absence_holds": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Re-scanned with ligature-tolerant and synonym regexes within the named book; no chunk answers the question."
+ },
+ {
+  "question_id": "Q-CB-I-030",
+  "verdict": "survive",
+  "checks": {
+   "absence_holds": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Re-scanned with ligature-tolerant and synonym regexes within the named book; no chunk answers the question."
+ },
+ {
+  "question_id": "Q-CB-J-001",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-CB-J-002",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": false
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "gold_chapter_title is wrong: 'Notation and Terminology' is the front-matter heading mis-propagated onto chapters 1-2 content; '{probabilistically/...} equivalent' is a stray fragment, not a chapter heading.",
+  "suggested_fix": "delete gold_chapter_title"
+ },
+ {
+  "question_id": "Q-CB-J-003",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": false
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "gold_chapter_title is wrong: 'Notation and Terminology' is the front-matter heading mis-propagated onto chapters 1-2 content; '{probabilistically/...} equivalent' is a stray fragment, not a chapter heading.",
+  "suggested_fix": "delete gold_chapter_title"
+ },
+ {
+  "question_id": "Q-CB-J-004",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-CB-J-005",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": false
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "gold_chapter_title is wrong: 'Notation and Terminology' is the front-matter heading mis-propagated onto chapters 1-2 content; '{probabilistically/...} equivalent' is a stray fragment, not a chapter heading.",
+  "suggested_fix": "delete gold_chapter_title"
+ },
+ {
+  "question_id": "Q-CB-J-006",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-CB-J-007",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-CB-J-008",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-CB-J-009",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-CB-J-010",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-CB-J-011",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-CB-J-012",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": false
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "gold_chapter_title is wrong: 'Notation and Terminology' is the front-matter heading mis-propagated onto chapters 1-2 content; '{probabilistically/...} equivalent' is a stray fragment, not a chapter heading.",
+  "suggested_fix": "delete gold_chapter_title"
+ },
+ {
+  "question_id": "Q-CB-J-013",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-CB-J-014",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "duplicate_free": true,
+   "specific": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-CB-J-015",
+  "verdict": "survive",
+  "checks": {
+   "absence_holds": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Re-scanned with ligature-tolerant and synonym regexes within the named book; no chunk answers the question."
+ }
+]
