@@ -1,0 +1,112 @@
+Hausman.Taylor	0	{}
+Blundell.Bond	0	{}
+Arellano.Bond	67	{'on': 67}
+Ashenfelter	104	{'on': 100, 'borderline': 3, 'off': 1}
+Mundlak	52	{'on': 48, 'borderline': 1, '?': 3}
+Hodges.Lehmann	25	{'on': 20, 'off': 4, 'borderline': 1}
+Fama.MacBeth	3	{'on': 3}
+Berry.Levinsohn|\bBLP\b	132	{'on': 120, 'borderline': 9, 'off': 2, '?': 1}
+Stock.Yogo	5	{'on': 4, 'off': 1}
+Lord.s paradox	2	{'on': 2}
+Tobit	137	{'off': 6, 'on': 122, 'borderline': 8, '?': 1}
+Durbin.Wu|Wu.Hausman	20	{'on': 14, 'borderline': 6}
+Sargan	70	{'on': 60, 'off': 2, 'borderline': 8}
+Hansen.s J|J.test of overidentif	6	{'on': 6}
+Kitagawa	243	{'on': 217, 'borderline': 22, 'off': 4}
+Rosenbaum bounds	31	{'on': 30, 'borderline': 1}
+design sensitivity	38	{'on': 34, 'off': 3, 'borderline': 1}
+Oster	13922	{'on': 7320, 'borderline': 1931, 'off': 4659, '?': 12}
+Altonji	47	{'on': 42, 'borderline': 5}
+Conley bounds|plausibly exogenous	57	{'on': 39, 'borderline': 16, 'off': 1, '?': 1}
+Bartik|shift.share	201	{'on': 178, 'off': 1, 'borderline': 22}
+judge.?leniency|examiner design	9	{'off': 1, 'on': 8}
+Lee bounds	105	{'on': 99, 'borderline': 6}
+Manski	726	{'on': 659, 'borderline': 46, 'off': 20, '?': 1}
+Wald.Wolfowitz	1	{'on': 1}
+Fisher.s exact test	89	{'off': 15, 'on': 62, 'borderline': 11, '?': 1}
+Mantel.Haenszel	40	{'on': 32, 'off': 3, 'borderline': 5}
+Cochran.Mantel	13	{'on': 12, 'off': 1}
+Peters.Clark	2	{'on': 2}
+Hodges	105	{'on': 92, 'borderline': 8, 'off': 5}
+Neyman.Pearson	80	{'on': 30, 'borderline': 27, 'off': 23}
+Gelman.Hill	0	{}
+Nevo	112	{'on': 79, 'off': 25, 'borderline': 8}
+quantile treatment ef+ect	1336	{'on': 1327, 'borderline': 7, '?': 2}
+Bonferroni	653	{'on': 450, 'off': 137, 'borderline': 64, '?': 2}
+Benjamini.Hochberg	207	{'on': 132, 'off': 47, 'borderline': 25, '?': 3}
+Tukey	146	{'on': 88, 'borderline': 30, 'off': 28}
+Wilcoxon	532	{'borderline': 45, 'on': 275, 'off': 211, '?': 1}
+Kaplan.Meier	464	{'on': 378, 'borderline': 81, 'off': 5}
+Cox proportional hazards	345	{'on': 299, 'off': 9, 'borderline': 35, '?': 2}
+Fine.Gray	8	{'on': 8}
+frailty	224	{'on': 208, 'off': 6, 'borderline': 10}
+stepped.wedge	532	{'on': 528, 'borderline': 4}
+crossover trial|cross-over trial	185	{'on': 150, 'borderline': 35}
+cluster.randomi[sz]ed trial	1209	{'on': 1180, 'borderline': 28, 'off': 1}
+factorial design	518	{'on': 461, 'borderline': 21, 'off': 36}
+Latin square	18	{'on': 14, 'off': 4}
+split.plot	153	{'on': 153}
+Taguchi	6	{'off': 5, 'on': 1}
+fractional factorial	116	{'on': 114, 'borderline': 2}
+Plackett.Burman	26	{'on': 26}
+response surface	504	{'on': 422, 'off': 70, 'borderline': 12}
+sequential probability ratio	18	{'borderline': 3, 'on': 15}
+alpha.spending|group sequential	70	{'borderline': 16, 'off': 5, 'on': 49}
+Thompson sampling	308	{'on': 198, 'borderline': 89, 'off': 21}
+Gittins	8	{'off': 5, 'on': 3}
+Kelly criterion	1	{'off': 1}
+Pigou	3	{'on': 3}
+Coase	0	{}
+Lucas critique	6	{'borderline': 2, 'on': 1, '?': 3}
+Phillips curve	14	{'on': 8, '?': 1, 'borderline': 5}
+Taylor rule	13	{'on': 11, 'borderline': 2}
+Granger.Newbold|spurious regression	16	{'on': 16}
+Johansen	109	{'on': 76, 'borderline': 24, 'off': 9}
+cointegrat	68	{'off': 1, 'on': 59, 'borderline': 8}
+Engle.Granger	2	{'borderline': 1, 'on': 1}
+Dickey.Fuller	38	{'on': 32, 'borderline': 3, 'off': 2, '?': 1}
+vector error correction	7	{'on': 6, 'borderline': 1}
+Hamilton filter	9	{'on': 9}
+Kalman	386	{'off': 201, 'on': 108, 'borderline': 77}
+GARCH	198	{'off': 110, 'on': 54, 'borderline': 34}
+Diebold.Mariano	11	{'on': 6, 'off': 1, 'borderline': 3, '?': 1}
+local projections?	190	{'on': 161, 'off': 9, 'borderline': 20}
+Jorda	488	{'on': 241, 'borderline': 59, 'off': 185, '?': 3}
+Cholesky	320	{'on': 223, 'borderline': 24, 'off': 73}
+sign restrictions	21	{'borderline': 8, 'on': 13}
+narrative identification	2	{'borderline': 2}
+proxy.SVAR|external instruments? SVAR	3	{'on': 3}
+Romer	163	{'on': 76, 'off': 64, 'borderline': 23}
+Blanchard.Quah	0	{}
+heteroscedasticity.based identification	2	{'on': 2}
+Rigobon	10	{'on': 9, 'borderline': 1}
+Sims	224	{'on': 119, 'borderline': 28, 'off': 77}
+Chetty	119	{'on': 106, 'borderline': 9, 'off': 4}
+Autor	5378	{'off': 2726, 'on': 2102, 'borderline': 535, '?': 15}
+Card.Krueger	6	{'on': 6}
+Angrist.Krueger	1	{'on': 1}
+Lalonde	475	{'on': 464, 'borderline': 6, 'off': 4, '?': 1}
+Dehejia.Wahba	12	{'on': 12}
+Heckman.Ichimura	0	{}
+Imbens.Rubin	0	{}
+Pearl.s causal hierarchy	139	{'on': 127, 'borderline': 9, 'off': 3}
+Reichenbach	182	{'on': 136, 'borderline': 14, 'off': 25, '?': 7}
+common cause principle	66	{'on': 52, 'borderline': 6, 'off': 4, '?': 4}
+Salmon	119	{'off': 84, 'borderline': 11, 'on': 24}
+Lewis.s counterfactual|possible world semantics	4	{'on': 4}
+Mill.s methods	1	{'on': 1}
+Bradford Hill	40	{'on': 40}
+Koch.s postulates	0	{}
+Rothman.s pie|sufficient.component cause	2	{'on': 2}
+Hume	106	{'on': 60, 'off': 30, 'borderline': 6, '?': 10}
+Kant	291	{'on': 167, 'borderline': 24, 'off': 99, '?': 1}
+Simpson.s paradox	255	{'on': 175, 'borderline': 55, 'off': 6, '?': 19}
+Berkson	68	{'on': 56, 'off': 3, 'borderline': 7, '?': 2}
+Neyman.s paradox	0	{}
+Lindley	79	{'on': 36, 'off': 4, 'borderline': 39}
+Stein.s paradox	4	{'on': 3, 'borderline': 1}
+Monty Hall	6	{'borderline': 5, 'off': 1}
+Newcomb	17	{'on': 17}
+Sleeping Beauty	1	{'on': 1}
+trolley	97	{'off': 34, 'on': 7, 'borderline': 56}
+Gettier	3	{'off': 3}
