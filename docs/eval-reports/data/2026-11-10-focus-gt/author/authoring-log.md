@@ -1,4 +1,4 @@
-# EV-4 focus-gt authoring log (CHECKPOINT, incomplete)
+# EV-4 focus-gt authoring log
 
 ## Collision-term table (chunk counts per label; papers per label) -- scans/scans-terms.tsv (tools/termscan.py)
 term: on_papers / off_papers (off-topic papers using the word)
@@ -11,10 +11,10 @@ synthetic control 419/15, regression discontinuity 360/8 -- no usable collision.
 Strongest: matching, instrument, interference, exposure, treatment, intervention (large non-causal use); collider/backdoor are clean (particle colliders / security backdoors).
 
 ## Items
-40 answerable items drafted (26 collision, 14 offtopic-legit); verify: 0 failures. Distractors verified (label off + regex in chunk) by tools/build.py.
-Killed: none yet in items; abandoned candidates: 2006.11386-style math-only chunks (latex heavy), 1409.2441:c8 (math), 2511.14922:c9 (latex), backdoor second item.
-Noted: some off-labelled papers use propensity/instrument in the causal sense (mislabels, e.g. 2601.01231, 2509.23424, 2604.03338) -- not used as distractors.
+50 items: collision 26, offtopic-legit 14, focus-absent 10. Difficulty 15 easy / 26 medium / 9 hard. verify: 50 items, 0 failures.
+Collision distractors: >=2 off-labelled papers each, chunk verified to contain the term (regex) -- see distractor_evidence; lookalikes for offtopic-legit verified label on + term in chunk (tools/build.py).
+Killed items: 0 items killed after drafting. Candidates abandoned before drafting (killed at selection): 1409.2441:c8 and 2511.14922:c9 (latex-only, no clean excerpt), a second backdoor item, 2008.00357 intro (generic), absent candidates Blundell-Bond (11 hits, a production-function paper may answer), Heckman-Ichimura (65 hits), Gelman-Hill (51), Imbens-Rubin (1439), instrument+telescope (56), Hodrick-Prescott/Stock-Yogo/Lord's paradox (on-topic answers exist). Total abandoned candidates: 12.
+Corpus observations: several off-labelled papers use propensity score matching / instruments in the causal sense (2601.01231, 2509.23424, 2604.03338: label noise, not used). "causal attention" appears in more off papers (163) than on (71).
 
-## Absent (focus-absent) -- NOT YET AUTHORED. See RESUME.md.
-Scan outputs: scans/abs1.tsv, scans/abs2.tsv (exact-count candidates).
-Specific patterns with 0 chunk hits: Hausman.Taylor, Blundell.Bond (but fuzzy `Blundell.{1,8}Bond` has 1 hit in 2506.23297:c2), Blanchard.Quah, Heckman.Ichimura (fuzzy has 2 hits), Koch.s postulates, Gelman.Hill (fuzzy: many hits -> drop), Coase, Neyman.s paradox, Imbens.Rubin (fuzzy: many hits -> drop), `instrumental variable.*(telescope|detector|spectrograph)`.
+## Absent items
+Scans: scans/abs1.tsv, abs2.tsv (candidate screens), abs3-5.out (final spec + broad counts; first-pass SPEC HIT lines list chunk ids). Each item records a specific scan and a broad scan; counts re-run by gt_tools verify. Non-zero specific hits (Hausman-Taylor 2, Blanchard-Quah 3, Bernanke-Mihov 1, sunspot 1, lunar 3) were read: citations in passing or spurious word collisions.

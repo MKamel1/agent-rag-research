@@ -1,0 +1,8 @@
+SPEC HIT 3 1712.02926:c14
+SPEC HIT 0 2607.06702:c21
+SPEC HIT 3 2607.09598:c7
+SPEC HIT 3 2607.09598:c19
+('sunspots?.{0,300}(stock|market|econom|GDP)|(stock|market|econom|GDP).{0,300}sunspots?', 'sunspot') [1, 134, '2606.05318:c2']
+('(dark matter|dark energy).{0,300}(propensity|difference-in-difference|instrumental variable)', 'dark (matter|energy)') [0, 1030, '2405.18095:c2']
+('(black hole|neutrino).{0,300}(treatment effect|propensity score|instrumental variable)', 'black hole|neutrino') [0, 1677, '2607.11737:c0']
+('(lunar|moon).{0,200}(birth|fertility|crime)', '\\bmoon\\b|lunar') [3, 260, '2505.04651:c3']
