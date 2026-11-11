@@ -240,7 +240,7 @@ class Retriever:
     def __init__(self, embedder, vector_store, document_store, reranker,
                  rerank_pool_size: int = _RERANK_POOL_SIZE, drop_stub_chunks: bool = False,
                  relevance_demotion: str | None = None, relevance_tau: float = 0.30,
-                 relevance_penalty: int = 10):
+                 relevance_penalty: int = 5):
         if relevance_demotion not in _DEMOTION_MODES:
             raise ValueError(
                 f"relevance_demotion must be one of {_DEMOTION_MODES}, got {relevance_demotion!r}"

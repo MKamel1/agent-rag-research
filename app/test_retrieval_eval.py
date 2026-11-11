@@ -1918,7 +1918,7 @@ def test_parse_args_relevance_demotion_flags_default_off(monkeypatch):
     base = ["retrieval_eval", "--collection", "c"]
     monkeypatch.setattr("sys.argv", base)
     a = retrieval_eval._parse_args()
-    assert (a.relevance_demotion, a.relevance_tau, a.relevance_penalty) == (None, 0.30, 10)
+    assert (a.relevance_demotion, a.relevance_tau, a.relevance_penalty) == (None, 0.30, 5)
     monkeypatch.setattr("sys.argv", base + ["--relevance-demotion", "penalty", "--relevance-tau", "0.25",
                                             "--relevance-penalty", "4"])
     a = retrieval_eval._parse_args()

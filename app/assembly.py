@@ -604,7 +604,7 @@ def _resolve_store_paths(
 def build_mcp_server(
     config: Config, *, db_path: str | None = None, blob_dir: str | None = None,
     collection: str = "papers", drop_stub_chunks: bool = False,
-    relevance_demotion: str | None = None, relevance_tau: float = 0.30, relevance_penalty: int = 10,
+    relevance_demotion: str | None = None, relevance_tau: float = 0.30, relevance_penalty: int = 5,
 ) -> McpServer:
     gpu_lock = FileGpuLock(Path(config.gpu_lock_path))  # same path as the ingest root -> same file
     db_path, blob_dir = _resolve_store_paths(config, db_path, blob_dir)

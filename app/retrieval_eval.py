@@ -1129,7 +1129,7 @@ def _parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--relevance-tau", type=float, default=0.30,
                         help="RQ-2: relevance_score threshold (only with --relevance-demotion).")
-    parser.add_argument("--relevance-penalty", type=int, default=10,
+    parser.add_argument("--relevance-penalty", type=int, default=5,
                         help="RQ-2: rank positions a below-tau result drops (penalty mode only).")
     return parser.parse_args()
 
