@@ -139,19 +139,45 @@ def anchors_for(con: sqlite3.Connection, chunk_ids: list[str]) -> dict[str, str]
     return out
 
 
+def exact_chunk_level(rows: list[dict], items: dict[str, dict], k: int) -> dict:
+    """Exact `gold_chunk_id` identity (stricter than the anchor-block rule when sibling chunks share
+    an anchor), over answerable items that carry a gold chunk; also split by item `difficulty`."""
+    groups: dict[str, list[tuple[bool, bool, bool, bool]]] = {"all": []}
+    for row in rows:
+        item = items[row["question_id"]]
+        if item["tests"] != "answerable" or not item.get("gold_chunk_id"):
+            continue
+        ids = row["retrieved_chunk_ids"][:k]
+        flags = (
+            item["gold_chunk_id"] in ids,
+            ids[:1] == [item["gold_chunk_id"]],
+            row["paper_level"]["hit"],
+            row["passage_level"]["hit"],
+        )
+        groups["all"].append(flags)
+        groups.setdefault(f"difficulty={item.get('difficulty')}", []).append(flags)
+    names = ("chunk_hit", "chunk_p1", "paper_hit", "anchor_hit")
+    return {
+        g: {"n": len(v), **{nm: sum(f[i] for f in v) for i, nm in enumerate(names)}}
+        for g, v in sorted(groups.items())
+    }
+
+
 def run_floor(gt_path: Path, db_path: str, k: int, variant: str) -> dict:
     """Score `gt_path` against `db_path`; returns the retrieval_eval-shaped report dict."""
     if variant not in VARIANTS:
         raise ValueError(f"variant must be one of {VARIANTS}, got {variant!r}")
     started = time.perf_counter()
+    gt = json.loads(gt_path.read_text())
     if variant == "title-ablated":
-        ablated = ablate_ground_truth(json.loads(gt_path.read_text()))
+        gt = ablate_ground_truth(gt)
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "ablated_gt.json"
-            path.write_text(json.dumps(ablated))
+            path.write_text(json.dumps(gt))
             questions = load_questions(path)
     else:
         questions = load_questions(gt_path)
+    items = {i["question_id"]: i for i in gt["ground_truth"]}
     vocab = {t for q in questions for t in tokenize(q.question_text)}
     con = connect_ro(db_path)
     try:
@@ -196,6 +222,7 @@ def run_floor(gt_path: Path, db_path: str, k: int, variant: str) -> dict:
         "ground_truth": str(gt_path),
         "db": str(db_path),
         "note": "lexical floor, not the system's retrieval output",
+        "exact_chunk_level": exact_chunk_level(report["questions"], items, k),
     }
     return report
 

@@ -145,3 +145,16 @@ def test_database_is_opened_read_only(toy):
 
     with pytest.raises(sqlite3.OperationalError):
         connect_ro(str(db)).execute("DELETE FROM chunks")
+
+
+def test_exact_chunk_level_counts_gold_chunk_identity(toy, tmp_path):
+    db, gt = toy
+    data = json.loads(gt.read_text())
+    data["ground_truth"][0]["gold_chunk_id"] = "c1"
+    data["ground_truth"][0]["difficulty"] = "easy"
+    data["ground_truth"][1]["gold_chunk_id"] = "c2"  # q2 ("alpha") ranks only c1 -> chunk miss
+    data["ground_truth"][1]["difficulty"] = "hard"
+    gt.write_text(json.dumps(data))
+    lvl = run_floor(gt, str(db), 10, "standard")["bm25_floor"]["exact_chunk_level"]
+    assert lvl["all"] == {"n": 2, "chunk_hit": 1, "chunk_p1": 1, "paper_hit": 2, "anchor_hit": 2}
+    assert lvl["difficulty=hard"]["chunk_hit"] == 0
