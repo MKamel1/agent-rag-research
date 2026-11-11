@@ -272,6 +272,10 @@ class QuestionResult:
     # `excerpt_block_id` the anchor rule's rank is copied here and `excerpt_fallback` is True.
     excerpt_rank: int | None = None
     excerpt_fallback: bool = False
+    # EV-9: per retrieved rank, the corpus chunk id(s) recovered from (paper id, anchor block id,
+    # passage text): one id = unique, several = ambiguous (identical text on one anchor), none =
+    # unresolved. Empty tuple when no CorpusLookup was supplied to `run`.
+    retrieved_chunk_ids: tuple[tuple[str, ...], ...] = ()
 
 
 def load_questions(ground_truth_path: Path, include_duplicates: bool = False) -> list[Question]:
@@ -408,6 +412,7 @@ class CorpusLookup:
 
     def __init__(self, db_path):
         self._con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+        self._chunks_by_paper: dict[str, dict[str, list[tuple[str, str]]]] = {}
 
     def close(self) -> None:
         self._con.close()
@@ -425,6 +430,24 @@ class CorpusLookup:
                 )
             }
         return sorted(ids - found)
+
+    def chunk_ids_for(self, paper_id: str, block_id: str, passage_text: str) -> list[str]:
+        """EV-9: ids of the chunks of `paper_id` anchored on `block_id` whose text equals
+        `passage_text` (GroundedResult carries no chunk id). Exactly one id when recoverable; ALL
+        matches when identical text sits on one anchor (the caller marks the row ambiguous --
+        never picks one); [] when nothing matches. Loaded and cached per paper."""
+        if paper_id not in self._chunks_by_paper:
+            by_anchor: dict[str, list[tuple[str, str]]] = {}
+            for cid, text, anchor_json in self._con.execute(
+                "SELECT chunk_id, text, anchor_json FROM chunks WHERE paper_id = ?", (paper_id,)
+            ):
+                by_anchor.setdefault(json.loads(anchor_json)["block_id"], []).append((cid, text))
+            self._chunks_by_paper[paper_id] = by_anchor
+        return sorted(
+            cid
+            for cid, text in self._chunks_by_paper[paper_id].get(block_id, ())
+            if text == passage_text
+        )
 
     def chunk_text(self, chunk_id: str) -> str | None:
         row = self._con.execute(
@@ -488,7 +511,8 @@ def _title_leak(result, gold_paper_ids: frozenset[str]) -> bool:
 
 
 def score_question(
-    question: Question, results: list, k: int, chapter_results: list | None = None
+    question: Question, results: list, k: int, chapter_results: list | None = None,
+    chunk_lookup: "CorpusLookup | None" = None,
 ) -> QuestionResult:
     """`results` is the `list[GroundedResult]` a real (or fake) `Retriever.retrieve()` call
     returned -- already truncated to `k` by `Retriever` itself, but truncated again here so a
@@ -498,6 +522,8 @@ def score_question(
     retrieve_papers()` call returned, for `gold_chapter_title` questions only -- `run()` doesn't
     make that call at all for a question that isn't chapter-scored, so this is `None` in that
     case (never an empty list standing in for "not scored").
+
+    `chunk_lookup` (EV-9) is only used to record `retrieved_chunk_ids`; it never feeds a hit rule.
     """
     truncated = results[:k]
     paper_rank = next(
@@ -547,6 +573,14 @@ def score_question(
         retrieved_block_ids=tuple(r.anchor.block_id for r in truncated),
         excerpt_rank=excerpt_rank,
         excerpt_fallback=excerpt_fallback,
+        retrieved_chunk_ids=(
+            tuple(
+                tuple(chunk_lookup.chunk_ids_for(r.paper_id, r.anchor.block_id, r.passage_text))
+                for r in truncated
+            )
+            if chunk_lookup is not None
+            else ()
+        ),
         question_id=question.question_id,
         question_type=question.question_type,
         paper_rank=paper_rank,
@@ -567,7 +601,9 @@ def score_question(
     )
 
 
-def run(questions: list[Question], retriever, k: int) -> list[QuestionResult]:
+def run(
+    questions: list[Question], retriever, k: int, chunk_lookup: "CorpusLookup | None" = None
+) -> list[QuestionResult]:
     """Calls the real (or fake) `retriever.retrieve(question_text, filters, k)` for every
     question -- plus `retriever.retrieve_papers(question_text, filters, k)` too, but only for a
     question carrying a `gold_chapter_title` (a chapter-routing question doesn't get scored
@@ -610,7 +646,7 @@ def run(questions: list[Question], retriever, k: int) -> list[QuestionResult]:
                 )
             )
             continue
-        results.append(score_question(question, hits, k, chapter_hits))
+        results.append(score_question(question, hits, k, chapter_hits, chunk_lookup))
         if i % 20 == 0:
             logger.info("scored %d/%d questions", i, len(questions))
     return results
@@ -727,6 +763,9 @@ def _question_row(r: QuestionResult) -> dict:
         "top_score": r.top_score,
         "retrieved_paper_ids": list(r.retrieved_paper_ids),
         "retrieved_block_ids": list(r.retrieved_block_ids),
+        # EV-9: additive; one candidate list per rank (see QuestionResult.retrieved_chunk_ids).
+        "retrieved_chunk_ids": [list(ids) for ids in r.retrieved_chunk_ids],
+        "chunk_id_ambiguous": any(len(ids) > 1 for ids in r.retrieved_chunk_ids),
         "paper_level": {"hit": r.paper_rank is not None, "rank": r.paper_rank},
         "passage_level": {
             "scored": r.passage_scored,
@@ -821,6 +860,14 @@ def build_report(
         "k": k,
         "n_questions": len(results),
         "n_errors": sum(1 for r in results if r.error),
+        # EV-9: ambiguity is counted, not hidden (rows with a rank matching >1 chunk; ranks that
+        # matched no chunk -- nonzero only when a CorpusLookup was supplied to `run`).
+        "n_chunk_id_ambiguous_rows": sum(
+            1 for r in results if any(len(ids) > 1 for ids in r.retrieved_chunk_ids)
+        ),
+        "n_chunk_id_unresolved_ranks": sum(
+            1 for r in results for ids in r.retrieved_chunk_ids if not ids
+        ),
         "paper_level": {
             "overall": _recall_mrr([r.paper_rank for r in results]),
             # BENCH-1: the two arms a mixed fixture must be read through. Additive -- 'overall'
@@ -1066,7 +1113,6 @@ def main() -> None:
             )
         sys.exit(EXIT_PREFLIGHT_FAILED)
     questions = lookup.attach_gold_texts(questions)
-    lookup.close()
     # Deferred import: pulls in the real (GPU-backed) adapter wiring, which unit tests must never
     # touch (they exercise load_questions/score_question/run/build_report against a fake
     # retriever instead) -- see app/test_retrieval_eval.py. After the preflight so a bad fixture
@@ -1096,7 +1142,8 @@ def main() -> None:
         build_kwargs["drop_stub_chunks"] = True
     server = build_mcp_server(config, **build_kwargs)
 
-    results = run(questions, server.retriever, args.k)
+    results = run(questions, server.retriever, args.k, chunk_lookup=lookup)
+    lookup.close()
     commit, dirty = code_commit()
     report = build_report(
         results, args.k, mode=args.sparse_mode, hybrid_dense_weight=weight,
