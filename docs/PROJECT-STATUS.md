@@ -1,9 +1,16 @@
 # Project Status — single source of truth
 
-*Written 2026-08-05. Every claim below was re-derived against live source/git on that date — see the
-citation next to each one (commit SHA, `file:line`, or report path). This doc supersedes any status
-claim in `AGENTS.md`'s old owner table or any doc listed §7 as HISTORICAL. If this doc and another doc
-disagree on a *fact* (not a frozen shape — `DATA-CONTRACTS.md` still wins those), this one wins; fix
+*Written 2026-08-05; partially re-verified 2026-11-10 (ticket EP-1). **Re-derived on 2026-11-10 against
+live read-only SQLite, git and the on-disk state:** the §1 corpus registry and known-state tables (every
+corpus count, config lever and chunker attribution), the entry-point rows in §2 for `app.serve`,
+`app.doctor`, `app.resparse`, `app.set_payload_fields`, the Precision-95 lane statuses in §3b, the new
+2026-11-10 ledger in §3, §6 (open items and pending operator decisions) and the §7 doc map. **Not
+re-verified since 2026-08-05 and may be stale:** the rest of §2 (flag table rows other than those named),
+§3 entries dated before 2026-08-28, §4, §5 and §8's branch index (§8's trailing sub-sections are ledger
+entries, now headed §3b). Where a section carries its own date or query, that date governs. Every claim
+carries its evidence (commit SHA, `file:line`, report path, or the query used). This doc supersedes any
+status claim in `AGENTS.md`'s old owner table or any doc listed §7 as HISTORICAL. If this doc and another
+doc disagree on a *fact* (not a frozen shape — `DATA-CONTRACTS.md` still wins those), this one wins; fix
 the other doc.*
 
 ---
