@@ -153,6 +153,7 @@ class TeiReranker:
         retry_sleep: RetrySleep | None = None,
         gpu_lock_timeout: float | None = _DEFAULT_GPU_LOCK_TIMEOUT_S,
         ensure_ready: Callable[[], None] | None = None,
+        record_scores: bool = False,
     ):
         self._client = client
         self._gpu_lock = gpu_lock
@@ -160,11 +161,19 @@ class TeiReranker:
         self._retry_sleep = retry_sleep or _default_retry_sleep
         self._gpu_lock_timeout = gpu_lock_timeout
         self._ensure_ready = ensure_ready
+        # EV-13 (default OFF, inert): when on, each `rerank()` leaves the cross-encoder scores it
+        # already computed for ordering in `last_scored` -- `(candidate, score)` in the returned
+        # order, covering the whole pool -- so an eval can read them. Nothing else changes: the
+        # `Reranker` contract, the return value and the HTTP traffic are identical either way.
+        self._record_scores = record_scores
+        self.last_scored: list[tuple[RerankCandidate, float]] | None = None
 
     def rerank(
         self, query: str, candidates: list[RerankCandidate]
     ) -> list[RerankCandidate]:
         if not candidates:
+            if self._record_scores:
+                self.last_scored = []
             return []
 
         # RI-28: the query rides in EVERY (query, document) pair, but only the document side was
@@ -228,7 +237,10 @@ class TeiReranker:
         # trusting TEI's response ordering — a vendor detail this project doesn't control.
         try:
             scored.sort(key=lambda pair: (-pair[1], pair[0]))
-            return [candidates[index] for index, _score in scored]
+            ordered = [candidates[index] for index, _score in scored]
+            if self._record_scores:
+                self.last_scored = [(candidates[index], score) for index, score in scored]
+            return ordered
         except IndexError as error:
             raise PermanentError(f"reranker response index out of range: {error}") from error
 

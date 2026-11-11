@@ -279,6 +279,10 @@ class QuestionResult:
     # EV-10: "gpu_lock_timeout" when the error is a GPU-lock acquisition timeout (the question
     # never ran), else None -- including for ordinary errors, which stay plain `error` strings.
     error_class: str | None = None
+    # EV-13: cross-encoder scores of the returned top-k and the pool (see `_rerank_fields`); None
+    # unless the run opted in with --record-rerank-scores, in which case `_question_row` adds a
+    # `rerank` key. Never an input to any hit/rank/score above.
+    rerank: dict | None = None
 
 
 def load_questions(ground_truth_path: Path, include_duplicates: bool = False) -> list[Question]:
@@ -513,9 +517,39 @@ def _title_leak(result, gold_paper_ids: frozenset[str]) -> bool:
     return bool(title) and title in _normalized(result.passage_text)
 
 
+def _rerank_fields(truncated: list, capture: list) -> dict:
+    """EV-13: the cross-encoder scores behind `truncated` (the returned top-k), from `capture`
+    (the reranker's `(candidate, score)` list for the whole pool, in rerank order).
+
+    `Retriever.retrieve` may drop an orphaned hit after reranking, so results are matched back to
+    the pool by passage text in order rather than assumed positionally aligned; if any result
+    cannot be matched, `aligned` is False and the per-result scores are withheld (the pool best
+    is still valid -- it is just the first pool score)."""
+    pool = [score for _candidate, score in capture]
+    fields: dict = {
+        "aligned": True, "scores": [], "max": None, "mean_top3": None, "margin_12": None,
+        "pool_best": pool[0] if pool else None, "pool_size": len(pool),
+    }
+    cursor, scores = 0, []
+    for result in truncated:
+        while cursor < len(capture) and capture[cursor][0].text != result.passage_text:
+            cursor += 1
+        if cursor == len(capture):
+            fields["aligned"] = False
+            return fields
+        scores.append(capture[cursor][1])
+        cursor += 1
+    fields["scores"] = scores
+    if scores:
+        fields["max"] = scores[0]  # rerank order is score-descending
+        fields["mean_top3"] = sum(scores[:3]) / len(scores[:3])  # mean of what exists if < 3
+        fields["margin_12"] = scores[0] - scores[1] if len(scores) > 1 else None
+    return fields
+
+
 def score_question(
     question: Question, results: list, k: int, chapter_results: list | None = None,
-    chunk_lookup: "CorpusLookup | None" = None,
+    chunk_lookup: "CorpusLookup | None" = None, rerank_capture: list | None = None,
 ) -> QuestionResult:
     """`results` is the `list[GroundedResult]` a real (or fake) `Retriever.retrieve()` call
     returned -- already truncated to `k` by `Retriever` itself, but truncated again here so a
@@ -527,6 +561,7 @@ def score_question(
     case (never an empty list standing in for "not scored").
 
     `chunk_lookup` (EV-9) is only used to record `retrieved_chunk_ids`; it never feeds a hit rule.
+    `rerank_capture` (EV-13) likewise only feeds the additive `rerank` field.
     """
     truncated = results[:k]
     paper_rank = next(
@@ -601,6 +636,7 @@ def score_question(
         # has no gold_paper_ids to hit, but still has a top result (and a top score) whenever the
         # corpus is non-empty, which is exactly the number the score-distribution census reads.
         top_score=truncated[0].score if truncated else None,
+        rerank=_rerank_fields(truncated, rerank_capture) if rerank_capture is not None else None,
     )
 
 
@@ -621,7 +657,8 @@ def _error_class(error: Exception) -> str | None:
 
 
 def run(
-    questions: list[Question], retriever, k: int, chunk_lookup: "CorpusLookup | None" = None
+    questions: list[Question], retriever, k: int, chunk_lookup: "CorpusLookup | None" = None,
+    record_rerank_scores: bool = False,
 ) -> list[QuestionResult]:
     """Calls the real (or fake) `retriever.retrieve(question_text, filters, k)` for every
     question -- plus `retriever.retrieve_papers(question_text, filters, k)` too, but only for a
@@ -641,6 +678,8 @@ def run(
     for i, question in enumerate(questions, start=1):
         try:
             hits, _coverage = retriever.retrieve(question.question_text, None, k)
+            # EV-13: read right after retrieve(), before retrieve_papers() reranks again.
+            capture = retriever.last_rerank_scores() if record_rerank_scores else None
             chapter_hits = None
             if question.gold_chapter_title is not None:
                 chapter_hits, _coverage2 = retriever.retrieve_papers(
@@ -666,7 +705,9 @@ def run(
                 )
             )
             continue
-        results.append(score_question(question, hits, k, chapter_hits, chunk_lookup))
+        results.append(
+            score_question(question, hits, k, chapter_hits, chunk_lookup, rerank_capture=capture)
+        )
         if i % 20 == 0:
             logger.info("scored %d/%d questions", i, len(questions))
     return results
@@ -767,7 +808,7 @@ def _question_row(r: QuestionResult) -> dict:
     scored in another is visible without inferring it from `null` ranks (a null rank alone is
     ambiguous between "errored" and "ran clean but missed").
     """
-    return {
+    row = {
         "question_id": r.question_id,
         "question_type": r.question_type,
         "doc_type": r.doc_type,
@@ -806,6 +847,9 @@ def _question_row(r: QuestionResult) -> dict:
             "fallback": r.excerpt_fallback,
         },
     }
+    if r.rerank is not None:  # EV-13: additive, only when --record-rerank-scores was given
+        row["rerank"] = r.rerank
+    return row
 
 
 _EXCERPT_SCORING_RULE = (
@@ -1121,6 +1165,12 @@ def _parse_args() -> argparse.Namespace:
         help="CQ-3 A/B arm: drop heading-only chunks before reranking (Retriever's "
              "drop_stub_chunks). Default off = baseline.",
     )
+    parser.add_argument(
+        "--record-rerank-scores", action="store_true",
+        help="EV-13: add a per-question `rerank` field with the cross-encoder scores of the "
+             "returned top-k (max, mean-top-3, top1-minus-top2 margin) and the pool's best score. "
+             "Capture only: ordering, results and every other field are unchanged. Default off.",
+    )
     return parser.parse_args()
 
 
@@ -1176,9 +1226,14 @@ def main() -> None:
     build_kwargs["collection"] = args.collection
     if args.drop_stub_chunks:
         build_kwargs["drop_stub_chunks"] = True
+    if args.record_rerank_scores:
+        build_kwargs["record_rerank_scores"] = True
     server = build_mcp_server(config, **build_kwargs)
 
-    results = run(questions, server.retriever, args.k, chunk_lookup=lookup)
+    results = run(
+        questions, server.retriever, args.k, chunk_lookup=lookup,
+        record_rerank_scores=args.record_rerank_scores,
+    )
     lookup.close()
     commit, dirty = code_commit()
     report = build_report(

@@ -1414,3 +1414,14 @@ def test_build_mcp_server_threads_drop_stub_chunks_default_off(monkeypatch, tmp_
     kw = {"db_path": str(tmp_path / "papers.db"), "blob_dir": str(tmp_path / "blobs")}
     assert build_mcp_server(cfg, **kw)._retriever._drop_stub_chunks is False
     assert build_mcp_server(cfg, drop_stub_chunks=True, **kw)._retriever._drop_stub_chunks is True
+
+
+def test_build_mcp_server_threads_record_rerank_scores_default_off(monkeypatch, tmp_path):
+    """EV-13: the capture switch reaches the TeiReranker; production wiring (no kwarg) leaves it off."""
+    monkeypatch.setattr("app.assembly.tei_lifecycle", _FakeTeiLifecycle())
+    monkeypatch.setattr("app.assembly.VectorIndex", lambda *a, **k: object())
+    cfg = Config(focus_area_queries=["causal inference"], gpu_lock_path=str(tmp_path / ".gpu.lock"))
+    kw = {"db_path": str(tmp_path / "papers.db"), "blob_dir": str(tmp_path / "blobs")}
+    assert build_mcp_server(cfg, **kw)._retriever._reranker._record_scores is False
+    assert build_mcp_server(
+        cfg, record_rerank_scores=True, **kw)._retriever._reranker._record_scores is True

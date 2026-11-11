@@ -604,6 +604,7 @@ def _resolve_store_paths(
 def build_mcp_server(
     config: Config, *, db_path: str | None = None, blob_dir: str | None = None,
     collection: str = "papers", drop_stub_chunks: bool = False,
+    record_rerank_scores: bool = False,
 ) -> McpServer:
     gpu_lock = FileGpuLock(Path(config.gpu_lock_path))  # same path as the ingest root -> same file
     db_path, blob_dir = _resolve_store_paths(config, db_path, blob_dir)
@@ -638,6 +639,7 @@ def build_mcp_server(
     reranker = TeiReranker(
         httpx.Client(base_url=_TEI_RERANK_URL, timeout=60.0), gpu_lock,
         ensure_ready=_ensure_query_tei_ready,
+        record_scores=record_rerank_scores,  # EV-13 eval-only capture; production wiring leaves it off
     )
     # 2026-07-18: `Config.rerank_depth`/`Config.top_k` were dead fields (declared, never read) --
     # wired here, the one composition root that knows both the Config lever and the reranker's

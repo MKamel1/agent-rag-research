@@ -225,6 +225,12 @@ class Retriever:
         self._rerank_pool_size = rerank_pool_size
         self._drop_stub_chunks = drop_stub_chunks
 
+    def last_rerank_scores(self) -> list[tuple[RerankCandidate, float]] | None:
+        """EV-13: the cross-encoder scores of the most recent rerank call, `(candidate, score)` in
+        rerank order, or None when the injected reranker does not record them (the default: fakes
+        and a `TeiReranker` built without `record_scores`). Read-only; changes no retrieval step."""
+        return getattr(self._reranker, "last_scored", None)
+
     def retrieve(
         self, query: str, filters: SearchFilters | None, k: int
     ) -> tuple[list[GroundedResult], RetrievalCoverage]:
