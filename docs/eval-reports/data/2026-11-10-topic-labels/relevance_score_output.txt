@@ -1,0 +1,78 @@
+labelled papers joined: 12385 of 12385; NULL relevance_score: 0
+
+Per-label distribution of relevance_score
+label       n    mean  median  | deciles d1..d9
+on          6711 0.411 0.417  | 0.310 0.350 0.378 0.398 0.417 0.436 0.454 0.473 0.500
+borderline  1044 0.328 0.328  | 0.231 0.259 0.285 0.308 0.328 0.351 0.372 0.394 0.427
+off         4630 0.250 0.256  | 0.132 0.168 0.202 0.232 0.256 0.280 0.302 0.324 0.355
+
+AUROC on vs off (borderline excluded): 0.9227
+AUROC on vs (borderline+off), for reference: 0.8970
+AUROC on vs borderline, for reference: 0.7830
+
+Threshold table: remove papers with score < t
+  t     off removed   on wrongly removed   borderline removed
+ 0.10    0.037          0.000              0.002
+ 0.15    0.153          0.000              0.009
+ 0.20    0.295          0.006              0.041
+ 0.25    0.471          0.028              0.158
+ 0.30    0.693          0.083              0.369
+ 0.35    0.888          0.200              0.595
+ 0.40    0.975          0.410              0.822
+ 0.45    0.997          0.678              0.945
+ 0.50    1.000          0.901              0.994
+ 0.55    1.000          0.985              1.000
+ 0.60    1.000          0.999              1.000
+ 0.65    1.000          1.000              1.000
+ 0.70    1.000          1.000              1.000
+
+By publication year (n on / n off, mean score on / off, AUROC)
+ 2007:    3/  17  (too few for a stable AUROC)  off share 0.81
+ 2008:    3/  28  (too few for a stable AUROC)  off share 0.90
+ 2009:    9/  36  (too few for a stable AUROC)  off share 0.80
+ 2010:    6/  38  (too few for a stable AUROC)  off share 0.83
+ 2011:    9/  44  (too few for a stable AUROC)  off share 0.81
+ 2012:   41/  54  0.389/0.155  AUROC 1.000  off share 0.56
+ 2013:   32/  42  0.402/0.152  AUROC 1.000  off share 0.54
+ 2014:   45/  48  0.388/0.161  AUROC 0.994  off share 0.48
+ 2015:   63/  69  0.384/0.161  AUROC 0.982  off share 0.47
+ 2016:   97/  68  0.388/0.161  AUROC 0.985  off share 0.39
+ 2017:  157/  75  0.392/0.163  AUROC 0.987  off share 0.31
+ 2018:  220/  83  0.402/0.177  AUROC 0.987  off share 0.26
+ 2019:  270/ 104  0.402/0.183  AUROC 0.983  off share 0.25
+ 2020:  463/ 142  0.404/0.188  AUROC 0.974  off share 0.22
+ 2021:  519/ 156  0.412/0.205  AUROC 0.973  off share 0.21
+ 2022:  657/ 164  0.407/0.227  AUROC 0.937  off share 0.18
+ 2023:  857/ 150  0.413/0.228  AUROC 0.933  off share 0.14
+ 2024: 1037/ 182  0.413/0.228  AUROC 0.934  off share 0.14
+ 2025: 1211/ 219  0.412/0.276  AUROC 0.880  off share 0.14
+ 2026: 1012/2911  0.422/0.278  AUROC 0.918  off share 0.68
+
+Top 15 primary arXiv categories among off-topic papers (count, mean score, share of category that is off)
+ cs.CV                636  mean off score 0.274  off share of category 0.79
+ cs.LG                586  mean off score 0.308  off share of category 0.25
+ cs.CL                368  mean off score 0.319  off share of category 0.67
+ cs.AI                264  mean off score 0.322  off share of category 0.37
+ cs.RO                211  mean off score 0.259  off share of category 0.85
+ astro-ph.GA          124  mean off score 0.160  off share of category 0.93
+ cs.CR                120  mean off score 0.270  off share of category 0.89
+ quant-ph             111  mean off score 0.215  off share of category 0.72
+ astro-ph.CO          102  mean off score 0.207  off share of category 1.00
+ astro-ph.SR           91  mean off score 0.161  off share of category 0.99
+ astro-ph.HE           90  mean off score 0.160  off share of category 1.00
+ gr-qc                 90  mean off score 0.164  off share of category 0.99
+ cs.SD                 78  mean off score 0.264  off share of category 0.93
+ cs.IR                 70  mean off score 0.318  off share of category 0.49
+ cs.SE                 69  mean off score 0.294  off share of category 0.56
+
+Within-category AUROC (categories with >=40 on and >=40 off)
+ cs.CV              on  117 off  636 AUROC 0.960
+ cs.LG              on 1555 off  586 AUROC 0.952
+ cs.CL              on  140 off  368 AUROC 0.952
+ cs.AI              on  393 off  264 AUROC 0.939
+ cs.IR              on   52 off   70 AUROC 0.871
+ cs.SE              on   43 off   69 AUROC 0.858
+ stat.ME            on 2006 off   53 AUROC 0.945
+ stat.ML            on  605 off   45 AUROC 0.971
+ cs.CY              on   43 off   43 AUROC 0.754
+

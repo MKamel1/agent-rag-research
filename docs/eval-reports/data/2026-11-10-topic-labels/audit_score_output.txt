@@ -1,0 +1,22 @@
+Confusion (rows Haiku, cols mine), unweighted sample n=300
+                    on borderline        off    row n
+on                  95          5          0      100
+borderline           5         83         12      100
+off                  0          4         96      100
+
+Unweighted (balanced sample): raw agree 0.913  kappa 0.870  binary off/not-off agree 0.947
+Corpus-weighted:              raw agree 0.944  kappa 0.901 (95% CI 0.850-0.947)  binary agree 0.975 (95% CI 0.957-0.989)
+
+Per-band agreement (share of Haiku-band papers I labelled the same): on 0.95, borderline 0.83, off 0.96
+  Haiku on         -> binary off-vs-not-off agree 1.00
+  Haiku borderline -> binary off-vs-not-off agree 0.88
+  Haiku off        -> binary off-vs-not-off agree 0.96
+
+My-label composition inside each Haiku band:  {'on': {'on': 95, 'borderline': 5, 'off': 0}, 'borderline': {'on': 5, 'borderline': 83, 'off': 12}, 'off': {'on': 0, 'borderline': 4, 'off': 96}}
+
+Haiku off share 0.374; audit-corrected off share 0.369 (95% bootstrap CI 0.352-0.383)
+
+on<->off disagreements: 0
+
+Position of every disagreement with off<->borderline or on<->borderline: {('borderline', 'on'): 5, ('borderline', 'off'): 12, ('on', 'borderline'): 5, ('off', 'borderline'): 4}
+
