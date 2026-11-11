@@ -1,0 +1,648 @@
+[
+ {
+  "question_id": "Q-STD-D-001",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Survive; note gold_chapter_title is a section (2.2) of a chapter, minor."
+ },
+ {
+  "question_id": "Q-STD-D-002",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Survive; gold_chapter_title is a numbered section of the US chapter, minor."
+ },
+ {
+  "question_id": "Q-STD-D-003",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": false
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "gold_chapter_title '5 2 Contract' is a subsection heading (chunk c1432 header '5 2 Contract > 5.2.1 Basis for Contractual Liability'), not a chapter title.",
+  "suggested_fix": "Drop gold_chapter_title or replace with the UK chapter's real title."
+ },
+ {
+  "question_id": "Q-STD-D-004",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; supported, unique, clear, label ok."
+ },
+ {
+  "question_id": "Q-STD-D-005",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; supported, unique, clear, label ok."
+ },
+ {
+  "question_id": "Q-STD-D-006",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; supported, unique, clear, label ok."
+ },
+ {
+  "question_id": "Q-STD-D-007",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; supported, unique, clear, label ok."
+ },
+ {
+  "question_id": "Q-STD-D-008",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; supported, unique, clear, label ok."
+ },
+ {
+  "question_id": "Q-STD-D-009",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; supported, unique, clear, label ok."
+ },
+ {
+  "question_id": "Q-STD-D-010",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; supported, unique, clear, label ok."
+ },
+ {
+  "question_id": "Q-STD-D-011",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; supported, unique, clear, label ok."
+ },
+ {
+  "question_id": "Q-STD-D-012",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; supported, unique, clear, label ok."
+ },
+ {
+  "question_id": "Q-STD-D-013",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": false
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "gold_chapter_title is wrong: chunk c36 is section 2.1 'Confusing Safety with Reliability' of ESW Chapter 2 'Questioning the Foundations of Traditional Safety Engineering' (TOC chunk c4); the parser filed it under Chapter 1's heading, and the label carries <sup> markup.",
+  "suggested_fix": "Set gold_chapter_title to 'Questioning the Foundations of Traditional Safety Engineering' (or drop it)."
+ },
+ {
+  "question_id": "Q-STD-D-014",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Survive; c210 (same book, Ch 3) also states emergent properties are controlled by constraints, so same-book second passage possible."
+ },
+ {
+  "question_id": "Q-STD-D-015",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; supported, unique, clear, label ok."
+ },
+ {
+  "question_id": "Q-STD-D-016",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "unique": false,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Question does not name Volume 2. Volume 1 (local:a6b537ff5738) c194/c55 also says the RISC 'makes the case to decision makers' that safety objectives are achieved; only Vol 2 c71 says the pursuit is 'on track to be successful throughout the system life cycle'.",
+  "suggested_fix": "Name 'Volume 2 (SP-2014-612)' in the question, as D-017/D-018 do."
+ },
+ {
+  "question_id": "Q-STD-D-017",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Survive; answer expands 'UU' as unknown and underappreciated, which is true in the book but not in c113."
+ },
+ {
+  "question_id": "Q-STD-D-018",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; supported, unique, clear, label ok."
+ },
+ {
+  "question_id": "Q-STD-D-019",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; supported, unique, clear, label ok."
+ },
+ {
+  "question_id": "Q-STD-D-020",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; supported, unique, clear, label ok."
+ },
+ {
+  "question_id": "Q-STD-D-021",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; supported, unique, clear, label ok."
+ },
+ {
+  "question_id": "Q-STD-D-022",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; supported, unique, clear, label ok."
+ },
+ {
+  "question_id": "Q-STD-D-023",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; supported, unique, clear, label ok."
+ },
+ {
+  "question_id": "Q-STD-D-024",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; supported, unique, clear, label ok."
+ },
+ {
+  "question_id": "Q-STD-D-025",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; supported, unique, clear, label ok."
+ },
+ {
+  "question_id": "Q-STD-D-026",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; supported, unique, clear, label ok."
+ },
+ {
+  "question_id": "Q-STD-D-027",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Survive; the phase C purpose also sits in the table row c49 (same doc)."
+ },
+ {
+  "question_id": "Q-STD-D-028",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Survive; same sentence also at c58 and c347 (same doc)."
+ },
+ {
+  "question_id": "Q-STD-D-029",
+  "verdict": "survive",
+  "checks": {
+   "absence_holds": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; supported, unique, clear, label ok."
+ },
+ {
+  "question_id": "Q-STD-D-030",
+  "verdict": "survive",
+  "checks": {
+   "absence_holds": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Survive; question stem ('use Bayes' theorem') is somewhat conspicuous as a false premise. c252 mentions 'prior probabilities' only in passing."
+ },
+ {
+  "question_id": "Q-STD-E-001",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true,
+   "each_passage_necessary": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; supported, unique, clear, label ok."
+ },
+ {
+  "question_id": "Q-STD-E-002",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true,
+   "each_passage_necessary": false
+  },
+  "additional_gold_paper_ids": [
+   "local:c0d3ca177aaf"
+  ],
+  "reason": "ISO 21448 itself restates the 26262-1 functional-safety definition (local:d4ceb75c64ab:c9), so the 26262-1 passage is not necessary; and ISO PAS 21448:2019 (local:c0d3ca177aaf:c17) carries the same 'does not apply to faults covered by the ISO 26262 series' sentence.",
+  "suggested_fix": "Accept local:c0d3ca177aaf as an alternative for passage 1, note d4ceb75c64ab:c9 shortcut, or reword to ask for the 26262-1 term number/clause wording."
+ },
+ {
+  "question_id": "Q-STD-E-003",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true,
+   "each_passage_necessary": false
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "AVSC-I-04 alone answers the whole question: c7 quotes the EU sentence verbatim ('The remote intervention operator shall not drive the fully automated vehicle and the ADS shall continue to perform the DDT') and c39 gives the AVSC side.",
+  "suggested_fix": "Accept local:b4287480c380:c7 as an alternative support for the EU half, or reword so the EU regulation's own text (e.g. definition 24/25 wording) is required."
+ },
+ {
+  "question_id": "Q-STD-E-004",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true,
+   "each_passage_necessary": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Survive; HSE nuclear tolerability doc (local:caf714759f86 c29) also uses gross disproportion but does not state the compliance test."
+ },
+ {
+  "question_id": "Q-STD-E-005",
+  "verdict": "fix",
+  "checks": {
+   "support": false,
+   "unique": true,
+   "clear": true,
+   "label": true,
+   "each_passage_necessary": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "UL 4600 16.2.1.1 list has six items; item 6 'Fatality rates' is in the next chunk (c1238) and is omitted from answer_text, which lists only through major injury; excerpt ends at item 4.",
+  "suggested_fix": "Add 'fatality rates' to answer_text and either add c1238 as a supporting chunk or phrase question as 'which of these loss-related rates (incident ... injury)'."
+ },
+ {
+  "question_id": "Q-STD-E-006",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true,
+   "each_passage_necessary": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; supported, unique, clear, label ok."
+ },
+ {
+  "question_id": "Q-STD-E-007",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true,
+   "each_passage_necessary": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; supported, unique, clear, label ok."
+ },
+ {
+  "question_id": "Q-STD-E-008",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true,
+   "each_passage_necessary": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; supported, unique, clear, label ok."
+ },
+ {
+  "question_id": "Q-STD-E-009",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true,
+   "each_passage_necessary": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; supported, unique, clear, label ok."
+ },
+ {
+  "question_id": "Q-STD-E-010",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true,
+   "each_passage_necessary": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; supported, unique, clear, label ok."
+ },
+ {
+  "question_id": "Q-STD-E-011",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true,
+   "each_passage_necessary": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; supported, unique, clear, label ok."
+ },
+ {
+  "question_id": "Q-STD-E-012",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true,
+   "each_passage_necessary": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; supported, unique, clear, label ok."
+ },
+ {
+  "question_id": "Q-STD-E-013",
+  "verdict": "survive",
+  "checks": {
+   "absence_holds": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; supported, unique, clear, label ok."
+ },
+ {
+  "question_id": "Q-STD-E-014",
+  "verdict": "survive",
+  "checks": {
+   "absence_holds": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Survive; near-miss: EU 2022/1426 c120 says the SMS certificate of compliance is valid max three years (SMS, not CSMS/R155)."
+ },
+ {
+  "question_id": "Q-STD-E-015",
+  "verdict": "survive",
+  "checks": {
+   "absence_holds": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; supported, unique, clear, label ok."
+ },
+ {
+  "question_id": "Q-STD-E-016",
+  "verdict": "survive",
+  "checks": {
+   "absence_holds": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Survive; near-miss: AAMVA c148 / NHTSA ADS 2.0 c98 mention a generic $5 million minimum insurance, not California/CPUC."
+ },
+ {
+  "question_id": "Q-STD-E-017",
+  "verdict": "fix",
+  "checks": {
+   "absence_holds": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Content absence holds, but the stated evidence is wrong: ISO 23793-1:2024 (titled 'Minimal risk manoeuvre (MRM) for automated driving') IS cited in local:61b72628b14f:c14 and the 'ISO 23793' pattern misses it because the text reads 'ISO Standard No. 23793-1'. Also MIRA c988 gives a 4.0 m/s2 MRM deceleration aim and EU 2022/1426 c161 a 5 m/s2 emergency-braking test, near-misses.",
+  "suggested_fix": "Correct answer_text to 'cited only as a reference in AVSC-I-06 c14; its limits are not reproduced'; fix the misdescription 'emergency intervention' (23793-1 is MRM)."
+ },
+ {
+  "question_id": "Q-STD-E-018",
+  "verdict": "survive",
+  "checks": {
+   "absence_holds": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; supported, unique, clear, label ok."
+ },
+ {
+  "question_id": "Q-STD-E-019",
+  "verdict": "survive",
+  "checks": {
+   "absence_holds": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; supported, unique, clear, label ok."
+ },
+ {
+  "question_id": "Q-STD-E-020",
+  "verdict": "survive",
+  "checks": {
+   "absence_holds": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; supported, unique, clear, label ok."
+ },
+ {
+  "question_id": "Q-STD-E-021",
+  "verdict": "survive",
+  "checks": {
+   "absence_holds": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; supported, unique, clear, label ok."
+ },
+ {
+  "question_id": "Q-STD-E-022",
+  "verdict": "survive",
+  "checks": {
+   "absence_holds": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; supported, unique, clear, label ok."
+ },
+ {
+  "question_id": "Q-STD-E-023",
+  "verdict": "survive",
+  "checks": {
+   "absence_holds": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; supported, unique, clear, label ok."
+ },
+ {
+  "question_id": "Q-STD-E-024",
+  "verdict": "survive",
+  "checks": {
+   "absence_holds": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; supported, unique, clear, label ok."
+ },
+ {
+  "question_id": "Q-STD-E-025",
+  "verdict": "fix",
+  "checks": {
+   "absence_holds": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Corpus-wide the 130 km/h fact is present: Steege local:5c15efe64f30:c1305 says 'As of January 2023, the amended Regulation 157 limits its maximum operational speed to 130kph'. No paragraph number is given anywhere, so the paragraph question is still unanswerable, but answer_text implies 130 km/h is absent from the corpus.",
+  "suggested_fix": "Reword answer_text: held R157 text is 60 km/h only; Steege c1305 mentions the amended 130 km/h limit but no paragraph is given."
+ },
+ {
+  "question_id": "Q-STD-E-026",
+  "verdict": "survive",
+  "checks": {
+   "absence_holds": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; supported, unique, clear, label ok."
+ }
+]

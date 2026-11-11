@@ -1,0 +1,860 @@
+[
+ {
+  "question_id": "Q-STD-A-001",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-A-002",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-A-003",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-A-004",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-A-005",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-A-006",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-A-007",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-A-008",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-A-009",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-A-010",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-A-011",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-A-012",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-A-013",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-A-014",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-A-015",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-A-016",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-A-017",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-A-018",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "unique": false,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [
+   "local:dbb1c4619d93"
+  ],
+  "reason": "ISO 26262-12 chunk dbb1c4619d93 carries the same independence NOTE ('aim of the independence defined in Table 1 is to ensure an objective, unbiased viewpoint ... organizational independence'); question names part 2 only.",
+  "suggested_fix": "Add local:dbb1c4619d93 to additional_gold_paper_ids."
+ },
+ {
+  "question_id": "Q-STD-A-019",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-A-020",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-A-021",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-A-022",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-A-023",
+  "verdict": "survive",
+  "checks": {
+   "absence_holds": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Independent scans with different vocabulary found no answering chunk."
+ },
+ {
+  "question_id": "Q-STD-A-024",
+  "verdict": "survive",
+  "checks": {
+   "absence_holds": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Independent scans with different vocabulary found no answering chunk."
+ },
+ {
+  "question_id": "Q-STD-B-001",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-B-002",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-B-003",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-B-004",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-B-005",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-B-006",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-B-007",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-B-008",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-B-009",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-B-010",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-B-011",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-B-012",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-B-013",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document. Note: R2P2 d5f3d058bb27 also states 1 in 10 000 for public, but lacks the single-large-plant framing; not added."
+ },
+ {
+  "question_id": "Q-STD-B-014",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "unique": false,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Identical DFMEA severity table (S9 'Noncompliance with regulations') also sits in same-paper chunk c473 (Annex C1.1); FMEA-MSR tables c343/c530 differ in name only. Chunk-level scoring could penalise a correct hit on c473.",
+  "suggested_fix": "Accept 0aa9a802631e:c473 as an alternative gold chunk."
+ },
+ {
+  "question_id": "Q-STD-B-015",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-B-016",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-B-017",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-B-018",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-B-019",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-B-020",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-B-021",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-B-022",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-B-023",
+  "verdict": "survive",
+  "checks": {
+   "absence_holds": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Independent scans with different vocabulary found no answering chunk."
+ },
+ {
+  "question_id": "Q-STD-B-024",
+  "verdict": "survive",
+  "checks": {
+   "absence_holds": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Independent scans with different vocabulary found no answering chunk."
+ },
+ {
+  "question_id": "Q-STD-C-001",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-C-002",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "unique": false,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [
+   "local:fff17ed80281"
+  ],
+  "reason": "AVSC00005 (superseded predecessor, chunk text '6.1.1.8 De-Powering ADS-DV. Describe the vehicle's electrical power source(s)...') has identical wording; question does not exclude it.",
+  "suggested_fix": "Add local:fff17ed80281 to additional_gold_paper_ids."
+ },
+ {
+  "question_id": "Q-STD-C-003",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-C-004",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-C-005",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-C-006",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-C-007",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-C-008",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-C-009",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-C-010",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-C-011",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-C-012",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-C-013",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-C-014",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-C-015",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-C-016",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-C-017",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-C-018",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": false
+  },
+  "additional_gold_paper_ids": [
+   "local:1c1a92b73224",
+   "local:9adcc5121bd5"
+  ],
+  "reason": "The two listed 'commentary' slide decks contain the clause verbatim (1c1a92b73224:c13 '6.4.1.2 REQUIRED: a) Use of at least one of the following risk evaluation approaches: 1) Risk table ...'; 9adcc5121bd5 same), so they answer equally and are not commentary.",
+  "suggested_fix": "Move both ids from commentary_paper_ids to additional_gold_paper_ids (or drop authority label)."
+ },
+ {
+  "question_id": "Q-STD-C-019",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": false
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Commentary local:9f51671af209 (chunk c15) only has a bullet '(e.g., use of leading and lagging metrics)' and does not discuss the topic; 8a590e370f52 and 36fe900b97bc do.",
+  "suggested_fix": "Remove local:9f51671af209 from commentary_paper_ids."
+ },
+ {
+  "question_id": "Q-STD-C-020",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-C-021",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-C-022",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "unique": true,
+   "clear": true,
+   "label": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Gold chunk read; answer supported; corpus scan found no other equally answering document."
+ },
+ {
+  "question_id": "Q-STD-C-023",
+  "verdict": "survive",
+  "checks": {
+   "absence_holds": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Independent scans with different vocabulary found no answering chunk."
+ },
+ {
+  "question_id": "Q-STD-C-024",
+  "verdict": "survive",
+  "checks": {
+   "absence_holds": true
+  },
+  "additional_gold_paper_ids": [],
+  "reason": "Independent scans with different vocabulary found no answering chunk."
+ }
+]

@@ -1,0 +1,970 @@
+[
+ {
+  "query": "four areas known unknown hazardous scenarios SOTIF",
+  "ts": "2026-10-27T20:48:05.989494+00:00"
+ },
+ {
+  "query": "definition of acceptance criterion and validation target",
+  "ts": "2026-10-27T20:48:07.249338+00:00"
+ },
+ {
+  "query": "incident report must be submitted within five calendar days",
+  "ts": "2026-10-27T20:48:08.262932+00:00"
+ },
+ {
+  "query": "safety performance indicators monitoring field feedback UL 4600",
+  "ts": "2026-10-27T20:48:09.887540+00:00"
+ },
+ {
+  "query": "AV STEP proposed rule withdrawn effective date",
+  "ts": "2026-10-27T20:48:10.643428+00:00"
+ },
+ {
+  "query": "hazard analysis and risk assessment ASIL severity exposure controllability",
+  "ts": "2026-10-27T20:48:12.014245+00:00"
+ },
+ {
+  "query": "unsafe control actions identification STPA steps",
+  "ts": "2026-10-27T20:48:12.768711+00:00"
+ },
+ {
+  "query": "goal structuring notation strategy context assumption justification elements",
+  "ts": "2026-10-27T20:48:13.941716+00:00"
+ },
+ {
+  "query": "how many miles would autonomous vehicles have to be driven to demonstrate reliability",
+  "ts": "2026-10-27T20:48:15.040302+00:00"
+ },
+ {
+  "query": "scenario-based safety assessment logical scenarios parameter space",
+  "ts": "2026-10-27T20:48:15.942740+00:00"
+ },
+ {
+  "query": "type-approval requirements ADS fully automated vehicle in-service monitoring",
+  "ts": "2026-10-27T20:48:16.943658+00:00"
+ },
+ {
+  "query": "absence of unreasonable risk definition safety",
+  "ts": "2026-10-27T23:06:23.382837+00:00"
+ },
+ {
+  "query": "unreasonable risk judged to be unacceptable in a certain context according to valid societal moral concepts",
+  "ts": "2026-10-27T23:06:24.820368+00:00"
+ },
+ {
+  "query": "residual risk definition risk remaining after safety measures",
+  "ts": "2026-10-27T23:06:25.974073+00:00"
+ },
+ {
+  "query": "acceptance criterion validation target definition",
+  "ts": "2026-10-27T23:06:27.057805+00:00"
+ },
+ {
+  "query": "GAMAB ALARP MEM positive risk balance principles for acceptance criteria",
+  "ts": "2026-10-27T23:06:28.195419+00:00"
+ },
+ {
+  "query": "positive risk balance automated vehicle safer than human driver",
+  "ts": "2026-10-27T23:06:29.220392+00:00"
+ },
+ {
+  "query": "competent and careful human driver level of safety ADS",
+  "ts": "2026-10-27T23:06:30.264263+00:00"
+ },
+ {
+  "query": "ADS shall be free of unreasonable safety risks to vehicle occupants and other road users",
+  "ts": "2026-10-27T23:06:31.384866+00:00"
+ },
+ {
+  "query": "technical service assessment audit safety management system type approval authority ADS",
+  "ts": "2026-10-27T23:06:32.291895+00:00"
+ },
+ {
+  "query": "275 million miles failure-free fatality rate 95 percent confidence",
+  "ts": "2026-10-27T23:06:33.033025+00:00"
+ },
+ {
+  "query": "billions of miles to demonstrate performance 20 percent better than human",
+  "ts": "2026-10-27T23:06:34.023669+00:00"
+ },
+ {
+  "query": "acceptable risk criteria safety case UL 4600 risk acceptance",
+  "ts": "2026-10-27T23:06:35.787064+00:00"
+ },
+ {
+  "query": "confidence in evidence statistical validity of claims safety case",
+  "ts": "2026-10-27T23:06:37.166497+00:00"
+ },
+ {
+  "query": "exposure miles driven operational design domain normalize",
+  "ts": "2026-10-27T23:06:37.990192+00:00"
+ },
+ {
+  "query": "positive risk balance Safety First for Automated Driving",
+  "ts": "2026-10-27T23:06:39.028747+00:00"
+ },
+ {
+  "query": "voluntary safety self-assessment manufacturers self-certify FMVSS no pre-approval",
+  "ts": "2026-10-27T23:06:39.805455+00:00"
+ },
+ {
+  "query": "SOTIF clauses specification hazard identification verification validation strategy evaluation of known unknown scenarios",
+  "ts": "2026-10-27T23:06:40.930821+00:00"
+ },
+ {
+  "query": "validation target confidence level statistical argument test kilometers",
+  "ts": "2026-10-27T23:06:42.173536+00:00"
+ },
+ {
+  "query": "What is the definition of automotive safety integrity level (ASIL)?",
+  "ts": "2026-11-01T04:26:32.844344+00:00"
+ },
+ {
+  "query": "How does ISO 26262 define a safety goal?",
+  "ts": "2026-11-01T04:26:33.876302+00:00"
+ },
+ {
+  "query": "What is the ISO 26262 definition of unreasonable risk?",
+  "ts": "2026-11-01T04:26:35.033405+00:00"
+ },
+ {
+  "query": "What are the severity classes S0 to S3 used in hazard analysis and risk assessment?",
+  "ts": "2026-11-01T04:26:36.488787+00:00"
+ },
+ {
+  "query": "What are the controllability classes C0 to C3?",
+  "ts": "2026-11-01T04:26:37.777556+00:00"
+ },
+ {
+  "query": "How is the ASIL determined from severity, probability of exposure and controllability?",
+  "ts": "2026-11-01T04:26:39.166700+00:00"
+ },
+ {
+  "query": "What are the inputs and steps for performing a hazard analysis and risk assessment on an item?",
+  "ts": "2026-11-01T04:26:40.572204+00:00"
+ },
+ {
+  "query": "What does the functional safety concept have to contain?",
+  "ts": "2026-11-01T04:26:41.660461+00:00"
+ },
+ {
+  "query": "What are the requirements for building the safety case in ISO 26262?",
+  "ts": "2026-11-01T04:26:42.951479+00:00"
+ },
+ {
+  "query": "Which confirmation measures are required and what level of independence do they need by ASIL?",
+  "ts": "2026-11-01T04:26:44.133908+00:00"
+ },
+ {
+  "query": "What characteristics indicate a good or poor safety culture?",
+  "ts": "2026-11-01T04:26:45.738382+00:00"
+ },
+ {
+  "query": "What is specified in the technical safety concept at the system level?",
+  "ts": "2026-11-01T04:26:46.969698+00:00"
+ },
+ {
+  "query": "How is safety validation performed for the integrated item at vehicle level?",
+  "ts": "2026-11-01T04:26:48.339120+00:00"
+ },
+ {
+  "query": "What are the target values for the single-point fault metric for each ASIL?",
+  "ts": "2026-11-01T04:26:49.943505+00:00"
+ },
+ {
+  "query": "What is the target for the probabilistic metric for random hardware failures (PMHF) for ASIL D?",
+  "ts": "2026-11-01T04:26:51.306176+00:00"
+ },
+ {
+  "query": "What are the latent-fault metric targets for ASIL B, C and D?",
+  "ts": "2026-11-01T04:26:52.706026+00:00"
+ },
+ {
+  "query": "Which structural coverage metrics are recommended at the software unit level, such as MC/DC?",
+  "ts": "2026-11-01T04:26:54.272813+00:00"
+ },
+ {
+  "query": "What methods are recommended for software unit verification?",
+  "ts": "2026-11-01T04:26:55.378761+00:00"
+ },
+ {
+  "query": "What does ISO 26262 require for field monitoring of safety-related issues during operation?",
+  "ts": "2026-11-01T04:26:56.415183+00:00"
+ },
+ {
+  "query": "How is the tool confidence level determined for software tools?",
+  "ts": "2026-11-01T04:26:57.689474+00:00"
+ },
+ {
+  "query": "What does a proven in use argument require?",
+  "ts": "2026-11-01T04:26:59.030820+00:00"
+ },
+ {
+  "query": "What does change management require in ISO 26262?",
+  "ts": "2026-11-01T04:26:59.936076+00:00"
+ },
+ {
+  "query": "What are the rules for ASIL decomposition of safety requirements?",
+  "ts": "2026-11-01T04:27:01.011507+00:00"
+ },
+ {
+  "query": "What is the purpose of dependent failures analysis and what failures does it address?",
+  "ts": "2026-11-01T04:27:02.205076+00:00"
+ },
+ {
+  "query": "Which safety analyses (deductive and inductive) are recommended for each ASIL?",
+  "ts": "2026-11-01T04:27:03.470078+00:00"
+ },
+ {
+  "query": "What is a safety element out of context and how is it developed?",
+  "ts": "2026-11-01T04:27:05.143481+00:00"
+ },
+ {
+  "query": "What is a triggering condition in SOTIF?",
+  "ts": "2026-11-01T04:27:06.465183+00:00"
+ },
+ {
+  "query": "How does SOTIF divide scenarios into known/unknown and safe/unsafe areas?",
+  "ts": "2026-11-01T04:27:07.733761+00:00"
+ },
+ {
+  "query": "How are validation targets defined for the intended functionality?",
+  "ts": "2026-11-01T04:27:09.019080+00:00"
+ },
+ {
+  "query": "How does SOTIF expect the unknown hazardous area to change during development?",
+  "ts": "2026-11-01T04:27:10.228465+00:00"
+ },
+ {
+  "query": "What are the options for treating risk in ISO 31000?",
+  "ts": "2026-11-01T04:27:11.371485+00:00"
+ },
+ {
+  "query": "What are the principles of risk management?",
+  "ts": "2026-11-01T04:27:12.487982+00:00"
+ },
+ {
+  "query": "What does risk evaluation involve?",
+  "ts": "2026-11-01T04:27:13.259854+00:00"
+ },
+ {
+  "query": "How is a consequence/likelihood matrix used and what are its limitations?",
+  "ts": "2026-11-01T04:27:14.877762+00:00"
+ },
+ {
+  "query": "How does Monte Carlo simulation work as a risk assessment technique?",
+  "ts": "2026-11-01T04:27:16.171822+00:00"
+ },
+ {
+  "query": "What is bow-tie analysis and when is it used?",
+  "ts": "2026-11-01T04:27:17.827828+00:00"
+ },
+ {
+  "query": "What is failure modes and effects analysis (FMEA)?",
+  "ts": "2026-11-01T04:27:19.236719+00:00"
+ },
+ {
+  "query": "What factors should be considered when selecting a risk assessment technique?",
+  "ts": "2026-11-01T04:27:20.380618+00:00"
+ },
+ {
+  "query": "What is the AI safety lifecycle in ISO PAS 8800?",
+  "ts": "2026-11-01T04:27:21.700534+00:00"
+ },
+ {
+  "query": "What safety requirements apply to datasets used to train AI components?",
+  "ts": "2026-11-01T04:27:22.985665+00:00"
+ },
+ {
+  "query": "What are the steps of threat analysis and risk assessment (TARA)?",
+  "ts": "2026-11-01T04:27:24.357993+00:00"
+ },
+ {
+  "query": "How is attack feasibility rated?",
+  "ts": "2026-11-01T04:27:25.307087+00:00"
+ },
+ {
+  "query": "What is risk appetite and how should an organization express it?",
+  "ts": "2026-11-01T04:27:26.355431+00:00"
+ },
+ {
+  "query": "How do automotive engineers decide how much development rigor a particular hazard needs, given how bad, how frequent and how avoidable it is?",
+  "ts": "2026-11-01T04:27:27.619201+00:00"
+ },
+ {
+  "query": "What number bounds how often random hardware faults may cause a top-level safety requirement to be violated?",
+  "ts": "2026-11-01T04:27:29.052881+00:00"
+ },
+ {
+  "query": "How do you argue a driving system is safe against situations nobody has thought of yet?",
+  "ts": "2026-11-01T04:27:30.307314+00:00"
+ },
+ {
+  "query": "After you have analysed a risk, how do you decide whether it needs further action?",
+  "ts": "2026-11-01T04:27:31.409266+00:00"
+ },
+ {
+  "query": "Which technique propagates input distributions through a model by repeated random sampling to get a distribution of outcomes?",
+  "ts": "2026-11-01T04:27:33.009376+00:00"
+ },
+ {
+  "query": "risk acceptance criteria residual risk validation target safety case",
+  "ts": "2026-11-03T01:58:08.964198+00:00"
+ },
+ {
+  "query": "ALARP tolerable risk as low as reasonably practicable",
+  "ts": "2026-11-03T01:58:11.295578+00:00"
+ },
+ {
+  "query": "safety performance indicators field monitoring feedback safety case",
+  "ts": "2026-11-03T01:58:17.977429+00:00"
+ },
+ {
+  "query": "hazard analysis risk assessment severity likelihood quantitative failure rate",
+  "ts": "2026-11-03T01:58:20.696483+00:00"
+ },
+ {
+  "query": "STPA unsafe control actions hazard analysis steps",
+  "ts": "2026-11-03T01:58:23.547265+00:00"
+ },
+ {
+  "query": "change risk management impact analysis hazards list risk score threshold acceptable",
+  "ts": "2026-11-03T01:59:29.777118+00:00"
+ },
+ {
+  "query": "quantitative safety risk assessment probability severity scores matrix acceptable level change",
+  "ts": "2026-11-03T01:59:32.678065+00:00"
+ },
+ {
+  "query": "acceptable risk specified at item level ALARP GAMAB MEM",
+  "ts": "2026-11-03T01:59:36.187281+00:00"
+ },
+ {
+  "query": "role of quantitative targets and qualitative arguments risk acceptance criteria",
+  "ts": "2026-11-03T01:59:38.839062+00:00"
+ },
+ {
+  "query": "change risk management process impact analysis hazards list steps overview",
+  "ts": "2026-11-03T02:01:54.758626+00:00"
+ },
+ {
+  "query": "severity levels likelihood levels definitions risk matrix risk score escalation approval authority",
+  "ts": "2026-11-03T02:01:57.447385+00:00"
+ },
+ {
+  "query": "risk mitigation verification confirm residual risk change rollback regression",
+  "ts": "2026-11-03T02:02:00.676992+00:00"
+ },
+ {
+  "query": "SOTIF unknown unsafe scenarios area 3 validation target residual risk acceptance criteria",
+  "ts": "2026-11-03T03:37:10.591519+00:00"
+ },
+ {
+  "query": "assurance case shall include claims arguments evidence structure",
+  "ts": "2026-11-03T03:37:13.271969+00:00"
+ },
+ {
+  "query": "system integrity level definition of integrity levels",
+  "ts": "2026-11-03T03:37:15.272541+00:00"
+ },
+ {
+  "query": "assurance in the life cycle assurance case maintenance during operation",
+  "ts": "2026-11-03T03:37:17.481283+00:00"
+ },
+ {
+  "query": "SUNRISE safety assurance framework credible simulation scenario database",
+  "ts": "2026-11-03T03:37:19.759879+00:00"
+ },
+ {
+  "query": "code of practice development of automated driving functions questions relevant phases",
+  "ts": "2026-11-03T03:37:21.948728+00:00"
+ },
+ {
+  "query": "safety assurance framework automated driving systems Department for Transport",
+  "ts": "2026-11-03T03:37:24.849897+00:00"
+ },
+ {
+  "query": "safety case framework guidance for creators claims evidence",
+  "ts": "2026-11-03T03:37:28.576272+00:00"
+ },
+ {
+  "query": "in-vehicle fallback test driver selection training oversight",
+  "ts": "2026-11-03T03:37:30.369011+00:00"
+ },
+ {
+  "query": "operational design domain attributes conceptual framework lexicon",
+  "ts": "2026-11-03T03:37:32.907791+00:00"
+ },
+ {
+  "query": "passenger-initiated emergency trip interruption",
+  "ts": "2026-11-03T03:37:34.475731+00:00"
+ },
+ {
+  "query": "data collection event analysis data elements ADS-DV",
+  "ts": "2026-11-03T03:37:38.028102+00:00"
+ },
+ {
+  "query": "first responder interactions fleet-managed ADS-DVs",
+  "ts": "2026-11-03T03:37:39.368586+00:00"
+ },
+ {
+  "query": "remote assistance use case advice not control of the vehicle",
+  "ts": "2026-11-03T03:37:41.634516+00:00"
+ },
+ {
+  "query": "risk assessment matrix severity categories probability levels risk acceptance authority high serious medium low",
+  "ts": "2026-11-03T03:37:45.261586+00:00"
+ },
+ {
+  "query": "propagating uncertainties Monte Carlo sampling epistemic aleatory event trees fault trees",
+  "ts": "2026-11-03T03:37:49.633153+00:00"
+ },
+ {
+  "query": "risk-informed decision making performance commitments deliberation analysis of alternatives",
+  "ts": "2026-11-03T03:37:52.048673+00:00"
+ },
+ {
+  "query": "continuous risk management identify analyze plan track control",
+  "ts": "2026-11-03T03:37:54.098680+00:00"
+ },
+ {
+  "query": "system safety risk acceptance hazard analysis framework",
+  "ts": "2026-11-03T03:37:57.681413+00:00"
+ },
+ {
+  "query": "tolerability of risk unacceptable broadly acceptable individual risk of death per year workers public",
+  "ts": "2026-11-03T03:38:00.545030+00:00"
+ },
+ {
+  "query": "minimal cut sets top event probability fault tree evaluation",
+  "ts": "2026-11-03T03:38:03.487326+00:00"
+ },
+ {
+  "query": "risk assessment matrix severity probability hazard risk index acceptable risk",
+  "ts": "2026-11-03T03:38:06.862834+00:00"
+ },
+ {
+  "query": "risk acceptance authority Component Acquisition Executive Program Executive Officer Program Manager risk level",
+  "ts": "2026-11-03T03:39:48.059691+00:00"
+ },
+ {
+  "query": "unacceptable region limit individual risk of death one in a thousand per annum workers one in ten thousand member of the public",
+  "ts": "2026-11-03T03:39:50.492883+00:00"
+ },
+ {
+  "query": "tolerable region risk must be reduced as low as reasonably practicable ALARP carry out cost benefit gross disproportion",
+  "ts": "2026-11-03T03:39:53.021450+00:00"
+ },
+ {
+  "query": "uncertainty analysis propagation Monte Carlo simulation sampling epistemic uncertainty distributions risk results",
+  "ts": "2026-11-03T03:39:57.028624+00:00"
+ },
+ {
+  "query": "performance measures imposed constraints performance commitments risk-informed alternative selection decision maker",
+  "ts": "2026-11-03T03:39:59.211441+00:00"
+ },
+ {
+  "query": "change risk management triggers hazards new risks evaluate safety measures iterate",
+  "ts": "2026-11-03T03:40:01.805668+00:00"
+ },
+ {
+  "query": "order of precedence for mitigating identified risk eliminate hazards design selection reduce risk design safety devices warning procedures training",
+  "ts": "2026-11-03T03:43:27.126328+00:00"
+ },
+ {
+  "query": "change risk management triggers examples software update new operational design domain hardware change",
+  "ts": "2026-11-03T03:43:30.333251+00:00"
+ },
+ {
+  "query": "safety risk management process five steps hazard identification risk analysis risk assessment risk control risk acceptance",
+  "ts": "2026-11-03T03:43:33.372579+00:00"
+ },
+ {
+  "query": "FMEA Action Priority table severity occurrence detection high medium low priority for action",
+  "ts": "2026-11-03T05:13:49.056153+00:00"
+ },
+ {
+  "query": "supplemental FMEA for monitoring and system response diagnostic monitoring",
+  "ts": "2026-11-03T05:13:52.173302+00:00"
+ },
+ {
+  "query": "claims supported by evidence: evidence criteria and claim criteria, assessment ratings",
+  "ts": "2026-11-03T05:13:55.259915+00:00"
+ },
+ {
+  "query": "triggers for reassessment of a safety case: event-based, time-based, as-needed",
+  "ts": "2026-11-03T05:13:58.532062+00:00"
+ },
+ {
+  "query": "assurance case concepts and vocabulary: claim, evidence, argument, integrity level",
+  "ts": "2026-11-03T05:13:59.977635+00:00"
+ },
+ {
+  "query": "taxonomy of off-nominal stopped conditions and degradation management",
+  "ts": "2026-11-03T05:14:01.812903+00:00"
+ },
+ {
+  "query": "remote assistant training qualification baseline competencies",
+  "ts": "2026-11-03T05:14:04.305930+00:00"
+ },
+ {
+  "query": "first responder interaction plan framework for fleet-managed ADS-DVs",
+  "ts": "2026-11-03T05:14:05.577940+00:00"
+ },
+ {
+  "query": "core safety information topics to communicate about an ADS safety approach",
+  "ts": "2026-11-03T05:14:07.373444+00:00"
+ },
+ {
+  "query": "safety inspection protocol lifecycle triggers minimum elements subject to inspection",
+  "ts": "2026-11-03T05:14:10.215022+00:00"
+ },
+ {
+  "query": "immediate post-crash behaviors five stages of crash events",
+  "ts": "2026-11-03T05:14:12.143294+00:00"
+ },
+ {
+  "query": "Action Priority AP replaces the Risk Priority Number RPN; why RPN is no longer used",
+  "ts": "2026-11-03T05:15:53.903396+00:00"
+ },
+ {
+  "query": "Action Priority High Medium Low definition: team must identify an action or justify why current controls are adequate",
+  "ts": "2026-11-03T05:15:57.297188+00:00"
+ },
+ {
+  "query": "Severity rating table 10 to 1: effect on vehicle or product, safety and regulatory, no effect",
+  "ts": "2026-11-03T05:16:00.579286+00:00"
+ },
+ {
+  "query": "Occurrence rating based on prevention controls, predicted frequency, field experience",
+  "ts": "2026-11-03T05:16:03.806463+00:00"
+ },
+ {
+  "query": "definition of risk factor and critical scenario in a scenario-based safety evaluation",
+  "ts": "2026-11-03T05:41:25.369488+00:00"
+ },
+ {
+  "query": "safety test objectives derived from risk acceptance criteria ALARP minimal endogenous mortality positive risk balance",
+  "ts": "2026-11-03T05:41:27.997975+00:00"
+ },
+ {
+  "query": "6.5 Specification of acceptance criteria for the residual risk: the acceptance criteria can be derived from",
+  "ts": "2026-11-03T05:41:50.654275+00:00"
+ },
+ {
+  "query": "dynamic driving task definition: real-time operational and tactical functions; object and event detection and response; operational design domain",
+  "ts": "2026-11-03T08:17:36.056625+00:00"
+ },
+ {
+  "query": "levels of driving automation Level 3 conditional Level 4 high Level 5 full automation fallback-ready user definitions",
+  "ts": "2026-11-03T08:17:38.588027+00:00"
+ },
+ {
+  "query": "minimal risk condition and minimal risk manoeuvre definition fallback",
+  "ts": "2026-11-03T08:17:41.172132+00:00"
+ },
+ {
+  "query": "driver who acts in an exemplary fashion reference performance model competent and careful driver",
+  "ts": "2026-11-03T08:17:43.867377+00:00"
+ },
+ {
+  "query": "railway RAMS EN 50126 tolerable hazard rate safety integrity level risk acceptance principle",
+  "ts": "2026-11-03T08:17:46.069675+00:00"
+ },
+ {
+  "query": "unreasonable risk is increased compared to a competently and carefully driven manual vehicle",
+  "ts": "2026-11-03T14:04:15.482888+00:00"
+ },
+ {
+  "query": "extremely improbable failure condition average probability per flight hour 1 x 10-9",
+  "ts": "2026-11-03T14:04:17.876633+00:00"
+ },
+ {
+  "query": "limitations of probabilistic risk assessment event chains versus systems theory",
+  "ts": "2026-11-03T14:04:22.242535+00:00"
+ },
+ {
+  "query": "technical risk management process crosscutting",
+  "ts": "2026-11-03T14:04:25.120808+00:00"
+ },
+ {
+  "query": "positive trust balance safety performance indicators field feedback deployment decision",
+  "ts": "2026-11-03T14:04:28.282860+00:00"
+ },
+ {
+  "query": "range compression risk inversion ordinal scales risk matrix problems",
+  "ts": "2026-11-03T14:04:29.970919+00:00"
+ },
+ {
+  "query": "Columbia accident organizational causes safety culture foam strike",
+  "ts": "2026-11-03T20:02:58.105896+00:00"
+ },
+ {
+  "query": "tyranny of net risk metrics fine-grain risk acceptance",
+  "ts": "2026-11-03T20:03:01.332966+00:00"
+ },
+ {
+  "query": "Defence Standard 00-56 safety management requirements for defence systems",
+  "ts": "2026-11-03T20:03:04.006127+00:00"
+ },
+ {
+  "query": "safety assurance argument context for automated driving MISRA",
+  "ts": "2026-11-03T20:03:07.688912+00:00"
+ },
+ {
+  "query": "approaches to assessing acceptable safety measurements processes thresholds public survey",
+  "ts": "2026-11-03T20:03:10.921395+00:00"
+ },
+ {
+  "query": "Risk Management Core explicit representation of risk automated driving",
+  "ts": "2026-11-03T20:03:13.414599+00:00"
+ },
+ {
+  "query": "risk-informed safety case system safety handbook volume 2 implementation examples",
+  "ts": "2026-11-03T20:03:24.499951+00:00"
+ },
+ {
+  "query": "JAMA automated driving safety evaluation framework scenario structure careful and competent driver",
+  "ts": "2026-11-03T20:03:28.347208+00:00"
+ },
+ {
+  "query": "safety management systems four components safety policy safety risk management safety assurance safety promotion advisory circular",
+  "ts": "2026-11-03T20:03:31.566462+00:00"
+ },
+ {
+  "query": "assessing atomic arguments syntax premises reasoning iTest primer",
+  "ts": "2026-11-03T20:03:34.596697+00:00"
+ },
+ {
+  "query": "systematic approach to safety case management goal structuring notation evolving safety case",
+  "ts": "2026-11-03T20:03:38.049989+00:00"
+ },
+ {
+  "query": "credible autonomy safety argumentation Koopman Kane Black",
+  "ts": "2026-11-03T20:03:40.538869+00:00"
+ },
+ {
+  "query": "How Safe Is Safe Enough slides MEM ALARP GAMAB positive risk balance",
+  "ts": "2026-11-03T20:03:43.462111+00:00"
+ },
+ {
+  "query": "AC 120-92D Safety Management Systems for Aviation Service Providers sample risk matrix severity likelihood",
+  "ts": "2026-11-03T20:03:59.505015+00:00"
+ },
+ {
+  "query": "L131 How Safe Is Safe Enough Koopman lecture slides risk acceptance principles",
+  "ts": "2026-11-03T20:04:02.481569+00:00"
+ },
+ {
+  "query": "L144 AV Safety and Net Risk Koopman lecture slides",
+  "ts": "2026-11-03T20:04:05.333694+00:00"
+ },
+ {
+  "query": "L152 Understanding AV Safety Koopman lecture slides 2024",
+  "ts": "2026-11-03T20:04:08.201727+00:00"
+ },
+ {
+  "query": "UL 4600 third edition update June 2023 slides what changed",
+  "ts": "2026-11-03T20:04:11.698924+00:00"
+ },
+ {
+  "query": "Koopman letter on UL 4600 2021",
+  "ts": "2026-11-03T20:04:14.995543+00:00"
+ },
+ {
+  "query": "The UL 4600 Guidebook free sample contents",
+  "ts": "2026-11-03T20:04:18.595512+00:00"
+ },
+ {
+  "query": "risk acceptance criteria ALARP individual risk hazard identification Rausand Haugen",
+  "ts": "2026-11-03T20:33:28.229826+00:00"
+ },
+ {
+  "query": "Toulmin warrant backing rebuttal qualifier claim grounds argument",
+  "ts": "2026-11-03T20:33:32.834604+00:00"
+ },
+ {
+  "query": "ISO TS 5083 automated driving systems design verification validation preview",
+  "ts": "2026-11-03T20:33:36.156268+00:00"
+ },
+ {
+  "query": "15026-2 assurance case claims argument evidence ANSI preview",
+  "ts": "2026-11-03T20:33:38.881192+00:00"
+ },
+ {
+  "query": "thresholds based on human driving performance: how a human-driving threshold would be set, what it means to be as safe as a human driver",
+  "ts": "2026-11-03T20:57:46.787444+00:00"
+ },
+ {
+  "query": "absolute safety goal threshold, how safe is safe enough, risk acceptance level for automated vehicles",
+  "ts": "2026-11-03T20:57:48.046433+00:00"
+ },
+ {
+  "query": "safety cases as crosscutting presentations of evidence; appraisal of how approaches build on each other",
+  "ts": "2026-11-03T20:57:49.281996+00:00"
+ },
+ {
+  "query": "recommendations for AV developers: measures, thresholds, transparency",
+  "ts": "2026-11-03T20:57:50.470460+00:00"
+ },
+ {
+  "query": "leading and lagging measures validity and feasibility, roadmanship",
+  "ts": "2026-11-03T20:57:51.722104+00:00"
+ },
+ {
+  "query": "how much better than a human driver must an automated vehicle be for positive risk balance; factor of 10 to 100",
+  "ts": "2026-11-03T20:57:52.054705+00:00"
+ },
+ {
+  "query": "risk transfer to vulnerable road users or demographic groups hidden by net risk",
+  "ts": "2026-11-03T20:57:52.350622+00:00"
+ },
+ {
+  "query": "negligent driving behavior; avoiding avoidable harm; why net risk is not enough",
+  "ts": "2026-11-03T20:57:52.636872+00:00"
+ },
+ {
+  "query": "conclusions: what should developers do beyond a net risk metric",
+  "ts": "2026-11-03T20:57:52.961739+00:00"
+ },
+ {
+  "query": "risk management core: explicit representation of risk, what it is and how it is used in automated driving",
+  "ts": "2026-11-03T20:57:53.031137+00:00"
+ },
+ {
+  "query": "definition of risk, risk assessment, risk evaluation, risk treatment in the automated driving architecture",
+  "ts": "2026-11-03T20:57:53.103020+00:00"
+ },
+ {
+  "query": "claim types, context, argument for automated driving; what the argument context must state",
+  "ts": "2026-11-03T20:57:53.302100+00:00"
+ },
+ {
+  "query": "operational design domain scope in the safety argument; assumptions and rationale claims",
+  "ts": "2026-11-03T20:57:53.498028+00:00"
+ },
+ {
+  "query": "risk to life reduced to as low as reasonably practicable; risk estimation; risk and compliance evaluation requirements",
+  "ts": "2026-11-03T20:57:54.331074+00:00"
+ },
+ {
+  "query": "tolerability and acceptance of risk; who accepts risk; safety committee; independent safety audit",
+  "ts": "2026-11-03T20:57:55.161879+00:00"
+ },
+ {
+  "query": "assessing an atomic argument: what makes the premises believed and the inference strong; steps of the assessment",
+  "ts": "2026-11-03T20:57:55.593884+00:00"
+ },
+ {
+  "query": "what changed in the third edition: safety performance indicators and post-incident requirements",
+  "ts": "2026-11-03T20:57:55.722412+00:00"
+ },
+ {
+  "query": "acceptable risk, risk evaluation, accepted risks, what the standard requires",
+  "ts": "2026-11-03T20:57:55.851615+00:00"
+ },
+ {
+  "query": "how many miles would automated vehicles have to be driven to demonstrate their safety relative to human drivers; failures per 100 million miles",
+  "ts": "2026-11-03T20:58:50.771124+00:00"
+ },
+ {
+  "query": "risk management core explicit representation of risk in automated driving architecture",
+  "ts": "2026-11-03T20:58:51.222478+00:00"
+ },
+ {
+  "query": "risk assessment, risk evaluation, risk treatment; acceptable risk; how the vehicle uses a risk model at runtime",
+  "ts": "2026-11-03T20:58:51.686723+00:00"
+ },
+ {
+  "query": "normalization of deviance; foam strikes accepted as in-family or acceptable risk; precedent justified continued flight",
+  "ts": "2026-11-03T20:58:55.892225+00:00"
+ },
+ {
+  "query": "organizational causes safety culture schedule pressure; engineers' concerns not escalated; decision-making",
+  "ts": "2026-11-03T20:59:00.125823+00:00"
+ },
+ {
+  "query": "risk acceptance by the decision maker; residual risk; risk-informed safety case; acceptable risk",
+  "ts": "2026-11-03T20:59:02.699670+00:00"
+ },
+ {
+  "query": "safety order of precedence; hazard analysis; risk matrix; closed-loop hazard tracking",
+  "ts": "2026-11-03T20:59:05.206043+00:00"
+ },
+ {
+  "query": "evolving safety case, safety case lifecycle, goal structuring notation, maintaining the case as the system changes",
+  "ts": "2026-11-03T20:59:05.403149+00:00"
+ },
+ {
+  "query": "credibility of an autonomy safety argument; what makes the argument credible; assurance gap and confirmation bias",
+  "ts": "2026-11-03T20:59:05.742973+00:00"
+ },
+ {
+  "query": "risk acceptance frameworks ALARP MEM NMAU GAMAB human baseline",
+  "ts": "2026-11-03T20:59:05.857019+00:00"
+ },
+ {
+  "query": "how much better than human drivers; Positive Risk Balance; Waymo",
+  "ts": "2026-11-03T20:59:05.973092+00:00"
+ },
+ {
+  "query": "what the book covers; safe enough; main argument; how the book is organized",
+  "ts": "2026-11-03T20:59:06.265751+00:00"
+ },
+ {
+  "query": "risk acceptance criteria: ALARP, individual risk, societal risk, F-N curve, tolerability regions",
+  "ts": "2026-11-03T20:59:17.293927+00:00"
+ },
+ {
+  "query": "risk matrix limitations, consistent ranking, calibration of risk matrix categories",
+  "ts": "2026-11-03T20:59:28.284830+00:00"
+ },
+ {
+  "query": "expert judgment biases overconfidence anchoring and calibration of experts, structured elicitation",
+  "ts": "2026-11-03T20:59:39.330872+00:00"
+ },
+ {
+  "query": "claim, data, warrant, backing, modal qualifier, rebuttal: the layout of an argument",
+  "ts": "2026-11-03T20:59:43.539819+00:00"
+ },
+ {
+  "query": "a warrant is a general rule authorizing the step from grounds to claim; backing certifies the warrant",
+  "ts": "2026-11-03T20:59:47.778830+00:00"
+ },
+ {
+  "query": "letter on UL 4600: main points about safety cases and acceptable risk",
+  "ts": "2026-11-03T20:59:47.900317+00:00"
+ },
+ {
+  "query": "net risk hides risk transfer; fatality rate comparisons; what to measure instead",
+  "ts": "2026-11-03T20:59:48.014053+00:00"
+ },
+ {
+  "query": "understanding AV safety: key ideas on acceptable risk, safety metrics and culture",
+  "ts": "2026-11-03T20:59:48.156194+00:00"
+ },
+ {
+  "query": "competent and careful driver model; reasonably foreseeable and preventable; definition",
+  "ts": "2026-11-03T20:59:52.669446+00:00"
+ },
+ {
+  "query": "safety risk management: hazard identification, risk analysis, assessment, control; acceptable level of risk decided by whom",
+  "ts": "2026-11-03T20:59:54.125746+00:00"
+ },
+ {
+  "query": "verification and validation activities at each level of the development process: unit, integration, system, vehicle level testing; V-model",
+  "ts": "2026-11-03T21:52:01.387378+00:00"
+ },
+ {
+  "query": "verification methods for automated driving: simulation, closed-course proving ground testing, public road testing; what each can show and its limits",
+  "ts": "2026-11-03T21:52:04.364979+00:00"
+ },
+ {
+  "query": "UL 4600 verification validation and test: coverage, simulation validity, test environments",
+  "ts": "2026-11-03T21:52:07.235577+00:00"
+ },
+ {
+  "query": "minimum risk manoeuvre, minimal risk condition, fallback when the system cannot continue; fail-safe response",
+  "ts": "2026-11-03T21:52:09.865350+00:00"
+ },
+ {
+  "query": "safe state, fail-operational, fail-safe, degraded operation, redundancy architecture for safety-related systems",
+  "ts": "2026-11-03T21:52:12.961581+00:00"
+ },
+ {
+  "query": "redundancy and diagnostic coverage, independence of safety mechanisms, freedom from interference",
+  "ts": "2026-11-03T21:52:15.887621+00:00"
+ },
+ {
+  "query": "safety culture: what an organization must do, leadership, reporting, questioning attitude, learning from incidents",
+  "ts": "2026-11-03T21:52:19.770880+00:00"
+ },
+ {
+  "query": "safety culture and organizational factors; leadership commitment; safety promotion; just culture reporting",
+  "ts": "2026-11-03T21:52:23.535948+00:00"
+ },
+ {
+  "query": "UL 4600 safety culture requirements",
+  "ts": "2026-11-03T21:52:23.633923+00:00"
+ },
+ {
+  "query": "Leveson safety culture chapter: how culture shapes safety, how to change it, safety information system",
+  "ts": "2026-11-03T21:52:29.278008+00:00"
+ },
+ {
+  "query": "AVSC safety management system safety culture and safety promotion",
+  "ts": "2026-11-03T21:52:31.954286+00:00"
+ },
+ {
+  "query": "safety culture requirements: the safety case shall address safety culture, management commitment, safety reporting",
+  "ts": "2026-11-03T21:52:59.674780+00:00"
+ },
+ {
+  "query": "12.3 coverage of verification validation, run-time monitoring, V&V methods limitations of simulation",
+  "ts": "2026-11-03T21:53:07.269988+00:00"
+ },
+ {
+  "query": "minimum risk manoeuvre definition and when the system shall perform it; fail-safe response",
+  "ts": "2026-11-03T21:53:08.181728+00:00"
+ },
+ {
+  "query": "limits of simulation versus real-world testing; validity of simulation models; test environment selection",
+  "ts": "2026-11-03T21:53:10.709760+00:00"
+ },
+ {
+  "query": "definitions: hazard, hazardous event, risk, accident scenario, the words of risk analysis",
+  "ts": "2026-11-03T23:10:17.359038+00:00"
+ },
+ {
+  "query": "frequency versus probability; the difference between a probability and a frequency",
+  "ts": "2026-11-03T23:10:28.248977+00:00"
+ },
+ {
+  "query": "hazard identification: purpose and when to carry it out; checklists and brainstorming",
+  "ts": "2026-11-03T23:10:39.489026+00:00"
+ },
+ {
+  "query": "hazard analysis and risk assessment: severity, exposure, controllability classes; determining ASIL",
+  "ts": "2026-11-03T23:10:42.209613+00:00"
+ },
+ {
+  "query": "FMEA failure mode and effects analysis: what it identifies and its limitations",
+  "ts": "2026-11-03T23:10:46.421304+00:00"
+ },
+ {
+  "query": "fault tree analysis: top event, basic events, logic gates; what it is used for and limitations",
+  "ts": "2026-11-03T23:10:51.906478+00:00"
+ },
+ {
+  "query": "event tree analysis: initiating event, branches, outcomes; what it is used for and limitations",
+  "ts": "2026-11-03T23:10:59.450222+00:00"
+ },
+ {
+  "query": "bow tie analysis threats consequences barriers; LOPA layers of protection analysis",
+  "ts": "2026-11-03T23:11:05.387754+00:00"
+ },
+ {
+  "query": "selecting techniques for risk assessment: factors in selection, availability of information, level of uncertainty",
+  "ts": "2026-11-03T23:11:09.954538+00:00"
+ },
+ {
+  "query": "unsafe control actions: definition and the four types; control structure",
+  "ts": "2026-11-03T23:11:13.543742+00:00"
+ },
+ {
+  "query": "definitions of hazard, mishap, risk: severity and probability",
+  "ts": "2026-11-03T23:11:17.369117+00:00"
+ },
+ {
+  "query": "exposure as a conditional probability of being in a scenario where a hazardous behaviour can lead to harm",
+  "ts": "2026-11-03T23:11:21.416425+00:00"
+ },
+ {
+  "query": "crash severity and frequency metrics for fleet-operated vehicles; safety goals",
+  "ts": "2026-11-03T23:11:23.753472+00:00"
+ },
+ {
+  "query": "risk is the effect of uncertainty on objectives; likelihood and consequences; risk criteria",
+  "ts": "2026-11-03T23:11:27.380629+00:00"
+ }
+]

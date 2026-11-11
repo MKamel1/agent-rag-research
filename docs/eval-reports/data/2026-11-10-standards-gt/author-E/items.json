@@ -1,0 +1,714 @@
+{
+ "_metadata": {
+  "author": "E",
+  "model": "claude-sonnet-5-5",
+  "date": "2026-11-10",
+  "counts": {
+   "cross-document": 12,
+   "absent": 9,
+   "partial-absent": 5
+  }
+ },
+ "ground_truth": [
+  {
+   "question_id": "Q-STD-E-001",
+   "tests": "answerable",
+   "dimension": "cross-document",
+   "difficulty": "medium",
+   "question_type": "Comparison",
+   "question_text": "How do the severity categories in MIL-STD-882E differ from the severity classes S0 to S3 of ISO 26262 part 3 in what each level is defined by?",
+   "answer_text": "MIL-STD-882E defines four categories (Catastrophic 1 to Negligible 4) by death/disability, environmental impact and monetary-loss thresholds (Catastrophic: death, permanent total disability, irreversible significant environmental impact or loss of $10M or more). ISO 26262-3 defines S0-S3 purely by injury outcome, S3 being life-threatening (survival uncertain) or fatal injuries.",
+   "supporting_passages": [
+    {
+     "paper_id": "local:4332c96f2fd6",
+     "passage_excerpt": "| Catastrophic | 1 | Could result in one or more of the following: death, permanent total disability, irreversiblesignificant environmental impact, or monetary loss equal to or exceeding $10M. |",
+     "gold_chunk_id": "local:4332c96f2fd6:c40",
+     "gold_block_id": "local:4332c96f2fd6:b117",
+     "excerpt_block_id": "local:4332c96f2fd6:b117",
+     "n_chunks_containing_excerpt": 1
+    },
+    {
+     "paper_id": "local:2416292a3545",
+     "passage_excerpt": "| Description | No injuries | Light and moderate injuries | Severe and life-threatening injuries (survival probable) | Life-threatening injuries (survival uncertain),fatal injuries |",
+     "gold_chunk_id": "local:2416292a3545:c53",
+     "gold_block_id": "local:2416292a3545:b219",
+     "excerpt_block_id": null,
+     "n_chunks_containing_excerpt": 1
+    }
+   ],
+   "seed_query": "severity levels likelihood levels definitions risk matrix risk score escalation approval authority"
+  },
+  {
+   "question_id": "Q-STD-E-002",
+   "tests": "answerable",
+   "dimension": "cross-document",
+   "difficulty": "easy",
+   "question_type": "Comparison",
+   "question_text": "Does ISO 21448 exclude failures that the ISO 26262 family already addresses, and in ISO 26262-1's vocabulary entry for functional safety, which term number is cited for unreasonable risk?",
+   "answer_text": "Yes, ISO 21448 does not apply to faults covered by the ISO 26262 series; in ISO 26262-1 the functional safety entry cites term 3.176 for unreasonable risk (with hazards 3.75, malfunctioning behaviour 3.88 and E/E systems 3.40).",
+   "supporting_passages": [
+    {
+     "paper_id": "local:d4ceb75c64ab",
+     "passage_excerpt": "This document does not apply to: — faults covered by the ISO 26262 series;",
+     "gold_chunk_id": "local:d4ceb75c64ab:c18",
+     "gold_block_id": "local:d4ceb75c64ab:b68",
+     "excerpt_block_id": null,
+     "n_chunks_containing_excerpt": 1
+    },
+    {
+     "paper_id": "local:cb40d304cbca",
+     "passage_excerpt": "absence of unreasonable risk (3.176) due to hazards (3.75) caused by malfunctioning behaviour (3.88) of E/E systems (3.40)",
+     "gold_chunk_id": "local:cb40d304cbca:c135",
+     "gold_block_id": "local:cb40d304cbca:b410",
+     "excerpt_block_id": "local:cb40d304cbca:b411",
+     "n_chunks_containing_excerpt": 1
+    }
+   ],
+   "seed_query": "SOTIF vs functional safety",
+   "additional_gold_paper_ids": [
+    "local:c0d3ca177aaf"
+   ]
+  },
+  {
+   "question_id": "Q-STD-E-003",
+   "tests": "answerable",
+   "dimension": "cross-document",
+   "difficulty": "medium",
+   "question_type": "Comparison",
+   "question_text": "Under EU Implementing Regulation 2022/1426, what may an on-board operator not do while the ADS performs the driving task, and how does AVSC's remote assistance best practice describe the degree of vehicle control a remote assistant takes?",
+   "answer_text": "The EU regulation says the on-board operator shall not drive the fully automated vehicle and the ADS shall continue to perform the DDT; AVSC says remote assistance gives real-time guidance and information without assuming direct control, i.e. without performing any part of the DDT.",
+   "supporting_passages": [
+    {
+     "paper_id": "local:77d354cc8af7",
+     "passage_excerpt": "In the above situations, the on-board operator shall not drive the fully automated vehicle and the ADS shall continue to perform the DDT.",
+     "gold_chunk_id": "local:77d354cc8af7:c16",
+     "gold_block_id": "local:77d354cc8af7:b65",
+     "excerpt_block_id": "local:77d354cc8af7:b66",
+     "n_chunks_containing_excerpt": 1
+    },
+    {
+     "paper_id": "local:b4287480c380",
+     "passage_excerpt": "Unlike remote driving, RA primarily serves to provide real-time guidance and information to an ADS-DV in specific scenarios without assuming direct control of the vehicle (i.e., without performing any part of the DDT).",
+     "gold_chunk_id": "local:b4287480c380:c39",
+     "gold_block_id": "local:b4287480c380:b113",
+     "excerpt_block_id": "local:b4287480c380:b116",
+     "n_chunks_containing_excerpt": 1
+    }
+   ],
+   "seed_query": "remote assistance use case advice not control of the vehicle"
+  },
+  {
+   "question_id": "Q-STD-E-004",
+   "tests": "answerable",
+   "dimension": "cross-document",
+   "difficulty": "hard",
+   "question_type": "Comparison",
+   "question_text": "How does the HSE decide that a duty holder has failed to cut risk as far as reasonably practicable, and how does Koopman's How Safe Is Safe Enough lecture summarise the same principle?",
+   "answer_text": "HSE (R2P2) treats ALARP duties as not complied with if the regime fails the 'gross disproportion' test; Koopman's slides summarise ALARP as reducing identified risks unless the cost is extreme.",
+   "supporting_passages": [
+    {
+     "paper_id": "local:d5f3d058bb27",
+     "passage_excerpt": "HSE believes that such duties have not been complied with if the regime introduced by duty holders to control risks fails the above ‘gross disproportion’ test.",
+     "gold_chunk_id": "local:d5f3d058bb27:c220",
+     "gold_block_id": "local:d5f3d058bb27:b599",
+     "excerpt_block_id": "local:d5f3d058bb27:b599",
+     "n_chunks_containing_excerpt": 1
+    },
+    {
+     "paper_id": "local:dcb47a114938",
+     "passage_excerpt": "ALARP – As Low As Reasonably Practicable\n\n Reduce identified risks unless cost is extreme",
+     "gold_chunk_id": "local:dcb47a114938:c7",
+     "gold_block_id": "local:dcb47a114938:b43",
+     "excerpt_block_id": null,
+     "n_chunks_containing_excerpt": 1
+    }
+   ],
+   "seed_query": "tolerable region risk must be reduced as low as reasonably practicable ALARP carry out cost benefit gross disp"
+  },
+  {
+   "question_id": "Q-STD-E-005",
+   "tests": "answerable",
+   "dimension": "cross-document",
+   "difficulty": "medium",
+   "question_type": "Comparison",
+   "question_text": "Which are the first four rate categories a UL 4600 draft item must define quantified SPIs for at a minimum, and how do Koopman's third-edition update slides characterise an SPI?",
+   "answer_text": "UL 4600 draft requires quantified SPIs covering at least incident rates, rule violation rates, minor collision rates (property damage only) and minor injury rates (listed items 1 to 4); the slides describe an SPI as a safety-specific KPI that provides metrics on safety case validity.",
+   "supporting_passages": [
+    {
+     "paper_id": "local:c3c5f9de20cc",
+     "passage_excerpt": "a) Define quantified SPIs for the overall item encompassing at least: 1) Incident rates EXAMPLE: Violation of safety margins with no damage 2) Rule violation rates EXAMPLE: Violation of traffic regulations and other rules with no damage 3) Minor collision rates (property damage only) 4) Minor injury rates",
+     "gold_chunk_id": "local:c3c5f9de20cc:c1237",
+     "gold_block_id": "local:c3c5f9de20cc:b5622",
+     "excerpt_block_id": null,
+     "n_chunks_containing_excerpt": 1
+    },
+    {
+     "paper_id": "local:9adcc5121bd5",
+     "passage_excerpt": "A KPI (Key Performance Indicator) specific to safety\n\n Provides metrics on safety case validity",
+     "gold_chunk_id": "local:9adcc5121bd5:c22",
+     "gold_block_id": "local:9adcc5121bd5:b94",
+     "excerpt_block_id": null,
+     "n_chunks_containing_excerpt": 1
+    }
+   ],
+   "seed_query": "safety performance indicators field monitoring feedback safety case"
+  },
+  {
+   "question_id": "Q-STD-E-006",
+   "tests": "answerable",
+   "dimension": "cross-document",
+   "difficulty": "medium",
+   "question_type": "Comparison",
+   "question_text": "In the Safety First for Automated Driving white paper, where does the positive-risk-balance target come from, and how do Koopman and Wagner say that target is usually expressed in numbers?",
+   "answer_text": "SaFAD ties the target of a positive risk balance compared with human driving performance to the German Ethics Commission recommendation (June 2017); Koopman and Wagner say PRB is typically stated as a lower fatality rate than comparable human-driven vehicles.",
+   "supporting_passages": [
+    {
+     "paper_id": "local:23f46dde097b",
+     "passage_excerpt": "However, there are also major challenges in realizing the full safety benefit of automated driving in order to achieve the target of a “positive risk balance compared to human driving performance”, as recommended by the German Ethics Commission in June, 2017 (BMVI, 2017).",
+     "gold_chunk_id": "local:23f46dde097b:c35",
+     "gold_block_id": "local:23f46dde097b:b54",
+     "excerpt_block_id": "local:23f46dde097b:b55",
+     "n_chunks_containing_excerpt": 1
+    },
+    {
+     "paper_id": "local:36fe900b97bc",
+     "passage_excerpt": "Typically, PRB is stated in terms of the SDC having a lower fatality rate than otherwise comparable human-driven vehicles.",
+     "gold_chunk_id": "local:36fe900b97bc:c7",
+     "gold_block_id": "local:36fe900b97bc:b13",
+     "excerpt_block_id": "local:36fe900b97bc:b15",
+     "n_chunks_containing_excerpt": 1
+    }
+   ],
+   "seed_query": "positive risk balance Safety First for Automated Driving"
+  },
+  {
+   "question_id": "Q-STD-E-007",
+   "tests": "answerable",
+   "dimension": "cross-document",
+   "difficulty": "medium",
+   "question_type": "Comparison",
+   "question_text": "How do MIL-STD-882E, the STPA Handbook and ISO 26262 part 1 each define a hazard?",
+   "answer_text": "MIL-STD-882E: a real or potential condition that could lead to a mishap causing death, injury, illness or damage. STPA: a system state or set of conditions that, with worst-case environmental conditions, will lead to a loss. ISO 26262-1: a potential source of harm caused by malfunctioning behaviour of the item.",
+   "supporting_passages": [
+    {
+     "paper_id": "local:4332c96f2fd6",
+     "passage_excerpt": "3.2.14 Hazard. A real or potential condition that could lead to an unplanned event or series of events (i.e. mishap) resulting in death, injury, occupational illness, damage to or loss of equipment or property, or damage to the environment.",
+     "gold_chunk_id": "local:4332c96f2fd6:c27",
+     "gold_block_id": "local:4332c96f2fd6:b68",
+     "excerpt_block_id": "local:4332c96f2fd6:b69",
+     "n_chunks_containing_excerpt": 1
+    },
+    {
+     "paper_id": "local:63091747b674",
+     "passage_excerpt": "Definition: A hazard is a system state or set of conditions that, together with a particular set of worst-case environmental conditions, will lead to a loss.",
+     "gold_chunk_id": "local:63091747b674:c37",
+     "gold_block_id": "local:63091747b674:b119",
+     "excerpt_block_id": "local:63091747b674:b120",
+     "n_chunks_containing_excerpt": 1
+    },
+    {
+     "paper_id": "local:cb40d304cbca",
+     "passage_excerpt": "potential source of harm (3.74) caused by malfunctioning behaviour (3.88) of the item (3.84)",
+     "gold_chunk_id": "local:cb40d304cbca:c151",
+     "gold_block_id": "local:cb40d304cbca:b441",
+     "excerpt_block_id": "local:cb40d304cbca:b442",
+     "n_chunks_containing_excerpt": 1
+    }
+   ],
+   "seed_query": "definitions of hazard, mishap, risk: severity and probability"
+  },
+  {
+   "question_id": "Q-STD-E-008",
+   "tests": "answerable",
+   "dimension": "cross-document",
+   "difficulty": "medium",
+   "question_type": "Comparison",
+   "question_text": "What does UN Regulation 157 say an ALKS operational design domain consists of, and who does AVSC00002 say determines an ADS vehicle's ODD?",
+   "answer_text": "R157: the specific operating conditions (environmental, geographic, time-of-day, traffic, infrastructure, speed range, weather, etc.) within the regulation's boundaries under which the ALKS is designed to operate without driver intervention. AVSC00002: the ODD is defined by the manufacturer based on numerous factors.",
+   "supporting_passages": [
+    {
+     "paper_id": "local:9def83274286",
+     "passage_excerpt": "defines the specific operating conditions (e.g. environmental, geographic, time-of-day, traffic, infrastructure, speed range, weather and other conditions) within the boundaries fixed by this regulation under which the automated lane keeping system is designed to operate without any intervention by the driver.",
+     "gold_chunk_id": "local:9def83274286:c88",
+     "gold_block_id": "local:9def83274286:b396",
+     "excerpt_block_id": "local:9def83274286:b398",
+     "n_chunks_containing_excerpt": 1
+    },
+    {
+     "paper_id": "local:a744d998a5b7",
+     "passage_excerpt": "An ADS-operated vehicle’s ODD is defined by the manufacturer based on numerous factors.",
+     "gold_chunk_id": "local:a744d998a5b7:c5",
+     "gold_block_id": "local:a744d998a5b7:b6",
+     "excerpt_block_id": "local:a744d998a5b7:b6",
+     "n_chunks_containing_excerpt": 1
+    }
+   ],
+   "seed_query": "operational design domain attributes conceptual framework lexicon"
+  },
+  {
+   "question_id": "Q-STD-E-009",
+   "tests": "answerable",
+   "dimension": "cross-document",
+   "difficulty": "hard",
+   "question_type": "Comparison",
+   "question_text": "Does the FAA advisory circular treat its per-flight-hour probability guidance as sufficient on its own for catastrophic failures, and what random-hardware-failure target does ISO 26262 part 5 set for ASIL D?",
+   "answer_text": "FAA AC 25.1309-1B: meeting the 1 x 10^-9 per flight hour guidance alone is not sufficient if relevant experience indicates the failure condition can occur. ISO 26262-5: ASIL D target is below 10^-8 per hour (ASIL C and B below 10^-7 per hour).",
+   "supporting_passages": [
+    {
+     "paper_id": "local:90e625593d47",
+     "passage_excerpt": "For example, meeting the 1 x 10<sup>-9</sup> per flight hour quantitative probability guidance alone is not sufficient to show compliance with the intent of the “extremely improbable” requirement of § 25.1309(b) if relevant experience indicates the failure condition can occur.",
+     "gold_chunk_id": "local:90e625593d47:c189",
+     "gold_block_id": "local:90e625593d47:b472",
+     "excerpt_block_id": "local:90e625593d47:b473",
+     "n_chunks_containing_excerpt": 1
+    },
+    {
+     "paper_id": "local:82d7244d048b",
+     "passage_excerpt": "| ASIL | Random hardware failure target values | | D | <10-8 h-1 | | C | <10-7 h-1 | | B | <10-7 h-1 |",
+     "gold_chunk_id": "local:82d7244d048b:c112",
+     "gold_block_id": "local:82d7244d048b:b477",
+     "excerpt_block_id": "local:82d7244d048b:b477",
+     "n_chunks_containing_excerpt": 1
+    }
+   ],
+   "seed_query": "extremely improbable failure condition average probability per flight hour 1 x 10-9"
+  },
+  {
+   "question_id": "Q-STD-E-010",
+   "tests": "answerable",
+   "dimension": "cross-document",
+   "difficulty": "hard",
+   "question_type": "Comparison",
+   "question_text": "In MIL-STD-882E's risk assessment matrix, what level do frequent and probable events get for the worst severity category, and what does Krisper call the loss of uncertainty ranges when values are forced into ordinal classes?",
+   "answer_text": "MIL-STD-882E rates both Frequent(A) and Probable(B) catastrophic hazards as High, so the two probability levels are not distinguished; Krisper calls the compression of real values into ordinal classes, losing the uncertainty ranges, 'range compression'.",
+   "supporting_passages": [
+    {
+     "paper_id": "local:4332c96f2fd6",
+     "passage_excerpt": "| Frequent(A) | High | High | Serious | Medium | | Probable(B) | High | High | Serious | Medium |",
+     "gold_chunk_id": "local:4332c96f2fd6:c44",
+     "gold_block_id": "local:4332c96f2fd6:b123",
+     "excerpt_block_id": "local:4332c96f2fd6:b123",
+     "n_chunks_containing_excerpt": 1
+    },
+    {
+     "paper_id": "2103.05440",
+     "passage_excerpt": "(G) Range Compression: Through pressing the real values into a scheme of ordinal scales, the original uncertainty ranges get lost, and the whole value range of an ordinal class is applied to the values.",
+     "gold_chunk_id": "2103.05440:c42",
+     "gold_block_id": "2103.05440:b69",
+     "excerpt_block_id": "2103.05440:b71",
+     "n_chunks_containing_excerpt": 1
+    }
+   ],
+   "seed_query": "range compression risk inversion ordinal scales risk matrix problems"
+  },
+  {
+   "question_id": "Q-STD-E-011",
+   "tests": "answerable",
+   "dimension": "cross-document",
+   "difficulty": "medium",
+   "question_type": "Comparison",
+   "question_text": "Does UL 4600 itself set the acceptable risk level for an item, and how does EU Implementing Regulation 2022/1426 fix the benchmark for unreasonable risk?",
+   "answer_text": "UL 4600 (draft) puts setting acceptable risk levels out of scope and only requires decisions to be recorded; the EU regulation defines unreasonable risk as an overall risk level increased compared with a manually driven vehicle in comparable services and situations within the ODD.",
+   "supporting_passages": [
+    {
+     "paper_id": "local:c3c5f9de20cc",
+     "passage_excerpt": "1.3.4 Two areas out of scope for this standard are setting acceptable risk levels and setting forth requirements for ethical product release decisions and any ethical aspects of product behavior.",
+     "gold_chunk_id": "local:c3c5f9de20cc:c38",
+     "gold_block_id": "local:c3c5f9de20cc:b36",
+     "excerpt_block_id": "local:c3c5f9de20cc:b37",
+     "n_chunks_containing_excerpt": 1
+    },
+    {
+     "paper_id": "local:77d354cc8af7",
+     "passage_excerpt": "means the overall level of risk for the vehicle occupants and other road users which is increased compared to a manually driven vehicle in comparable transportation services and situations within the operational design domain.",
+     "gold_chunk_id": "local:77d354cc8af7:c17",
+     "gold_block_id": "local:77d354cc8af7:b71",
+     "excerpt_block_id": "local:77d354cc8af7:b71",
+     "n_chunks_containing_excerpt": 1
+    }
+   ],
+   "seed_query": "unreasonable risk is increased compared to a competently and carefully driven manual vehicle"
+  },
+  {
+   "question_id": "Q-STD-E-012",
+   "tests": "answerable",
+   "dimension": "cross-document",
+   "difficulty": "medium",
+   "question_type": "Comparison",
+   "question_text": "How does IEC 31010 describe the risk priority number used in FMEA, and what does the AIAG-VDA handbook say about relying on RPN alone?",
+   "answer_text": "IEC 31010: RPN is an index taking the product of ratings for consequence, likelihood and detectability, giving higher priority when a failure is hard to detect. AIAG-VDA: RPN alone is not adequate to determine the need for action because it gives equal weight to S, O and D.",
+   "supporting_passages": [
+    {
+     "paper_id": "local:41a462827e37",
+     "passage_excerpt": "NOTE The RPN is an index method (B.8.6) that takes the product of ratings for consequence of failure, likelihood of failure and ability to detect the problem (detection). A failure is given a higher priority if it is difficult to detect.",
+     "gold_chunk_id": "local:41a462827e37:c193",
+     "gold_block_id": "local:41a462827e37:b760",
+     "excerpt_block_id": "local:41a462827e37:b760",
+     "n_chunks_containing_excerpt": 1
+    },
+    {
+     "paper_id": "local:0aa9a802631e",
+     "passage_excerpt": "RPN alone is not an adequate method to determine the need for more actions since RPN gives equal weight to S, O, and D.",
+     "gold_chunk_id": "local:0aa9a802631e:c155",
+     "gold_block_id": "local:0aa9a802631e:b674",
+     "excerpt_block_id": "local:0aa9a802631e:b674",
+     "n_chunks_containing_excerpt": 2
+    }
+   ],
+   "seed_query": "Action Priority AP replaces the Risk Priority Number RPN; why RPN is no longer used"
+  },
+  {
+   "question_id": "Q-STD-E-013",
+   "tests": "absent",
+   "dimension": "absent",
+   "difficulty": "medium",
+   "question_type": "Requirement",
+   "question_text": "Which minimum set of assumptions about other road users' speed and braking does IEEE 2846 require a developer to use in its foreseeable-behaviour model?",
+   "answer_text": "Not in the corpus: IEEE 2846 is held only as a one-line citation in Salem et al.; its content is not reproduced.",
+   "absence_evidence": [
+    {
+     "pattern": "IEEE (Std )?2846",
+     "hits": 1,
+     "note": "1 hit, Salem et al. says guidelines on assumptions about other road users 'can be found in IEEE 2846' - a pointer, no content"
+    },
+    {
+     "pattern": "foreseeable (behaviou?r|assumption)",
+     "hits": 2,
+     "note": "2 hits both in ISO 21448 (reasonably foreseeable behaviours of other road users) - generic SOTIF text, no IEEE 2846 assumption set"
+    }
+   ],
+   "nearest_distractor_paper_id": "1708.06374"
+  },
+  {
+   "question_id": "Q-STD-E-014",
+   "tests": "absent",
+   "dimension": "absent",
+   "difficulty": "medium",
+   "question_type": "Fact-Lookup",
+   "question_text": "How many years is a Certificate of Compliance for a Cyber Security Management System valid under UN Regulation No 155 before it has to be renewed?",
+   "answer_text": "Not in the corpus: UN R155 is only cited by other documents; its certificate validity rules are not in the corpus.",
+   "absence_evidence": [
+    {
+     "pattern": "R155|Regulation No\\.? 155",
+     "hits": 11,
+     "note": "11 chunks citing R155 as a cross-reference (EU 2022/1426, R157, MIRA, CoP-ADF, Steege); none states certificate validity"
+    },
+    {
+     "pattern": "Cyber ?Security Management System",
+     "hits": 39,
+     "note": "39 chunks, mostly CoP-ADF describing a CSMS generally plus R157/EU/ISO 21434 mentions; none gives a certificate validity period"
+    },
+    {
+     "pattern": "valid for|validity period|period of validity",
+     "hits": 37,
+     "note": "37 generic hits (valid for ...) in unrelated contexts, none about a CSMS certificate"
+    }
+   ],
+   "nearest_distractor_paper_id": "local:77d354cc8af7"
+  },
+  {
+   "question_id": "Q-STD-E-015",
+   "tests": "absent",
+   "dimension": "absent",
+   "difficulty": "medium",
+   "question_type": "Requirement",
+   "question_text": "Which clause of China's GB/T 40429 sets the takeover time requirement for Level 3 driving automation systems?",
+   "answer_text": "Not in the corpus: no Chinese GB or GB/T standard is held; China appears only in legal commentary and a SaFAD regional overview.",
+   "absence_evidence": [
+    {
+     "pattern": "GB ?/?T|GB ?4\\d{4}",
+     "hits": 0,
+     "note": "0 hits for any GB / GB/T designation"
+    },
+    {
+     "pattern": "China|Chinese",
+     "hits": 88,
+     "note": "88 chunks: Steege liability commentary, SUNRISE, SaFAD regional summary of MIIT guidelines; none gives a GB/T clause"
+    }
+   ],
+   "nearest_distractor_paper_id": "local:23f46dde097b"
+  },
+  {
+   "question_id": "Q-STD-E-016",
+   "tests": "absent",
+   "dimension": "absent",
+   "difficulty": "medium",
+   "question_type": "Requirement",
+   "question_text": "What minimum liability insurance amount does the California Public Utilities Commission require for a driverless deployment permit for passenger service?",
+   "answer_text": "Not in the corpus: no CPUC rules are held; California appears only in testing-permit and disengagement-report commentary.",
+   "absence_evidence": [
+    {
+     "pattern": "CPUC|Public Utilities Commission",
+     "hits": 2,
+     "note": "2 hits unrelated: Walkerton water utility (Leveson) and a RAND mention"
+    },
+    {
+     "pattern": "driverless (deployment|testing) permit|OL ?31[16]",
+     "hits": 0,
+     "note": "0 hits"
+    },
+    {
+     "pattern": "California",
+     "hits": 93,
+     "note": "broad: hits are RAND/NHTSA disengagement reporting, AAMVA titling/permit examples and CAIB geography; none gives insurance or CPUC permit terms"
+    }
+   ],
+   "nearest_distractor_paper_id": "local:71c88a1d2bc1"
+  },
+  {
+   "question_id": "Q-STD-E-017",
+   "tests": "absent",
+   "dimension": "absent",
+   "difficulty": "medium",
+   "question_type": "Requirement",
+   "question_text": "What peak deceleration limit does ISO 23793-1 impose on a minimal risk manoeuvre of an automated driving system?",
+   "answer_text": "Not in the corpus: ISO 23793-1:2024 (Minimal risk manoeuvre (MRM) for automated driving) is cited only as a bare reference in AVSC-I-06 (local:61b72628b14f, c14); its limits are not reproduced anywhere.",
+   "absence_evidence": [
+    {
+     "pattern": "ISO 23793",
+     "hits": 0,
+     "note": "0 hits only because the one citation reads 'ISO Standard No. 23793-1'; see next scan"
+    },
+    {
+     "pattern": "23793",
+     "hits": 1,
+     "note": "1 hit: local:61b72628b14f c14, a bare bibliography citation of ISO 23793-1:2024 (title only, plus URL); it states no deceleration limit or any content"
+    },
+    {
+     "pattern": "peak deceleration|deceleration limit",
+     "hits": 1,
+     "note": "1 hit, MIRA comfort limits for standing passengers; not an MRM limit. Near-misses not about ISO 23793-1: EU 2022/1426 MRM aim of 4,0 m/s2 and MIRA 4.0 m/s2 aim"
+    }
+   ],
+   "nearest_distractor_paper_id": "local:d4ceb75c64ab"
+  },
+  {
+   "question_id": "Q-STD-E-018",
+   "tests": "absent",
+   "dimension": "absent",
+   "difficulty": "medium",
+   "question_type": "Definition",
+   "question_text": "What are the seven foundational requirements FR 1 to FR 7 that IEC 62443-3-3 defines for control-system security?",
+   "answer_text": "Not in the corpus: IEC 62443 is only named in passing references; its foundational requirements are not described.",
+   "absence_evidence": [
+    {
+     "pattern": "foundational requirement",
+     "hits": 0
+    },
+    {
+     "pattern": "IEC 62443|62443",
+     "hits": 6,
+     "note": "5 hits that only name the standard as a reference (Rausand and Haugen, UL 4600 scoping list, ISO/SAE 21434)"
+    }
+   ],
+   "nearest_distractor_paper_id": "local:25d3a31a9aa1"
+  },
+  {
+   "question_id": "Q-STD-E-019",
+   "tests": "absent",
+   "dimension": "absent",
+   "difficulty": "easy",
+   "question_type": "Requirement",
+   "question_text": "What minimum time-gap setting does ISO 15622 require an adaptive cruise control system to offer the driver?",
+   "answer_text": "Not in the corpus: ISO 15622 appears only in a standards list in AV 3.0.",
+   "absence_evidence": [
+    {
+     "pattern": "ISO 15622",
+     "hits": 3,
+     "note": "3 hits, all AV 3.0 lists of related standards, titles only"
+    },
+    {
+     "pattern": "time ?gap",
+     "hits": 5,
+     "note": "5 hits: R157 ALKS following-distance and AVSC/MIRA text; none gives ISO 15622 ACC settings"
+    },
+    {
+     "pattern": "adaptive cruise",
+     "hits": 36,
+     "note": "36 mentions of ACC as an example technology; no performance requirements"
+    }
+   ],
+   "nearest_distractor_paper_id": "local:33ef25a38c1c"
+  },
+  {
+   "question_id": "Q-STD-E-020",
+   "tests": "absent",
+   "dimension": "absent",
+   "difficulty": "medium",
+   "question_type": "Requirement",
+   "question_text": "Which paragraphs of Article 9 of the EU AI Act set out what a risk management system for high-risk AI systems must contain?",
+   "answer_text": "Not in the corpus: the AI Act is discussed only in Steege's liability chapters; Article 9 is not described.",
+   "absence_evidence": [
+    {
+     "pattern": "EU AI Act|Artificial Intelligence Act|42001",
+     "hits": 2,
+     "note": "2 hits: Steege one-line mention and a reference-list entry in AVSC-I-04"
+    },
+    {
+     "pattern": "AI Act",
+     "hits": 5,
+     "note": "5 hits all Steege on liability (AILD, classification of high-risk AI, Article 2(2) exclusion); no risk management system obligations"
+    },
+    {
+     "pattern": "Article 9\\b",
+     "hits": 0,
+     "note": "0 hits"
+    }
+   ],
+   "nearest_distractor_paper_id": "local:1a5e084cb8bb"
+  },
+  {
+   "question_id": "Q-STD-E-021",
+   "tests": "absent",
+   "dimension": "absent",
+   "difficulty": "easy",
+   "question_type": "Fact-Lookup",
+   "question_text": "Which PFHd range does ISO 13849-1 assign to performance level d for safety-related machinery control parts?",
+   "answer_text": "Not in the corpus: ISO 13849 is only named in two example notes.",
+   "absence_evidence": [
+    {
+     "pattern": "ISO 13849",
+     "hits": 4,
+     "note": "4 hits: ISO 26262-8 examples and ISO/IEC/IEEE 15026-1 listing the standard; no performance levels or PFHd"
+    },
+    {
+     "pattern": "performance level [a-e]\\b",
+     "hits": 0,
+     "note": "0 hits"
+    }
+   ],
+   "nearest_distractor_paper_id": "local:6cd57a8fca7a"
+  },
+  {
+   "question_id": "Q-STD-E-022",
+   "tests": "absent",
+   "dimension": "partial-absent",
+   "difficulty": "medium",
+   "question_type": "Requirement",
+   "question_text": "What incident rate per million miles does clause 16.2.1.1 of UL 4600 set as the threshold an item's SPIs must stay under?",
+   "answer_text": "Not in the corpus: UL 4600 clause 16.2.1.1 requires defining quantified SPIs (incident rates, injury rates, etc.) but states no numeric threshold.",
+   "absence_evidence": [
+    {
+     "pattern": "million miles|per mile",
+     "hits": 0,
+     "paper_id": "local:c3c5f9de20cc",
+     "note": "0 hits in the UL 4600 voting version"
+    },
+    {
+     "pattern": "incident rates",
+     "hits": 1,
+     "paper_id": "local:c3c5f9de20cc",
+     "note": "1 hit: clause 16.2.1.1 lists SPI categories only, no numbers"
+    }
+   ],
+   "nearest_distractor_paper_id": "local:4c537c7906e8"
+  },
+  {
+   "question_id": "Q-STD-E-023",
+   "tests": "absent",
+   "dimension": "partial-absent",
+   "difficulty": "medium",
+   "question_type": "Fact-Lookup",
+   "question_text": "What PMHF target value does Table 6 of ISO 26262 part 5 give for ASIL A?",
+   "answer_text": "Not in the corpus: the PMHF table lists target values for ASIL D, C and B only.",
+   "absence_evidence": [
+    {
+     "pattern": "Random hardware failure target values",
+     "hits": 1,
+     "paper_id": "local:82d7244d048b",
+     "note": "1 hit: the table, with rows D, C, B only"
+    },
+    {
+     "pattern": "\\| A \\| ?<",
+     "hits": 0,
+     "paper_id": "local:82d7244d048b",
+     "note": "0 hits for an ASIL A row"
+    }
+   ],
+   "nearest_distractor_paper_id": "local:c35c19975827"
+  },
+  {
+   "question_id": "Q-STD-E-024",
+   "tests": "absent",
+   "dimension": "partial-absent",
+   "difficulty": "hard",
+   "question_type": "Requirement",
+   "question_text": "What time headway thresholds does Annex B of ISO 34502 give for cut-in critical scenarios?",
+   "answer_text": "Not in the corpus: the held ISO 34502 is a 15-page preview (contents, scope, terms); Annex B appears only as a contents entry.",
+   "absence_evidence": [
+    {
+     "pattern": "Annex B",
+     "hits": 1,
+     "paper_id": "local:83e003999861",
+     "note": "1 hit: contents line 'Traffic-related critical scenarios', no body text"
+    },
+    {
+     "pattern": "time (to|headway)|cut-in|lane change",
+     "hits": 0,
+     "paper_id": "local:83e003999861",
+     "note": "0 hits"
+    }
+   ],
+   "nearest_distractor_paper_id": "local:9def83274286"
+  },
+  {
+   "question_id": "Q-STD-E-025",
+   "tests": "absent",
+   "dimension": "partial-absent",
+   "difficulty": "medium",
+   "question_type": "Requirement",
+   "question_text": "Which paragraph of UN Regulation No 157 permits an ALKS to operate at speeds up to 130 km/h on motorways?",
+   "answer_text": "Not in the corpus: the held R157 text (original 00 series) limits ALKS to 60 km/h maximum and gives no 130 km/h provision; Steege et al. (local:5c15efe64f30, c1305) mentions that the amended Regulation 157 limits maximum operational speed to 130kph but cites no paragraph, so the paragraph number asked for is not stated anywhere.",
+   "absence_evidence": [
+    {
+     "pattern": "130 ?km",
+     "hits": 0,
+     "paper_id": "local:9def83274286",
+     "note": "0 hits in the held R157 text"
+    },
+    {
+     "pattern": "130 ?(km|kph)",
+     "hits": 1,
+     "paper_id": "local:5c15efe64f30",
+     "note": "1 hit: Steege c1305 says the amended Regulation 157 limits maximum operational speed to 130kph, but gives no paragraph number"
+    },
+    {
+     "pattern": "130 ?(km|kph)",
+     "hits": 6,
+     "note": "6 hits corpus-wide: Steege c1305 (above), 4 chunks of local:23f46dde097b and 1 of local:d4ceb75c64ab, which are generic ODD/example speeds and not R157 paragraphs"
+    },
+    {
+     "pattern": "maximum (operating )?speed|60 km",
+     "hits": 6,
+     "paper_id": "local:9def83274286",
+     "note": "6 hits: the original text limits operational speed to 60 km/h"
+    }
+   ],
+   "nearest_distractor_paper_id": "local:77d354cc8af7"
+  },
+  {
+   "question_id": "Q-STD-E-026",
+   "tests": "absent",
+   "dimension": "partial-absent",
+   "difficulty": "hard",
+   "question_type": "Requirement",
+   "question_text": "What numerical risk acceptance criterion does clause 6.2 of ISO/TS 5083 prescribe for an automated driving system?",
+   "answer_text": "Not in the corpus: the held ISO/TS 5083 is a preview (contents, foreword, scope); clause 6.2 is a contents entry only.",
+   "absence_evidence": [
+    {
+     "pattern": "acceptance criteri",
+     "hits": 1,
+     "paper_id": "local:6c9b33bfde9d",
+     "note": "1 hit: contents entry 'Defining the risk acceptance criteria'"
+    },
+    {
+     "pattern": "quantitative|per hour|per km",
+     "hits": 1,
+     "paper_id": "local:6c9b33bfde9d",
+     "note": "1 hit: contents entries for example solutions, no values"
+    }
+   ],
+   "nearest_distractor_paper_id": "local:d4ceb75c64ab"
+  }
+ ]
+}

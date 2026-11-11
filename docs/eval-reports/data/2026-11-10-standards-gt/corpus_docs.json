@@ -1,0 +1,716 @@
+[
+ {
+  "paper_id": "local:9f51671af209",
+  "doc_type": "paper",
+  "title": "A Safety Standard Approach for Fully Autonomous Vehicles - UL 4600 (Koopman et al., WAISE 2019)",
+  "n_chunks": 22
+ },
+ {
+  "paper_id": "local:71c88a1d2bc1",
+  "doc_type": "paper",
+  "title": "AAMVA Guidelines for Regulating Vehicles with Automated Driving Systems (Edition 4)",
+  "n_chunks": 560
+ },
+ {
+  "paper_id": "local:0aa9a802631e",
+  "doc_type": "paper",
+  "title": "AIAG-VDA FMEA Handbook (2019) \u2014 Failure Mode and Effects Analysis, DFMEA PFMEA FMEA-MSR",
+  "n_chunks": 663
+ },
+ {
+  "paper_id": "2102.01564",
+  "doc_type": "paper",
+  "title": "AMLAS \u2014 Guidance on the Assurance of Machine Learning in Autonomous Systems (Version 1, 2021)",
+  "n_chunks": 215
+ },
+ {
+  "paper_id": "local:d2d322f0b779",
+  "doc_type": "paper",
+  "title": "AVSC-D-02-2024 Best Practice for Core Automated Vehicle Safety Information (2024-05)",
+  "n_chunks": 132
+ },
+ {
+  "paper_id": "local:a709c254edeb",
+  "doc_type": "paper",
+  "title": "AVSC-D-03-2024 Best Practice for ADS-DV Safety Inspection Framework (2024-12)",
+  "n_chunks": 67
+ },
+ {
+  "paper_id": "local:c1c7c8354ba7",
+  "doc_type": "paper",
+  "title": "AVSC-D-04-2025 Best Practice for Assessment of ADS-DV Safety Case Claims Supported by Evidence (2025-10)",
+  "n_chunks": 76
+ },
+ {
+  "paper_id": "local:b6c10359d954",
+  "doc_type": "paper",
+  "title": "AVSC-I-01-2024 Best Practice for First Responder Interactions with Fleet-Managed ADS-DVs (revised 2024-04, supersedes AVSC00005)",
+  "n_chunks": 110
+ },
+ {
+  "paper_id": "local:b4287480c380",
+  "doc_type": "paper",
+  "title": "AVSC-I-04-2023 Best Practice for ADS Remote Assistance Use Case (2023-11)",
+  "n_chunks": 84
+ },
+ {
+  "paper_id": "local:5a125ddd1975",
+  "doc_type": "paper",
+  "title": "AVSC-I-05-2025 Best Practice for ADS-DV Immediate Post-Crash Behaviors and Interactions (2025-03)",
+  "n_chunks": 83
+ },
+ {
+  "paper_id": "local:61b72628b14f",
+  "doc_type": "paper",
+  "title": "AVSC-I-06-2025 Information Report on ADS-DV Stopped Conditions (2025-12)",
+  "n_chunks": 82
+ },
+ {
+  "paper_id": "local:e5b8e06e28f2",
+  "doc_type": "paper",
+  "title": "AVSC-I-07-2026 Best Practice for ADS Remote Assistance Training and Human Factors (2026-08)",
+  "n_chunks": 79
+ },
+ {
+  "paper_id": "local:ffd6b6449efc",
+  "doc_type": "paper",
+  "title": "AVSC00001 Best Practice for In-Vehicle Fallback Test Driver Selection, Training, and Oversight (2019-11)",
+  "n_chunks": 69
+ },
+ {
+  "paper_id": "local:a744d998a5b7",
+  "doc_type": "paper",
+  "title": "AVSC00002 Best Practice for Describing an Operational Design Domain (2020-04)",
+  "n_chunks": 108
+ },
+ {
+  "paper_id": "local:4de2a38fdc99",
+  "doc_type": "paper",
+  "title": "AVSC00003 Best Practice for Passenger-Initiated Emergency Trip Interruption (2020-06)",
+  "n_chunks": 62
+ },
+ {
+  "paper_id": "local:e98c1f12ff21",
+  "doc_type": "paper",
+  "title": "AVSC00004 Best Practice for Data Collection for ADS-DVs to Support Event Analysis (2020-09)",
+  "n_chunks": 167
+ },
+ {
+  "paper_id": "local:fff17ed80281",
+  "doc_type": "paper",
+  "title": "AVSC00005 Best Practice for First Responder Interactions with Fleet-Managed ADS-DVs (2020-12)",
+  "n_chunks": 79
+ },
+ {
+  "paper_id": "local:4c537c7906e8",
+  "doc_type": "paper",
+  "title": "AVSC00006 Best Practice for Metrics and Methods for Assessing Safety Performance of ADS",
+  "n_chunks": 174
+ },
+ {
+  "paper_id": "local:a14c3d11c6dc",
+  "doc_type": "paper",
+  "title": "AVSC00007 Information Report for Adapting a Safety Management System (SMS) for ADS Level 4 and 5 Testing",
+  "n_chunks": 69
+ },
+ {
+  "paper_id": "local:b827e7b12a07",
+  "doc_type": "paper",
+  "title": "AVSC00008 Best Practice for Evaluation of Behavioral Competencies for ADS-DVs",
+  "n_chunks": 71
+ },
+ {
+  "paper_id": "local:a89e28ee7840",
+  "doc_type": "paper",
+  "title": "AVSC00009 Best Practice for Interactions Between ADS-DVs and Vulnerable Road Users",
+  "n_chunks": 82
+ },
+ {
+  "paper_id": "local:d6d9d9a1057d",
+  "doc_type": "paper",
+  "title": "AVSC00010 Information Report for Change Risk Management",
+  "n_chunks": 65
+ },
+ {
+  "paper_id": "local:d38dea63d22f",
+  "doc_type": "paper",
+  "title": "AVSC00011 Best Practice for Continuous Monitoring and Improvement after Deployment",
+  "n_chunks": 62
+ },
+ {
+  "paper_id": "local:6a33889859b2",
+  "doc_type": "paper",
+  "title": "AVSC00012 Best Practice for Developing ADS Safety Performance Thresholds Based on Human Driving Behavior",
+  "n_chunks": 91
+ },
+ {
+  "paper_id": "local:cf129f19b0b0",
+  "doc_type": "paper",
+  "title": "AdvoCATE User Guide 1.4 (NASA assurance case tool)",
+  "n_chunks": 820
+ },
+ {
+  "paper_id": "local:c9a451f83ae4",
+  "doc_type": "paper",
+  "title": "Assurance Case Guide (Argevide) - GSN and Assurance Case Construction",
+  "n_chunks": 30
+ },
+ {
+  "paper_id": "local:a41019a5b430",
+  "doc_type": "paper",
+  "title": "BS 31100-2011 \u2014 Risk Management Code of Practice",
+  "n_chunks": 196
+ },
+ {
+  "paper_id": "2004.10474",
+  "doc_type": "paper",
+  "title": "Bloomfield and Rushby \u2014 Assurance 2.0, A Manifesto",
+  "n_chunks": 54
+ },
+ {
+  "paper_id": "local:5c15efe64f30",
+  "doc_type": "book",
+  "title": "Book \u2014 Autonomous Vehicles and Civil Liability (Steege et al, Springer 2024)",
+  "n_chunks": 1524
+ },
+ {
+  "paper_id": "local:5d92cd1f17dd",
+  "doc_type": "book",
+  "title": "CAIB \u2014 Columbia Accident Investigation Board Report, Volume I (2003)",
+  "n_chunks": 1277
+ },
+ {
+  "paper_id": "local:cf59ff8a1e69",
+  "doc_type": "paper",
+  "title": "CRS R48605 Safety Considerations for Automated Passenger Vehicles (July 2026)",
+  "n_chunks": 75
+ },
+ {
+  "paper_id": "local:77d354cc8af7",
+  "doc_type": "paper",
+  "title": "EU Commission Implementing Regulation 2022-1426 Type-Approval of ADS of Fully Automated Vehicles",
+  "n_chunks": 231
+ },
+ {
+  "paper_id": "local:83d0134fadfb",
+  "doc_type": "book",
+  "title": "FAA AC 120-92D \u2014 Safety Management Systems for Aviation Service Providers (2024-05-21)",
+  "n_chunks": 405
+ },
+ {
+  "paper_id": "local:90e625593d47",
+  "doc_type": "paper",
+  "title": "FAA AC 25.1309-1B \u2014 System Design and Analysis (2024-08-30)",
+  "n_chunks": 259
+ },
+ {
+  "paper_id": "local:3d586d235874",
+  "doc_type": "paper",
+  "title": "FAA \u2014 System Safety Handbook (2000)",
+  "n_chunks": 1526
+ },
+ {
+  "paper_id": "local:d5f3d058bb27",
+  "doc_type": "paper",
+  "title": "HSE \u2014 Reducing Risks, Protecting People: HSE decision-making process (R2P2, 2001)",
+  "n_chunks": 267
+ },
+ {
+  "paper_id": "local:caf714759f86",
+  "doc_type": "paper",
+  "title": "HSE \u2014 The tolerability of risk from nuclear power stations (1992 revision)",
+  "n_chunks": 253
+ },
+ {
+  "paper_id": "local:18f76aaa8a8c",
+  "doc_type": "paper",
+  "title": "Holloway and Wasson \u2014 A Primer on Argument Assessment (Version 1.0, 2021, NASA NTRS)",
+  "n_chunks": 85
+ },
+ {
+  "paper_id": "local:41a462827e37",
+  "doc_type": "paper",
+  "title": "IEC 31010-2019 \u2014 Risk Management - Risk Assessment Techniques (Ed 2.0)",
+  "n_chunks": 526
+ },
+ {
+  "paper_id": "local:d4ceb75c64ab",
+  "doc_type": "paper",
+  "title": "ISO 21448-2022 \u2014 Road vehicles, Safety of the Intended Functionality (SOTIF), full text",
+  "n_chunks": 562
+ },
+ {
+  "paper_id": "local:cb40d304cbca",
+  "doc_type": "paper",
+  "title": "ISO 26262-1-2018 \u2014 Vocabulary",
+  "n_chunks": 367
+ },
+ {
+  "paper_id": "local:3d1b235596aa",
+  "doc_type": "paper",
+  "title": "ISO 26262-10-2018 \u2014 Guidelines on ISO 26262",
+  "n_chunks": 293
+ },
+ {
+  "paper_id": "local:5be41d67ad16",
+  "doc_type": "paper",
+  "title": "ISO 26262-11-2018 \u2014 Application to Semiconductors",
+  "n_chunks": 683
+ },
+ {
+  "paper_id": "local:dbb1c4619d93",
+  "doc_type": "paper",
+  "title": "ISO 26262-12-2018 \u2014 Adaptation for Motorcycles (BSI)",
+  "n_chunks": 183
+ },
+ {
+  "paper_id": "local:0e6dbb524dfe",
+  "doc_type": "paper",
+  "title": "ISO 26262-2-2018 \u2014 Management of Functional Safety (BSI)",
+  "n_chunks": 201
+ },
+ {
+  "paper_id": "local:2416292a3545",
+  "doc_type": "paper",
+  "title": "ISO 26262-3-2018 \u2014 Concept Phase (BSI)",
+  "n_chunks": 141
+ },
+ {
+  "paper_id": "local:c35c19975827",
+  "doc_type": "paper",
+  "title": "ISO 26262-4-2018 \u2014 Product Development at the System Level (BSI)",
+  "n_chunks": 148
+ },
+ {
+  "paper_id": "local:82d7244d048b",
+  "doc_type": "paper",
+  "title": "ISO 26262-5-2018 \u2014 Product Development at the Hardware Level",
+  "n_chunks": 325
+ },
+ {
+  "paper_id": "local:6a34133ea7e6",
+  "doc_type": "paper",
+  "title": "ISO 26262-6-2018 \u2014 Product Development at the Software Level",
+  "n_chunks": 215
+ },
+ {
+  "paper_id": "local:1b04c71eb8c9",
+  "doc_type": "paper",
+  "title": "ISO 26262-7-2018 \u2014 Production, Operation, Service and Decommissioning",
+  "n_chunks": 70
+ },
+ {
+  "paper_id": "local:6cd57a8fca7a",
+  "doc_type": "paper",
+  "title": "ISO 26262-8-2018 \u2014 Supporting Processes",
+  "n_chunks": 289
+ },
+ {
+  "paper_id": "local:b3903fe001ed",
+  "doc_type": "paper",
+  "title": "ISO 26262-9-2018 \u2014 ASIL-Oriented and Safety-Oriented Analyses",
+  "n_chunks": 109
+ },
+ {
+  "paper_id": "local:fe96edbde0ee",
+  "doc_type": "paper",
+  "title": "ISO 31000-2009 \u2014 Risk Management Principles and Guidelines",
+  "n_chunks": 136
+ },
+ {
+  "paper_id": "local:7bfd4a363756",
+  "doc_type": "paper",
+  "title": "ISO 31000-2018 \u2014 Risk Management Guidelines",
+  "n_chunks": 79
+ },
+ {
+  "paper_id": "local:83e003999861",
+  "doc_type": "paper",
+  "title": "ISO 34502-2022 \u2014 Road vehicles, Test scenarios for automated driving systems, Scenario based safety evaluation framework (iTeh 15-page preview: contents, scope, terms, start of clause 4)",
+  "n_chunks": 41
+ },
+ {
+  "paper_id": "local:5eadc6bef925",
+  "doc_type": "paper",
+  "title": "ISO IEC IEEE 15026-2 2022 \u2014 Systems and software assurance, Part 2 Assurance case (ANSI preview)",
+  "n_chunks": 10
+ },
+ {
+  "paper_id": "local:216b19db6b0e",
+  "doc_type": "paper",
+  "title": "ISO IEC IEEE 15026-2 2022 \u2014 Systems and software assurance, Part 2 Assurance case (VDE preview)",
+  "n_chunks": 11
+ },
+ {
+  "paper_id": "local:c0d3ca177aaf",
+  "doc_type": "paper",
+  "title": "ISO PAS 21448-2019 \u2014 SOTIF (BSI)",
+  "n_chunks": 197
+ },
+ {
+  "paper_id": "local:1a5e084cb8bb",
+  "doc_type": "paper",
+  "title": "ISO PAS 8800-2024 \u2014 Safety and Artificial Intelligence",
+  "n_chunks": 691
+ },
+ {
+  "paper_id": "local:25d3a31a9aa1",
+  "doc_type": "paper",
+  "title": "ISO SAE 21434-2021 \u2014 Cybersecurity Engineering",
+  "n_chunks": 416
+ },
+ {
+  "paper_id": "local:6c9b33bfde9d",
+  "doc_type": "paper",
+  "title": "ISO TS 5083 2025 \u2014 Road vehicles, Safety for automated driving systems, Design, verification and validation (iTeh preview, contents, foreword, scope)",
+  "n_chunks": 17
+ },
+ {
+  "paper_id": "local:c22b61a61eaa",
+  "doc_type": "paper",
+  "title": "ISO-IEC 15026-2-2011 \u2014 Systems and Software Assurance, Part 2 Assurance Case",
+  "n_chunks": 50
+ },
+ {
+  "paper_id": "local:4d27eb6fb293",
+  "doc_type": "paper",
+  "title": "ISO-IEC 15026-3-2015 \u2014 Systems and Software Assurance, Part 3 System Integrity Levels",
+  "n_chunks": 104
+ },
+ {
+  "paper_id": "local:376d3c30684f",
+  "doc_type": "paper",
+  "title": "ISO-IEC-IEEE 15026-1-2019 \u2014 Systems and Software Assurance, Part 1 Concepts and Vocabulary",
+  "n_chunks": 177
+ },
+ {
+  "paper_id": "local:e10ec4c599f6",
+  "doc_type": "paper",
+  "title": "ISO-IEC-IEEE 15026-4-2021 \u2014 Systems and Software Assurance, Part 4 Assurance in the Life Cycle",
+  "n_chunks": 189
+ },
+ {
+  "paper_id": "local:7c89760c33e1",
+  "doc_type": "book",
+  "title": "JAMA \u2014 Automated Driving Safety Evaluation Framework Ver 4.0 (2026-03)",
+  "n_chunks": 1031
+ },
+ {
+  "paper_id": "local:1c13661fcaa8",
+  "doc_type": "paper",
+  "title": "Kelly \u2014 A Systematic Approach to Safety Case Management (SAE 2004)",
+  "n_chunks": 44
+ },
+ {
+  "paper_id": "local:1c1a92b73224",
+  "doc_type": "paper",
+  "title": "Key Ideas - UL 4600 Safety Standard for Autonomous Vehicles (Koopman lecture slides)",
+  "n_chunks": 31
+ },
+ {
+  "paper_id": "local:36fe900b97bc",
+  "doc_type": "paper",
+  "title": "Koopman and Wagner \u2014 Positive Trust Balance for Self-Driving Car Deployment (WAISE 2020)",
+  "n_chunks": 25
+ },
+ {
+  "paper_id": "local:475ad494687d",
+  "doc_type": "paper",
+  "title": "Koopman and Widen \u2014 Breaking the Tyranny of Net Risk Metrics for Automated Vehicle Safety (SCSC eJournal 2024)",
+  "n_chunks": 75
+ },
+ {
+  "paper_id": "local:44e5e7678422",
+  "doc_type": "paper",
+  "title": "Koopman and Widen \u2014 Redefining Safety for Autonomous Vehicles",
+  "n_chunks": 59
+ },
+ {
+  "paper_id": "local:8a590e370f52",
+  "doc_type": "paper",
+  "title": "Koopman \u2014 How Safe Is Safe Enough, free book preview (2022)",
+  "n_chunks": 62
+ },
+ {
+  "paper_id": "local:dcb47a114938",
+  "doc_type": "paper",
+  "title": "Koopman \u2014 L131 How Safe Is Safe Enough, slides (2022)",
+  "n_chunks": 21
+ },
+ {
+  "paper_id": "local:a52a42ac3822",
+  "doc_type": "paper",
+  "title": "Koopman \u2014 L144 AV Safety and Net Risk, slides",
+  "n_chunks": 18
+ },
+ {
+  "paper_id": "local:321336803fc1",
+  "doc_type": "paper",
+  "title": "Koopman \u2014 L152 Understanding AV Safety, slides (2024-10)",
+  "n_chunks": 26
+ },
+ {
+  "paper_id": "local:102762ff148b",
+  "doc_type": "paper",
+  "title": "Koopman \u2014 Letter on UL 4600 (2021-07-01)",
+  "n_chunks": 16
+ },
+ {
+  "paper_id": "local:5490e626ec16",
+  "doc_type": "paper",
+  "title": "Koopman \u2014 The UL 4600 Guidebook, free sample (2022)",
+  "n_chunks": 23
+ },
+ {
+  "paper_id": "local:9adcc5121bd5",
+  "doc_type": "paper",
+  "title": "Koopman \u2014 UL 4600 third edition update, slides (2023-06-19)",
+  "n_chunks": 31
+ },
+ {
+  "paper_id": "local:884acc517acd",
+  "doc_type": "paper",
+  "title": "Koopman, Kane and Black \u2014 Credible Autonomy Safety Argumentation (SSS 2019)",
+  "n_chunks": 86
+ },
+ {
+  "paper_id": "2103.05440",
+  "doc_type": "paper",
+  "title": "Krisper \u2014 Problems with Risk Matrices Using Ordinal Scales",
+  "n_chunks": 71
+ },
+ {
+  "paper_id": "local:97c21e9847c9",
+  "doc_type": "paper",
+  "title": "L3Pilot \u2014 Code of Practice for the Development of Automated Driving Functions (CoP-ADF v1.0)",
+  "n_chunks": 358
+ },
+ {
+  "paper_id": "local:7e8fdc2246cc",
+  "doc_type": "book",
+  "title": "Leveson \u2014 Engineering a Safer World, Systems Thinking Applied to Safety (MIT Press 2011, open access)",
+  "n_chunks": 1491
+ },
+ {
+  "paper_id": "local:4332c96f2fd6",
+  "doc_type": "paper",
+  "title": "MIL-STD-882E \u2014 Department of Defense Standard Practice for System Safety (2012)",
+  "n_chunks": 231
+ },
+ {
+  "paper_id": "local:54d6dfdea249",
+  "doc_type": "paper",
+  "title": "MIRA for DfT \u2014 Automated Vehicle Safety Assurance, A Framework for Automated Driving Systems (2022)",
+  "n_chunks": 1141
+ },
+ {
+  "paper_id": "local:e53772398dff",
+  "doc_type": "paper",
+  "title": "MISRA SC \u2014 Safety assurance argument context for automated driving (2024-04)",
+  "n_chunks": 54
+ },
+ {
+  "paper_id": "local:1742c8d5b998",
+  "doc_type": "paper",
+  "title": "NASA SP-2010-576 \u2014 NASA Risk-Informed Decision Making Handbook",
+  "n_chunks": 311
+ },
+ {
+  "paper_id": "local:a6b537ff5738",
+  "doc_type": "paper",
+  "title": "NASA SP-2010-580 \u2014 NASA System Safety Handbook Volume 1, System Safety Framework and Concepts",
+  "n_chunks": 243
+ },
+ {
+  "paper_id": "local:a391e0d13fa8",
+  "doc_type": "paper",
+  "title": "NASA SP-2011-3421 \u2014 Probabilistic Risk Assessment Procedures Guide for NASA Managers and Practitioners (2nd ed)",
+  "n_chunks": 1208
+ },
+ {
+  "paper_id": "local:46d6107b895f",
+  "doc_type": "paper",
+  "title": "NASA SP-2011-3422 \u2014 NASA Risk Management Handbook",
+  "n_chunks": 646
+ },
+ {
+  "paper_id": "local:5bf506972f70",
+  "doc_type": "book",
+  "title": "NASA SP-2014-612 \u2014 NASA System Safety Handbook, Volume 2, System Safety Concepts, Guidelines, and Implementation Examples (2014)",
+  "n_chunks": 666
+ },
+ {
+  "paper_id": "local:8eeb4887a4dc",
+  "doc_type": "book",
+  "title": "NASA SP-2016-6105 Rev 2 \u2014 NASA Systems Engineering Handbook",
+  "n_chunks": 1116
+ },
+ {
+  "paper_id": "local:64f9538c2b0f",
+  "doc_type": "paper",
+  "title": "NHTSA A Framework for Automated Driving System Testable Cases and Scenarios (DOT HS 812 623, 2018)",
+  "n_chunks": 533
+ },
+ {
+  "paper_id": "local:271a2d51c4f2",
+  "doc_type": "paper",
+  "title": "NHTSA AV STEP Notice of Proposed Rulemaking (90 FR 4130, Jan 15 2025)",
+  "n_chunks": 470
+ },
+ {
+  "paper_id": "local:a9c7b643276b",
+  "doc_type": "paper",
+  "title": "NHTSA AV STEP Withdrawal (91 FR 38619, June 26 2026)",
+  "n_chunks": 26
+ },
+ {
+  "paper_id": "local:e1cfbb5bd7bc",
+  "doc_type": "paper",
+  "title": "NHTSA Automated Driving Systems 2.0 - A Vision for Safety (2017)",
+  "n_chunks": 99
+ },
+ {
+  "paper_id": "local:23bd7524f4d5",
+  "doc_type": "paper",
+  "title": "NHTSA Report to Congress - Research and Rulemaking on Automated Driving Systems (July 2025)",
+  "n_chunks": 29
+ },
+ {
+  "paper_id": "local:e602ffa4f1cc",
+  "doc_type": "paper",
+  "title": "NHTSA Third Amended Standing General Order 2021-01 Incident Reporting (2025)",
+  "n_chunks": 60
+ },
+ {
+  "paper_id": "local:0bba4df6673d",
+  "doc_type": "paper",
+  "title": "NUREG-0492 \u2014 Fault Tree Handbook (NRC, 1981)",
+  "n_chunks": 601
+ },
+ {
+  "paper_id": "1708.06374",
+  "doc_type": "paper",
+  "title": "On a Formal Model of Safe and Scalable Self-driving Cars (RSS, Mobileye)",
+  "n_chunks": 211
+ },
+ {
+  "paper_id": "local:b468bf45f27c",
+  "doc_type": "paper",
+  "title": "PEGASUS Method - An Overview (2019)",
+  "n_chunks": 8
+ },
+ {
+  "paper_id": "local:da682684b180",
+  "doc_type": "paper",
+  "title": "Paper \u2014 Driver Assistance Systems - Analysis, Tests and the Safety Case, ISO 26262 and ISO PAS 21448 (Kirovskii and Gorelov, IOP 2019)",
+  "n_chunks": 33
+ },
+ {
+  "paper_id": "local:1d27d7fac441",
+  "doc_type": "paper",
+  "title": "RAND RR1478 Driving to Safety - How Many Miles of Driving Would It Take (2016)",
+  "n_chunks": 58
+ },
+ {
+  "paper_id": "local:c91d753ec3db",
+  "doc_type": "paper",
+  "title": "RAND RR2662 Measuring Automated Vehicle Safety - Forging a Framework (2018)",
+  "n_chunks": 213
+ },
+ {
+  "paper_id": "local:1493d1f836f3",
+  "doc_type": "book",
+  "title": "RAND \u2014 Safe Enough, Approaches to Assessing Acceptable Safety for Automated Vehicles (RR-A569-1, 2020)",
+  "n_chunks": 355
+ },
+ {
+  "paper_id": "local:e94916e8eba9",
+  "doc_type": "book",
+  "title": "Rausand and Haugen \u2014 Risk Assessment, Theory, Methods, and Applications, 2nd ed. (Wiley 2020)",
+  "n_chunks": 2073
+ },
+ {
+  "paper_id": "local:d42337eba862",
+  "doc_type": "paper",
+  "title": "SAE J3018 (2020) Safety-Relevant Guidance for On-Road Testing of Prototype ADS-Operated Vehicles",
+  "n_chunks": 64
+ },
+ {
+  "paper_id": "local:63091747b674",
+  "doc_type": "paper",
+  "title": "STPA Handbook (Leveson and Thomas, 2018)",
+  "n_chunks": 549
+ },
+ {
+  "paper_id": "local:0147e45dfd6e",
+  "doc_type": "paper",
+  "title": "SUNRISE D8.1 \u2014 Final report to vehicle safety bodies (safety assurance framework for connected automated mobility systems)",
+  "n_chunks": 434
+ },
+ {
+  "paper_id": "local:23f46dde097b",
+  "doc_type": "paper",
+  "title": "Safety First for Automated Driving (SaFAD white paper, 2019)",
+  "n_chunks": 449
+ },
+ {
+  "paper_id": "2302.07715",
+  "doc_type": "paper",
+  "title": "Salem et al \u2014 Risk Management Core, Toward an Explicit Representation of Risk in Automated Driving (IEEE Access 2024)",
+  "n_chunks": 100
+ },
+ {
+  "paper_id": "local:041e5f0c70d3",
+  "doc_type": "book",
+  "title": "Toulmin, Rieke and Janik \u2014 An Introduction to Reasoning, 2nd ed. (Macmillan 1984, OCR scan)",
+  "n_chunks": 1136
+ },
+ {
+  "paper_id": "local:0bc74d2bea76",
+  "doc_type": "paper",
+  "title": "UK Defence Standard 00-56 Part 1 Issue 7 \u2014 Safety Management Requirements for Defence Systems, Requirements (2017-02-28)",
+  "n_chunks": 174
+ },
+ {
+  "paper_id": "local:5893db5c997f",
+  "doc_type": "paper",
+  "title": "UL 4600 - What to Include in an Autonomous Vehicle Safety Case (Koopman)",
+  "n_chunks": 19
+ },
+ {
+  "paper_id": "local:c3c5f9de20cc",
+  "doc_type": "paper",
+  "title": "UL 4600 Voting Version (December 13 2019, Koopman copy) - Evaluation of Autonomous Products",
+  "n_chunks": 1384
+ },
+ {
+  "paper_id": "local:9def83274286",
+  "doc_type": "paper",
+  "title": "UN Regulation No 157 \u2014 Automated Lane Keeping Systems (00 series, EUR-Lex 2021-03-09)",
+  "n_chunks": 166
+ },
+ {
+  "paper_id": "local:3d0e31c34a0a",
+  "doc_type": "paper",
+  "title": "USDOT Ensuring American Leadership in Automated Vehicle Technologies - AV 4.0 (2020)",
+  "n_chunks": 255
+ },
+ {
+  "paper_id": "local:33ef25a38c1c",
+  "doc_type": "paper",
+  "title": "USDOT Preparing for the Future of Transportation - Automated Vehicles 3.0 (2018)",
+  "n_chunks": 238
+ },
+ {
+  "paper_id": "local:be80930e409d",
+  "doc_type": "paper",
+  "title": "Wachenfeld and Winner \u2014 The Release of Autonomous Vehicles (Springer 2016, chapter 21, open access)",
+  "n_chunks": 79
+ },
+ {
+  "paper_id": "local:b1d1917f9cf4",
+  "doc_type": "paper",
+  "title": "Zenzic \u2014 Safety Case Framework, The Guidance, Edition for Creators (2021)",
+  "n_chunks": 310
+ }
+]
