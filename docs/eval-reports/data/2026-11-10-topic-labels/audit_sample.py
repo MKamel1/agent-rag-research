@@ -1,3 +1,4 @@
+# ruff: noqa: E501, E731
 """EV-2: seeded stratified sample (100 per Haiku label, random.seed(20261110)) from topic_labels.tsv,
 joined read-only to papers (title, abstract[:600], categories_json); writes audit_sample.tsv WITHOUT the Haiku label.
 
@@ -6,7 +7,9 @@ PRE-REGISTERED CRITERION (EV-2, written before any labelling):
   => labels ACCEPTED as-is. Otherwise report which band fails and recommend relabelling that band.
 Run: conda run -n agent-rag-research python audit_sample.py
 """
-import csv, random, sqlite3
+import csv
+import random
+import sqlite3
 from pathlib import Path
 
 DB = "/home/omar/ai-projects/research-system-rag-data/papers.db"

@@ -1,3 +1,4 @@
+# ruff: noqa: E501, E731
 """EV-2: compare audit_labels.tsv (blind, independent) with the Haiku labels in topic_labels.tsv.
 Confusion matrix, raw agreement, Cohen's kappa (3-way) and binary off-vs-not-off agreement, each also
 re-weighted from the stratified sample (100 per Haiku label) to corpus Haiku-label proportions;
@@ -5,7 +6,8 @@ lists every on<->off disagreement; corrected corpus off-topic share.
 Criterion (pre-registered in audit_sample.py): kappa >= 0.70 AND binary agreement >= 0.92 -> accept.
 Run: conda run -n agent-rag-research python audit_score.py
 """
-import csv, math, sqlite3
+import csv
+import sqlite3
 from collections import Counter
 from pathlib import Path
 

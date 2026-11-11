@@ -1,3 +1,4 @@
+# ruff: noqa: E501, E731
 """EV-3: is papers.relevance_score a focus signal? Joins topic_labels.tsv to relevance_score (read-only);
 reports NULLs, per-label distribution, rank-sum AUROC (on vs off, borderline excluded), threshold table
 0.10-0.70, breakdown by year and primary category, top-15 categories among off-topic papers.
@@ -5,7 +6,10 @@ PRE-REGISTERED CRITERION: AUROC >= 0.85 -> usable query-time filter (propose thr
 0.70-0.85 -> ranking signal only; < 0.70 -> not usable.
 Run: conda run -n agent-rag-research python relevance_score_study.py
 """
-import csv, json, sqlite3, statistics as st
+import csv
+import json
+import sqlite3
+import statistics as st
 from collections import Counter, defaultdict
 from pathlib import Path
 
