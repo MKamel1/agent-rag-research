@@ -175,7 +175,11 @@ def main(argv: list[str] | None = None) -> int:
         return 1 if problems else 0
     if args.cmd == "check-points":
         chunks, papers = db_counts(args.db)
-        points = qdrant_points(args.collection, args.url)
+        try:
+            points = qdrant_points(args.collection, args.url)
+        except OSError as exc:  # URLError/HTTPError/timeout: vector store down or collection absent
+            print(f"vector store unreachable or collection {args.collection!r} missing: {exc}")
+            return 2
         ok = points_plausible(points, chunks, papers)
         print(
             f"collection {args.collection}: {points} points; db {args.db}: {chunks} chunks, "
