@@ -1827,3 +1827,84 @@ def test_rows_without_a_lookup_keep_empty_chunk_ids_and_other_fields_unchanged()
     row = build_report(results, 10)["questions"][0]
     assert row["retrieved_chunk_ids"] == [] and row["chunk_id_ambiguous"] is False
     assert row["retrieved_block_ids"] == ["P1:b0"]
+
+
+# --- EV-10: invalid run on a GPU-lock timeout --------------------------------------------------
+
+_LOCK_TIMEOUT_MSG = (
+    "gpu lock /x/.gpu.lock not acquired within 300.0s for stage 'rerank' -- likely held by a "
+    "stale or wedged process; check for a stuck holder before retrying"
+)
+
+
+class _TimeoutRetriever(FakeRetriever):
+    """Raises the real lock-timeout message for query text 'slow', answers the rest."""
+
+    def retrieve(self, query, filters, k):
+        if query == "slow":
+            raise RuntimeError(_LOCK_TIMEOUT_MSG)
+        return super().retrieve(query, filters, k)
+
+
+def test_lock_timeout_question_makes_the_report_invalid_with_a_count():
+    qs = [
+        Question("ok", "fast", "t", frozenset({"P1"}), None),
+        Question("late", "slow", "t", frozenset({"P1"}), None),
+    ]
+    report = build_report(run(qs, _TimeoutRetriever({"fast": [_hit("P1", "P1:b0")]}), 10), 10)
+    assert report["run_valid"] is False
+    assert report["n_lock_timeouts"] == 1
+    assert report["n_errors"] == 1
+    assert report["invalid_reason"]
+    assert report["questions"][1]["error_class"] == "gpu_lock_timeout"
+    assert report["questions"][0]["error_class"] is None
+
+
+def test_run_without_timeouts_is_valid_and_an_ordinary_error_does_not_invalidate():
+    qs = [
+        Question("ok", "fast", "t", frozenset({"P1"}), None),
+        Question("boom", "unscripted", "t", frozenset({"P1"}), None),  # plain RuntimeError
+    ]
+    report = build_report(run(qs, FakeRetriever({"fast": [_hit("P1", "P1:b0")]}), 10), 10)
+    assert report["run_valid"] is True
+    assert report["n_lock_timeouts"] == 0
+    assert report["n_errors"] == 1  # still visible (nb_eval_runner flags it VOID)
+
+
+def test_summary_announces_an_invalid_run(capsys):
+    qs = [Question("late", "slow", "t", frozenset({"P1"}), None)]
+    _print_summary(build_report(run(qs, _TimeoutRetriever({}), 10), 10))
+    assert "RUN INVALID" in capsys.readouterr().out
+
+
+def test_main_writes_the_report_then_exits_nonzero_on_a_lock_timeout(tmp_path, monkeypatch):
+    """End to end through main(): fake the server wiring; the invalid report is still written
+    (so the evidence survives) and the process exits EXIT_INVALID_RUN."""
+    import types
+
+    from app import retrieval_eval
+
+    gt = tmp_path / "gt.json"
+    gt.write_text(json.dumps({"ground_truth": [{
+        "question_id": "Q1", "question_text": "slow", "source_paper_id": "P1",
+    }]}))
+    cfg = types.SimpleNamespace(
+        hybrid_dense_weight=0.5, db_path=str(_corpus_db(tmp_path)), blob_dir="b",
+        model_copy=lambda update: cfg,
+    )
+    monkeypatch.setattr("rag.config.load_config", lambda path=None: cfg)
+    monkeypatch.setattr(
+        "app.assembly.build_mcp_server",
+        lambda config, **kw: types.SimpleNamespace(retriever=_TimeoutRetriever({})),
+    )
+    out = tmp_path / "report.json"
+    monkeypatch.setattr("sys.argv", [
+        "retrieval_eval", "--ground-truth", str(gt), "--collection", "c",
+        "--db-path", str(_corpus_db(tmp_path)), "--report-path", str(out),
+    ])
+    with pytest.raises(SystemExit) as exc:
+        retrieval_eval.main()
+    assert exc.value.code == retrieval_eval.EXIT_INVALID_RUN
+    written = json.loads(out.read_text())
+    assert written["run_valid"] is False
+    assert written["ground_truth_sha256_12"] == retrieval_eval.file_sha256_12(gt)
