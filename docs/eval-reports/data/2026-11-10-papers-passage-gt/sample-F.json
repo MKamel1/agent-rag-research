@@ -1,0 +1,162 @@
+[
+ {
+  "paper_id": "2211.10805",
+  "year": "2022",
+  "title": "On the Pointwise Behavior of Recursive Partitioning and Its Implications for Heterogeneous Causal Effect Estimation"
+ },
+ {
+  "paper_id": "2006.01366",
+  "year": "2020",
+  "title": "Non-parametric causal effects based on longitudinal modified treatment policies"
+ },
+ {
+  "paper_id": "2412.20638",
+  "year": "2024",
+  "title": "Predicting Long Term Sequential Policy Value Using Softer Surrogates"
+ },
+ {
+  "paper_id": "2606.09987",
+  "year": "2026",
+  "title": "Mode Instability and a Massive, Isolated Outburst in the Pulsating White Dwarf GD 1212"
+ },
+ {
+  "paper_id": "2606.06036",
+  "year": "2026",
+  "title": "Memory is Reconstructed, Not Retrieved: Graph Memory for LLM Agents"
+ },
+ {
+  "paper_id": "2606.14654",
+  "year": "2026",
+  "title": "Abstracting Cross-Domain Action Sequences into Interpretable Workflows"
+ },
+ {
+  "paper_id": "1804.04622",
+  "year": "2018",
+  "title": "Causal Inference via Kernel Deviance Measures"
+ },
+ {
+  "paper_id": "2208.00114",
+  "year": "2022",
+  "title": "Outcome Adaptive Propensity Score Methods for Handling Censoring and High-Dimensionality: Application to Insurance Claims"
+ },
+ {
+  "paper_id": "2607.10126",
+  "year": "2026",
+  "title": "ML in a Box: Analyzing Containerization Practices in Open Source ML Projects"
+ },
+ {
+  "paper_id": "2510.24781",
+  "year": "2025",
+  "title": "Dual-Channel Technology Diffusion: Spatial Decay and Network Contagion in Supply Chain Networks"
+ },
+ {
+  "paper_id": "2606.09388",
+  "year": "2026",
+  "title": "Distilling Safe LLM Systems via Soft Prompts for On Device Settings"
+ },
+ {
+  "paper_id": "2501.06864",
+  "year": "2025",
+  "title": "Fisher's Randomization Test for Causality with General Types of Treatments"
+ },
+ {
+  "paper_id": "2101.04025",
+  "year": "2021",
+  "title": "Distributed Double Machine Learning with a Serverless Architecture"
+ },
+ {
+  "paper_id": "2604.08681",
+  "year": "2026",
+  "title": "Nonparametric Identification and Estimation of Causal Effects on Latent Outcomes"
+ },
+ {
+  "paper_id": "2103.15933",
+  "year": "2021",
+  "title": "Learning Under Adversarial and Interventional Shifts"
+ },
+ {
+  "paper_id": "2411.03387",
+  "year": "2024",
+  "title": "Quantifying Aleatoric Uncertainty of the Treatment Effect: A Novel Orthogonal Learner"
+ },
+ {
+  "paper_id": "2606.26234",
+  "year": "2026",
+  "title": "Lyman-Alpha Forest and its Cross-Correlation with High-Redshift Galaxies in Effective Field Theory at the Field Level"
+ },
+ {
+  "paper_id": "2006.10742",
+  "year": "2020",
+  "title": "Learning Invariant Representations for Reinforcement Learning without Reconstruction"
+ },
+ {
+  "paper_id": "2003.03191",
+  "year": "2020",
+  "title": "Double Machine Learning based Program Evaluation under Unconfoundedness"
+ },
+ {
+  "paper_id": "2106.10141",
+  "year": "2021",
+  "title": "Active labour market policies for the long-term unemployed: New evidence from causal machine learning"
+ },
+ {
+  "paper_id": "2605.07834",
+  "year": "2026",
+  "title": "GenAI Powered Dynamic Causal Inference with Unstructured Data"
+ },
+ {
+  "paper_id": "2604.14856",
+  "year": "2026",
+  "title": "ClimateCause: Complex and Implicit Causal Structures in Climate Reports"
+ },
+ {
+  "paper_id": "2606.10912",
+  "year": "2026",
+  "title": "What Do Deepfake Speech Detectors Actually Hear?"
+ },
+ {
+  "paper_id": "2606.25601",
+  "year": "2026",
+  "title": "Statistically Valid Hyperparameter Selection: From Tuning to Guarantees"
+ },
+ {
+  "paper_id": "2606.26398",
+  "year": "2026",
+  "title": "DinoLink: A Token-Centric Representation Compression Framework for Bandwidth-Constrained Collaborative V2X Perception"
+ },
+ {
+  "paper_id": "2506.23374",
+  "year": "2025",
+  "title": "When Additive Noise Meets Unobserved Mediators: Bivariate Denoising Diffusion for Causal Discovery"
+ },
+ {
+  "paper_id": "2606.09508",
+  "year": "2026",
+  "title": "From Rigid to Dynamic: Entropy-Guided Adaptive Inference for Long-Context LLMs"
+ },
+ {
+  "paper_id": "2606.24283",
+  "year": "2026",
+  "title": "Investigating causality between principal components in protein dynamics"
+ },
+ {
+  "paper_id": "2505.05670",
+  "year": "2025",
+  "title": "Estimation and Inference in Boundary Discontinuity Designs: Location-Based Methods"
+ },
+ {
+  "paper_id": "2504.09163",
+  "year": "2025",
+  "title": "Deconfounded Reasoning for Multimodal Fake News Detection via Causal Intervention"
+ },
+ {
+  "paper_id": "2508.06662",
+  "year": "2025",
+  "title": "Fiscal Spillovers through Informal Financial Channels"
+ },
+ {
+  "paper_id": "2505.07729",
+  "year": "2025",
+  "title": "Nonparametric Instrumental Variable Inference with Many Weak Instruments"
+ }
+]

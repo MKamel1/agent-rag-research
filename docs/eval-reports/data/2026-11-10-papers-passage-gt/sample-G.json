@@ -1,0 +1,162 @@
+[
+ {
+  "paper_id": "2306.01969",
+  "year": "2023",
+  "title": "Individual Causal Inference Using Panel Data With Multiple Outcomes"
+ },
+ {
+  "paper_id": "2606.22126",
+  "year": "2026",
+  "title": "From Recognition to Understanding: Unlocking Cognitive Time Series Reasoning with LLMs"
+ },
+ {
+  "paper_id": "2210.11186",
+  "year": "2022",
+  "title": "Unruh deWitt probe of late time revival of quantum correlations in Friedmann spacetimes"
+ },
+ {
+  "paper_id": "2212.13145",
+  "year": "2022",
+  "title": "Orthogonal Series Estimation for the Ratio of Conditional Expectation Functions"
+ },
+ {
+  "paper_id": "2606.15637",
+  "year": "2026",
+  "title": "HAPI-EP: Towards Hybrid, Adaptive, and Predictive Digital Twins of Cardiac Electrophysiology"
+ },
+ {
+  "paper_id": "2512.19349",
+  "year": "2025",
+  "title": "VIGOR+: Iterative Confounder Generation and Validation via LLM-CEVAE Feedback Loop"
+ },
+ {
+  "paper_id": "2605.00374",
+  "year": "2026",
+  "title": "Advancing Edge Classification through High-Dimensional Causal Modeling of Node-Edge Interplay"
+ },
+ {
+  "paper_id": "2512.18997",
+  "year": "2025",
+  "title": "A Universal Framework for Factorial Matched Observational Studies with General Treatment Types: Design, Analysis, and Applications"
+ },
+ {
+  "paper_id": "2103.15218",
+  "year": "2021",
+  "title": "Data Integration through outcome adaptive LASSO and a collaborative propensity score approach"
+ },
+ {
+  "paper_id": "2202.02369",
+  "year": "2022",
+  "title": "Statistical Methods for Accommodating Immortal Time: A Selective Review and Comparison"
+ },
+ {
+  "paper_id": "2402.06032",
+  "year": "2024",
+  "title": "Navigating Market Turbulence: Insights from Causal Network Contagion Value at Risk"
+ },
+ {
+  "paper_id": "1803.08218",
+  "year": "2018",
+  "title": "Causal Inference for Survival Analysis"
+ },
+ {
+  "paper_id": "2607.06664",
+  "year": "2026",
+  "title": "Effects of Rotation on 3D Core-Collapse Supernova Models for Low-Mass Progenitors"
+ },
+ {
+  "paper_id": "2210.15829",
+  "year": "2022",
+  "title": "Estimation of Heterogeneous Treatment Effects Using a Conditional Moment Based Approach"
+ },
+ {
+  "paper_id": "2604.02293",
+  "year": "2026",
+  "title": "Covariate-Balanced Weighted Stacked Difference-in-Differences"
+ },
+ {
+  "paper_id": "1808.04246",
+  "year": "2018",
+  "title": "Semiparametric Bayesian causal inference"
+ },
+ {
+  "paper_id": "2602.07825",
+  "year": "2026",
+  "title": "Estimation Strategies for Causal Decomposition Analysis with Allowability Specifications"
+ },
+ {
+  "paper_id": "2510.16975",
+  "year": "2025",
+  "title": "Causal Variance Decompositions for Measuring Health Inequalities"
+ },
+ {
+  "paper_id": "1406.0531",
+  "year": "2014",
+  "title": "Causal Inference through a Witness Protection Program"
+ },
+ {
+  "paper_id": "2105.00416",
+  "year": "2021",
+  "title": "Selective Inference in Propensity Score Analysis"
+ },
+ {
+  "paper_id": "2410.23521",
+  "year": "2024",
+  "title": "Healthy Live Births Should be Considered as Competing Events when Estimating the Total Effect of Prenatal Medication Use on Pregnancy Outcomes"
+ },
+ {
+  "paper_id": "2606.23548",
+  "year": "2026",
+  "title": "SuperCond-GNN: Scalable Graph Neural Network Surrogate for Superconducting Circuit Simulations"
+ },
+ {
+  "paper_id": "1509.03940",
+  "year": "2015",
+  "title": "Causal Inference in Repeated Observational Studies: A Case Study of eBay Product Releases"
+ },
+ {
+  "paper_id": "2510.14780",
+  "year": "2025",
+  "title": "Causal Discovery for Linear DAGs with Dependent Latent Variables via Higher-order Cumulants"
+ },
+ {
+  "paper_id": "2606.05448",
+  "year": "2026",
+  "title": "Learning and Inferring Multiphase Flow Dynamics in Porous Media using Scientific Machine Learning: Application to the \"FluidFlower\" CO2 Injection Experiment"
+ },
+ {
+  "paper_id": "2605.23691",
+  "year": "2026",
+  "title": "Joint Estimation of Marginal and Heterogeneous Treatment Effects"
+ },
+ {
+  "paper_id": "2107.03922",
+  "year": "2021",
+  "title": "Balancing Higher Moments Matters for Causal Estimation: Further Context for the Results of Setodji et al. (2017)"
+ },
+ {
+  "paper_id": "2303.10544",
+  "year": "2023",
+  "title": "Quantum Causal Inference with Extremely Light Touch"
+ },
+ {
+  "paper_id": "2204.01169",
+  "year": "2022",
+  "title": "Extended Tetrad Analysis in Factor Modelling: Separability and Uncertainty from Multidimensional Dependence Structures"
+ },
+ {
+  "paper_id": "2606.21613",
+  "year": "2026",
+  "title": "Cross-Modal Corroboration for Annotation-Free Wildlife Monitoring"
+ },
+ {
+  "paper_id": "2207.13512",
+  "year": "2022",
+  "title": "Long-term temporal evolution of extreme temperature in a warming Earth"
+ },
+ {
+  "paper_id": "2504.00785",
+  "year": "2025",
+  "title": "Quantile Treatment Effects in High Dimensional Panel Data"
+ }
+]

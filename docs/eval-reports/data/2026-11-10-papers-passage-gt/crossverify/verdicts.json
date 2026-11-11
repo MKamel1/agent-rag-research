@@ -1,0 +1,822 @@
+[
+ {
+  "question_id": "Q-PF-F-001",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PF-F-002",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PF-F-003",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": false,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [
+   "2412.20638:c29"
+  ],
+  "reason": "Appendix chunk 2412.20638:c29 (12.1 HIV Treatment) also states 2500 long-term trajectories, 500 on-policy short-term trajectories and 'Reward is given at every time step in the 200 horizon'; it answers the same question.",
+  "suggested_fix": "Add 2412.20638:c29 to alternative_gold_chunk_ids."
+ },
+ {
+  "question_id": "Q-PF-F-004",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PF-F-005",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PF-F-006",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PF-F-007",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": false,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [
+   "2510.24781:c4",
+   "2510.24781:c60"
+  ],
+  "reason": "Intro 1.1 chunk 2510.24781:c4 states 'averages kappa = 0.0435 per kilometer ... (standard deviation 0.0006)', the same answer (c60 already listed is only the table).",
+  "suggested_fix": "Add 2510.24781:c4 to alternative_gold_chunk_ids (keep c60)."
+ },
+ {
+  "question_id": "Q-PF-F-008",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PF-F-009",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [
+   "2101.04025:c14"
+  ],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PF-F-010",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PF-F-011",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PF-F-012",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PF-F-013",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": false,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [
+   "2606.14654:c6"
+  ],
+  "reason": "2606.14654:c6 (4.1) says Layer 1 gives a detailed natural-language description of action sequences and Layer 2 infers the overall task, a near-duplicate answer to the first-two-layers question.",
+  "suggested_fix": "Add 2606.14654:c6 as alternative (weaker match), or tighten question to 'high-level activity' wording of c4."
+ },
+ {
+  "question_id": "Q-PF-F-014",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PF-F-015",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PF-F-016",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PF-F-017",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PF-F-018",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PF-F-019",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PF-F-020",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PF-F-021",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PF-F-022",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PF-F-023",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PF-F-024",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PF-F-025",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PF-F-026",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PF-F-027",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PF-F-028",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PF-F-029",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PF-F-030",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PF-F-031",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PAPG-001",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PAPG-002",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": false,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [
+   "2606.22126:c56"
+  ],
+  "reason": "Appendix I.3 chunk 2606.22126:c56 explains softmax 'competitive normalization ... mutual suppression' vs gated fusion preserving multiple important variables and uniform fusion equal weighting; it covers the same why-question.",
+  "suggested_fix": "Add 2606.22126:c56 to alternative_gold_chunk_ids."
+ },
+ {
+  "question_id": "Q-PAPG-003",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PAPG-004",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [
+   "2210.11186:c23"
+  ],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PAPG-005",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PAPG-006",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PAPG-007",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PAPG-008",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PAPG-009",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PAPG-010",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PAPG-011",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PAPG-012",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PAPG-013",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PAPG-014",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PAPG-015",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": false,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Question reuses title run 'stacked difference in differences' (title: Covariate-Balanced Weighted Stacked Difference-in-Differences).",
+  "suggested_fix": "Reword, e.g. 'In the simulation for the covariate-balancing weighted stacked DiD estimator ...' or describe by setting (staggered adoption, covariates affect timing and trend)."
+ },
+ {
+  "question_id": "Q-PAPG-016",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PAPG-017",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": false,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [
+   "2602.07825:c45"
+  ],
+  "reason": "Conclusion chunk 2602.07825:c45 says N-bridging estimators 'dominated every other estimator in their respective subclass' and names the best SWR estimator; same answer as gold c41.",
+  "suggested_fix": "Add 2602.07825:c45 to alternative_gold_chunk_ids."
+ },
+ {
+  "question_id": "Q-PAPG-018",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PAPG-019",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PAPG-020",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [
+   "2105.00416:c16"
+  ],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PAPG-021",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PAPG-022",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": false,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Question reuses title run 'network surrogate for superconducting' (title: ...Graph Neural Network Surrogate for Superconducting Circuit Simulations).",
+  "suggested_fix": "Reword, e.g. 'the GNN emulator of tape-stack superconducting circuits benchmarked against ngspice ...'."
+ },
+ {
+  "question_id": "Q-PAPG-023",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PAPG-024",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": false,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Question reuses title run 'with dependent latent variables' (title: ...Linear DAGs with Dependent Latent Variables via Higher-order Cumulants).",
+  "suggested_fix": "Reword, e.g. 'In the LvLiNGAM simulations using higher-order cumulants, what distribution do the disturbances follow?'."
+ },
+ {
+  "question_id": "Q-PAPG-025",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": false,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Question reuses title run 'FluidFlower CO2 injection experiment' (title: ...Application to the \"FluidFlower\" CO2 Injection Experiment).",
+  "suggested_fix": "Reword, e.g. 'In the Bayesian parameter identification for the CO2 storage lab-bench (FluidFlower benchmark) surrogate ...'."
+ },
+ {
+  "question_id": "Q-PAPG-026",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": false,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Question reuses title run 'marginal and heterogeneous treatment effect' (title: Joint Estimation of Marginal and Heterogeneous Treatment Effects).",
+  "suggested_fix": "Reword, e.g. 'In the simulations for the NAMI-HTE model combining population-average and subgroup effects ...'."
+ },
+ {
+  "question_id": "Q-PAPG-027",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PAPG-028",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PAPG-029",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ },
+ {
+  "question_id": "Q-PAPG-030",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "deep": true,
+   "unique_in_paper": true,
+   "identifiable": true,
+   "label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": ""
+ }
+]
