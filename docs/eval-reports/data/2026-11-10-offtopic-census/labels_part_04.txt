@@ -1,0 +1,85 @@
+230|on|batched adaptive experiments, experimentation inference
+231|off|storage metrics for LLM agents
+232|on|causal Bayesian optimisation over causal graphs
+233|on|covariate adjustment in RCTs
+234|on|VAT increase causal evidence via synthetic control
+235|off|SNN backdoor attack on object detection
+236|off|VLM document parsing
+237|off|dynamic network community detection
+238|off|emotional intelligence in generative AI
+239|on|heterogeneous treatment effects in trial
+240|on|evaluating HTE estimators
+241|on|GNN for causal inference in brain networks
+242|off|matrix-valued kernel regression
+243|off|latent reasoning in LLMs
+244|off|consciousness and computational functionalism
+245|on|flow-based dynamic temporal causal models
+246|off|quantum phase transitions in materials
+247|off|quantum subsystem codes
+248|borderline|built environment and activity; observational, causal peripheral
+249|on|quantile treatment effects, panel data
+250|on|weak instruments and alternative IV estimators
+251|borderline|panel econometrics with random forests; not causal method
+252|on|causal discovery with latent confounders
+253|borderline|artificial counterfactual tissue sampling; causal framing unclear
+254|on|double-robust causal effect estimation
+255|off|numerical PDE solvers
+256|off|CNN image super-resolution
+257|off|neural operator learning
+258|off|phase-field chemical equilibrium
+259|on|causal decision making versus effect estimation
+260|on|discussion of causal CI coverage tests
+261|off|solar flare MHD prediction
+262|borderline|causal information bottleneck; causal in name only
+263|off|video diffusion animation
+264|off|genetic algorithms mathematics
+265|off|Kalman noise covariance estimation
+266|off|LLM decision beliefs
+267|on|causal machine learning for galaxy environment effects
+268|off|supernova peculiar velocity cosmology
+269|on|causal discovery in high-dimensional time series
+270|on|causal representation learning from binary interactions
+271|on|causal ML for readmission policy targeting
+272|on|causal analysis methods in stochastic frontier models
+273|on|gsynth causal panel estimator validity
+274|borderline|causal driver quantification in trolleybus energy; causal in title only
+275|off|missing data imputation for EHR
+276|borderline|causal structure of quantum processes; not classical causal methods
+277|off|persuasion-attack compound AI
+278|off|multi-view 3D volume estimation
+279|on|deconfounding for domain generalization
+280|off|linear attention architectures
+281|on|Granger causal structure from event sequences
+282|off|extreme temperature modeling
+283|on|causal graph identifiability
+284|on|propensity-score Bayesian causal inference
+285|on|conditional independence testing for causal discovery
+286|on|implied weights of regression for causal inference
+287|on|Bayesian g-formula for causal quantities
+288|on|counterfactual graph intervention for LLM hallucination
+289|on|causal discovery with additive noise models
+290|off|matrix multiplication algorithms
+291|on|causal inference as prediction on target population
+292|off|KV cache optimization for LLM serving
+293|off|binomial logistic mixture inference
+294|off|time-lapse photography robots
+295|off|query expansion for retrieval
+296|on|NPIV inference with many weak instruments
+297|off|multi-robot path planning
+298|on|DAG topological criteria for causal discovery benchmarks
+299|on|treatment effects with external controls
+300|on|causal survival learning with time-varying treatments
+301|on|causal analysis of free public transport policy
+302|on|causal graph identifiability via invariance
+303|off|EPR study of radicals in electrochemistry
+304|on|causal representation learning benchmarks
+305|on|dynamic causal inference for time series
+306|on|human causal generalization over object powers
+307|on|causal discovery for hot corrosion
+308|on|synthetic control arms benchmark
+309|off|classifier performance metric
+310|off|transformer inference mechanisms
+311|on|counterfactual inference with representation learning
+312|off|gamma-ray sky tomography
+313|off|sliding-window attention for LLM reasoning
+314|off|multi-view video generation

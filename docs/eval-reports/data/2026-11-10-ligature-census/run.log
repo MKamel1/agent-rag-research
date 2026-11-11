@@ -1,0 +1,11 @@
+main: chunks=399676 affected_chunks=129566 (32.42%) docs=12390 docs_affected=6558 (52.93%) docs>=10%=6412 (51.75%) ligature_chunks=0
+  top: efect=117584, efects=96667, diferent=67572, diference=34731, diferences=23893
+waymo: chunks=47771 affected_chunks=4762 (9.97%) docs=1861 docs_affected=350 (18.81%) docs>=10%=335 (18.0%) ligature_chunks=0
+  top: diferent=3607, eficiency=1098, eficient=1083, efective=729, efect=641
+standards: chunks=35714 affected_chunks=995 (2.79%) docs=119 docs_affected=13 (10.92%) docs>=10%=7 (5.88%) ligature_chunks=0
+  top: diferent=468, efects=157, efect=150, suficient=106, dificult=101
+motional: chunks=2013 affected_chunks=101 (5.02%) docs=65 docs_affected=13 (20.0%) docs>=10%=8 (12.31%) ligature_chunks=0
+  top: diferent=35, efective=30, efectively=17, efects=12, efect=7
+waabi: chunks=566 affected_chunks=40 (7.07%) docs=29 docs_affected=4 (13.79%) docs>=10%=4 (13.79%) ligature_chunks=0
+  top: diferent=42, eficient=23, dificult=18, eficiently=10, efect=9
+overall top: efect=118391, efects=97382, diferent=71724, diference=35423, diferences=24361

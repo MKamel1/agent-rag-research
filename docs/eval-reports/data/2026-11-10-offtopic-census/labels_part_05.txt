@@ -1,0 +1,85 @@
+315|off|quantum-classical polarimetric classification
+316|off|LLM tokenization symmetry
+317|off|slender structure segmentation
+318|on|causal direction via density ratios
+319|off|6G UAV AI service provisioning
+320|on|supervised causal learning
+321|borderline|causal graph in expression spotting; CV method
+322|off|scientific image generation model
+323|on|counterfactual reasoning for popularity bias
+324|borderline|multinomial null cell estimation; generic statistics
+325|on|causal graphical modeling in education
+326|on|mediation analysis with semi-competing risks
+327|on|generalization bounds for causal regression
+328|off|LLM quantization
+329|off|age bias in LLM values
+330|on|matching for causal inference
+331|on|M-bias and causal regression adjustment
+332|borderline|offline RL with confounders; causal-adjacent
+333|off|agentic AutoML for time series
+334|borderline|causal latent world model; causal structure peripheral
+335|borderline|counterfactuals in combinatorial choice; econometric adjacent
+336|on|IV approach for causal inference in networks
+337|borderline|causal naming in image fusion; CV method
+338|off|language agent memory
+339|on|invariance and causality for robustness
+340|on|regression discontinuity multiple cutoffs
+341|on|causal interrupted time series designs
+342|off|scene graph generation
+343|on|spillover effects of policies
+344|on|doubly robust ATE estimation
+345|off|gamma-ray burst emission
+346|off|limit order book prediction
+347|on|randomization inference for experiments
+348|off|time-series parametric variation inference
+349|borderline|linear functional bounds; DR estimation adjacent
+350|on|probabilities of causation with partial diagrams
+351|on|nonlinear causal discovery under non-Gaussian noise
+352|on|random forests for HTE inference
+353|on|long-term effect estimation with surrogates
+354|on|longitudinal modified treatment policies
+355|off|multi-sensor regression fusion
+356|on|double robust counterfactual prediction
+357|borderline|cluster sampling for DiD precision; design adjacent
+358|off|explainable ML overview
+359|on|text-based causal inference of review ratings
+360|off|multilingual program-of-thought
+361|off|mean-field game IRL
+362|borderline|counterfactual learning for electricity unfairness
+363|on|visual causal discovery
+364|on|independence weights for continuous treatments
+365|borderline|DNNs in structural models for heterogeneity; econometric adjacent
+366|off|label noise learning
+367|on|LiNGAM causal discovery
+368|on|resampling for causal analysis validation
+369|off|power system planning
+370|off|quantum temperature concept
+371|borderline|string diagrams for causal models; formal, not causal inference
+372|off|LLM log generation
+373|on|Bayesian causal forests for treatment effects
+374|off|ECG synthesis
+375|on|CATE of educational support center
+376|off|surveillance video benchmark
+377|borderline|graph structure with Gaussian processes; causal link unclear
+378|on|causal foundation model for prescriptive maintenance
+379|on|quantifying causal influences in DAGs
+380|on|uplift modeling with causal trees
+381|off|text world models for agents
+382|off|black hole perturbations
+383|off|gravitational-wave EMRI detection
+384|off|video-to-audio synthesis
+385|on|causal discovery with counterfactual image editing
+386|on|cluster-DAG background knowledge for causal discovery
+387|on|causal approach to disease outbreak modelling
+388|off|low-resource machine translation
+389|borderline|ML for financial research; causal not central
+390|on|long-term effects of novel treatments
+391|on|covariate balance in randomized experiments
+392|off|long-context LLM inference
+393|off|thermoelectric materials
+394|off|knot genus construction
+395|off|text-to-motion generation
+396|off|innovation network dynamics
+397|on|heterogeneous survival treatment effects observational
+398|on|external controls in randomized trials
+399|off|LLM-based software testing

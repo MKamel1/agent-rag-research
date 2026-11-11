@@ -1,0 +1,80 @@
+150|on|policy evaluation chapter, causal effects
+151|on|causal forest for time-of-use pricing response
+152|on|causal effect of interventions over time
+153|off|Cherenkov radiation physics
+154|off|nuclear parity-violating scattering
+155|borderline|survey nonresponse adjustment; generic statistics
+156|on|synthetic control for intervention effect
+157|off|theory of mind RL for LLMs
+158|borderline|public transfer crowd-out review; causal content implied
+159|on|neural treatment effect estimation
+160|on|empirical calibration for observational causal bias
+161|off|speaker diarization clustering
+162|off|robot navigation
+163|off|autonomous driving diffusion planning
+164|borderline|fair ML Bayesian prediction; no causal method
+165|off|pathology image classification
+166|on|causal discovery with priors
+167|on|LLM-assisted causal discovery
+168|off|LLM mathematical reasoning analysis
+169|borderline|counterfactual data augmentation; causal-adjacent
+170|on|taxonomy of causal model families
+171|on|time-series causal discovery benchmarks
+172|on|heterogeneous effects of price interventions
+173|on|causal discovery with latent confounders
+174|on|causal effect estimation with DAG-aware transformer
+175|on|falsification of IV models for heterogeneous effects
+176|on|cyclic causal discovery
+177|on|community ban effects, causal design
+178|borderline|IV-based system identification; not causal inference
+179|off|video RAG for long-video reasoning
+180|on|dynamical causality with confounders
+181|on|secular trend bias in drug effectiveness study
+182|on|standardizing SCMs for causal benchmarking
+183|on|synthetic control counterfactual estimation
+184|on|PC algorithm structure learning
+185|off|audio language model benchmark
+186|off|LLM molecular design
+187|on|causal graphs from hard interventions
+188|off|differential privacy public data
+189|off|autonomous driving waypoints
+190|off|community detection Gaussian mixtures
+191|on|causal mediation for zero-inflated mediators
+192|on|automated causal effect estimators via LLM evolution
+193|off|dust emission in galaxies
+194|on|tree ensembles for heterogeneous effects
+195|on|half-trek estimators in causal SEMs
+196|off|5G cell switching
+197|off|interpretability in driving models
+198|on|quasi-experimental tax reform effects on wages
+199|off|turbulent pipe flow DNS
+200|on|causal inference with invalid instruments software
+201|off|device-independent entropy tests
+202|on|propensity score truncation in causal inference
+203|on|covariate adjustment under stratified randomization
+204|borderline|synthetic control named; persona simulation focus
+205|off|diffusion driving planner
+206|on|cross-fitting for CATE estimation
+207|on|penalized GMM for nonparametric IV functionals
+208|off|self-play game equilibria
+209|on|Bayesian causal discovery for treatment effects
+210|off|LLM implicit personalization
+211|on|causal representation learning identifiability
+212|on|instrumental variables for causal hazard ratio
+213|on|measurement error in causal discovery
+214|on|treatment effect bounds with unobserved confounders
+215|on|chronological causal discovery
+216|borderline|causal-why video QA; causal reasoning in vision
+217|on|possibilistic IV regression with invalid instruments
+218|off|machine learning potentials for solvation
+219|on|causal discovery from incomplete data
+220|on|semiparametric Bayesian DiD
+221|off|few-shot font generation
+222|borderline|causal representation in lung CT; clinical, method unclear
+223|on|treatment effects with network data adjustment
+224|off|flood depth surrogate models
+225|on|survey of LLM causal discovery and effect estimation
+226|off|visual anagram generation
+227|on|Granger causal structure learning
+228|off|opinion dynamics in complex systems
+229|off|self-organized criticality earthquakes

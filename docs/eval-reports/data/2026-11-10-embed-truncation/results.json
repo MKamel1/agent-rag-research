@@ -1,0 +1,1087 @@
+{
+ "main": {
+  "chunks": 399676,
+  "chars_total": 1080386685,
+  "tokenized_exact": 128975,
+  "sample_small_over": "0/5000",
+  "over_4096": 3138,
+  "over_4096_pct": 0.7851359601277035,
+  "chars_lost": 16312850,
+  "chars_lost_pct": 1.509908463931134,
+  "median_lost_frac_of_oversized": 0.24038688424219878,
+  "over_8192_rerank": 556,
+  "rr_chars_lost": 6190229,
+  "chars_gt_8000": 8487,
+  "chars_gt_30000": 91,
+  "chars_per_token_median_big": 2.9887640449438204,
+  "by_doc_type": {
+   "paper": {
+    "n_big": 128546,
+    "over": 3135
+   },
+   "book": {
+    "n_big": 429,
+    "over": 3
+   }
+  },
+  "kinds": {
+   "table_heavy": 1861,
+   "eq_heavy": 662,
+   "ref_like": 71
+  },
+  "top10": [
+   {
+    "pid": "2607.07980",
+    "sp": "APPENDIX 6 SUPPLEMENTARY DOCUMENT INDEX",
+    "chars": 709987,
+    "tok": 266029,
+    "dt": "paper",
+    "dollar": 32,
+    "pipe": 78708,
+    "refs": 19
+   },
+   {
+    "pid": "1208.4360",
+    "sp": "REFERENCES",
+    "chars": 472146,
+    "tok": 384805,
+    "dt": "paper",
+    "dollar": 60,
+    "pipe": 62607,
+    "refs": 0
+   },
+   {
+    "pid": "2602.07915",
+    "sp": "T Figure results aggregated over all hyperparameters",
+    "chars": 194403,
+    "tok": 128974,
+    "dt": "paper",
+    "dollar": 9930,
+    "pipe": 12211,
+    "refs": 0
+   },
+   {
+    "pid": "2012.00370",
+    "sp": "B Covariates",
+    "chars": 132613,
+    "tok": 88518,
+    "dt": "paper",
+    "dollar": 4,
+    "pipe": 16321,
+    "refs": 0
+   },
+   {
+    "pid": "2208.00114",
+    "sp": "Supplementary Tables",
+    "chars": 105676,
+    "tok": 70111,
+    "dt": "paper",
+    "dollar": 160,
+    "pipe": 22560,
+    "refs": 0
+   },
+   {
+    "pid": "2212.07379",
+    "sp": "A.3 Local average treatment efects for each DGP",
+    "chars": 99261,
+    "tok": 67023,
+    "dt": "paper",
+    "dollar": 0,
+    "pipe": 15793,
+    "refs": 1
+   },
+   {
+    "pid": "2601.16715",
+    "sp": "L Excluded results",
+    "chars": 98837,
+    "tok": 76195,
+    "dt": "paper",
+    "dollar": 790,
+    "pipe": 9512,
+    "refs": 0
+   },
+   {
+    "pid": "2506.11960",
+    "sp": "D.1 Covariate and Outcome Means by Program sequence",
+    "chars": 97672,
+    "tok": 70596,
+    "dt": "paper",
+    "dollar": 10,
+    "pipe": 11676,
+    "refs": 0
+   },
+   {
+    "pid": "1710.10139",
+    "sp": "B.1. Further annotations to Table B.1 :",
+    "chars": 94546,
+    "tok": 54485,
+    "dt": "paper",
+    "dollar": 1518,
+    "pipe": 3415,
+    "refs": 1
+   },
+   {
+    "pid": "2004.14800",
+    "sp": "Supplementary Appendix C: Simulation study results",
+    "chars": 82214,
+    "tok": 64870,
+    "dt": "paper",
+    "dollar": 0,
+    "pipe": 9838,
+    "refs": 0
+   }
+  ],
+  "gt30k": [
+   {
+    "pid": "2405.18206",
+    "sp": "D.2.3 Observational study and RCT",
+    "chars": 37324,
+    "pipe": 4519,
+    "dollar": 16,
+    "refs": 0
+   },
+   {
+    "pid": "2407.06038",
+    "sp": "S1 Additional Simulation Scenarios > S1.2 Simulation Results",
+    "chars": 34110,
+    "pipe": 4703,
+    "dollar": 372,
+    "refs": 0
+   },
+   {
+    "pid": "2408.14604",
+    "sp": "Table 5: Journals considered in data analysis",
+    "chars": 32196,
+    "pipe": 1791,
+    "dollar": 0,
+    "refs": 0
+   },
+   {
+    "pid": "2408.14604",
+    "sp": "F.4 Y hubs as clipping parameters vary",
+    "chars": 30670,
+    "pipe": 1910,
+    "dollar": 0,
+    "refs": 0
+   },
+   {
+    "pid": "2408.14604",
+    "sp": "F.5 Z hubs as clipping parameters vary",
+    "chars": 33768,
+    "pipe": 1920,
+    "dollar": 8,
+    "refs": 0
+   },
+   {
+    "pid": "2502.01575",
+    "sp": "C Additional Results - HIV Dataset Analysis",
+    "chars": 32951,
+    "pipe": 3058,
+    "dollar": 136,
+    "refs": 0
+   },
+   {
+    "pid": "2504.08301",
+    "sp": "VIII.1 Additional numerical result for RHC",
+    "chars": 42000,
+    "pipe": 5317,
+    "dollar": 410,
+    "refs": 0
+   },
+   {
+    "pid": "2506.10452",
+    "sp": "REFERENCES",
+    "chars": 31247,
+    "pipe": 4859,
+    "dollar": 0,
+    "refs": 183
+   },
+   {
+    "pid": "2507.12257",
+    "sp": "E.2. Additional Results",
+    "chars": 38141,
+    "pipe": 3596,
+    "dollar": 4,
+    "refs": 0
+   },
+   {
+    "pid": "2602.18762",
+    "sp": "E.1 Bounding Under Monotonicity Assumption",
+    "chars": 75975,
+    "pipe": 4863,
+    "dollar": 944,
+    "refs": 1
+   },
+   {
+    "pid": "2605.02050",
+    "sp": "References",
+    "chars": 30515,
+    "pipe": 758,
+    "dollar": 0,
+    "refs": 0
+   },
+   {
+    "pid": "2606.13209",
+    "sp": "A.11 AI utility statement.",
+    "chars": 32772,
+    "pipe": 2589,
+    "dollar": 778,
+    "refs": 3
+   },
+   {
+    "pid": "2606.13607",
+    "sp": "D Additional causal reasoning evaluation results",
+    "chars": 30958,
+    "pipe": 1362,
+    "dollar": 0,
+    "refs": 0
+   },
+   {
+    "pid": "2606.16058",
+    "sp": "References",
+    "chars": 44313,
+    "pipe": 6330,
+    "dollar": 154,
+    "refs": 0
+   },
+   {
+    "pid": "2606.19364",
+    "sp": "Raw prompt",
+    "chars": 50472,
+    "pipe": 1305,
+    "dollar": 22,
+    "refs": 0
+   },
+   {
+    "pid": "2606.23917",
+    "sp": "Contents:",
+    "chars": 71340,
+    "pipe": 1314,
+    "dollar": 0,
+    "refs": 0
+   },
+   {
+    "pid": "2606.24970",
+    "sp": "B Results",
+    "chars": 61811,
+    "pipe": 6480,
+    "dollar": 1794,
+    "refs": 0
+   },
+   {
+    "pid": "2606.26411",
+    "sp": "APPENDIX",
+    "chars": 36127,
+    "pipe": 2060,
+    "dollar": 1118,
+    "refs": 0
+   },
+   {
+    "pid": "2312.07610",
+    "sp": "References",
+    "chars": 30208,
+    "pipe": 399,
+    "dollar": 30,
+    "refs": 46
+   },
+   {
+    "pid": "2312.07610",
+    "sp": "References",
+    "chars": 31098,
+    "pipe": 454,
+    "dollar": 34,
+    "refs": 8
+   },
+   {
+    "pid": "2402.14781",
+    "sp": "D EXTENDED EXPERIMENTAL RESULTS",
+    "chars": 33983,
+    "pipe": 2057,
+    "dollar": 2398,
+    "refs": 1
+   },
+   {
+    "pid": "2004.14800",
+    "sp": "Supplementary Appendix C: Simulation study results",
+    "chars": 82214,
+    "pipe": 9838,
+    "dollar": 0,
+    "refs": 0
+   },
+   {
+    "pid": "2006.06807",
+    "sp": "References",
+    "chars": 35023,
+    "pipe": 5389,
+    "dollar": 0,
+    "refs": 0
+   },
+   {
+    "pid": "2006.08832",
+    "sp": "APPENDIX A",
+    "chars": 30910,
+    "pipe": 5588,
+    "dollar": 0,
+    "refs": 1127
+   },
+   {
+    "pid": "2009.07055",
+    "sp": "References",
+    "chars": 36908,
+    "pipe": 4978,
+    "dollar": 0,
+    "refs": 0
+   },
+   {
+    "pid": "2012.00370",
+    "sp": "B Covariates",
+    "chars": 132613,
+    "pipe": 16321,
+    "dollar": 4,
+    "refs": 0
+   },
+   {
+    "pid": "2104.04601",
+    "sp": "D <sub>.</sub> 1 Registration Questionnaire and Descriptive Statistics",
+    "chars": 79457,
+    "pipe": 9040,
+    "dollar": 0,
+    "refs": 0
+   },
+   {
+    "pid": "2106.10141",
+    "sp": "Online Appendix O-D: Full descriptive statistics",
+    "chars": 64194,
+    "pipe": 5733,
+    "dollar": 0,
+    "refs": 0
+   },
+   {
+    "pid": "2112.05274",
+    "sp": "Libraries were:",
+    "chars": 37916,
+    "pipe": 6735,
+    "dollar": 0,
+    "refs": 0
+   },
+   {
+    "pid": "2202.00436",
+    "sp": "B.4. Full Examples",
+    "chars": 36756,
+    "pipe": 1544,
+    "dollar": 52,
+    "refs": 0
+   },
+   {
+    "pid": "2202.12078",
+    "sp": "5 Simulation Studies",
+    "chars": 32517,
+    "pipe": 3968,
+    "dollar": 454,
+    "refs": 2
+   },
+   {
+    "pid": "2203.10002",
+    "sp": "C Additional Results of the Main Simulation",
+    "chars": 49491,
+    "pipe": 6298,
+    "dollar": 70,
+    "refs": 0
+   },
+   {
+    "pid": "2203.10002",
+    "sp": "D Simulation with Diferent Covariate Sets",
+    "chars": 59864,
+    "pipe": 7559,
+    "dollar": 82,
+    "refs": 0
+   },
+   {
+    "pid": "2206.13908",
+    "sp": "Appendix A: TABLE OF ALL COLLECTED INFALL SOURCES",
+    "chars": 54241,
+    "pipe": 7592,
+    "dollar": 0,
+    "refs": 0
+   },
+   {
+    "pid": "2208.00114",
+    "sp": "Supplementary Tables",
+    "chars": 105676,
+    "pipe": 22560,
+    "dollar": 160,
+    "refs": 0
+   },
+   {
+    "pid": "2208.06707",
+    "sp": "Tables",
+    "chars": 44718,
+    "pipe": 2207,
+    "dollar": 0,
+    "refs": 0
+   },
+   {
+    "pid": "2209.05916",
+    "sp": "References",
+    "chars": 43747,
+    "pipe": 4252,
+    "dollar": 0,
+    "refs": 23
+   },
+   {
+    "pid": "2210.02836",
+    "sp": "Results",
+    "chars": 31417,
+    "pipe": 3896,
+    "dollar": 8,
+    "refs": 0
+   },
+   {
+    "pid": "2210.06566",
+    "sp": "REFERENCES",
+    "chars": 36781,
+    "pipe": 1652,
+    "dollar": 0,
+    "refs": 4
+   },
+   {
+    "pid": "2212.07379",
+    "sp": "A.3 Local average treatment efects for each DGP",
+    "chars": 99261,
+    "pipe": 15793,
+    "dollar": 0,
+    "refs": 1
+   },
+   {
+    "pid": "2302.05260",
+    "sp": "Figure A0. RMSE of True Policy Advantages PANEL C: Modified Tree-based Policy",
+    "chars": 50307,
+    "pipe": 6681,
+    "dollar": 0,
+    "refs": 0
+   },
+   {
+    "pid": "2303.07329",
+    "sp": "APPENDIX",
+    "chars": 39969,
+    "pipe": 1209,
+    "dollar": 6,
+    "refs": 0
+   },
+   {
+    "pid": "2310.17679",
+    "sp": "2 Complete Results",
+    "chars": 35841,
+    "pipe": 2968,
+    "dollar": 0,
+    "refs": 0
+   },
+   {
+    "pid": "2402.01929",
+    "sp": "C.5 Results on real datasets",
+    "chars": 33068,
+    "pipe": 3214,
+    "dollar": 1014,
+    "refs": 1
+   },
+   {
+    "pid": "2405.10198",
+    "sp": "Appendix C.1. Base specifications",
+    "chars": 69932,
+    "pipe": 11846,
+    "dollar": 8,
+    "refs": 0
+   },
+   {
+    "pid": "2405.10198",
+    "sp": "Appendix C.2. Extensions to the base specification",
+    "chars": 70563,
+    "pipe": 11558,
+    "dollar": 8,
+    "refs": 0
+   },
+   {
+    "pid": "2405.15242",
+    "sp": "Section 4 DETAILS REGARDING DATA-GENERATION MECHANISMS",
+    "chars": 30704,
+    "pipe": 4673,
+    "dollar": 312,
+    "refs": 0
+   },
+   {
+    "pid": "2405.15242",
+    "sp": "Section 7 SIMULATION STUDY RESULTS",
+    "chars": 32464,
+    "pipe": 3956,
+    "dollar": 2,
+    "refs": 0
+   },
+   {
+    "pid": "2405.17139",
+    "sp": "M POSSIBLE COMBINATIONS",
+    "chars": 32618,
+    "pipe": 3888,
+    "dollar": 140,
+    "refs": 0
+   },
+   {
+    "pid": "2407.05001",
+    "sp": "C.2 Smaller sample size",
+    "chars": 30082,
+    "pipe": 3310,
+    "dollar": 386,
+    "refs": 0
+   },
+   {
+    "pid": "2407.11336",
+    "sp": "J Coeficient estimates for all models",
+    "chars": 40826,
+    "pipe": 5292,
+    "dollar": 0,
+    "refs": 0
+   },
+   {
+    "pid": "2407.11336",
+    "sp": "J Coeficient estimates for all models",
+    "chars": 48345,
+    "pipe": 5638,
+    "dollar": 0,
+    "refs": 0
+   },
+   {
+    "pid": "2410.23322",
+    "sp": "C.2.1 Permanent Residents Sample",
+    "chars": 33534,
+    "pipe": 4736,
+    "dollar": 0,
+    "refs": 98
+   },
+   {
+    "pid": "2410.23322",
+    "sp": "C.2.2 Temporary Residents Sample",
+    "chars": 33637,
+    "pipe": 4850,
+    "dollar": 0,
+    "refs": 168
+   },
+   {
+    "pid": "2410.23322",
+    "sp": "C.3.1 Permanent Residents Sample",
+    "chars": 32806,
+    "pipe": 4769,
+    "dollar": 0,
+    "refs": 51
+   },
+   {
+    "pid": "2410.23322",
+    "sp": "C.3.2 Temporary Residents Sample",
+    "chars": 33694,
+    "pipe": 4816,
+    "dollar": 26,
+    "refs": 116
+   },
+   {
+    "pid": "2411.10009",
+    "sp": "C Additional tables and figures",
+    "chars": 30294,
+    "pipe": 3632,
+    "dollar": 106,
+    "refs": 0
+   },
+   {
+    "pid": "2412.19507",
+    "sp": "REFERENCES",
+    "chars": 53693,
+    "pipe": 4321,
+    "dollar": 822,
+    "refs": 0
+   },
+   {
+    "pid": "2503.19949",
+    "sp": "5 Conclusion",
+    "chars": 31219,
+    "pipe": 826,
+    "dollar": 0,
+    "refs": 178
+   },
+   {
+    "pid": "2504.09144",
+    "sp": "REFERENCES",
+    "chars": 35180,
+    "pipe": 1728,
+    "dollar": 326,
+    "refs": 0
+   },
+   {
+    "pid": "2504.17166",
+    "sp": "References",
+    "chars": 35292,
+    "pipe": 4453,
+    "dollar": 0,
+    "refs": 0
+   },
+   {
+    "pid": "2504.17166",
+    "sp": "References",
+    "chars": 54956,
+    "pipe": 7493,
+    "dollar": 0,
+    "refs": 0
+   },
+   {
+    "pid": "2506.07962",
+    "sp": "D. Models analyzed",
+    "chars": 32765,
+    "pipe": 2769,
+    "dollar": 0,
+    "refs": 0
+   },
+   {
+    "pid": "2506.11960",
+    "sp": "D.1 Covariate and Outcome Means by Program sequence",
+    "chars": 97672,
+    "pipe": 11676,
+    "dollar": 10,
+    "refs": 0
+   },
+   {
+    "pid": "2507.17191",
+    "sp": "A.3.1 General track",
+    "chars": 35316,
+    "pipe": 3573,
+    "dollar": 0,
+    "refs": 0
+   },
+   {
+    "pid": "2509.06806",
+    "sp": "C EXTENDED PER-TASK EVALUATION",
+    "chars": 41351,
+    "pipe": 5208,
+    "dollar": 0,
+    "refs": 0
+   },
+   {
+    "pid": "2510.08438",
+    "sp": "D Additional simulation results",
+    "chars": 78842,
+    "pipe": 10500,
+    "dollar": 146,
+    "refs": 0
+   },
+   {
+    "pid": "2510.12503",
+    "sp": "E TABLE RESULTS ACROSS NODES, GRAPH TYPES, AND GRAPH DENSITIES",
+    "chars": 55492,
+    "pipe": 4994,
+    "dollar": 0,
+    "refs": 0
+   },
+   {
+    "pid": "2510.22031",
+    "sp": "G.1 Integration with Score-Based Causal Discovery Methods",
+    "chars": 47878,
+    "pipe": 2420,
+    "dollar": 1656,
+    "refs": 146
+   },
+   {
+    "pid": "2510.22809",
+    "sp": "C.4 Anomaly Detection Results",
+    "chars": 36418,
+    "pipe": 4150,
+    "dollar": 0,
+    "refs": 0
+   },
+   {
+    "pid": "2510.22953",
+    "sp": "I.1 Vision Task",
+    "chars": 32800,
+    "pipe": 4282,
+    "dollar": 0,
+    "refs": 0
+   },
+   {
+    "pid": "2511.03424",
+    "sp": "OA Additional simulation results",
+    "chars": 47902,
+    "pipe": 6767,
+    "dollar": 352,
+    "refs": 1
+   },
+   {
+    "pid": "2601.15479",
+    "sp": "REFERENCES",
+    "chars": 61426,
+    "pipe": 6905,
+    "dollar": 52,
+    "refs": 0
+   },
+   {
+    "pid": "2601.16715",
+    "sp": "L Excluded results",
+    "chars": 98837,
+    "pipe": 9512,
+    "dollar": 790,
+    "refs": 0
+   },
+   {
+    "pid": "2602.07915",
+    "sp": "T Figure results aggregated over all hyperparameters",
+    "chars": 194403,
+    "pipe": 12211,
+    "dollar": 9930,
+    "refs": 0
+   },
+   {
+    "pid": "2603.03805",
+    "sp": "F. Raw Results",
+    "chars": 37810,
+    "pipe": 4306,
+    "dollar": 0,
+    "refs": 0
+   },
+   {
+    "pid": "2603.19713",
+    "sp": "C.5. Computational Resources",
+    "chars": 30219,
+    "pipe": 1286,
+    "dollar": 1678,
+    "refs": 0
+   },
+   {
+    "pid": "2604.02656",
+    "sp": "C. Supplementary Tables",
+    "chars": 46407,
+    "pipe": 4428,
+    "dollar": 248,
+    "refs": 0
+   },
+   {
+    "pid": "2607.07186",
+    "sp": "Supplementary Tables",
+    "chars": 30702,
+    "pipe": 2799,
+    "dollar": 224,
+    "refs": 8
+   },
+   {
+    "pid": "2607.07765",
+    "sp": "REFERENCES",
+    "chars": 66695,
+    "pipe": 0,
+    "dollar": 0,
+    "refs": 0
+   },
+   {
+    "pid": "2607.07980",
+    "sp": "APPENDIX 6 SUPPLEMENTARY DOCUMENT INDEX",
+    "chars": 709987,
+    "pipe": 78708,
+    "dollar": 32,
+    "refs": 19
+   },
+   {
+    "pid": "2403.02467",
+    "sp": "Contents",
+    "chars": 30787,
+    "pipe": 0,
+    "dollar": 0,
+    "refs": 0
+   },
+   {
+    "pid": "1110.1987",
+    "sp": "REFERENCES",
+    "chars": 36430,
+    "pipe": 4294,
+    "dollar": 0,
+    "refs": 0
+   },
+   {
+    "pid": "1208.4360",
+    "sp": "REFERENCES",
+    "chars": 472146,
+    "pipe": 62607,
+    "dollar": 60,
+    "refs": 0
+   },
+   {
+    "pid": "1710.10139",
+    "sp": "B.1. Further annotations to Table B.1 :",
+    "chars": 94546,
+    "pipe": 3415,
+    "dollar": 1518,
+    "refs": 1
+   },
+   {
+    "pid": "1801.03147",
+    "sp": "Web Appendix B: Consistency of the PSPP estimator",
+    "chars": 54204,
+    "pipe": 8119,
+    "dollar": 46,
+    "refs": 2
+   },
+   {
+    "pid": "1902.10199",
+    "sp": "REFERENCES",
+    "chars": 35130,
+    "pipe": 4629,
+    "dollar": 0,
+    "refs": 0
+   },
+   {
+    "pid": "1903.03690",
+    "sp": "C Simulation",
+    "chars": 55209,
+    "pipe": 7707,
+    "dollar": 96,
+    "refs": 0
+   },
+   {
+    "pid": "2003.03789",
+    "sp": "4 Numerical Experiments > 4.5 Test problems from CEC2014 and CEC2017 suites",
+    "chars": 55911,
+    "pipe": 5781,
+    "dollar": 66,
+    "refs": 0
+   },
+   {
+    "pid": "2502.06536",
+    "sp": "E.2 Action/Temporal Sparsity Datasets and Temporal Causal3DIdent Dataset",
+    "chars": 30005,
+    "pipe": 2146,
+    "dollar": 226,
+    "refs": 0
+   },
+   {
+    "pid": "2607.27633",
+    "sp": "S3 Simulation Study > S3.2 Diferent Quantile Levels Under Sample Sizes of 500 an",
+    "chars": 31293,
+    "pipe": 3942,
+    "dollar": 0,
+    "refs": 0
+   }
+  ],
+  "gt30k_summary": {
+   "n": 91,
+   "distinct_papers": 80,
+   "table_heavy": 89,
+   "pipe_per_char_median": 0.11388521555144142
+  },
+  "gt30k_section_top": [
+   [
+    "REFERENCES",
+    9
+   ],
+   [
+    "References",
+    9
+   ],
+   [
+    "APPENDIX",
+    2
+   ],
+   [
+    "Supplementary Tables",
+    2
+   ],
+   [
+    "J Coeficient estimates for all models",
+    2
+   ],
+   [
+    "D.2.3 Observational study and RCT",
+    1
+   ],
+   [
+    "S1 Additional Simulation Scenarios",
+    1
+   ],
+   [
+    "Table 5: Journals considered in data ana",
+    1
+   ]
+  ]
+ },
+ "waymo": {
+  "chunks": 47771,
+  "chars_total": 99499771,
+  "tokenized_exact": 9338,
+  "sample_small_over": "0/5000",
+  "over_4096": 126,
+  "over_4096_pct": 0.2637583471143581,
+  "chars_lost": 384186,
+  "chars_lost_pct": 0.3861174715668441,
+  "median_lost_frac_of_oversized": 0.18622573446814458,
+  "over_8192_rerank": 12,
+  "rr_chars_lost": 56995,
+  "chars_gt_8000": 845,
+  "chars_gt_30000": 1,
+  "chars_per_token_median_big": 4.110986547085202,
+  "by_doc_type": {
+   "paper": {
+    "n_big": 9338,
+    "over": 126
+   }
+  },
+  "kinds": {
+   "table_heavy": 73,
+   "eq_heavy": 22,
+   "ref_like": 9
+  },
+  "top10": [
+   {
+    "pid": "local:86a350b887b5",
+    "sp": "REFERENCES",
+    "chars": 31460,
+    "tok": 14925,
+    "dt": "paper",
+    "dollar": 24,
+    "pipe": 2390,
+    "refs": 0
+   },
+   {
+    "pid": "local:007c79776d54",
+    "sp": "APPENDIX",
+    "chars": 23904,
+    "tok": 5642,
+    "dt": "paper",
+    "dollar": 0,
+    "pipe": 1018,
+    "refs": 98
+   },
+   {
+    "pid": "local:b1819859b098",
+    "sp": "C.1 Single-vehicle experiment",
+    "chars": 21826,
+    "tok": 16900,
+    "dt": "paper",
+    "dollar": 0,
+    "pipe": 2829,
+    "refs": 0
+   },
+   {
+    "pid": "local:52b5fc5d767d",
+    "sp": "3 RESULTS > 3.9 Validation of the Crash-Conflict Relationship [RQ.9]",
+    "chars": 21665,
+    "tok": 5021,
+    "dt": "paper",
+    "dollar": 0,
+    "pipe": 628,
+    "refs": 56
+   },
+   {
+    "pid": "2605.31243",
+    "sp": "II. Introduction",
+    "chars": 21464,
+    "tok": 9474,
+    "dt": "paper",
+    "dollar": 0,
+    "pipe": 0,
+    "refs": 21
+   },
+   {
+    "pid": "2401.11876",
+    "sp": "3<sub>.</sub>3 S<sub>y</sub>n<sub>c</sub>hr<sub>o</sub>niz<sub>a</sub>ti<sub>o</sub>n > 3.4 Disco<sub>v</sub>erin<sub>g</sub> Corner Cases",
+    "chars": 19766,
+    "tok": 8776,
+    "dt": "paper",
+    "dollar": 24,
+    "pipe": 0,
+    "refs": 3
+   },
+   {
+    "pid": "2406.18360",
+    "sp": "References",
+    "chars": 19529,
+    "tok": 13745,
+    "dt": "paper",
+    "dollar": 2,
+    "pipe": 2595,
+    "refs": 153
+   },
+   {
+    "pid": "2308.06419",
+    "sp": "XI. CONCLUSION",
+    "chars": 19103,
+    "tok": 4710,
+    "dt": "paper",
+    "dollar": 0,
+    "pipe": 678,
+    "refs": 128
+   },
+   {
+    "pid": "2510.10937",
+    "sp": "1 Introduction",
+    "chars": 18862,
+    "tok": 7964,
+    "dt": "paper",
+    "dollar": 0,
+    "pipe": 0,
+    "refs": 8
+   },
+   {
+    "pid": "2310.05170",
+    "sp": "Appendix",
+    "chars": 18250,
+    "tok": 13402,
+    "dt": "paper",
+    "dollar": 158,
+    "pipe": 2196,
+    "refs": 0
+   }
+  ],
+  "gt30k": [
+   {
+    "pid": "local:86a350b887b5",
+    "sp": "REFERENCES",
+    "chars": 31460,
+    "pipe": 2390,
+    "dollar": 24,
+    "refs": 0
+   }
+  ],
+  "gt30k_summary": {
+   "n": 1,
+   "distinct_papers": 1,
+   "table_heavy": 1,
+   "pipe_per_char_median": 0.07596948506039415
+  },
+  "gt30k_section_top": [
+   [
+    "REFERENCES",
+    1
+   ]
+  ]
+ },
+ "standards": {
+  "chunks": 35714,
+  "chars_total": 28394030,
+  "tokenized_exact": 0,
+  "sample_small_over": "0/5000",
+  "over_4096": 0,
+  "over_4096_pct": 0.0,
+  "chars_lost": 0,
+  "chars_lost_pct": 0.0,
+  "median_lost_frac_of_oversized": null,
+  "over_8192_rerank": 0,
+  "rr_chars_lost": 0,
+  "chars_gt_8000": 0,
+  "chars_gt_30000": 0,
+  "chars_per_token_median_big": null,
+  "by_doc_type": {},
+  "kinds": {
+   "table_heavy": 0,
+   "eq_heavy": 0,
+   "ref_like": 0
+  },
+  "top10": [],
+  "gt30k": [],
+  "gt30k_summary": {
+   "n": 0,
+   "distinct_papers": 0,
+   "table_heavy": 0,
+   "pipe_per_char_median": 0
+  },
+  "gt30k_section_top": []
+ }
+}

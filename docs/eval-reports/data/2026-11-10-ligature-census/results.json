@@ -1,0 +1,802 @@
+{
+  "patterns": [
+    "efects?",
+    "efect(?:ive|ively|iveness|ed|ing)",
+    "eficient(?:ly)?",
+    "eficienc(?:y|ies)",
+    "effcien[a-z]*",
+    "suficient(?:ly)?",
+    "suficienc(?:y|ies)",
+    "afect(?:s|ed|ing|ion|ions|ive)?",
+    "ofsets?",
+    "coefcient[a-z]*",
+    "coeficients?",
+    "diferen[a-z]*",
+    "dificult[a-z]*",
+    "signifcan[a-z]*",
+    "specifc[a-z]*",
+    "specifed",
+    "identifc[a-z]*",
+    "identifed",
+    "classifc[a-z]*",
+    "defnit[a-z]*",
+    "defne[ds]?",
+    "defned",
+    "frst",
+    "fnd(?:s|ing)?",
+    "fnal(?:ly)?",
+    "fnanc[a-z]*",
+    "fgures?",
+    "fxed",
+    "benefts?",
+    "confdenc[a-z]*",
+    "satisfed",
+    "verifed",
+    "modifed",
+    "quantifed",
+    "fexib[a-z]*",
+    "fows?",
+    "fuent(?:ly)?",
+    "workfows?",
+    "confict(?:s|ed|ing)?",
+    "refect(?:s|ed|ing|ion|ions|ive)?",
+    "infuenc[a-z]*"
+  ],
+  "corpora": {
+    "main": {
+      "corpus": "main",
+      "total_chunks": 399676,
+      "total_docs": 12390,
+      "affected_chunks": 129566,
+      "affected_chunks_pct": 32.42,
+      "docs_with_affected": 6558,
+      "docs_with_affected_pct": 52.93,
+      "docs_ge10pct_affected": 6412,
+      "docs_ge10pct_affected_pct": 51.75,
+      "ligature_char_chunks": 0,
+      "top_tokens": [
+        [
+          "efect",
+          117584
+        ],
+        [
+          "efects",
+          96667
+        ],
+        [
+          "diferent",
+          67572
+        ],
+        [
+          "diference",
+          34731
+        ],
+        [
+          "diferences",
+          23893
+        ],
+        [
+          "eficient",
+          20013
+        ],
+        [
+          "eficiency",
+          16821
+        ],
+        [
+          "efective",
+          12637
+        ],
+        [
+          "coeficients",
+          12188
+        ],
+        [
+          "suficient",
+          11607
+        ],
+        [
+          "coeficient",
+          10643
+        ],
+        [
+          "afect",
+          7675
+        ],
+        [
+          "suficiently",
+          6424
+        ],
+        [
+          "dificult",
+          6086
+        ],
+        [
+          "efectiveness",
+          5993
+        ]
+      ],
+      "worst_docs": [
+        {
+          "paper_id": "1412.3773",
+          "title": "Distinguishing cause from effect using observational data: methods and benchmarks",
+          "affected_chunks": 160,
+          "total_chunks": 160,
+          "pct": 100.0
+        },
+        {
+          "paper_id": "2102.01753",
+          "title": "Debiased Inference on Heterogeneous Quantile Treatment Effects with Regression Rank-Scores",
+          "affected_chunks": 146,
+          "total_chunks": 146,
+          "pct": 100.0
+        },
+        {
+          "paper_id": "2502.13238",
+          "title": "Robust Inference for the Direct Average Treatment Effect with Treatment Assignment Interference",
+          "affected_chunks": 145,
+          "total_chunks": 145,
+          "pct": 100.0
+        },
+        {
+          "paper_id": "2411.09221",
+          "title": "Difference-in-Differences with Sample Selection",
+          "affected_chunks": 145,
+          "total_chunks": 145,
+          "pct": 100.0
+        },
+        {
+          "paper_id": "2509.11381",
+          "title": "Accuracy Limits of Causal Trees for Individualized Treatment Effects",
+          "affected_chunks": 142,
+          "total_chunks": 142,
+          "pct": 100.0
+        },
+        {
+          "paper_id": "2402.11020",
+          "title": "Proximal Causal Inference for Conditional Separable Effects",
+          "affected_chunks": 132,
+          "total_chunks": 132,
+          "pct": 100.0
+        },
+        {
+          "paper_id": "2303.16711",
+          "title": "One-Step Estimation of Differentiable Hilbert-Valued Parameters",
+          "affected_chunks": 130,
+          "total_chunks": 130,
+          "pct": 100.0
+        },
+        {
+          "paper_id": "1702.04430",
+          "title": "Robust Uniform Inference for Quantile Treatment Effects in Regression Discontinuity Designs",
+          "affected_chunks": 126,
+          "total_chunks": 126,
+          "pct": 100.0
+        },
+        {
+          "paper_id": "2212.13641",
+          "title": "A Nonparametric Framework for Universal Difference-in-Differences",
+          "affected_chunks": 125,
+          "total_chunks": 125,
+          "pct": 100.0
+        },
+        {
+          "paper_id": "2106.02780",
+          "title": "Learning Treatment Effects in Panels with General Intervention Patterns",
+          "affected_chunks": 124,
+          "total_chunks": 124,
+          "pct": 100.0
+        }
+      ],
+      "worst_doc_rule": "fraction affected, docs with >= 5 chunks"
+    },
+    "waymo": {
+      "corpus": "waymo",
+      "total_chunks": 47771,
+      "total_docs": 1861,
+      "affected_chunks": 4762,
+      "affected_chunks_pct": 9.97,
+      "docs_with_affected": 350,
+      "docs_with_affected_pct": 18.81,
+      "docs_ge10pct_affected": 335,
+      "docs_ge10pct_affected_pct": 18.0,
+      "ligature_char_chunks": 0,
+      "top_tokens": [
+        [
+          "diferent",
+          3607
+        ],
+        [
+          "eficiency",
+          1098
+        ],
+        [
+          "eficient",
+          1083
+        ],
+        [
+          "efective",
+          729
+        ],
+        [
+          "efect",
+          641
+        ],
+        [
+          "diference",
+          635
+        ],
+        [
+          "efectiveness",
+          615
+        ],
+        [
+          "efectively",
+          548
+        ],
+        [
+          "efects",
+          540
+        ],
+        [
+          "suficient",
+          386
+        ],
+        [
+          "diferences",
+          380
+        ],
+        [
+          "dificult",
+          318
+        ],
+        [
+          "dificulty",
+          291
+        ],
+        [
+          "afect",
+          258
+        ],
+        [
+          "eficiently",
+          253
+        ]
+      ],
+      "worst_docs": [
+        {
+          "paper_id": "local:a7abebd91d13",
+          "title": "Evidence Sufficiency Under Delayed Ground Truth: Proxy Monitoring for Risk Decision Systems",
+          "affected_chunks": 60,
+          "total_chunks": 60,
+          "pct": 100.0
+        },
+        {
+          "paper_id": "2607.00545",
+          "title": "ECoSim: Data Efficient Fine-Tuning for Controllable Traffic Simulation",
+          "affected_chunks": 47,
+          "total_chunks": 47,
+          "pct": 100.0
+        },
+        {
+          "paper_id": "2601.15951",
+          "title": "EVolSplat4D: Efficient Volume-based Gaussian Splatting for 4D Urban Scene Synthesis",
+          "affected_chunks": 41,
+          "total_chunks": 41,
+          "pct": 100.0
+        },
+        {
+          "paper_id": "2203.14355",
+          "title": "Robust and Efficient Bayesian Inference for Non-Probability Samples",
+          "affected_chunks": 39,
+          "total_chunks": 39,
+          "pct": 100.0
+        },
+        {
+          "paper_id": "2605.12608",
+          "title": "A Data Efficiency Study of Synthetic Fog for Object Detection Using the Clear2Fog Pipeline",
+          "affected_chunks": 39,
+          "total_chunks": 39,
+          "pct": 100.0
+        },
+        {
+          "paper_id": "2605.11205",
+          "title": "The Scaling Law of Evaluation Failure: Why Simple Averaging Collapses Under Data Sparsity and Item Difficulty Gaps, and How Item Response Theory Recovers Ground Truth Across Domains",
+          "affected_chunks": 36,
+          "total_chunks": 36,
+          "pct": 100.0
+        },
+        {
+          "paper_id": "local:d045421ddd36",
+          "title": "Impact of connected and autonomous vehicle dedicated lane on the freeway traffic efficiency",
+          "affected_chunks": 32,
+          "total_chunks": 32,
+          "pct": 100.0
+        },
+        {
+          "paper_id": "2209.15215",
+          "title": "INT: Towards Infinite-frames 3D Detection with An Efficient Framework",
+          "affected_chunks": 26,
+          "total_chunks": 26,
+          "pct": 100.0
+        },
+        {
+          "paper_id": "2307.15442",
+          "title": "Predicting pedestrian trajectories at different densities: A multi-criteria empirical analysis",
+          "affected_chunks": 26,
+          "total_chunks": 26,
+          "pct": 100.0
+        },
+        {
+          "paper_id": "2210.08064",
+          "title": "LESS: Label-Efficient Semantic Segmentation for LiDAR Point Clouds",
+          "affected_chunks": 26,
+          "total_chunks": 26,
+          "pct": 100.0
+        }
+      ],
+      "worst_doc_rule": "fraction affected, docs with >= 5 chunks"
+    },
+    "standards": {
+      "corpus": "standards",
+      "total_chunks": 35714,
+      "total_docs": 119,
+      "affected_chunks": 995,
+      "affected_chunks_pct": 2.79,
+      "docs_with_affected": 13,
+      "docs_with_affected_pct": 10.92,
+      "docs_ge10pct_affected": 7,
+      "docs_ge10pct_affected_pct": 5.88,
+      "ligature_char_chunks": 0,
+      "top_tokens": [
+        [
+          "diferent",
+          468
+        ],
+        [
+          "efects",
+          157
+        ],
+        [
+          "efect",
+          150
+        ],
+        [
+          "suficient",
+          106
+        ],
+        [
+          "dificult",
+          101
+        ],
+        [
+          "diferences",
+          78
+        ],
+        [
+          "efective",
+          70
+        ],
+        [
+          "efectiveness",
+          57
+        ],
+        [
+          "afect",
+          50
+        ],
+        [
+          "diference",
+          49
+        ],
+        [
+          "eficient",
+          48
+        ],
+        [
+          "afected",
+          47
+        ],
+        [
+          "eficiency",
+          34
+        ],
+        [
+          "efectively",
+          33
+        ],
+        [
+          "suficiently",
+          25
+        ]
+      ],
+      "worst_docs": [
+        {
+          "paper_id": "local:e94916e8eba9",
+          "title": "Rausand and Haugen — Risk Assessment, Theory, Methods, and Applications, 2nd ed. (Wiley 2020)",
+          "affected_chunks": 633,
+          "total_chunks": 2073,
+          "pct": 30.5
+        },
+        {
+          "paper_id": "local:3d0e31c34a0a",
+          "title": "USDOT Ensuring American Leadership in Automated Vehicle Technologies - AV 4.0 (2020)",
+          "affected_chunks": 68,
+          "total_chunks": 255,
+          "pct": 26.7
+        },
+        {
+          "paper_id": "2102.01564",
+          "title": "AMLAS — Guidance on the Assurance of Machine Learning in Autonomous Systems (Version 1, 2021)",
+          "affected_chunks": 51,
+          "total_chunks": 215,
+          "pct": 23.7
+        },
+        {
+          "paper_id": "local:1d27d7fac441",
+          "title": "RAND RR1478 Driving to Safety - How Many Miles of Driving Would It Take (2016)",
+          "affected_chunks": 13,
+          "total_chunks": 58,
+          "pct": 22.4
+        },
+        {
+          "paper_id": "local:e1cfbb5bd7bc",
+          "title": "NHTSA Automated Driving Systems 2.0 - A Vision for Safety (2017)",
+          "affected_chunks": 13,
+          "total_chunks": 99,
+          "pct": 13.1
+        },
+        {
+          "paper_id": "local:8eeb4887a4dc",
+          "title": "NASA SP-2016-6105 Rev 2 — NASA Systems Engineering Handbook",
+          "affected_chunks": 143,
+          "total_chunks": 1116,
+          "pct": 12.8
+        },
+        {
+          "paper_id": "local:71c88a1d2bc1",
+          "title": "AAMVA Guidelines for Regulating Vehicles with Automated Driving Systems (Edition 4)",
+          "affected_chunks": 65,
+          "total_chunks": 560,
+          "pct": 11.6
+        },
+        {
+          "paper_id": "local:a14c3d11c6dc",
+          "title": "AVSC00007 Information Report for Adapting a Safety Management System (SMS) for ADS Level 4 and 5 Testing",
+          "affected_chunks": 3,
+          "total_chunks": 69,
+          "pct": 4.3
+        },
+        {
+          "paper_id": "local:b827e7b12a07",
+          "title": "AVSC00008 Best Practice for Evaluation of Behavioral Competencies for ADS-DVs",
+          "affected_chunks": 1,
+          "total_chunks": 71,
+          "pct": 1.4
+        },
+        {
+          "paper_id": "local:fff17ed80281",
+          "title": "AVSC00005 Best Practice for First Responder Interactions with Fleet-Managed ADS-DVs (2020-12)",
+          "affected_chunks": 1,
+          "total_chunks": 79,
+          "pct": 1.3
+        }
+      ],
+      "worst_doc_rule": "fraction affected, docs with >= 5 chunks"
+    },
+    "motional": {
+      "corpus": "motional",
+      "total_chunks": 2013,
+      "total_docs": 65,
+      "affected_chunks": 101,
+      "affected_chunks_pct": 5.02,
+      "docs_with_affected": 13,
+      "docs_with_affected_pct": 20.0,
+      "docs_ge10pct_affected": 8,
+      "docs_ge10pct_affected_pct": 12.31,
+      "ligature_char_chunks": 0,
+      "top_tokens": [
+        [
+          "diferent",
+          35
+        ],
+        [
+          "efective",
+          30
+        ],
+        [
+          "efectively",
+          17
+        ],
+        [
+          "efects",
+          12
+        ],
+        [
+          "efect",
+          7
+        ],
+        [
+          "efectiveness",
+          7
+        ],
+        [
+          "diferences",
+          6
+        ],
+        [
+          "dificult",
+          6
+        ],
+        [
+          "diference",
+          5
+        ],
+        [
+          "afect",
+          5
+        ],
+        [
+          "ofset",
+          5
+        ],
+        [
+          "diferentiable",
+          4
+        ],
+        [
+          "suficiently",
+          4
+        ],
+        [
+          "afected",
+          4
+        ],
+        [
+          "eficiently",
+          4
+        ]
+      ],
+      "worst_docs": [
+        {
+          "paper_id": "2201.04742",
+          "title": "nuReality: A VR environment for research of pedestrian and autonomous vehicle interactions",
+          "affected_chunks": 5,
+          "total_chunks": 8,
+          "pct": 62.5
+        },
+        {
+          "paper_id": "local:85a342590870",
+          "title": "Companion of the 2023 ACM/IEEE International Conference on Human-Robot Interaction: Coming In! Communicating Lane Change Intent in Autonomous Vehicles",
+          "affected_chunks": 8,
+          "total_chunks": 18,
+          "pct": 44.4
+        },
+        {
+          "paper_id": "local:e801f10415af",
+          "title": "Safe to Approach: Insights on Autonomous Vehicle Interaction Protocols with First Responders",
+          "affected_chunks": 7,
+          "total_chunks": 16,
+          "pct": 43.8
+        },
+        {
+          "paper_id": "2411.18714",
+          "title": "Explainable deep learning improves human mental models of self-driving cars",
+          "affected_chunks": 18,
+          "total_chunks": 57,
+          "pct": 31.6
+        },
+        {
+          "paper_id": "local:fb53f0a08a19",
+          "title": "Motional Voluntary Safety Self-Assessment 2026",
+          "affected_chunks": 20,
+          "total_chunks": 68,
+          "pct": 29.4
+        },
+        {
+          "paper_id": "local:15519fede67e",
+          "title": "Motional Voluntary Safety Self-Assessment 2021 (Autonomous Vehicle Safety Ecosystem)",
+          "affected_chunks": 27,
+          "total_chunks": 108,
+          "pct": 25.0
+        },
+        {
+          "paper_id": "local:aa4fc5944187",
+          "title": "I See You! Design Factors for Supporting Pedestrian-AV Interaction at Crosswalks",
+          "affected_chunks": 5,
+          "total_chunks": 21,
+          "pct": 23.8
+        },
+        {
+          "paper_id": "2101.05709",
+          "title": "Rule-based Optimal Control for Autonomous Driving",
+          "affected_chunks": 4,
+          "total_chunks": 33,
+          "pct": 12.1
+        },
+        {
+          "paper_id": "1903.11027",
+          "title": "nuScenes: A multimodal dataset for autonomous driving",
+          "affected_chunks": 1,
+          "total_chunks": 17,
+          "pct": 5.9
+        },
+        {
+          "paper_id": "local:a14c3d11c6dc",
+          "title": "AVSC Information Report for Adapting a Safety Management System (SMS) for ADS SAE Level 4 and 5 Testing and Evaluation",
+          "affected_chunks": 2,
+          "total_chunks": 53,
+          "pct": 3.8
+        }
+      ],
+      "worst_doc_rule": "fraction affected, docs with >= 5 chunks"
+    },
+    "waabi": {
+      "corpus": "waabi",
+      "total_chunks": 566,
+      "total_docs": 29,
+      "affected_chunks": 40,
+      "affected_chunks_pct": 7.07,
+      "docs_with_affected": 4,
+      "docs_with_affected_pct": 13.79,
+      "docs_ge10pct_affected": 4,
+      "docs_ge10pct_affected_pct": 13.79,
+      "ligature_char_chunks": 0,
+      "top_tokens": [
+        [
+          "diferent",
+          42
+        ],
+        [
+          "eficient",
+          23
+        ],
+        [
+          "dificult",
+          18
+        ],
+        [
+          "eficiently",
+          10
+        ],
+        [
+          "efect",
+          9
+        ],
+        [
+          "dificulty",
+          9
+        ],
+        [
+          "diferentiable",
+          9
+        ],
+        [
+          "efective",
+          8
+        ],
+        [
+          "efects",
+          6
+        ],
+        [
+          "eficiency",
+          6
+        ],
+        [
+          "ofsets",
+          4
+        ],
+        [
+          "diferences",
+          4
+        ],
+        [
+          "efectiveness",
+          3
+        ],
+        [
+          "ofset",
+          3
+        ],
+        [
+          "diference",
+          3
+        ]
+      ],
+      "worst_docs": [
+        {
+          "paper_id": "2008.05930",
+          "title": "Perceive, Predict, and Plan (P3) - Safe Motion Planning Through Interpretable Semantic Representations",
+          "affected_chunks": 10,
+          "total_chunks": 17,
+          "pct": 58.8
+        },
+        {
+          "paper_id": "local:2c0f159512a0",
+          "title": "Rethinking Closed-loop Training for Autonomous Driving (TRAVL)",
+          "affected_chunks": 12,
+          "total_chunks": 23,
+          "pct": 52.2
+        },
+        {
+          "paper_id": "local:bf97b49ccdc2",
+          "title": "Learning to drive via asymmetric self-play",
+          "affected_chunks": 11,
+          "total_chunks": 22,
+          "pct": 50.0
+        },
+        {
+          "paper_id": "2008.06020",
+          "title": "Testing the Safety of Self-driving Vehicles by Simulating Perception and Prediction",
+          "affected_chunks": 7,
+          "total_chunks": 23,
+          "pct": 30.4
+        }
+      ],
+      "worst_doc_rule": "fraction affected, docs with >= 5 chunks"
+    }
+  },
+  "overall_top_tokens": [
+    [
+      "efect",
+      118391
+    ],
+    [
+      "efects",
+      97382
+    ],
+    [
+      "diferent",
+      71724
+    ],
+    [
+      "diference",
+      35423
+    ],
+    [
+      "diferences",
+      24361
+    ],
+    [
+      "eficient",
+      21170
+    ],
+    [
+      "eficiency",
+      17959
+    ],
+    [
+      "efective",
+      13474
+    ],
+    [
+      "coeficients",
+      12353
+    ],
+    [
+      "suficient",
+      12102
+    ],
+    [
+      "coeficient",
+      10870
+    ],
+    [
+      "afect",
+      7989
+    ],
+    [
+      "efectiveness",
+      6675
+    ],
+    [
+      "suficiently",
+      6603
+    ],
+    [
+      "efectively",
+      6542
+    ]
+  ]
+}

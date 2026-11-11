@@ -1,0 +1,400 @@
+{"paper_id": "2310.04709", "label": "on", "reason": "survival-analysis mediation via causal graphs", "abstract_missing": false}
+{"paper_id": "2606.17192", "label": "off", "reason": "constrained diffusion sampling; no causal content", "abstract_missing": false}
+{"paper_id": "2108.07455", "label": "on", "reason": "causal inference with noncompliance and interference", "abstract_missing": false}
+{"paper_id": "2606.06906", "label": "off", "reason": "long-context QA test-time training", "abstract_missing": false}
+{"paper_id": "2607.06982", "label": "off", "reason": "edge AI model compression", "abstract_missing": false}
+{"paper_id": "2607.07903", "label": "off", "reason": "LLM jailbreak interpretability; no causal method", "abstract_missing": false}
+{"paper_id": "2510.13307", "label": "borderline", "reason": "causal representation in title; point-cloud segmentation", "abstract_missing": false}
+{"paper_id": "2607.08321", "label": "off", "reason": "vision model texture comparison", "abstract_missing": false}
+{"paper_id": "2606.21776", "label": "on", "reason": "causal DAG prior central to synthetic generator", "abstract_missing": false}
+{"paper_id": "2409.08295", "label": "on", "reason": "causality via transfer entropy for interaction structure", "abstract_missing": false}
+{"paper_id": "2401.09379", "label": "off", "reason": "merging uncertainty sets; generic statistics", "abstract_missing": false}
+{"paper_id": "2109.13288", "label": "on", "reason": "causal cross-design synthesis, generalizability", "abstract_missing": false}
+{"paper_id": "2606.06077", "label": "off", "reason": "underwater path planning", "abstract_missing": false}
+{"paper_id": "2402.12710", "label": "on", "reason": "causal inference with interference, online experiments", "abstract_missing": false}
+{"paper_id": "2208.11077", "label": "borderline", "reason": "conditional independence algebra, causal-adjacent", "abstract_missing": false}
+{"paper_id": "2402.15086", "label": "on", "reason": "Mendelian randomization causal estimator", "abstract_missing": false}
+{"paper_id": "2604.26729", "label": "on", "reason": "Neyman-orthogonal scores for causal inference", "abstract_missing": false}
+{"paper_id": "2606.00811", "label": "borderline", "reason": "econometric impact of certificates; causal design unclear", "abstract_missing": false}
+{"paper_id": "2502.00279", "label": "borderline", "reason": "doubly robust estimation applied to semi-supervised learning", "abstract_missing": false}
+{"paper_id": "2605.03282", "label": "on", "reason": "externally controlled trials viewed through causal lens", "abstract_missing": false}
+{"paper_id": "2011.00592", "label": "off", "reason": "sentence embedding probing", "abstract_missing": false}
+{"paper_id": "2406.07866", "label": "off", "reason": "predict-then-optimize regret, no causal content", "abstract_missing": false}
+{"paper_id": "2606.27320", "label": "off", "reason": "neural audio coding", "abstract_missing": false}
+{"paper_id": "2606.10481", "label": "off", "reason": "privacy auditing of fine-tuned LLMs", "abstract_missing": false}
+{"paper_id": "2507.17420", "label": "on", "reason": "causal-aware framework for CT image quality analysis", "abstract_missing": false}
+{"paper_id": "2607.08741", "label": "off", "reason": "human motion generation", "abstract_missing": false}
+{"paper_id": "2501.12639", "label": "borderline", "reason": "causal diagrams in economics teaching", "abstract_missing": false}
+{"paper_id": "2607.08547", "label": "off", "reason": "type theory and amortized analysis", "abstract_missing": false}
+{"paper_id": "2207.08369", "label": "on", "reason": "causal inference for database performance root cause", "abstract_missing": false}
+{"paper_id": "2108.09946", "label": "off", "reason": "pull request latency empirical study", "abstract_missing": false}
+{"paper_id": "2606.06663", "label": "off", "reason": "AI-RAN dependency tracking", "abstract_missing": false}
+{"paper_id": "2606.24994", "label": "off", "reason": "RL for LLM reasoning", "abstract_missing": false}
+{"paper_id": "2601.04386", "label": "off", "reason": "gas transport simulation", "abstract_missing": false}
+{"paper_id": "2605.22075", "label": "borderline", "reason": "causal-titled breath biomarker diagnosis; predictive ML", "abstract_missing": false}
+{"paper_id": "2203.13619", "label": "off", "reason": "video game marketing", "abstract_missing": false}
+{"paper_id": "2102.10003", "label": "on", "reason": "treatment effect estimation via MRP", "abstract_missing": false}
+{"paper_id": "2105.02379", "label": "borderline", "reason": "provider quality measurement; risk adjustment, not causal", "abstract_missing": false}
+{"paper_id": "2203.14857", "label": "on", "reason": "randomized trials emulation, causal benchmarking", "abstract_missing": false}
+{"paper_id": "2303.14665", "label": "on", "reason": "counterfactual fairness with structural causal model", "abstract_missing": false}
+{"paper_id": "2607.10474", "label": "off", "reason": "RL for PDE solvers", "abstract_missing": false}
+{"paper_id": "1803.04129", "label": "borderline", "reason": "bug-report donation badge effects; causal design unclear", "abstract_missing": false}
+{"paper_id": "1806.09613", "label": "off", "reason": "few-shot person re-identification", "abstract_missing": false}
+{"paper_id": "2311.01709", "label": "on", "reason": "covariate-adjusted causal inference in experiments", "abstract_missing": false}
+{"paper_id": "2511.09036", "label": "borderline", "reason": "weak causal learning for federated OOD generalization", "abstract_missing": false}
+{"paper_id": "1703.05283", "label": "off", "reason": "molecular machine dissipation physics", "abstract_missing": false}
+{"paper_id": "1812.06537", "label": "on", "reason": "fuzzy difference-in-discontinuities identification", "abstract_missing": false}
+{"paper_id": "2110.12884", "label": "on", "reason": "causally-aware generative networks for fair synthetic data", "abstract_missing": false}
+{"paper_id": "2607.06664", "label": "off", "reason": "supernova simulations", "abstract_missing": false}
+{"paper_id": "2607.18601", "label": "on", "reason": "optimal design of spillover experiments", "abstract_missing": false}
+{"paper_id": "2411.04312", "label": "on", "reason": "Lee bounds for causal effects under sample selection", "abstract_missing": false}
+{"paper_id": "2606.20373", "label": "off", "reason": "LLM agents for compiler tuning", "abstract_missing": false}
+{"paper_id": "2210.15524", "label": "borderline", "reason": "double machine learning trend model, ecology data", "abstract_missing": false}
+{"paper_id": "2510.24639", "label": "on", "reason": "causal ordering for time-series structure learning", "abstract_missing": false}
+{"paper_id": "2110.01688", "label": "on", "reason": "relative risks and backdoor criterion causal estimates", "abstract_missing": false}
+{"paper_id": "1903.11455", "label": "on", "reason": "transporting causal inferences across trials", "abstract_missing": false}
+{"paper_id": "2206.04356", "label": "on", "reason": "conditional independence tests for causal discovery", "abstract_missing": false}
+{"paper_id": "2606.02231", "label": "borderline", "reason": "Markov switching with instantaneous effects; structural, not causal", "abstract_missing": false}
+{"paper_id": "2510.04502", "label": "on", "reason": "causal debiasing of popularity bias in recommendation", "abstract_missing": false}
+{"paper_id": "2506.06958", "label": "off", "reason": "LLM social simulation", "abstract_missing": false}
+{"paper_id": "1901.05537", "label": "borderline", "reason": "causal paths in dementia-diabetes epidemiology", "abstract_missing": false}
+{"paper_id": "2606.13809", "label": "off", "reason": "diffusion style transfer", "abstract_missing": false}
+{"paper_id": "2009.00981", "label": "off", "reason": "open-source license selection", "abstract_missing": false}
+{"paper_id": "1502.07603", "label": "on", "reason": "instrumental variables with multiple treatments", "abstract_missing": false}
+{"paper_id": "1812.07274", "label": "off", "reason": "radiative torques of grains", "abstract_missing": false}
+{"paper_id": "2305.08969", "label": "on", "reason": "causal inference with external controls", "abstract_missing": false}
+{"paper_id": "2406.11940", "label": "on", "reason": "interference inference with partial network data", "abstract_missing": false}
+{"paper_id": "2012.04831", "label": "on", "reason": "interference in air pollution intervention effects", "abstract_missing": false}
+{"paper_id": "2206.09092", "label": "on", "reason": "dynamic heterogeneous treatment effects with abrupt changes", "abstract_missing": false}
+{"paper_id": "2607.10165", "label": "off", "reason": "emotional image generation", "abstract_missing": false}
+{"paper_id": "2601.01854", "label": "on", "reason": "causal inference with censored data and marks", "abstract_missing": false}
+{"paper_id": "2310.16638", "label": "borderline", "reason": "covariate shift with density-ratio; adjacent statistics", "abstract_missing": false}
+{"paper_id": "2010.02247", "label": "on", "reason": "causal discovery in non-intervenable systems", "abstract_missing": false}
+{"paper_id": "1806.01094", "label": "borderline", "reason": "confounding-robust ICA; causal-adjacent", "abstract_missing": false}
+{"paper_id": "2206.01081", "label": "on", "reason": "identifiability for causal inference", "abstract_missing": false}
+{"paper_id": "1701.08868", "label": "on", "reason": "interaction information for causal structure", "abstract_missing": false}
+{"paper_id": "2606.09572", "label": "off", "reason": "vision-action robot control", "abstract_missing": false}
+{"paper_id": "2307.08840", "label": "borderline", "reason": "safe policy learning; causal content not explicit", "abstract_missing": false}
+{"paper_id": "2606.10466", "label": "off", "reason": "time-series generation LLM", "abstract_missing": false}
+{"paper_id": "1309.4054", "label": "on", "reason": "dimension reduction for causal inference", "abstract_missing": false}
+{"paper_id": "2606.14371", "label": "off", "reason": "comet imaging and spectroscopy", "abstract_missing": false}
+{"paper_id": "2312.09758", "label": "on", "reason": "causal invariant representation learning", "abstract_missing": false}
+{"paper_id": "1411.1194", "label": "on", "reason": "sequential causal inference with treatments", "abstract_missing": false}
+{"paper_id": "2508.01018", "label": "on", "reason": "causal data simulation for benchmarking", "abstract_missing": false}
+{"paper_id": "2201.10683", "label": "on", "reason": "causality for ethical/fair ML", "abstract_missing": false}
+{"paper_id": "2607.15254", "label": "on", "reason": "exploratory causal analysis of driving data", "abstract_missing": false}
+{"paper_id": "2212.14133", "label": "on", "reason": "SINDy for causal discovery in time series", "abstract_missing": false}
+{"paper_id": "2606.15920", "label": "off", "reason": "multimodal RL for affective computing", "abstract_missing": false}
+{"paper_id": "2509.12587", "label": "on", "reason": "causal inference with multiple outcomes", "abstract_missing": false}
+{"paper_id": "2410.23155", "label": "on", "reason": "permutation-based causal discovery acceleration", "abstract_missing": false}
+{"paper_id": "2107.03597", "label": "on", "reason": "local causal structure learning with confounders", "abstract_missing": false}
+{"paper_id": "2606.26366", "label": "off", "reason": "LLM moral reasoning scaffolding", "abstract_missing": false}
+{"paper_id": "2509.24962", "label": "on", "reason": "CATE estimation regularization", "abstract_missing": false}
+{"paper_id": "2112.06833", "label": "borderline", "reason": "sequential decision algorithms in law/policy; not causal", "abstract_missing": false}
+{"paper_id": "2506.21362", "label": "borderline", "reason": "counterfactual voting adjustment; causal-adjacent", "abstract_missing": false}
+{"paper_id": "1207.3114", "label": "borderline", "reason": "quantum counterfactual paradox; physics not causal methods", "abstract_missing": false}
+{"paper_id": "2606.25688", "label": "borderline", "reason": "structural model calibration; econometric, not causal", "abstract_missing": false}
+{"paper_id": "2306.03625", "label": "on", "reason": "fair heterogeneous treatment effect policy learning", "abstract_missing": false}
+{"paper_id": "0903.0950", "label": "off", "reason": "galaxy correlation cosmology", "abstract_missing": false}
+{"paper_id": "2308.02005", "label": "on", "reason": "matching-based causal inference", "abstract_missing": false}
+{"paper_id": "2402.00584", "label": "borderline", "reason": "dynamic panel LASSO; generic econometrics", "abstract_missing": false}
+{"paper_id": "2503.09957", "label": "on", "reason": "causal inference of lockdown policy effects", "abstract_missing": false}
+{"paper_id": "2110.13891", "label": "on", "reason": "dynamic causal Bayesian optimization", "abstract_missing": false}
+{"paper_id": "2604.17843", "label": "off", "reason": "generative AI for policy analysis", "abstract_missing": false}
+{"paper_id": "2606.16731", "label": "off", "reason": "turn-taking prediction speech", "abstract_missing": false}
+{"paper_id": "2406.05961", "label": "off", "reason": "packet loss concealment audio", "abstract_missing": false}
+{"paper_id": "1709.04589", "label": "on", "reason": "generalizing trial causal inferences", "abstract_missing": false}
+{"paper_id": "1606.06542", "label": "off", "reason": "hadron resonance gas physics", "abstract_missing": false}
+{"paper_id": "1107.3911", "label": "off", "reason": "brain network motifs", "abstract_missing": false}
+{"paper_id": "2509.16397", "label": "on", "reason": "intervention and causal discovery in buildings", "abstract_missing": false}
+{"paper_id": "2606.23548", "label": "off", "reason": "superconducting circuit surrogate", "abstract_missing": false}
+{"paper_id": "1706.10029", "label": "on", "reason": "propensity score estimators in high dimensions", "abstract_missing": false}
+{"paper_id": "2010.14774", "label": "on", "reason": "structural causal model for treatment effect", "abstract_missing": false}
+{"paper_id": "1902.02495", "label": "on", "reason": "counterfactual inference for incentive allocation", "abstract_missing": false}
+{"paper_id": "2503.13842", "label": "borderline", "reason": "counterfactual experience RL; not causal inference", "abstract_missing": false}
+{"paper_id": "1801.00644", "label": "on", "reason": "matching for causal inference with text", "abstract_missing": false}
+{"paper_id": "2606.21937", "label": "off", "reason": "LLM confidence calibration", "abstract_missing": false}
+{"paper_id": "1304.3260", "label": "off", "reason": "numerical drift in scientific models", "abstract_missing": false}
+{"paper_id": "2210.01798", "label": "on", "reason": "latent confounder causal discovery", "abstract_missing": false}
+{"paper_id": "2603.29110", "label": "on", "reason": "treatment effect estimation with data integration", "abstract_missing": false}
+{"paper_id": "2606.08923", "label": "on", "reason": "network-aware experiment design, interference", "abstract_missing": false}
+{"paper_id": "2103.00527", "label": "on", "reason": "covariate balancing for causal treatments", "abstract_missing": false}
+{"paper_id": "2606.06888", "label": "off", "reason": "LLM pretraining scaling laws", "abstract_missing": false}
+{"paper_id": "2502.10215", "label": "on", "reason": "causal reasoning of LLMs", "abstract_missing": false}
+{"paper_id": "2606.27205", "label": "off", "reason": "LLM quantization for program repair", "abstract_missing": false}
+{"paper_id": "1507.08079", "label": "off", "reason": "oscillator normal form", "abstract_missing": false}
+{"paper_id": "2606.22312", "label": "off", "reason": "smart home rule conflicts", "abstract_missing": false}
+{"paper_id": "2510.09109", "label": "on", "reason": "sensitivity analysis for causal ML", "abstract_missing": false}
+{"paper_id": "2606.05972", "label": "on", "reason": "causal graphs for LLM explainability", "abstract_missing": false}
+{"paper_id": "2606.25892", "label": "off", "reason": "phase reduction in oscillators", "abstract_missing": false}
+{"paper_id": "2209.07509", "label": "off", "reason": "neural network initialisation", "abstract_missing": false}
+{"paper_id": "2110.02327", "label": "borderline", "reason": "distribution comparison command; generic statistics", "abstract_missing": false}
+{"paper_id": "2208.08399", "label": "borderline", "reason": "counterfactual Shapley attribution; causal-adjacent", "abstract_missing": false}
+{"paper_id": "2403.01622", "label": "on", "reason": "causal graph creation with humans", "abstract_missing": false}
+{"paper_id": "2607.06959", "label": "off", "reason": "cosmology neural networks", "abstract_missing": false}
+{"paper_id": "2501.12803", "label": "on", "reason": "instrumental causal forests for cash transfer", "abstract_missing": false}
+{"paper_id": "1806.03467", "label": "on", "reason": "orthogonal random forest for causal inference", "abstract_missing": false}
+{"paper_id": "2507.09961", "label": "on", "reason": "causal representation learning for domain generalization", "abstract_missing": false}
+{"paper_id": "1811.08774", "label": "off", "reason": "AGN radio spectra", "abstract_missing": false}
+{"paper_id": "1506.07457", "label": "off", "reason": "banjo acoustics", "abstract_missing": false}
+{"paper_id": "1909.12078", "label": "on", "reason": "Bayesian debiased ATE estimation", "abstract_missing": false}
+{"paper_id": "2606.05602", "label": "off", "reason": "human-AI assistance knowledge gaps", "abstract_missing": false}
+{"paper_id": "2501.15692", "label": "borderline", "reason": "simplex-valued weight inference, synthetic-control adjacent", "abstract_missing": false}
+{"paper_id": "2606.24338", "label": "off", "reason": "embodied robotic scene representations", "abstract_missing": false}
+{"paper_id": "2607.19866", "label": "on", "reason": "local causal structure learning with latent variables", "abstract_missing": false}
+{"paper_id": "2606.22968", "label": "off", "reason": "LLM prefill serving on wafer-scale chips", "abstract_missing": false}
+{"paper_id": "2207.06275", "label": "on", "reason": "evaluating treatment rules from observational data", "abstract_missing": false}
+{"paper_id": "2606.26914", "label": "off", "reason": "X-ray binary radio astrophysics", "abstract_missing": false}
+{"paper_id": "2211.06710", "label": "on", "reason": "robust difference-in-differences", "abstract_missing": false}
+{"paper_id": "2606.15145", "label": "borderline", "reason": "median odds ratio for multilevel contextual effects", "abstract_missing": false}
+{"paper_id": "2401.18012", "label": "borderline", "reason": "causal-titled coordinated RL; causal content peripheral", "abstract_missing": false}
+{"paper_id": "1910.00641", "label": "on", "reason": "policy evaluation chapter, causal effects", "abstract_missing": false}
+{"paper_id": "1810.09179", "label": "on", "reason": "causal forest for time-of-use pricing response", "abstract_missing": false}
+{"paper_id": "2410.10502", "label": "on", "reason": "causal effect of interventions over time", "abstract_missing": false}
+{"paper_id": "2606.10985", "label": "off", "reason": "Cherenkov radiation physics", "abstract_missing": false}
+{"paper_id": "2606.25019", "label": "off", "reason": "nuclear parity-violating scattering", "abstract_missing": false}
+{"paper_id": "2112.02822", "label": "borderline", "reason": "survey nonresponse adjustment; generic statistics", "abstract_missing": false}
+{"paper_id": "2505.00450", "label": "on", "reason": "synthetic control for intervention effect", "abstract_missing": false}
+{"paper_id": "2606.09092", "label": "off", "reason": "theory of mind RL for LLMs", "abstract_missing": false}
+{"paper_id": "2006.00737", "label": "borderline", "reason": "public transfer crowd-out review; causal content implied", "abstract_missing": false}
+{"paper_id": "2205.11106", "label": "on", "reason": "neural treatment effect estimation", "abstract_missing": false}
+{"paper_id": "2111.04233", "label": "on", "reason": "empirical calibration for observational causal bias", "abstract_missing": false}
+{"paper_id": "2606.24528", "label": "off", "reason": "speaker diarization clustering", "abstract_missing": false}
+{"paper_id": "2607.10288", "label": "off", "reason": "robot navigation", "abstract_missing": false}
+{"paper_id": "2606.25736", "label": "off", "reason": "autonomous driving diffusion planning", "abstract_missing": false}
+{"paper_id": "2606.12615", "label": "borderline", "reason": "fair ML Bayesian prediction; no causal method", "abstract_missing": false}
+{"paper_id": "1807.03136", "label": "off", "reason": "pathology image classification", "abstract_missing": false}
+{"paper_id": "2605.01669", "label": "on", "reason": "causal discovery with priors", "abstract_missing": false}
+{"paper_id": "2601.13614", "label": "on", "reason": "LLM-assisted causal discovery", "abstract_missing": false}
+{"paper_id": "2606.07410", "label": "off", "reason": "LLM mathematical reasoning analysis", "abstract_missing": false}
+{"paper_id": "2209.05104", "label": "borderline", "reason": "counterfactual data augmentation; causal-adjacent", "abstract_missing": false}
+{"paper_id": "2110.12052", "label": "on", "reason": "taxonomy of causal model families", "abstract_missing": false}
+{"paper_id": "2506.01361", "label": "on", "reason": "time-series causal discovery benchmarks", "abstract_missing": false}
+{"paper_id": "1710.03190", "label": "on", "reason": "heterogeneous effects of price interventions", "abstract_missing": false}
+{"paper_id": "2111.04095", "label": "on", "reason": "causal discovery with latent confounders", "abstract_missing": false}
+{"paper_id": "2410.10044", "label": "on", "reason": "causal effect estimation with DAG-aware transformer", "abstract_missing": false}
+{"paper_id": "2601.14464", "label": "on", "reason": "falsification of IV models for heterogeneous effects", "abstract_missing": false}
+{"paper_id": "1309.6849", "label": "on", "reason": "cyclic causal discovery", "abstract_missing": false}
+{"paper_id": "2209.09803", "label": "on", "reason": "community ban effects, causal design", "abstract_missing": false}
+{"paper_id": "1509.04774", "label": "borderline", "reason": "IV-based system identification; not causal inference", "abstract_missing": false}
+{"paper_id": "2605.06185", "label": "off", "reason": "video RAG for long-video reasoning", "abstract_missing": false}
+{"paper_id": "2408.05584", "label": "on", "reason": "dynamical causality with confounders", "abstract_missing": false}
+{"paper_id": "1808.06117", "label": "on", "reason": "secular trend bias in drug effectiveness study", "abstract_missing": false}
+{"paper_id": "2406.11601", "label": "on", "reason": "standardizing SCMs for causal benchmarking", "abstract_missing": false}
+{"paper_id": "2312.16307", "label": "on", "reason": "synthetic control counterfactual estimation", "abstract_missing": false}
+{"paper_id": "2511.19273", "label": "on", "reason": "PC algorithm structure learning", "abstract_missing": false}
+{"paper_id": "2606.25391", "label": "off", "reason": "audio language model benchmark", "abstract_missing": false}
+{"paper_id": "2606.09520", "label": "off", "reason": "LLM molecular design", "abstract_missing": false}
+{"paper_id": "2505.01037", "label": "on", "reason": "causal graphs from hard interventions", "abstract_missing": false}
+{"paper_id": "2504.14368", "label": "off", "reason": "differential privacy public data", "abstract_missing": false}
+{"paper_id": "2606.20772", "label": "off", "reason": "autonomous driving waypoints", "abstract_missing": false}
+{"paper_id": "2009.01185", "label": "off", "reason": "community detection Gaussian mixtures", "abstract_missing": false}
+{"paper_id": "2301.10064", "label": "on", "reason": "causal mediation for zero-inflated mediators", "abstract_missing": false}
+{"paper_id": "2604.04274", "label": "on", "reason": "automated causal effect estimators via LLM evolution", "abstract_missing": false}
+{"paper_id": "1905.13234", "label": "off", "reason": "dust emission in galaxies", "abstract_missing": false}
+{"paper_id": "2209.06998", "label": "on", "reason": "tree ensembles for heterogeneous effects", "abstract_missing": false}
+{"paper_id": "2606.26931", "label": "on", "reason": "half-trek estimators in causal SEMs", "abstract_missing": false}
+{"paper_id": "2606.05019", "label": "off", "reason": "5G cell switching", "abstract_missing": false}
+{"paper_id": "2607.06328", "label": "off", "reason": "interpretability in driving models", "abstract_missing": false}
+{"paper_id": "2510.16483", "label": "on", "reason": "quasi-experimental tax reform effects on wages", "abstract_missing": false}
+{"paper_id": "2207.06289", "label": "off", "reason": "turbulent pipe flow DNS", "abstract_missing": false}
+{"paper_id": "2301.04412", "label": "on", "reason": "causal inference with invalid instruments software", "abstract_missing": false}
+{"paper_id": "1505.07802", "label": "off", "reason": "device-independent entropy tests", "abstract_missing": false}
+{"paper_id": "1707.05861", "label": "on", "reason": "propensity score truncation in causal inference", "abstract_missing": false}
+{"paper_id": "2312.01266", "label": "on", "reason": "covariate adjustment under stratified randomization", "abstract_missing": false}
+{"paper_id": "2604.07513", "label": "borderline", "reason": "synthetic control named; persona simulation focus", "abstract_missing": false}
+{"paper_id": "2606.26017", "label": "off", "reason": "diffusion driving planner", "abstract_missing": false}
+{"paper_id": "2007.02852", "label": "on", "reason": "cross-fitting for CATE estimation", "abstract_missing": false}
+{"paper_id": "2603.29889", "label": "on", "reason": "penalized GMM for nonparametric IV functionals", "abstract_missing": false}
+{"paper_id": "2606.22688", "label": "off", "reason": "self-play game equilibria", "abstract_missing": false}
+{"paper_id": "2307.04988", "label": "on", "reason": "Bayesian causal discovery for treatment effects", "abstract_missing": false}
+{"paper_id": "2405.14808", "label": "off", "reason": "LLM implicit personalization", "abstract_missing": false}
+{"paper_id": "2311.12267", "label": "on", "reason": "causal representation learning identifiability", "abstract_missing": false}
+{"paper_id": "2210.13636", "label": "on", "reason": "instrumental variables for causal hazard ratio", "abstract_missing": false}
+{"paper_id": "1810.07973", "label": "on", "reason": "measurement error in causal discovery", "abstract_missing": false}
+{"paper_id": "2411.02231", "label": "on", "reason": "treatment effect bounds with unobserved confounders", "abstract_missing": false}
+{"paper_id": "2602.19903", "label": "on", "reason": "chronological causal discovery", "abstract_missing": false}
+{"paper_id": "2508.21010", "label": "borderline", "reason": "causal-why video QA; causal reasoning in vision", "abstract_missing": false}
+{"paper_id": "2511.16029", "label": "on", "reason": "possibilistic IV regression with invalid instruments", "abstract_missing": false}
+{"paper_id": "2607.10887", "label": "off", "reason": "machine learning potentials for solvation", "abstract_missing": false}
+{"paper_id": "2001.05343", "label": "on", "reason": "causal discovery from incomplete data", "abstract_missing": false}
+{"paper_id": "2412.04605", "label": "on", "reason": "semiparametric Bayesian DiD", "abstract_missing": false}
+{"paper_id": "2606.13382", "label": "off", "reason": "few-shot font generation", "abstract_missing": false}
+{"paper_id": "2601.18118", "label": "borderline", "reason": "causal representation in lung CT; clinical, method unclear", "abstract_missing": false}
+{"paper_id": "2312.02717", "label": "on", "reason": "treatment effects with network data adjustment", "abstract_missing": false}
+{"paper_id": "2606.05265", "label": "off", "reason": "flood depth surrogate models", "abstract_missing": false}
+{"paper_id": "2509.00987", "label": "on", "reason": "survey of LLM causal discovery and effect estimation", "abstract_missing": false}
+{"paper_id": "2606.16241", "label": "off", "reason": "visual anagram generation", "abstract_missing": false}
+{"paper_id": "1805.09909", "label": "on", "reason": "Granger causal structure learning", "abstract_missing": false}
+{"paper_id": "1401.2619", "label": "off", "reason": "opinion dynamics in complex systems", "abstract_missing": false}
+{"paper_id": "0711.1750", "label": "off", "reason": "self-organized criticality earthquakes", "abstract_missing": false}
+{"paper_id": "2512.10156", "label": "on", "reason": "batched adaptive experiments, experimentation inference", "abstract_missing": false}
+{"paper_id": "2607.11149", "label": "off", "reason": "storage metrics for LLM agents", "abstract_missing": false}
+{"paper_id": "2411.03028", "label": "on", "reason": "causal Bayesian optimisation over causal graphs", "abstract_missing": false}
+{"paper_id": "2212.09903", "label": "on", "reason": "covariate adjustment in RCTs", "abstract_missing": false}
+{"paper_id": "2409.01180", "label": "on", "reason": "VAT increase causal evidence via synthetic control", "abstract_missing": false}
+{"paper_id": "2607.09115", "label": "off", "reason": "SNN backdoor attack on object detection", "abstract_missing": false}
+{"paper_id": "2606.24447", "label": "off", "reason": "VLM document parsing", "abstract_missing": false}
+{"paper_id": "1708.08136", "label": "off", "reason": "dynamic network community detection", "abstract_missing": false}
+{"paper_id": "2607.10678", "label": "off", "reason": "emotional intelligence in generative AI", "abstract_missing": false}
+{"paper_id": "2503.15455", "label": "on", "reason": "heterogeneous treatment effects in trial", "abstract_missing": false}
+{"paper_id": "2412.18803", "label": "on", "reason": "evaluating HTE estimators", "abstract_missing": false}
+{"paper_id": "2010.07143", "label": "on", "reason": "GNN for causal inference in brain networks", "abstract_missing": false}
+{"paper_id": "1210.4792", "label": "off", "reason": "matrix-valued kernel regression", "abstract_missing": false}
+{"paper_id": "2606.13106", "label": "off", "reason": "latent reasoning in LLMs", "abstract_missing": false}
+{"paper_id": "2606.06424", "label": "off", "reason": "consciousness and computational functionalism", "abstract_missing": false}
+{"paper_id": "2506.17065", "label": "on", "reason": "flow-based dynamic temporal causal models", "abstract_missing": false}
+{"paper_id": "2207.10475", "label": "off", "reason": "quantum phase transitions in materials", "abstract_missing": false}
+{"paper_id": "2201.07254", "label": "off", "reason": "quantum subsystem codes", "abstract_missing": false}
+{"paper_id": "2201.07031", "label": "borderline", "reason": "built environment and activity; observational, causal peripheral", "abstract_missing": false}
+{"paper_id": "2504.00785", "label": "on", "reason": "quantile treatment effects, panel data", "abstract_missing": false}
+{"paper_id": "2104.12370", "label": "on", "reason": "weak instruments and alternative IV estimators", "abstract_missing": false}
+{"paper_id": "2605.17391", "label": "borderline", "reason": "panel econometrics with random forests; not causal method", "abstract_missing": false}
+{"paper_id": "2001.04197", "label": "on", "reason": "causal discovery with latent confounders", "abstract_missing": false}
+{"paper_id": "2302.03120", "label": "borderline", "reason": "artificial counterfactual tissue sampling; causal framing unclear", "abstract_missing": false}
+{"paper_id": "2008.00507", "label": "on", "reason": "double-robust causal effect estimation", "abstract_missing": false}
+{"paper_id": "2506.11719", "label": "off", "reason": "numerical PDE solvers", "abstract_missing": false}
+{"paper_id": "2506.02604", "label": "off", "reason": "CNN image super-resolution", "abstract_missing": false}
+{"paper_id": "2606.22946", "label": "off", "reason": "neural operator learning", "abstract_missing": false}
+{"paper_id": "2607.24620", "label": "off", "reason": "phase-field chemical equilibrium", "abstract_missing": false}
+{"paper_id": "2104.04103", "label": "on", "reason": "causal decision making versus effect estimation", "abstract_missing": false}
+{"paper_id": "2006.09613", "label": "on", "reason": "discussion of causal CI coverage tests", "abstract_missing": false}
+{"paper_id": "2606.09226", "label": "off", "reason": "solar flare MHD prediction", "abstract_missing": false}
+{"paper_id": "2210.14229", "label": "borderline", "reason": "causal information bottleneck; causal in name only", "abstract_missing": false}
+{"paper_id": "2603.11746", "label": "off", "reason": "video diffusion animation", "abstract_missing": false}
+{"paper_id": "2606.12279", "label": "off", "reason": "genetic algorithms mathematics", "abstract_missing": false}
+{"paper_id": "2112.12082", "label": "off", "reason": "Kalman noise covariance estimation", "abstract_missing": false}
+{"paper_id": "2606.11016", "label": "off", "reason": "LLM decision beliefs", "abstract_missing": false}
+{"paper_id": "2412.02439", "label": "on", "reason": "causal machine learning for galaxy environment effects", "abstract_missing": false}
+{"paper_id": "2606.17142", "label": "off", "reason": "supernova peculiar velocity cosmology", "abstract_missing": false}
+{"paper_id": "2501.10886", "label": "on", "reason": "causal discovery in high-dimensional time series", "abstract_missing": false}
+{"paper_id": "2306.09643", "label": "on", "reason": "causal representation learning from binary interactions", "abstract_missing": false}
+{"paper_id": "2005.14409", "label": "on", "reason": "causal ML for readmission policy targeting", "abstract_missing": false}
+{"paper_id": "2604.19693", "label": "on", "reason": "causal analysis methods in stochastic frontier models", "abstract_missing": false}
+{"paper_id": "2606.18113", "label": "on", "reason": "gsynth causal panel estimator validity", "abstract_missing": false}
+{"paper_id": "2607.11349", "label": "borderline", "reason": "causal driver quantification in trolleybus energy; causal in title only", "abstract_missing": false}
+{"paper_id": "2308.12388", "label": "off", "reason": "missing data imputation for EHR", "abstract_missing": false}
+{"paper_id": "2004.08308", "label": "borderline", "reason": "causal structure of quantum processes; not classical causal methods", "abstract_missing": false}
+{"paper_id": "2511.21749", "label": "off", "reason": "persuasion-attack compound AI", "abstract_missing": false}
+{"paper_id": "2606.23653", "label": "off", "reason": "multi-view 3D volume estimation", "abstract_missing": false}
+{"paper_id": "2503.16852", "label": "on", "reason": "deconfounding for domain generalization", "abstract_missing": false}
+{"paper_id": "2607.07953", "label": "off", "reason": "linear attention architectures", "abstract_missing": false}
+{"paper_id": "2306.14114", "label": "on", "reason": "Granger causal structure from event sequences", "abstract_missing": false}
+{"paper_id": "2207.13512", "label": "off", "reason": "extreme temperature modeling", "abstract_missing": false}
+{"paper_id": "1202.3757", "label": "on", "reason": "causal graph identifiability", "abstract_missing": false}
+{"paper_id": "2201.12831", "label": "on", "reason": "propensity-score Bayesian causal inference", "abstract_missing": false}
+{"paper_id": "2606.18011", "label": "on", "reason": "conditional independence testing for causal discovery", "abstract_missing": false}
+{"paper_id": "2104.06581", "label": "on", "reason": "implied weights of regression for causal inference", "abstract_missing": false}
+{"paper_id": "1512.04809", "label": "on", "reason": "Bayesian g-formula for causal quantities", "abstract_missing": false}
+{"paper_id": "2604.11087", "label": "on", "reason": "counterfactual graph intervention for LLM hallucination", "abstract_missing": false}
+{"paper_id": "1309.6779", "label": "on", "reason": "causal discovery with additive noise models", "abstract_missing": false}
+{"paper_id": "1904.05717", "label": "off", "reason": "matrix multiplication algorithms", "abstract_missing": false}
+{"paper_id": "2407.17385", "label": "on", "reason": "causal inference as prediction on target population", "abstract_missing": false}
+{"paper_id": "2607.08057", "label": "off", "reason": "KV cache optimization for LLM serving", "abstract_missing": false}
+{"paper_id": "2606.15665", "label": "off", "reason": "binomial logistic mixture inference", "abstract_missing": false}
+{"paper_id": "2208.10181", "label": "off", "reason": "time-lapse photography robots", "abstract_missing": false}
+{"paper_id": "1502.05168", "label": "off", "reason": "query expansion for retrieval", "abstract_missing": false}
+{"paper_id": "2505.07729", "label": "on", "reason": "NPIV inference with many weak instruments", "abstract_missing": false}
+{"paper_id": "2607.09911", "label": "off", "reason": "multi-robot path planning", "abstract_missing": false}
+{"paper_id": "2605.06288", "label": "on", "reason": "DAG topological criteria for causal discovery benchmarks", "abstract_missing": false}
+{"paper_id": "2508.03282", "label": "on", "reason": "treatment effects with external controls", "abstract_missing": false}
+{"paper_id": "2503.00730", "label": "on", "reason": "causal survival learning with time-varying treatments", "abstract_missing": false}
+{"paper_id": "2401.14945", "label": "on", "reason": "causal analysis of free public transport policy", "abstract_missing": false}
+{"paper_id": "2510.13583", "label": "on", "reason": "causal graph identifiability via invariance", "abstract_missing": false}
+{"paper_id": "2606.10034", "label": "off", "reason": "EPR study of radicals in electrochemistry", "abstract_missing": false}
+{"paper_id": "2603.17405", "label": "on", "reason": "causal representation learning benchmarks", "abstract_missing": false}
+{"paper_id": "2602.00836", "label": "on", "reason": "dynamic causal inference for time series", "abstract_missing": false}
+{"paper_id": "2111.12560", "label": "on", "reason": "human causal generalization over object powers", "abstract_missing": false}
+{"paper_id": "2402.07804", "label": "on", "reason": "causal discovery for hot corrosion", "abstract_missing": false}
+{"paper_id": "2607.27224", "label": "on", "reason": "synthetic control arms benchmark", "abstract_missing": false}
+{"paper_id": "2512.10053", "label": "off", "reason": "classifier performance metric", "abstract_missing": false}
+{"paper_id": "2606.16694", "label": "off", "reason": "transformer inference mechanisms", "abstract_missing": false}
+{"paper_id": "2006.07040", "label": "on", "reason": "counterfactual inference with representation learning", "abstract_missing": false}
+{"paper_id": "2606.16297", "label": "off", "reason": "gamma-ray sky tomography", "abstract_missing": false}
+{"paper_id": "2606.11634", "label": "off", "reason": "sliding-window attention for LLM reasoning", "abstract_missing": false}
+{"paper_id": "2607.05376", "label": "off", "reason": "multi-view video generation", "abstract_missing": false}
+{"paper_id": "2606.07766", "label": "off", "reason": "quantum-classical polarimetric classification", "abstract_missing": false}
+{"paper_id": "2606.15521", "label": "off", "reason": "LLM tokenization symmetry", "abstract_missing": false}
+{"paper_id": "2607.07123", "label": "off", "reason": "slender structure segmentation", "abstract_missing": false}
+{"paper_id": "2505.08371", "label": "on", "reason": "causal direction via density ratios", "abstract_missing": false}
+{"paper_id": "2607.06278", "label": "off", "reason": "6G UAV AI service provisioning", "abstract_missing": false}
+{"paper_id": "2110.00637", "label": "on", "reason": "supervised causal learning", "abstract_missing": false}
+{"paper_id": "2503.09098", "label": "borderline", "reason": "causal graph in expression spotting; CV method", "abstract_missing": false}
+{"paper_id": "2606.24441", "label": "off", "reason": "scientific image generation model", "abstract_missing": false}
+{"paper_id": "2010.15363", "label": "on", "reason": "counterfactual reasoning for popularity bias", "abstract_missing": false}
+{"paper_id": "2606.06571", "label": "borderline", "reason": "multinomial null cell estimation; generic statistics", "abstract_missing": false}
+{"paper_id": "2108.00654", "label": "on", "reason": "causal graphical modeling in education", "abstract_missing": false}
+{"paper_id": "2102.13252", "label": "on", "reason": "mediation analysis with semi-competing risks", "abstract_missing": false}
+{"paper_id": "2405.09516", "label": "on", "reason": "generalization bounds for causal regression", "abstract_missing": false}
+{"paper_id": "2606.10520", "label": "off", "reason": "LLM quantization", "abstract_missing": false}
+{"paper_id": "2404.08760", "label": "off", "reason": "age bias in LLM values", "abstract_missing": false}
+{"paper_id": "1707.06315", "label": "on", "reason": "matching for causal inference", "abstract_missing": false}
+{"paper_id": "1906.07136", "label": "on", "reason": "M-bias and causal regression adjustment", "abstract_missing": false}
+{"paper_id": "2205.13589", "label": "borderline", "reason": "offline RL with confounders; causal-adjacent", "abstract_missing": false}
+{"paper_id": "2606.05860", "label": "off", "reason": "agentic AutoML for time series", "abstract_missing": false}
+{"paper_id": "2603.29090", "label": "borderline", "reason": "causal latent world model; causal structure peripheral", "abstract_missing": false}
+{"paper_id": "2505.23546", "label": "borderline", "reason": "counterfactuals in combinatorial choice; econometric adjacent", "abstract_missing": false}
+{"paper_id": "2409.08544", "label": "on", "reason": "IV approach for causal inference in networks", "abstract_missing": false}
+{"paper_id": "2607.02572", "label": "borderline", "reason": "causal naming in image fusion; CV method", "abstract_missing": false}
+{"paper_id": "2606.05684", "label": "off", "reason": "language agent memory", "abstract_missing": false}
+{"paper_id": "1812.08233", "label": "on", "reason": "invariance and causality for robustness", "abstract_missing": false}
+{"paper_id": "1912.07346", "label": "on", "reason": "regression discontinuity multiple cutoffs", "abstract_missing": false}
+{"paper_id": "2105.10624", "label": "on", "reason": "causal interrupted time series designs", "abstract_missing": false}
+{"paper_id": "2606.06369", "label": "off", "reason": "scene graph generation", "abstract_missing": false}
+{"paper_id": "2212.06224", "label": "on", "reason": "spillover effects of policies", "abstract_missing": false}
+{"paper_id": "2402.14264", "label": "on", "reason": "doubly robust ATE estimation", "abstract_missing": false}
+{"paper_id": "2306.14729", "label": "off", "reason": "gamma-ray burst emission", "abstract_missing": false}
+{"paper_id": "2606.25986", "label": "off", "reason": "limit order book prediction", "abstract_missing": false}
+{"paper_id": "2406.09521", "label": "on", "reason": "randomization inference for experiments", "abstract_missing": false}
+{"paper_id": "2606.12836", "label": "off", "reason": "time-series parametric variation inference", "abstract_missing": false}
+{"paper_id": "2512.17341", "label": "borderline", "reason": "linear functional bounds; DR estimation adjacent", "abstract_missing": false}
+{"paper_id": "2602.14503", "label": "on", "reason": "probabilities of causation with partial diagrams", "abstract_missing": false}
+{"paper_id": "1103.5537", "label": "on", "reason": "nonlinear causal discovery under non-Gaussian noise", "abstract_missing": false}
+{"paper_id": "1510.04342", "label": "on", "reason": "random forests for HTE inference", "abstract_missing": false}
+{"paper_id": "2008.08236", "label": "on", "reason": "long-term effect estimation with surrogates", "abstract_missing": false}
+{"paper_id": "2006.01366", "label": "on", "reason": "longitudinal modified treatment policies", "abstract_missing": false}
+{"paper_id": "2606.22200", "label": "off", "reason": "multi-sensor regression fusion", "abstract_missing": false}
+{"paper_id": "2010.07866", "label": "on", "reason": "double robust counterfactual prediction", "abstract_missing": false}
+{"paper_id": "2411.17905", "label": "borderline", "reason": "cluster sampling for DiD precision; design adjacent", "abstract_missing": false}
+{"paper_id": "2009.11698", "label": "off", "reason": "explainable ML overview", "abstract_missing": false}
+{"paper_id": "2606.04286", "label": "on", "reason": "text-based causal inference of review ratings", "abstract_missing": false}
+{"paper_id": "2412.12609", "label": "off", "reason": "multilingual program-of-thought", "abstract_missing": false}
+{"paper_id": "2606.16759", "label": "off", "reason": "mean-field game IRL", "abstract_missing": false}
+{"paper_id": "2310.03258", "label": "borderline", "reason": "counterfactual learning for electricity unfairness", "abstract_missing": false}
+{"paper_id": "2512.01827", "label": "on", "reason": "visual causal discovery", "abstract_missing": false}
+{"paper_id": "2107.07086", "label": "on", "reason": "independence weights for continuous treatments", "abstract_missing": false}
+{"paper_id": "2010.14694", "label": "borderline", "reason": "DNNs in structural models for heterogeneity; econometric adjacent", "abstract_missing": false}
+{"paper_id": "2305.06247", "label": "off", "reason": "label noise learning", "abstract_missing": false}
+{"paper_id": "2404.11922", "label": "on", "reason": "LiNGAM causal discovery", "abstract_missing": false}
+{"paper_id": "2503.15436", "label": "on", "reason": "resampling for causal analysis validation", "abstract_missing": false}
+{"paper_id": "2507.18102", "label": "off", "reason": "power system planning", "abstract_missing": false}
+{"paper_id": "2607.08655", "label": "off", "reason": "quantum temperature concept", "abstract_missing": false}
+{"paper_id": "2305.02506", "label": "borderline", "reason": "string diagrams for causal models; formal, not causal inference", "abstract_missing": false}
+{"paper_id": "2607.11615", "label": "off", "reason": "LLM log generation", "abstract_missing": false}
+{"paper_id": "2211.02020", "label": "on", "reason": "Bayesian causal forests for treatment effects", "abstract_missing": false}
+{"paper_id": "2606.26580", "label": "off", "reason": "ECG synthesis", "abstract_missing": false}
+{"paper_id": "2411.01498", "label": "on", "reason": "CATE of educational support center", "abstract_missing": false}
+{"paper_id": "2505.12589", "label": "off", "reason": "surveillance video benchmark", "abstract_missing": false}
+{"paper_id": "2311.17007", "label": "borderline", "reason": "graph structure with Gaussian processes; causal link unclear", "abstract_missing": false}
+{"paper_id": "2512.00969", "label": "on", "reason": "causal foundation model for prescriptive maintenance", "abstract_missing": false}
+{"paper_id": "1203.6502", "label": "on", "reason": "quantifying causal influences in DAGs", "abstract_missing": false}
+{"paper_id": "2202.02416", "label": "on", "reason": "uplift modeling with causal trees", "abstract_missing": false}
+{"paper_id": "2606.09032", "label": "off", "reason": "text world models for agents", "abstract_missing": false}
+{"paper_id": "0803.3433", "label": "off", "reason": "black hole perturbations", "abstract_missing": false}
+{"paper_id": "2606.09238", "label": "off", "reason": "gravitational-wave EMRI detection", "abstract_missing": false}
+{"paper_id": "2606.07182", "label": "off", "reason": "video-to-audio synthesis", "abstract_missing": false}
+{"paper_id": "1904.12629", "label": "on", "reason": "causal discovery with counterfactual image editing", "abstract_missing": false}
+{"paper_id": "2512.10032", "label": "on", "reason": "cluster-DAG background knowledge for causal discovery", "abstract_missing": false}
+{"paper_id": "2109.07266", "label": "on", "reason": "causal approach to disease outbreak modelling", "abstract_missing": false}
+{"paper_id": "2607.05849", "label": "off", "reason": "low-resource machine translation", "abstract_missing": false}
+{"paper_id": "2103.00366", "label": "borderline", "reason": "ML for financial research; causal not central", "abstract_missing": false}
+{"paper_id": "2103.08390", "label": "on", "reason": "long-term effects of novel treatments", "abstract_missing": false}
+{"paper_id": "2502.16042", "label": "on", "reason": "covariate balance in randomized experiments", "abstract_missing": false}
+{"paper_id": "2606.09508", "label": "off", "reason": "long-context LLM inference", "abstract_missing": false}
+{"paper_id": "1910.06628", "label": "off", "reason": "thermoelectric materials", "abstract_missing": false}
+{"paper_id": "2511.15900", "label": "off", "reason": "knot genus construction", "abstract_missing": false}
+{"paper_id": "2606.11656", "label": "off", "reason": "text-to-motion generation", "abstract_missing": false}
+{"paper_id": "1212.3559", "label": "off", "reason": "innovation network dynamics", "abstract_missing": false}
+{"paper_id": "2008.07044", "label": "on", "reason": "heterogeneous survival treatment effects observational", "abstract_missing": false}
+{"paper_id": "2406.17971", "label": "on", "reason": "external controls in randomized trials", "abstract_missing": false}
+{"paper_id": "2303.01302", "label": "off", "reason": "LLM-based software testing", "abstract_missing": false}

@@ -1,0 +1,80 @@
+70|borderline|covariate shift with density-ratio; adjacent statistics
+71|on|causal discovery in non-intervenable systems
+72|borderline|confounding-robust ICA; causal-adjacent
+73|on|identifiability for causal inference
+74|on|interaction information for causal structure
+75|off|vision-action robot control
+76|borderline|safe policy learning; causal content not explicit
+77|off|time-series generation LLM
+78|on|dimension reduction for causal inference
+79|off|comet imaging and spectroscopy
+80|on|causal invariant representation learning
+81|on|sequential causal inference with treatments
+82|on|causal data simulation for benchmarking
+83|on|causality for ethical/fair ML
+84|on|exploratory causal analysis of driving data
+85|on|SINDy for causal discovery in time series
+86|off|multimodal RL for affective computing
+87|on|causal inference with multiple outcomes
+88|on|permutation-based causal discovery acceleration
+89|on|local causal structure learning with confounders
+90|off|LLM moral reasoning scaffolding
+91|on|CATE estimation regularization
+92|borderline|sequential decision algorithms in law/policy; not causal
+93|borderline|counterfactual voting adjustment; causal-adjacent
+94|borderline|quantum counterfactual paradox; physics not causal methods
+95|borderline|structural model calibration; econometric, not causal
+96|on|fair heterogeneous treatment effect policy learning
+97|off|galaxy correlation cosmology
+98|on|matching-based causal inference
+99|borderline|dynamic panel LASSO; generic econometrics
+100|on|causal inference of lockdown policy effects
+101|on|dynamic causal Bayesian optimization
+102|off|generative AI for policy analysis
+103|off|turn-taking prediction speech
+104|off|packet loss concealment audio
+105|on|generalizing trial causal inferences
+106|off|hadron resonance gas physics
+107|off|brain network motifs
+108|on|intervention and causal discovery in buildings
+109|off|superconducting circuit surrogate
+110|on|propensity score estimators in high dimensions
+111|on|structural causal model for treatment effect
+112|on|counterfactual inference for incentive allocation
+113|borderline|counterfactual experience RL; not causal inference
+114|on|matching for causal inference with text
+115|off|LLM confidence calibration
+116|off|numerical drift in scientific models
+117|on|latent confounder causal discovery
+118|on|treatment effect estimation with data integration
+119|on|network-aware experiment design, interference
+120|on|covariate balancing for causal treatments
+121|off|LLM pretraining scaling laws
+122|on|causal reasoning of LLMs
+123|off|LLM quantization for program repair
+124|off|oscillator normal form
+125|off|smart home rule conflicts
+126|on|sensitivity analysis for causal ML
+127|on|causal graphs for LLM explainability
+128|off|phase reduction in oscillators
+129|off|neural network initialisation
+130|borderline|distribution comparison command; generic statistics
+131|borderline|counterfactual Shapley attribution; causal-adjacent
+132|on|causal graph creation with humans
+133|off|cosmology neural networks
+134|on|instrumental causal forests for cash transfer
+135|on|orthogonal random forest for causal inference
+136|on|causal representation learning for domain generalization
+137|off|AGN radio spectra
+138|off|banjo acoustics
+139|on|Bayesian debiased ATE estimation
+140|off|human-AI assistance knowledge gaps
+141|borderline|simplex-valued weight inference, synthetic-control adjacent
+142|off|embodied robotic scene representations
+143|on|local causal structure learning with latent variables
+144|off|LLM prefill serving on wafer-scale chips
+145|on|evaluating treatment rules from observational data
+146|off|X-ray binary radio astrophysics
+147|on|robust difference-in-differences
+148|borderline|median odds ratio for multilevel contextual effects
+149|borderline|causal-titled coordinated RL; causal content peripheral

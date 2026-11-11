@@ -1,0 +1,70 @@
+0|on|survival-analysis mediation via causal graphs
+1|off|constrained diffusion sampling; no causal content
+2|on|causal inference with noncompliance and interference
+3|off|long-context QA test-time training
+4|off|edge AI model compression
+5|off|LLM jailbreak interpretability; no causal method
+6|borderline|causal representation in title; point-cloud segmentation
+7|off|vision model texture comparison
+8|on|causal DAG prior central to synthetic generator
+9|on|causality via transfer entropy for interaction structure
+10|off|merging uncertainty sets; generic statistics
+11|on|causal cross-design synthesis, generalizability
+12|off|underwater path planning
+13|on|causal inference with interference, online experiments
+14|borderline|conditional independence algebra, causal-adjacent
+15|on|Mendelian randomization causal estimator
+16|on|Neyman-orthogonal scores for causal inference
+17|borderline|econometric impact of certificates; causal design unclear
+18|borderline|doubly robust estimation applied to semi-supervised learning
+19|on|externally controlled trials viewed through causal lens
+20|off|sentence embedding probing
+21|off|predict-then-optimize regret, no causal content
+22|off|neural audio coding
+23|off|privacy auditing of fine-tuned LLMs
+24|on|causal-aware framework for CT image quality analysis
+25|off|human motion generation
+26|borderline|causal diagrams in economics teaching
+27|off|type theory and amortized analysis
+28|on|causal inference for database performance root cause
+29|off|pull request latency empirical study
+30|off|AI-RAN dependency tracking
+31|off|RL for LLM reasoning
+32|off|gas transport simulation
+33|borderline|causal-titled breath biomarker diagnosis; predictive ML
+34|off|video game marketing
+35|on|treatment effect estimation via MRP
+36|borderline|provider quality measurement; risk adjustment, not causal
+37|on|randomized trials emulation, causal benchmarking
+38|on|counterfactual fairness with structural causal model
+39|off|RL for PDE solvers
+40|borderline|bug-report donation badge effects; causal design unclear
+41|off|few-shot person re-identification
+42|on|covariate-adjusted causal inference in experiments
+43|borderline|weak causal learning for federated OOD generalization
+44|off|molecular machine dissipation physics
+45|on|fuzzy difference-in-discontinuities identification
+46|on|causally-aware generative networks for fair synthetic data
+47|off|supernova simulations
+48|on|optimal design of spillover experiments
+49|on|Lee bounds for causal effects under sample selection
+50|off|LLM agents for compiler tuning
+51|borderline|double machine learning trend model, ecology data
+52|on|causal ordering for time-series structure learning
+53|on|relative risks and backdoor criterion causal estimates
+54|on|transporting causal inferences across trials
+55|on|conditional independence tests for causal discovery
+56|borderline|Markov switching with instantaneous effects; structural, not causal
+57|on|causal debiasing of popularity bias in recommendation
+58|off|LLM social simulation
+59|borderline|causal paths in dementia-diabetes epidemiology
+60|off|diffusion style transfer
+61|off|open-source license selection
+62|on|instrumental variables with multiple treatments
+63|off|radiative torques of grains
+64|on|causal inference with external controls
+65|on|interference inference with partial network data
+66|on|interference in air pollution intervention effects
+67|on|dynamic heterogeneous treatment effects with abrupt changes
+68|off|emotional image generation
+69|on|causal inference with censored data and marks
