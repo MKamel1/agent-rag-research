@@ -35,6 +35,7 @@ from mcp.server.fastmcp import FastMCP
 
 from app.assembly import build_mcp_server
 from app.usage_log import UsageLog, record_usage
+from contracts.errors import TransientError
 from contracts.mcp_server import (
     PaperSearchResponse,
     PaperSummaryView,
@@ -88,7 +89,21 @@ logger.info(
     "serve: resolved db_path=%s blob_dir=%s collection=%s", _db_path, _blob_dir, _cfg.collection,
 )
 
-_server = build_mcp_server(_cfg, db_path=_db_path, blob_dir=_blob_dir, collection=_cfg.collection)
+try:
+    _server = build_mcp_server(
+        _cfg, db_path=_db_path, blob_dir=_blob_dir, collection=_cfg.collection
+    )
+except TransientError as _error:
+    # OP-1: build_mcp_server's vector-store constructor does a network round trip, so a down vector
+    # store used to kill this process with a raw traceback at import time -- which an MCP client
+    # only ever sees as "Connection closed". Say what is wrong and how to fix it instead.
+    # ponytail: the whole server still needs the vector store to start; SQLite-only tools could
+    # run without it if the vector index were constructed lazily (follow-up ticket).
+    sys.exit(
+        f"app.serve: cannot start -- the vector store is unreachable ({_error}). It is a CPU-only "
+        "container and does not need the GPU: run `python -m app.doctor --cpu-only`, then "
+        "reconnect the MCP client."
+    )
 mcp = FastMCP("research-system-rag")
 
 # Request telemetry (T-DOC-usage-telemetry): a dedicated <data_dir>/mcp_usage.db, sibling to the

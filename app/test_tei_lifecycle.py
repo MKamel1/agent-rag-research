@@ -13,13 +13,13 @@ import filelock
 import httpx
 import pytest
 
+import app.tei_lifecycle as _mod
 from app.tei_lifecycle import (
     _TEI_CONTAINERS,
     start_tei_containers,
     stop_tei_containers,
 )
-import app.tei_lifecycle as _mod
-
+from contracts.errors import TransientError
 
 # ---------------------------------------------------------------------------
 # stop_tei_containers()
@@ -395,3 +395,71 @@ def test_start_tei_containers_poll_timeout_s_overrides_the_module_default(monkey
     client = httpx.Client(transport=httpx.MockTransport(handler))
 
     start_tei_containers(client=client, poll_timeout_s=0.05)  # must return quickly, not after 30s
+
+
+# ---------------------------------------------------------------------------
+# ensure_tei_running(strict=True) -- OP-1: one actionable error on the MCP query path
+# ---------------------------------------------------------------------------
+
+
+def _unhealthy_client() -> httpx.Client:
+    return httpx.Client(transport=httpx.MockTransport(lambda request: httpx.Response(503)))
+
+
+def test_ensure_tei_running_strict_raises_one_actionable_message_when_still_down(monkeypatch):
+    monkeypatch.setattr(subprocess, "run", lambda args, **kwargs: None)
+    monkeypatch.setattr(_mod, "_TEI_START_POLL_INTERVAL_SECONDS", 0.01)
+    monkeypatch.setattr(_mod, "_TEI_START_POLL_TIMEOUT_SECONDS", 0.05)
+
+    with pytest.raises(_mod.TeiUnavailableError) as excinfo:
+        _mod.ensure_tei_running(
+            client=_unhealthy_client(), strict=True, serving="collection=papers db=/x/papers.db"
+        )
+
+    message = str(excinfo.value)
+    assert "semantic_search" in message and "search_papers" in message  # what is down
+    assert "CUDA out of memory" in message  # why that is expected
+    assert "nvidia-smi --query-compute-apps" in message  # who holds the GPU
+    assert "scan_corpus" in message and "corpus_stats" in message  # what still works
+    assert "python -m app.doctor" in message  # the recovery command
+    assert message.endswith("[serving collection=papers db=/x/papers.db]")
+    assert isinstance(excinfo.value, TransientError)
+
+
+def test_ensure_tei_running_strict_is_silent_when_start_brings_tei_up(monkeypatch):
+    """The recovery attempt still runs first; strict only complains if it did not work."""
+    monkeypatch.setattr(subprocess, "run", lambda args, **kwargs: None)
+    state = {"up": False}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200 if state["up"] else 503)
+
+    monkeypatch.setattr(_mod, "start_tei_containers", lambda **kw: state.update(up=True))
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+
+    _mod.ensure_tei_running(client=client, strict=True)  # must not raise
+
+
+def test_ensure_tei_running_strict_raises_during_pass1_without_touching_docker(
+    monkeypatch, tmp_path
+):
+    docker_calls = []
+    monkeypatch.setattr(subprocess, "run", lambda args, **kwargs: docker_calls.append(args))
+    lock_path = tmp_path / ".pass1.lock"
+    holder = filelock.FileLock(str(lock_path))
+    holder.acquire()
+    try:
+        with pytest.raises(_mod.TeiUnavailableError, match="Pass 1"):
+            _mod.ensure_tei_running(client=_unhealthy_client(), lock_path=lock_path, strict=True)
+    finally:
+        holder.release()
+    assert docker_calls == []
+
+
+def test_ensure_tei_running_non_strict_still_never_raises(monkeypatch):
+    """Existing contract for every other caller is unchanged."""
+    monkeypatch.setattr(subprocess, "run", lambda args, **kwargs: None)
+    monkeypatch.setattr(_mod, "_TEI_START_POLL_INTERVAL_SECONDS", 0.01)
+    monkeypatch.setattr(_mod, "_TEI_START_POLL_TIMEOUT_SECONDS", 0.05)
+
+    _mod.ensure_tei_running(client=_unhealthy_client())
