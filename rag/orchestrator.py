@@ -143,7 +143,7 @@ def vector_payload(
     `kind`/`section_path`/`text` are the only per-point fields; everything else is common to
     every point upserted for this record.
     """
-    return {
+    payload: VectorPayload = {
         "paper_id": record.ref.paper_id,
         "kind": kind,
         "section_path": section_path,
@@ -161,6 +161,13 @@ def vector_payload(
             match.name for match in record.author_orgs if match.method == "curated"
         ],
     }
+    # CQ-2: the authoritative `papers.relevance_score`, so it can serve as a query-time focus
+    # lever and survives a re-ingest/rechunk (app/set_payload_fields.py backfills the same key
+    # onto existing points). Absent (not None) when unscored, same legacy-key convention as above.
+    # NOT yet in the VectorPayload TypedDict (contracts/ is protected) -- see the CQ-2 runbook.
+    if record.relevance_score is not None:
+        payload["relevance_score"] = record.relevance_score  # type: ignore[typeddict-unknown-key]
+    return payload
 
 
 @dataclass
