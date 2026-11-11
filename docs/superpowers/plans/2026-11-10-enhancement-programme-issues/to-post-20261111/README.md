@@ -14,3 +14,5 @@ Nothing here has been posted. Each file is the body of one proposed issue; the f
 The 20 other formerly-active tickets are done and are not posted.
 
 The rerank-depth question (32 versus 128) is no longer an open decision: the operator chose 128 for the main corpus on 2026-11-11 (`docs/eval-reports/2026-11-11-rerank-depth-result.md` section 8); EV-23 covers the corpora not yet measured.
+
+Posted 2026-11-11 as GitHub issues: RIDER-1 #250, RQ-6 #251, EV-18b #252, CQ-9 #253, EV-24 #254, EV-23 #255.
