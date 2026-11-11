@@ -440,7 +440,9 @@ sequences the first GPU session. The programme plan is `docs/superpowers/plans/2
 
 **In progress on other branches (mentioned only; not verified here):** EV-4 focus ground truth
 (`EP-EV4-focus-gt`), CQ-5 standards metadata (`EP-CQ5-standards-metadata`), CQ-4 truncation re-chunk plan
-(`EP-CQ4-truncation-rechunk-plan`), EP-2 ticket set (`EP-EP2-ticket-set`).
+(`EP-CQ4-truncation-rechunk-plan`), EP-2 ticket set (`EP-EP2-ticket-set`). Merge commits for CQ-4 (`bb6520a`)
+and CQ-5 (`3df5c8b`) appeared on the integration branch while this pass was running; their content was not
+reviewed, ledgered or doc-mapped here and the figures in §1 do not depend on it.
 
 ## 4. Problems faced → solution landed
 
