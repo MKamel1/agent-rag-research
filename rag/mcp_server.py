@@ -37,6 +37,14 @@ _MIN_K = 1
 _MAX_K = 100
 
 
+def build_instructions(stats: dict) -> str:
+    """MC-2: the server `instructions` string an MCP client shows a cold agent, generated ONLY from
+    `McpServer.corpus_stats()` (SQLite; no embedder, no vector store) plus static, corpus-neutral
+    tool guidance -- so it is true for any corpus directory. Contract: under ~250 tokens; every
+    number in it is a value from `stats` (the static text contains no digits)."""
+    raise NotImplementedError
+
+
 class McpServer:
     """Constructor-injected collaborators only (CONVENTIONS §2): `retriever`, `document_store`.
     Never constructs a vendor client or the retrieval pipeline itself.
