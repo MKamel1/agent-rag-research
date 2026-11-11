@@ -1520,7 +1520,97 @@ def test_build_report_no_vision_fixture_text_arm_equals_overall_and_vision_empty
 def test_parse_args_drop_stub_chunks_flag_defaults_off(monkeypatch):
     """CQ-3: the A/B arm is opt-in from the CLI."""
     from app import retrieval_eval
-    monkeypatch.setattr("sys.argv", ["retrieval_eval"])
+    monkeypatch.setattr("sys.argv", ["retrieval_eval", "--collection", "c"])
     assert retrieval_eval._parse_args().drop_stub_chunks is False
-    monkeypatch.setattr("sys.argv", ["retrieval_eval", "--drop-stub-chunks"])
+    monkeypatch.setattr("sys.argv", ["retrieval_eval", "--collection", "c", "--drop-stub-chunks"])
     assert retrieval_eval._parse_args().drop_stub_chunks is True
+
+
+# --- EV-7: required --collection, hash/commit stamps, gold-id preflight ------------------------
+
+
+def _corpus_db(tmp_path):
+    """Tiny corpus DB: paper P1 with blocks P1:b0..b2 and chunks P1:c0 (anchor b0), P1:c1 (b2)."""
+    import sqlite3
+
+    path = tmp_path / "papers.db"
+    con = sqlite3.connect(path)
+    con.executescript(
+        "CREATE TABLE papers(paper_id);"
+        "CREATE TABLE chunks(chunk_id, paper_id, text, anchor_json);"
+        "CREATE TABLE blocks(block_id, paper_id, idx, text);"
+    )
+    con.execute("INSERT INTO papers VALUES('P1')")
+    for i in range(3):
+        con.execute("INSERT INTO blocks VALUES(?,?,?,?)", (f"P1:b{i}", "P1", i, "t"))
+    for cid, anchor, text in [("P1:c0", "P1:b0", "title\n\nalpha beta"), ("P1:c1", "P1:b2", "gamma")]:
+        con.execute(
+            "INSERT INTO chunks VALUES(?,?,?,?)", (cid, "P1", text, json.dumps({"block_id": anchor}))
+        )
+    con.commit()
+    con.close()
+    return path
+
+
+def test_parse_args_requires_collection(monkeypatch):
+    from app import retrieval_eval
+
+    monkeypatch.setattr("sys.argv", ["retrieval_eval"])
+    with pytest.raises(SystemExit) as exc:
+        retrieval_eval._parse_args()
+    assert exc.value.code == 2
+
+
+def test_file_sha256_12_equals_sha256sum_prefix(tmp_path):
+    import hashlib
+
+    from app.retrieval_eval import file_sha256_12
+
+    f = tmp_path / "gt.json"
+    f.write_bytes(b'{"ground_truth": []}\n')
+    assert file_sha256_12(f) == hashlib.sha256(f.read_bytes()).hexdigest()[:12]
+
+
+def test_build_report_stamps_hash_and_commit():
+    report = build_report(
+        [], 10, ground_truth_sha256_12="0123456789ab", code_commit="deadbeef", code_tree_dirty=False
+    )
+    assert report["ground_truth_sha256_12"] == "0123456789ab"
+    assert report["code_commit"] == "deadbeef"
+    assert report["code_tree_dirty"] is False
+
+
+def test_unresolved_gold_ids_names_each_missing_id(tmp_path):
+    from app.retrieval_eval import CorpusLookup
+
+    q_ok = Question("ok", "q", "t", frozenset({"P1"}), "P1:b1")
+    q_bad = Question(
+        "bad", "q", "t", frozenset({"P1", "NOPE"}), "P1:b99",
+        gold_chunk_id="P1:c9", alternative_gold_chunk_ids=("P1:c1", "P1:c8"),
+    )
+    lookup = CorpusLookup(_corpus_db(tmp_path))
+    assert lookup.unresolved_gold_ids([q_ok]) == {}
+    assert lookup.unresolved_gold_ids([q_ok, q_bad]) == {
+        "paper": ["NOPE"], "block": ["P1:b99"], "chunk": ["P1:c8", "P1:c9"],
+    }
+
+
+def test_main_exits_2_naming_unresolved_gold_ids_before_any_retrieval(
+    tmp_path, monkeypatch, capsys
+):
+    from app import retrieval_eval
+
+    gt = tmp_path / "gt.json"
+    gt.write_text(json.dumps({"ground_truth": [{
+        "question_id": "Q1", "question_text": "q", "source_paper_id": "GHOST",
+        "gold_block_id": "GHOST:b0",
+    }]}))
+    monkeypatch.setattr("sys.argv", [
+        "retrieval_eval", "--ground-truth", str(gt), "--collection", "c",
+        "--db-path", str(_corpus_db(tmp_path)),
+    ])
+    with pytest.raises(SystemExit) as exc:
+        retrieval_eval.main()
+    assert exc.value.code == 2
+    err = capsys.readouterr().err
+    assert "GHOST" in err and "GHOST:b0" in err
