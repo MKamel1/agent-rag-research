@@ -61,7 +61,11 @@
    "gold_chunk_id": "2006.11386:c7",
    "gold_block_id": "2006.11386:b41",
    "excerpt_block_id": "2006.11386:b44",
-   "n_chunks_containing_excerpt": 1
+   "n_chunks_containing_excerpt": 1,
+   "trap_strength": "moderate",
+   "alternative_gold_chunk_ids": [
+    "2006.11386:c16"
+   ]
   },
   {
    "question_id": "Q-FOC-002",
@@ -100,7 +104,8 @@
    "gold_chunk_id": "2605.05993:c4",
    "gold_block_id": "2605.05993:b19",
    "excerpt_block_id": "2605.05993:b22",
-   "n_chunks_containing_excerpt": 1
+   "n_chunks_containing_excerpt": 1,
+   "trap_strength": "moderate"
   },
   {
    "question_id": "Q-FOC-003",
@@ -139,46 +144,48 @@
    "gold_chunk_id": "2505.13422:c5",
    "gold_block_id": "2505.13422:b31",
    "excerpt_block_id": "2505.13422:b34",
-   "n_chunks_containing_excerpt": 1
+   "n_chunks_containing_excerpt": 1,
+   "trap_strength": "moderate"
   },
   {
    "question_id": "Q-FOC-004",
    "tests": "answerable",
    "dimension": "collision",
-   "difficulty": "hard",
-   "question_type": "Requirement",
-   "source_paper_id": "2311.08882",
-   "source_paper_title": "Identification of Causal Influences in Quantum Processes",
-   "section_path": "3 Interventional causal models",
-   "question_text": "When identifying causal influences in quantum processes, what must a sufficiently rich family of instruments allow one to do with the resulting outcome statistics?",
-   "passage_excerpt": "That is, there should exist a set of instruments for which the outcome statistics suffice to determine the data-generating process.",
-   "answer_text": "Determine (completely specify) the data-generating process from the outcome statistics.",
+   "difficulty": "medium",
+   "question_type": "Rationale",
+   "source_paper_id": "2512.14764",
+   "source_paper_title": "Scaling Causal Mediation for Complex Systems: A Framework for Root Cause Analysis",
+   "section_path": "3 Generalized Natural Indirect Effect (NIE) Framework",
+   "question_text": "In the method that extends mediation analysis to large logistics causal graphs, why must it give actionable insight even for factors operators cannot control?",
+   "passage_excerpt": "Unlike simple textbook examples, real DAGs contain both controllable and non-controllable factors, making it critical to provide actionable insights even when the main root causes cannot be directly changed.",
+   "answer_text": "Because real operational DAGs contain both controllable and non-controllable factors, so insight is needed even when the main root causes cannot be directly changed.",
    "paper_topic": "on",
-   "collision_term": "instrument",
-   "colliding_domain": "measurement instrument / detector (astronomy, cosmic-ray, microscopy)",
+   "collision_term": "mediation",
+   "trap_strength": "moderate",
+   "colliding_domain": "mediation layer / middleware and dispute mediation (software systems, negotiation, law)",
    "distractor_paper_ids": [
-    "1805.10649",
-    "2606.05971",
-    "2607.07221"
+    "2606.09692",
+    "2606.10173",
+    "1304.3260"
    ],
    "distractor_evidence": [
     {
-     "paper_id": "1805.10649",
-     "chunk_id": "1805.10649:c3"
+     "paper_id": "2606.09692",
+     "chunk_id": "2606.09692:c20"
     },
     {
-     "paper_id": "2606.05971",
-     "chunk_id": "2606.05971:c24"
+     "paper_id": "2606.10173",
+     "chunk_id": "2606.10173:c2"
     },
     {
-     "paper_id": "2607.07221",
-     "chunk_id": "2607.07221:c8"
+     "paper_id": "1304.3260",
+     "chunk_id": "1304.3260:c6"
     }
    ],
-   "gold_chunk_id": "2311.08882:c3",
-   "gold_block_id": "2311.08882:b38",
-   "excerpt_block_id": "2311.08882:b54",
-   "n_chunks_containing_excerpt": 2
+   "gold_chunk_id": "2512.14764:c11",
+   "gold_block_id": "2512.14764:b62",
+   "excerpt_block_id": "2512.14764:b63",
+   "n_chunks_containing_excerpt": 1
   },
   {
    "question_id": "Q-FOC-005",
@@ -189,7 +196,7 @@
    "source_paper_id": "2512.11154",
    "source_paper_title": "Stabilising Learner Trajectories: A Doubly Robust Evaluation of AI-Guided Student Support using Activity Theory",
    "section_path": "3 Methodology > 3.3 Propensity score estimation and matching",
-   "question_text": "In the doubly robust evaluation of AI-guided student support, what do blocking and the caliper each do in the matched comparison design?",
+   "question_text": "In the university study of AI-flagged at-risk learners, what do blocking and the caliper each do when matching supported students to untreated ones?",
    "passage_excerpt": "Here, blocking means forming strata defined by degree programme and study mode before any matching, while the caliper sets a maximum allowed difference in students’ log-odds of treatment (their logit propensity score) for them to be considered potential matches",
    "answer_text": "Blocking forms strata by degree programme and study mode before matching; the caliper caps the allowed difference in logit propensity score for two students to be potential matches.",
    "paper_topic": "on",
@@ -217,7 +224,8 @@
    "gold_chunk_id": "2512.11154:c13",
    "gold_block_id": "2512.11154:b46",
    "excerpt_block_id": "2512.11154:b47",
-   "n_chunks_containing_excerpt": 1
+   "n_chunks_containing_excerpt": 1,
+   "trap_strength": "moderate"
   },
   {
    "question_id": "Q-FOC-006",
@@ -228,7 +236,7 @@
    "source_paper_id": "2503.02073",
    "source_paper_title": "PanelMatch: Matching Methods for Causal Inference with Time-Series Cross-Section Data",
    "section_path": "3. Refining Matched Sets > 3.3. Refinement Diagnostics",
-   "question_text": "In the R package for time-series cross-sectional matched sets, what does the weight-tile plot after propensity-score refinement show about how control units are used in the example?",
+   "question_text": "What does the weight-tile figure in the PanelMatch example show about how often each unit gets reused by the matching after propensity-score refinement?",
    "passage_excerpt": "From the figure, we can observe that some units are used many times as matched controls, while a sizable number are never used at all.",
    "answer_text": "Some units serve as matched controls many times while a sizable number are never used at all.",
    "paper_topic": "on",
@@ -256,7 +264,8 @@
    "gold_chunk_id": "2503.02073:c19",
    "gold_block_id": "2503.02073:b112",
    "excerpt_block_id": "2503.02073:b114",
-   "n_chunks_containing_excerpt": 1
+   "n_chunks_containing_excerpt": 1,
+   "trap_strength": "moderate"
   },
   {
    "question_id": "Q-FOC-007",
@@ -267,7 +276,7 @@
    "source_paper_id": "2308.02005",
    "source_paper_title": "Randomization-Based Inference for Average Treatment Effects in Inexactly Matched Observational Studies",
    "section_path": "Appendix F: Concluding Remark",
-   "question_text": "What caution does the paper on inexactly paired observational studies give about datasets that look covariate-balanced by usual diagnostics?",
+   "question_text": "What caution does the randomization-inference paper on imperfect matching give about matched datasets that look covariate-balanced by usual diagnostics?",
    "passage_excerpt": "even when a matched dataset appears balanced in covariates by standard practices, residual post-matching imbalance can still introduce significant bias in randomization-based estimation and inference for average treatment efects.",
    "answer_text": "Residual imbalance remaining after the pairing can still bias randomization-based estimation and inference of average treatment effects.",
    "paper_topic": "on",
@@ -295,7 +304,8 @@
    "gold_chunk_id": "2308.02005:c59",
    "gold_block_id": "2308.02005:b434",
    "excerpt_block_id": "2308.02005:b435",
-   "n_chunks_containing_excerpt": 1
+   "n_chunks_containing_excerpt": 1,
+   "trap_strength": "moderate"
   },
   {
    "question_id": "Q-FOC-008",
@@ -306,7 +316,7 @@
    "source_paper_id": "1507.04199",
    "source_paper_title": "Evaluating the Causal Effect of University Grants on Student Dropout: Evidence from a Regression Discontinuity Design Using Principal Stratification",
    "section_path": "3. The basis for inference.",
-   "question_text": "In the university-grants dropout study that uses principal stratification, what does the discontinuity-specific stable-unit assumption exclude regarding other students' eligibility?",
+   "question_text": "In the university-grants dropout study using principal stratification, how does the local RD-SUTVA assumption treat interference among students?",
    "passage_excerpt": "Local RD-SUTVA rules out interference between units, implying that potential outcomes for a student cannot be afected by the eligibility status of other students.",
    "answer_text": "It rules out interference: a student's potential outcomes cannot be affected by other students' eligibility status.",
    "paper_topic": "on",
@@ -339,7 +349,8 @@
    "gold_chunk_id": "1507.04199:c4",
    "gold_block_id": "1507.04199:b46",
    "excerpt_block_id": "1507.04199:b47",
-   "n_chunks_containing_excerpt": 1
+   "n_chunks_containing_excerpt": 1,
+   "trap_strength": "moderate"
   },
   {
    "question_id": "Q-FOC-009",
@@ -350,7 +361,7 @@
    "source_paper_id": "2502.01106",
    "source_paper_title": "Can We Validate Counterfactual Estimations in the Presence of General Network Interference?",
    "section_path": "3. General Counterfactual Estimation Problem > 3.5. Practical Limitations",
-   "question_text": "In the work on validating counterfactual estimates when units affect one another through a network, what bounds the sample size available to the second step of the proposed algorithm?",
+   "question_text": "In the work on validating counterfactual estimates under network interference, what bounds the sample size available to the second step of the algorithm?",
    "passage_excerpt": "First, the estimation procedure in the second step of Algorithm 1 faces inherent sample size limitations that are bounded by the temporal horizon of the experiment",
    "answer_text": "The temporal horizon (length) of the experiment.",
    "paper_topic": "on",
@@ -383,7 +394,8 @@
    "gold_chunk_id": "2502.01106:c9",
    "gold_block_id": "2502.01106:b72",
    "excerpt_block_id": "2502.01106:b73",
-   "n_chunks_containing_excerpt": 1
+   "n_chunks_containing_excerpt": 1,
+   "trap_strength": "moderate"
   },
   {
    "question_id": "Q-FOC-010",
@@ -394,7 +406,7 @@
    "source_paper_id": "2602.19738",
    "source_paper_title": "Individualized Causal Effects under Network Interference with Combinatorial Treatments",
    "section_path": "3. Identification > 3.1. Identification via local orthogonal moments",
-   "question_text": "In the paper on individualized effects of combinatorial treatments across a network, why does a naive local regression fail even when assignments were randomized?",
+   "question_text": "For individualized effects of combinatorial treatments under network interference, why does naive local regression fail even when assignments were randomized?",
    "passage_excerpt": "A central difficulty is that even under randomized assignments, conditioning or localizing on the realized configuration can induce dependence between a unit’s own slate and its interference environment. This creates a form of endogeneity that invalidates naive regression of $Y$ on $Z ( T )$ within localized neighborhoods.",
    "answer_text": "Localizing on the realized configuration induces dependence between a unit's own treatment slate and its neighbours' environment, creating endogeneity that invalidates naive regression within neighborhoods.",
    "paper_topic": "on",
@@ -427,7 +439,8 @@
    "gold_chunk_id": "2602.19738:c6",
    "gold_block_id": "2602.19738:b49",
    "excerpt_block_id": "2602.19738:b50",
-   "n_chunks_containing_excerpt": 1
+   "n_chunks_containing_excerpt": 1,
+   "trap_strength": "moderate"
   },
   {
    "question_id": "Q-FOC-011",
@@ -438,7 +451,7 @@
    "source_paper_id": "2004.05641",
    "source_paper_title": "Complex Discontinuity Designs Using Covariates: Impact of School Grade Retention on Later Life Outcomes in Chile",
    "section_path": "1 Introduction > 1.2 Review of discontinuity designs > 1.2.1 Elements and frameworks",
-   "question_text": "In the Chile grade-retention paper's overview of threshold-based designs, why can units on either side of the assignment threshold be compared?",
+   "question_text": "In the Chile grade-retention paper's overview of regression discontinuity designs, why can units on either side of the cutoff be compared?",
    "passage_excerpt": "The basic intuition behind this design is that subjects just below the cutof (who are not assigned to treatment) are good counterfactual comparisons to those just above the cutof (who are assigned to treatment).",
    "answer_text": "Subjects just below the cutoff are good counterfactual comparisons for those just above it.",
    "paper_topic": "on",
@@ -466,7 +479,8 @@
    "gold_chunk_id": "2004.05641:c5",
    "gold_block_id": "2004.05641:b11",
    "excerpt_block_id": "2004.05641:b12",
-   "n_chunks_containing_excerpt": 1
+   "n_chunks_containing_excerpt": 1,
+   "trap_strength": "weak"
   },
   {
    "question_id": "Q-FOC-012",
@@ -477,7 +491,7 @@
    "source_paper_id": "1911.09511",
    "source_paper_title": "A Practical Introduction to Regression Discontinuity Designs: Foundations",
    "section_path": "4 The Continuity-Based Approach to RD Analysis > 4.2 Local Polynomial Point Estimation > 4.2.2 Bandwidth Selection and Implementation",
-   "question_text": "In the tutorial on RD designs, what role does the bandwidth play in the local polynomial approach?",
+   "question_text": "In the Foundations part of the Cattaneo-Idrobo-Titiunik RD introduction, what does the bandwidth control in the local polynomial estimator of a discontinuity effect?",
    "passage_excerpt": "The bandwidth h controls the width of the neighborhood around the cutof that is used to fit the local polynomial that approximates the unknown regression functions.",
    "answer_text": "It sets the width of the neighborhood around the cutoff used to fit the local polynomial approximating the regression functions.",
    "paper_topic": "on",
@@ -505,7 +519,8 @@
    "gold_chunk_id": "1911.09511:c25",
    "gold_block_id": "1911.09511:b173",
    "excerpt_block_id": "1911.09511:b174",
-   "n_chunks_containing_excerpt": 1
+   "n_chunks_containing_excerpt": 1,
+   "trap_strength": "weak"
   },
   {
    "question_id": "Q-FOC-013",
@@ -516,7 +531,7 @@
    "source_paper_id": "2403.05331",
    "source_paper_title": "Causality and extremes",
    "section_path": "4 Causal structure learning for extremes > 4.2 RMLM-based causal discovery",
-   "question_text": "In extreme-value causal structure learning, what intuitive idea do recursive max-linear models capture about how large disturbances travel?",
+   "question_text": "In extreme-value causal structure learning, what intuition do recursive max-linear models formalize about large shocks in the graph?",
    "passage_excerpt": "RMLMs reflect the intuitive concept of the large shocks propagating through a network and having a dominant efect on their descendants.",
    "answer_text": "Large shocks propagate through the network and have a dominant effect on their descendants.",
    "paper_topic": "on",
@@ -544,7 +559,8 @@
    "gold_chunk_id": "2403.05331:c16",
    "gold_block_id": "2403.05331:b120",
    "excerpt_block_id": "2403.05331:b121",
-   "n_chunks_containing_excerpt": 1
+   "n_chunks_containing_excerpt": 1,
+   "trap_strength": "moderate"
   },
   {
    "question_id": "Q-FOC-014",
@@ -555,7 +571,7 @@
    "source_paper_id": "2011.01380",
    "source_paper_title": "Instrumental Variable Identification of Dynamic Variance Decompositions",
    "section_path": "3 Identification results > 3.3 Dynamic model: parameters of interest",
-   "question_text": "In the IV identification of dynamic variance decompositions, what determines the lower and the upper bound of the identified set for the forecast-variance ratio?",
+   "question_text": "For the instrumental-variable bounds on how important a shock is for forecast-error variance, what determines the lower and the upper bound of the identified set?",
    "passage_excerpt": "the lower bound for the FVR depends on the strength of the IV, and the upper bound on the FVR depends on the informativeness of the macro variables for the shock of interest.",
    "answer_text": "The lower bound depends on the strength of the instrument; the upper bound depends on how informative the macro variables are about the shock of interest.",
    "paper_topic": "on",
@@ -583,7 +599,8 @@
    "gold_chunk_id": "2011.01380:c12",
    "gold_block_id": "2011.01380:b125",
    "excerpt_block_id": "2011.01380:b129",
-   "n_chunks_containing_excerpt": 1
+   "n_chunks_containing_excerpt": 1,
+   "trap_strength": "moderate"
   },
   {
    "question_id": "Q-FOC-015",
@@ -594,22 +611,19 @@
    "source_paper_id": "2412.02183",
    "source_paper_title": "Endogenous Interference in Randomized Experiments",
    "section_path": "Data-Generating Process for Networks",
-   "question_text": "In the model of randomized experiments where the network itself responds, how does link formation after the experiment differ from before it?",
+   "question_text": "In the model where the network responds to the intervention in a randomized experiment, how does link formation after the intervention differ from before it?",
    "passage_excerpt": "The preintervention graphon, $g ^ { \\mathrm { p r e } }$ , depends on the latent variable of the pairs, $w _ { i }$ and $w _ { j }$ , while the post-intervention graphon, $g ^ { \\mathrm { p o s t } }$ , also incorporates the treatment assignments $T _ { i }$ and $T _ { j }$ in forming links.",
    "answer_text": "Post-intervention links also depend on the two units' treatment assignments, whereas pre-intervention links depend only on their latent variables.",
    "paper_topic": "on",
    "collision_term": "intervention",
-   "colliding_domain": "robot / LLM-tutoring / DAgger human intervention",
+   "colliding_domain": "human/manual intervention in robotics, software repair and testing; DAgger",
    "distractor_paper_ids": [
-    "2606.22349",
     "2606.27163",
-    "2606.20880"
+    "2606.20880",
+    "2411.05540",
+    "2603.02551"
    ],
    "distractor_evidence": [
-    {
-     "paper_id": "2606.22349",
-     "chunk_id": "2606.22349:c6"
-    },
     {
      "paper_id": "2606.27163",
      "chunk_id": "2606.27163:c55"
@@ -617,12 +631,21 @@
     {
      "paper_id": "2606.20880",
      "chunk_id": "2606.20880:c17"
+    },
+    {
+     "paper_id": "2411.05540",
+     "chunk_id": "2411.05540:c3"
+    },
+    {
+     "paper_id": "2603.02551",
+     "chunk_id": "2603.02551:c12"
     }
    ],
    "gold_chunk_id": "2412.02183:c8",
    "gold_block_id": "2412.02183:b50",
    "excerpt_block_id": "2412.02183:b54",
-   "n_chunks_containing_excerpt": 1
+   "n_chunks_containing_excerpt": 1,
+   "trap_strength": "moderate"
   },
   {
    "question_id": "Q-FOC-016",
@@ -633,9 +656,9 @@
    "source_paper_id": "2506.01191",
    "source_paper_title": "Uncovering Bias Mechanisms in Observational Studies",
    "section_path": "3 A Taxonomy of Common Causal Biases",
-   "question_text": "In the taxonomy of common biases for observational studies, what mechanism defines the second category of bias?",
+   "question_text": "In the taxonomy of common causal biases in observational studies, which category covers conditioning on a collider, and what does it do to the treatment-outcome relationship?",
    "passage_excerpt": "The second category involves “collider” bias, where conditioning on a collider variable induces a spurious association between the treatment and outcome.",
-   "answer_text": "Collider bias: adjusting for a collider induces a spurious association between treatment and outcome.",
+   "answer_text": "The second category, collider bias: conditioning on a collider variable induces a spurious association between treatment and outcome.",
    "paper_topic": "on",
    "collision_term": "collider",
    "colliding_domain": "particle colliders (LHC, RHIC, electron collider circuits)",
@@ -661,7 +684,11 @@
    "gold_chunk_id": "2506.01191:c4",
    "gold_block_id": "2506.01191:b30",
    "excerpt_block_id": "2506.01191:b31",
-   "n_chunks_containing_excerpt": 1
+   "n_chunks_containing_excerpt": 1,
+   "trap_strength": "moderate",
+   "alternative_gold_chunk_ids": [
+    "2506.01191:c6"
+   ]
   },
   {
    "question_id": "Q-FOC-017",
@@ -672,7 +699,7 @@
    "source_paper_id": "2503.14459",
    "source_paper_title": "Doubly robust identification of treatment effects from multiple environments",
    "section_path": "1 Introduction",
-   "question_text": "When practitioners adjust for every available covariate because the graph is unknown, what danger does the multi-environment identification paper point out?",
+   "question_text": "What risk does the multi-environment identification paper associate with including every available control variable when the causal graph is unknown?",
    "passage_excerpt": "Yet, this approach runs the risk of including bad controls—covariates that, when conditioned on, invalidate the adjustment set and thereby bias the treatment efect estimate.",
    "answer_text": "Including bad controls: covariates whose conditioning invalidates the adjustment set and biases the effect estimate.",
    "paper_topic": "on",
@@ -700,7 +727,8 @@
    "gold_chunk_id": "2503.14459:c2",
    "gold_block_id": "2503.14459:b5",
    "excerpt_block_id": "2503.14459:b7",
-   "n_chunks_containing_excerpt": 1
+   "n_chunks_containing_excerpt": 1,
+   "trap_strength": "moderate"
   },
   {
    "question_id": "Q-FOC-018",
@@ -711,7 +739,7 @@
    "source_paper_id": "2301.07524",
    "source_paper_title": "Towards Causal Analysis of Empirical Software Engineering Data: The Impact of Programming Languages on Coding Competitions",
    "section_path": "5 Causal Analysis of Programming Language Efects > 5.4 Choosing Predictors to Measure Causality > 5.4.3 Adjustment Sets",
-   "question_text": "In the coding-competition study of language effects, what property makes a chosen group of regression variables a valid adjustment set?",
+   "question_text": "In the coding-competition study of language effects, what property of a chosen set of regression variables makes it a valid backdoor adjustment set?",
    "passage_excerpt": "A set of variables that satisfy these constraints is called an adjustment set; using them as regression variables would close all open backdoor paths without opening any closed backdoor paths.",
    "answer_text": "Conditioning on it blocks every open path from the language to the outcome without opening any closed one.",
    "paper_topic": "on",
@@ -739,7 +767,8 @@
    "gold_chunk_id": "2301.07524:c29",
    "gold_block_id": "2301.07524:b205",
    "excerpt_block_id": "2301.07524:b206",
-   "n_chunks_containing_excerpt": 1
+   "n_chunks_containing_excerpt": 1,
+   "trap_strength": "moderate"
   },
   {
    "question_id": "Q-FOC-019",
@@ -750,7 +779,7 @@
    "source_paper_id": "2208.08399",
    "source_paper_title": "The Counterfactual-Shapley Value: Attributing Change in System Metrics",
    "section_path": "5 Evaluation > 5.3 Evaluating CF-Shapley on simulated data",
-   "question_text": "Why does the Shapley-based method for explaining metric changes get tested on simulated data before being applied to the advertising system?",
+   "question_text": "Why is the Shapley-based attribution of metric changes tested on simulated data before being applied to the advertising system?",
    "passage_excerpt": "it is impossible to know the ground-truth attribution using data from a real-world system, since we do not know how the change in input variables led to the observed metric value and which inputs were the most important.",
    "answer_text": "Real-world data cannot reveal ground-truth attribution since it is unknown how input changes produced the metric and which inputs mattered most.",
    "paper_topic": "on",
@@ -778,7 +807,8 @@
    "gold_chunk_id": "2208.08399:c15",
    "gold_block_id": "2208.08399:b81",
    "excerpt_block_id": "2208.08399:b82",
-   "n_chunks_containing_excerpt": 1
+   "n_chunks_containing_excerpt": 1,
+   "trap_strength": "strong"
   },
   {
    "question_id": "Q-FOC-020",
@@ -789,7 +819,7 @@
    "source_paper_id": "2605.07280",
    "source_paper_title": "Mask2Cause: Causal Discovery via Adjacency Constrained Causal Attention",
    "section_path": "2 Mask2Cause Architecture > 2.2 Core Components",
-   "question_text": "In the transformer-based time-series discovery framework, how does the encoder impose the graph on its attention?",
+   "question_text": "In the transformer framework for time-series causal discovery, how does the causal attention encoder impose the learned graph on its attention?",
    "passage_excerpt": "It enforces the causal structure via a shared, learnable adjacency matrix A<sup>ˆ</sup> that acts as a structural gate within the self-attention mechanism.",
    "answer_text": "A shared learnable adjacency matrix acts as a structural gate within self-attention.",
    "paper_topic": "on",
@@ -817,7 +847,11 @@
    "gold_chunk_id": "2605.07280:c5",
    "gold_block_id": "2605.07280:b18",
    "excerpt_block_id": "2605.07280:b21",
-   "n_chunks_containing_excerpt": 1
+   "n_chunks_containing_excerpt": 1,
+   "trap_strength": "moderate",
+   "alternative_gold_chunk_ids": [
+    "2605.07280:c2"
+   ]
   },
   {
    "question_id": "Q-FOC-021",
@@ -828,7 +862,7 @@
    "source_paper_id": "2207.04208",
    "source_paper_title": "SCouT: Synthetic Counterfactuals via Spatiotemporal Transformers for Actionable Healthcare",
    "section_path": "4. Spatiotemporal Seq2Seq Modeling > 4.1 Architecture > 4.1.3 DECODER",
-   "question_text": "In the spatiotemporal transformer for synthetic counterfactuals in healthcare, how is the decoder's masking changed relative to a vanilla decoder?",
+   "question_text": "In the spatiotemporal transformer for synthetic counterfactuals in healthcare, how does the decoder's causal attention mask differ from a vanilla decoder's?",
    "passage_excerpt": "However, we do modify the causal attention mask used in the selfattention module to account for the tokens that lie on the same temporal slice but differ spatially. In other words, we enforce temporal causality but allow bidirectionality spatially.",
    "answer_text": "The causal mask is modified so tokens on the same temporal slice but different locations can attend to each other: temporal causality is enforced but spatial bidirectionality allowed.",
    "paper_topic": "on",
@@ -856,7 +890,11 @@
    "gold_chunk_id": "2207.04208:c17",
    "gold_block_id": "2207.04208:b90",
    "excerpt_block_id": "2207.04208:b91",
-   "n_chunks_containing_excerpt": 1
+   "n_chunks_containing_excerpt": 1,
+   "trap_strength": "strong",
+   "alternative_gold_chunk_ids": [
+    "2207.04208:c2"
+   ]
   },
   {
    "question_id": "Q-FOC-022",
@@ -867,7 +905,7 @@
    "source_paper_id": "2604.23534",
    "source_paper_title": "Multivariate incremental effects for continuous treatments: Studying the health effects of environmental mixtures",
    "section_path": "8 Discussion",
-   "question_text": "In the study of air-pollution mixtures with continuous treatments, how does the method learn which pollutants are most harmful while avoiding extrapolation from a fitted model?",
+   "question_text": "In the study of continuous air-pollution exposures, how does the method single out the most harmful exposures while avoiding extrapolation from a fitted outcome model?",
    "passage_excerpt": "By examining stochastic interventions with tilted exposure distributions, we can study which exposures are most harmful without relying on model-based extrapolation.",
    "answer_text": "It examines stochastic interventions that tilt the exposure distributions.",
    "paper_topic": "on",
@@ -895,7 +933,8 @@
    "gold_chunk_id": "2604.23534:c25",
    "gold_block_id": "2604.23534:b151",
    "excerpt_block_id": "2604.23534:b152",
-   "n_chunks_containing_excerpt": 1
+   "n_chunks_containing_excerpt": 1,
+   "trap_strength": "moderate"
   },
   {
    "question_id": "Q-FOC-023",
@@ -934,7 +973,11 @@
    "gold_chunk_id": "2506.16671:c12",
    "gold_block_id": "2506.16671:b61",
    "excerpt_block_id": "2506.16671:b63",
-   "n_chunks_containing_excerpt": 1
+   "n_chunks_containing_excerpt": 1,
+   "trap_strength": "moderate",
+   "alternative_gold_chunk_ids": [
+    "2506.16671:c2"
+   ]
   },
   {
    "question_id": "Q-FOC-024",
@@ -973,7 +1016,8 @@
    "gold_chunk_id": "2203.14831:c13",
    "gold_block_id": "2203.14831:b159",
    "excerpt_block_id": "2203.14831:b162",
-   "n_chunks_containing_excerpt": 1
+   "n_chunks_containing_excerpt": 1,
+   "trap_strength": "weak"
   },
   {
    "question_id": "Q-FOC-025",
@@ -984,7 +1028,7 @@
    "source_paper_id": "1912.09104",
    "source_paper_title": "Causal Inference and Data Fusion in Econometrics",
    "section_path": "4. SAMPLE SELECTION BIAS",
-   "question_text": "In the econometrics data-fusion review, why does the classic female labor supply example threaten valid inference?",
+   "question_text": "In the econometrics data-fusion review, why does the classic female labor supply example create a sample selection problem for valid inference?",
    "passage_excerpt": "The challenge to valid inference in this setting arises due to the fact that market wages are only observable for women who choose to work.",
    "answer_text": "Wages are observed only for women who choose to work, so the sample is selected.",
    "paper_topic": "on",
@@ -1012,7 +1056,8 @@
    "gold_chunk_id": "1912.09104:c12",
    "gold_block_id": "1912.09104:b139",
    "excerpt_block_id": "1912.09104:b140",
-   "n_chunks_containing_excerpt": 1
+   "n_chunks_containing_excerpt": 1,
+   "trap_strength": "moderate"
   },
   {
    "question_id": "Q-FOC-026",
@@ -1023,7 +1068,7 @@
    "source_paper_id": "2607.19908",
    "source_paper_title": "Treatment Geometry and Causal Identification with Earth Observation Data",
    "section_path": "1. Introduction",
-   "question_text": "In the Earth-observation impact-evaluation paper, what does the concept borrowed from radiation oncology denote when applied to a research design?",
+   "question_text": "In the Earth-observation impact-evaluation paper, what does treatment geometry, a notion borrowed from radiation oncology, mean for a research design?",
    "passage_excerpt": "In the context of GIEs, we use treatment geometry to refer to the spatial and temporal footprint through which exposure to treatment is represented.",
    "answer_text": "The spatial and temporal footprint through which exposure to treatment is represented.",
    "paper_topic": "on",
@@ -1056,7 +1101,8 @@
    "gold_chunk_id": "2607.19908:c2",
    "gold_block_id": "2607.19908:b10",
    "excerpt_block_id": "2607.19908:b12",
-   "n_chunks_containing_excerpt": 1
+   "n_chunks_containing_excerpt": 1,
+   "trap_strength": "strong"
   },
   {
    "question_id": "Q-FOC-027",
@@ -1151,7 +1197,7 @@
    "source_paper_id": "2606.22691",
    "source_paper_title": "Finite-volume scheme for first-order viscoresistive relativistic magnetohydrodynamics",
    "section_path": "3. NUMERICAL EVOLUTION > 3.2. 1D shocktube tests",
-   "question_text": "In the finite-volume scheme for relativistic viscoresistive MHD, why is the one-dimensional shock-tube test demanding for the dissipative version?",
+   "question_text": "In the finite-volume discretisation of relativistic viscoresistive MHD, why is the one-dimensional shock-tube test demanding for the dissipative version?",
    "passage_excerpt": "For the dissipative scheme, the shocktube presents a formidable challenge since the initial condition is far out of equilibrium in the thermodynamic quantities (gradients are formally infinite).",
    "answer_text": "The initial condition is far from equilibrium in the thermodynamic quantities, with formally infinite gradients.",
    "paper_topic": "off",
@@ -1179,7 +1225,7 @@
    "source_paper_id": "2606.11479",
    "source_paper_title": "A Two-Stage Framework for Fast Proton Spot Map Generation in Pencil Beam Scanning Prostate SBRT Planning",
    "section_path": "2 Materials and Methods > 2.2 Data Preparation > 2.2.1 Preprocessing",
-   "question_text": "In the proton spot map generation framework, how are images aligned during preprocessing?",
+   "question_text": "In the two-stage prostate SBRT pencil-beam planning pipeline, how are the CT images aligned during preprocessing?",
    "passage_excerpt": "All images were rigidly translated so that the treatment plan isocenter coincided with the image center.",
    "answer_text": "They are rigidly translated so the plan isocenter coincides with the image center.",
    "paper_topic": "off",
@@ -1235,7 +1281,7 @@
    "source_paper_id": "2606.12732",
    "source_paper_title": "X-ray Emission and Stellar Ages of Sun-Like Stars",
    "section_path": "2. SAMPLE SELECTION",
-   "question_text": "How many X-ray observations of Sun-like stars were gathered, and how are they split between the two observatories?",
+   "question_text": "How many X-ray observations of solar-type stars were gathered, and how are they split between the two observatories?",
    "passage_excerpt": "We retrieved a total of 111 observations (87 from XMM-Newton and 24 from Chandra) totaling ∼2.3 Msec in efective exposure time",
    "answer_text": "111 observations: 87 from XMM-Newton and 24 from Chandra.",
    "paper_topic": "off",
@@ -1263,7 +1309,7 @@
    "source_paper_id": "2606.09156",
    "source_paper_title": "OmniGen-AR: AutoRegressive Any-to-Image Generation",
    "section_path": "Abstract",
-   "question_text": "How does the autoregressive any-to-image generator keep conditioning tokens from leaking into content tokens?",
+   "question_text": "How does the any-to-image autoregressive generator keep conditioning tokens from leaking into content tokens?",
    "passage_excerpt": "we introduce Disentangled Causal Attention (DCA), which separates the full-sequence causal mask into condition causal attention and content causal attention.",
    "answer_text": "Disentangled Causal Attention splits the full-sequence causal mask into condition and content causal attention.",
    "paper_topic": "off",
@@ -1375,7 +1421,7 @@
    "source_paper_id": "2205.11957",
    "source_paper_title": "Comparison of Fractional-Order and Integer-Order H-infinty Control of a Non-Collocated Two-Mass Oscillator",
    "section_path": "1. INTRODUCTION",
-   "question_text": "In work comparing fractional-order and integer-order H-infinity design for a non-collocated two-mass oscillator, why are fractional-order extensions of PID attractive?",
+   "question_text": "In the robust-control study of a two-mass oscillator with fractional-order controllers, why are fractional-order extensions of PID attractive?",
    "passage_excerpt": "Especially the extension of the classical PID-controller (Podlubny, 1999) by FO terms has been investigated intensively (Monje et al., 2010), as the FO integral part leads to a reduced phase loss compared to an integer-order (IO) integrator.",
    "answer_text": "The fractional-order integral part leads to a reduced phase loss compared to an integer-order integrator.",
    "paper_topic": "off",
@@ -1478,18 +1524,18 @@
    "dimension": "focus-absent",
    "difficulty": "medium",
    "question_type": "Procedure",
-   "question_text": "How do Blanchard and Quah long-run restrictions identify structural shocks in a VAR?",
+   "question_text": "In a Blanchard-Quah decomposition, which shock is assumed to have no long-run effect on output, and how does that restriction pin down the impact matrix of a VAR?",
    "answer_text": "Not in the corpus: no paper explains this; the only vocabulary matches are off-topic or passing citations.",
    "absence_evidence": [
     {
      "pattern": "Blanchard.{1,8}Quah",
      "hits": 3,
-     "note": "3 chunks cite Blanchard & Quah (1989) in a list of SVAR identification schemes, no explanation (2605.09870:c13, c92; 2307.03074:c3)"
+     "note": "3 chunks cite Blanchard & Quah (1989) in a list of SVAR identification schemes (2605.09870:c13 says only 'constraining cumulative effects'; c92; 2307.03074:c3); none says which shock or how the impact matrix is pinned down"
     },
     {
-     "pattern": "structural VAR|SVAR",
-     "hits": 810,
-     "note": "SVAR surface vocabulary, other identification schemes"
+     "pattern": "(Blanchard.{1,8}Quah|long.run restrictions?).{0,300}(demand|supply|transitory|permanent).{0,200}(output|GDP)",
+     "hits": 0,
+     "note": "no chunk links the long-run restriction to a named shock and output"
     }
    ],
    "nearest_distractor_paper_id": "2512.05661",
@@ -1567,65 +1613,68 @@
    "tests": "absent",
    "dimension": "focus-absent",
    "difficulty": "hard",
-   "question_type": "Definition",
-   "question_text": "What is Neyman's paradox, and when does conditioning on a post-treatment variable produce it?",
+   "question_type": "Procedure",
+   "question_text": "In the Cochrane-Orcutt correction for AR(1) errors, what quasi-difference transformation is applied to the outcome and regressors before the treatment coefficient is re-estimated?",
    "answer_text": "Not in the corpus: no paper explains this; the only vocabulary matches are off-topic or passing citations.",
    "absence_evidence": [
     {
-     "pattern": "Neyman.s paradox",
-     "hits": 0
+     "pattern": "Cochrane.Orcutt",
+     "hits": 2,
+     "note": "2 passing mentions: 2603.17281:c12 lists it among error-structure options; 2403.08130:c7 says feasible BLUP needs iterative Cochrane-Orcutt or Prais-Winsten estimation of phi_1; neither gives the transformation"
     },
     {
-     "pattern": "paradox",
-     "hits": 1398,
-     "note": "other paradoxes (Simpson, Berkson, etc.)"
+     "pattern": "quasi.differenc.{0,250}(autocorrel|serial correl|AR\\(1\\))",
+     "hits": 0,
+     "note": "no chunk describes quasi-differencing for AR(1) errors"
     }
    ],
-   "nearest_distractor_paper_id": "2405.18095",
+   "nearest_distractor_paper_id": "2403.08130",
    "paper_topic": "absent",
    "question_id": "Q-FOC-046"
   },
   {
    "tests": "absent",
    "dimension": "focus-absent",
-   "difficulty": "easy",
-   "question_type": "Fact-Lookup",
-   "question_text": "Which instrumental variable or difference-in-differences design has been used to estimate the causal effect of dark matter density on galaxy formation?",
+   "difficulty": "medium",
+   "question_type": "Procedure",
+   "question_text": "How has a regression kink design been used to estimate the causal effect of galaxy-cluster membership on star formation, and what plays the role of the kinked assignment variable?",
    "answer_text": "Not in the corpus: no paper explains this; the only vocabulary matches are off-topic or passing citations.",
    "absence_evidence": [
     {
-     "pattern": "(dark matter|dark energy).{0,300}(propensity|difference-in-difference|instrumental variable)",
-     "hits": 0
+     "pattern": "(regression kink|kink design|\\bRKD\\b).{0,300}galax|galax.{0,300}(regression kink|kink design|\\bRKD\\b)",
+     "hits": 0,
+     "note": "no regression-kink chunk mentions galaxies"
     },
     {
-     "pattern": "dark (matter|energy)",
-     "hits": 1030,
-     "note": "astrophysics papers on dark matter, no causal-method framing"
+     "pattern": "galax.{0,300}(propensity|instrumental variable|regression discontinuity|difference.in.dif+erences?)",
+     "hits": 11,
+     "note": "astro papers using propensity-score matching for control samples (1603.06256, 2009.03915, 2203.07794 ...) and similar words, none uses a kink design"
     }
    ],
-   "nearest_distractor_paper_id": "2405.18095",
+   "nearest_distractor_paper_id": "1603.06256",
    "paper_topic": "absent",
    "question_id": "Q-FOC-047"
   },
   {
    "tests": "absent",
    "dimension": "focus-absent",
-   "difficulty": "easy",
+   "difficulty": "medium",
    "question_type": "Fact-Lookup",
-   "question_text": "How is the propensity score used to estimate the treatment effect of black hole mergers on neutrino emission?",
+   "question_text": "Which identification strategy do Hirshleifer and Shumway use to show that morning sunshine causally affects daily stock returns, and how large is the estimated effect?",
    "answer_text": "Not in the corpus: no paper explains this; the only vocabulary matches are off-topic or passing citations.",
    "absence_evidence": [
     {
-     "pattern": "(black hole|neutrino).{0,300}(treatment effect|propensity score|instrumental variable)",
-     "hits": 0
+     "pattern": "Hirshleifer.{0,40}Shumway|sunshine.{0,200}(stock|return|market)",
+     "hits": 0,
+     "note": "no chunk names the study or links sunshine to returns"
     },
     {
-     "pattern": "black hole|neutrino",
-     "hits": 1677,
-     "note": "pure physics papers"
+     "pattern": "sunshine",
+     "hits": 35,
+     "note": "broad: spurious (author surnames, bees/cat dialogue examples, astronomy); none links sunshine to returns"
     }
    ],
-   "nearest_distractor_paper_id": "2607.11737",
+   "nearest_distractor_paper_id": "2606.05318",
    "paper_topic": "absent",
    "question_id": "Q-FOC-048"
   },
@@ -1634,18 +1683,18 @@
    "dimension": "focus-absent",
    "difficulty": "medium",
    "question_type": "Fact-Lookup",
-   "question_text": "What causal effect of sunspot activity on stock market returns do the papers estimate, and with which identification strategy?",
+   "question_text": "What causal effect of solar sunspot activity on aggregate stock-market returns has been estimated, and which identification strategy makes that estimate credible?",
    "answer_text": "Not in the corpus: no paper explains this; the only vocabulary matches are off-topic or passing citations.",
    "absence_evidence": [
     {
      "pattern": "sunspots?.{0,300}(stock|market|econom|GDP)|(stock|market|econom|GDP).{0,300}sunspots?",
      "hits": 1,
-     "note": "1 chunk (2607.06702:c21) uses 'sunspot-free flow path' inside an economics simulation; not a sunspot-activity estimate"
+     "note": "1 chunk (2607.06702:c21) is a finance simulation chunk, not a sunspot-returns estimate"
     },
     {
      "pattern": "sunspot",
      "hits": 134,
-     "note": "solar-physics papers about sunspots"
+     "note": "broad: solar-physics papers"
     }
    ],
    "nearest_distractor_paper_id": "2606.05318",
@@ -1655,20 +1704,20 @@
   {
    "tests": "absent",
    "dimension": "focus-absent",
-   "difficulty": "hard",
+   "difficulty": "medium",
    "question_type": "Fact-Lookup",
-   "question_text": "Do the papers estimate a causal effect of lunar phase on birth rates or crime, and with what design?",
+   "question_text": "What causal effect of the lunar cycle on birth rates or violent crime has been estimated, and which quasi-experimental design makes that estimate credible?",
    "answer_text": "Not in the corpus: no paper explains this; the only vocabulary matches are off-topic or passing citations.",
    "absence_evidence": [
     {
      "pattern": "(lunar|moon).{0,200}(birth|fertility|crime)",
      "hits": 3,
-     "note": "3 spurious chunks: 'Chinese lunar new year' red packets; 'Moonshine' ASR tokenizer 'fertility' (x2)"
+     "note": "3 spurious hits: 1712.02926:c14 (lunar new year), 2607.09598:c7, c19 (Moonshine ASR model, 'fertility' tokenizer)"
     },
     {
      "pattern": "\\bmoon\\b|lunar",
      "hits": 260,
-     "note": "lunar/planetary science papers"
+     "note": "broad: astronomy / planetary-science papers"
     }
    ],
    "nearest_distractor_paper_id": "2505.04651",

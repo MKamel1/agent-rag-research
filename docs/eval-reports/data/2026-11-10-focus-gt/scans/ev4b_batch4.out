@@ -1,0 +1,59 @@
+### COUNTS
+    62 Perry_Abecedarian_HeadStart 
+    60 Progresa 
+   218 JobCorps_NSW 
+    15 Ashenfelter_dip 
+    84 Haavelmo 
+    12 Cowles 
+    13 Reiersol 
+   115 Granger_Newbold 
+   228 Hendry 
+   144 Markov_switching 
+     9 border_county 
+    19 Tinbergen 
+   112 ProjectSTAR 
+     6 SCC_pies ['2509.20506:c12', '2509.20506:c15', '2511.21516:c2', '2008.02509:c15', '2209.02016:c5', '2607.06677:c4']
+     0 SCC_interaction []
+   109 Rothman 
+     3 BQ_name ['2307.03074:c3', '2605.09870:c13', '2605.09870:c92']
+     0 BQ_outputeffect []
+     1 sunspot_stock ['2607.06702:c21']
+     3 lunar_birth ['1712.02926:c14', '2607.09598:c7', '2607.09598:c19']
+     2 Cochrane_Orcutt ['2603.17281:c12', '2403.08130:c7']
+    50 Prais_Winsten 
+     2 Lord_paradox ['0811.1640:c2', '2407.11937:c5']
+    24 Anscombe 
+   659 Hirano_GPS 
+    11 Kline_Moretti 
+    21 Autor_Dorn 
+     3 Chetty_mobility ['2010.04129:c2', '2010.04129:c4', '2202.12339:c5']
+    68 Jaeger 
+### CONTEXTS (<=8 hits)
+## SCC_pies
+  2509.20506:c12 | t Potential Outcome Distributions from a Single Study 6 Assessment of Assumption Plausibility  We will argue that under a minimum suficient cause or ‘causal pie’ model (Rothman, 1976), it is usually impossible for Assumptions 1 and 4 to jointly hold exactly. Under a causal pie model, the outcome occurs whenever any minimal suficient set $( \mathrm { o r ~ \bar { \ p i e } ^ { \prime } } )$ of causal conditi
+  2509.20506:c15 | . 8 5 ]$ across the support of $V _ { S }$ . We note that, consistent with the discussion in Section 6, the data generating process does not follow a causal pie model.  Observed outcome. The observed outcome was  $$ Y = ( 1 - A ) Y ( 0 ) + A Y ( 1 ) . $$
+  2511.21516:c2 |  Rubin, 2015; Hernan and Robins, 2025) and the broader specialized literature.´  Another influential framework that we do not review in detail is the sufficient–component cause (SCC) framework; see Rothman (1976), Greenland and Poole (1988), Greenland and Brumback (2002), Rothman et al. (2008, Chap. 2), VanderWeele and Robins (2009), VanderWeele and Richardson (2012, §7), and VanderWeele (2015, p.10 & Chap. 10) for detaile
+  2008.02509:c15 | ffects on Prices, Sales, Cross-Border Shopping, and Consumption. Annu Rev Nutr. 2019;39:317–38.  30. Schwartz S, Gatto NM, Campbell UB. Extending the sufficient component cause model to describe the Stable Unit Treatment Value Assumption (SUTVA). Epidemiol Perspect Innov. 2012;9.  31. Sterne JA, Hernán MA, Reeves BC, Savović J, Berkman ND, Viswanathan M, et al. ROBINS-I: A tool for assessing risk of bias in non-randomised 
+  2209.02016:c5 | pothesis by chance. Bayesian inference is used to determine the efect of an independent variable.  Common frameworks for causal inference include the causal pie model (component-cause) [10], Pearl’s structural causal model (causal diagram and do-calculus) [11], structural equation modeling, and Rubin’s causal model (potential-outcome) [12]. [13] presents a more comprehensive survey of classical causal infer
+  2607.06677:c4 | cles, identified as “direct waves” in [47].  Decomposing the filtered waveform via $\operatorname { E q . }$ (13), we find, remarkably, that the anti-causal piece alone [red dashed, Eq. (15)] closely reproduces the full filtered waveform; the prompt response and tail together contribute only ∼ 0.1% (yellow dashed). We have verified that this conclusion remains valid for other orbital configurations, includi
+## Cochrane_Orcutt
+  2603.17281:c12 | t command in Stata [17]) and specifying error structures accordingly, whether through Newey–West standard errors [16], Prais–Winsten regression [20], Cochrane–Orcutt regression [21], instrumental variables [22], or any one of the autoregressive conditional heteroskedasticity family of estimators (see [23, 24] for a comprehensive discussion of econometric time series models).  Fourth, researchers should endeavor 
+  2403.08130:c7 | } ( 1 )$ term converges to $0$ as $T _ { 0 } \to \infty$  blup is infeasible because $\phi _ { 1 }$ is not observed. Feasible blup requires iterative Cochrane-Orcutt or Prais-Winsten estimation of $\phi _ { 1 }$ , or direct estimation of $\beta$ and $\phi _ { 1 }$ from a Durbin equation.<sup>4</sup> These feasible estimators are all eficient and consistent. Cochrane and Orcutt (1949) suggest to improve the stand
+## Lord_paradox
+  0811.1640:c2 | e observed outcome notation is inadequate in general, and can lead to serious errors—see, for example, the discussions in Holland and Rubin (1983) on Lord’s paradox, and in Rubin (2005), where errors are explicated that Fisher made because (I believe) he eschewed the potential outcome notation. The essential problem with $Y _ { \mathrm { o b s } }$ is that it mixes up the science $[ \mathrm { i . e . , ~ } Y ( 
+  2407.11937:c5 |  the causal estimands and stating the identification assumptions in FDID. A similar use of $Z _ { i }$ appears in Holland and Rubin (1986) to clarify Lord’s paradox in settings identical to FDID. The departure from canonical DID arises from the absence of a one-to-one mapping between $G$ and Z.
+## BQ_name
+  2307.03074:c3 | ns. Such restrictions can be derived from an underlying economic model, such as short and long-run restrictions on the shocks impact (Bernanke, 1986, Blanchard and Quah, 1989, Faust and Leeper, 1997), or imposing sign restrictions on impulse response functions (Uhlig, 2005, Chari et al. 2008).  The success of the VAR approach is its reliance on data characteristics, thus allowing the validation of economic models u
+  2605.09870:c13 | cation strategies: (1) Short-run restrictions: imposing zeros in $B _ { 0 }$ (Sims, 1980); (2) Long-run restrictions: constraining cumulative efects (Blanchard & Quah, 1989); (3) Sign restrictions: imposing sign constraints on efects (Uhlig, 2005); (4) Non-Gaussianity: SVAR-LiNGAM (Hyvärinen et al., 2010). All four strategies recover identifiability by imposing additional statistical or sign restrictions on the S
+  2605.09870:c92 | usal Discovery via Simulator-Generated Interventional Distributions G.4 SVAR Literature in Econometrics  Econometric SVARs (Kilian & Lütkepohl, 2017; Blanchard & Quah, 1989; Uhlig, 2005) achieve identification through statistical assumptions. SpinSVAR (Misiakos & Püschel, 2025) scales to thousands of nodes via sparse Laplacian assumptions; the Bank of England (Brignone & Pifer, 2025) uses SVARs for monetary polic
+## lunar_birth
+  1712.02926:c14 | China and Singapore and white in Japan.<sup>4</sup>  These red packets are among the most important components of festivals, for example, the Chinese lunar new year and important events such as wedding and birthdays. They are the most frequently used tool for gift exchange between friends and an efective mechanism to maintain the close relationships with family members.<sup>5</sup>  Because of its lack of geographic constraints, WeChat significantly speeds 
+  2607.09598:c7 | nizer Transplantation: Mitigating Autoregressive Collapse in Edge-Efficient Bengali ASR 3. Tokenizer Fertility and Decoding Instability  The original Moonshine tokenizer was optimized primarily for English text. As a result, Bengali words undergo aggressive byte-level decomposition during tokenization. Tokenizer fertility is defined as the ratio of generated tokens to the total number of words:  $$ \Phi = \frac { \mathrm { T o t a l ~ T o k e n s } } { \mathrm { T o t a l ~ W o r d s } }\tag{1} $$  where lower values indicate more compact tokenization. The baseline t
+  2607.09598:c19 | utoregressive Collapse in Edge-Efficient Bengali ASR 7. Conclusion  This study introduced tokenizer transplantation for the Bengali adaptation of the Moonshine ASR model. Analysis identified excessive tokenizer fertility as a primary source of autoregressive instability in compact models. By initially fine-tuning the acoustic representations, replacing the native tokenizer with a morphologically aligned Bengali tokenizer, and implementing a two-stage recovery traini
+## Chetty_mobility
+  2010.04129:c2 | nset of COVID-19 dramatically changed consumption behavior. The first study to do so was Baker et al. (2020) using US fintech data and following this Opportunity Insights (Chetty et al., 2020a,b) produced a dashboard using multiple data sources to track regional US consumption behavior alongside other economic indicators.<sup>5</sup> Beyond the US similar exercises have been carried out to understand household consum
+  2010.04129:c4 | s at high frequency due to seasonality and day of week efects. We therefore follow an approach to smooth the transaction volumes over time as used by Opportunity Insights on similar US data (Chetty et al., 2020b,a): aggregating spending by day at the level of geography of interest, taking a seven day moving average and dividing by the previous year’s value.<sup>11</sup> Finally, we normalize the series setting an ind
+  2202.12339:c5 | han the timing of our survey waves, making any meaningful comparison dificult. Therefore, we use data collected and updated in real-time by Harvard’s Opportunity Insights team on the weekly percentage variations in consumer expenditures with respect to the first week of January 2020 (Chetty et al., 2020). This variable is seasonally adjusted and is available at the county level, which we match with the respondents’ r
+## sunspot_stock
+  2607.06702:c21 | endent frontier  5.3 The three motions and the time-dependent frontier  Unless stated as a single illustrative path, every reported number is a multi-economy average over random draws of the generating process rather than a single seed; the monotonicity fraction (483/500), the unhedgeability $R ^ { 2 }$ , and the swap loss are of this kind, while individual trajectories (a sunspot-free flow path, one switch detection) are labelled as illustrations. A dedicated experiment validates the configuration-space taxonomy of Theorem 3.7 and the frontier result of Theorem 3.8 against a known generating process. The three motions are co
+

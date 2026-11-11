@@ -1,0 +1,217 @@
+### ABSENT-CANDIDATE COUNTS (chunks)
+     0 BQ_refined_noLR_effect []
+     1 BQ_demand_transitory ['2209.03046:c13']
+     3 BQ_name ['2307.03074:c3', '2605.09870:c13', '2605.09870:c92']
+    10 Neyman_paradox 
+    12 settler_mortality 
+   172 quarter_of_birth 
+    86 Oregon_HIE 
+    13 MTO 
+   111 STAR 
+    43 Hirshleifer_sunshine 
+   178 Oaxaca 
+    40 Mantel 
+   243 Kitagawa 
+   164 Card_Krueger 
+   681 minwage 
+   127 kink 
+    34 Rosenbaum_bounds 
+    32 Roy_model 
+   597 Lalonde 
+     4 Stein_paradox ['2407.01186:c12', '2508.01341:c3', '2204.14121:c7', '2606.22391:c3']
+     8 Uhlig 
+     2 Sims_Zha ['2011.01380:c5', '2011.01380:c43']
+   105 Lee_bounds 
+    22 Heckman_two_step 
+    46 Hausman_spec 
+   201 Bartik 
+    16 galaxy_causal 
+   229 Wald_ratio 
+    59 Fama_French 
+     9 Granger_Sims 
+   320 Cholesky_ordering 
+   190 Jorda_LP 
+    10 Cragg_Donald 
+    91 Anderson_Rubin 
+    70 Sargan 
+    48 Nickell 
+    67 Arellano_Bond 
+   647 Hansen_Hurwitz 
+   726 Manski_bounds 
+  1180 Pearl_frontdoor 
+   250 Cinelli_Hazlett 
+    92 Imai_Kim 
+   378 two_way_FE_decomp 
+   875 Callaway_SantAnna 
+   357 Sun_Abraham 
+     5 vaccine_trial_cluster ['2310.04578:c5', '2408.16670:c30', '2410.21105:c2', '2504.21580:c4', '2605.21793:c2']
+    45 smallpox 
+    55 Snow_cholera 
+     4 Semmelweis ['2512.06804:c1', '2606.17113:c0', '2407.20694:c0', 'local:14b7e283bdcd:c58']
+    42 Bradford_Hill 
+   602 Doll_Hill_smoking 
+   144 Cornfield 
+### OFF-LABELLED SAMPLES (one chunk per paper)
+## intervention
+  2405.14345:c6 | cture. Taken together, the treatment and control events represent the intervention events.  Simply comparing the effect of the treatment and control eve
+  2405.14445:c1 | en for evaluation. Secondly, we used the LLM to predict Participants, Interventions, Controls and Outcomes (PICOs) labelled within 100 abstracts in the E
+  2408.14604:c35 | Missing Data Perspective | 21 | 104 | | z28 | Defining And Estimating Intervention Effects For Groups That Will Develop An | 39 | 29 | | z28 | Auxiliary
+  2408.14915:c12 | numbers across different number of marked points.  2. Counter-factual intervention. We perform counterfactual interventions (Baron, 2023) by modifying i
+  2411.05540:c3 | ity. Traditional vulnerability repair methods require extensive human intervention, are ineficient, and often lead to new vulnerabilities[2]. Due to the
+  2412.06864:c13 |  like "What caused this outcome?" or "What would happen if a specific intervention were applied?" In political science, causal inference is central to a
+  2503.15168:c5 | re trained on vast datasets and subsequently aligned through post-hoc interventions stands in contrast to Piaget’s developmental theory. Instead of gradu
+  2503.15691:c12 |  in RWD, this approach can identify true causal relationships between interventions and outcomes, forming the basis for actionable clinical recommendatio
+  2504.21189:c2 | ccuracies in predicting future cognitive status, suboptimal timing of interventions, difficulties in stratifying patients for clinical trials, and challe
+  2505.04651:c21 | ble hypotheses grounded in causality, enabling researchers to propose interventions and predict their outcomes with greater confidence. By bridging the g
+  2506.04166:c2 | hence a type of longitudinal data) as they undergo different types of interventions at different times [Bai09]. Panel data is used to analyze the causal 
+  2506.12808:c7 |  variety of feature types, including vital signs, laboratory results, interventions, and clinical notes. For instance, vital signs may be recorded at min
+  2506.16697:c3 | it trait X?) and causal claims about experimental manipulations (does intervention Y affect behavior Z?).  Answering these questions requires integratin
+  2506.19191:c56 | reater expected utility under truth-aligned reward $u _ { i }$ if the interventions satisfy the identifiability criterion and $\mu _ { i }$ is updated vi
+  2506.23270:c3 | ysis, it emphasizes causal relations. Another related concept, causal intervention [27], involves manipulating variables using a do operator. Model-agno
+  2507.02912:c1 |  on the above, we show high-emission “hotspots” and suggest equitable intervention plans, illustrating the potential of state-of-the-art AI graph learni
+  2507.04491:c15 |  2025; Sclar et al., 2024). For opensource models, more direct causal interventions like ablation studies (disabling specific model components) become po
+  2507.18557:c7 | provide actionable guidance for molecular optimization or mechanistic intervention.  To address this challenge, several efforts have emerged to enhance 
+  2508.10082:c8 | dly, it lays the groundwork for predictive modeling of mucustargeting interventions in diseases where viscoelastic overload impairs airway clearance, suc
+  2508.12393:c4 | edKGent to incorporate emerging medical relations with minimal manual intervention, eliminating the need for rigid schemas or retraining typically requi
+  2509.09737:c1 | rompting to Integration 31    6.2 Related Work 32    6.3 Predictions, Interventions, Hypotheticals & Counterfactuals . 34    6.4 Limitations and Key Open
+  2509.14508:c10 | ior (e.g., total points redeemed per month/week) before and after the intervention window for the treatment group to the corresponding change in the con
+  2510.00650:c3 | ews media (Solovev and Prollochs 2025).¨  As with other fact-checking interventions, Community Notes appear to have a moderately positive effect on the s
+  2510.22256:c14 |  }$ corresponds to a generic user without individual preference. This intervention severs the causal link from the original � = � to �, while keeping � 
+  2511.01202:c1 |     4.5. The Causal Ceiling of LLMs: Granger Prediction without Pearl Intervention . . 57    5. Epilogue and Conclusions . 60    Bibliography 61    Inde
+  2511.07051:c9 | n deepfake detection, data augmentation essentially constitutes human intervention in the causal mechanisms of data generation. We model augmentation op
+  2511.09962:c5 | tance, Ryall M D introduced causal modeling frameworks for evaluating intervention effects in marketing decisions, emphasizing the importance of counter
+  2511.21749:c0 | framework for enhancing human cognitive resilience through structured interventions before exposure to harmful content.
+  2511.23068:c1 | s. Such procedures allow to estimate the welfare effects following an intervention and are thus the foundation of cost-benefit and ex-ante policy evalua
+  2601.14296:c6 | n of mechanisms requires variables and functions, a set of structured intervention/mediator variables (i.e., mechanisms in the horizontal sense) can be 
+  2601.18933:c1 | ry of mind, analogical and relational reasoning, causal inference and intervention selection, and core reasoning primitives that are known to be confoun
+  2602.04990:c3 | with a small number of verifications. We caution that poorly designed interventions—such as audits—could have unintended consequences, and designing effe
+  2602.12476:c16 | ct friends or family or contextual reminders to engage offline. These interventions address structural drivers of loneliness identified in public health 
+  2603.02551:c12 | tem-level testing methods still sufer from a heavy reliance on manual intervention. In industrial practice, systemlevel testing, integration testing, an
+  2603.08703:c5 |  manner: it naturally supports indefinite extension, allows real-time intervention, and provides a principled interface for interactive control—making i
+  2603.12283:c1 | 1 Causal modelling framework . 12    3.2 Probability rule . 13    3.3 Interventions and signalling 15    4 Mappings between tensor networks and cyclic ca
+  2603.18273:c2 | ecute code, analyze results, and draft manuscripts with minimal human intervention. These systems represent an emerging paradigm in which the scientific
+  2603.21736:c14 | es can be drawn on the basis of temporal contiguity, covariation, and intervention without fully compositional representations (Sloman, 2005).  I note t
+  2603.22368:c16 |  recognize error-free cases and to provide accurate explanations when intervention occurs.  Effective deployment requires both accurate detection and ju
+  2604.10333:c17 | contact dynamics.  1. Perturb: Reveal a $3 2 \times 3 2$ -pixel green intervention patch in $f _ { \mathrm { 2 } } ^ { \mathrm { m a s k e d } }$ at the
+  2605.01134:c1 |  the do-calculus framework Pearl (2012), where the causal efect of an intervention on input x is expressed as $P ( y \mid d o ( x ) )$ , placing a verb 
+  2605.04639:c1 | ress, interaction patterns, and potential breakdowns, enabling timely intervention without excessive cognitive load (Harrer et al, 2013; Florido & Herná
+  2605.05254:c58 | milar modularity excess. Discriminating among these accounts requires intervention experiments or targeted predictions on which they disagree, neither a
+  2605.24683:c1 | des, equipping field technicians with maximum context before physical intervention.  • Production validation across five campuses of the Universidade Fe
+  2606.04550:c2 | 12 on sustainable consumption and production [16], treats demand-side interventions as a structural component of decarbonization rather than a regulatory
+  2606.04772:c10 | stinct roles. We use “causal” throughout in the sense of a controlled intervention on the model’s internal wiring at inference time, not as a claim abou
+  2606.04775:c1 | ed on large-scale web data can generate undesired content, motivating interventions that reduce harmful outputs without sacrificing visual quality. Activ
+  2606.04778:c1 | act  Safety-aligned Large Language Models (LLMs) remain vulnerable to interventions during inference that redirect generation toward harmful outputs. Rec
+  2606.04850:c17 | nt in Set 0 and that the framework correctly prunes them without user intervention.  Set 1 to Set 2: outward shift. Extending the solver to 200 epochs i
+  2606.04889:c6 | llation objectives. Furthermore, GRAIL introduces targeted structural interventions to ensure valid weighting at delimiter and EOS tokens, ensuring a sta
+  2606.05003:c2 | alidation references are jointly executable.  Existing inference-time interventions—chain-of-thought prompting Wei et al. (2022), self-consistency Wang e
+  2606.05023:c18 | so that experts can detect potential misinterpretations. (3) Flexible intervention: experts should be able to review and modify the proposed propagation
+  2606.05030:c14 | ng that the repair is predominantly accomplished in a single surgical intervention.  The comparison between TRI (SFT only) and TRI (Full) in the eficien
+  2606.05106:c1 |  distinct learning phases, and mechanistic analyses—attention-masking interventions on the CoT information graph, residual stream probing, and logit-lens
+  2606.05121:c1 | 8 sub-tasks, and PROACTIVE-SOUND-BENCH for evaluating proactive audio intervention. Across 8 benchmarks, Audio-Interaction preserves competitive perform
+  2606.05130:c2 | 2015), demandaware transportation systems, and targeted public health interventions (Oliver et al., 2020). The core challenge is to infer a user’s next s
+  2606.05145:c1 | overability structure: the inferencetime signature of which test-time interventions can rescue a given failure. Three problemlevel trajectory features, d
+  2606.05261:c22 | justment; when refinement is needed, NIV reduces the amount of expert intervention compared to constructing variable fonts from scratch, thereby saving 
+  2606.05285:c2 | rom multi-band filters) and phenomenological diversity [4, 5], manual intervention becomes infeasible across most stages of discovery. Early light curve
+  2606.05290:c1 | aches remain largely model-specific, requiring retraining or tailored interventions for each new architecture. In this work, we ask whether safety can be
+## propensity
+  2408.14604:c2 |  mixture, selection, dimension, mixtures | y06 | | causal inference | propensity, causal, score, observational, treatment, effects | y07 | | multiple 
+  2412.06864:c13 | cts, while Wood et al. [163] evaluated causal estimation methods like propensity score matching and inverse propensity weighting using GPT-generated t
+  2504.18897:c10 | od gives weights to observed samples reciprocally proportional to the propensity scores that are the conditional probabilities of being assigned to th
+  2505.04651:c30 | nabling systematic validation of mechanistic hypotheses Pearl [2009]. Propensity Score Matching (PSM) reduces confounding effects by simulating random
+  2506.04166:c18 | ently generated from all the randomness in the model) and i.i.d. with propensity $\mathbb { P } ( A _ { i , t } = 1 ) = p > 0$ for all (i, t). MAR is 
+  2506.12808:c19 |  They implemented behavior cloning techniques alongside doubly robust propensity weighted estimators. This approach aimed to develop safe policies tha
+  2506.19191:c23 |  as the agent-specific directional adjustment in replication or decay propensity:  $$ \nabla R _ { i } ( t ) : = \frac { \partial } { \partial t } \ph
+  2506.20377:c6 | ser overlap for those subreddits. We followed Trujillo et al.’s [117] propensity scoring method [1] that measures how likely users from one subreddit 
+  2508.10082:c15 |  baseline covariates (age, sex, MCC) and modeled treatment assignment.Propensity scores were estimated by logistic regression. Inverse-probability wei
+  2509.14508:c10 | oach yields consistent estimates for the treatment effect if either a propensity score model (for treatment assignment) or an outcome regression model
+  2509.25535:c9 |  and the outcome. On the other hand, the positivity assumption on the propensity score, i.e., $p ( s ) \in ( \epsilon , 1 - \epsilon )$ for some const
+  2510.00650:c8 | n’t care, but either way, it suggests seeing note publication affects propensity to contribute without being the sole determinant.
+  2510.18571:c5 | ombines: (1) causal inference methods (IPW, doubly robust estimation, propensity stratification) to handle confounding, (2) biological plausibility as
+  2510.26046:c12 | ed with synthetic data by the bias correction approach.  Consider the propensity score (Rosenbaum and Rubin, 1983), which is defined as the conditiona
+  2511.09962:c10 | ad spend), and U is latent noise. Using counterfactual estimation via propensity weighting, the expected causal effect of an intervention is:  $$ A C 
+  2601.13627:c29 | metrics emphasized causal inference, with difference- in-differences, propensity score matching, and instrumental-variable methods in- creasingly used
+  2601.14296:c7 | models to test and estimate these relationships. Common tools include propensity score methods (matching, stratification, weighting), instrumental var
+  2602.06195:c17 | bounded in $[ - M , M ]$ for all y and constant M.  Assumption 3. The propensity estimate converges at least asfast as the preference estimate i.e. $\
+  2602.12476:c2 | l needs (Mikulincer 1998; Shaver et al. 2005) and may condition their propensity to form intimate bonds with AI companions. Because AI companions offe
+  2603.18273:c29 | task type. Implement a CausalInferenceTemplate with sub-type routing (propensity score matching, inverse probability weighting, targeted maximum likel
+  2604.20711:c8 | on coverage score was estimated using doubly-robust Augmented Inverse Propensity Weighting (AIPW) [Robins et al., 1994, Imbens and Rubin, 2015], which
+  2605.12514:c3 | al findings, we employ a dual causal inference strategy combining the Propensity Score Matching (PSM) [17] and a quasi-natural experiment based on a U
+  2605.14591:c2 | ed by confounding, yielding a robust, shift-dependent correction.  3. Propensity Scores and Uncertainty Quantification (Section 6). Our composition an
+  2606.05003:c15 | ion and factuality evaluation.  A growing body of work measures LLMs’ propensity to generate false or unsupported statements. TruthfulQA (Lin et al., 
+  2606.05073:c18 | e weight on the random-initialization component increases with the MM propensity $\pi _ { j } ( F )$ . The initialization distribution $G _ { j }$ ign
+  2606.05684:c13 |  where dynamic synthesis was decisive, ADAMEM-MFT develops a stronger propensity to trigger memory generation, increasing the strategy update frequenc
+  2606.07157:c46 | }$ value from 0.68 to 0.93.  3. Reasoning training may reduce models’ propensity to answer questions with a single token, meaning that our tasks are f
+  2606.08552:c3 | ich are theoretical predictions of likelihood, not based on data).  A propensity is a calculated value that resembles a potential for future happening
+  2606.08779:c4 | uring the experiments, we explicitly control the policy’s exploration propensity within the decision space by sweeping the sampling temperature t = {0
+  2606.09590:c8 | d diagnosis status from confounding patient characteristics, we apply propensity-score matching (PSM) (Rosenbaum and Rubin, 1983; Kline and Luo, 2022)
+  2606.09735:c13 | rget of intervention is not the model's inferred partisanship but its propensity to deploy that knowledge in generation. That propensity is governed b
+  2606.09916:c31 | ease date”), so the failure is not a lack of capability but a lack of propensity to initiate retrieval when the question is presented in BCP’s long mu
+  2606.12219:c1 | nked to stronger methylation, reader binding, RBP occupancy and decay propensity.  Keywords: N6-methyladenosine; $\mathrm { m } ^ { 6 } \mathrm { A }$
+  2606.12243:c18 | r model training, and does not directly change the underlying model’s propensity to generate unsafe content; however, it can reduce the marginal cost 
+  2606.13818:c171 | eously reduces the dispersion of the empirical loss and mitigates the propensity to select models exhibiting large abnormal deviations, aligning with 
+  2606.15121:c11 | B) represents disaster perception (perceived/not perceived) with risk propensity. Desire(D) captures three psychological states: seeking safety, resto
+  2606.15165:c12 | e stability of modality interaction patterns.  • Modality interaction propensity features: The difference between intra-modal interaction strength and
+  2606.15209:c8 | , household-status proxies, interest proxies, activity level, comment propensity, and reaction propensity. The label generator uses  $$ \operatorname*
+  2606.22148:c46 | $  Here $\eta _ { i } > 0$ is a node-specific, non-directional degree propensity, and $\lambda = \left( \lambda _ { k \ell } \right)$ is a generally a
+  2606.23792:c14 |  the MCMC exploration of the three-component model due to the greater propensity of the optimizer to fit the residual light from the spiral arms rathe
+  2606.24790:c10 | id Not Answer and probes whether gradient patterns encode the model’s propensity to abstain (Geifman & El-Yaniv, 2017; Kadavath et al., 2022). Full is
+  2606.24915:c2 | calculate a sparse diagonal matrix of weights (D ) based on the error propensity between our KB ground truth and the ASR predictions. During inference
+  2606.26042:c12 | geneous counterparts (Appendix B). This contrast is mainly due to the propensity of heterogeneous simulations to have patches of concentrated flux tha
+  1802.08974:c3 | goal, two steps should be considered. The first one is to predict the propensity of the downward trend of a customer after a target length of time. Ne
+  1911.04663:c1 | regression imputation (Hahn, 1998, Heckman et al., 1997), (augmented) propensity score weighting (Horvitz and Thompson, 1952, Rosenbaum and Rubin, 198
+  2005.10879:c13 | rvational studies, as a desirable future expansion on this framework. Propensity score matching for multiple treatment conditions such as the case her
+  2006.09798:c0 | ime. In social systems, for instance, it has been observed that human propensity to cooperation does vary in time, and this has important consequences
+  2007.10550:c6 | lity across positions and teams. They diferentiate teams based on the propensity of the ofense to either move the ball to their primary shooters or di
+  2009.03915:c1 | stablishing differences and similarities between them. We make use of propensity score matching (PSM) to mitigate potential biases between the two sam
+  2101.04814:c12 | stem will be $Z + \nu _ { j }$ . The functions $a _ { j }$ are called propensity functions. Dynamically the state of the system at time t is $Z _ { i 
+  2108.01615:c11 | ode $( m o d e = A V )$ , the model indicates that there is a general propensity among respondents away from autonomous vehicles in comparison to trad
+  2110.05430:c20 | oups more similar along certain feature dimensions. For instance, the propensity score, which reflects the likelihood of an individual being in the (n
+  2112.04309:c8 | rganic channel from mere chemistry to biochemistry. To understand the propensity for a biosphere to exist beyond Earth, we need to understand planets.
+  2204.13844:c6 | ctural Causal Models (SCMs) [34]. The former mainly leverages inverse propensity scoring [37, 51] and doubly robust [21] to debias user feedback. SCMs
+  2206.11155:c1 | s dates and psychiatric comorbidities  2. Sample control groups using propensity score matching  3. Identify and remove spurious correlations introduc
+  2206.14136:c2 | ir compliance of security policies and mechanisms but increases their propensity to circumvent them. On the other hand, gender studies have been a pro
+  2208.06468:c16 | cterizes the communities of diffusion in OSNs. Gossip-friends share a propensity to exchange gossip online about certain topics. Such online friendshi
+  2211.14402:c2 | associations between profession and gender, certain ethnic groups and propensity for violence, and general cultural stereotypes (see Figure 1 for an e
+  2212.05874:c8 | in broadly stable. In fact, a common feature of large networks is the propensity to exhibit cascading failures, whereby local events trigger network-w
+  2302.08691:c19 | ovariates in this article add trends by multiplying with time.  4、Use propensity score matching (PSM): Propensity score matching refers to the selecti
+## mediation
+  2602.12476:c3 |  rather than a dynamic interpersonal process shaped by sociotechnical mediation; and 3) attachment theory, although central to human relational varia
+  2605.12514:c8 | ains (see details in Methods). Conceptually, we propose the following mediation pathway: SD (structure) → DI (behavior) → CD (innovation outcome) as 
+  2606.06380:c49 | with a partially independent meta-representational component.  Causal mediation via nullspace projection. We project h onto the nullspace of Probe A’
+  2606.07439:c1 | wever, many existing solutions remain dependent on healthcareprovider mediation or cloud-based analytics, limiting autonomous operation. Reliance on 
+  2606.09692:c20 | /sub>ti<sub>o</sub>n<sub>s.</sub>  Gateway contract. The gateway is a mediation layer (library, sidecar, <sub>p</sub>rox<sub>y</sub>, or MCP middlewa
+  2606.09735:c13 | ive information about contested political and social topics, and that mediation has a profound societal effect. Importantly, possessing knowledge and
+  2606.10173:c2 | ntegrated deployments, the relevant unit is broader: a platform-level mediation layer that can access, combine, and act upon signals drawn from a use
+  2606.11379:c0 | Automated Mediator for Human Negotiation: Pre-Mediation via a Structured LLM Pipeline   Automated Mediator for Human Negotiat
+  2606.11543:c28 | mechanism evidence rather than human-groundtruth annotation or causal mediation estimates. Generalization is also limited by the evaluation substrate
+  2606.12341:c1 | essage [7].  Three properties, traced in Figure 1, make agent privacy mediation hard. (P1) Leakage is cumulative: individually innocuous releases com
+  2606.12457:c1 |  gravity, who argued that matter could not act on matter "without the mediation of something else... through which their action and force may be tran
+  2606.12923:c7 |  admittance-cell, dose-derivative, overdrive-proxy, sink-channel, and mediation counts.  The worm line supplies neural perturbation propagation, not 
+  2606.14703:c3 | decomposes across heads with spatial specializations [14], and causal mediation has linked heads to object detection in VLMs [15]. Gaze heads continu
+  2606.21195:c8 | he apparent linguistic immediacy of the output conceals the numerical mediation that makes it possible.  For this reason, I avoid using “learning” fo
+  2606.22560:c1 | orcontrolled service, clients cannot independently distinguish honest mediation from route substitution, hidden fallback, stream manipulation, or for
+  2606.23122:c2 | intuition that agency must involve some form of internal selectivity, mediation, or organization of possibilities (Fodor, 1975; Marr, 2010). But old-
+  2606.26412:c23 | rk shows that ordinary APIs can expose sharedresource behavior. Timer mediation remains subtle [22, 49, 56]; generic computation can identify devices
+  2606.26449:c1 | rough a stated faithfulness condition, ground the framework in causal-mediation analysis and database-provenance theory, and discuss how the three me
+  2606.27000:c16 | ciated with this reduction. To assess this, we perform an exploratory mediation analysis [47]. This analysis estimates the portion of the observed as
+  2201.09960:c2 | tistically inferred from a bacterial perspective. Furthermore, causal mediation analysis, LiNGAM, and BayesLiNGAM were applied to estimate the import
+  2203.13962:c7 | sumptions. By presenting the prominent instrumental variable (IV) and mediation analysis tools, we demonstrate how to lift the assumptions and conduc
+  2204.03713:c4 | , and c) logistical tools including facilitation of investigation and mediation.  HEPA communities must implement new modes of community organizing a
+  2206.02928:c17 | al planning which requires a formal structure. Our method is based on mediation analysis VanderWeele (2015) and causal intervention Pearl (2009); Pet
+  2302.09540:c5 | sub>p</sub>ower over the <sub>p</sub>rod<sub>u</sub>ction<sub>,</sub> mediation<sub>,</sub> and dissemination of <sub>u</sub>ser disc<sub>u</sub>ssio
+  2310.13081:c22 | he market state influences the time series, there may exist a causal, mediation and/or moderation relation between coordinates (i.e., variables) of t
+  2502.07620:c2 | s by inducing false correlations between X and $Y$ . Furthermore, the mediation [45] path $X  B  Y$ confounds the direct contribution of $X  Y$ as de
+  2601.01231:c1 | rability despite—or because of—their sophisticated digital workflows. Mediation analysis revealed that 15% of engagement's effect on platform satisfa
+  2604.03338:c25 |  (10%). Evaluates whether the paper goes beyond reduced-form effects: mediation analysis, heterogeneity patterns consistent with theoretical mechanis
+  2604.17843:c36 | b>h<sub>e</sub>d<sub>.</sub> If th<sub>e</sub> <sub>reques</sub>t for mediation is not resolved within fort<sub>y</sub>-five (45) da<sub>y</sub>s of 
+  2607.01131:c2 | nships but cannot express higher-order patterns such as interactions, mediation chains, or confound structures. Full-pipeline AI scientist systems [3
+  2607.06375:c11 | </sup> since $D _ { X } \sim m _ { 3 / 2 } M _ { \mathrm { P l } }$ , mediation at a scale $M \sim M _ { \mathrm { P l } }$ gives $m _ { D } \sim m _
+  2607.06621:c8 | m the same weights, so this is shared-variance accounting, not causal mediation. Second, the attenuating covariate changes identity with RoPE fractio
+  2607.08740:c2 |  a workflow.  Figure 1 summarizes the three conceptual layers and the mediation boundary between semantic objects, the DSL-machine control layer, and
+  2607.10248:c4 | son (§ 4.6).  Interchange and DAS. Activation patching follows causal mediation (Vig et al. 2020), causal tracing (Meng et al. 2022), and activation-
+  1304.3260:c6 | ational process.  The WRF code is divided into three layers [12]. The Mediation layer describes a grid which represents an area of the Earth's atmosp
+  1902.02467:c21 |  Service client | 9,962 | | Camel | A framework to create routing and mediation rules in various domain specific languages | 32,124 | | Derby | Relat
+  2001.04879:c37 | duct disputes, such as Third Opinion, Dispute Resolution Noticeboard, Mediation Committee, Request for Mediation, and Request for Comments. We can le
+  2506.16952:c12 | stems, collaborative curriculum development, and research on interest mediation mechanisms (Peng et al., 2024).  CHAPTER II. OVERVIEW OF RELEVANT STU
+  2606.18550:c3 | igning [11], [12], capability typing [13], [14], and information-flow mediation [15]—but the contribution is their composition at a new locus: the de
+
