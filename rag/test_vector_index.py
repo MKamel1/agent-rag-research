@@ -1490,3 +1490,48 @@ def test_create_if_missing_false_refuses_an_absent_collection_without_creating_i
     with pytest.raises(ContractError, match="does not exist"):
         real.VectorIndex("h", 1, "typo", 2, create_if_missing=False)
     assert created == []
+
+
+# --- OP-6: collection_point_count (read-only probe for app.doctor) ------------------------------
+
+
+class _FakeProbeClient:
+    def __init__(self, *, exists, points=0, error=None):
+        self.exists, self.points, self.error, self.created = exists, points, error, False
+
+    def collection_exists(self, name):
+        if self.error:
+            raise self.error
+        return self.exists
+
+    def get_collection(self, name):
+        return SimpleNamespace(points_count=self.points)
+
+    def create_collection(self, *a, **k):  # must never be called
+        self.created = True
+
+
+def _patched_probe(monkeypatch, client):
+    real = pytest.importorskip("rag.vector_index")
+    monkeypatch.setattr(real, "QdrantClient", lambda **kw: client)
+    return real
+
+
+def test_collection_point_count_reads_the_count(monkeypatch):
+    real = _patched_probe(monkeypatch, _FakeProbeClient(exists=True, points=7))
+    assert real.collection_point_count("h", 1, "c") == 7
+
+
+def test_collection_point_count_is_none_for_a_missing_collection_and_creates_nothing(monkeypatch):
+    client = _FakeProbeClient(exists=False)
+    real = _patched_probe(monkeypatch, client)
+    assert real.collection_point_count("h", 1, "c") is None
+    assert client.created is False
+
+
+def test_collection_point_count_classifies_connection_errors_as_transient(monkeypatch):
+    real = pytest.importorskip("rag.vector_index")
+    error = real.ResponseHandlingException(Exception("down"))
+    _patched_probe(monkeypatch, _FakeProbeClient(exists=True, error=error))
+    with pytest.raises(TransientError):
+        real.collection_point_count("h", 1, "c")

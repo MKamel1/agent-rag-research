@@ -17,6 +17,9 @@ import logging
 import sqlite3
 import sys
 from dataclasses import dataclass
+from pathlib import Path
+
+from app.db_guard import MissingDatabaseError, require_existing_db
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +71,12 @@ def main() -> None:
         "corpus_integrity: resolved db_path=%s blob_dir=%s collection=%s",
         cfg.db_path, cfg.blob_dir, cfg.collection,
     )
-    conn = sqlite3.connect(cfg.db_path)
+    # OP-6: read-only (the query only SELECTs) and never creates a missing database.
+    try:
+        require_existing_db(cfg.db_path)
+    except MissingDatabaseError as error:
+        sys.exit(f"corpus-integrity: {error}")
+    conn = sqlite3.connect(f"file:{Path(cfg.db_path).resolve()}?mode=ro", uri=True)
     try:
         offenders = find_done_papers_without_chunks(conn)
     finally:

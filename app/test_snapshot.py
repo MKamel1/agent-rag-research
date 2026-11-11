@@ -17,7 +17,9 @@ from pathlib import Path
 
 import pytest
 
+from app.db_guard import MissingDatabaseError
 from app.snapshot import (
+    SnapshotIntegrityError,
     backup_blobs,
     backup_sqlite,
     backup_vector_store,
@@ -25,6 +27,8 @@ from app.snapshot import (
     main,
     prune_old_snapshots,
     run_snapshot,
+    snapshot_sqlite_only,
+    verify_snapshot,
 )
 from contracts.config import Config
 from migrations.migrate import migrate
@@ -148,7 +152,8 @@ def test_backup_vector_store_calls_create_and_download_and_reports_the_written_f
     manifest = backup_vector_store(fake, "papers", dest_dir)
 
     assert fake.calls == [str(dest_dir / "papers.snapshot")]
-    assert manifest == {"collection": "papers", "dest": "papers.snapshot", "bytes": 5}
+    assert manifest["bytes"] == 5 and manifest["dest"] == "papers.snapshot"
+    assert manifest["collection"] == "papers" and len(manifest["sha256"]) == 64
     assert (dest_dir / "papers.snapshot").read_bytes() == b"12345"
 
 
@@ -316,3 +321,151 @@ def test_main_logs_resolved_paths(tmp_path, monkeypatch, caplog):
     assert f"db_path={cfg.db_path}" in caplog.text
     assert f"blob_dir={cfg.blob_dir}" in caplog.text
     assert f"collection={cfg.collection}" in caplog.text
+
+
+# --- OP-3: integrity check, checksums, --verify, --sqlite-only ------------------------------------
+
+
+def _full_snapshot(tmp_path) -> Path:
+    cfg = _cfg_with_real_sources(tmp_path)
+    return run_snapshot(
+        cfg, tmp_path / "backups", keep=7, vector_index=_FakeVectorStore(),
+        now=datetime(2026, 7, 17, 12, 0, 0, tzinfo=timezone.utc),
+    )
+
+
+def test_manifest_records_quick_check_and_sha256_per_artifact(tmp_path):
+    manifest = json.loads((_full_snapshot(tmp_path) / "manifest.json").read_text())
+    assert manifest["sqlite"]["quick_check"] == "ok"
+    assert len(manifest["sqlite"]["sha256"]) == 64
+    assert list(manifest["blobs"]["sha256"]) == ["p.md"]
+    assert len(manifest["vector_store"]["sha256"]) == 64
+
+
+def test_corrupt_sqlite_copy_fails_the_snapshot_and_stays_partial(tmp_path, monkeypatch):
+    monkeypatch.setattr("app.snapshot.sqlite_pragma_check", lambda *a, **k: "*** bad ***")
+    cfg = _cfg_with_real_sources(tmp_path)
+    with pytest.raises(SnapshotIntegrityError, match="quick_check"):
+        run_snapshot(
+            cfg, tmp_path / "backups", keep=7, vector_index=_FakeVectorStore(),
+            now=datetime(2026, 7, 17, 12, 0, 0, tzinfo=timezone.utc),
+        )
+    assert (tmp_path / "backups" / "snapshot-20260717T120000Z.partial").exists()
+    assert not (tmp_path / "backups" / "snapshot-20260717T120000Z").exists()
+
+
+def test_verify_passes_on_a_fresh_snapshot_and_detects_a_flipped_blob_byte(tmp_path):
+    snap = _full_snapshot(tmp_path)
+    report, problems = verify_snapshot(snap)
+    assert problems == [] and "sqlite integrity_check: ok" in report
+    (snap / "blobs" / "p.md").write_text("contenX")
+    assert verify_snapshot(snap)[1] == ["sha256 mismatch: p.md"]
+
+
+def test_verify_detects_a_tampered_vector_file_and_a_missing_file(tmp_path):
+    snap = _full_snapshot(tmp_path)
+    (snap / "papers.snapshot").write_bytes(b"other")
+    (snap / "blobs" / "p.md").unlink()
+    problems = verify_snapshot(snap)[1]
+    assert "sha256 mismatch: papers.snapshot" in problems and "missing file: p.md" in problems
+
+
+def test_verify_old_manifest_without_checksums_reports_a_note_not_a_failure(tmp_path):
+    snap = _full_snapshot(tmp_path)
+    manifest = json.loads((snap / "manifest.json").read_text())
+    for key in ("sqlite", "blobs", "vector_store"):
+        del manifest[key]["sha256"]
+    (snap / "manifest.json").write_text(json.dumps(manifest))
+    report, problems = verify_snapshot(snap)
+    assert problems == [] and any("predates OP-3" in line for line in report)
+
+
+def test_verify_checks_a_MANIFEST_sha256_directory(tmp_path):
+    d = tmp_path / "vs-copy"
+    (d / "collections").mkdir(parents=True)
+    (d / "collections" / "a.json").write_text("{}")
+    import hashlib
+
+    digest = hashlib.sha256(b"{}").hexdigest()
+    (d / "MANIFEST.sha256").write_text(f"{digest}  collections/a.json\n")
+    assert verify_snapshot(d)[1] == []
+    (d / "collections" / "a.json").write_text("{ }")
+    assert verify_snapshot(d)[1] == ["sha256 mismatch: collections/a.json"]
+
+
+def test_sqlite_only_writes_checked_copy_with_sha256_and_needs_no_vector_store(tmp_path):
+    cfg = _cfg_with_real_sources(tmp_path, n_papers=3)
+    now = datetime(2026, 11, 10, tzinfo=timezone.utc)
+    dest = snapshot_sqlite_only(cfg, tmp_path / "backups", now=now)
+
+    assert dest.name == "papers.db.snapshot-20261110"
+    assert (tmp_path / "backups" / "papers.db.snapshot-20261110.sha256").read_text().endswith(
+        "  papers.db.snapshot-20261110\n"
+    )
+    report, problems = verify_snapshot(dest)
+    assert problems == [] and any("'papers': 3" in line for line in report)
+    with pytest.raises(FileExistsError):
+        snapshot_sqlite_only(cfg, tmp_path / "backups", now=now)
+
+
+def test_sqlite_only_verify_detects_a_flipped_byte(tmp_path):
+    cfg = _cfg_with_real_sources(tmp_path)
+    dest = snapshot_sqlite_only(cfg, tmp_path / "backups")
+    data = bytearray(dest.read_bytes())
+    data[-1] ^= 0xFF
+    dest.write_bytes(bytes(data))
+    assert any("sha256 mismatch" in p for p in verify_snapshot(dest)[1])
+
+
+def test_sqlite_only_does_not_modify_the_source(tmp_path):
+    cfg = _cfg_with_real_sources(tmp_path)
+    before = Path(cfg.db_path).read_bytes()
+    snapshot_sqlite_only(cfg, tmp_path / "backups")
+    assert Path(cfg.db_path).read_bytes() == before
+
+
+def test_sqlite_only_row_count_mismatch_fails_and_leaves_no_sha256(tmp_path, monkeypatch):
+    cfg = _cfg_with_real_sources(tmp_path)
+    monkeypatch.setattr("app.snapshot._ro_row_counts", lambda p: {"papers": 999})
+    with pytest.raises(SnapshotIntegrityError, match="row counts differ"):
+        snapshot_sqlite_only(cfg, tmp_path / "backups")
+    assert not list((tmp_path / "backups").glob("*.sha256"))
+
+
+def test_aborts_below_the_free_space_floor(tmp_path, monkeypatch):
+    class _Low:
+        free = 5 * 1024**3
+
+    monkeypatch.setattr("app.snapshot.shutil.disk_usage", lambda p: _Low())
+    cfg = _cfg_with_real_sources(tmp_path)
+    with pytest.raises(SystemExit, match="abort rule"):
+        snapshot_sqlite_only(cfg, tmp_path / "backups")
+
+
+def test_main_verify_exits_nonzero_on_a_problem_without_config(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr("app.snapshot.load_config", lambda path=None: pytest.fail("no config"))
+    monkeypatch.setattr(sys, "argv", ["snapshot", "--verify", str(tmp_path / "nope")])
+    with pytest.raises(SystemExit) as exit_info:
+        main()
+    assert exit_info.value.code == 1
+    assert "FAILED" in capsys.readouterr().out
+
+
+# --- OP-6: refuse a missing database -------------------------------------------------------
+
+
+def test_run_snapshot_refuses_a_missing_db_and_creates_nothing(tmp_path):
+    cfg = _base_config(db_path=str(tmp_path / "nodb" / "papers.db"), blob_dir=str(tmp_path))
+    backup_root = tmp_path / "backups"
+    with pytest.raises(MissingDatabaseError):
+        run_snapshot(cfg, backup_root, keep=7, vector_index=_FakeVectorStore())
+    assert not backup_root.exists() and not (tmp_path / "nodb").exists()
+
+
+def test_main_refuses_a_missing_db_with_one_line(tmp_path, monkeypatch):
+    cfg = _base_config(db_path=str(tmp_path / "papers.db"), blob_dir=str(tmp_path))
+    monkeypatch.setattr("app.snapshot.load_config", lambda path=None: cfg)
+    monkeypatch.setattr(sys, "argv", ["snapshot", "--sqlite-only"])
+    with pytest.raises(SystemExit, match="no database at"):
+        main()
+    assert not (tmp_path / "papers.db").exists() and not (tmp_path / "backups").exists()

@@ -6,6 +6,8 @@ connection), then inserts minimal rows directly -- no ingest pipeline involved.
 
 import sqlite3
 
+import pytest
+
 from app.corpus_integrity import IntegrityOffender, find_done_papers_without_chunks, main
 from contracts.config import Config
 from migrations.migrate import migrate
@@ -115,3 +117,40 @@ def test_main_logs_resolved_paths(tmp_path, monkeypatch, caplog):
     assert f"db_path={db_path}" in caplog.text
     assert f"blob_dir={cfg.blob_dir}" in caplog.text
     assert f"collection={cfg.collection}" in caplog.text
+
+
+def test_main_refuses_a_missing_db_and_does_not_create_one(tmp_path, monkeypatch):
+    # OP-6 (T-DOC56 shape): wrong directory -> no database -> refuse, don't create an empty one.
+    db_path = tmp_path / "papers.db"
+    cfg = Config(
+        focus_area_queries=["causal inference"], db_path=str(db_path), collection="papers",
+        drop_in_dir=str(tmp_path / "drop_in"),
+    )
+    monkeypatch.setattr("rag.config.load_config", lambda: cfg)
+
+    with pytest.raises(SystemExit, match="no database at"):
+        main()
+
+    assert not db_path.exists()
+
+
+def test_main_opens_the_database_read_only(tmp_path, monkeypatch, capsys):
+    db_path = tmp_path / "papers.db"
+    migrate(str(db_path))
+    cfg = Config(
+        focus_area_queries=["causal inference"], db_path=str(db_path), collection="papers",
+        drop_in_dir=str(tmp_path / "drop_in"),
+    )
+    monkeypatch.setattr("rag.config.load_config", lambda: cfg)
+    seen = []
+    real_find = __import__("app.corpus_integrity", fromlist=["x"]).find_done_papers_without_chunks
+
+    def spy(conn):
+        with pytest.raises(sqlite3.OperationalError, match="readonly"):
+            conn.execute("CREATE TABLE t (x)")
+        seen.append(True)
+        return real_find(conn)
+
+    monkeypatch.setattr("app.corpus_integrity.find_done_papers_without_chunks", spy)
+    main()
+    assert seen == [True]

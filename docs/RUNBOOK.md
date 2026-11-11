@@ -96,6 +96,73 @@ Back to full operation: once that process has exited (or been stopped by you), r
 exits 0 when everything, including the summarizer host service, is ready; then reconnect the MCP
 client (`/mcp` in Claude Code).
 
+### Diagnosing GPU contention (OP-5)
+
+`python -m app.doctor` (also with `--cpu-only --no-auto-start`, which starts nothing) ends with a
+"corpus / disk / GPU" block. Read it top-down:
+
+1. `GPU: N MiB free VRAM ...` -- compare with what the embedder + reranker need resident. Two
+   numbers exist and they disagree: doctor's preflight floor is **2000 MiB** (`_MIN_FREE_VRAM_MIB`,
+   an old "is there any headroom" threshold, still what gates `app.ingest`), while ARCHITECTURE.md
+   section 3 / CONVENTIONS.md section 6 give **~9.4 GB resident** for the TEI pair (embedder
+   ~8.2-10 GB during a real batch + reranker ~1.4 GB). The report prints both and says plainly
+   when free VRAM is below ~9400 MiB. Neither threshold was changed by OP-5.
+2. `GPU process [foreign]: pid .. name .. MiB` -- every compute process `nvidia-smi` lists that is
+   not the recorded `.gpu.lock` holder (the TEI containers appear here too while they are up).
+   `nvidia-smi` absent: one line saying so, no crash.
+3. `.gpu.lock holder: pid .. stage .. since .. -- <command>` -- who holds the cross-process
+   compute lock right now (written on acquire to `.gpu.lock.holder`, removed on release). A record
+   whose pid is dead (crashed holder) is ignored. `doctor` (full mode) also puts this in the
+   `gpu_lock` issue text. Which processes take the lock: ingest (summarize/embed), the MCP server's
+   embedder and reranker, the judge and other experiment scripts -- all per single inference call.
+4. Foreign process holds the VRAM, lock is free: `python -m app.doctor --cpu-only`, stop the foreign
+   process (your decision), then `python -m app.doctor`. Lock held by a live pid: wait, or stop
+   that pid; do not delete `.gpu.lock`.
+
+## Backup, restore and verify (OP-3)
+
+What exists on disk today (taken by hand on 2026-11-10, main corpus, under
+`<main corpus data dir>/backups/`):
+
+| Artifact | What it is | Check |
+|---|---|---|
+| `papers.db.snapshot-20261110` + `.sha256` | consistent SQLite backup; integrity ok; row counts equal to the source on papers, chunks, blocks, summaries, ingest_state, quarantine | `python -m app.snapshot --verify <path>` |
+| `qdrant-storage-20261110/` | plain file copy of the vector-store storage, container stopped, the five production collections only (`papers`, `waymo_av_safety`, `av_standards`, `motional_av`, `waabi_safety`); `MANIFEST.sha256` over 1,268 files; `README.txt` with restore steps | `python -m app.snapshot --verify <dir>` |
+
+What was **not** taken: about 24 GB of experiment/scratch collections (`exp*`, `e2e_*`, `bench*`,
+`scratch_*`, `tdoc87_*`, ...) were deliberately not copied, and the blob directory was not copied
+(markdown text; rebuildable from the PDFs but not instantly). **Everything is still on the same
+disk, which is ~98% full: there is no off-device copy.** These protect against a bad ingest or a
+corrupted index, not against losing the disk.
+
+Commands (run from the repo root; `--verify` reads only and needs no config or running services):
+
+```bash
+# verify any existing backup: snapshot-*/ dir, MANIFEST.sha256 dir, or a SQLite file + .sha256
+python -m app.snapshot --verify /path/to/backup
+
+# SQLite-only backup, no vector store needed: backup API from a read-only connection,
+# integrity_check, row-count comparison, writes papers.db.snapshot-<YYYYMMDD> + .sha256
+python -m app.snapshot --sqlite-only [--backup-root DIR]
+
+# full snapshot (needs the vector store up): sqlite + blobs + collection, manifest.json carries
+# quick_check and sha256 for every artifact; a failed check leaves snapshot-*.partial behind
+python -m app.snapshot [--backup-root DIR] [--keep N]
+```
+
+Rules: snapshots abort when the backup device has less than **20 GiB** free (`doctor` warns below
+the same figure); a tool pointed at a directory with no `papers.db` now refuses instead of creating
+an empty one (`app.snapshot`, `app.corpus_integrity`).
+
+Restore the SQLite copy: stop everything that writes, `python -m app.snapshot --verify` the file,
+copy it over `papers.db` (keep the old file aside until `python -m app.corpus_integrity` is happy).
+Restore the vector store from the file copy: `sha256sum -c --quiet MANIFEST.sha256` inside the
+backup directory, stop the container, copy `collections/<name>` back into the storage directory's
+`collections/` folder (the bind mount shown by `docker inspect rag-qdrant`), start the container,
+then `python -m app.doctor` -- its corpus-pairing check compares the collection's point count with
+chunks + summaries in the database (5% tolerance). Restore the SQLite and vector-store copies
+together; they only make sense as a pair.
+
 ## Reaching the dashboard over Tailscale
 
 The dashboard binds `0.0.0.0` by default (not just `127.0.0.1`) specifically so a Tailscale IP can

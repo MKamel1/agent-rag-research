@@ -13,6 +13,7 @@ guess.
 
 import logging
 import subprocess
+from dataclasses import dataclass
 
 logger = logging.getLogger(__name__)
 
@@ -43,3 +44,49 @@ def free_vram_mib() -> int | None:
     except (ValueError, IndexError) as e:
         logger.warning("free_vram_mib: unparseable nvidia-smi output %r: %s", result.stdout, e)
         return None
+
+
+@dataclass(frozen=True)
+class GpuProcess:
+    pid: int
+    name: str
+    used_mib: int | None  # None when nvidia-smi reports "[N/A]" / "[Not Supported]"
+
+
+def parse_compute_apps(stdout: str) -> list[GpuProcess]:
+    """Parse `nvidia-smi --query-compute-apps=pid,process_name,used_memory --format=csv,
+    noheader,nounits` rows (`1234, python, 512`). Defensive: a malformed row is skipped, a
+    non-numeric memory becomes None, a name containing commas survives (pid is the first field,
+    memory the last)."""
+    procs = []
+    for line in stdout.splitlines():
+        head, _, rest = line.partition(",")
+        name, _, mem = rest.rpartition(",")
+        try:
+            pid = int(head.strip())
+        except ValueError:
+            continue
+        mem = mem.strip()
+        procs.append(GpuProcess(pid, name.strip(), int(mem) if mem.isdigit() else None))
+    return procs
+
+
+def gpu_compute_processes() -> list[GpuProcess] | None:
+    """Processes currently holding GPU compute contexts, or `None` if `nvidia-smi` can't be run
+    (absent binary, non-zero exit, timeout) -- same never-raises contract as `free_vram_mib`."""
+    try:
+        result = subprocess.run(
+            [
+                "nvidia-smi",
+                "--query-compute-apps=pid,process_name,used_memory",
+                "--format=csv,noheader,nounits",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=10.0,
+            check=True,
+        )
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError) as e:
+        logger.warning("gpu_compute_processes: nvidia-smi probe failed, returning None: %s", e)
+        return None
+    return parse_compute_apps(result.stdout)

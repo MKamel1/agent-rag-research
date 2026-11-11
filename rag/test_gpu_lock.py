@@ -1,12 +1,14 @@
 """Tests for FileGpuLock — the real GpuLock adapter. Runs in default CI: no GPU, no network, just
 local temp files (contracts/gpu_lock.py's Protocol; DATA-CONTRACTS.md "GpuLock")."""
 
+import os
+
 import filelock
 import pytest
 
 from contracts.errors import TransientError
 from contracts.gpu_lock import GpuLock
-from rag.gpu_lock import FileGpuLock
+from rag.gpu_lock import FileGpuLock, holder_path, read_holder
 
 
 def test_file_gpu_lock_satisfies_the_gpu_lock_protocol(tmp_path):
@@ -103,3 +105,88 @@ def test_acquire_without_timeout_still_blocks_forever_by_default(tmp_path):
         with pytest.raises(filelock.Timeout):
             with contender.acquire("rerank").acquire(timeout=0):
                 pass
+
+
+# ---------------------------------------------------------------------------
+# OP-5: holder record. Metadata only -- the tests above (unchanged) prove acquire/release/timeout
+# behaviour; the ones below prove the record and that it can never change those outcomes.
+# ---------------------------------------------------------------------------
+
+
+def test_holder_record_is_written_on_acquire_and_cleared_on_release(tmp_path):
+    lock_path = tmp_path / "x.lock"
+    lock = FileGpuLock(lock_path)
+    assert read_holder(lock_path) is None
+    with lock.acquire("embed"):
+        record = read_holder(lock_path)
+        assert record["pid"] == os.getpid() and record["stage"] == "embed"
+        assert record["command"] and record["since"]
+    assert read_holder(lock_path) is None
+    assert not holder_path(lock_path).exists()
+
+
+def test_holder_record_is_written_with_a_timeout_and_cleared_on_exception(tmp_path):
+    lock_path = tmp_path / "x.lock"
+    lock = FileGpuLock(lock_path)
+    with pytest.raises(ValueError):
+        with lock.acquire("rerank", timeout=1.0):
+            assert read_holder(lock_path)["stage"] == "rerank"
+            raise ValueError("boom")
+    assert not holder_path(lock_path).exists()
+
+
+def test_failed_acquire_leaves_the_real_holders_record_alone(tmp_path):
+    lock_path = tmp_path / "x.lock"
+    holder, contender = FileGpuLock(lock_path), FileGpuLock(lock_path)
+    with holder.acquire("embed"):
+        with pytest.raises(TransientError, match="not acquired within 0.05s for stage 'rerank'"):
+            with contender.acquire("rerank", timeout=0.05):
+                pass
+        assert read_holder(lock_path)["stage"] == "embed"
+    assert not holder_path(lock_path).exists()
+
+
+def test_reentrant_acquire_keeps_the_record_until_the_outer_release(tmp_path):
+    lock_path = tmp_path / "x.lock"
+    lock = FileGpuLock(lock_path)
+    with lock.acquire("embed"):
+        with lock.acquire("embed"):
+            pass
+        assert read_holder(lock_path) is not None
+    assert read_holder(lock_path) is None
+
+
+def test_stale_record_from_a_dead_pid_is_ignored_and_overwritten_by_the_next_acquire(tmp_path):
+    lock_path = tmp_path / "x.lock"
+    holder_path(lock_path).write_text(
+        '{"pid": 2147483646, "command": "gone", "stage": "embed", "since": "x"}'
+    )
+    assert read_holder(lock_path) is None
+    with FileGpuLock(lock_path).acquire("rerank"):
+        assert read_holder(lock_path)["pid"] == os.getpid()
+
+
+@pytest.mark.parametrize("junk", ["", "not json", "[]", '{"pid": "x"}', "{}"])
+def test_unreadable_record_reads_as_none(tmp_path, junk):
+    lock_path = tmp_path / "x.lock"
+    holder_path(lock_path).write_text(junk)
+    assert read_holder(lock_path) is None
+
+
+def test_unwritable_holder_record_never_fails_the_acquire(tmp_path):
+    lock_path = tmp_path / "x.lock"
+    holder_path(lock_path).mkdir()  # write_text -> IsADirectoryError, an OSError
+    lock = FileGpuLock(lock_path)
+    with lock.acquire("embed"):
+        pass
+    with lock.acquire("embed", timeout=1.0):
+        pass
+    with pytest.raises(filelock.Timeout):
+        with lock.acquire("x"):
+            with FileGpuLock(lock_path).acquire("y").acquire(timeout=0):
+                pass
+
+
+def test_default_acquire_still_returns_a_filelock(tmp_path):
+    """No-timeout callers still get a raw `filelock.FileLock` (a subclass), as before."""
+    assert isinstance(FileGpuLock(tmp_path / "x.lock").acquire("embed"), filelock.FileLock)
