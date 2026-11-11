@@ -29,6 +29,17 @@ Two pieces:
 `read_usage_summary()` is the dashboard's read side (Task 3, a separate PR): `{"available":
 False}` alone when the file is missing or unreadable -- absent and zero are different facts, so
 this never returns a wall of zeros pretending to be real data.
+
+MC-3 binding table (what each tool writes; only what the caller sent plus the error text):
+`query` = `query` (searches) | `pattern` (scan_corpus) | `method` (scan_methods) | `section_path`
+(get_section) | `anchor.block_id` (get_span), capped at `_MAX_ARG_CHARS` for the non-search
+tools; `paper_id` = the `paper_id` argument (or `anchor.paper_id`, or `filters.paper_id`);
+`error` = exception class name (unchanged, so the dashboard's top_error still groups), and the
+new `error_message` = `str(e)[:200]`.
+
+Schema evolution: `error_message` is an ADDED column. `CREATE TABLE IF NOT EXISTS` leaves an
+existing `mcp_usage.db` untouched, so `_ensure_columns` ALTERs in any missing column on first
+write; existing rows stay readable (NULL). `papers.db` is never touched.
 """
 
 from __future__ import annotations
@@ -63,7 +74,8 @@ CREATE TABLE IF NOT EXISTS requests (
   latency_ms    REAL    NOT NULL,
   result_count  INTEGER,
   candidates    INTEGER,
-  error         TEXT
+  error         TEXT,
+  error_message TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_requests_ts   ON requests(ts);
 CREATE INDEX IF NOT EXISTS idx_requests_tool ON requests(tool);
@@ -72,9 +84,27 @@ CREATE INDEX IF NOT EXISTS idx_requests_tool ON requests(tool);
 _INSERT = """
 INSERT INTO requests
     (ts, source, tool, query, k, filters_json, doc_type, paper_id,
-     latency_ms, result_count, candidates, error)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     latency_ms, result_count, candidates, error, error_message)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 """
+
+# Columns added after the first release; `CREATE TABLE IF NOT EXISTS` will not add them to a DB
+# created by an older version, so `_ensure_columns` does.
+_ADDED_COLUMNS = {"error_message": "TEXT"}
+_MAX_ARG_CHARS = 500
+_MAX_ERROR_CHARS = 200
+
+
+def _ensure_columns(conn: sqlite3.Connection) -> None:
+    have = {row[1] for row in conn.execute("PRAGMA table_info(requests)")}
+    for name, decl in _ADDED_COLUMNS.items():
+        if name not in have:
+            try:
+                conn.execute(f"ALTER TABLE requests ADD COLUMN {name} {decl}")
+            except sqlite3.OperationalError:
+                # The dashboard and the MCP server both write; the other one may have just added it.
+                if name not in {row[1] for row in conn.execute("PRAGMA table_info(requests)")}:
+                    raise
 
 
 class UsageLog:
@@ -99,20 +129,25 @@ class UsageLog:
         result_count: int | None,
         candidates: int | None,
         error: str | None,
+        error_message: str | None = None,
+        paper_id: str | None = None,
     ) -> None:
         try:
             filters_json = filters.model_dump_json() if filters is not None else None
             doc_type = filters.doc_type if filters is not None else None
-            paper_id = filters.paper_id if filters is not None else None
+            if paper_id is None and filters is not None:
+                paper_id = filters.paper_id
             conn = sqlite3.connect(self._db_path)
             try:
                 conn.execute("PRAGMA journal_mode=WAL")
                 conn.executescript(_SCHEMA)
+                _ensure_columns(conn)
                 conn.execute(
                     _INSERT,
                     (
                         datetime.now(UTC).isoformat(), source, tool, query, k, filters_json,
                         doc_type, paper_id, latency_ms, result_count, candidates, error,
+                        error_message,
                     ),
                 )
                 conn.commit()
@@ -158,11 +193,13 @@ def record_usage(get_log: Callable[[], UsageLog], *, source: str, tool: str):
             start = time.perf_counter()
             result: Any = None
             error_name: str | None = None
+            error_message: str | None = None
             try:
                 result = fn(*args, **kwargs)
                 return result
             except Exception as e:
                 error_name = type(e).__name__
+                error_message = str(e)[:_MAX_ERROR_CHARS]
                 raise
             finally:
                 latency_ms = (time.perf_counter() - start) * 1000.0
@@ -173,16 +210,27 @@ def record_usage(get_log: Callable[[], UsageLog], *, source: str, tool: str):
                     except TypeError:
                         bound = {}
                 coverage = getattr(result, "coverage", None)
+                anchor = bound.get("anchor")
+                query = bound.get("query")
+                if query is None:
+                    # scan/get tools have no `query`; log the argument that plays its role.
+                    arg = next((bound[a] for a in ("pattern", "method", "section_path")
+                                if bound.get(a) is not None), None)
+                    if arg is None and anchor is not None:
+                        arg = getattr(anchor, "block_id", None)
+                    query = arg[:_MAX_ARG_CHARS] if isinstance(arg, str) else None
                 get_log().record(
                     source=source,
                     tool=tool,
-                    query=bound.get("query"),
+                    query=query,
                     k=bound.get("k"),
                     filters=bound.get("filters"),
                     latency_ms=latency_ms,
                     result_count=getattr(coverage, "returned", None),
                     candidates=getattr(coverage, "candidates", None),
                     error=error_name,
+                    error_message=error_message,
+                    paper_id=bound.get("paper_id") or getattr(anchor, "paper_id", None),
                 )
 
         return wrapper

@@ -37,6 +37,38 @@ _MIN_K = 1
 _MAX_K = 100
 
 
+def build_instructions(stats: dict) -> str:
+    """MC-2: the server `instructions` string an MCP client shows a cold agent, generated ONLY from
+    `McpServer.corpus_stats()` (SQLite; no embedder, no vector store) plus static, corpus-neutral
+    tool guidance -- so it is true for any corpus directory. Contract: under ~250 tokens; every
+    number in it is a value from `stats` (the static text contains no digits)."""
+    kinds = ", ".join(f"{n} {kind}" for kind, n in stats.get("doc_types", {}).items())
+    parts = [
+        f"Serving {stats.get('serving', 'an unlabelled corpus')}: {stats['papers']} documents "
+        f"({kinds}), {stats['blocks']} text blocks, {stats['figures']} figures, "
+        f"{stats['tables']} tables; published {stats['published_min']}..{stats['published_max']} "
+        "(dates can be year-only placeholders, so treat as approximate).",
+        "Tools: semantic_search ranks passages; search_papers ranks whole documents (use it first "
+        "when unsure which document matters); scan_corpus/scan_methods exhaustively regex-scan "
+        "every block (use for \"which documents mention X\": complete for the pattern, no "
+        "ranking, you reject false positives); get_paper then get_section reads a document; "
+        "get_span verifies a citation anchor; get_figures; corpus_stats; list_methods.",
+        "Limits: search cannot abstain: every query returns its best results, so judge relevance "
+        "from the text, and neither an empty nor a full page says the corpus covers or lacks a "
+        "topic. filters.paper_id must be a stored id exactly as get_paper accepts it, else the "
+        "call errors. author_org matches heuristic tags unless author_org_curated_only is true.",
+    ]
+    if len(stats.get("doc_types", {})) > 1:
+        parts.append("filters.doc_type narrows to one document kind.")
+    tags = list(stats.get("top_categories", {}).items())[:5]
+    parts.append(
+        "filters.categories tags (top, with counts): "
+        + ", ".join(f"{t} {n}" for t, n in tags) + "."
+        if tags else "No category tags are stored here, so filters.categories matches nothing."
+    )
+    return "\n".join(parts)
+
+
 class McpServer:
     """Constructor-injected collaborators only (CONVENTIONS §2): `retriever`, `document_store`.
     Never constructs a vendor client or the retrieval pipeline itself.
@@ -84,8 +116,10 @@ class McpServer:
         needed and can check this tool's results (each carries its own `paper_id`) against that
         expectation instead of trusting an unscoped search alone. This project's agent-as-reasoner
         design (CONTEXT.md, PRD.md §11A) puts that sequencing decision on the calling agent; this
-        server never auto-rewrites or narrows a query on its own. Postcondition: on an empty
-        corpus/no hits, `results == []` — empty is a valid answer, not an error.
+        server never auto-rewrites or narrows a query on its own. Precondition: a `filters.paper_id`
+        must be a stored paper id, else `ContractError` (same as `get_paper`) — an unknown id is a
+        typo, not "this paper says nothing". Stored ids carry no `arxiv:` prefix. Postcondition:
+        on an empty corpus/no hits, `results == []` — empty is a valid answer, not an error.
 
         `k=None` (a caller that omits it entirely) resolves to `self._default_k` (`Config.top_k`,
         wired via `app/assembly.py::build_mcp_server`); an explicit `k` always overrides it.
@@ -129,11 +163,13 @@ class McpServer:
           `author_org` to demand ONLY this tier — this is the correct way to ask "what does
           Waymo's own research say" and get back only confirmed hits.
         - `email_domain`/`keyword`: a derived heuristic (`rag/author_org_tagger.py`) — measured
-          precision 0.706 / recall 0.783 over 1,741 done papers against 138 known-positive ids
-          (docs/eval-reports/2026-08-07-affiliation-retrieval-first-batch.md). Roughly 3 in 10
-          hits at this tier are wrong. Fine for open-ended discovery ("candidates worth a closer
+          precision 0.706 / recall 0.783 over 1,741 done Waymo-corpus papers against 138 known-
+          positive ids (docs/eval-reports/2026-08-07-affiliation-retrieval-first-batch.md; the
+          report calls it a lower bound; figures are Waymo-specific). Roughly 3 in 10 hits at
+          this tier were wrong there. Fine for open-ended discovery ("candidates worth a closer
           look"), never for a claim that needs to be correct.
         """
+        self._require_known_paper_filter("semantic_search", filters)
         results, retrieval_coverage = self._retriever.retrieve(
             query, filters, self._resolve_k(k)
         )
@@ -147,7 +183,9 @@ class McpServer:
         it ranks whole papers by their summary — cheaply, before any chunk-level retrieval or
         reranking runs — so you can confirm which paper(s) actually matter, or find that a
         confirmed match's `get_paper` summary already answers the question without needing a
-        broader `semantic_search` chunk search at all. Postcondition: on no hits, `results == []`.
+        broader `semantic_search` chunk search at all. Precondition: a `filters.paper_id` must be
+        a stored paper id, else `ContractError` (see `semantic_search`). Postcondition: on no
+        hits, `results == []`.
 
         `k=None` resolves to `self._default_k`, same as `semantic_search` — see its docstring
         for the `[_MIN_K, _MAX_K]` clamp (OG-48#5) and why there is no further cap on how many
@@ -168,9 +206,11 @@ class McpServer:
         `filters.author_org` restricts to papers tagged as authored by that org — see
         `semantic_search`'s docstring for the full tier breakdown: `author_org_curated_only=True`
         demands the exact, enumerated `curated` tier; without it, a hit may be the derived
-        `email_domain`/`keyword` heuristic (precision 0.706 / recall 0.783 measured), not confirmed
+        `email_domain`/`keyword` heuristic (precision 0.706 / recall 0.783, measured on the Waymo
+        corpus), not confirmed
         authorship.
         """
+        self._require_known_paper_filter("search_papers", filters)
         results, retrieval_coverage = self._retriever.retrieve_papers(
             query, filters, self._resolve_k(k)
         )
@@ -190,8 +230,9 @@ class McpServer:
         - `semantic_search` ranks passages by relevance and returns the best `k`. It cannot promise
           it surfaced every qualifying paper, because ranking is per-passage: a paper that states a
           method once, plainly, ranks below a paper that discusses it at length, and one verbose
-          paper can occupy most of `k`. Measured on this corpus, an enumeration question answered
-          by retrieval alone found 3 of 4 qualifying papers.
+          paper can occupy most of `k`. Measured on the Waymo corpus (docs/eval-reports/
+          2026-08-19-retrieval-recall-precision.md), an enumeration question answered by
+          retrieval alone found 3 of 4 qualifying papers.
         - `scan_corpus` examines every block, so recall is 1.0 **for the pattern given**. It does no
           ranking and no semantic matching whatsoever — a paper that describes a technique without
           ever naming it will not match, so the pattern's vocabulary is the real limit. Widen it
@@ -304,8 +345,8 @@ class McpServer:
     def corpus_stats(self) -> dict:
         """Corpus-level aggregates for query calibration: paper/block/chunk/figure/table counts,
         published-date range, doc_type histogram, top categories. Use before searching -- knowing
-        the corpus is 1,738 AV-safety papers (not 12,390 causal-methods ones) changes how a
-        caller scopes everything else. Plain dict; keys documented in
+        which corpus this is and how big changes how a caller scopes everything else. Plain dict;
+        keys documented in
         `DocumentStore.corpus_stats`. When the composition root supplied a `corpus_label`, a
         `serving` key is merged in identifying the answering process."""
         stats = self._document_store.corpus_stats()
@@ -342,6 +383,18 @@ class McpServer:
         anchor is a grounding bug, not a normal "not found").
         """
         return self._document_store.get_span(anchor)
+
+    def _require_known_paper_filter(self, tool: str, filters: SearchFilters | None) -> None:
+        """MC-1: a `filters.paper_id` that is not in the corpus is a typo, not an empty answer --
+        raise exactly what `get_paper` raises (RV-4 F-4.2: an `arxiv:`-prefixed id returned empty
+        and read as "this standard does not discuss X"). Other filters are untouched."""
+        paper_id = filters.paper_id if filters is not None else None
+        if paper_id is None or self._document_store.get(paper_id) is not None:
+            return
+        hint = ""
+        if paper_id.startswith("arxiv:"):
+            hint = f" (stored ids have no 'arxiv:' prefix; try {paper_id.removeprefix('arxiv:')!r})"
+        raise ContractError(f"{tool}: unknown paper_id {paper_id!r}{hint}{self._serving_suffix()}")
 
     def _resolve_k(self, k: int | None) -> int:
         """`k=None` -> `self._default_k`; either way, clamp to `[_MIN_K, _MAX_K]` (OG-48#5) before
