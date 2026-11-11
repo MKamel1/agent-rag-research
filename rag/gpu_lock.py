@@ -5,6 +5,11 @@ serializes against any other process doing the same — `IngestionOrchestrator` 
 `McpServer` (M8) build theirs from the same `Config.gpu_lock_path` (default `.gpu.lock`), so they
 contend on the same file by construction, not by convention. Not managed here: model residency or
 eviction (contracts/gpu_lock.py's docstring) — this is a compute serializer only.
+
+OP-5 (stub, implemented in the following commits): after a successful acquire the holder's pid,
+command, stage label and start time are written to `<lock_path>.holder`; cleared on release;
+`read_holder()` ignores a record whose pid is dead (crashed holder). Metadata only -- acquire/
+release semantics, timeouts and exceptions are unchanged.
 """
 
 from contextlib import AbstractContextManager, contextmanager
