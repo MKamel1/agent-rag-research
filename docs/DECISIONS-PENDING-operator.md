@@ -12,9 +12,8 @@
 > on `origin/main`, but the commit's own title is "gate: do not ship" — the phase-1 projection tripped
 > its own stop conditions (`docs/eval-reports/2026-07-29-tdoc87-marker-regex-repair.md`), so the
 > recommended option A (disambiguate titles) was never built and the duplicate-title defect remains
-> open (`docs/BACKLOG.md` B-3). **Decision 1** (the IDF reindex) is genuinely still pending — no
-> commit runs it against production; `docs/BACKLOG.md` B-5 confirms the non-destructive migration path
-> exists but isn't the default and hasn't been triggered.
+> open (`docs/BACKLOG.md` B-3). **Decision 1** (the IDF reindex) is **closed** — see its section below; the
+> modifier was already in place on all five collections. (`docs/BACKLOG.md` B-5, the `reindex_idf` default flip, is moot.)
 
 *Four decisions. Each states the question, the options, the trade-offs, why it matters, and a
 recommendation. Nothing here has been actioned — all four need your call.*
@@ -55,6 +54,8 @@ harder to miss.
 ---
 
 ## Decision 1 — Run the IDF reindex on the production collection?
+
+> **CLOSED 2026-11-10 (EP-6): the IDF modifier is already applied on all five collections -- `sparse_vectors.sparse.modifier = "idf"` in each on-disk `collections/<name>/config.json` (papers, waymo_av_safety, av_standards, motional_av, waabi_safety); evidence and the adjudication in `docs/eval-reports/2026-11-10-system-review.md` (RV-6 F-A6 / Decision 1 REFUTED as open) and `docs/PROJECT-STATUS.md` section 1.1. No reindex is pending; `app.reindex_idf` is a no-op everywhere.** The text below is the historical question as asked on 2026-07-29.
 
 ### The question
 Production's sparse vectors have **no IDF weighting**. `app/reindex_idf.py` (OG-27) exists to fix

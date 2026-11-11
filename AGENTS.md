@@ -23,6 +23,7 @@ No claims, no reconciliation, no evidence tiers beyond a pinned `"A"`, no Obsidi
 | **docs/PROJECT-STATUS.md** | Current system state: what shipped (with commit SHAs/PR#s), what was tried and rejected, what's open. Every numeric/status claim is re-derived against live source/git, not copied — start here for "what actually exists today." |
 | **docs/superpowers/plans/2026-11-10-enhancement-programme.md** | The current forward plan (enhancement programme, 2026-11-10), resting on the adjudicated system review `docs/eval-reports/2026-11-10-system-review.md`. Being written in parallel with the docs pass — check the file exists before relying on it. |
 | **docs/BACKLOG.md** | The live work queue (D/T/B/O ticket series) — what's open right now, updated as items land. |
+| **docs/CORPORA.md** | Registry of the five corpora: data dirs, collections, how to select one (the cwd trap, `--data-dir`, one MCP process per corpus), per-corpus config levers, chunker generation, fixtures, defects; the no-ingest-during-benchmark rule. |
 | **CONTEXT.md** | Vocabulary and V0–V3 phase definitions. **Wins any terminology dispute.** |
 | **DATA-CONTRACTS.md** | Every frozen data shape, ID format, SQLite schema, `Config` fields. **Wins any shape conflict** with ARCHITECTURE.md or PRD.md — never fork a type, fix the other doc to match. |
 | **PRD.md** | Vision + 18 ADRs (§12). The ADRs are settled decisions — don't re-litigate Qdrant, SQLite, Ollama→vLLM, etc. without a new fact from Phase 0. |

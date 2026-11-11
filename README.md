@@ -67,6 +67,8 @@ After a reboot the whole sequence is `nvidia-smi` → `python -m app.doctor` →
 `scripts/dashboard.sh start`. Full operator bring-up, Tailscale access, and where the dashboard token
 lives: [`docs/RUNBOOK.md`](docs/RUNBOOK.md).
 
+Which corpus is which, and how to select one: [`docs/CORPORA.md`](docs/CORPORA.md).
+
 **Trap worth knowing before your first run:** most ingest-side tools have no `--data-dir` flag — **your
 shell's cwd is the data dir**. Only `app.init_config`, `app.serve`, `app.dashboard.server`, and
 `app.dashboard.verify_numbers` take one. Every entry point with its real flags is tabulated in
