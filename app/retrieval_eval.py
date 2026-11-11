@@ -111,6 +111,27 @@ therefore also emits `passage_level.by_vision_status` -- `text_answerable` (the 
 and its paper-level recall@k, because paper-level is where those items already succeed and that
 contrast is the finding) -- while `overall` keeps its exact prior definition. See
 `_VISION_ARM_NOTE`. Same shape as BENCH-1's `paper_level.by_gold_status`, not a second convention.
+Eval hardening (EV-7..EV-10; measurement-side only -- nothing here touches retrieval or ranking):
+
+  * EV-7 -- `--collection` is REQUIRED (no silent default corpus). Every report stamps
+    `ground_truth_sha256_12` (first 12 hex of the SHA-256 of the ground-truth file's bytes, same
+    pattern as judge_eval's `rubric_sha256_12`), `code_commit` (git HEAD of this checkout) and
+    `code_tree_dirty`. Before any retrieval runs, a gold-id preflight checks every gold paper /
+    chunk / block id of the loaded questions resolves in the given DB and exits 2 naming the
+    unresolved ids otherwise.
+  * EV-8 -- additive `passage_excerpt_level` beside the unchanged anchor `passage_level`: a hit is
+    a returned `passage_text` that contains the normalised gold `passage_excerpt` (or equals the
+    text of an `alternative_gold_chunk_ids` / `gold_chunk_id` chunk resolved through the DB).
+    Items with a null `excerpt_block_id` fall back to the anchor rule and are listed separately.
+    Relation to the frozen protocols' member-passage metric: see `excerpt_hit`.
+  * EV-9 -- each per-question row gains `retrieved_chunk_ids` (one list of candidate chunk ids per
+    retrieved rank, recovered from (paper id, anchor block id, passage text) via the DB; more than
+    one id for a rank marks the row `chunk_id_ambiguous`).
+  * EV-10 -- a run in which any question errored on a GPU-lock timeout is INVALID: the report
+    carries `run_valid: false` and `n_lock_timeouts`, the summary says so, and the process exits
+    `EXIT_INVALID_RUN` (3) after writing the report. Same VOID convention as
+    `scripts/nb_eval_runner.py` (a partially starved run is not a baseline).
+
 """
 
 from __future__ import annotations
