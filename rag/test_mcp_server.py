@@ -741,3 +741,38 @@ def test_corpus_stats_merges_serving_key_without_mutating_store_dict():
     assert out["serving"] == "collection=waymo_av_safety db=/x/papers.db"
     assert out["papers"] == 1738
     assert "serving" not in store_stats
+
+
+# ---------------------------------------------------------------------------
+# MC-1: unknown `filters.paper_id` raises (same as get_paper) instead of returning empty
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize("tool", ["semantic_search", "search_papers"])
+def test_unknown_paper_id_filter_raises_and_never_reaches_the_retriever(tool):
+    from contracts.errors import ContractError
+    retriever = SpyRetriever()
+    server = _artifact_server(corpus_label="collection=c db=/x")
+    server._retriever = retriever
+    with pytest.raises(ContractError, match=rf"{tool}: unknown paper_id 'no:such'.*serving collection=c"):
+        getattr(server, tool)("q", SearchFilters(paper_id="no:such"))
+    assert retriever.retrieve_calls == retriever.retrieve_papers_calls == []
+
+
+def test_arxiv_prefixed_paper_id_filter_gets_the_stripped_hint():
+    from contracts.errors import ContractError
+    with pytest.raises(ContractError, match=r"no 'arxiv:' prefix; try '2302\.07715'"):
+        _artifact_server().semantic_search("q", SearchFilters(paper_id="arxiv:2302.07715"))
+
+
+@pytest.mark.parametrize("tool,calls", [("semantic_search", "retrieve_calls"),
+                                        ("search_papers", "retrieve_papers_calls")])
+def test_valid_inputs_reach_the_retriever_with_unchanged_arguments(tool, calls):
+    # Pre-baseline rule: for valid inputs the retriever sees exactly (query, filters, resolved k),
+    # whether the filter is absent, paper-less, or a known paper_id.
+    retriever = SpyRetriever()
+    server = _artifact_server()
+    server._retriever = retriever
+    known = SearchFilters(paper_id="2506.01234", doc_type="paper")
+    other = SearchFilters(doc_type="book")
+    for f in (None, other, known):
+        getattr(server, tool)("q", f, 7)
+    assert getattr(retriever, calls) == [("q", None, 7), ("q", other, 7), ("q", known, 7)]

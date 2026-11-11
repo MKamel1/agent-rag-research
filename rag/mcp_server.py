@@ -136,6 +136,7 @@ class McpServer:
           hits at this tier are wrong. Fine for open-ended discovery ("candidates worth a closer
           look"), never for a claim that needs to be correct.
         """
+        self._require_known_paper_filter("semantic_search", filters)
         results, retrieval_coverage = self._retriever.retrieve(
             query, filters, self._resolve_k(k)
         )
@@ -175,6 +176,7 @@ class McpServer:
         `email_domain`/`keyword` heuristic (precision 0.706 / recall 0.783 measured), not confirmed
         authorship.
         """
+        self._require_known_paper_filter("search_papers", filters)
         results, retrieval_coverage = self._retriever.retrieve_papers(
             query, filters, self._resolve_k(k)
         )
@@ -346,6 +348,18 @@ class McpServer:
         anchor is a grounding bug, not a normal "not found").
         """
         return self._document_store.get_span(anchor)
+
+    def _require_known_paper_filter(self, tool: str, filters: SearchFilters | None) -> None:
+        """MC-1: a `filters.paper_id` that is not in the corpus is a typo, not an empty answer --
+        raise exactly what `get_paper` raises (RV-4 F-4.2: an `arxiv:`-prefixed id returned empty
+        and read as "this standard does not discuss X"). Other filters are untouched."""
+        paper_id = filters.paper_id if filters is not None else None
+        if paper_id is None or self._document_store.get(paper_id) is not None:
+            return
+        hint = ""
+        if paper_id.startswith("arxiv:"):
+            hint = f" (stored ids have no 'arxiv:' prefix; try {paper_id.removeprefix('arxiv:')!r})"
+        raise ContractError(f"{tool}: unknown paper_id {paper_id!r}{hint}{self._serving_suffix()}")
 
     def _resolve_k(self, k: int | None) -> int:
         """`k=None` -> `self._default_k`; either way, clamp to `[_MIN_K, _MAX_K]` (OG-48#5) before
