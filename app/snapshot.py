@@ -42,14 +42,17 @@ under `--backup-root` after a successful run.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
 import shutil
 import sqlite3
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Protocol
 
+from app.db_guard import MissingDatabaseError, require_existing_db
 from contracts.config import Config
 from rag.config import load_config
 
@@ -65,6 +68,57 @@ _DEFAULT_VECTOR_STORE_PORT = 6333
 _VECTOR_STORE_DIM = 2560
 
 _TIMESTAMP_FORMAT = "%Y%m%dT%H%M%SZ"
+# Operator rule (OP-3/OP-6): a snapshot aborts when the backup device has less than this free.
+MIN_FREE_GIB = 20.0
+
+
+class SnapshotIntegrityError(RuntimeError):
+    """A produced artifact failed its integrity check; the snapshot stays `.partial`."""
+
+
+def require_free_space(path: Path, *, min_free_gib: float = MIN_FREE_GIB) -> None:
+    free_gib = shutil.disk_usage(path).free / 1024**3
+    if free_gib < min_free_gib:
+        raise SystemExit(
+            f"snapshot: only {free_gib:.1f} GiB free at {path} (abort rule: >= {min_free_gib:g})"
+        )
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with open(path, "rb") as f:
+        for block in iter(lambda: f.read(1 << 20), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def parse_sha256sum(text: str) -> dict[str, str]:
+    """`sha256sum` output (`<hex>  <relpath>` per line) -> {relpath: hex}."""
+    out = {}
+    for line in text.splitlines():
+        if line.strip():
+            digest, _, name = line.partition("  ")
+            out[name.lstrip("*")] = digest
+    return out
+
+
+def sqlite_pragma_check(path: Path, pragma: str = "integrity_check") -> str:
+    """`ok`, or the first problem line SQLite reports. Opens `immutable=1`: a finished backup is
+    static, and a plain read-only open of a WAL-mode file would create `-wal`/`-shm` files beside
+    it -- verifying a backup must not write into the backup directory."""
+    con = sqlite3.connect(f"file:{path.resolve()}?mode=ro&immutable=1", uri=True)
+    try:
+        return con.execute(f"PRAGMA {pragma}").fetchone()[0]
+    finally:
+        con.close()
+
+
+def _ro_row_counts(path: Path) -> dict[str, int]:
+    con = sqlite3.connect(f"file:{path.resolve()}?mode=ro&immutable=1", uri=True)
+    try:
+        return _table_row_counts(con)
+    finally:
+        con.close()
 
 
 class SnapshotableVectorStore(Protocol):
@@ -102,17 +156,17 @@ def backup_sqlite(db_path: str, dest_dir: Path) -> dict:
     finally:
         source.close()
 
-    copy = sqlite3.connect(str(dest_path))
-    try:
-        row_counts = _table_row_counts(copy)
-    finally:
-        copy.close()
+    check = sqlite_pragma_check(dest_path, "quick_check")
+    if check != "ok":
+        raise SnapshotIntegrityError(f"quick_check on {dest_path} failed: {check}")
 
     return {
         "source": str(Path(db_path).resolve()),
         "dest": dest_path.name,
         "bytes": dest_path.stat().st_size,
-        "row_counts": row_counts,
+        "row_counts": _ro_row_counts(dest_path),
+        "quick_check": check,
+        "sha256": sha256_file(dest_path),
     }
 
 
@@ -129,6 +183,7 @@ def backup_blobs(blob_dir: str, dest_dir: Path) -> dict:
         "dest": dest_path.name,
         "bytes": sum(f.stat().st_size for f in files),
         "file_count": len(files),
+        "sha256": {str(f.relative_to(dest_path)): sha256_file(f) for f in sorted(files)},
     }
 
 
@@ -148,6 +203,7 @@ def backup_vector_store(
         "collection": collection,
         "dest": dest_path.name,
         "bytes": dest_path.stat().st_size,
+        "sha256": sha256_file(dest_path),
     }
 
 
@@ -166,8 +222,10 @@ def run_snapshot(
     to the final `snapshot-<timestamp>` directory -- see module docstring for the atomicity
     contract. Prunes to the newest `keep` completed snapshots afterward. Returns the final dir.
     """
+    require_existing_db(cfg.db_path)  # before anything is created -- OP-6
     ts = (now or datetime.now(timezone.utc)).strftime(_TIMESTAMP_FORMAT)
     backup_root.mkdir(parents=True, exist_ok=True)
+    require_free_space(backup_root)
     partial_dir = backup_root / f"snapshot-{ts}.partial"
     final_dir = backup_root / f"snapshot-{ts}"
     partial_dir.mkdir(parents=True)
@@ -183,6 +241,123 @@ def run_snapshot(
     partial_dir.rename(final_dir)
     prune_old_snapshots(backup_root, keep=keep)
     return final_dir
+
+
+def snapshot_sqlite_only(
+    cfg: Config, backup_root: Path, *, now: datetime | None = None
+) -> Path:
+    """SQLite-only backup that needs no vector store (the operator's 2026-11-10 manual shape):
+    `<backup_root>/papers.db.snapshot-<YYYYMMDD>` plus `<same>.sha256` (`sha256sum` format).
+
+    Stdlib backup API from a **read-only** source connection; row counts are read inside one read
+    transaction on the source so the comparison with the copy is not racy; `integrity_check` runs
+    on the copy. Any failure leaves `<name>.partial` behind and raises -- no `.sha256` is written
+    for a bad copy. Refuses to overwrite an existing snapshot of the same day.
+    """
+    require_existing_db(cfg.db_path)
+    stamp = (now or datetime.now(timezone.utc)).strftime("%Y%m%d")
+    backup_root.mkdir(parents=True, exist_ok=True)
+    require_free_space(backup_root)
+    dest = backup_root / f"papers.db.snapshot-{stamp}"
+    if dest.exists():
+        raise FileExistsError(f"{dest} already exists; refusing to overwrite a backup")
+    partial = dest.with_name(dest.name + ".partial")
+    partial.unlink(missing_ok=True)
+
+    source = sqlite3.connect(f"file:{Path(cfg.db_path).resolve()}?mode=ro", uri=True)
+    try:
+        source.execute("BEGIN")
+        source_counts = _table_row_counts(source)
+        target = sqlite3.connect(str(partial))
+        try:
+            source.backup(target)
+        finally:
+            target.close()
+    finally:
+        source.close()
+
+    check = sqlite_pragma_check(partial)
+    if check != "ok":
+        raise SnapshotIntegrityError(f"integrity_check on {partial} failed: {check}")
+    copy_counts = _ro_row_counts(partial)
+    if copy_counts != source_counts:
+        raise SnapshotIntegrityError(
+            f"row counts differ (source {source_counts} vs copy {copy_counts}); is a writer active?"
+        )
+    digest = sha256_file(partial)
+    partial.rename(dest)
+    dest.with_name(dest.name + ".sha256").write_text(f"{digest}  {dest.name}\n")
+    print(f"snapshot: wrote {dest} ({dest.stat().st_size:,} bytes)")
+    print(f"  integrity_check=ok sha256={digest}")
+    print(f"  row_counts={copy_counts}")
+    return dest
+
+
+# --- verify ------------------------------------------------------------------------------------
+
+
+def _check_hashes(base: Path, expected: dict[str, str], problems: list[str]) -> None:
+    for rel, digest in expected.items():
+        f = base / rel
+        if not f.is_file():
+            problems.append(f"missing file: {rel}")
+        elif sha256_file(f) != digest:
+            problems.append(f"sha256 mismatch: {rel}")
+
+
+def verify_snapshot(path: Path) -> tuple[list[str], list[str]]:
+    """Re-check an existing snapshot. Returns (report lines, problems); empty problems == good.
+
+    Read-only; needs no config and no vector store. Three shapes:
+    - `snapshot-*/` dir with `manifest.json` (this module's full snapshot),
+    - dir with `MANIFEST.sha256` (file copy of the vector-store storage, `sha256sum -c` format),
+    - a single SQLite file with a sibling `<name>.sha256` (`--sqlite-only` / the manual backup).
+    """
+    report: list[str] = []
+    problems: list[str] = []
+    if path.is_dir() and (path / "manifest.json").is_file():
+        manifest = json.loads((path / "manifest.json").read_text())
+        sq = manifest["sqlite"]
+        db = path / sq["dest"]
+        if not db.is_file():
+            problems.append(f"missing file: {sq['dest']}")
+        else:
+            check = sqlite_pragma_check(db)
+            report.append(f"sqlite integrity_check: {check}")
+            if check != "ok":
+                problems.append(f"sqlite integrity_check: {check}")
+            if _ro_row_counts(db) != sq["row_counts"]:
+                problems.append("sqlite row counts differ from manifest")
+            if "sha256" in sq:
+                _check_hashes(path, {sq["dest"]: sq["sha256"]}, problems)
+        blobs = manifest["blobs"]
+        if "sha256" in blobs:
+            _check_hashes(path / blobs["dest"], blobs["sha256"], problems)
+            report.append(f"blobs: {len(blobs['sha256'])} files hashed")
+        vs = manifest["vector_store"]
+        if "sha256" in vs:
+            _check_hashes(path, {vs["dest"]: vs["sha256"]}, problems)
+        if not all("sha256" in manifest[k] for k in ("sqlite", "blobs", "vector_store")):
+            report.append("note: manifest predates OP-3 -- some sha256 values were never recorded")
+    elif path.is_dir() and (path / "MANIFEST.sha256").is_file():
+        expected = parse_sha256sum((path / "MANIFEST.sha256").read_text())
+        _check_hashes(path, expected, problems)
+        report.append(f"MANIFEST.sha256: {len(expected)} files checked")
+    elif path.is_file():
+        sidecar = path.with_name(path.name + ".sha256")
+        if not sidecar.is_file():
+            problems.append(f"no checksum file {sidecar.name} next to {path.name}")
+        else:
+            expected = parse_sha256sum(sidecar.read_text())
+            _check_hashes(path.parent, {path.name: expected.get(path.name, "")}, problems)
+        check = sqlite_pragma_check(path)
+        report.append(f"sqlite integrity_check: {check}")
+        if check != "ok":
+            problems.append(f"sqlite integrity_check: {check}")
+        report.append(f"row_counts={_ro_row_counts(path)}")
+    else:
+        problems.append(f"{path} is neither a snapshot dir, a MANIFEST.sha256 dir nor a file")
+    return report, problems
 
 
 def prune_old_snapshots(backup_root: Path, *, keep: int) -> None:
@@ -218,7 +393,7 @@ def print_summary(final_dir: Path, manifest: dict) -> None:
     vs = manifest["vector_store"]
     print(f"snapshot: wrote {final_dir}")
     print(f"  sqlite:       {sq['dest']:<20} {sq['bytes']:>14,} bytes")
-    print(f"                row_counts={sq['row_counts']}")
+    print(f"                row_counts={sq['row_counts']} quick_check={sq['quick_check']}")
     print(f"  blobs:        {bl['dest']:<20} {bl['bytes']:>14,} bytes  ({bl['file_count']} files)")
     print(f"  vector store: {vs['dest']:<20} {vs['bytes']:>14,} bytes")
     print(f"                collection={vs['collection']}")
@@ -242,14 +417,32 @@ def _parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--vector-store-host", default=_DEFAULT_VECTOR_STORE_HOST)
     parser.add_argument("--vector-store-port", type=int, default=_DEFAULT_VECTOR_STORE_PORT)
+    parser.add_argument(
+        "--verify", metavar="PATH", default=None,
+        help="re-check an existing backup (snapshot-*/ dir, MANIFEST.sha256 dir, or a SQLite file "
+        "with its .sha256): sha256s, integrity_check, row counts. Read-only; no vector store.",
+    )
+    parser.add_argument(
+        "--sqlite-only", action="store_true",
+        help="back up only SQLite (backup API, integrity check, row-count comparison, .sha256) "
+        "into --backup-root; needs no vector store",
+    )
     return parser.parse_args()
 
 
 def main() -> None:
-    from rag.vector_index import VectorIndex  # only imported here -- see module docstring
-
     logging.basicConfig(level=logging.INFO)
     args = _parse_args()
+    if args.verify:
+        report, problems = verify_snapshot(Path(args.verify))
+        print("\n".join(report))
+        if problems:
+            print(f"verify: FAILED -- {len(problems)} problem(s):")
+            print("\n".join(f"  - {p}" for p in problems))
+            sys.exit(1)
+        print(f"verify: OK -- {args.verify}")
+        return
+
     cfg = load_config(args.config)
     # T-DOC89 §4: report what was resolved, same pattern as app/delete_docs.py -- an operator
     # standing in the wrong directory should see where this process actually pointed, not guess.
@@ -257,7 +450,16 @@ def main() -> None:
         "snapshot: resolved db_path=%s blob_dir=%s collection=%s",
         cfg.db_path, cfg.blob_dir, cfg.collection,
     )
+    try:
+        require_existing_db(cfg.db_path)
+    except MissingDatabaseError as error:
+        sys.exit(f"snapshot: {error}")
     backup_root = Path(args.backup_root) if args.backup_root else default_backup_root(cfg)
+    if args.sqlite_only:
+        snapshot_sqlite_only(cfg, backup_root)
+        return
+
+    from rag.vector_index import VectorIndex  # only imported here -- see module docstring
 
     vector_index = VectorIndex(
         args.vector_store_host, args.vector_store_port, cfg.collection, _VECTOR_STORE_DIM
