@@ -137,9 +137,13 @@ Eval hardening (EV-7..EV-10; measurement-side only -- nothing here touches retri
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
+import sqlite3
 import statistics
+import subprocess
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -147,6 +151,12 @@ logger = logging.getLogger(__name__)
 
 _DEFAULT_GROUND_TRUTH = "fixtures/eval/eval_ground_truth.json"
 _DEFAULT_K = 10
+
+# EV-7: exit code of a gold-id preflight failure (unresolvable gold ids -- nothing was measured).
+EXIT_PREFLIGHT_FAILED = 2
+# EV-10: exit code of a run that finished and wrote its report but is INVALID (GPU-lock timeout).
+# scripts/nb_eval_runner.py mirrors this number to still collect the (VOID-flagged) report.
+EXIT_INVALID_RUN = 3
 
 # Stated in the emitted report itself (build_report), not just here: a verbatim predicate leaves
 # paraphrase-level leaks uncounted, so the reported figure is a floor, not a measurement.
@@ -213,6 +223,10 @@ class Question:
     # build_report can split the passage metric into text vs vision arms; the default keeps every
     # pre-VARM-1 fixture parsing unchanged.
     vision_derived: bool = False
+    # EV-7/EV-8: gold chunk identity as recorded in the fixture (None / () when absent). Read for
+    # the gold-id preflight; `alternative_gold_chunk_ids` also feeds the excerpt metric (EV-8).
+    gold_chunk_id: str | None = None
+    alternative_gold_chunk_ids: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -317,9 +331,78 @@ def load_questions(ground_truth_path: Path, include_duplicates: bool = False) ->
                 doc_type=r.get("doc_type", "paper"),
                 vision_derived=bool(r.get("vision_derived", False)),
                 gold_chapter_title=r.get("gold_chapter_title"),
+                gold_chunk_id=r.get("gold_chunk_id"),
+                alternative_gold_chunk_ids=tuple(r.get("alternative_gold_chunk_ids") or ()),
             )
         )
     return questions
+
+
+def file_sha256_12(path: Path) -> str:
+    """First 12 hex of the SHA-256 of the file's bytes (== `sha256sum <path> | cut -c1-12`)."""
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()[:12]
+
+
+def code_commit(repo_dir: Path | None = None) -> tuple[str | None, bool | None]:
+    """(`git rev-parse HEAD`, tree-has-tracked-changes) of the checkout this module runs from, or
+    (None, None) when git is unavailable. Stamped into every report so a number names the code
+    that produced it. Untracked files are ignored (run output dirs live inside the repo)."""
+    cwd = repo_dir or Path(__file__).resolve().parent.parent
+    try:
+        head = subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=cwd, capture_output=True, text=True, check=True
+        ).stdout.strip()
+        dirty = subprocess.run(
+            ["git", "status", "--porcelain", "--untracked-files=no"],
+            cwd=cwd, capture_output=True, text=True, check=True,
+        ).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        return None, None
+    return head, bool(dirty)
+
+
+class CorpusLookup:
+    """Read-only (`mode=ro`) view of the corpus DB for the measurement side: the gold-id preflight
+    (EV-7). Never writes; opened separately from the retriever's own store."""
+
+    def __init__(self, db_path):
+        self._con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+
+    def close(self) -> None:
+        self._con.close()
+
+    def _missing(self, table: str, column: str, ids: set[str]) -> list[str]:
+        found: set[str] = set()
+        wanted = sorted(ids)
+        for i in range(0, len(wanted), 500):  # stay under SQLite's bound-variable limit
+            batch = wanted[i : i + 500]
+            marks = ",".join("?" * len(batch))
+            found |= {
+                r[0]
+                for r in self._con.execute(
+                    f"SELECT {column} FROM {table} WHERE {column} IN ({marks})", batch
+                )
+            }
+        return sorted(ids - found)
+
+    def unresolved_gold_ids(self, questions: list[Question]) -> dict[str, list[str]]:
+        """{kind: sorted unresolved ids} for gold paper / block / chunk ids absent from this DB
+        (empty dict = every gold id resolves). A mispointed `--db-path` otherwise yields a
+        plausible low number with `n_errors = 0`."""
+        papers = {p for q in questions for p in q.gold_paper_ids}
+        blocks = {q.gold_block_id for q in questions if q.gold_block_id}
+        chunks = {
+            c
+            for q in questions
+            for c in (q.gold_chunk_id, *q.alternative_gold_chunk_ids)
+            if c
+        }
+        missing = {
+            "paper": self._missing("papers", "paper_id", papers),
+            "block": self._missing("blocks", "block_id", blocks),
+            "chunk": self._missing("chunks", "chunk_id", chunks),
+        }
+        return {kind: ids for kind, ids in missing.items() if ids}
 
 
 def _normalized(text: str) -> str:
@@ -608,6 +691,9 @@ def build_report(
     mode: str = "fused",
     hybrid_dense_weight: float = 0.5,
     include_per_question: bool = True,
+    ground_truth_sha256_12: str | None = None,
+    code_commit: str | None = None,
+    code_tree_dirty: bool | None = None,
 ) -> dict:
     question_types = sorted({r.question_type for r in results})
     doc_types = sorted({r.doc_type for r in results})
@@ -634,6 +720,12 @@ def build_report(
         # (and its RRF weight) rather than adding a second, parallel report field for it.
         # See _scoring_rule.
         "scoring_rule": _scoring_rule(k, mode, hybrid_dense_weight),
+        # EV-7: what produced this number -- the ground-truth file (judge_eval's
+        # `rubric_sha256_12` pattern) and the code commit. None when the caller did not supply
+        # them (unit tests, in-process reuse by other experiment modules).
+        "ground_truth_sha256_12": ground_truth_sha256_12,
+        "code_commit": code_commit,
+        "code_tree_dirty": code_tree_dirty,
         "k": k,
         "n_questions": len(results),
         "n_errors": sum(1 for r in results if r.error),
@@ -798,9 +890,10 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--db-path", default=None)
     parser.add_argument("--blob-dir", default=None)
     parser.add_argument(
-        "--collection", default=None,
-        help="named vector-store collection to search (defaults to the retriever wiring's own "
-             "default) -- point this at a throwaway baseline/headered collection to compare them",
+        "--collection", required=True,
+        help="REQUIRED (EV-7): named vector-store collection to search. There is no default -- "
+             "an omitted flag used to fall through to the main `papers` corpus and a mispointed "
+             "run printed a plausible low number with 0 errors",
     )
     parser.add_argument("--k", type=int, default=_DEFAULT_K)
     parser.add_argument("--report-path", default=None, help="write the JSON report here")
@@ -842,6 +935,25 @@ def main() -> None:
     from app.assembly import build_mcp_server
     from rag.config import load_config
 
+    questions = load_questions(Path(args.ground_truth))
+    if args.limit is not None:
+        questions = questions[: args.limit]
+
+    # EV-7 preflight, BEFORE any service is touched: every gold id must resolve in the DB this run
+    # will query, else exit 2 naming them. Read-only. `--db-path` wins, else the config's own --
+    # the same precedence as app.assembly._resolve_store_paths.
+    db_path = args.db_path or load_config(args.config).db_path
+    lookup = CorpusLookup(db_path)
+    unresolved = lookup.unresolved_gold_ids(questions)
+    if unresolved:
+        for kind, ids in unresolved.items():
+            print(
+                f"PREFLIGHT FAILED: {len(ids)} gold {kind} id(s) not found in {db_path}: "
+                f"{', '.join(ids[:20])}{' ...' if len(ids) > 20 else ''}",
+                file=sys.stderr,
+            )
+        sys.exit(EXIT_PREFLIGHT_FAILED)
+    lookup.close()
     config = load_config(args.config)
     # RI-M3: resolve the ablation mode to a concrete hybrid_dense_weight; FUSE-1 extends this
     # with an explicit --dense-weight that pins any intermediate value (the modes alone can only
@@ -860,20 +972,18 @@ def main() -> None:
         build_kwargs["db_path"] = args.db_path
     if args.blob_dir is not None:
         build_kwargs["blob_dir"] = args.blob_dir
-    if args.collection is not None:
-        build_kwargs["collection"] = args.collection
+    build_kwargs["collection"] = args.collection
     if args.drop_stub_chunks:
         build_kwargs["drop_stub_chunks"] = True
     server = build_mcp_server(config, **build_kwargs)
 
-    questions = load_questions(Path(args.ground_truth))
-    if args.limit is not None:
-        questions = questions[: args.limit]
-
     results = run(questions, server.retriever, args.k)
+    commit, dirty = code_commit()
     report = build_report(
         results, args.k, mode=args.sparse_mode, hybrid_dense_weight=weight,
         include_per_question=not args.no_per_question,
+        ground_truth_sha256_12=file_sha256_12(Path(args.ground_truth)),
+        code_commit=commit, code_tree_dirty=dirty,
     )
     _print_summary(report)
 
