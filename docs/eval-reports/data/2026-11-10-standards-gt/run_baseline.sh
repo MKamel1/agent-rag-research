@@ -55,12 +55,17 @@ for arm in "${ARMS[@]}"; do
   run "$1" "$GT" "$2" "$3"                                     # authored questions
   run "$1.ablated" "$OUT/standards_gt.title-ablated.json" "$2" "$3"   # control (i)
 done
+# Run-to-run jitter envelope: the shipped arm again, same config. The depth decision is only valid if
+# this repeat and depth128-fused differ on <= 1 question's member-passage hit@10 (protocol section 6).
+run "depth128-fused-repeat" "$GT" 128 fused
 
 # Strata report of record (member-passage metric). One GT file per invocation; never blended.
 for suffix in "" ".ablated"; do
   gt="$GT"; [ -n "$suffix" ] && gt="$OUT/standards_gt.title-ablated.json"
   reports=(); for arm in "${ARMS[@]}"; do set -- $arm; reports+=("$OUT/$1$suffix.json"); done
+  [ -z "$suffix" ] && reports+=("$OUT/depth128-fused-repeat.json")
   (cd "$REPO" && python scripts/eval_strata_report.py --ground-truth "$gt" --db "$DB" --k 10 \
       --json-out "$OUT/strata$suffix.json" "${reports[@]}") | tee "$OUT/strata$suffix.txt"
 done
+echo "finished $(date -Is)" >> "$OUT/MANIFEST.txt"
 echo "done -> $OUT"

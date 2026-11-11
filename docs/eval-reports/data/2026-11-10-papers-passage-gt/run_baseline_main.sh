@@ -88,4 +88,5 @@ if has legacy; then  # stock reports only: these fixtures have no `dimension`/`t
     run "legacy-$f" "$REPO/fixtures/eval/$f.json"
   done
 fi
+echo "finished $(date -Is)" >> "$OUT/MANIFEST.txt"
 echo "done -> $OUT"
