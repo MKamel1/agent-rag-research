@@ -37,7 +37,7 @@ import uuid
 from dataclasses import dataclass, field
 
 from qdrant_client import QdrantClient, models
-from qdrant_client.http.exceptions import ApiException
+from qdrant_client.http.exceptions import ApiException, ResponseHandlingException
 
 from contracts.errors import ContractError, TransientError
 from contracts.fusion import rrf_fuse
@@ -873,3 +873,16 @@ def _is_container_healthy() -> bool:
             return 200 <= resp.status < 300
     except (urllib.error.URLError, OSError, ValueError):
         return False
+
+
+def collection_point_count(host: str, port: int, collection: str) -> int | None:
+    """Read-only probe for `app.doctor`'s corpus-pairing check: the point count of `collection`,
+    or None if it does not exist. Unlike constructing `VectorIndex`, this never creates a
+    collection. Connection problems surface as `TransientError`."""
+    client = QdrantClient(host=host, port=port, check_compatibility=False, timeout=5.0)
+    try:
+        if not client.collection_exists(collection):
+            return None
+        return client.get_collection(collection).points_count
+    except (ApiException, ResponseHandlingException) as e:
+        raise TransientError(f"Qdrant call failed: {e}") from e

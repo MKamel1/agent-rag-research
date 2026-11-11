@@ -30,6 +30,15 @@ from app.doctor import (
 )
 from contracts.config import Config
 
+_REAL_RUN_OPS_CHECKS = doctor_mod.run_ops_checks
+
+
+@pytest.fixture(autouse=True)
+def _stub_ops_checks(monkeypatch):
+    """The OP-6/OP-5 extras read the real db/nvidia-smi; existing tests drive main() with fakes."""
+    monkeypatch.setattr(doctor_mod, "run_ops_checks", lambda cfg: ([], []))
+
+
 # ---------------------------------------------------------------------------
 # check_disk_headroom
 # ---------------------------------------------------------------------------
@@ -561,3 +570,146 @@ def test_main_logs_resolved_paths(tmp_path, monkeypatch, caplog):
 # (zero-GPU, zero-network) and this ticket's own instructions ("do not launch the real MCP server
 # against the real corpus in a test") rule out. `cwd or os.getcwd()`'s defaulting is a one-line,
 # self-evident expression -- manual verification only, same as `app/mcp_verify_client.py` itself.
+
+
+# ---------------------------------------------------------------------------
+# OP-6: corpus pairing + data-disk warning; OP-5: GPU contention report
+# ---------------------------------------------------------------------------
+
+
+def _db_cfg(tmp_path, chunks: int, summaries: int, collection="papers") -> Config:
+    import sqlite3
+
+    db = tmp_path / "papers.db"
+    con = sqlite3.connect(db)
+    con.execute("CREATE TABLE chunks (x)")
+    con.execute("CREATE TABLE summaries (x)")
+    con.executemany("INSERT INTO chunks VALUES (1)", [()] * chunks)
+    con.executemany("INSERT INTO summaries VALUES (1)", [()] * summaries)
+    con.commit()
+    con.close()
+    return Config(
+        focus_area_queries=["x"], db_path=str(db), collection=collection,
+        gpu_lock_path=str(tmp_path / ".gpu.lock"),
+    )
+
+
+def test_pairing_missing_db_is_an_issue_and_creates_nothing(tmp_path):
+    cfg = Config(focus_area_queries=["x"], db_path=str(tmp_path / "papers.db"))
+    issues, _ = doctor_mod.check_corpus_pairing(cfg)
+    assert [i.check for i in issues] == ["corpus pairing"] and "no database at" in issues[0].detail
+    assert not (tmp_path / "papers.db").exists()
+
+
+def test_pairing_empty_db_is_only_a_note(tmp_path):
+    issues, notes = doctor_mod.check_corpus_pairing(_db_cfg(tmp_path, 0, 0))
+    assert issues == [] and "0 chunks and 0 summaries" in notes[0]
+
+
+def test_pairing_without_the_vector_store_checks_the_db_only_and_says_so(monkeypatch, tmp_path):
+    monkeypatch.setattr(doctor_mod, "_is_healthy", lambda url: False)
+    monkeypatch.setattr(
+        doctor_mod._vector_index_adapter, "collection_point_count",
+        lambda *a: pytest.fail("must not touch the store when it is down"),
+    )
+    issues, notes = doctor_mod.check_corpus_pairing(_db_cfg(tmp_path, 90, 10))
+    assert issues == [] and "not checked (vector store unreachable)" in notes[0]
+
+
+def _with_store(monkeypatch, points):
+    monkeypatch.setattr(doctor_mod, "_is_healthy", lambda url: True)
+    monkeypatch.setattr(
+        doctor_mod._vector_index_adapter, "collection_point_count", lambda h, p, c: points
+    )
+
+
+def test_pairing_ok_within_tolerance(monkeypatch, tmp_path):
+    _with_store(monkeypatch, 103)
+    issues, notes = doctor_mod.check_corpus_pairing(_db_cfg(tmp_path, 90, 10))
+    assert issues == [] and "ok" in notes[0]
+
+
+def test_pairing_mismatch_beyond_tolerance_is_an_issue(monkeypatch, tmp_path):
+    _with_store(monkeypatch, 40)
+    issues, _ = doctor_mod.check_corpus_pairing(_db_cfg(tmp_path, 90, 10))
+    assert "40 points" in issues[0].detail and "100 chunks+summaries" in issues[0].detail
+
+
+def test_pairing_missing_collection_over_a_populated_db_is_an_issue(monkeypatch, tmp_path):
+    _with_store(monkeypatch, None)
+    issues, _ = doctor_mod.check_corpus_pairing(_db_cfg(tmp_path, 90, 10, collection="oops"))
+    assert "'oops' does not exist" in issues[0].detail
+
+
+def test_data_disk_warns_below_threshold_and_not_above(monkeypatch, tmp_path):
+    cfg = _db_cfg(tmp_path, 1, 1)
+    monkeypatch.setattr(shutil, "disk_usage", lambda path: _FakeUsage(5 * 1024**3))
+    assert "snapshots abort below 20 GiB" in doctor_mod.check_data_disk_space(cfg)
+    monkeypatch.setattr(shutil, "disk_usage", lambda path: _FakeUsage(79 * 1024**3))
+    assert doctor_mod.check_data_disk_space(cfg) is None
+
+
+def test_data_disk_check_uses_nearest_existing_parent(monkeypatch, tmp_path):
+    cfg = Config(focus_area_queries=["x"], db_path=str(tmp_path / "gone" / "deeper" / "papers.db"))
+    seen = []
+    monkeypatch.setattr(
+        shutil, "disk_usage", lambda path: seen.append(path) or _FakeUsage(100 * 1024**3)
+    )
+    doctor_mod.check_data_disk_space(cfg)
+    assert seen == [tmp_path.resolve()]
+
+
+def _gpu(monkeypatch, free, procs):
+    monkeypatch.setattr(doctor_mod.gpu_headroom, "free_vram_mib", lambda: free)
+    monkeypatch.setattr(doctor_mod.gpu_headroom, "gpu_compute_processes", lambda: procs)
+
+
+def test_gpu_report_lists_foreign_processes_and_states_the_vram_shortfall(monkeypatch, tmp_path):
+    from app.gpu_headroom import GpuProcess
+
+    _gpu(monkeypatch, 3000, [GpuProcess(4242, "python", 20000), GpuProcess(7, "x", None)])
+    text = "\n".join(doctor_mod.describe_gpu_contention(_cfg(tmp_path)))
+    assert "[foreign]: pid 4242 python 20000 MiB" in text and "pid 7 x ?" in text
+    assert "below the ~9400 MiB" in text and "floor 2000 MiB" in text
+
+
+def test_gpu_report_marks_the_lock_holder_and_prints_its_record(monkeypatch, tmp_path):
+    import os
+
+    from app.gpu_headroom import GpuProcess
+    from rag.gpu_lock import FileGpuLock
+
+    cfg = _cfg(tmp_path)
+    _gpu(monkeypatch, 20000, [GpuProcess(os.getpid(), "python", 8000)])
+    with FileGpuLock(Path(cfg.gpu_lock_path)).acquire("embed"):
+        text = "\n".join(doctor_mod.describe_gpu_contention(cfg))
+        assert "[gpu lock holder]" in text and ".gpu.lock holder: pid" in text
+        assert "stage 'embed'" in text
+        assert "stage 'embed'" in check_gpu_lock_free(cfg.gpu_lock_path).detail
+    assert "below the" not in text
+
+
+def test_gpu_report_survives_a_missing_nvidia_smi(monkeypatch, tmp_path):
+    _gpu(monkeypatch, None, None)
+    assert doctor_mod.describe_gpu_contention(_cfg(tmp_path)) == [
+        "GPU: nvidia-smi unavailable -- cannot read VRAM or processes"
+    ]
+
+
+def test_main_cpu_only_prints_the_report_and_a_pairing_issue_still_fails(
+    monkeypatch, tmp_path, capsys
+):
+    cfg = Config(focus_area_queries=["x"], db_path=str(tmp_path / "papers.db"))
+    monkeypatch.setattr("rag.config.load_config", lambda: cfg)
+    monkeypatch.setattr(doctor_mod, "run_preflight", lambda cfg, **kw: [])
+    monkeypatch.setattr(doctor_mod, "run_ops_checks", _REAL_RUN_OPS_CHECKS)
+    monkeypatch.setattr(shutil, "disk_usage", lambda path: _FakeUsage(5 * 1024**3))
+    _gpu(monkeypatch, None, None)
+    monkeypatch.setattr(sys, "argv", ["doctor", "--cpu-only", "--no-auto-start"])
+
+    with pytest.raises(SystemExit):
+        main()
+
+    out = capsys.readouterr().out
+    assert "WARNING: only 5.0 GiB free" in out and "nvidia-smi unavailable" in out
+    assert "corpus pairing: no database at" in out

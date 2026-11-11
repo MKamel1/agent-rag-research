@@ -42,6 +42,13 @@ service), skips TEI, the VRAM-headroom check and the `.gpu.lock` check, prints w
 in that mode and which do not, and exits 0 when the CPU services are ready. Default behaviour is
 unchanged.
 
+**OP-6 / OP-5 (`run_ops_checks`, called by `main()` only -- never by `run_preflight`, so
+`app.ingest`'s startup gate is unchanged):** a corpus-pairing check (the configured database exists
+and holds chunks/summaries; when the vector store is reachable, the collection exists and its point
+count is within 5% of chunks + summaries), a data-device free-space warning (below the 20 GiB
+snapshot abort rule), and a GPU contention report (free VRAM, compute processes via `nvidia-smi`,
+the `.gpu.lock` holder record). Only a definite pairing mismatch is an issue; the rest is printed.
+
 `app.ingest` calls `run_preflight()` at startup (default on, `--no-preflight`/`--force` to skip
 or downgrade to a warning) and refuses to start with every issue named in one message, instead of
 quarantining papers or crashing partway through a multi-hour run.
@@ -52,16 +59,21 @@ import asyncio
 import logging
 import os
 import shutil
+import sqlite3
 import sys
 import urllib.error
 import urllib.request
 from collections.abc import Callable
 from dataclasses import dataclass
+from pathlib import Path
 
 import filelock
 
 from app import gpu_headroom, tei_lifecycle
+from app.db_guard import MissingDatabaseError, require_existing_db
 from contracts.config import Config
+from contracts.errors import TransientError
+from rag import gpu_lock as _gpu_lock_adapter
 from rag import parser as _parser_adapter
 from rag import vector_index as _vector_index_adapter
 
@@ -120,6 +132,19 @@ _HEALTH_ONLY_SERVICES = (
 # different threshold per run. Promote to a CLI flag if a real run ever needs a different floor.
 _MIN_FREE_DISK_GIB = 5.0
 _MIN_FREE_VRAM_MIB = 2000
+# OP-6: the snapshot abort rule (app/snapshot.py MIN_FREE_GIB) -- below this the data device is
+# too full to back up onto itself, so doctor warns.
+_SNAPSHOT_MIN_FREE_GIB = 20.0
+# OP-6: vector-store points should equal chunks + summaries (rag/orchestrator.py upserts exactly
+# those two kinds); allow slack for an ingest in flight or a just-deleted paper.
+_POINT_COUNT_TOLERANCE = 0.05
+_VECTOR_STORE_HOST = "localhost"
+_VECTOR_STORE_PORT = 6333
+# OP-5: what the embedder + reranker need resident, per ARCHITECTURE.md §3 / CONVENTIONS.md §6
+# ("~9.4GB together"; the embedder alone is ~9-10GB during a real batch). NOT the same number as
+# `_MIN_FREE_VRAM_MIB` above, which is the older 2000 MiB preflight floor -- see
+# `describe_gpu_contention`, which reports both instead of silently picking one.
+_TEI_PAIR_RESIDENT_MIB = 9400
 _HEALTH_CHECK_TIMEOUT_SECONDS = 5.0
 # T-DOC66: generous relative to the HTTP health-check timeout above -- this spawns a real `conda`/
 # `python` subprocess and imports app.serve's full composition root (every client object its
@@ -175,9 +200,137 @@ def check_gpu_lock_free(lock_path: str) -> PreflightIssue | None:
     try:
         lock.acquire(timeout=0)
     except filelock.Timeout:
-        return PreflightIssue("gpu_lock", f"{lock_path} is held by another live process")
+        holder = _gpu_lock_adapter.read_holder(Path(lock_path))
+        who = (
+            f" (pid {holder['pid']}, stage {holder.get('stage')!r}, since {holder.get('since')}: "
+            f"{holder.get('command')})"
+            if holder
+            else ""
+        )
+        return PreflightIssue("gpu_lock", f"{lock_path} is held by another live process{who}")
     lock.release()
     return None
+
+
+def check_data_disk_space(
+    cfg: Config, *, min_free_gib: float = _SNAPSHOT_MIN_FREE_GIB
+) -> str | None:
+    """Warning text if the device holding the data dir (`db_path`'s directory) has less than
+    `min_free_gib` free, else None. Walks up to the nearest existing directory."""
+    path = Path(cfg.db_path).resolve().parent
+    while not path.exists() and path != path.parent:
+        path = path.parent
+    usage = shutil.disk_usage(path)
+    free_gib = usage.free / 1024**3
+    if free_gib < min_free_gib:
+        return (
+            f"only {free_gib:.1f} GiB free on the device holding {path} "
+            f"(snapshots abort below {min_free_gib:g} GiB)"
+        )
+    return None
+
+
+def check_corpus_pairing(cfg: Config) -> tuple[list[PreflightIssue], list[str]]:
+    """Do the configured database and collection belong together? (issues, notes).
+
+    Knowable without the vector store: the database file exists (it is never created here) and
+    holds chunks/summaries -- the database itself records no collection name, so the name cannot be
+    checked from SQLite alone. With the store reachable: the collection exists and its point count
+    is within `_POINT_COUNT_TOLERANCE` of chunks + summaries. An empty database is only a note (a
+    brand-new corpus is legitimate); a missing database, a missing collection over a populated
+    database, or a count mismatch is an issue. The store being down is a note, never an issue here
+    (the service check reports that).
+    """
+    try:
+        db = require_existing_db(cfg.db_path)
+    except MissingDatabaseError as error:
+        return [PreflightIssue("corpus pairing", str(error))], []
+    try:
+        con = sqlite3.connect(f"file:{db.resolve()}?mode=ro", uri=True)
+        try:
+            chunks = con.execute("SELECT COUNT(*) FROM chunks").fetchone()[0]
+            summaries = con.execute("SELECT COUNT(*) FROM summaries").fetchone()[0]
+        finally:
+            con.close()
+    except sqlite3.Error as error:
+        return [PreflightIssue("corpus pairing", f"cannot read {db}: {error}")], []
+    expected = chunks + summaries
+    if expected == 0:
+        return [], [f"database {db} holds 0 chunks and 0 summaries -- new corpus or wrong db?"]
+    if not _is_healthy(f"http://{_VECTOR_STORE_HOST}:{_VECTOR_STORE_PORT}/collections"):
+        return [], [
+            f"database holds {expected} chunks+summaries; pairing with collection "
+            f"{cfg.collection!r} not checked (vector store unreachable)"
+        ]
+    try:
+        points = _vector_index_adapter.collection_point_count(
+            _VECTOR_STORE_HOST, _VECTOR_STORE_PORT, cfg.collection
+        )
+    except TransientError as error:
+        return [], [f"could not read collection {cfg.collection!r}: {error}"]
+    if points is None:
+        return [
+            PreflightIssue(
+                "corpus pairing",
+                f"collection {cfg.collection!r} does not exist in the vector store but "
+                f"{db} holds {expected} chunks+summaries -- wrong config for this database?",
+            )
+        ], []
+    if abs(points - expected) > _POINT_COUNT_TOLERANCE * expected:
+        return [
+            PreflightIssue(
+                "corpus pairing",
+                f"collection {cfg.collection!r} has {points} points but {db} has {expected} "
+                f"chunks+summaries (tolerance {_POINT_COUNT_TOLERANCE:.0%}) -- wrong pairing or "
+                "an index out of sync",
+            )
+        ], []
+    return [], [f"collection {cfg.collection!r}: {points} points vs {expected} expected: ok"]
+
+
+def describe_gpu_contention(cfg: Config) -> list[str]:
+    """Plain-text GPU contention report (OP-5): free VRAM vs what the TEI pair needs, every compute
+    process `nvidia-smi` lists (those that are not the recorded `.gpu.lock` holder are marked
+    foreign -- TEI's own containers show up here too while they are up), and the lock holder.
+    Informational; never raises, and prints a one-line "unavailable" when `nvidia-smi` is absent."""
+    free_mib = gpu_headroom.free_vram_mib()
+    procs = gpu_headroom.gpu_compute_processes()
+    holder = _gpu_lock_adapter.read_holder(Path(cfg.gpu_lock_path))
+    lines = []
+    if free_mib is None:
+        lines.append("GPU: nvidia-smi unavailable -- cannot read VRAM or processes")
+    else:
+        lines.append(
+            f"GPU: {free_mib} MiB free VRAM (preflight floor {_MIN_FREE_VRAM_MIB} MiB; embedder + "
+            f"reranker need ~{_TEI_PAIR_RESIDENT_MIB} MiB resident per ARCHITECTURE.md)"
+        )
+        if free_mib < _TEI_PAIR_RESIDENT_MIB:
+            lines.append(
+                f"GPU: free VRAM is below the ~{_TEI_PAIR_RESIDENT_MIB} MiB embedder + reranker "
+                "need -- the TEI containers cannot start (CUDA out of memory) until it is freed"
+            )
+    holder_pid = holder["pid"] if holder else None
+    for proc in procs or []:
+        mem = "?" if proc.used_mib is None else f"{proc.used_mib} MiB"
+        tag = "gpu lock holder" if proc.pid == holder_pid else "foreign"
+        lines.append(f"GPU process [{tag}]: pid {proc.pid} {proc.name} {mem}")
+    if procs == []:
+        lines.append("GPU processes: none")
+    if holder:
+        lines.append(
+            f".gpu.lock holder: pid {holder['pid']} stage {holder.get('stage')!r} since "
+            f"{holder.get('since')} -- {holder.get('command')}"
+        )
+    return lines
+
+
+def run_ops_checks(cfg: Config) -> tuple[list[PreflightIssue], list[str]]:
+    """OP-6/OP-5 extras for `main()`: (issues, informational lines). Not part of `run_preflight`."""
+    issues, lines = check_corpus_pairing(cfg)
+    disk_warning = check_data_disk_space(cfg)
+    if disk_warning:
+        lines.append(f"WARNING: {disk_warning}")
+    return issues, lines + describe_gpu_contention(cfg)
 
 
 def _is_healthy(url: str) -> bool:
@@ -370,6 +523,10 @@ def main() -> None:
     )
     args = _parse_args()
     issues = run_preflight(cfg, auto_start=not args.no_auto_start, cpu_only=args.cpu_only)
+    ops_issues, ops_lines = run_ops_checks(cfg)
+    issues.extend(ops_issues)
+    if ops_lines:
+        print("doctor: corpus / disk / GPU\n" + "\n".join(f"  {line}" for line in ops_lines))
     if args.check_mcp:
         mcp_issue = check_mcp_server()
         if mcp_issue is not None:
