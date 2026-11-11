@@ -82,6 +82,10 @@ match `GIT-WORKFLOW.md`/`CONVENTIONS.md`'s register: concrete triggers, not pros
    `graphify reflect`. A dead-end mark on a stale edge is exactly the signal
    T-G10's validator cannot infer on its own.
 
+6. **Before you propose or run an experiment, read `docs/eval-reports/EXPERIMENT-REGISTER.md`.** If it is
+   already there, read its report and "Do not re-run unless" section; re-run only when the stated
+   condition changed. Add a register row in the same commit as any new result.
+
 ## B. Per-PR / per-trigger documentation obligation
 
 | Trigger | Doc to update | What to write |

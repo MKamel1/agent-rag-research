@@ -64,3 +64,21 @@ Each file is in `parked/` and starts with a `Parked-until:` line stating the che
 | RQ-4 | Expose the cross-encoder score in result metadata | wave:4-rider, area:retrieval, area:mcp, needs-signoff, size:S, parked | 4 | RIDER-1, EV-19, RQ-1 | [RQ-4-expose-rerank-score-metadata.md](parked/RQ-4-expose-rerank-score-metadata.md) |
 
 Dependency entries of the form F1..F8 are operator questions (plan section 3); EV-4b is the in-progress repair of the merged focus ground truth; CQ-4, CQ-5, EP-1 are done. Entries marked "ordering only" in an issue's Gates line are file-ownership orders, not data dependencies. No active ticket depends on a parked one.
+
+## Status after the 2026-11-11 measurements (git and run verdicts; nothing adopted)
+
+Rows above keep their original wave and trigger text; this section records what the runs show. Results and "do not re-run unless"
+conditions: `docs/eval-reports/EXPERIMENT-REGISTER.md`.
+
+| id | status | verdict (report in `docs/eval-reports/`) |
+|---|---|---|
+| EV-14 | done | CQ-9 TRIGGER MET: `papers` F1 0.988 < 0.99; kill clause (0 short lists) also literally met, ambiguity recorded (`2026-11-11-filtered-search-result.md`) |
+| EV-19 | done | CANDIDATE (focus, standards pass; legacy fails length control) (`2026-11-11-rerank-score-census-result.md`) |
+| EV-20 | done | papers: no change (G-1 not met); books: G-1 met; open operator decision (`2026-11-11-rerank-depth-result.md`) |
+| EV-21 | done | KILLED by its own ceiling rule, no arm run (`2026-11-11-stub-filter-result.md`) |
+| EV-22 | done | REJECT, clause (a) fails 22 vs 22 (`2026-11-11-ligature-repair-result.md`) |
+| CQ-7 | done | clone `papers__ligrepair_20261111` built (412,167 points, 138,484 sparse vectors changed); not deleted |
+| RQ-3 | done | REJECT, all three arms (`2026-11-11-relevance-demotion-result.md`); RQ-2 lever stays default off |
+| CQ-9 | parked, trigger met | see EV-14 |
+| CQ-14 | parked | kill criterion as written met (standards stub-at-rank-1 = 1 < 3); not closed here |
+| RQ-4 | parked | EV-19 gave CANDIDATE; the "CI contains 0.5 on two of three sets" kill criterion is not met; other gates unchanged |
