@@ -1243,7 +1243,7 @@ def _seed_stub_corpus(store, docstore, embedder, n_real=6, n_stub=6):
                     block_id=f"r{i}:b0", text=_hdr(f"{_STUB_BODY} number {i}"), section_path="3 Terms")
 
 
-class _SpyReranker(FakeReranker):
+class _PoolSpy(FakeReranker):
     def __init__(self):
         super().__init__()
         self.seen: list[list[str]] = []
@@ -1268,14 +1268,14 @@ def test_is_stub_chunk_text_boundaries():
 
 
 def test_default_off_keeps_stubs_and_reranker_sees_them():
-    store, docstore, embedder, spy = FakeVectorStore(), RecordingDocStore(), FakeEmbedder(), _SpyReranker()
+    store, docstore, embedder, spy = FakeVectorStore(), RecordingDocStore(), FakeEmbedder(), _PoolSpy()
     _seed_stub_corpus(store, docstore, embedder)
     _stub_retriever(store, docstore, embedder, spy, drop=False, pool=12).retrieve(_Q, None, 4)
     assert len(spy.seen[0]) == 12 and sum(i.startswith("s") for i in spy.seen[0]) == 6
 
 
 def test_drop_never_shows_stubs_to_reranker_and_fills_pool_with_real_chunks():
-    store, docstore, embedder, spy = FakeVectorStore(), RecordingDocStore(), FakeEmbedder(), _SpyReranker()
+    store, docstore, embedder, spy = FakeVectorStore(), RecordingDocStore(), FakeEmbedder(), _PoolSpy()
     _seed_stub_corpus(store, docstore, embedder, n_real=6, n_stub=6)
     results, _ = _stub_retriever(store, docstore, embedder, spy, drop=True, pool=4).retrieve(_Q, None, 3)
     assert len(spy.seen[0]) == 4                                  # pool still filled to rerank_pool_size
@@ -1284,7 +1284,7 @@ def test_drop_never_shows_stubs_to_reranker_and_fills_pool_with_real_chunks():
 
 
 def test_drop_with_all_candidates_stubs_returns_empty_without_calling_reranker():
-    store, docstore, embedder, spy = FakeVectorStore(), RecordingDocStore(), FakeEmbedder(), _SpyReranker()
+    store, docstore, embedder, spy = FakeVectorStore(), RecordingDocStore(), FakeEmbedder(), _PoolSpy()
     _seed_stub_corpus(store, docstore, embedder, n_real=0, n_stub=4)
     results, cov = _stub_retriever(store, docstore, embedder, spy, drop=True).retrieve(_Q, None, 3)
     assert results == [] and cov.candidate_count > 0 and spy.seen == []

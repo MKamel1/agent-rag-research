@@ -240,7 +240,9 @@ class Retriever:
         stand-in it used to fall back on.
         """
         pool = max(k, self._rerank_pool_size)
-        fetch = pool * _STUB_OVERFETCH_NUM // _STUB_OVERFETCH_DEN if self._drop_stub_chunks else pool
+        fetch = pool
+        if self._drop_stub_chunks:
+            fetch = pool * _STUB_OVERFETCH_NUM // _STUB_OVERFETCH_DEN
         hits = self._hybrid_hits(query, filters, fetch, kind="chunk")
         if not hits:
             return [], RetrievalCoverage(candidate_count=0)
