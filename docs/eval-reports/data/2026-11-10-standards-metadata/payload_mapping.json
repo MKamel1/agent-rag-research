@@ -1,0 +1,1286 @@
+{
+ "local:9f51671af209": {
+  "categories": [
+   "kind:paper",
+   "status:current",
+   "completeness:full",
+   "kindstatus:paper+current",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "2004.10474": {
+  "categories": [
+   "cs.SE",
+   "eess.SY",
+   "kind:paper",
+   "status:current",
+   "completeness:full",
+   "kindstatus:paper+current",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "2103.05440": {
+  "categories": [
+   "q-fin.RM",
+   "kind:paper",
+   "status:current",
+   "completeness:full",
+   "kindstatus:paper+current",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "1708.06374": {
+  "categories": [
+   "cs.RO",
+   "cs.AI",
+   "stat.ML",
+   "kind:paper",
+   "status:current",
+   "completeness:full",
+   "kindstatus:paper+current",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "2302.07715": {
+  "categories": [
+   "eess.SY",
+   "kind:paper",
+   "status:current",
+   "completeness:full",
+   "kindstatus:paper+current",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:1c13661fcaa8": {
+  "categories": [
+   "kind:paper",
+   "status:current",
+   "completeness:full",
+   "kindstatus:paper+current",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:36fe900b97bc": {
+  "categories": [
+   "kind:paper",
+   "status:current",
+   "completeness:full",
+   "kindstatus:paper+current",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:475ad494687d": {
+  "categories": [
+   "kind:paper",
+   "status:current",
+   "completeness:full",
+   "kindstatus:paper+current",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:44e5e7678422": {
+  "categories": [
+   "kind:paper",
+   "status:current",
+   "completeness:full",
+   "kindstatus:paper+current",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:884acc517acd": {
+  "categories": [
+   "kind:paper",
+   "status:current",
+   "completeness:full",
+   "kindstatus:paper+current",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:da682684b180": {
+  "categories": [
+   "kind:paper",
+   "status:current",
+   "completeness:full",
+   "kindstatus:paper+current",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:be80930e409d": {
+  "categories": [
+   "kind:paper",
+   "status:current",
+   "completeness:full",
+   "kindstatus:paper+current",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:5893db5c997f": {
+  "categories": [
+   "kind:paper",
+   "status:current",
+   "completeness:full",
+   "kindstatus:paper+current",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:102762ff148b": {
+  "categories": [
+   "kind:letter",
+   "status:current",
+   "completeness:full",
+   "kindstatus:letter+current",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:1c1a92b73224": {
+  "categories": [
+   "kind:slides",
+   "status:current",
+   "completeness:full",
+   "kindstatus:slides+current",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:9adcc5121bd5": {
+  "categories": [
+   "kind:slides",
+   "status:current",
+   "completeness:full",
+   "kindstatus:slides+current",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:dcb47a114938": {
+  "categories": [
+   "kind:slides",
+   "status:current",
+   "completeness:full",
+   "kindstatus:slides+current",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:a52a42ac3822": {
+  "categories": [
+   "kind:slides",
+   "status:current",
+   "completeness:full",
+   "kindstatus:slides+current",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:321336803fc1": {
+  "categories": [
+   "kind:slides",
+   "status:current",
+   "completeness:full",
+   "kindstatus:slides+current",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:8a590e370f52": {
+  "categories": [
+   "kind:book",
+   "status:preview-only",
+   "completeness:preview",
+   "kindstatus:book+preview-only",
+   "normative:false",
+   "normstatus:false+preview-only"
+  ]
+ },
+ "local:5490e626ec16": {
+  "categories": [
+   "kind:commentary",
+   "status:preview-only",
+   "completeness:preview",
+   "kindstatus:commentary+preview-only",
+   "normative:false",
+   "normstatus:false+preview-only"
+  ]
+ },
+ "local:7e8fdc2246cc": {
+  "categories": [
+   "kind:book",
+   "status:current",
+   "completeness:full",
+   "kindstatus:book+current",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:e94916e8eba9": {
+  "categories": [
+   "kind:book",
+   "status:current",
+   "completeness:full",
+   "kindstatus:book+current",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:041e5f0c70d3": {
+  "categories": [
+   "kind:book",
+   "status:current",
+   "completeness:full",
+   "kindstatus:book+current",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:5c15efe64f30": {
+  "categories": [
+   "kind:book",
+   "status:current",
+   "completeness:full",
+   "kindstatus:book+current",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:18f76aaa8a8c": {
+  "categories": [
+   "kind:paper",
+   "status:current",
+   "completeness:full",
+   "kindstatus:paper+current",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:63091747b674": {
+  "categories": [
+   "kind:handbook",
+   "status:current",
+   "completeness:full",
+   "kindstatus:handbook+current",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:71c88a1d2bc1": {
+  "categories": [
+   "kind:guidance",
+   "status:current",
+   "completeness:full",
+   "kindstatus:guidance+current",
+   "issuer:aamva",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:0aa9a802631e": {
+  "categories": [
+   "kind:handbook",
+   "status:current",
+   "completeness:full",
+   "kindstatus:handbook+current",
+   "issuer:aiag-vda",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "2102.01564": {
+  "categories": [
+   "cs.LG",
+   "cs.AI",
+   "kind:guidance",
+   "status:current",
+   "completeness:full",
+   "kindstatus:guidance+current",
+   "issuer:university-of-york-aaip",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:ffd6b6449efc": {
+  "categories": [
+   "kind:guidance",
+   "status:current",
+   "completeness:full",
+   "kindstatus:guidance+current",
+   "issuer:avsc",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:a744d998a5b7": {
+  "categories": [
+   "kind:guidance",
+   "status:current",
+   "completeness:full",
+   "kindstatus:guidance+current",
+   "issuer:avsc",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:4de2a38fdc99": {
+  "categories": [
+   "kind:guidance",
+   "status:current",
+   "completeness:full",
+   "kindstatus:guidance+current",
+   "issuer:avsc",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:e98c1f12ff21": {
+  "categories": [
+   "kind:guidance",
+   "status:current",
+   "completeness:full",
+   "kindstatus:guidance+current",
+   "issuer:avsc",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:fff17ed80281": {
+  "categories": [
+   "kind:guidance",
+   "status:superseded",
+   "completeness:full",
+   "kindstatus:guidance+superseded",
+   "issuer:avsc",
+   "normative:false",
+   "normstatus:false+superseded"
+  ]
+ },
+ "local:4c537c7906e8": {
+  "categories": [
+   "kind:guidance",
+   "status:current",
+   "completeness:full",
+   "kindstatus:guidance+current",
+   "issuer:avsc",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:a14c3d11c6dc": {
+  "categories": [
+   "kind:report",
+   "status:current",
+   "completeness:full",
+   "kindstatus:report+current",
+   "issuer:avsc",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:b827e7b12a07": {
+  "categories": [
+   "kind:guidance",
+   "status:current",
+   "completeness:full",
+   "kindstatus:guidance+current",
+   "issuer:avsc",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:a89e28ee7840": {
+  "categories": [
+   "kind:guidance",
+   "status:current",
+   "completeness:full",
+   "kindstatus:guidance+current",
+   "issuer:avsc",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:d6d9d9a1057d": {
+  "categories": [
+   "kind:report",
+   "status:current",
+   "completeness:full",
+   "kindstatus:report+current",
+   "issuer:avsc",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:d38dea63d22f": {
+  "categories": [
+   "kind:guidance",
+   "status:current",
+   "completeness:full",
+   "kindstatus:guidance+current",
+   "issuer:avsc",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:6a33889859b2": {
+  "categories": [
+   "kind:guidance",
+   "status:current",
+   "completeness:full",
+   "kindstatus:guidance+current",
+   "issuer:avsc",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:b4287480c380": {
+  "categories": [
+   "kind:guidance",
+   "status:current",
+   "completeness:full",
+   "kindstatus:guidance+current",
+   "issuer:avsc",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:b6c10359d954": {
+  "categories": [
+   "kind:guidance",
+   "status:current",
+   "completeness:full",
+   "kindstatus:guidance+current",
+   "issuer:avsc",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:d2d322f0b779": {
+  "categories": [
+   "kind:guidance",
+   "status:current",
+   "completeness:full",
+   "kindstatus:guidance+current",
+   "issuer:avsc",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:a709c254edeb": {
+  "categories": [
+   "kind:guidance",
+   "status:current",
+   "completeness:full",
+   "kindstatus:guidance+current",
+   "issuer:avsc",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:c1c7c8354ba7": {
+  "categories": [
+   "kind:guidance",
+   "status:current",
+   "completeness:full",
+   "kindstatus:guidance+current",
+   "issuer:avsc",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:5a125ddd1975": {
+  "categories": [
+   "kind:guidance",
+   "status:current",
+   "completeness:full",
+   "kindstatus:guidance+current",
+   "issuer:avsc",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:61b72628b14f": {
+  "categories": [
+   "kind:report",
+   "status:current",
+   "completeness:full",
+   "kindstatus:report+current",
+   "issuer:avsc",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:e5b8e06e28f2": {
+  "categories": [
+   "kind:guidance",
+   "status:current",
+   "completeness:full",
+   "kindstatus:guidance+current",
+   "issuer:avsc",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:cf129f19b0b0": {
+  "categories": [
+   "kind:handbook",
+   "status:current",
+   "completeness:full",
+   "kindstatus:handbook+current",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:c9a451f83ae4": {
+  "categories": [
+   "kind:guidance",
+   "status:current",
+   "completeness:full",
+   "kindstatus:guidance+current",
+   "issuer:argevide",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:a41019a5b430": {
+  "categories": [
+   "kind:standard",
+   "status:current",
+   "completeness:full",
+   "kindstatus:standard+current",
+   "issuer:bsi",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:5d92cd1f17dd": {
+  "categories": [
+   "kind:report",
+   "status:current",
+   "completeness:full",
+   "kindstatus:report+current",
+   "issuer:columbia-accident-investigation-board",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:cf59ff8a1e69": {
+  "categories": [
+   "kind:report",
+   "status:current",
+   "completeness:full",
+   "kindstatus:report+current",
+   "issuer:congressional-research-service",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:77d354cc8af7": {
+  "categories": [
+   "kind:regulation",
+   "status:current",
+   "completeness:full",
+   "kindstatus:regulation+current",
+   "issuer:european-commission",
+   "normative:true",
+   "normstatus:true+current"
+  ]
+ },
+ "local:83d0134fadfb": {
+  "categories": [
+   "kind:guidance",
+   "status:current",
+   "completeness:full",
+   "kindstatus:guidance+current",
+   "issuer:faa",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:90e625593d47": {
+  "categories": [
+   "kind:guidance",
+   "status:current",
+   "completeness:full",
+   "kindstatus:guidance+current",
+   "issuer:faa",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:3d586d235874": {
+  "categories": [
+   "kind:handbook",
+   "status:current",
+   "completeness:full",
+   "kindstatus:handbook+current",
+   "issuer:faa",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:d5f3d058bb27": {
+  "categories": [
+   "kind:guidance",
+   "status:current",
+   "completeness:full",
+   "kindstatus:guidance+current",
+   "issuer:hse",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:caf714759f86": {
+  "categories": [
+   "kind:guidance",
+   "status:current",
+   "completeness:full",
+   "kindstatus:guidance+current",
+   "issuer:hse",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:41a462827e37": {
+  "categories": [
+   "kind:standard",
+   "status:current",
+   "completeness:full",
+   "kindstatus:standard+current",
+   "issuer:iec",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:d4ceb75c64ab": {
+  "categories": [
+   "kind:standard",
+   "status:current",
+   "completeness:full",
+   "kindstatus:standard+current",
+   "issuer:iso",
+   "normative:true",
+   "normstatus:true+current"
+  ]
+ },
+ "local:cb40d304cbca": {
+  "categories": [
+   "kind:standard",
+   "status:current",
+   "completeness:full",
+   "kindstatus:standard+current",
+   "issuer:iso",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:3d1b235596aa": {
+  "categories": [
+   "kind:standard",
+   "status:current",
+   "completeness:full",
+   "kindstatus:standard+current",
+   "issuer:iso",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:5be41d67ad16": {
+  "categories": [
+   "kind:standard",
+   "status:current",
+   "completeness:full",
+   "kindstatus:standard+current",
+   "issuer:iso",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:dbb1c4619d93": {
+  "categories": [
+   "kind:standard",
+   "status:current",
+   "completeness:full",
+   "kindstatus:standard+current",
+   "issuer:iso",
+   "normative:true",
+   "normstatus:true+current"
+  ]
+ },
+ "local:0e6dbb524dfe": {
+  "categories": [
+   "kind:standard",
+   "status:current",
+   "completeness:full",
+   "kindstatus:standard+current",
+   "issuer:iso",
+   "normative:true",
+   "normstatus:true+current"
+  ]
+ },
+ "local:2416292a3545": {
+  "categories": [
+   "kind:standard",
+   "status:current",
+   "completeness:full",
+   "kindstatus:standard+current",
+   "issuer:iso",
+   "normative:true",
+   "normstatus:true+current"
+  ]
+ },
+ "local:c35c19975827": {
+  "categories": [
+   "kind:standard",
+   "status:current",
+   "completeness:full",
+   "kindstatus:standard+current",
+   "issuer:iso",
+   "normative:true",
+   "normstatus:true+current"
+  ]
+ },
+ "local:82d7244d048b": {
+  "categories": [
+   "kind:standard",
+   "status:current",
+   "completeness:full",
+   "kindstatus:standard+current",
+   "issuer:iso",
+   "normative:true",
+   "normstatus:true+current"
+  ]
+ },
+ "local:6a34133ea7e6": {
+  "categories": [
+   "kind:standard",
+   "status:current",
+   "completeness:full",
+   "kindstatus:standard+current",
+   "issuer:iso",
+   "normative:true",
+   "normstatus:true+current"
+  ]
+ },
+ "local:1b04c71eb8c9": {
+  "categories": [
+   "kind:standard",
+   "status:current",
+   "completeness:full",
+   "kindstatus:standard+current",
+   "issuer:iso",
+   "normative:true",
+   "normstatus:true+current"
+  ]
+ },
+ "local:6cd57a8fca7a": {
+  "categories": [
+   "kind:standard",
+   "status:current",
+   "completeness:full",
+   "kindstatus:standard+current",
+   "issuer:iso",
+   "normative:true",
+   "normstatus:true+current"
+  ]
+ },
+ "local:b3903fe001ed": {
+  "categories": [
+   "kind:standard",
+   "status:current",
+   "completeness:full",
+   "kindstatus:standard+current",
+   "issuer:iso",
+   "normative:true",
+   "normstatus:true+current"
+  ]
+ },
+ "local:fe96edbde0ee": {
+  "categories": [
+   "kind:standard",
+   "status:superseded",
+   "completeness:full",
+   "kindstatus:standard+superseded",
+   "issuer:iso",
+   "normative:false",
+   "normstatus:false+superseded"
+  ]
+ },
+ "local:7bfd4a363756": {
+  "categories": [
+   "kind:standard",
+   "status:current",
+   "completeness:full",
+   "kindstatus:standard+current",
+   "issuer:iso",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:83e003999861": {
+  "categories": [
+   "kind:standard",
+   "status:preview-only",
+   "completeness:preview",
+   "kindstatus:standard+preview-only",
+   "issuer:iso",
+   "normative:true",
+   "normstatus:true+preview-only"
+  ]
+ },
+ "local:5eadc6bef925": {
+  "categories": [
+   "kind:standard",
+   "status:preview-only",
+   "completeness:preview",
+   "kindstatus:standard+preview-only",
+   "issuer:iso-iec-ieee"
+  ]
+ },
+ "local:216b19db6b0e": {
+  "categories": [
+   "kind:standard",
+   "status:preview-only",
+   "completeness:preview",
+   "kindstatus:standard+preview-only",
+   "issuer:iso-iec-ieee"
+  ]
+ },
+ "local:c0d3ca177aaf": {
+  "categories": [
+   "kind:technical-specification",
+   "status:superseded",
+   "completeness:full",
+   "kindstatus:technical-specification+superseded",
+   "issuer:iso",
+   "normative:true",
+   "normstatus:true+superseded"
+  ]
+ },
+ "local:1a5e084cb8bb": {
+  "categories": [
+   "kind:technical-specification",
+   "status:current",
+   "completeness:full",
+   "kindstatus:technical-specification+current",
+   "issuer:iso",
+   "normative:true",
+   "normstatus:true+current"
+  ]
+ },
+ "local:25d3a31a9aa1": {
+  "categories": [
+   "kind:standard",
+   "status:current",
+   "completeness:full",
+   "kindstatus:standard+current",
+   "issuer:iso-sae",
+   "normative:true",
+   "normstatus:true+current"
+  ]
+ },
+ "local:6c9b33bfde9d": {
+  "categories": [
+   "kind:technical-specification",
+   "status:preview-only",
+   "completeness:preview",
+   "kindstatus:technical-specification+preview-only",
+   "issuer:iso"
+  ]
+ },
+ "local:c22b61a61eaa": {
+  "categories": [
+   "kind:standard",
+   "status:superseded",
+   "completeness:full",
+   "kindstatus:standard+superseded",
+   "issuer:iso-iec",
+   "normative:true",
+   "normstatus:true+superseded"
+  ]
+ },
+ "local:4d27eb6fb293": {
+  "categories": [
+   "kind:standard",
+   "status:current",
+   "completeness:full",
+   "kindstatus:standard+current",
+   "issuer:iso-iec",
+   "normative:true",
+   "normstatus:true+current"
+  ]
+ },
+ "local:376d3c30684f": {
+  "categories": [
+   "kind:standard",
+   "status:current",
+   "completeness:full",
+   "kindstatus:standard+current",
+   "issuer:iso-iec-ieee",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:e10ec4c599f6": {
+  "categories": [
+   "kind:standard",
+   "status:current",
+   "completeness:full",
+   "kindstatus:standard+current",
+   "issuer:iso-iec-ieee",
+   "normative:true",
+   "normstatus:true+current"
+  ]
+ },
+ "local:7c89760c33e1": {
+  "categories": [
+   "kind:guidance",
+   "status:current",
+   "completeness:full",
+   "kindstatus:guidance+current",
+   "issuer:jama",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:97c21e9847c9": {
+  "categories": [
+   "kind:guidance",
+   "status:current",
+   "completeness:full",
+   "kindstatus:guidance+current",
+   "issuer:l3pilot",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:4332c96f2fd6": {
+  "categories": [
+   "kind:standard",
+   "status:current",
+   "completeness:full",
+   "kindstatus:standard+current",
+   "issuer:us-department-of-defense",
+   "normative:true",
+   "normstatus:true+current"
+  ]
+ },
+ "local:54d6dfdea249": {
+  "categories": [
+   "kind:report",
+   "status:current",
+   "completeness:full",
+   "kindstatus:report+current",
+   "issuer:horiba-mira",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:e53772398dff": {
+  "categories": [
+   "kind:guidance",
+   "status:current",
+   "completeness:full",
+   "kindstatus:guidance+current",
+   "issuer:misra",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:1742c8d5b998": {
+  "categories": [
+   "kind:handbook",
+   "status:current",
+   "completeness:full",
+   "kindstatus:handbook+current",
+   "issuer:nasa",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:a6b537ff5738": {
+  "categories": [
+   "kind:handbook",
+   "status:current",
+   "completeness:full",
+   "kindstatus:handbook+current",
+   "issuer:nasa",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:a391e0d13fa8": {
+  "categories": [
+   "kind:handbook",
+   "status:current",
+   "completeness:full",
+   "kindstatus:handbook+current",
+   "issuer:nasa",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:46d6107b895f": {
+  "categories": [
+   "kind:handbook",
+   "status:current",
+   "completeness:full",
+   "kindstatus:handbook+current",
+   "issuer:nasa",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:5bf506972f70": {
+  "categories": [
+   "kind:handbook",
+   "status:current",
+   "completeness:full",
+   "kindstatus:handbook+current",
+   "issuer:nasa",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:8eeb4887a4dc": {
+  "categories": [
+   "kind:handbook",
+   "status:current",
+   "completeness:full",
+   "kindstatus:handbook+current",
+   "issuer:nasa",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:64f9538c2b0f": {
+  "categories": [
+   "kind:report",
+   "status:current",
+   "completeness:full",
+   "kindstatus:report+current",
+   "issuer:nhtsa",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:271a2d51c4f2": {
+  "categories": [
+   "kind:regulation",
+   "status:withdrawn",
+   "completeness:full",
+   "kindstatus:regulation+withdrawn",
+   "issuer:nhtsa",
+   "normative:false",
+   "normstatus:false+withdrawn"
+  ]
+ },
+ "local:a9c7b643276b": {
+  "categories": [
+   "kind:regulation",
+   "status:current",
+   "completeness:full",
+   "kindstatus:regulation+current",
+   "issuer:nhtsa",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:e1cfbb5bd7bc": {
+  "categories": [
+   "kind:guidance",
+   "status:current",
+   "completeness:full",
+   "kindstatus:guidance+current",
+   "issuer:nhtsa",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:23bd7524f4d5": {
+  "categories": [
+   "kind:report",
+   "status:current",
+   "completeness:full",
+   "kindstatus:report+current",
+   "issuer:nhtsa",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:e602ffa4f1cc": {
+  "categories": [
+   "kind:regulation",
+   "status:current",
+   "completeness:full",
+   "kindstatus:regulation+current",
+   "issuer:nhtsa",
+   "normative:true",
+   "normstatus:true+current"
+  ]
+ },
+ "local:0bba4df6673d": {
+  "categories": [
+   "kind:handbook",
+   "status:current",
+   "completeness:full",
+   "kindstatus:handbook+current",
+   "issuer:us-nuclear-regulatory-commission",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:b468bf45f27c": {
+  "categories": [
+   "kind:report",
+   "status:current",
+   "completeness:preview",
+   "kindstatus:report+current",
+   "issuer:pegasus-project",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:1d27d7fac441": {
+  "categories": [
+   "kind:report",
+   "status:current",
+   "completeness:full",
+   "kindstatus:report+current",
+   "issuer:rand",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:c91d753ec3db": {
+  "categories": [
+   "kind:report",
+   "status:current",
+   "completeness:full",
+   "kindstatus:report+current",
+   "issuer:rand",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:1493d1f836f3": {
+  "categories": [
+   "kind:report",
+   "status:current",
+   "completeness:full",
+   "kindstatus:report+current",
+   "issuer:rand",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:d42337eba862": {
+  "categories": [
+   "kind:standard",
+   "status:current",
+   "completeness:full",
+   "kindstatus:standard+current",
+   "issuer:sae",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:0147e45dfd6e": {
+  "categories": [
+   "kind:report",
+   "status:current",
+   "completeness:full",
+   "kindstatus:report+current",
+   "issuer:sunrise-project",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:23f46dde097b": {
+  "categories": [
+   "kind:report",
+   "status:current",
+   "completeness:full",
+   "kindstatus:report+current",
+   "issuer:safad-consortium",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:0bc74d2bea76": {
+  "categories": [
+   "kind:standard",
+   "status:current",
+   "completeness:full",
+   "kindstatus:standard+current",
+   "issuer:uk-ministry-of-defence",
+   "normative:true",
+   "normstatus:true+current"
+  ]
+ },
+ "local:c3c5f9de20cc": {
+  "categories": [
+   "kind:standard",
+   "status:draft",
+   "completeness:full",
+   "kindstatus:standard+draft",
+   "issuer:ul",
+   "normative:true",
+   "normstatus:true+draft"
+  ]
+ },
+ "local:9def83274286": {
+  "categories": [
+   "kind:regulation",
+   "status:current",
+   "completeness:full",
+   "kindstatus:regulation+current",
+   "issuer:unece",
+   "normative:true",
+   "normstatus:true+current"
+  ]
+ },
+ "local:3d0e31c34a0a": {
+  "categories": [
+   "kind:report",
+   "status:current",
+   "completeness:full",
+   "kindstatus:report+current",
+   "issuer:usdot",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:33ef25a38c1c": {
+  "categories": [
+   "kind:guidance",
+   "status:current",
+   "completeness:full",
+   "kindstatus:guidance+current",
+   "issuer:usdot",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ },
+ "local:b1d1917f9cf4": {
+  "categories": [
+   "kind:guidance",
+   "status:current",
+   "completeness:full",
+   "kindstatus:guidance+current",
+   "issuer:zenzic",
+   "normative:false",
+   "normstatus:false+current"
+  ]
+ }
+}

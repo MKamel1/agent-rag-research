@@ -1,0 +1,4043 @@
+{
+ "meta": {
+  "schema": "standards_metadata/1",
+  "reviewed": "2026-11-10",
+  "source_db": "/home/omar/ai-projects/research-system-rag-standards/data/papers.db (read-only)",
+  "vocabularies": {
+   "kind": [
+    "standard",
+    "technical-specification",
+    "regulation",
+    "guidance",
+    "handbook",
+    "report",
+    "book",
+    "paper",
+    "slides",
+    "commentary",
+    "letter"
+   ],
+   "status": [
+    "current",
+    "superseded",
+    "draft",
+    "withdrawn",
+    "preview-only"
+   ],
+   "completeness": [
+    "full",
+    "preview"
+   ],
+   "year_basis": [
+    "document",
+    "cross-reference",
+    "arxiv-date"
+   ]
+  },
+  "rules": {
+   "status": "'current' means: the latest edition of that document held in this corpus and nothing in the corpus says it is superseded, draft or withdrawn. It does NOT assert the document is still in force in the world (that cannot be established from the document text).",
+   "normative": "true = the document is the issuing body's own text and states requirements with 'shall' (boilerplate 'shall not be held responsible' etc. excluded) and does not declare itself informative/voluntary. false = guidance, handbooks, best practices, reports, papers, slides, books, vocabulary-only or self-declared informative parts, and proposed rules never in force. null = held text is front matter only, so it cannot be tested. A 'shall' in a handbook or best practice is not enough: handbooks and best practices are false unless they say compliance is required.",
+   "issuer": "The issuing/publishing body. null for individually authored papers, slides, letters and books (publisher is not treated as issuer).",
+   "edition_year": "From the document's own text (or, flagged by year_basis, a corpus document that cites it, or the arXiv date for the 5 arXiv papers). Never the DB published placeholder. null when not established; year_hint_unverified then carries a title/draft claim that the held text does not confirm.",
+   "supersedes_external": "Documents named in this document's own text as superseded/cancelled that are not held in the corpus.",
+   "evidence": "chunk_id + quote; the quote is verbatim from the chunk after normalisation (remove '|' and runs of '-', private-use glyphs; collapse whitespace). Some quotes come from another document that cites this one (chunk_id says which)."
+  }
+ },
+ "documents": [
+  {
+   "paper_id": "local:9f51671af209",
+   "title": "A Safety Standard Approach for Fully Autonomous Vehicles - UL 4600 (Koopman et al., WAISE 2019)",
+   "kind": "paper",
+   "issuer": null,
+   "designation": null,
+   "edition_label": null,
+   "edition_year": 2019,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:9f51671af209:c2",
+     "quote": "tually other related domains. WAISE 2019 Preprint. Approved for public release."
+    },
+    {
+     "chunk_id": "local:9f51671af209:c2",
+     "quote": "The strategy described is the basis of the draft “UL 4600 Standard for Safety for the Evaluation"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2019-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "issuer": "individually authored work (paper/slides/letter/book): no issuing body",
+    "designation": "no designation printed (non-standard publication)",
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": "Position paper about the then-draft UL 4600; not the standard text."
+  },
+  {
+   "paper_id": "2004.10474",
+   "title": "Bloomfield and Rushby — Assurance 2.0, A Manifesto",
+   "kind": "paper",
+   "issuer": null,
+   "designation": null,
+   "edition_label": null,
+   "edition_year": 2020,
+   "year_basis": "arxiv-date",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "2004.10474:c0",
+     "quote": "Assurance 2.0: A Manifesto Assurance 2.0: A Manifesto Ro"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2020-04-22",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "issuer": "individually authored work (paper/slides/letter/book): no issuing body",
+    "designation": "no designation printed (non-standard publication)",
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "2103.05440",
+   "title": "Krisper — Problems with Risk Matrices Using Ordinal Scales",
+   "kind": "paper",
+   "issuer": null,
+   "designation": null,
+   "edition_label": null,
+   "edition_year": 2021,
+   "year_basis": "arxiv-date",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "2103.05440:c0",
+     "quote": "Problems with Risk Matrices Using Ordinal Scales Problems with Risk Matrices U"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2021-03-07",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "issuer": "individually authored work (paper/slides/letter/book): no issuing body",
+    "designation": "no designation printed (non-standard publication)",
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "1708.06374",
+   "title": "On a Formal Model of Safe and Scalable Self-driving Cars (RSS, Mobileye)",
+   "kind": "paper",
+   "issuer": null,
+   "designation": null,
+   "edition_label": null,
+   "edition_year": 2017,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "1708.06374:c0",
+     "quote": "ing Cars Shai Shalev-Shwartz, Shaked Shammah, Amnon Shashua Mobileye, 2017"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2017-08-21",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "issuer": "individually authored work (paper/slides/letter/book): no issuing body",
+    "designation": "no designation printed (non-standard publication)",
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "2302.07715",
+   "title": "Salem et al — Risk Management Core, Toward an Explicit Representation of Risk in Automated Driving (IEEE Access 2024)",
+   "kind": "paper",
+   "issuer": null,
+   "designation": null,
+   "edition_label": null,
+   "edition_year": 2024,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "2302.07715:c0",
+     "quote": "Driving IEEE copyright notice 2024 IEEE. Personal use of this material is permitted. Permission from"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2023-02-15",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "issuer": "individually authored work (paper/slides/letter/book): no issuing body",
+    "designation": "no designation printed (non-standard publication)",
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": "DB published date 2023-02-15 is the arXiv date; the held text is the 2024 IEEE Access version."
+  },
+  {
+   "paper_id": "local:1c13661fcaa8",
+   "title": "Kelly — A Systematic Approach to Safety Case Management (SAE 2004)",
+   "kind": "paper",
+   "issuer": null,
+   "designation": null,
+   "edition_label": null,
+   "edition_year": 2003,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:1c13661fcaa8:c0",
+     "quote": "Kelly University of York, UK Copyright © 2003 SAE International"
+    }
+   ],
+   "title_issue": "Title says 'SAE 2004'; the only year in the held text is 'Copyright (c) 2003 SAE International'.",
+   "db_doc_type": "paper",
+   "db_published": "2003-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "issuer": "individually authored work (paper/slides/letter/book): no issuing body",
+    "designation": "no designation printed (non-standard publication)",
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "local:36fe900b97bc",
+   "title": "Koopman and Wagner — Positive Trust Balance for Self-Driving Car Deployment (WAISE 2020)",
+   "kind": "paper",
+   "issuer": null,
+   "designation": null,
+   "edition_label": null,
+   "edition_year": 2020,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:36fe900b97bc:c0",
+     "quote": "\\*\\*\\*\\*\\* PREPRINT / WAISE 2020 \\*\\*\\*\\*\\* \\*\\*\\*\\*\\* PREPRIN"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2020-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "issuer": "individually authored work (paper/slides/letter/book): no issuing body",
+    "designation": "no designation printed (non-standard publication)",
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "local:475ad494687d",
+   "title": "Koopman and Widen — Breaking the Tyranny of Net Risk Metrics for Automated Vehicle Safety (SCSC eJournal 2024)",
+   "kind": "paper",
+   "issuer": null,
+   "designation": null,
+   "edition_label": null,
+   "edition_year": null,
+   "year_basis": null,
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:475ad494687d:c0",
+     "quote": "Breaking the Tyranny of Net Risk Metrics for Automated Vehicle Safety Philip Koopman"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2024-01-01",
+   "year_hint_unverified": 2024,
+   "null_reasons": {
+    "edition_year": "held text carries no publication date or venue line; only the DB title says 'SCSC eJournal 2024'",
+    "issuer": "individually authored work (paper/slides/letter/book): no issuing body",
+    "designation": "no designation printed (non-standard publication)",
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "local:44e5e7678422",
+   "title": "Koopman and Widen — Redefining Safety for Autonomous Vehicles",
+   "kind": "paper",
+   "issuer": null,
+   "designation": null,
+   "edition_label": null,
+   "edition_year": null,
+   "year_basis": null,
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:44e5e7678422:c0",
+     "quote": "afety for Autonomous Vehicles Redefining Safety for Autonomous Vehicles Philip Koopman <sup>[0000-0003-1658-2386]</s"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2024-01-01",
+   "year_hint_unverified": 2024,
+   "null_reasons": {
+    "edition_year": "held text carries no publication date; the draft's 2024 is not in the document",
+    "issuer": "individually authored work (paper/slides/letter/book): no issuing body",
+    "designation": "no designation printed (non-standard publication)",
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "local:884acc517acd",
+   "title": "Koopman, Kane and Black — Credible Autonomy Safety Argumentation (SSS 2019)",
+   "kind": "paper",
+   "issuer": null,
+   "designation": null,
+   "edition_label": null,
+   "edition_year": null,
+   "year_basis": null,
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:884acc517acd:c0",
+     "quote": "Autonomy Safety Argumentation Credible Autonomy Safety Argumentation Philip Koopman, Aaron Kane, Jen Black Carneg"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2019-01-01",
+   "year_hint_unverified": 2019,
+   "null_reasons": {
+    "edition_year": "held text carries no date or venue line; only the DB title says 'SSS 2019'",
+    "issuer": "individually authored work (paper/slides/letter/book): no issuing body",
+    "designation": "no designation printed (non-standard publication)",
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "local:da682684b180",
+   "title": "Paper — Driver Assistance Systems - Analysis, Tests and the Safety Case, ISO 26262 and ISO PAS 21448 (Kirovskii and Gorelov, IOP 2019)",
+   "kind": "paper",
+   "issuer": null,
+   "designation": null,
+   "edition_label": null,
+   "edition_year": 2019,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:da682684b180:c0",
+     "quote": "O M Kirovskii and V A Gorelov 2019 IOP Conf. Ser.: Mater. Sci. Eng. 534 012019 View the article online for u"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2019-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "issuer": "individually authored work (paper/slides/letter/book): no issuing body",
+    "designation": "no designation printed (non-standard publication)",
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "local:be80930e409d",
+   "title": "Wachenfeld and Winner — The Release of Autonomous Vehicles (Springer 2016, chapter 21, open access)",
+   "kind": "paper",
+   "issuer": null,
+   "designation": null,
+   "edition_label": null,
+   "edition_year": null,
+   "year_basis": null,
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:be80930e409d:c76",
+     "quote": "Open Access This chapter is distributed under the terms of the Creative Commons"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2007-01-01",
+   "year_hint_unverified": 2016,
+   "null_reasons": {
+    "edition_year": "held text has no publication year; only the DB title says 'Springer 2016'",
+    "issuer": "individually authored work (paper/slides/letter/book): no issuing body",
+    "designation": "no designation printed (non-standard publication)",
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": "DB published value 2007-01-01 is a placeholder that matches nothing in the text (the chapter cites later work)."
+  },
+  {
+   "paper_id": "local:5893db5c997f",
+   "title": "UL 4600 - What to Include in an Autonomous Vehicle Safety Case (Koopman)",
+   "kind": "paper",
+   "issuer": null,
+   "designation": null,
+   "edition_label": null,
+   "edition_year": null,
+   "year_basis": null,
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:5893db5c997f:c0",
+     "quote": "Philip Koopman , Carnegie Mellon University UL 4600 provides an umbrella"
+    },
+    {
+     "chunk_id": "local:5893db5c997f:c6",
+     "quote": "ards to emergency responders. Issued in April 2020, UL 4600 fills these gaps by providing a comprehensive"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2023-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "edition_year": "magazine-style article with no date line in the held text; c17 says an update 'is being prepared for release in 2023', so it was written before 2023",
+    "issuer": "individually authored work (paper/slides/letter/book): no issuing body",
+    "designation": "no designation printed (non-standard publication)",
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": "A magazine-style article ABOUT UL 4600, not a UL document (draft had issuer=UL, kind=commentary)."
+  },
+  {
+   "paper_id": "local:102762ff148b",
+   "title": "Koopman — Letter on UL 4600 (2021-07-01)",
+   "kind": "letter",
+   "issuer": null,
+   "designation": null,
+   "edition_label": null,
+   "edition_year": 2021,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:102762ff148b:c0",
+     "quote": "July 2, 2021 Chairman Jerry Litt Washington State Transportati"
+    },
+    {
+     "chunk_id": "local:102762ff148b:c1",
+     "quote": "application of ANSI/UL 4600. I am a voting member of the Standards Technical Panel (STP) for ANSI/UL 4600. I was"
+    }
+   ],
+   "title_issue": "Title says 2021-07-01; the letter is dated 'July 2, 2021'.",
+   "db_doc_type": "paper",
+   "db_published": "2021-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "issuer": "individually authored work (paper/slides/letter/book): no issuing body",
+    "designation": "no designation printed (non-standard publication)",
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "local:1c1a92b73224",
+   "title": "Key Ideas - UL 4600 Safety Standard for Autonomous Vehicles (Koopman lecture slides)",
+   "kind": "slides",
+   "issuer": null,
+   "designation": null,
+   "edition_label": null,
+   "edition_year": null,
+   "year_basis": null,
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:1c1a92b73224:c2",
+     "quote": "UL 4600 standard for AV safety cases Fully autonomous vehicles Issued April 2020 How to contribute to the next version"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2026-10-27",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "edition_year": "undated deck; describes UL 4600 as 'Issued April 2020' with a call to contribute to the next version, i.e. at or after 2020-04 and before the 3rd-edition deck local:9adcc5121bd5",
+    "issuer": "individually authored work (paper/slides/letter/book): no issuing body",
+    "designation": "no designation printed (non-standard publication)",
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": "Earlier deck of the same lineage as local:9adcc5121bd5 (same 'Key Ideas: UL 4600' title); not linked as superseded because no document text says so."
+  },
+  {
+   "paper_id": "local:9adcc5121bd5",
+   "title": "Koopman — UL 4600 third edition update, slides (2023-06-19)",
+   "kind": "slides",
+   "issuer": null,
+   "designation": null,
+   "edition_label": null,
+   "edition_year": 2023,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:9adcc5121bd5:c1",
+     "quote": "June 2023 http://koopman.us/ UL 4600 standard for AV safety cases Automated driving (SAE Levels 3-5) First published April 2020 3rd Edition published March 2023"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2023-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "issuer": "individually authored work (paper/slides/letter/book): no issuing body",
+    "designation": "no designation printed (non-standard publication)",
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "local:dcb47a114938",
+   "title": "Koopman — L131 How Safe Is Safe Enough, slides (2022)",
+   "kind": "slides",
+   "issuer": null,
+   "designation": null,
+   "edition_label": null,
+   "edition_year": 2022,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:dcb47a114938:c0",
+     "quote": "ough for Autonomous Vehicles? November 2022 www. Koopman.us Carnegie Mellon University Risk management frameworks Wh"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2022-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "issuer": "individually authored work (paper/slides/letter/book): no issuing body",
+    "designation": "no designation printed (non-standard publication)",
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "local:a52a42ac3822",
+   "title": "Koopman — L144 AV Safety and Net Risk, slides",
+   "kind": "slides",
+   "issuer": null,
+   "designation": null,
+   "edition_label": null,
+   "edition_year": 2024,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:a52a42ac3822:c0",
+     "quote": "le Safety: More Than Net Risk Carnegie Mellon University May 7, 2024 www. Koopman.us"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2024-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "issuer": "individually authored work (paper/slides/letter/book): no issuing body",
+    "designation": "no designation printed (non-standard publication)",
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "local:321336803fc1",
+   "title": "Koopman — L152 Understanding AV Safety, slides (2024-10)",
+   "kind": "slides",
+   "issuer": null,
+   "designation": null,
+   "edition_label": null,
+   "edition_year": 2024,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:321336803fc1:c1",
+     "quote": "Understanding Self-Driving Vehicle Safety October 2024 PhilKoopman. Substack.com"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2024-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "issuer": "individually authored work (paper/slides/letter/book): no issuing body",
+    "designation": "no designation printed (non-standard publication)",
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "local:8a590e370f52",
+   "title": "Koopman — How Safe Is Safe Enough, free book preview (2022)",
+   "kind": "book",
+   "issuer": null,
+   "designation": null,
+   "edition_label": "First Edition (Version 1.0.00)",
+   "edition_year": 2022,
+   "year_basis": "document",
+   "status": "preview-only",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "preview",
+   "evidence": [
+    {
+     "chunk_id": "local:8a590e370f52:c0",
+     "quote": "PREVIEW For Cindy, Moira, Brynn, and Ben. First Edition, 2022"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2026-11-03",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "issuer": "individually authored work (paper/slides/letter/book): no issuing body",
+    "designation": "no designation printed (non-standard publication)"
+   },
+   "notes": "Free preview of the book: contents, preface and introduction only (23 top-level sections, 62 chunks)."
+  },
+  {
+   "paper_id": "local:5490e626ec16",
+   "title": "Koopman — The UL 4600 Guidebook, free sample (2022)",
+   "kind": "commentary",
+   "issuer": null,
+   "designation": null,
+   "edition_label": "First Edition (Version 1.0.00)",
+   "edition_year": 2022,
+   "year_basis": "document",
+   "status": "preview-only",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "preview",
+   "evidence": [
+    {
+     "chunk_id": "local:5490e626ec16:c1",
+     "quote": "First Edition, 2022. (Version 1.0.00) Copyright © 2022 by Philip Koopman"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2026-11-03",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "issuer": "individually authored work (paper/slides/letter/book): no issuing body",
+    "designation": "no designation printed (non-standard publication)"
+   },
+   "notes": "Free sample of a book interpreting UL 4600: only Contents, Preface and chapter 1 are held (5 sections, 23 chunks). Not the standard."
+  },
+  {
+   "paper_id": "local:7e8fdc2246cc",
+   "title": "Leveson — Engineering a Safer World, Systems Thinking Applied to Safety (MIT Press 2011, open access)",
+   "kind": "book",
+   "issuer": null,
+   "designation": null,
+   "edition_label": null,
+   "edition_year": 2011,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:7e8fdc2246cc:c1",
+     "quote": "Engineering a Safer World © 2011 Massachusetts Institute of Technology All rights reserved. No part"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "book",
+   "db_published": "2026-11-03",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "issuer": "individually authored work (paper/slides/letter/book): no issuing body",
+    "designation": "no designation printed (non-standard publication)",
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "local:e94916e8eba9",
+   "title": "Rausand and Haugen — Risk Assessment, Theory, Methods, and Applications, 2nd ed. (Wiley 2020)",
+   "kind": "book",
+   "issuer": null,
+   "designation": null,
+   "edition_label": "Second Edition",
+   "edition_year": 2020,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:e94916e8eba9:c1",
+     "quote": "in Rausand Stein Haugen WILEY This edition first published 2020 © 2020 John Wiley & Sons, Inc"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "book",
+   "db_published": "2026-11-03",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "issuer": "individually authored work (paper/slides/letter/book): no issuing body",
+    "designation": "no designation printed (non-standard publication)"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "local:041e5f0c70d3",
+   "title": "Toulmin, Rieke and Janik — An Introduction to Reasoning, 2nd ed. (Macmillan 1984, OCR scan)",
+   "kind": "book",
+   "issuer": null,
+   "designation": null,
+   "edition_label": "Second Edition",
+   "edition_year": 1984,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:041e5f0c70d3:c0",
+     "quote": "An introduction to reasoning Second Edition Stephen Toulmin Richard Rieke Allan Janik Macmillan Publishing Co., Inc"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "book",
+   "db_published": "2026-11-03",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "issuer": "individually authored work (paper/slides/letter/book): no issuing body",
+    "designation": "no designation printed (non-standard publication)"
+   },
+   "notes": "OCR scan (per title); retrieval quality of the text not assessed here."
+  },
+  {
+   "paper_id": "local:5c15efe64f30",
+   "title": "Book — Autonomous Vehicles and Civil Liability (Steege et al, Springer 2024)",
+   "kind": "book",
+   "issuer": null,
+   "designation": null,
+   "edition_label": null,
+   "edition_year": 2024,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:5c15efe64f30:c2",
+     "quote": "under exclusive license to Springer Nature Switzerland AG 2024"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "book",
+   "db_published": "2026-10-31",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "issuer": "individually authored work (paper/slides/letter/book): no issuing body",
+    "designation": "no designation printed (non-standard publication)",
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "local:18f76aaa8a8c",
+   "title": "Holloway and Wasson — A Primer on Argument Assessment (Version 1.0, 2021, NASA NTRS)",
+   "kind": "paper",
+   "issuer": null,
+   "designation": null,
+   "edition_label": "Version 1.0",
+   "edition_year": 2021,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:18f76aaa8a8c:c2",
+     "quote": "t Assessment Revision History Version Date Remarks 1.0 2021-10-20 First published version."
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2026-11-03",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "issuer": "individually authored work (paper/slides/letter/book): no issuing body",
+    "designation": "no designation printed (non-standard publication)"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "local:63091747b674",
+   "title": "STPA Handbook (Leveson and Thomas, 2018)",
+   "kind": "handbook",
+   "issuer": null,
+   "designation": null,
+   "edition_label": null,
+   "edition_year": 2018,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:63091747b674:c0",
+     "quote": "STPA HANDBOOK STPA HANDBOOK NANCY G. LEVESON JOHN P. THOMAS MARCH 2018 This handbook is intended for"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2018-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "issuer": "individually authored handbook; no issuing body printed",
+    "designation": "no designation printed (non-standard publication)",
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "local:71c88a1d2bc1",
+   "title": "AAMVA Guidelines for Regulating Vehicles with Automated Driving Systems (Edition 4)",
+   "kind": "guidance",
+   "issuer": "AAMVA",
+   "designation": null,
+   "edition_label": "Edition 4",
+   "edition_year": 2024,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:71c88a1d2bc1:c2",
+     "quote": "ith Automated Driving Systems Edition 4 March 2024 AUTOMATED VEHICLES SUBCOMMITT"
+    },
+    {
+     "chunk_id": "local:71c88a1d2bc1:c34",
+     "quote": "2104 Chapter 1 Introduction > 1.5 Recommendations Are Voluntary 1.5 Recommendations Are Volun"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2024-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "designation": "no designation printed (non-standard publication)"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "local:0aa9a802631e",
+   "title": "AIAG-VDA FMEA Handbook (2019) — Failure Mode and Effects Analysis, DFMEA PFMEA FMEA-MSR",
+   "kind": "handbook",
+   "issuer": "AIAG & VDA",
+   "designation": null,
+   "edition_label": "First Edition",
+   "edition_year": 2019,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:0aa9a802631e:c0",
+     "quote": "ects Analysis – FMEA Handbook First Edition Issued June 2019 Copyright 2019"
+    },
+    {
+     "chunk_id": "local:0aa9a802631e:c1",
+     "quote": "ith its scope and provisions. An AlAG publication is intended as a guide to aid the manufacturer, the"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2026-11-02",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "designation": "no designation printed (non-standard publication)"
+   },
+   "notes": "DB published 2026-11-02 is the ingest date, not the document date."
+  },
+  {
+   "paper_id": "2102.01564",
+   "title": "AMLAS — Guidance on the Assurance of Machine Learning in Autonomous Systems (Version 1, 2021)",
+   "kind": "guidance",
+   "issuer": "University of York (AAIP)",
+   "designation": null,
+   "edition_label": "Version 1",
+   "edition_year": 2021,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "2102.01564:c0",
+     "quote": "firstname.lastname@york.ac.uk Version 1, February 2021 Abstract. Machine Learning (M"
+    },
+    {
+     "chunk_id": "2102.01564:c12",
+     "quote": "the use of ”shall” indicates a required element of the guidance"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2021-02-02",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "designation": "no designation printed (non-standard publication)"
+   },
+   "notes": "Uses 'shall' (110x) only to mark required elements of its own method, not as a regulator or standards body."
+  },
+  {
+   "paper_id": "local:ffd6b6449efc",
+   "title": "AVSC00001 Best Practice for In-Vehicle Fallback Test Driver Selection, Training, and Oversight (2019-11)",
+   "kind": "guidance",
+   "issuer": "AVSC",
+   "designation": "AVSC00001201911",
+   "edition_label": null,
+   "edition_year": 2019,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:ffd6b6449efc:c0",
+     "quote": "ITC Automated Vehicle Safety AVSC00001201911 Consortium™M Best Practice Issued 2019-11 AVSC Best Practice for In-Veh"
+    },
+    {
+     "chunk_id": "local:ffd6b6449efc:c3",
+     "quote": "use of this best practice is entirely voluntary and its suitability for any p"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2019-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "local:a744d998a5b7",
+   "title": "AVSC00002 Best Practice for Describing an Operational Design Domain (2020-04)",
+   "kind": "guidance",
+   "issuer": "AVSC",
+   "designation": "AVSC00002202004",
+   "edition_label": null,
+   "edition_year": 2020,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:a744d998a5b7:c0",
+     "quote": "fetyConsortium™ Best Practice AVSC00002202004 Issued 2020-04 AVSC Best Practice for Descri"
+    },
+    {
+     "chunk_id": "local:a744d998a5b7:c0",
+     "quote": "use of this best practice is entirely voluntary and its suitability for any p"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2020-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "local:4de2a38fdc99",
+   "title": "AVSC00003 Best Practice for Passenger-Initiated Emergency Trip Interruption (2020-06)",
+   "kind": "guidance",
+   "issuer": "AVSC",
+   "designation": "AVSC00003202006",
+   "edition_label": null,
+   "edition_year": 2020,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:4de2a38fdc99:c0",
+     "quote": "ety Consortium™ Best Practice AVSC00003202006 Issued 2020-06 AVSC Best Practice for Passen"
+    },
+    {
+     "chunk_id": "local:4de2a38fdc99:c3",
+     "quote": "use of this best practice is entirely voluntary and its suitability for any p"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2020-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "local:e98c1f12ff21",
+   "title": "AVSC00004 Best Practice for Data Collection for ADS-DVs to Support Event Analysis (2020-09)",
+   "kind": "guidance",
+   "issuer": "AVSC",
+   "designation": "AVSC00004202009",
+   "edition_label": null,
+   "edition_year": 2020,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:e98c1f12ff21:c0",
+     "quote": "ty Consortium™M Best Practice AVSC00004202009 Issued 2020-09 Superseding System-Dedicated"
+    },
+    {
+     "chunk_id": "local:e98c1f12ff21:c2",
+     "quote": "use of this best practice is entirely voluntary and its suitability for any p"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2020-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": "Cover reads 'Issued 2020-09 Superseding' but the superseded document name is lost in extraction, so no supersedes link is asserted."
+  },
+  {
+   "paper_id": "local:fff17ed80281",
+   "title": "AVSC00005 Best Practice for First Responder Interactions with Fleet-Managed ADS-DVs (2020-12)",
+   "kind": "guidance",
+   "issuer": "AVSC",
+   "designation": "AVSC00005202012",
+   "edition_label": null,
+   "edition_year": 2020,
+   "year_basis": "document",
+   "status": "superseded",
+   "supersedes": [],
+   "superseded_by": [
+    "local:b6c10359d954"
+   ],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:fff17ed80281:c13",
+     "quote": "Dedicated Vehicles (ADS-DVs) (AVSC00005202012) recommends a common approach"
+    },
+    {
+     "chunk_id": "local:fff17ed80281:c7",
+     "quote": "use of this best practice is entirely voluntary and its suitability for any p"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2020-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "local:4c537c7906e8",
+   "title": "AVSC00006 Best Practice for Metrics and Methods for Assessing Safety Performance of ADS",
+   "kind": "guidance",
+   "issuer": "AVSC",
+   "designation": "AVSC00006202103",
+   "edition_label": null,
+   "edition_year": 2021,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:4c537c7906e8:c1",
+     "quote": "Citation: Automated Vehicle Safety Consortium. 2021. Best Practice for Metrics and Methods"
+    },
+    {
+     "chunk_id": "local:4c537c7906e8:c6",
+     "quote": "use of this best practice is entirely voluntary and its suitability for any p"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2021-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": "Designation/month from other corpus documents citing it as AVSC00006202103 (e.g. local:a14c3d11c6dc)."
+  },
+  {
+   "paper_id": "local:a14c3d11c6dc",
+   "title": "AVSC00007 Information Report for Adapting a Safety Management System (SMS) for ADS Level 4 and 5 Testing",
+   "kind": "report",
+   "issuer": "AVSC",
+   "designation": "AVSC00007202107",
+   "edition_label": null,
+   "edition_year": 2021,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:a14c3d11c6dc:c1",
+     "quote": "Citation: Automated Vehicle Safety Consortium. 2021. Information Report for Adapting"
+    },
+    {
+     "chunk_id": "local:a14c3d11c6dc:c5",
+     "quote": "of this information report is entirely voluntary and its suitability for any p"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2021-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": "Designation/month from other corpus documents citing it as AVSC00007202107."
+  },
+  {
+   "paper_id": "local:b827e7b12a07",
+   "title": "AVSC00008 Best Practice for Evaluation of Behavioral Competencies for ADS-DVs",
+   "kind": "guidance",
+   "issuer": "AVSC",
+   "designation": "AVSC00008202111",
+   "edition_label": null,
+   "edition_year": 2021,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:b827e7b12a07:c9",
+     "quote": "-Dedicated Vehicles (ADS-DV) (AVSC00008202111) describes an elemental set o"
+    },
+    {
+     "chunk_id": "local:b827e7b12a07:c5",
+     "quote": "use of this best practice is entirely voluntary and its suitability for any p"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2021-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": "Designation/month from other corpus documents citing it as AVSC00008202111."
+  },
+  {
+   "paper_id": "local:a89e28ee7840",
+   "title": "AVSC00009 Best Practice for Interactions Between ADS-DVs and Vulnerable Road Users",
+   "kind": "guidance",
+   "issuer": "AVSC",
+   "designation": "AVSC00009202208",
+   "edition_label": null,
+   "edition_year": 2022,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:a89e28ee7840:c0",
+     "quote": "ety Consortium™ Best Practice AVSC00009202208 Issued 2022-08 Citation: Automated Vehicle S"
+    },
+    {
+     "chunk_id": "local:a89e28ee7840:c3",
+     "quote": "use of this best practice is entirely voluntary and its suitability for any p"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2022-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "local:d6d9d9a1057d",
+   "title": "AVSC00010 Information Report for Change Risk Management",
+   "kind": "report",
+   "issuer": "AVSC",
+   "designation": "AVSC00010202304",
+   "edition_label": null,
+   "edition_year": 2023,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:d6d9d9a1057d:c0",
+     "quote": "AVSC00010202304 Automated Vehicle Safety Consortium™ Information Report Issued 2023-04"
+    },
+    {
+     "chunk_id": "local:d6d9d9a1057d:c3",
+     "quote": "of this information report is entirely voluntary and its suitability for any p"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2023-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "local:d38dea63d22f",
+   "title": "AVSC00011 Best Practice for Continuous Monitoring and Improvement after Deployment",
+   "kind": "guidance",
+   "issuer": "AVSC",
+   "designation": "AVSC00011202307",
+   "edition_label": null,
+   "edition_year": 2023,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:d38dea63d22f:c0",
+     "quote": "fety Consortium™Best Practice AVSC00011202307 Issued 2023-07 Rationale Citation: Automated"
+    },
+    {
+     "chunk_id": "local:d38dea63d22f:c2",
+     "quote": "use of this best practice is entirely voluntary and its suitability for any p"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2023-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "local:6a33889859b2",
+   "title": "AVSC00012 Best Practice for Developing ADS Safety Performance Thresholds Based on Human Driving Behavior",
+   "kind": "guidance",
+   "issuer": "AVSC",
+   "designation": "AVSC00012202308",
+   "edition_label": null,
+   "edition_year": 2023,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:6a33889859b2:c0",
+     "quote": "sed on Human Driving Behavior Issued 2023-08 Automated Vehicle Safety Cons"
+    },
+    {
+     "chunk_id": "local:6a33889859b2:c2",
+     "quote": "use of this best practice is entirely voluntary and its suitability for any p"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2023-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "local:b4287480c380",
+   "title": "AVSC-I-04-2023 Best Practice for ADS Remote Assistance Use Case (2023-11)",
+   "kind": "guidance",
+   "issuer": "AVSC",
+   "designation": "AVSC-I-04-2023",
+   "edition_label": null,
+   "edition_year": 2023,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:b4287480c380:c0",
+     "quote": "ety Consortium ™Best Practice AVSC-I-04-2023 Issued 2023-11 Rationale Citation: Automated"
+    },
+    {
+     "chunk_id": "local:b4287480c380:c2",
+     "quote": "use of this best practice is entirely voluntary and its suitability for any p"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2023-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": "Its 9 'shall' hits are quotations of other regulations, not AVSC requirements."
+  },
+  {
+   "paper_id": "local:b6c10359d954",
+   "title": "AVSC-I-01-2024 Best Practice for First Responder Interactions with Fleet-Managed ADS-DVs (revised 2024-04, supersedes AVSC00005)",
+   "kind": "guidance",
+   "issuer": "AVSC",
+   "designation": "AVSC-I-01-2024",
+   "edition_label": null,
+   "edition_year": 2024,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [
+    "local:fff17ed80281"
+   ],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:b6c10359d954:c2",
+     "quote": "This AVSC best practice supersedes Best Practice for First Responder"
+    },
+    {
+     "chunk_id": "local:b6c10359d954:c3",
+     "quote": "use of this best practice is entirely voluntary and its suitability for any p"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2024-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "local:d2d322f0b779",
+   "title": "AVSC-D-02-2024 Best Practice for Core Automated Vehicle Safety Information (2024-05)",
+   "kind": "guidance",
+   "issuer": "AVSC",
+   "designation": "AVSC-D-02-2024",
+   "edition_label": null,
+   "edition_year": 2024,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:d2d322f0b779:c0",
+     "quote": "AVSC-D-02-2024 Automated Vehicle Safety Consortium ™Best Practice Issued AVSC Best Practice for Core Automated 2024-05"
+    },
+    {
+     "chunk_id": "local:d2d322f0b779:c1",
+     "quote": "use of this best practice is entirely voluntary and its suitability for any p"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2024-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "local:a709c254edeb",
+   "title": "AVSC-D-03-2024 Best Practice for ADS-DV Safety Inspection Framework (2024-12)",
+   "kind": "guidance",
+   "issuer": "AVSC",
+   "designation": "AVSC-D-03-2024",
+   "edition_label": null,
+   "edition_year": 2024,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:a709c254edeb:c0",
+     "quote": "ety Consortium ™Best Practice AVSC-D-03-2024 Issued 2024-12 Safety Consortium A Program o"
+    },
+    {
+     "chunk_id": "local:a709c254edeb:c2",
+     "quote": "use of this best practice is entirely voluntary and its suitability for any p"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2024-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "local:c1c7c8354ba7",
+   "title": "AVSC-D-04-2025 Best Practice for Assessment of ADS-DV Safety Case Claims Supported by Evidence (2025-10)",
+   "kind": "guidance",
+   "issuer": "AVSC",
+   "designation": "AVSC-D-04-2025",
+   "edition_label": null,
+   "edition_year": 2025,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:c1c7c8354ba7:c0",
+     "quote": "ty Consortium ™ Best Practice AVSC-D-04-2025 Issued 2025-10 Safety Consortium A Program o"
+    },
+    {
+     "chunk_id": "local:c1c7c8354ba7:c1",
+     "quote": "use of this best practice is entirely voluntary and its suitability for any p"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2025-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "local:5a125ddd1975",
+   "title": "AVSC-I-05-2025 Best Practice for ADS-DV Immediate Post-Crash Behaviors and Interactions (2025-03)",
+   "kind": "guidance",
+   "issuer": "AVSC",
+   "designation": "AVSC-I-05-2025",
+   "edition_label": null,
+   "edition_year": 2025,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:5a125ddd1975:c0",
+     "quote": "ty Consortium ™ Best Practice AVSC-I-05-2025 Issued 2025-03 Safety Consortium A Program o"
+    },
+    {
+     "chunk_id": "local:5a125ddd1975:c2",
+     "quote": "use of this best practice is entirely voluntary and its suitability for any p"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2025-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "local:61b72628b14f",
+   "title": "AVSC-I-06-2025 Information Report on ADS-DV Stopped Conditions (2025-12)",
+   "kind": "report",
+   "issuer": "AVSC",
+   "designation": "AVSC-I-06-2025",
+   "edition_label": null,
+   "edition_year": 2025,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:61b72628b14f:c0",
+     "quote": "nsortium ™ Information Report AVSC-I-06-2025 Issued 2025-12 A Program of SAE ITC System-D"
+    },
+    {
+     "chunk_id": "local:61b72628b14f:c2",
+     "quote": "of this information report is entirely voluntary and its suitability for any p"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2025-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "local:e5b8e06e28f2",
+   "title": "AVSC-I-07-2026 Best Practice for ADS Remote Assistance Training and Human Factors (2026-08)",
+   "kind": "guidance",
+   "issuer": "AVSC",
+   "designation": "AVSC-I-07-2026",
+   "edition_label": null,
+   "edition_year": 2026,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:e5b8e06e28f2:c0",
+     "quote": "ety Consortium ™Best Practice AVSC-I-07-2026 Issued 2026-08 Rationale Training and Human"
+    },
+    {
+     "chunk_id": "local:e5b8e06e28f2:c1",
+     "quote": "use of this best practice is entirely voluntary and its suitability for any p"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2026-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "local:cf129f19b0b0",
+   "title": "AdvoCATE User Guide 1.4 (NASA assurance case tool)",
+   "kind": "handbook",
+   "issuer": null,
+   "designation": null,
+   "edition_label": null,
+   "edition_year": null,
+   "year_basis": null,
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:cf129f19b0b0:c1",
+     "quote": "This user guide describes the functionality in AdvoCATE 0.34.1-s"
+    }
+   ],
+   "title_issue": "Title says 'User Guide 1.4'; the held text describes AdvoCATE 0.34.1-s and never mentions 1.4.",
+   "db_doc_type": "paper",
+   "db_published": "2022-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "issuer": "opening pages of the held text name no issuing organisation (title says NASA)",
+    "edition_year": "no date in the held text",
+    "designation": "no designation printed (non-standard publication)",
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "local:c9a451f83ae4",
+   "title": "Assurance Case Guide (Argevide) - GSN and Assurance Case Construction",
+   "kind": "guidance",
+   "issuer": "Argevide",
+   "designation": null,
+   "edition_label": "Part 1",
+   "edition_year": 2025,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:c9a451f83ae4:c1",
+     "quote": "Part 1. Argument Structure 25.04.2025 1 Introduction ... ...2 2 The"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2025-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "designation": "no designation printed (non-standard publication)"
+   },
+   "notes": "Part 1 (Argument Structure) of a multi-part guide; other parts are not held."
+  },
+  {
+   "paper_id": "local:a41019a5b430",
+   "title": "BS 31100-2011 — Risk Management Code of Practice",
+   "kind": "standard",
+   "issuer": "BSI",
+   "designation": "BS 31100:2011",
+   "edition_label": "Second edition, June 2011",
+   "edition_year": 2011,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [
+    "BS 31100:2008"
+   ],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:a41019a5b430:c2",
+     "quote": "First published October 2008 Second (present) edition, June 2011"
+    },
+    {
+     "chunk_id": "local:a41019a5b430:c10",
+     "quote": "of BS ISO 31000 Supersession BS 31100:2011 supersedes BS 31100:2008, which is withdrawn."
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2011-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {},
+   "notes": "Code of practice (no 'shall' anywhere). Written to implement BS ISO 31000 (the 2009 edition), which this corpus holds as superseded."
+  },
+  {
+   "paper_id": "local:5d92cd1f17dd",
+   "title": "CAIB — Columbia Accident Investigation Board Report, Volume I (2003)",
+   "kind": "report",
+   "issuer": "Columbia Accident Investigation Board",
+   "designation": null,
+   "edition_label": "Volume I",
+   "edition_year": 2003,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:5d92cd1f17dd:c0",
+     "quote": "COLUMBIA ACCIDENT INVESTIGATION BOARD REPORT VOLUME I AUGUST 2OO3"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "book",
+   "db_published": "2026-11-03",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "designation": "no designation printed (non-standard publication)"
+   },
+   "notes": "Volume I only; volumes II-VI (appendices) are not held. DB doc_type is 'book'."
+  },
+  {
+   "paper_id": "local:cf59ff8a1e69",
+   "title": "CRS R48605 Safety Considerations for Automated Passenger Vehicles (July 2026)",
+   "kind": "report",
+   "issuer": "Congressional Research Service",
+   "designation": "R48605",
+   "edition_label": null,
+   "edition_year": 2026,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:cf59ff8a1e69:c0",
+     "quote": "Automated Passenger Vehicles Updated July 15, 2026 Safety Considerations for Aut"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2026-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "local:77d354cc8af7",
+   "title": "EU Commission Implementing Regulation 2022-1426 Type-Approval of ADS of Fully Automated Vehicles",
+   "kind": "regulation",
+   "issuer": "European Commission",
+   "designation": "Commission Implementing Regulation (EU) 2022/1426",
+   "edition_label": null,
+   "edition_year": 2022,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": true,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:77d354cc8af7:c0",
+     "quote": "acts) REGULATIONS COMMISSION IMPLEMENTING REGULATION (EU) 2022/1426 of 5 August 2022 laying down rules for the app"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2022-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "local:83d0134fadfb",
+   "title": "FAA AC 120-92D — Safety Management Systems for Aviation Service Providers (2024-05-21)",
+   "kind": "guidance",
+   "issuer": "FAA",
+   "designation": "AC 120-92D",
+   "edition_label": "D",
+   "edition_year": 2024,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [
+    "AC 120-92B (2015-01-08)"
+   ],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:83d0134fadfb:c0",
+     "quote": "or Aviation Service Providers Date: 5/21/24 Initiated by: AFS-900 AC No: 120-92D Change: This advisory circula"
+    },
+    {
+     "chunk_id": "local:83d0134fadfb:c10",
+     "quote": "AC 120-92B, Safety Management Systems for Aviation Service Providers, dated January 8, 2015, is canceled"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "book",
+   "db_published": "2026-11-03",
+   "year_hint_unverified": null,
+   "null_reasons": {},
+   "notes": "DB doc_type is 'book'."
+  },
+  {
+   "paper_id": "local:90e625593d47",
+   "title": "FAA AC 25.1309-1B — System Design and Analysis (2024-08-30)",
+   "kind": "guidance",
+   "issuer": "FAA",
+   "designation": "AC 25.1309-1B",
+   "edition_label": "B",
+   "edition_year": 2024,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [
+    "AC 25.1309-1A (1988-06-21)"
+   ],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:90e625593d47:c0",
+     "quote": "and Analysis <sub>Date:</sub> 08/30/2024 Initiated By: AIR-600 AC No: 25.1309-1B This advisory circular (AC) d"
+    },
+    {
+     "chunk_id": "local:90e625593d47:c22",
+     "quote": "ncellation. 1.3 Cancellation. This AC cancels AC 25.1309-1A, dated June 21, 1988."
+    },
+    {
+     "chunk_id": "local:90e625593d47:c0",
+     "quote": "B This advisory circular (AC) describes acceptable means, but not the only means, for showing compliance with"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2024-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {},
+   "notes": null
+  },
+  {
+   "paper_id": "local:3d586d235874",
+   "title": "FAA — System Safety Handbook (2000)",
+   "kind": "handbook",
+   "issuer": "FAA",
+   "designation": null,
+   "edition_label": null,
+   "edition_year": 2000,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:3d586d235874:c0",
+     "quote": "FAA System Safety Handbook, Chapter 1: Introduction December 30, 2000"
+    },
+    {
+     "chunk_id": "local:3d586d235874:c1",
+     "quote": "The System Safety Handbook (SSH) was developed for the use of Federal Aviation Administration"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2000-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "designation": "no designation printed (non-standard publication)",
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": "Quotes FAA orders containing 'shall'; the handbook itself supports those orders."
+  },
+  {
+   "paper_id": "local:d5f3d058bb27",
+   "title": "HSE — Reducing Risks, Protecting People: HSE decision-making process (R2P2, 2001)",
+   "kind": "guidance",
+   "issuer": "HSE",
+   "designation": null,
+   "edition_label": null,
+   "edition_year": 2001,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:d5f3d058bb27:c0",
+     "quote": "HSE’s decision-making process ©<sup>Crown</sup> <sup>copyright</sup> <sup>2001</sup> Applications for reproduction"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2026-11-02",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "designation": "no designation printed (non-standard publication)",
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": "Regulator's published decision-making framework (policy), not a requirement set. DB published 2026-11-02 is the ingest date."
+  },
+  {
+   "paper_id": "local:caf714759f86",
+   "title": "HSE — The tolerability of risk from nuclear power stations (1992 revision)",
+   "kind": "guidance",
+   "issuer": "HSE",
+   "designation": null,
+   "edition_label": "1992 revision",
+   "edition_year": 1992,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:caf714759f86:c2",
+     "quote": "her reading 60 London: HMSO O Crown copyright I988 Revised 1992 Applications for reproduction"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2026-11-03",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "designation": "no designation printed (non-standard publication)"
+   },
+   "notes": "Original 1988; the held text is the 1992 revision."
+  },
+  {
+   "paper_id": "local:41a462827e37",
+   "title": "IEC 31010-2019 — Risk Management - Risk Assessment Techniques (Ed 2.0)",
+   "kind": "standard",
+   "issuer": "IEC",
+   "designation": "IEC 31010:2019",
+   "edition_label": "Edition 2.0",
+   "edition_year": 2019,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:41a462827e37:c0",
+     "quote": "INTERNATIONAL STANDARD Edition 2.0 2019-06 INTERNATIONAL STANDARD NORME INTERNATIONALE Risk man"
+    },
+    {
+     "chunk_id": "local:41a462827e37:c16",
+     "quote": "This International Standard provides guidance on the selection and application of techniques"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2019-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {},
+   "notes": "IEC standard that is guidance only (no requirement 'shall'); hence normative=false."
+  },
+  {
+   "paper_id": "local:d4ceb75c64ab",
+   "title": "ISO 21448-2022 — Road vehicles, Safety of the Intended Functionality (SOTIF), full text",
+   "kind": "standard",
+   "issuer": "ISO",
+   "designation": "ISO 21448:2022",
+   "edition_label": "First edition",
+   "edition_year": 2022,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [
+    "local:c0d3ca177aaf"
+   ],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": true,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:d4ceb75c64ab:c0",
+     "quote": "of the intended functionality First edition 2022-06 Road vehicles — Safety of the"
+    },
+    {
+     "chunk_id": "local:d4ceb75c64ab:c7",
+     "quote": "This first edition cancels and replaces the first edition of ISO/PAS 21448:2019"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2022-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {},
+   "notes": null
+  },
+  {
+   "paper_id": "local:cb40d304cbca",
+   "title": "ISO 26262-1-2018 — Vocabulary",
+   "kind": "standard",
+   "issuer": "ISO",
+   "designation": "ISO 26262-1:2018",
+   "edition_label": "Second edition",
+   "edition_year": 2018,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:cb40d304cbca:c0",
+     "quote": "l safety — Part 1: Vocabulary Second edition 2018-12 Road vehicles — Functional sa"
+    },
+    {
+     "chunk_id": "local:cb40d304cbca:c0",
+     "quote": "ehicles — Functional safety — Part 1: Vocabulary Second edition 2018-12 Road v"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2018-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {},
+   "notes": "Vocabulary only: no requirement 'shall', so normative=false by the stated rule."
+  },
+  {
+   "paper_id": "local:3d1b235596aa",
+   "title": "ISO 26262-10-2018 — Guidelines on ISO 26262",
+   "kind": "standard",
+   "issuer": "ISO",
+   "designation": "ISO 26262-10:2018",
+   "edition_label": "Second edition",
+   "edition_year": 2018,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:3d1b235596aa:c0",
+     "quote": "t 10: Guidelines on ISO 26262 Second edition 2018-12 Road vehicles — Functional sa"
+    },
+    {
+     "chunk_id": "local:3d1b235596aa:c18",
+     "quote": "SO 26262 series of standards. It has an informative character only and describes the general con"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2018-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {},
+   "notes": "Self-declared informative."
+  },
+  {
+   "paper_id": "local:5be41d67ad16",
+   "title": "ISO 26262-11-2018 — Application to Semiconductors",
+   "kind": "standard",
+   "issuer": "ISO",
+   "designation": "ISO 26262-11:2018",
+   "edition_label": "First edition",
+   "edition_year": 2018,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:5be41d67ad16:c0",
+     "quote": "f ISO 26262 to semiconductors First edition 2018-12 Road vehicles — Functional sa"
+    },
+    {
+     "chunk_id": "local:5be41d67ad16:c18",
+     "quote": "l performance of E/E systems. This document has an informative character only. It contains possible interpr"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2018-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {},
+   "notes": "Self-declared informative; its 'shall' hits quote other parts."
+  },
+  {
+   "paper_id": "local:dbb1c4619d93",
+   "title": "ISO 26262-12-2018 — Adaptation for Motorcycles (BSI)",
+   "kind": "standard",
+   "issuer": "ISO",
+   "designation": "ISO 26262-12:2018",
+   "edition_label": "First edition",
+   "edition_year": 2018,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": true,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:dbb1c4619d93:c3",
+     "quote": "ommittee on 31 December 2018. First edition 2018-12 Road vehicles — Functional sa"
+    },
+    {
+     "chunk_id": "local:dbb1c4619d93:c3",
+     "quote": "This British Standard is the UK implementation of ISO 26262-12:2018"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2018-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {},
+   "notes": "BSI adoption (national foreword); content is ISO 26262-12:2018."
+  },
+  {
+   "paper_id": "local:0e6dbb524dfe",
+   "title": "ISO 26262-2-2018 — Management of Functional Safety (BSI)",
+   "kind": "standard",
+   "issuer": "ISO",
+   "designation": "ISO 26262-2:2018",
+   "edition_label": "Second edition",
+   "edition_year": 2018,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [
+    "BS ISO 26262-2:2011"
+   ],
+   "normative": true,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:0e6dbb524dfe:c3",
+     "quote": "onal safety National foreword Second edition 2018-12 Road vehicles — Functional sa"
+    },
+    {
+     "chunk_id": "local:0e6dbb524dfe:c1",
+     "quote": "This British Standard is the UK implementation of ISO 26262-2:2018. It supersedes BS ISO 26262-2:2011, which is withdrawn"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2018-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {},
+   "notes": "BSI adoption (national foreword); content is ISO 26262-2:2018."
+  },
+  {
+   "paper_id": "local:2416292a3545",
+   "title": "ISO 26262-3-2018 — Concept Phase (BSI)",
+   "kind": "standard",
+   "issuer": "ISO",
+   "designation": "ISO 26262-3:2018",
+   "edition_label": "Second edition",
+   "edition_year": 2018,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [
+    "BS ISO 26262-3:2011"
+   ],
+   "normative": true,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:2416292a3545:c3",
+     "quote": "ncept phase National foreword Second edition 2018-12 Road vehicles — Functional sa"
+    },
+    {
+     "chunk_id": "local:2416292a3545:c1",
+     "quote": "This British Standard is the UK implementation of ISO 26262-3:2018. It supersedes BS ISO 26262-3:2011, which is withdrawn"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2018-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {},
+   "notes": "BSI adoption (national foreword); content is ISO 26262-3:2018."
+  },
+  {
+   "paper_id": "local:c35c19975827",
+   "title": "ISO 26262-4-2018 — Product Development at the System Level (BSI)",
+   "kind": "standard",
+   "issuer": "ISO",
+   "designation": "ISO 26262-4:2018",
+   "edition_label": "Second edition",
+   "edition_year": 2018,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [
+    "BS ISO 26262-4:2011"
+   ],
+   "normative": true,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:c35c19975827:c3",
+     "quote": "ystem level National foreword Second edition 2018-12-18 Road vehicles — Functional"
+    },
+    {
+     "chunk_id": "local:c35c19975827:c1",
+     "quote": "This British Standard is the UK implementation of ISO 26262-4:2018. It supersedes BS IS0 26262-4:2011, which is withdrawn"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2018-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {},
+   "notes": "BSI adoption (national foreword); content is ISO 26262-4:2018."
+  },
+  {
+   "paper_id": "local:82d7244d048b",
+   "title": "ISO 26262-5-2018 — Product Development at the Hardware Level",
+   "kind": "standard",
+   "issuer": "ISO",
+   "designation": "ISO 26262-5:2018",
+   "edition_label": "Second edition",
+   "edition_year": 2018,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": true,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:82d7244d048b:c0",
+     "quote": "lopment at the hardware level Second edition 2018-12 Road vehicles — Functional sa"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2018-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {},
+   "notes": null
+  },
+  {
+   "paper_id": "local:6a34133ea7e6",
+   "title": "ISO 26262-6-2018 — Product Development at the Software Level",
+   "kind": "standard",
+   "issuer": "ISO",
+   "designation": "ISO 26262-6:2018",
+   "edition_label": "Second edition",
+   "edition_year": 2018,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": true,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:6a34133ea7e6:c0",
+     "quote": "lopment at the software level Second edition 2018-12 Road vehicles — Functional sa"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2018-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {},
+   "notes": null
+  },
+  {
+   "paper_id": "local:1b04c71eb8c9",
+   "title": "ISO 26262-7-2018 — Production, Operation, Service and Decommissioning",
+   "kind": "standard",
+   "issuer": "ISO",
+   "designation": "ISO 26262-7:2018",
+   "edition_label": "Second edition",
+   "edition_year": 2018,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": true,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:1b04c71eb8c9:c0",
+     "quote": "— Functional safety — Part 7: Second edition 2018-12 Road vehicles — Functional sa"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2018-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {},
+   "notes": null
+  },
+  {
+   "paper_id": "local:6cd57a8fca7a",
+   "title": "ISO 26262-8-2018 — Supporting Processes",
+   "kind": "standard",
+   "issuer": "ISO",
+   "designation": "ISO 26262-8:2018",
+   "edition_label": "Second edition",
+   "edition_year": 2018,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": true,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:6cd57a8fca7a:c0",
+     "quote": "Part 8: Supporting processes Second edition 2018-12 Road vehicles — Functional sa"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2018-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {},
+   "notes": null
+  },
+  {
+   "paper_id": "local:b3903fe001ed",
+   "title": "ISO 26262-9-2018 — ASIL-Oriented and Safety-Oriented Analyses",
+   "kind": "standard",
+   "issuer": "ISO",
+   "designation": "ISO 26262-9:2018",
+   "edition_label": null,
+   "edition_year": 2018,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": true,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:b3903fe001ed:c2",
+     "quote": "ehicles — Functional safety — © ISO 2018 All rights reserved. Unless o"
+    },
+    {
+     "chunk_id": "local:b3903fe001ed:c8",
+     "quote": "This edition of ISO 26262 series of standards cancels and replaces the edition ISO 26262:2011 series"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2018-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "edition_label": "held front matter shows no 'edition' line"
+   },
+   "notes": "Year from the '© ISO 2018' line; foreword says it 'cancels and replaces the edition ISO 26262:2011 series'."
+  },
+  {
+   "paper_id": "local:fe96edbde0ee",
+   "title": "ISO 31000-2009 — Risk Management Principles and Guidelines",
+   "kind": "standard",
+   "issuer": "ISO",
+   "designation": "ISO 31000:2009",
+   "edition_label": "First edition",
+   "edition_year": 2009,
+   "year_basis": "document",
+   "status": "superseded",
+   "supersedes": [],
+   "superseded_by": [
+    "local:7bfd4a363756"
+   ],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:fe96edbde0ee:c0",
+     "quote": "t — Principles and guidelines First edition 2009-11-15 Risk management — Principles"
+    },
+    {
+     "chunk_id": "local:7bfd4a363756:c6",
+     "quote": "This second edition cancels and replaces the first edition (ISO 31000:2009)"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2009-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {},
+   "notes": "Principles and guidelines; no requirement 'shall'."
+  },
+  {
+   "paper_id": "local:7bfd4a363756",
+   "title": "ISO 31000-2018 — Risk Management Guidelines",
+   "kind": "standard",
+   "issuer": "ISO",
+   "designation": "ISO 31000:2018",
+   "edition_label": "Second edition",
+   "edition_year": 2018,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [
+    "local:fe96edbde0ee"
+   ],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:7bfd4a363756:c0",
+     "quote": "INTERNATIONAL STANDARD ISO 31000 Second edition 2018-02 Risk management — Guidelines"
+    },
+    {
+     "chunk_id": "local:7bfd4a363756:c6",
+     "quote": "This second edition cancels and replaces the first edition (ISO 31000:2009)"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2018-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {},
+   "notes": "Guidelines; no requirement 'shall'. Smaller than the 2009 text only because the 2018 edition drops Annex A (sections end at 6 Process + Bibliography)."
+  },
+  {
+   "paper_id": "local:83e003999861",
+   "title": "ISO 34502-2022 — Road vehicles, Test scenarios for automated driving systems, Scenario based safety evaluation framework (iTeh 15-page preview: contents, scope, terms, start of clause 4)",
+   "kind": "standard",
+   "issuer": "ISO",
+   "designation": "ISO 34502:2022",
+   "edition_label": "First edition",
+   "edition_year": 2022,
+   "year_basis": "document",
+   "status": "preview-only",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": true,
+   "completeness": "preview",
+   "evidence": [
+    {
+     "chunk_id": "local:83e003999861:c0",
+     "quote": "d safety evaluation framework First edition 2022-11 Road vehicles — Test scenario"
+    },
+    {
+     "chunk_id": "local:83e003999861:c33",
+     "quote": "This document shall be applied in combination with: — ISO 21448"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2022-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {},
+   "notes": "iTeh preview: front matter, scope, terms and the start of clause 4 (12 top-level sections, 41 chunks)."
+  },
+  {
+   "paper_id": "local:5eadc6bef925",
+   "title": "ISO IEC IEEE 15026-2 2022 — Systems and software assurance, Part 2 Assurance case (ANSI preview)",
+   "kind": "standard",
+   "issuer": "ISO/IEC/IEEE",
+   "designation": "ISO/IEC/IEEE 15026-2:2022",
+   "edition_label": "Second edition",
+   "edition_year": 2022,
+   "year_basis": "document",
+   "status": "preview-only",
+   "supersedes": [
+    "local:c22b61a61eaa"
+   ],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": null,
+   "completeness": "preview",
+   "evidence": [
+    {
+     "chunk_id": "local:5eadc6bef925:c6",
+     "quote": "This second edition cancels and replaces the first edition (ISO/IEC 15026-2:2011)"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2022-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "normative": "held text is front matter only (foreword/introduction/contents); no clause text to test for requirements"
+   },
+   "notes": "ANSI preview; same standard as its twin (CQ-6 census: 0.80 shingle Jaccard)."
+  },
+  {
+   "paper_id": "local:216b19db6b0e",
+   "title": "ISO IEC IEEE 15026-2 2022 — Systems and software assurance, Part 2 Assurance case (VDE preview)",
+   "kind": "standard",
+   "issuer": "ISO/IEC/IEEE",
+   "designation": "ISO/IEC/IEEE 15026-2:2022",
+   "edition_label": "Second edition",
+   "edition_year": 2022,
+   "year_basis": "document",
+   "status": "preview-only",
+   "supersedes": [
+    "local:c22b61a61eaa"
+   ],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": null,
+   "completeness": "preview",
+   "evidence": [
+    {
+     "chunk_id": "local:216b19db6b0e:c6",
+     "quote": "This second edition cancels and replaces the first edition (ISO/IEC 15026-2:2011)"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2022-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "normative": "held text is front matter only (foreword/introduction/contents); no clause text to test for requirements"
+   },
+   "notes": "VDE preview; same standard as its twin (CQ-6 census: 0.80 shingle Jaccard)."
+  },
+  {
+   "paper_id": "local:c0d3ca177aaf",
+   "title": "ISO PAS 21448-2019 — SOTIF (BSI)",
+   "kind": "technical-specification",
+   "issuer": "ISO",
+   "designation": "ISO/PAS 21448:2019",
+   "edition_label": "First edition (BSI PD adoption)",
+   "edition_year": 2019,
+   "year_basis": "document",
+   "status": "superseded",
+   "supersedes": [],
+   "superseded_by": [
+    "local:d4ceb75c64ab"
+   ],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": true,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:c0d3ca177aaf:c1",
+     "quote": "This Published Document is the UK implementation of ISO/PAS 21448:2019"
+    },
+    {
+     "chunk_id": "local:d4ceb75c64ab:c7",
+     "quote": "This first edition cancels and replaces the first edition of ISO/PAS 21448:2019"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2019-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {},
+   "notes": "BSI 'PD ISO/PAS 21448:2019'."
+  },
+  {
+   "paper_id": "local:1a5e084cb8bb",
+   "title": "ISO PAS 8800-2024 — Safety and Artificial Intelligence",
+   "kind": "technical-specification",
+   "issuer": "ISO",
+   "designation": "ISO/PAS 8800:2024",
+   "edition_label": null,
+   "edition_year": 2024,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": true,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:1a5e084cb8bb:c0",
+     "quote": "é et intelligenceartificielle ISO/PAS8800:2024(en)"
+    },
+    {
+     "chunk_id": "local:1a5e084cb8bb:c2",
+     "quote": "y and artificial intelligence ◎ ISO 2024 Alrights reserved. Unless oth"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2024-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "edition_label": "held front matter shows no edition line"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "local:25d3a31a9aa1",
+   "title": "ISO SAE 21434-2021 — Cybersecurity Engineering",
+   "kind": "standard",
+   "issuer": "ISO/SAE",
+   "designation": "ISO/SAE 21434:2021",
+   "edition_label": "First edition",
+   "edition_year": 2021,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": true,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:25d3a31a9aa1:c0",
+     "quote": "s — Cybersecurity engineering First edition 2021-08 Road vehicles — Cybersecurity"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2026-10-31",
+   "year_hint_unverified": null,
+   "null_reasons": {},
+   "notes": null
+  },
+  {
+   "paper_id": "local:6c9b33bfde9d",
+   "title": "ISO TS 5083 2025 — Road vehicles, Safety for automated driving systems, Design, verification and validation (iTeh preview, contents, foreword, scope)",
+   "kind": "technical-specification",
+   "issuer": "ISO",
+   "designation": "ISO/TS 5083:2025",
+   "edition_label": null,
+   "edition_year": 2025,
+   "year_basis": "document",
+   "status": "preview-only",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": null,
+   "completeness": "preview",
+   "evidence": [
+    {
+     "chunk_id": "local:6c9b33bfde9d:c3",
+     "quote": ", verification and validation ISO/TS 5083:2025(en)"
+    },
+    {
+     "chunk_id": "local:6c9b33bfde9d:c0",
+     "quote": "tion Document Pre ISO/TS 5083 iTeh Standards (https://standards.iteh.ai) D"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2025-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "normative": "held text is licence/foreword front matter only; no requirement text",
+    "edition_label": "no edition line in the held preview"
+   },
+   "notes": "iTeh preview: contents, foreword, scope (6 top-level sections, 17 chunks)."
+  },
+  {
+   "paper_id": "local:c22b61a61eaa",
+   "title": "ISO-IEC 15026-2-2011 — Systems and Software Assurance, Part 2 Assurance Case",
+   "kind": "standard",
+   "issuer": "ISO/IEC",
+   "designation": "ISO/IEC 15026-2:2011",
+   "edition_label": "First edition",
+   "edition_year": 2011,
+   "year_basis": "document",
+   "status": "superseded",
+   "supersedes": [],
+   "superseded_by": [
+    "local:5eadc6bef925",
+    "local:216b19db6b0e"
+   ],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": true,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:c22b61a61eaa:c0",
+     "quote": "tems and software assurance — First edition 2011-02-15 Systems and software engineer"
+    },
+    {
+     "chunk_id": "local:5eadc6bef925:c6",
+     "quote": "This second edition cancels and replaces the first edition (ISO/IEC 15026-2:2011)"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2011-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {},
+   "notes": "Superseding 2022 edition is held only as two previews, so this is the only FULL text of the assurance-case part."
+  },
+  {
+   "paper_id": "local:4d27eb6fb293",
+   "title": "ISO-IEC 15026-3-2015 — Systems and Software Assurance, Part 3 System Integrity Levels",
+   "kind": "standard",
+   "issuer": "ISO/IEC",
+   "designation": "ISO/IEC 15026-3:2015",
+   "edition_label": "Second edition",
+   "edition_year": 2015,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": true,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:4d27eb6fb293:c0",
+     "quote": "rt 3: System integrity levels Second edition 2015-12-01 Systems and software engineer"
+    },
+    {
+     "chunk_id": "local:4d27eb6fb293:c54",
+     "quote": "and use of integrity levels. Integrity levels shall be defined for an area only if a substantial body of relevan"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2015-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {},
+   "notes": null
+  },
+  {
+   "paper_id": "local:376d3c30684f",
+   "title": "ISO-IEC-IEEE 15026-1-2019 — Systems and Software Assurance, Part 1 Concepts and Vocabulary",
+   "kind": "standard",
+   "issuer": "ISO/IEC/IEEE",
+   "designation": "ISO/IEC/IEEE 15026-1:2019",
+   "edition_label": "First edition",
+   "edition_year": 2019,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [
+    "ISO/IEC 15026-1:2013"
+   ],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:376d3c30684f:c0",
+     "quote": "tems and software assurance — First edition 2019-03 Systems and software engineer"
+    },
+    {
+     "chunk_id": "local:376d3c30684f:c7",
+     "quote": "This first edition cancels and replaces ISO/IEC 15026-1:2013"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2019-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {},
+   "notes": "Concepts and vocabulary: no requirement 'shall'."
+  },
+  {
+   "paper_id": "local:e10ec4c599f6",
+   "title": "ISO-IEC-IEEE 15026-4-2021 — Systems and Software Assurance, Part 4 Assurance in the Life Cycle",
+   "kind": "standard",
+   "issuer": "ISO/IEC/IEEE",
+   "designation": "ISO/IEC/IEEE 15026-4:2021",
+   "edition_label": null,
+   "edition_year": 2021,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": true,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:e10ec4c599f6:c1",
+     "quote": "COPYRIGHT PROTECTED DOCUMENT © ISO/IEC 2021 © IEEE 2021 All rights reserved. Unless o"
+    },
+    {
+     "chunk_id": "local:e10ec4c599f6:c24",
+     "quote": "conformance to this document shall be achieved in either or both of the following ways"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2021-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "edition_label": "held front matter shows no edition line"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "local:7c89760c33e1",
+   "title": "JAMA — Automated Driving Safety Evaluation Framework Ver 4.0 (2026-03)",
+   "kind": "guidance",
+   "issuer": "JAMA",
+   "designation": null,
+   "edition_label": "Ver 4.0",
+   "edition_year": 2026,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:7c89760c33e1:c0",
+     "quote": "Automated Driving Safety Evaluation Framework Ver4.0 Japan Automobile Manufacturers Association, Inc."
+    },
+    {
+     "chunk_id": "local:7c89760c33e1:c0",
+     "quote": "afety Evaluation Subcommittee March 2026"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "book",
+   "db_published": "2026-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "designation": "no designation printed (non-standard publication)"
+   },
+   "notes": "Industry framework; its 'shall' sentences define the framework's own safety principle, not an authority's requirement. DB doc_type is 'book'."
+  },
+  {
+   "paper_id": "local:97c21e9847c9",
+   "title": "L3Pilot — Code of Practice for the Development of Automated Driving Functions (CoP-ADF v1.0)",
+   "kind": "guidance",
+   "issuer": "L3Pilot",
+   "designation": null,
+   "edition_label": "CoP-ADF v1.0",
+   "edition_year": null,
+   "year_basis": null,
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:97c21e9847c9:c11",
+     "quote": "The questions shall be checked and evaluated by the user during the development process of ADF"
+    },
+    {
+     "chunk_id": "local:97c21e9847c9:c5",
+     "quote": "d automotive research project L3Pilot running from 2017 to 2021. It provides comprehensive gu"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2026-11-01",
+   "year_hint_unverified": 2021,
+   "null_reasons": {
+    "edition_year": "held text gives only the project span 2017-2021 and a UN R157 addendum dated March 2021, no publication date",
+    "designation": "no designation printed (non-standard publication)"
+   },
+   "notes": "Code of practice made of questions for the user to answer; self-describes as guidelines."
+  },
+  {
+   "paper_id": "local:4332c96f2fd6",
+   "title": "MIL-STD-882E — Department of Defense Standard Practice for System Safety (2012)",
+   "kind": "standard",
+   "issuer": "US Department of Defense",
+   "designation": "MIL-STD-882E",
+   "edition_label": "E",
+   "edition_year": 2012,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [
+    "MIL-STD-882D (2000-02-10)"
+   ],
+   "normative": true,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:4332c96f2fd6:c0",
+     "quote": "MIL-STD-882E 11 May 2012 SUPERSEDING MIL-STD-882D 10 February 2000"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2012-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {},
+   "notes": null
+  },
+  {
+   "paper_id": "local:54d6dfdea249",
+   "title": "MIRA for DfT — Automated Vehicle Safety Assurance, A Framework for Automated Driving Systems (2022)",
+   "kind": "report",
+   "issuer": "HORIBA MIRA",
+   "designation": null,
+   "edition_label": "Non-Abridged Version",
+   "edition_year": 2023,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:54d6dfdea249:c0",
+     "quote": "A TRL THE FUTURE OF TRANSPORT © HORIBA MIRA Ltd 2023. All rights reserved, subject"
+    },
+    {
+     "chunk_id": "local:54d6dfdea249:c1",
+     "quote": "The information contained within this response does not necessarily represent the position of the Department for Transport"
+    }
+   ],
+   "title_issue": "Title says 2022; the only year in the front matter is '(c) HORIBA MIRA Ltd 2023'.",
+   "db_doc_type": "paper",
+   "db_published": "2022-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "designation": "no designation printed (non-standard publication)"
+   },
+   "notes": "Report commissioned by DfT recommending a framework for low-speed AVs; 'shall' (446x) marks the proposed framework's own requirements, not DfT's."
+  },
+  {
+   "paper_id": "local:e53772398dff",
+   "title": "MISRA SC — Safety assurance argument context for automated driving (2024-04)",
+   "kind": "guidance",
+   "issuer": "MISRA",
+   "designation": null,
+   "edition_label": "April 2024",
+   "edition_year": 2024,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:e53772398dff:c0",
+     "quote": "MISRA SC Safety assurance argument context for automated driving April 2024 First published March 2024"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2024-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "designation": "no designation printed (non-standard publication)"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "local:1742c8d5b998",
+   "title": "NASA SP-2010-576 — NASA Risk-Informed Decision Making Handbook",
+   "kind": "handbook",
+   "issuer": "NASA",
+   "designation": "NASA/SP-2010-576",
+   "edition_label": "Version 1.0",
+   "edition_year": 2010,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:1742c8d5b998:c0",
+     "quote": "Version 1.0 - NASA/SP-2010-576 – APRIL 2010 NASA Risk-Informed Decision M"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2010-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {},
+   "notes": null
+  },
+  {
+   "paper_id": "local:a6b537ff5738",
+   "title": "NASA SP-2010-580 — NASA System Safety Handbook Volume 1, System Safety Framework and Concepts",
+   "kind": "handbook",
+   "issuer": "NASA",
+   "designation": "NASA/SP-2010-580",
+   "edition_label": "Version 1.0 (Volume 1)",
+   "edition_year": 2011,
+   "year_basis": "cross-reference",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:cf129f19b0b0:c7",
+     "quote": "Concepts for Implementation. NASA/SP-2010-580, Version 1.0, Nov. 2011. URL: https://ntrs.nasa.gov/c"
+    },
+    {
+     "chunk_id": "local:a6b537ff5738:c0",
+     "quote": "NASA System Safety Handbook Volume 1, System Safety Framework and Concepts for Implementation"
+    }
+   ],
+   "title_issue": "Report number says 2010; the version-1.0 date (Nov. 2011) is only available from another corpus document that cites it, not from this document's own held text.",
+   "db_doc_type": "paper",
+   "db_published": "2010-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {},
+   "notes": null
+  },
+  {
+   "paper_id": "local:a391e0d13fa8",
+   "title": "NASA SP-2011-3421 — Probabilistic Risk Assessment Procedures Guide for NASA Managers and Practitioners (2nd ed)",
+   "kind": "handbook",
+   "issuer": "NASA",
+   "designation": "NASA/SP-2011-3421",
+   "edition_label": "Second Edition",
+   "edition_year": 2011,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:a391e0d13fa8:c3",
+     "quote": "A Headquarters Washington, DC Second Edition December 2011 Acknowledgments The individua"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2011-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {},
+   "notes": null
+  },
+  {
+   "paper_id": "local:46d6107b895f",
+   "title": "NASA SP-2011-3422 — NASA Risk Management Handbook",
+   "kind": "handbook",
+   "issuer": "NASA",
+   "designation": "NASA/SP-2011-3422",
+   "edition_label": "Version 1.0",
+   "edition_year": 2011,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:46d6107b895f:c0",
+     "quote": "NASA RISK MANAGEMENT HANDBOOK NASA Risk Management Handbook NASA/SP-2011-3422 Version 1.0"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2011-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {},
+   "notes": "Year taken from the report number; no printed date was found in the held text."
+  },
+  {
+   "paper_id": "local:5bf506972f70",
+   "title": "NASA SP-2014-612 — NASA System Safety Handbook, Volume 2, System Safety Concepts, Guidelines, and Implementation Examples (2014)",
+   "kind": "handbook",
+   "issuer": "NASA",
+   "designation": "NASA/SP-2014-612",
+   "edition_label": "Version 1.0 (Volume 2)",
+   "edition_year": 2015,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:5bf506972f70:c31",
+     "quote": "surance Requirements Division Office of Safety and Mission Assurance June 2015"
+    }
+   ],
+   "title_issue": "Title says 2014 (report-number year); the signed preface in the held text is dated June 2015.",
+   "db_doc_type": "book",
+   "db_published": "2014-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {},
+   "notes": "DB doc_type is 'book'."
+  },
+  {
+   "paper_id": "local:8eeb4887a4dc",
+   "title": "NASA SP-2016-6105 Rev 2 — NASA Systems Engineering Handbook",
+   "kind": "handbook",
+   "issuer": "NASA",
+   "designation": "NASA/SP-2016-6105 Rev 2",
+   "edition_label": "Rev 2",
+   "edition_year": 2016,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [
+    "NASA/SP-2007-6105 Rev 1 (2007-12)"
+   ],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:8eeb4887a4dc:c0",
+     "quote": "NASA SP-2016-6105 Rev2 supersedes SP-2007-6105 Rev 1 dated December, 2007"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "book",
+   "db_published": "2026-11-03",
+   "year_hint_unverified": null,
+   "null_reasons": {},
+   "notes": "Year from the report number; DB doc_type is 'book'."
+  },
+  {
+   "paper_id": "local:64f9538c2b0f",
+   "title": "NHTSA A Framework for Automated Driving System Testable Cases and Scenarios (DOT HS 812 623, 2018)",
+   "kind": "report",
+   "issuer": "NHTSA",
+   "designation": "DOT HS 812 623",
+   "edition_label": null,
+   "edition_year": 2018,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:64f9538c2b0f:c0",
+     "quote": "DOT HS 812 623 September 2018 A Framework for Automated Driving System Testable Cases and Scenarios"
+    },
+    {
+     "chunk_id": "local:64f9538c2b0f:c1",
+     "quote": "The opinions, findings and conclusions expressed in this publication are those of the a"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2018-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": "Research report (contractor authors); its 'shall' statements are proposed test conditions."
+  },
+  {
+   "paper_id": "local:271a2d51c4f2",
+   "title": "NHTSA AV STEP Notice of Proposed Rulemaking (90 FR 4130, Jan 15 2025)",
+   "kind": "regulation",
+   "issuer": "NHTSA",
+   "designation": "90 FR 4130",
+   "edition_label": null,
+   "edition_year": 2025,
+   "year_basis": "document",
+   "status": "withdrawn",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [
+    "local:a9c7b643276b"
+   ],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:271a2d51c4f2:c2",
+     "quote": "This document proposes a voluntary framework for the evaluation and oversight"
+    },
+    {
+     "chunk_id": "local:a9c7b643276b:c1",
+     "quote": "The NPRM published in the Federal Register on January 15, 2025, at 90 FR 4130, is withdrawn as of June 26, 2026"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2025-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": "Notice of Proposed Rulemaking: proposed text, never in force; normative=false."
+  },
+  {
+   "paper_id": "local:a9c7b643276b",
+   "title": "NHTSA AV STEP Withdrawal (91 FR 38619, June 26 2026)",
+   "kind": "regulation",
+   "issuer": "NHTSA",
+   "designation": "FR Doc. 2026-12912",
+   "edition_label": null,
+   "edition_year": 2026,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:a9c7b643276b:c1",
+     "quote": "ess on other ADS initiatives, NHTSA is withdrawing the rulemaking. DATES: The NPRM published in"
+    },
+    {
+     "chunk_id": "local:a9c7b643276b:c0",
+     "quote": "han Morrison, Administrator. [FR Doc. 2026–12912 Filed 6–25–26; 8:45 am] BILLING CODE 4910–5"
+    }
+   ],
+   "title_issue": "Title cites '91 FR 38619'; that citation is not in the held text (the text gives FR Doc. 2026-12912).",
+   "db_doc_type": "paper",
+   "db_published": "2026-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": "Chunk c0 is the tail of a different Federal Register document (Figure 8 to 571.210) and the file also contains an unrelated FTA notice (49 CFR Part 665), so it is not a clean single document."
+  },
+  {
+   "paper_id": "local:e1cfbb5bd7bc",
+   "title": "NHTSA Automated Driving Systems 2.0 - A Vision for Safety (2017)",
+   "kind": "guidance",
+   "issuer": "NHTSA",
+   "designation": null,
+   "edition_label": null,
+   "edition_year": 2017,
+   "year_basis": "cross-reference",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:3d0e31c34a0a:c2",
+     "quote": "Automated Driving Systems 2.0: A Vision for Safety (ADS 2.0) in September 2017"
+    },
+    {
+     "chunk_id": "local:e1cfbb5bd7bc:c15",
+     "quote": "INTRODUCTORY MESSAGE SECTION 1: VOLUNTARY GUIDANCE"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2026-10-27",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "designation": "no designation printed (non-standard publication)",
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": "Date only from the later USDOT documents that cite it; the held text itself shows no date."
+  },
+  {
+   "paper_id": "local:23bd7524f4d5",
+   "title": "NHTSA Report to Congress - Research and Rulemaking on Automated Driving Systems (July 2025)",
+   "kind": "report",
+   "issuer": "NHTSA",
+   "designation": null,
+   "edition_label": null,
+   "edition_year": 2025,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:23bd7524f4d5:c0",
+     "quote": "Report to Congress July 2025 NHTSA Research and Rulemaking Activities"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2025-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "designation": "no designation printed (non-standard publication)",
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "local:e602ffa4f1cc",
+   "title": "NHTSA Third Amended Standing General Order 2021-01 Incident Reporting (2025)",
+   "kind": "regulation",
+   "issuer": "NHTSA",
+   "designation": "Standing General Order 2021-01",
+   "edition_label": "Third Amended",
+   "edition_year": 2025,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": true,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:e602ffa4f1cc:c27",
+     "quote": "DEPARTMENT OF TRANSPORTATION Dated: April 24, 2025 By: \\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\_\\"
+    },
+    {
+     "chunk_id": "local:e602ffa4f1cc:c2",
+     "quote": "This Third Amended Standing General Order 2021-01 (General Order) is issued by the National Highway Traffic Safety Administration"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2021-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {},
+   "notes": "DB published 2021-01-01 is the original order's year, not this amendment's."
+  },
+  {
+   "paper_id": "local:0bba4df6673d",
+   "title": "NUREG-0492 — Fault Tree Handbook (NRC, 1981)",
+   "kind": "handbook",
+   "issuer": "US Nuclear Regulatory Commission",
+   "designation": "NUREG-0492",
+   "edition_label": null,
+   "edition_year": 1981,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:0bba4df6673d:c0",
+     "quote": "Fault Tree Handbook U.S. Nuclear Regulatory Commission Fault Tree Handbook Date Published: January 1981"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2026-11-02",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "local:b468bf45f27c",
+   "title": "PEGASUS Method - An Overview (2019)",
+   "kind": "report",
+   "issuer": "PEGASUS project",
+   "designation": null,
+   "edition_label": null,
+   "edition_year": null,
+   "year_basis": null,
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "preview",
+   "evidence": [
+    {
+     "chunk_id": "local:b468bf45f27c:c1",
+     "quote": "The aim of PEGASUS is the development of a method that contributes to the safeguarding of highly automated driving functions"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2026-10-27",
+   "year_hint_unverified": 2019,
+   "null_reasons": {
+    "edition_year": "held text carries no date; only the DB title says 2019",
+    "designation": "no designation printed (non-standard publication)",
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": "Index/landing page only (8 chunks, ~2.7k chars): lists the 32 method chapters but holds none of their content."
+  },
+  {
+   "paper_id": "local:1d27d7fac441",
+   "title": "RAND RR1478 Driving to Safety - How Many Miles of Driving Would It Take (2016)",
+   "kind": "report",
+   "issuer": "RAND",
+   "designation": "RR-1478",
+   "edition_label": null,
+   "edition_year": 2016,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:1d27d7fac441:c56",
+     "quote": "Driving to Safety © Copyright 2016 RAND Corporation"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2015-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": "DB published 2015-01-01 is wrong; the text says 2016."
+  },
+  {
+   "paper_id": "local:c91d753ec3db",
+   "title": "RAND RR2662 Measuring Automated Vehicle Safety - Forging a Framework (2018)",
+   "kind": "report",
+   "issuer": "RAND",
+   "designation": "RR-2662",
+   "edition_label": null,
+   "edition_year": 2018,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:c91d753ec3db:c0",
+     "quote": "oration, Santa Monica, Calif. © Copyright 2018 RAND Corporation R® is a registered trademark."
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2026-10-27",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": null
+  },
+  {
+   "paper_id": "local:1493d1f836f3",
+   "title": "RAND — Safe Enough, Approaches to Assessing Acceptable Safety for Automated Vehicles (RR-A569-1, 2020)",
+   "kind": "report",
+   "issuer": "RAND",
+   "designation": "RR-A569-1",
+   "edition_label": null,
+   "edition_year": 2020,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:1493d1f836f3:c0",
+     "quote": "oration, Santa Monica, Calif. © Copyright 2020 RAND Corporation R® is a registered trademark."
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "book",
+   "db_published": "2026-11-03",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": "DB doc_type is 'book'."
+  },
+  {
+   "paper_id": "local:d42337eba862",
+   "title": "SAE J3018 (2020) Safety-Relevant Guidance for On-Road Testing of Prototype ADS-Operated Vehicles",
+   "kind": "standard",
+   "issuer": "SAE",
+   "designation": "SAE J3018",
+   "edition_label": "Revised 2020-12",
+   "edition_year": 2020,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [
+    "SAE J3018 SEP2019"
+   ],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:d42337eba862:c0",
+     "quote": "SURFACE VEH ICLE RECOMMENDED PRACTICE Issued 201 5-03 Revised 2020-1 2"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2020-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {},
+   "notes": "SAE 'Recommended Practice' (one 'shall' hit); normative=false."
+  },
+  {
+   "paper_id": "local:0147e45dfd6e",
+   "title": "SUNRISE D8.1 — Final report to vehicle safety bodies (safety assurance framework for connected automated mobility systems)",
+   "kind": "report",
+   "issuer": "SUNRISE project",
+   "designation": "D8.1",
+   "edition_label": null,
+   "edition_year": 2025,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:0147e45dfd6e:c3",
+     "quote": "ponsible Bryan Bourauel, BASt Status - Version Final – V1.0 Submission date 28/08/2025 Keywords Vehicle, Safety, Bod"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2021-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": "Project deliverable; its 'shall' (51x) are example use-case requirements."
+  },
+  {
+   "paper_id": "local:23f46dde097b",
+   "title": "Safety First for Automated Driving (SaFAD white paper, 2019)",
+   "kind": "report",
+   "issuer": "SaFAD consortium",
+   "designation": null,
+   "edition_label": null,
+   "edition_year": 2019,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:23f46dde097b:c10",
+     "quote": "DRIVING REFERENCED STANDARDS © Copyright 2019 by Aptiv Services US, LLC; AUDI AG; Bayrische Motoren Werke AG;"
+    },
+    {
+     "chunk_id": "local:23f46dde097b:c28",
+     "quote": "this publication is not intended and shall not be construed to establish, create, or deem to have created a single minimum or maximum requirement"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2019-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "designation": "no designation printed (non-standard publication)",
+    "edition_label": "no edition/version label printed"
+   },
+   "notes": "Industry white paper (Aptiv, Audi, Baidu, BMW, Continental, Daimler, FCA, ...)."
+  },
+  {
+   "paper_id": "local:0bc74d2bea76",
+   "title": "UK Defence Standard 00-56 Part 1 Issue 7 — Safety Management Requirements for Defence Systems, Requirements (2017-02-28)",
+   "kind": "standard",
+   "issuer": "UK Ministry of Defence",
+   "designation": "Defence Standard 00-56 Part 1",
+   "edition_label": "Issue 7",
+   "edition_year": 2017,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [
+    "Def Stan 00-56 Part 1 Issue 6 (2015-04-02)"
+   ],
+   "normative": true,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:0bc74d2bea76:c0",
+     "quote": "Defence Standard 00-56 Part 1 Issue 7 Date: 28 February 2017"
+    },
+    {
+     "chunk_id": "local:0bc74d2bea76:c7",
+     "quote": "This Standard supersedes the following: Defence Standard 00-56 Part 1 Issue 6 dated 02 Apr 2015"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2017-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {},
+   "notes": null
+  },
+  {
+   "paper_id": "local:c3c5f9de20cc",
+   "title": "UL 4600 Voting Version (December 13 2019, Koopman copy) - Evaluation of Autonomous Products",
+   "kind": "standard",
+   "issuer": "UL",
+   "designation": "UL 4600",
+   "edition_label": "Proposed First Edition (STP voting draft)",
+   "edition_year": 2019,
+   "year_basis": "document",
+   "status": "draft",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": true,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:c3c5f9de20cc:c0",
+     "quote": "Proposed First Edition of the Standard for Safety for the Evaluation of Autonomous Products, UL 4600"
+    },
+    {
+     "chunk_id": "local:c3c5f9de20cc:c1",
+     "quote": "Performance Indicators (SPIs) STP BALLOTS AND ALL COMMENTS DUE: JANUARY 27, 2020 Please provide your comments"
+    },
+    {
+     "chunk_id": "local:c3c5f9de20cc:c3",
+     "quote": "A proposal for the First Edition of the Standard for Safety for the Evaluation of Autonomous Products, UL 4600, was issued for review and comment on October 2, 2019"
+    }
+   ],
+   "title_issue": "Title gives 'December 13 2019'; that date is not in the held text (which shows a 2019-10-02 proposal and ballots due 2020-01-27).",
+   "db_doc_type": "paper",
+   "db_published": "2019-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {},
+   "notes": "A ballot draft, not the published standard. Every chunk carries the running header '16 Metrics and Safety Performance Indicators (SPIs)', so section_path is unreliable. Editions 1-3 are not held (the 2023 slides say 3rd edition published March 2023)."
+  },
+  {
+   "paper_id": "local:9def83274286",
+   "title": "UN Regulation No 157 — Automated Lane Keeping Systems (00 series, EUR-Lex 2021-03-09)",
+   "kind": "regulation",
+   "issuer": "UNECE",
+   "designation": "UN Regulation No. 157",
+   "edition_label": "00 series of amendments",
+   "edition_year": 2021,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": true,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:9def83274286:c0",
+     "quote": "l of vehicles with regards to Automated Lane Keeping Systems [2021/389] Only the original UN/ECE text"
+    },
+    {
+     "chunk_id": "local:9def83274286:c13",
+     "quote": "00 corresponding to the 00 series of amendments, its original version"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2021-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {},
+   "notes": "EUR-Lex copy: the text itself says only the original UN/ECE texts have legal effect. Later series (01) are not held (author-E log)."
+  },
+  {
+   "paper_id": "local:3d0e31c34a0a",
+   "title": "USDOT Ensuring American Leadership in Automated Vehicle Technologies - AV 4.0 (2020)",
+   "kind": "report",
+   "issuer": "USDOT",
+   "designation": null,
+   "edition_label": "AV 4.0",
+   "edition_year": 2020,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:3d0e31c34a0a:c0",
+     "quote": "Automated Vehicles 4.0 A Report by the NATIONAL SCIENCE & TECHNOLOGY COUNCIL and the UNITED STATES DEPARTMENT OF TRANSPORTATION January 2020"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2020-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "designation": "no designation printed (non-standard publication)"
+   },
+   "notes": "Joint NSTC/USDOT report; no requirements."
+  },
+  {
+   "paper_id": "local:33ef25a38c1c",
+   "title": "USDOT Preparing for the Future of Transportation - Automated Vehicles 3.0 (2018)",
+   "kind": "guidance",
+   "issuer": "USDOT",
+   "designation": null,
+   "edition_label": "AV 3.0",
+   "edition_year": 2018,
+   "year_basis": "cross-reference",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:3d0e31c34a0a:c2",
+     "quote": "In October 2018, Preparing for the Future of Transportation: Automated Vehicles 3.0"
+    },
+    {
+     "chunk_id": "local:33ef25a38c1c:c5",
+     "quote": "THE FUTURE OF TRANSPORTATION U.S. DOT AUTOMATION PRINCIPLES The United States Department"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2026-10-27",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "designation": "no designation printed (non-standard publication)"
+   },
+   "notes": "Date from the AV 4.0 document that cites it (the held text names only March 2018 and a June 2018 SAE edition)."
+  },
+  {
+   "paper_id": "local:b1d1917f9cf4",
+   "title": "Zenzic — Safety Case Framework, The Guidance, Edition for Creators (2021)",
+   "kind": "guidance",
+   "issuer": "Zenzic",
+   "designation": null,
+   "edition_label": "Edition for Creators",
+   "edition_year": 2021,
+   "year_basis": "document",
+   "status": "current",
+   "supersedes": [],
+   "superseded_by": [],
+   "withdrawn_by": [],
+   "supersedes_external": [],
+   "normative": false,
+   "completeness": "full",
+   "evidence": [
+    {
+     "chunk_id": "local:b1d1917f9cf4:c0",
+     "quote": "Safety Case Framework: The Guidance Edition For Creators 2021"
+    },
+    {
+     "chunk_id": "local:b1d1917f9cf4:c1",
+     "quote": "Any views expressed in this report are not necessarily those of Zenzic"
+    }
+   ],
+   "title_issue": null,
+   "db_doc_type": "paper",
+   "db_published": "2021-01-01",
+   "year_hint_unverified": null,
+   "null_reasons": {
+    "designation": "no designation printed (non-standard publication)"
+   },
+   "notes": "Produced by HORIBA MIRA, TRL and WMG under contract to Zenzic."
+  }
+ ]
+}
