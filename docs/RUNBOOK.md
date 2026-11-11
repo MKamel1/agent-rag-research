@@ -218,7 +218,7 @@ misread as "the Waymo corpus has no data". Three ways to know where you are:
    stderr -- visible in the client's MCP server logs).
 3. To reach more than one corpus from one client, register one server entry per corpus: the default
    one above, plus one per extra corpus with `"args": [..., "-m", "app.serve", "--data-dir",
-   "<data dir from the table in "Running a second corpus" below>"]` (for example
+   "<data dir>"]` (data directories are tabulated under "Running a second corpus" below; for example
    `/home/omar/ai-projects/research-system-rag/waymo/data`). Same PYTHONPATH rules apply.
 
 `app.mcp_verify_client` takes the same `--data-dir` (e.g. `python -m app.mcp_verify_client "query"
