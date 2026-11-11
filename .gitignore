@@ -43,3 +43,4 @@ config.yaml
 # worktrees (a union merge-driver is already registered in .gitattributes for that case).
 graphify-out/
 .omo/
+.gpu.lock.holder
