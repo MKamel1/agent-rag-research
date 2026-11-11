@@ -1888,9 +1888,9 @@ def test_main_writes_the_report_then_exits_nonzero_on_a_lock_timeout(tmp_path, m
     gt.write_text(json.dumps({"ground_truth": [{
         "question_id": "Q1", "question_text": "slow", "source_paper_id": "P1",
     }]}))
+    db = _corpus_db(tmp_path)
     cfg = types.SimpleNamespace(
-        hybrid_dense_weight=0.5, db_path=str(_corpus_db(tmp_path)), blob_dir="b",
-        model_copy=lambda update: cfg,
+        hybrid_dense_weight=0.5, db_path=str(db), blob_dir="b", model_copy=lambda update: cfg,
     )
     monkeypatch.setattr("rag.config.load_config", lambda path=None: cfg)
     monkeypatch.setattr(
@@ -1900,7 +1900,7 @@ def test_main_writes_the_report_then_exits_nonzero_on_a_lock_timeout(tmp_path, m
     out = tmp_path / "report.json"
     monkeypatch.setattr("sys.argv", [
         "retrieval_eval", "--ground-truth", str(gt), "--collection", "c",
-        "--db-path", str(_corpus_db(tmp_path)), "--report-path", str(out),
+        "--db-path", str(db), "--report-path", str(out),
     ])
     with pytest.raises(SystemExit) as exc:
         retrieval_eval.main()

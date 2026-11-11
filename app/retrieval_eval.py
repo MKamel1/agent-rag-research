@@ -276,6 +276,9 @@ class QuestionResult:
     # passage text): one id = unique, several = ambiguous (identical text on one anchor), none =
     # unresolved. Empty tuple when no CorpusLookup was supplied to `run`.
     retrieved_chunk_ids: tuple[tuple[str, ...], ...] = ()
+    # EV-10: "gpu_lock_timeout" when the error is a GPU-lock acquisition timeout (the question
+    # never ran), else None -- including for ordinary errors, which stay plain `error` strings.
+    error_class: str | None = None
 
 
 def load_questions(ground_truth_path: Path, include_duplicates: bool = False) -> list[Question]:
@@ -601,6 +604,22 @@ def score_question(
     )
 
 
+GPU_LOCK_TIMEOUT = "gpu_lock_timeout"
+
+
+def _error_class(error: Exception) -> str | None:
+    """EV-10: classify a per-question retrieval error. A lock timeout is raised by
+    rag/gpu_lock.py as TransientError("gpu lock <path> not acquired within <n>s for stage ...");
+    matched on that message (the retriever may wrap the exception type) over the cause chain."""
+    seen = error
+    while seen is not None:
+        text = str(seen)
+        if "gpu lock" in text and "not acquired within" in text:
+            return GPU_LOCK_TIMEOUT
+        seen = seen.__cause__
+    return None
+
+
 def run(
     questions: list[Question], retriever, k: int, chunk_lookup: "CorpusLookup | None" = None
 ) -> list[QuestionResult]:
@@ -637,6 +656,7 @@ def run(
                     passage_rank=None,
                     passage_scored=question.gold_block_id is not None,
                     error=str(e),
+                    error_class=_error_class(e),
                     gold_paper_ids=question.gold_paper_ids,
                     gold_block_id=question.gold_block_id,
                     doc_type=question.doc_type,
@@ -756,6 +776,7 @@ def _question_row(r: QuestionResult) -> dict:
         "gold_block_id": r.gold_block_id,
         "gold_chapter_title": r.gold_chapter_title,
         "error": r.error,
+        "error_class": r.error_class,
         # Diagnostic only -- see build_report's paper_level.title_leak note; not an input to
         # hit/rank above (pinned by test_build_report_reports_leaks_alongside_untouched_metrics).
         "title_leak": r.title_leak,
@@ -844,6 +865,7 @@ def build_report(
     text_arm_results = [r for r in passage_eligible if not r.vision_derived]
     vision_arm_results = [r for r in passage_eligible if r.vision_derived]
     excerpt_fallbacks = [r for r in passage_eligible if r.excerpt_fallback]
+    n_lock_timeouts = sum(1 for r in results if r.error_class == GPU_LOCK_TIMEOUT)
 
     report = {
         # RI-15: names the hit rule and k in force, so reports produced under different rules are
@@ -860,6 +882,18 @@ def build_report(
         "k": k,
         "n_questions": len(results),
         "n_errors": sum(1 for r in results if r.error),
+        # EV-10: a question that errored on a GPU-lock timeout never ran -- scoring it as a miss
+        # (SB-1) makes the whole run a partially starved, untrustworthy measurement. Header-level
+        # so a reader sees it before any metric; same VOID convention as scripts/nb_eval_runner.py.
+        "run_valid": n_lock_timeouts == 0,
+        "n_lock_timeouts": n_lock_timeouts,
+        "invalid_reason": (
+            f"{n_lock_timeouts} question(s) errored on a GPU-lock timeout and never ran; their "
+            "rows are counted as misses below -- do not use any number in this report; re-run "
+            "with no concurrent GPU-lock contention"
+            if n_lock_timeouts
+            else None
+        ),
         # EV-9: ambiguity is counted, not hidden (rows with a rank matching >1 chunk; ranks that
         # matched no chunk -- nonzero only when a CorpusLookup was supplied to `run`).
         "n_chunk_id_ambiguous_rows": sum(
@@ -981,6 +1015,8 @@ def _print_summary(report: dict) -> None:
             return "n=0 (no questions in this split)"
         return f"Recall@{report['k']}={m['recall_at_k']:.3f}  MRR={m['mrr']:.3f}  (n={m['n']})"
 
+    if not report["run_valid"]:
+        print(f"*** RUN INVALID: {report['invalid_reason']} ***")
     print(f"Scoring rule: {report['scoring_rule']}")
     print(f"Questions scored: {report['n_questions']} (errors: {report['n_errors']})")
     # BENCH-1: a mixed fixture prints its two arms, not the blend -- the unpartitioned 'overall'
@@ -1156,6 +1192,8 @@ def main() -> None:
     if args.report_path:
         Path(args.report_path).write_text(json.dumps(report, indent=2))
         print(f"\nWrote report to {args.report_path}")
+    if not report["run_valid"]:
+        sys.exit(EXIT_INVALID_RUN)
 
 
 if __name__ == "__main__":
