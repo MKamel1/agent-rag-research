@@ -136,3 +136,81 @@ def test_record_usage_records_the_error_then_reraises(tmp_path):
     conn = sqlite3.connect(tmp_path / "u.db")
     assert conn.execute("SELECT error FROM requests").fetchone()[0] == "PermanentError"
     conn.close()
+
+
+# --- MC-3: scan/get tools log their arguments; errors log the message ------------------------
+
+
+def _tool_rows(tmp_path, calls):
+    """Run each `(tool_name, fn, kwargs)` through `record_usage` and return its rows."""
+    log = usage_log.UsageLog(tmp_path / "mcp_usage.db")
+    for tool, fn, kwargs in calls:
+        try:
+            usage_log.record_usage(lambda: log, source="mcp", tool=tool)(fn)(**kwargs)
+        except ValueError:
+            pass
+    conn = sqlite3.connect(tmp_path / "mcp_usage.db")
+    rows = conn.execute("SELECT tool, query, paper_id, error, error_message FROM requests ORDER BY id").fetchall()
+    conn.close()
+    return rows
+
+
+def test_scan_and_get_tools_record_their_arguments_and_errors(tmp_path):
+    from contracts.provenance import Anchor
+
+    def scan_corpus(pattern, paper_id=None, author_org=None): return None
+    def scan_methods(method, paper_id=None): return None
+    def get_section(paper_id, section_path): return []
+    def get_figures(paper_id, kind="all"): return []
+    def get_span(anchor): return "text"
+    def get_paper(paper_id): raise ValueError("unknown paper_id 'x' [serving collection=c]")
+
+    anchor = Anchor(paper_id="p1", block_id="p1:b3", page=0, bbox=(0.0, 0.0, 1.0, 1.0),
+                    snippet="s", section_path="")
+    rows = _tool_rows(tmp_path, [
+        ("scan_corpus", scan_corpus, {"pattern": "bootstrap|resampl", "paper_id": "p9"}),
+        ("scan_corpus", scan_corpus, {"pattern": "x" * 900}),
+        ("scan_methods", scan_methods, {"method": "RRF"}),
+        ("get_section", get_section, {"paper_id": "p1", "section_path": "3. Method"}),
+        ("get_figures", get_figures, {"paper_id": "p2"}),
+        ("get_span", get_span, {"anchor": anchor}),
+        ("get_paper", get_paper, {"paper_id": "x"}),
+    ])
+    assert rows[0] == ("scan_corpus", "bootstrap|resampl", "p9", None, None)
+    assert len(rows[1][1]) == 500  # long patterns are capped
+    assert rows[2][:3] == ("scan_methods", "RRF", None)
+    assert rows[3][:3] == ("get_section", "3. Method", "p1")
+    assert rows[4][:3] == ("get_figures", None, "p2")
+    assert rows[5][:3] == ("get_span", "p1:b3", "p1")
+    assert rows[6] == ("get_paper", None, "x", "ValueError", "unknown paper_id 'x' [serving collection=c]")
+
+
+def test_error_message_is_truncated_to_200_chars(tmp_path):
+    def get_paper(paper_id): raise ValueError("e" * 1000)
+    assert len(_tool_rows(tmp_path, [("get_paper", get_paper, {"paper_id": "x"})])[0][4]) == 200
+
+
+def test_a_log_created_by_the_old_schema_is_upgraded_in_place_and_old_rows_stay_readable(tmp_path):
+    db = tmp_path / "mcp_usage.db"
+    conn = sqlite3.connect(db)
+    conn.executescript(  # the pre-MC-3 schema, verbatim, plus one old row
+        "CREATE TABLE requests (id INTEGER PRIMARY KEY, ts TEXT NOT NULL, source TEXT NOT NULL, "
+        "tool TEXT NOT NULL, query TEXT, k INTEGER, filters_json TEXT, doc_type TEXT, paper_id TEXT, "
+        "latency_ms REAL NOT NULL, result_count INTEGER, candidates INTEGER, error TEXT);"
+        "INSERT INTO requests (ts, source, tool, latency_ms, error) "
+        "VALUES ('2026-08-01T00:00:00+00:00', 'mcp', 'get_paper', 1.0, 'ContractError');"
+    )
+    conn.commit()
+    conn.close()
+
+    log = usage_log.UsageLog(db)
+    for _ in range(2):  # second write proves the migration is idempotent
+        log.record(source="mcp", tool="get_paper", query=None, k=None, filters=None, latency_ms=2.0,
+                   result_count=None, candidates=None, error="ContractError",
+                   error_message="unknown paper_id", paper_id="p")
+
+    conn = sqlite3.connect(db)
+    rows = conn.execute("SELECT error, error_message, paper_id FROM requests ORDER BY id").fetchall()
+    conn.close()
+    assert rows == [("ContractError", None, None)] + [("ContractError", "unknown paper_id", "p")] * 2
+    assert usage_log.read_usage_summary(db)["total"] == 3  # the dashboard's read side still works

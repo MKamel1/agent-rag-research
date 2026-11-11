@@ -24,7 +24,7 @@ import pytest
 import app.assembly
 import rag.config
 from contracts.config import Config
-from contracts.mcp_server import Coverage, PaperSearchResponse, SearchResponse
+from contracts.mcp_server import Coverage, PaperSearchResponse, ScanResponse, SearchResponse
 from contracts.vector_index import SearchFilters
 
 
@@ -53,6 +53,15 @@ class _FakeMcpServer:
     def get_span(self, anchor):
         self.get_span_calls.append(anchor)
         return "verbatim source text"
+
+    def scan_corpus(self, pattern, paper_id, author_org, max_matches, context):
+        return ScanResponse(matches=[], papers_scanned=1, papers_matched=0, truncated=False)
+
+    def scan_methods(self, method, paper_id, author_org, max_matches, context):
+        return ScanResponse(matches=[], papers_scanned=1, papers_matched=0, truncated=False)
+
+    def get_section(self, paper_id, section_path):
+        return []
 
     def corpus_stats(self):
         return {
@@ -372,3 +381,25 @@ def test_described_filters_still_validate_to_a_plain_searchfilters(serve_module)
     arg_model = serve_mod.mcp._tool_manager.get_tool("semantic_search").fn_metadata.arg_model
     filters = arg_model.model_validate({"query": "q", "filters": {"doc_type": "book"}}).filters
     assert type(filters) is SearchFilters and filters.doc_type == "book"
+
+
+# --- MC-3: a mixed session leaves no NULL where the tool had an argument -------------------------
+
+
+def test_mixed_session_logs_scan_and_get_arguments(serve_module):
+    serve_mod, _ = serve_module
+    serve_mod.scan_corpus("bootstrap|resampl")
+    serve_mod.scan_methods("RRF", "p1")
+    serve_mod.get_section("p1", "3. Method")
+    with pytest.raises(AssertionError):
+        serve_mod.get_paper("p2")
+
+    conn = sqlite3.connect(serve_mod._usage_log_path)
+    rows = conn.execute("SELECT tool, query, paper_id, error, error_message FROM requests ORDER BY id").fetchall()
+    conn.close()
+    assert rows == [
+        ("scan_corpus", "bootstrap|resampl", None, None, None),
+        ("scan_methods", "RRF", "p1", None, None),
+        ("get_section", "3. Method", "p1", None, None),
+        ("get_paper", None, "p2", "AssertionError", "get_paper not exercised by these tests"),
+    ]
