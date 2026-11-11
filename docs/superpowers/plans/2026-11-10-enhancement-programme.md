@@ -1,6 +1,8 @@
 # The enhancement programme: instruments first, measurements second, gated changes last
 
-Written 2026-11-10, before execution (house rule from the precision-95 and next-build programmes: the wave map exists so dependencies are decided before dispatch). Primary input: the adjudicated system review `docs/eval-reports/2026-11-10-system-review.md` and its six lane reports. **This document plans; it does not implement.** Every number is cited to its source report. Where something is unknown or not commissioned, it says so. It defines 51 tickets (plus the already-done work in section 7). The issue bodies, one file per ticket, are in `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/` with `INDEX.md`; nothing has been posted to GitHub.
+Written 2026-11-10, before execution (house rule from the precision-95 and next-build programmes: the wave map exists so dependencies are decided before dispatch). Primary input: the adjudicated system review `docs/eval-reports/2026-11-10-system-review.md` and its six lane reports. **This document plans; it does not implement.** Every number is cited to its source report. Where something is unknown or not commissioned, it says so.
+
+**Revision 2026-11-11 (EP-2b).** The operator approved in full the minimizer verdicts in `docs/eval-reports/2026-11-10-ticket-set-minimizer.md`. The original 51 tickets are now **22 active and 21 parked** (KEEP 10, SHRINK 12, DEFER 20, MERGE 7, CUT 2; plus one new ticket, EV-6b; one SHRINK, CQ-13, is placed in the parked section because it hard-depends on a parked ticket, see section 11). ACTIVE tickets are the list proposed for posting as GitHub issues; PARKED tickets stay in the plan behind a checkable trigger and are not to be started or posted unless the operator asks. The issue bodies, one file per ticket (parked ones in `parked/`), are in `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/` with `INDEX.md`; nothing has been posted to GitHub.
 
 ---
 
@@ -41,7 +43,7 @@ Only facts verified by the review (or re-checked on 2026-11-10, where stated) ar
 
 1. **What is proven (by reading code and data, not by retrieval runs):** the reranker score is thrown away; no payload index exists; the section tracker causes the standards path defects; the main corpus has no recent backup; merged ligature repair changes none of 1,217 recorded queries; IDF is applied everywhere; the first GPU run, as the old scripts were written, would have rewritten its own fixture and measured another checkout (now fixed in the run scripts).
 2. **What is unknown until the first GPU session (wave 2):** passage-level recall on the three new sets; whether stubs or ligature damage cost any answer; how often off-topic papers enter a top 10; whether the per-corpus depth and weight settings help; whether the cross-encoder score separates answerable from absent; whether filtered searches lose neighbours without payload indexes (that one needs only the vector store on CPU).
-3. **What this programme does NOT promise:** no retrieval improvement has been measured for anything, and none is promised. No precision-0.95 or abstention claim (the P0-2 ratification is unsigned, F8). No deletion of the off-topic papers. No full re-chunk. No MCP wiring of any confidence signal (it would need at least 60 distinct real absent items). The ground-truth sets are LLM-authored, same-family verified, with questions about twice as long as real queries and title tokens carrying 11-16 points of paper recall; the authority and edition strata (n=4) are descriptive only until CQ-19/CQ-20 land.
+3. **What this programme does NOT promise:** no retrieval improvement has been measured for anything, and none is promised. No precision-0.95 or abstention claim (the P0-2 ratification is unsigned, F8). No deletion of the off-topic papers. No full re-chunk. No MCP wiring of any confidence signal (it would need at least 60 distinct real absent items). The ground-truth sets are LLM-authored, same-family verified, with questions about twice as long as real queries and title tokens carrying 11-16 points of paper recall; the authority and edition strata (n=4) stay descriptive: the 38-item extensions are parked (CQ-19) behind a baseline result.
 4. **Statistical reality:** with 61-128 items per set, a net +3 items is the smallest effect any rule here can call, and many gated tickets will honestly end as REJECT, UNDERPOWERED or closed-by-gate. That counts as success: each costs a clone and a report, never a live change.
 5. **Estimates:** every GPU duration and every size in this plan is an estimate (GPU-day runbook basis), not a measurement; the first run replaces them.
 
@@ -59,20 +61,20 @@ Only facts verified by the review (or re-checked on 2026-11-10, where stated) ar
 
 | # | question | blocks |
 |---|---|---|
-| F1 | Backups: is there any device or remote for an off-disk copy (the only other disk is the photo project's read-only source)? After a fresh verified snapshot, may the five July `.bak` files (6.4 GB), the 07-28 `.partial`, and two of the three July snapshots be deleted? | OP-4 (off-device copy and deletions only; the snapshot itself is not blocked), EP-7 (restore section's target) |
-| F2 | May the vector store (CPU container only) be started for clone measurements? Each clone needs about 6-8 GB of the 91 GB free. | EV-14, CQ-7, CQ-9, CQ-10, CQ-15, CQ-18 |
-| F3 | Who owns the wedged foreign model process holding 18.6 GB of VRAM, and may it be stopped? It is what blocks the GPU. | Every wave-2 ticket (EV-16 to EV-22) and every GPU ticket in wave 3 (RQ-3, CQ-10, CQ-11, CQ-15, CQ-16, CQ-18) |
-| F4 | Push the local commits (67 at review time) so CI judges them: yes or no? | RIDER-1 (a CI verdict on the rider); every 'CI passes' claim in this plan is local until then |
-| F5 | May the MCP wire be a projection of the frozen envelope (drop `bbox` and the duplicated `snippet`/`paper_id`)? | MC-4 |
-| F6 | Focus lever: is 'demote, never drop, opt-in' the only acceptable form? What off-topic share in the top 10 counts as material? | RQ-3 (starts only above the bar), EV-17 (reports the number, does not set the bar), RIDER-1 item 1 |
-| F7 | If the standards structure gate passes, may stored `Block.section_path` be rewritten for standards (and a 35k re-embed run), or must the corrected path live in a derived column? | CQ-15 (default is the derived column until answered), CQ-16, RIDER-1 conditional item 7 |
-| F8 | P0-2 metric ratification: sign it, or retire it in favour of the EV-5 protocols and EV-7/EV-8 addenda? | Any headline quoted from wave-2 reports (they cite the EV-5 protocols, never P0-2, until answered); EP-4 records the answer |
+| F1 | Backups: is there any device or remote for an off-disk copy (the only other disk is the photo project's read-only source)? After a fresh verified snapshot, may the five July `.bak` files (6.4 GB), the 07-28 `.partial`, and two of the three July snapshots be deleted? | the off-device copy and the deletions only (no ticket exists for them: no off-device tooling until a target exists, section 9); the snapshot itself is not blocked and OP-4 is in progress |
+| F2 | May the vector store (CPU container only) be started for clone measurements? Each clone needs about 6-8 GB of the 91 GB free. | EV-14 (active); parked CQ-7, CQ-9, CQ-16, CQ-18 |
+| F3 | Who owns the wedged foreign model process holding 18.6 GB of VRAM, and may it be stopped? It is what blocks the GPU. | EV-16, EV-17, EV-18 and EV-20, and every parked GPU ticket (EV-19, EV-21, EV-22, RQ-3, CQ-16, CQ-18) |
+| F4 | Push the local commits (67 at review time) so CI judges them: yes or no? | RIDER-1 (a CI verdict on the rider, and its ruff step); every 'CI passes' claim in this plan is local until then |
+| F5 | May the MCP wire be a projection of the frozen envelope (drop `bbox` and the duplicated `snippet`/`paper_id`)? | MC-4 (parked) |
+| F6 | Focus lever: is 'demote, never drop, opt-in' the only acceptable form? What off-topic share in the top 10 counts as material? | parked RQ-2 and RQ-3 (start only above the bar), EV-17 (reports the number, does not set the bar) |
+| F7 | If the standards structure gate passes, may stored `Block.section_path` be rewritten for standards (and a 35k re-embed run), or must the corrected path live in a derived column? | parked CQ-16 (default is the derived column until answered) |
+| F8 | P0-2 metric ratification: sign it, or retire it in favour of the EV-5 protocols and EV-7/EV-8 addenda? | Any headline quoted from wave-2 reports (they cite the EV-5 protocols, never P0-2, until answered); the answer is recorded in EV-16's ledger entry |
 
-Programme-embedded decisions that are NOT blocking questions (the operator decides them in PR review of the named ticket): the 20 s query-path lock timeout (OP-5), the Qdrant version pin (OP-7), the amended CQ-3 ADOPT rule (EV-12), the standards protocol addendum (EV-11), whether unsupported per-corpus defaults are reset to 32/0.5 as the review says or stay as frozen rule G-1 says (EV-20), the bare-clause-number folding rule (CQ-14), and applying any adopted index change to a live collection (follow-on tickets, written only on ADOPT).
+Programme-embedded decisions that are NOT blocking questions (the operator decides them in PR review of the named ticket): the Qdrant version pin (OP-7), the standards protocol addendum (EV-11), whether unsupported per-corpus defaults are reset to 32/0.5 as the review says or stay as frozen rule G-1 says (EV-20; G-1 wins, section 9), and, for parked tickets, the amended CQ-3 ADOPT rule (EV-12), the bare-clause-number folding rule (CQ-14), the 20 s query-path lock timeout (deferred out of OP-5, section 9) and applying any adopted index change to a live collection (follow-on tickets, written only on ADOPT).
 
 ## 4. Execution model and global constraints
 
-One orchestrator plus dispatched subagents plus detached measurement processes (`docs/AGENT-OPERATIONS-LESSONS.md`). The orchestrator writes briefs from the ticket entries below, dispatches, verifies artifacts against git, merges lanes into the integration branch and owns integration. It never implements a ticket. Tier rule: Haiku for mechanical work (EP-3, EP-4, EP-5, OP-4), Sonnet for logic and authoring (everything else), Opus only for hard design adjudication with a one-line justification (none needed so far).
+One orchestrator plus dispatched subagents plus detached measurement processes (`docs/AGENT-OPERATIONS-LESSONS.md`). The orchestrator writes briefs from the ticket entries below, dispatches, verifies artifacts against git, merges lanes into the integration branch and owns integration. It never implements a ticket. Tier rule: Haiku for mechanical work (OP-4), Sonnet for logic and authoring (everything else), Opus only for hard design adjudication with a one-line justification (none needed so far).
 
 ### Global constraints: encode into EVERY brief, verbatim-adapted
 
@@ -88,62 +90,94 @@ One orchestrator plus dispatched subagents plus detached measurement processes (
 10. **Both fixtures / all sets are reported, never averaged.** One variable per run; a change is believed only if the held-out set does not move against it; the five-part qualifier `{metric, fixture, arm, pool depth, config}` accompanies every number.
 11. **Ceiling-check before freezing any metric or rule** (LESSONS 7.2): the achievability bound (for example, that +3 is reachable on n items) is computed and written into commit ① before any run.
 12. **Local CI gate before every push:** the full zero-GPU pytest and `ci.run_enforcement` (the synthesized push event, or `--local <base>`), read to their verdict line. A passing local suite says nothing about the gate (LESSONS 1.1-1.2). Until F4 is answered, no CI verdict exists for any of this work.
-13. **Docs batching exception (declared, to be confirmed by the operator).** AGENT-PROCEDURES section B requires ledger entries in the same PR. Because PROJECT-STATUS.md and BACKLOG.md are the two most conflict-prone files, tickets here ship their own report or design note and name the section B triggers in 'Docs to update'; EP-3, EP-4 and EP-5 pay the ledger, entry-point and doc-map rows from the merged SHAs, once per wave. Doc supersession banners are still done in the superseding PR.
+13. **Documentation is paid in the same PR (no batch tickets).** `docs/AGENT-PROCEDURES.md` section B makes the BACKLOG row flip, the PROJECT-STATUS section 3 ledger entry and the section 7 doc-map row (and the section 2 entry-point row for a new flag) same-PR, non-deferrable obligations. The earlier batching exception (tickets EP-3, EP-4, EP-5) is withdrawn on the minimizer's reasons: it recreated the failure section B exists to prevent, W2 is GPU-serial so there is nothing to batch around, and the batch tickets fanned in 27 dependencies. Every active ticket therefore lists these obligations in its 'Docs to update in the same PR' field. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files and are deliberately NOT in any ticket's `Owns`; the orchestrator resolves append conflicts when it merges each ticket into the integration branch. Doc supersession banners are done in the superseding PR.
 14. **Measurement runs are detached processes** (`setsid`, LESSONS 7.3, 8.1), one GPU job at a time, cheapest first (LESSONS 9.1); liveness is a `/proc` scan, never `$!`; a stuck holder is found with `fuser` on the lock and killed by exact pid after checking its working directory; never `pkill -f`. Confirm artifacts through git, not by listing someone else's tree.
 15. **Brief hygiene** (LESSONS section 5): each brief states the rejected alternative and why, invites disagreement ('if you think this is wrong, say why and do not change it'), names the reuse target or demands the search that justifies new code, prefers one fix at a shared choke point, and gives the failure mode, not just the requirement. Baselines ('N passed') are re-read from the ticket's own merge base at dispatch time.
+16. **Pre-baseline rule.** No ticket may change retrieval, ranking, index or server start-up behaviour (even default-off) before the baseline commit is frozen, unless this plan lists it as a baseline-path exception with its reason. The baseline is the reference for everything: only instrument fixes and read-only or diagnostic changes may precede it; any behaviour-touching change lands after the last baseline (EV-18 merged) and is verified against the real baseline rows. The exception list and the check of the active set are in section 6.4. At the freeze, any listed exception not yet merged is held, not merged, until the EV-18 report is merged. The parked behaviour-touching tickets (RQ-1, RQ-2, RQ-5, EV-13, OP-2, CQ-9, CQ-18, MC-4) are barred by their triggers anyway; RQ-1 is explicitly the first post-baseline change.
+17. **Baseline commit freeze.** EV-16's first commit records the integration-branch head as `baseline_commit`; EV-16, EV-17 and EV-18 run from a worktree checked out at exactly that SHA and write it into every MANIFEST and every run's output; a report whose recorded SHA differs from the code that ran is discarded. This is a step of the baseline tickets, not a separate ticket.
 
 ## 5. Ticket ID scheme
 
-`EP-n` programme and housekeeping; `EV-n` evaluation instruments and measurements; `CQ-n` corpus and index quality; `RQ-n` retrieval quality and focus; `MC-n` MCP surface; `OP-n` operations; `RIDER-1` the single sign-off batch. Numbering continues after the IDs used on 2026-11-10 (EP-0..EP-2, EV-1..EV-6, CQ-1..CQ-6, OP-1); OP-2 is the lazy vector-index construction reserved by OP-1's notes. The review's `S-nn` id is kept in each ticket as 'Review cross-reference'. Waves: W1 do now without GPU (some tickets need the vector store on CPU), W2 first GPU session, W3 gated changes, W4 rider and what it unblocks. Branches: `EP-<ID without hyphen>-<slug>`, e.g. `EP-OP2-lazy-vector-index-construction`. Labels on issues come from a closed set (`wave:*`, `area:*`, `needs-gpu`, `needs-signoff`, `needs-services`, `size:S|M`). Sizes: S up to 2 h of agent work, M up to 1 day; nothing is larger (anything that was larger was split, section 11).
+`EP-n` programme and housekeeping (the EP-3/EP-4/EP-5 batch tickets are dropped; EP-2b applied the minimizer verdicts); in-progress repair tickets carry a letter suffix (`EV-4b`, the repair of the merged focus ground truth; `EV-6b`, the review of the strata report script); `EV-n` evaluation instruments and measurements; `CQ-n` corpus and index quality; `RQ-n` retrieval quality and focus; `MC-n` MCP surface; `OP-n` operations; `RIDER-1` the single sign-off batch. Numbering continues after the IDs used on 2026-11-10 (EP-0..EP-2, EV-1..EV-6, CQ-1..CQ-6, OP-1); OP-2 is the lazy vector-index construction reserved by OP-1's notes. The review's `S-nn` id is kept in each ticket as 'Review cross-reference'. Waves: W1 do now without GPU (some tickets need the vector store on CPU), W2 first GPU session, W3 gated changes, W4 rider and what it unblocks. Branches: `EP-<ID without hyphen>-<slug>`, e.g. `EP-OP2-lazy-vector-index-construction`. Labels on issues come from a closed set (`wave:*`, `area:*`, `needs-gpu`, `needs-signoff`, `needs-services`, `size:S|M`, and `parked`, used on parked issue files only). Sizes: S up to 2 h of agent work, M up to 1 day; nothing is larger (anything that was larger was split, section 11).
 
-## 6. Wave map
+## 6. Wave map and critical path
+
+### 6.1 Minimal critical path to a trustworthy first baseline (the minimizer's order, numbered)
+
+Not tickets, and first: (a) EV-4b (in progress) repairs the merged focus ground truth and re-freezes its hash, so EV-17 has a valid fixture; (b) the operator answers F3 (the GPU). OP-4 (a fresh main-corpus snapshot) is urgent but independent of the baseline: the orchestrator is running it now, outside the programme queue, and it is not waited for.
+
+1. **EV-7** Require `--collection`, stamp the fixture hash, preflight gold ids (`app/retrieval_eval.py` only).
+2. **EV-8** Excerpt-containment passage metric.
+3. **EV-9** Chunk ids in eval rows (shrunk to the additive row field).
+4. **EV-10** Mark an eval run invalid on a GPU lock timeout.
+5. **EV-11** Record the three alternatives, re-freeze the fixture hashes (in parallel with 1-4 once EV-8 has landed; the hash file is shared with EV-4b, keys disjoint).
+6. **EV-15** BM25 floor script (no dependencies; parallel anywhere).
+7. **EV-6b** Dry-run and independently review `scripts/eval_strata_report.py` against a hand-computed example (inserted by the operator's instruction: the minimizer found the script unreviewed although every headline number passes through it and proposed folding the dry run into EV-8; a separate ticket gives an independent reviewer and runs after EV-9 has made the row format final).
+8. **Freeze the baseline commit** (a step inside EV-16's commit 1, not a separate ticket): record the integration head SHA as `baseline_commit` and write it into every run's output.
+9. **EV-16** Main-corpus baselines (papers, books, legacy), including the one TEI `/info` truncation check.
+10. **EV-17** Focus baseline (needs EV-4b's re-frozen hash and EV-16's slot).
+11. **EV-18** Standards baseline and the structure-gate count.
+
+**Combination decision for items 1-4.** EV-7, EV-8, EV-9 and EV-10 all own `app/retrieval_eval.py` and `app/test_retrieval_eval.py`, so they serialise whatever is done. They stay **four tickets explicitly chained** (EV-7 -> EV-8 -> EV-9 -> EV-10) but are delivered as **one branch and one PR** (`EP-EV7-eval-entrypoint-bundle`), with a commit group per ticket, dispatched as two sequential briefs of two tickets each (EV-7 + EV-8, then EV-9 + EV-10, which respects global rule 2, two items per brief). Why chained tickets and not one ticket: each keeps its own acceptance criterion, falsifier and traceability row and the operator can strike one; why one PR: four separate branches over the same file would merge-conflict in sequence and the instrument changes belong to one review. The EV-9 -> EV-10 edge is an ordering edge only, not a data dependency.
+
+Tickets that are not on this path and must not gate EV-16: OP-3, OP-5, OP-6, OP-7, MC-1, MC-2, MC-3, EP-6, EV-14 (hygiene; fine to run in parallel agent capacity, but under rule 16 any that touch the baseline path are merged before the freeze or held until EV-18 is merged). EV-20 runs after EV-18 and only if its headroom gate holds.
+
+### 6.2 Wave map (active set only)
 
 ```
-W0  done / in progress (section 7)   EP-0 EV-1..3 EV-5 EV-6 CQ-1..6 OP-1 EP-1 RV-1..6 RV-S | EV-4 in progress
+W0  done / in progress (section 7)   EP-0 EV-1..3 EV-5 EV-6 CQ-1..6 OP-1 EP-1 RV-1..6 RV-S | EV-4 merged, needs repair: EV-4b IN PROGRESS | OP-4 IN PROGRESS (orchestrator)
 
-W1  no GPU                                                      (operator answers: F1, F2)
- docs   EP-6 --> EP-7 ------------------------------------------------------------------+
- ops    OP-4 (snapshot, first)      OP-3 -> OP-6 -> OP-5 -> OP-2 (needs MC-3)   OP-7 ---+
- mcp    MC-1 -> MC-2 -> MC-3 ------------------------------^                            |
- retr   RQ-1 -> RQ-5 -> EV-14*      RQ-1 -> RQ-2 (needs EV-10)                           |
- eval   EV-7 -> EV-8 -> EV-9 -> EV-10 -> RQ-2 ;  EV-8 -> EV-11(EV-4) -> EV-12 ;          |
-        RQ-1 -> EV-13 ;  EV-15 ;  EV-11 -> CQ-19 -> CQ-20                                |
- corpus CQ-7* (clone, CPU)   CQ-8                                                         |
-        (* = needs vector store up, F2; EV-14 and CQ-7 also need OP-4)                    v
-                                                                         EP-3 (W1 ledger batch)
+W1  no GPU                                                       (operator answer: F2 for EV-14; F1 only for off-device copy)
+ eval bundle   EV-7 -> EV-8 -> EV-9 -> EV-10          one branch, one PR (section 6.1)
+ eval          EV-8 -> EV-11 (EV-4b merge order)      EV-15 (no deps)       EV-9 -> EV-6b
+ retr (RO)     EV-14* (read-only, live collection)
+ ops           OP-4 (now)      OP-3 -> OP-6 -> OP-5 -> OP-7 (RUNBOOK commit last; ordering edges)
+ mcp           MC-1 -> MC-2 -> MC-3                   (hygiene, not a gate of EV-16)
+ docs          EP-6
+               (* = needs the vector store up on CPU, F2)
+
+               [ freeze baseline_commit: step of EV-16 ]
 W2  first GPU session, measurements only, one job at a time, cheapest first (F3)
- EV-16 --> EV-18 --> EV-19 --> EV-20 --> EV-21 --> EV-22        EV-17 (focus; after EV-4's hash, off-chain)
- EP-4 (W2 ledger batch) after all of them
+ EV-7,8,9,10,11,15,6b --> EV-16 --> EV-18 --> EV-20 (only if headroom)        EV-17 (focus; after EV-16's slot, needs EV-4b)
 
-W3  gated changes (each starts only if its gate holds)
- EV-17,EV-16,RQ-2,F6 -> RQ-3 -> CQ-10 -> CQ-11 -> CQ-15 -> CQ-16 -> CQ-18
- EV-14 -> CQ-9 -> CQ-17 (needs EV-22) -> CQ-18            EV-18 gate -> CQ-12 -> CQ-13 -> CQ-15 ; EV-18 -> CQ-14 -> CQ-15
- MC-3 + F5 -> MC-4
+W3  gated changes: nothing active. Every W3 ticket is parked (section 8A).
 
-W4  RIDER-1 (only adopted items) -> RQ-4 (needs EV-19 gate) ; EP-5 (final ledger batch)
+W4  EV-11, EV-18 --> RIDER-1 (items 5, 2, 6 only; F4)
 ```
 
-Dependency edges, exhaustive (`A -> B` = B needs A; operator answers and in-progress inputs follow). GPU-serial edges only order jobs on the single card; they carry no data.
+### 6.3 Dependency edges, exhaustive for the ACTIVE set
 
-**W1 do now, no GPU** (edges whose target is in this wave):
+`A -> B` means B needs A. '(ordering)' edges exist only because both tickets own the same file; they carry no data. GPU-serial edges only order jobs on the single card. No active ticket depends on a parked ticket (checked mechanically, section 11).
 
-- OP-3 -> EP-7; OP-4 -> EP-7; OP-5 -> EP-7; OP-7 -> EP-7; EP-6 -> EP-7; EP-6 -> EP-3; EP-7 -> EP-3; OP-2 -> EP-3; OP-3 -> EP-3; OP-4 -> EP-3; OP-5 -> EP-3; OP-6 -> EP-3; OP-7 -> EP-3; MC-1 -> EP-3; MC-2 -> EP-3; MC-3 -> EP-3; RQ-1 -> EP-3; RQ-2 -> EP-3; RQ-5 -> EP-3; EV-7 -> EP-3; EV-8 -> EP-3; EV-9 -> EP-3; EV-10 -> EP-3; EV-11 -> EP-3; EV-12 -> EP-3; EV-13 -> EP-3; EV-14 -> EP-3; EV-15 -> EP-3; CQ-7 -> EP-3; CQ-8 -> EP-3; CQ-19 -> EP-3; CQ-20 -> EP-3; OP-3 -> OP-6; OP-6 -> OP-5; OP-5 -> OP-2; OP-6 -> OP-2; MC-3 -> OP-2; MC-1 -> MC-2; MC-2 -> MC-3; RQ-1 -> RQ-5; RQ-1 -> RQ-2; EV-10 -> RQ-2; EV-7 -> EV-8; EV-8 -> EV-9; EV-9 -> EV-10; EV-8 -> EV-11; EV-9 -> EV-12; EV-11 -> EV-12; RQ-1 -> EV-13; RQ-5 -> EV-14; OP-4 -> EV-14; OP-4 -> CQ-7; EV-11 -> CQ-19; CQ-19 -> CQ-20
+**W1 do now, no GPU** (edges whose target is in this wave): OP-3 -> OP-6 (ordering); OP-6 -> OP-5 (ordering); OP-5 -> OP-7 (ordering); MC-1 -> MC-2 (ordering); MC-2 -> MC-3 (ordering); EV-7 -> EV-8 (ordering); EV-8 -> EV-9 (ordering); EV-9 -> EV-10 (ordering); EV-8 -> EV-11; EV-9 -> EV-6b
 
-**W2 first GPU session, measurements only** (edges whose target is in this wave):
+**W2 first GPU session** (edges whose target is in this wave): EV-7 -> EV-16; EV-8 -> EV-16; EV-9 -> EV-16; EV-10 -> EV-16; EV-11 -> EV-16; EV-15 -> EV-16; EV-6b -> EV-16; EV-16 -> EV-17 (GPU-serial order and shared baseline commit); EV-16 -> EV-18 (GPU-serial order and shared baseline commit); EV-9 -> EV-18; EV-11 -> EV-18; EV-15 -> EV-18; EV-16 -> EV-20; EV-18 -> EV-20
 
-- EV-7 -> EV-16; EV-8 -> EV-16; EV-10 -> EV-16; EV-11 -> EV-16; EV-15 -> EV-16; RQ-1 -> EV-16; OP-5 -> EV-16; EV-16 -> EV-17; EV-16 -> EV-18; EV-11 -> EV-18; EV-15 -> EV-18; EV-13 -> EV-19; EV-16 -> EV-19; EV-18 -> EV-19; EV-16 -> EV-20; EV-18 -> EV-20; EV-19 -> EV-20 (GPU-serial order); EV-12 -> EV-21; EV-9 -> EV-21; EV-16 -> EV-21; EV-18 -> EV-21; EV-20 -> EV-21 (GPU-serial order); CQ-7 -> EV-22; EV-16 -> EV-22; EV-18 -> EV-22; EV-21 -> EV-22; EP-3 -> EP-4; EV-16 -> EP-4; EV-17 -> EP-4; EV-18 -> EP-4; EV-19 -> EP-4; EV-20 -> EP-4; EV-21 -> EP-4; EV-22 -> EP-4
+**W3**: no active tickets.
 
-**W3 gated changes after baselines** (edges whose target is in this wave):
+**W4 rider**: EV-11 -> RIDER-1; EV-18 -> RIDER-1
 
-- RQ-2 -> RQ-3; EV-16 -> RQ-3; EV-17 -> RQ-3; EV-22 -> RQ-3; EV-14 -> CQ-9; RQ-5 -> CQ-9; RQ-1 -> CQ-9; EV-16 -> CQ-10; RQ-3 -> CQ-10 (GPU-serial order); CQ-10 -> CQ-11; EV-18 -> CQ-12; CQ-12 -> CQ-13; EV-18 -> CQ-13; EV-18 -> CQ-14; CQ-12 -> CQ-15; CQ-13 -> CQ-15; CQ-14 -> CQ-15; CQ-8 -> CQ-15; CQ-11 -> CQ-15; CQ-15 -> CQ-16; EV-18 -> CQ-16; EV-22 -> CQ-17; CQ-9 -> CQ-17; RQ-5 -> CQ-17; CQ-17 -> CQ-18; EV-22 -> CQ-18; EV-16 -> CQ-18; EV-18 -> CQ-18; CQ-16 -> CQ-18 (GPU-serial order); MC-3 -> MC-4
+**External inputs and operator answers:** EV-14 <- F2; EV-11 <- EV-4b; EV-16 <- F3; EV-17 <- EV-4b; EV-17 <- F3; EV-18 <- F3; EV-20 <- F3; RIDER-1 <- F4. OP-4 has no operator dependency (F1 only blocks the off-device copy and deletions, which have no ticket).
 
-**W4 rider and what it unblocks** (edges whose target is in this wave):
+Parked tickets' own edges are listed inside each parked ticket (section 8A). If an active ticket is later found to need a parked one, that is reported, not wired silently.
 
-- EV-11 -> RIDER-1; EV-18 -> RIDER-1; EV-19 -> RIDER-1; EV-20 -> RIDER-1; EV-21 -> RIDER-1; RQ-3 -> RIDER-1; RQ-5 -> RIDER-1; OP-5 -> RIDER-1; CQ-18 -> RIDER-1; RIDER-1 -> RQ-4; EV-19 -> RQ-4; RQ-1 -> RQ-4; EP-4 -> EP-5; RQ-3 -> EP-5; CQ-9 -> EP-5; CQ-11 -> EP-5; CQ-16 -> EP-5; CQ-17 -> EP-5; CQ-18 -> EP-5; MC-4 -> EP-5; RIDER-1 -> EP-5; RQ-4 -> EP-5
+### 6.4 Pre-baseline rule: check of the active set (rule 16)
 
-**External inputs and operator answers:** OP-4 <- F1; EV-11 <- EV-4; EV-14 <- F2; CQ-7 <- F2; EV-16 <- F3; EV-17 <- EV-4, F3; EV-18 <- F3; EV-19 <- F3; EV-20 <- F3; EV-21 <- F3; EV-22 <- F3; RQ-3 <- F3, F6; CQ-9 <- F2; CQ-10 <- F3; CQ-15 <- F2, F3, F7; CQ-16 <- F3; CQ-18 <- F2, F3; MC-4 <- F5; RIDER-1 <- F4, F7.
+| ticket | what it touches | verdict |
+|---|---|---|
+| EV-7, EV-8, EV-9, EV-10 | the eval harness `app/retrieval_eval.py` (instrument) | allowed: instrument fixes; baseline prerequisites (EV-7 gold preflight, EV-8 metric, EV-9 chunk ids needed by EV-18's gate count, EV-10 validity) |
+| EV-11, EV-15, EV-6b | fixtures hash file, BM25 script, strata script | allowed: instrument; baseline prerequisites |
+| OP-3, OP-4, OP-7, EP-6 | snapshot tool, a snapshot record, a compose file, docs | allowed: not retrieval, ranking, index or serve start-up |
+| OP-6 | doctor, snapshot, integrity tool guards | allowed: none is on the retrieval path or in `app/serve.py` start-up |
+| MC-1 | `McpServer.semantic_search` raises on an unknown `paper_id` | **listed exception**: new failure mode on the path the harness measures through `build_mcp_server`; results for valid ids are unchanged and EV-7's preflight guarantees every fixture gold id resolves. Merged before the freeze or held until EV-18 |
+| MC-2 | server instructions generated at start-up from `corpus_stats()` | **listed exception**: changes start-up output only, no retrieval path; same hold rule |
+| MC-3 | usage-log bindings for scan and get tools | **listed exception**: logging only; same hold rule |
+| OP-5 | `FileGpuLock` writes a holder file on acquire (also on the eval path), doctor listing | **listed exception**: best effort, removed on release, no result changes; the 20 s timeout that would have changed behaviour is cut; same hold rule |
+| EV-14 | maybe one read-only `VectorIndex` method; searches the live collection read-only | **listed exception**: read-only by construction, not called by retrieval; same hold rule |
+| RIDER-1 | config validation (item 2), fixtures promotion (item 5), CI (item 6) | **violates the rule unless sequenced**: item 2 changes config validation (start-up); resolved by the explicit dependency RIDER-1 <- EV-18, so it merges after the last baseline |
+| EV-16, EV-17, EV-18, EV-20 | measurements | n/a |
 
-Notes: EP-3, EP-4, EP-5 depend on every ticket of their wave (they batch ledger rows); the W2 chain is also the order of the GPU-day runbook steps 1c, 2, 3, 4, 5, with EV-16 as step 1a and EV-17 as step 1b run in the slot after EV-16 when its fixture hash is frozen, otherwise skipped. W3 gated tickets begin only when the named gate holds; if it does not, the ticket is closed by its gate with the report that shows it.
+Outcome: no active ticket violates the rule as sequenced; five (MC-1, MC-2, MC-3, OP-5, EV-14) are baseline-path exceptions listed with their reason, none a baseline prerequisite (the minimizer's ruling: defensible, not gating), and RIDER-1 is the one ticket that would violate it if it were not held behind EV-18.
 
 ## 7. Already done, or in progress on other branches (W0)
 
@@ -167,319 +201,502 @@ Not re-ticketed. SHAs are on the integration branch `EP-programme-20261110`.
 | OP-1 | `doctor --cpu-only` and fail-fast degraded mode | DONE `564582a` | `app/doctor.py` |
 | RV-1..RV-6 | Six review lanes | DONE `b4c2b43`, `e796cc9` | `docs/eval-reports/data/2026-11-10-system-review/` |
 | RV-S | Adjudicated system review (the primary input of this plan) | DONE `364aa13` | `docs/eval-reports/2026-11-10-system-review.md` |
-| EV-4 | Topic-focus ground truth (40 of about 50 items authored) | IN PROGRESS | branch `EP-EV4-focus-gt`; its content is not described here |
-| EP-2 | This plan, the issue files and the BACKLOG section | READY | branch `EP-EP2-ticket-set` |
+| EV-4 | Topic-focus ground truth | MERGED, needs repair | branch `EP-EV4-focus-gt`; independent cross-verification found 18 of 26 collision questions did not contain their collision term and 6 of 10 absent items weak. Anything that depended on the focus set's frozen hash now depends on EV-4b |
+| EV-4b | Repair of the focus ground truth (collision questions, weak absent items) and re-freeze of its hash | IN PROGRESS | branch `EP-EV4b-focus-fixes` |
+| EP-2 | This plan, the issue files and the BACKLOG section (first version) | READY | branch `EP-EP2-ticket-set` |
+| EP-2b | Application of the operator-approved minimizer verdicts (this revision) | READY | branch `EP-EP2b-apply-minimizer` |
+| OP-4 | Fresh main-corpus snapshot, executed by the orchestrator outside the queue (it is also an active ticket, section 8) | IN PROGRESS | consistent SQLite backup into the corpus's `backups/` directory with integrity check, row-count comparison and SHA-256; the vector store's on-disk data was NOT copied (service stopped, about 31 GB, operator decision pending); not DONE |
 
-## 8. The tickets
+## 8. The tickets (ACTIVE)
 
-Every entry has the same fields; the standard gate (full zero-GPU pytest, enforcement, ruff on owned files) is spelled out in each. The same text is the issue body in the issues directory.
+Every entry has the same fields; the standard gate (full zero-GPU pytest, enforcement, ruff on owned files) is spelled out in each. The same text is the issue body in the issues directory. Order is the minimal critical path first within each wave. Active tickets with a 'Cut by minimizer' line were shrunk; 'Absorbs' names merged sources.
 
 ### W1 do now, no GPU
 
-#### CQ-7: Build a ligature-repaired clone of the main collection on CPU
+#### OP-4: Take and verify a fresh main-corpus snapshot
 
-Labels: wave:1-no-gpu, area:corpus, needs-services, size:M. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/CQ-7-ligature-resparse-clone-cpu.md`.
+Labels: wave:1-no-gpu, area:ops, size:S. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/OP-4-take-verify-main-snapshot.md`.
 
-**Review cross-reference:** S-17. **Wave:** W1 do now, no GPU.
+**Review cross-reference:** S-01. **Wave:** W1 do now, no GPU.
 
-**Why.** CQ-1 repairs ligature damage in the sparse arm but is deliberately not applied to any index, and CQ-2 added `app.resparse` to recompute sparse vectors without re-embedding. The A/B (EV-22) needs a repaired clone to exist, and the whole preparation is CPU-only, so it can run while the GPU is held by another process (GPU-day runbook step 5.1). About 35% of main-corpus chunks change; resparse time is unmeasured.
+**Status (2026-11-10): IN PROGRESS**, executed by the orchestrator outside the programme queue (do not wait for F1; only the off-device copy and deletions need it). It is a consistent SQLite backup of the main corpus database into that corpus's `backups/` directory with an integrity check, a row-count comparison against the manifest and a SHA-256. **The vector store's on-disk data was NOT copied** (service stopped; about 31 GB; operator decision pending). Do not mark this ticket DONE until the operator has decided that copy.
+
+**Why.** The newest main snapshot is from 2026-07-30 (manifest records 11,026 papers; the live database has 12,390) and every backup sits on the same device as the live data, which is 98% full with 91 GB free (review item g, `df -h`). The next write, re-embed or bad migration on that device has no recent restore point. This is the only finding whose downside is unrecoverable.
 
 **Scope.**
 - In:
-  - Clone the main collection with `VectorIndex.clone_points_into` into a new scratch collection, then `app.resparse --collection <scratch> --target-is-clone --clone-of <live> --apply` after a dry run, following `docs/eval-reports/2026-11-10-cq2-index-maintenance.md`. Record measured resparse time and the sparse-staleness sample before and after.
+  - Run the existing `python -m app.snapshot` for the main corpus from its data directory, once.
+  - Verify the new snapshot read-only: `PRAGMA quick_check` on the snapshot copy opened with `mode=ro`, and `count(*)` of papers and chunks equal to the manifest. Record sizes, timings and `df` before/after in a dated record under `docs/eval-reports/data/`.
 - Out (explicitly):
-  - Touching the live collection (read-only source only). The A/B (EV-22). Any BM25 weighting (CQ-17). Deleting the clone: EV-22 does that when done.
+  - Deleting any old snapshot, `.bak` or `.partial` file, and copying to another device (operator question F1; no target exists).
+  - Any code change (OP-3 adds the checks to the tool). Any write to `papers.db`.
 
 **Owns** (files this ticket may touch; anything else is out of bounds):
-- `docs/eval-reports/data/<run-date>-ligature-clone/`
+- `docs/eval-reports/data/<run-date>-main-snapshot-record/`
 
 **Commits** (① is a stub, committed before any real work):
-① stub: record skeleton with the dry-run and apply checklists and the abort rule (under 20 GB free)
-② dry run output saved
-③ apply on the clone; times and counts recorded; staleness sample before/after
-④ handover note for EV-22 (collection name, git revision of the resparse code)
+① stub: record file with the four acceptance checks as an unchecked list and the abort rule (stop if under 20 GB free)
+② snapshot taken; manifest copied into the record
+③ verification results: quick_check, counts vs manifest, age
+④ free-space and next-step notes (off-device copy is F1)
 
 **Verification:**
 - `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
 - `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
-- `df -h /` before the clone
-- `conda run -n agent-rag-research python -m app.resparse --help` shows `--collection` required and `--target-is-clone`
-- Post-apply sparse-staleness sample reports the stale share near zero on the clone and unchanged on the live collection
+- `sqlite3 "file:<snapshot-db>?mode=ro" "PRAGMA quick_check"` prints `ok`
+- `sqlite3 "file:<snapshot-db>?mode=ro" "select count(*) from papers"` equals the manifest `papers`
+- `df -h /` before and after is quoted
 
-**Acceptance / falsification criterion.** Scratch collection holds the same point count as the live one; resparse applied only to the scratch collection; staleness sample on the scratch shows the repaired vectors, on the live shows unchanged. Falsified if the live collection's point count or sampled sparse vectors changed at all.
+**Acceptance / falsification criterion.** Newest main snapshot is under 24 hours old at verification time, quick_check is ok, restored paper count equals the manifest, and free space after is still at least 20 GB. Falsified if any of the four fails; then the snapshot is deleted and the failure reported (nothing else is touched).
 
-**Gates / depends on.** Depends on: OP-4. Operator answers: F2. Gates: EP-3, EV-22.
+**Gates / depends on.** Depends on: none. Gates: CQ-7 (parked).
 
-**Needs.** GPU: n · services up: vector store (CPU container) up; no GPU services · operator sign-off: n (no protected path is touched); operator answers: F2 · re-embed: n. Also: vector store start approved (F2); 6-8 GB free for the clone.
-
-**Model tier and size.** Sonnet; M (up to 1 day of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
-
-**Risk and rollback.** Applying resparse to the live collection by mistake (the documented CQ-1 deployment hazard). Mitigation: `--target-is-clone` guard, explicit `--collection` on every command, live collection read-only. Rollback: delete the scratch collection.
-
-**Docs to update in the same PR.** CQ-2 operating note is the reference; record is the doc; PROJECT-STATUS via EP-3. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-3 carries those entries from this ticket's merged SHA.
-
-#### CQ-8: Make rechunk re-embed only chunks whose text changed
-
-Labels: wave:1-no-gpu, area:corpus, size:M. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/CQ-8-rechunk-reuse-vectors-by-text-hash.md`.
-
-**Review cross-reference:** S-14. **Wave:** W1 do now, no GPU.
-
-**Why.** `app/rechunk.py:189` re-embeds every chunk of a re-chunked paper, including unchanged text, which multiplies the cost of every re-chunk the later tickets want (RV-2 F-2.3 step 1; review S-14). Chunk ids are positional, so reuse must key on a text hash, not on the id.
-
-**Scope.**
-- In:
-  - Look up stored vectors for identical chunk text (hash of the embedded text) in the same collection, reuse them, and embed only new text. Guard: reuse only from the same collection and embedder model name.
-- Out (explicitly):
-  - Content-addressed chunk ids (explicitly rejected: 'Will not do' table). Changing the chunker. Applying to any live index.
-
-**Owns** (files this ticket may touch; anything else is out of bounds):
-- `app/rechunk.py`
-- `app/test_rechunk.py`
-
-**Commits** (① is a stub, committed before any real work):
-① stub: docstring stating the reuse rule and its guards
-② failing test: a text-only change to one chunk of a 10-chunk paper re-embeds exactly one chunk (fake embedder call count)
-③ implementation to green
-④ dry-run report line 'reused N, embedded M'
-
-**Verification:**
-- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
-- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
-- `conda run -n agent-rag-research ruff check app/rechunk.py app/test_rechunk.py`
-- `conda run -n agent-rag-research python -m pytest -q app/test_rechunk.py -o addopts="--disable-socket"`
-- Mutation proof: disable the reuse path and the call-count test fails
-
-**Acceptance / falsification criterion.** Dry run on a fixture of 10 papers with a text-only change: re-embedded count equals changed-text count and reused count equals the rest; a changed embedder model name disables reuse. Falsified if the call-count test passes with reuse disabled.
-
-**Gates / depends on.** Depends on: none. Gates: EP-3, CQ-15.
-
-**Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
-
-**Model tier and size.** Sonnet; M (up to 1 day of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
-
-**Risk and rollback.** A wrongly reused vector silently pairs old text with a new position. Mitigation: vectors depend only on the embedded text (which includes title and section path prefix), guarded by model name. Rollback: revert.
-
-**Docs to update in the same PR.** PROJECT-STATUS via EP-3. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-3 carries those entries from this ticket's merged SHA.
-
-#### CQ-19: Author 38 more standards authority-stratum ground-truth items
-
-Labels: wave:1-no-gpu, area:eval, area:corpus, size:M. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/CQ-19-standards-authority-items.md`.
-
-**Review cross-reference:** CQ-5 follow-up. **Wave:** W1 do now, no GPU.
-
-**Why.** The authority stratum has 4 items (Q-STD-C-019..022), so any filter or tag effect is description only: with n=4 the best possible exact McNemar p is 0.125 and can never reach 0.05. CQ-5's pre-registered measurement (`docs/eval-reports/2026-11-10-cq5-standards-metadata.md` section 5) computes 42 items per stratum for a 30-point difference at alpha 0.05, power 80%, planning disagreement 0.5, so 38 more are needed.
-
-**Scope.**
-- In:
-  - Author 38 new authority-stratum items from many different documents (the current four rest on four), phrased as a user would without hinting the tag, under the existing blind two-author plus cross-verification regime and `gt_tools.py verify`; recorded as a separate extension file with its own hash entry, dated addendum first.
-  - If frozen before EV-18 launches, EV-18 may run them as a descriptive stratum; otherwise they wait for a later run.
-- Out (explicitly):
-  - Running retrieval on them. Any change to the 128 existing items. The tag filters (CQ-5, done).
-
-**Owns** (files this ticket may touch; anything else is out of bounds):
-- `docs/eval-reports/data/<date>-standards-gt-authority-extension/`
-- `docs/eval-reports/data/2026-11-10-FIXTURE-HASHES.json`
-
-**Commits** (① is a stub, committed before any real work):
-① stub: addendum and authoring protocol copy (strata definition, no-hint rule, hash procedure), before any item is written
-② author A and author B draft files, blind to each other
-③ cross-verification report with kills and fixes counted
-④ adjudicated extension file, `verify` transcript and hash entry
-
-**Verification:**
-- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
-- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
-- `conda run -n agent-rag-research python docs/eval-reports/data/2026-11-10-standards-gt/gt_tools.py verify <extension file>` passes (read-only against the standards database)
-- Count of distinct source documents printed (target: at least 20)
-
-**Acceptance / falsification criterion.** 38 items pass verbatim-excerpt verification, 0 reuse a 6-word run of the excerpt, come from at least 20 distinct documents, are cross-verified by a reader other than the authors, and their SHA-256 is in the hash file before any run reads them. Falsified if any item fails `verify` or an excerpt is not verbatim in the stored chunk.
-
-**Gates / depends on.** Depends on: EV-11. Gates: EP-3, CQ-20.
-
-**Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
-
-**Model tier and size.** Sonnet; M (up to 1 day of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
-
-**Risk and rollback.** Same-model-family authors and verifiers (0 kills on standards so far): residual defects are possible; the stratum stays labelled LLM-authored. Rollback: drop the extension file and its hash entry.
-
-**Docs to update in the same PR.** Addendum and extension file are the docs; PROJECT-STATUS via EP-3. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-3 carries those entries from this ticket's merged SHA.
-
-#### CQ-20: Author 38 more standards edition-stratum ground-truth items
-
-Labels: wave:1-no-gpu, area:eval, area:corpus, size:M. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/CQ-20-standards-edition-items.md`.
-
-**Review cross-reference:** CQ-5 follow-up. **Wave:** W1 do now, no GPU.
-
-**Why.** The edition stratum also has 4 items (Q-STD-A-021/022, B-021/022); same arithmetic as CQ-19: 42 per stratum needed, 38 to add (`docs/eval-reports/2026-11-10-cq5-standards-metadata.md` section 5). Edition questions are where BM25 scores 0.00 chunk@10 on n=4 (RV-3), so the stratum is the one that would show whether the standards metadata tags help.
-
-**Scope.**
-- In:
-  - Author 38 edition-stratum items (some naming an edition, some not, from many documents with superseded and current editions), same regime and extension-file procedure as CQ-19.
-- Out (explicitly):
-  - Running retrieval. Changing existing items. Using `status:current` as a filter in the design (excluded by CQ-5 because the gold documents may be superseded).
-
-**Owns** (files this ticket may touch; anything else is out of bounds):
-- `docs/eval-reports/data/<date>-standards-gt-edition-extension/`
-- `docs/eval-reports/data/2026-11-10-FIXTURE-HASHES.json`
-
-**Commits** (① is a stub, committed before any real work):
-① stub: addendum with the stratum definition and the named/unnamed edition quota
-② author A and author B draft files
-③ cross-verification report
-④ adjudicated extension file, `verify` transcript and hash entry
-
-**Verification:**
-- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
-- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
-- `conda run -n agent-rag-research python docs/eval-reports/data/2026-11-10-standards-gt/gt_tools.py verify <extension file>` passes
-- Count of distinct source documents printed (target: at least 20)
-
-**Acceptance / falsification criterion.** Same as CQ-19: 38 verified, cross-verified, hashed items from at least 20 documents, hash recorded before any run reads them. Falsified if any item fails `verify`.
-
-**Gates / depends on.** Depends on: CQ-19. Gates: EP-3.
-
-**Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
-
-**Model tier and size.** Sonnet; M (up to 1 day of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
-
-**Risk and rollback.** As CQ-19; the hash file is shared with CQ-19, hence the sequencing. Rollback: drop the extension file and hash entry.
-
-**Docs to update in the same PR.** PROJECT-STATUS via EP-3. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-3 carries those entries from this ticket's merged SHA.
-
-#### EP-3: Batch BACKLOG and PROJECT-STATUS updates for wave 1
-
-Labels: wave:1-no-gpu, area:docs, size:S. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EP-3-status-batch-wave-1.md`.
-
-**Review cross-reference:** S-13. **Wave:** W1 do now, no GPU.
-
-**Why.** The common brief for this programme forbids parallel tickets from editing `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` (they are the two most conflict-prone files), so AGENT-PROCEDURES section B's ledger obligations are paid here, once per wave, from each ticket's 'Docs to update' list. The BACKLOG drift rows of RV-6 B.1 (SB-1, SB-3, P0-2/T-F7, FD-1, B-4, B-5) were corrected by EP-2 itself.
-
-**Scope.**
-- In:
-  - For every wave-1 ticket merged: flip its row in the 'Enhancement programme (2026-11-10)' BACKLOG section to `DONE -- <sha>`; add one PROJECT-STATUS section 3 ledger entry; add section 2 entry-point rows and section 7 doc-map rows exactly where the ticket's docs line says a trigger fired.
-  - Any further BACKLOG drift row found while flipping rows, each with its git evidence.
-  - Record operator answers received so far (F1-F8) in PROJECT-STATUS section 6 as open or closed.
-- Out (explicitly):
-  - Any claim about retrieval quality (none exists until wave 2). Rewriting PROJECT-STATUS sections EP-1 already corrected on 2026-11-10; this ticket only appends ledger entries.
-
-**Owns** (files this ticket may touch; anything else is out of bounds):
-- `docs/PROJECT-STATUS.md`
-- `docs/BACKLOG.md`
-
-**Commits** (① is a stub, committed before any real work):
-① stub: checklist of the wave-1 tickets with their merge SHAs, empty status cells
-② BACKLOG row flips + punch rows 1,5,6,17,18
-③ PROJECT-STATUS ledger, entry-point and doc-map rows
-④ open-question status lines
-
-**Verification:**
-- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
-- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
-- `grep -c 'IN PROGRESS' docs/BACKLOG.md` no longer lists SB-1
-- Each ledger SHA exists: `git cat-file -e <sha>^{commit}` for every SHA written
-- `git diff --stat` touches only the two owned files
-
-**Acceptance / falsification criterion.** Every merged wave-1 ticket has a DONE row with a SHA that resolves and a ledger entry; no row says DONE for an unmerged ticket (checked by `git branch --contains <sha>` against the integration branch). Falsified if any SHA does not resolve.
-
-**Gates / depends on.** Depends on: EP-6, EP-7, OP-2, OP-3, OP-4, OP-5, OP-6, OP-7, MC-1, MC-2, MC-3, RQ-1, RQ-2, RQ-5, EV-7, EV-8, EV-9, EV-10, EV-11, EV-12, EV-13, EV-14, EV-15, CQ-7, CQ-8, CQ-19, CQ-20. Gates: EP-4.
-
-**Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
+**Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched); operator answers: F1 · re-embed: n. Also: operator go-ahead to write about 9 GB (estimate, RV-6) into the main data dir's backups folder on a 98%-full device.
 
 **Model tier and size.** Haiku; S (up to 2 h of agent work). Mechanical work, no judgement calls.
 
-**Risk and rollback.** Low. A wrong SHA is the failure; mitigation is the `git cat-file` check. Rollback: revert.
+**Risk and rollback.** Disk fills mid-write on a 98%-full device. Mitigation: abort rule before starting; the tool reads the source read-only and writes only the new snapshot. Rollback: delete the new snapshot directory.
 
-**Docs to update in the same PR.** This ticket is the docs obligation for wave 1.
+**Docs to update in the same PR.** The dated snapshot record is the doc (section 7 doc-map row if a new `docs/*.md` is added); ledger entry only after the operator decides the vector-store data copy. Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
 
-#### EP-6: Add CORPORA.md and fix drift rows outside EP-1's files
+#### OP-3: Add integrity check and checksums to snapshot manifests
 
-Labels: wave:1-no-gpu, area:docs, size:M. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EP-6-docs-corpora-and-drift-remainder.md`.
+Labels: wave:1-no-gpu, area:ops, size:S. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/OP-3-snapshot-integrity-and-checksums.md`.
 
-**Review cross-reference:** S-13. **Wave:** W1 do now, no GPU.
+**Review cross-reference:** S-01. **Wave:** W1 do now, no GPU.
 
-**Why.** Agents follow stale docs exactly (CONVENTIONS section 0.6). The review's 23-row drift punch list (RV-6 B.1) splits by file: PROJECT-STATUS, README and AGENTS belong to EP-1 (in progress); the rest has no owner. Which chunker built each corpus is written nowhere (RV-2 F-2.2), the IDF question in DECISIONS-PENDING Decision 1 is stale (the on-disk config of all five collections already carries the IDF modifier; review item 1 'Decision 1'), and the review's rule 'no ingest into a live collection from this branch' has no home.
+**Absorbs EP-7** (part: the backup and restore RUNBOOK section). EP-7's GPU-contention section goes to OP-5 and its containers pointer to OP-7.
 
-**Scope.**
-- In:
-  - New `docs/CORPORA.md`: one row per corpus (five), data-dir role, collection name, document/chunk counts re-derived read-only, and which chunker built it (standards: bounded chunker; main and Waymo: legacy chunker), reusing the five-corpus registry EP-1 added to PROJECT-STATUS instead of restating it differently.
-  - State the rule: no ingest into a live collection from this branch until the verdicts of EV-22 (sparse recompute) and CQ-11 (bounded re-chunk) are in, because it would mix chunkers and sparse versions (review S-13; item h residual risk 1).
-  - Close Decision 1 in `docs/DECISIONS-PENDING-operator.md` with the evidence (IDF modifier present in the on-disk config of all five collections); punch-list rows 8 and 16 (that file and `docs/HANDOFF-2026-08-24.md`); tick the status of each ticket in `docs/superpowers/plans/2026-08-25-precision95-programme.md` per RV-6 B.2 (row 7).
-  - HISTORICAL banner, in this PR, on any doc this PR supersedes (AGENT-PROCEDURES section B).
-- Out (explicitly):
-  - PROJECT-STATUS.md, README.md, AGENTS.md (EP-1). BACKLOG.md rows (EP-3). RUNBOOK.md (EP-7).
-  - Any code change; any measurement that needs a service (counts are read-only SQLite).
-
-**Owns** (files this ticket may touch; anything else is out of bounds):
-- `docs/CORPORA.md`
-- `docs/DECISIONS-PENDING-operator.md`
-- `docs/HANDOFF-2026-08-24.md`
-- `docs/superpowers/plans/2026-08-25-precision95-programme.md`
-
-**Commits** (① is a stub, committed before any real work):
-① stub: `docs/CORPORA.md` skeleton with the five rows and column headings, empty cells marked TODO
-② corpora table filled from read-only queries; counts stamped with the query date
-③ no-ingest rule + chunker provenance column
-④ Decision 1 closure + HANDOFF + precision-95 plan status rows (each row cites the git evidence)
-
-**Verification:**
-- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
-- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
-- `grep -c 'IN PROGRESS' docs/BACKLOG.md` is NOT this ticket's check (EP-3). Instead: `grep -n 'Decision 1' docs/DECISIONS-PENDING-operator.md` shows the closure with the config evidence
-- Every count in CORPORA.md reproduces with the read-only query printed under the table (`sqlite3 "file:<db>?mode=ro" 'select count(*) from chunks'`)
-
-**Acceptance / falsification criterion.** `docs/CORPORA.md` lists five corpora with path role, collection, counts and chunker; each count was re-derived on the day and the query is shown; the no-ingest rule is present; Decision 1 reads 'closed' with evidence; someone who did not write it can re-run every shown query and match. Falsified if any count differs from a fresh read-only query by more than the ingest drift stated in the doc.
-
-**Gates / depends on.** Depends on: none. Gates: EP-7, EP-3.
-
-**Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
-
-**Model tier and size.** Sonnet; M (up to 1 day of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
-
-**Risk and rollback.** Low. Docs only. A wrong count misleads an agent; mitigation is the printed query beside each number. Rollback: revert the commit.
-
-**Docs to update in the same PR.** New doc: PROJECT-STATUS section 7 (doc map) row is carried by EP-3. Superseded-doc banners are done in this PR. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-3 carries those entries from this ticket's merged SHA.
-
-#### EP-7: Add backup, container and GPU-contention sections to RUNBOOK
-
-Labels: wave:1-no-gpu, area:docs, area:ops, size:S. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EP-7-runbook-backup-containers-gpu-contention.md`.
-
-**Review cross-reference:** S-13, S-01, S-06, S-12. **Wave:** W1 do now, no GPU.
-
-**Why.** `docs/RUNBOOK.md` has no backup or restore section, no container definitions and no GPU-contention section (RV-6 punch row 22), yet the system has no backup newer than 2026-07-30 and a foreign process holds the GPU today (review items g, S-06). A second-corpus recipe also omits that `app.init_config` writes a private `gpu_lock_path` that must be edited to the shared lock.
+**Why.** `app/snapshot.py::backup_sqlite` is correct (read-only source plus VACUUM INTO) but never runs an integrity check and the manifest records no checksum per artifact (RV-6 F-A1, F-A7; review S-01), so a corrupt snapshot looks identical to a good one until the day it is restored.
 
 **Scope.**
 - In:
-  - Three sections: (1) backup and restore (what `app.snapshot` writes, how to verify with `quick_check` and the manifest checksums, restore drill, retention, the off-device gap), (2) containers (point to `ops/docker-compose.yml`, the pinned Qdrant version, the rule that nothing is restarted without a snapshot), (3) GPU contention (holder file, doctor's foreign-process listing, the 20 s query-path timeout, cheapest-first ordering rule from LESSONS section 9.1).
-  - Punch row 22: the shared-lock note in 'Running a second corpus'. Add a pointer to `docs/CORPORA.md` and the no-ingest rule.
+  - Run `PRAGMA quick_check` on the produced SQLite copy and fail the snapshot (non-zero exit, snapshot marked incomplete) if it is not `ok`.
+  - Write sha256 per artifact into the manifest; add a verify mode (or reuse an existing one) that recomputes them and compares `count(*)` with the manifest.
+  - `docs/RUNBOOK.md`: backup and restore section (what `app.snapshot` writes, how to verify with `quick_check` and the manifest checksums, a restore drill on a scratch copy, retention, the off-device gap named as open question F1). Commands run or `--help`-checked and quoted, not guessed.
 - Out (explicitly):
-  - Writing the code those sections describe (OP-3, OP-5, OP-7 own it). Deleting any backup (operator question F1).
+  - The guard against a nonexistent data dir (OP-6). Taking a snapshot (OP-4). Off-device copy (F1).
 
 **Owns** (files this ticket may touch; anything else is out of bounds):
+- `app/snapshot.py`
+- `app/test_snapshot.py`
 - `docs/RUNBOOK.md`
 
 **Commits** (① is a stub, committed before any real work):
-① stub: three empty section headings with one-line intent each
-② backup/restore section, commands copied from the merged OP-3/OP-4 output, not guessed
-③ container + GPU-contention sections, commands verified against merged OP-5/OP-7
-④ punch row 22 + CORPORA pointer
+① stub: docstring stating the manifest fields (`quick_check`, `sha256` per artifact) and the failure rule
+② failing tests: corrupt copy fails; manifest has sha256; verify detects a flipped byte
+③ implementation to green
+④ docstring and `--help` text brought up to date
+⑤ RUNBOOK backup and restore section
 
 **Verification:**
 - `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
 - `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
-- Every command in the new sections was run (or `--help`-checked) in the worktree and the output is quoted in the PR description
-- `grep -n 'gpu_lock_path' docs/RUNBOOK.md` shows the second-corpus warning
+- `conda run -n agent-rag-research ruff check app/snapshot.py app/test_snapshot.py`
+- `conda run -n agent-rag-research python -m pytest -q app/test_snapshot.py -o addopts="--disable-socket"`
+- Mutation proof (CONVENTIONS section 14): revert the quick_check call and watch the corruption test fail
+- `grep -n 'quick_check' docs/RUNBOOK.md` shows the verification step; every command in the section was run or `--help`-checked and quoted in the PR
 
-**Acceptance / falsification criterion.** A cold agent can, from RUNBOOK alone, (a) take and verify a snapshot, (b) name who holds the GPU, (c) recreate the four containers from the tracked compose file. Checked by a reviewer who did not write it following each section once on a read-only or dry-run basis. Falsified if any quoted command fails or prints different flags.
+**Acceptance / falsification criterion.** A deliberately corrupted SQLite copy makes the snapshot exit non-zero and not write a complete manifest; a flipped byte in an artifact fails verify; existing snapshot tests stay green. Falsified if either test passes with the check removed.
 
-**Gates / depends on.** Depends on: OP-3, OP-4, OP-5, OP-7, EP-6. Gates: EP-3.
+**Gates / depends on.** Depends on: none. Gates: OP-6.
 
 **Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
 
 **Model tier and size.** Sonnet; S (up to 2 h of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
 
-**Risk and rollback.** Low. A documented command that has since changed misleads; mitigation: commands verified at merge time. Rollback: revert.
+**Risk and rollback.** A verify mode changes the manifest shape: old manifests lack checksums. Mitigation: verify treats a missing checksum as 'unverifiable', not 'ok'. Rollback: revert.
 
-**Docs to update in the same PR.** RUNBOOK is itself the doc; PROJECT-STATUS doc-map row carried by EP-3. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-3 carries those entries from this ticket's merged SHA.
+**Docs to update in the same PR.** Section 2: entry-point row for any new snapshot flag; `docs/RUNBOOK.md` backup and restore section is part of this PR. Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
+
+#### OP-6: Guard every corpus tool against a missing or mismatched database
+
+Labels: wave:1-no-gpu, area:ops, needs-services, size:M. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/OP-6-wrong-corpus-guards.md`.
+
+**Review cross-reference:** S-07. **Wave:** W1 do now, no GPU.
+
+**Cut by minimizer:** the `app/dashboard/status.py:830` fallback and `reindex_idf` are cut (`reindex_idf` is a no-op tool per plan section 9; eval is already protected by the run scripts' `check-points`). Folded in from the unplaced lane findings: the doctor disk-space check against the device of the data directory, not the cwd (RV-6 F-A10; matters at 98% full).
+
+**Why.** Only `app.serve --data-dir` refuses a nonexistent database (`app/serve.py:80-82` has no exists check on the default branch). `app/corpus_integrity.py` opens the live database read-write, and the collection-versus-database pairing is checked nowhere, so a mispointed tool returns a confident empty or wrong corpus (the T-DOC56 shape; RV-6 F-A4, RV-3 F-1.2; review S-07). `app/dashboard/status.py:830` falls back to the literal collection name `papers`.
+
+**Scope.**
+- In:
+  - One shared `require_existing_db()` (search for an existing helper first, e.g. the T-DOC56 `_resolve_store_paths`; add a module only if none fits) used by `corpus_integrity` (also opened `mode=ro`) and `snapshot`.
+  - `app.doctor`: collection point count must match the database within 1% (stated tolerance), reported with both numbers.
+  - `app.doctor`: free-space check measured on the device that holds the data directory (not the current working directory), reported with the path.
+- Out (explicitly):
+  - `app/dashboard/status.py` fallback and `app/reindex_idf.py` (cut). The two `app/serve.py` branches (parked OP-2). Changing `migrate()` (protected).
+  - Auto-snapshot before migration (RV-6 F-A7, dropped).
+
+**Owns** (files this ticket may touch; anything else is out of bounds):
+- `app/corpus_paths.py`
+- `app/test_corpus_paths.py`
+- `app/corpus_integrity.py`
+- `app/test_corpus_integrity.py`
+- `app/snapshot.py`
+- `app/test_snapshot.py`
+- `app/doctor.py`
+- `app/test_doctor.py`
+
+**Commits** (① is a stub, committed before any real work):
+① stub: docstring of `require_existing_db()` stating precondition and error message; list of the two call sites
+② failing tests per call site (nonexistent path exits non-zero, names the path)
+③ helper + call sites to green; `corpus_integrity` opens `mode=ro` (test asserts a write attempt fails)
+④ doctor point-count-vs-database check with injected counts
+⑤ doctor disk-space check on the data-dir device with an injected `statvfs`
+
+**Verification:**
+- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
+- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
+- `conda run -n agent-rag-research ruff check app/corpus_paths.py app/test_corpus_paths.py app/corpus_integrity.py app/test_corpus_integrity.py app/snapshot.py app/test_snapshot.py app/doctor.py app/test_doctor.py`
+- `conda run -n agent-rag-research python -m app.corpus_integrity --help` still works; each tool against a nonexistent data dir exits non-zero (shown in the PR)
+- `conda run -n agent-rag-research python -m app.doctor --cpu-only` from each data dir still passes where services are up (needs services: run only when the vector store is up)
+
+**Acceptance / falsification criterion.** `snapshot` and `corpus_integrity` exit non-zero against a nonexistent path with a message that names the path; `corpus_integrity` cannot write; doctor run from each of the five data dirs passes its pairing check on the current corpora and reports free space for the data-dir device. Falsified if either tool still prints a result for a nonexistent path or if the doctor check fails on a correctly paired corpus.
+
+**Gates / depends on.** Depends on: OP-3 (ordering only: same file, not a data dependency). Gates: OP-5, OP-2 (parked).
+
+**Needs.** GPU: n · services up: vector store (CPU container) only for the doctor smoke run; unit tests use fakes · operator sign-off: n (no protected path is touched) · re-embed: n
+
+**Model tier and size.** Sonnet; M (up to 1 day of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
+
+**Risk and rollback.** A false positive in the 1% tolerance blocks a healthy doctor run. Mitigation: tolerance is a named constant, the message prints both counts. Doctor, snapshot and integrity are not on the retrieval path (pre-baseline rule, plan section 4). Rollback: revert; the guards are additive.
+
+**Docs to update in the same PR.** Section 2: doctor behaviour (pairing and disk-space checks). Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
+
+#### OP-5: Name the GPU lock holder and list foreign GPU processes in doctor
+
+Labels: wave:1-no-gpu, area:ops, size:M. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/OP-5-gpu-lock-holder-and-fast-fail.md`.
+
+**Review cross-reference:** S-06. **Wave:** W1 do now, no GPU.
+
+**Cut by minimizer:** the 20 s query-path timeout is deferred (a behaviour change on the baseline path, and a Config field the rider would have to add) until a contended real session shows the 300 s wait; `app/assembly.py` leaves Owns. Holder file and doctor foreign-process listing stay (the foreign holder of 18.6 GB is real and current). OP-5 is no longer a dependency of EV-16. Absorbs the GPU-contention section of EP-7 (see Absorbs).
+
+**Absorbs EP-7** (part: the GPU-contention RUNBOOK section and the `gpu_lock_path` second-corpus warning, RV-6 punch row 22). EP-7's other sections go to OP-3 (backup and restore) and OP-7 (containers).
+
+**Why.** A query waits up to 300 s (the wait itself is left as is here) for the GPU lock before erroring (`app/assembly.py:630-640` passes no `gpu_lock_timeout`, default 300 s in the embedder and reranker), the timeout message does not name the holder (`rag/gpu_lock.py:38-41`), and doctor reports only 'unreachable' when a foreign process holds the GPU (OP-1 handles 'TEI down', not 'GPU held'; RV-1 F-1.9, RV-6 F-A3 and F-A8; review S-06). A foreign model server holds 18,609 of 24,576 MiB today.
+
+**Scope.**
+- In:
+  - `FileGpuLock` writes pid, stage and UTC time to a `<lock>.holder` file on acquire (best effort, removed on release) and the timeout error reads it back.
+  - `app.doctor`: list foreign GPU compute processes via `nvidia-smi --query-compute-apps` and read the TEI container exit code and OOM log line, so 'GPU held by a foreign process' is distinct from 'TEI crashed' (nvidia-smi and docker calls injected so tests need neither).
+  - `docs/RUNBOOK.md`: GPU-contention section (holder file, doctor's foreign-process listing, cheapest-first ordering rule from LESSONS section 9.1) and, in 'Running a second corpus', the warning that `app.init_config` writes a private `gpu_lock_path` that must be edited to the shared lock (punch row 22). Commands quoted from a run, not guessed.
+- Out (explicitly):
+  - The 20 s query-path timeout and its Config field (deferred until a contended real session; RIDER-1 would carry the field). Any change to `app/assembly.py` or to the lock wait time.
+  - Marking eval runs invalid on lock timeouts (EV-10). A priority scheduler for the lock. Reranker-failure fallback to fused order (changes behaviour, needs a Coverage flag: foundation).
+
+**Owns** (files this ticket may touch; anything else is out of bounds):
+- `rag/gpu_lock.py`
+- `rag/test_gpu_lock.py`
+- `app/doctor.py`
+- `app/test_doctor.py`
+- `docs/RUNBOOK.md`
+
+**Commits** (① is a stub, committed before any real work):
+① stub: docstrings stating the holder-file format and the doctor listing
+② failing tests: second lock with timeout 0.1 raises naming the first's pid and stage; doctor names a foreign pid from a canned nvidia-smi output
+③ implementation to green
+④ doctor TEI exit-code and OOM-line reading with injected docker output
+⑤ RUNBOOK GPU-contention section and the `gpu_lock_path` warning; every command run or `--help`-checked
+
+**Verification:**
+- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
+- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
+- `conda run -n agent-rag-research ruff check rag/gpu_lock.py rag/test_gpu_lock.py app/doctor.py app/test_doctor.py`
+- Two `FileGpuLock` objects on one path in a unit test (no GPU)
+- `grep -n 'gpu_lock_path' docs/RUNBOOK.md` shows the second-corpus warning
+- Live check only when the operator frees the GPU: hold the lock from a second process; the timeout error names the holder
+
+**Acceptance / falsification criterion.** Holding the lock from a second process (test timeout 0.1 s) makes the second acquirer's error name the holder's pid and stage; doctor output against a canned foreign-holder state names the pid and says 'GPU held by a foreign process', not 'TEI unreachable'; the default query-path wait is unchanged (no `app/assembly.py` diff). Falsified if the error omits the holder or the diff changes a timeout.
+
+**Gates / depends on.** Depends on: OP-6 (ordering only: same file, not a data dependency). Gates: OP-7, OP-2 (parked).
+
+**Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
+
+**Model tier and size.** Sonnet; M (up to 1 day of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
+
+**Risk and rollback.** The holder file is written on every lock acquire, including on the eval path: best effort and removed on release, so no result changes (listed in the pre-baseline rule, plan section 4). A stale holder file could name a dead pid: the message states the write time. Rollback: revert.
+
+**Docs to update in the same PR.** Section 2: doctor flags; `docs/RUNBOOK.md` GPU-contention section is part of this PR. Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
+
+#### OP-7: Track the four container definitions in ops/docker-compose.yml
+
+Labels: wave:1-no-gpu, area:ops, needs-services, size:S. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/OP-7-tracked-container-definitions.md`.
+
+**Review cross-reference:** S-12. **Wave:** W1 do now, no GPU.
+
+**Absorbs EP-7** (part: the containers RUNBOOK pointer). Its RUNBOOK commit is ordered after OP-5 (shared file `docs/RUNBOOK.md`); the compose-file commits have no dependency.
+
+**Why.** The four containers (embedder, reranker, vector store, reference-resolution service) cannot be recreated from tracked files: the vector-store image tag is the moving `latest`, arguments, ports and volumes exist only in `docker inspect`, and a re-pull could jump the storage version over a 31 GB store (RV-6 F-A2; review S-12). Not re-run by the review beyond the lane's own inspect.
+
+**Scope.**
+- In:
+  - A compose file with the four services exactly as inspected today (image, command, binds, ports, GPU reservation), the vector store pinned to v1.18.2 by digest, and no restart policy (a restart on a contended GPU is how the foreign-holder situation arises).
+  - Read-only inspection only: `docker inspect`, `docker image inspect`, `docker compose config`.
+  - `docs/RUNBOOK.md`: a short containers section pointing to `ops/docker-compose.yml`, the pinned vector-store version and the rule that nothing is restarted without a verified snapshot and a `docker compose config` diff.
+- Out (explicitly):
+  - Starting, stopping or recreating any container (this ticket never applies the file). Moving the vector store's data. Adding a restart policy.
+
+**Owns** (files this ticket may touch; anything else is out of bounds):
+- `ops/docker-compose.yml`
+- `docs/RUNBOOK.md`
+
+**Commits** (① is a stub, committed before any real work):
+① stub: compose file with the four service names and a header comment stating 'mirrors inspected state of <date>; never applied by this ticket'
+② services transcribed from `docker inspect` output, one commit per service pair
+③ digest pin and `docker compose config` output compared line by line with the inspected values
+④ RUNBOOK containers section (after OP-5 has merged)
+
+**Verification:**
+- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
+- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
+- `docker compose -f ops/docker-compose.yml config` succeeds and matches image, command, binds and GPU reservation of each running container (differences listed in the PR)
+
+**Acceptance / falsification criterion.** `docker compose config` reproduces image digest, command, binds, ports and GPU reservation of all four running containers; the vector-store image is pinned by digest to v1.18.2; the PR lists any field that could not be reproduced. Falsified if a running container's inspected setting is absent from the file.
+
+**Gates / depends on.** Depends on: OP-5 (ordering only: shared `docs/RUNBOOK.md`; only its RUNBOOK commit waits). Gates: none.
+
+**Needs.** GPU: n · services up: docker daemon read-only inspection (no container is started or restarted) · operator sign-off: n (not a protected path). The version pin is a decision for the operator in PR review. · re-embed: n
+
+**Model tier and size.** Sonnet; S (up to 2 h of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
+
+**Risk and rollback.** The file drifts from reality or is applied by a later agent with different GPU settings. Mitigation: header states it is a mirror; the RUNBOOK containers section (this ticket) says 'verify with config diff before any recreate'. Rollback: delete the file.
+
+**Docs to update in the same PR.** `ops/docker-compose.yml` is the doc; `docs/RUNBOOK.md` containers section is part of this PR; section 7 doc-map row for the compose file if the map lists ops files. Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
+
+#### EP-6: Add CORPORA.md and fix drift rows outside EP-1's files
+
+Labels: wave:1-no-gpu, area:docs, size:S. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EP-6-docs-corpora-and-drift-remainder.md`.
+
+**Review cross-reference:** S-13. **Wave:** W1 do now, no GPU.
+
+**Cut by minimizer:** the HANDOFF-2026-08-24 and precision-95 plan status-tick rows are archaeology and are cut; CORPORA.md, the no-ingest rule and the closure of Decision 1 stay (a stale doc misleads agents). Not on the baseline path.
+
+**Why.** Agents follow stale docs exactly (CONVENTIONS section 0.6). The review's 23-row drift punch list (RV-6 B.1) splits by file: PROJECT-STATUS, README and AGENTS belong to EP-1 (in progress); the rest has no owner. Which chunker built each corpus is written nowhere (RV-2 F-2.2), the IDF question in DECISIONS-PENDING Decision 1 is stale (the on-disk config of all five collections already carries the IDF modifier; review item 1 'Decision 1'), and the review's rule 'no ingest into a live collection from this branch' has no home.
+
+**Scope.**
+- In:
+  - New `docs/CORPORA.md`: one row per corpus (five), data-dir role, collection name, document/chunk counts re-derived read-only, and which chunker built it (standards: bounded chunker; main and Waymo: legacy chunker), reusing the five-corpus registry EP-1 added to PROJECT-STATUS instead of restating it differently. State that only the main, standards-GT and focus sets have baselines in this programme; the Motional, Waabi and Waymo corpora get none (plan section 9).
+  - State the rule: no ingest into a live collection from this branch until the operator has decided the parked sparse-recompute (CQ-7/EV-22) and re-chunk (CQ-16) questions, because it would mix chunkers and sparse versions (review S-13; item h residual risk 1).
+  - Close Decision 1 in `docs/DECISIONS-PENDING-operator.md` with the evidence (IDF modifier present in the on-disk config of all five collections).
+  - HISTORICAL banner, in this PR, on any doc this PR supersedes (AGENT-PROCEDURES section B).
+- Out (explicitly):
+  - `docs/HANDOFF-2026-08-24.md` and the precision-95 plan tick rows (cut).
+  - PROJECT-STATUS section rows other than this ticket's own ledger and doc-map entries, README.md, AGENTS.md (EP-1, done). RUNBOOK.md (OP-3, OP-5, OP-7). Any code change; any measurement that needs a service (counts are read-only SQLite).
+
+**Owns** (files this ticket may touch; anything else is out of bounds):
+- `docs/CORPORA.md`
+- `docs/DECISIONS-PENDING-operator.md`
+
+**Commits** (① is a stub, committed before any real work):
+① stub: `docs/CORPORA.md` skeleton with the five rows and column headings, empty cells marked TODO
+② corpora table filled from read-only queries; counts stamped with the query date
+③ no-ingest rule + chunker provenance column
+④ Decision 1 closure with the git evidence
+
+**Verification:**
+- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
+- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
+- `grep -n 'Decision 1' docs/DECISIONS-PENDING-operator.md` shows the closure with the config evidence
+- Every count in CORPORA.md reproduces with the read-only query printed under the table (`sqlite3 "file:<db>?mode=ro" 'select count(*) from chunks'`)
+
+**Acceptance / falsification criterion.** `docs/CORPORA.md` lists five corpora with path role, collection, counts and chunker; each count was re-derived on the day and the query is shown; the no-ingest rule is present; Decision 1 reads 'closed' with evidence; someone who did not write it can re-run every shown query and match. Falsified if any count differs from a fresh read-only query by more than the ingest drift stated in the doc.
+
+**Gates / depends on.** Depends on: none. Gates: none.
+
+**Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
+
+**Model tier and size.** Sonnet; S (up to 2 h of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
+
+**Risk and rollback.** Low. Docs only. A wrong count misleads an agent; mitigation is the printed query beside each number. Rollback: revert the commit.
+
+**Docs to update in the same PR.** New `docs/CORPORA.md` gets a section 7 doc-map row (AUTHORITATIVE) and a ledger entry. Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
+
+#### MC-1: Raise an error for an unknown paper_id filter instead of returning empty
+
+Labels: wave:1-no-gpu, area:mcp, size:S. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/MC-1-unknown-paper-id-raises.md`.
+
+**Review cross-reference:** S-08. **Wave:** W1 do now, no GPU.
+
+**Why.** `filters.paper_id` with an unknown or wrongly formed id returns an empty result with no error, while `get_paper` raises for the same id. In the standards usage log one call with an `arxiv:`-prefixed id (row 327) returned empty and the next with the bare stored id (row 337) succeeded (RV-4 F-4.2, confirmed by the review). An agent reads the empty result as 'this standard does not discuss X'.
+
+**Scope.**
+- In:
+  - In `McpServer.semantic_search` and `search_papers`: when `filters.paper_id` is set, resolve it against the document store; on a miss raise `ContractError` with the same wording style as `get_paper` plus a hint when the id starts with `arxiv:` (the stored form has no prefix).
+  - Reuse the existing `get_paper` resolution and error construction; no new lookup path.
+- Out (explicitly):
+  - Dropping the absolute database path from error text and other error rewording (RV-4 F-4.9, not carried by the review). Fuzzy nearest-id suggestions. Any contract change.
+
+**Owns** (files this ticket may touch; anything else is out of bounds):
+- `rag/mcp_server.py`
+- `rag/test_mcp_server.py`
+
+**Commits** (① is a stub, committed before any real work):
+① stub: docstring lines stating the new precondition and error
+② failing tests: unknown id raises; `arxiv:`-prefixed id raises with the stripped hint; known id still returns results
+③ implementation to green
+④ docstring updated
+
+**Verification:**
+- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
+- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
+- `conda run -n agent-rag-research ruff check rag/mcp_server.py rag/test_mcp_server.py`
+- `conda run -n agent-rag-research python -m pytest -q rag/test_mcp_server.py -o addopts="--disable-socket"`
+
+**Acceptance / falsification criterion.** Unit tests: an unknown id raises `ContractError`; the `arxiv:`-prefixed form produces the hint; a valid id is unchanged. Mutation proof: remove the resolve call and the unknown-id test fails. Falsified if the unknown-id test passes with the resolve call removed.
+
+**Gates / depends on.** Depends on: none. Gates: MC-2.
+
+**Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
+
+**Model tier and size.** Sonnet; S (up to 2 h of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
+
+**Risk and rollback.** A valid-but-unindexed paper id now errors where it used to return empty. That is intended; it is also the same behaviour `get_paper` already has. Rollback: revert.
+
+**Docs to update in the same PR.** Section 2: the unknown-`paper_id` error. Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
+
+#### MC-2: Make the MCP server describe its corpus, filters and limits
+
+Labels: wave:1-no-gpu, area:mcp, size:M. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/MC-2-self-describing-mcp-server.md`.
+
+**Review cross-reference:** S-10. **Wave:** W1 do now, no GPU.
+
+**Cut by minimizer:** the new `documents` list in `corpus_stats` (and with it the metadata-tag dependency) is cut. Instructions string and filter legend stay (evidence: `doc_type` used 0 of 1,198 calls; wrong-corpus calls ids 8, 21-24). The MC-1 -> MC-2 edge is file ownership (`rag/mcp_server.py`), not data.
+
+**Why.** A cold agent sees no server instructions, zero field descriptions in the `SearchFilters` schema, and docstring guidance that FastMCP never exposes; `doc_type` was used 0 times in 1,198 logged calls, and wrong-corpus queries appear in the main log (ids 8, 21-24) (RV-4 F-4.3, F-4.4; review S-10). Hard-coded counts and a stale 32-ceiling paragraph in docstrings can disagree with the corpus.
+
+**Scope.**
+- In:
+  - Pass `instructions=` to `FastMCP`, generated at startup from `corpus_stats()` (what the corpus is, counts, date range, document kinds, which filters are meaningful, a five-line tool map), under 250 tokens.
+  - A compact filter legend in the `semantic_search` tool docstring (the field schema is protected). Delete hard-coded counts and the 32-ceiling paragraph.
+- Out (explicitly):
+  - A `documents` list in `corpus_stats` (cut by the minimizer). Field descriptions on `SearchFilters` (contracts edit, RIDER-1 territory). A per-corpus card file or Config key. Federation across corpora. Response slimming (parked MC-4).
+
+**Owns** (files this ticket may touch; anything else is out of bounds):
+- `app/serve.py`
+- `app/test_serve.py`
+- `rag/mcp_server.py`
+- `rag/test_mcp_server.py`
+
+**Commits** (① is a stub, committed before any real work):
+① stub: docstring stating the instructions contract (generated, under 250 tokens, no literal counts)
+② failing tests: `instructions` present and under budget; every filter named in the legend; no number in any description absent from `corpus_stats`
+③ implementation to green
+④ docstring cleanup commit
+
+**Verification:**
+- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
+- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
+- `conda run -n agent-rag-research ruff check app/serve.py app/test_serve.py rag/mcp_server.py rag/test_mcp_server.py`
+- `list_tools` and `initialize().instructions` dump built on fakes (no GPU, no store); output quoted in the PR
+- `conda run -n agent-rag-research python -m pytest -q app/test_serve.py rag/test_mcp_server.py -o addopts="--disable-socket"`
+
+**Acceptance / falsification criterion.** Instructions exist and stay under 250 tokens on a standards-sized and a main-sized fake; every filter appears in the legend; no description contains a literal count that disagrees with `corpus_stats`. Falsified if a description number is not derived from `corpus_stats`.
+
+**Gates / depends on.** Depends on: MC-1 (ordering only: same file, not a data dependency). Gates: MC-3.
+
+**Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
+
+**Model tier and size.** Sonnet; M (up to 1 day of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
+
+**Risk and rollback.** Generated text that is wrong for a corpus misleads every cold session. Mitigation: the text is derived from `corpus_stats` only; a test pins that. Rollback: revert.
+
+**Docs to update in the same PR.** Section 2: what the server advertises. Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
+
+#### MC-3: Record arguments and errors for scan and get tools in the usage log
+
+Labels: wave:1-no-gpu, area:mcp, size:S. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/MC-3-scan-tool-telemetry.md`.
+
+**Review cross-reference:** S-11. **Wave:** W1 do now, no GPU.
+
+**Cut by minimizer:** bind pattern/args and the error message only; the `--client-label` flag is cut (no MCP work is scheduled that consumes it). Decoupled from OP-2 (parked). The MC-2 -> MC-3 edge is an ownership order only (both own `app/serve.py`), not a data dependency.
+
+**Why.** 213 scan calls (18% of all 1,198 logged calls) have no pattern recorded, `get_section`, `get_span` and `get_paper` rows carry no arguments, errors store only the exception class name, and `source` is constant, so harness replays look like agent sessions (RV-4 F-4.5; review S-11). The usage log is the only evidence base for any future MCP work, and it is blind exactly where agents behave most like brute force.
+
+**Scope.**
+- In:
+  - Bind pattern, method or section path into the existing `query` column, the argument `paper_id`, `result_count` from the result length and `str(e)[:200]` into `error`. No schema change; existing rows stay valid.
+- Out (explicitly):
+  - A `--client-label` flag and any change to `source` (cut by the minimizer). New columns (top score, returned ids: RV-6 F-A9, dropped). Dashboard changes. Any retrieval change.
+
+**Owns** (files this ticket may touch; anything else is out of bounds):
+- `app/usage_log.py`
+- `app/test_usage_log.py`
+- `app/serve.py`
+- `app/test_serve.py`
+
+**Commits** (① is a stub, committed before any real work):
+① stub: docstring stating the per-tool binding table
+② failing tests per tool (scan_corpus, scan_methods, get_section, get_span, get_paper, errors)
+③ implementation to green
+
+**Verification:**
+- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
+- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
+- `conda run -n agent-rag-research ruff check app/usage_log.py app/test_usage_log.py app/serve.py app/test_serve.py`
+- `conda run -n agent-rag-research python -m pytest -q app/test_usage_log.py app/test_serve.py -o addopts="--disable-socket"`
+- On a scratch usage database: one mixed fake session then `select tool, query from requests where tool like 'scan%'` shows no NULL query
+
+**Acceptance / falsification criterion.** After one scripted mixed session on fakes, no scan row has a NULL `query` and every get_* row has its `paper_id`; error rows carry the message prefix. Falsified if any tool still writes a NULL where its argument exists.
+
+**Gates / depends on.** Depends on: MC-2 (ordering only: same file, not a data dependency). Gates: OP-2 (parked), MC-4 (parked).
+
+**Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
+
+**Model tier and size.** Sonnet; S (up to 2 h of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
+
+**Risk and rollback.** Logging full regex patterns could store sensitive text. Mitigation: the log is local and already stores queries; length is capped. Rollback: revert; rows written stay valid.
+
+**Docs to update in the same PR.** Section 2: what the usage log now records for scan and get tools. Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
+
+#### EV-14: Measure filtered-search overlap with exact search on the live collection (read-only)
+
+Labels: wave:1-no-gpu, area:eval, area:retrieval, needs-services, size:S. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EV-14-payload-index-overlap-measurement.md`.
+
+**Review cross-reference:** S-15. **Wave:** W1 do now, no GPU.
+
+**Cut by minimizer:** no clone is made: search is read-only, so exact versus HNSW runs on the live collection; the OP-4 and RQ-5 dependencies are dropped. CPU-only (the vector store container, no embedder, no reranker), so it can run while the GPU is busy.
+
+**Why.** No payload index exists on any live collection (every segment's `payload_index/config.json` is `{"indexed_fields":{}}`; 8, 7 and 8 segments), yet every query is filtered. The recall loss is inferred from the vector store's documented design, not measured (the minimizer notes the harm is inferred, not observed; this is the cheap closer); the real risk band is mid-selectivity filters (`kind=summary` is 3% of points and is the whole `search_papers` path; `doc_type=book`) (review item b; RV-1 F-1.2).
+
+**Scope.**
+- In:
+  - Read-only on the live collection (never a write, never an index change): use 100 stored summary vectors as queries and compare exact search with the default HNSW search for `kind=summary`, `doc_type=book` and a single `paper_id`; report overlap@k per filter. Reuse CQ-2's read-only sampling helpers; if an exact-search method is missing from `VectorIndex`, add one small read-only method there (vendor SDK calls stay inside that adapter).
+  - Pre-registered falsifier (commit 1): HNSW overlap with exact is at least 0.99 on all three filters, then payload-index work (parked CQ-9) is closed.
+- Out (explicitly):
+  - Cloning the collection. Creating payload indexes (parked CQ-9). Any write to the collection. Any GPU use: stored vectors are the queries, nothing is embedded.
+
+**Owns** (files this ticket may touch; anything else is out of bounds):
+- `rag/vector_index.py`
+- `rag/test_vector_index.py`
+- `scripts/payload_index_overlap.py`
+- `scripts/test_payload_index_overlap.py`
+- `docs/eval-reports/data/<run-date>-payload-index-overlap/`
+
+**Commits** (① is a stub, committed before any real work):
+① stub: report skeleton with the pre-registered 0.99 falsifier and the three filters, committed before any query is sent
+② exact-search read-only method (only if missing) and the script, unit-tested against mocked clients
+③ dry run on 10 queries against the live collection
+④ full run; report with the overlap table and the verdict
+
+**Verification:**
+- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
+- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
+- `conda run -n agent-rag-research ruff check rag/vector_index.py rag/test_vector_index.py scripts/payload_index_overlap.py scripts/test_payload_index_overlap.py`
+- `conda run -n agent-rag-research python scripts/payload_index_overlap.py --help` shows required `--collection`; the script issues no write call (a unit test asserts the client double records none)
+- Report table has one row per filter with overlap@10 and the count of queries returning fewer than k
+
+**Acceptance / falsification criterion.** Report states overlap of HNSW versus exact for each of the three filters on the live collection. Verdict is mechanical: all three at least 0.99 closes the finding (parked CQ-9 is then killed); any below 0.99 satisfies CQ-9's trigger. Falsified (finding closed) if all three are 0.99 or more. No write to the collection occurred.
+
+**Gates / depends on.** Depends on: none. Operator answers: F2. Gates: CQ-9 (parked).
+
+**Needs.** GPU: n · services up: vector store (CPU container) up; no embedder, no reranker · operator sign-off: n (no protected path is touched); operator answers: F2 (start the vector store container) · re-embed: n.
+
+**Model tier and size.** Sonnet; S (up to 2 h of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
+
+**Risk and rollback.** Adding a method to `rag/vector_index.py` that is read-only by construction; the live collection is only read. Rollback: revert.
+
+**Docs to update in the same PR.** The overlap report is a new doc (section 7 doc-map row); section 5/6 gets the verdict (finding closed or CQ-9 trigger met). Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
 
 #### EV-7: Require --collection, stamp the fixture hash, preflight gold ids
 
@@ -487,23 +704,22 @@ Labels: wave:1-no-gpu, area:eval, size:M. Issue file: `docs/superpowers/plans/20
 
 **Review cross-reference:** S-02. **Wave:** W1 do now, no GPU.
 
-**Why.** `--collection` still defaults to None in `app/retrieval_eval.py:780`, `app/escalation_eval.py:153` and `app/score_distribution_census.py:209`, which `build_mcp_server` turns into the main `papers` collection, so a mispointed run yields a plausible low number with `n_errors = 0` (RV-3 F-1.2). Reports stamp no hash of the ground-truth file (contrast `judge_eval`'s `rubric_sha256_12`). EV-5 already fixed the run scripts (fixture hash check, point-count guard, no fixture rewrite, run from the worktree under test); the Python entry points themselves were not touched.
+**Cut by minimizer:** `escalation_eval.py` and `score_distribution_census.py` are not run anywhere in the programme and drop out; `app/retrieval_eval.py` (the instrument) and the gold-id preflight stay. The failure is real but already mitigated: EV-5's run scripts pass `--collection` and check the hash.
+
+**Why.** `--collection` still defaults to None in `app/retrieval_eval.py:780` (the same default exists in `app/escalation_eval.py` and `app/score_distribution_census.py`, which this programme does not run), which `build_mcp_server` turns into the main `papers` collection, so a mispointed run yields a plausible low number with `n_errors = 0` (RV-3 F-1.2). Reports stamp no hash of the ground-truth file (contrast `judge_eval`'s `rubric_sha256_12`). EV-5 already fixed the run scripts (fixture hash check, point-count guard, no fixture rewrite, run from the worktree under test); the Python entry points themselves were not touched.
 
 **Scope.**
 - In:
-  - `--collection` `required=True` in the three entry points (precedent: `app/generation_capture.py`).
+  - `--collection` `required=True` in `app/retrieval_eval.py` (precedent: `app/generation_capture.py`).
   - `ground_truth_sha256_12` in `build_report`, same pattern as `judge_eval`.
   - Preflight before scoring: every `gold_paper_id` of the loaded questions resolves in the document store, else exit 2 naming the unresolved ids.
 - Out (explicitly):
+  - `app/escalation_eval.py` and `app/score_distribution_census.py` (not run in this programme; they keep their default).
   - The run scripts, protocols and addenda (EV-5, done). The collection point-count check (stays in the run scripts' `check-points`). Lock-timeout validity (EV-10). Excerpt metric (EV-8).
 
 **Owns** (files this ticket may touch; anything else is out of bounds):
 - `app/retrieval_eval.py`
 - `app/test_retrieval_eval.py`
-- `app/escalation_eval.py`
-- `app/test_escalation_eval.py`
-- `app/score_distribution_census.py`
-- `app/test_score_distribution_census.py`
 
 **Commits** (① is a stub, committed before any real work):
 ① stub: docstrings stating the three behaviours (required flag, hash stamp, preflight exit 2)
@@ -514,13 +730,13 @@ Labels: wave:1-no-gpu, area:eval, size:M. Issue file: `docs/superpowers/plans/20
 **Verification:**
 - `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
 - `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
-- `conda run -n agent-rag-research ruff check app/retrieval_eval.py app/test_retrieval_eval.py app/escalation_eval.py app/test_escalation_eval.py app/score_distribution_census.py app/test_score_distribution_census.py`
+- `conda run -n agent-rag-research ruff check app/retrieval_eval.py app/test_retrieval_eval.py`
 - `conda run -n agent-rag-research python -m app.retrieval_eval --help` shows `--collection` as required
 - Unit test: report hash equals `sha256sum` of the fixture file (first 12 hex)
 
-**Acceptance / falsification criterion.** Running any of the three without `--collection` exits non-zero; the report's `ground_truth_sha256_12` equals the first 12 hex of `sha256sum` of the file; a fixture with an unresolvable gold paper id exits 2 naming it. Falsified if a run without `--collection` still starts.
+**Acceptance / falsification criterion.** Running `app.retrieval_eval` without `--collection` exits non-zero; the report's `ground_truth_sha256_12` equals the first 12 hex of `sha256sum` of the file; a fixture with an unresolvable gold paper id exits 2 naming it. Falsified if a run without `--collection` still starts.
 
-**Gates / depends on.** Depends on: none. Gates: EP-3, EV-8, EV-16.
+**Gates / depends on.** Depends on: none. Gates: EV-8, EV-16.
 
 **Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
 
@@ -528,7 +744,7 @@ Labels: wave:1-no-gpu, area:eval, size:M. Issue file: `docs/superpowers/plans/20
 
 **Risk and rollback.** Existing wrapper scripts that relied on the default break loudly. Mitigation: that is the point; EV-5's run scripts already pass `--collection`. Rollback: revert.
 
-**Docs to update in the same PR.** PROJECT-STATUS section 2 (flag now required) via EP-3. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-3 carries those entries from this ticket's merged SHA.
+**Docs to update in the same PR.** Section 2: `--collection` is now required for `app.retrieval_eval`. Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
 
 #### EV-8: Add an excerpt-containment passage metric that honours alternative gold chunks
 
@@ -564,7 +780,7 @@ Labels: wave:1-no-gpu, area:eval, size:M. Issue file: `docs/superpowers/plans/20
 
 **Acceptance / falsification criterion.** A FakeRetriever test returning an alternative chunk is a hit under the excerpt rule and a miss under the anchor rule; Waymo anchor-rule results are byte-identical on the existing test fixtures. This is an instrument, not a retrieval change: its ceiling check is that on the gold chunk itself the excerpt metric equals 1 for every non-null-excerpt item. Falsified if the gold chunk fails its own excerpt check on any fixture item.
 
-**Gates / depends on.** Depends on: EV-7. Gates: EP-3, EV-9, EV-11, EV-16.
+**Gates / depends on.** Depends on: EV-7 (ordering only: same file, not a data dependency). Gates: EV-9, EV-11, EV-16.
 
 **Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
 
@@ -572,44 +788,43 @@ Labels: wave:1-no-gpu, area:eval, size:M. Issue file: `docs/superpowers/plans/20
 
 **Risk and rollback.** Two metrics diverge in meaning from EV-6's member-passage metric and confuse later reports. Mitigation: the docstring reconciliation and one stamped `scoring_rule`. Rollback: revert; additive.
 
-**Docs to update in the same PR.** PROJECT-STATUS section 2 via EP-3. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-3 carries those entries from this ticket's merged SHA.
+**Docs to update in the same PR.** Section 2: the new `passage_excerpt_hit` report fields. Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
 
-#### EV-9: Record retrieved chunk ids in eval rows; match stubs by chunk id
+#### EV-9: Record retrieved chunk ids in eval rows
 
 Labels: wave:1-no-gpu, area:eval, size:S. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EV-9-chunk-ids-in-eval-rows.md`.
 
 **Review cross-reference:** S-05. **Wave:** W1 do now, no GPU.
 
-**Why.** Report rows carry only `retrieved_block_ids` (`app/retrieval_eval.py:229,371,551`), and `scripts/list_stub_chunks.py` identifies a stub by its anchor block, which is ambiguous for the 7.5% of standards chunks that share an anchor (35,714 chunks, 33,053 distinct anchors; RV-1 F-1.3, review section 2 on CQ-3). The CQ-3 addendum (EV-12) needs per-chunk identity.
+**Cut by minimizer:** only the additive `retrieved_chunk_ids` row field stays (rows from the 1-2 h standards run cannot be recollected cheaply, and EV-18 prints the structure-gate count from them); the `scripts/list_stub_chunks.py --ab` rewiring is cut and is done only if EV-21 is commissioned. The EV-9 -> EV-10 edge is a file-ownership order only (both own `app/retrieval_eval.py`), not a data dependency.
+
+**Why.** Report rows carry only `retrieved_block_ids` (`app/retrieval_eval.py:229,371,551`), and `scripts/list_stub_chunks.py` identifies a stub by its anchor block, which is ambiguous for the 7.5% of standards chunks that share an anchor (35,714 chunks, 33,053 distinct anchors; RV-1 F-1.3, review section 2 on CQ-3). EV-18's structure-gate count and any later stub analysis (parked EV-21) need per-chunk identity in the rows.
 
 **Scope.**
 - In:
   - Add `retrieved_chunk_ids` to the per-question row. `GroundedResult` has no chunk id, so recover it from (paper id, anchor block id, passage text) through the document store the harness already holds; where two chunks match, record both and mark the row ambiguous.
-  - `scripts/list_stub_chunks.py --ab` matches stubs by chunk id.
 - Out (explicitly):
+  - `scripts/list_stub_chunks.py --ab` matching by chunk id (parked EV-21 does that if it is commissioned).
   - Any `contracts/` change. If chunk ids cannot be recovered without one, STOP and report: that is a RIDER-1 candidate, not an edit.
 
 **Owns** (files this ticket may touch; anything else is out of bounds):
 - `app/retrieval_eval.py`
 - `app/test_retrieval_eval.py`
-- `scripts/list_stub_chunks.py`
-- `scripts/test_list_stub_chunks.py`
 
 **Commits** (① is a stub, committed before any real work):
 ① stub: docstring of the recovery rule and the ambiguity marker
-② failing tests: unique recovery; duplicate-text ambiguity marked; stub-at-rank-1 share computed by chunk id equals anchor-based share where anchors are unique, and differs on a shared-anchor fixture
+② failing tests: unique recovery; duplicate-text ambiguity marked; a shared-anchor fixture yields both chunk ids and the ambiguous flag
 ③ implementation to green
-④ list_stub_chunks wired
 
 **Verification:**
 - `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
 - `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
-- `conda run -n agent-rag-research ruff check app/retrieval_eval.py app/test_retrieval_eval.py scripts/list_stub_chunks.py scripts/test_list_stub_chunks.py`
-- `conda run -n agent-rag-research python -m pytest -q app/test_retrieval_eval.py scripts/test_list_stub_chunks.py -o addopts="--disable-socket"`
+- `conda run -n agent-rag-research ruff check app/retrieval_eval.py app/test_retrieval_eval.py`
+- `conda run -n agent-rag-research python -m pytest -q app/test_retrieval_eval.py -o addopts="--disable-socket"`
 
-**Acceptance / falsification criterion.** On a fixture with two chunks sharing one anchor, the stub-at-rank-1 share is computed per chunk and the anchor-based figure is shown to differ; ambiguous rows are counted, not hidden. Falsified if recovery silently picks one of two matching chunks.
+**Acceptance / falsification criterion.** On a fixture with two chunks sharing one anchor, the row lists both chunk ids and is marked ambiguous; ambiguous rows are counted in the report, not hidden. Falsified if recovery silently picks one of two matching chunks.
 
-**Gates / depends on.** Depends on: EV-8. Gates: EP-3, EV-10, EV-12, EV-21.
+**Gates / depends on.** Depends on: EV-8 (ordering only: same file, not a data dependency). Gates: EV-10, EV-6b, EV-12 (parked), EV-16, EV-18, EV-21 (parked).
 
 **Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
 
@@ -617,7 +832,7 @@ Labels: wave:1-no-gpu, area:eval, size:S. Issue file: `docs/superpowers/plans/20
 
 **Risk and rollback.** Recovery by text may be slow on 30,000-chunk papers. Mitigation: per-paper lookup, cached. Rollback: revert; additive field.
 
-**Docs to update in the same PR.** PROJECT-STATUS section 2 via EP-3. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-3 carries those entries from this ticket's merged SHA.
+**Docs to update in the same PR.** Section 2: the new `retrieved_chunk_ids` row field. Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
 
 #### EV-10: Mark an eval run invalid when any error is a GPU lock timeout
 
@@ -651,7 +866,7 @@ Labels: wave:1-no-gpu, area:eval, size:S. Issue file: `docs/superpowers/plans/20
 
 **Acceptance / falsification criterion.** A stubbed lock timeout on one question makes the whole report invalid and the process exit non-zero; a run with no timeouts is unchanged. Falsified if the timeout question is still counted as a miss.
 
-**Gates / depends on.** Depends on: EV-9. Gates: EP-3, RQ-2, EV-16.
+**Gates / depends on.** Depends on: EV-9 (ordering only: same file, not a data dependency). Gates: RQ-2 (parked), EV-16.
 
 **Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
 
@@ -659,7 +874,7 @@ Labels: wave:1-no-gpu, area:eval, size:S. Issue file: `docs/superpowers/plans/20
 
 **Risk and rollback.** A transient timeout on one question invalidates a long run. Mitigation: intended (a partially starved run is not a baseline); the run is repeatable. Rollback: revert.
 
-**Docs to update in the same PR.** PROJECT-STATUS via EP-3. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-3 carries those entries from this ticket's merged SHA.
+**Docs to update in the same PR.** Section 2: the `run_valid` rule and non-zero exit. Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
 
 #### EV-11: Record note-only duplicates as alternatives and re-freeze fixture hashes
 
@@ -667,178 +882,46 @@ Labels: wave:1-no-gpu, area:eval, size:S. Issue file: `docs/superpowers/plans/20
 
 **Review cross-reference:** S-03. **Wave:** W1 do now, no GPU.
 
+**Cut by minimizer:** the `merge_gt` orphan-tolerance change is cut (run scripts no longer call `merge_gt`; no orphan has ever been observed), so `gt_tools.py` leaves Owns. Folded in from the unplaced lane findings: one caveat sentence in the addendum (RV-3 F-1.12: the chapter-level metric is a heading-string match).
+
 **Why.** Cross-verification found three same-document duplicates recorded only as 'survive' notes (Q-STD-D-014, D-027, D-028) that are not in `alternative_gold_chunk_ids`, so a correct answer from the duplicate scores a miss (RV-3 F-1.5, review S-03). Fixing it changes a frozen fixture, so it must happen before any run and under a dated addendum, because the frozen protocols record each fixture's SHA-256.
 
 **Scope.**
 - In:
-  - Dated addendum to the standards protocol first (commit 1), then record the duplicates as alternatives in the standards ground-truth file, make `merge_gt` tolerate per-item orphans (report them, write the rest, fail only above a stated percentage), and update the standards, books and papers entries in `docs/eval-reports/data/2026-11-10-FIXTURE-HASHES.json`.
+  - Dated addendum to the standards protocol first (commit 1), containing the change, why it is pre-run, the new hash procedure, and one caveat sentence that the chapter-level metric is a heading-string match (RV-3 F-1.12).
+  - Then record the three duplicates as alternatives in the standards ground-truth file and update the standards, books and papers entries in `docs/eval-reports/data/2026-11-10-FIXTURE-HASHES.json`.
 - Out (explicitly):
-  - Rewriting any question or gold excerpt. Collapsing the three `gt_tools.py` copies. The focus-set hash entry (EV-4). Promotion into `fixtures/eval/` (RIDER-1).
+  - Rewriting any question or gold excerpt. Any `merge_gt` / `gt_tools.py` change (orphan tolerance cut). Collapsing the three `gt_tools.py` copies. The focus-set hash entry (EV-4b owns it). Promotion into `fixtures/eval/` (RIDER-1).
 
 **Owns** (files this ticket may touch; anything else is out of bounds):
 - `docs/eval-reports/data/2026-11-10-standards-gt/`
 - `docs/eval-reports/data/2026-11-10-causal-books-gt/`
-- `docs/eval-reports/data/2026-11-10-papers-passage-gt/gt_tools.py`
 - `docs/eval-reports/data/2026-11-10-FIXTURE-HASHES.json`
 - `docs/eval-reports/2026-11-10-standards-benchmark-protocol.md`
 
 **Commits** (① is a stub, committed before any real work):
-① stub: addendum text (what changes, why it is pre-run, the new hash procedure) appended to the standards protocol BEFORE any fixture edit
-② three duplicates recorded as alternatives; per-item orphan tolerance in `merge_gt` with tests or a dry-run transcript
+① stub: addendum text (what changes, why it is pre-run, the new hash procedure, the F-1.12 caveat) appended to the standards protocol BEFORE any fixture edit
+② three duplicates recorded as alternatives
 ③ new hashes written to FIXTURE-HASHES.json for the files that changed
 ④ `scripts/eval_protocol_tools.py check-hash` transcript quoted
 
 **Verification:**
 - `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
 - `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
-- `conda run -n agent-rag-research ruff check docs/eval-reports/data/2026-11-10-papers-passage-gt/gt_tools.py`
 - `conda run -n agent-rag-research python scripts/eval_protocol_tools.py check-hash docs/eval-reports/data/2026-11-10-FIXTURE-HASHES.json <fixture-relative-path>` passes for each fixture
 - `git log --format=%H -- docs/eval-reports/data/2026-11-10-FIXTURE-HASHES.json` shows the addendum commit precedes the hash change
 
 **Acceptance / falsification criterion.** Addendum commit precedes the fixture edit; the three duplicates appear as alternatives; hashes in the file equal `sha256sum` of each fixture; no question text or excerpt changed (diff shows only alternatives and the hash file). Falsified if `git diff` shows any other change in a fixture.
 
-**Gates / depends on.** Depends on: EV-8. In-progress tickets on other branches (merge order or inputs): EV-4. Gates: EP-3, EV-12, CQ-19, EV-16, EV-18, RIDER-1.
+**Gates / depends on.** Depends on: EV-8. In-progress tickets on other branches (merge order or inputs): EV-4b. Gates: CQ-19 (parked), EV-12 (parked), EV-16, EV-18, RIDER-1.
 
 **Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
 
 **Model tier and size.** Sonnet; S (up to 2 h of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
 
-**Risk and rollback.** A hash edit after a run would void that run. Mitigation: ordered before wave 2 by dependency. The hash file is shared with in-progress EV-4 (focus entry): edits are key-disjoint and EV-4 merges first. Rollback: revert the fixture and hash commits together.
+**Risk and rollback.** A hash edit after a run would void that run. Mitigation: ordered before wave 2 by dependency. The hash file is shared with in-progress EV-4b (focus entry): edits are key-disjoint and EV-4b merges first or the two rebase over each other in key-disjoint hunks. Rollback: revert the fixture and hash commits together.
 
-**Docs to update in the same PR.** Standards protocol addendum is the doc; PROJECT-STATUS via EP-3. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-3 carries those entries from this ticket's merged SHA.
-
-#### EV-12: Amend the CQ-3 stub A/B pre-registration (fixtures, minimum effect)
-
-Labels: wave:1-no-gpu, area:eval, size:S. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EV-12-cq3-preregistration-addendum.md`.
-
-**Review cross-reference:** S-05. **Wave:** W1 do now, no GPU.
-
-**Why.** CQ-3's pre-registration names the wrong fixtures (the 210-question set and the legacy books set, which have no passage gold), has no minimum effect so one noise flip would ADOPT, and identifies stubs by anchor (ambiguous for 7.5% of standards chunks); the stub length threshold also differs across three tools (40, 60 and 80 characters; review section 2).
-
-**Scope.**
-- In:
-  - Dated addendum appended to `docs/eval-reports/2026-11-10-cq3-stub-chunks.md`: fixtures are the standards, causal-books and papers-passage sets (post-EV-11 hashes); ADOPT needs net +3 items on at least one set and no stratum losing more than 1; stubs identified by chunk id (EV-9); the single binding stub definition for this A/B is the retriever's (40 characters) with the other two tools' thresholds stated as non-binding.
-- Out (explicitly):
-  - Changing any threshold in code (the three tools stay as they are). Running the A/B (EV-21). Editing the original pre-registration text: append only.
-
-**Owns** (files this ticket may touch; anything else is out of bounds):
-- `docs/eval-reports/2026-11-10-cq3-stub-chunks.md`
-
-**Commits** (① is a stub, committed before any real work):
-① stub: addendum heading with date and the four amendments as a list, committed before any stub A/B report exists
-② addendum text with ceiling arithmetic for the new minimum effect (n of each set vs +3)
-③ cross-check that every number cited resolves to a file
-
-**Verification:**
-- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
-- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
-- `git log --diff-filter=A --format='%H %cI' -- <any stub A/B report>` shows no such file older than this addendum's commit
-
-**Acceptance / falsification criterion.** Addendum is committed before any stub A/B report exists and states fixtures, ADOPT rule (net +3 on one set, no stratum worse by more than 1), chunk-id matching and the binding threshold; the ceiling note shows +3 is reachable on each set (n=94, 69, 61 answerable). Falsified if a stub A/B report predates the addendum.
-
-**Gates / depends on.** Depends on: EV-9, EV-11. Gates: EP-3, EV-21.
-
-**Needs.** GPU: n · services up: none · operator sign-off: n (not a protected path); the amended rule is a decision for the operator in PR review. · re-embed: n
-
-**Model tier and size.** Sonnet; S (up to 2 h of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
-
-**Risk and rollback.** Low. An addendum cannot undo a result already seen; ordering is enforced by dependency. Rollback: revert.
-
-**Docs to update in the same PR.** PROJECT-STATUS via EP-3. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-3 carries those entries from this ticket's merged SHA.
-
-#### EV-13: Capture cross-encoder scores and build the absence census tool
-
-Labels: wave:1-no-gpu, area:eval, area:retrieval, size:M. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EV-13-rerank-score-capture-and-census.md`.
-
-**Review cross-reference:** S-04. **Wave:** W1 do now, no GPU.
-
-**Why.** Callers get the fusion (RRF) score and the reranker's score is discarded (`rag/retriever.py:249`, `rag/reranker.py:231`), so the earlier 'no score floor' verdict tested rank arithmetic only; the cross-encoder score is the one cheap absence signal nobody has censused (review item a; RV-1 F-1.1, RV-4 F-4.1). A CRAG instrument (AUROC 0.94 and 0.80) and MiniCheck are independent of this and stay as they are.
-
-**Scope.**
-- In:
-  - Experiment-only `rerank_scored()` on `TeiReranker` returning `(candidate, score)` pairs, no contract change, `rerank()` untouched.
-  - `app/exp_rerank_score_census.py`: answerable top-1 reranker score versus the absent arms (standards absent 9 and partial-absent 13 reported separately; main known-absent 24; books partial-absent 5; Waymo 12 and 14), AUROC with Hanley-McNeil interval, reusing `auroc_pos_higher` from `exp_agentic_loop_v0` and `_iqr_separates` from the score census; explicit `--collection`, `--db-path`, `--blob-dir`. Definition frozen in the standards protocol section 7 (iii).
-- Out (explicitly):
-  - Exposing the score to callers (RQ-4, gated). Running it (EV-19, GPU). Any threshold or wiring decision (needs 60 or more distinct absent items; RV-3 F-1.10).
-
-**Owns** (files this ticket may touch; anything else is out of bounds):
-- `rag/reranker.py`
-- `rag/test_reranker.py`
-- `app/exp_rerank_score_census.py`
-- `app/test_exp_rerank_score_census.py`
-
-**Commits** (① is a stub, committed before any real work):
-① stub: docstrings of `rerank_scored` and the census CLI; the frozen definition cited by section number
-② failing tests: scores returned are monotone in the order `rerank()` returns; census on a fake reranker computes the expected AUROC and CI
-③ implementation to green
-④ census CLI with required collection flags
-
-**Verification:**
-- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
-- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
-- `conda run -n agent-rag-research ruff check rag/reranker.py rag/test_reranker.py app/exp_rerank_score_census.py app/test_exp_rerank_score_census.py`
-- `conda run -n agent-rag-research python -m pytest -q rag/test_reranker.py app/test_exp_rerank_score_census.py -o addopts="--disable-socket"`
-- Reuse stated: `auroc_pos_higher`, `_iqr_separates`, Hanley-McNeil helper (no new statistics code)
-
-**Acceptance / falsification criterion.** Unit test: `rerank_scored` scores are monotone with `rerank()` order; the census reproduces a hand-computed AUROC on a fixture of 6 items. Falsified if `rerank()` output changes by even one id on the existing reranker tests.
-
-**Gates / depends on.** Depends on: RQ-1. Gates: EP-3, EV-19.
-
-**Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
-
-**Model tier and size.** Sonnet; M (up to 1 day of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
-
-**Risk and rollback.** Adding a method to a real adapter widens its surface. Mitigation: documented experiment-only; fakes are untouched (protected). Rollback: revert.
-
-**Docs to update in the same PR.** PROJECT-STATUS section 2 (new `app/` entry point) via EP-3. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-3 carries those entries from this ticket's merged SHA.
-
-#### EV-14: Measure filtered-search overlap with exact search on a clone
-
-Labels: wave:1-no-gpu, area:eval, area:retrieval, needs-services, size:M. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EV-14-payload-index-overlap-measurement.md`.
-
-**Review cross-reference:** S-15. **Wave:** W1 do now, no GPU.
-
-**Why.** No payload index exists on any live collection (every segment's `payload_index/config.json` is `{"indexed_fields":{}}`; 8, 7 and 8 segments), yet every query is filtered. The recall loss is inferred from the vector store's documented design, not measured; the real risk band is mid-selectivity filters (`kind=summary` is 3% of points and is the whole `search_papers` path; `doc_type=book`) (review item b; RV-1 F-1.2).
-
-**Scope.**
-- In:
-  - On a clone made with `VectorIndex.clone_points_into` (never the live collection): use 100 stored summary vectors as queries and compare exact search with the default HNSW search for `kind=summary`, `doc_type=book` and a single `paper_id`; report overlap@k per filter. Reuse CQ-2's read-only sampling helpers; if an exact-search method is missing from `VectorIndex`, add one small read-only method there (vendor SDK calls stay inside that adapter).
-  - Pre-registered falsifier (commit 1): HNSW overlap with exact is at least 0.99 on all three filters, then payload-index work (CQ-9) is closed.
-- Out (explicitly):
-  - Creating payload indexes (CQ-9). Touching the live collection. Any GPU use: stored vectors are the queries, nothing is embedded.
-
-**Owns** (files this ticket may touch; anything else is out of bounds):
-- `rag/vector_index.py`
-- `rag/test_vector_index.py`
-- `scripts/payload_index_overlap.py`
-- `scripts/test_payload_index_overlap.py`
-- `docs/eval-reports/data/<run-date>-payload-index-overlap/`
-
-**Commits** (① is a stub, committed before any real work):
-① stub: report skeleton with the pre-registered 0.99 falsifier and the three filters, committed before the clone is made
-② exact-search read-only method and the script, unit-tested against mocked clients
-③ clone created; dry run on 10 queries; free space recorded
-④ full run; report with the overlap table and the verdict
-
-**Verification:**
-- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
-- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
-- `conda run -n agent-rag-research ruff check rag/vector_index.py rag/test_vector_index.py scripts/payload_index_overlap.py scripts/test_payload_index_overlap.py`
-- `df -h /` before cloning (needs 6-8 GB free per clone, review F2)
-- `conda run -n agent-rag-research python scripts/payload_index_overlap.py --help` shows required `--collection` and a `--target-is-clone` guard
-- Report table has one row per filter with overlap@10 and the count of queries returning fewer than k
-
-**Acceptance / falsification criterion.** Report states overlap of HNSW versus exact for each of the three filters. Verdict is mechanical: all three at least 0.99 closes the finding; any below 0.99 opens CQ-9. Falsified (finding closed) if all three are 0.99 or more. The clone is deleted afterwards and its deletion is recorded.
-
-**Gates / depends on.** Depends on: RQ-5, OP-4. Operator answers: F2. Gates: EP-3, CQ-9.
-
-**Needs.** GPU: n · services up: vector store (CPU container) up; no embedder, no reranker · operator sign-off: n (no protected path is touched); operator answers: F2 · re-embed: n. Also: vector store start approved (operator question F2) and 6-8 GB free for one clone.
-
-**Model tier and size.** Sonnet; M (up to 1 day of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
-
-**Risk and rollback.** Cloning on a 98%-full disk. Mitigation: OP-4 first, free-space check, one clone at a time, deleted after. The live collection is only read. Rollback: delete the clone.
-
-**Docs to update in the same PR.** Report is the doc; PROJECT-STATUS section 5/6 via EP-3. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-3 carries those entries from this ticket's merged SHA.
+**Docs to update in the same PR.** The standards protocol addendum is the doc; the hash file is the record. Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
 
 #### EV-15: Add the plain BM25 floor script named EV-5b in the protocols
 
@@ -872,7 +955,7 @@ Labels: wave:1-no-gpu, area:eval, size:S. Issue file: `docs/superpowers/plans/20
 
 **Acceptance / falsification criterion.** Standards floor reproduces the review's re-run within the tolerance stated in the protocol (paper R@10 0.98, chunk@10 0.63, chunk@1 0.23 on the 94 answerable items). Falsified if the script cannot reproduce those figures from the same stored text.
 
-**Gates / depends on.** Depends on: none. Gates: EP-3, EV-16, EV-18.
+**Gates / depends on.** Depends on: none. Gates: EV-16, EV-18.
 
 **Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
 
@@ -880,148 +963,574 @@ Labels: wave:1-no-gpu, area:eval, size:S. Issue file: `docs/superpowers/plans/20
 
 **Risk and rollback.** A tokenisation difference makes the floor differ from the one the protocols quote. Mitigation: the reproduction check and the stated tolerance. Rollback: revert.
 
-**Docs to update in the same PR.** PROJECT-STATUS section 2 via EP-3. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-3 carries those entries from this ticket's merged SHA.
+**Docs to update in the same PR.** Section 2: entry-point row for `scripts/bm25_floor.py`. Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
 
-#### MC-1: Raise an error for an unknown paper_id filter instead of returning empty
+#### EV-6b: Dry-run and independently review the strata report script before the first baseline
 
-Labels: wave:1-no-gpu, area:mcp, size:S. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/MC-1-unknown-paper-id-raises.md`.
+Labels: wave:1-no-gpu, area:eval, size:S. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EV-6b-review-strata-report-script.md`.
 
-**Review cross-reference:** S-08. **Wave:** W1 do now, no GPU.
+**Review cross-reference:** review section 2 ('EV-6 not reviewed by any lane'); minimizer section 2 (critical-path gap). **Wave:** W1 do now, no GPU.
 
-**Why.** `filters.paper_id` with an unknown or wrongly formed id returns an empty result with no error, while `get_paper` raises for the same id. In the standards usage log one call with an `arxiv:`-prefixed id (row 327) returned empty and the next with the bare stored id (row 337) succeeded (RV-4 F-4.2, confirmed by the review). An agent reads the empty result as 'this standard does not discuss X'.
+**Why.** `scripts/eval_strata_report.py` (EV-6, done) produces every per-stratum and member-passage number of EV-16, EV-17 and EV-18, yet no lane or reviewer has examined it, and its own docstring states known over-estimate cases (3.1% of sampled standards chunks have a member block missing from the chunk text; chunks sharing one anchor are merged). A wrong table would be read as a baseline. The minimizer proposed folding a dry run into EV-8's acceptance; the operator asked for a separate small ticket so that the review is done by an agent other than the author of the row-format changes (EV-8, EV-9, EV-10) and after the row format is final.
 
 **Scope.**
 - In:
-  - In `McpServer.semantic_search` and `search_papers`: when `filters.paper_id` is set, resolve it against the document store; on a miss raise `ContractError` with the same wording style as `get_paper` plus a hint when the id starts with `arxiv:` (the stored form has no prefix).
-  - Reuse the existing `get_paper` resolution and error construction; no new lookup path.
+  - A hand-computed example: a six-question fake rows file and a tiny ground-truth file (built in the test, no real corpus) in which every printed number (paper recall@k and P@1, anchor and member-passage hit, stub share, authority/edition ranking, cross-document, absent arm, focus contamination) is computed by hand and written into the test as a literal; the script's output must equal it.
+  - A dry run of the script on the rows produced by the merged EV-7..EV-10 bundle's fake-backed tests (so rows carry `passage_excerpt_hit`, `retrieved_chunk_ids`, `scoring_rule`, `ground_truth_sha256_12`, `run_valid`): the script must not fail on the new fields and the review note states whether it ignores or uses each.
+  - A written review note: each metric definition read against the frozen protocols, the known over-estimate cases listed with their bound, and any defect fixed minimally (or reported if the fix is larger than a few lines). The reviewer is a fresh agent, not the author of EV-8, EV-9 or EV-10.
 - Out (explicitly):
-  - Dropping the absolute database path from error text and other error rewording (RV-4 F-4.9, not carried by the review). Fuzzy nearest-id suggestions. Any contract change.
+  - New metrics. Using `passage_excerpt_hit` inside the strata tables (only if the review shows the member rule disagrees materially). Reading any real corpus database, any GPU or service.
 
 **Owns** (files this ticket may touch; anything else is out of bounds):
-- `rag/mcp_server.py`
-- `rag/test_mcp_server.py`
+- `scripts/eval_strata_report.py`
+- `scripts/test_eval_strata_report.py`
+- `docs/eval-reports/<run-date>-eval-strata-report-review.md`
 
 **Commits** (① is a stub, committed before any real work):
-① stub: docstring lines stating the new precondition and error
-② failing tests: unknown id raises; `arxiv:`-prefixed id raises with the stripped hint; known id still returns results
-③ implementation to green
-④ docstring updated
+① stub: review-note skeleton listing every metric and the hand-computed expected table, committed before the script is run against it
+② hand-computed example test (red where the script disagrees, green where it agrees) and the dry run on the bundle's fake rows
+③ fixes for any defect found (omitted if none), each with its own test
+④ review note final: per metric 'matches protocol' or 'deviates: how and by how much'
 
 **Verification:**
 - `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
 - `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
-- `conda run -n agent-rag-research ruff check rag/mcp_server.py rag/test_mcp_server.py`
-- `conda run -n agent-rag-research python -m pytest -q rag/test_mcp_server.py -o addopts="--disable-socket"`
+- `conda run -n agent-rag-research ruff check scripts/eval_strata_report.py scripts/test_eval_strata_report.py`
+- `conda run -n agent-rag-research python scripts/eval_strata_report.py --help` still works
+- Mutation proof: change one hand-computed literal and watch the test fail
 
-**Acceptance / falsification criterion.** Unit tests: an unknown id raises `ContractError`; the `arxiv:`-prefixed form produces the hint; a valid id is unchanged. Mutation proof: remove the resolve call and the unknown-id test fails. Falsified if the unknown-id test passes with the resolve call removed.
+**Acceptance / falsification criterion.** The script's output equals the hand-computed value for every metric of the example; the dry run on rows with the new fields succeeds; the review note gives each metric a verdict. Falsified if any hand-computed value differs from the script's output and the difference is not an explicitly documented rule of the script.
 
-**Gates / depends on.** Depends on: none. Gates: EP-3, MC-2.
+**Gates / depends on.** Depends on: EV-9. Gates: EV-16.
 
 **Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
 
-**Model tier and size.** Sonnet; S (up to 2 h of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
+**Model tier and size.** Sonnet; S (up to 2 h of agent work). Logic work; no Opus-level design adjudication is needed.
 
-**Risk and rollback.** A valid-but-unindexed paper id now errors where it used to return empty. That is intended; it is also the same behaviour `get_paper` already has. Rollback: revert.
+**Risk and rollback.** A defect found late changes the reporting rule after rows exist. Mitigation: the review is a prerequisite of EV-16, before any real row exists. Rollback: revert; the script is post-processing only.
 
-**Docs to update in the same PR.** PROJECT-STATUS ledger via EP-3. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-3 carries those entries from this ticket's merged SHA.
+**Docs to update in the same PR.** The review note is a new doc (section 7 doc-map row, REFERENCE). Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
 
-#### MC-2: Make the MCP server describe its corpus, filters and limits
+### W2 first GPU session, measurements only
 
-Labels: wave:1-no-gpu, area:mcp, size:M. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/MC-2-self-describing-mcp-server.md`.
+#### EV-16: Run the frozen main-corpus baselines (papers, books, legacy)
 
-**Review cross-reference:** S-10. **Wave:** W1 do now, no GPU.
+Labels: wave:2-gpu-measure, area:eval, needs-gpu, needs-services, size:M. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EV-16-baseline-main-corpus.md`.
 
-**Why.** A cold agent sees no server instructions, zero field descriptions in the `SearchFilters` schema, and docstring guidance that FastMCP never exposes; `doc_type` was used 0 times in 1,198 logged calls, and wrong-corpus queries appear in the main log (ids 8, 21-24) (RV-4 F-4.3, F-4.4; review S-10). Hard-coded counts and a stale 32-ceiling paragraph in docstrings can disagree with the corpus.
+**Review cross-reference:** S-16. **Wave:** W2 first GPU session, measurements only.
+
+**Baseline commit freeze (step of this ticket, not a separate ticket).** Before launch the orchestrator records the integration-branch head as `baseline_commit`; all code used by EV-16, EV-17 and EV-18 is that exact commit (run worktree checked out at it); the SHA is written into the stub and into every run's MANIFEST and output directory; nothing in the pre-baseline rule's list (plan section 4, rule 16) merges into the integration branch until the EV-18 report is merged.
+
+**Why.** No baseline exists for the new papers-passage and causal-books sets, and every later A/B needs a measured reference on the same code and index; the first run is also the only moment the TEI truncation limit can be confirmed with one `/info` request (review S-16). Plain BM25 already reaches 0.96-0.98 paper recall on these sets, so only passage level and the title-ablated arm can show headroom (RV-3 F-1.3).
 
 **Scope.**
 - In:
-  - Pass `instructions=` to `FastMCP`, generated at startup from `corpus_stats()` (what the corpus is, counts, date range, document kinds, which filters are meaningful, a five-line tool map), under 250 tokens.
-  - A compact filter legend in the `semantic_search` tool docstring (the field schema is protected). Delete hard-coded counts and the 32-ceiling paragraph.
-  - `corpus_stats` gains a compact `documents` list (id, title, kind, year, status) when the corpus has 500 documents or fewer; kind and status are read from the standards metadata tags if present (CQ-5), omitted otherwise (no hard dependency).
+  - Freeze the baseline commit (see above) and verify the strata-report instrument was reviewed (EV-6b merged) before any number is read.
+  - Run `run_baseline_main.sh papers books legacy` exactly as the GPU-day runbook step 1a specifies (about 654 queries, estimated 20-40 min), as a detached process (LESSONS section 7.3); then the BM25 floor (EV-15) beside it, the title-ablated arm and the strata report (EV-6, reviewed by EV-6b).
+  - One `/info` request to the embedder to confirm its truncation limit; record the value.
+  - Report unmodified as a dated baseline document: passage-level headline (member-passage hit@10 and P@1, plus `passage_excerpt_hit`), paper recall as tripwire only, per-stratum Wilson intervals, `authority`/`edition`-style small strata labelled descriptive.
 - Out (explicitly):
-  - Field descriptions on `SearchFilters` (contracts edit, RIDER-1 territory). A per-corpus card file or Config key. Federation across corpora. Response slimming (MC-4).
+  - Any A/B or config change (later tickets). The focus set (EV-17) and standards (EV-18). Re-grounding or editing a fixture. Quoting a precision-95 headline number (operator question F8).
+  - Baselines for the Motional, Waabi and Waymo corpora: none is planned (plan section 9).
 
 **Owns** (files this ticket may touch; anything else is out of bounds):
-- `app/serve.py`
-- `app/test_serve.py`
-- `rag/mcp_server.py`
-- `rag/test_mcp_server.py`
+- `docs/eval-reports/<run-date>-main-baseline.md`
+- `docs/eval-reports/data/<run-date>-main-baseline/`
+- `docs/eval-reports/data/2026-11-10-papers-passage-gt/runs/ (own stamp only)`
 
 **Commits** (① is a stub, committed before any real work):
-① stub: docstring stating the instructions contract (generated, under 250 tokens, no literal counts)
-② failing tests: `instructions` present and under budget; every filter named in the legend; no number in any description absent from `corpus_stats`; `documents` present only at 500 documents or fewer
-③ implementation to green
-④ docstring cleanup commit
+① stub: report skeleton citing the frozen main-corpus protocol and the stop conditions; hash file revision recorded; `baseline_commit` frozen (integration head SHA), recorded here, and the run worktree checked out at exactly that SHA
+② detached run launched; MANIFEST committed when it starts (start time, collection, db, `baseline_commit`, fixture hashes)
+③ raw reports copied into the data dir with `n_errors` and `run_valid` shown
+④ BM25 floor and title-ablated arm
+⑤ report written; every number carries {metric, fixture, arm, pool depth, config}
 
 **Verification:**
 - `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
 - `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
-- `conda run -n agent-rag-research ruff check app/serve.py app/test_serve.py rag/mcp_server.py rag/test_mcp_server.py`
-- `list_tools` and `initialize().instructions` dump built on fakes (no GPU, no store); output quoted in the PR
-- `conda run -n agent-rag-research python -m pytest -q app/test_serve.py rag/test_mcp_server.py -o addopts="--disable-socket"`
+- `conda run -n agent-rag-research python -m app.doctor --no-auto-start` exits 0 before and after
+- Run scripts print `check-hash` and `check-points` passes; the report's `ground_truth_sha256_12` equals the hash file's entry
+- `n_errors` is 0 and `run_valid` is true in every report (else the arm is invalid and is not read)
+- `git rev-parse HEAD` in the run worktree equals the recorded `baseline_commit` before and after the run, and the SHA appears in every output directory
 
-**Acceptance / falsification criterion.** Instructions exist and stay under 250 tokens on a standards-sized and a main-sized fake; every filter appears in the legend; no description contains a literal count that disagrees with `corpus_stats`. Falsified if a description number is not derived from `corpus_stats`.
+**Acceptance / falsification criterion.** Per set (never averaged): passage-level hit@10 and P@1 with Wilson intervals, the BM25 floor beside it, the title-ablated paper recall, and stratum tables; the report hash equals the frozen hash; zero errors. The ceiling for each metric is printed with it (member hit@10 ceiling 1.00; paper recall tripwire headroom at most 2 items on the legacy 210-set). Every output carries the `baseline_commit` SHA. Falsified (run discarded) if a hash or point-count check fails, the recorded SHA differs from the code that ran, or any error is a lock timeout.
 
-**Gates / depends on.** Depends on: MC-1. Gates: EP-3, MC-3.
+**Gates / depends on.** Depends on: EV-7, EV-8, EV-9, EV-10, EV-11, EV-15, EV-6b. Operator answers: F3. Gates: CQ-7 (parked), EV-17, EV-18, EV-20, EV-19 (parked), EV-21 (parked), EV-22 (parked), CQ-18 (parked), RQ-3 (parked).
+
+**Needs.** GPU: y · services up: embedder + reranker containers, vector store, corpus database (read-only) · operator sign-off: n (no protected path is touched); operator answers: F3 · re-embed: n. Also: GPU free of the foreign model process (operator question F3); about 20-40 min GPU (estimate, not measured).
+
+**Model tier and size.** Sonnet; M (up to 1 day of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
+
+**Risk and rollback.** A foreign GPU holder or a held lock starves the run. Mitigation: EV-10 invalidates a starved run (and `app.doctor`, if OP-5 has merged, names the holder); one GPU job at a time. The run only reads. Rollback: discard the run directory.
+
+**Docs to update in the same PR.** The dated baseline report is the doc (section 7 doc-map row); section 3 ledger entry carries the `baseline_commit` SHA. Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
+
+#### EV-17: Run the frozen topic-focus baseline
+
+Labels: wave:2-gpu-measure, area:eval, needs-gpu, needs-services, size:S. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EV-17-baseline-topic-focus.md`.
+
+**Review cross-reference:** S-16. **Wave:** W2 first GPU session, measurements only.
+
+**Why.** Whether off-topic papers enter the top ten for realistic questions is unmeasured: 37.4% of main-corpus papers are off-topic (labels audited at weighted kappa 0.90) and nothing has ever measured how often they surface in answers (review section 4 'Unknown'). The frozen topic-focus protocol defines the instrument; its fixture hash is null until authoring ends.
+
+**Scope.**
+- In:
+  - Run the `focus` mode of the main baseline script (about 50 queries, estimated 2-5 min) once EV-4b (the repair of EV-4's focus fixture, which found 18 of 26 collision questions without their collision term and 6 of 10 weak absent items) has re-frozen the focus fixture hash in the hash file; the run uses the same `baseline_commit` as EV-16 (recorded in its MANIFEST); report off-topic share in the top 10 with its interval, `offtopic-legit` paper recall, and the control arms, per the frozen protocol.
+- Out (explicitly):
+  - Choosing the materiality bar (operator question F6: the report states the number, the operator sets the bar). Any demotion arm (RQ-3).
+
+**Owns** (files this ticket may touch; anything else is out of bounds):
+- `docs/eval-reports/<run-date>-focus-baseline.md`
+- `docs/eval-reports/data/<run-date>-focus-baseline/`
+- `docs/eval-reports/data/2026-11-10-papers-passage-gt/runs/ (own stamp only)`
+
+**Commits** (① is a stub, committed before any real work):
+① stub: report skeleton, the frozen metrics and the refusal rule (the script refuses while the hash is null)
+② MANIFEST committed at launch
+③ raw report copied; errors and validity shown
+④ report with off-topic share, interval and the bar left blank for the operator
+
+**Verification:**
+- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
+- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
+- `sha256sum` of the focus fixture equals the hash file entry (the script checks it)
+- `n_errors` 0, `run_valid` true
+
+**Acceptance / falsification criterion.** Report states off-topic share in the top 10 on the focus set with a Wilson interval, per question dimension, never averaged with the other sets, with the control arms' values beside it; its fixture hash matches EV-4b's frozen hash and its MANIFEST `baseline_commit` equals EV-16's. The ceiling and floor arithmetic of the protocol are printed with each metric. Falsified (not read) if the hash was null at launch or any error occurred.
+
+**Gates / depends on.** Depends on: EV-16 (GPU-serial order and the shared baseline commit). In-progress tickets on other branches (merge order or inputs): EV-4b. Operator answers: F3. Gates: RQ-2 (parked), RQ-3 (parked).
+
+**Needs.** GPU: y · services up: embedder + reranker containers, vector store, corpus database (read-only) · operator sign-off: n (no protected path is touched); operator answers: F3 · re-embed: n. Also: GPU free (F3); focus fixture authoring finished and hash frozen (EV-4b).
+
+**Model tier and size.** Sonnet; S (up to 2 h of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
+
+**Risk and rollback.** Fixture hash still null: the script refuses to run, which is the intended guard. Rollback: discard run directory.
+
+**Docs to update in the same PR.** The dated focus baseline report is the doc (section 7 doc-map row); the off-topic share goes to section 6 as an open measured number. Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
+
+#### EV-18: Run the frozen standards baseline and evaluate the structure gate
+
+Labels: wave:2-gpu-measure, area:eval, needs-gpu, needs-services, size:M. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EV-18-baseline-standards.md`.
+
+**Review cross-reference:** S-16, S-24 gate. **Wave:** W2 first GPU session, measurements only.
+
+**Minimizer note.** The gate count here is the single trigger for parked CQ-8, CQ-12, CQ-13, CQ-14 and CQ-16 (count of 5 or more); the authority-stratum result is the trigger for parked CQ-19. Report both explicitly.
+
+**Why.** The standards corpus (119 documents, 35,714 chunks, built with the new bounded chunker) has never been measured by any fixture; the standards protocol freezes a depth decision rule (D-1) and a falsifier (S-1) to be evaluated from this one run, and the review gates the whole standards structure bundle (CQ-12 to CQ-16) on a count taken from it (review S-24).
+
+**Scope.**
+- In:
+  - Run `run_baseline.sh` exactly as GPU-day runbook step 1c specifies (about 1,198 queries across depth 128/32/64 and fused/dense/sparse arms plus ablations and controls; estimated 1-2 h), detached; BM25 floor and per-stratum tables beside it; evaluate D-1 and S-1 as written.
+  - Gate evaluation for CQ-12: count answerable misses whose gold chunk or top-10 chunk has a furniture, numeric or NOTE root, or a split table (mechanical rules from `scripts/chunk_quality_census.py` and RV-2 F-2.5), and state whether the count reaches 5.
+  - Run at EV-16's `baseline_commit` (recorded in the MANIFEST). Every per-question row must carry `retrieved_chunk_ids` (EV-9); the gate count is printed together with the list of qualifying questions.
+- Out (explicitly):
+  - Changing the standards depth default (that is rule D-1's verdict, a sign-off, not an edit here). Any structure fix (CQ-12 to CQ-16).
+
+**Owns** (files this ticket may touch; anything else is out of bounds):
+- `docs/eval-reports/<run-date>-standards-baseline.md`
+- `docs/eval-reports/data/<run-date>-standards-baseline/`
+- `docs/eval-reports/data/2026-11-10-standards-gt/runs/ (own stamp only)`
+
+**Commits** (① is a stub, committed before any real work):
+① stub: report skeleton with rules D-1 and S-1 quoted verbatim and the gate definition for CQ-12
+② MANIFEST committed at launch
+③ raw reports + validity (the `depth128-fused-repeat` arm is the validity gate)
+④ D-1 / S-1 verdicts and the structure-gate count
+⑤ report
+
+**Verification:**
+- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
+- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
+- Run script prints `check-hash` and `check-points` passes
+- `depth128-fused-repeat` agrees with `depth128-fused` within the protocol's jitter envelope
+- `n_errors` 0, `run_valid` true
+
+**Acceptance / falsification criterion.** Verdicts for D-1 and S-1 are mechanical and quoted from the protocol; the structure-gate count is a number with the list of qualifying questions and the per-row chunk ids they rest on; the MANIFEST `baseline_commit` equals EV-16's; per-stratum intervals shown with edition/authority marked descriptive; no fixture averaged. Falsified (run not read) if the repeat arm disagrees beyond the envelope or any error occurs.
+
+**Gates / depends on.** Depends on: EV-16 (GPU-serial order and the shared baseline commit), EV-9 (chunk ids in rows), EV-11, EV-15. Operator answers: F3. Gates: CQ-19 (parked), CQ-8 (parked), RQ-1 (parked), EV-20, EV-19 (parked), EV-21 (parked), EV-22 (parked), CQ-12 (parked), CQ-13 (parked), CQ-14 (parked), CQ-16 (parked), CQ-18 (parked), RIDER-1.
+
+**Needs.** GPU: y · services up: embedder + reranker containers, vector store, corpus database (read-only) · operator sign-off: n (no protected path is touched); operator answers: F3 · re-embed: n. Also: GPU free (F3); about 1-2 h GPU (estimate).
+
+**Model tier and size.** Sonnet; M (up to 1 day of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
+
+**Risk and rollback.** Longest read-only job of the session; a mid-run foreign GPU grab invalidates it. Mitigation: detached, validity arm, `run_valid`. Rollback: discard.
+
+**Docs to update in the same PR.** The dated standards baseline report is the doc (section 7 doc-map row); the D-1 and S-1 verdicts go to section 5 or 6. Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
+
+#### EV-20: Run the depth grid (32 versus 128) on papers and books, only if headroom allows
+
+Labels: wave:2-gpu-measure, area:eval, needs-gpu, needs-services, size:S. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EV-20-depth-weight-grid.md`.
+
+**Review cross-reference:** S-19. **Wave:** W2 first GPU session, measurements only.
+
+**Cut by minimizer:** 1,200 queries and 40-90 min of GPU against weak, sign-flipping prior evidence is cut to depth 32 versus 128 at weight 0.5 on the papers and books sets only; standards (depth already decided by D-1 from EV-18's depth arms) and Waymo drop; the weight arms wait. It runs only if that set's passage hit@10 in EV-16 leaves at least 6 items of headroom. The EV-19 -> EV-20 edge is cut (EV-19 is parked).
+
+**Why.** Rerank depth and dense weight differ per corpus (standards depth 128; Waymo weight 0.7; others 32 and 0.5) with no recorded reason, and the existing measurements are single-question effects with the sign flipping between fixtures (RV-1 F-1.5, review S-19). The evidence that the settings matter is weak; the evidence that they differ for a reason is absent.
+
+**Scope.**
+- In:
+  - Precondition (stated in commit 1, checked from EV-16's report): a set is run only if its passage hit@10 leaves at least 6 items of headroom (answerable items minus member-passage hits at 10); if neither set does, close the ticket by that gate with the numbers.
+  - Arms: depth 32 versus depth 128 at dense weight 0.5 on the papers-passage and causal-books sets, each on its own fixture; arms already measured in the baselines are not repeated; paired flips via `scripts/nb_xp_deeppool_tables.py` with its jitter envelope.
+  - Rule G-1 as already frozen in the runbook: a candidate arm is believed only with net member-passage hit@10 of at least +3 on that corpus's own fixture, wins:losses at least 3:1, no gating stratum (n at least 10) losing more than 1, and the same sign on the title-ablated arm.
+- Out (explicitly):
+  - Standards and Waymo grids; dense-weight arms 0.7 and 1.0 (they wait for a reason to run them). Reopening the standards depth question (D-1 decides it).
+  - Changing any default (a verdict here is a recommendation; a default change needs sign-off and goes through RIDER-1 or a config edit the operator approves). The review's fallback 'otherwise set everything to 32/0.5' is NOT part of G-1: see risk.
+
+**Owns** (files this ticket may touch; anything else is out of bounds):
+- `docs/eval-reports/<run-date>-depth-weight-grid.md`
+- `docs/eval-reports/data/<run-date>-depth-weight-grid/`
+
+**Commits** (① is a stub, committed before any real work):
+① stub: report skeleton quoting rule G-1, the 6-item headroom precondition with the numbers from EV-16, and the unresolved difference with the review (see risk); pre-registered, no metric, threshold or fixture changes afterwards (dated addendum only)
+② arms run one at a time (cheapest first); MANIFEST per arm, each recording the baseline commit SHA
+③ flip tables per set with the jitter envelope
+④ report: verdict per set (or closed by the headroom gate)
+
+**Verification:**
+- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
+- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
+- Each arm names `--collection`, `--db-path`, `--blob-dir` explicitly
+- Both fixtures (or all of a corpus's fixtures) are reported separately, never averaged
+
+**Acceptance / falsification criterion.** Per set (papers, books): the flip table and the G-1 verdict (or the headroom gate that closed it); no default changes unless G-1 holds; the ceiling for 'net +3' is shown per fixture (n answerable). Falsified if the baseline arm repeated here differs from the EV-16/EV-18 arm beyond the jitter envelope (then the grid is not interpretable).
+
+**Gates / depends on.** Depends on: EV-16, EV-18. Operator answers: F3. Gates: none.
+
+**Needs.** GPU: y · services up: embedder + reranker containers, vector store, corpus database (read-only) · operator sign-off: n (no protected path is touched); operator answers: F3 · re-embed: n. Also: GPU free (F3); GPU time is not estimated here (a fraction of the original 40-90 min grid; the first run replaces any estimate).
+
+**Model tier and size.** Sonnet; S (up to 2 h of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
+
+**Risk and rollback.** The review (S-19) says that if no arm wins, reset all corpora to 32/0.5; the runbook's frozen rule G-1 says defaults stay. The EV-20 stub commit must state which applies; default is G-1 as frozen, because resetting is a config change needing sign-off and a frozen rule changes only by dated addendum. Rollback: n/a (read-only).
+
+**Docs to update in the same PR.** The grid report is the doc (section 7 doc-map row); a verdict goes to section 5 (tried) or 6 (open). Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
+
+### W4 rider and what it unblocks
+
+#### RIDER-1: Raise the single foundation rider PR (promote ground-truth sets, reject dead lever, ruff step)
+
+Labels: wave:4-rider, area:ops, area:eval, area:retrieval, needs-signoff, size:M. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/RIDER-1-foundation-signoff-rider.md`.
+
+**Review cross-reference:** review (D), RV-5 F-5.6, RV-3 F-1.11, RV-6 F-A5, RV-1 F-1.10. **Wave:** W4 rider and what it unblocks.
+
+**Cut by minimizer:** items 3 (`rerank_score` note) and 4 (fake imports `sparse_tokens`) die with parked RQ-4 and RQ-5; item 1 and conditional item 7 exist only if an adopted result needs them. Kept: item 5 (promote the ground-truth sets to `fixtures/eval/` with the invariants test, the drift guard), item 2 (reject the dead `relevance_filter`) and item 6 (ruff step, after F4). Items for adopted results are added by a plan amendment when the result exists.
+
+**Why.** Several adopted changes can only land on protected paths (`contracts/`, `rag/config.py`, `config.example.yaml`, `rag/fakes/`, `fixtures/`, `.github/`), and every unrelated protected-path PR pays the same sign-off toll; batching them into one PR pays it once (`docs/AGENT-OPERATIONS-LESSONS.md` section 6.3). It is raised only after the baselines so no start-up or validation change precedes the frozen baseline commit; items whose source tickets are parked are absent.
+
+**Scope.**
+- In:
+  - (2) `relevance_filter="embedding"` fails validation until a gate exists (dead lever, RV-5 F-5.6).
+  - (5) Promote the three ground-truth sets to `fixtures/eval/` with one parametrised invariants test (unique ids, strata vocabulary, no gold on absent items, 6-word rule, excerpt verbatim in the live database with a skip when absent) and the SHA-256 in each set's metadata (RV-3 F-1.11), after the hash lock.
+  - (6) `.github/`: a `ruff` step in CI and the nightly real-adapter workflow labelled manual-only (RV-6 F-A5).
+- Out (explicitly):
+  - Items 1, 3, 4 and conditional item 7 (their sources are parked or cut; each returns only by a plan amendment citing an ADOPT verdict). The `chunker_id` migration (not doing). Any logic change beyond the listed edits. Pushing to the default branch or merging (human only).
+
+**Owns** (files this ticket may touch; anything else is out of bounds):
+- `contracts/config.py`
+- `rag/config.py`
+- `fixtures/eval/`
+- `.github/workflows/ci.yml`
+- `.github/workflows/nightly-real-adapters.yml`
+
+**Commits** (① is a stub, committed before any real work):
+① stub: PR description draft listing each item, its source and the operator decision it needs; empty diff
+② item (5) (promotion and invariants test)
+③ item (2) (validation of the dead lever)
+④ item (6)
+⑤ local enforcement transcript with the `foundation-change` label noted
+
+**Verification:**
+- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
+- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
+- `conda run -n agent-rag-research ruff check contracts/config.py rag/config.py`
+- Mutation proof for the invariants test: edit one question in a copy and watch it fail
+
+**Acceptance / falsification criterion.** One PR only; every protected-path edit is traceable to a listed item; the invariants test passes on the three promoted sets and fails when one question is altered; the PR carries the `foundation-change` label and waits for the operator's merge. Falsified if the PR touches any protected path not listed.
+
+**Gates / depends on.** Depends on: EV-11 (hash lock before promotion), EV-18 (pre-baseline rule: no validation change before the last baseline). Operator answers: F4. Gates: RQ-4 (parked).
+
+**Needs.** GPU: n · services up: none · operator sign-off: y: this ticket IS the sign-off request; the operator merges (never an agent); operator answers: F4, F7 · re-embed: n. Also: operator sign-off and merge; push of the local commits so CI can judge them (F4).
+
+**Model tier and size.** Sonnet; M (up to 1 day of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
+
+**Risk and rollback.** Item 2 changes config validation (a start-up behaviour), so the ticket is sequenced after the last baseline (pre-baseline rule, plan section 4). A broad rider is slow to review; this one is small. Rollback: revert the merge (single PR).
+
+**Docs to update in the same PR.** DATA-CONTRACTS is untouched by the kept items; the PR description is the record. Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
+
+### W3 gated changes after baselines
+
+No active tickets. Every W3 ticket is parked (section 8A).
+
+## 8A. Parked — do not start
+
+These tickets stay in the plan but are not to be started, posted as issues or dispatched until their trigger holds (status `PARKED` in BACKLOG; issue files in `parked/` with a `Parked-until:` line). A trigger is a checkable condition on a baseline result or a named decision; the kill criteria are the minimizer's W3 list, applied the moment the baseline numbers arrive (a ticket whose kill criterion holds is closed with the report that shows it). Where the minimizer said 'defer until X', X is the trigger. Merged tickets: CQ-19 absorbs CQ-20; CQ-16 absorbs CQ-15; CQ-18 absorbs CQ-17. CQ-13 is a SHRINK verdict placed here because it depends on parked CQ-12 (section 11). Parked tickets keep the wave label of the original plan.
+
+GPU-serial ordering edges that existed between parked tickets (EV-20 -> EV-21, EV-21 -> EV-22, CQ-16 -> CQ-18, RQ-3 -> CQ-10) are not dependencies: if two parked tickets are both started they run one at a time on the card, nothing more.
+
+| id | title | start only if / only after (checkable) | kill criterion | depends on |
+|---|---|---|---|---|
+| CQ-19 | Author 38 more standards ground-truth items for the weak stratum (authority or edition) | start only if EV-18 shows authority-stratum hit@10 clearly below the other standards strata (at least 2 of the 4 current authority items missing at hit@10 while the other strata are strong); author only the stratum that is weak (the edition half, absorbed from CQ-20, is started only if the edition stratum is the weak one). | killed if no standards stratum is visibly weak in EV-18. | EV-11, EV-18 |
+| CQ-7 | Build a ligature-repaired clone of the main collection on CPU | start only if EV-16's per-stratum rows show damaged-gold passage hit@10 at least 10 points below clean-gold passage hit@10, or at least 5 damaged-gold misses (computable from EV-16 rows, no extra GPU); and operator answer F2 (vector store up) and OP-4 done. | none listed by the minimizer; the trigger is the gate. | OP-4, EV-16, F2, F3 |
+| CQ-8 | Make rechunk re-embed only chunks whose text changed | start only if EV-18's structure-gate count is 5 or more (its sole consumer is CQ-16). | killed if EV-18's count is below 5. | EV-18 |
+| EV-12 | Amend the CQ-3 stub A/B pre-registration (fixtures, minimum effect) | only after the decision to commission EV-21 (it is a pure prerequisite of EV-21). | killed with EV-21. | EV-9, EV-11 |
+| EV-13 | Capture cross-encoder scores and build the absence census tool | only after an abstention feature is commissioned by the operator and at least 60 distinct absent items exist (the sets hold 9-24). | killed if no abstention feature is commissioned. | RQ-1 |
+| OP-2 | Construct the vector index lazily so the server starts without it | only after the operator needs the MCP server to start with the services down. | none. | OP-5, OP-6, MC-3 |
+| RQ-1 | Fix three one-line retrieval defects (payload, partial rerank, cap) | only after EV-16, EV-17 and EV-18 are merged (the baseline commit is then released); it is the first post-baseline change and must be verified byte-identical against the real-index baseline rows. | none; if the byte-identical check fails it is not merged. | EV-18 |
+| RQ-2 | Add an opt-in, default-off relevance demotion to the Retriever | start only if EV-17's off-topic top-10 share exceeds the operator's F6 bar (the share and a first demotion estimate are computable offline from EV-17 rows plus `relevance_score`). | killed if EV-17's share is below the bar. | RQ-1, EV-10, EV-17, F6 |
+| RQ-5 | Extract one shared sparse_tokens() used by the index | only after the CQ-18 trigger holds (the sparse arm is shown to matter, see CQ-18). | killed with CQ-18. | RQ-1 |
+| EV-19 | Run the reranker-score census on the absent arms | only together with EV-13 (same condition: abstention commissioned and 60+ distinct absent items). | the census closes the RQ-4 gate: RQ-4 dies if the census CI contains 0.5 on two of three sets. | EV-13, EV-16, EV-18, F3 |
+| EV-21 | Run the amended CQ-3 stub-filter A/B | start only if baseline rows (with chunk ids) show a stub at rank 1 on at least 3 answerable items on some set; needs EV-12 and operator answer F3. | killed if the stub-at-rank-1 count is below 3 on every set. | EV-12, EV-9, EV-16, EV-18, F3 |
+| EV-22 | Run the ligature-repair A/B on the repaired clone | start only if the damaged-gold stratum shows a gap (CQ-7's trigger holds and CQ-7 is done); needs F3. | killed with CQ-7. | CQ-7, EV-16, EV-18, F3 |
+| CQ-12 | Add golden tests and rules to the section tracker (standards) | start only if EV-18's structure-attributable miss count is 5 or more. | killed if the count is below 5 or standards passage hit@10 leaves under 5 items of headroom. | EV-18 |
+| CQ-13 | Add the running-furniture pre-pass (standards) | start only after CQ-12 has run and its in-memory re-derive leaves furniture roots among the qualifying-miss questions. | killed if zero furniture roots remain among the qualifying-miss questions. | CQ-12, EV-18 |
+| CQ-14 | Fold heading-only chunks into the next group and guard normalisation regexes | only after the EV-21 verdict; the regex guard only if CQ-16 proceeds. | killed if EV-21 is REJECT, or stub-at-rank-1 occurs on fewer than 3 answerable standards items, or fewer than 3 qualifying misses have a stub in the top 10. | EV-18, EV-21 |
+| CQ-16 | Rebuild the standards clone from re-derived paths and measure it against baseline (absorbs CQ-15) | start only if EV-18's structure-attributable miss count is 5 or more (net +3 must be reachable); the CQ-15 half (clone rebuild) also needs F2, F3 and F7. | killed if the EV-18 count is below 5 or the rebuilt clone shows fewer than 3 flipped questions; the CQ-15 half is killed if CQ-12, CQ-13 and CQ-14 are all killed, or F7 says keep stored paths and the operator will not pay the 35k re-embed. | CQ-12, CQ-13, CQ-14, CQ-8, EV-18, F2, F3, F7 |
+| CQ-18 | Add BM25 weighting behind a flag and run the A/B on a repaired clone (absorbs CQ-17) | start only if on some set fused minus dense-only passage hit@10 is 3 items or more AND sparse-only passage hit@10 is more than 3 items from the plain-BM25 floor on that set (the sparse arm matters and is not merely BM25); needs F2 and F3, and a repaired base if EV-22 ran. | killed if on every set fused minus dense-only passage hit@10 is 2 items or fewer, or sparse-only is within 3 items of the BM25 floor on every set, or EV-22 shows ligature repair itself changed the sparse arm so that attribution is muddied and no gain remains. | RQ-5, EV-22, EV-16, EV-18, F2, F3 |
+| CQ-9 | Add idempotent payload indexes and verify them on a clone | start only if EV-14 reports overlap below 0.99 on at least one of the three filters. | killed if EV-14 overlap is at least 0.99 on all three filters, or no baseline query returned fewer than k hits. | EV-14, RQ-5, RQ-1, F2 |
+| MC-4 | Slim the MCP wire by projecting duplicated envelope fields away | start only if F5 = yes AND MC-3 telemetry shows agents lowering the default k. | killed if F5 = no, or MC-3 telemetry shows default-k calls are not lowered, or a standards k=10 response (about 4.2k tokens) is acceptable to the operator. | MC-3, F5 |
+| RQ-3 | Run the relevance-demotion arms on the focus and passage sets | start only if EV-17's off-topic top-10 share exceeds the operator's F6 bar; needs RQ-2 built and F3. | killed if EV-17's share is below the bar, or an offline demotion on EV-17 rows (using `relevance_score`) removes under 50% of off-topic top-10 slots or drops any gold on papers-passage or books. | RQ-2, EV-16, EV-17, F3, F6 |
+| RQ-4 | Expose the cross-encoder score in result metadata | only after an abstention feature is commissioned, the EV-19 census gate can open (60+ distinct absent items) and RIDER-1 has landed. | killed if the EV-19 census CI contains 0.5 on two of three sets. | RIDER-1, EV-19, RQ-1 |
+
+#### CQ-19: Author 38 more standards ground-truth items for the weak stratum (authority or edition)
+
+Labels: wave:1-no-gpu, area:eval, area:corpus, size:M, parked. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/parked/CQ-19-standards-authority-items.md`.
+
+**Review cross-reference:** CQ-5 follow-up. **Wave:** W1 do now, no GPU.
+
+**Parked, do not start.** Parked-until: start only if EV-18 shows authority-stratum hit@10 clearly below the other standards strata (at least 2 of the 4 current authority items missing at hit@10 while the other strata are strong); author only the stratum that is weak (the edition half, absorbed from CQ-20, is started only if the edition stratum is the weak one). Kill criterion: killed if no standards stratum is visibly weak in EV-18.
+
+**Absorbs CQ-20** (CQ-20: Author 38 more standards edition-stratum ground-truth items). The merged ticket is one unit: author only the stratum that is visibly weak in the EV-18 baseline (the other half is not started); the two halves are sequenced on the shared hash file only.
+
+**Why.** The authority stratum has 4 items (Q-STD-C-019..022), so any filter or tag effect is description only: with n=4 the best possible exact McNemar p is 0.125 and can never reach 0.05. CQ-5's pre-registered measurement (`docs/eval-reports/2026-11-10-cq5-standards-metadata.md` section 5) computes 42 items per stratum for a 30-point difference at alpha 0.05, power 80%, planning disagreement 0.5, so 38 more are needed. Absorbed from CQ-20: The edition stratum also has 4 items (Q-STD-A-021/022, B-021/022); same arithmetic as CQ-19: 42 per stratum needed, 38 to add (`docs/eval-reports/2026-11-10-cq5-standards-metadata.md` section 5). Edition questions are where BM25 scores 0.00 chunk@10 on n=4 (RV-3), so the stratum is the one that would show whether the standards metadata tags help.
+
+**Scope.**
+- In:
+  - Author 38 new authority-stratum items from many different documents (the current four rest on four), phrased as a user would without hinting the tag, under the existing blind two-author plus cross-verification regime and `gt_tools.py verify`; recorded as a separate extension file with its own hash entry, dated addendum first.
+  - Absorbed from CQ-20: Author 38 edition-stratum items (some naming an edition, some not, from many documents with superseded and current editions), same regime and extension-file procedure as CQ-19.
+- Out (explicitly):
+  - Running retrieval on them. Any change to the 128 existing items. The tag filters (CQ-5, done).
+  - Absorbed from CQ-20: Running retrieval. Changing existing items. Using `status:current` as a filter in the design (excluded by CQ-5 because the gold documents may be superseded).
+
+**Owns** (files this ticket may touch; anything else is out of bounds):
+- `docs/eval-reports/data/<date>-standards-gt-authority-extension/`
+- `docs/eval-reports/data/2026-11-10-FIXTURE-HASHES.json`
+- `docs/eval-reports/data/<date>-standards-gt-edition-extension/`
+
+**Commits** (① is a stub, committed before any real work):
+① stub: addendum and authoring protocol copy (strata definition, no-hint rule, hash procedure), before any item is written
+② author A and author B draft files, blind to each other
+③ cross-verification report with kills and fixes counted
+④ adjudicated extension file, `verify` transcript and hash entry
+⑤ [absorbed CQ-20] stub: addendum with the stratum definition and the named/unnamed edition quota
+⑥ [absorbed CQ-20] author A and author B draft files
+⑦ [absorbed CQ-20] cross-verification report
+⑧ [absorbed CQ-20] adjudicated extension file, `verify` transcript and hash entry
+
+**Verification:**
+- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
+- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
+- `conda run -n agent-rag-research python docs/eval-reports/data/2026-11-10-standards-gt/gt_tools.py verify <extension file>` passes (read-only against the standards database)
+- Count of distinct source documents printed (target: at least 20)
+- `conda run -n agent-rag-research python docs/eval-reports/data/2026-11-10-standards-gt/gt_tools.py verify <extension file>` passes
+
+**Acceptance / falsification criterion.** 38 items pass verbatim-excerpt verification, 0 reuse a 6-word run of the excerpt, come from at least 20 distinct documents, are cross-verified by a reader other than the authors, and their SHA-256 is in the hash file before any run reads them. Falsified if any item fails `verify` or an excerpt is not verbatim in the stored chunk.
+
+Absorbed from CQ-20: Same as CQ-19: 38 verified, cross-verified, hashed items from at least 20 documents, hash recorded before any run reads them. Falsified if any item fails `verify`.
+
+**Gates / depends on.** Depends on: EV-11, EV-18. Gates: none.
 
 **Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
 
 **Model tier and size.** Sonnet; M (up to 1 day of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
 
-**Risk and rollback.** Generated text that is wrong for a corpus misleads every cold session. Mitigation: the text is derived from `corpus_stats` only; a test pins that. Rollback: revert.
+**Risk and rollback.** Same-model-family authors and verifiers (0 kills on standards so far): residual defects are possible; the stratum stays labelled LLM-authored. Rollback: drop the extension file and its hash entry.
 
-**Docs to update in the same PR.** PROJECT-STATUS section 2 (what the server advertises) via EP-3. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-3 carries those entries from this ticket's merged SHA.
+**Docs to update in the same PR.** The addendum and extension file are the docs (section 7 doc-map row). Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
 
-#### MC-3: Record arguments and errors for scan and get tools in the usage log
+#### CQ-7: Build a ligature-repaired clone of the main collection on CPU
 
-Labels: wave:1-no-gpu, area:mcp, size:S. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/MC-3-scan-tool-telemetry.md`.
+Labels: wave:1-no-gpu, area:corpus, needs-services, size:M, parked. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/parked/CQ-7-ligature-resparse-clone-cpu.md`.
 
-**Review cross-reference:** S-11. **Wave:** W1 do now, no GPU.
+**Review cross-reference:** S-17. **Wave:** W1 do now, no GPU.
 
-**Why.** 213 scan calls (18% of all 1,198 logged calls) have no pattern recorded, `get_section`, `get_span` and `get_paper` rows carry no arguments, errors store only the exception class name, and `source` is constant, so harness replays look like agent sessions (RV-4 F-4.5; review S-11). The usage log is the only evidence base for any future MCP work, and it is blind exactly where agents behave most like brute force.
+**Parked, do not start.** Parked-until: start only if EV-16's per-stratum rows show damaged-gold passage hit@10 at least 10 points below clean-gold passage hit@10, or at least 5 damaged-gold misses (computable from EV-16 rows, no extra GPU); and operator answer F2 (vector store up) and OP-4 done. Kill criterion: none listed by the minimizer; the trigger is the gate.
+
+**Why.** CQ-1 repairs ligature damage in the sparse arm but is deliberately not applied to any index, and CQ-2 added `app.resparse` to recompute sparse vectors without re-embedding. The A/B (EV-22) needs a repaired clone to exist, and the whole preparation is CPU-only, so it can run while the GPU is held by another process (GPU-day runbook step 5.1). About 35% of main-corpus chunks change; resparse time is unmeasured.
 
 **Scope.**
 - In:
-  - Bind pattern, method or section path into the existing `query` column, the argument `paper_id`, `result_count` from the result length, `str(e)[:200]` into `error`, and a `--client-label` flag (argparse, not environment) into `source`. No schema change; existing rows stay valid.
+  - Clone the main collection with `VectorIndex.clone_points_into` into a new scratch collection, then `app.resparse --collection <scratch> --target-is-clone --clone-of <live> --apply` after a dry run, following `docs/eval-reports/2026-11-10-cq2-index-maintenance.md`. Record measured resparse time and the sparse-staleness sample before and after.
 - Out (explicitly):
-  - New columns (top score, returned ids: RV-6 F-A9, not carried by the review). Dashboard changes. Any retrieval change.
+  - Touching the live collection (read-only source only). The A/B (EV-22). Any BM25 weighting (CQ-18). Deleting the clone: EV-22 does that when done.
 
 **Owns** (files this ticket may touch; anything else is out of bounds):
-- `app/usage_log.py`
-- `app/test_usage_log.py`
-- `app/serve.py`
-- `app/test_serve.py`
+- `docs/eval-reports/data/<run-date>-ligature-clone/`
 
 **Commits** (① is a stub, committed before any real work):
-① stub: docstring stating the per-tool binding table
-② failing tests per tool (scan_corpus, scan_methods, get_section, get_span, get_paper, errors)
-③ implementation to green
-④ `--client-label` flag + test
+① stub: record skeleton with the dry-run and apply checklists and the abort rule (under 20 GB free)
+② dry run output saved
+③ apply on the clone; times and counts recorded; staleness sample before/after
+④ handover note for EV-22 (collection name, git revision of the resparse code)
 
 **Verification:**
 - `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
 - `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
-- `conda run -n agent-rag-research ruff check app/usage_log.py app/test_usage_log.py app/serve.py app/test_serve.py`
-- `conda run -n agent-rag-research python -m pytest -q app/test_usage_log.py app/test_serve.py -o addopts="--disable-socket"`
-- On a scratch usage database: one mixed fake session then `select tool, query from requests where tool like 'scan%'` shows no NULL query
+- `df -h /` before the clone
+- `conda run -n agent-rag-research python -m app.resparse --help` shows `--collection` required and `--target-is-clone`
+- Post-apply sparse-staleness sample reports the stale share near zero on the clone and unchanged on the live collection
 
-**Acceptance / falsification criterion.** After one scripted mixed session on fakes, no scan row has a NULL `query` and every get_* row has its `paper_id`; error rows carry the message prefix. Falsified if any tool still writes a NULL where its argument exists.
+**Acceptance / falsification criterion.** Scratch collection holds the same point count as the live one; resparse applied only to the scratch collection; staleness sample on the scratch shows the repaired vectors, on the live shows unchanged. Falsified if the live collection's point count or sampled sparse vectors changed at all.
 
-**Gates / depends on.** Depends on: MC-2. Gates: EP-3, OP-2, MC-4.
+**Gates / depends on.** Depends on: OP-4, EV-16. Operator answers: F2, F3. Gates: EV-22 (parked).
+
+**Needs.** GPU: n · services up: vector store (CPU container) up; no GPU services · operator sign-off: n (no protected path is touched); operator answers: F2 · re-embed: n. Also: vector store start approved (F2); 6-8 GB free for the clone.
+
+**Model tier and size.** Sonnet; M (up to 1 day of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
+
+**Risk and rollback.** Applying resparse to the live collection by mistake (the documented CQ-1 deployment hazard). Mitigation: `--target-is-clone` guard, explicit `--collection` on every command, live collection read-only. Rollback: delete the scratch collection.
+
+**Docs to update in the same PR.** The CQ-2 operating note is the reference and the dated record is the doc (section 7 doc-map row). Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
+
+#### CQ-8: Make rechunk re-embed only chunks whose text changed
+
+Labels: wave:1-no-gpu, area:corpus, size:M, parked. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/parked/CQ-8-rechunk-reuse-vectors-by-text-hash.md`.
+
+**Review cross-reference:** S-14. **Wave:** W1 do now, no GPU.
+
+**Parked, do not start.** Parked-until: start only if EV-18's structure-gate count is 5 or more (its sole consumer is CQ-16). Kill criterion: killed if EV-18's count is below 5.
+
+**Why.** `app/rechunk.py:189` re-embeds every chunk of a re-chunked paper, including unchanged text, which multiplies the cost of every re-chunk the later tickets want (RV-2 F-2.3 step 1; review S-14). Chunk ids are positional, so reuse must key on a text hash, not on the id.
+
+**Scope.**
+- In:
+  - Look up stored vectors for identical chunk text (hash of the embedded text) in the same collection, reuse them, and embed only new text. Guard: reuse only from the same collection and embedder model name.
+- Out (explicitly):
+  - Content-addressed chunk ids (explicitly rejected: 'Will not do' table). Changing the chunker. Applying to any live index.
+
+**Owns** (files this ticket may touch; anything else is out of bounds):
+- `app/rechunk.py`
+- `app/test_rechunk.py`
+
+**Commits** (① is a stub, committed before any real work):
+① stub: docstring stating the reuse rule and its guards
+② failing test: a text-only change to one chunk of a 10-chunk paper re-embeds exactly one chunk (fake embedder call count)
+③ implementation to green
+④ dry-run report line 'reused N, embedded M'
+
+**Verification:**
+- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
+- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
+- `conda run -n agent-rag-research ruff check app/rechunk.py app/test_rechunk.py`
+- `conda run -n agent-rag-research python -m pytest -q app/test_rechunk.py -o addopts="--disable-socket"`
+- Mutation proof: disable the reuse path and the call-count test fails
+
+**Acceptance / falsification criterion.** Dry run on a fixture of 10 papers with a text-only change: re-embedded count equals changed-text count and reused count equals the rest; a changed embedder model name disables reuse. Falsified if the call-count test passes with reuse disabled.
+
+**Gates / depends on.** Depends on: EV-18. Gates: CQ-16 (parked).
 
 **Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
 
+**Model tier and size.** Sonnet; M (up to 1 day of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
+
+**Risk and rollback.** A wrongly reused vector silently pairs old text with a new position. Mitigation: vectors depend only on the embedded text (which includes title and section path prefix), guarded by model name. Rollback: revert.
+
+**Docs to update in the same PR.** The report or note this ticket writes is its doc (section 7 doc-map row). Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
+
+#### EV-12: Amend the CQ-3 stub A/B pre-registration (fixtures, minimum effect)
+
+Labels: wave:1-no-gpu, area:eval, size:S, parked. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/parked/EV-12-cq3-preregistration-addendum.md`.
+
+**Review cross-reference:** S-05. **Wave:** W1 do now, no GPU.
+
+**Parked, do not start.** Parked-until: only after the decision to commission EV-21 (it is a pure prerequisite of EV-21). Kill criterion: killed with EV-21.
+
+**Why.** CQ-3's pre-registration names the wrong fixtures (the 210-question set and the legacy books set, which have no passage gold), has no minimum effect so one noise flip would ADOPT, and identifies stubs by anchor (ambiguous for 7.5% of standards chunks); the stub length threshold also differs across three tools (40, 60 and 80 characters; review section 2).
+
+**Scope.**
+- In:
+  - Dated addendum appended to `docs/eval-reports/2026-11-10-cq3-stub-chunks.md`: fixtures are the standards, causal-books and papers-passage sets (post-EV-11 hashes); ADOPT needs net +3 items on at least one set and no stratum losing more than 1; stubs identified by chunk id (EV-9); the single binding stub definition for this A/B is the retriever's (40 characters) with the other two tools' thresholds stated as non-binding.
+- Out (explicitly):
+  - Changing any threshold in code (the three tools stay as they are). Running the A/B (EV-21). Editing the original pre-registration text: append only.
+
+**Owns** (files this ticket may touch; anything else is out of bounds):
+- `docs/eval-reports/2026-11-10-cq3-stub-chunks.md`
+
+**Commits** (① is a stub, committed before any real work):
+① stub: addendum heading with date and the four amendments as a list, committed before any stub A/B report exists
+② addendum text with ceiling arithmetic for the new minimum effect (n of each set vs +3)
+③ cross-check that every number cited resolves to a file
+
+**Verification:**
+- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
+- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
+- `git log --diff-filter=A --format='%H %cI' -- <any stub A/B report>` shows no such file older than this addendum's commit
+
+**Acceptance / falsification criterion.** Addendum is committed before any stub A/B report exists and states fixtures, ADOPT rule (net +3 on one set, no stratum worse by more than 1), chunk-id matching and the binding threshold; the ceiling note shows +3 is reachable on each set (n=94, 69, 61 answerable). Falsified if a stub A/B report predates the addendum.
+
+**Gates / depends on.** Depends on: EV-9, EV-11. Gates: EV-21 (parked).
+
+**Needs.** GPU: n · services up: none · operator sign-off: n (not a protected path); the amended rule is a decision for the operator in PR review. · re-embed: n
+
 **Model tier and size.** Sonnet; S (up to 2 h of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
 
-**Risk and rollback.** Logging full regex patterns could store sensitive text. Mitigation: the log is local and already stores queries; length is capped. Rollback: revert; rows written stay valid.
+**Risk and rollback.** Low. An addendum cannot undo a result already seen; ordering is enforced by dependency. Rollback: revert.
 
-**Docs to update in the same PR.** PROJECT-STATUS section 2 (`--client-label`) via EP-3. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-3 carries those entries from this ticket's merged SHA.
+**Docs to update in the same PR.** The report or note this ticket writes is its doc (section 7 doc-map row). Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
+
+#### EV-13: Capture cross-encoder scores and build the absence census tool
+
+Labels: wave:1-no-gpu, area:eval, area:retrieval, size:M, parked. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/parked/EV-13-rerank-score-capture-and-census.md`.
+
+**Review cross-reference:** S-04. **Wave:** W1 do now, no GPU.
+
+**Parked, do not start.** Parked-until: only after an abstention feature is commissioned by the operator and at least 60 distinct absent items exist (the sets hold 9-24). Kill criterion: killed if no abstention feature is commissioned.
+
+**Why.** Callers get the fusion (RRF) score and the reranker's score is discarded (`rag/retriever.py:249`, `rag/reranker.py:231`), so the earlier 'no score floor' verdict tested rank arithmetic only; the cross-encoder score is the one cheap absence signal nobody has censused (review item a; RV-1 F-1.1, RV-4 F-4.1). A CRAG instrument (AUROC 0.94 and 0.80) and MiniCheck are independent of this and stay as they are.
+
+**Scope.**
+- In:
+  - Experiment-only `rerank_scored()` on `TeiReranker` returning `(candidate, score)` pairs, no contract change, `rerank()` untouched.
+  - `app/exp_rerank_score_census.py`: answerable top-1 reranker score versus the absent arms (standards absent 9 and partial-absent 13 reported separately; main known-absent 24; books partial-absent 5; Waymo 12 and 14), AUROC with Hanley-McNeil interval, reusing `auroc_pos_higher` from `exp_agentic_loop_v0` and `_iqr_separates` from the score census; explicit `--collection`, `--db-path`, `--blob-dir`. Definition frozen in the standards protocol section 7 (iii).
+- Out (explicitly):
+  - Exposing the score to callers (RQ-4, gated). Running it (EV-19, GPU). Any threshold or wiring decision (needs 60 or more distinct absent items; RV-3 F-1.10).
+
+**Owns** (files this ticket may touch; anything else is out of bounds):
+- `rag/reranker.py`
+- `rag/test_reranker.py`
+- `app/exp_rerank_score_census.py`
+- `app/test_exp_rerank_score_census.py`
+
+**Commits** (① is a stub, committed before any real work):
+① stub: docstrings of `rerank_scored` and the census CLI; the frozen definition cited by section number
+② failing tests: scores returned are monotone in the order `rerank()` returns; census on a fake reranker computes the expected AUROC and CI
+③ implementation to green
+④ census CLI with required collection flags
+
+**Verification:**
+- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
+- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
+- `conda run -n agent-rag-research ruff check rag/reranker.py rag/test_reranker.py app/exp_rerank_score_census.py app/test_exp_rerank_score_census.py`
+- `conda run -n agent-rag-research python -m pytest -q rag/test_reranker.py app/test_exp_rerank_score_census.py -o addopts="--disable-socket"`
+- Reuse stated: `auroc_pos_higher`, `_iqr_separates`, Hanley-McNeil helper (no new statistics code)
+
+**Acceptance / falsification criterion.** Unit test: `rerank_scored` scores are monotone with `rerank()` order; the census reproduces a hand-computed AUROC on a fixture of 6 items. Falsified if `rerank()` output changes by even one id on the existing reranker tests.
+
+**Gates / depends on.** Depends on: RQ-1. Gates: EV-19 (parked).
+
+**Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
+
+**Model tier and size.** Sonnet; M (up to 1 day of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
+
+**Risk and rollback.** Adding a method to a real adapter widens its surface. Mitigation: documented experiment-only; fakes are untouched (protected). Rollback: revert.
+
+**Docs to update in the same PR.** Section 2: new `app/` entry point. Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
 
 #### OP-2: Construct the vector index lazily so the server starts without it
 
-Labels: wave:1-no-gpu, area:ops, area:mcp, size:M. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/OP-2-lazy-vector-index-construction.md`.
+Labels: wave:1-no-gpu, area:ops, area:mcp, size:M, parked. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/parked/OP-2-lazy-vector-index-construction.md`.
 
 **Review cross-reference:** S-07. **Wave:** W1 do now, no GPU.
+
+**Parked, do not start.** Parked-until: only after the operator needs the MCP server to start with the services down. Kill criterion: none.
 
 **Why.** OP-1 made a down vector store exit with an actionable message, but the server still cannot start without it: `build_mcp_server` constructs the vector index eagerly and that constructor makes a network call. `app/serve.py` carries the note 'SQLite-only tools could run without it if the vector index were constructed lazily (follow-up ticket)'. Eight of the ten MCP tools need only SQLite.
 
@@ -1054,7 +1563,7 @@ Labels: wave:1-no-gpu, area:ops, area:mcp, size:M. Issue file: `docs/superpowers
 
 **Acceptance / falsification criterion.** With the vector store construction failing, the server builds and the eight SQLite tools answer on fakes; the two search tools raise the actionable error naming `python -m app.doctor --cpu-only`; the tool list is unchanged. Falsified if any SQLite tool touches the vector index or if a search tool returns an empty result instead of raising.
 
-**Gates / depends on.** Depends on: OP-5, OP-6, MC-3. Gates: EP-3.
+**Gates / depends on.** Depends on: OP-5, OP-6, MC-3 (ordering only: shared `app/serve.py`). Gates: none.
 
 **Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
 
@@ -1062,247 +1571,15 @@ Labels: wave:1-no-gpu, area:ops, area:mcp, size:M. Issue file: `docs/superpowers
 
 **Risk and rollback.** Misconfiguration (wrong collection) surfaces on first search instead of at startup. Mitigation: doctor still checks the pairing (OP-6); the first-use error names the collection. Rollback: revert; behaviour returns to eager construction.
 
-**Docs to update in the same PR.** PROJECT-STATUS section 2 (serve behaviour) via EP-3; RUNBOOK mention via EP-7. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-3 carries those entries from this ticket's merged SHA.
-
-#### OP-3: Add integrity check and checksums to snapshot manifests
-
-Labels: wave:1-no-gpu, area:ops, size:S. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/OP-3-snapshot-integrity-and-checksums.md`.
-
-**Review cross-reference:** S-01. **Wave:** W1 do now, no GPU.
-
-**Why.** `app/snapshot.py::backup_sqlite` is correct (read-only source plus VACUUM INTO) but never runs an integrity check and the manifest records no checksum per artifact (RV-6 F-A1, F-A7; review S-01), so a corrupt snapshot looks identical to a good one until the day it is restored.
-
-**Scope.**
-- In:
-  - Run `PRAGMA quick_check` on the produced SQLite copy and fail the snapshot (non-zero exit, snapshot marked incomplete) if it is not `ok`.
-  - Write sha256 per artifact into the manifest; add a verify mode (or reuse an existing one) that recomputes them and compares `count(*)` with the manifest.
-- Out (explicitly):
-  - The guard against a nonexistent data dir (OP-6). Taking a snapshot (OP-4). Off-device copy (F1).
-
-**Owns** (files this ticket may touch; anything else is out of bounds):
-- `app/snapshot.py`
-- `app/test_snapshot.py`
-
-**Commits** (① is a stub, committed before any real work):
-① stub: docstring stating the manifest fields (`quick_check`, `sha256` per artifact) and the failure rule
-② failing tests: corrupt copy fails; manifest has sha256; verify detects a flipped byte
-③ implementation to green
-④ docstring and `--help` text brought up to date
-
-**Verification:**
-- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
-- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
-- `conda run -n agent-rag-research ruff check app/snapshot.py app/test_snapshot.py`
-- `conda run -n agent-rag-research python -m pytest -q app/test_snapshot.py -o addopts="--disable-socket"`
-- Mutation proof (CONVENTIONS section 14): revert the quick_check call and watch the corruption test fail
-
-**Acceptance / falsification criterion.** A deliberately corrupted SQLite copy makes the snapshot exit non-zero and not write a complete manifest; a flipped byte in an artifact fails verify; existing snapshot tests stay green. Falsified if either test passes with the check removed.
-
-**Gates / depends on.** Depends on: none. Gates: EP-7, EP-3, OP-6.
-
-**Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
-
-**Model tier and size.** Sonnet; S (up to 2 h of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
-
-**Risk and rollback.** A verify mode changes the manifest shape: old manifests lack checksums. Mitigation: verify treats a missing checksum as 'unverifiable', not 'ok'. Rollback: revert.
-
-**Docs to update in the same PR.** PROJECT-STATUS section 2 entry-point row for any new flag (via EP-3); RUNBOOK via EP-7. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-3 carries those entries from this ticket's merged SHA.
-
-#### OP-4: Take and verify a fresh main-corpus snapshot
-
-Labels: wave:1-no-gpu, area:ops, size:S. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/OP-4-take-verify-main-snapshot.md`.
-
-**Review cross-reference:** S-01. **Wave:** W1 do now, no GPU.
-
-**Why.** The newest main snapshot is from 2026-07-30 (manifest records 11,026 papers; the live database has 12,390) and every backup sits on the same device as the live data, which is 98% full with 91 GB free (review item g, `df -h`). The next write, re-embed or bad migration on that device has no recent restore point. This is the only finding whose downside is unrecoverable.
-
-**Scope.**
-- In:
-  - Run the existing `python -m app.snapshot` for the main corpus from its data directory, once.
-  - Verify the new snapshot read-only: `PRAGMA quick_check` on the snapshot copy opened with `mode=ro`, and `count(*)` of papers and chunks equal to the manifest. Record sizes, timings and `df` before/after in a dated record under `docs/eval-reports/data/`.
-- Out (explicitly):
-  - Deleting any old snapshot, `.bak` or `.partial` file, and copying to another device (operator question F1; no target exists).
-  - Any code change (OP-3 adds the checks to the tool). Any write to `papers.db`.
-
-**Owns** (files this ticket may touch; anything else is out of bounds):
-- `docs/eval-reports/data/<run-date>-main-snapshot-record/`
-
-**Commits** (① is a stub, committed before any real work):
-① stub: record file with the four acceptance checks as an unchecked list and the abort rule (stop if under 20 GB free)
-② snapshot taken; manifest copied into the record
-③ verification results: quick_check, counts vs manifest, age
-④ free-space and next-step notes (off-device copy is F1)
-
-**Verification:**
-- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
-- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
-- `sqlite3 "file:<snapshot-db>?mode=ro" "PRAGMA quick_check"` prints `ok`
-- `sqlite3 "file:<snapshot-db>?mode=ro" "select count(*) from papers"` equals the manifest `papers`
-- `df -h /` before and after is quoted
-
-**Acceptance / falsification criterion.** Newest main snapshot is under 24 hours old at verification time, quick_check is ok, restored paper count equals the manifest, and free space after is still at least 20 GB. Falsified if any of the four fails; then the snapshot is deleted and the failure reported (nothing else is touched).
-
-**Gates / depends on.** Depends on: none. Operator answers: F1. Gates: EP-7, EP-3, EV-14, CQ-7.
-
-**Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched); operator answers: F1 · re-embed: n. Also: operator go-ahead to write about 9 GB (estimate, RV-6) into the main data dir's backups folder on a 98%-full device.
-
-**Model tier and size.** Haiku; S (up to 2 h of agent work). Mechanical work, no judgement calls.
-
-**Risk and rollback.** Disk fills mid-write on a 98%-full device. Mitigation: abort rule before starting; the tool reads the source read-only and writes only the new snapshot. Rollback: delete the new snapshot directory.
-
-**Docs to update in the same PR.** BACKLOG and PROJECT-STATUS rows via EP-3; the restore procedure itself is documented by EP-7. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-3 carries those entries from this ticket's merged SHA.
-
-#### OP-5: Name the GPU lock holder and fail fast on the query path
-
-Labels: wave:1-no-gpu, area:ops, size:M. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/OP-5-gpu-lock-holder-and-fast-fail.md`.
-
-**Review cross-reference:** S-06. **Wave:** W1 do now, no GPU.
-
-**Why.** A query waits up to 300 s for the GPU lock before erroring (`app/assembly.py:630-640` passes no `gpu_lock_timeout`, default 300 s in the embedder and reranker), the timeout message does not name the holder (`rag/gpu_lock.py:38-41`), and doctor reports only 'unreachable' when a foreign process holds the GPU (OP-1 handles 'TEI down', not 'GPU held'; RV-1 F-1.9, RV-6 F-A3 and F-A8; review S-06). A foreign model server holds 18,609 of 24,576 MiB today.
-
-**Scope.**
-- In:
-  - `FileGpuLock` writes pid, stage and UTC time to a `<lock>.holder` file on acquire (best effort, removed on release) and the timeout error reads it back.
-  - Query path only: pass a short `gpu_lock_timeout` (proposed 20 s, a named constant; ingest keeps 300 s) with an actionable message.
-  - `app.doctor`: list foreign GPU compute processes via `nvidia-smi --query-compute-apps` and read the TEI container exit code and OOM log line, so 'GPU held by a foreign process' is distinct from 'TEI crashed' (nvidia-smi and docker calls injected so tests need neither).
-- Out (explicitly):
-  - Marking eval runs invalid on lock timeouts (EV-10). A priority scheduler for the lock (not needed; the holder file is the smallest step). Reranker-failure fallback to fused order (changes behaviour, needs a Coverage flag: foundation).
-  - The Config field for the timeout (RIDER-1 item 1).
-
-**Owns** (files this ticket may touch; anything else is out of bounds):
-- `rag/gpu_lock.py`
-- `rag/test_gpu_lock.py`
-- `app/doctor.py`
-- `app/test_doctor.py`
-- `app/assembly.py`
-- `app/test_assembly.py`
-
-**Commits** (① is a stub, committed before any real work):
-① stub: docstrings stating the holder-file format and the 20 s query-path timeout
-② failing tests: second lock with timeout 0.1 raises with the first's stage label; query-path construction passes the short timeout; doctor names a foreign pid from a canned nvidia-smi output
-③ implementation to green
-④ doctor TEI exit-code and OOM-line reading with injected docker output
-
-**Verification:**
-- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
-- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
-- `conda run -n agent-rag-research ruff check rag/gpu_lock.py rag/test_gpu_lock.py app/doctor.py app/test_doctor.py app/assembly.py app/test_assembly.py`
-- Two `FileGpuLock` objects on one path in a unit test (no GPU)
-- Live check only when the operator frees the GPU: hold the lock from a second process, `semantic_search` returns the named error in under 22 s
-
-**Acceptance / falsification criterion.** Holding the lock from a second process makes the query path fail in under 22 s with the holder named; doctor output against a canned foreign-holder state names the pid and says 'GPU held by a foreign process', not 'TEI unreachable'. Falsified if the error still waits the full default or omits the holder.
-
-**Gates / depends on.** Depends on: OP-6. Gates: EP-7, EP-3, OP-2, EV-16, RIDER-1.
-
-**Needs.** GPU: n · services up: none · operator sign-off: n for the code; the 20 s value is a decision in PR review. Moving it into Config rides RIDER-1 item 1. · re-embed: n
-
-**Model tier and size.** Sonnet; M (up to 1 day of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
-
-**Risk and rollback.** A 20 s ceiling will fail queries that today would have waited out a long GPU job. That is the intended behaviour but changes what an agent sees. Mitigation: ingest is unaffected; the value is one constant. Rollback: revert.
-
-**Docs to update in the same PR.** PROJECT-STATUS section 2 (doctor flags) via EP-3; RUNBOOK GPU-contention section via EP-7. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-3 carries those entries from this ticket's merged SHA.
-
-#### OP-6: Guard every corpus tool against a missing or mismatched database
-
-Labels: wave:1-no-gpu, area:ops, needs-services, size:M. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/OP-6-wrong-corpus-guards.md`.
-
-**Review cross-reference:** S-07. **Wave:** W1 do now, no GPU.
-
-**Why.** Only `app.serve --data-dir` refuses a nonexistent database (`app/serve.py:80-82` has no exists check on the default branch). `app/corpus_integrity.py` opens the live database read-write, and the collection-versus-database pairing is checked nowhere, so a mispointed tool returns a confident empty or wrong corpus (the T-DOC56 shape; RV-6 F-A4, RV-3 F-1.2; review S-07). `app/dashboard/status.py:830` falls back to the literal collection name `papers`.
-
-**Scope.**
-- In:
-  - One shared `require_existing_db()` (search for an existing helper first, e.g. the T-DOC56 `_resolve_store_paths`; add a module only if none fits) used by `corpus_integrity` (also opened `mode=ro`), `snapshot`, `reindex_idf`.
-  - `app.doctor`: collection point count must match the database within 1% (stated tolerance), reported with both numbers.
-  - Remove the `papers` fallback at `app/dashboard/status.py:830`.
-- Out (explicitly):
-  - The two `app/serve.py` branches (folded into OP-2, which owns that file's startup). Changing `migrate()` (protected).
-  - Auto-snapshot before migration (RV-6 F-A7, not carried by the review).
-
-**Owns** (files this ticket may touch; anything else is out of bounds):
-- `app/corpus_paths.py`
-- `app/test_corpus_paths.py`
-- `app/corpus_integrity.py`
-- `app/test_corpus_integrity.py`
-- `app/snapshot.py`
-- `app/test_snapshot.py`
-- `app/reindex_idf.py`
-- `app/test_reindex_idf.py`
-- `app/doctor.py`
-- `app/test_doctor.py`
-- `app/dashboard/status.py`
-- `app/dashboard/test_status.py`
-
-**Commits** (① is a stub, committed before any real work):
-① stub: docstring of `require_existing_db()` stating precondition and error message; list of the five call sites
-② failing tests per call site (nonexistent path exits non-zero, names the path)
-③ helper + call sites to green; `corpus_integrity` opens `mode=ro` (test asserts a write attempt fails)
-④ doctor point-count-vs-database check with injected counts; status fallback removed
-
-**Verification:**
-- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
-- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
-- `conda run -n agent-rag-research ruff check app/corpus_paths.py app/test_corpus_paths.py app/corpus_integrity.py app/test_corpus_integrity.py app/snapshot.py app/test_snapshot.py app/reindex_idf.py app/test_reindex_idf.py app/doctor.py app/test_doctor.py app/dashboard/status.py app/dashboard/test_status.py`
-- `conda run -n agent-rag-research python -m app.corpus_integrity --help` still works; each tool against a nonexistent data dir exits non-zero (shown in the PR)
-- `conda run -n agent-rag-research python -m app.doctor --cpu-only` from each data dir still passes where services are up (needs services: run only when the vector store is up)
-
-**Acceptance / falsification criterion.** Every named tool exits non-zero against a nonexistent path with a message that names the path; `corpus_integrity` cannot write; doctor run from each of the five data dirs passes its pairing check on the current corpora. Falsified if any tool still prints a result for a nonexistent path or if the doctor check fails on a correctly paired corpus.
-
-**Gates / depends on.** Depends on: OP-3. Gates: EP-3, OP-5, OP-2.
-
-**Needs.** GPU: n · services up: vector store (CPU container) only for the doctor smoke run; unit tests use fakes · operator sign-off: n (no protected path is touched) · re-embed: n
-
-**Model tier and size.** Sonnet; M (up to 1 day of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
-
-**Risk and rollback.** A false positive in the 1% tolerance blocks a healthy doctor run. Mitigation: tolerance is a named constant, the message prints both counts. Rollback: revert; the guards are additive.
-
-**Docs to update in the same PR.** PROJECT-STATUS section 2 (doctor behaviour) via EP-3; RUNBOOK via EP-7. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-3 carries those entries from this ticket's merged SHA.
-
-#### OP-7: Track the four container definitions in ops/docker-compose.yml
-
-Labels: wave:1-no-gpu, area:ops, needs-services, size:S. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/OP-7-tracked-container-definitions.md`.
-
-**Review cross-reference:** S-12. **Wave:** W1 do now, no GPU.
-
-**Why.** The four containers (embedder, reranker, vector store, reference-resolution service) cannot be recreated from tracked files: the vector-store image tag is the moving `latest`, arguments, ports and volumes exist only in `docker inspect`, and a re-pull could jump the storage version over a 31 GB store (RV-6 F-A2; review S-12). Not re-run by the review beyond the lane's own inspect.
-
-**Scope.**
-- In:
-  - A compose file with the four services exactly as inspected today (image, command, binds, ports, GPU reservation), the vector store pinned to v1.18.2 by digest, and no restart policy (a restart on a contended GPU is how the foreign-holder situation arises).
-  - Read-only inspection only: `docker inspect`, `docker image inspect`, `docker compose config`.
-- Out (explicitly):
-  - Starting, stopping or recreating any container (this ticket never applies the file). Moving the vector store's data. Adding a restart policy.
-
-**Owns** (files this ticket may touch; anything else is out of bounds):
-- `ops/docker-compose.yml`
-
-**Commits** (① is a stub, committed before any real work):
-① stub: compose file with the four service names and a header comment stating 'mirrors inspected state of <date>; never applied by this ticket'
-② services transcribed from `docker inspect` output, one commit per service pair
-③ digest pin and `docker compose config` output compared line by line with the inspected values
-
-**Verification:**
-- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
-- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
-- `docker compose -f ops/docker-compose.yml config` succeeds and matches image, command, binds and GPU reservation of each running container (differences listed in the PR)
-
-**Acceptance / falsification criterion.** `docker compose config` reproduces image digest, command, binds, ports and GPU reservation of all four running containers; the vector-store image is pinned by digest to v1.18.2; the PR lists any field that could not be reproduced. Falsified if a running container's inspected setting is absent from the file.
-
-**Gates / depends on.** Depends on: none. Gates: EP-7, EP-3.
-
-**Needs.** GPU: n · services up: docker daemon read-only inspection (no container is started or restarted) · operator sign-off: n (not a protected path). The version pin is a decision for the operator in PR review. · re-embed: n
-
-**Model tier and size.** Sonnet; S (up to 2 h of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
-
-**Risk and rollback.** The file drifts from reality or is applied by a later agent with different GPU settings. Mitigation: header states it is a mirror; EP-7 documents 'verify with config diff before any recreate'. Rollback: delete the file.
-
-**Docs to update in the same PR.** RUNBOOK containers section via EP-7; PROJECT-STATUS doc-map/entry via EP-3. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-3 carries those entries from this ticket's merged SHA.
+**Docs to update in the same PR.** Section 2: serve behaviour. Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
 
 #### RQ-1: Fix three one-line retrieval defects (payload, partial rerank, cap)
 
-Labels: wave:1-no-gpu, area:retrieval, size:S. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/RQ-1-three-retrieval-one-liners.md`.
+Labels: wave:1-no-gpu, area:retrieval, size:S, parked. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/parked/RQ-1-three-retrieval-one-liners.md`.
 
 **Review cross-reference:** S-09. **Wave:** W1 do now, no GPU.
+
+**Parked, do not start.** Parked-until: only after EV-16, EV-17 and EV-18 are merged (the baseline commit is then released); it is the first post-baseline change and must be verified byte-identical against the real-index baseline rows. Kill criterion: none; if the byte-identical check fails it is not merged.
 
 **Why.** (1) `hybrid_search` requests the full payload (including chunk text) for up to 10,000 hits per arm but uses two fields (`rag/vector_index.py:286,296`; about 50 MB per main query, latency inferred). (2) A malformed partial reranker reply silently drops candidates: nothing checks the scored indices form a permutation before `rag/reranker.py:231`. (3) `max_hits_per_paper` applied together with `paper_id` returns fewer than `k` (RV-1 F-1.7, F-1.8 #7, RV-4 F-4.11; review S-09).
 
@@ -1337,7 +1614,7 @@ Labels: wave:1-no-gpu, area:retrieval, size:S. Issue file: `docs/superpowers/pla
 
 **Acceptance / falsification criterion.** Not a ranking change, so no A/B: the falsifier is that `Hit` id and score lists are identical before and after on the fake for any query without a `paper_id`+cap combination; the 31-of-32 stub raises; the `paper_id`+cap test returns `k`. The EV-16 baselines run on this code, so any real-index difference would show as an unexplained delta against the pre-change commit recorded in each run manifest. Falsified if the identical-hits test fails.
 
-**Gates / depends on.** Depends on: none. Gates: EP-3, RQ-5, RQ-2, EV-13, EV-16, CQ-9, RQ-4.
+**Gates / depends on.** Depends on: EV-18. Gates: EV-13 (parked), RQ-2 (parked), RQ-5 (parked), CQ-9 (parked), RQ-4 (parked).
 
 **Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
 
@@ -1345,13 +1622,15 @@ Labels: wave:1-no-gpu, area:retrieval, size:S. Issue file: `docs/superpowers/pla
 
 **Risk and rollback.** Narrowing the payload could break a reader that silently used another field. Mitigation: the grep and the identical-hits test. Rollback: revert (three independent commits).
 
-**Docs to update in the same PR.** PROJECT-STATUS ledger via EP-3. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-3 carries those entries from this ticket's merged SHA.
+**Docs to update in the same PR.** The report or note this ticket writes is its doc (section 7 doc-map row). Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
 
 #### RQ-2: Add an opt-in, default-off relevance demotion to the Retriever
 
-Labels: wave:1-no-gpu, area:retrieval, size:M. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/RQ-2-opt-in-relevance-demotion.md`.
+Labels: wave:1-no-gpu, area:retrieval, size:M, parked. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/parked/RQ-2-opt-in-relevance-demotion.md`.
 
 **Review cross-reference:** S-21. **Wave:** W1 do now, no GPU.
+
+**Parked, do not start.** Parked-until: start only if EV-17's off-topic top-10 share exceeds the operator's F6 bar (the share and a first demotion estimate are computable offline from EV-17 rows plus `relevance_score`). Kill criterion: killed if EV-17's share is below the bar.
 
 **Why.** 37.4% of main-corpus papers (4,630 of 12,385) are off-topic against the audited labels and nothing in the pipeline can keep them out of an answer; `papers.relevance_score` separates on from off topic at AUROC 0.923 (RV-1 F-1.4, `docs/eval-reports/2026-11-10-topic-labels-audit.md`), the Retriever already loads the paper record for every reranked hit, and `Config.relevance_filter` is dead. The operator keeps the off-topic papers; the lever is measurement first, demotion only.
 
@@ -1383,7 +1662,7 @@ Labels: wave:1-no-gpu, area:retrieval, size:M. Issue file: `docs/superpowers/pla
 
 **Acceptance / falsification criterion.** Default-off output is identical to the pre-change commit on the fake (byte-equal result lists); with a floor set, no result is removed and order within each side of the floor is preserved. The retrieval-quality ADOPT/REJECT rule is not applied here: it is frozen in the topic-focus protocol section 6 and applied by RQ-3. Falsified if the default-off identity test fails.
 
-**Gates / depends on.** Depends on: RQ-1, EV-10. Gates: EP-3, RQ-3.
+**Gates / depends on.** Depends on: RQ-1, EV-10 (ordering only: same file, not a data dependency), EV-17. Operator answers: F6. Gates: RQ-3 (parked).
 
 **Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
 
@@ -1391,13 +1670,15 @@ Labels: wave:1-no-gpu, area:retrieval, size:M. Issue file: `docs/superpowers/pla
 
 **Risk and rollback.** Demotion acts on the already-truncated pool and can starve it (a pool 40% off-topic still leaves about 19 of 32; RV-1 F-1.4). Mitigation: default off; RQ-3 reports `Coverage` pool sizes. Rollback: revert; nothing depends on it until RIDER-1.
 
-**Docs to update in the same PR.** PROJECT-STATUS section 2 (flag) via EP-3; no contract or Config change here. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-3 carries those entries from this ticket's merged SHA.
+**Docs to update in the same PR.** Section 2: the new eval flag; no contract or Config change here. Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
 
 #### RQ-5: Extract one shared sparse_tokens() used by the index
 
-Labels: wave:1-no-gpu, area:retrieval, size:S. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/RQ-5-shared-sparse-tokens.md`.
+Labels: wave:1-no-gpu, area:retrieval, size:S, parked. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/parked/RQ-5-shared-sparse-tokens.md`.
 
 **Review cross-reference:** none: RV-1 F-1.10, prerequisite of RIDER-1 item 4. **Wave:** W1 do now, no GPU.
+
+**Parked, do not start.** Parked-until: only after the CQ-18 trigger holds (the sparse arm is shown to matter, see CQ-18). Kill criterion: killed with CQ-18.
 
 **Why.** The fake vector store keeps its own `lower().split()` (`rag/fakes/fake_vector_store.py:131`) while the real index tokenizes and repairs ligatures in `_sparse_vector`, so a tokenizer change cannot fail any fake-backed test (review item h residual risk 2; RV-1 F-1.10). RIDER-1 item 4 makes the fake import a shared function, but that function must exist first and it is not a protected path.
 
@@ -1406,7 +1687,7 @@ Labels: wave:1-no-gpu, area:retrieval, size:S. Issue file: `docs/superpowers/pla
   - A small pure module (no vendor import, so vendor isolation holds) exposing `sparse_tokens(text)`, containing exactly today's behaviour including CQ-1's ligature repair, imported by `VectorIndex._sparse_vector`.
   - A test that pins the checksum of `rag/ligature_map.json` so the map cannot drift silently (review section 2, CQ-1: no test pins it).
 - Out (explicitly):
-  - Any tokenizer behaviour change (edge-punctuation stripping and BM25 weighting are CQ-17). Editing the fake (RIDER-1). A filter-parity test against an in-memory vector store (RV-1 F-1.10 part 2, not carried by the review).
+  - Any tokenizer behaviour change (edge-punctuation stripping and BM25 weighting are CQ-18). Editing the fake (RIDER-1). A filter-parity test against an in-memory vector store (RV-1 F-1.10 part 2, not carried by the review).
 
 **Owns** (files this ticket may touch; anything else is out of bounds):
 - `rag/sparse_tokens.py`
@@ -1429,7 +1710,7 @@ Labels: wave:1-no-gpu, area:retrieval, size:S. Issue file: `docs/superpowers/pla
 
 **Acceptance / falsification criterion.** Sparse vectors for a fixed sample of chunk texts are byte-identical before and after the extraction; mutating the shared function fails the vector-index tests. Falsified if any sampled vector differs.
 
-**Gates / depends on.** Depends on: RQ-1. Gates: EP-3, EV-14, CQ-9, CQ-17, RIDER-1.
+**Gates / depends on.** Depends on: RQ-1. Gates: CQ-18 (parked), CQ-9 (parked).
 
 **Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
 
@@ -1437,193 +1718,15 @@ Labels: wave:1-no-gpu, area:retrieval, size:S. Issue file: `docs/superpowers/pla
 
 **Risk and rollback.** Extraction subtly changes tokens, which would silently desynchronise stored sparse vectors from query tokens. Mitigation: the identical-vectors check. Rollback: revert.
 
-**Docs to update in the same PR.** PROJECT-STATUS section 2 (new `rag/` module) and the ARCHITECTURE.md module list; the ARCHITECTURE line is in this PR, the ledger via EP-3. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-3 carries those entries from this ticket's merged SHA.
-
-### W2 first GPU session, measurements only
-
-#### EP-4: Batch BACKLOG and PROJECT-STATUS updates for wave 2
-
-Labels: wave:2-gpu-measure, area:docs, size:S. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EP-4-status-batch-wave-2.md`.
-
-**Review cross-reference:** S-13. **Wave:** W2 first GPU session, measurements only.
-
-**Why.** Wave 2 produces the first measured numbers for the new sets; they must land in the shipped-work ledger and the open-questions section in one pass, not from seven concurrent branches editing the same two files (same reason as EP-3).
-
-**Scope.**
-- In:
-  - BACKLOG rows for EV-16 to EV-22 flipped with SHAs; PROJECT-STATUS section 3 ledger entries quoting each verdict and its report; section 5 (tried and failed) for any REJECT; section 6 for open questions (F3 answered or not, F6 bar, F8).
-- Out (explicitly):
-  - Interpreting results beyond what each report states. Editing reports.
-
-**Owns** (files this ticket may touch; anything else is out of bounds):
-- `docs/PROJECT-STATUS.md`
-- `docs/BACKLOG.md`
-
-**Commits** (① is a stub, committed before any real work):
-① stub: checklist of wave-2 tickets with report paths, empty verdict cells
-② BACKLOG rows + SHAs
-③ PROJECT-STATUS ledger and section 5/6 entries
-④ open-question status lines
-
-**Verification:**
-- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
-- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
-- `git cat-file -e <sha>^{commit}` for every SHA written
-- Every verdict quoted equals the verdict line in its report (grep)
-
-**Acceptance / falsification criterion.** Each wave-2 ticket has a row and a ledger entry whose verdict text is copied from its report and whose SHA resolves. Falsified if any quoted verdict differs from the report.
-
-**Gates / depends on.** Depends on: EP-3, EV-16, EV-17, EV-18, EV-19, EV-20, EV-21, EV-22. Gates: EP-5.
-
-**Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
-
-**Model tier and size.** Haiku; S (up to 2 h of agent work). Mechanical work, no judgement calls.
-
-**Risk and rollback.** Low. Rollback: revert.
-
-**Docs to update in the same PR.** This ticket is the docs obligation for wave 2.
-
-#### EV-16: Run the frozen main-corpus baselines (papers, books, legacy)
-
-Labels: wave:2-gpu-measure, area:eval, needs-gpu, needs-services, size:M. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EV-16-baseline-main-corpus.md`.
-
-**Review cross-reference:** S-16. **Wave:** W2 first GPU session, measurements only.
-
-**Why.** No baseline exists for the new papers-passage and causal-books sets, and every later A/B needs a measured reference on the same code and index; the first run is also the only moment the TEI truncation limit can be confirmed with one `/info` request (review S-16). Plain BM25 already reaches 0.96-0.98 paper recall on these sets, so only passage level and the title-ablated arm can show headroom (RV-3 F-1.3).
-
-**Scope.**
-- In:
-  - Run `run_baseline_main.sh papers books legacy` exactly as the GPU-day runbook step 1a specifies (about 654 queries, estimated 20-40 min), as a detached process (LESSONS section 7.3); then the BM25 floor (EV-15) beside it, the title-ablated arm and the strata report (EV-6).
-  - One `/info` request to the embedder to confirm its truncation limit; record the value.
-  - Report unmodified as a dated baseline document: passage-level headline (member-passage hit@10 and P@1, plus `passage_excerpt_hit`), paper recall as tripwire only, per-stratum Wilson intervals, `authority`/`edition`-style small strata labelled descriptive.
-- Out (explicitly):
-  - Any A/B or config change (later tickets). The focus set (EV-17) and standards (EV-18). Re-grounding or editing a fixture. Quoting a precision-95 headline number (operator question F8).
-
-**Owns** (files this ticket may touch; anything else is out of bounds):
-- `docs/eval-reports/<run-date>-main-baseline.md`
-- `docs/eval-reports/data/<run-date>-main-baseline/`
-- `docs/eval-reports/data/2026-11-10-papers-passage-gt/runs/ (own stamp only)`
-
-**Commits** (① is a stub, committed before any real work):
-① stub: report skeleton citing the frozen main-corpus protocol and the stop conditions; hash file revision and git revision of the code under test recorded
-② detached run launched; MANIFEST committed when it starts (start time, collection, db, git revision, fixture hashes)
-③ raw reports copied into the data dir with `n_errors` and `run_valid` shown
-④ BM25 floor and title-ablated arm
-⑤ report written; every number carries {metric, fixture, arm, pool depth, config}
-
-**Verification:**
-- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
-- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
-- `conda run -n agent-rag-research python -m app.doctor --no-auto-start` exits 0 before and after
-- Run scripts print `check-hash` and `check-points` passes; the report's `ground_truth_sha256_12` equals the hash file's entry
-- `n_errors` is 0 and `run_valid` is true in every report (else the arm is invalid and is not read)
-
-**Acceptance / falsification criterion.** Per set (never averaged): passage-level hit@10 and P@1 with Wilson intervals, the BM25 floor beside it, the title-ablated paper recall, and stratum tables; the report hash equals the frozen hash; zero errors. The ceiling for each metric is printed with it (member hit@10 ceiling 1.00; paper recall tripwire headroom at most 2 items on the legacy 210-set). Falsified (run discarded) if a hash or point-count check fails or any error is a lock timeout.
-
-**Gates / depends on.** Depends on: EV-7, EV-8, EV-10, EV-11, EV-15, RQ-1, OP-5. Operator answers: F3. Gates: EV-17, EV-18, EV-19, EV-20, EV-21, EV-22, EP-4, RQ-3, CQ-10, CQ-18.
-
-**Needs.** GPU: y · services up: embedder + reranker containers, vector store, corpus database (read-only) · operator sign-off: n (no protected path is touched); operator answers: F3 · re-embed: n. Also: GPU free of the foreign model process (operator question F3); about 20-40 min GPU (estimate, not measured).
-
-**Model tier and size.** Sonnet; M (up to 1 day of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
-
-**Risk and rollback.** A foreign GPU holder or a held lock starves the run. Mitigation: OP-5 names the holder; EV-10 invalidates a starved run; one GPU job at a time. The run only reads. Rollback: discard the run directory.
-
-**Docs to update in the same PR.** Dated baseline report is the doc; PROJECT-STATUS section 3/6 via EP-4. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-4 carries those entries from this ticket's merged SHA.
-
-#### EV-17: Run the frozen topic-focus baseline
-
-Labels: wave:2-gpu-measure, area:eval, needs-gpu, needs-services, size:S. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EV-17-baseline-topic-focus.md`.
-
-**Review cross-reference:** S-16. **Wave:** W2 first GPU session, measurements only.
-
-**Why.** Whether off-topic papers enter the top ten for realistic questions is unmeasured: 37.4% of main-corpus papers are off-topic (labels audited at weighted kappa 0.90) and nothing has ever measured how often they surface in answers (review section 4 'Unknown'). The frozen topic-focus protocol defines the instrument; its fixture hash is null until authoring ends.
-
-**Scope.**
-- In:
-  - Run the `focus` mode of the main baseline script (about 50 queries, estimated 2-5 min) once EV-4 has frozen the focus fixture hash in the hash file; report off-topic share in the top 10 with its interval, `offtopic-legit` paper recall, and the control arms, per the frozen protocol.
-- Out (explicitly):
-  - Choosing the materiality bar (operator question F6: the report states the number, the operator sets the bar). Any demotion arm (RQ-3).
-
-**Owns** (files this ticket may touch; anything else is out of bounds):
-- `docs/eval-reports/<run-date>-focus-baseline.md`
-- `docs/eval-reports/data/<run-date>-focus-baseline/`
-- `docs/eval-reports/data/2026-11-10-papers-passage-gt/runs/ (own stamp only)`
-
-**Commits** (① is a stub, committed before any real work):
-① stub: report skeleton, the frozen metrics and the refusal rule (the script refuses while the hash is null)
-② MANIFEST committed at launch
-③ raw report copied; errors and validity shown
-④ report with off-topic share, interval and the bar left blank for the operator
-
-**Verification:**
-- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
-- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
-- `sha256sum` of the focus fixture equals the hash file entry (the script checks it)
-- `n_errors` 0, `run_valid` true
-
-**Acceptance / falsification criterion.** Report states off-topic share in the top 10 on the focus set with a Wilson interval, per question dimension, never averaged with the other sets, with the control arms' values beside it; its fixture hash matches. The ceiling and floor arithmetic of the protocol are printed with each metric. Falsified (not read) if the hash was null at launch or any error occurred.
-
-**Gates / depends on.** Depends on: EV-16. In-progress tickets on other branches (merge order or inputs): EV-4. Operator answers: F3. Gates: EP-4, RQ-3.
-
-**Needs.** GPU: y · services up: embedder + reranker containers, vector store, corpus database (read-only) · operator sign-off: n (no protected path is touched); operator answers: F3 · re-embed: n. Also: GPU free (F3); focus fixture authoring finished and hash frozen (EV-4).
-
-**Model tier and size.** Sonnet; S (up to 2 h of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
-
-**Risk and rollback.** Fixture hash still null: the script refuses to run, which is the intended guard. Rollback: discard run directory.
-
-**Docs to update in the same PR.** Report via EP-4. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-4 carries those entries from this ticket's merged SHA.
-
-#### EV-18: Run the frozen standards baseline and evaluate the structure gate
-
-Labels: wave:2-gpu-measure, area:eval, needs-gpu, needs-services, size:M. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EV-18-baseline-standards.md`.
-
-**Review cross-reference:** S-16, S-24 gate. **Wave:** W2 first GPU session, measurements only.
-
-**Why.** The standards corpus (119 documents, 35,714 chunks, built with the new bounded chunker) has never been measured by any fixture; the standards protocol freezes a depth decision rule (D-1) and a falsifier (S-1) to be evaluated from this one run, and the review gates the whole standards structure bundle (CQ-12 to CQ-16) on a count taken from it (review S-24).
-
-**Scope.**
-- In:
-  - Run `run_baseline.sh` exactly as GPU-day runbook step 1c specifies (about 1,198 queries across depth 128/32/64 and fused/dense/sparse arms plus ablations and controls; estimated 1-2 h), detached; BM25 floor and per-stratum tables beside it; evaluate D-1 and S-1 as written.
-  - Gate evaluation for CQ-12: count answerable misses whose gold chunk or top-10 chunk has a furniture, numeric or NOTE root, or a split table (mechanical rules from `scripts/chunk_quality_census.py` and RV-2 F-2.5), and state whether the count reaches 5.
-- Out (explicitly):
-  - Changing the standards depth default (that is rule D-1's verdict, a sign-off, not an edit here). Any structure fix (CQ-12 to CQ-16).
-
-**Owns** (files this ticket may touch; anything else is out of bounds):
-- `docs/eval-reports/<run-date>-standards-baseline.md`
-- `docs/eval-reports/data/<run-date>-standards-baseline/`
-- `docs/eval-reports/data/2026-11-10-standards-gt/runs/ (own stamp only)`
-
-**Commits** (① is a stub, committed before any real work):
-① stub: report skeleton with rules D-1 and S-1 quoted verbatim and the gate definition for CQ-12
-② MANIFEST committed at launch
-③ raw reports + validity (the `depth128-fused-repeat` arm is the validity gate)
-④ D-1 / S-1 verdicts and the structure-gate count
-⑤ report
-
-**Verification:**
-- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
-- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
-- Run script prints `check-hash` and `check-points` passes
-- `depth128-fused-repeat` agrees with `depth128-fused` within the protocol's jitter envelope
-- `n_errors` 0, `run_valid` true
-
-**Acceptance / falsification criterion.** Verdicts for D-1 and S-1 are mechanical and quoted from the protocol; the structure-gate count is a number with the list of qualifying questions; per-stratum intervals shown with edition/authority marked descriptive; no fixture averaged. Falsified (run not read) if the repeat arm disagrees beyond the envelope or any error occurs.
-
-**Gates / depends on.** Depends on: EV-16, EV-11, EV-15. Operator answers: F3. Gates: EV-19, EV-20, EV-21, EV-22, EP-4, CQ-12, CQ-13, CQ-14, CQ-16, CQ-18, RIDER-1.
-
-**Needs.** GPU: y · services up: embedder + reranker containers, vector store, corpus database (read-only) · operator sign-off: n (no protected path is touched); operator answers: F3 · re-embed: n. Also: GPU free (F3); about 1-2 h GPU (estimate).
-
-**Model tier and size.** Sonnet; M (up to 1 day of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
-
-**Risk and rollback.** Longest read-only job of the session; a mid-run foreign GPU grab invalidates it. Mitigation: detached, validity arm, `run_valid`. Rollback: discard.
-
-**Docs to update in the same PR.** Report via EP-4. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-4 carries those entries from this ticket's merged SHA.
+**Docs to update in the same PR.** Section 2 (new `rag/` module) and the ARCHITECTURE.md module list line, both in this PR. Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
 
 #### EV-19: Run the reranker-score census on the absent arms
 
-Labels: wave:2-gpu-measure, area:eval, needs-gpu, needs-services, size:S. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EV-19-rerank-score-absence-census.md`.
+Labels: wave:2-gpu-measure, area:eval, needs-gpu, needs-services, size:S, parked. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/parked/EV-19-rerank-score-absence-census.md`.
 
 **Review cross-reference:** S-16, S-04. **Wave:** W2 first GPU session, measurements only.
+
+**Parked, do not start.** Parked-until: only together with EV-13 (same condition: abstention commissioned and 60+ distinct absent items). Kill criterion: the census closes the RQ-4 gate: RQ-4 dies if the census CI contains 0.5 on two of three sets.
 
 **Why.** Whether the cross-encoder score can tell 'answerable' from 'absent' was never tested; the earlier 'no floor' verdict measured RRF rank arithmetic (review item a). This is the cheapest read-only job after the baselines and decides whether exposing the score (RQ-4) is worth a contract change.
 
@@ -1651,7 +1754,7 @@ Labels: wave:2-gpu-measure, area:eval, needs-gpu, needs-services, size:S. Issue 
 
 **Acceptance / falsification criterion.** Verdict is the pre-registered rule applied mechanically on per-set (not pooled) results, with each set's n printed; partial-absent is reported as its own class. Ceiling note: with 9-24 absent items per set the interval half-width is about 0.1 or more, so 'open' needs a clearly separated signal. Falsified (gate closed) if the interval includes 0.5 on two of the three sets.
 
-**Gates / depends on.** Depends on: EV-13, EV-16, EV-18. Operator answers: F3. Gates: EV-20, EP-4, RIDER-1, RQ-4.
+**Gates / depends on.** Depends on: EV-13, EV-16, EV-18. Operator answers: F3. Gates: RQ-4 (parked).
 
 **Needs.** GPU: y · services up: embedder + reranker containers, vector store, corpus database (read-only) · operator sign-off: n (no protected path is touched); operator answers: F3 · re-embed: n. Also: GPU free (F3); about 15-30 min GPU (estimate).
 
@@ -1659,57 +1762,15 @@ Labels: wave:2-gpu-measure, area:eval, needs-gpu, needs-services, size:S. Issue 
 
 **Risk and rollback.** Small n yields an inconclusive verdict. Mitigation: the rule treats inconclusive as 'gate closed, no change'. Rollback: n/a (read-only).
 
-**Docs to update in the same PR.** Report via EP-4. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-4 carries those entries from this ticket's merged SHA.
-
-#### EV-20: Run the per-corpus depth and dense-weight grid
-
-Labels: wave:2-gpu-measure, area:eval, needs-gpu, needs-services, size:M. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EV-20-depth-weight-grid.md`.
-
-**Review cross-reference:** S-19. **Wave:** W2 first GPU session, measurements only.
-
-**Why.** Rerank depth and dense weight differ per corpus (standards depth 128; Waymo weight 0.7; others 32 and 0.5) with no recorded reason, and the existing measurements are single-question effects with the sign flipping between fixtures (RV-1 F-1.5, review S-19). The evidence that the settings matter is weak; the evidence that they differ for a reason is absent.
-
-**Scope.**
-- In:
-  - The GPU-day runbook step 3 grid: depth {32, 128} by dense weight {0.5, 0.7, 1.0} per corpus on its own fixtures, arms already measured in the baselines not repeated (about 1,200 queries, estimate 40-90 min), paired flips via `scripts/nb_xp_deeppool_tables.py` with its jitter envelope.
-  - Rule G-1 as already frozen in the runbook: a candidate arm is believed only with net member-passage hit@10 of at least +3 on that corpus's own fixture(s), wins:losses at least 3:1, no gating stratum (n at least 10) losing more than 1, and the same sign on the title-ablated arm. The standards depth question is already decided by D-1 and is not reopened.
-- Out (explicitly):
-  - Changing any default (a verdict here is a recommendation; a default change needs sign-off and goes through RIDER-1 or a config edit the operator approves). The review's fallback 'otherwise set everything to 32/0.5' is NOT part of G-1: see risk.
-
-**Owns** (files this ticket may touch; anything else is out of bounds):
-- `docs/eval-reports/<run-date>-depth-weight-grid.md`
-- `docs/eval-reports/data/<run-date>-depth-weight-grid/`
-
-**Commits** (① is a stub, committed before any real work):
-① stub: report skeleton quoting rule G-1 and stating the unresolved difference with the review (see risk)
-② Pre-registered in commit 1; no metric, threshold or fixture changes afterwards (dated addendum only).
-③ arms run one at a time (cheapest first); MANIFEST per arm
-④ flip tables per corpus with the jitter envelope
-⑤ report: verdict per corpus
-
-**Verification:**
-- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
-- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
-- Each arm names `--collection`, `--db-path`, `--blob-dir` explicitly
-- Both fixtures (or all of a corpus's fixtures) are reported separately, never averaged
-
-**Acceptance / falsification criterion.** Per corpus: the flip table and the G-1 verdict; no default changes unless G-1 holds; the ceiling for 'net +3' is shown per fixture (n answerable). Falsified if the baseline arm repeated here differs from the EV-16/EV-18 arm beyond the jitter envelope (then the grid is not interpretable).
-
-**Gates / depends on.** Depends on: EV-16, EV-18, EV-19. Operator answers: F3. Gates: EV-21, EP-4, RIDER-1.
-
-**Needs.** GPU: y · services up: embedder + reranker containers, vector store, corpus database (read-only) · operator sign-off: n (no protected path is touched); operator answers: F3 · re-embed: n. Also: GPU free (F3); about 40-90 min GPU (estimate).
-
-**Model tier and size.** Sonnet; M (up to 1 day of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
-
-**Risk and rollback.** The review (S-19) says that if no arm wins, reset all corpora to 32/0.5; the runbook's frozen rule G-1 says defaults stay. The EV-20 stub commit must state which applies; default is G-1 as frozen, because resetting is a config change needing sign-off and a frozen rule changes only by dated addendum. Rollback: n/a (read-only).
-
-**Docs to update in the same PR.** Report via EP-4. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-4 carries those entries from this ticket's merged SHA.
+**Docs to update in the same PR.** The report or note this ticket writes is its doc (section 7 doc-map row). Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
 
 #### EV-21: Run the amended CQ-3 stub-filter A/B
 
-Labels: wave:2-gpu-measure, area:eval, needs-gpu, needs-services, size:M. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EV-21-stub-filter-ab.md`.
+Labels: wave:2-gpu-measure, area:eval, needs-gpu, needs-services, size:M, parked. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/parked/EV-21-stub-filter-ab.md`.
 
 **Review cross-reference:** S-18. **Wave:** W2 first GPU session, measurements only.
+
+**Parked, do not start.** Parked-until: start only if baseline rows (with chunk ids) show a stub at rank 1 on at least 3 answerable items on some set; needs EV-12 and operator answer F3. Kill criterion: killed if the stub-at-rank-1 count is below 3 on every set.
 
 **Why.** 7-10% of chunks in every corpus are heading-only stubs (main 36,364 of 399,676; standards 2,483 of 35,714) and whether they cost any results is unmeasured; CQ-3 shipped a reversible default-off filter and a pre-registered A/B, amended by EV-12 (review S-18, `docs/eval-reports/2026-11-10-cq3-stub-chunks.md`).
 
@@ -1738,7 +1799,7 @@ Labels: wave:2-gpu-measure, area:eval, needs-gpu, needs-services, size:M. Issue 
 
 **Acceptance / falsification criterion.** ADOPT only if the EV-12 rule holds (net +3 items on at least one set, no stratum losing more than 1, stub-at-rank-1 share above 0 at baseline); otherwise REJECT and the default stays off. Both sets' tables are shown; none averaged. Ceiling: a gain is bounded by the stub-at-rank-1 and top-10 stub shares printed from `--report`. Falsified if the baseline arm differs from EV-16/EV-18's beyond the jitter envelope.
 
-**Gates / depends on.** Depends on: EV-12, EV-9, EV-16, EV-18, EV-20. Operator answers: F3. Gates: EV-22, EP-4, RIDER-1.
+**Gates / depends on.** Depends on: EV-12, EV-9, EV-16, EV-18. Operator answers: F3. Gates: CQ-14 (parked).
 
 **Needs.** GPU: y · services up: embedder + reranker containers, vector store, corpus database (read-only) · operator sign-off: n (no protected path is touched); operator answers: F3 · re-embed: n. Also: GPU free (F3); about 40-80 min GPU (estimate).
 
@@ -1746,13 +1807,15 @@ Labels: wave:2-gpu-measure, area:eval, needs-gpu, needs-services, size:M. Issue 
 
 **Risk and rollback.** A noise flip adopting a filter: prevented by the amended minimum effect. Rollback: n/a (flag only).
 
-**Docs to update in the same PR.** Report via EP-4. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-4 carries those entries from this ticket's merged SHA.
+**Docs to update in the same PR.** The report or note this ticket writes is its doc (section 7 doc-map row). Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
 
 #### EV-22: Run the ligature-repair A/B on the repaired clone
 
-Labels: wave:2-gpu-measure, area:eval, needs-gpu, needs-services, size:M. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EV-22-ligature-resparse-ab.md`.
+Labels: wave:2-gpu-measure, area:eval, needs-gpu, needs-services, size:M, parked. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/parked/EV-22-ligature-resparse-ab.md`.
 
 **Review cross-reference:** S-17. **Wave:** W2 first GPU session, measurements only.
+
+**Parked, do not start.** Parked-until: start only if the damaged-gold stratum shows a gap (CQ-7's trigger holds and CQ-7 is done); needs F3. Kill criterion: killed with CQ-7.
 
 **Why.** CQ-1's sparse-arm ligature repair is merged but unmeasured: 32.42% of main chunks (129,566) carry damaged ligatures and 57% of the papers-set gold chunks (35 of 61) and 39% of books (27 of 69) are damaged, so the effect can be stratified (RV-3 F-1.14, review S-17). Review item h shows the merged query-side repair changes none of 1,217 stored queries.
 
@@ -1782,7 +1845,7 @@ Labels: wave:2-gpu-measure, area:eval, needs-gpu, needs-services, size:M. Issue 
 
 **Acceptance / falsification criterion.** Verdict applies the pre-registered rule per set, with damaged and clean strata separate (35/26 on papers, 27/42 on books); the ceiling is stated (a gain can only occur on damaged-gold items; with about 60 damaged items only an effect of about 10 net items is detectable per RV-3). Falsified if arm A differs from the EV-16 run beyond the jitter envelope.
 
-**Gates / depends on.** Depends on: CQ-7, EV-16, EV-18, EV-21. Operator answers: F3. Gates: EP-4, RQ-3, CQ-17, CQ-18.
+**Gates / depends on.** Depends on: CQ-7, EV-16, EV-18. Operator answers: F3. Gates: CQ-18 (parked).
 
 **Needs.** GPU: y · services up: embedder + reranker containers, vector store, corpus database (read-only) · operator sign-off: n (no protected path is touched); operator answers: F3 · re-embed: n. Also: GPU free (F3); the repaired clone exists (CQ-7); about 12-25 min GPU (estimate).
 
@@ -1790,15 +1853,277 @@ Labels: wave:2-gpu-measure, area:eval, needs-gpu, needs-services, size:M. Issue 
 
 **Risk and rollback.** Serving from the clone with the wrong code revision. Mitigation: manifest records revisions; arm B uses the CQ-1 code by design. Rollback: delete the clone.
 
-**Docs to update in the same PR.** Report via EP-4. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-4 carries those entries from this ticket's merged SHA.
+**Docs to update in the same PR.** The report or note this ticket writes is its doc (section 7 doc-map row). Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
 
-### W3 gated changes after baselines
+#### CQ-12: Add golden tests and rules to the section tracker (standards)
+
+Labels: wave:3-gated-change, area:corpus, size:M, parked. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/parked/CQ-12-section-tracker-rules-and-golden-tests.md`.
+
+**Review cross-reference:** S-24. **Wave:** W3 gated changes after baselines.
+
+**Parked, do not start.** Parked-until: start only if EV-18's structure-attributable miss count is 5 or more. Kill criterion: killed if the count is below 5 or standards passage hit@10 leaves under 5 items of headroom.
+
+**Why.** `_heading_depth` and `_SectionTracker` (`rag/parser.py:457-494`, fed by the unfiltered `text_level >= 2` test at `:539`) are the root cause of stale clause numbers, furniture roots and NOTE/output-line roots in section paths; neither has a unit test. Reproduced today: a path such as `'FOR UL INTERNAL REFERENCE > 6.4.1.2 Risk'`. It is a standards and books problem (1,678 furniture-root chunks in standards against 150 in main), high for standards and low for main (review item c). It cannot fix flat books: the parser emits only levels 1 and 2.
+
+**Scope.**
+- In:
+  - Golden tests first, pinning the reproduced defects, then rules that reject or renest headings whose text equals the last path component, drop stale numeric markers, and refuse NOTE/output lines as roots; expose the tracker as a pure function over stored blocks so it can be re-run on CPU.
+  - Starts only if EV-18's gate count is 5 or more.
+- Out (explicitly):
+  - Books' chapter structure (needs the PDF outline join; not carried by the review). Rewriting stored `Block.section_path` (operator question F7). Re-embedding (CQ-16).
+
+**Owns** (files this ticket may touch; anything else is out of bounds):
+- `rag/parser.py`
+- `rag/test_parser.py`
+
+**Commits** (① is a stub, committed before any real work):
+① stub: docstring and a skipped golden-test file listing the reproduced sequences
+② golden tests pinning current behaviour on the reproduced examples (green)
+③ rules change the golden expectations; tests updated in the same commit with the reason
+④ pure function over stored blocks; CPU diff over the standards documents (read-only), counts and a 30-diff manual sample recorded in the commit body
+
+**Verification:**
+- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
+- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
+- `conda run -n agent-rag-research ruff check rag/parser.py rag/test_parser.py`
+- `conda run -n agent-rag-research python -m pytest -q rag/test_parser.py -o addopts="--disable-socket"`
+- `python scripts/chunk_quality_census.py <standards.db>` before/after counts on the in-memory re-derivation
+
+**Acceptance / falsification criterion.** The three reproduced paths no longer occur; the in-memory re-derivation over standards blocks changes only paths with a stale numeric, furniture or NOTE root (every changed path listed, 30 sampled by hand with zero wrong); main sample unchanged within stated tolerance. Falsified if a sampled changed path is wrong.
+
+**Gates / depends on.** Depends on: EV-18. Gates: CQ-13 (parked), CQ-16 (parked).
+
+**Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
+
+**Model tier and size.** Sonnet; M (up to 1 day of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
+
+**Risk and rollback.** A tracker change affects every future parse. Mitigation: no live data is re-parsed here; golden tests pin the rest. Rollback: revert.
+
+**Docs to update in the same PR.** The report or note this ticket writes is its doc (section 7 doc-map row). Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
+
+#### CQ-13: Add the running-furniture pre-pass (standards)
+
+Labels: wave:3-gated-change, area:corpus, size:M, parked. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/parked/CQ-13-furniture-prepass-and-table-spans.md`.
+
+**Review cross-reference:** S-24. **Wave:** W3 gated changes after baselines.
+
+**Parked, do not start.** Parked-until: start only after CQ-12 has run and its in-memory re-derive leaves furniture roots among the qualifying-miss questions. Kill criterion: killed if zero furniture roots remain among the qualifying-miss questions.
+
+**Cut by minimizer:** table sup/sub and rowspan/colspan handling is cut (no qualifying miss is attributed to tables; unrelated to furniture). The furniture pre-pass is kept only if CQ-12's in-memory re-derive leaves furniture roots (furniture affects 4.7% of standards chunks and may be fixed by CQ-12's rules). Because it depends on parked CQ-12 it sits in the parked section (interpretation, reported).
+
+**Why.** Running headers promoted to headings are a standards problem and are detectable positionally: 20 of 119 standards documents, 947 blocks, 1,678 chunks (4.7%) have a furniture string as their path root (RV-2 F-2.5).
+
+**Scope.**
+- In:
+  - Pre-pass in `_build_blocks`: key `(text with digits collapsed, 12-point y bucket)` per page; a text item recurring on at least 4 pages is furniture and skipped before the tracker; also runnable on stored blocks.
+- Out (explicitly):
+  - Table sup/sub and rowspan/colspan handling (cut). Main-corpus table HTML (not stored). Re-embedding. Persisting `content_list` (not doing).
+
+**Owns** (files this ticket may touch; anything else is out of bounds):
+- `rag/parser.py`
+- `rag/test_parser.py`
+
+**Commits** (① is a stub, committed before any real work):
+① stub: docstring for the pre-pass and the 70% / 4-page criteria
+② golden tests: a furniture case and a real repeating template heading that must survive
+③ pre-pass implementation to green; CPU probe re-run on standards blocks
+
+**Verification:**
+- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
+- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
+- `conda run -n agent-rag-research ruff check rag/parser.py rag/test_parser.py`
+- Positional probe re-run on stored standards blocks reports 0 furniture roots; template headings that repeat at different y survive (RV-2 F-2.5 check)
+- `conda run -n agent-rag-research python -m pytest -q rag/test_parser.py -o addopts="--disable-socket"`
+
+**Acceptance / falsification criterion.** Probe finds 0 furniture roots in standards; the real template heading survives. Falsified if the 70% threshold removes a real template heading.
+
+**Gates / depends on.** Depends on: CQ-12, EV-18. Gates: CQ-16 (parked).
+
+**Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
+
+**Model tier and size.** Sonnet; M (up to 1 day of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
+
+**Risk and rollback.** False positives delete real headings. Mitigation: y-clustering criterion and the survival test. Rollback: revert.
+
+**Docs to update in the same PR.** The report or note this ticket writes is its doc (section 7 doc-map row). Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
+
+#### CQ-14: Fold heading-only chunks into the next group and guard normalisation regexes
+
+Labels: wave:3-gated-change, area:corpus, size:M, parked. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/parked/CQ-14-stub-folding-and-regex-guard.md`.
+
+**Review cross-reference:** S-24. **Wave:** W3 gated changes after baselines.
+
+**Parked, do not start.** Parked-until: only after the EV-21 verdict; the regex guard only if CQ-16 proceeds. Kill criterion: killed if EV-21 is REJECT, or stub-at-rank-1 occurs on fewer than 3 answerable standards items, or fewer than 3 qualifying misses have a stub in the top 10.
+
+**Why.** Heading-only groups become stub chunks (standards 2,825 by the lane's count, 400 of them bare clause numbers; main 37,770); the chunker emits them by design (`rag/chunker.py:169-173`, `:261-266`). The two generic normalisation regexes also damage identifiers such as `a<sub>max,brake</sub>` and `2016a,b` (RV-2 F-2.6, F-2.8).
+
+**Scope.**
+- In:
+  - Do not emit a group that is only its own heading text: carry it as prefix of the following group's body, or drop it when nothing follows; prepend a bare clause number to the next term group's first block (the operator decision in RV-2 open question 4 is recorded in the PR).
+  - Add `<sub>/<sup>` spans and `\d[a-z],[a-z]` citation patterns to the normalisation `protected` regex.
+- Out (explicitly):
+  - Per-corpus normalisation tables, glued-word repair, a dictionary segmenter (new dependency). Re-embedding.
+
+**Owns** (files this ticket may touch; anything else is out of bounds):
+- `rag/chunker.py`
+- `rag/test_chunker.py`
+
+**Commits** (① is a stub, committed before any real work):
+① stub: docstring stating the folding rule and the bare-number rule
+② failing tests (the existing `test_complete_definition_retains_its_term_path_after_a_stale_numeric_marker` expectation changes with a recorded reason)
+③ implementation to green
+④ regex guard + diff of derived text over standards blocks (changes limited to the intended classes)
+
+**Verification:**
+- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
+- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
+- `conda run -n agent-rag-research ruff check rag/chunker.py rag/test_chunker.py`
+- `python scripts/chunk_quality_census.py <standards.db>` on an in-memory re-chunk: stub rate under 2% and `bare_number` 0 (targets from RV-2 F-2.6)
+- Derived-text diff over standards blocks shows no change inside `<sub>` spans
+
+**Acceptance / falsification criterion.** On a re-chunk of the standards blocks (read-only, in memory) the stub rate is under 2% and bare-number stubs are 0; ten definitions sampled from the vocabulary part carry their numbers in the term chunk; no change inside `<sub>/<sup>` spans. Falsified if any sampled definition loses its number or term.
+
+**Gates / depends on.** Depends on: EV-18, EV-21. Gates: CQ-16 (parked).
+
+**Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
+
+**Model tier and size.** Sonnet; M (up to 1 day of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
+
+**Risk and rollback.** Folding changes chunk boundaries for every new ingest and invalidates gold chunk ids of re-chunked corpora (scoring uses the excerpt metric). Mitigation: nothing is re-chunked live here. Rollback: revert.
+
+**Docs to update in the same PR.** The report or note this ticket writes is its doc (section 7 doc-map row). Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
+
+#### CQ-16: Rebuild the standards clone from re-derived paths and measure it against baseline (absorbs CQ-15)
+
+Labels: wave:3-gated-change, area:corpus, area:eval, needs-gpu, needs-services, size:S, parked. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/parked/CQ-16-standards-rechunk-verdict.md`.
+
+**Review cross-reference:** S-24. **Wave:** W3 gated changes after baselines.
+
+**Parked, do not start.** Parked-until: start only if EV-18's structure-attributable miss count is 5 or more (net +3 must be reachable); the CQ-15 half (clone rebuild) also needs F2, F3 and F7. Kill criterion: killed if the EV-18 count is below 5 or the rebuilt clone shows fewer than 3 flipped questions; the CQ-15 half is killed if CQ-12, CQ-13 and CQ-14 are all killed, or F7 says keep stored paths and the operator will not pay the 35k re-embed.
+
+**Absorbs CQ-15** (CQ-15: Re-derive standards paths from stored blocks and re-chunk on a clone). The merged ticket is one unit: rebuild the standards clone from the re-derived paths and measure it against the EV-18 baseline in one ticket.
+
+**Why.** Structure fixes are only worth a live re-embed if answers improve: the gate (EV-18) is a count of structure-attributable misses, and the standards fixture is scored by the chunker-independent excerpt metric so old and new chunkers are comparable (review S-24). Absorbed from CQ-15: The structure fixes (CQ-12 to CQ-14) change section paths and chunk boundaries, so they take effect on the existing corpus only through a re-chunk of the standards corpus (about 35k embeds; 477 MB collection); whether stored block paths may be rewritten at all is operator question F7.
+
+**Scope.**
+- In:
+  - Run the standards GT on live and on the CPU-rebuilt clone, same code, excerpt metric, paired flips by stratum; plus the structural checks (furniture roots 0, stub rate under 2%, bare-number stubs 0).
+  - Absorbed from CQ-15: A CPU tool that re-derives section paths from stored standards blocks with the CQ-12/13 functions into a derived column or copy (the default, until F7 is answered), then `app.rechunk` on a database copy and a clone of the standards collection, with CQ-8 reuse, GPU embed of the changed chunks only.
+- Out (explicitly):
+  - Applying to the live collection (follow-on ticket on ADOPT only; needs F7).
+  - Absorbed from CQ-15: Rewriting stored `Block.section_path` in place (needs F7 = rewrite). Live application. Books' outline paths. Measurement (CQ-16).
+
+**Owns** (files this ticket may touch; anything else is out of bounds):
+- `docs/eval-reports/<run-date>-standards-rechunk-verdict.md`
+- `docs/eval-reports/data/<run-date>-standards-rechunk-verdict/`
+- `app/restructure_blocks.py`
+- `app/test_restructure_blocks.py`
+- `docs/eval-reports/data/<run-date>-standards-rechunk-clone/`
+
+**Commits** (① is a stub, committed before any real work):
+① stub: report skeleton; rule: ADOPT only if net +3 excerpt hits on the standards set, flips at least 3:1, no stratum losing more than 1, and the structural checks pass
+② Pre-registered in commit 1; no metric, threshold or fixture changes afterwards (dated addendum only).
+③ live and clone arms; MANIFEST
+④ report
+⑤ [absorbed CQ-15] stub: docstring stating derived-column route, read-only source, clone-only apply
+⑥ [absorbed CQ-15] tool with tests on fixtures (idempotent, never writes the source database)
+⑦ [absorbed CQ-15] database copy + clone; dry run: counts of changed paths and chunks
+⑧ [absorbed CQ-15] apply on the clone; GPU embed time and counts recorded
+
+**Verification:**
+- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
+- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
+- Every command names `--collection` (live and clone separately)
+- Gold chunk ids of re-chunked documents are not used for scoring
+- `conda run -n agent-rag-research ruff check app/restructure_blocks.py app/test_restructure_blocks.py`
+- The tool opens the source `mode=ro` (a write attempt fails in the test)
+- `--collection` explicit on every command; the first apply is `--dry-run`
+
+**Acceptance / falsification criterion.** Verdict applies the stated rule; edition and authority strata (n=4 each) are shown as descriptive only. Ceiling: gain bounded by the EV-18 structure-attributable miss count. Falsified if the live arm differs from EV-18's beyond the jitter envelope.
+
+Absorbed from CQ-15: Clone holds re-chunked standards with chunk count and changed-text count equal to the dry run; the live collection and database are byte-unchanged (point count, sampled vectors, file hash of the live database). Falsified if the live database hash changes.
+
+**Gates / depends on.** Depends on: CQ-12, CQ-13, CQ-14, CQ-8, EV-18. Operator answers: F2, F3, F7. Gates: none.
+
+**Needs.** GPU: y · services up: embedder + reranker containers, vector store, corpus database (read-only) · operator sign-off: n (no protected path is touched); operator answers: F3 · re-embed: n. Also: GPU free (F3); about 20-30 min GPU (estimate). Absorbed from CQ-15: GPU: y · services up: embedder + reranker containers, vector store, corpus database (read-only) (embedder for the clone) · operator sign-off: n (no protected path is touched); operator answers: F2, F3, F7 · re-embed: y (about 35k, standards whole corpus, estimate). Also: GPU free (F3); vector store (F2); operator answer F7 on the section-path route; about 5-15 min GPU (estimate).
+
+**Model tier and size.** Sonnet; S (up to 2 h of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
+
+**Risk and rollback.** Gain unobservable at n=94. Mitigation: UNDERPOWERED is a verdict. Rollback: delete the clone. Absorbed from CQ-15: Mixing the derived column with the stored path in later tooling. Mitigation: derived route documented in the record; nothing live changes. Rollback: delete the clone and the database copy.
+
+**Docs to update in the same PR.** The report or note this ticket writes is its doc (section 7 doc-map row). Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
+
+#### CQ-18: Add BM25 weighting behind a flag and run the A/B on a repaired clone (absorbs CQ-17)
+
+Labels: wave:3-gated-change, area:corpus, area:eval, needs-gpu, needs-services, size:M, parked. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/parked/CQ-18-bm25-weighting-ab.md`.
+
+**Review cross-reference:** S-25. **Wave:** W3 gated changes after baselines.
+
+**Parked, do not start.** Parked-until: start only if on some set fused minus dense-only passage hit@10 is 3 items or more AND sparse-only passage hit@10 is more than 3 items from the plain-BM25 floor on that set (the sparse arm matters and is not merely BM25); needs F2 and F3, and a repaired base if EV-22 ran. Kill criterion: killed if on every set fused minus dense-only passage hit@10 is 2 items or fewer, or sparse-only is within 3 items of the BM25 floor on every set, or EV-22 shows ligature repair itself changed the sparse arm so that attribution is muddied and no gain remains.
+
+**Absorbs CQ-17** (CQ-17: Add BM25 saturation and length normalisation to the sparse arm behind a flag). The merged ticket is one unit: the flag-gated implementation and the clone A/B are one ticket; the dependency CQ-9 -> CQ-17 (a file-ownership artefact of `rag/vector_index.py`) is cut.
+
+**Why.** Whether length normalisation and saturation help the sparse arm is unmeasured; a separate A/B keeps attribution clean after the ligature A/B (review S-25). Absorbed from CQ-17: The sparse arm is raw term frequency times IDF with no saturation or length normalisation although its docstring says 'BM25-style' (`rag/vector_index.py:112`); legacy main chunks are unbounded (8,487 chunks over 8,000 characters), so long chunks can dominate (RV-1 F-1.6). A sparse recompute is CPU-only, so bundling it with ligature repair 'to save cost' is wrong and would confound attribution (review S-25).
+
+**Scope.**
+- In:
+  - On a fresh clone: resparse with the option on (CPU), run the standards, causal-books and papers-passage sets and the lexical strata (standards clause lookups, books terminology) against the live baseline, paired flips.
+  - Absorbed from CQ-17: Index-time weight `tf*(k1+1)/(tf + k1*(1-b+b*len/avglen))` behind an explicit option, `avglen` measured once per corpus from stored chunks (CPU) and recorded; applies only when (re)computing sparse vectors (`app.resparse` on a clone); default off.
+  - Absorbed from CQ-17: Starts only after EV-22 (S-17 done).
+- Out (explicitly):
+  - Live application (follow-on on ADOPT only). Combining with any other change.
+  - Absorbed from CQ-17: Edge-punctuation stripping in the tokenizer (measured effect on 12-26% of tokens, but it changes tokens; include only if the operator wants it in this A/B: stated as a separate flag, never bundled). Applying to any live collection. The A/B (CQ-18).
+
+**Owns** (files this ticket may touch; anything else is out of bounds):
+- `docs/eval-reports/<run-date>-bm25-weighting-ab.md`
+- `docs/eval-reports/data/<run-date>-bm25-weighting-ab/`
+- `rag/vector_index.py`
+- `rag/test_vector_index.py`
+- `rag/sparse_tokens.py`
+- `rag/test_sparse_tokens.py`
+- `app/resparse.py`
+- `app/test_resparse.py`
+
+**Commits** (① is a stub, committed before any real work):
+① stub: report skeleton; rule: ADOPT only if net +3 items on at least one set, no set losing more than 1, and a gain on the lexical strata, else REJECT
+② Pre-registered in commit 1; no metric, threshold or fixture changes afterwards (dated addendum only).
+③ clone built and resparsed; counts recorded
+④ arms run; MANIFEST
+⑤ report; clone deleted
+⑥ [absorbed CQ-17] stub: docstring with the formula, parameters (k1, b, avglen), the default-off guarantee and the one-recompute-per-arm rule
+⑦ [absorbed CQ-17] failing tests: option off leaves vectors byte-identical; option on gives the expected weights on a toy corpus
+⑧ [absorbed CQ-17] implementation to green
+⑨ [absorbed CQ-17] avglen measurement helper and recorded constants per corpus
+
+**Verification:**
+- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
+- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
+- Every command names `--collection`; the live collection is never an apply target
+- `conda run -n agent-rag-research ruff check rag/vector_index.py rag/test_vector_index.py rag/sparse_tokens.py rag/test_sparse_tokens.py app/resparse.py app/test_resparse.py`
+- Identical sparse vectors with the option off on 200 stored chunks (RQ-5 check reused)
+- `conda run -n agent-rag-research python -m pytest -q rag/test_vector_index.py rag/test_sparse_tokens.py app/test_resparse.py -o addopts="--disable-socket"`
+
+**Acceptance / falsification criterion.** Verdict applies the stated rule per set (never averaged); the ceiling is stated per stratum (BM25 floor from EV-15 shows where lexical headroom exists). Falsified if the baseline arm differs from EV-16/EV-18 beyond the jitter envelope.
+
+Absorbed from CQ-17: Option off: byte-identical vectors; option on: weights match a hand-computed toy example; avglen constants recorded with the command that produced them. Falsified if default behaviour changes by one byte.
+
+**Gates / depends on.** Depends on: RQ-5, EV-22, EV-16, EV-18. Operator answers: F2, F3. Gates: none.
+
+**Needs.** GPU: y · services up: embedder + reranker containers, vector store, corpus database (read-only) · operator sign-off: n (no protected path is touched); operator answers: F2, F3 · re-embed: n. Also: GPU free (F3); vector store (F2); 6-8 GB for a clone. Absorbed from CQ-17: GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
+
+**Model tier and size.** Sonnet; M (up to 1 day of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
+
+**Risk and rollback.** Disk or contention; mitigations as CQ-7. Rollback: delete the clone. Absorbed from CQ-17: Query-side tokens stay binary while index weights change, which a later reader might misread as a bug. Mitigation: documented in the docstring. Rollback: revert; no index depends on it.
+
+**Docs to update in the same PR.** The report or note this ticket writes is its doc (section 7 doc-map row). Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
 
 #### CQ-9: Add idempotent payload indexes and verify them on a clone
 
-Labels: wave:3-gated-change, area:corpus, area:retrieval, needs-services, size:M. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/CQ-9-payload-indexes-on-clone.md`.
+Labels: wave:3-gated-change, area:corpus, area:retrieval, needs-services, size:M, parked. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/parked/CQ-9-payload-indexes-on-clone.md`.
 
 **Review cross-reference:** S-22. **Wave:** W3 gated changes after baselines.
+
+**Parked, do not start.** Parked-until: start only if EV-14 reports overlap below 0.99 on at least one of the three filters. Kill criterion: killed if EV-14 overlap is at least 0.99 on all three filters, or no baseline query returned fewer than k hits.
 
 **Why.** If EV-14 shows filtered HNSW search loses neighbours against exact search, payload indexes are the repair; they rebuild HNSW links, a CPU and disk cost, so they must be proven on a clone first (review S-22; RV-1 F-1.2). If EV-14 shows overlap of at least 0.99, this ticket is closed unstarted.
 
@@ -1831,7 +2156,7 @@ Labels: wave:3-gated-change, area:corpus, area:retrieval, needs-services, size:M
 
 **Acceptance / falsification criterion.** Verdict applies the stated rule to the three filters separately; build time, added disk and p50 query latency before and after are reported. Falsified if overlap with the index is not strictly greater than without it.
 
-**Gates / depends on.** Depends on: EV-14, RQ-5, RQ-1. Operator answers: F2. Gates: CQ-17, EP-5.
+**Gates / depends on.** Depends on: EV-14, RQ-5, RQ-1. Operator answers: F2. Gates: none.
 
 **Needs.** GPU: n · services up: vector store (CPU container) up; no GPU services · operator sign-off: n (no protected path is touched); operator answers: F2 · re-embed: n. Also: vector store start approved (F2); 6-8 GB free for one clone.
 
@@ -1839,404 +2164,15 @@ Labels: wave:3-gated-change, area:corpus, area:retrieval, needs-services, size:M
 
 **Risk and rollback.** Index build on a large clone could fill the disk or slow other work. Mitigation: free-space abort rule, one clone, deleted after. Rollback: delete the clone; revert the code (no live collection touched).
 
-**Docs to update in the same PR.** Report; PROJECT-STATUS via EP-5. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-5 carries those entries from this ticket's merged SHA.
-
-#### CQ-10: Assess raising the embedding server's token limit for truncated chunks
-
-Labels: wave:3-gated-change, area:corpus, area:ops, needs-gpu, needs-services, size:M. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/CQ-10-assess-raising-embedder-token-limit.md`.
-
-**Review cross-reference:** S-23. **Wave:** W3 gated changes after baselines.
-
-**Why.** 3,138 main chunks exceed the embedder's 4,096-token limit and are silently truncated (0.79% of main chunks; 0 in standards). CQ-4's plan (`docs/eval-reports/data/2026-11-10-truncation-rechunk/report.md`) shows the re-chunk fix costs about 177k-212k embeddings (against 64,770 chunks held today by the affected papers), re-grounding of 48 ground-truth items, and mixed chunk granularity inside one index; it names raising the embedding server's `--max-batch-tokens` as the alternative it did not assess. The review's rule (d)(2) permits a targeted re-chunk only for information destroyed at embed time, and CQ-4 shows the targeted form is not cheap, so the cheap alternative is assessed first (review S-23, re-scoped).
-
-**Scope.**
-- In:
-  - Feasibility measurement on a scratch embedder setting, after the operator restarts the embedder container with a higher limit (agents never restart containers): VRAM use, out-of-memory events and p50/p95 latency at the larger limit; then embed the exact truncated chunk list (`truncated_chunk_ids_main.txt`, about 3,136 chunks, minutes of GPU) and report the cosine between each full-length embedding and its stored truncated embedding. Nothing is written to any index.
-  - Ceiling statement: none of the 48 affected ground-truth items has a truncated gold chunk (CQ-4), so a retrieval gain on the current fixtures is bounded at 0 by construction; the verdict is feasibility and vector shift, not retrieval quality.
-- Out (explicitly):
-  - Any re-chunk (see CQ-11: only inside a planned full re-chunk). Writing or replacing vectors in any collection. Restarting containers (operator action).
-
-**Owns** (files this ticket may touch; anything else is out of bounds):
-- `docs/eval-reports/<run-date>-embedder-token-limit.md`
-- `docs/eval-reports/data/<run-date>-embedder-token-limit/`
-
-**Commits** (① is a stub, committed before any real work):
-① stub: report skeleton with the feasibility rule written before any run: FEASIBLE if no out-of-memory event and p95 embedding latency for normal chunks stays within 1.5x of today's; INFEASIBLE otherwise
-② Pre-registered in commit 1; no metric, threshold or fixture changes afterwards (dated addendum only).
-③ limit change requested from the operator; baseline latency and VRAM recorded first
-④ truncated-chunk embeddings and cosine table
-⑤ report and verdict
-
-**Verification:**
-- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
-- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
-- Each embedding call is wrapped by the existing GPU lock; no collection name appears in any write command
-- Count of chunks embedded equals the length of the truncated-id list
-
-**Acceptance / falsification criterion.** Report states, for the larger limit: out-of-memory events (0 or not), latency ratio against baseline, and the distribution of cosine shift on the truncated chunks; verdict FEASIBLE or INFEASIBLE by the pre-stated rule. Falsified (INFEASIBLE) if any out-of-memory event occurs or latency exceeds 1.5x.
-
-**Gates / depends on.** Depends on: EV-16, RQ-3. Operator answers: F3. Gates: CQ-11.
-
-**Needs.** GPU: y · services up: embedder + reranker containers, vector store, corpus database (read-only) · operator sign-off: n (no protected path is touched); operator answers: F3 · re-embed: n. Also: operator restarts the embedder with a higher limit and restores it afterwards; GPU free (F3); minutes of GPU (estimate).
-
-**Model tier and size.** Sonnet; M (up to 1 day of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
-
-**Risk and rollback.** A larger batch-token limit can exhaust VRAM next to the reranker and starve other work. Mitigation: operator-run restart, restore step in the record, one job at a time. Rollback: restore the previous container setting.
-
-**Docs to update in the same PR.** Report; PROJECT-STATUS via EP-5. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-5 carries those entries from this ticket's merged SHA.
-
-#### CQ-11: Decide the truncation fix: limit change or only inside a planned full re-chunk
-
-Labels: wave:3-gated-change, area:corpus, area:eval, size:S. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/CQ-11-truncation-fix-decision.md`.
-
-**Review cross-reference:** S-23. **Wave:** W3 gated changes after baselines.
-
-**Why.** With CQ-4's costs on record, a re-chunk of only the truncated chunks is not justified on its own (about 177k-212k embeddings, 48 ground-truth items to re-ground, mixed granularity). The only remaining routes are a server limit change (CQ-10) or folding the truncation fix into a full re-chunk that passes the review's paired chunker test, rule (d)(3) (66 papers, two scratch collections, about 45k embeds, at least +5 net excerpt hits, flips at least 3:1, 2x disk headroom).
-
-**Scope.**
-- In:
-  - A short decision note: if CQ-10 is FEASIBLE, recommend the limit change to the operator and list which stored vectors would be recomputed (only the truncated chunks, about 3,136 for main; a bounded job, specified but not run); if INFEASIBLE, record that the truncation defect waits for a full re-chunk decision and is not re-proposed separately. No GPU.
-- Out (explicitly):
-  - Running any re-chunk or re-embed. Re-grounding fixtures. A full re-chunk test (not part of this programme).
-
-**Owns** (files this ticket may touch; anything else is out of bounds):
-- `docs/eval-reports/<run-date>-truncation-fix-decision.md`
-
-**Commits** (① is a stub, committed before any real work):
-① stub: note skeleton with the two branches and the facts each cites (CQ-4 report, CQ-10 verdict)
-② decision text
-③ cross-check that every cited number resolves to a file
-
-**Verification:**
-- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
-- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
-- Every number in the note appears in CQ-4's report or CQ-10's report (grep list in the PR)
-
-**Acceptance / falsification criterion.** Note states one recommendation, derived mechanically from CQ-10's verdict, with costs from CQ-4 quoted exactly; someone who did not write it can trace each figure. Falsified if a quoted figure is absent from its source report.
-
-**Gates / depends on.** Depends on: CQ-10. Gates: CQ-15, EP-5.
-
-**Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
-
-**Model tier and size.** Sonnet; S (up to 2 h of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
-
-**Risk and rollback.** Low. Docs only. Rollback: revert.
-
-**Docs to update in the same PR.** Note is the doc; PROJECT-STATUS section 5/6 via EP-5. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-5 carries those entries from this ticket's merged SHA.
-
-#### CQ-12: Add golden tests and rules to the section tracker (standards)
-
-Labels: wave:3-gated-change, area:corpus, size:M. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/CQ-12-section-tracker-rules-and-golden-tests.md`.
-
-**Review cross-reference:** S-24. **Wave:** W3 gated changes after baselines.
-
-**Why.** `_heading_depth` and `_SectionTracker` (`rag/parser.py:457-494`, fed by the unfiltered `text_level >= 2` test at `:539`) are the root cause of stale clause numbers, furniture roots and NOTE/output-line roots in section paths; neither has a unit test. Reproduced today: a path such as `'FOR UL INTERNAL REFERENCE > 6.4.1.2 Risk'`. It is a standards and books problem (1,678 furniture-root chunks in standards against 150 in main), high for standards and low for main (review item c). It cannot fix flat books: the parser emits only levels 1 and 2.
-
-**Scope.**
-- In:
-  - Golden tests first, pinning the reproduced defects, then rules that reject or renest headings whose text equals the last path component, drop stale numeric markers, and refuse NOTE/output lines as roots; expose the tracker as a pure function over stored blocks so it can be re-run on CPU.
-  - Starts only if EV-18's gate count is 5 or more.
-- Out (explicitly):
-  - Books' chapter structure (needs the PDF outline join; not carried by the review). Rewriting stored `Block.section_path` (operator question F7). Re-embedding (CQ-15/CQ-16).
-
-**Owns** (files this ticket may touch; anything else is out of bounds):
-- `rag/parser.py`
-- `rag/test_parser.py`
-
-**Commits** (① is a stub, committed before any real work):
-① stub: docstring and a skipped golden-test file listing the reproduced sequences
-② golden tests pinning current behaviour on the reproduced examples (green)
-③ rules change the golden expectations; tests updated in the same commit with the reason
-④ pure function over stored blocks; CPU diff over the standards documents (read-only), counts and a 30-diff manual sample recorded in the commit body
-
-**Verification:**
-- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
-- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
-- `conda run -n agent-rag-research ruff check rag/parser.py rag/test_parser.py`
-- `conda run -n agent-rag-research python -m pytest -q rag/test_parser.py -o addopts="--disable-socket"`
-- `python scripts/chunk_quality_census.py <standards.db>` before/after counts on the in-memory re-derivation
-
-**Acceptance / falsification criterion.** The three reproduced paths no longer occur; the in-memory re-derivation over standards blocks changes only paths with a stale numeric, furniture or NOTE root (every changed path listed, 30 sampled by hand with zero wrong); main sample unchanged within stated tolerance. Falsified if a sampled changed path is wrong.
-
-**Gates / depends on.** Depends on: EV-18. Gates: CQ-13, CQ-15.
-
-**Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
-
-**Model tier and size.** Sonnet; M (up to 1 day of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
-
-**Risk and rollback.** A tracker change affects every future parse. Mitigation: no live data is re-parsed here; golden tests pin the rest. Rollback: revert.
-
-**Docs to update in the same PR.** PROJECT-STATUS via EP-5; DATA-CONTRACTS wording is RIDER-1 conditional item 7. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-5 carries those entries from this ticket's merged SHA.
-
-#### CQ-13: Add the running-furniture pre-pass and table sup/sub and span handling
-
-Labels: wave:3-gated-change, area:corpus, size:M. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/CQ-13-furniture-prepass-and-table-spans.md`.
-
-**Review cross-reference:** S-24. **Wave:** W3 gated changes after baselines.
-
-**Why.** Running headers promoted to headings are a standards problem and are detectable positionally: 20 of 119 standards documents, 947 blocks, 1,678 chunks (4.7%) have a furniture string as their path root (RV-2 F-2.5); table conversion drops superscripts and rowspan content (`<10-8 h-1` instead of `<10^-8 h^-1`; 2,189 standards tables) (RV-2 F-2.10).
-
-**Scope.**
-- In:
-  - Pre-pass in `_build_blocks`: key `(text with digits collapsed, 12-point y bucket)` per page; a text item recurring on at least 4 pages is furniture and skipped before the tracker; also runnable on stored blocks.
-  - `markdownify` `sup_symbol`/`sub_symbol`, and rowspan/colspan expansion before conversion (fallback: `col: value` lines for irregular spans).
-- Out (explicitly):
-  - Main-corpus table HTML (not stored, needs a re-parse: not carried by the review). Re-embedding. Persisting `content_list` (explicitly not doing).
-
-**Owns** (files this ticket may touch; anything else is out of bounds):
-- `rag/parser.py`
-- `rag/test_parser.py`
-
-**Commits** (① is a stub, committed before any real work):
-① stub: docstrings for both changes and the 70% / 4-page criteria
-② golden tests: the PMHF row and a severity table (`10^-8`, equal cell counts); a furniture case and a real repeating template heading that must survive
-③ pre-pass implementation to green
-④ table fix to green; CPU probe re-run on standards blocks
-
-**Verification:**
-- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
-- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
-- `conda run -n agent-rag-research ruff check rag/parser.py rag/test_parser.py`
-- Positional probe re-run on stored standards blocks reports 0 furniture roots; template headings that repeat at different y survive (RV-2 F-2.5 check)
-- `conda run -n agent-rag-research python -m pytest -q rag/test_parser.py -o addopts="--disable-socket"`
-
-**Acceptance / falsification criterion.** Probe finds 0 furniture roots in standards; the real template heading survives; golden table tests pass with equal cell counts per row. Falsified if the 70% threshold removes a real template heading.
-
-**Gates / depends on.** Depends on: CQ-12, EV-18. Gates: CQ-15.
-
-**Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
-
-**Model tier and size.** Sonnet; M (up to 1 day of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
-
-**Risk and rollback.** False positives delete real headings. Mitigation: y-clustering criterion and the survival test. Rollback: revert.
-
-**Docs to update in the same PR.** PROJECT-STATUS via EP-5. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-5 carries those entries from this ticket's merged SHA.
-
-#### CQ-14: Fold heading-only chunks into the next group and guard normalisation regexes
-
-Labels: wave:3-gated-change, area:corpus, size:M. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/CQ-14-stub-folding-and-regex-guard.md`.
-
-**Review cross-reference:** S-24. **Wave:** W3 gated changes after baselines.
-
-**Why.** Heading-only groups become stub chunks (standards 2,825 by the lane's count, 400 of them bare clause numbers; main 37,770); the chunker emits them by design (`rag/chunker.py:169-173`, `:261-266`). The two generic normalisation regexes also damage identifiers such as `a<sub>max,brake</sub>` and `2016a,b` (RV-2 F-2.6, F-2.8).
-
-**Scope.**
-- In:
-  - Do not emit a group that is only its own heading text: carry it as prefix of the following group's body, or drop it when nothing follows; prepend a bare clause number to the next term group's first block (the operator decision in RV-2 open question 4 is recorded in the PR).
-  - Add `<sub>/<sup>` spans and `\d[a-z],[a-z]` citation patterns to the normalisation `protected` regex.
-- Out (explicitly):
-  - Per-corpus normalisation tables, glued-word repair, a dictionary segmenter (new dependency). Re-embedding.
-
-**Owns** (files this ticket may touch; anything else is out of bounds):
-- `rag/chunker.py`
-- `rag/test_chunker.py`
-
-**Commits** (① is a stub, committed before any real work):
-① stub: docstring stating the folding rule and the bare-number rule
-② failing tests (the existing `test_complete_definition_retains_its_term_path_after_a_stale_numeric_marker` expectation changes with a recorded reason)
-③ implementation to green
-④ regex guard + diff of derived text over standards blocks (changes limited to the intended classes)
-
-**Verification:**
-- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
-- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
-- `conda run -n agent-rag-research ruff check rag/chunker.py rag/test_chunker.py`
-- `python scripts/chunk_quality_census.py <standards.db>` on an in-memory re-chunk: stub rate under 2% and `bare_number` 0 (targets from RV-2 F-2.6)
-- Derived-text diff over standards blocks shows no change inside `<sub>` spans
-
-**Acceptance / falsification criterion.** On a re-chunk of the standards blocks (read-only, in memory) the stub rate is under 2% and bare-number stubs are 0; ten definitions sampled from the vocabulary part carry their numbers in the term chunk; no change inside `<sub>/<sup>` spans. Falsified if any sampled definition loses its number or term.
-
-**Gates / depends on.** Depends on: EV-18. Gates: CQ-15.
-
-**Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
-
-**Model tier and size.** Sonnet; M (up to 1 day of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
-
-**Risk and rollback.** Folding changes chunk boundaries for every new ingest and invalidates gold chunk ids of re-chunked corpora (scoring uses the excerpt metric). Mitigation: nothing is re-chunked live here. Rollback: revert.
-
-**Docs to update in the same PR.** PROJECT-STATUS via EP-5. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-5 carries those entries from this ticket's merged SHA.
-
-#### CQ-15: Re-derive standards paths from stored blocks and re-chunk on a clone
-
-Labels: wave:3-gated-change, area:corpus, needs-gpu, needs-services, size:M. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/CQ-15-standards-rederive-and-rechunk-clone.md`.
-
-**Review cross-reference:** S-24. **Wave:** W3 gated changes after baselines.
-
-**Why.** The structure fixes (CQ-12 to CQ-14) change section paths and chunk boundaries, so they take effect on the existing corpus only through a re-chunk of the standards corpus (about 35k embeds; 477 MB collection); whether stored block paths may be rewritten at all is operator question F7.
-
-**Scope.**
-- In:
-  - A CPU tool that re-derives section paths from stored standards blocks with the CQ-12/13 functions into a derived column or copy (the default, until F7 is answered), then `app.rechunk` on a database copy and a clone of the standards collection, with CQ-8 reuse, GPU embed of the changed chunks only.
-- Out (explicitly):
-  - Rewriting stored `Block.section_path` in place (needs F7 = rewrite). Live application. Books' outline paths. Measurement (CQ-16).
-
-**Owns** (files this ticket may touch; anything else is out of bounds):
-- `app/restructure_blocks.py`
-- `app/test_restructure_blocks.py`
-- `docs/eval-reports/data/<run-date>-standards-rechunk-clone/`
-
-**Commits** (① is a stub, committed before any real work):
-① stub: docstring stating derived-column route, read-only source, clone-only apply
-② tool with tests on fixtures (idempotent, never writes the source database)
-③ database copy + clone; dry run: counts of changed paths and chunks
-④ apply on the clone; GPU embed time and counts recorded
-
-**Verification:**
-- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
-- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
-- `conda run -n agent-rag-research ruff check app/restructure_blocks.py app/test_restructure_blocks.py`
-- The tool opens the source `mode=ro` (a write attempt fails in the test)
-- `--collection` explicit on every command; the first apply is `--dry-run`
-
-**Acceptance / falsification criterion.** Clone holds re-chunked standards with chunk count and changed-text count equal to the dry run; the live collection and database are byte-unchanged (point count, sampled vectors, file hash of the live database). Falsified if the live database hash changes.
-
-**Gates / depends on.** Depends on: CQ-12, CQ-13, CQ-14, CQ-8, CQ-11. Operator answers: F2, F3, F7. Gates: CQ-16.
-
-**Needs.** GPU: y · services up: embedder + reranker containers, vector store, corpus database (read-only) (embedder for the clone) · operator sign-off: n (no protected path is touched); operator answers: F2, F3, F7 · re-embed: y (about 35k, standards whole corpus, estimate). Also: GPU free (F3); vector store (F2); operator answer F7 on the section-path route; about 5-15 min GPU (estimate).
-
-**Model tier and size.** Sonnet; M (up to 1 day of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
-
-**Risk and rollback.** Mixing the derived column with the stored path in later tooling. Mitigation: derived route documented in the record; nothing live changes. Rollback: delete the clone and the database copy.
-
-**Docs to update in the same PR.** Record; PROJECT-STATUS via EP-5. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-5 carries those entries from this ticket's merged SHA.
-
-#### CQ-16: Measure the standards re-chunk against baseline and decide
-
-Labels: wave:3-gated-change, area:corpus, area:eval, needs-gpu, needs-services, size:S. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/CQ-16-standards-rechunk-verdict.md`.
-
-**Review cross-reference:** S-24. **Wave:** W3 gated changes after baselines.
-
-**Why.** Structure fixes are only worth a live re-embed if answers improve: the gate (EV-18) is a count of structure-attributable misses, and the standards fixture is scored by the chunker-independent excerpt metric so old and new chunkers are comparable (review S-24).
-
-**Scope.**
-- In:
-  - Run the standards GT on live and on the CPU-rebuilt clone, same code, excerpt metric, paired flips by stratum; plus the structural checks (furniture roots 0, stub rate under 2%, bare-number stubs 0).
-- Out (explicitly):
-  - Applying to the live collection (follow-on ticket on ADOPT only; needs F7).
-
-**Owns** (files this ticket may touch; anything else is out of bounds):
-- `docs/eval-reports/<run-date>-standards-rechunk-verdict.md`
-- `docs/eval-reports/data/<run-date>-standards-rechunk-verdict/`
-
-**Commits** (① is a stub, committed before any real work):
-① stub: report skeleton; rule: ADOPT only if net +3 excerpt hits on the standards set, flips at least 3:1, no stratum losing more than 1, and the structural checks pass
-② Pre-registered in commit 1; no metric, threshold or fixture changes afterwards (dated addendum only).
-③ live and clone arms; MANIFEST
-④ report
-
-**Verification:**
-- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
-- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
-- Every command names `--collection` (live and clone separately)
-- Gold chunk ids of re-chunked documents are not used for scoring
-
-**Acceptance / falsification criterion.** Verdict applies the stated rule; edition and authority strata (n=4 each) are shown as descriptive only. Ceiling: gain bounded by the EV-18 structure-attributable miss count. Falsified if the live arm differs from EV-18's beyond the jitter envelope.
-
-**Gates / depends on.** Depends on: CQ-15, EV-18. Operator answers: F3. Gates: CQ-18, EP-5.
-
-**Needs.** GPU: y · services up: embedder + reranker containers, vector store, corpus database (read-only) · operator sign-off: n (no protected path is touched); operator answers: F3 · re-embed: n. Also: GPU free (F3); about 20-30 min GPU (estimate).
-
-**Model tier and size.** Sonnet; S (up to 2 h of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
-
-**Risk and rollback.** Gain unobservable at n=94. Mitigation: UNDERPOWERED is a verdict. Rollback: delete the clone.
-
-**Docs to update in the same PR.** Report; PROJECT-STATUS via EP-5. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-5 carries those entries from this ticket's merged SHA.
-
-#### CQ-17: Add BM25 saturation and length normalisation to the sparse arm behind a flag
-
-Labels: wave:3-gated-change, area:corpus, area:retrieval, size:M. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/CQ-17-bm25-weighting-in-sparse-arm.md`.
-
-**Review cross-reference:** S-25. **Wave:** W3 gated changes after baselines.
-
-**Why.** The sparse arm is raw term frequency times IDF with no saturation or length normalisation although its docstring says 'BM25-style' (`rag/vector_index.py:112`); legacy main chunks are unbounded (8,487 chunks over 8,000 characters), so long chunks can dominate (RV-1 F-1.6). A sparse recompute is CPU-only, so bundling it with ligature repair 'to save cost' is wrong and would confound attribution (review S-25).
-
-**Scope.**
-- In:
-  - Index-time weight `tf*(k1+1)/(tf + k1*(1-b+b*len/avglen))` behind an explicit option, `avglen` measured once per corpus from stored chunks (CPU) and recorded; applies only when (re)computing sparse vectors (`app.resparse` on a clone); default off.
-  - Starts only after EV-22 (S-17 done).
-- Out (explicitly):
-  - Edge-punctuation stripping in the tokenizer (measured effect on 12-26% of tokens, but it changes tokens; include only if the operator wants it in this A/B: stated as a separate flag, never bundled). Applying to any live collection. The A/B (CQ-18).
-
-**Owns** (files this ticket may touch; anything else is out of bounds):
-- `rag/vector_index.py`
-- `rag/test_vector_index.py`
-- `rag/sparse_tokens.py`
-- `rag/test_sparse_tokens.py`
-- `app/resparse.py`
-- `app/test_resparse.py`
-
-**Commits** (① is a stub, committed before any real work):
-① stub: docstring with the formula, parameters (k1, b, avglen), the default-off guarantee and the one-recompute-per-arm rule
-② failing tests: option off leaves vectors byte-identical; option on gives the expected weights on a toy corpus
-③ implementation to green
-④ avglen measurement helper and recorded constants per corpus
-
-**Verification:**
-- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
-- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
-- `conda run -n agent-rag-research ruff check rag/vector_index.py rag/test_vector_index.py rag/sparse_tokens.py rag/test_sparse_tokens.py app/resparse.py app/test_resparse.py`
-- Identical sparse vectors with the option off on 200 stored chunks (RQ-5 check reused)
-- `conda run -n agent-rag-research python -m pytest -q rag/test_vector_index.py rag/test_sparse_tokens.py app/test_resparse.py -o addopts="--disable-socket"`
-
-**Acceptance / falsification criterion.** Option off: byte-identical vectors; option on: weights match a hand-computed toy example; avglen constants recorded with the command that produced them. Falsified if default behaviour changes by one byte.
-
-**Gates / depends on.** Depends on: EV-22, CQ-9, RQ-5. Gates: CQ-18, EP-5.
-
-**Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
-
-**Model tier and size.** Sonnet; M (up to 1 day of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
-
-**Risk and rollback.** Query-side tokens stay binary while index weights change, which a later reader might misread as a bug. Mitigation: documented in the docstring. Rollback: revert; no index depends on it.
-
-**Docs to update in the same PR.** PROJECT-STATUS via EP-5. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-5 carries those entries from this ticket's merged SHA.
-
-#### CQ-18: Run the BM25-weighting A/B on a repaired clone
-
-Labels: wave:3-gated-change, area:corpus, area:eval, needs-gpu, needs-services, size:M. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/CQ-18-bm25-weighting-ab.md`.
-
-**Review cross-reference:** S-25. **Wave:** W3 gated changes after baselines.
-
-**Why.** Whether length normalisation and saturation help the sparse arm is unmeasured; a separate A/B keeps attribution clean after the ligature A/B (review S-25).
-
-**Scope.**
-- In:
-  - On a fresh clone: resparse with the option on (CPU), run the standards, causal-books and papers-passage sets and the lexical strata (standards clause lookups, books terminology) against the live baseline, paired flips.
-- Out (explicitly):
-  - Live application (follow-on on ADOPT only). Combining with any other change.
-
-**Owns** (files this ticket may touch; anything else is out of bounds):
-- `docs/eval-reports/<run-date>-bm25-weighting-ab.md`
-- `docs/eval-reports/data/<run-date>-bm25-weighting-ab/`
-
-**Commits** (① is a stub, committed before any real work):
-① stub: report skeleton; rule: ADOPT only if net +3 items on at least one set, no set losing more than 1, and a gain on the lexical strata, else REJECT
-② Pre-registered in commit 1; no metric, threshold or fixture changes afterwards (dated addendum only).
-③ clone built and resparsed; counts recorded
-④ arms run; MANIFEST
-⑤ report; clone deleted
-
-**Verification:**
-- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
-- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
-- Every command names `--collection`; the live collection is never an apply target
-
-**Acceptance / falsification criterion.** Verdict applies the stated rule per set (never averaged); the ceiling is stated per stratum (BM25 floor from EV-15 shows where lexical headroom exists). Falsified if the baseline arm differs from EV-16/EV-18 beyond the jitter envelope.
-
-**Gates / depends on.** Depends on: CQ-17, EV-22, EV-16, EV-18, CQ-16. Operator answers: F2, F3. Gates: RIDER-1, EP-5.
-
-**Needs.** GPU: y · services up: embedder + reranker containers, vector store, corpus database (read-only) · operator sign-off: n (no protected path is touched); operator answers: F2, F3 · re-embed: n. Also: GPU free (F3); vector store (F2); 6-8 GB for a clone.
-
-**Model tier and size.** Sonnet; M (up to 1 day of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
-
-**Risk and rollback.** Disk or contention; mitigations as CQ-7. Rollback: delete the clone.
-
-**Docs to update in the same PR.** Report; PROJECT-STATUS via EP-5. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-5 carries those entries from this ticket's merged SHA.
+**Docs to update in the same PR.** The report or note this ticket writes is its doc (section 7 doc-map row). Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
 
 #### MC-4: Slim the MCP wire by projecting duplicated envelope fields away
 
-Labels: wave:3-gated-change, area:mcp, size:S. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/MC-4-mcp-wire-projection.md`.
+Labels: wave:3-gated-change, area:mcp, size:S, parked. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/parked/MC-4-mcp-wire-projection.md`.
 
 **Review cross-reference:** S-26. **Wave:** W3 gated changes after baselines.
+
+**Parked, do not start.** Parked-until: start only if F5 = yes AND MC-3 telemetry shows agents lowering the default k. Kill criterion: killed if F5 = no, or MC-3 telemetry shows default-k calls are not lowered, or a standards k=10 response (about 4.2k tokens) is acceptable to the operator.
 
 **Why.** 57-58% of a standards `semantic_search` response is envelope rather than passage (k=10 is about 4.2k tokens; a Waymo call averages about 10.8k): `bbox`, a `snippet` that lies inside `passage_text` for 94-100% of results, and repeated `paper_id`/`block_id`. Agents already lower `k` to cope (RV-4 F-4.6; review S-26).
 
@@ -2268,7 +2204,7 @@ Labels: wave:3-gated-change, area:mcp, size:S. Issue file: `docs/superpowers/pla
 
 **Acceptance / falsification criterion.** Token count of a standards k=10 response falls by at least 25% with identical `passage_text` and citation content; `get_span` still round-trips. Falsified if `passage_text` differs anywhere or the drop is under 25%.
 
-**Gates / depends on.** Depends on: MC-3. Operator answers: F5. Gates: EP-5.
+**Gates / depends on.** Depends on: MC-3. Operator answers: F5. Gates: none.
 
 **Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched); operator answers: F5 · re-embed: n. Also: operator answer F5 (wire as a projection of the frozen envelope).
 
@@ -2276,13 +2212,15 @@ Labels: wave:3-gated-change, area:mcp, size:S. Issue file: `docs/superpowers/pla
 
 **Risk and rollback.** A client that read a dropped field breaks. Mitigation: only fields no LLM can use are dropped; the dropped list is documented in the server instructions. Rollback: revert.
 
-**Docs to update in the same PR.** PROJECT-STATUS section 2 via EP-5. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-5 carries those entries from this ticket's merged SHA.
+**Docs to update in the same PR.** Section 2: the MCP wire projection. Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
 
 #### RQ-3: Run the relevance-demotion arms on the focus and passage sets
 
-Labels: wave:3-gated-change, area:retrieval, area:eval, needs-gpu, needs-services, size:M. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/RQ-3-focus-lever-ab.md`.
+Labels: wave:3-gated-change, area:retrieval, area:eval, needs-gpu, needs-services, size:M, parked. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/parked/RQ-3-focus-lever-ab.md`.
 
 **Review cross-reference:** S-21. **Wave:** W3 gated changes after baselines.
+
+**Parked, do not start.** Parked-until: start only if EV-17's off-topic top-10 share exceeds the operator's F6 bar; needs RQ-2 built and F3. Kill criterion: killed if EV-17's share is below the bar, or an offline demotion on EV-17 rows (using `relevance_score`) removes under 50% of off-topic top-10 slots or drops any gold on papers-passage or books.
 
 **Why.** Off-topic papers cannot be kept out of an answer today. RQ-2 built a default-off demotion lever; the frozen topic-focus protocol (section 6) pre-registers its adoption rule. Whether the lever is needed at all depends on how material the baseline off-topic share is (operator question F6) (review S-21).
 
@@ -2313,7 +2251,7 @@ Labels: wave:3-gated-change, area:retrieval, area:eval, needs-gpu, needs-service
 
 **Acceptance / falsification criterion.** ADOPT only if the protocol's rule holds: at least 50% relative drop in off-topic top-10 share with zero gold losses on papers-passage and causal-books and the legitimate-off-topic guards intact; otherwise REJECT. Ceiling: the achievable drop is bounded by the share of off-topic papers whose `relevance_score` falls below the floor (printed from the 0.923-AUROC operating points). Falsified if the baseline arm differs from EV-16/EV-17 beyond the jitter envelope.
 
-**Gates / depends on.** Depends on: RQ-2, EV-16, EV-17, EV-22. Operator answers: F3, F6. Gates: CQ-10, RIDER-1, EP-5.
+**Gates / depends on.** Depends on: RQ-2, EV-16, EV-17. Operator answers: F3, F6. Gates: none.
 
 **Needs.** GPU: y · services up: embedder + reranker containers, vector store, corpus database (read-only) · operator sign-off: n (no protected path is touched); operator answers: F3, F6 · re-embed: n. Also: GPU free (F3); operator-set materiality bar (F6); about 15 min GPU (estimate).
 
@@ -2321,116 +2259,15 @@ Labels: wave:3-gated-change, area:retrieval, area:eval, needs-gpu, needs-service
 
 **Risk and rollback.** Demotion starves a pool that is already 40% off-topic. Mitigation: pool sizes are recorded and a starved pool is a REJECT reason. Rollback: n/a (flag only).
 
-**Docs to update in the same PR.** Report and protocol addendum; PROJECT-STATUS via EP-5. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-5 carries those entries from this ticket's merged SHA.
-
-### W4 rider and what it unblocks
-
-#### EP-5: Batch BACKLOG and PROJECT-STATUS updates for waves 3 and 4
-
-Labels: wave:4-rider, area:docs, size:S. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/EP-5-status-batch-final.md`.
-
-**Review cross-reference:** S-13. **Wave:** W4 rider and what it unblocks.
-
-**Why.** Same reason as EP-3 and EP-4: the gated tickets land verdicts (ADOPT, REJECT, UNDERPOWERED, closed-by-gate) that belong in the ledger and in PROJECT-STATUS section 5 (tried and failed) in one pass.
-
-**Scope.**
-- In:
-  - BACKLOG rows flipped with SHAs, including tickets closed by their gate ('CLOSED -- gate not met: <report>'); ledger entries; section 5 entries for each REJECT; the list of on-ADOPT follow-on tickets the operator should now commission.
-- Out (explicitly):
-  - Writing the follow-on tickets themselves.
-
-**Owns** (files this ticket may touch; anything else is out of bounds):
-- `docs/PROJECT-STATUS.md`
-- `docs/BACKLOG.md`
-
-**Commits** (① is a stub, committed before any real work):
-① stub: checklist of W3/W4 tickets and their gate outcomes
-② BACKLOG rows + SHAs
-③ PROJECT-STATUS ledger and section 5 entries
-④ follow-on list
-
-**Verification:**
-- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
-- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
-- `git cat-file -e <sha>^{commit}` for every SHA written
-- Every verdict quoted equals its report's verdict line
-
-**Acceptance / falsification criterion.** Every W3/W4 ticket has a row stating DONE, CLOSED-by-gate or BLOCKED with its reason; no verdict text differs from its report. Falsified if any SHA fails to resolve.
-
-**Gates / depends on.** Depends on: EP-4, RQ-3, CQ-9, CQ-11, CQ-16, CQ-17, CQ-18, MC-4, RIDER-1, RQ-4. Gates: nothing further (programme close).
-
-**Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
-
-**Model tier and size.** Haiku; S (up to 2 h of agent work). Mechanical work, no judgement calls.
-
-**Risk and rollback.** Low. Rollback: revert.
-
-**Docs to update in the same PR.** This ticket is the docs obligation for waves 3 and 4.
-
-#### RIDER-1: Raise the single foundation rider PR with only the adopted items
-
-Labels: wave:4-rider, area:ops, area:eval, area:retrieval, needs-signoff, size:M. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/RIDER-1-foundation-signoff-rider.md`.
-
-**Review cross-reference:** review (D), RV-5 F-5.6, RV-3 F-1.11, RV-6 F-A5, RV-1 F-1.10. **Wave:** W4 rider and what it unblocks.
-
-**Why.** Several adopted changes can only land on protected paths (`contracts/`, `rag/config.py`, `config.example.yaml`, `rag/fakes/`, `fixtures/`, `.github/`), and every unrelated protected-path PR pays the same sign-off toll; batching them into one PR pays it once (`docs/AGENT-OPERATIONS-LESSONS.md` section 6.3). It is raised only after the wave-2 verdicts so only adopted items ride.
-
-**Scope.**
-- In:
-  - (1) `Config` fields (in `contracts/config.py`, loader/defaults in `rag/config.py`, `config.example.yaml`) for whichever of `drop_stub_chunks` (EV-21), the focus lever (RQ-3) and the query-path `gpu_lock_timeout` (OP-5) were ADOPTED; none if none were.
-  - (2) `relevance_filter="embedding"` fails validation until a gate exists (dead lever, RV-5 F-5.6).
-  - (3) Only if EV-19's gate opened: the `rerank_score` metadata note in `contracts/retriever.py` and its DATA-CONTRACTS section M7 paragraph.
-  - (4) `rag/fakes/fake_vector_store.py` imports the shared `sparse_tokens()` (RQ-5).
-  - (5) Promote the three ground-truth sets to `fixtures/eval/` with one parametrised invariants test (unique ids, strata vocabulary, no gold on absent items, 6-word rule, excerpt verbatim in the live database with a skip when absent) and the SHA-256 in each set's metadata (RV-3 F-1.11), after the hash lock.
-  - (6) `.github/`: a `ruff` step in CI and the nightly real-adapter workflow labelled manual-only (RV-6 F-A5).
-  - Conditional item 7, present only if F7 = rewrite: DATA-CONTRACTS wording for `Block.section_path` (review S-24 sign-off need).
-- Out (explicitly):
-  - The `chunker_id` migration (explicitly not doing). Any logic change beyond the listed edits. Pushing to the default branch or merging (human only). Items whose verdict was REJECT or UNDERPOWERED: they drop out, the rider shrinks.
-
-**Owns** (files this ticket may touch; anything else is out of bounds):
-- `contracts/config.py`
-- `contracts/retriever.py`
-- `rag/config.py`
-- `config.example.yaml`
-- `rag/fakes/fake_vector_store.py`
-- `rag/fakes/test_fake_vector_store.py`
-- `fixtures/eval/`
-- `DATA-CONTRACTS.md`
-- `.github/workflows/ci.yml`
-- `.github/workflows/nightly-real-adapters.yml`
-
-**Commits** (① is a stub, committed before any real work):
-① stub: PR description draft listing each item, its source verdict and the operator decision it needs; empty diff
-② items (4) and (5) (no verdict dependency)
-③ items (1)-(3) for the adopted set only, each citing its verdict report
-④ item (6) and conditional item 7
-⑤ local enforcement transcript with the `foundation-change` label noted
-
-**Verification:**
-- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (zero GPU, zero network; report the summary line)
-- `EV=$(mktemp) && echo '{}' > "$EV" && GITHUB_EVENT_NAME=push GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement` (report the verdict line)
-- `conda run -n agent-rag-research ruff check contracts/config.py contracts/retriever.py rag/config.py rag/fakes/fake_vector_store.py rag/fakes/test_fake_vector_store.py`
-- `conda run -n agent-rag-research python -m pytest -q -o addopts="--disable-socket -m 'not real_adapter'"` (includes the new invariants test)
-- `EV=$(mktemp) && printf '{"pull_request":{"number":0,"labels":["foundation-change"],"base":{"sha":"%s"},"head":{"sha":"%s"}}}' "$(git merge-base origin/main HEAD)" "$(git rev-parse HEAD)" > "$EV" && GITHUB_EVENT_NAME=pull_request GITHUB_EVENT_PATH="$EV" conda run -n agent-rag-research python -m ci.run_enforcement`
-- Mutation proof for the invariants test: edit one question in a copy and watch it fail
-
-**Acceptance / falsification criterion.** One PR only; every protected-path edit is traceable to a listed item with an ADOPT verdict or an operator decision; the invariants test passes on the three promoted sets and fails when one question is altered; the PR carries the `foundation-change` label and waits for the operator's merge. Falsified if the PR touches any protected path not listed.
-
-**Gates / depends on.** Depends on: EV-11, EV-18, EV-19, EV-20, EV-21, RQ-3, RQ-5, OP-5, CQ-18. Operator answers: F4, F7. Gates: RQ-4, EP-5.
-
-**Needs.** GPU: n · services up: none · operator sign-off: y: this ticket IS the sign-off request; the operator merges (never an agent); operator answers: F4, F7 · re-embed: n. Also: operator sign-off and merge; push of the local commits so CI can judge them (F4).
-
-**Model tier and size.** Sonnet; M (up to 1 day of agent work). Logic or authoring work; no Opus-level design adjudication is needed.
-
-**Risk and rollback.** A broad rider is slow to review. Mitigation: items with no adopted verdict are omitted, so it can be small. A wrong Config default could change serving: all new fields default to current behaviour. Rollback: revert the merge (single PR).
-
-**Docs to update in the same PR.** DATA-CONTRACTS section M7 paragraph for item (3) (in this PR); PROJECT-STATUS via EP-5. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-5 carries those entries from this ticket's merged SHA.
+**Docs to update in the same PR.** The report or note this ticket writes is its doc (section 7 doc-map row). Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
 
 #### RQ-4: Expose the cross-encoder score in result metadata
 
-Labels: wave:4-rider, area:retrieval, area:mcp, needs-signoff, size:S. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/RQ-4-expose-rerank-score-metadata.md`.
+Labels: wave:4-rider, area:retrieval, area:mcp, needs-signoff, size:S, parked. Issue file: `docs/superpowers/plans/2026-11-10-enhancement-programme-issues/parked/RQ-4-expose-rerank-score-metadata.md`.
 
 **Review cross-reference:** S-20. **Wave:** W4 rider and what it unblocks.
+
+**Parked, do not start.** Parked-until: only after an abstention feature is commissioned, the EV-19 census gate can open (60+ distinct absent items) and RIDER-1 has landed. Kill criterion: killed if the EV-19 census CI contains 0.5 on two of three sets.
 
 **Why.** Only if the census (EV-19) shows the reranker score separates answerable from absent: callers today get the fusion score, which carries no absolute relevance, so no abstention or focus signal can be built on it (review item a; RV-4 F-4.1). `GroundedResult.metadata` is the contract-reserved slot, so populating it is the rider's act.
 
@@ -2461,7 +2298,7 @@ Labels: wave:4-rider, area:retrieval, area:mcp, needs-signoff, size:S. Issue fil
 
 **Acceptance / falsification criterion.** Metadata carries the reranker score; `score`, order and `passage_text` are byte-identical to before on the fake; the EV-16 rows reproduced on a small live sample match order exactly. Falsified if any order or `score` differs.
 
-**Gates / depends on.** Depends on: RIDER-1, EV-19, RQ-1. Gates: EP-5.
+**Gates / depends on.** Depends on: RIDER-1, EV-19, RQ-1. Gates: none.
 
 **Needs.** GPU: n · services up: none · operator sign-off: y: blocked by RIDER-1 item 3 (contract note) merging · re-embed: n
 
@@ -2469,7 +2306,7 @@ Labels: wave:4-rider, area:retrieval, area:mcp, needs-signoff, size:S. Issue fil
 
 **Risk and rollback.** A caller treating the new field as calibrated confidence. Mitigation: the contract note says 'uncalibrated rank-order score'. Rollback: revert.
 
-**Docs to update in the same PR.** DATA-CONTRACTS section M7 via the rider; PROJECT-STATUS via EP-5. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-5 carries those entries from this ticket's merged SHA.
+**Docs to update in the same PR.** DATA-CONTRACTS section M7 paragraph rides the RIDER-1 amendment that adopts this item. Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
 
 ## 9. Will not do, and why
 
@@ -2490,112 +2327,127 @@ So nobody re-proposes these without the stated condition.
 | MCP-E1 find-similar, MCP-E4 taxonomy, federation (RV-4 F-4.10, F-4.4) | Zero log evidence (2 `scan_methods` calls in 1,198). | MC-3 telemetry shows more than 30% of hand-written scan patterns are alias-style alternations of one method (E4), or find-similar demand appears (E1). |
 | Self-hosted CI runner (RV-6 F-A5) | An always-on cost on a GPU workstation; manual-only and documented is enough (RIDER-1 item 6). | None stated. |
 | `_normalize_text` per-corpus table (RV-2 F-2.8) | 23 blocks affected; only the regex guard is worth doing and it is folded into CQ-14. | None stated. |
+| MCP confidence/abstention wiring and score floors (review section 2 and 10 scope notes) | Needs at least 60 distinct real absent items; the sets hold 9-24. | An abstention feature is commissioned and 60+ absent items exist (parked EV-13/EV-19/RQ-4). |
+| Focus lever options C (blending) and D (collection split); hard drop or filter of off-topic papers (review, operator decision) | Rejected by the review's reasoning and the operator decision: the off-topic papers stay; only demotion, opt-in, is on the table (parked RQ-2/RQ-3). | The operator reverses the decision. |
+| Writing `relevance_score` into the vector payload (RQ-3 follow-on) | No evidence of pool starvation. | RQ-3 observes pool starvation. |
+| GPU-lock priority scheduler; reranker-failure fallback to fused order (rejected in OP-5's Out) | The holder file is the smallest step; a fallback changes behaviour and needs a Coverage flag (foundation). | Repeated `run_valid: false` from lock contention (section 11 falsifier c). |
+| Restart policy on containers; auto-restart of the foreign model server | A restart on a contended GPU is how the foreign-holder situation arises. | The operator decides the foreign process is theirs to restart. |
+| CQ-10 and CQ-11 (embedder token-limit assessment and the truncation decision note) | CUT by the minimizer: the ticket's own ceiling says the gain on current fixtures is 0 by construction (no ground-truth item has a truncated gold chunk; 0 truncated in standards; 0.79% of main chunks); it needs an operator container restart with VRAM/OOM risk; no harm measured. CQ-11 is derived mechanically from CQ-10 and one BACKLOG line covers it. | Any EV-16 miss has its gold or top-10 chunk in `truncated_chunk_ids_main.txt`. |
+| Edge-punctuation tokenizer change (named in CQ-17's Out) | No evidence; would change the sparse arm beyond the parked weighting experiment. | CQ-18 ADOPT plus a miss analysis showing edge punctuation. |
+| Baselines for the Motional, Waabi and Waymo corpora (implied by omission before) | No ground truth in this programme exists for them; the three baselines are main, standards and focus only. | The operator commissions a ground-truth set for one of them. |
+| Resetting per-corpus defaults to 32/0.5 (review S-19) | The frozen runbook rule G-1 says defaults stay unless an arm wins; G-1 is the rule that applies (EV-20), a reset is a config change needing sign-off. | The operator signs a reset, or G-1 is amended by a dated addendum. |
+| Any off-device backup tooling | No target exists (F1). | F1 yields a target. |
+| The 20 s query-path lock timeout and its Config field (cut from OP-5) | A behaviour change on the baseline path under contention, which is what wave 2 is. | A contended real session shows the 300 s wait. |
+| Pieces cut from SHRINK tickets: `escalation_eval.py` and `score_distribution_census.py` `--collection` change (EV-7); `list_stub_chunks.py --ab` rewiring (EV-9); `merge_gt` orphan tolerance (EV-11); the `documents` list in `corpus_stats` (MC-2); `--client-label` (MC-3); `status.py:830` fallback and `reindex_idf` (OP-6); HANDOFF and precision-95 tick rows (EP-6); table sup/sub/span handling (CQ-13); standards and Waymo grids and the weight arms (EV-20) | Cut by the minimizer: not run anywhere in the programme, no observed harm, or a no-op tool. | The consumer is commissioned (for example EV-21 commissions the `--ab` rewiring), or an observed failure names the piece. |
+| RV-3 F-1.1 one-command regression gate (manifest + `--baseline`) (lane finding, formerly unplaced) | Dropped now; the stored baselines do not exist yet. | After EV-16/EV-18 manifests exist: a diff script over stored baselines. |
+| RV-3 F-1.6 question-style realism controls (lane finding, formerly unplaced) | Dropped: needs operator time; the title-ablated arm is already reported and the 'questions twice as long as real queries' caveat is in section 2. | The operator provides time for a logged-query comparison. |
+| RV-2 F-2.7 front/back-matter role classifier and payload tag (lane finding, formerly unplaced) | Dropped. | EV-9 chunk ids show reference or TOC chunks in top-10 slots. |
+| RV-2 F-2.11 books outline join for chapter paths (lane finding, formerly unplaced) | Dropped. | EV-16 shows flat-book chapter-level misses. |
+| RV-2 F-2.13 chunks over 3,500 characters metric (lane finding, formerly unplaced) | Dropped (low value). | None stated. |
+| RV-4 F-4.7 `get_section` clause-prefix match, `scan_corpus` `section_pattern` (lane finding, formerly unplaced) | Dropped: 4 clause references in 242 queries. | MC-3 telemetry shows clause references in volume. |
+| RV-4 F-4.9 error text without absolute path, nearest-id hints, async tool wrappers (lane finding, formerly unplaced) | Dropped (low). | None stated. |
+| RV-4 F-4.10 reorder BACKLOG MCP-E rows (lane finding, formerly unplaced) | Dropped: the evidence ranking is already recorded in this table. | None. |
+| RV-6 F-A7 pre-migration snapshot guard, `busy_timeout` (the `quick_check` part is carried by OP-3) (lane finding, formerly unplaced) | Dropped: no migrations are planned and `migrations/` is protected. | A migration is scheduled. |
+| RV-6 F-A9 canary eval slice and usage-log top-score columns (lane finding, formerly unplaced) | Dropped: the canary is the regression gate again (F-1.1). | Same as F-1.1. |
+| RV-6 F-A10 dashboard bind default and `.phase0-data` naming (the doctor disk check is folded into OP-6) (lane finding, formerly unplaced) | Dropped (low). | None stated. |
+| RV-5 F-5.7 on-topic supply understated; F-5.11 other corpora not rebuildable from tracked files; F-5.12 first-seed runs not reproducible (lane finding, formerly unplaced) | Dropped: no harvest is scheduled. | A harvest is scheduled. |
+| RV-1 F-1.12 per-paper diversity default (lane finding, formerly unplaced) | Dropped: the lane recommends no change. | None. |
 
-Also not done, by operator decision: removing the off-topic papers; any GPU work before F3; any protected-path edit outside RIDER-1.
+Also not done, by operator decision: removing the off-topic papers; any GPU work before F3; any protected-path edit outside RIDER-1. Tickets dropped without a will-not-do row: the batch tickets EP-3, EP-4, EP-5 (documentation is paid in the same PR, rule 13) and EP-7 (absorbed by OP-3, OP-5, OP-7).
 
 ## 10. Traceability
 
-Every review item maps to a ticket, to 'folded into', or to 'not doing'.
+Every review item maps to an active ticket, a parked ticket, 'merged into <id>' or 'not doing: <reason>'. Nothing is unmapped.
 
-| review item | claim | ticket(s) / disposition |
+| review item | claim | disposition |
 |---|---|---|
-| S-01 | No backup since 07-30, none off-device | OP-4 (snapshot now), OP-3 (quick_check + checksums). Off-device copy and deletions: no ticket until a target exists (F1) |
-| S-02 | Eval inputs not frozen | Folded into EV-5 (done: run scripts verify hashes, no run-time fixture rewrite, run from the worktree under test, point-count guard, protocols and addenda, title-ablation tool); residual EV-7 (required `--collection`, hash in report, gold-id preflight); EV-15 (BM25 floor, the 'EV-5b' of the protocols) |
-| CQ-5 follow-up | 38 more authority and 38 more edition items (CQ-5 report section 5) | CQ-19, CQ-20 |
-| S-03 | Chunk-identity scoring ignores alternatives | EV-8 (excerpt metric), EV-11 (alternatives recorded, hashes re-frozen) |
-| S-04 | Cross-encoder score never captured | EV-13 (capture + census tool), EV-19 (the run) |
-| S-05 | CQ-3 pre-registration wrong fixtures, no minimum effect | EV-12 (addendum); EV-9 (chunk ids in rows, enabler) |
-| S-06 | GPU contention unnamed and slow to fail | OP-5 (holder file, 20 s query path, doctor), EV-10 (eval invalid on lock timeout) |
-| S-07 | Wrong-corpus guards cover one path | OP-6 (helper, tools, doctor, status fallback), OP-2 (the two serve call sites) |
-| S-08 | Unknown paper_id returns empty | MC-1 |
-| S-09 | Three one-line retrieval defects | RQ-1 |
-| S-10 | Cold agent cannot see filters/corpus | MC-2 |
-| S-11 | Telemetry blind on scan/get tools | MC-3 |
-| S-12 | Containers not reproducible | OP-7 |
-| S-13 | Docs drift, chunker provenance, Decision 1 | EP-1 (done: PROJECT-STATUS, README, AGENTS rows); EP-2 itself (BACKLOG rows 1, 5, 6, 17, 18, B-5 corrections, as allowed by the coordinator); EP-6 (CORPORA.md, DECISIONS-PENDING, HANDOFF, precision-95 plan rows, no-ingest rule); EP-7 (RUNBOOK sections, row 22) |
-| S-14 | rechunk re-embeds unchanged text | CQ-8 |
-| S-15 | Filtered dense search without payload indexes | EV-14 |
-| S-16 | No baselines, reranker score untested | EV-16 (main), EV-17 (focus), EV-18 (standards), EV-19 (census); TEI `/info` check folded into EV-16 |
-| S-17 | Ligature repair in sparse arm | CQ-7 (CPU clone), EV-22 (A/B, stratified by damaged vs clean gold) |
-| S-18 | Stub filter | EV-21 |
-| S-19 | Depth and weight per corpus | EV-20 |
-| S-20 | Expose cross-encoder score | RQ-4 (after RIDER-1 item 3), gate = EV-19 |
-| S-21 | Focus lever: post-rerank demotion | RQ-2 (build, default off), RQ-3 (A/B and verdict), RIDER-1 item 1 |
-| S-22 | Payload indexes on live collections | CQ-9 (clone and verdict; live application is an on-ADOPT follow-on), gate = EV-14 |
-| S-23 | Bounded re-chunk of oversized main papers | Re-scoped after CQ-4 (done): CQ-10 (assess raising the embedder token limit), CQ-11 (decision: limit change, or truncation fix only inside a planned full re-chunk). The targeted re-chunk tickets were dropped because CQ-4 priced it at about 177k-212k embeddings |
-| S-24 | Standards structure bundle | CQ-12 (tracker + golden tests), CQ-13 (furniture pre-pass, table sup/sub/spans), CQ-14 (stub folding, regex guard), CQ-15 (re-derive + clone re-chunk), CQ-16 (verdict); gate counted in EV-18; F7 |
-| S-25 | BM25 saturation and length normalisation | CQ-17 (flag-gated implementation), CQ-18 (A/B) |
-| S-26 | Envelope slimming on the MCP wire | MC-4 (gate F5) |
-| (D) | Single foundation rider | RIDER-1 (items 1 to 6; conditional item 7 for F7) |
-| (E) | Not worth doing | Section 9 'Will not do' table; no ticket |
+| S-01 | No backup since 07-30, none off-device | OP-4 (active, IN PROGRESS, snapshot taken; vector-store data not copied, operator decision pending), OP-3 (active, quick_check + checksums + RUNBOOK backup section). Off-device copy and deletions: not doing until a target exists (section 9; F1) |
+| S-02 | Eval inputs not frozen | EV-5 (done); EV-7 (active, `app/retrieval_eval.py` only), EV-15 (active, BM25 floor). Not doing: the `--collection` change to `escalation_eval.py` and `score_distribution_census.py` (cut, section 9) |
+| CQ-5 follow-up | 38 more authority and 38 more edition items | CQ-19 (parked; absorbs CQ-20 = merged into CQ-19) |
+| S-03 | Chunk-identity scoring ignores alternatives | EV-8 (active), EV-11 (active) |
+| S-04 | Cross-encoder score never captured | EV-13 (parked), EV-19 (parked) |
+| S-05 | CQ-3 pre-registration wrong fixtures, no minimum effect | EV-12 (parked); EV-9 (active, chunk ids in rows) |
+| S-06 | GPU contention unnamed and slow to fail | OP-5 (active, holder file and doctor listing; the 20 s timeout is not doing now, section 9), EV-10 (active) |
+| S-07 | Wrong-corpus guards cover one path | OP-6 (active, snapshot and corpus_integrity helper, doctor pairing and disk checks; the `status.py` fallback and `reindex_idf` are not doing: cut), OP-2 (parked, the two serve call sites) |
+| S-08 | Unknown paper_id returns empty | MC-1 (active) |
+| S-09 | Three one-line retrieval defects | RQ-1 (parked, first post-baseline change) |
+| S-10 | Cold agent cannot see filters/corpus | MC-2 (active, without the `documents` list) |
+| S-11 | Telemetry blind on scan/get tools | MC-3 (active, without `--client-label`) |
+| S-12 | Containers not reproducible | OP-7 (active) |
+| S-13 | Docs drift, chunker provenance, Decision 1 | EP-1 (done); EP-2 and EP-2b themselves; EP-6 (active: CORPORA.md, DECISIONS-PENDING, no-ingest rule; the HANDOFF and precision-95 tick rows are not doing: cut); EP-7 merged into OP-3, OP-5, OP-7 (RUNBOOK sections, row 22); EP-3, EP-4, EP-5 not doing as tickets: documentation is paid in each ticket's own PR (rule 13) |
+| S-14 | rechunk re-embeds unchanged text | CQ-8 (parked) |
+| S-15 | Filtered dense search without payload indexes | EV-14 (active, read-only on the live collection) |
+| S-16 | No baselines, reranker score untested | EV-16, EV-17, EV-18 (active); EV-19 (parked); TEI `/info` check folded into EV-16 |
+| S-17 | Ligature repair in sparse arm | CQ-7 (parked), EV-22 (parked) |
+| S-18 | Stub filter | EV-21 (parked), EV-12 (parked prerequisite) |
+| S-19 | Depth and weight per corpus | EV-20 (active, shrunk: depth only, papers and books, conditional on headroom); standards depth decided by D-1; weight arms not doing now (section 9) |
+| S-20 | Expose cross-encoder score | RQ-4 (parked) |
+| S-21 | Focus lever: post-rerank demotion | RQ-2 (parked), RQ-3 (parked) |
+| S-22 | Payload indexes on live collections | CQ-9 (parked), gate = EV-14 |
+| S-23 | Bounded re-chunk of oversized main papers | CQ-10 and CQ-11: not doing: cut (section 9; reopen on a truncated gold chunk in an EV-16 miss) |
+| S-24 | Standards structure bundle | CQ-12, CQ-13 (shrunk to the furniture pre-pass), CQ-14, CQ-16 (absorbs CQ-15 = merged into CQ-16) (all parked); gate counted in EV-18; F7 |
+| S-25 | BM25 saturation and length normalisation | CQ-18 (parked; absorbs CQ-17 = merged into CQ-18) |
+| S-26 | Envelope slimming on the MCP wire | MC-4 (parked; gate F5) |
+| (D) | Single foundation rider | RIDER-1 (active, shrunk to items 5, 2, 6); items 1, 3, 4 and conditional item 7 return only by plan amendment when their source tickets are adopted |
+| (E) | Not worth doing | Section 9; no ticket |
 | (F) | Open operator questions | Section 3, each linked to the tickets it blocks |
 
 Lane findings and review adjudications kept by the synthesis:
 
 | finding | disposition |
 |---|---|
-| Review 1a (score discarded, RV-1 F-1.1, RV-4 F-4.1) | EV-13, EV-19, RQ-4 (=S-04, S-20) |
-| Review 1b (no payload index, RV-1 F-1.2) | EV-14, CQ-9 (=S-15, S-22) |
-| Review 1c (`_SectionTracker`, RV-2 F-2.1) | CQ-12 to CQ-16 (=S-24); flat books (D5) not fixable by the tracker and not ticketed (needs the PDF outline join, RV-2 F-2.11, not carried) |
-| Review 1d (patches vs re-chunk rule, RV-2 F-2.2/F-2.3) | Rule applied in CQ-10/CQ-11 (after CQ-4) and CQ-8 (text-hash reuse); full re-chunk and `chunker_id` in section 9; no-ingest rule in EP-6 |
-| Review 1e (saturation, run-time fixture rewrite, wrong checkout; RV-3 F-1.3, F-1.4) | EV-5 (done), EV-7, EV-15, EV-8, EV-11; passage-level headline and title-ablated arm are in the frozen protocols (EV-5) |
+| Review 1a (score discarded, RV-1 F-1.1, RV-4 F-4.1) | EV-13, EV-19, RQ-4 (parked; =S-04, S-20) |
+| Review 1b (no payload index, RV-1 F-1.2) | EV-14 (active), CQ-9 (parked) (=S-15, S-22) |
+| Review 1c (`_SectionTracker`, RV-2 F-2.1) | CQ-12, CQ-13, CQ-14, CQ-16 (parked; =S-24); flat books not fixable by the tracker and not ticketed (the PDF outline join, RV-2 F-2.11, is dropped, section 9) |
+| Review 1d (patches vs re-chunk rule, RV-2 F-2.2/F-2.3) | Rule applied by CQ-8 and CQ-16 (parked); the truncation route (CQ-10/CQ-11) is cut; full re-chunk and `chunker_id` in section 9; no-ingest rule in EP-6 (active) |
+| Review 1e (saturation, run-time fixture rewrite, wrong checkout; RV-3 F-1.3, F-1.4) | EV-5 (done), EV-7, EV-15, EV-8, EV-11 (active); passage-level headline and title-ablated arm are in the frozen protocols (EV-5) |
 | Review 1f (contamination cause, RV-5 F-5.1) | Section 9 (arXiv curl); the lexical gate is built with the next harvest |
-| Review 1g (backups, RV-6 F-A1) | OP-4, OP-3 |
-| Review 1h (CQ-1 hazard refuted as regression) | No ticket for the refuted part. Residual risk 1 (ingest into a live collection mixes chunkers/sparse versions): EP-6 no-ingest rule. Residual risk 2 (fake tokenizer): RQ-5 and RIDER-1 item 4 |
-| Review 'other claims': RV-4 F-4.2 | MC-1 |
-| RV-1 F-1.3 shared anchors (confirmed) | Folded into EV-8 (excerpt metric removes the anchor-equality blind spot) and EV-9 (chunk ids). The member-block (QW-1 Variant A) helper must treat fragments; QW-1 remains parked on T-F7 and is not part of this programme |
-| RV-1 F-1.9 300 s lock wait, RV-6 F-A3, F-A8 | OP-5, EV-10 |
-| RV-3 F-1.2 `--collection` default | EV-7 |
+| Review 1g (backups, RV-6 F-A1) | OP-4, OP-3 (active) |
+| Review 1h (CQ-1 hazard refuted as regression) | No ticket for the refuted part. Residual risk 1 (ingest into a live collection mixes chunkers/sparse versions): EP-6 no-ingest rule (active). Residual risk 2 (fake tokenizer): RQ-5 (parked), and rider item 4 which is not in the shrunk RIDER-1 |
+| Review 'other claims': RV-4 F-4.2 | MC-1 (active) |
+| RV-1 F-1.3 shared anchors (confirmed) | EV-8 (excerpt metric) and EV-9 (chunk ids), both active. QW-1 remains parked on T-F7 and is not part of this programme |
+| RV-1 F-1.9 300 s lock wait, RV-6 F-A3, F-A8 | OP-5 (holder only), EV-10 (active); the 20 s timeout is not doing now |
+| RV-3 F-1.2 `--collection` default | EV-7 (active; `app/retrieval_eval.py` only) |
 | RV-1 F-1.11 critique of CQ-3 (refuted) | No action. CQ-3 overfetches and stops once the pool is full |
-| RV-6 F-A6 / Decision 1 (refuted as open) | EP-6 closes Decision 1 with the config evidence; `reindex_idf` default flip in section 9 |
+| RV-6 F-A6 / Decision 1 (refuted as open) | EP-6 closes Decision 1 with the config evidence; `reindex_idf` default flip: not doing (section 9) |
 | RV-5 foundation-protection notes; F-5.5 (refuted) | RIDER-1 item 2 carries the real protected change (`relevance_filter`); labels are in git, so no ticket |
-| RV-5 F-5.6 inert config | RIDER-1 item 2 |
-| RV-3 F-1.11 promotion of the three sets | RIDER-1 item 5 |
-| RV-6 F-A5 CI (ruff step, nightly manual-only, push) | RIDER-1 item 6; push is operator question F4. Self-hosted runner: section 9 |
-| RV-3 F-1.14 ligature stratification | EV-22 |
-| RV-3 F-1.10 abstention minimum data | EV-19 (census only); no MCP wiring is proposed anywhere in this programme |
-| RV-2 F-2.5 / F-2.6 / F-2.8 (a) / F-2.10 | CQ-13, CQ-14 (regex guard), CQ-13 (table sup/sub/spans), CQ-14 (stub folding) |
-| RV-4 F-4.3, F-4.4 | MC-2 |
-| RV-4 F-4.5 | MC-3 |
-| RV-4 F-4.6 | MC-4 |
-| RV-4 F-4.11 | RQ-1 |
-| RV-1 F-1.4 (focus lever options) | RQ-2, RQ-3 (option A only); option B payload route only if RQ-3 sees starvation; C blending and D collection split rejected by the review's reasoning and the operator decision |
-| RV-1 F-1.5 (depth/weight) | EV-20 |
-| RV-1 F-1.6 (BM25 weighting) | CQ-17, CQ-18 |
-| RV-1 F-1.7, F-1.8 #7 | RQ-1 |
-| RV-1 F-1.10 shared tokenizer | RQ-5, RIDER-1 item 4 |
-| RV-6 F-A2 | OP-7 |
-| RV-6 B.1 punch list rows 1-23 | EP-1 (PROJECT-STATUS, README, AGENTS rows, done), EP-2 (BACKLOG rows), EP-6 (HANDOFF, DECISIONS-PENDING, precision-95 plan), EP-7 (RUNBOOK) |
-| Review section 2: CQ-1 'no test pins the map checksum' | RQ-5 (checksum test) |
-| Review section 2: OP-1 covers only 'TEI down' | OP-5 |
-| Review section 2: EV-6 'not reviewed by any lane' | Not ticketed; its first exercise is EV-16, where every strata number is cross-checked against the raw report (stated in EV-16's acceptance via the validity checks) |
+| RV-5 F-5.6 inert config | RIDER-1 item 2 (active) |
+| RV-3 F-1.11 promotion of the three sets | RIDER-1 item 5 (active) |
+| RV-6 F-A5 CI (ruff step, nightly manual-only, push) | RIDER-1 item 6 (active); push is operator question F4. Self-hosted runner: section 9 |
+| RV-3 F-1.14 ligature stratification | EV-22 (parked) |
+| RV-3 F-1.10 abstention minimum data | EV-19 (parked, census only); no MCP wiring is proposed (section 9) |
+| RV-2 F-2.5 / F-2.6 / F-2.8 (a) / F-2.10 | CQ-13 (furniture pre-pass only; table sup/sub/spans not doing: cut), CQ-14 (regex guard, stub folding) (both parked) |
+| RV-4 F-4.3, F-4.4 | MC-2 (active) |
+| RV-4 F-4.5 | MC-3 (active) |
+| RV-4 F-4.6 | MC-4 (parked) |
+| RV-4 F-4.11 | RQ-1 (parked) |
+| RV-1 F-1.4 (focus lever options) | RQ-2, RQ-3 (parked; option A only); option B payload route only if RQ-3 sees starvation; C blending and D collection split: not doing (section 9) |
+| RV-1 F-1.5 (depth/weight) | EV-20 (active, shrunk) |
+| RV-1 F-1.6 (BM25 weighting) | CQ-18 (parked; absorbs CQ-17) |
+| RV-1 F-1.7, F-1.8 #7 | RQ-1 (parked) |
+| RV-1 F-1.10 shared tokenizer | RQ-5 (parked); rider item 4 not in the shrunk RIDER-1 |
+| RV-6 F-A2 | OP-7 (active) |
+| RV-6 B.1 punch list rows 1-23 | EP-1 (done), EP-2/EP-2b (BACKLOG rows), EP-6 (DECISIONS-PENDING; the HANDOFF and precision-95 rows are not doing: cut), RUNBOOK rows (incl. row 22) in OP-3, OP-5, OP-7 (EP-7 merged) |
+| Review section 2: CQ-1 'no test pins the map checksum' | RQ-5 (parked) |
+| Review section 2: OP-1 covers only 'TEI down' | OP-5 (active; doctor listing of foreign GPU processes) |
+| Review section 2: EV-6 'not reviewed by any lane' | EV-6b (active, new): hand-computed example, dry run, independent review, before EV-16 |
 
-Lane findings the synthesis neither ranked nor rejected. They are NOT silently dropped: they are listed here as unplaced, with no ticket, and reported to the operator as a decision (a second review pass or explicit rejection):
+Lane findings the synthesis neither ranked nor rejected, now placed by the minimizer: two are folded and twelve dropped (the twelve are rows in section 9 with their reopen conditions).
 
-| finding | note |
+| finding | disposition |
 |---|---|
-| RV-3 F-1.1 one-command regression gate (manifest + `--baseline`) | Not carried by the synthesis. Candidate after the first baselines exist (the stored baselines from EV-16/18 are its input). |
-| RV-3 F-1.6 question-style realism controls (logged-query comparison, human 30-item slice, keywordised arm) | Not carried. The protocols already report the title-ablated arm; the realism slice needs operator time. |
-| RV-3 F-1.12 chapter-level is a heading-string match (caveat) | Not carried; one-line docs caveat, can ride EV-11 if the operator asks. |
-| RV-2 F-2.7 front/back-matter role classifier and payload tag | Not carried. Revisit if EV-21 shows reference/TOC chunks occupying top-10 slots. |
-| RV-2 F-2.11 books outline join for chapter paths | Not carried (12.5k chunks, GPU re-embed). Needed to fix flat books; CQ-12 explicitly does not. |
-| RV-2 F-2.13 chunks over 3,500 characters metric in `scripts/truncation_census.py` | Not carried (low). |
-| RV-4 F-4.7 `get_section` clause-prefix match, `scan_corpus` `section_pattern` | Not carried; the logs show 4 clause references in 242 queries. Reopen on MC-3 telemetry. |
-| RV-4 F-4.9 error text without absolute path, nearest-id hints, async tool wrappers | Not carried (low). |
-| RV-4 F-4.10 reorder BACKLOG MCP-E rows | Not carried as a ticket; the evidence ranking is recorded in section 9 (MCP-E1, E4 not doing). |
-| RV-6 F-A7 pre-migration snapshot guard, `busy_timeout`, `quick_check` on snapshot | Only the `quick_check` part is carried (OP-3). The migration guard and `busy_timeout` are not. |
-| RV-6 F-A9 canary eval slice and usage-log top-score columns | Not carried. |
-| RV-6 F-A10 dashboard bind default, doctor disk check on cwd only, `.phase0-data` naming | Not carried (low). |
-| RV-5 F-5.7 on-topic supply understated; F-5.11 other corpora not rebuildable from tracked files; F-5.12 first-seed runs not reproducible | Not carried. |
-| RV-1 F-1.12 per-paper diversity default | Not carried (no change recommended by the lane). |
+| RV-3 F-1.12 chapter-level is a heading-string match (caveat) | Folded: one caveat sentence in EV-11's addendum (active) |
+| RV-6 F-A10 doctor disk check on cwd only | Folded: the data-dir-device disk check is part of OP-6 (active); the rest of F-A10 is dropped (section 9) |
+| RV-3 F-1.1, F-1.6; RV-2 F-2.7, F-2.11, F-2.13; RV-4 F-4.7, F-4.9, F-4.10; RV-6 F-A7, F-A9; RV-5 F-5.7/F-5.11/F-5.12; RV-1 F-1.12 | Not doing (section 9, each with its reason and reopen condition) |
 
 ## 11. Self-review
 
-- **Counts.** 51 tickets: W1 28, W2 8, W3 12, W4 3.
-- **File-ownership conflicts checked** by a throwaway script over every pair of tickets in the same wave without a dependency path between them: none share an `Owns` path. Conflicts found and resolved by sequencing: `app/retrieval_eval.py` (EV-7, EV-8, EV-9, EV-10, RQ-2 chain); `rag/vector_index.py` (RQ-1, RQ-5, EV-14; CQ-9, CQ-17); `rag/reranker.py` (RQ-1, EV-13); `rag/retriever.py` (RQ-1, RQ-2); `app/serve.py` (MC-2, MC-3, OP-2); `app/assembly.py`, `app/doctor.py`, `app/snapshot.py` (OP-3, OP-6, OP-5, OP-2); `rag/parser.py` (CQ-12, CQ-13); the fixture hash file (EV-11, CQ-19, CQ-20; also shared with in-progress EV-4: key-disjoint edits, EV-4 merges first). Review items that touched the same file were split to make this possible (S-06 into OP-5 and EV-10; S-07 into OP-6 and OP-2).
-- **Every ticket has a falsifier**: each acceptance line contains an explicit 'Falsified if' clause (checked mechanically).
-- **What would falsify this plan's structure.** (a) If the baselines show the new sets saturated even at passage level with the title-ablated arm high, every gated change auto-REJECTs and the programme's value is the instruments: the structure absorbs it because each change is a per-ticket verdict. (b) If a W1 chain produces merge conflicts anyway, the ownership partition is wrong and the shared-file list must be re-cut. (c) If the first run shows `run_valid: false` from lock contention, the cheapest-first serialization is not enough and a scheduler (rejected here) comes back. (d) If EV-14 finds overlap of at least 0.99, CQ-9 and CQ-17's dependency on it vanish cleanly.
-- **Deviations to confirm.** (1) Docs batching (rule 13) departs from AGENT-PROCEDURES section B's same-PR ledger rule. (2) Review S-19 says reset unsupported per-corpus defaults to 32/0.5; the frozen runbook rule G-1 says defaults stay; EV-20 follows G-1 unless the operator says otherwise. (3) After CQ-4 the review's S-23 targeted re-chunk was re-scoped to a token-limit assessment (CQ-10) and a decision note (CQ-11). (4) RQ-5 has no S-nn: it is the prerequisite for rider item 4. (5) RQ-2 builds the default-off demotion in wave 1, although the review lists S-21 as gated: only its adoption is gated; the build is reversible and keeps the first GPU day from being wasted. (6) Wording: 'sign-off' for non-protected paths means a decision in PR review, not RIDER-1.
-- **Three weakest points, stated honestly.** (1) *One GPU session carries the value.* Every quality question sits behind a single serialized session that is blocked by a process this programme does not control (F3); if it slips, W2 and W3 do nothing and only the instruments and fixes land. (2) *Statistical power.* With n of 61-128 and strata of 4-26, even a clean win is hard to call; the plan deals with that by pre-registered minimum effects and an UNDERPOWERED verdict, but it cannot create power. The authority and edition strata stay descriptive until CQ-19/CQ-20 land. (3) *Serial chains and untested estimates.* W1 is chain-bound on `retrieval_eval.py`, `serve.py` and `assembly.py`, so wall time is longer than the ticket count suggests; GPU durations and sizes are estimates; and the docs batching exception adds a dependency on three Haiku tickets that could fall behind.
-- **Scope discipline.** No MCP confidence wiring, no corpus deletion, no full re-chunk, no harvest changes, no schema migration. Review items outside the ranked groups are listed as unplaced in section 10, not smuggled in.
-- **Dispatch survival encoded:** stub-first commits in every ticket including docs tickets; detached runs with MANIFEST committed at launch; death verified through git; one worktree per dispatch; no `pkill -f`.
+- **Counts.** 22 active tickets: W1 17, W2 4, W3 0, W4 1; 21 parked. Original 51 = KEEP 10 + SHRINK 12 + DEFER 20 + MERGE 7 + CUT 2; plus EV-6b (new) = 52 rows considered, 43 kept as tickets (22 + 21), 7 merged away (CQ-20 into CQ-19, CQ-15 into CQ-16, CQ-17 into CQ-18, EP-7 into OP-3/OP-5/OP-7, EP-3/EP-4/EP-5 dropped as batch tickets), 2 cut (CQ-10, CQ-11). The plan header, INDEX.md and the BACKLOG section state the same two numbers (checked mechanically).
+- **Consistency check (throwaway script, not committed), result on this revision:** every dependency id exists and is active, parked-to-active, done or an operator answer; no active ticket depends on a parked ticket; no cycles; 170 unordered pairs of active tickets checked and none shares an `Owns` path (shared files are ordered by explicit edges: `app/retrieval_eval.py` by EV-7 -> EV-8 -> EV-9 -> EV-10, `app/serve.py` and `rag/mcp_server.py` by MC-1 -> MC-2 -> MC-3, `app/snapshot.py` by OP-3 -> OP-6, `app/doctor.py` by OP-6 -> OP-5, `docs/RUNBOOK.md` by OP-3 -> OP-6 -> OP-5 -> OP-7, the fixture hash file by EV-8 -> EV-11 and EV-4b merge order; the baseline run directories are serial EV-16 -> EV-17 -> EV-18); every active ticket has an issue file, an INDEX row and a BACKLOG row; every parked ticket has a `parked/` file with a `Parked-until:` line, a PARKED BACKLOG row and a INDEX row; issue files contain no absolute path outside the repo, no e-mail address and no personal name.
+- **Every ticket has a falsifier**: each acceptance line contains an explicit 'Falsified' clause (checked mechanically).
+- **Minimizer verdicts, interpretations and conflicts (each applied conservatively).** (1) CQ-13 is a SHRINK verdict but hard-depends on parked CQ-12, so it is placed in the parked section instead of leaving an active-to-parked edge. (2) EV-6b is a separate small ticket as the operator instructed; the minimizer would have folded the dry run into EV-8's acceptance. (3) The minimizer's 'combine EV-7 to EV-10 into one PR' is implemented as four chained tickets on one branch and one PR in two briefs (section 6.1). (4) The minimizer's 'decouple' remarks (EV-9/EV-10, MC-3/MC-2, MC-3/OP-2, CQ-9/CQ-17, RQ-3/CQ-10, EV-20/EV-21) are applied as 'no data dependency'; where the two tickets still own the same file the edge stays as an explicit ordering edge (EV-9 -> EV-10, MC-2 -> MC-3, parked OP-2 <- MC-3), and the pure artefacts are removed (CQ-9 -> CQ-17, RQ-3 -> CQ-10, EV-20 -> EV-21 and the other parked GPU-serial edges). (5) EP-7 is split by section into OP-3 (backup and restore), OP-5 (GPU contention and the `gpu_lock_path` row) and OP-7 (containers), which puts `docs/RUNBOOK.md` in three Owns lists, so OP-3 -> OP-6 -> OP-5 -> OP-7 is chained (OP-7's compose-file work has no dependency, only its RUNBOOK commit waits). (6) 'Remove OP-5 as a gate of EV-16' and 'MC-1/2/3 must merge before the frozen commit, not during' are reconciled by the hold rule in section 6.4: they do not gate EV-16, and any not yet merged at the freeze waits for EV-18. (7) The minimizer's RQ-1 trigger ('after EV-16 has landed') is applied as after EV-16, EV-17 and EV-18 are merged, because the freeze holds through EV-18. (8) CQ-18's trigger is composed as the negation of its kill criterion on the same set. (9) EV-14 still needs F2 (the vector store container must run, CPU only) although no clone is made. (10) RIDER-1 is kept active but depends on EV-18 so its config-validation item merges after the last baseline (pre-baseline rule). (11) EV-20 is active but conditional on a 6-item headroom gate. (12) EP-6's no-ingest rule is re-targeted from 'verdicts of EV-22 and CQ-11' to the operator's decision on the parked CQ-7/EV-22/CQ-16 questions. (13) OP-4 is IN PROGRESS, not DONE, because the vector store's on-disk data was not copied.
+- **What would falsify this plan's structure.** (a) If the baselines show the new sets saturated even at passage level with the title-ablated arm high, every parked ticket stays parked and the programme's value is the instruments: the structure absorbs it because nothing downstream is started without a trigger. (b) If the one-PR instrument bundle produces merge conflicts anyway, the ownership partition is wrong. (c) If the first run shows `run_valid: false` from lock contention, the cheapest-first serialization is not enough and a scheduler (rejected here, section 9) comes back. (d) If EV-14 finds overlap of at least 0.99, CQ-9 is killed cleanly. (e) If EV-6b finds the strata script wrong, the first baseline's tables wait for the fix, by design.
+- **Deviations to confirm.** (1) Docs batching (the former rule 13) is withdrawn; AGENT-PROCEDURES section B applies. (2) Review S-19 says reset unsupported per-corpus defaults to 32/0.5; the frozen runbook rule G-1 says defaults stay; EV-20 follows G-1. (3) After CQ-4 the review's S-23 targeted re-chunk was re-scoped, then cut by the minimizer (CQ-10/CQ-11). (4) RQ-5 has no S-nn: it is the prerequisite for rider item 4 and is parked. (5) RQ-2 is no longer built before the baseline; its build is parked behind EV-17's off-topic share. (6) Wording: 'sign-off' for non-protected paths means a decision in PR review, not RIDER-1.
+- **Three weakest points, stated honestly.** (1) *One GPU session carries the value.* Every quality question sits behind a single serialized session that is blocked by a process this programme does not control (F3); if it slips, W2 does nothing and only the instruments and fixes land. (2) *Statistical power.* With n of 61-128 and strata of 4-26, even a clean win is hard to call; the plan deals with that by pre-registered minimum effects, UNDERPOWERED verdicts and kill criteria, but it cannot create power. (3) *The minimizer's kill criteria are applied by hand at baseline time.* A parked ticket whose trigger is read wrongly either starts too early (cost: a clone and a report) or never; the triggers are written as numbers on named baseline outputs to keep that reading mechanical.
+- **Scope discipline.** No MCP confidence wiring, no corpus deletion, no full re-chunk, no harvest changes, no schema migration. Review items outside the ranked groups are placed in section 9 or 10, not smuggled in.
+- **Dispatch survival encoded:** stub-first commits in every ticket including docs tickets; detached runs with MANIFEST committed at launch; death verified through git; one worktree per dispatch (the EV-7 to EV-10 bundle is one worktree, two briefs); no `pkill -f`.

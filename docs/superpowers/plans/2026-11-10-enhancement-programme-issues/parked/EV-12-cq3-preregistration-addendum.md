@@ -1,9 +1,12 @@
 Title: EV-12: Amend the CQ-3 stub A/B pre-registration (fixtures, minimum effect)
-Labels: wave:1-no-gpu, area:eval, size:S
+Labels: wave:1-no-gpu, area:eval, size:S, parked
+Parked-until: only after the decision to commission EV-21 (it is a pure prerequisite of EV-21). Kill criterion: killed with EV-21.
 
 ## EV-12 -- Amend the CQ-3 stub A/B pre-registration (fixtures, minimum effect)
 
 **Review cross-reference:** S-05. **Wave:** W1 do now, no GPU.
+
+**Parked, do not start.** Parked-until: only after the decision to commission EV-21 (it is a pure prerequisite of EV-21). Kill criterion: killed with EV-21.
 
 **Why.** CQ-3's pre-registration names the wrong fixtures (the 210-question set and the legacy books set, which have no passage gold), has no minimum effect so one noise flip would ADOPT, and identifies stubs by anchor (ambiguous for 7.5% of standards chunks); the stub length threshold also differs across three tools (40, 60 and 80 characters; review section 2).
 
@@ -28,7 +31,7 @@ Labels: wave:1-no-gpu, area:eval, size:S
 
 **Acceptance / falsification criterion.** Addendum is committed before any stub A/B report exists and states fixtures, ADOPT rule (net +3 on one set, no stratum worse by more than 1), chunk-id matching and the binding threshold; the ceiling note shows +3 is reachable on each set (n=94, 69, 61 answerable). Falsified if a stub A/B report predates the addendum.
 
-**Gates / depends on.** Depends on: EV-9, EV-11. Gates: EP-3, EV-21.
+**Gates / depends on.** Depends on: EV-9, EV-11. Gates: EV-21 (parked).
 
 **Needs.** GPU: n · services up: none · operator sign-off: n (not a protected path); the amended rule is a decision for the operator in PR review. · re-embed: n
 
@@ -36,4 +39,4 @@ Labels: wave:1-no-gpu, area:eval, size:S
 
 **Risk and rollback.** Low. An addendum cannot undo a result already seen; ordering is enforced by dependency. Rollback: revert.
 
-**Docs to update in the same PR.** PROJECT-STATUS via EP-3. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-3 carries those entries from this ticket's merged SHA.
+**Docs to update in the same PR.** The report or note this ticket writes is its doc (section 7 doc-map row). Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.

@@ -33,7 +33,7 @@ Labels: wave:1-no-gpu, area:eval, size:M
 
 **Acceptance / falsification criterion.** A FakeRetriever test returning an alternative chunk is a hit under the excerpt rule and a miss under the anchor rule; Waymo anchor-rule results are byte-identical on the existing test fixtures. This is an instrument, not a retrieval change: its ceiling check is that on the gold chunk itself the excerpt metric equals 1 for every non-null-excerpt item. Falsified if the gold chunk fails its own excerpt check on any fixture item.
 
-**Gates / depends on.** Depends on: EV-7. Gates: EP-3, EV-9, EV-11, EV-16.
+**Gates / depends on.** Depends on: EV-7 (ordering only: same file, not a data dependency). Gates: EV-9, EV-11, EV-16.
 
 **Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
 
@@ -41,4 +41,4 @@ Labels: wave:1-no-gpu, area:eval, size:M
 
 **Risk and rollback.** Two metrics diverge in meaning from EV-6's member-passage metric and confuse later reports. Mitigation: the docstring reconciliation and one stamped `scoring_rule`. Rollback: revert; additive.
 
-**Docs to update in the same PR.** PROJECT-STATUS section 2 via EP-3. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-3 carries those entries from this ticket's merged SHA.
+**Docs to update in the same PR.** Section 2: the new `passage_excerpt_hit` report fields. Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.

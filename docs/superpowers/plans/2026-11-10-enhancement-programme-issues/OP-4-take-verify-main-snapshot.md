@@ -5,6 +5,8 @@ Labels: wave:1-no-gpu, area:ops, size:S
 
 **Review cross-reference:** S-01. **Wave:** W1 do now, no GPU.
 
+**Status (2026-11-10): IN PROGRESS**, executed by the orchestrator outside the programme queue (do not wait for F1; only the off-device copy and deletions need it). It is a consistent SQLite backup of the main corpus database into that corpus's `backups/` directory with an integrity check, a row-count comparison against the manifest and a SHA-256. **The vector store's on-disk data was NOT copied** (service stopped; about 31 GB; operator decision pending). Do not mark this ticket DONE until the operator has decided that copy.
+
 **Why.** The newest main snapshot is from 2026-07-30 (manifest records 11,026 papers; the live database has 12,390) and every backup sits on the same device as the live data, which is 98% full with 91 GB free (review item g, `df -h`). The next write, re-embed or bad migration on that device has no recent restore point. This is the only finding whose downside is unrecoverable.
 
 **Scope.**
@@ -33,7 +35,7 @@ Labels: wave:1-no-gpu, area:ops, size:S
 
 **Acceptance / falsification criterion.** Newest main snapshot is under 24 hours old at verification time, quick_check is ok, restored paper count equals the manifest, and free space after is still at least 20 GB. Falsified if any of the four fails; then the snapshot is deleted and the failure reported (nothing else is touched).
 
-**Gates / depends on.** Depends on: none. Operator answers: F1. Gates: EP-7, EP-3, EV-14, CQ-7.
+**Gates / depends on.** Depends on: none. Gates: CQ-7 (parked).
 
 **Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched); operator answers: F1 · re-embed: n. Also: operator go-ahead to write about 9 GB (estimate, RV-6) into the main data dir's backups folder on a 98%-full device.
 
@@ -41,4 +43,4 @@ Labels: wave:1-no-gpu, area:ops, size:S
 
 **Risk and rollback.** Disk fills mid-write on a 98%-full device. Mitigation: abort rule before starting; the tool reads the source read-only and writes only the new snapshot. Rollback: delete the new snapshot directory.
 
-**Docs to update in the same PR.** BACKLOG and PROJECT-STATUS rows via EP-3; the restore procedure itself is documented by EP-7. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-3 carries those entries from this ticket's merged SHA.
+**Docs to update in the same PR.** The dated snapshot record is the doc (section 7 doc-map row if a new `docs/*.md` is added); ledger entry only after the operator decides the vector-store data copy. Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.

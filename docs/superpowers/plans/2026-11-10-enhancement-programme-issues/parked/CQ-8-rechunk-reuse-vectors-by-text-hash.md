@@ -1,9 +1,12 @@
 Title: CQ-8: Make rechunk re-embed only chunks whose text changed
-Labels: wave:1-no-gpu, area:corpus, size:M
+Labels: wave:1-no-gpu, area:corpus, size:M, parked
+Parked-until: start only if EV-18's structure-gate count is 5 or more (its sole consumer is CQ-16). Kill criterion: killed if EV-18's count is below 5.
 
 ## CQ-8 -- Make rechunk re-embed only chunks whose text changed
 
 **Review cross-reference:** S-14. **Wave:** W1 do now, no GPU.
+
+**Parked, do not start.** Parked-until: start only if EV-18's structure-gate count is 5 or more (its sole consumer is CQ-16). Kill criterion: killed if EV-18's count is below 5.
 
 **Why.** `app/rechunk.py:189` re-embeds every chunk of a re-chunked paper, including unchanged text, which multiplies the cost of every re-chunk the later tickets want (RV-2 F-2.3 step 1; review S-14). Chunk ids are positional, so reuse must key on a text hash, not on the id.
 
@@ -32,7 +35,7 @@ Labels: wave:1-no-gpu, area:corpus, size:M
 
 **Acceptance / falsification criterion.** Dry run on a fixture of 10 papers with a text-only change: re-embedded count equals changed-text count and reused count equals the rest; a changed embedder model name disables reuse. Falsified if the call-count test passes with reuse disabled.
 
-**Gates / depends on.** Depends on: none. Gates: EP-3, CQ-15.
+**Gates / depends on.** Depends on: EV-18. Gates: CQ-16 (parked).
 
 **Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
 
@@ -40,4 +43,4 @@ Labels: wave:1-no-gpu, area:corpus, size:M
 
 **Risk and rollback.** A wrongly reused vector silently pairs old text with a new position. Mitigation: vectors depend only on the embedded text (which includes title and section path prefix), guarded by model name. Rollback: revert.
 
-**Docs to update in the same PR.** PROJECT-STATUS via EP-3. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-3 carries those entries from this ticket's merged SHA.
+**Docs to update in the same PR.** The report or note this ticket writes is its doc (section 7 doc-map row). Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
