@@ -20,6 +20,11 @@ OUT="$HERE/runs/$(date +%Y%m%dT%H%M%S)"
 export PYTHONPATH="$REPO"
 
 die() { echo "STOP: $*" >&2; exit 1; }
+# Frozen-baseline guard: measure committed code only, and record which commit. --untracked-files=no
+# because $OUT (runs/<stamp>/) lives inside the repo; tracked edits are what could change a number.
+[ -z "$(git -C "$REPO" status --porcelain --untracked-files=no)" ] \
+  || die "working tree has uncommitted changes to tracked files; commit or stash them so the run names one commit"
+GIT_COMMIT="$(git -C "$REPO" rev-parse HEAD)"
 
 # 0. Fixture integrity -- before any service is touched. A changed or unfrozen fixture is not measured.
 (cd "$REPO" && python "$TOOLS" check-hash "$HASHES" "$GT_REL") || die "fixture hash check failed"
@@ -31,8 +36,9 @@ die() { echo "STOP: $*" >&2; exit 1; }
 python "$TOOLS" check-points --collection "$COLL" --db "$DB" || die "collection/db mismatch -- refusing to measure"
 
 mkdir -p "$OUT"
+echo "$GIT_COMMIT" > "$OUT/GIT_COMMIT"
 cp "$DATA/config.yaml" "$OUT/config-shipped.yaml"
-{ echo "git_rev $(git -C "$REPO" rev-parse HEAD)"; echo "started $(date -Is)"; echo "collection $COLL"; echo "db $DB";
+{ echo "git_rev $GIT_COMMIT"; echo "started $(date -Is)"; echo "collection $COLL"; echo "db $DB";
   sha256sum "$GT" "$HASHES"; } > "$OUT/MANIFEST.txt"
 python "$TOOLS" ablate "$GT" "$OUT/standards_gt.title-ablated.json" | tee -a "$OUT/MANIFEST.txt"
 python "$TOOLS" wilson "$GT" | tee "$OUT/strata-n-and-halfwidth.txt"

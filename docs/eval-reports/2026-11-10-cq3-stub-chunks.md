@@ -89,8 +89,8 @@ Standards (`$STD_GT` = the standards ground-truth fixture of record; not in this
 ```
 cfg=/home/omar/ai-projects/research-system-rag-standards/data/config.yaml
 db=/home/omar/ai-projects/research-system-rag-standards/data/papers.db
-python -m app.retrieval_eval --config $cfg --ground-truth $STD_GT --k 10 --report-path std_base.json
-python -m app.retrieval_eval --config $cfg --ground-truth $STD_GT --k 10 --drop-stub-chunks --report-path std_drop.json
+python -m app.retrieval_eval --config $cfg --ground-truth $STD_GT --collection av_standards --db-path $db --k 10 --report-path std_base.json
+python -m app.retrieval_eval --config $cfg --ground-truth $STD_GT --collection av_standards --db-path $db --k 10 --drop-stub-chunks --report-path std_drop.json
 python scripts/list_stub_chunks.py $db --report std_base.json
 python scripts/list_stub_chunks.py $db --ab std_base.json std_drop.json
 ```

@@ -328,10 +328,13 @@ def run_fixture(name: str, ground_truth: str, report_path: Path, args: argparse.
         )
     except subprocess.TimeoutExpired as e:
         raise SystemExit(f"NB-D4: {name} timed out after {_SUBPROCESS_TIMEOUT_S}s") from e
-    if proc.returncode != 0:
+    # 3 = app.retrieval_eval.EXIT_INVALID_RUN: the run finished and wrote its report but a GPU-lock
+    # timeout invalidated it (EV-10). Keep going so the report renders as VOID via its n_errors;
+    # not imported (this module never imports the harness, see the docstring).
+    if proc.returncode not in (0, 3):
         tail = "\n".join((proc.stdout + proc.stderr).splitlines()[-30:])
         raise SystemExit(f"NB-D4: {name} exited {proc.returncode}:\n{tail}")
-    print(f"[nb-eval] {name}: exit 0, verifying report...", flush=True)
+    print(f"[nb-eval] {name}: exit {proc.returncode}, verifying report...", flush=True)
     return load_and_verify_report(report_path)
 
 

@@ -19,6 +19,7 @@ import pytest
 from app.retrieval_eval import (
     SPARSE_MODES,
     Question,
+    QuestionResult,
     _print_summary,
     build_report,
     load_questions,
@@ -1520,7 +1521,393 @@ def test_build_report_no_vision_fixture_text_arm_equals_overall_and_vision_empty
 def test_parse_args_drop_stub_chunks_flag_defaults_off(monkeypatch):
     """CQ-3: the A/B arm is opt-in from the CLI."""
     from app import retrieval_eval
-    monkeypatch.setattr("sys.argv", ["retrieval_eval"])
+    monkeypatch.setattr("sys.argv", ["retrieval_eval", "--collection", "c"])
     assert retrieval_eval._parse_args().drop_stub_chunks is False
-    monkeypatch.setattr("sys.argv", ["retrieval_eval", "--drop-stub-chunks"])
+    monkeypatch.setattr("sys.argv", ["retrieval_eval", "--collection", "c", "--drop-stub-chunks"])
     assert retrieval_eval._parse_args().drop_stub_chunks is True
+
+
+# --- EV-7: required --collection, hash/commit stamps, gold-id preflight ------------------------
+
+
+def _corpus_db(tmp_path):
+    """Tiny corpus DB: paper P1 with blocks P1:b0..b2 and chunks P1:c0 (anchor b0), P1:c1 (b2)."""
+    import sqlite3
+
+    path = tmp_path / "papers.db"
+    con = sqlite3.connect(path)
+    con.executescript(
+        "CREATE TABLE papers(paper_id);"
+        "CREATE TABLE chunks(chunk_id, paper_id, text, anchor_json);"
+        "CREATE TABLE blocks(block_id, paper_id, idx, text);"
+    )
+    con.execute("INSERT INTO papers VALUES('P1')")
+    for i in range(3):
+        con.execute("INSERT INTO blocks VALUES(?,?,?,?)", (f"P1:b{i}", "P1", i, "t"))
+    for cid, anchor, text in [
+        ("P1:c0", "P1:b0", "title\n\nalpha beta"), ("P1:c1", "P1:b2", "gamma"),
+    ]:
+        anchor_json = json.dumps({"block_id": anchor})
+        con.execute("INSERT INTO chunks VALUES(?,?,?,?)", (cid, "P1", text, anchor_json))
+    con.commit()
+    con.close()
+    return path
+
+
+def test_parse_args_requires_collection(monkeypatch):
+    from app import retrieval_eval
+
+    monkeypatch.setattr("sys.argv", ["retrieval_eval"])
+    with pytest.raises(SystemExit) as exc:
+        retrieval_eval._parse_args()
+    assert exc.value.code == 2
+
+
+def test_file_sha256_12_equals_sha256sum_prefix(tmp_path):
+    import hashlib
+
+    from app.retrieval_eval import file_sha256_12
+
+    f = tmp_path / "gt.json"
+    f.write_bytes(b'{"ground_truth": []}\n')
+    assert file_sha256_12(f) == hashlib.sha256(f.read_bytes()).hexdigest()[:12]
+
+
+def test_build_report_stamps_hash_and_commit():
+    report = build_report(
+        [], 10, ground_truth_sha256_12="0123456789ab", code_commit="deadbeef", code_tree_dirty=False
+    )
+    assert report["ground_truth_sha256_12"] == "0123456789ab"
+    assert report["code_commit"] == "deadbeef"
+    assert report["code_tree_dirty"] is False
+
+
+def test_unresolved_gold_ids_names_each_missing_id(tmp_path):
+    from app.retrieval_eval import CorpusLookup
+
+    q_ok = Question("ok", "q", "t", frozenset({"P1"}), "P1:b1")
+    q_bad = Question(
+        "bad", "q", "t", frozenset({"P1", "NOPE"}), "P1:b99",
+        gold_chunk_id="P1:c9", alternative_gold_chunk_ids=("P1:c1", "P1:c8"),
+    )
+    lookup = CorpusLookup(_corpus_db(tmp_path))
+    assert lookup.unresolved_gold_ids([q_ok]) == {}
+    assert lookup.unresolved_gold_ids([q_ok, q_bad]) == {
+        "paper": ["NOPE"], "block": ["P1:b99"], "chunk": ["P1:c8", "P1:c9"],
+    }
+
+
+def test_main_exits_2_naming_unresolved_gold_ids_before_any_retrieval(
+    tmp_path, monkeypatch, capsys
+):
+    from app import retrieval_eval
+
+    gt = tmp_path / "gt.json"
+    gt.write_text(json.dumps({"ground_truth": [{
+        "question_id": "Q1", "question_text": "q", "source_paper_id": "GHOST",
+        "gold_block_id": "GHOST:b0",
+    }]}))
+    monkeypatch.setattr("sys.argv", [
+        "retrieval_eval", "--ground-truth", str(gt), "--collection", "c",
+        "--db-path", str(_corpus_db(tmp_path)),
+    ])
+    with pytest.raises(SystemExit) as exc:
+        retrieval_eval.main()
+    assert exc.value.code == 2
+    err = capsys.readouterr().err
+    assert "GHOST" in err and "GHOST:b0" in err
+
+
+# --- EV-8: excerpt-containment passage metric --------------------------------------------------
+
+_EXCERPT = "The stump has the smallest pointwise RMSE near the centre."
+
+
+def _excerpt_q(qid="Q", *, excerpt_block_id="P1:b3", alt_texts=(), excerpt=_EXCERPT, **kw):
+    return Question(
+        qid, f"text {qid}", "t", frozenset({"P1"}), "P1:b0",
+        passage_excerpt=excerpt, excerpt_block_id=excerpt_block_id,
+        gold_chunk_id="P1:c0", alternative_gold_chunk_ids=("P1:c1",),
+        alt_chunk_texts=tuple(alt_texts), **kw,
+    )
+
+
+def test_alternative_chunk_is_an_excerpt_hit_and_an_anchor_miss():
+    """The ticket's acceptance test: an alternative gold chunk (different anchor block) that
+    contains the excerpt is a hit under the excerpt rule and a miss under the anchor rule."""
+    q = _excerpt_q()
+    alt = _hit("P1", "P1:b7", passage_text=f"Title\n\nIntro. {_EXCERPT} Outro.")
+    r = score_question(q, [alt], k=10)
+    assert r.passage_rank is None  # anchor rule: b7 != gold_block_id b0
+    assert r.excerpt_rank == 1
+    assert r.excerpt_fallback is False
+
+
+def test_excerpt_match_is_casefolded_and_whitespace_collapsed():
+    q = _excerpt_q()
+    spaced = _hit("P1", "P1:b9", passage_text=_EXCERPT.upper().replace(" ", "\n  "))
+    assert score_question(q, [spaced], k=10).excerpt_rank == 1
+
+
+def test_sibling_chunk_sharing_the_gold_anchor_is_anchor_hit_but_excerpt_miss():
+    """RV-1 F-1.3: a fragment chunk anchored on the gold block but lacking the excerpt is a
+    lenient anchor hit; the excerpt rule does not credit it."""
+    q = _excerpt_q()
+    fragment = _hit("P1", "P1:b0", passage_text="Title\n\nunrelated first half of the block")
+    r = score_question(q, [fragment], k=10)
+    assert r.passage_rank == 1
+    assert r.excerpt_rank is None
+
+
+def test_alternative_chunk_text_equality_covers_rerendered_excerpts():
+    """If the excerpt is not verbatim in the served text (table re-rendered), a result whose text
+    equals an alternative/gold chunk's DB text still counts."""
+    q = _excerpt_q(alt_texts=("Title\n\n| a | b |\n| 1 | 2 |",))
+    served = _hit("P1", "P1:b8", passage_text="title\n\n| a | b |   \n| 1 | 2 |")
+    assert score_question(q, [served], k=10).excerpt_rank == 1
+
+
+def test_gold_chunk_passes_its_own_excerpt_check_for_every_non_null_excerpt_item():
+    """Ceiling check from the ticket: serving the gold chunk itself is always an excerpt hit."""
+    items = [
+        _excerpt_q(f"Q{i}", excerpt=f"excerpt number {i} of the fixture")
+        for i in range(5)
+    ]
+    for q in items:
+        gold_chunk = _hit("P1", "P1:b0", passage_text=f"Title\n\nlead {q.passage_excerpt} tail")
+        assert score_question(q, [gold_chunk], k=10).excerpt_rank == 1
+
+
+def test_null_excerpt_block_id_falls_back_to_anchor_rule_and_is_listed():
+    q = _excerpt_q("SPAN", excerpt_block_id=None)
+    hit = _hit("P1", "P1:b0", passage_text="no excerpt text here")
+    r = score_question(q, [hit], k=10)
+    assert r.excerpt_fallback is True
+    assert r.excerpt_rank == r.passage_rank == 1
+    report = build_report([r], 10)
+    assert report["passage_excerpt_level"]["fallback_question_ids"] == ["SPAN"]
+    assert report["passage_excerpt_level"]["n_fallback_anchor"] == 1
+
+
+def test_question_without_gold_block_id_is_not_excerpt_scored():
+    q = Question("N", "t", "t", frozenset({"P1"}), None, passage_excerpt=_EXCERPT,
+                 excerpt_block_id="P1:b3")
+    r = score_question(q, [_hit("P1", "P1:b3", passage_text=_EXCERPT)], k=10)
+    assert r.excerpt_rank is None
+    assert build_report([r], 10)["passage_excerpt_level"]["n_scored"] == 0
+
+
+def test_report_carries_excerpt_level_beside_unchanged_anchor_level():
+    hit_alt = score_question(
+        _excerpt_q("A"), [_hit("P1", "P1:b7", passage_text=f"x {_EXCERPT}")], k=10
+    )
+    miss = score_question(_excerpt_q("B"), [_hit("P1", "P1:b7", passage_text="nope")], k=10)
+    report = build_report([hit_alt, miss], 10)
+    assert report["passage_level"]["overall"] == {"recall_at_k": 0.0, "mrr": 0.0, "n": 2}
+    pe = report["passage_excerpt_level"]
+    assert pe["n_scored"] == 2
+    assert pe["overall"] == {"recall_at_k": 0.5, "mrr": 0.5, "n": 2}
+    assert pe["by_question_type"]["t"]["n"] == 2
+    assert pe["by_doc_type"]["paper"]["n"] == 2
+    assert "passage_excerpt" in pe["scoring_rule"] and "anchor" in pe["scoring_rule"]
+    row = report["questions"][0]["passage_excerpt_level"]
+    assert row == {"scored": True, "hit": True, "rank": 1, "fallback": False}
+
+
+def test_load_questions_reads_excerpt_and_alternative_fields(tmp_path):
+    gt = tmp_path / "gt.json"
+    gt.write_text(json.dumps({"ground_truth": [{
+        "question_id": "Q1", "question_text": "q", "source_paper_id": "P1",
+        "gold_block_id": "P1:b0", "gold_chunk_id": "P1:c0", "excerpt_block_id": "P1:b3",
+        "passage_excerpt": "ex", "alternative_gold_chunk_ids": ["P1:c1"],
+    }]}))
+    (q,) = load_questions(gt)
+    assert (q.gold_chunk_id, q.excerpt_block_id, q.passage_excerpt) == ("P1:c0", "P1:b3", "ex")
+    assert q.alternative_gold_chunk_ids == ("P1:c1",)
+
+
+def test_attach_gold_texts_resolves_gold_and_alternative_chunk_text(tmp_path):
+    from app.retrieval_eval import CorpusLookup
+
+    lookup = CorpusLookup(_corpus_db(tmp_path))
+    (q,) = lookup.attach_gold_texts([_excerpt_q()])
+    assert q.alt_chunk_texts == ("title\n\nalpha beta", "gamma")
+
+
+def test_anchor_metric_is_byte_identical_over_a_stored_report():
+    """Regression (EV-8): rebuild QuestionResults from a stored pre-EV-8 report's rows and
+    re-run build_report; every anchor/paper/chapter subtree must serialise byte-for-byte as stored.
+    The excerpt metric is purely additive."""
+    stored_path = (
+        Path(__file__).resolve().parent.parent
+        / "docs/eval-reports/data/2026-08-25-nb-d4-dual-fixture-SAMPLE/waymo_gt_verified.json"
+    )
+    stored = json.loads(stored_path.read_text())
+    results = [
+        QuestionResult(
+            question_id=r["question_id"], question_type=r["question_type"],
+            paper_rank=r["paper_level"]["rank"], passage_rank=r["passage_level"]["rank"],
+            passage_scored=r["passage_level"]["scored"], error=r["error"],
+            gold_paper_ids=frozenset(r["gold_paper_ids"]), gold_block_id=r["gold_block_id"],
+            doc_type=r["doc_type"], vision_derived=r["vision_derived"],
+            chapter_rank=r["chapter_level"]["rank"], chapter_scored=r["chapter_level"]["scored"],
+            gold_chapter_title=r["gold_chapter_title"], title_leak=r["title_leak"],
+            top_score=r["top_score"],
+        )
+        for r in stored["questions"]
+    ]
+    rebuilt = build_report(results, stored["k"])
+    for key in ("k", "n_questions", "n_errors", "paper_level", "passage_level", "chapter_level"):
+        assert json.dumps(rebuilt[key], sort_keys=True) == json.dumps(stored[key], sort_keys=True)
+
+
+# --- EV-9: retrieved_chunk_ids in the per-question rows ----------------------------------------
+
+
+def _dup_anchor_db(tmp_path):
+    """P1: c0 (anchor b0, text 'alpha'), c1+c2 share anchor b1 with DIFFERENT text, c3+c4 share
+    anchor b2 with IDENTICAL text (indistinguishable by (paper, anchor, text))."""
+    import sqlite3
+
+    path = tmp_path / "dup.db"
+    con = sqlite3.connect(path)
+    con.executescript(
+        "CREATE TABLE papers(paper_id);"
+        "CREATE TABLE chunks(chunk_id, paper_id, text, anchor_json);"
+        "CREATE TABLE blocks(block_id, paper_id, idx, text);"
+    )
+    con.execute("INSERT INTO papers VALUES('P1')")
+    for cid, anchor, text in [
+        ("P1:c0", "P1:b0", "alpha"), ("P1:c1", "P1:b1", "beta one"), ("P1:c2", "P1:b1", "beta two"),
+        ("P1:c3", "P1:b2", "same"), ("P1:c4", "P1:b2", "same"),
+    ]:
+        anchor_json = json.dumps({"block_id": anchor})
+        con.execute("INSERT INTO chunks VALUES(?,?,?,?)", (cid, "P1", text, anchor_json))
+    con.commit()
+    con.close()
+    return path
+
+
+def test_chunk_ids_for_recovers_unique_chunk_even_when_anchor_is_shared(tmp_path):
+    from app.retrieval_eval import CorpusLookup
+
+    lookup = CorpusLookup(_dup_anchor_db(tmp_path))
+    assert lookup.chunk_ids_for("P1", "P1:b0", "alpha") == ["P1:c0"]
+    assert lookup.chunk_ids_for("P1", "P1:b1", "beta two") == ["P1:c2"]  # not c1: text decides
+
+
+def test_chunk_ids_for_records_both_when_text_is_duplicated_and_nothing_when_unmatched(tmp_path):
+    from app.retrieval_eval import CorpusLookup
+
+    lookup = CorpusLookup(_dup_anchor_db(tmp_path))
+    assert lookup.chunk_ids_for("P1", "P1:b2", "same") == ["P1:c3", "P1:c4"]  # never silently one
+    assert lookup.chunk_ids_for("P1", "P1:b2", "different text") == []
+    assert lookup.chunk_ids_for("GHOST", "GHOST:b0", "alpha") == []
+
+
+def test_run_fills_chunk_ids_and_marks_ambiguous_rows(tmp_path):
+    from app.retrieval_eval import CorpusLookup
+
+    q = Question("Q1", "query", "t", frozenset({"P1"}), "P1:b0")
+    hits = [
+        _hit("P1", "P1:b1", passage_text="beta two"),
+        _hit("P1", "P1:b2", passage_text="same"),
+        _hit("P1", "P1:b9", passage_text="orphan"),
+    ]
+    lookup = CorpusLookup(_dup_anchor_db(tmp_path))
+    results = run([q], FakeRetriever({"query": hits}), 10, chunk_lookup=lookup)
+    report = build_report(results, 10)
+    row = report["questions"][0]
+    assert row["retrieved_chunk_ids"] == [["P1:c2"], ["P1:c3", "P1:c4"], []]
+    assert row["chunk_id_ambiguous"] is True
+    assert report["n_chunk_id_ambiguous_rows"] == 1
+    assert report["n_chunk_id_unresolved_ranks"] == 1
+
+
+def test_rows_without_a_lookup_keep_empty_chunk_ids_and_other_fields_unchanged():
+    q = Question("Q1", "query", "t", frozenset({"P1"}), "P1:b0")
+    results = run([q], FakeRetriever({"query": [_hit("P1", "P1:b0")]}), 10)
+    row = build_report(results, 10)["questions"][0]
+    assert row["retrieved_chunk_ids"] == [] and row["chunk_id_ambiguous"] is False
+    assert row["retrieved_block_ids"] == ["P1:b0"]
+
+
+# --- EV-10: invalid run on a GPU-lock timeout --------------------------------------------------
+
+_LOCK_TIMEOUT_MSG = (
+    "gpu lock /x/.gpu.lock not acquired within 300.0s for stage 'rerank' -- likely held by a "
+    "stale or wedged process; check for a stuck holder before retrying"
+)
+
+
+class _TimeoutRetriever(FakeRetriever):
+    """Raises the real lock-timeout message for query text 'slow', answers the rest."""
+
+    def retrieve(self, query, filters, k):
+        if query == "slow":
+            raise RuntimeError(_LOCK_TIMEOUT_MSG)
+        return super().retrieve(query, filters, k)
+
+
+def test_lock_timeout_question_makes_the_report_invalid_with_a_count():
+    qs = [
+        Question("ok", "fast", "t", frozenset({"P1"}), None),
+        Question("late", "slow", "t", frozenset({"P1"}), None),
+    ]
+    report = build_report(run(qs, _TimeoutRetriever({"fast": [_hit("P1", "P1:b0")]}), 10), 10)
+    assert report["run_valid"] is False
+    assert report["n_lock_timeouts"] == 1
+    assert report["n_errors"] == 1
+    assert report["invalid_reason"]
+    assert report["questions"][1]["error_class"] == "gpu_lock_timeout"
+    assert report["questions"][0]["error_class"] is None
+
+
+def test_run_without_timeouts_is_valid_and_an_ordinary_error_does_not_invalidate():
+    qs = [
+        Question("ok", "fast", "t", frozenset({"P1"}), None),
+        Question("boom", "unscripted", "t", frozenset({"P1"}), None),  # plain RuntimeError
+    ]
+    report = build_report(run(qs, FakeRetriever({"fast": [_hit("P1", "P1:b0")]}), 10), 10)
+    assert report["run_valid"] is True
+    assert report["n_lock_timeouts"] == 0
+    assert report["n_errors"] == 1  # still visible (nb_eval_runner flags it VOID)
+
+
+def test_summary_announces_an_invalid_run(capsys):
+    qs = [Question("late", "slow", "t", frozenset({"P1"}), None)]
+    _print_summary(build_report(run(qs, _TimeoutRetriever({}), 10), 10))
+    assert "RUN INVALID" in capsys.readouterr().out
+
+
+def test_main_writes_the_report_then_exits_nonzero_on_a_lock_timeout(tmp_path, monkeypatch):
+    """End to end through main(): fake the server wiring; the invalid report is still written
+    (so the evidence survives) and the process exits EXIT_INVALID_RUN."""
+    import types
+
+    from app import retrieval_eval
+
+    gt = tmp_path / "gt.json"
+    gt.write_text(json.dumps({"ground_truth": [{
+        "question_id": "Q1", "question_text": "slow", "source_paper_id": "P1",
+    }]}))
+    db = _corpus_db(tmp_path)
+    cfg = types.SimpleNamespace(
+        hybrid_dense_weight=0.5, db_path=str(db), blob_dir="b", model_copy=lambda update: cfg,
+    )
+    monkeypatch.setattr("rag.config.load_config", lambda path=None: cfg)
+    monkeypatch.setattr(
+        "app.assembly.build_mcp_server",
+        lambda config, **kw: types.SimpleNamespace(retriever=_TimeoutRetriever({})),
+    )
+    out = tmp_path / "report.json"
+    monkeypatch.setattr("sys.argv", [
+        "retrieval_eval", "--ground-truth", str(gt), "--collection", "c",
+        "--db-path", str(db), "--report-path", str(out),
+    ])
+    with pytest.raises(SystemExit) as exc:
+        retrieval_eval.main()
+    assert exc.value.code == retrieval_eval.EXIT_INVALID_RUN
+    written = json.loads(out.read_text())
+    assert written["run_valid"] is False
+    assert written["ground_truth_sha256_12"] == retrieval_eval.file_sha256_12(gt)

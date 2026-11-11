@@ -23,6 +23,11 @@ export PYTHONPATH="$REPO"
 SETS=("$@"); [ ${#SETS[@]} -gt 0 ] || SETS=(papers books legacy)
 
 die() { echo "STOP: $*" >&2; exit 1; }
+# Frozen-baseline guard: measure committed code only, and record which commit. --untracked-files=no
+# because $OUT (runs/<stamp>/) lives inside the repo; tracked edits are what could change a number.
+[ -z "$(git -C "$REPO" status --porcelain --untracked-files=no)" ] \
+  || die "working tree has uncommitted changes to tracked files; commit or stash them so the run names one commit"
+GIT_COMMIT="$(git -C "$REPO" rev-parse HEAD)"
 has() { local s; for s in "${SETS[@]}"; do [ "$s" = "$1" ] && return 0; done; return 1; }
 for s in "${SETS[@]}"; do case "$s" in papers|books|legacy|focus) ;; *) die "unknown set '$s'";; esac; done
 
@@ -46,8 +51,9 @@ has books  && { (cd "$REPO/$D/2026-11-10-causal-books-gt" && python gt_tools.py 
 python "$TOOLS" check-points --collection "$COLL" --db "$DB" || die "collection/db mismatch -- refusing to measure"
 
 mkdir -p "$OUT"
+echo "$GIT_COMMIT" > "$OUT/GIT_COMMIT"
 cp "$DATA/config.yaml" "$OUT/config-shipped.yaml"
-{ echo "git_rev $(git -C "$REPO" rev-parse HEAD)"; echo "started $(date -Is)"; echo "collection $COLL"; echo "db $DB";
+{ echo "git_rev $GIT_COMMIT"; echo "started $(date -Is)"; echo "collection $COLL"; echo "db $DB";
   echo "sets ${SETS[*]}"; (cd "$REPO" && sha256sum "${NEED[@]}" "$D/2026-11-10-FIXTURE-HASHES.json"); } > "$OUT/MANIFEST.txt"
 
 # run <tag> <gt-file>: collection, db and blobs named explicitly (omitting --collection queries `papers` by default,

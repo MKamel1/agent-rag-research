@@ -321,3 +321,33 @@ def test_main_prints_void_warning_to_stdout_when_errors_present(tmp_path, monkey
     out = capsys.readouterr().out
     assert rc == 0
     assert "*** VOID: gt_wmr had 3 errored question(s)" in out
+
+
+def test_run_fixture_keeps_the_report_of_an_invalid_run_exit_so_it_renders_void(
+    tmp_path, monkeypatch
+):
+    """EV-10: retrieval_eval exits 3 AFTER writing its report when a GPU-lock timeout invalidated
+    the run. The runner must still load that report (its n_errors>0 row renders VOID) instead of
+    dying on the non-zero exit; any other non-zero exit stays fatal."""
+    import subprocess
+    import types
+
+    import pytest
+
+    import scripts.nb_eval_runner as runner
+
+    report_path = tmp_path / "r.json"
+    report_path.write_text(json.dumps({"n_questions": 2, "n_errors": 1, "run_valid": False}))
+
+    def fake_run(code):
+        return lambda *a, **kw: types.SimpleNamespace(returncode=code, stdout="", stderr="")
+
+    args = types.SimpleNamespace(
+        python_exe="python", runner_module="app.retrieval_eval", config="c", collection="x",
+        k=10, sparse_mode="fused", dense_weight=None, limit=None,
+    )
+    monkeypatch.setattr(subprocess, "run", fake_run(3))
+    assert runner.run_fixture("f", "gt.json", report_path, args)["n_errors"] == 1
+    monkeypatch.setattr(subprocess, "run", fake_run(1))
+    with pytest.raises(SystemExit):
+        runner.run_fixture("f", "gt.json", report_path, args)

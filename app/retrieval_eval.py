@@ -111,21 +111,52 @@ therefore also emits `passage_level.by_vision_status` -- `text_answerable` (the 
 and its paper-level recall@k, because paper-level is where those items already succeed and that
 contrast is the finding) -- while `overall` keeps its exact prior definition. See
 `_VISION_ARM_NOTE`. Same shape as BENCH-1's `paper_level.by_gold_status`, not a second convention.
+Eval hardening (EV-7..EV-10; measurement-side only -- nothing here touches retrieval or ranking):
+
+  * EV-7 -- `--collection` is REQUIRED (no silent default corpus). Every report stamps
+    `ground_truth_sha256_12` (first 12 hex of the SHA-256 of the ground-truth file's bytes, same
+    pattern as judge_eval's `rubric_sha256_12`), `code_commit` (git HEAD of this checkout) and
+    `code_tree_dirty`. Before any retrieval runs, a gold-id preflight checks every gold paper /
+    chunk / block id of the loaded questions resolves in the given DB and exits 2 naming the
+    unresolved ids otherwise.
+  * EV-8 -- additive `passage_excerpt_level` beside the unchanged anchor `passage_level`: a hit is
+    a returned `passage_text` that contains the normalised gold `passage_excerpt` (or equals the
+    text of an `alternative_gold_chunk_ids` / `gold_chunk_id` chunk resolved through the DB).
+    Items with a null `excerpt_block_id` fall back to the anchor rule and are listed separately.
+    Relation to the frozen protocols' member-passage metric: see `excerpt_hit`.
+  * EV-9 -- each per-question row gains `retrieved_chunk_ids` (one list of candidate chunk ids per
+    retrieved rank, recovered from (paper id, anchor block id, passage text) via the DB; more than
+    one id for a rank marks the row `chunk_id_ambiguous`).
+  * EV-10 -- a run in which any question errored on a GPU-lock timeout is INVALID: the report
+    carries `run_valid: false` and `n_lock_timeouts`, the summary says so, and the process exits
+    `EXIT_INVALID_RUN` (3) after writing the report. Same VOID convention as
+    `scripts/nb_eval_runner.py` (a partially starved run is not a baseline).
+
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
+import sqlite3
 import statistics
-from dataclasses import dataclass
+import subprocess
+import sys
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
 _DEFAULT_GROUND_TRUTH = "fixtures/eval/eval_ground_truth.json"
 _DEFAULT_K = 10
+
+# EV-7: exit code of a gold-id preflight failure (unresolvable gold ids -- nothing was measured).
+EXIT_PREFLIGHT_FAILED = 2
+# EV-10: exit code of a run that finished and wrote its report but is INVALID (GPU-lock timeout).
+# scripts/nb_eval_runner.py mirrors this number to still collect the (VOID-flagged) report.
+EXIT_INVALID_RUN = 3
 
 # Stated in the emitted report itself (build_report), not just here: a verbatim predicate leaves
 # paraphrase-level leaks uncounted, so the reported figure is a floor, not a measurement.
@@ -192,6 +223,16 @@ class Question:
     # build_report can split the passage metric into text vs vision arms; the default keeps every
     # pre-VARM-1 fixture parsing unchanged.
     vision_derived: bool = False
+    # EV-7/EV-8: gold chunk identity as recorded in the fixture (None / () when absent). Read for
+    # the gold-id preflight; `alternative_gold_chunk_ids` also feeds the excerpt metric (EV-8).
+    gold_chunk_id: str | None = None
+    alternative_gold_chunk_ids: tuple[str, ...] = ()
+    # EV-8: the fixture's verbatim excerpt text and the block it sits in (None for an item whose
+    # excerpt spans blocks -> excerpt metric falls back to the anchor rule). `alt_chunk_texts` is
+    # the DB text of the gold + alternative chunks, filled in by CorpusLookup.attach_gold_texts.
+    passage_excerpt: str | None = None
+    excerpt_block_id: str | None = None
+    alt_chunk_texts: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -227,6 +268,17 @@ class QuestionResult:
     # Purely additive outputs -- no input to any hit/rank/score above.
     retrieved_paper_ids: tuple[str, ...] = ()
     retrieved_block_ids: tuple[str, ...] = ()
+    # EV-8: rank of the first excerpt-containment hit (see `excerpt_hit`); for an item with a null
+    # `excerpt_block_id` the anchor rule's rank is copied here and `excerpt_fallback` is True.
+    excerpt_rank: int | None = None
+    excerpt_fallback: bool = False
+    # EV-9: per retrieved rank, the corpus chunk id(s) recovered from (paper id, anchor block id,
+    # passage text): one id = unique, several = ambiguous (identical text on one anchor), none =
+    # unresolved. Empty tuple when no CorpusLookup was supplied to `run`.
+    retrieved_chunk_ids: tuple[tuple[str, ...], ...] = ()
+    # EV-10: "gpu_lock_timeout" when the error is a GPU-lock acquisition timeout (the question
+    # never ran), else None -- including for ordinary errors, which stay plain `error` strings.
+    error_class: str | None = None
 
 
 def load_questions(ground_truth_path: Path, include_duplicates: bool = False) -> list[Question]:
@@ -296,9 +348,144 @@ def load_questions(ground_truth_path: Path, include_duplicates: bool = False) ->
                 doc_type=r.get("doc_type", "paper"),
                 vision_derived=bool(r.get("vision_derived", False)),
                 gold_chapter_title=r.get("gold_chapter_title"),
+                gold_chunk_id=r.get("gold_chunk_id"),
+                alternative_gold_chunk_ids=tuple(r.get("alternative_gold_chunk_ids") or ()),
+                passage_excerpt=r.get("passage_excerpt"),
+                excerpt_block_id=r.get("excerpt_block_id"),
             )
         )
     return questions
+
+
+def file_sha256_12(path: Path) -> str:
+    """First 12 hex of the SHA-256 of the file's bytes (== `sha256sum <path> | cut -c1-12`)."""
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()[:12]
+
+
+def code_commit(repo_dir: Path | None = None) -> tuple[str | None, bool | None]:
+    """(`git rev-parse HEAD`, tree-has-tracked-changes) of the checkout this module runs from, or
+    (None, None) when git is unavailable. Stamped into every report so a number names the code
+    that produced it. Untracked files are ignored (run output dirs live inside the repo)."""
+    cwd = repo_dir or Path(__file__).resolve().parent.parent
+    try:
+        head = subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=cwd, capture_output=True, text=True, check=True
+        ).stdout.strip()
+        dirty = subprocess.run(
+            ["git", "status", "--porcelain", "--untracked-files=no"],
+            cwd=cwd, capture_output=True, text=True, check=True,
+        ).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        return None, None
+    return head, bool(dirty)
+
+
+def excerpt_hit(question: Question, passage_text: str) -> bool:
+    """EV-8: does one returned `passage_text` contain the question's gold excerpt?
+
+    True when the normalised (`_normalized`: casefold + whitespace collapse) `passage_excerpt` is a
+    substring of the normalised passage, or the normalised passage EQUALS the text of the gold or
+    an `alternative_gold_chunk_ids` chunk (`alt_chunk_texts`, resolved through the DB -- covers an
+    excerpt the chunker re-rendered, e.g. a table). Chunk identity and anchor block never enter, so
+    the rule survives a re-chunk and credits an alternative chunk the anchor rule misses.
+
+    Ceiling: the gold chunk's own text satisfies this for every item with a non-null
+    `excerpt_block_id` whose excerpt is verbatim in it (pinned by test).
+
+    Relation to the frozen protocols' member-passage metric (scripts/eval_strata_report.py): that
+    metric is anchor-based -- a result counts if its ANCHOR block is the gold block, anchors an
+    alternative/gold chunk, or its member-block span contains `excerpt_block_id`. It answers "did
+    retrieval land on a chunk covering the right block", independent of what text was served, and
+    over-counts when chunks share an anchor. This metric asks "was the excerpt text actually in the
+    served passage", independent of chunk identity. They agree where the chunk body is served in
+    full and anchors are unique (the main corpus), and can differ for shared-anchor chunks (member
+    counts, excerpt does not unless the text matches) and truncated/re-rendered bodies. The names do
+    not collide (`passage_excerpt_level` vs `member_hit`); the protocols' metric of record stays
+    member-passage and this one is reported beside it, never in place of it.
+    """
+    served = _normalized(passage_text)
+    if question.passage_excerpt and _normalized(question.passage_excerpt) in served:
+        return True
+    return any(served == _normalized(t) for t in question.alt_chunk_texts if t)
+
+
+class CorpusLookup:
+    """Read-only (`mode=ro`) view of the corpus DB for the measurement side: the gold-id preflight
+    (EV-7). Never writes; opened separately from the retriever's own store."""
+
+    def __init__(self, db_path):
+        self._con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+        self._chunks_by_paper: dict[str, dict[str, list[tuple[str, str]]]] = {}
+
+    def close(self) -> None:
+        self._con.close()
+
+    def _missing(self, table: str, column: str, ids: set[str]) -> list[str]:
+        found: set[str] = set()
+        wanted = sorted(ids)
+        for i in range(0, len(wanted), 500):  # stay under SQLite's bound-variable limit
+            batch = wanted[i : i + 500]
+            marks = ",".join("?" * len(batch))
+            found |= {
+                r[0]
+                for r in self._con.execute(
+                    f"SELECT {column} FROM {table} WHERE {column} IN ({marks})", batch
+                )
+            }
+        return sorted(ids - found)
+
+    def chunk_ids_for(self, paper_id: str, block_id: str, passage_text: str) -> list[str]:
+        """EV-9: ids of the chunks of `paper_id` anchored on `block_id` whose text equals
+        `passage_text` (GroundedResult carries no chunk id). Exactly one id when recoverable; ALL
+        matches when identical text sits on one anchor (the caller marks the row ambiguous --
+        never picks one); [] when nothing matches. Loaded and cached per paper."""
+        if paper_id not in self._chunks_by_paper:
+            by_anchor: dict[str, list[tuple[str, str]]] = {}
+            for cid, text, anchor_json in self._con.execute(
+                "SELECT chunk_id, text, anchor_json FROM chunks WHERE paper_id = ?", (paper_id,)
+            ):
+                by_anchor.setdefault(json.loads(anchor_json)["block_id"], []).append((cid, text))
+            self._chunks_by_paper[paper_id] = by_anchor
+        return sorted(
+            cid
+            for cid, text in self._chunks_by_paper[paper_id].get(block_id, ())
+            if text == passage_text
+        )
+
+    def chunk_text(self, chunk_id: str) -> str | None:
+        row = self._con.execute(
+            "SELECT text FROM chunks WHERE chunk_id = ?", (chunk_id,)
+        ).fetchone()
+        return row[0] if row else None
+
+    def attach_gold_texts(self, questions: list[Question]) -> list[Question]:
+        """Questions with `alt_chunk_texts` = DB text of each gold / alternative chunk (EV-8).
+        Ids that do not resolve are skipped here (the preflight is what fails on them)."""
+        out = []
+        for q in questions:
+            ids = [c for c in (q.gold_chunk_id, *q.alternative_gold_chunk_ids) if c]
+            texts = tuple(t for t in (self.chunk_text(c) for c in ids) if t is not None)
+            out.append(replace(q, alt_chunk_texts=texts) if texts else q)
+        return out
+
+    def unresolved_gold_ids(self, questions: list[Question]) -> dict[str, list[str]]:
+        """{kind: sorted unresolved ids} for gold paper / block / chunk ids absent from this DB
+        (empty dict = every gold id resolves). A mispointed `--db-path` otherwise yields a
+        plausible low number with `n_errors = 0`."""
+        papers = {p for q in questions for p in q.gold_paper_ids}
+        blocks = {q.gold_block_id for q in questions if q.gold_block_id}
+        chunks = {
+            c
+            for q in questions
+            for c in (q.gold_chunk_id, *q.alternative_gold_chunk_ids)
+            if c
+        }
+        missing = {
+            "paper": self._missing("papers", "paper_id", papers),
+            "block": self._missing("blocks", "block_id", blocks),
+            "chunk": self._missing("chunks", "chunk_id", chunks),
+        }
+        return {kind: ids for kind, ids in missing.items() if ids}
 
 
 def _normalized(text: str) -> str:
@@ -327,7 +514,8 @@ def _title_leak(result, gold_paper_ids: frozenset[str]) -> bool:
 
 
 def score_question(
-    question: Question, results: list, k: int, chapter_results: list | None = None
+    question: Question, results: list, k: int, chapter_results: list | None = None,
+    chunk_lookup: "CorpusLookup | None" = None,
 ) -> QuestionResult:
     """`results` is the `list[GroundedResult]` a real (or fake) `Retriever.retrieve()` call
     returned -- already truncated to `k` by `Retriever` itself, but truncated again here so a
@@ -337,6 +525,8 @@ def score_question(
     retrieve_papers()` call returned, for `gold_chapter_title` questions only -- `run()` doesn't
     make that call at all for a question that isn't chapter-scored, so this is `None` in that
     case (never an empty list standing in for "not scored").
+
+    `chunk_lookup` (EV-9) is only used to record `retrieved_chunk_ids`; it never feeds a hit rule.
     """
     truncated = results[:k]
     paper_rank = next(
@@ -351,6 +541,21 @@ def score_question(
                 i
                 for i, r in enumerate(truncated, start=1)
                 if r.anchor.block_id == question.gold_block_id
+            ),
+            None,
+        )
+    # EV-8: additive excerpt-containment rank; items without an excerpt block fall back to the
+    # anchor rule (and are flagged so build_report can list them).
+    excerpt_fallback = passage_scored and (
+        question.excerpt_block_id is None or not question.passage_excerpt
+    )
+    excerpt_rank = None
+    if passage_scored:
+        excerpt_rank = passage_rank if excerpt_fallback else next(
+            (
+                i
+                for i, r in enumerate(truncated, start=1)
+                if excerpt_hit(question, r.passage_text)
             ),
             None,
         )
@@ -369,6 +574,16 @@ def score_question(
     return QuestionResult(
         retrieved_paper_ids=tuple(r.paper_id for r in truncated),
         retrieved_block_ids=tuple(r.anchor.block_id for r in truncated),
+        excerpt_rank=excerpt_rank,
+        excerpt_fallback=excerpt_fallback,
+        retrieved_chunk_ids=(
+            tuple(
+                tuple(chunk_lookup.chunk_ids_for(r.paper_id, r.anchor.block_id, r.passage_text))
+                for r in truncated
+            )
+            if chunk_lookup is not None
+            else ()
+        ),
         question_id=question.question_id,
         question_type=question.question_type,
         paper_rank=paper_rank,
@@ -389,7 +604,25 @@ def score_question(
     )
 
 
-def run(questions: list[Question], retriever, k: int) -> list[QuestionResult]:
+GPU_LOCK_TIMEOUT = "gpu_lock_timeout"
+
+
+def _error_class(error: Exception) -> str | None:
+    """EV-10: classify a per-question retrieval error. A lock timeout is raised by
+    rag/gpu_lock.py as TransientError("gpu lock <path> not acquired within <n>s for stage ...");
+    matched on that message (the retriever may wrap the exception type) over the cause chain."""
+    seen = error
+    while seen is not None:
+        text = str(seen)
+        if "gpu lock" in text and "not acquired within" in text:
+            return GPU_LOCK_TIMEOUT
+        seen = seen.__cause__
+    return None
+
+
+def run(
+    questions: list[Question], retriever, k: int, chunk_lookup: "CorpusLookup | None" = None
+) -> list[QuestionResult]:
     """Calls the real (or fake) `retriever.retrieve(question_text, filters, k)` for every
     question -- plus `retriever.retrieve_papers(question_text, filters, k)` too, but only for a
     question carrying a `gold_chapter_title` (a chapter-routing question doesn't get scored
@@ -423,6 +656,7 @@ def run(questions: list[Question], retriever, k: int) -> list[QuestionResult]:
                     passage_rank=None,
                     passage_scored=question.gold_block_id is not None,
                     error=str(e),
+                    error_class=_error_class(e),
                     gold_paper_ids=question.gold_paper_ids,
                     gold_block_id=question.gold_block_id,
                     doc_type=question.doc_type,
@@ -432,7 +666,7 @@ def run(questions: list[Question], retriever, k: int) -> list[QuestionResult]:
                 )
             )
             continue
-        results.append(score_question(question, hits, k, chapter_hits))
+        results.append(score_question(question, hits, k, chapter_hits, chunk_lookup))
         if i % 20 == 0:
             logger.info("scored %d/%d questions", i, len(questions))
     return results
@@ -542,6 +776,7 @@ def _question_row(r: QuestionResult) -> dict:
         "gold_block_id": r.gold_block_id,
         "gold_chapter_title": r.gold_chapter_title,
         "error": r.error,
+        "error_class": r.error_class,
         # Diagnostic only -- see build_report's paper_level.title_leak note; not an input to
         # hit/rank above (pinned by test_build_report_reports_leaks_alongside_untouched_metrics).
         "title_leak": r.title_leak,
@@ -549,6 +784,9 @@ def _question_row(r: QuestionResult) -> dict:
         "top_score": r.top_score,
         "retrieved_paper_ids": list(r.retrieved_paper_ids),
         "retrieved_block_ids": list(r.retrieved_block_ids),
+        # EV-9: additive; one candidate list per rank (see QuestionResult.retrieved_chunk_ids).
+        "retrieved_chunk_ids": [list(ids) for ids in r.retrieved_chunk_ids],
+        "chunk_id_ambiguous": any(len(ids) > 1 for ids in r.retrieved_chunk_ids),
         "paper_level": {"hit": r.paper_rank is not None, "rank": r.paper_rank},
         "passage_level": {
             "scored": r.passage_scored,
@@ -560,7 +798,24 @@ def _question_row(r: QuestionResult) -> dict:
             "hit": r.chapter_rank is not None,
             "rank": r.chapter_rank,
         },
+        # EV-8: additive; `passage_level` above is the unchanged anchor rule.
+        "passage_excerpt_level": {
+            "scored": r.passage_scored,
+            "hit": r.excerpt_rank is not None,
+            "rank": r.excerpt_rank,
+            "fallback": r.excerpt_fallback,
+        },
     }
+
+
+_EXCERPT_SCORING_RULE = (
+    "top-{k} truncation; passage_excerpt hit = first rank r <= {k} whose passage_text (casefolded, "
+    "whitespace collapsed) contains the question's passage_excerpt or equals the text of its gold "
+    "/ alternative_gold_chunk_ids chunk; questions with a null excerpt_block_id use the anchor "
+    "rule (result.anchor.block_id == gold_block_id) and are listed in fallback_question_ids. "
+    "Reported beside, never in place of, passage_level (anchor rule) and the protocols' "
+    "member-passage metric (scripts/eval_strata_report.py)."
+)
 
 
 def _scoring_rule(k: int, mode: str, hybrid_dense_weight: float) -> str:
@@ -587,6 +842,9 @@ def build_report(
     mode: str = "fused",
     hybrid_dense_weight: float = 0.5,
     include_per_question: bool = True,
+    ground_truth_sha256_12: str | None = None,
+    code_commit: str | None = None,
+    code_tree_dirty: bool | None = None,
 ) -> dict:
     question_types = sorted({r.question_type for r in results})
     doc_types = sorted({r.doc_type for r in results})
@@ -606,6 +864,8 @@ def build_report(
     # discipline, and 'overall' below stays untouched so existing fixtures' numbers do not move.
     text_arm_results = [r for r in passage_eligible if not r.vision_derived]
     vision_arm_results = [r for r in passage_eligible if r.vision_derived]
+    excerpt_fallbacks = [r for r in passage_eligible if r.excerpt_fallback]
+    n_lock_timeouts = sum(1 for r in results if r.error_class == GPU_LOCK_TIMEOUT)
 
     report = {
         # RI-15: names the hit rule and k in force, so reports produced under different rules are
@@ -613,9 +873,35 @@ def build_report(
         # (and its RRF weight) rather than adding a second, parallel report field for it.
         # See _scoring_rule.
         "scoring_rule": _scoring_rule(k, mode, hybrid_dense_weight),
+        # EV-7: what produced this number -- the ground-truth file (judge_eval's
+        # `rubric_sha256_12` pattern) and the code commit. None when the caller did not supply
+        # them (unit tests, in-process reuse by other experiment modules).
+        "ground_truth_sha256_12": ground_truth_sha256_12,
+        "code_commit": code_commit,
+        "code_tree_dirty": code_tree_dirty,
         "k": k,
         "n_questions": len(results),
         "n_errors": sum(1 for r in results if r.error),
+        # EV-10: a question that errored on a GPU-lock timeout never ran -- scoring it as a miss
+        # (SB-1) makes the whole run a partially starved, untrustworthy measurement. Header-level
+        # so a reader sees it before any metric; same VOID convention as scripts/nb_eval_runner.py.
+        "run_valid": n_lock_timeouts == 0,
+        "n_lock_timeouts": n_lock_timeouts,
+        "invalid_reason": (
+            f"{n_lock_timeouts} question(s) errored on a GPU-lock timeout and never ran; their "
+            "rows are counted as misses below -- do not use any number in this report; re-run "
+            "with no concurrent GPU-lock contention"
+            if n_lock_timeouts
+            else None
+        ),
+        # EV-9: ambiguity is counted, not hidden (rows with a rank matching >1 chunk; ranks that
+        # matched no chunk -- nonzero only when a CorpusLookup was supplied to `run`).
+        "n_chunk_id_ambiguous_rows": sum(
+            1 for r in results if any(len(ids) > 1 for ids in r.retrieved_chunk_ids)
+        ),
+        "n_chunk_id_unresolved_ranks": sum(
+            1 for r in results for ids in r.retrieved_chunk_ids if not ids
+        ),
         "paper_level": {
             "overall": _recall_mrr([r.paper_rank for r in results]),
             # BENCH-1: the two arms a mixed fixture must be read through. Additive -- 'overall'
@@ -681,6 +967,26 @@ def build_report(
                 for dt in sorted({r.doc_type for r in passage_eligible})
             },
         },
+        # EV-8: excerpt-containment passage metric, BESIDE the anchor `passage_level` (which is
+        # untouched). Same denominator (questions with a gold_block_id); items without an excerpt
+        # block use the anchor rule and are listed so the mix is never hidden.
+        "passage_excerpt_level": {
+            "scoring_rule": _EXCERPT_SCORING_RULE.format(k=k),
+            "n_scored": len(passage_eligible),
+            "n_fallback_anchor": len(excerpt_fallbacks),
+            "fallback_question_ids": [r.question_id for r in excerpt_fallbacks],
+            "overall": _recall_mrr([r.excerpt_rank for r in passage_eligible]),
+            "by_question_type": {
+                t: _recall_mrr(
+                    [r.excerpt_rank for r in passage_eligible if r.question_type == t]
+                )
+                for t in sorted({r.question_type for r in passage_eligible})
+            },
+            "by_doc_type": {
+                dt: _recall_mrr([r.excerpt_rank for r in passage_eligible if r.doc_type == dt])
+                for dt in sorted({r.doc_type for r in passage_eligible})
+            },
+        },
         # Chapter-routing accuracy (search_papers) -- distinct from passage_level (semantic_search)
         # per the design doc: "This is what chapter summaries exist for" vs. "whether chapter work
         # affects retrieval at all, or only navigation." Empty/all-n=0 for any fixture with no
@@ -709,6 +1015,8 @@ def _print_summary(report: dict) -> None:
             return "n=0 (no questions in this split)"
         return f"Recall@{report['k']}={m['recall_at_k']:.3f}  MRR={m['mrr']:.3f}  (n={m['n']})"
 
+    if not report["run_valid"]:
+        print(f"*** RUN INVALID: {report['invalid_reason']} ***")
     print(f"Scoring rule: {report['scoring_rule']}")
     print(f"Questions scored: {report['n_questions']} (errors: {report['n_errors']})")
     # BENCH-1: a mixed fixture prints its two arms, not the blend -- the unpartitioned 'overall'
@@ -743,6 +1051,10 @@ def _print_summary(report: dict) -> None:
     else:
         print("Passage-level: no question in this ground-truth file carries a gold_block_id "
               "-- nothing to score (this is expected for the 210-question set)")
+    pe = report["passage_excerpt_level"]
+    if pe["n_scored"]:
+        print(f"Passage-excerpt {_fmt(pe['overall'])}  [{pe['n_fallback_anchor']} of "
+              f"{pe['n_scored']} fell back to the anchor rule: null excerpt_block_id]")
     cl = report["chapter_level"]
     if cl["n_scored"]:
         print(f"Chapter-level {_fmt(cl['overall'])}  [{cl['n_scored']}/{report['n_questions']} "
@@ -777,9 +1089,10 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--db-path", default=None)
     parser.add_argument("--blob-dir", default=None)
     parser.add_argument(
-        "--collection", default=None,
-        help="named vector-store collection to search (defaults to the retriever wiring's own "
-             "default) -- point this at a throwaway baseline/headered collection to compare them",
+        "--collection", required=True,
+        help="REQUIRED (EV-7): named vector-store collection to search. There is no default -- "
+             "an omitted flag used to fall through to the main `papers` corpus and a mispointed "
+             "run printed a plausible low number with 0 errors",
     )
     parser.add_argument("--k", type=int, default=_DEFAULT_K)
     parser.add_argument("--report-path", default=None, help="write the JSON report here")
@@ -815,11 +1128,32 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO)
     args = _parse_args()
 
-    # Deferred import: these pull in the real (GPU-backed) adapter wiring, which unit tests must
-    # never touch (they exercise load_questions/score_question/run/build_report against a fake
-    # retriever instead) -- see app/test_retrieval_eval.py.
-    from app.assembly import build_mcp_server
     from rag.config import load_config
+
+    questions = load_questions(Path(args.ground_truth))
+    if args.limit is not None:
+        questions = questions[: args.limit]
+
+    # EV-7 preflight, BEFORE any service is touched: every gold id must resolve in the DB this run
+    # will query, else exit 2 naming them. Read-only. `--db-path` wins, else the config's own --
+    # the same precedence as app.assembly._resolve_store_paths.
+    db_path = args.db_path or load_config(args.config).db_path
+    lookup = CorpusLookup(db_path)
+    unresolved = lookup.unresolved_gold_ids(questions)
+    if unresolved:
+        for kind, ids in unresolved.items():
+            print(
+                f"PREFLIGHT FAILED: {len(ids)} gold {kind} id(s) not found in {db_path}: "
+                f"{', '.join(ids[:20])}{' ...' if len(ids) > 20 else ''}",
+                file=sys.stderr,
+            )
+        sys.exit(EXIT_PREFLIGHT_FAILED)
+    questions = lookup.attach_gold_texts(questions)
+    # Deferred import: pulls in the real (GPU-backed) adapter wiring, which unit tests must never
+    # touch (they exercise load_questions/score_question/run/build_report against a fake
+    # retriever instead) -- see app/test_retrieval_eval.py. After the preflight so a bad fixture
+    # or DB fails before any adapter is imported.
+    from app.assembly import build_mcp_server
 
     config = load_config(args.config)
     # RI-M3: resolve the ablation mode to a concrete hybrid_dense_weight; FUSE-1 extends this
@@ -839,26 +1173,27 @@ def main() -> None:
         build_kwargs["db_path"] = args.db_path
     if args.blob_dir is not None:
         build_kwargs["blob_dir"] = args.blob_dir
-    if args.collection is not None:
-        build_kwargs["collection"] = args.collection
+    build_kwargs["collection"] = args.collection
     if args.drop_stub_chunks:
         build_kwargs["drop_stub_chunks"] = True
     server = build_mcp_server(config, **build_kwargs)
 
-    questions = load_questions(Path(args.ground_truth))
-    if args.limit is not None:
-        questions = questions[: args.limit]
-
-    results = run(questions, server.retriever, args.k)
+    results = run(questions, server.retriever, args.k, chunk_lookup=lookup)
+    lookup.close()
+    commit, dirty = code_commit()
     report = build_report(
         results, args.k, mode=args.sparse_mode, hybrid_dense_weight=weight,
         include_per_question=not args.no_per_question,
+        ground_truth_sha256_12=file_sha256_12(Path(args.ground_truth)),
+        code_commit=commit, code_tree_dirty=dirty,
     )
     _print_summary(report)
 
     if args.report_path:
         Path(args.report_path).write_text(json.dumps(report, indent=2))
         print(f"\nWrote report to {args.report_path}")
+    if not report["run_valid"]:
+        sys.exit(EXIT_INVALID_RUN)
 
 
 if __name__ == "__main__":
