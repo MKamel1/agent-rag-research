@@ -687,7 +687,7 @@ class DocumentStore:
             scanned.add(r_paper_id)
             text = text or ""
             match = regex.search(text)
-            snippet_src, start_at, end_at = text, None, None
+            start_at = end_at = None
             if match is None and text:
                 # CQ-1: retry on the ligature-repaired text so `effect` finds "efect".
                 repaired, to_original = repair_with_offsets(text)
