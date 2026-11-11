@@ -432,7 +432,9 @@ def main(argv=None) -> int:
         Path(args.out).write_text(json.dumps(flags, indent=2))
         vals = list(flags.values())
         print(f"damaged={vals.count(True)} clean={vals.count(False)} unknown={vals.count(None)}")
-        return 0 if None not in vals else BAD_INPUT
+        # absent items carry no gold chunk: unknown by design, not bad input
+        lost = [q for q, v in flags.items() if v is None and gt[q].get("gold_chunk_id")]
+        return 0 if not lost else BAD_INPUT
 
     from rag.ligatures import repair_ligatures
 
