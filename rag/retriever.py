@@ -77,6 +77,28 @@ _MAX_HITS_PER_PAPER = 3
 # R@10 0.650 -> 0.725 at this cap -- see docs/eval-reports/2026-07-29-scoped-cap-measurement.md.)
 _MAX_HITS_PER_PAPER_SCOPED = 50
 
+# CQ-3: a chunk whose body (text after the `title\nsection_path\n\n` header) is shorter than this is
+# a heading-only "stub" (docs/eval-reports/2026-11-10-cq3-stub-chunks.md). 40 matches the census's
+# `--stub-chars` default; a real short definition ("computer program used in the development of an
+# item", 51 chars) clears it, a bare clause number ("3.159") does not.
+_MIN_BODY_CHARS = 40
+
+# With `drop_stub_chunks` on, fetch this much more than the pool so dropping stubs (7-10% of chunks)
+# still leaves a full pool of real chunks. ponytail: fixed 25% headroom; raise if a corpus's stub
+# share exceeds ~20%.
+_STUB_OVERFETCH_NUM, _STUB_OVERFETCH_DEN = 5, 4
+
+
+def body_of(text: str) -> str:
+    """A chunk's text is `title\nsection_path\n\nbody` (rag/chunker.py::_build_chunk); returns the
+    stripped body, "" if there is no header separator. The one definition of "body" -- the census
+    and stub-lister scripts import it."""
+    return text.split("\n\n", 1)[1].strip() if "\n\n" in text else ""
+
+
+def is_stub_chunk_text(text: str) -> bool:
+    return len(body_of(text)) < _MIN_BODY_CHARS
+
 
 def _is_scoped(filters: SearchFilters | None) -> bool:
     """True once the caller has narrowed results to one document/doc_type, per Decision 2 option B.
@@ -189,15 +211,19 @@ class Retriever:
     `rerank_pool_size` is not a collaborator, just a plain tuning knob (defaults to
     `_RERANK_POOL_SIZE`, this module's own docstring on that constant explains where the live
     value -- `Config.rerank_depth` -- gets threaded in from).
+
+    `drop_stub_chunks` (CQ-3, default OFF): `retrieve()` drops heading-only chunks before they reach
+    the reranker and refills the pool from deeper hybrid hits. `retrieve_papers()` is unaffected.
     """
 
     def __init__(self, embedder, vector_store, document_store, reranker,
-                 rerank_pool_size: int = _RERANK_POOL_SIZE):
+                 rerank_pool_size: int = _RERANK_POOL_SIZE, drop_stub_chunks: bool = False):
         self._embedder = embedder
         self._vector_store = vector_store
         self._document_store = document_store
         self._reranker = reranker
         self._rerank_pool_size = rerank_pool_size
+        self._drop_stub_chunks = drop_stub_chunks
 
     def retrieve(
         self, query: str, filters: SearchFilters | None, k: int
@@ -213,7 +239,11 @@ class Retriever:
         build the real `Coverage.candidates` (contracts/mcp_server.py) instead of the `len(results)`
         stand-in it used to fall back on.
         """
-        hits = self._hybrid_hits(query, filters, max(k, self._rerank_pool_size), kind="chunk")
+        pool = max(k, self._rerank_pool_size)
+        fetch = pool
+        if self._drop_stub_chunks:
+            fetch = pool * _STUB_OVERFETCH_NUM // _STUB_OVERFETCH_DEN
+        hits = self._hybrid_hits(query, filters, fetch, kind="chunk")
         if not hits:
             return [], RetrievalCoverage(candidate_count=0)
         scores = {hit.id: hit.score for hit in hits}
@@ -223,8 +253,14 @@ class Retriever:
         # an unknown id; per-hit try/except mirrors the parent-paper orphan-skip further down.
         chunks = {}
         for hit in hits:
+            if len(chunks) >= pool:
+                break  # only reachable with stub overfetch: the pool is already full of real chunks
             try:
-                chunks[hit.id] = self._document_store.get_chunk(hit.id)
+                chunk = self._document_store.get_chunk(hit.id)
+                # CQ-3: the one place a stub is dropped -- after its text is loaded, before it is a
+                # RerankCandidate, so it costs no reranker slot.
+                if not (self._drop_stub_chunks and is_stub_chunk_text(chunk.text)):
+                    chunks[hit.id] = chunk
             except ContractError:
                 logger.warning(
                     "retrieve(): dropping unresolvable hit chunk_id=%r (no matching Chunk row -- "
@@ -232,6 +268,8 @@ class Retriever:
                     "instead of failing the whole query",
                     hit.id,
                 )
+        if not chunks:  # every hit was a stub or orphaned
+            return [], RetrievalCoverage(candidate_count=len(hits))
         candidates = [
             RerankCandidate(id=chunk_id, text=chunk.text) for chunk_id, chunk in chunks.items()
         ]

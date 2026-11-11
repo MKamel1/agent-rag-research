@@ -803,6 +803,11 @@ def _parse_args() -> argparse.Namespace:
              "of the config's own or --sparse-mode's mapped extreme; wins when both are given. "
              "The used value is stamped into the report's scoring_rule.",
     )
+    parser.add_argument(
+        "--drop-stub-chunks", action="store_true",
+        help="CQ-3 A/B arm: drop heading-only chunks before reranking (Retriever's "
+             "drop_stub_chunks). Default off = baseline.",
+    )
     return parser.parse_args()
 
 
@@ -836,6 +841,8 @@ def main() -> None:
         build_kwargs["blob_dir"] = args.blob_dir
     if args.collection is not None:
         build_kwargs["collection"] = args.collection
+    if args.drop_stub_chunks:
+        build_kwargs["drop_stub_chunks"] = True
     server = build_mcp_server(config, **build_kwargs)
 
     questions = load_questions(Path(args.ground_truth))

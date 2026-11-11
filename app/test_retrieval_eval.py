@@ -1515,3 +1515,12 @@ def test_build_report_no_vision_fixture_text_arm_equals_overall_and_vision_empty
     assert arms["vision"]["mrr"] is None
     assert arms["vision"]["rank_1_rate"] is None
     assert arms["vision"]["paper_level"]["recall_at_k"] is None
+
+
+def test_parse_args_drop_stub_chunks_flag_defaults_off(monkeypatch):
+    """CQ-3: the A/B arm is opt-in from the CLI."""
+    from app import retrieval_eval
+    monkeypatch.setattr("sys.argv", ["retrieval_eval"])
+    assert retrieval_eval._parse_args().drop_stub_chunks is False
+    monkeypatch.setattr("sys.argv", ["retrieval_eval", "--drop-stub-chunks"])
+    assert retrieval_eval._parse_args().drop_stub_chunks is True

@@ -603,7 +603,7 @@ def _resolve_store_paths(
 
 def build_mcp_server(
     config: Config, *, db_path: str | None = None, blob_dir: str | None = None,
-    collection: str = "papers",
+    collection: str = "papers", drop_stub_chunks: bool = False,
 ) -> McpServer:
     gpu_lock = FileGpuLock(Path(config.gpu_lock_path))  # same path as the ingest root -> same file
     db_path, blob_dir = _resolve_store_paths(config, db_path, blob_dir)
@@ -653,7 +653,10 @@ def build_mcp_server(
     # `config.rerank_depth` is now the real lever, and the vendor limit stays where T-DOC39 put it
     # -- inside the reranker, which still defends it unconditionally per call.
     rerank_pool_size = config.rerank_depth
-    retriever = Retriever(embedder, vector_index, document_store, reranker, rerank_pool_size)
+    retriever = Retriever(
+        embedder, vector_index, document_store, reranker, rerank_pool_size,
+        drop_stub_chunks=drop_stub_chunks,  # CQ-3 A/B switch; production wiring leaves it off
+    )
 
     return McpServer(
         retriever, document_store, default_k=config.top_k,

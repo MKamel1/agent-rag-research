@@ -1404,3 +1404,13 @@ def test_build_mcp_server_default_k_matches_configs_own_default_top_k(monkeypatc
     )
 
     assert server._default_k == 10  # Config.top_k's own default
+
+
+def test_build_mcp_server_threads_drop_stub_chunks_default_off(monkeypatch, tmp_path):
+    """CQ-3: the A/B switch reaches Retriever; production wiring (no kwarg) leaves it off."""
+    monkeypatch.setattr("app.assembly.tei_lifecycle", _FakeTeiLifecycle())
+    monkeypatch.setattr("app.assembly.VectorIndex", lambda *a, **k: object())
+    cfg = Config(focus_area_queries=["causal inference"], gpu_lock_path=str(tmp_path / ".gpu.lock"))
+    kw = {"db_path": str(tmp_path / "papers.db"), "blob_dir": str(tmp_path / "blobs")}
+    assert build_mcp_server(cfg, **kw)._retriever._drop_stub_chunks is False
+    assert build_mcp_server(cfg, drop_stub_chunks=True, **kw)._retriever._drop_stub_chunks is True
