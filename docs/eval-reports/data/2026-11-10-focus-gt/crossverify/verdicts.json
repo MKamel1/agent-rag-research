@@ -1,0 +1,851 @@
+[
+ {
+  "question_id": "Q-FOC-001",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "labels_ok": true,
+   "collision_real": true,
+   "term_in_question": true,
+   "not_answerable_elsewhere": false,
+   "no_title_run_4plus": true,
+   "no_excerpt_run_6plus": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [
+   "2006.11386:c16"
+  ],
+  "reason": "c16 also says the gamma parameter scales bias from exclusion violations (weaker restatement); distractors 1805.10649:c3, 2606.05971:c24, 2607.07221:c8 are genuine measurement-instrument uses."
+ },
+ {
+  "question_id": "Q-FOC-002",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "labels_ok": true,
+   "collision_real": true,
+   "term_in_question": true,
+   "not_answerable_elsewhere": true,
+   "no_title_run_4plus": true,
+   "no_excerpt_run_6plus": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Clean; term 'instrument' in question; distractors real."
+ },
+ {
+  "question_id": "Q-FOC-003",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "labels_ok": true,
+   "collision_real": true,
+   "term_in_question": true,
+   "not_answerable_elsewhere": true,
+   "no_title_run_4plus": true,
+   "no_excerpt_run_6plus": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Clean; only c5 states the linear-combination pass-through."
+ },
+ {
+  "question_id": "Q-FOC-004",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "labels_ok": true,
+   "collision_real": true,
+   "term_in_question": true,
+   "not_answerable_elsewhere": false,
+   "no_title_run_4plus": false,
+   "no_excerpt_run_6plus": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [
+   "2311.08882:c4"
+  ],
+  "reason": "Question reuses 4-word title runs 'causal influences in quantum' / 'influences in quantum processes' (title: Identification of Causal Influences in Quantum Processes). Chunk 2311.08882:c4 (overlapping chunk) contains the same excerpt sentence.",
+  "suggested_fix": "When pinning down cause-effect structure in quantum circuits, what property must a sufficiently rich set of instruments have regarding the outcome statistics?"
+ },
+ {
+  "question_id": "Q-FOC-005",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "labels_ok": true,
+   "collision_real": true,
+   "term_in_question": true,
+   "not_answerable_elsewhere": true,
+   "no_title_run_4plus": false,
+   "no_excerpt_run_6plus": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Question reuses the 5-word title run 'doubly robust evaluation of AI-guided student support' (title: Stabilising Learner Trajectories: A Doubly Robust Evaluation of AI-Guided Student Support...).",
+  "suggested_fix": "In the university study of AI-flagged at-risk learners, what do blocking and the caliper each do when matching supported students to untreated ones?"
+ },
+ {
+  "question_id": "Q-FOC-006",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "labels_ok": true,
+   "collision_real": true,
+   "term_in_question": true,
+   "not_answerable_elsewhere": true,
+   "no_title_run_4plus": true,
+   "no_excerpt_run_6plus": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Clean; 'matched' in question; distractors 2606.08436:c41, 2606.10369:c38, 2606.24256:c2 are genuine feature/keyword matching."
+ },
+ {
+  "question_id": "Q-FOC-007",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "labels_ok": true,
+   "collision_real": true,
+   "term_in_question": false,
+   "not_answerable_elsewhere": true,
+   "no_title_run_4plus": true,
+   "no_excerpt_run_6plus": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Collision term 'matching' does not occur in the question text (only, if at all, in the answer), so the trap is not live: a retriever is never pulled toward the distractor domain. Distractor chunks verified as genuine non-causal uses (2606.10369:c38 keyword matching etc.). Question says 'paired' only.",
+  "suggested_fix": "What caution does the randomization-inference paper on imperfect matching give about matched datasets that look covariate-balanced by usual diagnostics? (avoid the 4-word title run 'inexactly matched observational studies')"
+ },
+ {
+  "question_id": "Q-FOC-008",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "labels_ok": true,
+   "collision_real": true,
+   "term_in_question": false,
+   "not_answerable_elsewhere": true,
+   "no_title_run_4plus": true,
+   "no_excerpt_run_6plus": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Collision term 'interference' does not occur in the question text (only, if at all, in the answer), so the trap is not live: a retriever is never pulled toward the distractor domain. Distractor chunks verified as genuine non-causal uses (1810.02064:c3, 2606.07463:c4 etc.).",
+  "suggested_fix": "In the university-grants dropout study using principal stratification, what does the local RD-SUTVA assumption rule out about interference between students?"
+ },
+ {
+  "question_id": "Q-FOC-009",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "labels_ok": true,
+   "collision_real": true,
+   "term_in_question": false,
+   "not_answerable_elsewhere": true,
+   "no_title_run_4plus": true,
+   "no_excerpt_run_6plus": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Collision term 'interference' does not occur in the question text (only, if at all, in the answer), so the trap is not live: a retriever is never pulled toward the distractor domain. Distractor chunks verified as genuine non-causal uses (wave/signal interference chunks). 'Network interference' is the natural phrase and is avoided.",
+  "suggested_fix": "In the work on validating counterfactual estimates under network interference, what bounds the sample size available to the second step of the algorithm?"
+ },
+ {
+  "question_id": "Q-FOC-010",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "labels_ok": true,
+   "collision_real": true,
+   "term_in_question": false,
+   "not_answerable_elsewhere": true,
+   "no_title_run_4plus": true,
+   "no_excerpt_run_6plus": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Collision term 'interference' does not occur in the question text (only, if at all, in the answer), so the trap is not live: a retriever is never pulled toward the distractor domain. Distractor chunks verified as genuine non-causal uses (wave/signal interference chunks).",
+  "suggested_fix": "For individualized effects of combinatorial treatments under network interference, why does naive local regression fail even when assignments were randomized?"
+ },
+ {
+  "question_id": "Q-FOC-011",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "labels_ok": true,
+   "collision_real": true,
+   "term_in_question": false,
+   "not_answerable_elsewhere": true,
+   "no_title_run_4plus": true,
+   "no_excerpt_run_6plus": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Collision term 'discontinuity' does not occur in the question text (only, if at all, in the answer), so the trap is not live: a retriever is never pulled toward the distractor domain. Distractor chunks verified as genuine non-causal uses (2606.22691:c7 MHD discontinuity etc.). Also the fact is generic: 16 papers state 'just below the cutoff are good counterfactual comparisons' (crossverify/generic_scan.out); only the 'Chile grade-retention' descriptor scopes it.",
+  "suggested_fix": "In the Chile grade-retention paper's overview of regression discontinuity designs, why can units on either side of the cutoff be compared?"
+ },
+ {
+  "question_id": "Q-FOC-012",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "labels_ok": true,
+   "collision_real": true,
+   "term_in_question": false,
+   "not_answerable_elsewhere": true,
+   "no_title_run_4plus": true,
+   "no_excerpt_run_6plus": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Collision term 'discontinuity' does not occur in the question text (only, if at all, in the answer), so the trap is not live: a retriever is never pulled toward the distractor domain. Distractor chunks verified as genuine non-causal uses (2606.22691:c7 etc.). 'Tutorial on RD designs' is ambiguous: the corpus holds many RD papers (23 papers state bandwidth/neighborhood, e.g. 1809.00236:c4, 2108.09400 'Regression Discontinuity Designs') so a correct bandwidth passage from another RD paper would be scored wrong.",
+  "suggested_fix": "In the Foundations part of the Cattaneo-Idrobo-Titiunik RD practical introduction, what role does the bandwidth play in the local polynomial estimator of a regression discontinuity effect?"
+ },
+ {
+  "question_id": "Q-FOC-013",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "labels_ok": true,
+   "collision_real": true,
+   "term_in_question": false,
+   "not_answerable_elsewhere": true,
+   "no_title_run_4plus": true,
+   "no_excerpt_run_6plus": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Collision term 'shock' does not occur in the question text (only, if at all, in the answer), so the trap is not live: a retriever is never pulled toward the distractor domain. Distractor chunks verified as genuine non-causal uses (2606.13202:c26 nova shocks etc.). Question says 'large disturbances'.",
+  "suggested_fix": "In extreme-value causal structure learning, what intuitive idea do recursive max-linear models capture about how large shocks propagate?"
+ },
+ {
+  "question_id": "Q-FOC-014",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "labels_ok": true,
+   "collision_real": true,
+   "term_in_question": false,
+   "not_answerable_elsewhere": true,
+   "no_title_run_4plus": false,
+   "no_excerpt_run_6plus": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Collision term 'shock' does not occur in the question text (only, if at all, in the answer), so the trap is not live: a retriever is never pulled toward the distractor domain. Distractor chunks verified as genuine non-causal uses (astrophysical shocks). Also reuses 4-word title run 'identification of dynamic variance decompositions'.",
+  "suggested_fix": "For the instrumental-variable bounds on how important a shock is for forecast-error variance, what determines the lower and the upper bound of the identified set?"
+ },
+ {
+  "question_id": "Q-FOC-015",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "labels_ok": true,
+   "collision_real": true,
+   "term_in_question": false,
+   "not_answerable_elsewhere": true,
+   "no_title_run_4plus": true,
+   "no_excerpt_run_6plus": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Collision term 'intervention' does not occur in the question text (only, if at all, in the answer), so the trap is not live: a retriever is never pulled toward the distractor domain. Distractor chunks verified as genuine non-causal uses (2606.27163:c55 DAgger, 2606.20880:c17 control input). Weak distractor: 2606.22349:c6 'linguistic interventions' in LLM tutoring is an experimental-intervention sense, not clearly non-causal.",
+  "suggested_fix": "In the model where the network responds to the intervention in a randomized experiment, how does link formation after the intervention differ from before it?"
+ },
+ {
+  "question_id": "Q-FOC-016",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "labels_ok": true,
+   "collision_real": true,
+   "term_in_question": false,
+   "not_answerable_elsewhere": false,
+   "no_title_run_4plus": true,
+   "no_excerpt_run_6plus": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [
+   "2506.01191:c6"
+  ],
+  "reason": "Collision term 'collider' does not occur in the question text (only, if at all, in the answer), so the trap is not live: a retriever is never pulled toward the distractor domain. Distractor chunks verified as genuine non-causal uses (1506.09028:c10 electron collider circuit, 1909.05668:c2 RHIC). The term is the answer itself, so the question is not a trap as written. c6 (section 'Category 2: Conditioning on Colliders') also supports the answer.",
+  "suggested_fix": "In the taxonomy of common biases for observational studies, why does conditioning on a collider create a spurious treatment-outcome association?"
+ },
+ {
+  "question_id": "Q-FOC-017",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "labels_ok": true,
+   "collision_real": true,
+   "term_in_question": false,
+   "not_answerable_elsewhere": true,
+   "no_title_run_4plus": true,
+   "no_excerpt_run_6plus": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Collision term 'control' does not occur in the question text (only, if at all, in the answer), so the trap is not live: a retriever is never pulled toward the distractor domain. Distractor chunks verified as genuine non-causal uses (2407.06499:c0 controller, 2205.11957:c1 H-infinity control). The term 'control' appears only in the answer.",
+  "suggested_fix": "When practitioners adjust for all available covariates because the graph is unknown, what are the bad controls the multi-environment paper warns about?"
+ },
+ {
+  "question_id": "Q-FOC-018",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "labels_ok": true,
+   "collision_real": true,
+   "term_in_question": false,
+   "not_answerable_elsewhere": true,
+   "no_title_run_4plus": true,
+   "no_excerpt_run_6plus": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Collision term 'backdoor' does not occur in the question text (only, if at all, in the answer), so the trap is not live: a retriever is never pulled toward the distractor domain. Distractor chunks verified as genuine non-causal uses (2409.15670:c10 etc. backdoor attacks). Question says 'adjustment set' only.",
+  "suggested_fix": "In the coding-competition study of language effects, what property of a chosen set of regression variables makes it a valid backdoor adjustment set?"
+ },
+ {
+  "question_id": "Q-FOC-019",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "labels_ok": true,
+   "collision_real": true,
+   "term_in_question": false,
+   "not_answerable_elsewhere": true,
+   "no_title_run_4plus": true,
+   "no_excerpt_run_6plus": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Collision term 'attribution' does not occur in the question text (only, if at all, in the answer), so the trap is not live: a retriever is never pulled toward the distractor domain. Distractor chunks verified as genuine non-causal uses (2606.23872:c24 image attribution etc.).",
+  "suggested_fix": "Why is the Shapley-based attribution of metric changes tested on simulated data before the advertising system?"
+ },
+ {
+  "question_id": "Q-FOC-020",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "labels_ok": true,
+   "collision_real": true,
+   "term_in_question": false,
+   "not_answerable_elsewhere": false,
+   "no_title_run_4plus": true,
+   "no_excerpt_run_6plus": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [
+   "2605.07280:c2"
+  ],
+  "reason": "Collision term 'causal attention' does not occur in the question text (only, if at all, in the answer), so the trap is not live: a retriever is never pulled toward the distractor domain. Distractor chunks verified as genuine non-causal uses (2607.08639:c7 etc.). Question has 'attention' but not 'causal attention'. c2 (intro) states the same adjacency-constrained masked attention idea.",
+  "suggested_fix": "In the transformer-based time-series discovery framework, how does the causal attention encoder impose the graph?"
+ },
+ {
+  "question_id": "Q-FOC-021",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "labels_ok": true,
+   "collision_real": true,
+   "term_in_question": false,
+   "not_answerable_elsewhere": false,
+   "no_title_run_4plus": true,
+   "no_excerpt_run_6plus": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [
+   "2207.04208:c2"
+  ],
+  "reason": "Collision term 'causal attention' does not occur in the question text (only, if at all, in the answer), so the trap is not live: a retriever is never pulled toward the distractor domain. Distractor chunks verified as genuine non-causal uses (2606.09156:c1 etc.). Question says 'masking' only. c2 (intro) states the same change ('bidirectional attention spatially while maintaining temporal causality').",
+  "suggested_fix": "In the spatiotemporal transformer for synthetic counterfactuals, how is the decoder's causal attention mask changed relative to a vanilla decoder?"
+ },
+ {
+  "question_id": "Q-FOC-022",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "labels_ok": true,
+   "collision_real": true,
+   "term_in_question": false,
+   "not_answerable_elsewhere": true,
+   "no_title_run_4plus": true,
+   "no_excerpt_run_6plus": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Collision term 'exposure' does not occur in the question text (only, if at all, in the answer), so the trap is not live: a retriever is never pulled toward the distractor domain. Distractor chunks verified as genuine non-causal uses (2606.10160:c6 JWST exposure time etc.).",
+  "suggested_fix": "In the study of air-pollution mixtures with continuous exposures, how does the method learn which exposures are most harmful without extrapolating from a fitted model?"
+ },
+ {
+  "question_id": "Q-FOC-023",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "labels_ok": true,
+   "collision_real": true,
+   "term_in_question": true,
+   "not_answerable_elsewhere": false,
+   "no_title_run_4plus": true,
+   "no_excerpt_run_6plus": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [
+   "2506.16671:c2"
+  ],
+  "reason": "'dose-response' in question; distractors real (2607.24187:c2 is a drug dose rather than radiation, still non-causal). 2506.16671:c2 also states effects increase from ACT to NSW to Victoria with lockdown days."
+ },
+ {
+  "question_id": "Q-FOC-024",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "labels_ok": true,
+   "collision_real": true,
+   "term_in_question": true,
+   "not_answerable_elsewhere": true,
+   "no_title_run_4plus": true,
+   "no_excerpt_run_6plus": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "'synthetic control' in question; control-theory distractors are real though the pairing is faintly contrived (nobody confuses synthetic control with control theory)."
+ },
+ {
+  "question_id": "Q-FOC-025",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "labels_ok": true,
+   "collision_real": true,
+   "term_in_question": false,
+   "not_answerable_elsewhere": true,
+   "no_title_run_4plus": true,
+   "no_excerpt_run_6plus": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Collision term 'selection' does not occur in the question text (only, if at all, in the answer), so the trap is not live: a retriever is never pulled toward the distractor domain. Distractor chunks verified as genuine non-causal uses (2606.24967:c10 checkpoint selection, 2302.09457:c19). Weak distractor 2606.20781:c8 ('selectively' adverb plus 'action selection').",
+  "suggested_fix": "In the econometrics data-fusion review, why does the classic female labor supply example create a sample selection problem for valid inference?"
+ },
+ {
+  "question_id": "Q-FOC-026",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "labels_ok": true,
+   "collision_real": true,
+   "term_in_question": false,
+   "not_answerable_elsewhere": true,
+   "no_title_run_4plus": true,
+   "no_excerpt_run_6plus": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Collision term 'treatment' not in question, but 'radiation oncology' carries the colliding domain; distractors (2606.11479:c6 treatment plan, 2606.05465:c24 etc.) are genuine; 2607.19908:c2 contains the radiation-oncology origin sentence and the definition."
+ },
+ {
+  "question_id": "Q-FOC-027",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "gold_label_off": true,
+   "lookalike_labels_on": true,
+   "lookalike_shares_term": true,
+   "genuine_offtopic_question": true,
+   "no_title_run_4plus": true,
+   "no_excerpt_run_6plus": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Clean. Shared term 'interference' in 2602.19738 verified (3 hits)."
+ },
+ {
+  "question_id": "Q-FOC-028",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "gold_label_off": true,
+   "lookalike_labels_on": true,
+   "lookalike_shares_term": true,
+   "genuine_offtopic_question": true,
+   "no_title_run_4plus": true,
+   "no_excerpt_run_6plus": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Clean."
+ },
+ {
+  "question_id": "Q-FOC-029",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "gold_label_off": true,
+   "lookalike_labels_on": true,
+   "lookalike_shares_term": true,
+   "genuine_offtopic_question": true,
+   "no_title_run_4plus": true,
+   "no_excerpt_run_6plus": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Clean; 2301.07524 uses 'backdoor paths'."
+ },
+ {
+  "question_id": "Q-FOC-030",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "gold_label_off": true,
+   "lookalike_labels_on": true,
+   "lookalike_shares_term": true,
+   "genuine_offtopic_question": true,
+   "no_title_run_4plus": true,
+   "no_excerpt_run_6plus": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Clean; title overlap only 'finite-volume scheme for' (3 whitespace words, hyphen-joined)."
+ },
+ {
+  "question_id": "Q-FOC-031",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "gold_label_off": true,
+   "lookalike_labels_on": true,
+   "lookalike_shares_term": true,
+   "genuine_offtopic_question": true,
+   "no_title_run_4plus": false,
+   "no_excerpt_run_6plus": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Question reuses 4-word title run 'proton spot map generation' (title: A Two-Stage Framework for Fast Proton Spot Map Generation...).",
+  "suggested_fix": "In the two-stage prostate SBRT pencil-beam planning pipeline, how are the CT images aligned during preprocessing?"
+ },
+ {
+  "question_id": "Q-FOC-032",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "gold_label_off": true,
+   "lookalike_labels_on": true,
+   "lookalike_shares_term": true,
+   "genuine_offtopic_question": true,
+   "no_title_run_4plus": true,
+   "no_excerpt_run_6plus": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Clean."
+ },
+ {
+  "question_id": "Q-FOC-033",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "gold_label_off": true,
+   "lookalike_labels_on": true,
+   "lookalike_shares_term": true,
+   "genuine_offtopic_question": true,
+   "no_title_run_4plus": true,
+   "no_excerpt_run_6plus": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Clean; 'of Sun-like stars' is 3 whitespace words."
+ },
+ {
+  "question_id": "Q-FOC-034",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "gold_label_off": true,
+   "lookalike_labels_on": true,
+   "lookalike_shares_term": true,
+   "genuine_offtopic_question": true,
+   "no_title_run_4plus": true,
+   "no_excerpt_run_6plus": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Clean; 'autoregressive any-to-image' is 2 whitespace words."
+ },
+ {
+  "question_id": "Q-FOC-035",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "gold_label_off": true,
+   "lookalike_labels_on": true,
+   "lookalike_shares_term": true,
+   "genuine_offtopic_question": true,
+   "no_title_run_4plus": true,
+   "no_excerpt_run_6plus": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Clean."
+ },
+ {
+  "question_id": "Q-FOC-036",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "gold_label_off": true,
+   "lookalike_labels_on": true,
+   "lookalike_shares_term": true,
+   "genuine_offtopic_question": true,
+   "no_title_run_4plus": true,
+   "no_excerpt_run_6plus": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Clean."
+ },
+ {
+  "question_id": "Q-FOC-037",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "gold_label_off": true,
+   "lookalike_labels_on": true,
+   "lookalike_shares_term": true,
+   "genuine_offtopic_question": true,
+   "no_title_run_4plus": true,
+   "no_excerpt_run_6plus": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Clean."
+ },
+ {
+  "question_id": "Q-FOC-038",
+  "verdict": "fix",
+  "checks": {
+   "support": true,
+   "gold_label_off": true,
+   "lookalike_labels_on": true,
+   "lookalike_shares_term": true,
+   "genuine_offtopic_question": true,
+   "no_title_run_4plus": false,
+   "no_excerpt_run_6plus": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Question copies the title run 'fractional-order and integer-order H-infinity ... a non-collocated two-mass oscillator' (>=4 words twice).",
+  "suggested_fix": "In the robust-control study of a two-mass oscillator with fractional-order controllers, why are fractional-order extensions of PID attractive?"
+ },
+ {
+  "question_id": "Q-FOC-039",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "gold_label_off": true,
+   "lookalike_labels_on": true,
+   "lookalike_shares_term": true,
+   "genuine_offtopic_question": true,
+   "no_title_run_4plus": true,
+   "no_excerpt_run_6plus": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Clean."
+ },
+ {
+  "question_id": "Q-FOC-040",
+  "verdict": "survive",
+  "checks": {
+   "support": true,
+   "gold_label_off": true,
+   "lookalike_labels_on": true,
+   "lookalike_shares_term": true,
+   "genuine_offtopic_question": true,
+   "no_title_run_4plus": true,
+   "no_excerpt_run_6plus": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Clean."
+ },
+ {
+  "question_id": "Q-FOC-041",
+  "verdict": "survive",
+  "checks": {
+   "absence_holds": true,
+   "premise_plausible": true,
+   "no_style_giveaway": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Hausman-Taylor only cited (1912.06346:c56, 2501.07550:c9); no chunk with instrument+time-invariant mechanism (0 hits); Mundlak/CRE chunks (2506.23297) are a different estimator."
+ },
+ {
+  "question_id": "Q-FOC-042",
+  "verdict": "fix",
+  "checks": {
+   "absence_holds": true,
+   "premise_plausible": true,
+   "no_style_giveaway": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "2605.09870:c13 states in one clause that Blanchard-Quah long-run restrictions work by 'constraining cumulative effects' (also c92, 2307.03074:c3 cite it). A grader could count c13 as stating the asked-for fact; absence is not clean.",
+  "suggested_fix": "Ask the finer question: 'Which shock does Blanchard-Quah assume has no long-run effect on output, and how does that pin down the impact matrix?' (not stated in the corpus)."
+ },
+ {
+  "question_id": "Q-FOC-043",
+  "verdict": "survive",
+  "checks": {
+   "absence_holds": true,
+   "premise_plausible": true,
+   "no_style_giveaway": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Bernanke-Mihov appears once as a dataset source (1606.04431:c24); no assumption text; recursive/CEE only in a reference list (2011.01380:c35)."
+ },
+ {
+  "question_id": "Q-FOC-044",
+  "verdict": "survive",
+  "checks": {
+   "absence_holds": true,
+   "premise_plausible": true,
+   "no_style_giveaway": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Koch postulates: 0 relevant hits (172 'Koch' hits are surnames); Bradford Hill (2506.18469) is a different framework."
+ },
+ {
+  "question_id": "Q-FOC-045",
+  "verdict": "survive",
+  "checks": {
+   "absence_holds": true,
+   "premise_plausible": true,
+   "no_style_giveaway": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Coase/Coasian 0 hits; 'property rights' hits are intellectual-property."
+ },
+ {
+  "question_id": "Q-FOC-046",
+  "verdict": "fix",
+  "checks": {
+   "absence_holds": false,
+   "premise_plausible": true,
+   "no_style_giveaway": true,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "'Neyman's paradox' 0 hits, but the second half ('when does conditioning on a post-treatment variable produce it') is answered by many chunks: 69 conditioning-on-post-treatment and 555 post-treatment-bias chunks (e.g. 2404.18197:c2, 2502.00924:c2). The gold is ambiguous.",
+  "suggested_fix": "Drop the post-treatment clause: 'What is Neyman's paradox in causal inference?'"
+ },
+ {
+  "question_id": "Q-FOC-047",
+  "verdict": "fix",
+  "checks": {
+   "absence_holds": true,
+   "premise_plausible": false,
+   "no_style_giveaway": false,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Absence holds (0 hits) but premise is absurd (causal effect of dark matter density by IV/DiD); the style gives it away as absent, 'easy' tier tests nothing. Nearest are astro causal-discovery papers (2311.15160, 2510.01112).",
+  "suggested_fix": "Use a plausible-sounding but absent cross-domain method, e.g. 'Which regression kink design estimates the causal effect of galaxy-cluster membership on star formation?' after verifying 0 hits."
+ },
+ {
+  "question_id": "Q-FOC-048",
+  "verdict": "fix",
+  "checks": {
+   "absence_holds": true,
+   "premise_plausible": false,
+   "no_style_giveaway": false,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Absence holds but premise absurd (propensity score for black-hole mergers on neutrino emission); obvious giveaway.",
+  "suggested_fix": "Replace with a believable absent causal-methods question in an adjacent corpus domain, rescanned."
+ },
+ {
+  "question_id": "Q-FOC-049",
+  "verdict": "fix",
+  "checks": {
+   "absence_holds": true,
+   "premise_plausible": true,
+   "no_style_giveaway": false,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Absence holds (no sunspot-stock causal estimate), but 'what do the papers estimate' phrasing refers to the corpus, a tell no answerable item uses (minor).",
+  "suggested_fix": "'What is the causal effect of sunspot activity on stock returns, and with which identification strategy?'"
+ },
+ {
+  "question_id": "Q-FOC-050",
+  "verdict": "fix",
+  "checks": {
+   "absence_holds": true,
+   "premise_plausible": true,
+   "no_style_giveaway": false,
+   "clarity": true,
+   "dimension_label": true
+  },
+  "alternative_gold_chunk_ids": [],
+  "reason": "Absence holds (3 spurious hits: 1712.02926:c14 lunar new year etc.), but 'Do the papers estimate...' yes/no corpus-referential phrasing is a tell (minor).",
+  "suggested_fix": "'What is the causal effect of lunar phase on birth rates or crime, and with what design?'"
+ }
+]
