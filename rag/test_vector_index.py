@@ -1255,3 +1255,238 @@ def test_is_container_healthy_treats_url_error_as_unhealthy(monkeypatch):
     monkeypatch.setattr(real.urllib.request, "urlopen", raise_error)
 
     assert real._is_container_healthy() is False
+
+
+# ---------------------------------------------------------------------------
+# CQ-2: resparse() / set_payload() / sampling helpers. Offline: `_Cq2Client` is a minimal in-memory
+# stand-in for the vendor client (paged scroll, update_vectors, set_payload, count, query_points)
+# that records every call, so the tests can assert what was and was NOT sent.
+# ---------------------------------------------------------------------------
+
+
+class _Cq2Client:
+    def __init__(self, points):
+        self.points = list(points)  # SimpleNamespace(id, payload, vector)
+        self.calls: list[tuple[str, dict]] = []
+        self.fail_update_on_call: int | None = None
+
+    def scroll(self, collection_name, limit, offset, with_payload, with_vectors):
+        self.calls.append(("scroll", {"limit": limit, "with_vectors": with_vectors}))
+        start = offset or 0
+        page = self.points[start : start + limit]
+        nxt = start + limit if start + limit < len(self.points) else None
+        return page, nxt
+
+    def update_vectors(self, collection_name, points):
+        n_update = sum(1 for c, _ in self.calls if c == "update_vectors") + 1
+        if self.fail_update_on_call == n_update:
+            raise real_api_exception()("boom")
+        self.calls.append(("update_vectors", {"points": points}))
+        by_id = {p.id: p for p in self.points}
+        for pv in points:
+            by_id[pv.id].vector = {**(by_id[pv.id].vector or {}), **pv.vector}
+
+    def _matching(self, flt):
+        (cond,) = flt.must
+        if hasattr(cond, "has_id"):
+            return [p for p in self.points if p.id in cond.has_id]
+        return [p for p in self.points if p.payload.get(cond.key) in cond.match.any]
+
+    def count(self, collection_name, count_filter, exact):
+        return SimpleNamespace(count=len(self._matching(count_filter)))
+
+    def set_payload(self, collection_name, payload, points):
+        self.calls.append(("set_payload", {"payload": payload, "points": points}))
+        for p in self._matching(points):
+            p.payload.update(payload)
+
+    def query_points(self, collection_name, query, limit, with_payload, with_vectors):
+        self.calls.append(("query_points", {"query": query}))
+        return SimpleNamespace(points=self.points[:limit])
+
+
+def real_api_exception():
+    from qdrant_client.http.exceptions import ApiException
+
+    return ApiException
+
+
+def _cq2_index(points):
+    real = pytest.importorskip("rag.vector_index")
+    adapter = real.VectorIndex.__new__(real.VectorIndex)
+    adapter._client = _Cq2Client(points)
+    adapter._collection = "papers"
+    return real, adapter
+
+
+def _pt(real, pid, text, *, stored_text=None, kind="chunk", paper="p1", **extra):
+    """A point whose STORED sparse vector was built from `stored_text` (default: `text`)."""
+    payload = {"paper_id": paper, "kind": kind, "text": text, "other": "keep", **extra}
+    if text is None:
+        del payload["text"]
+    if stored_text is None:
+        stored = real._sparse_vector(text or "")
+    else:  # what a pre-CQ-1 index held: same hashing, NO ligature repair
+        counts: dict[int, float] = {}
+        for tok in stored_text.lower().split():
+            idx = int(real.hashlib.sha1(tok.encode()).hexdigest(), 16) % real._SPARSE_MODULUS
+            counts[idx] = counts.get(idx, 0.0) + 1.0
+        stored = real.models.SparseVector(indices=list(counts), values=list(counts.values()))
+    return SimpleNamespace(id=pid, payload=payload, vector={"sparse": stored})
+
+
+def test_resparse_writes_only_the_sparse_vector_for_stale_points():
+    real = pytest.importorskip("rag.vector_index")
+    stale = _pt(real, "a", "the effect is large", stored_text="the efect is large")
+    fresh = _pt(real, "b", "plain words")
+    _, adapter = _cq2_index([stale, fresh])
+    report = adapter.resparse()
+    assert (report.scanned, report.changed, report.unchanged) == (2, 1, 1)
+    (update,) = [kw for c, kw in adapter._client.calls if c == "update_vectors"]
+    (pv,) = update["points"]
+    assert pv.id == "a" and set(pv.vector) == {"sparse"}  # no dense vector, no payload sent
+    assert pv.vector["sparse"] == real._sparse_vector("the effect is large")
+    assert not any(c == "set_payload" for c, _ in adapter._client.calls)
+    # the scroll never asked for dense vectors
+    assert all(kw["with_vectors"] == ["sparse"] for c, kw in adapter._client.calls if c == "scroll")
+
+
+def test_resparse_is_idempotent():
+    real = pytest.importorskip("rag.vector_index")
+    _, adapter = _cq2_index([_pt(real, "a", "the effect", stored_text="the efect")])
+    assert adapter.resparse().changed == 1
+    again = adapter.resparse()
+    assert (again.changed, again.unchanged) == (0, 1)
+    assert sum(1 for c, _ in adapter._client.calls if c == "update_vectors") == 1
+
+
+def test_resparse_resumes_after_a_mid_run_failure():
+    real = pytest.importorskip("rag.vector_index")
+    pts = [_pt(real, str(i), "the effect", stored_text="the efect") for i in range(4)]
+    _, adapter = _cq2_index(pts)
+    adapter._client.fail_update_on_call = 2
+    with pytest.raises(TransientError):
+        adapter.resparse(batch_size=2)
+    adapter._client.fail_update_on_call = None
+    report = adapter.resparse(batch_size=2)
+    assert (report.scanned, report.changed, report.unchanged) == (4, 2, 2)  # unfinished page only
+    assert adapter.resparse(batch_size=2).changed == 0
+
+
+def test_resparse_counts_no_text_points_and_missing_stored_sparse():
+    real = pytest.importorskip("rag.vector_index")
+    no_text = _pt(real, "n", None, kind="summary")
+    summary = _pt(
+        real, "s", "a summary of effect", stored_text="a summary of efect", kind="summary"
+    )
+    unsparsed = SimpleNamespace(id="u", payload={"kind": "chunk", "text": "x y"}, vector={})
+    _, adapter = _cq2_index([no_text, summary, unsparsed])
+    report = adapter.resparse()
+    assert report.skipped == {"no_text": 1}
+    assert (report.scanned, report.changed, report.stored_sparse_missing) == (3, 2, 1)
+    assert report.scanned_by_kind == {"summary": 2, "chunk": 1}
+    assert report.changed_by_kind == {"summary": 1, "chunk": 1}
+    assert no_text.vector["sparse"] == real._sparse_vector("")  # left untouched
+
+
+def test_resparse_batch_boundaries():
+    real = pytest.importorskip("rag.vector_index")
+    pts = [_pt(real, str(i), "the effect", stored_text="the efect") for i in range(5)]
+    _, adapter = _cq2_index(pts)
+    report = adapter.resparse(batch_size=2)
+    sizes = [len(kw["points"]) for c, kw in adapter._client.calls if c == "update_vectors"]
+    assert sizes == [2, 2, 1] and report.changed == 5
+    # exact multiple: no empty trailing request
+    pts = [_pt(real, str(i), "the effect", stored_text="the efect") for i in range(4)]
+    _, adapter = _cq2_index(pts)
+    adapter.resparse(batch_size=2)
+    assert [len(kw["points"]) for c, kw in adapter._client.calls if c == "update_vectors"] == [2, 2]
+
+
+def test_resparse_dry_run_writes_nothing():
+    real = pytest.importorskip("rag.vector_index")
+    _, adapter = _cq2_index([_pt(real, "a", "the effect", stored_text="the efect")])
+    report = adapter.resparse(dry_run=True)
+    assert report.changed == 1 and report.dry_run
+    assert not any(c == "update_vectors" for c, _ in adapter._client.calls)
+
+
+def test_sample_sparse_staleness_is_read_only():
+    real = pytest.importorskip("rag.vector_index")
+    _, adapter = _cq2_index(
+        [_pt(real, "a", "the effect", stored_text="the efect"), _pt(real, "b", "plain")]
+    )
+    report = adapter.sample_sparse_staleness(2)
+    assert (report.scanned, report.changed) == (2, 1)
+    assert [c for c, _ in adapter._client.calls] == ["query_points"]
+
+
+def test_set_payload_by_paper_ids_merges_and_never_drops_keys():
+    real = pytest.importorskip("rag.vector_index")
+    pts = [
+        _pt(real, "a", "t", paper="p1"),
+        _pt(real, "b", "t", paper="p1"),
+        _pt(real, "c", "t", paper="p2"),
+    ]
+    _, adapter = _cq2_index(pts)
+    assert adapter.set_payload({"relevance_score": 0.5}, paper_ids=["p1"]) == 2
+    assert pts[0].payload["relevance_score"] == 0.5 and pts[0].payload["other"] == "keep"
+    assert pts[0].payload["text"] == "t" and "relevance_score" not in pts[2].payload
+
+
+def test_set_payload_by_point_ids_batches_and_counts_only_existing():
+    real = pytest.importorskip("rag.vector_index")
+    pts = [_pt(real, real._point_id(x), "t") for x in "abc"]
+    _, adapter = _cq2_index(pts)
+    n = adapter.set_payload({"f": 1}, point_ids=["a", "b", "c", "missing"], batch_size=2)
+    assert n == 3
+    assert sum(1 for c, _ in adapter._client.calls if c == "set_payload") == 2
+
+
+def test_set_payload_rejects_bad_calls():
+    real = pytest.importorskip("rag.vector_index")
+    _, adapter = _cq2_index([])
+    with pytest.raises(ContractError):
+        adapter.set_payload({"f": 1})
+    with pytest.raises(ContractError):
+        adapter.set_payload({"f": 1}, paper_ids=["p"], point_ids=["a"])
+    with pytest.raises(ContractError, match="protected"):
+        adapter.set_payload({"text": "x"}, paper_ids=["p"])
+    with pytest.raises(ContractError):
+        adapter.set_payload({}, paper_ids=["p"])
+    assert adapter._client.calls == []
+    assert real  # importorskip guard
+
+
+def test_paper_point_ids_and_sample_payloads():
+    real = pytest.importorskip("rag.vector_index")
+    _, adapter = _cq2_index(
+        [_pt(real, x, "t", paper=p) for x, p in (("a", "p1"), ("b", "p1"), ("c", "p2"))]
+    )
+    for p in adapter._client.points:
+        p.payload["_ext_id"] = f"ext-{p.id}"
+    assert adapter.paper_point_ids() == {"p1": ["ext-a", "ext-b"], "p2": ["ext-c"]}
+    adapter._client.points[0].payload.pop("_ext_id")
+    with pytest.raises(ContractError, match="_ext_id"):
+        adapter.paper_point_ids()
+    assert adapter.sample_payloads(2)[0]["other"] == "keep"
+
+
+def test_create_if_missing_false_refuses_an_absent_collection_without_creating_it(monkeypatch):
+    real = pytest.importorskip("rag.vector_index")
+    created = []
+
+    class _Client:
+        def __init__(self, **kwargs):
+            pass
+
+        def collection_exists(self, name):
+            return False
+
+        def create_collection(self, *a, **kw):
+            created.append(a)
+
+    monkeypatch.setattr(real, "QdrantClient", _Client)
+    with pytest.raises(ContractError, match="does not exist"):
+        real.VectorIndex("h", 1, "typo", 2, create_if_missing=False)
+    assert created == []

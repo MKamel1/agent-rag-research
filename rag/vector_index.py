@@ -34,6 +34,7 @@ import time
 import urllib.error
 import urllib.request
 import uuid
+from dataclasses import dataclass, field
 
 from qdrant_client import QdrantClient, models
 from qdrant_client.http.exceptions import ApiException
@@ -66,6 +67,18 @@ _SCROLL_PAGE_SIZE = 100_000
 # ceiling -- so this is 400 (~15MB at that same per-point size), leaving real margin rather than
 # retuning to the observed edge.
 _CLONE_UPSERT_BATCH_SIZE = 400
+# CQ-2: resparse() reads and writes SPARSE vectors only (no 2560-dim dense vector on the wire in
+# either direction), so a page is just text + a few hundred (index, value) pairs per point --
+# roughly 3-4MB of response and ~1MB of update body per 1,000 points, far under the 32MB REST
+# ceiling that sized _CLONE_UPSERT_BATCH_SIZE. One number serves as both the scroll page and the
+# update batch, so each page is one read round-trip and at most one write round-trip.
+_RESPARSE_BATCH_SIZE = 1_000
+# set_payload() batch: how many paper ids go into one `MatchAny` filter / how many point ids into
+# one `HasId` filter per request.
+_PAYLOAD_BATCH_SIZE = 200
+# Keys set_payload() refuses to overwrite: `text` feeds the sparse vector (changing it without
+# re-sparsing would desync them), the rest are the adapter's own identity/routing keys.
+_PROTECTED_PAYLOAD_KEYS = frozenset({"text", "_ext_id", "paper_id", "kind"})
 # create_and_download_snapshot() streams a whole collection snapshot file over localhost -- large
 # but not slow (no WAN hop), so a generous fixed ceiling rather than a caller-tunable knob is
 # enough headroom without letting a wedged download hang the caller (app/snapshot.py) forever.
@@ -98,6 +111,23 @@ _HEALTH_URL = "http://localhost:6333/collections"
 _START_POLL_INTERVAL_SECONDS = 0.25  # matches app/tei_lifecycle.py's own constant
 _START_POLL_TIMEOUT_SECONDS = 30.0  # Qdrant has no model to reload -- restarts fast; TEI's 60s
 # floor was sized for VRAM reload, this one is conservative-but-shorter for a plain DB restart.
+
+
+@dataclass
+class ResparseReport:
+    """What `VectorIndex.resparse()` / `sample_sparse_staleness()` saw. `changed` means "stored
+    sparse vector differs from the one the current `_sparse_vector` computes" -- in a dry run these
+    were NOT written. `skipped` maps reason -> count (today: "no_text" -- payload has no string
+    `text`, so nothing to recompute from; the point's existing sparse vector is left as is)."""
+
+    dry_run: bool
+    scanned: int = 0
+    changed: int = 0
+    unchanged: int = 0
+    stored_sparse_missing: int = 0  # subset of `changed`: point had no stored sparse vector at all
+    skipped: dict[str, int] = field(default_factory=dict)
+    scanned_by_kind: dict[str, int] = field(default_factory=dict)
+    changed_by_kind: dict[str, int] = field(default_factory=dict)
 
 
 def _point_id(external_id: str) -> str:
@@ -190,6 +220,9 @@ class VectorIndex:
     `Config.top_k` or `Config.hybrid_dense_weight` are. It also has nowhere to land without a new
     constructor parameter either way, since every caller already passes individual connection
     params here rather than a `Config` instance.
+
+    `create_if_missing=False` (CQ-2 maintenance CLIs): raise `ContractError` instead of creating
+    the collection when it is absent.
     """
 
     def __init__(
@@ -199,6 +232,7 @@ class VectorIndex:
         collection_name: str,
         dim: int,
         hybrid_dense_weight: float = 0.5,
+        create_if_missing: bool = True,
     ):
         # QdrantClient is constructed here, and only here (CONVENTIONS.md §1/§2) — callers
         # (including the composition root) pass connection params, never a pre-built client, so
@@ -212,6 +246,11 @@ class VectorIndex:
         self._collection = collection_name
         self._dim = dim
         self._hybrid_dense_weight = hybrid_dense_weight
+        exists = self._call(self._client.collection_exists, collection_name)
+        if not create_if_missing and not exists:
+            # CQ-2 maintenance CLIs pass False: a typo'd --collection must fail, not silently
+            # create (and then "successfully" operate on) an empty collection.
+            raise ContractError(f"collection {collection_name!r} does not exist")
         self._ensure_collection()
 
     def _ensure_collection(self) -> None:
@@ -563,6 +602,170 @@ class VectorIndex:
                 f"cloned but does not have the IDF modifier set -- refusing to swap it into "
                 f"place."
             )
+
+    def _sparse_updates(self, points: list, report: ResparseReport) -> list:
+        """Tallies `points` into `report` and returns the `PointVectors` that need writing: the
+        ones whose stored sparse vector differs from `_sparse_vector(payload["text"])`. Unchanged
+        points are not returned, which is what makes a re-run after an interruption cheap and
+        idempotent (it only rewrites what is still stale)."""
+        updates = []
+        for p in points:
+            payload = p.payload or {}
+            kind = str(payload.get("kind", "unknown"))
+            report.scanned += 1
+            report.scanned_by_kind[kind] = report.scanned_by_kind.get(kind, 0) + 1
+            text = payload.get("text")
+            if not isinstance(text, str):
+                report.skipped["no_text"] = report.skipped.get("no_text", 0) + 1
+                continue
+            fresh = _sparse_vector(text)
+            vectors = p.vector if isinstance(p.vector, dict) else {}
+            stored = vectors.get(_SPARSE_VECTOR)
+            if stored is not None and dict(zip(stored.indices, stored.values)) == dict(
+                zip(fresh.indices, fresh.values)
+            ):
+                report.unchanged += 1
+                continue
+            report.changed += 1
+            report.changed_by_kind[kind] = report.changed_by_kind.get(kind, 0) + 1
+            if stored is None:
+                report.stored_sparse_missing += 1
+            updates.append(models.PointVectors(id=p.id, vector={_SPARSE_VECTOR: fresh}))
+        return updates
+
+    def resparse(
+        self,
+        collection: str | None = None,
+        *,
+        batch_size: int = _RESPARSE_BATCH_SIZE,
+        dry_run: bool = False,
+    ) -> ResparseReport:
+        """CQ-2: recompute every point's SPARSE vector from `payload["text"]` with the current
+        `_sparse_vector` (CQ-1's ligature repair) and write ONLY that named vector via the client's
+        update-vectors call. Dense vectors and payloads are never read or sent -- no embedder, no
+        GPU. `collection=None` means this adapter's own collection.
+
+        Idempotent and resumable: points whose stored sparse vector already equals the recomputed
+        one are not written, so after a mid-run failure (a `TransientError` from any round-trip
+        propagates; earlier batches stay written) simply re-running does only the remaining work.
+        Every point kind carries a sparse vector built from its `text` -- chunks (chunk text) and
+        summaries (paper `summary_text`, or a chapter's text for book chapter summaries) alike --
+        so summaries are resparsed like chunks. A point with no string `text` cannot be
+        recomputed; it is counted under `report.skipped["no_text"]` and left untouched.
+        `dry_run=True` scans and reports what would change without writing.
+        """
+        name = collection or self._collection
+        report = ResparseReport(dry_run=dry_run)
+        offset = None
+        while True:
+            page, offset = self._call(
+                self._client.scroll,
+                name,
+                limit=batch_size,
+                offset=offset,
+                with_payload=["text", "kind"],
+                with_vectors=[_SPARSE_VECTOR],
+            )
+            updates = self._sparse_updates(page, report)
+            if updates and not dry_run:
+                self._call(self._client.update_vectors, name, points=updates)
+            if offset is None:
+                return report
+
+    def sample_sparse_staleness(self, n: int, collection: str | None = None) -> ResparseReport:
+        """Read-only: `n` random points, each compared with its recomputed sparse vector --
+        `report.changed / report.scanned` estimates how stale the collection is (0 after a full
+        `resparse()`). Never writes."""
+        report = ResparseReport(dry_run=True)
+        sample = self._sample_points(
+            n, collection, with_payload=["text", "kind"], with_vectors=[_SPARSE_VECTOR]
+        )
+        self._sparse_updates(sample, report)
+        return report
+
+    def sample_payloads(self, n: int, collection: str | None = None) -> list[dict]:
+        """Read-only: full payloads of `n` random points (read-back check for `set_payload`)."""
+        return [dict(p.payload or {}) for p in self._sample_points(n, collection, True, False)]
+
+    def _sample_points(self, n: int, collection, with_payload, with_vectors) -> list:
+        return self._call(
+            self._client.query_points,
+            collection or self._collection,
+            query=models.SampleQuery(sample=models.Sample.RANDOM),
+            limit=n,
+            with_payload=with_payload,
+            with_vectors=with_vectors,
+        ).points
+
+    def paper_point_ids(self, collection: str | None = None) -> dict[str, list[str]]:
+        """External ids (as passed to `upsert`) of every point, grouped by `paper_id` -- one light
+        scroll (two payload keys, no vectors). Backs payload backfills: `len()` per paper is the
+        before/after invariant, and the ids address `set_payload(point_ids=...)` directly, which
+        avoids one full-collection filter scan per paper (no payload index on `paper_id`).
+        Raises `ContractError` for a point with no `_ext_id` -- it could not be addressed."""
+        by_paper: dict[str, list[str]] = {}
+        offset = None
+        while True:
+            page, offset = self._call(
+                self._client.scroll,
+                collection or self._collection,
+                limit=_SCROLL_PAGE_SIZE,
+                offset=offset,
+                with_payload=["paper_id", _EXT_ID_KEY],
+                with_vectors=False,
+            )
+            for p in page:
+                payload = p.payload or {}
+                if _EXT_ID_KEY not in payload:
+                    raise ContractError(f"point {p.id} has no {_EXT_ID_KEY} payload key")
+                by_paper.setdefault(payload.get("paper_id"), []).append(payload[_EXT_ID_KEY])
+            if offset is None:
+                return by_paper
+
+    def set_payload(
+        self,
+        fields: dict,
+        *,
+        paper_ids: list[str] | None = None,
+        point_ids: list[str] | None = None,
+        collection: str | None = None,
+        batch_size: int = _PAYLOAD_BATCH_SIZE,
+    ) -> int:
+        """CQ-2: MERGE `fields` into the payload of every point of `paper_ids` (all chunk and
+        summary points of those papers) or of `point_ids` (the caller's external ids, as passed to
+        `upsert`). Exactly one selector. Existing payload keys not named in `fields` survive --
+        Qdrant's set-payload merges, never replaces; vectors are untouched. Batched by
+        `batch_size` ids per request. Returns the number of points that matched (and so were
+        written): ids with no point are silently not counted.
+
+        `fields` must not name `text` (it feeds the sparse vector), `paper_id`, `kind` or the
+        adapter's own `_ext_id`: overwriting those would corrupt retrieval, so it raises
+        `ContractError`.
+        """
+        if (paper_ids is None) == (point_ids is None):
+            raise ContractError("set_payload: give exactly one of paper_ids / point_ids")
+        if not fields:
+            raise ContractError("set_payload: fields is empty")
+        forbidden = _PROTECTED_PAYLOAD_KEYS & fields.keys()
+        if forbidden:
+            raise ContractError(
+                f"set_payload: refusing to overwrite protected keys {sorted(forbidden)}"
+            )
+        name = collection or self._collection
+        if paper_ids is not None:
+            ids, make = paper_ids, lambda b: models.FieldCondition(
+                key="paper_id", match=models.MatchAny(any=b)
+            )
+        else:
+            ids, make = [_point_id(i) for i in point_ids], lambda b: models.HasIdCondition(has_id=b)
+        total = 0
+        for i in range(0, len(ids), batch_size):
+            flt = models.Filter(must=[make(ids[i : i + batch_size])])
+            matched = self._call(self._client.count, name, count_filter=flt, exact=True).count
+            if matched:
+                self._call(self._client.set_payload, name, payload=fields, points=flt)
+            total += matched
+        return total
 
     def point_count(self) -> int:
         """Current number of points in the collection -- `app/reindex_idf.py`'s (OG-27) before/

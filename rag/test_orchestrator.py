@@ -92,6 +92,7 @@ from rag.fakes.fake_gpu_lock import FakeGpuLock
 from rag.fakes.fake_ingest_state import FakeIngestState
 from rag.fakes.fake_source import FakeSource
 from rag.fakes.fake_summarizer import FakeSummarizer
+from rag.orchestrator import vector_payload
 from rag.fakes.fake_vector_store import FakeVectorStore
 
 _mod = pytest.importorskip("rag.orchestrator")  # suite SKIPS until rag/orchestrator.py exists
@@ -1777,3 +1778,18 @@ def test_parse_phase_books_are_singleton_batches():
     ]
     for ref in papers + books:
         assert state.get(ref.paper_id).stage == "chunked"
+
+
+def test_vector_payload_carries_relevance_score_when_scored_and_omits_it_otherwise():
+    # CQ-2: the payload builder is the one place future ingests/rechunks get the backfilled field.
+    rig = Rig(refs=REFS[:1])
+    rig.ingest()
+    record = rig.document_store.get(FIRST_ID)
+    assert record.relevance_score is not None
+    _, payload = rig.vector_store._store[record.summary_id]
+    assert payload["relevance_score"] == record.relevance_score
+
+    unscored = record.model_copy(update={"relevance_score": None})
+    assert "relevance_score" not in vector_payload(
+        unscored, "v1", kind="chunk", section_path="", text="t"
+    )
