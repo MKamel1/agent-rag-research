@@ -1,0 +1,13 @@
+
+=== docs/eval-reports/data/2026-11-10-bm25-floor/papers-body-only.report.json  (k=10, questions=61, GT items not in report=0)
+per dimension (answerable only):
+  equation-context     n=11  paperR@k 8/11 = 0.727 | paperP@1 8/11 = 0.727 | anchor hit@k 6/11 = 0.545 | anchor P@1 2/11 = 0.182 | member hit@k 6/11 = 0.545 | member P@1 3/11 = 0.273
+  method-detail        n=20  paperR@k 20/20 = 1.000 | paperP@1 16/20 = 0.800 | anchor hit@k 15/20 = 0.750 | anchor P@1 7/20 = 0.350 | member hit@k 15/20 = 0.750 | member P@1 7/20 = 0.350
+  numeric-result       n=16  paperR@k 16/16 = 1.000 | paperP@1 16/16 = 1.000 | anchor hit@k 16/16 = 1.000 | anchor P@1 9/16 = 0.562 | member hit@k 16/16 = 1.000 | member P@1 9/16 = 0.562
+  paper-passage        n=14  paperR@k 14/14 = 1.000 | paperP@1 10/14 = 0.714 | anchor hit@k 11/14 = 0.786 | anchor P@1 6/14 = 0.429 | member hit@k 11/14 = 0.786 | member P@1 6/14 = 0.429
+stub chunks: rank-1 0/61 = 0.000; top-k slots 0/610 = 0.000
+authority, commentary outranks gold: 0/0 = n/a
+edition, other edition outranks gold: 0/0 = n/a
+cross-document: all gold in top-k 0/0 = n/a; any 0/0 = n/a
+absent arm (n=0): top-score absent {'n': 0} vs answerable {'n': 61, 'min': 27.435218554475696, 'median': 51.44907433700877, 'max': 120.6911709080199}
+  nearest distractor at rank 1: 0/0 = n/a

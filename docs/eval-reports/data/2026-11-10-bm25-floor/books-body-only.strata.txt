@@ -1,0 +1,12 @@
+
+=== docs/eval-reports/data/2026-11-10-bm25-floor/books-body-only.report.json  (k=10, questions=74, GT items not in report=0)
+per dimension (answerable only):
+  book-passage         n=52  paperR@k 43/52 = 0.827 | paperP@1 36/52 = 0.692 | anchor hit@k 35/52 = 0.673 | anchor P@1 19/52 = 0.365 | member hit@k 35/52 = 0.673 | member P@1 20/52 = 0.385
+  equation-context     n=12  paperR@k 11/12 = 0.917 | paperP@1 7/12 = 0.583 | anchor hit@k 10/12 = 0.833 | anchor P@1 3/12 = 0.250 | member hit@k 10/12 = 0.833 | member P@1 3/12 = 0.250
+  table-requirement    n=5   paperR@k 5/5 = 1.000 | paperP@1 3/5 = 0.600 | anchor hit@k 4/5 = 0.800 | anchor P@1 1/5 = 0.200 | member hit@k 4/5 = 0.800 | member P@1 1/5 = 0.200
+stub chunks: rank-1 0/74 = 0.000; top-k slots 0/740 = 0.000
+authority, commentary outranks gold: 0/0 = n/a
+edition, other edition outranks gold: 0/0 = n/a
+cross-document: all gold in top-k 0/0 = n/a; any 0/0 = n/a
+absent arm (n=5): top-score absent {'n': 5, 'min': 41.75745424613597, 'median': 49.23612719077834, 'max': 58.16634422863154} vs answerable {'n': 69, 'min': 20.34347331443258, 'median': 45.87088014490254, 'max': 90.36024312581095}
+  nearest distractor at rank 1: 0/5 = 0.000
