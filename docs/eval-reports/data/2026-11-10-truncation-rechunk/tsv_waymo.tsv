@@ -1,0 +1,73 @@
+paper_id	title	truncated_chunks	total_chunks	truncated_chars	paper_chars	est_new_chunks_lo	est_new_chunks_hi
+2512.07661	Optimization-Guided Diffusion for Interactive Scene Generation	8	36	98294	212026	177	197
+2401.11876	First-principles Based 3D Virtual Simulation Testing for Discovering SOTIF Corner Cases of Autonomous Driving	5	23	75068	122098	102	118
+2105.02851	Algorithmic Ethics: Formalization and Verification of Autonomous Vehicle Obligations	6	25	73745	140453	118	132
+2506.07150	Improving Traffic Signal Data Quality for the Waymo Open Motion Dataset	6	29	66190	140579	118	132
+2510.10937	Neutral Agent-based Adversarial Policy Learning against Deep Reinforcement Learning in Multi-party Open Systems	5	43	59263	182994	153	174
+2605.31243	Safe Arrival Scheduling at Constraint Waypoints in UAM Corridors	4	16	56320	103761	87	96
+2203.14355	Robust and Efficient Bayesian Inference for Non-Probability Samples	6	39	54200	156201	131	153
+2208.02232	GAS: Generating Fast and Accurate Surrogate Models for Autonomous Vehicle Systems	4	25	49080	151290	127	141
+2111.05534	Verifying Controllers with Convolutional Neural Network-based Perception: A Case for Intelligible, Safe, and Precise Abstractions	4	24	47884	137123	115	127
+2205.14523	Risk of Stochastic Systems for Temporal Logic Specifications	4	43	45965	186947	156	177
+2009.00738	A Deontic Logic Analysis of Autonomous Systems' Safety	3	24	39038	112138	94	109
+2606.07789	A Framework for Evaluating and Benchmarking Concept Drift Detection Methods	3	29	36956	117499	98	115
+2510.22680	Uncertainty-Aware Autonomous Vehicles: Predicting the Road Ahead	3	16	36082	84646	71	80
+local:86a350b887b5	Wali, B., Khattak, A., Karnowski, T., 2020. The relationship between driving volatility in time to collision and crash-injury severity	1	30	31460	97041	81	97
+local:b1819859b098	Note on the Definition of the Reliability of Links and Paths for Dynamic Route Guidance Applications	2	163	28530	530287	442	521
+2403.18764	Temporal Logic Formalisation of ISO 34502 Critical Scenarios: Modular Construction with the RSS Safety Distance	2	28	27298	113892	95	109
+2101.05709	Rule-based Optimal Control for Autonomous Driving	2	33	24560	136762	114	133
+local:007c79776d54	A SLR about the impact of AI on AV safety	1	21	23904	115252	97	107
+local:52b5fc5d767d	This may be the author’s version of a work that was submitted/accepted	1	33	21665	120852	101	119
+2506.09217	Perception Characteristics Distance: Measuring Stability and Robustness of Perception System in Dynamic Conditions under a Certain Decision Rule	2	19	21414	63345	53	63
+local:2e846607d4b3	[Title of Document]	2	84	20354	230837	193	239
+2406.18360	XLD: A Cross-Lane Dataset for Benchmarking Novel Driving View Synthesis	1	25	19529	53188	45	57
+2308.06419	Pedestrian Trajectory Prediction in Pedestrian-Vehicle Mixed Environments: A Systematic Review	1	36	19103	139685	117	134
+2310.05170	DeepQTest: Testing Autonomous Driving Systems with Reinforcement Learning and Real-world Weather Data	1	51	18250	158124	132	158
+2104.02631	Local Metrics for Multi-Object Tracking	1	25	17924	67448	57	71
+2406.17813	Unsupervised Concept Drift Detection from Deep Learning Representations in Real-time	2	36	17796	136222	114	131
+2412.07746	LoRA3D: Low-Rank Self-Calibration of 3D Geometric Foundation Models	1	35	17756	70648	59	77
+2407.21569	Analysis of Functional Insufficiencies and Triggering Conditions to Improve the SOTIF of an MPC-based Trajectory Planner	1	49	16816	121157	101	126
+2208.09103	Intersection Two-Vehicle Crash Scenario Specification for Automated Vehicle Safety Evaluation Using Sequence Analysis and Bayesian Networks	1	25	13916	75748	64	76
+2501.12269	Benchmarking Image Perturbations for Testing Automated Driving Assistance Systems	1	24	13373	62475	53	68
+2304.05610	Vehicle Trajectory Prediction based Predictive Collision Risk Assessment for Autonomous Driving in Highway Scenarios	1	28	12707	69536	58	71
+2510.12963	Trajectory-based real-time pedestrian crash prediction at intersections: A novel non-linear link function for block maxima led Bayesian GEV framework addressing heterogeneous traffic condition	1	28	12650	71426	60	75
+2405.14062	ChatScene: Knowledge-Enabled Safety-Critical Scenario Generation for Autonomous Vehicles	1	23	12625	55985	47	58
+2509.05780	3DPillars: Pillar-based two-stage 3D object detection	1	45	11889	83431	70	93
+2310.10424	A Novel Benchmarking Paradigm and a Scale- and Motion-Aware Model for Egocentric Pedestrian Trajectory Prediction	1	30	11831	58573	49	64
+2304.04273	Multimodal Brain-Computer Interface for In-Vehicle Driver Cognitive Load Measurement: Dataset and Baselines	1	27	11326	71443	60	76
+2110.06853	Attentive and Contrastive Learning for Joint Depth and Motion Field Estimation	1	26	11316	58030	49	61
+2607.23045	Stress-testing large language model agents in a robotic chemistry laboratory	1	1605	11290	840995	701	1783
+2503.14839	Bayesian hierarchical non-stationary hybrid modeling for threshold estimation in peak over threshold approach	1	47	11148	114503	96	123
+2407.16832	Real-time risk estimation for active road safety: Leveraging Waymo AV sensor data with hierarchical Bayesian extreme value models	1	25	10342	105194	88	101
+local:f130589fdc25	Д У « Н А Ц І О Н А Л Ь Н И Й Н А У К О В О - Д О С Л І Д Н И Й І Н С Т И Т У Т	1	6	10303	22800	19	23
+2404.09496	Towards Collaborative Autonomous Driving: Simulation Platform and End-to-End System	1	42	10238	136503	114	137
+2603.06757	Learning Unbiased Cluster Descriptors for Interpretable Imbalanced Concept Drift Detection	1	28	9997	76192	64	77
+2402.02426	Hybrid-Prediction Integrated Planning for Autonomous Driving	1	23	9718	71967	60	71
+local:a52597c6c4ee	Studying traffic safety during the transition period	1	28	9638	114267	96	111
+2509.02871	Learning from geometry-aware near misses to real-time COR: A corridor-wide grouped random parameters GEV framework	1	29	9637	127984	107	125
+2006.11305	Generalization of Agent Behavior through Explicit Representation of Context	1	15	9615	61275	52	60
+2603.27909	Data is All You Need: Markov Chain Car-Following (MC-CF) Model	1	38	9243	98852	83	98
+2604.09358	Drift-Aware Online Dynamic Learning for Nonstationary Multivariate Time Series: Application to Sintering Quality Prediction	1	23	9225	85739	72	84
+2411.00192	Optical Lens Attack on Monocular Depth Estimation for Autonomous Driving	1	28	8880	78807	66	80
+2309.14209	Continual Driving Policy Optimization with Closed-Loop Individualized Curricula	1	25	8840	60347	51	65
+2103.14027	USB: Universal-Scale Object Detection Benchmark	1	41	8803	78769	66	89
+2605.12608	A Data Efficiency Study of Synthetic Fog for Object Detection Using the Clear2Fog Pipeline	1	39	8738	82812	70	91
+2401.12392	Evaluating Roadside Perception for Autonomous Vehicles: Insights from Field Testing	1	20	8617	59591	50	61
+2401.00912	ScatterFormer: Efficient Voxel Transformer with Scattered Linear Attention	1	19	8607	39441	33	42
+2508.02028	Bench2ADVLM: A Closed-Loop Benchmark for Vision-language Models in Autonomous Driving	1	18	8429	43609	37	46
+2204.07874	Ergo, SMIRK is Safe: A Safety Case for a Machine Learning Component in a Pedestrian Automatic Emergency Brake System	1	81	8336	169075	141	185
+2403.15455	Improving Sampling Methods for Fine-tuning SentenceBERT in Text Streams	1	16	8137	37924	32	42
+2106.08417	Scene Transformer: A unified architecture for predicting multiple agent trajectories	1	23	7955	63830	54	67
+2602.15891	Learning to Drive in New Cities Without Human Demonstrations	1	56	7942	90476	76	105
+2209.09385	LidarMultiNet: Towards a Unified Multi-Task Network for LiDAR Perception	1	22	7899	46911	40	49
+2302.13301	Pillar R-CNN for Point Cloud 3D Object Detection	1	20	7741	43721	37	49
+2312.06371	BAT: Behavior-Aware Human-Like Trajectory Prediction for Autonomous Driving	1	24	7735	47902	40	53
+2205.07403	PillarNet: Real-Time and High-Performance Pillar-based 3D Object Detection	1	16	7658	40250	34	43
+local:4973093f69a3	Surrogate Safety Evaluation at Uncontrolled Intersection in Non-Lane Base Traffic Conditions	1	16	7606	40781	34	45
+2503.07020	Driving Through Uncertainty: Risk-Averse Control with LLM Commonsense for Autonomous Driving under Perception Deficits	1	19	7526	48636	41	51
+2605.10034	Beyond Self-Play and Scale: A Behavior Benchmark for Generalization in Autonomous Driving	1	52	7384	104700	88	112
+2309.05573	UniSeg: A Unified Multi-Modal LiDAR Segmentation Network and the OpenPCSeg Codebase	1	32	7209	66647	56	71
+2502.15119	CurricuVLM: Towards Safe Autonomous Driving via Personalized Safety-Critical Curriculum Learning with Vision-Language Models	1	40	7118	99210	83	103
+2108.06709	SPG: Unsupervised Domain Adaptation for 3D Object Detection via Semantic Point Generation	1	32	6922	55754	47	63
+2402.07680	AYDIV: Adaptable Yielding 3D Object Detection via Integrated Contextual Vision Transformer	1	16	6878	34223	29	36
+2306.05925	Using extreme value theory to evaluate the leading pedestrian interval road safety intervention	1	22	5928	49151	41	53
