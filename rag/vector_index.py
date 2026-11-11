@@ -220,6 +220,9 @@ class VectorIndex:
     `Config.top_k` or `Config.hybrid_dense_weight` are. It also has nowhere to land without a new
     constructor parameter either way, since every caller already passes individual connection
     params here rather than a `Config` instance.
+
+    `create_if_missing=False` (CQ-2 maintenance CLIs): raise `ContractError` instead of creating
+    the collection when it is absent.
     """
 
     def __init__(
@@ -229,6 +232,7 @@ class VectorIndex:
         collection_name: str,
         dim: int,
         hybrid_dense_weight: float = 0.5,
+        create_if_missing: bool = True,
     ):
         # QdrantClient is constructed here, and only here (CONVENTIONS.md §1/§2) — callers
         # (including the composition root) pass connection params, never a pre-built client, so
@@ -242,6 +246,11 @@ class VectorIndex:
         self._collection = collection_name
         self._dim = dim
         self._hybrid_dense_weight = hybrid_dense_weight
+        exists = self._call(self._client.collection_exists, collection_name)
+        if not create_if_missing and not exists:
+            # CQ-2 maintenance CLIs pass False: a typo'd --collection must fail, not silently
+            # create (and then "successfully" operate on) an empty collection.
+            raise ContractError(f"collection {collection_name!r} does not exist")
         self._ensure_collection()
 
     def _ensure_collection(self) -> None:
@@ -688,10 +697,13 @@ class VectorIndex:
             with_vectors=with_vectors,
         ).points
 
-    def paper_point_counts(self, collection: str | None = None) -> dict[str, int]:
-        """Points per `paper_id` (one light scroll, `paper_id` payload key only) -- the before/
-        after invariant for payload backfills: a backfill must not change any paper's count."""
-        counts: dict[str, int] = {}
+    def paper_point_ids(self, collection: str | None = None) -> dict[str, list[str]]:
+        """External ids (as passed to `upsert`) of every point, grouped by `paper_id` -- one light
+        scroll (two payload keys, no vectors). Backs payload backfills: `len()` per paper is the
+        before/after invariant, and the ids address `set_payload(point_ids=...)` directly, which
+        avoids one full-collection filter scan per paper (no payload index on `paper_id`).
+        Raises `ContractError` for a point with no `_ext_id` -- it could not be addressed."""
+        by_paper: dict[str, list[str]] = {}
         offset = None
         while True:
             page, offset = self._call(
@@ -699,14 +711,16 @@ class VectorIndex:
                 collection or self._collection,
                 limit=_SCROLL_PAGE_SIZE,
                 offset=offset,
-                with_payload=["paper_id"],
+                with_payload=["paper_id", _EXT_ID_KEY],
                 with_vectors=False,
             )
             for p in page:
-                paper_id = (p.payload or {}).get("paper_id")
-                counts[paper_id] = counts.get(paper_id, 0) + 1
+                payload = p.payload or {}
+                if _EXT_ID_KEY not in payload:
+                    raise ContractError(f"point {p.id} has no {_EXT_ID_KEY} payload key")
+                by_paper.setdefault(payload.get("paper_id"), []).append(payload[_EXT_ID_KEY])
             if offset is None:
-                return counts
+                return by_paper
 
     def set_payload(
         self,

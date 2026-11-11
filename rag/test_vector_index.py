@@ -1458,10 +1458,35 @@ def test_set_payload_rejects_bad_calls():
     assert real  # importorskip guard
 
 
-def test_paper_point_counts_and_sample_payloads():
+def test_paper_point_ids_and_sample_payloads():
     real = pytest.importorskip("rag.vector_index")
     _, adapter = _cq2_index(
         [_pt(real, x, "t", paper=p) for x, p in (("a", "p1"), ("b", "p1"), ("c", "p2"))]
     )
-    assert adapter.paper_point_counts() == {"p1": 2, "p2": 1}
+    for p in adapter._client.points:
+        p.payload["_ext_id"] = f"ext-{p.id}"
+    assert adapter.paper_point_ids() == {"p1": ["ext-a", "ext-b"], "p2": ["ext-c"]}
+    adapter._client.points[0].payload.pop("_ext_id")
+    with pytest.raises(ContractError, match="_ext_id"):
+        adapter.paper_point_ids()
     assert adapter.sample_payloads(2)[0]["other"] == "keep"
+
+
+def test_create_if_missing_false_refuses_an_absent_collection_without_creating_it(monkeypatch):
+    real = pytest.importorskip("rag.vector_index")
+    created = []
+
+    class _Client:
+        def __init__(self, **kwargs):
+            pass
+
+        def collection_exists(self, name):
+            return False
+
+        def create_collection(self, *a, **kw):
+            created.append(a)
+
+    monkeypatch.setattr(real, "QdrantClient", _Client)
+    with pytest.raises(ContractError, match="does not exist"):
+        real.VectorIndex("h", 1, "typo", 2, create_if_missing=False)
+    assert created == []
