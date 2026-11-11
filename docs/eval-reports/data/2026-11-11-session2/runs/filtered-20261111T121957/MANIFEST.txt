@@ -1,0 +1,6 @@
+git_rev 03cfd1854b7d37c8116d35545c3f54a309e6da40
+started 2026-11-11T12:19:59-07:00
+n_per_filter 100
+seed 20261111
+fixtures none
+finished 2026-11-11T12:28:47-07:00

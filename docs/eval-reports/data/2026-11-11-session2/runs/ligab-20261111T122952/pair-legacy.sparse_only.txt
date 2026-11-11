@@ -1,0 +1,10 @@
+label=legacy tags={'mode': 'sparse_only'} answerable=210 errored base/arm=0/0 run_valid=[True, True]
+  paper    n=210 base=110 arm=113 wins=4 losses=1 net=+3
+  dimension=Assumption-Comprehension n=  6 paper:5->5(+0)
+  dimension=Contribution-Comprehension n= 15 [gating] paper:10->10(+0)
+  dimension=Method-Comprehension     n= 51 [gating] paper:26->27(+1)
+  dimension=Multi-Paper-Reasoning    n= 50 [gating] paper:22->25(+3)
+  dimension=Multi-Paper-Synthesis    n= 10 [gating] paper:3->3(+0)
+  dimension=Result-Comprehension     n= 28 [gating] paper:15->15(+0)
+  dimension=Single-Paper-Reasoning   n= 50 [gating] paper:29->28(-1)
+  worst gating-stratum net (paper): -1

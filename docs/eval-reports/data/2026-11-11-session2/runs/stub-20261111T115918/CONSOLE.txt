@@ -1,0 +1,14 @@
+hash check OK (3 fixtures)
+WARNING: rag/ app/ contracts/ differ between baseline commit 626fac3555a386076944d106254354ad66b2dfa7 and HEAD; arms re-run here are
+         comparable with each other, NOT necessarily with the baseline run (jitter gate will tell).
+WARNING: rag/ app/ contracts/ differ between baseline commit 626fac3555a386076944d106254354ad66b2dfa7 and HEAD; arms re-run here are
+         comparable with each other, NOT necessarily with the baseline run (jitter gate will tell).
+WARNING: rag/ app/ contracts/ differ between baseline commit 626fac3555a386076944d106254354ad66b2dfa7 and HEAD; arms re-run here are
+         comparable with each other, NOT necessarily with the baseline run (jitter gate will tell).
+{"n_answerable": 106, "stub_rank1_answerable": 1, "stub_slots_topk": 5, "slots_topk": 1280, "stub_slot_share": 0.00390625, "answerable_with_stub_in_topk": 4, "ceiling": 0, "min_effect": 2, "run": false}
+skipped: ceiling (standards: fewer than 2 baseline misses carry a stub in the top 10; minimum effect unreachable)
+{"n_answerable": 61, "stub_rank1_answerable": 0, "stub_slots_topk": 0, "slots_topk": 610, "stub_slot_share": 0.0, "answerable_with_stub_in_topk": 0, "ceiling": 0, "min_effect": 2, "run": false}
+skipped: ceiling (papers: fewer than 2 baseline misses carry a stub in the top 10; minimum effect unreachable)
+{"n_answerable": 69, "stub_rank1_answerable": 0, "stub_slots_topk": 12, "slots_topk": 740, "stub_slot_share": 0.016216216216216217, "answerable_with_stub_in_topk": 3, "ceiling": 0, "min_effect": 2, "run": false}
+skipped: ceiling (books: fewer than 2 baseline misses carry a stub in the top 10; minimum effect unreachable)
+killed: stub-at-rank-1 occurs on fewer than 3 answerable items on every set (max 1); EV-21 trigger / minimizer s.4. No arm run.

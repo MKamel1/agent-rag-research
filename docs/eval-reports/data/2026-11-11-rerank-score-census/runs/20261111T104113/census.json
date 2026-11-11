@@ -1,0 +1,3443 @@
+{
+  "seed": 20261111,
+  "reps": 2000,
+  "sets": {
+    "focus": {
+      "n_absent": 9,
+      "n_answerable": 40,
+      "features": {
+        "rerank_top1": {
+          "n_absent": 9,
+          "n_answerable": 40,
+          "absent_dist": {
+            "n": 9,
+            "mean": 0.7497957266666667,
+            "median": 0.8304567,
+            "stdev": 0.2145255367351312,
+            "min": 0.33928013,
+            "max": 0.9558166,
+            "p25": 0.584193905,
+            "p75": 0.9104845500000001
+          },
+          "answerable_dist": {
+            "n": 40,
+            "mean": 0.96156303175,
+            "median": 0.9786513,
+            "stdev": 0.052954916185379945,
+            "min": 0.7320175,
+            "max": 0.9978002,
+            "p25": 0.9567713975000001,
+            "p75": 0.990844965
+          },
+          "auroc_raw": 0.9416666666666667,
+          "auroc": 0.9416666666666667,
+          "auroc_ci95": [
+            0.8611111111111112,
+            0.9944444444444445
+          ],
+          "best_threshold_in_sample": {
+            "threshold": 0.9238511,
+            "rule": "abstain if < 0.923851",
+            "FP_false_refusals": 3,
+            "n_answerable": 40,
+            "FN_missed_absent": 1,
+            "n_absent": 9,
+            "TP_detected_absent": 8,
+            "TN_correct_answerable": 37,
+            "youden_j": 0.8138888888888889,
+            "false_abstention_wilson95": [
+              0.025835556771858226,
+              0.19864530159097524
+            ],
+            "missed_absence_wilson95": [
+              0.019890371327130535,
+              0.4350062147680601
+            ]
+          },
+          "no_better_than_length": false,
+          "paired_diff_vs_fusion_top_score_ci95": [
+            0.05833333333333324,
+            0.4083333333333333
+          ],
+          "paired_diff_vs_query_words_ci95": [
+            0.03749999999999998,
+            0.46111111111111114
+          ]
+        },
+        "rerank_mean_top3": {
+          "n_absent": 9,
+          "n_answerable": 40,
+          "absent_dist": {
+            "n": 9,
+            "mean": 0.668720498888889,
+            "median": 0.6756754333333334,
+            "stdev": 0.2245995456091053,
+            "min": 0.24232164,
+            "max": 0.9047712899999999,
+            "p25": 0.5130716916666667,
+            "p75": 0.8867630483333334
+          },
+          "answerable_dist": {
+            "n": 40,
+            "mean": 0.9232870220833334,
+            "median": 0.9364106233333334,
+            "stdev": 0.06357292635682588,
+            "min": 0.6899924433333333,
+            "max": 0.9970159833333333,
+            "p25": 0.8987746958333334,
+            "p75": 0.9675449141666667
+          },
+          "auroc_raw": 0.9222222222222223,
+          "auroc": 0.9222222222222223,
+          "auroc_ci95": [
+            0.8277777777777777,
+            0.9916666666666667
+          ],
+          "best_threshold_in_sample": {
+            "threshold": 0.906780795,
+            "rule": "abstain if < 0.906781",
+            "FP_false_refusals": 11,
+            "n_answerable": 40,
+            "FN_missed_absent": 0,
+            "n_absent": 9,
+            "TP_detected_absent": 9,
+            "TN_correct_answerable": 29,
+            "youden_j": 0.725,
+            "false_abstention_wilson95": [
+              0.1610785343314309,
+              0.4283525083312457
+            ],
+            "missed_absence_wilson95": [
+              0.0,
+              0.2991527535509594
+            ]
+          },
+          "no_better_than_length": false,
+          "paired_diff_vs_fusion_top_score_ci95": [
+            0.03888888888888897,
+            0.38888888888888895
+          ],
+          "paired_diff_vs_query_words_ci95": [
+            0.01805555555555549,
+            0.45000000000000007
+          ]
+        },
+        "rerank_margin_12": {
+          "n_absent": 9,
+          "n_answerable": 40,
+          "absent_dist": {
+            "n": 9,
+            "mean": 0.07696782111111111,
+            "median": 0.07584223000000001,
+            "stdev": 0.06246043492203053,
+            "min": 0.011757629999999963,
+            "max": 0.20834160000000002,
+            "p25": 0.02173225000000001,
+            "p75": 0.10546598499999998
+          },
+          "answerable_dist": {
+            "n": 40,
+            "mean": 0.04161421975,
+            "median": 0.019604029999999995,
+            "stdev": 0.049531768459543976,
+            "min": 0.0008162500000000739,
+            "max": 0.19503906000000004,
+            "p25": 0.007887172499999956,
+            "p75": 0.054921922500000026
+          },
+          "auroc_raw": 0.28055555555555556,
+          "auroc": 0.28055555555555556,
+          "auroc_ci95": [
+            0.125,
+            0.4583333333333333
+          ],
+          "best_threshold_in_sample": {
+            "threshold": 0.011697065000000006,
+            "rule": "abstain if > 0.0116971",
+            "FP_false_refusals": 25,
+            "n_answerable": 40,
+            "FN_missed_absent": 0,
+            "n_absent": 9,
+            "TP_detected_absent": 9,
+            "TN_correct_answerable": 15,
+            "youden_j": 0.375,
+            "false_abstention_wilson95": [
+              0.47032160054531913,
+              0.7577722646420829
+            ],
+            "missed_absence_wilson95": [
+              0.0,
+              0.2991527535509594
+            ]
+          },
+          "no_better_than_length": true,
+          "paired_diff_vs_fusion_top_score_ci95": [
+            -0.7,
+            -0.1444444444444445
+          ],
+          "paired_diff_vs_query_words_ci95": [
+            -0.6888888888888889,
+            -0.10972222222222222
+          ]
+        },
+        "rerank_pool_best": {
+          "n_absent": 9,
+          "n_answerable": 40,
+          "absent_dist": {
+            "n": 9,
+            "mean": 0.7497957266666667,
+            "median": 0.8304567,
+            "stdev": 0.2145255367351312,
+            "min": 0.33928013,
+            "max": 0.9558166,
+            "p25": 0.584193905,
+            "p75": 0.9104845500000001
+          },
+          "answerable_dist": {
+            "n": 40,
+            "mean": 0.96156303175,
+            "median": 0.9786513,
+            "stdev": 0.052954916185379945,
+            "min": 0.7320175,
+            "max": 0.9978002,
+            "p25": 0.9567713975000001,
+            "p75": 0.990844965
+          },
+          "auroc_raw": 0.9416666666666667,
+          "auroc": 0.9416666666666667,
+          "auroc_ci95": [
+            0.8611111111111112,
+            0.9944444444444445
+          ],
+          "best_threshold_in_sample": {
+            "threshold": 0.9238511,
+            "rule": "abstain if < 0.923851",
+            "FP_false_refusals": 3,
+            "n_answerable": 40,
+            "FN_missed_absent": 1,
+            "n_absent": 9,
+            "TP_detected_absent": 8,
+            "TN_correct_answerable": 37,
+            "youden_j": 0.8138888888888889,
+            "false_abstention_wilson95": [
+              0.025835556771858226,
+              0.19864530159097524
+            ],
+            "missed_absence_wilson95": [
+              0.019890371327130535,
+              0.4350062147680601
+            ]
+          },
+          "no_better_than_length": false,
+          "paired_diff_vs_fusion_top_score_ci95": [
+            0.05833333333333324,
+            0.4083333333333333
+          ],
+          "paired_diff_vs_query_words_ci95": [
+            0.03749999999999998,
+            0.46111111111111114
+          ]
+        },
+        "fusion_top_score": {
+          "n_absent": 9,
+          "n_answerable": 40,
+          "absent_dist": {
+            "n": 9,
+            "mean": 0.00889474002279387,
+            "median": 0.007709574557355039,
+            "stdev": 0.0028502034818324255,
+            "min": 0.006711057908125094,
+            "max": 0.014297385620915032,
+            "p25": 0.007054848966613673,
+            "p75": 0.010859028533177141
+          },
+          "answerable_dist": {
+            "n": 40,
+            "mean": 0.00999747367292378,
+            "median": 0.008843137916887194,
+            "stdev": 0.002632747001972187,
+            "min": 0.007005948446794448,
+            "max": 0.016133229247983348,
+            "p25": 0.007967185384950703,
+            "p75": 0.011908785957918624
+          },
+          "auroc_raw": 0.30416666666666664,
+          "auroc": 0.6958333333333333,
+          "auroc_ci95": [
+            0.5194444444444444,
+            0.8958333333333334
+          ],
+          "best_threshold_in_sample": {
+            "threshold": 0.007736824575383971,
+            "rule": "abstain if < 0.00773682",
+            "FP_false_refusals": 5,
+            "n_answerable": 40,
+            "FN_missed_absent": 4,
+            "n_absent": 9,
+            "TP_detected_absent": 5,
+            "TN_correct_answerable": 35,
+            "youden_j": 0.4305555555555556,
+            "false_abstention_wilson95": [
+              0.05459419773541284,
+              0.26112420670238146
+            ],
+            "missed_absence_wilson95": [
+              0.188775429471914,
+              0.7333526542559703
+            ]
+          },
+          "no_better_than_length": false
+        },
+        "query_words": {
+          "n_absent": 9,
+          "n_answerable": 40,
+          "absent_dist": {
+            "n": 9,
+            "mean": 22.333333333333332,
+            "median": 24.0,
+            "stdev": 5.267826876426369,
+            "min": 14.0,
+            "max": 29.0,
+            "p25": 17.0,
+            "p75": 26.5
+          },
+          "answerable_dist": {
+            "n": 40,
+            "mean": 20.75,
+            "median": 21.0,
+            "stdev": 2.9764029228204905,
+            "min": 14.0,
+            "max": 26.0,
+            "p25": 19.0,
+            "p75": 23.0
+          },
+          "auroc_raw": 0.6166666666666667,
+          "auroc": 0.6166666666666667,
+          "auroc_ci95": [
+            0.5069444444444444,
+            0.8666666666666667
+          ],
+          "best_threshold_in_sample": {
+            "threshold": 23.5,
+            "rule": "abstain if > 23.5",
+            "FP_false_refusals": 7,
+            "n_answerable": 40,
+            "FN_missed_absent": 4,
+            "n_absent": 9,
+            "TP_detected_absent": 5,
+            "TN_correct_answerable": 33,
+            "youden_j": 0.3805555555555556,
+            "false_abstention_wilson95": [
+              0.08745302996883066,
+              0.3195029205439244
+            ],
+            "missed_absence_wilson95": [
+              0.188775429471914,
+              0.7333526542559703
+            ]
+          }
+        }
+      }
+    },
+    "books": {
+      "n_absent": 5,
+      "n_answerable": 69,
+      "features": {
+        "rerank_top1": {
+          "n_absent": 5,
+          "n_answerable": 69,
+          "absent_dist": {
+            "n": 5,
+            "mean": 0.93293088,
+            "median": 0.9859364,
+            "stdev": 0.0813584666725105,
+            "min": 0.8197491,
+            "max": 0.9932811,
+            "p25": 0.8462654000000001,
+            "p75": 0.9930936
+          },
+          "answerable_dist": {
+            "n": 69,
+            "mean": 0.946508502173913,
+            "median": 0.97562337,
+            "stdev": 0.10861657695862935,
+            "min": 0.22936256,
+            "max": 0.99918646,
+            "p25": 0.94207445,
+            "p75": 0.99405877
+          },
+          "auroc_raw": 0.5623188405797102,
+          "auroc": 0.5623188405797102,
+          "auroc_ci95": [
+            0.2811594202898551,
+            0.8376811594202899
+          ],
+          "best_threshold_in_sample": {
+            "threshold": 0.8776048000000001,
+            "rule": "abstain if < 0.877605",
+            "FP_false_refusals": 6,
+            "n_answerable": 69,
+            "FN_missed_absent": 3,
+            "n_absent": 5,
+            "TP_detected_absent": 2,
+            "TN_correct_answerable": 63,
+            "youden_j": 0.3130434782608696,
+            "false_abstention_wilson95": [
+              0.04046307012090733,
+              0.1770170511284886
+            ],
+            "missed_absence_wilson95": [
+              0.23071993220883708,
+              0.8823817688407467
+            ]
+          },
+          "no_better_than_length": true,
+          "paired_diff_vs_fusion_top_score_ci95": [
+            -0.4492753623188406,
+            -0.011594202898550732
+          ],
+          "paired_diff_vs_query_words_ci95": [
+            -0.4173913043478261,
+            0.2797101449275362
+          ]
+        },
+        "rerank_mean_top3": {
+          "n_absent": 5,
+          "n_answerable": 69,
+          "absent_dist": {
+            "n": 5,
+            "mean": 0.925516538,
+            "median": 0.9838026666666666,
+            "stdev": 0.08443128810271402,
+            "min": 0.8076043233333333,
+            "max": 0.9886923,
+            "p25": 0.835638595,
+            "p75": 0.9862514166666667
+          },
+          "answerable_dist": {
+            "n": 69,
+            "mean": 0.8911454111594203,
+            "median": 0.9235421,
+            "stdev": 0.1216716510862677,
+            "min": 0.16015787333333334,
+            "max": 0.99493325,
+            "p25": 0.85626796,
+            "p75": 0.9594337983333333
+          },
+          "auroc_raw": 0.3739130434782609,
+          "auroc": 0.3739130434782609,
+          "auroc_ci95": [
+            0.05507246376811594,
+            0.7130434782608696
+          ],
+          "best_threshold_in_sample": {
+            "threshold": 0.98345875,
+            "rule": "abstain if > 0.983459",
+            "FP_false_refusals": 7,
+            "n_answerable": 69,
+            "FN_missed_absent": 2,
+            "n_absent": 5,
+            "TP_detected_absent": 3,
+            "TN_correct_answerable": 62,
+            "youden_j": 0.49855072463768113,
+            "false_abstention_wilson95": [
+              0.050016002571615495,
+              0.19492095652867886
+            ],
+            "missed_absence_wilson95": [
+              0.1176182311592533,
+              0.769280067791163
+            ]
+          },
+          "no_better_than_length": true,
+          "paired_diff_vs_fusion_top_score_ci95": [
+            -0.6695652173913044,
+            -0.15362318840579703
+          ],
+          "paired_diff_vs_query_words_ci95": [
+            -0.636231884057971,
+            0.13623188405797104
+          ]
+        },
+        "rerank_margin_12": {
+          "n_absent": 5,
+          "n_answerable": 69,
+          "absent_dist": {
+            "n": 5,
+            "mean": 0.0043842200000000055,
+            "median": 0.004369999999999985,
+            "stdev": 0.002607506448122416,
+            "min": 0.0006085000000000118,
+            "max": 0.0076735,
+            "p25": 0.0021221000000000156,
+            "p75": 0.006653450000000005
+          },
+          "answerable_dist": {
+            "n": 69,
+            "mean": 0.05880131826086955,
+            "median": 0.04128584000000002,
+            "stdev": 0.0530070214174743,
+            "min": 0.0016511000000000164,
+            "max": 0.19293210000000005,
+            "p25": 0.012506194999999998,
+            "p75": 0.09542722000000001
+          },
+          "auroc_raw": 0.9333333333333333,
+          "auroc": 0.9333333333333333,
+          "auroc_ci95": [
+            0.863768115942029,
+            0.9826086956521739
+          ],
+          "best_threshold_in_sample": {
+            "threshold": 0.0079766,
+            "rule": "abstain if < 0.0079766",
+            "FP_false_refusals": 9,
+            "n_answerable": 69,
+            "FN_missed_absent": 0,
+            "n_absent": 5,
+            "TP_detected_absent": 5,
+            "TN_correct_answerable": 60,
+            "youden_j": 0.8695652173913043,
+            "false_abstention_wilson95": [
+              0.07016548568804834,
+              0.22968514911404272
+            ],
+            "missed_absence_wilson95": [
+              0.0,
+              0.43449149475208104
+            ]
+          },
+          "no_better_than_length": false,
+          "paired_diff_vs_fusion_top_score_ci95": [
+            0.0028985507246377384,
+            0.33913043478260874
+          ],
+          "paired_diff_vs_query_words_ci95": [
+            0.12753623188405794,
+            0.4521739130434783
+          ]
+        },
+        "rerank_pool_best": {
+          "n_absent": 5,
+          "n_answerable": 69,
+          "absent_dist": {
+            "n": 5,
+            "mean": 0.93293088,
+            "median": 0.9859364,
+            "stdev": 0.0813584666725105,
+            "min": 0.8197491,
+            "max": 0.9932811,
+            "p25": 0.8462654000000001,
+            "p75": 0.9930936
+          },
+          "answerable_dist": {
+            "n": 69,
+            "mean": 0.946508502173913,
+            "median": 0.97562337,
+            "stdev": 0.10861657695862935,
+            "min": 0.22936256,
+            "max": 0.99918646,
+            "p25": 0.94207445,
+            "p75": 0.99405877
+          },
+          "auroc_raw": 0.5623188405797102,
+          "auroc": 0.5623188405797102,
+          "auroc_ci95": [
+            0.2811594202898551,
+            0.8376811594202899
+          ],
+          "best_threshold_in_sample": {
+            "threshold": 0.8776048000000001,
+            "rule": "abstain if < 0.877605",
+            "FP_false_refusals": 6,
+            "n_answerable": 69,
+            "FN_missed_absent": 3,
+            "n_absent": 5,
+            "TP_detected_absent": 2,
+            "TN_correct_answerable": 63,
+            "youden_j": 0.3130434782608696,
+            "false_abstention_wilson95": [
+              0.04046307012090733,
+              0.1770170511284886
+            ],
+            "missed_absence_wilson95": [
+              0.23071993220883708,
+              0.8823817688407467
+            ]
+          },
+          "no_better_than_length": true,
+          "paired_diff_vs_fusion_top_score_ci95": [
+            -0.4492753623188406,
+            -0.011594202898550732
+          ],
+          "paired_diff_vs_query_words_ci95": [
+            -0.4173913043478261,
+            0.2797101449275362
+          ]
+        },
+        "fusion_top_score": {
+          "n_absent": 5,
+          "n_answerable": 69,
+          "absent_dist": {
+            "n": 5,
+            "mean": 0.007670501750519371,
+            "median": 0.0076743647727070385,
+            "stdev": 0.0004932781714243091,
+            "min": 0.007024074958857567,
+            "max": 0.008398770911573917,
+            "p25": 0.007274187279314432,
+            "p75": 0.008064884710630476
+          },
+          "answerable_dist": {
+            "n": 69,
+            "mean": 0.009201609700966347,
+            "median": 0.008356926373955385,
+            "stdev": 0.002235401444250126,
+            "min": 0.006578947368421052,
+            "max": 0.016009221311475412,
+            "p25": 0.007929371080672194,
+            "p75": 0.009495447438159135
+          },
+          "auroc_raw": 0.22028985507246376,
+          "auroc": 0.7797101449275362,
+          "auroc_ci95": [
+            0.6057971014492753,
+            0.9159420289855073
+          ],
+          "best_threshold_in_sample": {
+            "threshold": 0.0077717492548435175,
+            "rule": "abstain if < 0.00777175",
+            "FP_false_refusals": 14,
+            "n_answerable": 69,
+            "FN_missed_absent": 1,
+            "n_absent": 5,
+            "TP_detected_absent": 4,
+            "TN_correct_answerable": 55,
+            "youden_j": 0.5971014492753624,
+            "false_abstention_wilson95": [
+              0.12489219999893796,
+              0.3122426240576451
+            ],
+            "missed_absence_wilson95": [
+              0.03622316096978745,
+              0.6244717358814613
+            ]
+          },
+          "no_better_than_length": false
+        },
+        "query_words": {
+          "n_absent": 5,
+          "n_answerable": 69,
+          "absent_dist": {
+            "n": 5,
+            "mean": 23.2,
+            "median": 22.0,
+            "stdev": 3.63318042491699,
+            "min": 19.0,
+            "max": 27.0,
+            "p25": 20.0,
+            "p75": 27.0
+          },
+          "answerable_dist": {
+            "n": 69,
+            "mean": 24.6231884057971,
+            "median": 25.0,
+            "stdev": 5.14524751955731,
+            "min": 14.0,
+            "max": 34.0,
+            "p25": 21.0,
+            "p75": 29.0
+          },
+          "auroc_raw": 0.3898550724637681,
+          "auroc": 0.6101449275362318,
+          "auroc_ci95": [
+            0.5072463768115942,
+            0.7927536231884058
+          ],
+          "best_threshold_in_sample": {
+            "threshold": 27.5,
+            "rule": "abstain if < 27.5",
+            "FP_false_refusals": 46,
+            "n_answerable": 69,
+            "FN_missed_absent": 0,
+            "n_absent": 5,
+            "TP_detected_absent": 5,
+            "TN_correct_answerable": 23,
+            "youden_j": 0.33333333333333337,
+            "false_abstention_wilson95": [
+              0.5492625453552142,
+              0.7664910899301172
+            ],
+            "missed_absence_wilson95": [
+              0.0,
+              0.43449149475208104
+            ]
+          }
+        }
+      }
+    },
+    "legacy": {
+      "n_absent": 24,
+      "n_answerable": 250,
+      "features": {
+        "rerank_top1": {
+          "n_absent": 24,
+          "n_answerable": 250,
+          "absent_dist": {
+            "n": 24,
+            "mean": 0.9472014583333334,
+            "median": 0.9594058,
+            "stdev": 0.05170709291118441,
+            "min": 0.7279754,
+            "max": 0.9863105,
+            "p25": 0.9376030625,
+            "p75": 0.975175475
+          },
+          "answerable_dist": {
+            "n": 250,
+            "mean": 0.984178999,
+            "median": 0.9916029,
+            "stdev": 0.02143752429735558,
+            "min": 0.8451773,
+            "max": 0.99994123,
+            "p25": 0.9785794,
+            "p75": 0.997396375
+          },
+          "auroc_raw": 0.8741666666666666,
+          "auroc": 0.8741666666666666,
+          "auroc_ci95": [
+            0.8185,
+            0.9218333333333333
+          ],
+          "best_threshold_in_sample": {
+            "threshold": 0.986466985,
+            "rule": "abstain if < 0.986467",
+            "FP_false_refusals": 92,
+            "n_answerable": 250,
+            "FN_missed_absent": 0,
+            "n_absent": 24,
+            "TP_detected_absent": 24,
+            "TN_correct_answerable": 158,
+            "youden_j": 0.632,
+            "false_abstention_wilson95": [
+              0.3106363981848008,
+              0.4293589374890997
+            ],
+            "missed_absence_wilson95": [
+              0.0,
+              0.13798057582897535
+            ]
+          },
+          "no_better_than_length": true,
+          "paired_diff_vs_fusion_top_score_ci95": [
+            0.18625000000000003,
+            0.3816666666666666
+          ],
+          "paired_diff_vs_query_words_ci95": [
+            -0.15533333333333332,
+            -0.05008333333333337
+          ]
+        },
+        "rerank_mean_top3": {
+          "n_absent": 24,
+          "n_answerable": 250,
+          "absent_dist": {
+            "n": 24,
+            "mean": 0.9077522155555555,
+            "median": 0.9415767416666666,
+            "stdev": 0.09923528658570632,
+            "min": 0.5874668766666667,
+            "max": 0.9832580333333333,
+            "p25": 0.8969316533333332,
+            "p75": 0.96457732
+          },
+          "answerable_dist": {
+            "n": 250,
+            "mean": 0.9692561472133333,
+            "median": 0.9804913216666666,
+            "stdev": 0.035779645037195634,
+            "min": 0.7997425866666666,
+            "max": 0.9998291233333333,
+            "p25": 0.9619573758333334,
+            "p75": 0.99206301
+          },
+          "auroc_raw": 0.8216666666666667,
+          "auroc": 0.8216666666666667,
+          "auroc_ci95": [
+            0.7485,
+            0.8856666666666667
+          ],
+          "best_threshold_in_sample": {
+            "threshold": 0.955249585,
+            "rule": "abstain if < 0.95525",
+            "FP_false_refusals": 51,
+            "n_answerable": 250,
+            "FN_missed_absent": 6,
+            "n_absent": 24,
+            "TP_detected_absent": 18,
+            "TN_correct_answerable": 199,
+            "youden_j": 0.546,
+            "false_abstention_wilson95": [
+              0.158704508175768,
+              0.25825472939600896
+            ],
+            "missed_absence_wilson95": [
+              0.1199920347934233,
+              0.4489982531210644
+            ]
+          },
+          "no_better_than_length": true,
+          "paired_diff_vs_fusion_top_score_ci95": [
+            0.12508333333333332,
+            0.3394166666666667
+          ],
+          "paired_diff_vs_query_words_ci95": [
+            -0.22516666666666663,
+            -0.08850000000000002
+          ]
+        },
+        "rerank_margin_12": {
+          "n_absent": 24,
+          "n_answerable": 250,
+          "absent_dist": {
+            "n": 24,
+            "mean": 0.04631032291666665,
+            "median": 0.014325040000000011,
+            "stdev": 0.10289948227558604,
+            "min": 0.0018016000000000698,
+            "max": 0.50306265,
+            "p25": 0.005758447499999986,
+            "p75": 0.037437937499999935
+          },
+          "answerable_dist": {
+            "n": 250,
+            "mean": 0.014310329600000003,
+            "median": 0.006682479999999991,
+            "stdev": 0.023492759320308147,
+            "min": 1.7970000000033792e-05,
+            "max": 0.19301507000000007,
+            "p25": 0.0016218025000000469,
+            "p75": 0.018961242499999975
+          },
+          "auroc_raw": 0.31916666666666665,
+          "auroc": 0.31916666666666665,
+          "auroc_ci95": [
+            0.22333333333333333,
+            0.4225
+          ],
+          "best_threshold_in_sample": {
+            "threshold": 0.0027755399999999653,
+            "rule": "abstain if > 0.00277554",
+            "FP_false_refusals": 160,
+            "n_answerable": 250,
+            "FN_missed_absent": 2,
+            "n_absent": 24,
+            "TP_detected_absent": 22,
+            "TN_correct_answerable": 90,
+            "youden_j": 0.2766666666666666,
+            "false_abstention_wilson95": [
+              0.5787938053589917,
+              0.6969687174111138
+            ],
+            "missed_absence_wilson95": [
+              0.023158327842973503,
+              0.258492152014506
+            ]
+          },
+          "no_better_than_length": true,
+          "paired_diff_vs_fusion_top_score_ci95": [
+            -0.42649999999999993,
+            -0.12166666666666659
+          ],
+          "paired_diff_vs_query_words_ci95": [
+            -0.7554166666666666,
+            -0.5506666666666666
+          ]
+        },
+        "rerank_pool_best": {
+          "n_absent": 24,
+          "n_answerable": 250,
+          "absent_dist": {
+            "n": 24,
+            "mean": 0.9472014583333334,
+            "median": 0.9594058,
+            "stdev": 0.05170709291118441,
+            "min": 0.7279754,
+            "max": 0.9863105,
+            "p25": 0.9376030625,
+            "p75": 0.975175475
+          },
+          "answerable_dist": {
+            "n": 250,
+            "mean": 0.984178999,
+            "median": 0.9916029,
+            "stdev": 0.02143752429735558,
+            "min": 0.8451773,
+            "max": 0.99994123,
+            "p25": 0.9785794,
+            "p75": 0.997396375
+          },
+          "auroc_raw": 0.8741666666666666,
+          "auroc": 0.8741666666666666,
+          "auroc_ci95": [
+            0.8185,
+            0.9218333333333333
+          ],
+          "best_threshold_in_sample": {
+            "threshold": 0.986466985,
+            "rule": "abstain if < 0.986467",
+            "FP_false_refusals": 92,
+            "n_answerable": 250,
+            "FN_missed_absent": 0,
+            "n_absent": 24,
+            "TP_detected_absent": 24,
+            "TN_correct_answerable": 158,
+            "youden_j": 0.632,
+            "false_abstention_wilson95": [
+              0.3106363981848008,
+              0.4293589374890997
+            ],
+            "missed_absence_wilson95": [
+              0.0,
+              0.13798057582897535
+            ]
+          },
+          "no_better_than_length": true,
+          "paired_diff_vs_fusion_top_score_ci95": [
+            0.18625000000000003,
+            0.3816666666666666
+          ],
+          "paired_diff_vs_query_words_ci95": [
+            -0.15533333333333332,
+            -0.05008333333333337
+          ]
+        },
+        "fusion_top_score": {
+          "n_absent": 24,
+          "n_answerable": 250,
+          "absent_dist": {
+            "n": 24,
+            "mean": 0.009829749119259292,
+            "median": 0.008739990507249707,
+            "stdev": 0.0026651821183343153,
+            "min": 0.006743756743756744,
+            "max": 0.01626123744050767,
+            "p25": 0.007843501984126984,
+            "p75": 0.011040937734202855
+          },
+          "answerable_dist": {
+            "n": 250,
+            "mean": 0.010444104222287266,
+            "median": 0.009141058002169248,
+            "stdev": 0.002778254445596875,
+            "min": 0.006722171569333141,
+            "max": 0.016133229247983348,
+            "p25": 0.008204911851247436,
+            "p75": 0.012861382434165274
+          },
+          "auroc_raw": 0.42725,
+          "auroc": 0.57275,
+          "auroc_ci95": [
+            0.5040833333333333,
+            0.6976666666666667
+          ],
+          "best_threshold_in_sample": {
+            "threshold": 0.007954172546966523,
+            "rule": "abstain if < 0.00795417",
+            "FP_false_refusals": 35,
+            "n_answerable": 250,
+            "FN_missed_absent": 17,
+            "n_absent": 24,
+            "TP_detected_absent": 7,
+            "TN_correct_answerable": 215,
+            "youden_j": 0.15166666666666667,
+            "false_abstention_wilson95": [
+              0.10241566325298423,
+              0.1884807067667446
+            ],
+            "missed_absence_wilson95": [
+              0.508319363412903,
+              0.8508553966583573
+            ]
+          },
+          "no_better_than_length": true
+        },
+        "query_words": {
+          "n_absent": 24,
+          "n_answerable": 250,
+          "absent_dist": {
+            "n": 24,
+            "mean": 17.458333333333332,
+            "median": 17.0,
+            "stdev": 2.283764372728703,
+            "min": 14.0,
+            "max": 22.0,
+            "p25": 15.25,
+            "p75": 19.0
+          },
+          "answerable_dist": {
+            "n": 250,
+            "mean": 59.148,
+            "median": 39.0,
+            "stdev": 37.71971904480834,
+            "min": 13.0,
+            "max": 160.0,
+            "p25": 29.0,
+            "p75": 91.0
+          },
+          "auroc_raw": 0.026083333333333333,
+          "auroc": 0.9739166666666667,
+          "auroc_ci95": [
+            0.95525,
+            0.9885833333333334
+          ],
+          "best_threshold_in_sample": {
+            "threshold": 22.5,
+            "rule": "abstain if < 22.5",
+            "FP_false_refusals": 19,
+            "n_answerable": 250,
+            "FN_missed_absent": 0,
+            "n_absent": 24,
+            "TP_detected_absent": 24,
+            "TN_correct_answerable": 231,
+            "youden_j": 0.924,
+            "false_abstention_wilson95": [
+              0.0491912491961804,
+              0.11564225327150024
+            ],
+            "missed_absence_wilson95": [
+              0.0,
+              0.13798057582897535
+            ]
+          }
+        }
+      }
+    },
+    "legacy-vs-papers-SECONDARY": {
+      "n_absent": 24,
+      "n_answerable": 61,
+      "features": {
+        "rerank_top1": {
+          "n_absent": 24,
+          "n_answerable": 61,
+          "absent_dist": {
+            "n": 24,
+            "mean": 0.9472014583333334,
+            "median": 0.9594058,
+            "stdev": 0.05170709291118441,
+            "min": 0.7279754,
+            "max": 0.9863105,
+            "p25": 0.9376030625,
+            "p75": 0.975175475
+          },
+          "answerable_dist": {
+            "n": 61,
+            "mean": 0.9717234718032787,
+            "median": 0.9882222,
+            "stdev": 0.04462403187562069,
+            "min": 0.7973991,
+            "max": 0.99979657,
+            "p25": 0.9646211,
+            "p75": 0.997247715
+          },
+          "auroc_raw": 0.7855191256830601,
+          "auroc": 0.7855191256830601,
+          "auroc_ci95": [
+            0.6864754098360656,
+            0.8736338797814208
+          ],
+          "best_threshold_in_sample": {
+            "threshold": 0.9867939,
+            "rule": "abstain if < 0.986794",
+            "FP_false_refusals": 25,
+            "n_answerable": 61,
+            "FN_missed_absent": 0,
+            "n_absent": 24,
+            "TP_detected_absent": 24,
+            "TN_correct_answerable": 36,
+            "youden_j": 0.5901639344262295,
+            "false_abstention_wilson95": [
+              0.2953514834927377,
+              0.5350043374617113
+            ],
+            "missed_absence_wilson95": [
+              0.0,
+              0.13798057582897535
+            ]
+          },
+          "no_better_than_length": true,
+          "paired_diff_vs_fusion_top_score_ci95": [
+            0.0840163934426229,
+            0.323087431693989
+          ],
+          "paired_diff_vs_query_words_ci95": [
+            -0.21721311475409844,
+            -0.01775956284153002
+          ]
+        },
+        "rerank_mean_top3": {
+          "n_absent": 24,
+          "n_answerable": 61,
+          "absent_dist": {
+            "n": 24,
+            "mean": 0.9077522155555555,
+            "median": 0.9415767416666666,
+            "stdev": 0.09923528658570632,
+            "min": 0.5874668766666667,
+            "max": 0.9832580333333333,
+            "p25": 0.8969316533333332,
+            "p75": 0.96457732
+          },
+          "answerable_dist": {
+            "n": 61,
+            "mean": 0.9400402553005465,
+            "median": 0.96698038,
+            "stdev": 0.06867207686573282,
+            "min": 0.7080486,
+            "max": 0.99788617,
+            "p25": 0.9258537666666666,
+            "p75": 0.9869616816666666
+          },
+          "auroc_raw": 0.6782786885245902,
+          "auroc": 0.6782786885245902,
+          "auroc_ci95": [
+            0.5601092896174863,
+            0.7889344262295082
+          ],
+          "best_threshold_in_sample": {
+            "threshold": 0.9480836500000001,
+            "rule": "abstain if < 0.948084",
+            "FP_false_refusals": 20,
+            "n_answerable": 61,
+            "FN_missed_absent": 8,
+            "n_absent": 24,
+            "TP_detected_absent": 16,
+            "TN_correct_answerable": 41,
+            "youden_j": 0.33879781420765026,
+            "false_abstention_wilson95": [
+              0.2233495518172607,
+              0.45278428818668737
+            ],
+            "missed_absence_wilson95": [
+              0.17971978688379642,
+              0.5329404050591954
+            ]
+          },
+          "no_better_than_length": true,
+          "paired_diff_vs_fusion_top_score_ci95": [
+            -0.036202185792349795,
+            0.2295081967213115
+          ],
+          "paired_diff_vs_query_words_ci95": [
+            -0.33504098360655743,
+            -0.11851092896174853
+          ]
+        },
+        "rerank_margin_12": {
+          "n_absent": 24,
+          "n_answerable": 61,
+          "absent_dist": {
+            "n": 24,
+            "mean": 0.04631032291666665,
+            "median": 0.014325040000000011,
+            "stdev": 0.10289948227558604,
+            "min": 0.0018016000000000698,
+            "max": 0.50306265,
+            "p25": 0.005758447499999986,
+            "p75": 0.037437937499999935
+          },
+          "answerable_dist": {
+            "n": 61,
+            "mean": 0.03487753491803279,
+            "median": 0.01582311999999997,
+            "stdev": 0.05357203818537847,
+            "min": 4.229999999993961e-05,
+            "max": 0.32197204,
+            "p25": 0.005140400000000045,
+            "p75": 0.04313718500000002
+          },
+          "auroc_raw": 0.5020491803278688,
+          "auroc": 0.5020491803278688,
+          "auroc_ci95": [
+            0.36543715846994534,
+            0.6379781420765027
+          ],
+          "best_threshold_in_sample": {
+            "threshold": 0.009237799999999963,
+            "rule": "abstain if < 0.0092378",
+            "FP_false_refusals": 19,
+            "n_answerable": 61,
+            "FN_missed_absent": 13,
+            "n_absent": 24,
+            "TP_detected_absent": 11,
+            "TN_correct_answerable": 42,
+            "youden_j": 0.14685792349726773,
+            "false_abstention_wilson95": [
+              0.20937273683536856,
+              0.43591670697847934
+            ],
+            "missed_absence_wilson95": [
+              0.35074553553106635,
+              0.7210894164831857
+            ]
+          },
+          "no_better_than_length": true,
+          "paired_diff_vs_fusion_top_score_ci95": [
+            -0.2745901639344263,
+            0.10040983606557374
+          ],
+          "paired_diff_vs_query_words_ci95": [
+            -0.5604508196721312,
+            -0.22301912568306015
+          ]
+        },
+        "rerank_pool_best": {
+          "n_absent": 24,
+          "n_answerable": 61,
+          "absent_dist": {
+            "n": 24,
+            "mean": 0.9472014583333334,
+            "median": 0.9594058,
+            "stdev": 0.05170709291118441,
+            "min": 0.7279754,
+            "max": 0.9863105,
+            "p25": 0.9376030625,
+            "p75": 0.975175475
+          },
+          "answerable_dist": {
+            "n": 61,
+            "mean": 0.9717234718032787,
+            "median": 0.9882222,
+            "stdev": 0.04462403187562069,
+            "min": 0.7973991,
+            "max": 0.99979657,
+            "p25": 0.9646211,
+            "p75": 0.997247715
+          },
+          "auroc_raw": 0.7855191256830601,
+          "auroc": 0.7855191256830601,
+          "auroc_ci95": [
+            0.6864754098360656,
+            0.8736338797814208
+          ],
+          "best_threshold_in_sample": {
+            "threshold": 0.9867939,
+            "rule": "abstain if < 0.986794",
+            "FP_false_refusals": 25,
+            "n_answerable": 61,
+            "FN_missed_absent": 0,
+            "n_absent": 24,
+            "TP_detected_absent": 24,
+            "TN_correct_answerable": 36,
+            "youden_j": 0.5901639344262295,
+            "false_abstention_wilson95": [
+              0.2953514834927377,
+              0.5350043374617113
+            ],
+            "missed_absence_wilson95": [
+              0.0,
+              0.13798057582897535
+            ]
+          },
+          "no_better_than_length": true,
+          "paired_diff_vs_fusion_top_score_ci95": [
+            0.0840163934426229,
+            0.323087431693989
+          ],
+          "paired_diff_vs_query_words_ci95": [
+            -0.21721311475409844,
+            -0.01775956284153002
+          ]
+        },
+        "fusion_top_score": {
+          "n_absent": 24,
+          "n_answerable": 61,
+          "absent_dist": {
+            "n": 24,
+            "mean": 0.009829749119259292,
+            "median": 0.008739990507249707,
+            "stdev": 0.0026651821183343153,
+            "min": 0.006743756743756744,
+            "max": 0.01626123744050767,
+            "p25": 0.007843501984126984,
+            "p75": 0.011040937734202855
+          },
+          "answerable_dist": {
+            "n": 61,
+            "mean": 0.010149884627269694,
+            "median": 0.009064516129032259,
+            "stdev": 0.0025421723378026713,
+            "min": 0.006582535110061783,
+            "max": 0.015772478887232988,
+            "p25": 0.008262743051939556,
+            "p75": 0.011420870795870796
+          },
+          "auroc_raw": 0.4453551912568306,
+          "auroc": 0.5546448087431695,
+          "auroc_ci95": [
+            0.5034153005464481,
+            0.694672131147541
+          ],
+          "best_threshold_in_sample": {
+            "threshold": 0.008238713829827871,
+            "rule": "abstain if < 0.00823871",
+            "FP_false_refusals": 14,
+            "n_answerable": 61,
+            "FN_missed_absent": 15,
+            "n_absent": 24,
+            "TP_detected_absent": 9,
+            "TN_correct_answerable": 47,
+            "youden_j": 0.14549180327868852,
+            "false_abstention_wilson95": [
+              0.141931023788832,
+              0.34913643907451497
+            ],
+            "missed_absence_wilson95": [
+              0.42709619037907065,
+              0.7884086656636855
+            ]
+          },
+          "no_better_than_length": true
+        },
+        "query_words": {
+          "n_absent": 24,
+          "n_answerable": 61,
+          "absent_dist": {
+            "n": 24,
+            "mean": 17.458333333333332,
+            "median": 17.0,
+            "stdev": 2.283764372728703,
+            "min": 14.0,
+            "max": 22.0,
+            "p25": 15.25,
+            "p75": 19.0
+          },
+          "answerable_dist": {
+            "n": 61,
+            "mean": 24.83606557377049,
+            "median": 24.0,
+            "stdev": 5.75667823161023,
+            "min": 13.0,
+            "max": 41.0,
+            "p25": 21.0,
+            "p75": 29.0
+          },
+          "auroc_raw": 0.10075136612021858,
+          "auroc": 0.8992486338797814,
+          "auroc_ci95": [
+            0.8278688524590164,
+            0.9562841530054644
+          ],
+          "best_threshold_in_sample": {
+            "threshold": 21.5,
+            "rule": "abstain if < 21.5",
+            "FP_false_refusals": 16,
+            "n_answerable": 61,
+            "FN_missed_absent": 1,
+            "n_absent": 24,
+            "TP_detected_absent": 23,
+            "TN_correct_answerable": 45,
+            "youden_j": 0.6960382513661203,
+            "false_abstention_wilson95": [
+              0.16838645195913188,
+              0.38436980328441556
+            ],
+            "missed_absence_wilson95": [
+              0.007393265354805126,
+              0.20242226248842232
+            ]
+          }
+        }
+      }
+    },
+    "standards": {
+      "n_absent": 22,
+      "n_answerable": 106,
+      "features": {
+        "rerank_top1": {
+          "n_absent": 22,
+          "n_answerable": 106,
+          "absent_dist": {
+            "n": 22,
+            "mean": 0.6434898510909091,
+            "median": 0.7092155200000001,
+            "stdev": 0.30645430805505514,
+            "min": 0.09041373,
+            "max": 0.9685006,
+            "p25": 0.3439979375,
+            "p75": 0.9110705874999999
+          },
+          "answerable_dist": {
+            "n": 106,
+            "mean": 0.8719323820754717,
+            "median": 0.96007702,
+            "stdev": 0.18733876932564544,
+            "min": 0.26284185,
+            "max": 0.9998568,
+            "p25": 0.852409765,
+            "p75": 0.99093761
+          },
+          "auroc_raw": 0.8008147512864494,
+          "auroc": 0.8008147512864494,
+          "auroc_ci95": [
+            0.7148370497427101,
+            0.8786449399656947
+          ],
+          "best_threshold_in_sample": {
+            "threshold": 0.95577535,
+            "rule": "abstain if < 0.955775",
+            "FP_false_refusals": 48,
+            "n_answerable": 106,
+            "FN_missed_absent": 1,
+            "n_absent": 22,
+            "TP_detected_absent": 21,
+            "TN_correct_answerable": 58,
+            "youden_j": 0.5017152658662093,
+            "false_abstention_wilson95": [
+              0.3613756390040924,
+              0.5475841722149721
+            ],
+            "missed_absence_wilson95": [
+              0.008069219301147859,
+              0.21798489499518053
+            ]
+          },
+          "no_better_than_length": false,
+          "paired_diff_vs_fusion_top_score_ci95": [
+            0.061963979416809645,
+            0.27144082332761577
+          ],
+          "paired_diff_vs_query_words_ci95": [
+            0.05831903945111494,
+            0.3222555746140652
+          ]
+        },
+        "rerank_mean_top3": {
+          "n_absent": 22,
+          "n_answerable": 106,
+          "absent_dist": {
+            "n": 22,
+            "mean": 0.5794115892575757,
+            "median": 0.6068384866666667,
+            "stdev": 0.30069812397221585,
+            "min": 0.04975448366666666,
+            "max": 0.9358210166666666,
+            "p25": 0.282495655,
+            "p75": 0.8722142833333333
+          },
+          "answerable_dist": {
+            "n": 106,
+            "mean": 0.7592453525094339,
+            "median": 0.8516130783333333,
+            "stdev": 0.22953237788056693,
+            "min": 0.18071096866666667,
+            "max": 0.9960948866666667,
+            "p25": 0.5922479466666667,
+            "p75": 0.9420959291666666
+          },
+          "auroc_raw": 0.6921097770154374,
+          "auroc": 0.6921097770154374,
+          "auroc_ci95": [
+            0.5823327615780446,
+            0.7975986277873071
+          ],
+          "best_threshold_in_sample": {
+            "threshold": 0.6766950333333335,
+            "rule": "abstain if < 0.676695",
+            "FP_false_refusals": 31,
+            "n_answerable": 106,
+            "FN_missed_absent": 8,
+            "n_absent": 22,
+            "TP_detected_absent": 14,
+            "TN_correct_answerable": 75,
+            "youden_j": 0.3439108061749571,
+            "false_abstention_wilson95": [
+              0.21433210649260998,
+              0.38509106287127387
+            ],
+            "missed_absence_wilson95": [
+              0.19732972772607899,
+              0.5704865065628195
+            ]
+          },
+          "no_better_than_length": false,
+          "paired_diff_vs_fusion_top_score_ci95": [
+            -0.0634648370497427,
+            0.1719554030874786
+          ],
+          "paired_diff_vs_query_words_ci95": [
+            -0.07418524871355059,
+            0.2356346483704974
+          ]
+        },
+        "rerank_margin_12": {
+          "n_absent": 22,
+          "n_answerable": 106,
+          "absent_dist": {
+            "n": 22,
+            "mean": 0.06192834718181817,
+            "median": 0.038687145000000034,
+            "stdev": 0.0747776216954325,
+            "min": 0.0028180999999999345,
+            "max": 0.31689375,
+            "p25": 0.011366034999999941,
+            "p75": 0.076071665
+          },
+          "answerable_dist": {
+            "n": 106,
+            "mean": 0.1308196962264151,
+            "median": 0.05700992499999999,
+            "stdev": 0.17555128346094134,
+            "min": 0.0,
+            "max": 0.92742471,
+            "p25": 0.022967875000000054,
+            "p75": 0.18814134500000002
+          },
+          "auroc_raw": 0.6162092624356775,
+          "auroc": 0.6162092624356775,
+          "auroc_ci95": [
+            0.4888507718696398,
+            0.7298456260720412
+          ],
+          "best_threshold_in_sample": {
+            "threshold": 0.06988069500000002,
+            "rule": "abstain if < 0.0698807",
+            "FP_false_refusals": 60,
+            "n_answerable": 106,
+            "FN_missed_absent": 5,
+            "n_absent": 22,
+            "TP_detected_absent": 17,
+            "TN_correct_answerable": 46,
+            "youden_j": 0.20668953687821612,
+            "false_abstention_wilson95": [
+              0.47101182829146454,
+              0.6564444360018451
+            ],
+            "missed_absence_wilson95": [
+              0.10122890794820358,
+              0.4344035606295935
+            ]
+          },
+          "no_better_than_length": false,
+          "paired_diff_vs_fusion_top_score_ci95": [
+            -0.19897084048027447,
+            0.14622641509433965
+          ],
+          "paired_diff_vs_query_words_ci95": [
+            -0.14386792452830188,
+            0.15630360205831906
+          ]
+        },
+        "rerank_pool_best": {
+          "n_absent": 22,
+          "n_answerable": 106,
+          "absent_dist": {
+            "n": 22,
+            "mean": 0.6434898510909091,
+            "median": 0.7092155200000001,
+            "stdev": 0.30645430805505514,
+            "min": 0.09041373,
+            "max": 0.9685006,
+            "p25": 0.3439979375,
+            "p75": 0.9110705874999999
+          },
+          "answerable_dist": {
+            "n": 106,
+            "mean": 0.8719323820754717,
+            "median": 0.96007702,
+            "stdev": 0.18733876932564544,
+            "min": 0.26284185,
+            "max": 0.9998568,
+            "p25": 0.852409765,
+            "p75": 0.99093761
+          },
+          "auroc_raw": 0.8008147512864494,
+          "auroc": 0.8008147512864494,
+          "auroc_ci95": [
+            0.7148370497427101,
+            0.8786449399656947
+          ],
+          "best_threshold_in_sample": {
+            "threshold": 0.95577535,
+            "rule": "abstain if < 0.955775",
+            "FP_false_refusals": 48,
+            "n_answerable": 106,
+            "FN_missed_absent": 1,
+            "n_absent": 22,
+            "TP_detected_absent": 21,
+            "TN_correct_answerable": 58,
+            "youden_j": 0.5017152658662093,
+            "false_abstention_wilson95": [
+              0.3613756390040924,
+              0.5475841722149721
+            ],
+            "missed_absence_wilson95": [
+              0.008069219301147859,
+              0.21798489499518053
+            ]
+          },
+          "no_better_than_length": false,
+          "paired_diff_vs_fusion_top_score_ci95": [
+            0.061963979416809645,
+            0.27144082332761577
+          ],
+          "paired_diff_vs_query_words_ci95": [
+            0.05831903945111494,
+            0.3222555746140652
+          ]
+        },
+        "fusion_top_score": {
+          "n_absent": 22,
+          "n_answerable": 106,
+          "absent_dist": {
+            "n": 22,
+            "mean": 0.011221815340364677,
+            "median": 0.011227263511307676,
+            "stdev": 0.0028678606046320322,
+            "min": 0.006623641304347826,
+            "max": 0.01527518656716418,
+            "p25": 0.00877033722046849,
+            "p75": 0.014089344620074275
+          },
+          "answerable_dist": {
+            "n": 106,
+            "mean": 0.012503651041692723,
+            "median": 0.013198739805621806,
+            "stdev": 0.0033712096148150596,
+            "min": 0.004339950372208436,
+            "max": 0.01639344262295082,
+            "p25": 0.009280521667138712,
+            "p75": 0.015549662487945998
+          },
+          "auroc_raw": 0.3632075471698113,
+          "auroc": 0.6367924528301887,
+          "auroc_ci95": [
+            0.5338765008576329,
+            0.7444253859348199
+          ],
+          "best_threshold_in_sample": {
+            "threshold": 0.015307382510748367,
+            "rule": "abstain if < 0.0153074",
+            "FP_false_refusals": 73,
+            "n_answerable": 106,
+            "FN_missed_absent": 0,
+            "n_absent": 22,
+            "TP_detected_absent": 22,
+            "TN_correct_answerable": 33,
+            "youden_j": 0.3113207547169812,
+            "false_abstention_wilson95": [
+              0.595235830212175,
+              0.7689249249115668
+            ],
+            "missed_absence_wilson95": [
+              1.3877787807814457e-17,
+              0.14865952572596125
+            ]
+          },
+          "no_better_than_length": false
+        },
+        "query_words": {
+          "n_absent": 22,
+          "n_answerable": 106,
+          "absent_dist": {
+            "n": 22,
+            "mean": 18.545454545454547,
+            "median": 18.0,
+            "stdev": 3.5284864248309713,
+            "min": 10.0,
+            "max": 26.0,
+            "p25": 16.75,
+            "p75": 20.25
+          },
+          "answerable_dist": {
+            "n": 106,
+            "mean": 20.660377358490567,
+            "median": 20.0,
+            "stdev": 6.879765766296228,
+            "min": 6.0,
+            "max": 38.0,
+            "p25": 16.0,
+            "p75": 25.0
+          },
+          "auroc_raw": 0.3975128644939966,
+          "auroc": 0.6024871355060034,
+          "auroc_ci95": [
+            0.5132933104631218,
+            0.7062607204116638
+          ],
+          "best_threshold_in_sample": {
+            "threshold": 20.5,
+            "rule": "abstain if < 20.5",
+            "FP_false_refusals": 54,
+            "n_answerable": 106,
+            "FN_missed_absent": 5,
+            "n_absent": 22,
+            "TP_detected_absent": 17,
+            "TN_correct_answerable": 52,
+            "youden_j": 0.26329331046312177,
+            "false_abstention_wilson95": [
+              0.41561339945718223,
+              0.6025946382990048
+            ],
+            "missed_absence_wilson95": [
+              0.10122890794820358,
+              0.4344035606295935
+            ]
+          }
+        }
+      },
+      "by_absent_class": {
+        "absent": {
+          "n_absent": 9,
+          "n_answerable": 106,
+          "features": {
+            "rerank_top1": {
+              "n_absent": 9,
+              "n_answerable": 106,
+              "absent_dist": {
+                "n": 9,
+                "mean": 0.45046637377777776,
+                "median": 0.36466444,
+                "stdev": 0.3108267941187076,
+                "min": 0.09041373,
+                "max": 0.90448195,
+                "p25": 0.174705402,
+                "p75": 0.754665285
+              },
+              "answerable_dist": {
+                "n": 106,
+                "mean": 0.8719323820754717,
+                "median": 0.96007702,
+                "stdev": 0.18733876932564544,
+                "min": 0.26284185,
+                "max": 0.9998568,
+                "p25": 0.852409765,
+                "p75": 0.99093761
+              },
+              "auroc_raw": 0.9046121593291404,
+              "auroc": 0.9046121593291404,
+              "auroc_ci95": [
+                0.8144654088050315,
+                0.9790356394129979
+              ],
+              "best_threshold_in_sample": {
+                "threshold": 0.905484825,
+                "rule": "abstain if < 0.905485",
+                "FP_false_refusals": 32,
+                "n_answerable": 106,
+                "FN_missed_absent": 0,
+                "n_absent": 9,
+                "TP_detected_absent": 9,
+                "TN_correct_answerable": 74,
+                "youden_j": 0.6981132075471699,
+                "false_abstention_wilson95": [
+                  0.22268303619470348,
+                  0.39494817092536755
+                ],
+                "missed_absence_wilson95": [
+                  0.0,
+                  0.2991527535509594
+                ]
+              },
+              "no_better_than_length": false,
+              "paired_diff_vs_fusion_top_score_ci95": [
+                0.04926624737945495,
+                0.36687631027253675
+              ],
+              "paired_diff_vs_query_words_ci95": [
+                0.2075471698113207,
+                0.4350104821802936
+              ]
+            },
+            "rerank_mean_top3": {
+              "n_absent": 9,
+              "n_answerable": 106,
+              "absent_dist": {
+                "n": 9,
+                "mean": 0.3791922581851852,
+                "median": 0.29638511666666667,
+                "stdev": 0.2736595514007229,
+                "min": 0.04975448366666666,
+                "max": 0.87086826,
+                "p25": 0.1405988066666667,
+                "p75": 0.579692495
+              },
+              "answerable_dist": {
+                "n": 106,
+                "mean": 0.7592453525094339,
+                "median": 0.8516130783333333,
+                "stdev": 0.22953237788056693,
+                "min": 0.18071096866666667,
+                "max": 0.9960948866666667,
+                "p25": 0.5922479466666667,
+                "p75": 0.9420959291666666
+              },
+              "auroc_raw": 0.8532494758909853,
+              "auroc": 0.8532494758909853,
+              "auroc_ci95": [
+                0.7211740041928721,
+                0.9591194968553459
+              ],
+              "best_threshold_in_sample": {
+                "threshold": 0.5245449166666667,
+                "rule": "abstain if < 0.524545",
+                "FP_false_refusals": 19,
+                "n_answerable": 106,
+                "FN_missed_absent": 2,
+                "n_absent": 9,
+                "TP_detected_absent": 7,
+                "TN_correct_answerable": 87,
+                "youden_j": 0.5985324947589099,
+                "false_abstention_wilson95": [
+                  0.11786105495852324,
+                  0.26306566133111564
+                ],
+                "missed_absence_wilson95": [
+                  0.06322376231222723,
+                  0.5474166563271946
+                ]
+              },
+              "no_better_than_length": false,
+              "paired_diff_vs_fusion_top_score_ci95": [
+                0.0010482180293500676,
+                0.31656184486373173
+              ],
+              "paired_diff_vs_query_words_ci95": [
+                0.1221174004192872,
+                0.40670859538784065
+              ]
+            },
+            "rerank_margin_12": {
+              "n_absent": 9,
+              "n_answerable": 106,
+              "absent_dist": {
+                "n": 9,
+                "mean": 0.07583484644444444,
+                "median": 0.06070998,
+                "stdev": 0.10022585336885297,
+                "min": 0.006127618000000001,
+                "max": 0.31689375,
+                "p25": 0.0077576599999999996,
+                "p75": 0.10298986000000002
+              },
+              "answerable_dist": {
+                "n": 106,
+                "mean": 0.1308196962264151,
+                "median": 0.05700992499999999,
+                "stdev": 0.17555128346094134,
+                "min": 0.0,
+                "max": 0.92742471,
+                "p25": 0.022967875000000054,
+                "p75": 0.18814134500000002
+              },
+              "auroc_raw": 0.6027253668763103,
+              "auroc": 0.6027253668763103,
+              "auroc_ci95": [
+                0.4088050314465409,
+                0.8029350104821803
+              ],
+              "best_threshold_in_sample": {
+                "threshold": 0.012345089999999947,
+                "rule": "abstain if < 0.0123451",
+                "FP_false_refusals": 15,
+                "n_answerable": 106,
+                "FN_missed_absent": 5,
+                "n_absent": 9,
+                "TP_detected_absent": 4,
+                "TN_correct_answerable": 91,
+                "youden_j": 0.3029350104821803,
+                "false_abstention_wilson95": [
+                  0.0876695987836644,
+                  0.2204249664812261
+                ],
+                "missed_absence_wilson95": [
+                  0.2666473457440297,
+                  0.811224570528086
+                ]
+              },
+              "no_better_than_length": false,
+              "paired_diff_vs_fusion_top_score_ci95": [
+                -0.35744234800838576,
+                0.17819706498951782
+              ],
+              "paired_diff_vs_query_words_ci95": [
+                -0.18029350104821806,
+                0.239517819706499
+              ]
+            },
+            "rerank_pool_best": {
+              "n_absent": 9,
+              "n_answerable": 106,
+              "absent_dist": {
+                "n": 9,
+                "mean": 0.45046637377777776,
+                "median": 0.36466444,
+                "stdev": 0.3108267941187076,
+                "min": 0.09041373,
+                "max": 0.90448195,
+                "p25": 0.174705402,
+                "p75": 0.754665285
+              },
+              "answerable_dist": {
+                "n": 106,
+                "mean": 0.8719323820754717,
+                "median": 0.96007702,
+                "stdev": 0.18733876932564544,
+                "min": 0.26284185,
+                "max": 0.9998568,
+                "p25": 0.852409765,
+                "p75": 0.99093761
+              },
+              "auroc_raw": 0.9046121593291404,
+              "auroc": 0.9046121593291404,
+              "auroc_ci95": [
+                0.8144654088050315,
+                0.9790356394129979
+              ],
+              "best_threshold_in_sample": {
+                "threshold": 0.905484825,
+                "rule": "abstain if < 0.905485",
+                "FP_false_refusals": 32,
+                "n_answerable": 106,
+                "FN_missed_absent": 0,
+                "n_absent": 9,
+                "TP_detected_absent": 9,
+                "TN_correct_answerable": 74,
+                "youden_j": 0.6981132075471699,
+                "false_abstention_wilson95": [
+                  0.22268303619470348,
+                  0.39494817092536755
+                ],
+                "missed_absence_wilson95": [
+                  0.0,
+                  0.2991527535509594
+                ]
+              },
+              "no_better_than_length": false,
+              "paired_diff_vs_fusion_top_score_ci95": [
+                0.04926624737945495,
+                0.36687631027253675
+              ],
+              "paired_diff_vs_query_words_ci95": [
+                0.2075471698113207,
+                0.4350104821802936
+              ]
+            },
+            "fusion_top_score": {
+              "n_absent": 9,
+              "n_answerable": 106,
+              "absent_dist": {
+                "n": 9,
+                "mean": 0.01055960661318992,
+                "median": 0.009040604785285636,
+                "stdev": 0.0033237820742936515,
+                "min": 0.006623641304347826,
+                "max": 0.014953478068232167,
+                "p25": 0.007694559566036397,
+                "p75": 0.014234841491891533
+              },
+              "answerable_dist": {
+                "n": 106,
+                "mean": 0.012503651041692723,
+                "median": 0.013198739805621806,
+                "stdev": 0.0033712096148150596,
+                "min": 0.004339950372208436,
+                "max": 0.01639344262295082,
+                "p25": 0.009280521667138712,
+                "p75": 0.015549662487945998
+              },
+              "auroc_raw": 0.31027253668763105,
+              "auroc": 0.6897274633123689,
+              "auroc_ci95": [
+                0.5408805031446541,
+                0.8375262054507338
+              ],
+              "best_threshold_in_sample": {
+                "threshold": 0.014981219320854434,
+                "rule": "abstain if < 0.0149812",
+                "FP_false_refusals": 70,
+                "n_answerable": 106,
+                "FN_missed_absent": 0,
+                "n_absent": 9,
+                "TP_detected_absent": 9,
+                "TN_correct_answerable": 36,
+                "youden_j": 0.339622641509434,
+                "false_abstention_wilson95": [
+                  0.566024879452293,
+                  0.7435117624028874
+                ],
+                "missed_absence_wilson95": [
+                  0.0,
+                  0.2991527535509594
+                ]
+              },
+              "no_better_than_length": false
+            },
+            "query_words": {
+              "n_absent": 9,
+              "n_answerable": 106,
+              "absent_dist": {
+                "n": 9,
+                "mean": 19.88888888888889,
+                "median": 18.0,
+                "stdev": 3.586239131891669,
+                "min": 16.0,
+                "max": 26.0,
+                "p25": 17.0,
+                "p75": 23.5
+              },
+              "answerable_dist": {
+                "n": 106,
+                "mean": 20.660377358490567,
+                "median": 20.0,
+                "stdev": 6.879765766296228,
+                "min": 6.0,
+                "max": 38.0,
+                "p25": 16.0,
+                "p75": 25.0
+              },
+              "auroc_raw": 0.46226415094339623,
+              "auroc": 0.5377358490566038,
+              "auroc_ci95": [
+                0.5026205450733753,
+                0.6844863731656184
+              ],
+              "best_threshold_in_sample": {
+                "threshold": 15.5,
+                "rule": "abstain if > 15.5",
+                "FP_false_refusals": 82,
+                "n_answerable": 106,
+                "FN_missed_absent": 0,
+                "n_absent": 9,
+                "TP_detected_absent": 9,
+                "TN_correct_answerable": 24,
+                "youden_j": 0.2264150943396226,
+                "false_abstention_wilson95": [
+                  0.6851667228942294,
+                  0.8428663720351962
+                ],
+                "missed_absence_wilson95": [
+                  0.0,
+                  0.2991527535509594
+                ]
+              }
+            }
+          }
+        },
+        "partial-absent": {
+          "n_absent": 13,
+          "n_answerable": 106,
+          "features": {
+            "rerank_top1": {
+              "n_absent": 13,
+              "n_answerable": 106,
+              "absent_dist": {
+                "n": 13,
+                "mean": 0.7771214892307692,
+                "median": 0.8735388,
+                "stdev": 0.22946019580327331,
+                "min": 0.15077753,
+                "max": 0.9685006,
+                "p25": 0.65969452,
+                "p75": 0.939844275
+              },
+              "answerable_dist": {
+                "n": 106,
+                "mean": 0.8719323820754717,
+                "median": 0.96007702,
+                "stdev": 0.18733876932564544,
+                "min": 0.26284185,
+                "max": 0.9998568,
+                "p25": 0.852409765,
+                "p75": 0.99093761
+              },
+              "auroc_raw": 0.728955007256894,
+              "auroc": 0.728955007256894,
+              "auroc_ci95": [
+                0.6219158200290276,
+                0.8258345428156749
+              ],
+              "best_threshold_in_sample": {
+                "threshold": 0.96978747,
+                "rule": "abstain if < 0.969787",
+                "FP_false_refusals": 56,
+                "n_answerable": 106,
+                "FN_missed_absent": 0,
+                "n_absent": 13,
+                "TP_detected_absent": 13,
+                "TN_correct_answerable": 50,
+                "youden_j": 0.4716981132075472,
+                "false_abstention_wilson95": [
+                  0.4339500438390183,
+                  0.620674069429543
+                ],
+                "missed_absence_wilson95": [
+                  0.0,
+                  0.22810184305529166
+                ]
+              },
+              "no_better_than_length": false,
+              "paired_diff_vs_fusion_top_score_ci95": [
+                0.010159651669085612,
+                0.23367198838896952
+              ],
+              "paired_diff_vs_query_words_ci95": [
+                -0.06676342525399126,
+                0.23512336719883886
+              ]
+            },
+            "rerank_mean_top3": {
+              "n_absent": 13,
+              "n_answerable": 106,
+              "absent_dist": {
+                "n": 13,
+                "mean": 0.7180249723076924,
+                "median": 0.8479182533333334,
+                "stdev": 0.23963904489919738,
+                "min": 0.14175761,
+                "max": 0.9358210166666666,
+                "p25": 0.585873575,
+                "p75": 0.9163327666666665
+              },
+              "answerable_dist": {
+                "n": 106,
+                "mean": 0.7592453525094339,
+                "median": 0.8516130783333333,
+                "stdev": 0.22953237788056693,
+                "min": 0.18071096866666667,
+                "max": 0.9960948866666667,
+                "p25": 0.5922479466666667,
+                "p75": 0.9420959291666666
+              },
+              "auroc_raw": 0.5805515239477503,
+              "auroc": 0.5805515239477503,
+              "auroc_ci95": [
+                0.444121915820029,
+                0.7155297532656023
+              ],
+              "best_threshold_in_sample": {
+                "threshold": 0.9361095933333333,
+                "rule": "abstain if < 0.93611",
+                "FP_false_refusals": 76,
+                "n_answerable": 106,
+                "FN_missed_absent": 0,
+                "n_absent": 13,
+                "TP_detected_absent": 13,
+                "TN_correct_answerable": 30,
+                "youden_j": 0.28301886792452835,
+                "false_abstention_wilson95": [
+                  0.6248082524055175,
+                  0.7939766159867855
+                ],
+                "missed_absence_wilson95": [
+                  0.0,
+                  0.22810184305529166
+                ]
+              },
+              "no_better_than_length": true,
+              "paired_diff_vs_fusion_top_score_ci95": [
+                -0.15965166908563122,
+                0.10812772133526849
+              ],
+              "paired_diff_vs_query_words_ci95": [
+                -0.2380261248185776,
+                0.11393323657474597
+              ]
+            },
+            "rerank_margin_12": {
+              "n_absent": 13,
+              "n_answerable": 106,
+              "absent_dist": {
+                "n": 13,
+                "mean": 0.052300770769230766,
+                "median": 0.030229740000000005,
+                "stdev": 0.0533215746771382,
+                "min": 0.0028180999999999345,
+                "max": 0.18893190999999998,
+                "p25": 0.014401399999999967,
+                "p75": 0.079237995
+              },
+              "answerable_dist": {
+                "n": 106,
+                "mean": 0.1308196962264151,
+                "median": 0.05700992499999999,
+                "stdev": 0.17555128346094134,
+                "min": 0.0,
+                "max": 0.92742471,
+                "p25": 0.022967875000000054,
+                "p75": 0.18814134500000002
+              },
+              "auroc_raw": 0.625544267053701,
+              "auroc": 0.625544267053701,
+              "auroc_ci95": [
+                0.4862119013062409,
+                0.7634252539912917
+              ],
+              "best_threshold_in_sample": {
+                "threshold": 0.19021564499999996,
+                "rule": "abstain if < 0.190216",
+                "FP_false_refusals": 80,
+                "n_answerable": 106,
+                "FN_missed_absent": 0,
+                "n_absent": 13,
+                "TP_detected_absent": 13,
+                "TN_correct_answerable": 26,
+                "youden_j": 0.24528301886792447,
+                "false_abstention_wilson95": [
+                  0.6648534502859221,
+                  0.8267635691311294
+                ],
+                "missed_absence_wilson95": [
+                  0.0,
+                  0.22810184305529166
+                ]
+              },
+              "no_better_than_length": true,
+              "paired_diff_vs_fusion_top_score_ci95": [
+                -0.17416545718432508,
+                0.19303338171262696
+              ],
+              "paired_diff_vs_query_words_ci95": [
+                -0.22278664731494913,
+                0.16654571843251098
+              ]
+            },
+            "rerank_pool_best": {
+              "n_absent": 13,
+              "n_answerable": 106,
+              "absent_dist": {
+                "n": 13,
+                "mean": 0.7771214892307692,
+                "median": 0.8735388,
+                "stdev": 0.22946019580327331,
+                "min": 0.15077753,
+                "max": 0.9685006,
+                "p25": 0.65969452,
+                "p75": 0.939844275
+              },
+              "answerable_dist": {
+                "n": 106,
+                "mean": 0.8719323820754717,
+                "median": 0.96007702,
+                "stdev": 0.18733876932564544,
+                "min": 0.26284185,
+                "max": 0.9998568,
+                "p25": 0.852409765,
+                "p75": 0.99093761
+              },
+              "auroc_raw": 0.728955007256894,
+              "auroc": 0.728955007256894,
+              "auroc_ci95": [
+                0.6219158200290276,
+                0.8258345428156749
+              ],
+              "best_threshold_in_sample": {
+                "threshold": 0.96978747,
+                "rule": "abstain if < 0.969787",
+                "FP_false_refusals": 56,
+                "n_answerable": 106,
+                "FN_missed_absent": 0,
+                "n_absent": 13,
+                "TP_detected_absent": 13,
+                "TN_correct_answerable": 50,
+                "youden_j": 0.4716981132075472,
+                "false_abstention_wilson95": [
+                  0.4339500438390183,
+                  0.620674069429543
+                ],
+                "missed_absence_wilson95": [
+                  0.0,
+                  0.22810184305529166
+                ]
+              },
+              "no_better_than_length": false,
+              "paired_diff_vs_fusion_top_score_ci95": [
+                0.010159651669085612,
+                0.23367198838896952
+              ],
+              "paired_diff_vs_query_words_ci95": [
+                -0.06676342525399126,
+                0.23512336719883886
+              ]
+            },
+            "fusion_top_score": {
+              "n_absent": 13,
+              "n_answerable": 106,
+              "absent_dist": {
+                "n": 13,
+                "mean": 0.011680267536101047,
+                "median": 0.011292212634494514,
+                "stdev": 0.0025439125409206917,
+                "min": 0.007553313582619372,
+                "max": 0.01527518656716418,
+                "p25": 0.009434156885168698,
+                "p75": 0.014127975604957701
+              },
+              "answerable_dist": {
+                "n": 106,
+                "mean": 0.012503651041692723,
+                "median": 0.013198739805621806,
+                "stdev": 0.0033712096148150596,
+                "min": 0.004339950372208436,
+                "max": 0.01639344262295082,
+                "p25": 0.009280521667138712,
+                "p75": 0.015549662487945998
+              },
+              "auroc_raw": 0.39985486211901305,
+              "auroc": 0.600145137880987,
+              "auroc_ci95": [
+                0.5072568940493469,
+                0.7198838896952104
+              ],
+              "best_threshold_in_sample": {
+                "threshold": 0.015307382510748367,
+                "rule": "abstain if < 0.0153074",
+                "FP_false_refusals": 73,
+                "n_answerable": 106,
+                "FN_missed_absent": 0,
+                "n_absent": 13,
+                "TP_detected_absent": 13,
+                "TN_correct_answerable": 33,
+                "youden_j": 0.3113207547169812,
+                "false_abstention_wilson95": [
+                  0.595235830212175,
+                  0.7689249249115668
+                ],
+                "missed_absence_wilson95": [
+                  0.0,
+                  0.22810184305529166
+                ]
+              },
+              "no_better_than_length": true
+            },
+            "query_words": {
+              "n_absent": 13,
+              "n_answerable": 106,
+              "absent_dist": {
+                "n": 13,
+                "mean": 17.615384615384617,
+                "median": 18.0,
+                "stdev": 3.305007855221667,
+                "min": 10.0,
+                "max": 22.0,
+                "p25": 15.5,
+                "p75": 20.0
+              },
+              "answerable_dist": {
+                "n": 106,
+                "mean": 20.660377358490567,
+                "median": 20.0,
+                "stdev": 6.879765766296228,
+                "min": 6.0,
+                "max": 38.0,
+                "p25": 16.0,
+                "p75": 25.0
+              },
+              "auroc_raw": 0.35268505079825835,
+              "auroc": 0.6473149492017416,
+              "auroc_ci95": [
+                0.5308417997097242,
+                0.7565312046444121
+              ],
+              "best_threshold_in_sample": {
+                "threshold": 22.5,
+                "rule": "abstain if < 22.5",
+                "FP_false_refusals": 66,
+                "n_answerable": 106,
+                "FN_missed_absent": 0,
+                "n_absent": 13,
+                "TP_detected_absent": 13,
+                "TN_correct_answerable": 40,
+                "youden_j": 0.37735849056603776,
+                "false_abstention_wilson95": [
+                  0.5276006299875899,
+                  0.7091038608428422
+                ],
+                "missed_absence_wilson95": [
+                  0.0,
+                  0.22810184305529166
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "pooled_secondary": {
+    "n_absent": 60,
+    "n_answerable": 465,
+    "features": {
+      "rerank_top1": {
+        "n_absent": 60,
+        "n_answerable": 465,
+        "absent_dist": {
+          "n": 60,
+          "mean": 0.8050404610666667,
+          "median": 0.923035,
+          "stdev": 0.24690592737215145,
+          "min": 0.09041373,
+          "max": 0.9932811,
+          "p25": 0.7338024000000001,
+          "p75": 0.9618035300000001
+        },
+        "answerable_dist": {
+          "n": 465,
+          "mean": 0.9510563229462365,
+          "median": 0.98672616,
+          "stdev": 0.11039540710033013,
+          "min": 0.22936256,
+          "max": 0.99994123,
+          "p25": 0.96249705,
+          "p75": 0.9957598000000001
+        },
+        "auroc_raw": 0.8273835125448029,
+        "auroc": 0.8273835125448029,
+        "auroc_ci95": [
+          0.7788172043010753,
+          0.8721863799283154
+        ],
+        "best_threshold_in_sample": {
+          "threshold": 0.96203607,
+          "rule": "abstain if < 0.962036",
+          "FP_false_refusals": 111,
+          "n_answerable": 465,
+          "FN_missed_absent": 14,
+          "n_absent": 60,
+          "TP_detected_absent": 46,
+          "TN_correct_answerable": 354,
+          "youden_j": 0.5279569892473119,
+          "false_abstention_wilson95": [
+            0.20220321393830837,
+            0.2794980685417445
+          ],
+          "missed_absence_wilson95": [
+            0.1443943161843107,
+            0.3543651134039202
+          ]
+        },
+        "no_better_than_length": false,
+        "paired_diff_vs_fusion_top_score_ci95": [
+          0.15731182795698928,
+          0.33068100358422936
+        ],
+        "paired_diff_vs_query_words_ci95": [
+          -0.04707885304659498,
+          0.07025089605734769
+        ]
+      },
+      "rerank_mean_top3": {
+        "n_absent": 60,
+        "n_answerable": 465,
+        "absent_dist": {
+          "n": 60,
+          "mean": 0.7529862552833333,
+          "median": 0.8795888700000001,
+          "stdev": 0.26063144365191004,
+          "min": 0.04975448366666666,
+          "max": 0.9886923,
+          "p25": 0.6042562566666667,
+          "p75": 0.9416070225
+        },
+        "answerable_dist": {
+          "n": 465,
+          "mean": 0.9058377600487455,
+          "median": 0.96245955,
+          "stdev": 0.14917451757220174,
+          "min": 0.16015787333333334,
+          "max": 0.9998291233333333,
+          "p25": 0.90084124,
+          "p75": 0.984745345
+        },
+        "auroc_raw": 0.7444086021505376,
+        "auroc": 0.7444086021505376,
+        "auroc_ci95": [
+          0.6797491039426523,
+          0.8029390681003584
+        ],
+        "best_threshold_in_sample": {
+          "threshold": 0.9478269166666666,
+          "rule": "abstain if < 0.947827",
+          "FP_false_refusals": 190,
+          "n_answerable": 465,
+          "FN_missed_absent": 11,
+          "n_absent": 60,
+          "TP_detected_absent": 49,
+          "TN_correct_answerable": 275,
+          "youden_j": 0.4080645161290322,
+          "false_abstention_wilson95": [
+            0.3648474932549619,
+            0.4538546014397068
+          ],
+          "missed_absence_wilson95": [
+            0.1055768903713613,
+            0.29919993226466285
+          ]
+        },
+        "no_better_than_length": true,
+        "paired_diff_vs_fusion_top_score_ci95": [
+          0.06632616487455201,
+          0.2532616487455197
+        ],
+        "paired_diff_vs_query_words_ci95": [
+          -0.14166666666666672,
+          -0.002060931899641627
+        ]
+      },
+      "rerank_margin_12": {
+        "n_absent": 60,
+        "n_answerable": 465,
+        "absent_dist": {
+          "n": 60,
+          "mean": 0.05314171463333332,
+          "median": 0.020928504999999986,
+          "stdev": 0.08356549492418035,
+          "min": 0.0006085000000000118,
+          "max": 0.50306265,
+          "p25": 0.0072678874999999865,
+          "p75": 0.06461661249999998
+        },
+        "answerable_dist": {
+          "n": 465,
+          "mean": 0.04982006440860215,
+          "median": 0.0158415999999999,
+          "stdev": 0.10041982279285554,
+          "min": 0.0,
+          "max": 0.92742471,
+          "p25": 0.003887034999999983,
+          "p75": 0.04626860500000002
+        },
+        "auroc_raw": 0.42767025089605737,
+        "auroc": 0.42767025089605737,
+        "auroc_ci95": [
+          0.35989247311827954,
+          0.49842293906810037
+        ],
+        "best_threshold_in_sample": {
+          "threshold": 0.002766624999999967,
+          "rule": "abstain if > 0.00276662",
+          "FP_false_refusals": 364,
+          "n_answerable": 465,
+          "FN_missed_absent": 3,
+          "n_absent": 60,
+          "TP_detected_absent": 57,
+          "TN_correct_answerable": 101,
+          "youden_j": 0.16720430107526874,
+          "false_abstention_wilson95": [
+            0.7430815287481869,
+            0.8178755194318381
+          ],
+          "missed_absence_wilson95": [
+            0.01714919117914121,
+            0.13700734625099836
+          ]
+        },
+        "no_better_than_length": true,
+        "paired_diff_vs_fusion_top_score_ci95": [
+          -0.2606989247311828,
+          -0.04878136200716848
+        ],
+        "paired_diff_vs_query_words_ci95": [
+          -0.4663799283154122,
+          -0.31073476702508956
+        ]
+      },
+      "rerank_pool_best": {
+        "n_absent": 60,
+        "n_answerable": 465,
+        "absent_dist": {
+          "n": 60,
+          "mean": 0.8050404610666667,
+          "median": 0.923035,
+          "stdev": 0.24690592737215145,
+          "min": 0.09041373,
+          "max": 0.9932811,
+          "p25": 0.7338024000000001,
+          "p75": 0.9618035300000001
+        },
+        "answerable_dist": {
+          "n": 465,
+          "mean": 0.9510563229462365,
+          "median": 0.98672616,
+          "stdev": 0.11039540710033013,
+          "min": 0.22936256,
+          "max": 0.99994123,
+          "p25": 0.96249705,
+          "p75": 0.9957598000000001
+        },
+        "auroc_raw": 0.8273835125448029,
+        "auroc": 0.8273835125448029,
+        "auroc_ci95": [
+          0.7788172043010753,
+          0.8721863799283154
+        ],
+        "best_threshold_in_sample": {
+          "threshold": 0.96203607,
+          "rule": "abstain if < 0.962036",
+          "FP_false_refusals": 111,
+          "n_answerable": 465,
+          "FN_missed_absent": 14,
+          "n_absent": 60,
+          "TP_detected_absent": 46,
+          "TN_correct_answerable": 354,
+          "youden_j": 0.5279569892473119,
+          "false_abstention_wilson95": [
+            0.20220321393830837,
+            0.2794980685417445
+          ],
+          "missed_absence_wilson95": [
+            0.1443943161843107,
+            0.3543651134039202
+          ]
+        },
+        "no_better_than_length": false,
+        "paired_diff_vs_fusion_top_score_ci95": [
+          0.15731182795698928,
+          0.33068100358422936
+        ],
+        "paired_diff_vs_query_words_ci95": [
+          -0.04707885304659498,
+          0.07025089605734769
+        ]
+      },
+      "fusion_top_score": {
+        "n_absent": 60,
+        "n_answerable": 465,
+        "absent_dist": {
+          "n": 60,
+          "mean": 0.010019984755133125,
+          "median": 0.008848135784250517,
+          "stdev": 0.0028334993632122673,
+          "min": 0.006623641304347826,
+          "max": 0.01626123744050767,
+          "p25": 0.007683167218869039,
+          "p75": 0.012643659555181456
+        },
+        "answerable_dist": {
+          "n": 465,
+          "mean": 0.010690802327472848,
+          "median": 0.009473629568106313,
+          "stdev": 0.0030304600783764525,
+          "min": 0.004339950372208436,
+          "max": 0.01639344262295082,
+          "p25": 0.00819672131147541,
+          "p75": 0.01357091591994158
+        },
+        "auroc_raw": 0.4206451612903226,
+        "auroc": 0.5793548387096774,
+        "auroc_ci95": [
+          0.5095698924731182,
+          0.6570071684587814
+        ],
+        "best_threshold_in_sample": {
+          "threshold": 0.00796851814370168,
+          "rule": "abstain if < 0.00796852",
+          "FP_false_refusals": 76,
+          "n_answerable": 465,
+          "FN_missed_absent": 39,
+          "n_absent": 60,
+          "TP_detected_absent": 21,
+          "TN_correct_answerable": 389,
+          "youden_j": 0.1865591397849462,
+          "false_abstention_wilson95": [
+            0.13261392289227872,
+            0.19978320227750143
+          ],
+          "missed_absence_wilson95": [
+            0.5236238380947751,
+            0.7583239827618451
+          ]
+        },
+        "no_better_than_length": true
+      },
+      "query_words": {
+        "n_absent": 60,
+        "n_answerable": 465,
+        "absent_dist": {
+          "n": 60,
+          "mean": 19.066666666666666,
+          "median": 18.5,
+          "stdev": 3.9180878537085575,
+          "min": 10.0,
+          "max": 29.0,
+          "p25": 16.0,
+          "p75": 21.0
+        },
+        "answerable_dist": {
+          "n": 465,
+          "mean": 41.94838709677419,
+          "median": 28.0,
+          "stdev": 33.54316446149964,
+          "min": 6.0,
+          "max": 160.0,
+          "p25": 21.0,
+          "p75": 43.0
+        },
+        "auroc_raw": 0.18295698924731182,
+        "auroc": 0.8170430107526881,
+        "auroc_ci95": [
+          0.7715412186379929,
+          0.8594086021505376
+        ],
+        "best_threshold_in_sample": {
+          "threshold": 22.5,
+          "rule": "abstain if < 22.5",
+          "FP_false_refusals": 135,
+          "n_answerable": 465,
+          "FN_missed_absent": 10,
+          "n_absent": 60,
+          "TP_detected_absent": 50,
+          "TN_correct_answerable": 330,
+          "youden_j": 0.543010752688172,
+          "false_abstention_wilson95": [
+            0.25091683810700605,
+            0.33316443795723394
+          ],
+          "missed_absence_wilson95": [
+            0.09313077201321032,
+            0.28031851497207827
+          ]
+        }
+      }
+    },
+    "by_absent_class": {
+      "absent": {
+        "n_absent": 42,
+        "n_answerable": 465,
+        "features": {
+          "rerank_top1": {
+            "n_absent": 42,
+            "n_answerable": 465,
+            "absent_dist": {
+              "n": 42,
+              "mean": 0.7984569977142857,
+              "median": 0.9276025999999999,
+              "stdev": 0.2634089765833877,
+              "min": 0.09041373,
+              "max": 0.9863105,
+              "p25": 0.7240896175,
+              "p75": 0.9626338625
+            },
+            "answerable_dist": {
+              "n": 465,
+              "mean": 0.9510563229462365,
+              "median": 0.98672616,
+              "stdev": 0.11039540710033013,
+              "min": 0.22936256,
+              "max": 0.99994123,
+              "p25": 0.96249705,
+              "p75": 0.9957598000000001
+            },
+            "auroc_raw": 0.8322068612391194,
+            "auroc": 0.8322068612391194,
+            "auroc_ci95": [
+              0.7837941628264209,
+              0.879057859703021
+            ],
+            "best_threshold_in_sample": {
+              "threshold": 0.966219525,
+              "rule": "abstain if < 0.96622",
+              "FP_false_refusals": 127,
+              "n_answerable": 465,
+              "FN_missed_absent": 8,
+              "n_absent": 42,
+              "TP_detected_absent": 34,
+              "TN_correct_answerable": 338,
+              "youden_j": 0.536405529953917,
+              "false_abstention_wilson95": [
+                0.23460243791033492,
+                0.3153521736258427
+              ],
+              "missed_absence_wilson95": [
+                0.09981889609856436,
+                0.33301067354996444
+              ]
+            },
+            "no_better_than_length": false,
+            "paired_diff_vs_fusion_top_score_ci95": [
+              0.13230926779313879,
+              0.3140296979006657
+            ],
+            "paired_diff_vs_query_words_ci95": [
+              -0.055811571940604265,
+              0.07826420890937014
+            ]
+          },
+          "rerank_mean_top3": {
+            "n_absent": 42,
+            "n_answerable": 465,
+            "absent_dist": {
+              "n": 42,
+              "mean": 0.7432682854047619,
+              "median": 0.8934443983333333,
+              "stdev": 0.27592281836056637,
+              "min": 0.04975448366666666,
+              "max": 0.9832580333333333,
+              "p25": 0.5953596366666667,
+              "p75": 0.9458491816666666
+            },
+            "answerable_dist": {
+              "n": 465,
+              "mean": 0.9058377600487455,
+              "median": 0.96245955,
+              "stdev": 0.14917451757220174,
+              "min": 0.16015787333333334,
+              "max": 0.9998291233333333,
+              "p25": 0.90084124,
+              "p75": 0.984745345
+            },
+            "auroc_raw": 0.7470046082949309,
+            "auroc": 0.7470046082949309,
+            "auroc_ci95": [
+              0.6782386072708654,
+              0.8153097798259089
+            ],
+            "best_threshold_in_sample": {
+              "threshold": 0.955249585,
+              "rule": "abstain if < 0.95525",
+              "FP_false_refusals": 211,
+              "n_answerable": 465,
+              "FN_missed_absent": 6,
+              "n_absent": 42,
+              "TP_detected_absent": 36,
+              "TN_correct_answerable": 254,
+              "youden_j": 0.40337941628264207,
+              "false_abstention_wilson95": [
+                0.4090747931916837,
+                0.4992097958891486
+              ],
+              "missed_absence_wilson95": [
+                0.06715875684189933,
+                0.2784138235217878
+              ]
+            },
+            "no_better_than_length": true,
+            "paired_diff_vs_fusion_top_score_ci95": [
+              0.04009216589861753,
+              0.23292370711725552
+            ],
+            "paired_diff_vs_query_words_ci95": [
+              -0.16134152585765493,
+              0.007910906298003173
+            ]
+          },
+          "rerank_margin_12": {
+            "n_absent": 42,
+            "n_answerable": 465,
+            "absent_dist": {
+              "n": 42,
+              "mean": 0.05920647042857142,
+              "median": 0.023716740000000014,
+              "stdev": 0.09427804899587956,
+              "min": 0.0018016000000000698,
+              "max": 0.50306265,
+              "p25": 0.007534862499999989,
+              "p75": 0.071112625
+            },
+            "answerable_dist": {
+              "n": 465,
+              "mean": 0.04982006440860215,
+              "median": 0.0158415999999999,
+              "stdev": 0.10041982279285554,
+              "min": 0.0,
+              "max": 0.92742471,
+              "p25": 0.003887034999999983,
+              "p75": 0.04626860500000002
+            },
+            "auroc_raw": 0.4118279569892473,
+            "auroc": 0.4118279569892473,
+            "auroc_ci95": [
+              0.3330773169482847,
+              0.49088581669226833
+            ],
+            "best_threshold_in_sample": {
+              "threshold": 0.005306184999999963,
+              "rule": "abstain if > 0.00530618",
+              "FP_false_refusals": 330,
+              "n_answerable": 465,
+              "FN_missed_absent": 5,
+              "n_absent": 42,
+              "TP_detected_absent": 37,
+              "TN_correct_answerable": 135,
+              "youden_j": 0.17127496159754219,
+              "false_abstention_wilson95": [
+                0.6668355620427661,
+                0.749083161892994
+              ],
+              "missed_absence_wilson95": [
+                0.05193726765019084,
+                0.2500068180710754
+              ]
+            },
+            "no_better_than_length": true,
+            "paired_diff_vs_fusion_top_score_ci95": [
+              -0.33346134152585766,
+              -0.07007168458781354
+            ],
+            "paired_diff_vs_query_words_ci95": [
+              -0.49521249359959035,
+              -0.3239375320020481
+            ]
+          },
+          "rerank_pool_best": {
+            "n_absent": 42,
+            "n_answerable": 465,
+            "absent_dist": {
+              "n": 42,
+              "mean": 0.7984569977142857,
+              "median": 0.9276025999999999,
+              "stdev": 0.2634089765833877,
+              "min": 0.09041373,
+              "max": 0.9863105,
+              "p25": 0.7240896175,
+              "p75": 0.9626338625
+            },
+            "answerable_dist": {
+              "n": 465,
+              "mean": 0.9510563229462365,
+              "median": 0.98672616,
+              "stdev": 0.11039540710033013,
+              "min": 0.22936256,
+              "max": 0.99994123,
+              "p25": 0.96249705,
+              "p75": 0.9957598000000001
+            },
+            "auroc_raw": 0.8322068612391194,
+            "auroc": 0.8322068612391194,
+            "auroc_ci95": [
+              0.7837941628264209,
+              0.879057859703021
+            ],
+            "best_threshold_in_sample": {
+              "threshold": 0.966219525,
+              "rule": "abstain if < 0.96622",
+              "FP_false_refusals": 127,
+              "n_answerable": 465,
+              "FN_missed_absent": 8,
+              "n_absent": 42,
+              "TP_detected_absent": 34,
+              "TN_correct_answerable": 338,
+              "youden_j": 0.536405529953917,
+              "false_abstention_wilson95": [
+                0.23460243791033492,
+                0.3153521736258427
+              ],
+              "missed_absence_wilson95": [
+                0.09981889609856436,
+                0.33301067354996444
+              ]
+            },
+            "no_better_than_length": false,
+            "paired_diff_vs_fusion_top_score_ci95": [
+              0.13230926779313879,
+              0.3140296979006657
+            ],
+            "paired_diff_vs_query_words_ci95": [
+              -0.055811571940604265,
+              0.07826420890937014
+            ]
+          },
+          "fusion_top_score": {
+            "n_absent": 42,
+            "n_answerable": 465,
+            "absent_dist": {
+              "n": 42,
+              "mean": 0.009785788061573264,
+              "median": 0.008520579565650874,
+              "stdev": 0.0028341309873243163,
+              "min": 0.006623641304347826,
+              "max": 0.01626123744050767,
+              "p25": 0.007570769258731663,
+              "p75": 0.012355531095211886
+            },
+            "answerable_dist": {
+              "n": 465,
+              "mean": 0.010690802327472848,
+              "median": 0.009473629568106313,
+              "stdev": 0.0030304600783764525,
+              "min": 0.004339950372208436,
+              "max": 0.01639344262295082,
+              "p25": 0.00819672131147541,
+              "p75": 0.01357091591994158
+            },
+            "auroc_raw": 0.3923963133640553,
+            "auroc": 0.6076036866359447,
+            "auroc_ci95": [
+              0.5211725550435228,
+              0.6977726574500769
+            ],
+            "best_threshold_in_sample": {
+              "threshold": 0.00796851814370168,
+              "rule": "abstain if < 0.00796852",
+              "FP_false_refusals": 76,
+              "n_answerable": 465,
+              "FN_missed_absent": 26,
+              "n_absent": 42,
+              "TP_detected_absent": 16,
+              "TN_correct_answerable": 389,
+              "youden_j": 0.21751152073732716,
+              "false_abstention_wilson95": [
+                0.13261392289227872,
+                0.19978320227750143
+              ],
+              "missed_absence_wilson95": [
+                0.46813768219996377,
+                0.7500047910121407
+              ]
+            },
+            "no_better_than_length": true
+          },
+          "query_words": {
+            "n_absent": 42,
+            "n_answerable": 465,
+            "absent_dist": {
+              "n": 42,
+              "mean": 19.023809523809526,
+              "median": 18.0,
+              "stdev": 3.853969099057808,
+              "min": 14.0,
+              "max": 29.0,
+              "p25": 16.0,
+              "p75": 21.25
+            },
+            "answerable_dist": {
+              "n": 465,
+              "mean": 41.94838709677419,
+              "median": 28.0,
+              "stdev": 33.54316446149964,
+              "min": 6.0,
+              "max": 160.0,
+              "p25": 21.0,
+              "p75": 43.0
+            },
+            "auroc_raw": 0.1795442908346134,
+            "auroc": 0.8204557091653866,
+            "auroc_ci95": [
+              0.7721710189452125,
+              0.8660522273425499
+            ],
+            "best_threshold_in_sample": {
+              "threshold": 22.5,
+              "rule": "abstain if < 22.5",
+              "FP_false_refusals": 135,
+              "n_answerable": 465,
+              "FN_missed_absent": 8,
+              "n_absent": 42,
+              "TP_detected_absent": 34,
+              "TN_correct_answerable": 330,
+              "youden_j": 0.5192012288786483,
+              "false_abstention_wilson95": [
+                0.25091683810700605,
+                0.33316443795723394
+              ],
+              "missed_absence_wilson95": [
+                0.09981889609856436,
+                0.33301067354996444
+              ]
+            }
+          }
+        }
+      },
+      "partial-absent": {
+        "n_absent": 18,
+        "n_answerable": 465,
+        "features": {
+          "rerank_top1": {
+            "n_absent": 18,
+            "n_answerable": 465,
+            "absent_dist": {
+              "n": 18,
+              "mean": 0.8204018755555555,
+              "median": 0.88588548,
+              "stdev": 0.20947637182857964,
+              "min": 0.15077753,
+              "max": 0.9932811,
+              "p25": 0.73024946,
+              "p75": 0.9589257250000001
+            },
+            "answerable_dist": {
+              "n": 465,
+              "mean": 0.9510563229462365,
+              "median": 0.98672616,
+              "stdev": 0.11039540710033013,
+              "min": 0.22936256,
+              "max": 0.99994123,
+              "p25": 0.96249705,
+              "p75": 0.9957598000000001
+            },
+            "auroc_raw": 0.8161290322580645,
+            "auroc": 0.8161290322580645,
+            "auroc_ci95": [
+              0.7135603345280764,
+              0.9029868578255675
+            ],
+            "best_threshold_in_sample": {
+              "threshold": 0.95577535,
+              "rule": "abstain if < 0.955775",
+              "FP_false_refusals": 97,
+              "n_answerable": 465,
+              "FN_missed_absent": 4,
+              "n_absent": 18,
+              "TP_detected_absent": 14,
+              "TN_correct_answerable": 368,
+              "youden_j": 0.5691756272401434,
+              "false_abstention_wilson95": [
+                0.17413339667168037,
+                0.2478462228842634
+              ],
+              "missed_absence_wilson95": [
+                0.09000781913382,
+                0.4521502645230549
+              ]
+            },
+            "no_better_than_length": false,
+            "paired_diff_vs_fusion_top_score_ci95": [
+              0.11409796893667867,
+              0.374910394265233
+            ],
+            "paired_diff_vs_query_words_ci95": [
+              -0.08990442054958181,
+              0.09671445639187581
+            ]
+          },
+          "rerank_mean_top3": {
+            "n_absent": 18,
+            "n_answerable": 465,
+            "absent_dist": {
+              "n": 18,
+              "mean": 0.7756615183333333,
+              "median": 0.865817375,
+              "stdev": 0.22662553916260053,
+              "min": 0.14175761,
+              "max": 0.9886923,
+              "p25": 0.6094207166666666,
+              "p75": 0.9294485641666667
+            },
+            "answerable_dist": {
+              "n": 465,
+              "mean": 0.9058377600487455,
+              "median": 0.96245955,
+              "stdev": 0.14917451757220174,
+              "min": 0.16015787333333334,
+              "max": 0.9998291233333333,
+              "p25": 0.90084124,
+              "p75": 0.984745345
+            },
+            "auroc_raw": 0.7383512544802867,
+            "auroc": 0.7383512544802867,
+            "auroc_ci95": [
+              0.6175627240143369,
+              0.8431302270011948
+            ],
+            "best_threshold_in_sample": {
+              "threshold": 0.9359361583333333,
+              "rule": "abstain if < 0.935936",
+              "FP_false_refusals": 164,
+              "n_answerable": 465,
+              "FN_missed_absent": 3,
+              "n_absent": 18,
+              "TP_detected_absent": 15,
+              "TN_correct_answerable": 301,
+              "youden_j": 0.48064516129032264,
+              "false_abstention_wilson95": [
+                0.31062747054192796,
+                0.397162964436538
+              ],
+              "missed_absence_wilson95": [
+                0.05836470400465757,
+                0.39222499638359243
+              ]
+            },
+            "no_better_than_length": true,
+            "paired_diff_vs_fusion_top_score_ci95": [
+              0.02090800477897259,
+              0.31421744324970136
+            ],
+            "paired_diff_vs_query_words_ci95": [
+              -0.18052568697729987,
+              0.03130227001194741
+            ]
+          },
+          "rerank_margin_12": {
+            "n_absent": 18,
+            "n_answerable": 465,
+            "absent_dist": {
+              "n": 18,
+              "mean": 0.03899061777777778,
+              "median": 0.017269344999999936,
+              "stdev": 0.04996267804271441,
+              "min": 0.0006085000000000118,
+              "max": 0.18893190999999998,
+              "p25": 0.005317550000000004,
+              "p75": 0.05892757000000007
+            },
+            "answerable_dist": {
+              "n": 465,
+              "mean": 0.04982006440860215,
+              "median": 0.0158415999999999,
+              "stdev": 0.10041982279285554,
+              "min": 0.0,
+              "max": 0.92742471,
+              "p25": 0.003887034999999983,
+              "p75": 0.04626860500000002
+            },
+            "auroc_raw": 0.46463560334528076,
+            "auroc": 0.46463560334528076,
+            "auroc_ci95": [
+              0.34528076463560337,
+              0.5862604540023895
+            ],
+            "best_threshold_in_sample": {
+              "threshold": 0.002766624999999967,
+              "rule": "abstain if > 0.00276662",
+              "FP_false_refusals": 364,
+              "n_answerable": 465,
+              "FN_missed_absent": 1,
+              "n_absent": 18,
+              "TP_detected_absent": 17,
+              "TN_correct_answerable": 101,
+              "youden_j": 0.1616487455197132,
+              "false_abstention_wilson95": [
+                0.7430815287481869,
+                0.8178755194318381
+              ],
+              "missed_absence_wilson95": [
+                0.009874935830924525,
+                0.2575779980200754
+              ]
+            },
+            "no_better_than_length": true,
+            "paired_diff_vs_fusion_top_score_ci95": [
+              -0.2381123058542413,
+              0.039187574671445624
+            ],
+            "paired_diff_vs_query_words_ci95": [
+              -0.502031063321386,
+              -0.18231780167264044
+            ]
+          },
+          "rerank_pool_best": {
+            "n_absent": 18,
+            "n_answerable": 465,
+            "absent_dist": {
+              "n": 18,
+              "mean": 0.8204018755555555,
+              "median": 0.88588548,
+              "stdev": 0.20947637182857964,
+              "min": 0.15077753,
+              "max": 0.9932811,
+              "p25": 0.73024946,
+              "p75": 0.9589257250000001
+            },
+            "answerable_dist": {
+              "n": 465,
+              "mean": 0.9510563229462365,
+              "median": 0.98672616,
+              "stdev": 0.11039540710033013,
+              "min": 0.22936256,
+              "max": 0.99994123,
+              "p25": 0.96249705,
+              "p75": 0.9957598000000001
+            },
+            "auroc_raw": 0.8161290322580645,
+            "auroc": 0.8161290322580645,
+            "auroc_ci95": [
+              0.7135603345280764,
+              0.9029868578255675
+            ],
+            "best_threshold_in_sample": {
+              "threshold": 0.95577535,
+              "rule": "abstain if < 0.955775",
+              "FP_false_refusals": 97,
+              "n_answerable": 465,
+              "FN_missed_absent": 4,
+              "n_absent": 18,
+              "TP_detected_absent": 14,
+              "TN_correct_answerable": 368,
+              "youden_j": 0.5691756272401434,
+              "false_abstention_wilson95": [
+                0.17413339667168037,
+                0.2478462228842634
+              ],
+              "missed_absence_wilson95": [
+                0.09000781913382,
+                0.4521502645230549
+              ]
+            },
+            "no_better_than_length": false,
+            "paired_diff_vs_fusion_top_score_ci95": [
+              0.11409796893667867,
+              0.374910394265233
+            ],
+            "paired_diff_vs_query_words_ci95": [
+              -0.08990442054958181,
+              0.09671445639187581
+            ]
+          },
+          "fusion_top_score": {
+            "n_absent": 18,
+            "n_answerable": 465,
+            "absent_dist": {
+              "n": 18,
+              "mean": 0.010566443706772803,
+              "median": 0.009981782611092956,
+              "stdev": 0.0028356079384886253,
+              "min": 0.007024074958857567,
+              "max": 0.01527518656716418,
+              "p25": 0.007716840075442035,
+              "p75": 0.013388229901314108
+            },
+            "answerable_dist": {
+              "n": 465,
+              "mean": 0.010690802327472848,
+              "median": 0.009473629568106313,
+              "stdev": 0.0030304600783764525,
+              "min": 0.004339950372208436,
+              "max": 0.01639344262295082,
+              "p25": 0.00819672131147541,
+              "p75": 0.01357091591994158
+            },
+            "auroc_raw": 0.48655913978494625,
+            "auroc": 0.5134408602150538,
+            "auroc_ci95": [
+              0.5021505376344086,
+              0.6591397849462366
+            ],
+            "best_threshold_in_sample": {
+              "threshold": 0.007747536551549969,
+              "rule": "abstain if < 0.00774754",
+              "FP_false_refusals": 58,
+              "n_answerable": 465,
+              "FN_missed_absent": 13,
+              "n_absent": 18,
+              "TP_detected_absent": 5,
+              "TN_correct_answerable": 407,
+              "youden_j": 0.15304659498207887,
+              "false_abstention_wilson95": [
+                0.09773946334704925,
+                0.15787266663459054
+              ],
+              "missed_absence_wilson95": [
+                0.49126922453805477,
+                0.8750043085364452
+              ]
+            },
+            "no_better_than_length": true
+          },
+          "query_words": {
+            "n_absent": 18,
+            "n_answerable": 465,
+            "absent_dist": {
+              "n": 18,
+              "mean": 19.166666666666668,
+              "median": 19.5,
+              "stdev": 4.176263457995464,
+              "min": 10.0,
+              "max": 27.0,
+              "p25": 16.75,
+              "p75": 21.25
+            },
+            "answerable_dist": {
+              "n": 465,
+              "mean": 41.94838709677419,
+              "median": 28.0,
+              "stdev": 33.54316446149964,
+              "min": 6.0,
+              "max": 160.0,
+              "p25": 21.0,
+              "p75": 43.0
+            },
+            "auroc_raw": 0.1909199522102748,
+            "auroc": 0.8090800477897252,
+            "auroc_ci95": [
+              0.7433094384707288,
+              0.8688172043010752
+            ],
+            "best_threshold_in_sample": {
+              "threshold": 22.5,
+              "rule": "abstain if < 22.5",
+              "FP_false_refusals": 135,
+              "n_answerable": 465,
+              "FN_missed_absent": 2,
+              "n_absent": 18,
+              "TP_detected_absent": 16,
+              "TN_correct_answerable": 330,
+              "youden_j": 0.5985663082437276,
+              "false_abstention_wilson95": [
+                0.25091683810700605,
+                0.33316443795723394
+              ],
+              "missed_absence_wilson95": [
+                0.031018868453582787,
+                0.3280024486660421
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  "verdict": {
+    "rule": "CANDIDATE only if, on >= 2 sets with n_absent >= 9, rerank_top1's AUROC CI lower bound > 0.70 AND AUROC beats fusion top_score AND beats question length; otherwise NO SIGNAL at this sample size",
+    "qualifying_sets": [
+      "focus",
+      "legacy",
+      "standards"
+    ],
+    "per_set": {
+      "focus": {
+        "ci_lower_gt_0.70": true,
+        "beats_fusion": true,
+        "beats_length": true,
+        "pass": true
+      },
+      "legacy": {
+        "ci_lower_gt_0.70": true,
+        "beats_fusion": true,
+        "beats_length": false,
+        "pass": false
+      },
+      "standards": {
+        "ci_lower_gt_0.70": true,
+        "beats_fusion": true,
+        "beats_length": true,
+        "pass": true
+      }
+    },
+    "passing_sets": [
+      "focus",
+      "standards"
+    ],
+    "verdict": "CANDIDATE",
+    "fewer_than_two_qualifying_sets_supplied": false,
+    "exploratory_features_pass_by_set_NOT_THE_VERDICT": {
+      "rerank_mean_top3": {
+        "focus": true,
+        "legacy": false,
+        "standards": false
+      },
+      "rerank_margin_12": {
+        "focus": false,
+        "legacy": false,
+        "standards": false
+      },
+      "rerank_pool_best": {
+        "focus": true,
+        "legacy": false,
+        "standards": true
+      }
+    },
+    "descriptive_ticket_readouts": {
+      "primary_ci_lower_gt_0.65_sets": [
+        "focus",
+        "legacy",
+        "standards"
+      ],
+      "primary_auroc_ge_0.85_sets": [
+        "focus",
+        "legacy"
+      ],
+      "primary_ci_contains_0.5_sets": []
+    }
+  }
+}

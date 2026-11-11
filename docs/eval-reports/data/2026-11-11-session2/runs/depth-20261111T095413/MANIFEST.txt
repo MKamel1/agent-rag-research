@@ -1,0 +1,11 @@
+git_rev 03cfd1854b7d37c8116d35545c3f54a309e6da40
+started 2026-11-11T09:54:16-07:00
+script run_depth_compare.sh
+label depth-compare 32 vs 128, weight 0.5, sets: papers books; baseline /home/omar/ai-projects/research-system-rag/.claude/worktrees/EP-programme-20261110/docs/eval-reports/data/2026-11-10-papers-passage-gt/runs/20261111T004734
+58cdbf47f08b00fa0ec289c8fd299dd07570a07a695e56c2526a931cd83faf81  docs/eval-reports/data/2026-11-10-papers-passage-gt/papers_passage_gt.json
+3c21d57bb6cb8949092a57cc0f4879f24f6f1f338993be24196e35a52195a0a8  docs/eval-reports/data/2026-11-10-causal-books-gt/causal_books_gt.json
+7f2fa1fc352f0d8960f0965295edab780ddaa8213376fe700f60768b7cd9ca8c  docs/eval-reports/data/2026-11-10-FIXTURE-HASHES.json
+baseline_run /home/omar/ai-projects/research-system-rag/.claude/worktrees/EP-programme-20261110/docs/eval-reports/data/2026-11-10-papers-passage-gt/runs/20261111T004734
+/home/omar/ai-projects/research-system-rag/.claude/worktrees/EP-post-baseline/docs/eval-reports/data/2026-11-11-session2/runs/depth-20261111T095413/papers.title-ablated.json: 61 items, omitted {}
+/home/omar/ai-projects/research-system-rag/.claude/worktrees/EP-post-baseline/docs/eval-reports/data/2026-11-11-session2/runs/depth-20261111T095413/books.title-ablated.json: 69 items, omitted {'not answerable': 5}
+finished 2026-11-11T10:41:13-07:00

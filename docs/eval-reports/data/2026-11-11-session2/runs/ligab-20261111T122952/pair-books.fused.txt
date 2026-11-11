@@ -1,0 +1,11 @@
+label=books tags={'mode': 'fused'} answerable=69 errored base/arm=0/0 run_valid=[True, True]
+  member   n= 69 base= 54 arm= 53 wins=0 losses=1 net=-1
+  paper    n= 69 base= 60 arm= 59 wins=0 losses=1 net=-1
+  excerpt  n= 69 base= 54 arm= 53 wins=0 losses=1 net=-1
+  anchor   n= 69 base= 54 arm= 53 wins=0 losses=1 net=-1
+  dimension=book-passage             n= 52 [gating] member:41->40(-1) paper:45->44(-1) excerpt:41->40(-1) anchor:41->40(-1)
+  dimension=equation-context         n= 12 [gating] member:10->10(+0) paper:11->11(+0) excerpt:10->10(+0) anchor:10->10(+0)
+  dimension=table-requirement        n=  5 member:3->3(+0) paper:4->4(+0) excerpt:3->3(+0) anchor:3->3(+0)
+  ligature=clean                     n= 42 member:34->33(-1) paper:38->37(-1) excerpt:34->33(-1) anchor:34->33(-1)
+  ligature=damaged                   n= 27 member:20->20(+0) paper:22->22(+0) excerpt:20->20(+0) anchor:20->20(+0)
+  worst gating-stratum net (member): -1

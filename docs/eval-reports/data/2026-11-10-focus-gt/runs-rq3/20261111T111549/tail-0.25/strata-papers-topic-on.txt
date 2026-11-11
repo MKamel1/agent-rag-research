@@ -1,0 +1,13 @@
+
+=== /home/omar/ai-projects/research-system-rag/.claude/worktrees/EP-post-baseline/docs/eval-reports/data/2026-11-10-focus-gt/runs-rq3/20261111T111549/tail-0.25/split/papers.paper_topic-on.json  (k=10, questions=38, GT items not in report=23)
+per dimension (answerable only):
+  equation-context     n=6   paperR@k 5/6 = 0.833 | paperP@1 4/6 = 0.667 | anchor hit@k 4/6 = 0.667 | anchor P@1 3/6 = 0.500 | member hit@k 4/6 = 0.667 | member P@1 3/6 = 0.500
+  method-detail        n=13  paperR@k 11/13 = 0.846 | paperP@1 11/13 = 0.846 | anchor hit@k 10/13 = 0.769 | anchor P@1 9/13 = 0.692 | member hit@k 10/13 = 0.769 | member P@1 9/13 = 0.692
+  numeric-result       n=8   paperR@k 8/8 = 1.000 | paperP@1 8/8 = 1.000 | anchor hit@k 8/8 = 1.000 | anchor P@1 7/8 = 0.875 | member hit@k 8/8 = 1.000 | member P@1 7/8 = 0.875
+  paper-passage        n=11  paperR@k 10/11 = 0.909 | paperP@1 9/11 = 0.818 | anchor hit@k 7/11 = 0.636 | anchor P@1 6/11 = 0.545 | member hit@k 8/11 = 0.727 | member P@1 6/11 = 0.545
+stub chunks: rank-1 0/38 = 0.000; top-k slots 0/380 = 0.000
+authority, commentary outranks gold: 0/0 = n/a
+edition, other edition outranks gold: 0/0 = n/a
+cross-document: all gold in top-k 0/0 = n/a; any 0/0 = n/a
+absent arm (n=0): top-score absent {'n': 0} vs answerable {'n': 38, 'min': 0.006582535110061783, 'median': 0.009083731086694215, 'max': 0.015772478887232988}
+  nearest distractor at rank 1: 0/0 = n/a

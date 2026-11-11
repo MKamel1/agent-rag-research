@@ -1,0 +1,273 @@
+{
+  "n_answerable": 61,
+  "n_errored_base": 0,
+  "n_errored_arm": 0,
+  "run_valid": [
+    true,
+    true
+  ],
+  "gating_metric": "member",
+  "metrics": {
+    "member": {
+      "n": 61,
+      "base": 9,
+      "arm": 8,
+      "wins": 0,
+      "losses": 1,
+      "net": -1
+    },
+    "paper": {
+      "n": 61,
+      "base": 22,
+      "arm": 22,
+      "wins": 0,
+      "losses": 0,
+      "net": 0
+    },
+    "excerpt": {
+      "n": 61,
+      "base": 9,
+      "arm": 8,
+      "wins": 0,
+      "losses": 1,
+      "net": -1
+    },
+    "anchor": {
+      "n": 61,
+      "base": 8,
+      "arm": 7,
+      "wins": 0,
+      "losses": 1,
+      "net": -1
+    }
+  },
+  "strata": {
+    "dimension=equation-context": {
+      "n": 11,
+      "metrics": {
+        "member": {
+          "n": 11,
+          "base": 1,
+          "arm": 1,
+          "wins": 0,
+          "losses": 0,
+          "net": 0
+        },
+        "paper": {
+          "n": 11,
+          "base": 5,
+          "arm": 5,
+          "wins": 0,
+          "losses": 0,
+          "net": 0
+        },
+        "excerpt": {
+          "n": 11,
+          "base": 1,
+          "arm": 1,
+          "wins": 0,
+          "losses": 0,
+          "net": 0
+        },
+        "anchor": {
+          "n": 11,
+          "base": 0,
+          "arm": 0,
+          "wins": 0,
+          "losses": 0,
+          "net": 0
+        }
+      }
+    },
+    "dimension=method-detail": {
+      "n": 20,
+      "metrics": {
+        "member": {
+          "n": 20,
+          "base": 3,
+          "arm": 2,
+          "wins": 0,
+          "losses": 1,
+          "net": -1
+        },
+        "paper": {
+          "n": 20,
+          "base": 8,
+          "arm": 8,
+          "wins": 0,
+          "losses": 0,
+          "net": 0
+        },
+        "excerpt": {
+          "n": 20,
+          "base": 3,
+          "arm": 2,
+          "wins": 0,
+          "losses": 1,
+          "net": -1
+        },
+        "anchor": {
+          "n": 20,
+          "base": 3,
+          "arm": 2,
+          "wins": 0,
+          "losses": 1,
+          "net": -1
+        }
+      }
+    },
+    "dimension=numeric-result": {
+      "n": 16,
+      "metrics": {
+        "member": {
+          "n": 16,
+          "base": 5,
+          "arm": 5,
+          "wins": 0,
+          "losses": 0,
+          "net": 0
+        },
+        "paper": {
+          "n": 16,
+          "base": 9,
+          "arm": 9,
+          "wins": 0,
+          "losses": 0,
+          "net": 0
+        },
+        "excerpt": {
+          "n": 16,
+          "base": 5,
+          "arm": 5,
+          "wins": 0,
+          "losses": 0,
+          "net": 0
+        },
+        "anchor": {
+          "n": 16,
+          "base": 5,
+          "arm": 5,
+          "wins": 0,
+          "losses": 0,
+          "net": 0
+        }
+      }
+    },
+    "dimension=paper-passage": {
+      "n": 14,
+      "metrics": {
+        "member": {
+          "n": 14,
+          "base": 0,
+          "arm": 0,
+          "wins": 0,
+          "losses": 0,
+          "net": 0
+        },
+        "paper": {
+          "n": 14,
+          "base": 0,
+          "arm": 0,
+          "wins": 0,
+          "losses": 0,
+          "net": 0
+        },
+        "excerpt": {
+          "n": 14,
+          "base": 0,
+          "arm": 0,
+          "wins": 0,
+          "losses": 0,
+          "net": 0
+        },
+        "anchor": {
+          "n": 14,
+          "base": 0,
+          "arm": 0,
+          "wins": 0,
+          "losses": 0,
+          "net": 0
+        }
+      }
+    },
+    "ligature=clean": {
+      "n": 26,
+      "metrics": {
+        "member": {
+          "n": 26,
+          "base": 1,
+          "arm": 1,
+          "wins": 0,
+          "losses": 0,
+          "net": 0
+        },
+        "paper": {
+          "n": 26,
+          "base": 7,
+          "arm": 7,
+          "wins": 0,
+          "losses": 0,
+          "net": 0
+        },
+        "excerpt": {
+          "n": 26,
+          "base": 1,
+          "arm": 1,
+          "wins": 0,
+          "losses": 0,
+          "net": 0
+        },
+        "anchor": {
+          "n": 26,
+          "base": 1,
+          "arm": 1,
+          "wins": 0,
+          "losses": 0,
+          "net": 0
+        }
+      }
+    },
+    "ligature=damaged": {
+      "n": 35,
+      "metrics": {
+        "member": {
+          "n": 35,
+          "base": 8,
+          "arm": 7,
+          "wins": 0,
+          "losses": 1,
+          "net": -1
+        },
+        "paper": {
+          "n": 35,
+          "base": 15,
+          "arm": 15,
+          "wins": 0,
+          "losses": 0,
+          "net": 0
+        },
+        "excerpt": {
+          "n": 35,
+          "base": 8,
+          "arm": 7,
+          "wins": 0,
+          "losses": 1,
+          "net": -1
+        },
+        "anchor": {
+          "n": 35,
+          "base": 7,
+          "arm": 6,
+          "wins": 0,
+          "losses": 1,
+          "net": -1
+        }
+      }
+    }
+  },
+  "worst_stratum_net": -1,
+  "label": "papers",
+  "tags": {
+    "mode": "sparse_only"
+  }
+}

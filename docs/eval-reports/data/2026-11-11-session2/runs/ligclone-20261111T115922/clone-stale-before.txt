@@ -1,0 +1,2 @@
+resparse: VERIFY SAMPLE of 'papers__ligrepair_20261111': 655/2,000 (32.8%) sampled points have a stale sparse vector (scanned=2,000 would change=655 unchanged=1,345 (of changed, no stored sparse vector: 0) skipped: none
+  by kind scanned={'chunk': 1950, 'summary': 50} would change={'chunk': 655})

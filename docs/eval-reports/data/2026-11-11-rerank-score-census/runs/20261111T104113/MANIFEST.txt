@@ -1,0 +1,14 @@
+git_rev 03cfd1854b7d37c8116d35545c3f54a309e6da40
+started 2026-11-11T10:41:14-07:00
+sets focus papers books legacy standards
+estimated_gpu_min 56
+c68210e06a9f5c9af4abe00b3b8537f6e3a77fbf75f360bd37e708877d2da09e  docs/eval-reports/data/2026-11-10-focus-gt/focus_gt.json
+58cdbf47f08b00fa0ec289c8fd299dd07570a07a695e56c2526a931cd83faf81  docs/eval-reports/data/2026-11-10-papers-passage-gt/papers_passage_gt.json
+3c21d57bb6cb8949092a57cc0f4879f24f6f1f338993be24196e35a52195a0a8  docs/eval-reports/data/2026-11-10-causal-books-gt/causal_books_gt.json
+8c80ee4095fbdddd952e3ac34bcbfd3fb0f50724f12e641fa00986777cf3002f  fixtures/eval/eval_known_absent.json
+61e52db8957cde90267b46814164a9e4e47ca97809659b96e013abb14e8e50b6  fixtures/eval/eval_ground_truth.json
+7813ac0efe3f40724b9883e8eee67661ae3f533a632df7a50b6642654b36a615  fixtures/eval/eval_questions_blind.json
+d3fbe4ad94b9fbaafdabe264edebb077d804e411ea65124a1a4847e9935e82a8  fixtures/eval/eval_equation_slice.json
+09b1061198c9817bff48708aa9c625508dc2eac0549c7f70dd748465bc114237  docs/eval-reports/data/2026-11-10-standards-gt/standards_gt.json
+7f2fa1fc352f0d8960f0965295edab780ddaa8213376fe700f60768b7cd9ca8c  docs/eval-reports/data/2026-11-10-FIXTURE-HASHES.json
+finished 2026-11-11T11:15:36-07:00

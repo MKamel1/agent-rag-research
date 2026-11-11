@@ -1,0 +1,10 @@
+label=legacy-jitter tags={} answerable=210 errored base/arm=0/0 run_valid=[True, True]
+  paper    n=210 base=207 arm=207 wins=0 losses=0 net=+0
+  dimension=Assumption-Comprehension n=  6 paper:6->6(+0)
+  dimension=Contribution-Comprehension n= 15 [gating] paper:15->15(+0)
+  dimension=Method-Comprehension     n= 51 [gating] paper:51->51(+0)
+  dimension=Multi-Paper-Reasoning    n= 50 [gating] paper:47->47(+0)
+  dimension=Multi-Paper-Synthesis    n= 10 [gating] paper:10->10(+0)
+  dimension=Result-Comprehension     n= 28 [gating] paper:28->28(+0)
+  dimension=Single-Paper-Reasoning   n= 50 [gating] paper:50->50(+0)
+  worst gating-stratum net (paper): +0

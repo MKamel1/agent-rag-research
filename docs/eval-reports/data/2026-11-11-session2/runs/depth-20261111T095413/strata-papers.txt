@@ -1,0 +1,26 @@
+
+=== /home/omar/ai-projects/research-system-rag/.claude/worktrees/EP-post-baseline/docs/eval-reports/data/2026-11-11-session2/runs/depth-20261111T095413/papers.depth32.json  (k=10, questions=61, GT items not in report=0)
+per dimension (answerable only):
+  equation-context     n=11  paperR@k 10/11 = 0.909 | paperP@1 8/11 = 0.727 | anchor hit@k 9/11 = 0.818 | anchor P@1 6/11 = 0.545 | member hit@k 9/11 = 0.818 | member P@1 6/11 = 0.545
+  method-detail        n=20  paperR@k 18/20 = 0.900 | paperP@1 18/20 = 0.900 | anchor hit@k 17/20 = 0.850 | anchor P@1 16/20 = 0.800 | member hit@k 17/20 = 0.850 | member P@1 16/20 = 0.800
+  numeric-result       n=16  paperR@k 16/16 = 1.000 | paperP@1 16/16 = 1.000 | anchor hit@k 16/16 = 1.000 | anchor P@1 14/16 = 0.875 | member hit@k 16/16 = 1.000 | member P@1 15/16 = 0.938
+  paper-passage        n=14  paperR@k 13/14 = 0.929 | paperP@1 12/14 = 0.857 | anchor hit@k 9/14 = 0.643 | anchor P@1 8/14 = 0.571 | member hit@k 10/14 = 0.714 | member P@1 8/14 = 0.571
+stub chunks: rank-1 0/61 = 0.000; top-k slots 0/610 = 0.000
+authority, commentary outranks gold: 0/0 = n/a
+edition, other edition outranks gold: 0/0 = n/a
+cross-document: all gold in top-k 0/0 = n/a; any 0/0 = n/a
+absent arm (n=0): top-score absent {'n': 0} vs answerable {'n': 61, 'min': 0.006582535110061783, 'median': 0.009064516129032259, 'max': 0.015772478887232988}
+  nearest distractor at rank 1: 0/0 = n/a
+
+=== /home/omar/ai-projects/research-system-rag/.claude/worktrees/EP-post-baseline/docs/eval-reports/data/2026-11-11-session2/runs/depth-20261111T095413/papers.depth128.json  (k=10, questions=61, GT items not in report=0)
+per dimension (answerable only):
+  equation-context     n=11  paperR@k 10/11 = 0.909 | paperP@1 8/11 = 0.727 | anchor hit@k 9/11 = 0.818 | anchor P@1 5/11 = 0.455 | member hit@k 9/11 = 0.818 | member P@1 5/11 = 0.455
+  method-detail        n=20  paperR@k 19/20 = 0.950 | paperP@1 17/20 = 0.850 | anchor hit@k 17/20 = 0.850 | anchor P@1 15/20 = 0.750 | member hit@k 17/20 = 0.850 | member P@1 15/20 = 0.750
+  numeric-result       n=16  paperR@k 16/16 = 1.000 | paperP@1 16/16 = 1.000 | anchor hit@k 16/16 = 1.000 | anchor P@1 14/16 = 0.875 | member hit@k 16/16 = 1.000 | member P@1 15/16 = 0.938
+  paper-passage        n=14  paperR@k 13/14 = 0.929 | paperP@1 11/14 = 0.786 | anchor hit@k 12/14 = 0.857 | anchor P@1 10/14 = 0.714 | member hit@k 12/14 = 0.857 | member P@1 10/14 = 0.714
+stub chunks: rank-1 0/61 = 0.000; top-k slots 0/610 = 0.000
+authority, commentary outranks gold: 0/0 = n/a
+edition, other edition outranks gold: 0/0 = n/a
+cross-document: all gold in top-k 0/0 = n/a; any 0/0 = n/a
+absent arm (n=0): top-score absent {'n': 0} vs answerable {'n': 61, 'min': 0.004346577164973392, 'median': 0.00888542654563519, 'max': 0.015772478887232988}
+  nearest distractor at rank 1: 0/0 = n/a

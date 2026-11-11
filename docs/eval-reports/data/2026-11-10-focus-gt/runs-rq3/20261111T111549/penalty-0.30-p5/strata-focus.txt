@@ -1,0 +1,15 @@
+
+=== /home/omar/ai-projects/research-system-rag/.claude/worktrees/EP-post-baseline/docs/eval-reports/data/2026-11-10-focus-gt/runs-rq3/20261111T111549/penalty-0.30-p5/focus.json  (k=10, questions=49, GT items not in report=0)
+per dimension (answerable only):
+  collision            n=26  paperR@k 24/26 = 0.923 | paperP@1 21/26 = 0.808 | anchor hit@k 21/26 = 0.808 | anchor P@1 16/26 = 0.615 | member hit@k 21/26 = 0.808 | member P@1 16/26 = 0.615
+  offtopic-legit       n=14  paperR@k 14/14 = 1.000 | paperP@1 12/14 = 0.857 | anchor hit@k 13/14 = 0.929 | anchor P@1 6/14 = 0.429 | member hit@k 13/14 = 0.929 | member P@1 6/14 = 0.429
+stub chunks: rank-1 0/49 = 0.000; top-k slots 1/490 = 0.002
+authority, commentary outranks gold: 0/0 = n/a
+edition, other edition outranks gold: 0/0 = n/a
+cross-document: all gold in top-k 0/0 = n/a; any 0/0 = n/a
+absent arm (n=9): top-score absent {'n': 9, 'min': 0.006711057908125094, 'median': 0.007709574557355039, 'max': 0.014297385620915032} vs answerable {'n': 40, 'min': 0.006944444444444444, 'median': 0.008653204800681154, 'max': 0.016133229247983348}
+  nearest distractor at rank 1: 0/9 = 0.000
+focus (chance baseline: corpus off share 4630/12385 = 0.374):
+  on-gold answerable   n=26  mean off share of top-k 0.112 | off at rank 1 0/26 = 0.000 | distractor outranks gold 0/26 = 0.000
+  collision            n=26  mean off share of top-k 0.112 | off at rank 1 0/26 = 0.000 | distractor outranks gold 0/26 = 0.000
+  offtopic-legit: lookalike outranks gold 0/14 = 0.000

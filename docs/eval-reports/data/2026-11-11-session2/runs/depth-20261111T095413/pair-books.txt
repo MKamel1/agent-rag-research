@@ -1,0 +1,9 @@
+label=books tags={} answerable=69 errored base/arm=0/0 run_valid=[True, True]
+  member   n= 69 base= 54 arm= 57 wins=4 losses=1 net=+3
+  paper    n= 69 base= 60 arm= 63 wins=4 losses=1 net=+3
+  excerpt  n= 69 base= 54 arm= 57 wins=4 losses=1 net=+3
+  anchor   n= 69 base= 54 arm= 57 wins=4 losses=1 net=+3
+  dimension=book-passage             n= 52 [gating] member:41->42(+1) paper:45->47(+2) excerpt:41->42(+1) anchor:41->42(+1)
+  dimension=equation-context         n= 12 [gating] member:10->11(+1) paper:11->12(+1) excerpt:10->11(+1) anchor:10->11(+1)
+  dimension=table-requirement        n=  5 member:3->4(+1) paper:4->4(+0) excerpt:3->4(+1) anchor:3->4(+1)
+  worst gating-stratum net (member): +1

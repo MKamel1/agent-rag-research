@@ -1,0 +1,10 @@
+git_rev 03cfd1854b7d37c8116d35545c3f54a309e6da40
+started 2026-11-11T11:59:23-07:00
+source papers
+clone papers__ligrepair_20261111
+/dev/nvme0n1p2  3.6T  3.4T   78G  98% /
+live papers points before: 412167
+clone_seconds 741
+clone points: 412167
+resparse_apply_seconds 273
+finished 2026-11-11T12:19:49-07:00

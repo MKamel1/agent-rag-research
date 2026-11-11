@@ -1,0 +1,3 @@
+resparse: APPLIED to 'papers__ligrepair_20261111' (412,167 points preserved). Guard: 'papers__ligrepair_20261111' matches 'papers' point-for-count (412,167). Post-check: 0/200 sampled points stale.
+  scanned=412,167 changed=138,484 unchanged=273,683 (of changed, no stored sparse vector: 0) skipped: none
+  by kind scanned={'chunk': 399676, 'summary': 12491} changed={'chunk': 138451, 'summary': 33}

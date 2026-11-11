@@ -1,0 +1,12 @@
+label=papers tags={'mode': 'sparse_only'} answerable=61 errored base/arm=0/0 run_valid=[True, True]
+  member   n= 61 base=  9 arm=  8 wins=0 losses=1 net=-1
+  paper    n= 61 base= 22 arm= 22 wins=0 losses=0 net=+0
+  excerpt  n= 61 base=  9 arm=  8 wins=0 losses=1 net=-1
+  anchor   n= 61 base=  8 arm=  7 wins=0 losses=1 net=-1
+  dimension=equation-context         n= 11 [gating] member:1->1(+0) paper:5->5(+0) excerpt:1->1(+0) anchor:0->0(+0)
+  dimension=method-detail            n= 20 [gating] member:3->2(-1) paper:8->8(+0) excerpt:3->2(-1) anchor:3->2(-1)
+  dimension=numeric-result           n= 16 [gating] member:5->5(+0) paper:9->9(+0) excerpt:5->5(+0) anchor:5->5(+0)
+  dimension=paper-passage            n= 14 [gating] member:0->0(+0) paper:0->0(+0) excerpt:0->0(+0) anchor:0->0(+0)
+  ligature=clean                     n= 26 member:1->1(+0) paper:7->7(+0) excerpt:1->1(+0) anchor:1->1(+0)
+  ligature=damaged                   n= 35 member:8->7(-1) paper:15->15(+0) excerpt:8->7(-1) anchor:7->6(-1)
+  worst gating-stratum net (member): -1

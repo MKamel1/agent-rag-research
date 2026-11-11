@@ -1,0 +1,236 @@
+{
+  "n_answerable": 69,
+  "n_errored_base": 0,
+  "n_errored_arm": 0,
+  "run_valid": [
+    true,
+    true
+  ],
+  "gating_metric": "member",
+  "metrics": {
+    "member": {
+      "n": 69,
+      "base": 54,
+      "arm": 53,
+      "wins": 0,
+      "losses": 1,
+      "net": -1
+    },
+    "paper": {
+      "n": 69,
+      "base": 60,
+      "arm": 59,
+      "wins": 0,
+      "losses": 1,
+      "net": -1
+    },
+    "excerpt": {
+      "n": 69,
+      "base": 54,
+      "arm": 53,
+      "wins": 0,
+      "losses": 1,
+      "net": -1
+    },
+    "anchor": {
+      "n": 69,
+      "base": 54,
+      "arm": 53,
+      "wins": 0,
+      "losses": 1,
+      "net": -1
+    }
+  },
+  "strata": {
+    "dimension=book-passage": {
+      "n": 52,
+      "metrics": {
+        "member": {
+          "n": 52,
+          "base": 41,
+          "arm": 40,
+          "wins": 0,
+          "losses": 1,
+          "net": -1
+        },
+        "paper": {
+          "n": 52,
+          "base": 45,
+          "arm": 44,
+          "wins": 0,
+          "losses": 1,
+          "net": -1
+        },
+        "excerpt": {
+          "n": 52,
+          "base": 41,
+          "arm": 40,
+          "wins": 0,
+          "losses": 1,
+          "net": -1
+        },
+        "anchor": {
+          "n": 52,
+          "base": 41,
+          "arm": 40,
+          "wins": 0,
+          "losses": 1,
+          "net": -1
+        }
+      }
+    },
+    "dimension=equation-context": {
+      "n": 12,
+      "metrics": {
+        "member": {
+          "n": 12,
+          "base": 10,
+          "arm": 10,
+          "wins": 0,
+          "losses": 0,
+          "net": 0
+        },
+        "paper": {
+          "n": 12,
+          "base": 11,
+          "arm": 11,
+          "wins": 0,
+          "losses": 0,
+          "net": 0
+        },
+        "excerpt": {
+          "n": 12,
+          "base": 10,
+          "arm": 10,
+          "wins": 0,
+          "losses": 0,
+          "net": 0
+        },
+        "anchor": {
+          "n": 12,
+          "base": 10,
+          "arm": 10,
+          "wins": 0,
+          "losses": 0,
+          "net": 0
+        }
+      }
+    },
+    "dimension=table-requirement": {
+      "n": 5,
+      "metrics": {
+        "member": {
+          "n": 5,
+          "base": 3,
+          "arm": 3,
+          "wins": 0,
+          "losses": 0,
+          "net": 0
+        },
+        "paper": {
+          "n": 5,
+          "base": 4,
+          "arm": 4,
+          "wins": 0,
+          "losses": 0,
+          "net": 0
+        },
+        "excerpt": {
+          "n": 5,
+          "base": 3,
+          "arm": 3,
+          "wins": 0,
+          "losses": 0,
+          "net": 0
+        },
+        "anchor": {
+          "n": 5,
+          "base": 3,
+          "arm": 3,
+          "wins": 0,
+          "losses": 0,
+          "net": 0
+        }
+      }
+    },
+    "ligature=clean": {
+      "n": 42,
+      "metrics": {
+        "member": {
+          "n": 42,
+          "base": 34,
+          "arm": 33,
+          "wins": 0,
+          "losses": 1,
+          "net": -1
+        },
+        "paper": {
+          "n": 42,
+          "base": 38,
+          "arm": 37,
+          "wins": 0,
+          "losses": 1,
+          "net": -1
+        },
+        "excerpt": {
+          "n": 42,
+          "base": 34,
+          "arm": 33,
+          "wins": 0,
+          "losses": 1,
+          "net": -1
+        },
+        "anchor": {
+          "n": 42,
+          "base": 34,
+          "arm": 33,
+          "wins": 0,
+          "losses": 1,
+          "net": -1
+        }
+      }
+    },
+    "ligature=damaged": {
+      "n": 27,
+      "metrics": {
+        "member": {
+          "n": 27,
+          "base": 20,
+          "arm": 20,
+          "wins": 0,
+          "losses": 0,
+          "net": 0
+        },
+        "paper": {
+          "n": 27,
+          "base": 22,
+          "arm": 22,
+          "wins": 0,
+          "losses": 0,
+          "net": 0
+        },
+        "excerpt": {
+          "n": 27,
+          "base": 20,
+          "arm": 20,
+          "wins": 0,
+          "losses": 0,
+          "net": 0
+        },
+        "anchor": {
+          "n": 27,
+          "base": 20,
+          "arm": 20,
+          "wins": 0,
+          "losses": 0,
+          "net": 0
+        }
+      }
+    }
+  },
+  "worst_stratum_net": -1,
+  "label": "books",
+  "tags": {
+    "mode": "fused"
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "n_answerable": 210,
+  "n_errored_base": 0,
+  "n_errored_arm": 0,
+  "run_valid": [
+    true,
+    true
+  ],
+  "gating_metric": "paper",
+  "metrics": {
+    "paper": {
+      "n": 210,
+      "base": 207,
+      "arm": 207,
+      "wins": 0,
+      "losses": 0,
+      "net": 0
+    }
+  },
+  "strata": {
+    "dimension=Assumption-Comprehension": {
+      "n": 6,
+      "metrics": {
+        "paper": {
+          "n": 6,
+          "base": 6,
+          "arm": 6,
+          "wins": 0,
+          "losses": 0,
+          "net": 0
+        }
+      }
+    },
+    "dimension=Contribution-Comprehension": {
+      "n": 15,
+      "metrics": {
+        "paper": {
+          "n": 15,
+          "base": 15,
+          "arm": 15,
+          "wins": 0,
+          "losses": 0,
+          "net": 0
+        }
+      }
+    },
+    "dimension=Method-Comprehension": {
+      "n": 51,
+      "metrics": {
+        "paper": {
+          "n": 51,
+          "base": 51,
+          "arm": 51,
+          "wins": 0,
+          "losses": 0,
+          "net": 0
+        }
+      }
+    },
+    "dimension=Multi-Paper-Reasoning": {
+      "n": 50,
+      "metrics": {
+        "paper": {
+          "n": 50,
+          "base": 47,
+          "arm": 47,
+          "wins": 0,
+          "losses": 0,
+          "net": 0
+        }
+      }
+    },
+    "dimension=Multi-Paper-Synthesis": {
+      "n": 10,
+      "metrics": {
+        "paper": {
+          "n": 10,
+          "base": 10,
+          "arm": 10,
+          "wins": 0,
+          "losses": 0,
+          "net": 0
+        }
+      }
+    },
+    "dimension=Result-Comprehension": {
+      "n": 28,
+      "metrics": {
+        "paper": {
+          "n": 28,
+          "base": 28,
+          "arm": 28,
+          "wins": 0,
+          "losses": 0,
+          "net": 0
+        }
+      }
+    },
+    "dimension=Single-Paper-Reasoning": {
+      "n": 50,
+      "metrics": {
+        "paper": {
+          "n": 50,
+          "base": 50,
+          "arm": 50,
+          "wins": 0,
+          "losses": 0,
+          "net": 0
+        }
+      }
+    }
+  },
+  "worst_stratum_net": 0,
+  "label": "legacy-jitter",
+  "tags": {}
+}

@@ -1,0 +1,13 @@
+{
+  "set": "papers",
+  "net_128_minus_32": 2,
+  "wins_losses": [
+    2,
+    0
+  ],
+  "worst_stratum_net": 0,
+  "rule_ge2_prefers": "128 (provisional)",
+  "G1_core": false,
+  "G1_ablated_same_sign": null,
+  "recommend_default_change": false
+}

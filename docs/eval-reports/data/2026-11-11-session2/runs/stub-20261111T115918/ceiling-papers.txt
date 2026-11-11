@@ -1,0 +1,1 @@
+{"n_answerable": 61, "stub_rank1_answerable": 0, "stub_slots_topk": 0, "slots_topk": 610, "stub_slot_share": 0.0, "answerable_with_stub_in_topk": 0, "ceiling": 0, "min_effect": 2, "run": false}

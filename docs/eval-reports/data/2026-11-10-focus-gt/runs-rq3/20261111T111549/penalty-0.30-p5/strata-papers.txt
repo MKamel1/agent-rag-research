@@ -1,0 +1,20 @@
+
+=== /home/omar/ai-projects/research-system-rag/.claude/worktrees/EP-post-baseline/docs/eval-reports/data/2026-11-10-focus-gt/runs-rq3/20261111T111549/penalty-0.30-p5/papers.json  (k=10, questions=61, GT items not in report=0)
+per dimension (answerable only):
+  equation-context     n=11  paperR@k 10/11 = 0.909 | paperP@1 8/11 = 0.727 | anchor hit@k 9/11 = 0.818 | anchor P@1 6/11 = 0.545 | member hit@k 9/11 = 0.818 | member P@1 6/11 = 0.545
+  method-detail        n=20  paperR@k 18/20 = 0.900 | paperP@1 16/20 = 0.800 | anchor hit@k 17/20 = 0.850 | anchor P@1 14/20 = 0.700 | member hit@k 17/20 = 0.850 | member P@1 14/20 = 0.700
+  numeric-result       n=16  paperR@k 16/16 = 1.000 | paperP@1 13/16 = 0.812 | anchor hit@k 16/16 = 1.000 | anchor P@1 11/16 = 0.688 | member hit@k 16/16 = 1.000 | member P@1 12/16 = 0.750
+  paper-passage        n=14  paperR@k 13/14 = 0.929 | paperP@1 11/14 = 0.786 | anchor hit@k 9/14 = 0.643 | anchor P@1 7/14 = 0.500 | member hit@k 10/14 = 0.714 | member P@1 7/14 = 0.500
+stub chunks: rank-1 0/61 = 0.000; top-k slots 0/610 = 0.000
+authority, commentary outranks gold: 0/0 = n/a
+edition, other edition outranks gold: 0/0 = n/a
+cross-document: all gold in top-k 0/0 = n/a; any 0/0 = n/a
+absent arm (n=0): top-score absent {'n': 0} vs answerable {'n': 61, 'min': 0.006582535110061783, 'median': 0.008912028893735782, 'max': 0.015772478887232988}
+  nearest distractor at rank 1: 0/0 = n/a
+focus (chance baseline: corpus off share 4630/12385 = 0.374):
+  on-gold answerable   n=38  mean off share of top-k 0.126 | off at rank 1 0/38 = 0.000 | distractor outranks gold 0/0 = n/a
+  equation-context     n=5   mean off share of top-k 0.060 | off at rank 1 0/5 = 0.000 | distractor outranks gold 0/0 = n/a
+  method-detail        n=13  mean off share of top-k 0.154 | off at rank 1 0/13 = 0.000 | distractor outranks gold 0/0 = n/a
+  numeric-result       n=10  mean off share of top-k 0.110 | off at rank 1 0/10 = 0.000 | distractor outranks gold 0/0 = n/a
+  paper-passage        n=10  mean off share of top-k 0.140 | off at rank 1 0/10 = 0.000 | distractor outranks gold 0/0 = n/a
+  offtopic-legit: lookalike outranks gold 0/0 = n/a

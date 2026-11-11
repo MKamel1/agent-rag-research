@@ -1,0 +1,15 @@
+git_rev 03cfd1854b7d37c8116d35545c3f54a309e6da40
+started 2026-11-11T11:15:52-07:00
+collection papers
+db /home/omar/ai-projects/research-system-rag-data/papers.db
+arms baseline tail-0.25 tail-0.30 penalty-0.30-p5
+c68210e06a9f5c9af4abe00b3b8537f6e3a77fbf75f360bd37e708877d2da09e  docs/eval-reports/data/2026-11-10-focus-gt/focus_gt.json
+58cdbf47f08b00fa0ec289c8fd299dd07570a07a695e56c2526a931cd83faf81  docs/eval-reports/data/2026-11-10-papers-passage-gt/papers_passage_gt.json
+3c21d57bb6cb8949092a57cc0f4879f24f6f1f338993be24196e35a52195a0a8  docs/eval-reports/data/2026-11-10-causal-books-gt/causal_books_gt.json
+c14cf1ebafc010f45e4e377f18d67994183b3d8696859b7c4ded55659956e8d1  docs/eval-reports/data/2026-11-10-topic-labels/topic_labels.tsv
+7f2fa1fc352f0d8960f0965295edab780ddaa8213376fe700f60768b7cd9ca8c  docs/eval-reports/data/2026-11-10-FIXTURE-HASHES.json
+baseline: 
+tail-0.25: --relevance-demotion tail --relevance-tau 0.25
+tail-0.30: --relevance-demotion tail --relevance-tau 0.30
+penalty-0.30-p5: --relevance-demotion penalty --relevance-tau 0.30 --relevance-penalty 5
+finished 2026-11-11T11:59:18-07:00

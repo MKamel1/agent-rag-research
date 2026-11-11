@@ -1,0 +1,147 @@
+{
+  "/home/omar/ai-projects/research-system-rag/.claude/worktrees/EP-post-baseline/docs/eval-reports/data/2026-11-10-focus-gt/runs-rq3/20261111T111549/tail-0.30/focus.json": {
+    "n_questions": 49,
+    "gt_items_not_in_report": 0,
+    "n_errored_rows": 0,
+    "run_valid": true,
+    "per_dimension": {
+      "collision": {
+        "n": 26,
+        "paper_recall": {
+          "hits": 21,
+          "n": 26
+        },
+        "paper_p1": {
+          "hits": 18,
+          "n": 26
+        },
+        "anchor_hit": {
+          "hits": 19,
+          "n": 26
+        },
+        "anchor_p1": {
+          "hits": 14,
+          "n": 26
+        },
+        "member_hit": {
+          "hits": 19,
+          "n": 26
+        },
+        "member_p1": {
+          "hits": 14,
+          "n": 26
+        }
+      },
+      "offtopic-legit": {
+        "n": 14,
+        "paper_recall": {
+          "hits": 8,
+          "n": 14
+        },
+        "paper_p1": {
+          "hits": 3,
+          "n": 14
+        },
+        "anchor_hit": {
+          "hits": 6,
+          "n": 14
+        },
+        "anchor_p1": {
+          "hits": 2,
+          "n": 14
+        },
+        "member_hit": {
+          "hits": 6,
+          "n": 14
+        },
+        "member_p1": {
+          "hits": 2,
+          "n": 14
+        }
+      }
+    },
+    "stub": {
+      "rank1": {
+        "hits": 0,
+        "n": 49
+      },
+      "topk_slots": {
+        "hits": 4,
+        "n": 490
+      }
+    },
+    "authority_commentary_outranks_gold": {
+      "hits": 0,
+      "n": 0
+    },
+    "edition_other_outranks_gold": {
+      "hits": 0,
+      "n": 0
+    },
+    "cross_document": {
+      "all_gold_in_topk": {
+        "hits": 0,
+        "n": 0
+      },
+      "any_gold_in_topk": {
+        "hits": 0,
+        "n": 0
+      }
+    },
+    "absent_arm": {
+      "n_absent": 9,
+      "top_score_absent": {
+        "n": 9,
+        "min": 0.006711057908125094,
+        "median": 0.007709574557355039,
+        "max": 0.01333570412517781
+      },
+      "top_score_answerable": {
+        "n": 40,
+        "min": 0.006910567059182848,
+        "median": 0.008183731106062204,
+        "max": 0.015339578454332554
+      },
+      "nearest_distractor_at_rank1": {
+        "hits": 0,
+        "n": 9
+      }
+    },
+    "focus": {
+      "on_gold_answerable": {
+        "n": 26,
+        "mean_off_share_topk": 0.15384615384615385,
+        "off_at_rank1": {
+          "hits": 1,
+          "n": 26
+        },
+        "distractor_outranks_gold": {
+          "hits": 0,
+          "n": 26
+        }
+      },
+      "by_dimension": {
+        "collision": {
+          "n": 26,
+          "mean_off_share_topk": 0.15384615384615385,
+          "off_at_rank1": {
+            "hits": 1,
+            "n": 26
+          },
+          "distractor_outranks_gold": {
+            "hits": 0,
+            "n": 26
+          }
+        }
+      },
+      "offtopic_legit_lookalike_outranks_gold": {
+        "hits": 0,
+        "n": 14
+      },
+      "chance_baseline_off_share": {
+        "hits": 4630,
+        "n": 12385
+      }
+    }
+  }
+}

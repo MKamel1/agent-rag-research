@@ -1,0 +1,10 @@
+== ligature verdict (CQ-2 rule; standards fixture NOT run: best possible outcome is ADOPT-PENDING-STANDARDS) ==
+{
+  "a_sparse_only_papers_recall_strictly_higher": false,
+  "b_fused_no_worse_than_minus_1": {
+    "papers": true,
+    "books": true
+  },
+  "missing": [],
+  "verdict": "REJECT"
+}

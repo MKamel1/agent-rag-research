@@ -1,0 +1,173 @@
+focus: /home/omar/ai-projects/research-system-rag/.claude/worktrees/EP-post-baseline/docs/eval-reports/data/2026-11-11-rerank-score-census/runs/20261111T104113/focus.json: 49 scored rows, 0 errored rows excluded
+books: /home/omar/ai-projects/research-system-rag/.claude/worktrees/EP-post-baseline/docs/eval-reports/data/2026-11-11-rerank-score-census/runs/20261111T104113/books.json: 74 scored rows, 0 errored rows excluded
+legacy: /home/omar/ai-projects/research-system-rag/.claude/worktrees/EP-post-baseline/docs/eval-reports/data/2026-11-11-rerank-score-census/runs/20261111T104113/legacy-known_absent.json: 24 scored rows, 0 errored rows excluded
+legacy: /home/omar/ai-projects/research-system-rag/.claude/worktrees/EP-post-baseline/docs/eval-reports/data/2026-11-11-rerank-score-census/runs/20261111T104113/legacy-ground_truth.json: 210 scored rows, 0 errored rows excluded
+legacy: /home/omar/ai-projects/research-system-rag/.claude/worktrees/EP-post-baseline/docs/eval-reports/data/2026-11-11-rerank-score-census/runs/20261111T104113/legacy-equation_slice.json: 40 scored rows, 0 errored rows excluded
+legacy-vs-papers-SECONDARY: /home/omar/ai-projects/research-system-rag/.claude/worktrees/EP-post-baseline/docs/eval-reports/data/2026-11-11-rerank-score-census/runs/20261111T104113/legacy-known_absent.json: 24 scored rows, 0 errored rows excluded
+legacy-vs-papers-SECONDARY: /home/omar/ai-projects/research-system-rag/.claude/worktrees/EP-post-baseline/docs/eval-reports/data/2026-11-11-rerank-score-census/runs/20261111T104113/papers.json: 61 scored rows, 0 errored rows excluded
+standards: /home/omar/ai-projects/research-system-rag/.claude/worktrees/EP-post-baseline/docs/eval-reports/data/2026-11-11-rerank-score-census/runs/20261111T104113/standards.json: 128 scored rows, 0 errored rows excluded
+
+### SET focus  (n_absent=9, n_answerable=40)
+| feature | AUROC | 95% CI (bootstrap) | absent median | answerable median | best-threshold false-abstain (Wilson) | missed-absence (Wilson) | flag |
+|---|---|---|---|---|---|---|---|
+| rerank_top1 | 0.942 | [0.861, 0.994] | 0.830 | 0.979 | 3/40 [0.026, 0.199] | 1/9 [0.020, 0.435] (abstain if < 0.923851, in-sample) |  |
+| rerank_mean_top3 | 0.922 | [0.828, 0.992] | 0.676 | 0.936 | 11/40 [0.161, 0.428] | 0/9 [0.000, 0.299] (abstain if < 0.906781, in-sample) |  |
+| rerank_margin_12 | 0.281 | [0.125, 0.458] | 0.076 | 0.020 | 25/40 [0.470, 0.758] | 0/9 [0.000, 0.299] (abstain if > 0.0116971, in-sample) | no better than length |
+| rerank_pool_best | 0.942 | [0.861, 0.994] | 0.830 | 0.979 | 3/40 [0.026, 0.199] | 1/9 [0.020, 0.435] (abstain if < 0.923851, in-sample) |  |
+| fusion_top_score | 0.696 | [0.519, 0.896] | 0.008 | 0.009 | 5/40 [0.055, 0.261] | 4/9 [0.189, 0.733] (abstain if < 0.00773682, in-sample) |  |
+| query_words | 0.617 | [0.507, 0.867] | 24.000 | 21.000 | 7/40 [0.087, 0.320] | 4/9 [0.189, 0.733] (abstain if > 23.5, in-sample) |  |
+
+### SET books  (n_absent=5, n_answerable=69)
+| feature | AUROC | 95% CI (bootstrap) | absent median | answerable median | best-threshold false-abstain (Wilson) | missed-absence (Wilson) | flag |
+|---|---|---|---|---|---|---|---|
+| rerank_top1 | 0.562 | [0.281, 0.838] | 0.986 | 0.976 | 6/69 [0.040, 0.177] | 3/5 [0.231, 0.882] (abstain if < 0.877605, in-sample) | no better than length |
+| rerank_mean_top3 | 0.374 | [0.055, 0.713] | 0.984 | 0.924 | 7/69 [0.050, 0.195] | 2/5 [0.118, 0.769] (abstain if > 0.983459, in-sample) | no better than length |
+| rerank_margin_12 | 0.933 | [0.864, 0.983] | 0.004 | 0.041 | 9/69 [0.070, 0.230] | 0/5 [0.000, 0.434] (abstain if < 0.0079766, in-sample) |  |
+| rerank_pool_best | 0.562 | [0.281, 0.838] | 0.986 | 0.976 | 6/69 [0.040, 0.177] | 3/5 [0.231, 0.882] (abstain if < 0.877605, in-sample) | no better than length |
+| fusion_top_score | 0.780 | [0.606, 0.916] | 0.008 | 0.008 | 14/69 [0.125, 0.312] | 1/5 [0.036, 0.624] (abstain if < 0.00777175, in-sample) |  |
+| query_words | 0.610 | [0.507, 0.793] | 22.000 | 25.000 | 46/69 [0.549, 0.766] | 0/5 [0.000, 0.434] (abstain if < 27.5, in-sample) |  |
+
+### SET legacy  (n_absent=24, n_answerable=250)
+| feature | AUROC | 95% CI (bootstrap) | absent median | answerable median | best-threshold false-abstain (Wilson) | missed-absence (Wilson) | flag |
+|---|---|---|---|---|---|---|---|
+| rerank_top1 | 0.874 | [0.819, 0.922] | 0.959 | 0.992 | 92/250 [0.311, 0.429] | 0/24 [0.000, 0.138] (abstain if < 0.986467, in-sample) | no better than length |
+| rerank_mean_top3 | 0.822 | [0.749, 0.886] | 0.942 | 0.980 | 51/250 [0.159, 0.258] | 6/24 [0.120, 0.449] (abstain if < 0.95525, in-sample) | no better than length |
+| rerank_margin_12 | 0.319 | [0.223, 0.422] | 0.014 | 0.007 | 160/250 [0.579, 0.697] | 2/24 [0.023, 0.258] (abstain if > 0.00277554, in-sample) | no better than length |
+| rerank_pool_best | 0.874 | [0.819, 0.922] | 0.959 | 0.992 | 92/250 [0.311, 0.429] | 0/24 [0.000, 0.138] (abstain if < 0.986467, in-sample) | no better than length |
+| fusion_top_score | 0.573 | [0.504, 0.698] | 0.009 | 0.009 | 35/250 [0.102, 0.188] | 17/24 [0.508, 0.851] (abstain if < 0.00795417, in-sample) | no better than length |
+| query_words | 0.974 | [0.955, 0.989] | 17.000 | 39.000 | 19/250 [0.049, 0.116] | 0/24 [0.000, 0.138] (abstain if < 22.5, in-sample) |  |
+
+### SET legacy-vs-papers-SECONDARY (secondary, not in verdict)  (n_absent=24, n_answerable=61)
+| feature | AUROC | 95% CI (bootstrap) | absent median | answerable median | best-threshold false-abstain (Wilson) | missed-absence (Wilson) | flag |
+|---|---|---|---|---|---|---|---|
+| rerank_top1 | 0.786 | [0.686, 0.874] | 0.959 | 0.988 | 25/61 [0.295, 0.535] | 0/24 [0.000, 0.138] (abstain if < 0.986794, in-sample) | no better than length |
+| rerank_mean_top3 | 0.678 | [0.560, 0.789] | 0.942 | 0.967 | 20/61 [0.223, 0.453] | 8/24 [0.180, 0.533] (abstain if < 0.948084, in-sample) | no better than length |
+| rerank_margin_12 | 0.502 | [0.365, 0.638] | 0.014 | 0.016 | 19/61 [0.209, 0.436] | 13/24 [0.351, 0.721] (abstain if < 0.0092378, in-sample) | no better than length |
+| rerank_pool_best | 0.786 | [0.686, 0.874] | 0.959 | 0.988 | 25/61 [0.295, 0.535] | 0/24 [0.000, 0.138] (abstain if < 0.986794, in-sample) | no better than length |
+| fusion_top_score | 0.555 | [0.503, 0.695] | 0.009 | 0.009 | 14/61 [0.142, 0.349] | 15/24 [0.427, 0.788] (abstain if < 0.00823871, in-sample) | no better than length |
+| query_words | 0.899 | [0.828, 0.956] | 17.000 | 24.000 | 16/61 [0.168, 0.384] | 1/24 [0.007, 0.202] (abstain if < 21.5, in-sample) |  |
+
+### SET standards  (n_absent=22, n_answerable=106)
+| feature | AUROC | 95% CI (bootstrap) | absent median | answerable median | best-threshold false-abstain (Wilson) | missed-absence (Wilson) | flag |
+|---|---|---|---|---|---|---|---|
+| rerank_top1 | 0.801 | [0.715, 0.879] | 0.709 | 0.960 | 48/106 [0.361, 0.548] | 1/22 [0.008, 0.218] (abstain if < 0.955775, in-sample) |  |
+| rerank_mean_top3 | 0.692 | [0.582, 0.798] | 0.607 | 0.852 | 31/106 [0.214, 0.385] | 8/22 [0.197, 0.570] (abstain if < 0.676695, in-sample) |  |
+| rerank_margin_12 | 0.616 | [0.489, 0.730] | 0.039 | 0.057 | 60/106 [0.471, 0.656] | 5/22 [0.101, 0.434] (abstain if < 0.0698807, in-sample) |  |
+| rerank_pool_best | 0.801 | [0.715, 0.879] | 0.709 | 0.960 | 48/106 [0.361, 0.548] | 1/22 [0.008, 0.218] (abstain if < 0.955775, in-sample) |  |
+| fusion_top_score | 0.637 | [0.534, 0.744] | 0.011 | 0.013 | 73/106 [0.595, 0.769] | 0/22 [0.000, 0.149] (abstain if < 0.0153074, in-sample) |  |
+| query_words | 0.602 | [0.513, 0.706] | 18.000 | 20.000 | 54/106 [0.416, 0.603] | 5/22 [0.101, 0.434] (abstain if < 20.5, in-sample) |  |
+
+###   class absent  (n_absent=9, n_answerable=106)
+| feature | AUROC | 95% CI (bootstrap) | absent median | answerable median | best-threshold false-abstain (Wilson) | missed-absence (Wilson) | flag |
+|---|---|---|---|---|---|---|---|
+| rerank_top1 | 0.905 | [0.814, 0.979] | 0.365 | 0.960 | 32/106 [0.223, 0.395] | 0/9 [0.000, 0.299] (abstain if < 0.905485, in-sample) |  |
+| rerank_mean_top3 | 0.853 | [0.721, 0.959] | 0.296 | 0.852 | 19/106 [0.118, 0.263] | 2/9 [0.063, 0.547] (abstain if < 0.524545, in-sample) |  |
+| rerank_margin_12 | 0.603 | [0.409, 0.803] | 0.061 | 0.057 | 15/106 [0.088, 0.220] | 5/9 [0.267, 0.811] (abstain if < 0.0123451, in-sample) |  |
+| rerank_pool_best | 0.905 | [0.814, 0.979] | 0.365 | 0.960 | 32/106 [0.223, 0.395] | 0/9 [0.000, 0.299] (abstain if < 0.905485, in-sample) |  |
+| fusion_top_score | 0.690 | [0.541, 0.838] | 0.009 | 0.013 | 70/106 [0.566, 0.744] | 0/9 [0.000, 0.299] (abstain if < 0.0149812, in-sample) |  |
+| query_words | 0.538 | [0.503, 0.684] | 18.000 | 20.000 | 82/106 [0.685, 0.843] | 0/9 [0.000, 0.299] (abstain if > 15.5, in-sample) |  |
+
+###   class partial-absent  (n_absent=13, n_answerable=106)
+| feature | AUROC | 95% CI (bootstrap) | absent median | answerable median | best-threshold false-abstain (Wilson) | missed-absence (Wilson) | flag |
+|---|---|---|---|---|---|---|---|
+| rerank_top1 | 0.729 | [0.622, 0.826] | 0.874 | 0.960 | 56/106 [0.434, 0.621] | 0/13 [0.000, 0.228] (abstain if < 0.969787, in-sample) |  |
+| rerank_mean_top3 | 0.581 | [0.444, 0.716] | 0.848 | 0.852 | 76/106 [0.625, 0.794] | 0/13 [0.000, 0.228] (abstain if < 0.93611, in-sample) | no better than length |
+| rerank_margin_12 | 0.626 | [0.486, 0.763] | 0.030 | 0.057 | 80/106 [0.665, 0.827] | 0/13 [0.000, 0.228] (abstain if < 0.190216, in-sample) | no better than length |
+| rerank_pool_best | 0.729 | [0.622, 0.826] | 0.874 | 0.960 | 56/106 [0.434, 0.621] | 0/13 [0.000, 0.228] (abstain if < 0.969787, in-sample) |  |
+| fusion_top_score | 0.600 | [0.507, 0.720] | 0.011 | 0.013 | 73/106 [0.595, 0.769] | 0/13 [0.000, 0.228] (abstain if < 0.0153074, in-sample) | no better than length |
+| query_words | 0.647 | [0.531, 0.757] | 18.000 | 20.000 | 66/106 [0.528, 0.709] | 0/13 [0.000, 0.228] (abstain if < 22.5, in-sample) |  |
+
+### POOLED across sets -- SECONDARY ONLY (scores not comparable across corpora/depths)  (n_absent=60, n_answerable=465)
+| feature | AUROC | 95% CI (bootstrap) | absent median | answerable median | best-threshold false-abstain (Wilson) | missed-absence (Wilson) | flag |
+|---|---|---|---|---|---|---|---|
+| rerank_top1 | 0.827 | [0.779, 0.872] | 0.923 | 0.987 | 111/465 [0.202, 0.279] | 14/60 [0.144, 0.354] (abstain if < 0.962036, in-sample) |  |
+| rerank_mean_top3 | 0.744 | [0.680, 0.803] | 0.880 | 0.962 | 190/465 [0.365, 0.454] | 11/60 [0.106, 0.299] (abstain if < 0.947827, in-sample) | no better than length |
+| rerank_margin_12 | 0.428 | [0.360, 0.498] | 0.021 | 0.016 | 364/465 [0.743, 0.818] | 3/60 [0.017, 0.137] (abstain if > 0.00276662, in-sample) | no better than length |
+| rerank_pool_best | 0.827 | [0.779, 0.872] | 0.923 | 0.987 | 111/465 [0.202, 0.279] | 14/60 [0.144, 0.354] (abstain if < 0.962036, in-sample) |  |
+| fusion_top_score | 0.579 | [0.510, 0.657] | 0.009 | 0.009 | 76/465 [0.133, 0.200] | 39/60 [0.524, 0.758] (abstain if < 0.00796852, in-sample) | no better than length |
+| query_words | 0.817 | [0.772, 0.859] | 18.500 | 28.000 | 135/465 [0.251, 0.333] | 10/60 [0.093, 0.280] (abstain if < 22.5, in-sample) |  |
+
+###   class absent  (n_absent=42, n_answerable=465)
+| feature | AUROC | 95% CI (bootstrap) | absent median | answerable median | best-threshold false-abstain (Wilson) | missed-absence (Wilson) | flag |
+|---|---|---|---|---|---|---|---|
+| rerank_top1 | 0.832 | [0.784, 0.879] | 0.928 | 0.987 | 127/465 [0.235, 0.315] | 8/42 [0.100, 0.333] (abstain if < 0.96622, in-sample) |  |
+| rerank_mean_top3 | 0.747 | [0.678, 0.815] | 0.893 | 0.962 | 211/465 [0.409, 0.499] | 6/42 [0.067, 0.278] (abstain if < 0.95525, in-sample) | no better than length |
+| rerank_margin_12 | 0.412 | [0.333, 0.491] | 0.024 | 0.016 | 330/465 [0.667, 0.749] | 5/42 [0.052, 0.250] (abstain if > 0.00530618, in-sample) | no better than length |
+| rerank_pool_best | 0.832 | [0.784, 0.879] | 0.928 | 0.987 | 127/465 [0.235, 0.315] | 8/42 [0.100, 0.333] (abstain if < 0.96622, in-sample) |  |
+| fusion_top_score | 0.608 | [0.521, 0.698] | 0.009 | 0.009 | 76/465 [0.133, 0.200] | 26/42 [0.468, 0.750] (abstain if < 0.00796852, in-sample) | no better than length |
+| query_words | 0.820 | [0.772, 0.866] | 18.000 | 28.000 | 135/465 [0.251, 0.333] | 8/42 [0.100, 0.333] (abstain if < 22.5, in-sample) |  |
+
+###   class partial-absent  (n_absent=18, n_answerable=465)
+| feature | AUROC | 95% CI (bootstrap) | absent median | answerable median | best-threshold false-abstain (Wilson) | missed-absence (Wilson) | flag |
+|---|---|---|---|---|---|---|---|
+| rerank_top1 | 0.816 | [0.714, 0.903] | 0.886 | 0.987 | 97/465 [0.174, 0.248] | 4/18 [0.090, 0.452] (abstain if < 0.955775, in-sample) |  |
+| rerank_mean_top3 | 0.738 | [0.618, 0.843] | 0.866 | 0.962 | 164/465 [0.311, 0.397] | 3/18 [0.058, 0.392] (abstain if < 0.935936, in-sample) | no better than length |
+| rerank_margin_12 | 0.465 | [0.345, 0.586] | 0.017 | 0.016 | 364/465 [0.743, 0.818] | 1/18 [0.010, 0.258] (abstain if > 0.00276662, in-sample) | no better than length |
+| rerank_pool_best | 0.816 | [0.714, 0.903] | 0.886 | 0.987 | 97/465 [0.174, 0.248] | 4/18 [0.090, 0.452] (abstain if < 0.955775, in-sample) |  |
+| fusion_top_score | 0.513 | [0.502, 0.659] | 0.010 | 0.009 | 58/465 [0.098, 0.158] | 13/18 [0.491, 0.875] (abstain if < 0.00774754, in-sample) | no better than length |
+| query_words | 0.809 | [0.743, 0.869] | 19.500 | 28.000 | 135/465 [0.251, 0.333] | 2/18 [0.031, 0.328] (abstain if < 22.5, in-sample) |  |
+
+## Verdict (pre-registered rule, per set, never pooled)
+{
+  "rule": "CANDIDATE only if, on >= 2 sets with n_absent >= 9, rerank_top1's AUROC CI lower bound > 0.70 AND AUROC beats fusion top_score AND beats question length; otherwise NO SIGNAL at this sample size",
+  "qualifying_sets": [
+    "focus",
+    "legacy",
+    "standards"
+  ],
+  "per_set": {
+    "focus": {
+      "ci_lower_gt_0.70": true,
+      "beats_fusion": true,
+      "beats_length": true,
+      "pass": true
+    },
+    "legacy": {
+      "ci_lower_gt_0.70": true,
+      "beats_fusion": true,
+      "beats_length": false,
+      "pass": false
+    },
+    "standards": {
+      "ci_lower_gt_0.70": true,
+      "beats_fusion": true,
+      "beats_length": true,
+      "pass": true
+    }
+  },
+  "passing_sets": [
+    "focus",
+    "standards"
+  ],
+  "verdict": "CANDIDATE",
+  "fewer_than_two_qualifying_sets_supplied": false,
+  "exploratory_features_pass_by_set_NOT_THE_VERDICT": {
+    "rerank_mean_top3": {
+      "focus": true,
+      "legacy": false,
+      "standards": false
+    },
+    "rerank_margin_12": {
+      "focus": false,
+      "legacy": false,
+      "standards": false
+    },
+    "rerank_pool_best": {
+      "focus": true,
+      "legacy": false,
+      "standards": true
+    }
+  },
+  "descriptive_ticket_readouts": {
+    "primary_ci_lower_gt_0.65_sets": [
+      "focus",
+      "legacy",
+      "standards"
+    ],
+    "primary_auroc_ge_0.85_sets": [
+      "focus",
+      "legacy"
+    ],
+    "primary_ci_contains_0.5_sets": []
+  }
+}

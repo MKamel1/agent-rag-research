@@ -1,0 +1,234 @@
+{
+  "/home/omar/ai-projects/research-system-rag/.claude/worktrees/EP-post-baseline/docs/eval-reports/data/2026-11-10-focus-gt/runs-rq3/20261111T111549/baseline/papers.json": {
+    "n_questions": 61,
+    "gt_items_not_in_report": 0,
+    "n_errored_rows": 0,
+    "run_valid": true,
+    "per_dimension": {
+      "equation-context": {
+        "n": 11,
+        "paper_recall": {
+          "hits": 10,
+          "n": 11
+        },
+        "paper_p1": {
+          "hits": 8,
+          "n": 11
+        },
+        "anchor_hit": {
+          "hits": 9,
+          "n": 11
+        },
+        "anchor_p1": {
+          "hits": 6,
+          "n": 11
+        },
+        "member_hit": {
+          "hits": 9,
+          "n": 11
+        },
+        "member_p1": {
+          "hits": 6,
+          "n": 11
+        }
+      },
+      "method-detail": {
+        "n": 20,
+        "paper_recall": {
+          "hits": 18,
+          "n": 20
+        },
+        "paper_p1": {
+          "hits": 18,
+          "n": 20
+        },
+        "anchor_hit": {
+          "hits": 17,
+          "n": 20
+        },
+        "anchor_p1": {
+          "hits": 16,
+          "n": 20
+        },
+        "member_hit": {
+          "hits": 17,
+          "n": 20
+        },
+        "member_p1": {
+          "hits": 16,
+          "n": 20
+        }
+      },
+      "numeric-result": {
+        "n": 16,
+        "paper_recall": {
+          "hits": 16,
+          "n": 16
+        },
+        "paper_p1": {
+          "hits": 16,
+          "n": 16
+        },
+        "anchor_hit": {
+          "hits": 16,
+          "n": 16
+        },
+        "anchor_p1": {
+          "hits": 14,
+          "n": 16
+        },
+        "member_hit": {
+          "hits": 16,
+          "n": 16
+        },
+        "member_p1": {
+          "hits": 15,
+          "n": 16
+        }
+      },
+      "paper-passage": {
+        "n": 14,
+        "paper_recall": {
+          "hits": 13,
+          "n": 14
+        },
+        "paper_p1": {
+          "hits": 12,
+          "n": 14
+        },
+        "anchor_hit": {
+          "hits": 9,
+          "n": 14
+        },
+        "anchor_p1": {
+          "hits": 8,
+          "n": 14
+        },
+        "member_hit": {
+          "hits": 10,
+          "n": 14
+        },
+        "member_p1": {
+          "hits": 8,
+          "n": 14
+        }
+      }
+    },
+    "stub": {
+      "rank1": {
+        "hits": 0,
+        "n": 61
+      },
+      "topk_slots": {
+        "hits": 0,
+        "n": 610
+      }
+    },
+    "authority_commentary_outranks_gold": {
+      "hits": 0,
+      "n": 0
+    },
+    "edition_other_outranks_gold": {
+      "hits": 0,
+      "n": 0
+    },
+    "cross_document": {
+      "all_gold_in_topk": {
+        "hits": 0,
+        "n": 0
+      },
+      "any_gold_in_topk": {
+        "hits": 0,
+        "n": 0
+      }
+    },
+    "absent_arm": {
+      "n_absent": 0,
+      "top_score_absent": {
+        "n": 0
+      },
+      "top_score_answerable": {
+        "n": 61,
+        "min": 0.006582535110061783,
+        "median": 0.009064516129032259,
+        "max": 0.015772478887232988
+      },
+      "nearest_distractor_at_rank1": {
+        "hits": 0,
+        "n": 0
+      }
+    },
+    "focus": {
+      "on_gold_answerable": {
+        "n": 38,
+        "mean_off_share_topk": 0.11842105263157894,
+        "off_at_rank1": {
+          "hits": 0,
+          "n": 38
+        },
+        "distractor_outranks_gold": {
+          "hits": 0,
+          "n": 0
+        }
+      },
+      "by_dimension": {
+        "equation-context": {
+          "n": 5,
+          "mean_off_share_topk": 0.06000000000000001,
+          "off_at_rank1": {
+            "hits": 0,
+            "n": 5
+          },
+          "distractor_outranks_gold": {
+            "hits": 0,
+            "n": 0
+          }
+        },
+        "method-detail": {
+          "n": 13,
+          "mean_off_share_topk": 0.13846153846153847,
+          "off_at_rank1": {
+            "hits": 0,
+            "n": 13
+          },
+          "distractor_outranks_gold": {
+            "hits": 0,
+            "n": 0
+          }
+        },
+        "numeric-result": {
+          "n": 10,
+          "mean_off_share_topk": 0.11000000000000001,
+          "off_at_rank1": {
+            "hits": 0,
+            "n": 10
+          },
+          "distractor_outranks_gold": {
+            "hits": 0,
+            "n": 0
+          }
+        },
+        "paper-passage": {
+          "n": 10,
+          "mean_off_share_topk": 0.13,
+          "off_at_rank1": {
+            "hits": 0,
+            "n": 10
+          },
+          "distractor_outranks_gold": {
+            "hits": 0,
+            "n": 0
+          }
+        }
+      },
+      "offtopic_legit_lookalike_outranks_gold": {
+        "hits": 0,
+        "n": 0
+      },
+      "chance_baseline_off_share": {
+        "hits": 4630,
+        "n": 12385
+      }
+    }
+  }
+}

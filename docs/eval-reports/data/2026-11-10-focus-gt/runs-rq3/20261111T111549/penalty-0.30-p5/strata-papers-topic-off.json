@@ -1,0 +1,162 @@
+{
+  "/home/omar/ai-projects/research-system-rag/.claude/worktrees/EP-post-baseline/docs/eval-reports/data/2026-11-10-focus-gt/runs-rq3/20261111T111549/penalty-0.30-p5/split/papers.paper_topic-off.json": {
+    "n_questions": 17,
+    "gt_items_not_in_report": 44,
+    "n_errored_rows": 0,
+    "run_valid": true,
+    "per_dimension": {
+      "equation-context": {
+        "n": 3,
+        "paper_recall": {
+          "hits": 3,
+          "n": 3
+        },
+        "paper_p1": {
+          "hits": 2,
+          "n": 3
+        },
+        "anchor_hit": {
+          "hits": 3,
+          "n": 3
+        },
+        "anchor_p1": {
+          "hits": 2,
+          "n": 3
+        },
+        "member_hit": {
+          "hits": 3,
+          "n": 3
+        },
+        "member_p1": {
+          "hits": 2,
+          "n": 3
+        }
+      },
+      "method-detail": {
+        "n": 6,
+        "paper_recall": {
+          "hits": 6,
+          "n": 6
+        },
+        "paper_p1": {
+          "hits": 5,
+          "n": 6
+        },
+        "anchor_hit": {
+          "hits": 6,
+          "n": 6
+        },
+        "anchor_p1": {
+          "hits": 5,
+          "n": 6
+        },
+        "member_hit": {
+          "hits": 6,
+          "n": 6
+        },
+        "member_p1": {
+          "hits": 5,
+          "n": 6
+        }
+      },
+      "numeric-result": {
+        "n": 5,
+        "paper_recall": {
+          "hits": 5,
+          "n": 5
+        },
+        "paper_p1": {
+          "hits": 3,
+          "n": 5
+        },
+        "anchor_hit": {
+          "hits": 5,
+          "n": 5
+        },
+        "anchor_p1": {
+          "hits": 3,
+          "n": 5
+        },
+        "member_hit": {
+          "hits": 5,
+          "n": 5
+        },
+        "member_p1": {
+          "hits": 3,
+          "n": 5
+        }
+      },
+      "paper-passage": {
+        "n": 3,
+        "paper_recall": {
+          "hits": 3,
+          "n": 3
+        },
+        "paper_p1": {
+          "hits": 2,
+          "n": 3
+        },
+        "anchor_hit": {
+          "hits": 2,
+          "n": 3
+        },
+        "anchor_p1": {
+          "hits": 1,
+          "n": 3
+        },
+        "member_hit": {
+          "hits": 2,
+          "n": 3
+        },
+        "member_p1": {
+          "hits": 1,
+          "n": 3
+        }
+      }
+    },
+    "stub": {
+      "rank1": {
+        "hits": 0,
+        "n": 17
+      },
+      "topk_slots": {
+        "hits": 0,
+        "n": 170
+      }
+    },
+    "authority_commentary_outranks_gold": {
+      "hits": 0,
+      "n": 0
+    },
+    "edition_other_outranks_gold": {
+      "hits": 0,
+      "n": 0
+    },
+    "cross_document": {
+      "all_gold_in_topk": {
+        "hits": 0,
+        "n": 0
+      },
+      "any_gold_in_topk": {
+        "hits": 0,
+        "n": 0
+      }
+    },
+    "absent_arm": {
+      "n_absent": 0,
+      "top_score_absent": {
+        "n": 0
+      },
+      "top_score_answerable": {
+        "n": 17,
+        "min": 0.007313626307222986,
+        "median": 0.00887148514413398,
+        "max": 0.015640273704789834
+      },
+      "nearest_distractor_at_rank1": {
+        "hits": 0,
+        "n": 0
+      }
+    }
+  }
+}

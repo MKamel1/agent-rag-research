@@ -1,0 +1,13 @@
+{
+  "set": "books",
+  "net_128_minus_32": 3,
+  "wins_losses": [
+    4,
+    1
+  ],
+  "worst_stratum_net": 1,
+  "rule_ge2_prefers": "128 (provisional)",
+  "G1_core": true,
+  "G1_ablated_same_sign": null,
+  "recommend_default_change": false
+}

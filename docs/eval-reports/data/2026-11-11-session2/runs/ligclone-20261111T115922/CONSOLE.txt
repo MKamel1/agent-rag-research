@@ -1,0 +1,50 @@
+INFO:__main__:doctor: resolved db_path=/home/omar/ai-projects/research-system-rag-data/papers.db blob_dir=/home/omar/ai-projects/research-system-rag-data/blobs collection=papers
+doctor: corpus / disk / GPU
+  collection 'papers': 412167 points vs 412167 expected: ok
+  GPU: 14495 MiB free VRAM (preflight floor 2000 MiB; embedder + reranker need ~9400 MiB resident per ARCHITECTURE.md)
+  GPU process [foreign]: pid 2565600 text-embeddings-router 8178 MiB
+  GPU process [foreign]: pid 2565801 text-embeddings-router 1426 MiB
+doctor: OK (--cpu-only) -- vector store and reference-resolution service ready; TEI/GPU checks skipped.
+MCP tools in this mode:
+  scan_corpus      available
+  scan_methods     available
+  list_methods     available
+  get_paper        available
+  get_span         available
+  get_section      available
+  get_figures      available
+  corpus_stats     available
+  semantic_search  NOT available (needs TEI/GPU)
+  search_papers    NOT available (needs TEI/GPU)
+Full operation once the GPU is free: python -m app.doctor
+collection papers: 412167 points; db /home/omar/ai-projects/research-system-rag-data/papers.db: 399676 chunks, 12390 papers -> plausible
+free disk at /home/omar/ai-projects/research-system-rag/.phase0-data/qdrant: 78 GB (abort under 20 GB)
+expected clone size on disk: about 6-8 GB (source 5.8 GB per the runbook)
+available RAM: 66 GB (abort under 16 GB: one scroll page is several GB)
+live papers points before: 412167
+resparse: VERIFY SAMPLE of 'papers': 708/2,000 (35.4%) sampled points have a stale sparse vector (scanned=2,000 would change=708 unchanged=1,292 (of changed, no stored sparse vector: 0) skipped: none
+  by kind scanned={'chunk': 1945, 'summary': 55} would change={'chunk': 708})
+[2026-11-11T11:59:24-07:00] clone papers -> papers__ligrepair_20261111 (no re-embedding)
+cloned 412167 points papers -> papers__ligrepair_20261111
+clone_seconds 741
+clone points: 412167
+resparse: VERIFY SAMPLE of 'papers__ligrepair_20261111': 655/2,000 (32.8%) sampled points have a stale sparse vector (scanned=2,000 would change=655 unchanged=1,345 (of changed, no stored sparse vector: 0) skipped: none
+  by kind scanned={'chunk': 1950, 'summary': 50} would change={'chunk': 655})
+resparse: DRY RUN on 'papers__ligrepair_20261111' (412,167 points) -- nothing written; pass --apply to write.
+  scanned=412,167 would change=138,484 unchanged=273,683 (of changed, no stored sparse vector: 0) skipped: none
+  by kind scanned={'chunk': 399676, 'summary': 12491} would change={'chunk': 138451, 'summary': 33}
+[2026-11-11T12:15:09-07:00] resparse --apply on the CLONE only
+resparse: APPLIED to 'papers__ligrepair_20261111' (412,167 points preserved). Guard: 'papers__ligrepair_20261111' matches 'papers' point-for-count (412,167). Post-check: 0/200 sampled points stale.
+  scanned=412,167 changed=138,484 unchanged=273,683 (of changed, no stored sparse vector: 0) skipped: none
+  by kind scanned={'chunk': 399676, 'summary': 12491} changed={'chunk': 138451, 'summary': 33}
+resparse_apply_seconds 273
+resparse: VERIFY SAMPLE of 'papers__ligrepair_20261111': 0/2,000 (0.0%) sampled points have a stale sparse vector (scanned=2,000 would change=0 unchanged=2,000 (of changed, no stored sparse vector: 0) skipped: none
+  by kind scanned={'chunk': 1932, 'summary': 68} would change={})
+resparse: VERIFY SAMPLE of 'papers': 652/2,000 (32.6%) sampled points have a stale sparse vector (scanned=2,000 would change=652 unchanged=1,348 (of changed, no stored sparse vector: 0) skipped: none
+  by kind scanned={'chunk': 1941, 'summary': 59} would change={'chunk': 651, 'summary': 1})
+live stale before/after: 708 of 2,000 / 652 of 2,000 (must be statistically equal; live never written)
+done -> /home/omar/ai-projects/research-system-rag/.claude/worktrees/EP-post-baseline/docs/eval-reports/data/2026-11-11-session2/runs/ligclone-20261111T115922
+Handover for run_ligature_ab.sh: collection papers__ligrepair_20261111, code revision 03cfd1854b7d37c8116d35545c3f54a309e6da40.
+CLEANUP (NOT executed by this script; run it after the A/B, once the report is written):
+  curl -fsS -X DELETE http://localhost:6333/collections/papers__ligrepair_20261111
+  curl -s -o /dev/null -w '%{http_code}\n' http://localhost:6333/collections/papers__ligrepair_20261111    # expect 404

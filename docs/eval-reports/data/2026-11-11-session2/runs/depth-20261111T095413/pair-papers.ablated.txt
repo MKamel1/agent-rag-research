@@ -1,0 +1,10 @@
+label=papers-ablated tags={} answerable=61 errored base/arm=0/0 run_valid=[True, True]
+  member   n= 61 base= 41 arm= 46 wins=6 losses=1 net=+5
+  paper    n= 61 base= 47 arm= 49 wins=4 losses=2 net=+2
+  excerpt  n= 61 base= 41 arm= 46 wins=6 losses=1 net=+5
+  anchor   n= 61 base= 41 arm= 46 wins=6 losses=1 net=+5
+  dimension=equation-context         n= 11 [gating] member:4->6(+2) paper:6->7(+1) excerpt:4->6(+2) anchor:4->6(+2)
+  dimension=method-detail            n= 20 [gating] member:12->14(+2) paper:16->15(-1) excerpt:12->14(+2) anchor:12->14(+2)
+  dimension=numeric-result           n= 16 [gating] member:15->16(+1) paper:15->16(+1) excerpt:15->16(+1) anchor:15->16(+1)
+  dimension=paper-passage            n= 14 [gating] member:10->10(+0) paper:10->11(+1) excerpt:10->10(+0) anchor:10->10(+0)
+  worst gating-stratum net (member): +0

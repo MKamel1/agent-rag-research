@@ -1,0 +1,10 @@
+collection=av_standards points=36031 payload_schema={}
+F1 kind=summary                           n=100 mean=1.0 min=1.0 short=0
+F2 kind=chunk                             n=100 mean=1.0 min=1.0 short=0
+F3 kind=summary doc_type=book             n=100 mean=1.0 min=1.0 short=0
+F4 kind=chunk doc_type=book               n=100 mean=0.8859999999999999 min=0.0 short=0
+F5 kind=chunk doc_type=paper              n=100 mean=0.998 min=0.9 short=0
+F6 kind=chunk paper_id=<own>              n=100 mean=0.9390000000000001 min=0.0 short=4
+F7 kind=summary categories any-of own     n=  4 mean=1.0 min=1.0 short=4
+F8 kind=chunk categories any-of own       n= 10 mean=1.0 min=1.0 short=0
+verdict: CQ-9 TRIGGER MET: binding filters below 0.99: ['F4', 'F6']

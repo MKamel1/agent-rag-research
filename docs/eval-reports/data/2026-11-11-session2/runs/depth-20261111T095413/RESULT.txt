@@ -1,0 +1,28 @@
+== papers (validity gate passed) ==
+{
+  "set": "papers",
+  "net_128_minus_32": 2,
+  "wins_losses": [
+    2,
+    0
+  ],
+  "worst_stratum_net": 0,
+  "rule_ge2_prefers": "128 (provisional)",
+  "G1_core": false,
+  "G1_ablated_same_sign": true,
+  "recommend_default_change": false
+}
+== books (validity gate passed) ==
+{
+  "set": "books",
+  "net_128_minus_32": 3,
+  "wins_losses": [
+    4,
+    1
+  ],
+  "worst_stratum_net": 1,
+  "rule_ge2_prefers": "128 (provisional)",
+  "G1_core": true,
+  "G1_ablated_same_sign": true,
+  "recommend_default_change": true
+}

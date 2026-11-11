@@ -1,0 +1,80 @@
+{
+  "collection": "av_standards",
+  "seed": 20261111,
+  "k": 10,
+  "falsifier": 0.99,
+  "binding": [
+    "F1",
+    "F3",
+    "F4",
+    "F6"
+  ],
+  "results": {
+    "F1": {
+      "filter": "kind=summary",
+      "n": 100,
+      "mean_overlap": 1.0,
+      "min_overlap": 1.0,
+      "share_perfect": 1.0,
+      "n_short_lists": 0
+    },
+    "F2": {
+      "filter": "kind=chunk",
+      "n": 100,
+      "mean_overlap": 1.0,
+      "min_overlap": 1.0,
+      "share_perfect": 1.0,
+      "n_short_lists": 0
+    },
+    "F3": {
+      "filter": "kind=summary doc_type=book",
+      "n": 100,
+      "mean_overlap": 1.0,
+      "min_overlap": 1.0,
+      "share_perfect": 1.0,
+      "n_short_lists": 0
+    },
+    "F4": {
+      "filter": "kind=chunk doc_type=book",
+      "n": 100,
+      "mean_overlap": 0.8859999999999999,
+      "min_overlap": 0.0,
+      "share_perfect": 0.81,
+      "n_short_lists": 0
+    },
+    "F5": {
+      "filter": "kind=chunk doc_type=paper",
+      "n": 100,
+      "mean_overlap": 0.998,
+      "min_overlap": 0.9,
+      "share_perfect": 0.98,
+      "n_short_lists": 0
+    },
+    "F6": {
+      "filter": "kind=chunk paper_id=<own>",
+      "n": 100,
+      "mean_overlap": 0.9390000000000001,
+      "min_overlap": 0.0,
+      "share_perfect": 0.92,
+      "n_short_lists": 4
+    },
+    "F7": {
+      "filter": "kind=summary categories any-of own",
+      "n": 4,
+      "mean_overlap": 1.0,
+      "min_overlap": 1.0,
+      "share_perfect": 1.0,
+      "n_short_lists": 4
+    },
+    "F8": {
+      "filter": "kind=chunk categories any-of own",
+      "n": 10,
+      "mean_overlap": 1.0,
+      "min_overlap": 1.0,
+      "share_perfect": 1.0,
+      "n_short_lists": 0
+    }
+  },
+  "verdict": "CQ-9 TRIGGER MET: binding filters below 0.99: ['F4', 'F6']",
+  "http_calls": 2956
+}

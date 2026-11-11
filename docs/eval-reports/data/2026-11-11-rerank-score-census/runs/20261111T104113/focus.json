@@ -1,0 +1,5677 @@
+{
+  "scoring_rule": "top-10 truncation; sparse_mode=fused (hybrid_dense_weight=0.5 -- zeroes a score contribution, does not remove that arm's candidates from the fused pool, see module docstring); paper-level hit = first rank r <= 10 with result.paper_id in question.gold_paper_ids; passage-level hit = first rank r <= 10 with result.anchor.block_id == question.gold_block_id; chapter-level hit = first retrieve_papers rank with paper_id in gold_paper_ids and chapter == gold_chapter_title",
+  "ground_truth_sha256_12": "c68210e06a9f",
+  "code_commit": "03cfd1854b7d37c8116d35545c3f54a309e6da40",
+  "code_tree_dirty": false,
+  "k": 10,
+  "n_questions": 49,
+  "n_errors": 0,
+  "run_valid": true,
+  "n_lock_timeouts": 0,
+  "invalid_reason": null,
+  "n_chunk_id_ambiguous_rows": 0,
+  "n_chunk_id_unresolved_ranks": 0,
+  "paper_level": {
+    "overall": {
+      "recall_at_k": 0.7755102040816326,
+      "mrr": 0.7335600907029478,
+      "n": 49
+    },
+    "by_gold_status": {
+      "note": "Partition by gold-set presence (BENCH-1): a question whose gold_paper_ids set is empty has nothing to retrieve against -- a known-absent item, a guaranteed miss -- so blending it into recall deflates the headline with items that cannot hit rather than failures to hit. 'answerable' is the false-negative measure; 'known_absent' is the false-positive arm, read through its top-score distribution because recall is undefined when no hit is possible. 'overall' is retained unpartitioned exactly as earlier reports computed it, for diff compatibility -- do not quote it as the headline for a fixture that mixes the arms.",
+      "answerable": {
+        "recall_at_k": 0.95,
+        "mrr": 0.898611111111111,
+        "n": 40
+      },
+      "known_absent": {
+        "n": 9,
+        "recall_at_k": null,
+        "mrr": null,
+        "metric_note": "recall/MRR withheld by design: an empty gold set misses by construction, so a number here would measure the fixture, not the retriever. Read this arm through n_with_top_result and the top_score distribution.",
+        "n_with_top_result": 9,
+        "top_score": {
+          "n": 9,
+          "mean": 0.00889474002279387,
+          "median": 0.007709574557355039,
+          "min": 0.006711057908125094,
+          "max": 0.014297385620915032
+        }
+      }
+    },
+    "by_question_type": {
+      "Comparison": {
+        "recall_at_k": 1.0,
+        "mrr": 1.0,
+        "n": 1
+      },
+      "Definition": {
+        "recall_at_k": 1.0,
+        "mrr": 0.9166666666666666,
+        "n": 6
+      },
+      "Fact-Lookup": {
+        "recall_at_k": 0.8125,
+        "mrr": 0.8125,
+        "n": 16
+      },
+      "Procedure": {
+        "recall_at_k": 0.5454545454545454,
+        "mrr": 0.4848484848484848,
+        "n": 11
+      },
+      "Rationale": {
+        "recall_at_k": 0.8,
+        "mrr": 0.7407407407407407,
+        "n": 15
+      }
+    },
+    "by_doc_type": {
+      "paper": {
+        "recall_at_k": 0.7755102040816326,
+        "mrr": 0.7335600907029478,
+        "n": 49
+      }
+    },
+    "title_leak": {
+      "predicate": "verbatim-substring",
+      "n_hits": 38,
+      "n_leaking": 32,
+      "fraction_of_hits": 0.8421052631578947,
+      "note": "Floor, not a measurement: the predicate matches the gold title verbatim only (casefolded, whitespace runs collapsed), so paraphrase-level leaks go uncounted and true title-driven retrieval is at least this large. Diagnostic alongside Recall/MRR -- deducted from neither."
+    }
+  },
+  "passage_level": {
+    "n_scored": 40,
+    "overall": {
+      "recall_at_k": 0.85,
+      "mrr": 0.69875,
+      "n": 40
+    },
+    "by_vision_status": {
+      "note": "Partition by vision-derivation among passage-scored questions (VARM-1): a vision_derived item's answer exists only inside a figure -- the gold chunk's own text does not contain it -- so no text retriever has anything to rank on, and blending such items into the passage headline caps it below any achievable target (60/64 = 0.9375 on waymo_gt_verified.json). 'text_answerable' is the arm the >=0.95 passage-precision target applies to; 'vision' keeps its own denominator and reports paper-level recall@k alongside its passage metrics because paper-level retrieval already finds these items -- there the gap is reading figures, not finding the page. 'overall' is retained unpartitioned exactly as earlier reports computed it, for diff compatibility; when a fixture has no vision-derived items, text_answerable's recall/MRR/n equal overall's exactly.",
+      "text_answerable": {
+        "recall_at_k": 0.85,
+        "mrr": 0.69875,
+        "n": 40,
+        "rank_1_rate": 0.6,
+        "paper_level": {
+          "recall_at_k": 0.95,
+          "mrr": 0.898611111111111,
+          "n": 40
+        }
+      },
+      "vision": {
+        "recall_at_k": null,
+        "mrr": null,
+        "n": 0,
+        "rank_1_rate": null,
+        "paper_level": {
+          "recall_at_k": null,
+          "mrr": null,
+          "n": 0
+        }
+      }
+    },
+    "by_question_type": {
+      "Comparison": {
+        "recall_at_k": 1.0,
+        "mrr": 1.0,
+        "n": 1
+      },
+      "Definition": {
+        "recall_at_k": 1.0,
+        "mrr": 0.9166666666666666,
+        "n": 6
+      },
+      "Fact-Lookup": {
+        "recall_at_k": 0.9230769230769231,
+        "mrr": 0.6858974358974359,
+        "n": 13
+      },
+      "Procedure": {
+        "recall_at_k": 0.8571428571428571,
+        "mrr": 0.6476190476190476,
+        "n": 7
+      },
+      "Rationale": {
+        "recall_at_k": 0.6923076923076923,
+        "mrr": 0.6153846153846154,
+        "n": 13
+      }
+    },
+    "by_doc_type": {
+      "paper": {
+        "recall_at_k": 0.85,
+        "mrr": 0.69875,
+        "n": 40
+      }
+    }
+  },
+  "passage_excerpt_level": {
+    "scoring_rule": "top-10 truncation; passage_excerpt hit = first rank r <= 10 whose passage_text (casefolded, whitespace collapsed) contains the question's passage_excerpt or equals the text of its gold / alternative_gold_chunk_ids chunk; questions with a null excerpt_block_id use the anchor rule (result.anchor.block_id == gold_block_id) and are listed in fallback_question_ids. Reported beside, never in place of, passage_level (anchor rule) and the protocols' member-passage metric (scripts/eval_strata_report.py).",
+    "n_scored": 40,
+    "n_fallback_anchor": 0,
+    "fallback_question_ids": [],
+    "overall": {
+      "recall_at_k": 0.85,
+      "mrr": 0.69875,
+      "n": 40
+    },
+    "by_question_type": {
+      "Comparison": {
+        "recall_at_k": 1.0,
+        "mrr": 1.0,
+        "n": 1
+      },
+      "Definition": {
+        "recall_at_k": 1.0,
+        "mrr": 0.9166666666666666,
+        "n": 6
+      },
+      "Fact-Lookup": {
+        "recall_at_k": 0.9230769230769231,
+        "mrr": 0.6858974358974359,
+        "n": 13
+      },
+      "Procedure": {
+        "recall_at_k": 0.8571428571428571,
+        "mrr": 0.6476190476190476,
+        "n": 7
+      },
+      "Rationale": {
+        "recall_at_k": 0.6923076923076923,
+        "mrr": 0.6153846153846154,
+        "n": 13
+      }
+    },
+    "by_doc_type": {
+      "paper": {
+        "recall_at_k": 0.85,
+        "mrr": 0.69875,
+        "n": 40
+      }
+    }
+  },
+  "chapter_level": {
+    "n_scored": 0,
+    "overall": {
+      "recall_at_k": null,
+      "mrr": null,
+      "n": 0
+    },
+    "by_question_type": {}
+  },
+  "questions": [
+    {
+      "question_id": "Q-FOC-001",
+      "question_type": "Fact-Lookup",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2006.11386"
+      ],
+      "gold_block_id": "2006.11386:b41",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.008208069620253165,
+      "retrieved_paper_ids": [
+        "2006.11386",
+        "2308.08020",
+        "2108.03726",
+        "2606.26411",
+        "1606.03729",
+        "2408.14604",
+        "2104.12370",
+        "2607.28289",
+        "2308.08020",
+        "2312.07610"
+      ],
+      "retrieved_block_ids": [
+        "2006.11386:b41",
+        "2308.08020:b106",
+        "2108.03726:b7",
+        "2606.26411:b89",
+        "1606.03729:b70",
+        "2408.14604:b233",
+        "2104.12370:b14",
+        "2607.28289:b110",
+        "2308.08020:b155",
+        "2312.07610:b246"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2006.11386:c7"
+        ],
+        [
+          "2308.08020:c15"
+        ],
+        [
+          "2108.03726:c2"
+        ],
+        [
+          "2606.26411:c20"
+        ],
+        [
+          "1606.03729:c12"
+        ],
+        [
+          "2408.14604:c46"
+        ],
+        [
+          "2104.12370:c3"
+        ],
+        [
+          "2607.28289:c7"
+        ],
+        [
+          "2308.08020:c28"
+        ],
+        [
+          "2312.07610:c40"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.9254997,
+          0.82275945,
+          0.7733876,
+          0.7446563,
+          0.7132319,
+          0.6854233,
+          0.62245935,
+          0.6004227,
+          0.57684,
+          0.55649
+        ],
+        "max": 0.9254997,
+        "mean_top3": 0.8405489166666666,
+        "margin_12": 0.10274025000000009,
+        "pool_best": 0.9254997,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-002",
+      "question_type": "Definition",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2605.05993"
+      ],
+      "gold_block_id": "2605.05993:b19",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.008064516129032258,
+      "retrieved_paper_ids": [
+        "2605.05993",
+        "2307.01449",
+        "2605.05993",
+        "1602.01051",
+        "2605.02050",
+        "1808.04945",
+        "2605.05993",
+        "2606.23917",
+        "2402.18496",
+        "2210.06566"
+      ],
+      "retrieved_block_ids": [
+        "2605.05993:b19",
+        "2307.01449:b10",
+        "2605.05993:b28",
+        "1602.01051:b9",
+        "2605.02050:b73",
+        "1808.04945:b26",
+        "2605.05993:b8",
+        "2606.23917:b298",
+        "2402.18496:b97",
+        "2210.06566:b96"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2605.05993:c4"
+        ],
+        [
+          "2307.01449:c3"
+        ],
+        [
+          "2605.05993:c5"
+        ],
+        [
+          "1602.01051:c3"
+        ],
+        [
+          "2605.02050:c21"
+        ],
+        [
+          "1808.04945:c5"
+        ],
+        [
+          "2605.05993:c2"
+        ],
+        [
+          "2606.23917:c57"
+        ],
+        [
+          "2402.18496:c28"
+        ],
+        [
+          "2210.06566:c29"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.9285385,
+          0.9092645,
+          0.87610537,
+          0.8465777,
+          0.7759446,
+          0.7220373,
+          0.65367985,
+          0.6307987,
+          0.6121358,
+          0.59030694
+        ],
+        "max": 0.9285385,
+        "mean_top3": 0.9046361233333333,
+        "margin_12": 0.019274000000000013,
+        "pool_best": 0.9285385,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-003",
+      "question_type": "Rationale",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2505.13422"
+      ],
+      "gold_block_id": "2505.13422:b31",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.010072548257546315,
+      "retrieved_paper_ids": [
+        "2505.13422",
+        "2505.13422",
+        "2505.13422",
+        "2505.13422",
+        "2601.12120",
+        "2505.13422",
+        "2607.17478",
+        "2208.06707",
+        "2605.02050",
+        "2006.14998"
+      ],
+      "retrieved_block_ids": [
+        "2505.13422:b124",
+        "2505.13422:b31",
+        "2505.13422:b110",
+        "2505.13422:b7",
+        "2601.12120:b119",
+        "2505.13422:b132",
+        "2607.17478:b6",
+        "2208.06707:b73",
+        "2605.02050:b73",
+        "2006.14998:b7"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2505.13422:c16"
+        ],
+        [
+          "2505.13422:c5"
+        ],
+        [
+          "2505.13422:c14"
+        ],
+        [
+          "2505.13422:c2"
+        ],
+        [
+          "2601.12120:c13"
+        ],
+        [
+          "2505.13422:c17"
+        ],
+        [
+          "2607.17478:c2"
+        ],
+        [
+          "2208.06707:c17"
+        ],
+        [
+          "2605.02050:c21"
+        ],
+        [
+          "2006.14998:c2"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 2
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 2,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.9535353,
+          0.94910634,
+          0.9043131,
+          0.89143354,
+          0.8912444,
+          0.83467656,
+          0.8156734,
+          0.6010083,
+          0.5969619,
+          0.55492276
+        ],
+        "max": 0.9535353,
+        "mean_top3": 0.93565158,
+        "margin_12": 0.004428959999999926,
+        "pool_best": 0.9535353,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-004",
+      "question_type": "Rationale",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2512.14764"
+      ],
+      "gold_block_id": "2512.14764:b62",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.007936507936507936,
+      "retrieved_paper_ids": [
+        "2512.14764",
+        "2512.14764",
+        "2604.14856",
+        "2312.07610",
+        "2405.17591",
+        "2312.07610",
+        "1904.08515",
+        "2310.16284",
+        "2403.04131",
+        "2606.23917"
+      ],
+      "retrieved_block_ids": [
+        "2512.14764:b62",
+        "2512.14764:b2",
+        "2604.14856:b323",
+        "2312.07610:b223",
+        "2405.17591:b6",
+        "2312.07610:b246",
+        "1904.08515:b20",
+        "2310.16284:b6",
+        "2403.04131:b6",
+        "2606.23917:b298"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2512.14764:c11"
+        ],
+        [
+          "2512.14764:c1"
+        ],
+        [
+          "2604.14856:c63"
+        ],
+        [
+          "2312.07610:c38"
+        ],
+        [
+          "2405.17591:c2"
+        ],
+        [
+          "2312.07610:c40"
+        ],
+        [
+          "1904.08515:c3"
+        ],
+        [
+          "2310.16284:c2"
+        ],
+        [
+          "2403.04131:c2"
+        ],
+        [
+          "2606.23917:c57"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.994089,
+          0.87191176,
+          0.8244619,
+          0.7967673,
+          0.70831347,
+          0.684475,
+          0.65599746,
+          0.60480744,
+          0.57534945,
+          0.54852235
+        ],
+        "max": 0.994089,
+        "mean_top3": 0.8968208866666667,
+        "margin_12": 0.12217723999999996,
+        "pool_best": 0.994089,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-005",
+      "question_type": "Procedure",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2512.11154"
+      ],
+      "gold_block_id": "2512.11154:b46",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.01387846961740435,
+      "retrieved_paper_ids": [
+        "2512.11154",
+        "2512.11154",
+        "2512.11154",
+        "2512.11154",
+        "local:54d6ca71dda9",
+        "2202.00436",
+        "2605.02050",
+        "2512.11154",
+        "2512.11154",
+        "2512.11154"
+      ],
+      "retrieved_block_ids": [
+        "2512.11154:b46",
+        "2512.11154:b14",
+        "2512.11154:b63",
+        "2512.11154:b37",
+        "local:54d6ca71dda9:b3581",
+        "2202.00436:b161",
+        "2605.02050:b73",
+        "2512.11154:b28",
+        "2512.11154:b117",
+        "2512.11154:b96"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2512.11154:c13"
+        ],
+        [
+          "2512.11154:c3"
+        ],
+        [
+          "2512.11154:c14"
+        ],
+        [
+          "2512.11154:c9"
+        ],
+        [
+          "local:54d6ca71dda9:c403"
+        ],
+        [
+          "2202.00436:c34"
+        ],
+        [
+          "2605.02050:c21"
+        ],
+        [
+          "2512.11154:c6"
+        ],
+        [
+          "2512.11154:c26"
+        ],
+        [
+          "2512.11154:c19"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.9783019,
+          0.96102494,
+          0.8784186,
+          0.8718026,
+          0.67640615,
+          0.6551154,
+          0.64857763,
+          0.60498255,
+          0.57320064,
+          0.5348858
+        ],
+        "max": 0.9783019,
+        "mean_top3": 0.9392484799999999,
+        "margin_12": 0.017276959999999897,
+        "pool_best": 0.9783019,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-006",
+      "question_type": "Fact-Lookup",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2503.02073"
+      ],
+      "gold_block_id": "2503.02073:b112",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": false,
+      "top_score": 0.00790932158119658,
+      "retrieved_paper_ids": [
+        "2503.02073",
+        "2503.02073",
+        "2503.02073",
+        "2503.02073",
+        "1201.6385",
+        "2503.02073",
+        "2601.13150",
+        "2203.07794",
+        "1812.06575",
+        "2503.02073"
+      ],
+      "retrieved_block_ids": [
+        "2503.02073:b95",
+        "2503.02073:b106",
+        "2503.02073:b112",
+        "2503.02073:b124",
+        "1201.6385:b30",
+        "2503.02073:b91",
+        "2601.13150:b601",
+        "2203.07794:b59",
+        "1812.06575:b172",
+        "2503.02073:b64"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2503.02073:c17"
+        ],
+        [
+          "2503.02073:c18"
+        ],
+        [
+          "2503.02073:c19"
+        ],
+        [
+          "2503.02073:c20"
+        ],
+        [
+          "1201.6385:c6"
+        ],
+        [
+          "2503.02073:c16"
+        ],
+        [
+          "2601.13150:c72"
+        ],
+        [
+          "2203.07794:c9"
+        ],
+        [
+          "1812.06575:c19"
+        ],
+        [
+          "2503.02073:c12"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 3
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 3,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.96879715,
+          0.9639839,
+          0.96189344,
+          0.9534488,
+          0.91181,
+          0.8677098,
+          0.86545163,
+          0.8530579,
+          0.80821866,
+          0.7940658
+        ],
+        "max": 0.96879715,
+        "mean_top3": 0.9648914966666666,
+        "margin_12": 0.004813249999999991,
+        "pool_best": 0.96879715,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-007",
+      "question_type": "Rationale",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2308.02005"
+      ],
+      "gold_block_id": "2308.02005:b434",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": false,
+      "top_score": 0.007908637102391456,
+      "retrieved_paper_ids": [
+        "1804.08760",
+        "1804.08760",
+        "1804.08760",
+        "2203.10002",
+        "1804.08760",
+        "1804.08760",
+        "1804.08760",
+        "1804.08760",
+        "2308.02005",
+        "2601.13150"
+      ],
+      "retrieved_block_ids": [
+        "1804.08760:b113",
+        "1804.08760:b14",
+        "1804.08760:b7",
+        "2203.10002:b212",
+        "1804.08760:b20",
+        "1804.08760:b70",
+        "1804.08760:b4",
+        "1804.08760:b53",
+        "2308.02005:b8",
+        "2601.13150:b601"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "1804.08760:c20"
+        ],
+        [
+          "1804.08760:c3"
+        ],
+        [
+          "1804.08760:c2"
+        ],
+        [
+          "2203.10002:c35"
+        ],
+        [
+          "1804.08760:c6"
+        ],
+        [
+          "1804.08760:c14"
+        ],
+        [
+          "1804.08760:c1"
+        ],
+        [
+          "1804.08760:c10"
+        ],
+        [
+          "2308.02005:c2"
+        ],
+        [
+          "2601.13150:c72"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 9
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.9785493,
+          0.95861524,
+          0.9535353,
+          0.94539934,
+          0.9375548,
+          0.91655886,
+          0.9113377,
+          0.90414387,
+          0.8906752,
+          0.8517063
+        ],
+        "max": 0.9785493,
+        "mean_top3": 0.9635666133333333,
+        "margin_12": 0.019934059999999976,
+        "pool_best": 0.9785493,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-008",
+      "question_type": "Definition",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "1507.04199"
+      ],
+      "gold_block_id": "1507.04199:b46",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.015339578454332554,
+      "retrieved_paper_ids": [
+        "1507.04199",
+        "1507.04199",
+        "1507.04199",
+        "1507.04199",
+        "1810.02761",
+        "1507.04199",
+        "1507.04199",
+        "2502.16156",
+        "2211.09099",
+        "1804.03105"
+      ],
+      "retrieved_block_ids": [
+        "1507.04199:b46",
+        "1507.04199:b11",
+        "1507.04199:b124",
+        "1507.04199:b0",
+        "1810.02761:b28",
+        "1507.04199:b62",
+        "1507.04199:b35",
+        "2502.16156:b298",
+        "2211.09099:b35",
+        "1804.03105:b6"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "1507.04199:c4"
+        ],
+        [
+          "1507.04199:c1"
+        ],
+        [
+          "1507.04199:c11"
+        ],
+        [
+          "1507.04199:c0"
+        ],
+        [
+          "1810.02761:c7"
+        ],
+        [
+          "1507.04199:c5"
+        ],
+        [
+          "1507.04199:c3"
+        ],
+        [
+          "2502.16156:c48"
+        ],
+        [
+          "2211.09099:c6"
+        ],
+        [
+          "1804.03105:c2"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.9971439,
+          0.9856076,
+          0.98141783,
+          0.9795506,
+          0.9740426,
+          0.9628831,
+          0.9539661,
+          0.94165415,
+          0.9320833,
+          0.9158089
+        ],
+        "max": 0.9971439,
+        "mean_top3": 0.9880564433333333,
+        "margin_12": 0.011536299999999944,
+        "pool_best": 0.9971439,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-009",
+      "question_type": "Fact-Lookup",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2502.01106"
+      ],
+      "gold_block_id": "2502.01106:b72",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.00819672131147541,
+      "retrieved_paper_ids": [
+        "2502.01106",
+        "2504.08301",
+        "2502.01106",
+        "2504.08301",
+        "2502.01106",
+        "2311.16984",
+        "2311.08340",
+        "2410.01159",
+        "2205.14552",
+        "2005.10879"
+      ],
+      "retrieved_block_ids": [
+        "2502.01106:b72",
+        "2504.08301:b727",
+        "2502.01106:b6",
+        "2504.08301:b711",
+        "2502.01106:b219",
+        "2311.16984:b418",
+        "2311.08340:b62",
+        "2410.01159:b185",
+        "2205.14552:b7",
+        "2005.10879:b105"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2502.01106:c9"
+        ],
+        [
+          "2504.08301:c64"
+        ],
+        [
+          "2502.01106:c2"
+        ],
+        [
+          "2504.08301:c63"
+        ],
+        [
+          "2502.01106:c28"
+        ],
+        [
+          "2311.16984:c84"
+        ],
+        [
+          "2311.08340:c9"
+        ],
+        [
+          "2410.01159:c21"
+        ],
+        [
+          "2205.14552:c2"
+        ],
+        [
+          "2005.10879:c12"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.98803884,
+          0.9793935,
+          0.97267544,
+          0.9697281,
+          0.9600627,
+          0.9486325,
+          0.94218844,
+          0.8938666,
+          0.89312315,
+          0.8873999
+        ],
+        "max": 0.98803884,
+        "mean_top3": 0.9800359266666666,
+        "margin_12": 0.008645339999999946,
+        "pool_best": 0.98803884,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-010",
+      "question_type": "Rationale",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2602.19738"
+      ],
+      "gold_block_id": "2602.19738:b49",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.00815712362398036,
+      "retrieved_paper_ids": [
+        "2602.19738",
+        "2205.14552",
+        "2005.10879",
+        "2607.02385",
+        "2408.14604",
+        "2402.18496",
+        "2312.07610",
+        "2408.14604",
+        "2312.07610",
+        "2408.14604"
+      ],
+      "retrieved_block_ids": [
+        "2602.19738:b4",
+        "2205.14552:b7",
+        "2005.10879:b105",
+        "2607.02385:b150",
+        "2408.14604:b233",
+        "2402.18496:b97",
+        "2312.07610:b223",
+        "2408.14604:b187",
+        "2312.07610:b246",
+        "2408.14604:b238"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2602.19738:c2"
+        ],
+        [
+          "2205.14552:c2"
+        ],
+        [
+          "2005.10879:c12"
+        ],
+        [
+          "2607.02385:c19"
+        ],
+        [
+          "2408.14604:c46"
+        ],
+        [
+          "2402.18496:c28"
+        ],
+        [
+          "2312.07610:c38"
+        ],
+        [
+          "2408.14604:c35"
+        ],
+        [
+          "2312.07610:c40"
+        ],
+        [
+          "2408.14604:c47"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.9789554,
+          0.9451974,
+          0.8630457,
+          0.73810315,
+          0.70740473,
+          0.5551338,
+          0.5375573,
+          0.41596606,
+          0.34698373,
+          0.25441635
+        ],
+        "max": 0.9789554,
+        "mean_top3": 0.9290661666666667,
+        "margin_12": 0.033758000000000066,
+        "pool_best": 0.9789554,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-011",
+      "question_type": "Rationale",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2004.05641"
+      ],
+      "gold_block_id": "2004.05641:b11",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": false,
+      "top_score": 0.007005948446794448,
+      "retrieved_paper_ids": [
+        "2211.09099",
+        "1906.04242",
+        "1911.09511",
+        "2108.09400",
+        "2301.08958",
+        "2301.08958",
+        "1507.04199",
+        "2412.20840",
+        "2301.08958",
+        "2408.14604"
+      ],
+      "retrieved_block_ids": [
+        "2211.09099:b11",
+        "1906.04242:b17",
+        "1911.09511:b19",
+        "2108.09400:b9",
+        "2301.08958:b15",
+        "2301.08958:b36",
+        "1507.04199:b0",
+        "2412.20840:b24",
+        "2301.08958:b369",
+        "2408.14604:b233"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2211.09099:c2"
+        ],
+        [
+          "1906.04242:c3"
+        ],
+        [
+          "1911.09511:c4"
+        ],
+        [
+          "2108.09400:c3"
+        ],
+        [
+          "2301.08958:c2"
+        ],
+        [
+          "2301.08958:c4"
+        ],
+        [
+          "1507.04199:c0"
+        ],
+        [
+          "2412.20840:c2"
+        ],
+        [
+          "2301.08958:c47"
+        ],
+        [
+          "2408.14604:c46"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": false,
+        "rank": null
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.9524858,
+          0.9324533,
+          0.9265699,
+          0.9014011,
+          0.8806945,
+          0.8494724,
+          0.8480936,
+          0.8191712,
+          0.7914989,
+          0.6920179
+        ],
+        "max": 0.9524858,
+        "mean_top3": 0.9371696666666667,
+        "margin_12": 0.02003250000000001,
+        "pool_best": 0.9524858,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-012",
+      "question_type": "Definition",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "1911.09511"
+      ],
+      "gold_block_id": "1911.09511:b173",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.012536759015632256,
+      "retrieved_paper_ids": [
+        "1911.09511",
+        "1809.03904",
+        "1811.11512",
+        "1911.09511",
+        "2108.09400",
+        "1911.09511",
+        "1911.09511",
+        "2110.08410",
+        "1809.00236",
+        "1906.04242"
+      ],
+      "retrieved_block_ids": [
+        "1911.09511:b173",
+        "1809.03904:b8",
+        "1811.11512:b7",
+        "1911.09511:b219",
+        "2108.09400:b84",
+        "1911.09511:b156",
+        "1911.09511:b188",
+        "2110.08410:b20",
+        "1809.00236:b8",
+        "1906.04242:b49"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "1911.09511:c25"
+        ],
+        [
+          "1809.03904:c2"
+        ],
+        [
+          "1811.11512:c2"
+        ],
+        [
+          "1911.09511:c29"
+        ],
+        [
+          "2108.09400:c14"
+        ],
+        [
+          "1911.09511:c23"
+        ],
+        [
+          "1911.09511:c26"
+        ],
+        [
+          "2110.08410:c5"
+        ],
+        [
+          "1809.00236:c2"
+        ],
+        [
+          "1906.04242:c5"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.9873262,
+          0.9824905,
+          0.98039377,
+          0.97826034,
+          0.9751545,
+          0.9734938,
+          0.97288233,
+          0.9727791,
+          0.9704086,
+          0.9692078
+        ],
+        "max": 0.9873262,
+        "mean_top3": 0.98340349,
+        "margin_12": 0.004835699999999998,
+        "pool_best": 0.9873262,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-013",
+      "question_type": "Rationale",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2403.05331"
+      ],
+      "gold_block_id": "2403.05331:b120",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.011222085063404781,
+      "retrieved_paper_ids": [
+        "2403.05331",
+        "1908.05097",
+        "2604.21620",
+        "2502.13762",
+        "2403.05331",
+        "2604.14856",
+        "2207.10227",
+        "2503.06536",
+        "2106.08305",
+        "2403.05331"
+      ],
+      "retrieved_block_ids": [
+        "2403.05331:b120",
+        "1908.05097:b8",
+        "2604.21620:b5",
+        "2502.13762:b6",
+        "2403.05331:b57",
+        "2604.14856:b323",
+        "2207.10227:b3",
+        "2503.06536:b4",
+        "2106.08305:b4",
+        "2403.05331:b35"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2403.05331:c16"
+        ],
+        [
+          "1908.05097:c2"
+        ],
+        [
+          "2604.21620:c2"
+        ],
+        [
+          "2502.13762:c2"
+        ],
+        [
+          "2403.05331:c9"
+        ],
+        [
+          "2604.14856:c63"
+        ],
+        [
+          "2207.10227:c1"
+        ],
+        [
+          "2503.06536:c1"
+        ],
+        [
+          "2106.08305:c2"
+        ],
+        [
+          "2403.05331:c8"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.99293363,
+          0.95531917,
+          0.9312127,
+          0.9250947,
+          0.8975158,
+          0.8508408,
+          0.8474635,
+          0.8293538,
+          0.8283842,
+          0.81669897
+        ],
+        "max": 0.99293363,
+        "mean_top3": 0.9598218333333334,
+        "margin_12": 0.037614460000000016,
+        "pool_best": 0.99293363,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-014",
+      "question_type": "Fact-Lookup",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2011.01380"
+      ],
+      "gold_block_id": "2011.01380:b125",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.011607142857142858,
+      "retrieved_paper_ids": [
+        "2011.01380",
+        "2011.01380",
+        "2011.01380",
+        "2011.01380",
+        "2011.01380",
+        "2011.01380",
+        "2011.01380",
+        "2011.01380",
+        "2011.01380",
+        "2011.01380"
+      ],
+      "retrieved_block_ids": [
+        "2011.01380:b95",
+        "2011.01380:b67",
+        "2011.01380:b85",
+        "2011.01380:b117",
+        "2011.01380:b162",
+        "2011.01380:b327",
+        "2011.01380:b408",
+        "2011.01380:b353",
+        "2011.01380:b8",
+        "2011.01380:b369"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2011.01380:c10"
+        ],
+        [
+          "2011.01380:c8"
+        ],
+        [
+          "2011.01380:c9"
+        ],
+        [
+          "2011.01380:c11"
+        ],
+        [
+          "2011.01380:c18"
+        ],
+        [
+          "2011.01380:c39"
+        ],
+        [
+          "2011.01380:c46"
+        ],
+        [
+          "2011.01380:c41"
+        ],
+        [
+          "2011.01380:c1"
+        ],
+        [
+          "2011.01380:c42"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.99477994,
+          0.9937588,
+          0.99304235,
+          0.98609793,
+          0.9845754,
+          0.98046875,
+          0.97838473,
+          0.9744834,
+          0.97134733,
+          0.9664738
+        ],
+        "max": 0.99477994,
+        "mean_top3": 0.9938603633333334,
+        "margin_12": 0.001021139999999976,
+        "pool_best": 0.99477994,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-015",
+      "question_type": "Comparison",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2412.02183"
+      ],
+      "gold_block_id": "2412.02183:b50",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.008492404339269614,
+      "retrieved_paper_ids": [
+        "2412.02183",
+        "2412.02183",
+        "2412.02183",
+        "2412.02183",
+        "2511.21675",
+        "2312.07610",
+        "2605.02050",
+        "2402.18496",
+        "2408.16933",
+        "2202.00436"
+      ],
+      "retrieved_block_ids": [
+        "2412.02183:b50",
+        "2412.02183:b6",
+        "2412.02183:b28",
+        "2412.02183:b118",
+        "2511.21675:b22",
+        "2312.07610:b223",
+        "2605.02050:b73",
+        "2402.18496:b97",
+        "2408.16933:b97",
+        "2202.00436:b161"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2412.02183:c8"
+        ],
+        [
+          "2412.02183:c2"
+        ],
+        [
+          "2412.02183:c6"
+        ],
+        [
+          "2412.02183:c12"
+        ],
+        [
+          "2511.21675:c3"
+        ],
+        [
+          "2312.07610:c38"
+        ],
+        [
+          "2605.02050:c21"
+        ],
+        [
+          "2402.18496:c28"
+        ],
+        [
+          "2408.16933:c20"
+        ],
+        [
+          "2202.00436:c34"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.98439646,
+          0.9692078,
+          0.9516839,
+          0.91949815,
+          0.84286314,
+          0.82104415,
+          0.76646847,
+          0.7483523,
+          0.6210239,
+          0.5977253
+        ],
+        "max": 0.98439646,
+        "mean_top3": 0.9684293866666667,
+        "margin_12": 0.015188660000000076,
+        "pool_best": 0.98439646,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-016",
+      "question_type": "Definition",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2506.01191"
+      ],
+      "gold_block_id": "2506.01191:b30",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.00819672131147541,
+      "retrieved_paper_ids": [
+        "2506.01191",
+        "2506.01191",
+        "2301.06219",
+        "1408.0324",
+        "2604.14856",
+        "1907.07271",
+        "2403.02467",
+        "2011.12379",
+        "1408.0324",
+        "2301.06219"
+      ],
+      "retrieved_block_ids": [
+        "2506.01191:b30",
+        "2506.01191:b41",
+        "2301.06219:b43",
+        "1408.0324:b7",
+        "2604.14856:b323",
+        "1907.07271:b198",
+        "2403.02467:b1562",
+        "2011.12379:b146",
+        "1408.0324:b4",
+        "2301.06219:b34"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2506.01191:c4"
+        ],
+        [
+          "2506.01191:c6"
+        ],
+        [
+          "2301.06219:c9"
+        ],
+        [
+          "1408.0324:c2"
+        ],
+        [
+          "2604.14856:c63"
+        ],
+        [
+          "1907.07271:c27"
+        ],
+        [
+          "2403.02467:c127"
+        ],
+        [
+          "2011.12379:c21"
+        ],
+        [
+          "1408.0324:c1"
+        ],
+        [
+          "2301.06219:c8"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.9941347,
+          0.9928231,
+          0.90481883,
+          0.8705973,
+          0.8121234,
+          0.79101497,
+          0.64187145,
+          0.6042822,
+          0.58332205,
+          0.5772571
+        ],
+        "max": 0.9941347,
+        "mean_top3": 0.9639255433333332,
+        "margin_12": 0.0013116000000000794,
+        "pool_best": 0.9941347,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-017",
+      "question_type": "Rationale",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2503.14459"
+      ],
+      "gold_block_id": "2503.14459:b5",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": false,
+      "top_score": 0.007457894996789648,
+      "retrieved_paper_ids": [
+        "2503.14459",
+        "2503.14459",
+        "2604.14856",
+        "2311.16984",
+        "1703.02645",
+        "2012.08154",
+        "2406.17422",
+        "2202.00436",
+        "local:dfe850b3281a",
+        "2210.06566"
+      ],
+      "retrieved_block_ids": [
+        "2503.14459:b5",
+        "2503.14459:b12",
+        "2604.14856:b323",
+        "2311.16984:b418",
+        "1703.02645:b17",
+        "2012.08154:b2",
+        "2406.17422:b3",
+        "2202.00436:b161",
+        "local:dfe850b3281a:b568",
+        "2210.06566:b96"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2503.14459:c2"
+        ],
+        [
+          "2503.14459:c3"
+        ],
+        [
+          "2604.14856:c63"
+        ],
+        [
+          "2311.16984:c84"
+        ],
+        [
+          "1703.02645:c4"
+        ],
+        [
+          "2012.08154:c1"
+        ],
+        [
+          "2406.17422:c1"
+        ],
+        [
+          "2202.00436:c34"
+        ],
+        [
+          "local:dfe850b3281a:c95"
+        ],
+        [
+          "2210.06566:c29"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.9822196,
+          0.9293122,
+          0.84286314,
+          0.7622471,
+          0.5463146,
+          0.5454673,
+          0.5290049,
+          0.4681523,
+          0.4589246,
+          0.3454364
+        ],
+        "max": 0.9822196,
+        "mean_top3": 0.9181316466666667,
+        "margin_12": 0.05290739999999994,
+        "pool_best": 0.9822196,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-018",
+      "question_type": "Definition",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2301.07524"
+      ],
+      "gold_block_id": "2301.07524:b205",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": false,
+      "top_score": 0.007607753952783193,
+      "retrieved_paper_ids": [
+        "2306.05511",
+        "2301.07524",
+        "1912.00306",
+        "2301.07524",
+        "2311.16984",
+        "2408.14604",
+        "2402.18496",
+        "2301.07524",
+        "2605.02050",
+        "2305.16908"
+      ],
+      "retrieved_block_ids": [
+        "2306.05511:b65",
+        "2301.07524:b205",
+        "1912.00306:b7",
+        "2301.07524:b209",
+        "2311.16984:b418",
+        "2408.14604:b233",
+        "2402.18496:b97",
+        "2301.07524:b198",
+        "2605.02050:b73",
+        "2305.16908:b44"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2306.05511:c9"
+        ],
+        [
+          "2301.07524:c29"
+        ],
+        [
+          "1912.00306:c2"
+        ],
+        [
+          "2301.07524:c30"
+        ],
+        [
+          "2311.16984:c84"
+        ],
+        [
+          "2408.14604:c46"
+        ],
+        [
+          "2402.18496:c28"
+        ],
+        [
+          "2301.07524:c28"
+        ],
+        [
+          "2605.02050:c21"
+        ],
+        [
+          "2305.16908:c7"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 2
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 2
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 2,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.9608783,
+          0.94994867,
+          0.82460326,
+          0.78116375,
+          0.74186105,
+          0.7373473,
+          0.73545164,
+          0.7192851,
+          0.6353356,
+          0.5656586
+        ],
+        "max": 0.9608783,
+        "mean_top3": 0.9118100766666667,
+        "margin_12": 0.010929629999999912,
+        "pool_best": 0.9608783,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-019",
+      "question_type": "Rationale",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2208.08399"
+      ],
+      "gold_block_id": "2208.08399:b81",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.011929595827900912,
+      "retrieved_paper_ids": [
+        "2208.08399",
+        "2208.08399",
+        "2606.26411",
+        "2208.08399",
+        "2208.08399",
+        "2208.08399",
+        "2208.08399",
+        "2208.08399",
+        "2208.08399",
+        "2208.08399"
+      ],
+      "retrieved_block_ids": [
+        "2208.08399:b6",
+        "2208.08399:b81",
+        "2606.26411:b89",
+        "2208.08399:b4",
+        "2208.08399:b71",
+        "2208.08399:b95",
+        "2208.08399:b16",
+        "2208.08399:b35",
+        "2208.08399:b111",
+        "2208.08399:b118"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2208.08399:c2"
+        ],
+        [
+          "2208.08399:c15"
+        ],
+        [
+          "2606.26411:c20"
+        ],
+        [
+          "2208.08399:c1"
+        ],
+        [
+          "2208.08399:c12"
+        ],
+        [
+          "2208.08399:c16"
+        ],
+        [
+          "2208.08399:c3"
+        ],
+        [
+          "2208.08399:c8"
+        ],
+        [
+          "2208.08399:c21"
+        ],
+        [
+          "2208.08399:c22"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 2
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 2,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.95540243,
+          0.92107415,
+          0.8631611,
+          0.85573065,
+          0.8356178,
+          0.8247444,
+          0.8217605,
+          0.6144518,
+          0.59372705,
+          0.5912513
+        ],
+        "max": 0.95540243,
+        "mean_top3": 0.91321256,
+        "margin_12": 0.03432827999999999,
+        "pool_best": 0.95540243,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-020",
+      "question_type": "Procedure",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2605.07280"
+      ],
+      "gold_block_id": "2605.07280:b18",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": false,
+      "top_score": 0.008059217730279006,
+      "retrieved_paper_ids": [
+        "2508.15928",
+        "2406.16708",
+        "2601.05647",
+        "2601.05647",
+        "2406.16708",
+        "2505.19355",
+        "2604.14856",
+        "2305.11561",
+        "2406.17422",
+        "2109.12128"
+      ],
+      "retrieved_block_ids": [
+        "2508.15928:b10",
+        "2406.16708:b7",
+        "2601.05647:b40",
+        "2601.05647:b3",
+        "2406.16708:b4",
+        "2505.19355:b115",
+        "2604.14856:b323",
+        "2305.11561:b3",
+        "2406.17422:b3",
+        "2109.12128:b15"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2508.15928:c2"
+        ],
+        [
+          "2406.16708:c2"
+        ],
+        [
+          "2601.05647:c11"
+        ],
+        [
+          "2601.05647:c1"
+        ],
+        [
+          "2406.16708:c1"
+        ],
+        [
+          "2505.19355:c21"
+        ],
+        [
+          "2604.14856:c63"
+        ],
+        [
+          "2305.11561:c1"
+        ],
+        [
+          "2406.17422:c1"
+        ],
+        [
+          "2109.12128:c3"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": false,
+        "rank": null
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.98527133,
+          0.9635062,
+          0.9590777,
+          0.921499,
+          0.90174776,
+          0.8655654,
+          0.856092,
+          0.7778066,
+          0.74853617,
+          0.6239499
+        ],
+        "max": 0.98527133,
+        "mean_top3": 0.9692850766666666,
+        "margin_12": 0.02176513000000002,
+        "pool_best": 0.98527133,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-021",
+      "question_type": "Procedure",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2207.04208"
+      ],
+      "gold_block_id": "2207.04208:b90",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.00830329358844009,
+      "retrieved_paper_ids": [
+        "2207.04208",
+        "2505.19355",
+        "2604.14856",
+        "2602.07915",
+        "2207.04208",
+        "2606.23917",
+        "2606.13607",
+        "2106.10141",
+        "2402.18496",
+        "2202.00436"
+      ],
+      "retrieved_block_ids": [
+        "2207.04208:b90",
+        "2505.19355:b115",
+        "2604.14856:b323",
+        "2602.07915:b180",
+        "2207.04208:b8",
+        "2606.23917:b298",
+        "2606.13607:b183",
+        "2106.10141:b148",
+        "2402.18496:b97",
+        "2202.00436:b161"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2207.04208:c17"
+        ],
+        [
+          "2505.19355:c21"
+        ],
+        [
+          "2604.14856:c63"
+        ],
+        [
+          "2602.07915:c47"
+        ],
+        [
+          "2207.04208:c1"
+        ],
+        [
+          "2606.23917:c57"
+        ],
+        [
+          "2606.13607:c54"
+        ],
+        [
+          "2106.10141:c27"
+        ],
+        [
+          "2402.18496:c28"
+        ],
+        [
+          "2202.00436:c34"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.9868787,
+          0.88059187,
+          0.8626991,
+          0.6797104,
+          0.63000226,
+          0.60241246,
+          0.50704527,
+          0.41294438,
+          0.35745537,
+          0.35342818
+        ],
+        "max": 0.9868787,
+        "mean_top3": 0.9100565566666666,
+        "margin_12": 0.10628682999999994,
+        "pool_best": 0.9868787,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-022",
+      "question_type": "Rationale",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2604.23534"
+      ],
+      "gold_block_id": "2604.23534:b151",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": false,
+      "top_score": 0.007352941176470588,
+      "retrieved_paper_ids": [
+        "2604.23534",
+        "1712.00642",
+        "1909.09611",
+        "2307.02667",
+        "2404.09126",
+        "1806.00928",
+        "2606.13607",
+        "2509.17960",
+        "2604.23534",
+        "0705.1270"
+      ],
+      "retrieved_block_ids": [
+        "2604.23534:b151",
+        "1712.00642:b0",
+        "1909.09611:b9",
+        "2307.02667:b10",
+        "2404.09126:b0",
+        "1806.00928:b9",
+        "2606.13607:b183",
+        "2509.17960:b4",
+        "2604.23534:b5",
+        "0705.1270:b10"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2604.23534:c25"
+        ],
+        [
+          "1712.00642:c0"
+        ],
+        [
+          "1909.09611:c2"
+        ],
+        [
+          "2307.02667:c3"
+        ],
+        [
+          "2404.09126:c0"
+        ],
+        [
+          "1806.00928:c2"
+        ],
+        [
+          "2606.13607:c54"
+        ],
+        [
+          "2509.17960:c2"
+        ],
+        [
+          "2604.23534:c2"
+        ],
+        [
+          "0705.1270:c1"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.98123896,
+          0.9351099,
+          0.93108755,
+          0.91212356,
+          0.89606965,
+          0.88778967,
+          0.8076124,
+          0.8053262,
+          0.7823301,
+          0.70304
+        ],
+        "max": 0.98123896,
+        "mean_top3": 0.94914547,
+        "margin_12": 0.046129059999999944,
+        "pool_best": 0.98123896,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-023",
+      "question_type": "Fact-Lookup",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2506.16671"
+      ],
+      "gold_block_id": "2506.16671:b61",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.011846356347971761,
+      "retrieved_paper_ids": [
+        "2506.16671",
+        "2506.16671",
+        "2506.16671",
+        "2506.16671",
+        "2506.16671",
+        "2506.16671",
+        "2506.16671",
+        "2506.16671",
+        "2506.16671",
+        "2506.16671"
+      ],
+      "retrieved_block_ids": [
+        "2506.16671:b61",
+        "2506.16671:b9",
+        "2506.16671:b49",
+        "2506.16671:b135",
+        "2506.16671:b41",
+        "2506.16671:b82",
+        "2506.16671:b127",
+        "2506.16671:b114",
+        "2506.16671:b73",
+        "2506.16671:b118"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2506.16671:c12"
+        ],
+        [
+          "2506.16671:c2"
+        ],
+        [
+          "2506.16671:c10"
+        ],
+        [
+          "2506.16671:c25"
+        ],
+        [
+          "2506.16671:c8"
+        ],
+        [
+          "2506.16671:c17"
+        ],
+        [
+          "2506.16671:c24"
+        ],
+        [
+          "2506.16671:c21"
+        ],
+        [
+          "2506.16671:c15"
+        ],
+        [
+          "2506.16671:c22"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.9972638,
+          0.99632156,
+          0.9927672,
+          0.98799264,
+          0.98498523,
+          0.98439646,
+          0.9639839,
+          0.9360516,
+          0.9324533,
+          0.9309621
+        ],
+        "max": 0.9972638,
+        "mean_top3": 0.9954508533333334,
+        "margin_12": 0.0009422399999999831,
+        "pool_best": 0.9972638,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-024",
+      "question_type": "Procedure",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2203.14831"
+      ],
+      "gold_block_id": "2203.14831:b159",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.009903024326101248,
+      "retrieved_paper_ids": [
+        "2401.07152",
+        "2206.01779",
+        "2203.14831",
+        "2401.07152",
+        "2203.11576",
+        "2401.07152",
+        "2408.14604",
+        "2606.23917",
+        "2606.23857",
+        "2001.06118"
+      ],
+      "retrieved_block_ids": [
+        "2401.07152:b5",
+        "2206.01779:b7",
+        "2203.14831:b159",
+        "2401.07152:b3",
+        "2203.11576:b6",
+        "2401.07152:b118",
+        "2408.14604:b233",
+        "2606.23917:b298",
+        "2606.23857:b59",
+        "2001.06118:b239"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2401.07152:c2"
+        ],
+        [
+          "2206.01779:c2"
+        ],
+        [
+          "2203.14831:c13"
+        ],
+        [
+          "2401.07152:c1"
+        ],
+        [
+          "2203.11576:c2"
+        ],
+        [
+          "2401.07152:c11"
+        ],
+        [
+          "2408.14604:c46"
+        ],
+        [
+          "2606.23917:c57"
+        ],
+        [
+          "2606.23857:c13"
+        ],
+        [
+          "2001.06118:c26"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 3
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 3
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 3,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.87396973,
+          0.85729086,
+          0.8217605,
+          0.65401137,
+          0.6349961,
+          0.62977463,
+          0.5572129,
+          0.5480084,
+          0.48505086,
+          0.47935134
+        ],
+        "max": 0.87396973,
+        "mean_top3": 0.85100703,
+        "margin_12": 0.016678870000000012,
+        "pool_best": 0.87396973,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-025",
+      "question_type": "Rationale",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "1912.09104"
+      ],
+      "gold_block_id": "1912.09104:b139",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.012544547398431933,
+      "retrieved_paper_ids": [
+        "1912.09104",
+        "1307.5806",
+        "2404.04707",
+        "2404.16166",
+        "2511.12640",
+        "2202.03413",
+        "2404.04707",
+        "2204.02657",
+        "2012.00370",
+        "2204.02657"
+      ],
+      "retrieved_block_ids": [
+        "1912.09104:b139",
+        "1307.5806:b209",
+        "2404.04707:b123",
+        "2404.16166:b121",
+        "2511.12640:b8",
+        "2202.03413:b5",
+        "2404.04707:b174",
+        "2204.02657:b7",
+        "2012.00370:b310",
+        "2204.02657:b271"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "1912.09104:c12"
+        ],
+        [
+          "1307.5806:c12"
+        ],
+        [
+          "2404.04707:c24"
+        ],
+        [
+          "2404.16166:c29"
+        ],
+        [
+          "2511.12640:c2"
+        ],
+        [
+          "2202.03413:c1"
+        ],
+        [
+          "2404.04707:c29"
+        ],
+        [
+          "2204.02657:c2"
+        ],
+        [
+          "2012.00370:c44"
+        ],
+        [
+          "2204.02657:c25"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.9641868,
+          0.82587075,
+          0.7520126,
+          0.74890363,
+          0.7433543,
+          0.6169935,
+          0.56241685,
+          0.5046233,
+          0.47894004,
+          0.35353976
+        ],
+        "max": 0.9641868,
+        "mean_top3": 0.8473567166666666,
+        "margin_12": 0.13831605000000002,
+        "pool_best": 0.9641868,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-026",
+      "question_type": "Definition",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2607.19908"
+      ],
+      "gold_block_id": "2607.19908:b10",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.010041739761659911,
+      "retrieved_paper_ids": [
+        "2607.19908",
+        "2607.19908",
+        "2607.19908",
+        "2607.19908",
+        "2607.19908",
+        "2607.19908",
+        "2607.19908",
+        "2606.26411",
+        "2402.18496",
+        "2607.19908"
+      ],
+      "retrieved_block_ids": [
+        "2607.19908:b10",
+        "2607.19908:b78",
+        "2607.19908:b179",
+        "2607.19908:b19",
+        "2607.19908:b2",
+        "2607.19908:b16",
+        "2607.19908:b162",
+        "2606.26411:b89",
+        "2402.18496:b97",
+        "2607.19908:b81"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2607.19908:c2"
+        ],
+        [
+          "2607.19908:c18"
+        ],
+        [
+          "2607.19908:c35"
+        ],
+        [
+          "2607.19908:c4"
+        ],
+        [
+          "2607.19908:c1"
+        ],
+        [
+          "2607.19908:c3"
+        ],
+        [
+          "2607.19908:c31"
+        ],
+        [
+          "2606.26411:c20"
+        ],
+        [
+          "2402.18496:c28"
+        ],
+        [
+          "2607.19908:c19"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.99178034,
+          0.90414387,
+          0.8933094,
+          0.87212974,
+          0.84234506,
+          0.78464925,
+          0.68783975,
+          0.6494675,
+          0.5019989,
+          0.49031952
+        ],
+        "max": 0.99178034,
+        "mean_top3": 0.9297445366666667,
+        "margin_12": 0.08763647000000008,
+        "pool_best": 0.99178034,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-027",
+      "question_type": "Procedure",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2607.11740"
+      ],
+      "gold_block_id": "2607.11740:b13",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.008204729932859004,
+      "retrieved_paper_ids": [
+        "2607.11740",
+        "2607.11740",
+        "2607.11740",
+        "2607.11740",
+        "2607.11740",
+        "2607.11740",
+        "2607.11740",
+        "2607.11740",
+        "2607.11740",
+        "2607.11740"
+      ],
+      "retrieved_block_ids": [
+        "2607.11740:b0",
+        "2607.11740:b151",
+        "2607.11740:b68",
+        "2607.11740:b59",
+        "2607.11740:b13",
+        "2607.11740:b113",
+        "2607.11740:b97",
+        "2607.11740:b119",
+        "2607.11740:b57",
+        "2607.11740:b44"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2607.11740:c0"
+        ],
+        [
+          "2607.11740:c24"
+        ],
+        [
+          "2607.11740:c10"
+        ],
+        [
+          "2607.11740:c9"
+        ],
+        [
+          "2607.11740:c3"
+        ],
+        [
+          "2607.11740:c15"
+        ],
+        [
+          "2607.11740:c12"
+        ],
+        [
+          "2607.11740:c16"
+        ],
+        [
+          "2607.11740:c8"
+        ],
+        [
+          "2607.11740:c7"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 5
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 5,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.966347,
+          0.9566342,
+          0.9492946,
+          0.93403506,
+          0.915356,
+          0.9005298,
+          0.882022,
+          0.8694931,
+          0.86385167,
+          0.82460326
+        ],
+        "max": 0.966347,
+        "mean_top3": 0.9574252666666666,
+        "margin_12": 0.009712799999999966,
+        "pool_best": 0.966347,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-028",
+      "question_type": "Fact-Lookup",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2606.17631"
+      ],
+      "gold_block_id": "2606.17631:b4",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.016133229247983348,
+      "retrieved_paper_ids": [
+        "2606.17631",
+        "2606.17631",
+        "2606.17631",
+        "2606.17631",
+        "2606.17631",
+        "2606.17631",
+        "2606.17631",
+        "2606.17631",
+        "2606.17631",
+        "2606.17631"
+      ],
+      "retrieved_block_ids": [
+        "2606.17631:b6",
+        "2606.17631:b4",
+        "2606.17631:b133",
+        "2606.17631:b41",
+        "2606.17631:b48",
+        "2606.17631:b84",
+        "2606.17631:b62",
+        "2606.17631:b107",
+        "2606.17631:b20",
+        "2606.17631:b116"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2606.17631:c3"
+        ],
+        [
+          "2606.17631:c2"
+        ],
+        [
+          "2606.17631:c20"
+        ],
+        [
+          "2606.17631:c6"
+        ],
+        [
+          "2606.17631:c7"
+        ],
+        [
+          "2606.17631:c13"
+        ],
+        [
+          "2606.17631:c10"
+        ],
+        [
+          "2606.17631:c17"
+        ],
+        [
+          "2606.17631:c4"
+        ],
+        [
+          "2606.17631:c18"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 2
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 2,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.9978002,
+          0.99698395,
+          0.9962638,
+          0.99029154,
+          0.9826909,
+          0.98166555,
+          0.97246706,
+          0.968441,
+          0.95783347,
+          0.9451974
+        ],
+        "max": 0.9978002,
+        "mean_top3": 0.9970159833333333,
+        "margin_12": 0.0008162500000000739,
+        "pool_best": 0.9978002,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-029",
+      "question_type": "Fact-Lookup",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2409.15670"
+      ],
+      "gold_block_id": "2409.15670:b32",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.007764074593412903,
+      "retrieved_paper_ids": [
+        "2409.15670",
+        "2402.18496",
+        "2606.13607",
+        "2210.06566",
+        "2012.00370",
+        "2606.23917",
+        "2106.10141",
+        "2209.15266",
+        "2409.15670",
+        "2409.15670"
+      ],
+      "retrieved_block_ids": [
+        "2409.15670:b32",
+        "2402.18496:b97",
+        "2606.13607:b183",
+        "2210.06566:b96",
+        "2012.00370:b310",
+        "2606.23917:b298",
+        "2106.10141:b148",
+        "2209.15266:b5",
+        "2409.15670:b39",
+        "2409.15670:b95"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2409.15670:c10"
+        ],
+        [
+          "2402.18496:c28"
+        ],
+        [
+          "2606.13607:c54"
+        ],
+        [
+          "2210.06566:c29"
+        ],
+        [
+          "2012.00370:c44"
+        ],
+        [
+          "2606.23917:c57"
+        ],
+        [
+          "2106.10141:c27"
+        ],
+        [
+          "2209.15266:c2"
+        ],
+        [
+          "2409.15670:c13"
+        ],
+        [
+          "2409.15670:c23"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.7320175,
+          0.69575167,
+          0.64220816,
+          0.43398145,
+          0.40433103,
+          0.3765085,
+          0.37011155,
+          0.35220176,
+          0.34444344,
+          0.23178805
+        ],
+        "max": 0.7320175,
+        "mean_top3": 0.6899924433333333,
+        "margin_12": 0.03626582999999994,
+        "pool_best": 0.7320175,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-030",
+      "question_type": "Rationale",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2606.22691"
+      ],
+      "gold_block_id": "2606.22691:b91",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.008814005262092695,
+      "retrieved_paper_ids": [
+        "2606.22691",
+        "2606.22691",
+        "2606.22691",
+        "2606.22691",
+        "0912.1774",
+        "2606.13607",
+        "2606.22691",
+        "1003.3697",
+        "2607.05639",
+        "2311.16984"
+      ],
+      "retrieved_block_ids": [
+        "2606.22691:b91",
+        "2606.22691:b9",
+        "2606.22691:b131",
+        "2606.22691:b17",
+        "0912.1774:b7",
+        "2606.13607:b183",
+        "2606.22691:b65",
+        "1003.3697:b93",
+        "2607.05639:b330",
+        "2311.16984:b418"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2606.22691:c7"
+        ],
+        [
+          "2606.22691:c1"
+        ],
+        [
+          "2606.22691:c11"
+        ],
+        [
+          "2606.22691:c2"
+        ],
+        [
+          "0912.1774:c1"
+        ],
+        [
+          "2606.13607:c54"
+        ],
+        [
+          "2606.22691:c4"
+        ],
+        [
+          "1003.3697:c10"
+        ],
+        [
+          "2607.05639:c31"
+        ],
+        [
+          "2311.16984:c84"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.9696707,
+          0.96203625,
+          0.91117966,
+          0.8698252,
+          0.85776806,
+          0.8556101,
+          0.81479084,
+          0.74761593,
+          0.71173155,
+          0.66345096
+        ],
+        "max": 0.9696707,
+        "mean_top3": 0.94762887,
+        "margin_12": 0.007634449999999959,
+        "pool_best": 0.9696707,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-031",
+      "question_type": "Procedure",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2606.11479"
+      ],
+      "gold_block_id": "2606.11479:b24",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.00918040293040293,
+      "retrieved_paper_ids": [
+        "2606.11479",
+        "2606.11479",
+        "2606.11479",
+        "2606.11479",
+        "2606.11479",
+        "2405.01078",
+        "2606.11479",
+        "2606.11479",
+        "2606.11479",
+        "2210.06566"
+      ],
+      "retrieved_block_ids": [
+        "2606.11479:b24",
+        "2606.11479:b79",
+        "2606.11479:b44",
+        "2606.11479:b3",
+        "2606.11479:b10",
+        "2405.01078:b75",
+        "2606.11479:b30",
+        "2606.11479:b18",
+        "2606.11479:b71",
+        "2210.06566:b96"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2606.11479:c6"
+        ],
+        [
+          "2606.11479:c17"
+        ],
+        [
+          "2606.11479:c10"
+        ],
+        [
+          "2606.11479:c1"
+        ],
+        [
+          "2606.11479:c2"
+        ],
+        [
+          "2405.01078:c10"
+        ],
+        [
+          "2606.11479:c7"
+        ],
+        [
+          "2606.11479:c4"
+        ],
+        [
+          "2606.11479:c16"
+        ],
+        [
+          "2210.06566:c29"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.9787533,
+          0.8806945,
+          0.8669231,
+          0.8224745,
+          0.7713272,
+          0.6771539,
+          0.6619229,
+          0.6547844,
+          0.51176995,
+          0.45456293
+        ],
+        "max": 0.9787533,
+        "mean_top3": 0.9087903,
+        "margin_12": 0.0980588,
+        "pool_best": 0.9787533,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-032",
+      "question_type": "Fact-Lookup",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "1602.02754"
+      ],
+      "gold_block_id": "1602.02754:b26",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.0078125,
+      "retrieved_paper_ids": [
+        "1602.02754",
+        "1602.02754",
+        "1602.02754",
+        "1602.02754",
+        "1602.02754",
+        "1602.02754",
+        "2606.26411",
+        "1602.02754",
+        "1602.02754",
+        "1602.02754"
+      ],
+      "retrieved_block_ids": [
+        "1602.02754:b26",
+        "1602.02754:b13",
+        "1602.02754:b225",
+        "1602.02754:b234",
+        "1602.02754:b8",
+        "1602.02754:b67",
+        "2606.26411:b89",
+        "1602.02754:b70",
+        "1602.02754:b111",
+        "1602.02754:b209"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "1602.02754:c4"
+        ],
+        [
+          "1602.02754:c2"
+        ],
+        [
+          "1602.02754:c23"
+        ],
+        [
+          "1602.02754:c24"
+        ],
+        [
+          "1602.02754:c1"
+        ],
+        [
+          "1602.02754:c6"
+        ],
+        [
+          "2606.26411:c20"
+        ],
+        [
+          "1602.02754:c7"
+        ],
+        [
+          "1602.02754:c11"
+        ],
+        [
+          "1602.02754:c21"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.99664956,
+          0.95775455,
+          0.9520419,
+          0.93403506,
+          0.9223426,
+          0.888372,
+          0.8702668,
+          0.86281466,
+          0.84632385,
+          0.83575183
+        ],
+        "max": 0.99664956,
+        "mean_top3": 0.9688153366666666,
+        "margin_12": 0.03889501000000006,
+        "pool_best": 0.99664956,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-033",
+      "question_type": "Fact-Lookup",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2606.12732"
+      ],
+      "gold_block_id": "2606.12732:b27",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.009889333647280433,
+      "retrieved_paper_ids": [
+        "2606.12732",
+        "2606.12732",
+        "1208.4360",
+        "2606.12732",
+        "1007.5029",
+        "2606.12732",
+        "2607.07068",
+        "2606.12732",
+        "2606.12732",
+        "1110.1987"
+      ],
+      "retrieved_block_ids": [
+        "2606.12732:b36",
+        "2606.12732:b21",
+        "1208.4360:b55",
+        "2606.12732:b27",
+        "1007.5029:b121",
+        "2606.12732:b13",
+        "2607.07068:b131",
+        "2606.12732:b10",
+        "2606.12732:b40",
+        "1110.1987:b66"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2606.12732:c6"
+        ],
+        [
+          "2606.12732:c3"
+        ],
+        [
+          "1208.4360:c12"
+        ],
+        [
+          "2606.12732:c4"
+        ],
+        [
+          "1007.5029:c22"
+        ],
+        [
+          "2606.12732:c2"
+        ],
+        [
+          "2607.07068:c32"
+        ],
+        [
+          "2606.12732:c1"
+        ],
+        [
+          "2606.12732:c7"
+        ],
+        [
+          "1110.1987:c12"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 4
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 4,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.7923036,
+          0.79036856,
+          0.7606507,
+          0.6293191,
+          0.57648236,
+          0.5034427,
+          0.40344933,
+          0.3213535,
+          0.31997076,
+          0.24184732
+        ],
+        "max": 0.7923036,
+        "mean_top3": 0.7811076199999999,
+        "margin_12": 0.001935039999999999,
+        "pool_best": 0.7923036,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-034",
+      "question_type": "Procedure",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2606.09156"
+      ],
+      "gold_block_id": "2606.09156:b3",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.008997334123222749,
+      "retrieved_paper_ids": [
+        "2606.09156",
+        "2606.09156",
+        "2606.09156",
+        "2606.09156",
+        "2606.09156",
+        "2606.14943",
+        "2407.11336",
+        "2606.09156",
+        "2607.09892",
+        "2407.11336"
+      ],
+      "retrieved_block_ids": [
+        "2606.09156:b3",
+        "2606.09156:b5",
+        "2606.09156:b25",
+        "2606.09156:b62",
+        "2606.09156:b13",
+        "2606.14943:b19",
+        "2407.11336:b390",
+        "2606.09156:b21",
+        "2607.09892:b6",
+        "2407.11336:b397"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2606.09156:c1"
+        ],
+        [
+          "2606.09156:c2"
+        ],
+        [
+          "2606.09156:c9"
+        ],
+        [
+          "2606.09156:c16"
+        ],
+        [
+          "2606.09156:c4"
+        ],
+        [
+          "2606.14943:c4"
+        ],
+        [
+          "2407.11336:c69"
+        ],
+        [
+          "2606.09156:c7"
+        ],
+        [
+          "2607.09892:c1"
+        ],
+        [
+          "2407.11336:c71"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.9969722,
+          0.99611557,
+          0.98378503,
+          0.98190993,
+          0.88602656,
+          0.876423,
+          0.25571522,
+          0.24346252,
+          0.12527926,
+          0.12326006
+        ],
+        "max": 0.9969722,
+        "mean_top3": 0.9922909333333333,
+        "margin_12": 0.0008566300000000249,
+        "pool_best": 0.9969722,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-035",
+      "question_type": "Rationale",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2606.22349"
+      ],
+      "gold_block_id": "2606.22349:b74",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.014021421616358325,
+      "retrieved_paper_ids": [
+        "2606.22349",
+        "2606.22349",
+        "2606.22349",
+        "2606.22349",
+        "2606.22349",
+        "2606.22349",
+        "2606.22349",
+        "2606.11744",
+        "2606.22349",
+        "2606.22349"
+      ],
+      "retrieved_block_ids": [
+        "2606.22349:b31",
+        "2606.22349:b7",
+        "2606.22349:b5",
+        "2606.22349:b16",
+        "2606.22349:b48",
+        "2606.22349:b21",
+        "2606.22349:b46",
+        "2606.11744:b6",
+        "2606.22349:b120",
+        "2606.22349:b113"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2606.22349:c5"
+        ],
+        [
+          "2606.22349:c2"
+        ],
+        [
+          "2606.22349:c1"
+        ],
+        [
+          "2606.22349:c3"
+        ],
+        [
+          "2606.22349:c7"
+        ],
+        [
+          "2606.22349:c4"
+        ],
+        [
+          "2606.22349:c6"
+        ],
+        [
+          "2606.11744:c2"
+        ],
+        [
+          "2606.22349:c28"
+        ],
+        [
+          "2606.22349:c24"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.961678,
+          0.9500415,
+          0.9474783,
+          0.93306583,
+          0.8490974,
+          0.8230441,
+          0.79438496,
+          0.7031419,
+          0.5989575,
+          0.5371931
+        ],
+        "max": 0.961678,
+        "mean_top3": 0.9530659333333333,
+        "margin_12": 0.01163650000000005,
+        "pool_best": 0.961678,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-036",
+      "question_type": "Fact-Lookup",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2606.23353"
+      ],
+      "gold_block_id": "2606.23353:b38",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.014718614718614718,
+      "retrieved_paper_ids": [
+        "2606.23353",
+        "2606.23353",
+        "2606.23353",
+        "2606.23353",
+        "2606.23353",
+        "2606.23353",
+        "2606.23353",
+        "2606.23353",
+        "2606.13607",
+        "2606.23353"
+      ],
+      "retrieved_block_ids": [
+        "2606.23353:b8",
+        "2606.23353:b60",
+        "2606.23353:b38",
+        "2606.23353:b22",
+        "2606.23353:b0",
+        "2606.23353:b66",
+        "2606.23353:b55",
+        "2606.23353:b24",
+        "2606.13607:b183",
+        "2606.23353:b46"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2606.23353:c1"
+        ],
+        [
+          "2606.23353:c10"
+        ],
+        [
+          "2606.23353:c5"
+        ],
+        [
+          "2606.23353:c2"
+        ],
+        [
+          "2606.23353:c0"
+        ],
+        [
+          "2606.23353:c12"
+        ],
+        [
+          "2606.23353:c9"
+        ],
+        [
+          "2606.23353:c4"
+        ],
+        [
+          "2606.13607:c54"
+        ],
+        [
+          "2606.23353:c6"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 3
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 3,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.9516839,
+          0.9375548,
+          0.9012275,
+          0.89312315,
+          0.891811,
+          0.87439936,
+          0.86737317,
+          0.8042522,
+          0.71102977,
+          0.69925445
+        ],
+        "max": 0.9516839,
+        "mean_top3": 0.9301554,
+        "margin_12": 0.014129100000000006,
+        "pool_best": 0.9516839,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-037",
+      "question_type": "Fact-Lookup",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2606.10369"
+      ],
+      "gold_block_id": "2606.10369:b227",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.008872270571681693,
+      "retrieved_paper_ids": [
+        "2606.10369",
+        "2606.10369",
+        "2606.10369",
+        "2606.10369",
+        "2012.00370",
+        "2606.20295",
+        "2106.10141",
+        "2606.08728",
+        "2606.20295",
+        "2606.06098"
+      ],
+      "retrieved_block_ids": [
+        "2606.10369:b227",
+        "2606.10369:b74",
+        "2606.10369:b224",
+        "2606.10369:b4",
+        "2012.00370:b310",
+        "2606.20295:b171",
+        "2106.10141:b148",
+        "2606.08728:b238",
+        "2606.20295:b75",
+        "2606.06098:b52"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2606.10369:c38"
+        ],
+        [
+          "2606.10369:c13"
+        ],
+        [
+          "2606.10369:c37"
+        ],
+        [
+          "2606.10369:c2"
+        ],
+        [
+          "2012.00370:c44"
+        ],
+        [
+          "2606.20295:c43"
+        ],
+        [
+          "2106.10141:c27"
+        ],
+        [
+          "2606.08728:c48"
+        ],
+        [
+          "2606.20295:c22"
+        ],
+        [
+          "2606.06098:c8"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.97923523,
+          0.8097278,
+          0.7932662,
+          0.7247729,
+          0.5137218,
+          0.43686226,
+          0.39198765,
+          0.24328269,
+          0.23792988,
+          0.14767806
+        ],
+        "max": 0.97923523,
+        "mean_top3": 0.8607430766666667,
+        "margin_12": 0.16950743000000001,
+        "pool_best": 0.97923523,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-038",
+      "question_type": "Rationale",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2205.11957"
+      ],
+      "gold_block_id": "2205.11957:b5",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": false,
+      "top_score": 0.014162077104642014,
+      "retrieved_paper_ids": [
+        "2205.11957",
+        "2606.13607",
+        "2311.16984",
+        "2205.11957",
+        "2205.11957",
+        "2205.11957",
+        "2205.11957",
+        "2205.11957",
+        "2205.11957",
+        "2208.06707"
+      ],
+      "retrieved_block_ids": [
+        "2205.11957:b5",
+        "2606.13607:b183",
+        "2311.16984:b418",
+        "2205.11957:b47",
+        "2205.11957:b0",
+        "2205.11957:b21",
+        "2205.11957:b92",
+        "2205.11957:b30",
+        "2205.11957:b72",
+        "2208.06707:b73"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2205.11957:c1"
+        ],
+        [
+          "2606.13607:c54"
+        ],
+        [
+          "2311.16984:c84"
+        ],
+        [
+          "2205.11957:c6"
+        ],
+        [
+          "2205.11957:c0"
+        ],
+        [
+          "2205.11957:c3"
+        ],
+        [
+          "2205.11957:c11"
+        ],
+        [
+          "2205.11957:c5"
+        ],
+        [
+          "2205.11957:c9"
+        ],
+        [
+          "2208.06707:c17"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.96411926,
+          0.7690802,
+          0.7629543,
+          0.6788595,
+          0.64467263,
+          0.64187145,
+          0.6077796,
+          0.6077796,
+          0.5927255,
+          0.5897164
+        ],
+        "max": 0.96411926,
+        "mean_top3": 0.8320512533333333,
+        "margin_12": 0.19503906000000004,
+        "pool_best": 0.96411926,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-039",
+      "question_type": "Fact-Lookup",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "0801.1986"
+      ],
+      "gold_block_id": "0801.1986:b8",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.007329215696714765,
+      "retrieved_paper_ids": [
+        "0801.1986",
+        "0801.1986",
+        "0801.1986",
+        "0801.1986",
+        "2606.16796",
+        "2606.13607",
+        "2210.06566",
+        "0801.1986",
+        "2202.00436",
+        "2606.23917"
+      ],
+      "retrieved_block_ids": [
+        "0801.1986:b30",
+        "0801.1986:b8",
+        "0801.1986:b5",
+        "0801.1986:b0",
+        "2606.16796:b52",
+        "2606.13607:b183",
+        "2210.06566:b96",
+        "0801.1986:b14",
+        "2202.00436:b161",
+        "2606.23917:b298"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "0801.1986:c6"
+        ],
+        [
+          "0801.1986:c2"
+        ],
+        [
+          "0801.1986:c1"
+        ],
+        [
+          "0801.1986:c0"
+        ],
+        [
+          "2606.16796:c11"
+        ],
+        [
+          "2606.13607:c54"
+        ],
+        [
+          "2210.06566:c29"
+        ],
+        [
+          "0801.1986:c3"
+        ],
+        [
+          "2202.00436:c34"
+        ],
+        [
+          "2606.23917:c57"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 2
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 2,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.93546456,
+          0.87987113,
+          0.8594279,
+          0.5705108,
+          0.5600722,
+          0.55244917,
+          0.41851866,
+          0.3712506,
+          0.3562227,
+          0.26894143
+        ],
+        "max": 0.93546456,
+        "mean_top3": 0.8915878633333333,
+        "margin_12": 0.055593430000000055,
+        "pool_best": 0.93546456,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-040",
+      "question_type": "Fact-Lookup",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2301.09934"
+      ],
+      "gold_block_id": "2301.09934:b107",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.01422081769701758,
+      "retrieved_paper_ids": [
+        "2301.09934",
+        "2301.09934",
+        "2301.09934",
+        "2301.09934",
+        "2301.09934",
+        "2301.09934",
+        "2301.09934",
+        "2301.09934",
+        "2301.09934",
+        "2301.09934"
+      ],
+      "retrieved_block_ids": [
+        "2301.09934:b107",
+        "2301.09934:b55",
+        "2301.09934:b112",
+        "2301.09934:b81",
+        "2301.09934:b69",
+        "2301.09934:b96",
+        "2301.09934:b10",
+        "2301.09934:b44",
+        "2301.09934:b63",
+        "2301.09934:b5"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2301.09934:c14"
+        ],
+        [
+          "2301.09934:c7"
+        ],
+        [
+          "2301.09934:c15"
+        ],
+        [
+          "2301.09934:c11"
+        ],
+        [
+          "2301.09934:c9"
+        ],
+        [
+          "2301.09934:c13"
+        ],
+        [
+          "2301.09934:c3"
+        ],
+        [
+          "2301.09934:c6"
+        ],
+        [
+          "2301.09934:c8"
+        ],
+        [
+          "2301.09934:c2"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.96323055,
+          0.87925047,
+          0.78695047,
+          0.7744129,
+          0.68510735,
+          0.66443145,
+          0.6490227,
+          0.5932558,
+          0.50878054,
+          0.5010433
+        ],
+        "max": 0.96323055,
+        "mean_top3": 0.8764771633333334,
+        "margin_12": 0.08398008000000001,
+        "pool_best": 0.96323055,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-041",
+      "question_type": "Procedure",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [],
+      "gold_block_id": null,
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": false,
+      "top_score": 0.006711057908125094,
+      "retrieved_paper_ids": [
+        "2406.15288",
+        "2603.20464",
+        "2409.01266",
+        "2405.08687",
+        "2312.07610",
+        "1903.03690",
+        "2402.18496",
+        "2604.02250",
+        "2606.13607",
+        "2605.02050"
+      ],
+      "retrieved_block_ids": [
+        "2406.15288:b8",
+        "2603.20464:b7",
+        "2409.01266:b15",
+        "2405.08687:b7",
+        "2312.07610:b223",
+        "1903.03690:b223",
+        "2402.18496:b97",
+        "2604.02250:b166",
+        "2606.13607:b183",
+        "2605.02050:b73"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2406.15288:c2"
+        ],
+        [
+          "2603.20464:c2"
+        ],
+        [
+          "2409.01266:c3"
+        ],
+        [
+          "2405.08687:c2"
+        ],
+        [
+          "2312.07610:c38"
+        ],
+        [
+          "1903.03690:c35"
+        ],
+        [
+          "2402.18496:c28"
+        ],
+        [
+          "2604.02250:c36"
+        ],
+        [
+          "2606.13607:c54"
+        ],
+        [
+          "2605.02050:c21"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": false,
+        "rank": null
+      },
+      "passage_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.9222025,
+          0.8951567,
+          0.83141696,
+          0.77509457,
+          0.754915,
+          0.70598775,
+          0.58154076,
+          0.5455581,
+          0.53840685,
+          0.50749147
+        ],
+        "max": 0.9222025,
+        "mean_top3": 0.8829253866666668,
+        "margin_12": 0.02704580000000001,
+        "pool_best": 0.9222025,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-042",
+      "question_type": "Procedure",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [],
+      "gold_block_id": null,
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": false,
+      "top_score": 0.006756756756756757,
+      "retrieved_paper_ids": [
+        "2207.05019",
+        "2111.07465",
+        "2011.01380",
+        "2011.01380",
+        "1903.03690",
+        "2011.01380",
+        "2606.13607",
+        "2011.01380",
+        "2312.07610",
+        "2011.01380"
+      ],
+      "retrieved_block_ids": [
+        "2207.05019:b242",
+        "2111.07465:b22",
+        "2011.01380:b8",
+        "2011.01380:b210",
+        "1903.03690:b223",
+        "2011.01380:b46",
+        "2606.13607:b183",
+        "2011.01380:b181",
+        "2312.07610:b223",
+        "2011.01380:b23"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2207.05019:c35"
+        ],
+        [
+          "2111.07465:c4"
+        ],
+        [
+          "2011.01380:c1"
+        ],
+        [
+          "2011.01380:c25"
+        ],
+        [
+          "1903.03690:c35"
+        ],
+        [
+          "2011.01380:c5"
+        ],
+        [
+          "2606.13607:c54"
+        ],
+        [
+          "2011.01380:c20"
+        ],
+        [
+          "2312.07610:c38"
+        ],
+        [
+          "2011.01380:c3"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": false,
+        "rank": null
+      },
+      "passage_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.8490974,
+          0.74761593,
+          0.66530186,
+          0.61479884,
+          0.6008912,
+          0.5911333,
+          0.58776563,
+          0.57021165,
+          0.56745726,
+          0.5497917
+        ],
+        "max": 0.8490974,
+        "mean_top3": 0.7540050633333334,
+        "margin_12": 0.10148146999999996,
+        "pool_best": 0.8490974,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-043",
+      "question_type": "Procedure",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [],
+      "gold_block_id": null,
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": false,
+      "top_score": 0.014297385620915032,
+      "retrieved_paper_ids": [
+        "2011.01380",
+        "2011.01380",
+        "2011.01380",
+        "2011.01380",
+        "2011.01380",
+        "2011.01380",
+        "2011.01380",
+        "2606.07715",
+        "2011.01380",
+        "2011.01380"
+      ],
+      "retrieved_block_ids": [
+        "2011.01380:b8",
+        "2011.01380:b399",
+        "2011.01380:b181",
+        "2011.01380:b218",
+        "2011.01380:b408",
+        "2011.01380:b197",
+        "2011.01380:b426",
+        "2606.07715:b109",
+        "2011.01380:b285",
+        "2011.01380:b245"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2011.01380:c1"
+        ],
+        [
+          "2011.01380:c45"
+        ],
+        [
+          "2011.01380:c20"
+        ],
+        [
+          "2011.01380:c26"
+        ],
+        [
+          "2011.01380:c46"
+        ],
+        [
+          "2011.01380:c24"
+        ],
+        [
+          "2011.01380:c50"
+        ],
+        [
+          "2606.07715:c15"
+        ],
+        [
+          "2011.01380:c35"
+        ],
+        [
+          "2011.01380:c28"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": false,
+        "rank": null
+      },
+      "passage_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.8987666,
+          0.88700897,
+          0.88602656,
+          0.83400166,
+          0.7892337,
+          0.7858021,
+          0.53212124,
+          0.4300875,
+          0.3463202,
+          0.3208213
+        ],
+        "max": 0.8987666,
+        "mean_top3": 0.8906007100000001,
+        "margin_12": 0.011757629999999963,
+        "pool_best": 0.8987666,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-044",
+      "question_type": "Rationale",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [],
+      "gold_block_id": null,
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": false,
+      "top_score": 0.007352941176470588,
+      "retrieved_paper_ids": [
+        "2012.00370",
+        "2312.07610",
+        "2512.03110",
+        "1805.03313",
+        "2402.08514",
+        "2607.07980",
+        "2512.06872",
+        "2604.14856",
+        "2606.23917",
+        "2409.08924"
+      ],
+      "retrieved_block_ids": [
+        "2012.00370:b310",
+        "2312.07610:b223",
+        "2512.03110:b70",
+        "1805.03313:b297",
+        "2402.08514:b11",
+        "2607.07980:b171",
+        "2512.06872:b225",
+        "2604.14856:b323",
+        "2606.23917:b298",
+        "2409.08924:b211"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2012.00370:c44"
+        ],
+        [
+          "2312.07610:c38"
+        ],
+        [
+          "2512.03110:c20"
+        ],
+        [
+          "1805.03313:c53"
+        ],
+        [
+          "2402.08514:c2"
+        ],
+        [
+          "2607.07980:c35"
+        ],
+        [
+          "2512.06872:c33"
+        ],
+        [
+          "2604.14856:c63"
+        ],
+        [
+          "2606.23917:c57"
+        ],
+        [
+          "2409.08924:c22"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": false,
+        "rank": null
+      },
+      "passage_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.33928013,
+          0.29838914,
+          0.08929565,
+          0.073430054,
+          0.04248321,
+          0.021822825,
+          0.021698097,
+          0.020567095,
+          0.019087434,
+          0.016466176
+        ],
+        "max": 0.33928013,
+        "mean_top3": 0.24232164,
+        "margin_12": 0.040890990000000016,
+        "pool_best": 0.33928013,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-045",
+      "question_type": "Rationale",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [],
+      "gold_block_id": null,
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": false,
+      "top_score": 0.00796519912997825,
+      "retrieved_paper_ids": [
+        "2312.07610",
+        "2401.08290",
+        "2202.00436",
+        "1903.03690",
+        "2604.14856",
+        "2605.02050",
+        "2312.07610",
+        "2402.18496",
+        "2606.13607",
+        "2303.07329"
+      ],
+      "retrieved_block_ids": [
+        "2312.07610:b223",
+        "2401.08290:b414",
+        "2202.00436:b161",
+        "1903.03690:b223",
+        "2604.14856:b323",
+        "2605.02050:b73",
+        "2312.07610:b246",
+        "2402.18496:b97",
+        "2606.13607:b183",
+        "2303.07329:b97"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2312.07610:c38"
+        ],
+        [
+          "2401.08290:c70"
+        ],
+        [
+          "2202.00436:c34"
+        ],
+        [
+          "1903.03690:c35"
+        ],
+        [
+          "2604.14856:c63"
+        ],
+        [
+          "2605.02050:c21"
+        ],
+        [
+          "2312.07610:c40"
+        ],
+        [
+          "2402.18496:c28"
+        ],
+        [
+          "2606.13607:c54"
+        ],
+        [
+          "2303.07329:c26"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": false,
+        "rank": null
+      },
+      "passage_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.45595554,
+          0.43953684,
+          0.3889661,
+          0.20737518,
+          0.12002562,
+          0.076683804,
+          0.074500255,
+          0.05781161,
+          0.034229323,
+          0.030043371
+        ],
+        "max": 0.45595554,
+        "mean_top3": 0.4281528266666667,
+        "margin_12": 0.01641870000000001,
+        "pool_best": 0.45595554,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-047",
+      "question_type": "Procedure",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [],
+      "gold_block_id": null,
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": false,
+      "top_score": 0.01333570412517781,
+      "retrieved_paper_ids": [
+        "2404.09117",
+        "2110.00921",
+        "2604.14856",
+        "2407.01765",
+        "2211.09099",
+        "2606.13607",
+        "1605.09773",
+        "1402.1909",
+        "2312.07610",
+        "2202.00436"
+      ],
+      "retrieved_block_ids": [
+        "2404.09117:b6",
+        "2110.00921:b14",
+        "2604.14856:b323",
+        "2407.01765:b427",
+        "2211.09099:b11",
+        "2606.13607:b183",
+        "1605.09773:b287",
+        "1402.1909:b7",
+        "2312.07610:b223",
+        "2202.00436:b161"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2404.09117:c2"
+        ],
+        [
+          "2110.00921:c4"
+        ],
+        [
+          "2604.14856:c63"
+        ],
+        [
+          "2407.01765:c66"
+        ],
+        [
+          "2211.09099:c2"
+        ],
+        [
+          "2606.13607:c54"
+        ],
+        [
+          "1605.09773:c37"
+        ],
+        [
+          "1402.1909:c1"
+        ],
+        [
+          "2312.07610:c38"
+        ],
+        [
+          "2202.00436:c34"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": false,
+        "rank": null
+      },
+      "passage_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.9558166,
+          0.87997437,
+          0.8785229,
+          0.8329173,
+          0.68299675,
+          0.590425,
+          0.5730812,
+          0.5615755,
+          0.5341569,
+          0.2972659
+        ],
+        "max": 0.9558166,
+        "mean_top3": 0.9047712899999999,
+        "margin_12": 0.07584223000000001,
+        "pool_best": 0.9558166,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-048",
+      "question_type": "Fact-Lookup",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [],
+      "gold_block_id": null,
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": false,
+      "top_score": 0.008382352941176471,
+      "retrieved_paper_ids": [
+        "2511.15123",
+        "2606.13607",
+        "1903.01672",
+        "2312.07610",
+        "2402.18496",
+        "2606.23917",
+        "2312.07610",
+        "1509.08056",
+        "2406.18936",
+        "2202.03146"
+      ],
+      "retrieved_block_ids": [
+        "2511.15123:b6",
+        "2606.13607:b183",
+        "1903.01672:b292",
+        "2312.07610:b223",
+        "2402.18496:b97",
+        "2606.23917:b298",
+        "2312.07610:b246",
+        "1509.08056:b128",
+        "2406.18936:b145",
+        "2202.03146:b48"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2511.15123:c2"
+        ],
+        [
+          "2606.13607:c54"
+        ],
+        [
+          "1903.01672:c37"
+        ],
+        [
+          "2312.07610:c38"
+        ],
+        [
+          "2402.18496:c28"
+        ],
+        [
+          "2606.23917:c57"
+        ],
+        [
+          "2312.07610:c40"
+        ],
+        [
+          "1509.08056:c22"
+        ],
+        [
+          "2406.18936:c10"
+        ],
+        [
+          "2202.03146:c7"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": false,
+        "rank": null
+      },
+      "passage_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.71243227,
+          0.6044573,
+          0.4770821,
+          0.42817363,
+          0.31226513,
+          0.24635197,
+          0.19667186,
+          0.19147882,
+          0.18624303,
+          0.14463145
+        ],
+        "max": 0.71243227,
+        "mean_top3": 0.5979905566666667,
+        "margin_12": 0.10797497,
+        "pool_best": 0.71243227,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-049",
+      "question_type": "Fact-Lookup",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [],
+      "gold_block_id": null,
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": false,
+      "top_score": 0.007709574557355039,
+      "retrieved_paper_ids": [
+        "2301.11904",
+        "2312.07610",
+        "2606.23917",
+        "2504.09144",
+        "2312.07610",
+        "2311.17223",
+        "1903.03690",
+        "2210.06566",
+        "2604.14856",
+        "2202.00436"
+      ],
+      "retrieved_block_ids": [
+        "2301.11904:b5",
+        "2312.07610:b223",
+        "2606.23917:b298",
+        "2504.09144:b7",
+        "2312.07610:b246",
+        "2311.17223:b10",
+        "1903.03690:b223",
+        "2210.06566:b96",
+        "2604.14856:b323",
+        "2202.00436:b161"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2301.11904:c1"
+        ],
+        [
+          "2312.07610:c38"
+        ],
+        [
+          "2606.23917:c57"
+        ],
+        [
+          "2504.09144:c1"
+        ],
+        [
+          "2312.07610:c40"
+        ],
+        [
+          "2311.17223:c2"
+        ],
+        [
+          "1903.03690:c35"
+        ],
+        [
+          "2210.06566:c29"
+        ],
+        [
+          "2604.14856:c63"
+        ],
+        [
+          "2202.00436:c34"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": false,
+        "rank": null
+      },
+      "passage_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.7841538,
+          0.6811968,
+          0.46077415,
+          0.42614248,
+          0.23757592,
+          0.23144047,
+          0.11899801,
+          0.10631887,
+          0.09687654,
+          0.068537496
+        ],
+        "max": 0.7841538,
+        "mean_top3": 0.6420415833333334,
+        "margin_12": 0.10295699999999997,
+        "pool_best": 0.7841538,
+        "pool_size": 32
+      }
+    },
+    {
+      "question_id": "Q-FOC-050",
+      "question_type": "Fact-Lookup",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [],
+      "gold_block_id": null,
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": false,
+      "top_score": 0.007541687989189775,
+      "retrieved_paper_ids": [
+        "2407.01765",
+        "2309.12595",
+        "2404.11506",
+        "2404.11506",
+        "1903.03690",
+        "2312.07610",
+        "2208.11047",
+        "2606.23917",
+        "2210.06566",
+        "2206.03387"
+      ],
+      "retrieved_block_ids": [
+        "2407.01765:b427",
+        "2309.12595:b0",
+        "2404.11506:b79",
+        "2404.11506:b54",
+        "1903.03690:b223",
+        "2312.07610:b246",
+        "2208.11047:b93",
+        "2606.23917:b298",
+        "2210.06566:b96",
+        "2206.03387:b9"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2407.01765:c66"
+        ],
+        [
+          "2309.12595:c0"
+        ],
+        [
+          "2404.11506:c15"
+        ],
+        [
+          "2404.11506:c13"
+        ],
+        [
+          "1903.03690:c35"
+        ],
+        [
+          "2312.07610:c40"
+        ],
+        [
+          "2208.11047:c25"
+        ],
+        [
+          "2606.23917:c57"
+        ],
+        [
+          "2210.06566:c29"
+        ],
+        [
+          "2206.03387:c3"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": false,
+        "rank": null
+      },
+      "passage_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null,
+        "fallback": false
+      },
+      "rerank": {
+        "aligned": true,
+        "scores": [
+          0.8304567,
+          0.6221151,
+          0.5744545,
+          0.4511149,
+          0.37593555,
+          0.33491564,
+          0.26961395,
+          0.21060391,
+          0.2052962,
+          0.09721884
+        ],
+        "max": 0.8304567,
+        "mean_top3": 0.6756754333333334,
+        "margin_12": 0.20834160000000002,
+        "pool_best": 0.8304567,
+        "pool_size": 32
+      }
+    }
+  ]
+}
