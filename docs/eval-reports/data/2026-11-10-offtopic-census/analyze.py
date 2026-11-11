@@ -44,7 +44,7 @@ def primary(cj):
     try:
         cats = json.loads(cj) if isinstance(cj, str) else cj
         return cats[0] if cats else "(none)"
-    except Exception:
+    except (ValueError, TypeError, IndexError):
         return "(unparsed)"
 
 def year(pub):
