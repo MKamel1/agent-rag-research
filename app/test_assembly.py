@@ -1414,3 +1414,14 @@ def test_build_mcp_server_threads_drop_stub_chunks_default_off(monkeypatch, tmp_
     kw = {"db_path": str(tmp_path / "papers.db"), "blob_dir": str(tmp_path / "blobs")}
     assert build_mcp_server(cfg, **kw)._retriever._drop_stub_chunks is False
     assert build_mcp_server(cfg, drop_stub_chunks=True, **kw)._retriever._drop_stub_chunks is True
+
+
+def test_build_mcp_server_threads_relevance_demotion_default_off(monkeypatch, tmp_path):
+    """RQ-2: the A/B switch reaches Retriever; production wiring (no kwarg) leaves demotion off."""
+    monkeypatch.setattr("app.assembly.tei_lifecycle", _FakeTeiLifecycle())
+    monkeypatch.setattr("app.assembly.VectorIndex", lambda *a, **k: object())
+    cfg = Config(focus_area_queries=["causal inference"], gpu_lock_path=str(tmp_path / ".gpu.lock"))
+    kw = {"db_path": str(tmp_path / "papers.db"), "blob_dir": str(tmp_path / "blobs")}
+    assert build_mcp_server(cfg, **kw)._retriever._relevance_demotion is None
+    r = build_mcp_server(cfg, relevance_demotion="penalty", relevance_tau=0.25, relevance_penalty=7, **kw)._retriever
+    assert (r._relevance_demotion, r._relevance_tau, r._relevance_penalty) == ("penalty", 0.25, 7)

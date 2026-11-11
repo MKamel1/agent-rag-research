@@ -1121,6 +1121,16 @@ def _parse_args() -> argparse.Namespace:
         help="CQ-3 A/B arm: drop heading-only chunks before reranking (Retriever's "
              "drop_stub_chunks). Default off = baseline.",
     )
+    parser.add_argument(
+        "--relevance-demotion", choices=["tail", "penalty"], default=None,
+        help="RQ-2 A/B arm: after reranking, move results whose paper relevance_score < "
+             "--relevance-tau down (never dropped). tail = behind all others; penalty = down "
+             "--relevance-penalty ranks. Default off = baseline.",
+    )
+    parser.add_argument("--relevance-tau", type=float, default=0.30,
+                        help="RQ-2: relevance_score threshold (only with --relevance-demotion).")
+    parser.add_argument("--relevance-penalty", type=int, default=10,
+                        help="RQ-2: rank positions a below-tau result drops (penalty mode only).")
     return parser.parse_args()
 
 
@@ -1176,6 +1186,11 @@ def main() -> None:
     build_kwargs["collection"] = args.collection
     if args.drop_stub_chunks:
         build_kwargs["drop_stub_chunks"] = True
+    if args.relevance_demotion is not None:
+        build_kwargs.update(
+            relevance_demotion=args.relevance_demotion, relevance_tau=args.relevance_tau,
+            relevance_penalty=args.relevance_penalty,
+        )
     server = build_mcp_server(config, **build_kwargs)
 
     results = run(questions, server.retriever, args.k, chunk_lookup=lookup)

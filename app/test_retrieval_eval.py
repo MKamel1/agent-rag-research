@@ -1911,3 +1911,15 @@ def test_main_writes_the_report_then_exits_nonzero_on_a_lock_timeout(tmp_path, m
     written = json.loads(out.read_text())
     assert written["run_valid"] is False
     assert written["ground_truth_sha256_12"] == retrieval_eval.file_sha256_12(gt)
+
+
+def test_parse_args_relevance_demotion_flags_default_off(monkeypatch):
+    from app import retrieval_eval
+    base = ["retrieval_eval", "--collection", "c"]
+    monkeypatch.setattr("sys.argv", base)
+    a = retrieval_eval._parse_args()
+    assert (a.relevance_demotion, a.relevance_tau, a.relevance_penalty) == (None, 0.30, 10)
+    monkeypatch.setattr("sys.argv", base + ["--relevance-demotion", "penalty", "--relevance-tau", "0.25",
+                                            "--relevance-penalty", "4"])
+    a = retrieval_eval._parse_args()
+    assert (a.relevance_demotion, a.relevance_tau, a.relevance_penalty) == ("penalty", 0.25, 4)
