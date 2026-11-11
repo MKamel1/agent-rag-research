@@ -844,6 +844,26 @@ def test_scan_blocks_finds_every_matching_paper_not_just_the_best_ranked(store):
     assert {r[0] for r in rows} == {f"2506.0000{i}" for i in range(4)}
 
 
+def test_scan_blocks_finds_ligature_damaged_text_and_quotes_the_original(store):
+    """CQ-1: `effect` matches a block that only says "efect"; the snippet is the ORIGINAL text."""
+    text = "before the efect of treatment on frst outcomes, afterwards"
+    _put_paper(store, "2506.00020", [make_block(block_id="2506.00020:b0", paper_id="2506.00020",
+                                                text=text)])
+
+    rows, _scanned, matched, _truncated = store.scan_blocks("effect", context=10)
+
+    assert matched == 1
+    snippet = rows[0][5]
+    assert "efect" in snippet and "effect" not in snippet  # quotes the page, not the repair
+    assert snippet in text
+    # a multi-word repaired span (two repaired words) maps back to whole original words
+    rows, *_ = store.scan_blocks(r"effect of treatment on first", context=0)
+    assert rows[0][5] == "efect of treatment on frst"
+    # the damaged spelling itself still matches directly, and clean text is untouched
+    assert store.scan_blocks("efect")[0][0][5] == " ".join(text.split())
+    assert store.scan_blocks("nothing like this")[0] == []
+
+
 def test_scan_blocks_returns_section_path_so_use_can_be_told_from_citation(store):
     """`section_path` is what makes a match adjudicable -- Related Work means cited, Methods means
     used. Without it, a lexical hit is undecidable."""

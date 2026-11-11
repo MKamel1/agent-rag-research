@@ -734,6 +734,28 @@ def test_sparse_vector_stays_raw_term_frequency_no_client_side_idf():
     assert sorted(values_by_index.values()) == [1.0, 3.0]
 
 
+def test_sparse_vector_repairs_ligature_damage_on_index_and_query_side():
+    # CQ-1: "efect" (damaged chunk text) and "effect" (a query) must share a sparse term.
+    real = pytest.importorskip("rag.vector_index")
+    assert real._sparse_vector("efect").indices == real._sparse_vector("effect").indices
+    assert (real._sparse_vector("a diferent efect").indices
+            == real._sparse_vector("a different effect").indices)
+
+
+def test_sparse_vector_unchanged_for_correctly_spelled_text():
+    # CQ-1 regression guard: hashes are exactly sha1(token) % modulus over the plain lowercase
+    # whitespace split, as before ligature repair existed.
+    import hashlib
+    real = pytest.importorskip("rag.vector_index")
+    text = "The effect of different Coefficients, first-order (offset)."
+    expected: dict[int, float] = {}
+    for tok in text.lower().split():
+        i = int(hashlib.sha1(tok.encode()).hexdigest(), 16) % real._SPARSE_MODULUS
+        expected[i] = expected.get(i, 0.0) + 1.0
+    vec = real._sparse_vector(text)
+    assert dict(zip(vec.indices, vec.values)) == expected
+
+
 def test_sparse_vector_params_requests_native_idf_modifier():
     # The actual T-DOC27 fix: the collection's sparse field must be created with the native IDF
     # modifier so common words stop carrying as much weight as discriminative ones (ADR-01/ADR-11

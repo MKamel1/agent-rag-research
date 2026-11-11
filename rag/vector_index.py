@@ -41,6 +41,7 @@ from qdrant_client.http.exceptions import ApiException
 from contracts.errors import ContractError, TransientError
 from contracts.fusion import rrf_fuse
 from contracts.vector_index import Hit, SearchFilters, VectorPayload
+from rag.ligatures import repair_ligatures
 
 logger = logging.getLogger(__name__)
 
@@ -108,8 +109,10 @@ def _sparse_vector(text: str) -> models.SparseVector:
     # discriminative-term weighting server-side from the collection's own document-frequency
     # stats, so this function deliberately stays a plain hash-based term-frequency count on both
     # the upsert and query side (same as before T-DOC27).
+    # CQ-1: ligature-dropped words ("efect") are repaired before hashing, so "effect" and "efect"
+    # share a term; stored text is untouched. Index and query both come through here.
     counts: dict[int, float] = {}
-    for token in text.lower().split():
+    for token in repair_ligatures(text.lower()).split():
         index = int(hashlib.sha1(token.encode()).hexdigest(), 16) % _SPARSE_MODULUS
         counts[index] = counts.get(index, 0.0) + 1.0
     return models.SparseVector(indices=list(counts.keys()), values=list(counts.values()))
