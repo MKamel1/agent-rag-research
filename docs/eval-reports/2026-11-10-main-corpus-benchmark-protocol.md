@@ -206,3 +206,35 @@ beside), `strata-books.txt`; the ablated files as control. Results land in
 Gates stand as measured. Any change to a definition, threshold or fixture is a dated addendum below this line
 stating what changed and why; the measured results above it are not edited, and a re-run after a fixture change
 is a new baseline, not a replacement.
+
+---
+
+## ADDENDUM 2026-11-11 (EV-11)
+
+**What changed.** No main-corpus fixture changed in content: `papers_passage_gt.json` and `causal_books_gt.json`
+keep every recorded alternative (papers 8 items, books 4 items) and gain none; the sweep of both sets' cross-verification
+reports found every suggested alternative already recorded (the one unmatched verdict, Q-CB-H-022, is an item that was
+killed as a duplicate of QB-037). The hashes were re-verified, not changed.
+
+**No retrieval output of any kind existed when these changes were made** (no embedder, reranker or vector store has
+run against these sets), so every edit below sits inside the freeze rule: it was made blind to retrieval results.
+Nothing was changed after seeing a score; a fixture edit after a run would void that run and be a new baseline.
+
+Hash procedure: every fixture of record was re-hashed with SHA-256 (`scripts/eval_protocol_tools.py`
+`sha256_of`), the file was rewritten in one commit (`b4f5a09`, after the fixture commit `82bffac`), and
+`scripts/eval_protocol_tools.py check-hash data/2026-11-10-FIXTURE-HASHES.json <10 fixtures>` passes
+(`hash check OK (10 fixtures)`). Both run scripts were exercised up to their service check: the hash check and the
+read-only `gt_tools.py verify` (standards 128 items, papers 61, books 74; 0 failures) pass, then each stops at
+`app.doctor` because the services are down, as expected. The merged files were regenerated with each set's own
+`merge_gt.py` (no FAIL line) and load with `app.retrieval_eval.load_questions` (128 / 74 / 61 / 49).
+
+| fixture | SHA-256 (first 12 hex; full values in `data/2026-11-10-FIXTURE-HASHES.json`) | changed? |
+|---|---|---|
+| `standards_gt.json` | `09b1061198c9` (was `87b241af55d4`) | yes, 3 alternatives added |
+| `causal_books_gt.json` | `3c21d57bb6cb` | no |
+| `papers_passage_gt.json` | `58cdbf47f08b` | no |
+| `focus_gt.json` | `c68210e06a9f` (was `null`) | first freeze; repaired set, 49 items |
+
+Metric note (EV-8): `app/retrieval_eval.py` now emits one additional metric, `passage_excerpt_level`, reported
+BESIDE the member-passage metric of record defined in section 3. It gates nothing and replaces nothing; the
+gates and decision rules above are unchanged.
