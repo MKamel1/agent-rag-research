@@ -1911,3 +1911,107 @@ def test_main_writes_the_report_then_exits_nonzero_on_a_lock_timeout(tmp_path, m
     written = json.loads(out.read_text())
     assert written["run_valid"] is False
     assert written["ground_truth_sha256_12"] == retrieval_eval.file_sha256_12(gt)
+
+
+# --- EV-13: opt-in cross-encoder score capture -------------------------------------------------
+
+
+class _ScoringRetriever(FakeRetriever):
+    """FakeRetriever that also exposes `Retriever.last_rerank_scores()`; `capture` is the pool as
+    `(passage_text, score)` in rerank order."""
+
+    def __init__(self, responses, capture):
+        super().__init__(responses)
+        self._capture = capture
+
+    def last_rerank_scores(self):
+        from contracts.retriever import RerankCandidate
+        return [(RerankCandidate(id=f"c{i}", text=t), s) for i, (t, s) in enumerate(self._capture)]
+
+
+def _scored_q(qid="Q1"):
+    return Question(qid, f"text {qid}", "t", frozenset({"P1"}), "P1:b0")
+
+
+def test_rerank_fields_top_k_scores_max_mean3_margin_and_pool_best():
+    hits = [_hit("P1", f"P1:b{i}", passage_text=f"t{i}") for i in range(4)]
+    retriever = _ScoringRetriever({"text Q1": hits}, [("t0", 0.9), ("t1", 0.6), ("t2", 0.3),
+                                                       ("t3", 0.2), ("tail", 0.1)])
+    (r,) = run([_scored_q()], retriever, k=4, record_rerank_scores=True)
+    row = build_report([r], 4)["questions"][0]["rerank"]
+    assert row["scores"] == [0.9, 0.6, 0.3, 0.2]
+    assert row["max"] == 0.9 and row["pool_best"] == 0.9 and row["pool_size"] == 5
+    assert row["mean_top3"] == pytest.approx(0.6)
+    assert row["margin_12"] == pytest.approx(0.3)
+    assert row["aligned"] is True
+
+
+def test_rerank_fields_skip_a_post_rerank_orphan_drop_by_text_not_position():
+    # pool order t0,t1,t2 but t1's chunk was dropped after reranking: results are t0,t2.
+    hits = [_hit("P1", "P1:b0", passage_text="t0"), _hit("P1", "P1:b2", passage_text="t2")]
+    retriever = _ScoringRetriever({"text Q1": hits}, [("t0", 0.9), ("t1", 0.5), ("t2", 0.2)])
+    (r,) = run([_scored_q()], retriever, k=10, record_rerank_scores=True)
+    assert r.rerank["scores"] == [0.9, 0.2] and r.rerank["aligned"] is True
+
+
+def test_rerank_fields_withhold_scores_when_a_result_cannot_be_matched():
+    hits = [_hit("P1", "P1:b0", passage_text="unknown")]
+    retriever = _ScoringRetriever({"text Q1": hits}, [("t0", 0.9)])
+    (r,) = run([_scored_q()], retriever, k=10, record_rerank_scores=True)
+    assert r.rerank["aligned"] is False and r.rerank["scores"] == []
+    assert r.rerank["pool_best"] == 0.9
+
+
+def test_capture_off_never_asks_the_retriever_and_adds_no_row_key():
+    """Inert when off: a retriever with NO last_rerank_scores (the default fakes) runs fine and
+    the row has exactly the pre-EV-13 keys."""
+    hits = [_hit("P1", "P1:b0", passage_text="t0")]
+    (r,) = run([_scored_q()], FakeRetriever({"text Q1": hits}), k=10)
+    assert r.rerank is None
+    assert "rerank" not in build_report([r], 10)["questions"][0]
+
+
+def test_capture_on_changes_no_existing_field_or_aggregate():
+    """Regression (EV-13): over a stored pre-EV-13 report's rows, attaching rerank fields leaves
+    every row key/value and every aggregate subtree byte-identical; `rerank` is the only addition."""
+    stored_path = (
+        Path(__file__).resolve().parent.parent
+        / "docs/eval-reports/data/2026-08-25-nb-d4-dual-fixture-SAMPLE/waymo_gt_verified.json"
+    )
+    stored = json.loads(stored_path.read_text())
+
+    def rebuild(rerank):
+        return [
+            QuestionResult(
+                question_id=r["question_id"], question_type=r["question_type"],
+                paper_rank=r["paper_level"]["rank"], passage_rank=r["passage_level"]["rank"],
+                passage_scored=r["passage_level"]["scored"], error=r["error"],
+                gold_paper_ids=frozenset(r["gold_paper_ids"]), gold_block_id=r["gold_block_id"],
+                doc_type=r["doc_type"], vision_derived=r["vision_derived"],
+                chapter_rank=r["chapter_level"]["rank"], chapter_scored=r["chapter_level"]["scored"],
+                gold_chapter_title=r["gold_chapter_title"], title_leak=r["title_leak"],
+                top_score=r["top_score"], rerank=rerank,
+            )
+            for r in stored["questions"]
+        ]
+
+    off = build_report(rebuild(None), stored["k"])
+    on = build_report(rebuild({"scores": [0.5], "aligned": True}), stored["k"])
+    assert all("rerank" not in row for row in off["questions"])
+    assert all("rerank" in row for row in on["questions"])
+    for a, b in zip(off["questions"], on["questions"]):
+        assert {k: v for k, v in b.items() if k != "rerank"} == a
+    for key in off:
+        if key != "questions":
+            assert json.dumps(off[key], sort_keys=True) == json.dumps(on[key], sort_keys=True)
+    for key in ("k", "n_questions", "n_errors", "paper_level", "passage_level", "chapter_level"):
+        assert json.dumps(off[key], sort_keys=True) == json.dumps(stored[key], sort_keys=True)
+
+
+def test_parse_args_record_rerank_scores_flag_defaults_off(monkeypatch):
+    from app import retrieval_eval
+    monkeypatch.setattr("sys.argv", ["retrieval_eval", "--collection", "c"])
+    assert retrieval_eval._parse_args().record_rerank_scores is False
+    monkeypatch.setattr(
+        "sys.argv", ["retrieval_eval", "--collection", "c", "--record-rerank-scores"])
+    assert retrieval_eval._parse_args().record_rerank_scores is True

@@ -1317,3 +1317,9 @@ def test_drop_flag_does_not_affect_retrieve_papers():
     _seed_summary(store, docstore, embedder, paper_id="p1", summary_id="p1:summary", summary_text="x")
     results, _ = _stub_retriever(store, docstore, embedder, FakeReranker(), drop=True).retrieve_papers(_Q, None, 5)
     assert [r.view.paper_id for r in results] == ["p1"]            # a 1-char "summary" is not a stub
+
+
+def test_last_rerank_scores_is_none_for_a_non_recording_reranker():
+    """EV-13: the default (fake) reranker records nothing; the accessor is inert."""
+    r = _make_retriever(FakeVectorStore(), RecordingDocStore(), FakeReranker())
+    assert r.last_rerank_scores() is None

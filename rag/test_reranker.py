@@ -669,3 +669,58 @@ def test_query_at_the_item_budget_still_reranks_untruncated():
     result = reranker.rerank(at_limit, _candidates(("a", "text a")))
 
     assert [c.id for c in result] == ["a"]
+
+
+# ---------------------------------------------------------------------------
+# EV-13: opt-in score capture. Default OFF and inert; ON changes nothing the caller can see.
+# ---------------------------------------------------------------------------
+
+
+def _reranker_over(scores, **kw):
+    posts = []
+
+    def handler(request):
+        posts.append(request.content)
+        return httpx.Response(200, json=[{"index": i, "score": s} for i, s in enumerate(scores)])
+
+    client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
+    return TeiReranker(client, FakeGpuLock(), **kw), posts
+
+
+def test_score_capture_off_by_default_records_nothing_and_leaves_calls_and_result_identical():
+    cands = _candidates(("a", "ta"), ("b", "tb"), ("c", "tc"))
+    off, off_posts = _reranker_over([0.1, 0.9, 0.5])
+    on, on_posts = _reranker_over([0.1, 0.9, 0.5], record_scores=True)
+
+    assert [c.id for c in off.rerank("q", cands)] == ["b", "c", "a"]
+    assert off.last_scored is None  # nothing retained when off
+    assert [c.id for c in on.rerank("q", cands)] == ["b", "c", "a"]  # same ordering when on
+    assert on_posts == off_posts  # byte-identical HTTP traffic
+
+
+def test_score_capture_on_keeps_candidate_score_pairs_in_returned_order_over_all_batches():
+    cands = _candidates(*((f"c{i}", f"t{i}") for i in range(40)))  # 2 batches of 32 + 8
+    scores = {f"c{i}": (i * 37 % 40) / 40 for i in range(40)}
+
+    def handler(request):
+        import json as _json
+        n = len(_json.loads(request.content)["texts"])
+        first = 0 if n == 32 else 32
+        return httpx.Response(200, json=[
+            {"index": j, "score": scores[f"c{first + j}"]} for j in range(n)])
+
+    client = httpx.Client(base_url="http://tei.local", transport=httpx.MockTransport(handler))
+    reranker = TeiReranker(client, FakeGpuLock(), record_scores=True)
+    ordered = reranker.rerank("q", cands)
+
+    assert [c.id for c, _ in reranker.last_scored] == [c.id for c in ordered]
+    got = [s for _, s in reranker.last_scored]
+    assert got == sorted(got, reverse=True)  # monotone with the returned order
+    assert all(s == scores[c.id] for c, s in reranker.last_scored)
+
+
+def test_score_capture_on_empty_candidates_clears_the_previous_call():
+    reranker, _ = _reranker_over([0.3], record_scores=True)
+    reranker.rerank("q", _candidates(("a", "ta")))
+    assert reranker.rerank("q", []) == []
+    assert reranker.last_scored == []
