@@ -1,0 +1,19 @@
+12390 papers, 331272 candidate pairs -> 7 duplicate pairs
+
+  0.783  1910.01288             2103.00378              neither curated
+          Towards Efficient Local Causal Structure Learning
+  0.728  1304.7920              1408.2063               neither curated
+          From Ordinary Differential Equations to Structural Causal Models: the 
+  0.616  1210.4792              1408.2066               neither curated
+          Scalable Matrix-valued Kernel Learning for High-dimensional Nonlinear 
+  0.602  1106.0752              1106.0753               neither curated
+          Influence of Photoexcitation Depth on Luminescence Spectra of Bulk GaA
+  0.577  2212.02932             2307.16577              neither curated
+          Learning to Bound Counterfactual Inference from Observational, Biased 
+  0.446  2008.05951             2108.12208              neither curated
+          Marginalization of Regression-Adjusted Treatment Effects in Indirect C
+  0.386  2211.03195             2211.16938              neither curated
+          Evaluating Digital Tools for Sustainable Agriculture using Causal Infe
+
+both curated: 0 | one curated: 0 | neither: 7
+

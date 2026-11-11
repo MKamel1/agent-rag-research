@@ -1,0 +1,55 @@
+== standards  db=/home/omar/ai-projects/research-system-rag-standards/data/papers.db
+total chunks=35714 total chars=28394030
+-- SECTION (verified against section_path)
+chunks=181 (0.51%)  chars=85457 (0.30%)
+  heading-only stubs (<= 80 chars): 63 chunks, 2811 chars
+  real bibliography text: 118 chunks, 82646 chars
+  documents with real bibliography text: 38
+-- HEURISTIC (content, any section; >= 5 citation lines and year density >= 0.5)
+chunks=9 (0.03%)  chars=9702 (0.03%)
+  heuristic-only (not section-matched): 7 chunks, 7307 chars
+-- UNION (section OR heuristic)
+chunks=188 (0.53%)  chars=92764 (0.33%)
+documents with any reference chunk: 76
+
+-- TOP 15 DOCUMENTS BY REFERENCE CHARS (union)
+  local:5c15efe64f30       ref_chunks=35   ref_chars=24416    Book — Autonomous Vehicles and Civil Liability (Steege et al, Springer 2024)
+  local:46d6107b895f       ref_chunks=11   ref_chars=10367    NASA SP-2011-3422 — NASA Risk Management Handbook
+  local:1d27d7fac441       ref_chunks=10   ref_chars=9992     RAND RR1478 Driving to Safety - How Many Miles of Driving Would It Take (2016)
+  local:23f46dde097b       ref_chunks=8    ref_chars=8281     Safety First for Automated Driving (SaFAD white paper, 2019)
+  local:8eeb4887a4dc       ref_chunks=11   ref_chars=7488     NASA SP-2016-6105 Rev 2 — NASA Systems Engineering Handbook
+  2302.07715               ref_chunks=4    ref_chars=4491     Salem et al — Risk Management Core, Toward an Explicit Representation of Risk in
+  local:e94916e8eba9       ref_chunks=24   ref_chars=3975     Rausand and Haugen — Risk Assessment, Theory, Methods, and Applications, 2nd ed.
+  local:5bf506972f70       ref_chunks=4    ref_chars=3019     NASA SP-2014-612 — NASA System Safety Handbook, Volume 2, System Safety Concepts
+  local:1a5e084cb8bb       ref_chunks=3    ref_chars=2850     ISO PAS 8800-2024 — Safety and Artificial Intelligence
+  local:71c88a1d2bc1       ref_chunks=5    ref_chars=2523     AAMVA Guidelines for Regulating Vehicles with Automated Driving Systems (Edition
+  local:0bba4df6673d       ref_chunks=4    ref_chars=2408     NUREG-0492 — Fault Tree Handbook (NRC, 1981)
+  local:6cd57a8fca7a       ref_chunks=2    ref_chars=1445     ISO 26262-8-2018 — Supporting Processes
+  local:4de2a38fdc99       ref_chunks=2    ref_chars=1214     AVSC00003 Best Practice for Passenger-Initiated Emergency Trip Interruption (202
+  local:61b72628b14f       ref_chunks=2    ref_chars=1188     AVSC-I-06-2025 Information Report on ADS-DV Stopped Conditions (2025-12)
+  local:4d27eb6fb293       ref_chunks=1    ref_chars=1127     ISO-IEC 15026-3-2015 — Systems and Software Assurance, Part 3 System Integrity L
+
+-- EXAMPLES: section-matched real bibliography (chunk_id | section_path | first 60 chars)
+  local:0e6dbb524dfe:c188 | Bibliography | Road vehicles — Functional safety — Part 2: Management of fu
+  local:1a5e084cb8bb:c688 | Bibliography | Road vehicles—Safety and artificial intelligence | Bibliograph
+  local:1a5e084cb8bb:c689 | Bibliography | Road vehicles—Safety and artificial intelligence | Bibliograph
+  local:1a5e084cb8bb:c690 | Bibliography | Road vehicles—Safety and artificial intelligence | Bibliograph
+  local:1d27d7fac441:c39 | REFERENCES | Driving to Safety | REFERENCES |  | Anderson, James M., Nidhi Kalr
+-- EXAMPLES: section-matched heading-only stubs
+  1708.06374:c207 | References | On a Formal Model of Safe and Scalable Self-driving Cars
+Ref
+  local:1b04c71eb8c9:c69 | Bibliography | Road vehicles — Functional safety — Part 7:
+Bibliography
+  local:4c537c7906e8:c19 | 2. References | Automated Vehicle Safety Consortium™ Best Practice
+2. Refere
+  local:5c15efe64f30:c366 | References | Data Science, Machine Intelligence, and Law
+References
+  local:5c15efe64f30:c424 | References | Data Science, Machine Intelligence, and Law
+References
+-- EXAMPLES: heuristic-only (not section-matched)
+  local:5c15efe64f30:c363 | Laws, Regulations and Other Rules | Data Science, Machine Intelligence, and Law | Laws, Regulation
+  local:5c15efe64f30:c364 | Laws, Regulations and Other Rules | Data Science, Machine Intelligence, and Law | Laws, Regulation
+  local:4de2a38fdc99:c15 | 2. References > 2.1 Applicable Documents > 2.1.2 Other Documents | 2. References > 2.1 Applicable Documents > 2.1.2 Other Docum
+  local:61b72628b14f:c14 | 2. References > 2.1 Applicable Documents > 2.1.2 Other Documents | 2. References > 2.1 Applicable Documents > 2.1.2 Other Docum
+  local:e94916e8eba9:c1634 | Security Assessment > 17.1 Introduction > 17.1.2 Standards and Guidelines | WILEY SERIES IN STATISTICS IN PRACTICE | Security Assessment >
+

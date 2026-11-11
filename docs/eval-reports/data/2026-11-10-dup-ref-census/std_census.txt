@@ -1,0 +1,133 @@
+db: /home/omar/ai-projects/research-system-rag-standards/data/papers.db
+papers with chunks: 119  (papers table rows: 119)
+total chunks: 35714  total chunk chars: 28394030
+
+ROW 1708.06374	211	191010	On a Formal Model of Safe and Scalable Self-driving Cars (RSS, Mobileye)
+ROW 2004.10474	54	50555	Bloomfield and Rushby — Assurance 2.0, A Manifesto
+ROW 2102.01564	215	128578	AMLAS — Guidance on the Assurance of Machine Learning in Autonomous Systems (Version 1, 2021)
+ROW 2103.05440	71	59374	Krisper — Problems with Risk Matrices Using Ordinal Scales
+ROW 2302.07715	100	94355	Salem et al — Risk Management Core, Toward an Explicit Representation of Risk in Automated Driving (IEEE Access 2024)
+ROW local:0147e45dfd6e	434	284525	SUNRISE D8.1 — Final report to vehicle safety bodies (safety assurance framework for connected automated mobility systems)
+ROW local:041e5f0c70d3	1136	1025505	Toulmin, Rieke and Janik — An Introduction to Reasoning, 2nd ed. (Macmillan 1984, OCR scan)
+ROW local:0aa9a802631e	663	434089	AIAG-VDA FMEA Handbook (2019) — Failure Mode and Effects Analysis, DFMEA PFMEA FMEA-MSR
+ROW local:0bba4df6673d	601	519217	NUREG-0492 — Fault Tree Handbook (NRC, 1981)
+ROW local:0bc74d2bea76	174	135252	UK Defence Standard 00-56 Part 1 Issue 7 — Safety Management Requirements for Defence Systems, Requirements (2017-02-28)
+ROW local:0e6dbb524dfe	201	154881	ISO 26262-2-2018 — Management of Functional Safety (BSI)
+ROW local:102762ff148b	16	15848	Koopman — Letter on UL 4600 (2021-07-01)
+ROW local:1493d1f836f3	355	311843	RAND — Safe Enough, Approaches to Assessing Acceptable Safety for Automated Vehicles (RR-A569-1, 2020)
+ROW local:1742c8d5b998	311	279715	NASA SP-2010-576 — NASA Risk-Informed Decision Making Handbook
+ROW local:18f76aaa8a8c	85	61611	Holloway and Wasson — A Primer on Argument Assessment (Version 1.0, 2021, NASA NTRS)
+ROW local:1a5e084cb8bb	691	492652	ISO PAS 8800-2024 — Safety and Artificial Intelligence
+ROW local:1b04c71eb8c9	70	50163	ISO 26262-7-2018 — Production, Operation, Service and Decommissioning
+ROW local:1c13661fcaa8	44	40762	Kelly — A Systematic Approach to Safety Case Management (SAE 2004)
+ROW local:1c1a92b73224	31	9659	Key Ideas - UL 4600 Safety Standard for Autonomous Vehicles (Koopman lecture slides)
+ROW local:1d27d7fac441	58	51760	RAND RR1478 Driving to Safety - How Many Miles of Driving Would It Take (2016)
+ROW local:216b19db6b0e	11	9137	ISO IEC IEEE 15026-2 2022 — Systems and software assurance, Part 2 Assurance case (VDE preview)
+ROW local:23bd7524f4d5	29	18933	NHTSA Report to Congress - Research and Rulemaking on Automated Driving Systems (July 2025)
+ROW local:23f46dde097b	449	323464	Safety First for Automated Driving (SaFAD white paper, 2019)
+ROW local:2416292a3545	141	105771	ISO 26262-3-2018 — Concept Phase (BSI)
+ROW local:25d3a31a9aa1	416	200902	ISO SAE 21434-2021 — Cybersecurity Engineering
+ROW local:271a2d51c4f2	470	405341	NHTSA AV STEP Notice of Proposed Rulemaking (90 FR 4130, Jan 15 2025)
+ROW local:321336803fc1	26	11974	Koopman — L152 Understanding AV Safety, slides (2024-10)
+ROW local:33ef25a38c1c	238	197334	USDOT Preparing for the Future of Transportation - Automated Vehicles 3.0 (2018)
+ROW local:36fe900b97bc	25	20897	Koopman and Wagner — Positive Trust Balance for Self-Driving Car Deployment (WAISE 2020)
+ROW local:376d3c30684f	177	95104	ISO-IEC-IEEE 15026-1-2019 — Systems and Software Assurance, Part 1 Concepts and Vocabulary
+ROW local:3d0e31c34a0a	255	186323	USDOT Ensuring American Leadership in Automated Vehicle Technologies - AV 4.0 (2020)
+ROW local:3d1b235596aa	293	248301	ISO 26262-10-2018 — Guidelines on ISO 26262
+ROW local:3d586d235874	1526	1265995	FAA — System Safety Handbook (2000)
+ROW local:41a462827e37	526	334682	IEC 31010-2019 — Risk Management - Risk Assessment Techniques (Ed 2.0)
+ROW local:4332c96f2fd6	231	222344	MIL-STD-882E — Department of Defense Standard Practice for System Safety (2012)
+ROW local:44e5e7678422	59	58946	Koopman and Widen — Redefining Safety for Autonomous Vehicles
+ROW local:46d6107b895f	646	573359	NASA SP-2011-3422 — NASA Risk Management Handbook
+ROW local:475ad494687d	75	64060	Koopman and Widen — Breaking the Tyranny of Net Risk Metrics for Automated Vehicle Safety (SCSC eJournal 2024)
+ROW local:4c537c7906e8	174	157074	AVSC00006 Best Practice for Metrics and Methods for Assessing Safety Performance of ADS
+ROW local:4d27eb6fb293	104	65574	ISO-IEC 15026-3-2015 — Systems and Software Assurance, Part 3 System Integrity Levels
+ROW local:4de2a38fdc99	62	45727	AVSC00003 Best Practice for Passenger-Initiated Emergency Trip Interruption (2020-06)
+ROW local:5490e626ec16	23	18567	Koopman — The UL 4600 Guidebook, free sample (2022)
+ROW local:54d6dfdea249	1141	1077429	MIRA for DfT — Automated Vehicle Safety Assurance, A Framework for Automated Driving Systems (2022)
+ROW local:5893db5c997f	19	17363	UL 4600 - What to Include in an Autonomous Vehicle Safety Case (Koopman)
+ROW local:5a125ddd1975	83	48712	AVSC-I-05-2025 Best Practice for ADS-DV Immediate Post-Crash Behaviors and Interactions (2025-03)
+ROW local:5be41d67ad16	683	663043	ISO 26262-11-2018 — Application to Semiconductors
+ROW local:5bf506972f70	666	672878	NASA SP-2014-612 — NASA System Safety Handbook, Volume 2, System Safety Concepts, Guidelines, and Implementation Examples (2014)
+ROW local:5c15efe64f30	1524	1320871	Book — Autonomous Vehicles and Civil Liability (Steege et al, Springer 2024)
+ROW local:5d92cd1f17dd	1277	1067402	CAIB — Columbia Accident Investigation Board Report, Volume I (2003)
+ROW local:5eadc6bef925	10	9169	ISO IEC IEEE 15026-2 2022 — Systems and software assurance, Part 2 Assurance case (ANSI preview)
+ROW local:61b72628b14f	82	55940	AVSC-I-06-2025 Information Report on ADS-DV Stopped Conditions (2025-12)
+ROW local:63091747b674	549	480496	STPA Handbook (Leveson and Thomas, 2018)
+ROW local:64f9538c2b0f	533	369704	NHTSA A Framework for Automated Driving System Testable Cases and Scenarios (DOT HS 812 623, 2018)
+ROW local:6a33889859b2	91	72164	AVSC00012 Best Practice for Developing ADS Safety Performance Thresholds Based on Human Driving Behavior
+ROW local:6a34133ea7e6	215	167002	ISO 26262-6-2018 — Product Development at the Software Level
+ROW local:6c9b33bfde9d	17	15794	ISO TS 5083 2025 — Road vehicles, Safety for automated driving systems, Design, verification and validation (iTeh preview, contents, foreword, scope)
+ROW local:6cd57a8fca7a	289	195658	ISO 26262-8-2018 — Supporting Processes
+ROW local:71c88a1d2bc1	560	439083	AAMVA Guidelines for Regulating Vehicles with Automated Driving Systems (Edition 4)
+ROW local:77d354cc8af7	231	177092	EU Commission Implementing Regulation 2022-1426 Type-Approval of ADS of Fully Automated Vehicles
+ROW local:7bfd4a363756	79	40256	ISO 31000-2018 — Risk Management Guidelines
+ROW local:7c89760c33e1	1031	653589	JAMA — Automated Driving Safety Evaluation Framework Ver 4.0 (2026-03)
+ROW local:7e8fdc2246cc	1491	1410628	Leveson — Engineering a Safer World, Systems Thinking Applied to Safety (MIT Press 2011, open access)
+ROW local:82d7244d048b	325	260612	ISO 26262-5-2018 — Product Development at the Hardware Level
+ROW local:83d0134fadfb	405	395059	FAA AC 120-92D — Safety Management Systems for Aviation Service Providers (2024-05-21)
+ROW local:83e003999861	41	29849	ISO 34502-2022 — Road vehicles, Test scenarios for automated driving systems, Scenario based safety evaluation framework (iTeh 15-page preview: contents, scope, terms, start of clause 4)
+ROW local:884acc517acd	86	79939	Koopman, Kane and Black — Credible Autonomy Safety Argumentation (SSS 2019)
+ROW local:8a590e370f52	62	55344	Koopman — How Safe Is Safe Enough, free book preview (2022)
+ROW local:8eeb4887a4dc	1116	887686	NASA SP-2016-6105 Rev 2 — NASA Systems Engineering Handbook
+ROW local:90e625593d47	259	185949	FAA AC 25.1309-1B — System Design and Analysis (2024-08-30)
+ROW local:97c21e9847c9	358	310758	L3Pilot — Code of Practice for the Development of Automated Driving Functions (CoP-ADF v1.0)
+ROW local:9adcc5121bd5	31	10289	Koopman — UL 4600 third edition update, slides (2023-06-19)
+ROW local:9def83274286	166	152032	UN Regulation No 157 — Automated Lane Keeping Systems (00 series, EUR-Lex 2021-03-09)
+ROW local:9f51671af209	22	17499	A Safety Standard Approach for Fully Autonomous Vehicles - UL 4600 (Koopman et al., WAISE 2019)
+ROW local:a14c3d11c6dc	69	48399	AVSC00007 Information Report for Adapting a Safety Management System (SMS) for ADS Level 4 and 5 Testing
+ROW local:a391e0d13fa8	1208	1124405	NASA SP-2011-3421 — Probabilistic Risk Assessment Procedures Guide for NASA Managers and Practitioners (2nd ed)
+ROW local:a41019a5b430	196	138628	BS 31100-2011 — Risk Management Code of Practice
+ROW local:a52a42ac3822	18	7709	Koopman — L144 AV Safety and Net Risk, slides
+ROW local:a6b537ff5738	243	238046	NASA SP-2010-580 — NASA System Safety Handbook Volume 1, System Safety Framework and Concepts
+ROW local:a709c254edeb	67	50682	AVSC-D-03-2024 Best Practice for ADS-DV Safety Inspection Framework (2024-12)
+ROW local:a744d998a5b7	108	67441	AVSC00002 Best Practice for Describing an Operational Design Domain (2020-04)
+ROW local:a89e28ee7840	82	67831	AVSC00009 Best Practice for Interactions Between ADS-DVs and Vulnerable Road Users
+ROW local:a9c7b643276b	26	18481	NHTSA AV STEP Withdrawal (91 FR 38619, June 26 2026)
+ROW local:b1d1917f9cf4	310	226146	Zenzic — Safety Case Framework, The Guidance, Edition for Creators (2021)
+ROW local:b3903fe001ed	109	75767	ISO 26262-9-2018 — ASIL-Oriented and Safety-Oriented Analyses
+ROW local:b4287480c380	84	58519	AVSC-I-04-2023 Best Practice for ADS Remote Assistance Use Case (2023-11)
+ROW local:b468bf45f27c	8	2736	PEGASUS Method - An Overview (2019)
+ROW local:b6c10359d954	110	67834	AVSC-I-01-2024 Best Practice for First Responder Interactions with Fleet-Managed ADS-DVs (revised 2024-04, supersedes AVSC00005)
+ROW local:b827e7b12a07	71	49302	AVSC00008 Best Practice for Evaluation of Behavioral Competencies for ADS-DVs
+ROW local:be80930e409d	79	65364	Wachenfeld and Winner — The Release of Autonomous Vehicles (Springer 2016, chapter 21, open access)
+ROW local:c0d3ca177aaf	197	136278	ISO PAS 21448-2019 — SOTIF (BSI)
+ROW local:c1c7c8354ba7	76	48308	AVSC-D-04-2025 Best Practice for Assessment of ADS-DV Safety Case Claims Supported by Evidence (2025-10)
+ROW local:c22b61a61eaa	50	32066	ISO-IEC 15026-2-2011 — Systems and Software Assurance, Part 2 Assurance Case
+ROW local:c35c19975827	148	114038	ISO 26262-4-2018 — Product Development at the System Level (BSI)
+ROW local:c3c5f9de20cc	1384	871790	UL 4600 Voting Version (December 13 2019, Koopman copy) - Evaluation of Autonomous Products
+ROW local:c91d753ec3db	213	192513	RAND RR2662 Measuring Automated Vehicle Safety - Forging a Framework (2018)
+ROW local:c9a451f83ae4	30	21010	Assurance Case Guide (Argevide) - GSN and Assurance Case Construction
+ROW local:caf714759f86	253	217481	HSE — The tolerability of risk from nuclear power stations (1992 revision)
+ROW local:cb40d304cbca	367	100607	ISO 26262-1-2018 — Vocabulary
+ROW local:cf129f19b0b0	820	436617	AdvoCATE User Guide 1.4 (NASA assurance case tool)
+ROW local:cf59ff8a1e69	75	63980	CRS R48605 Safety Considerations for Automated Passenger Vehicles (July 2026)
+ROW local:d2d322f0b779	132	83703	AVSC-D-02-2024 Best Practice for Core Automated Vehicle Safety Information (2024-05)
+ROW local:d38dea63d22f	62	48059	AVSC00011 Best Practice for Continuous Monitoring and Improvement after Deployment
+ROW local:d42337eba862	64	39048	SAE J3018 (2020) Safety-Relevant Guidance for On-Road Testing of Prototype ADS-Operated Vehicles
+ROW local:d4ceb75c64ab	562	446882	ISO 21448-2022 — Road vehicles, Safety of the Intended Functionality (SOTIF), full text
+ROW local:d5f3d058bb27	267	226854	HSE — Reducing Risks, Protecting People: HSE decision-making process (R2P2, 2001)
+ROW local:d6d9d9a1057d	65	38956	AVSC00010 Information Report for Change Risk Management
+ROW local:da682684b180	33	30854	Paper — Driver Assistance Systems - Analysis, Tests and the Safety Case, ISO 26262 and ISO PAS 21448 (Kirovskii and Gorelov, IOP 2019)
+ROW local:dbb1c4619d93	183	137349	ISO 26262-12-2018 — Adaptation for Motorcycles (BSI)
+ROW local:dcb47a114938	21	11234	Koopman — L131 How Safe Is Safe Enough, slides (2022)
+ROW local:e10ec4c599f6	189	150476	ISO-IEC-IEEE 15026-4-2021 — Systems and Software Assurance, Part 4 Assurance in the Life Cycle
+ROW local:e1cfbb5bd7bc	99	82627	NHTSA Automated Driving Systems 2.0 - A Vision for Safety (2017)
+ROW local:e53772398dff	54	35026	MISRA SC — Safety assurance argument context for automated driving (2024-04)
+ROW local:e5b8e06e28f2	79	55554	AVSC-I-07-2026 Best Practice for ADS Remote Assistance Training and Human Factors (2026-08)
+ROW local:e602ffa4f1cc	60	60143	NHTSA Third Amended Standing General Order 2021-01 Incident Reporting (2025)
+ROW local:e94916e8eba9	2073	1766423	Rausand and Haugen — Risk Assessment, Theory, Methods, and Applications, 2nd ed. (Wiley 2020)
+ROW local:e98c1f12ff21	167	94935	AVSC00004 Best Practice for Data Collection for ADS-DVs to Support Event Analysis (2020-09)
+ROW local:fe96edbde0ee	136	70888	ISO 31000-2009 — Risk Management Principles and Guidelines
+ROW local:ffd6b6449efc	69	51710	AVSC00001 Best Practice for In-Vehicle Fallback Test Driver Selection, Training, and Oversight (2019-11)
+ROW local:fff17ed80281	79	60879	AVSC00005 Best Practice for First Responder Interactions with Fleet-Managed ADS-DVs (2020-12)
+
+== SUMMARY
+title-equal groups: 0  redundant docs: 0
+prefix-equal (exact 2000 chars) groups: 0  redundant docs: 0
+prefix-equal after lowercase+whitespace collapse, not exact: 0  redundant docs: 0
+
+== TITLE-EQUAL GROUPS
+== PREFIX-EQUAL GROUPS (exact)
+== PREFIX-EQUAL GROUPS (loose, not exact)
+

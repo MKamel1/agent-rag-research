@@ -1,0 +1,29 @@
+db: /home/omar/ai-projects/research-system-rag-data/papers.db
+papers with chunks: 12390  (papers table rows: 12390)
+total chunks: 399676  total chunk chars: 1080386685
+
+== SUMMARY
+title-equal groups: 4  redundant docs: 4
+prefix-equal (exact 2000 chars) groups: 0  redundant docs: 0
+prefix-equal after lowercase+whitespace collapse, not exact: 0  redundant docs: 0
+
+== TITLE-EQUAL GROUPS
+[title] group of 2
+    1210.4792                chunks=29    chars=104758    prefix_sha1=68148931d7  Scalable Matrix-valued Kernel Learning for High-dimensional Nonlinear Multivariate Regress
+    1408.2066                chunks=14    chars=53267     prefix_sha1=c304ade54e  Scalable Matrix-valued Kernel Learning for High-dimensional Nonlinear Multivariate Regress
+
+[title] group of 2
+    1304.7920                chunks=28    chars=50144     prefix_sha1=e57df7b322  From Ordinary Differential Equations to Structural Causal Models: the deterministic case
+    1408.2063                chunks=28    chars=49501     prefix_sha1=1f2a29c8a7  From Ordinary Differential Equations to Structural Causal Models: the deterministic case
+
+[title] group of 2
+    1910.01288               chunks=19    chars=84257     prefix_sha1=9cfdada4ae  Towards Efficient Local Causal Structure Learning
+    2103.00378               chunks=28    chars=85456     prefix_sha1=9e48e58519  Towards Efficient Local Causal Structure Learning
+
+[title] group of 2
+    2301.00314               chunks=15    chars=38957     prefix_sha1=1be4e3435a  Causal Deep Learning
+    2303.02186               chunks=31    chars=69657     prefix_sha1=82b5e46c38  Causal Deep Learning
+
+== PREFIX-EQUAL GROUPS (exact)
+== PREFIX-EQUAL GROUPS (loose, not exact)
+
