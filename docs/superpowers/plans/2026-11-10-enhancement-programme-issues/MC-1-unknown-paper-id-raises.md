@@ -32,7 +32,7 @@ Labels: wave:1-no-gpu, area:mcp, size:S
 
 **Acceptance / falsification criterion.** Unit tests: an unknown id raises `ContractError`; the `arxiv:`-prefixed form produces the hint; a valid id is unchanged. Mutation proof: remove the resolve call and the unknown-id test fails. Falsified if the unknown-id test passes with the resolve call removed.
 
-**Gates / depends on.** Depends on: none. Gates: EP-3, MC-2.
+**Gates / depends on.** Depends on: none. Gates: MC-2.
 
 **Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
 
@@ -40,4 +40,4 @@ Labels: wave:1-no-gpu, area:mcp, size:S
 
 **Risk and rollback.** A valid-but-unindexed paper id now errors where it used to return empty. That is intended; it is also the same behaviour `get_paper` already has. Rollback: revert.
 
-**Docs to update in the same PR.** PROJECT-STATUS ledger via EP-3. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-3 carries those entries from this ticket's merged SHA.
+**Docs to update in the same PR.** Section 2: the unknown-`paper_id` error. Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.

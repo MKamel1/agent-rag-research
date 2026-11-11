@@ -31,7 +31,7 @@ Labels: wave:1-no-gpu, area:eval, size:S
 
 **Acceptance / falsification criterion.** A stubbed lock timeout on one question makes the whole report invalid and the process exit non-zero; a run with no timeouts is unchanged. Falsified if the timeout question is still counted as a miss.
 
-**Gates / depends on.** Depends on: EV-9. Gates: EP-3, RQ-2, EV-16.
+**Gates / depends on.** Depends on: EV-9 (ordering only: same file, not a data dependency). Gates: RQ-2 (parked), EV-16.
 
 **Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
 
@@ -39,4 +39,4 @@ Labels: wave:1-no-gpu, area:eval, size:S
 
 **Risk and rollback.** A transient timeout on one question invalidates a long run. Mitigation: intended (a partially starved run is not a baseline); the run is repeatable. Rollback: revert.
 
-**Docs to update in the same PR.** PROJECT-STATUS via EP-3. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-3 carries those entries from this ticket's merged SHA.
+**Docs to update in the same PR.** Section 2: the `run_valid` rule and non-zero exit. Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.

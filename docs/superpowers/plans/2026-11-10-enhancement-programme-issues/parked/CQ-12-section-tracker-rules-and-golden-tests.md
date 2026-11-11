@@ -1,9 +1,12 @@
 Title: CQ-12: Add golden tests and rules to the section tracker (standards)
-Labels: wave:3-gated-change, area:corpus, size:M
+Labels: wave:3-gated-change, area:corpus, size:M, parked
+Parked-until: start only if EV-18's structure-attributable miss count is 5 or more. Kill criterion: killed if the count is below 5 or standards passage hit@10 leaves under 5 items of headroom.
 
 ## CQ-12 -- Add golden tests and rules to the section tracker (standards)
 
 **Review cross-reference:** S-24. **Wave:** W3 gated changes after baselines.
+
+**Parked, do not start.** Parked-until: start only if EV-18's structure-attributable miss count is 5 or more. Kill criterion: killed if the count is below 5 or standards passage hit@10 leaves under 5 items of headroom.
 
 **Why.** `_heading_depth` and `_SectionTracker` (`rag/parser.py:457-494`, fed by the unfiltered `text_level >= 2` test at `:539`) are the root cause of stale clause numbers, furniture roots and NOTE/output-line roots in section paths; neither has a unit test. Reproduced today: a path such as `'FOR UL INTERNAL REFERENCE > 6.4.1.2 Risk'`. It is a standards and books problem (1,678 furniture-root chunks in standards against 150 in main), high for standards and low for main (review item c). It cannot fix flat books: the parser emits only levels 1 and 2.
 
@@ -12,7 +15,7 @@ Labels: wave:3-gated-change, area:corpus, size:M
   - Golden tests first, pinning the reproduced defects, then rules that reject or renest headings whose text equals the last path component, drop stale numeric markers, and refuse NOTE/output lines as roots; expose the tracker as a pure function over stored blocks so it can be re-run on CPU.
   - Starts only if EV-18's gate count is 5 or more.
 - Out (explicitly):
-  - Books' chapter structure (needs the PDF outline join; not carried by the review). Rewriting stored `Block.section_path` (operator question F7). Re-embedding (CQ-15/CQ-16).
+  - Books' chapter structure (needs the PDF outline join; not carried by the review). Rewriting stored `Block.section_path` (operator question F7). Re-embedding (CQ-16).
 
 **Owns** (files this ticket may touch; anything else is out of bounds):
 - `rag/parser.py`
@@ -33,7 +36,7 @@ Labels: wave:3-gated-change, area:corpus, size:M
 
 **Acceptance / falsification criterion.** The three reproduced paths no longer occur; the in-memory re-derivation over standards blocks changes only paths with a stale numeric, furniture or NOTE root (every changed path listed, 30 sampled by hand with zero wrong); main sample unchanged within stated tolerance. Falsified if a sampled changed path is wrong.
 
-**Gates / depends on.** Depends on: EV-18. Gates: CQ-13, CQ-15.
+**Gates / depends on.** Depends on: EV-18. Gates: CQ-13 (parked), CQ-16 (parked).
 
 **Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
 
@@ -41,4 +44,4 @@ Labels: wave:3-gated-change, area:corpus, size:M
 
 **Risk and rollback.** A tracker change affects every future parse. Mitigation: no live data is re-parsed here; golden tests pin the rest. Rollback: revert.
 
-**Docs to update in the same PR.** PROJECT-STATUS via EP-5; DATA-CONTRACTS wording is RIDER-1 conditional item 7. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-5 carries those entries from this ticket's merged SHA.
+**Docs to update in the same PR.** The report or note this ticket writes is its doc (section 7 doc-map row). Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.

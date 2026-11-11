@@ -1,9 +1,12 @@
 Title: RQ-2: Add an opt-in, default-off relevance demotion to the Retriever
-Labels: wave:1-no-gpu, area:retrieval, size:M
+Labels: wave:1-no-gpu, area:retrieval, size:M, parked
+Parked-until: start only if EV-17's off-topic top-10 share exceeds the operator's F6 bar (the share and a first demotion estimate are computable offline from EV-17 rows plus `relevance_score`). Kill criterion: killed if EV-17's share is below the bar.
 
 ## RQ-2 -- Add an opt-in, default-off relevance demotion to the Retriever
 
 **Review cross-reference:** S-21. **Wave:** W1 do now, no GPU.
+
+**Parked, do not start.** Parked-until: start only if EV-17's off-topic top-10 share exceeds the operator's F6 bar (the share and a first demotion estimate are computable offline from EV-17 rows plus `relevance_score`). Kill criterion: killed if EV-17's share is below the bar.
 
 **Why.** 37.4% of main-corpus papers (4,630 of 12,385) are off-topic against the audited labels and nothing in the pipeline can keep them out of an answer; `papers.relevance_score` separates on from off topic at AUROC 0.923 (RV-1 F-1.4, `docs/eval-reports/2026-11-10-topic-labels-audit.md`), the Retriever already loads the paper record for every reranked hit, and `Config.relevance_filter` is dead. The operator keeps the off-topic papers; the lever is measurement first, demotion only.
 
@@ -35,7 +38,7 @@ Labels: wave:1-no-gpu, area:retrieval, size:M
 
 **Acceptance / falsification criterion.** Default-off output is identical to the pre-change commit on the fake (byte-equal result lists); with a floor set, no result is removed and order within each side of the floor is preserved. The retrieval-quality ADOPT/REJECT rule is not applied here: it is frozen in the topic-focus protocol section 6 and applied by RQ-3. Falsified if the default-off identity test fails.
 
-**Gates / depends on.** Depends on: RQ-1, EV-10. Gates: EP-3, RQ-3.
+**Gates / depends on.** Depends on: RQ-1, EV-10 (ordering only: same file, not a data dependency), EV-17. Operator answers: F6. Gates: RQ-3 (parked).
 
 **Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
 
@@ -43,4 +46,4 @@ Labels: wave:1-no-gpu, area:retrieval, size:M
 
 **Risk and rollback.** Demotion acts on the already-truncated pool and can starve it (a pool 40% off-topic still leaves about 19 of 32; RV-1 F-1.4). Mitigation: default off; RQ-3 reports `Coverage` pool sizes. Rollback: revert; nothing depends on it until RIDER-1.
 
-**Docs to update in the same PR.** PROJECT-STATUS section 2 (flag) via EP-3; no contract or Config change here. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-3 carries those entries from this ticket's merged SHA.
+**Docs to update in the same PR.** Section 2: the new eval flag; no contract or Config change here. Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.

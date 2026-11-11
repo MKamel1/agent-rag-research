@@ -1,9 +1,12 @@
 Title: MC-4: Slim the MCP wire by projecting duplicated envelope fields away
-Labels: wave:3-gated-change, area:mcp, size:S
+Labels: wave:3-gated-change, area:mcp, size:S, parked
+Parked-until: start only if F5 = yes AND MC-3 telemetry shows agents lowering the default k. Kill criterion: killed if F5 = no, or MC-3 telemetry shows default-k calls are not lowered, or a standards k=10 response (about 4.2k tokens) is acceptable to the operator.
 
 ## MC-4 -- Slim the MCP wire by projecting duplicated envelope fields away
 
 **Review cross-reference:** S-26. **Wave:** W3 gated changes after baselines.
+
+**Parked, do not start.** Parked-until: start only if F5 = yes AND MC-3 telemetry shows agents lowering the default k. Kill criterion: killed if F5 = no, or MC-3 telemetry shows default-k calls are not lowered, or a standards k=10 response (about 4.2k tokens) is acceptable to the operator.
 
 **Why.** 57-58% of a standards `semantic_search` response is envelope rather than passage (k=10 is about 4.2k tokens; a Waymo call averages about 10.8k): `bbox`, a `snippet` that lies inside `passage_text` for 94-100% of results, and repeated `paper_id`/`block_id`. Agents already lower `k` to cope (RV-4 F-4.6; review S-26).
 
@@ -35,7 +38,7 @@ Labels: wave:3-gated-change, area:mcp, size:S
 
 **Acceptance / falsification criterion.** Token count of a standards k=10 response falls by at least 25% with identical `passage_text` and citation content; `get_span` still round-trips. Falsified if `passage_text` differs anywhere or the drop is under 25%.
 
-**Gates / depends on.** Depends on: MC-3. Operator answers: F5. Gates: EP-5.
+**Gates / depends on.** Depends on: MC-3. Operator answers: F5. Gates: none.
 
 **Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched); operator answers: F5 · re-embed: n. Also: operator answer F5 (wire as a projection of the frozen envelope).
 
@@ -43,4 +46,4 @@ Labels: wave:3-gated-change, area:mcp, size:S
 
 **Risk and rollback.** A client that read a dropped field breaks. Mitigation: only fields no LLM can use are dropped; the dropped list is documented in the server instructions. Rollback: revert.
 
-**Docs to update in the same PR.** PROJECT-STATUS section 2 via EP-5. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-5 carries those entries from this ticket's merged SHA.
+**Docs to update in the same PR.** Section 2: the MCP wire projection. Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.

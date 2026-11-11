@@ -1,9 +1,12 @@
 Title: EV-22: Run the ligature-repair A/B on the repaired clone
-Labels: wave:2-gpu-measure, area:eval, needs-gpu, needs-services, size:M
+Labels: wave:2-gpu-measure, area:eval, needs-gpu, needs-services, size:M, parked
+Parked-until: start only if the damaged-gold stratum shows a gap (CQ-7's trigger holds and CQ-7 is done); needs F3. Kill criterion: killed with CQ-7.
 
 ## EV-22 -- Run the ligature-repair A/B on the repaired clone
 
 **Review cross-reference:** S-17. **Wave:** W2 first GPU session, measurements only.
+
+**Parked, do not start.** Parked-until: start only if the damaged-gold stratum shows a gap (CQ-7's trigger holds and CQ-7 is done); needs F3. Kill criterion: killed with CQ-7.
 
 **Why.** CQ-1's sparse-arm ligature repair is merged but unmeasured: 32.42% of main chunks (129,566) carry damaged ligatures and 57% of the papers-set gold chunks (35 of 61) and 39% of books (27 of 69) are damaged, so the effect can be stratified (RV-3 F-1.14, review S-17). Review item h shows the merged query-side repair changes none of 1,217 stored queries.
 
@@ -33,7 +36,7 @@ Labels: wave:2-gpu-measure, area:eval, needs-gpu, needs-services, size:M
 
 **Acceptance / falsification criterion.** Verdict applies the pre-registered rule per set, with damaged and clean strata separate (35/26 on papers, 27/42 on books); the ceiling is stated (a gain can only occur on damaged-gold items; with about 60 damaged items only an effect of about 10 net items is detectable per RV-3). Falsified if arm A differs from the EV-16 run beyond the jitter envelope.
 
-**Gates / depends on.** Depends on: CQ-7, EV-16, EV-18, EV-21. Operator answers: F3. Gates: EP-4, RQ-3, CQ-17, CQ-18.
+**Gates / depends on.** Depends on: CQ-7, EV-16, EV-18. Operator answers: F3. Gates: CQ-18 (parked).
 
 **Needs.** GPU: y · services up: embedder + reranker containers, vector store, corpus database (read-only) · operator sign-off: n (no protected path is touched); operator answers: F3 · re-embed: n. Also: GPU free (F3); the repaired clone exists (CQ-7); about 12-25 min GPU (estimate).
 
@@ -41,4 +44,4 @@ Labels: wave:2-gpu-measure, area:eval, needs-gpu, needs-services, size:M
 
 **Risk and rollback.** Serving from the clone with the wrong code revision. Mitigation: manifest records revisions; arm B uses the CQ-1 code by design. Rollback: delete the clone.
 
-**Docs to update in the same PR.** Report via EP-4. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-4 carries those entries from this ticket's merged SHA.
+**Docs to update in the same PR.** The report or note this ticket writes is its doc (section 7 doc-map row). Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.

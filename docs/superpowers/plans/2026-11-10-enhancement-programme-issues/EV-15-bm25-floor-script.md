@@ -31,7 +31,7 @@ Labels: wave:1-no-gpu, area:eval, size:S
 
 **Acceptance / falsification criterion.** Standards floor reproduces the review's re-run within the tolerance stated in the protocol (paper R@10 0.98, chunk@10 0.63, chunk@1 0.23 on the 94 answerable items). Falsified if the script cannot reproduce those figures from the same stored text.
 
-**Gates / depends on.** Depends on: none. Gates: EP-3, EV-16, EV-18.
+**Gates / depends on.** Depends on: none. Gates: EV-16, EV-18.
 
 **Needs.** GPU: n · services up: none · operator sign-off: n (no protected path is touched) · re-embed: n
 
@@ -39,4 +39,4 @@ Labels: wave:1-no-gpu, area:eval, size:S
 
 **Risk and rollback.** A tokenisation difference makes the floor differ from the one the protocols quote. Mitigation: the reproduction check and the stated tolerance. Rollback: revert.
 
-**Docs to update in the same PR.** PROJECT-STATUS section 2 via EP-3. Programme batching rule (plan section 4, rule 13): this ticket does not edit PROJECT-STATUS.md or BACKLOG.md; EP-3 carries those entries from this ticket's merged SHA.
+**Docs to update in the same PR.** Section 2: entry-point row for `scripts/bm25_floor.py`. Per `docs/AGENT-PROCEDURES.md` section B, in this same PR: flip this ticket's row in `docs/BACKLOG.md` (Enhancement programme section) to DONE with the landing SHA; add one entry to the `docs/PROJECT-STATUS.md` section 3 shipped-work ledger (ticket, what it did, SHA); add a section 7 doc-map row for every new `docs/*.md`; add the section 2 entry-point row for any new entry point or flag; HISTORICAL banner on any doc this PR supersedes. `docs/PROJECT-STATUS.md` and `docs/BACKLOG.md` are shared append-or-flip files, deliberately not listed under Owns; the orchestrator resolves append conflicts when it merges.
