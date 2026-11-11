@@ -17,8 +17,9 @@ resparsed therefore serves REPAIRED queries against UNREPAIRED stored sparse vec
     matches them. THIS is the only regression, and it is limited to queries that contain a key of
     `rag/ligature_map.json` (227 entries). The 263 questions in the 2026-11-10 ground-truth sets
     contain none, so an eval run will NOT reveal it;
-  * The vector store's IDF is computed from stored vectors, so the repaired query term's document frequency
-    is under-counted (it lacks the "efect" chunks) until the resparse -- a mild over-weighting.
+  * The vector store's IDF is computed from stored vectors, so the repaired query term's
+    document frequency is under-counted (it lacks the "efect" chunks) until the resparse -- a
+    mild over-weighting.
 Conclusion: the code is safe to deploy ahead of the resparse for ordinary (correctly spelled)
 queries, but the keyword arm gets no benefit until the resparse runs (~35% of main-corpus chunks
 change), and damaged-spelling queries regress in the interim. Prefer shipping them together:
