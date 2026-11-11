@@ -320,7 +320,7 @@ def test_vector_store_down_at_startup_exits_with_one_actionable_message(tmp_path
     from contracts.errors import TransientError
 
     def _down(*a, **k):
-        raise TransientError("Qdrant call failed: connection refused")
+        raise TransientError("vector store call failed: connection refused")
 
     monkeypatch.setattr(rag.config, "load_config", lambda *a, **k: Config(
         focus_area_queries=["x"], gpu_lock_path=str(tmp_path / ".gpu.lock")))
