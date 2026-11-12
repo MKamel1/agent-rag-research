@@ -1,0 +1,67 @@
+{
+  "k": 10,
+  "n_questions": 40,
+  "n_errors": 0,
+  "paper_level": {
+    "overall": {
+      "recall_at_k": 1.0,
+      "mrr": 0.9675,
+      "n": 40
+    },
+    "by_question_type": {
+      "Algorithm-Retrieval": {
+        "recall_at_k": 1.0,
+        "mrr": 1.0,
+        "n": 5
+      },
+      "Equation-Retrieval": {
+        "recall_at_k": 1.0,
+        "mrr": 0.962857142857143,
+        "n": 35
+      }
+    },
+    "by_doc_type": {
+      "paper": {
+        "recall_at_k": 1.0,
+        "mrr": 0.9675,
+        "n": 40
+      }
+    }
+  },
+  "passage_level": {
+    "n_scored": 40,
+    "overall": {
+      "recall_at_k": 0.925,
+      "mrr": 0.7841666666666667,
+      "n": 40
+    },
+    "by_question_type": {
+      "Algorithm-Retrieval": {
+        "recall_at_k": 0.8,
+        "mrr": 0.7,
+        "n": 5
+      },
+      "Equation-Retrieval": {
+        "recall_at_k": 0.9428571428571428,
+        "mrr": 0.7961904761904762,
+        "n": 35
+      }
+    },
+    "by_doc_type": {
+      "paper": {
+        "recall_at_k": 0.925,
+        "mrr": 0.7841666666666667,
+        "n": 40
+      }
+    }
+  },
+  "chapter_level": {
+    "n_scored": 0,
+    "overall": {
+      "recall_at_k": null,
+      "mrr": null,
+      "n": 0
+    },
+    "by_question_type": {}
+  }
+}
