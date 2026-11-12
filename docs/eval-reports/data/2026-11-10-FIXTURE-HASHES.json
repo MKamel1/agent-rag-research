@@ -8,7 +8,7 @@
   "docs/eval-reports/data/2026-11-10-topic-labels/topic_labels.tsv": "c14cf1ebafc010f45e4e377f18d67994183b3d8696859b7c4ded55659956e8d1",
   "fixtures/eval/eval_ground_truth.json": "61e52db8957cde90267b46814164a9e4e47ca97809659b96e013abb14e8e50b6",
   "fixtures/eval/eval_questions_blind.json": "7813ac0efe3f40724b9883e8eee67661ae3f533a632df7a50b6642654b36a615",
-  "fixtures/eval/eval_book_questions.json": "747420e97d23b14a270825ea2bb4ce37dc5e816e74834ed35ffa062c02c64586",
+  "fixtures/eval/eval_book_questions.json": "648351282c63e963d8ecfa21de1a7043afa703eb026f976dd45db33d8c8acc73",
   "fixtures/eval/eval_known_absent.json": "8c80ee4095fbdddd952e3ac34bcbfd3fb0f50724f12e641fa00986777cf3002f",
   "fixtures/eval/eval_equation_slice.json": "d3fbe4ad94b9fbaafdabe264edebb077d804e411ea65124a1a4847e9935e82a8"
  },
