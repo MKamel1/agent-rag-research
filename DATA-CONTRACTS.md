@@ -782,7 +782,7 @@ class ScanResponse:
 | `semantic_search(query, filters?, k)` | `SearchResponse` (passage-level `GroundedResult`s, via `Retriever.retrieve()`) |
 | `get_paper(paper_id)` | `PaperSummaryView` |
 | `get_span(anchor)` | the exact verbatim source text for an anchor (the check-my-source tool) |
-| `scan_corpus(pattern, paper_id?, author_org?, max_matches_per_paper=3, context=200)` | `ScanResponse` (exhaustive block-text enumeration — the "WHICH PAPERS contain X" tool; use it, not `semantic_search`, for that question) |
+| `scan_corpus(pattern, paper_id?, author_org?, max_matches_per_paper=3, context=200, section_pattern?)` | `ScanResponse` (exhaustive block-text enumeration — the "WHICH PAPERS contain X" tool; use it, not `semantic_search`, for that question) |
 
 `search_papers`/`semantic_search` carry a **`Coverage`** so the agent knows when it is seeing a sample, not
 the whole picture (PRD §8.5 anti-miss) — this is a real field on both response types now, not a prose promise;

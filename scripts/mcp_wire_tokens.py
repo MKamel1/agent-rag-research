@@ -30,7 +30,7 @@ def _counter():
         import tiktoken
         enc = tiktoken.get_encoding("cl100k_base")
         return "cl100k_base tokens", lambda text: len(enc.encode(text))
-    except Exception:  # tiktoken missing, or its vocab file is not cached offline
+    except (ImportError, OSError):  # tiktoken missing, or its vocab file is not cached offline
         return "characters", len
 
 

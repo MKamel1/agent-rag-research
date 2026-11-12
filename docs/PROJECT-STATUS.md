@@ -278,6 +278,17 @@ the MCP server and the dashboard's `/api/search`) is recorded into a **separate*
 foundation sign-off (`app/usage_log.py:1-15`). Shipped D-2a (PR #207, store + `app/serve.py`
 instrumentation) and D-2b (PR #209, dashboard `usage` panel).
 
+### MCP surface enhancements MC-5a..e and MC-4 (2026-11-11, branch `MC-5-mcp-enhancements`, not yet merged)
+
+Operator-approved follow-ups to the RV-4 review (`docs/eval-reports/2026-11-11-mcp-enhancements.md`): `search_papers`
+caps `section_paths` at 30 (`fde471c`); `get_section` takes a clause prefix or substring and returns a capped subtree
+(`af02bf5`); `scan_corpus` takes `section_pattern` (`3f3ee2f`); `max_hits_per_paper` is ignored under `paper_id`
+(`b964d7c`); unknown-id errors carry a remedy and no db path, `scan_methods` raises `ContractError` (`7d3944a`).
+**MC-4** (`97495e8`), under the operator ruling of 2026-11-11 that the MCP wire may be a lean projection of the
+frozen result contract: search/`get_paper` tools return `rag.mcp_server.to_wire(...)` (no `bbox`, `anchor.snippet`,
+repeated `paper_id`, `anchor.section_path`, default `evidence_tier`/`metadata`); `get_span` takes an anchor with only
+`block_id` required. `contracts/` is untouched. Standards k=10 response: 5,060 -> 3,679 tokens (-27.3%).
+
 ### Author-org tagging (NEW, undocumented elsewhere — shipped 2026-08-05)
 
 Design: `docs/superpowers/specs/2026-08-05-paper-author-org-tagging-design.md`. Motivated by the
