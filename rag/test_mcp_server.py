@@ -196,6 +196,21 @@ def test_search_papers_returns_paper_search_response_of_records():
     assert all(isinstance(r, PaperSearchResult) for r in resp.results)
 
 
+def test_search_papers_caps_section_paths_and_says_how_many_exist():
+    # MC-5a: long path lists are cut to _MAX_SECTION_PATHS with a marker naming the true total.
+    cap = _mod._MAX_SECTION_PATHS
+    long = _paper_result()
+    long = long.model_copy(update={"view": long.view.model_copy(
+        update={"section_paths": [f"{i}. Sec" for i in range(cap + 20)]})})
+    short = _paper_result("2506.09999")
+    resp = _server(SpyRetriever(paper_results=[long, short])).search_papers("q", k=10)
+    paths = resp.results[0].view.section_paths
+    assert paths[:cap] == [f"{i}. Sec" for i in range(cap)]
+    assert len(paths) == cap + 1
+    assert f"first {cap} of {cap + 20}" in paths[-1] and "get_paper" in paths[-1]
+    assert resp.results[1].view.section_paths == ["1. Intro", "3. Method"]  # under cap: untouched
+
+
 def test_search_papers_coverage_invariant():
     # T-DOC28 regression — see test_semantic_search_coverage_invariant's comment.
     resp = _server(SpyRetriever(

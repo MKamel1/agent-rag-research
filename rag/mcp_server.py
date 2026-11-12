@@ -17,6 +17,7 @@ from contracts.mcp_server import (
     BlockMatch,
     Coverage,
     PaperSearchResponse,
+    PaperSearchResult,
     PaperSummaryView,
     ScanResponse,
     SearchResponse,
@@ -35,6 +36,11 @@ from rag.retriever import source_url
 # call a caller that isn't even this class, e.g. a test fake) -- gets a sane, bounded pool.
 _MIN_K = 1
 _MAX_K = 100
+
+# MC-5a (RV-4 F-4.6): `search_papers` used to ship every distinct section path of every hit (standards
+# median 68 paths = ~820 tokens per hit, max 1,285 = ~45k). 30 keeps a typical paper whole and cuts the
+# long tail; `get_paper` still returns the full list.
+_MAX_SECTION_PATHS = 30
 
 
 def build_instructions(stats: dict) -> str:
@@ -209,13 +215,17 @@ class McpServer:
         `email_domain`/`keyword` heuristic (precision 0.706 / recall 0.783, measured on the Waymo
         corpus), not confirmed
         authorship.
+
+        Each hit's `view.section_paths` is capped at `_MAX_SECTION_PATHS`; a longer list ends with
+        a "[truncated: first N of M ...]" marker string (not a real path). `get_paper` has all.
         """
         self._require_known_paper_filter("search_papers", filters)
         results, retrieval_coverage = self._retriever.retrieve_papers(
             query, filters, self._resolve_k(k)
         )
         return PaperSearchResponse(
-            results=results, coverage=self._coverage(results, retrieval_coverage)
+            results=[self._cap_section_paths(r) for r in results],
+            coverage=self._coverage(results, retrieval_coverage),
         )
 
     def scan_corpus(
@@ -395,6 +405,20 @@ class McpServer:
         if paper_id.startswith("arxiv:"):
             hint = f" (stored ids have no 'arxiv:' prefix; try {paper_id.removeprefix('arxiv:')!r})"
         raise ContractError(f"{tool}: unknown paper_id {paper_id!r}{hint}{self._serving_suffix()}")
+
+    @staticmethod
+    def _cap_section_paths(result: PaperSearchResult) -> PaperSearchResult:
+        """MC-5a: keep the first `_MAX_SECTION_PATHS` paths and end the list with a marker string
+        saying how many exist (`PaperSummaryView` is a frozen contract with no `truncated` field, so
+        the marker rides in the list itself; it is not a real section path)."""
+        paths = result.view.section_paths
+        if len(paths) <= _MAX_SECTION_PATHS:
+            return result
+        marker = (f"[truncated: first {_MAX_SECTION_PATHS} of {len(paths)} section paths; "
+                  "get_paper returns all]")
+        view = result.view.model_copy(
+            update={"section_paths": [*paths[:_MAX_SECTION_PATHS], marker]})
+        return result.model_copy(update={"view": view})
 
     def _resolve_k(self, k: int | None) -> int:
         """`k=None` -> `self._default_k`; either way, clamp to `[_MIN_K, _MAX_K]` (OG-48#5) before
