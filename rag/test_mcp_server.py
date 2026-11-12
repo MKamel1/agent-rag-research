@@ -582,10 +582,11 @@ class ScanSpyDocStore:
         self._rows = list(rows)
 
     def scan_blocks(self, pattern, *, paper_id=None, curated_org=None, context=200,
-                    max_per_paper=3):
+                    max_per_paper=3, section_pattern=None):
         self.scan_calls.append({
             "pattern": pattern, "paper_id": paper_id, "curated_org": curated_org,
             "context": context, "max_per_paper": max_per_paper,
+            "section_pattern": section_pattern,
         })
         return list(self._rows), 1738, len({r[0] for r in self._rows}), False
 
@@ -875,3 +876,11 @@ def test_instructions_state_the_known_limits_and_name_every_tool():
     for tool in ("semantic_search", "search_papers", "scan_corpus", "scan_methods", "get_paper",
                  "get_section", "get_span", "get_figures", "corpus_stats", "list_methods"):
         assert tool in text
+
+
+def test_scan_corpus_passes_section_pattern_through_and_defaults_to_unset():
+    server = _scan_server()
+    server.scan_corpus("ASIL", "p1", None, 3, 200, "^ASIL$")
+    server.scan_corpus("ASIL")
+    calls = server._document_store.scan_calls
+    assert calls[0]["section_pattern"] == "^ASIL$" and calls[1]["section_pattern"] is None

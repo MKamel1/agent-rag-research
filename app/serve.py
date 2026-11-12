@@ -194,7 +194,7 @@ def semantic_search(
 @record_usage(_get_usage_log, source="mcp", tool="scan_corpus")
 def scan_corpus(
     pattern: str, paper_id: str | None = None, author_org: str | None = None,
-    max_matches_per_paper: int = 3, context: int = 200,
+    max_matches_per_paper: int = 3, context: int = 200, section_pattern: str | None = None,
 ) -> ScanResponse:
     """Exhaustive regex scan over every stored block — the tool for "WHICH PAPERS contain X".
 
@@ -210,8 +210,14 @@ def scan_corpus(
 
     `paper_id` narrows to a single document — the right way to resolve a definition or an
     abbreviation, which retrieval handles badly. `author_org` restricts to papers carrying a
-    curated (enumerated, not heuristic) authorship tag for that organisation."""
-    return _server.scan_corpus(pattern, paper_id, author_org, max_matches_per_paper, context)
+    curated (enumerated, not heuristic) authorship tag for that organisation.
+
+    `section_pattern` (optional) is a case-insensitive regex the block's `section_path` must also
+    match: `section_pattern="^ASIL$"` with `paper_id` set returns the block under a heading named
+    exactly that, the way a vocabulary document defines a term (`pattern` may be `""`). Unset
+    means every section."""
+    return _server.scan_corpus(
+        pattern, paper_id, author_org, max_matches_per_paper, context, section_pattern)
 
 
 @mcp.tool()

@@ -54,7 +54,7 @@ class _FakeMcpServer:
         self.get_span_calls.append(anchor)
         return "verbatim source text"
 
-    def scan_corpus(self, pattern, paper_id, author_org, max_matches, context):
+    def scan_corpus(self, pattern, paper_id, author_org, max_matches, context, section_pattern=None):
         return ScanResponse(matches=[], papers_scanned=1, papers_matched=0, truncated=False)
 
     def scan_methods(self, method, paper_id, author_org, max_matches, context):

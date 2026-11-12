@@ -247,7 +247,7 @@ class McpServer:
 
     def scan_corpus(
         self, pattern: str, paper_id: str | None = None, author_org: str | None = None,
-        max_matches_per_paper: int = 3, context: int = 200,
+        max_matches_per_paper: int = 3, context: int = 200, section_pattern: str | None = None,
     ) -> ScanResponse:
         """Exhaustive regex scan over every stored block. **Use this, not `semantic_search`, when
         the question is "WHICH PAPERS do/contain X".**
@@ -281,10 +281,16 @@ class McpServer:
         `author_org` restricts to papers with a CURATED authorship tag for that org — the enumerated
         tier only (`AuthorOrgMatch.method == "curated"`), never the email/keyword heuristic, so
         "which of Waymo's own papers" means exactly that.
+
+        `section_pattern` (MC-5c, optional) is a case-insensitive regex that the block's
+        `section_path` must ALSO match, e.g. `"^ASIL$"` for the block under a heading named exactly
+        that (how a vocabulary document defines a term). `pattern` may be `""` to take every block
+        of the matching sections. Unset = every section, exactly as before.
         """
         rows, scanned, matched, truncated = self._document_store.scan_blocks(
             pattern, paper_id=paper_id, curated_org=author_org,
             context=context, max_per_paper=max_matches_per_paper,
+            section_pattern=section_pattern,
         )
         return ScanResponse(
             matches=[

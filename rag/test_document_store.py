@@ -932,6 +932,23 @@ def test_scan_blocks_rejects_an_invalid_regex_rather_than_matching_nothing(store
         store.scan_blocks("bootstrap(")
 
 
+def test_scan_blocks_section_pattern_ands_with_text_pattern_and_unset_is_unchanged(store):
+    # MC-5c: the vocabulary-document case -- the definition lives under a heading named exactly "ASIL".
+    _put_paper(store, "2506.00001", [
+        make_block(block_id="2506.00001:b0", paper_id="2506.00001", text="ASIL is a level.",
+                   section_path="ASIL", index=0),
+        make_block(block_id="2506.00001:b1", paper_id="2506.00001", text="The ASIL applies here.",
+                   section_path="5 Classification", index=1),
+    ])
+    assert len(store.scan_blocks("ASIL")[0]) == 2  # unset: as before
+    rows = store.scan_blocks("ASIL", section_pattern="^ASIL$")[0]
+    assert [r[2] for r in rows] == ["2506.00001:b0"]
+    assert [r[2] for r in store.scan_blocks("", section_pattern="^asil$")[0]] == ["2506.00001:b0"]
+    assert store.scan_blocks("nothing", section_pattern="^ASIL$")[0] == []
+    with pytest.raises(ContractError):
+        store.scan_blocks("ASIL", section_pattern="(")
+
+
 # --------------------------------------------------------------------------------------------------
 # cross-thread reads (RI-1) — the dashboard builds the retrieval stack on one thread and reads
 # through it from ThreadingHTTPServer request threads on every search

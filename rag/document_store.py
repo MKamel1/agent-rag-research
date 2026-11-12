@@ -614,6 +614,7 @@ class DocumentStore:
     def scan_blocks(
         self, pattern: str, *, paper_id: str | None = None,
         curated_org: str | None = None, context: int = 200, max_per_paper: int = 3,
+        section_pattern: str | None = None,
     ) -> tuple[list[tuple[str, str, str, int, str, str]], int, int, bool]:
         """Exhaustive regex scan over stored block text. Returns
         `(rows, papers_scanned, papers_matched, truncated)` where each row is
@@ -643,11 +644,18 @@ class DocumentStore:
 
         `max_per_paper` bounds evidence per paper, never papers: a paper with more matches still
         appears, it just contributes fewer rows, and `truncated` says so.
+
+        MC-5c: `section_pattern` (case-insensitive regex, `re.search`) additionally requires the
+        block's `section_path` to match, so `"^ASIL$"` finds the block under a heading named exactly
+        that. A block is a match only if BOTH patterns match; unset/empty adds no constraint.
         """
         try:
             regex = re.compile(pattern, re.IGNORECASE)
+            section_regex = re.compile(section_pattern, re.IGNORECASE) if section_pattern else None
         except re.error as error:
-            raise ContractError(f"scan_blocks: invalid regex {pattern!r}: {error}") from error
+            raise ContractError(
+                f"scan_blocks: invalid regex (pattern={pattern!r}, "
+                f"section_pattern={section_pattern!r}): {error}") from error
 
         sql = ("SELECT b.paper_id, b.block_id, b.page, b.section_path, b.text, p.title, "
                "p.author_orgs FROM blocks b JOIN papers p ON p.paper_id = b.paper_id")
@@ -685,6 +693,8 @@ class DocumentStore:
                 if not curated_cache[r_paper_id]:
                     continue
             scanned.add(r_paper_id)
+            if section_regex is not None and not section_regex.search(section_path or ""):
+                continue
             text = text or ""
             match = regex.search(text)
             start_at = end_at = None
