@@ -71,17 +71,17 @@ def main() -> int:
     name = titles()
     if args.json:
         for r in results:
-            r["title"] = name.get(r["anchor"]["paper_id"], "")
+            r["title"] = name.get(r["paper_id"], "")
         print(json.dumps(results, indent=1))
         return 0
     print(f"scope: {scope}")
     for i, r in enumerate(results, 1):
         anchor = r["anchor"]
-        pid = anchor["paper_id"]
+        pid = r["paper_id"]  # the slim MCP wire (MC-4) keeps paper_id on the result only
         # Title first and in full -- see the note in scripts/enumerate_corpus.py.
         print(f"\n[{i}] {name.get(pid, '')}")
         print(f"    PAPER  : {pid}  p.{anchor['page']}  score={r['score']:.3f}")
-        print(f"    SECTION: {anchor['section_path'] or '(front matter / unsectioned)'}")
+        print(f"    SECTION: {r['citation']['section_path'] or '(front matter / unsectioned)'}")
         print(f"    TEXT   : {' '.join(r['passage_text'].split())[:700]}")
     print(f"\n({len(results)} results)")
     return 0
