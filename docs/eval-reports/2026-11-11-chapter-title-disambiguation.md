@@ -110,3 +110,19 @@ Do not re-run unless chapter boundaries or titles change again.
 
 Note: these runs are at `rerank_depth` 128; the frozen 2026-11-11 baseline for this set (paper 0.774, passage 0.722,
 chapter 0.478) was at depth 32, so the two are not a paired comparison of depth.
+
+## Paired depth check on the same 115 questions (2026-11-11, after the renames)
+
+Same commit, fixture and corpus state; only `rerank_depth` differs (`runs/config-depth32.yaml` vs `runs/config-shipped.yaml`);
+0 errors in both (`runs/after-depth32.json`, `runs/after.json`). The depth-32 run reproduces the frozen baseline
+counts exactly (89 / 83 / 55).
+
+| level | depth 32 | depth 128 | gained : lost at 128 |
+|---|---|---|---|
+| paper hit@10 | 89/115 = 0.774 | 94/115 = 0.817 | 8 : 3 |
+| passage hit@10 | 83/115 = 0.722 | 88/115 = 0.765 | 8 : 3 |
+| chapter hit@10 | 55/115 = 0.478 | 52/115 = 0.452 | 4 : 7 |
+
+Depth 128 helps paper and passage retrieval (+5 each) and costs chapter routing 3 questions net. Chapter-level
+changes: gained QB-033, QB-045, QB-060, QB-104; lost QB-017, QB-037, QB-039, QB-053, QB-056, QB-073, QB-091. Cause of
+the chapter loss not investigated. Not pre-registered; descriptive.

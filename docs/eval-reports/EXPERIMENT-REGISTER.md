@@ -47,3 +47,4 @@ CQ-18 (BM25 weighting), CQ-12/13/16 (standards structure), RQ-4 (expose rerank s
 no result; see `docs/BACKLOG.md` for their triggers. The open `sparse_only` finding above is relevant to CQ-18's trigger.
 
 - 2026-11-11, CQ-20 applied: duplicate chapter titles renamed on `papers` (8) and `av_standards` (2); paired before/after on the 115 book questions at depth 128 shows no change at any level (chapter 52/115 both); false chapter hits from duplicates were 0. Report: `2026-11-11-chapter-title-disambiguation.md`. Re-run only if chapter boundaries or titles change.
+- 2026-11-11, paired rerank depth 32 vs 128 on the 115 legacy book questions (post-CQ-20): paper 89 -> 94, passage 83 -> 88, chapter 55 -> 52 (4 gained, 7 lost); descriptive, not pre-registered; see `2026-11-11-chapter-title-disambiguation.md`. Re-run only if depth, reranker or chapter units change.
