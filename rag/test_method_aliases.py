@@ -9,6 +9,8 @@ import re
 
 import pytest
 
+from contracts.errors import ContractError
+
 from rag.method_aliases import (
     METHOD_ALIASES,
     build_method_regex,
@@ -50,7 +52,7 @@ def test_resolve_unknown_method_falls_back_to_literal():
 
 def test_resolve_ambiguous_substring_raises_rather_than_guessing():
     # "benchmark" sits inside several families; results must never depend on dict order
-    with pytest.raises(ValueError, match="multiple families"):
+    with pytest.raises(ContractError, match="multiple families"):
         resolve_method("benchmark")
 
 

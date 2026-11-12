@@ -114,7 +114,21 @@ class McpServer:
         self._corpus_label = corpus_label
 
     def _serving_suffix(self) -> str:
-        return f" [serving {self._corpus_label}]" if self._corpus_label else ""
+        # MC-5e: the label is "collection=X db=/abs/path"; an error text keeps only the collection
+        # (the path is noise to an agent and leaks the host filesystem).
+        if not self._corpus_label:
+            return ""
+        return f" [serving {self._corpus_label.split(' db=')[0]}]"
+
+    def _unknown_paper_error(self, tool: str, paper_id: str) -> ContractError:
+        """MC-5e: the one text for "no such paper_id" -- says how to find a valid id, and, for an
+        `arxiv:`-prefixed one (stored ids have none), what to retry with."""
+        hint = ""
+        if paper_id.startswith("arxiv:"):
+            hint = f" (stored ids have no 'arxiv:' prefix; try {paper_id.removeprefix('arxiv:')!r})"
+        return ContractError(
+            f"{tool}: unknown paper_id {paper_id!r}{hint}; use search_papers or corpus_stats to "
+            f"find a valid id{self._serving_suffix()}")
 
     @property
     def retriever(self):
@@ -360,7 +374,7 @@ class McpServer:
         one); `markdown` on tables is the extracted table text, which is what makes a table's
         CONTENT answerable without vision."""
         if self._document_store.get(paper_id) is None:
-            raise ContractError(f"get_figures: unknown paper_id {paper_id!r}{self._serving_suffix()}")
+            raise self._unknown_paper_error("get_figures", paper_id)
         return self._document_store.get_artifacts(paper_id, kind)
 
     def get_section(self, paper_id: str, section_path: str) -> list[Block] | dict:
@@ -377,7 +391,7 @@ class McpServer:
         `ContractError` for an unknown `paper_id`. Blocks are the same frozen provenance type
         `get_span` resolves, so any block here can be cited."""
         if self._document_store.get(paper_id) is None:
-            raise ContractError(f"get_section: unknown paper_id {paper_id!r}{self._serving_suffix()}")
+            raise self._unknown_paper_error("get_section", paper_id)
         blocks = self._document_store.get_blocks(paper_id)
         exact = [b for b in blocks if b.section_path == section_path]
         if exact or not section_path:
@@ -410,7 +424,7 @@ class McpServer:
         """
         record = self._document_store.get(paper_id)
         if record is None:
-            raise ContractError(f"get_paper: unknown paper_id {paper_id!r}{self._serving_suffix()}")
+            raise self._unknown_paper_error("get_paper", paper_id)
         section_paths = self._distinct_section_paths(record.parsed.blocks)
         return PaperSummaryView(
             paper_id=paper_id,
@@ -441,10 +455,7 @@ class McpServer:
         paper_id = filters.paper_id if filters is not None else None
         if paper_id is None or self._document_store.get(paper_id) is not None:
             return
-        hint = ""
-        if paper_id.startswith("arxiv:"):
-            hint = f" (stored ids have no 'arxiv:' prefix; try {paper_id.removeprefix('arxiv:')!r})"
-        raise ContractError(f"{tool}: unknown paper_id {paper_id!r}{hint}{self._serving_suffix()}")
+        raise self._unknown_paper_error(tool, paper_id)
 
     @staticmethod
     def _cap_section_paths(result: PaperSearchResult) -> PaperSearchResult:

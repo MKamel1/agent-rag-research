@@ -22,6 +22,8 @@ pre-truncation pool, not a `len(results)` stand-in (the exact bug `_coverage()` 
 
 import pytest
 
+from contracts.errors import ContractError
+
 _mod = pytest.importorskip("rag.mcp_server")
 
 from contracts.mcp_server import (
@@ -626,7 +628,7 @@ def test_scan_methods_unknown_method_scans_literal_without_error():
 
 def test_scan_methods_ambiguous_input_raises_instead_of_guessing():
     server = _scan_server()
-    with pytest.raises(ValueError, match="multiple families"):
+    with pytest.raises(ContractError, match="multiple families"):
         server.scan_methods("benchmark")
 
 
@@ -884,3 +886,19 @@ def test_scan_corpus_passes_section_pattern_through_and_defaults_to_unset():
     server.scan_corpus("ASIL")
     calls = server._document_store.scan_calls
     assert calls[0]["section_pattern"] == "^ASIL$" and calls[1]["section_pattern"] is None
+
+
+def test_unknown_paper_error_text_has_hints_and_drops_the_db_path():
+    # MC-5e: collection kept, db path gone, remedy named, arxiv prefix hint only for arxiv: ids.
+    server = _artifact_server(corpus_label="collection=av_standards db=/home/u/data/papers.db")
+    for call in (lambda: server.get_paper("arxiv:1234.5"), lambda: server.get_section("arxiv:1234.5", "x"),
+                 lambda: server.get_figures("arxiv:1234.5")):
+        with pytest.raises(ContractError) as err:
+            call()
+        msg = str(err.value)
+        assert "collection=av_standards" in msg and "/home" not in msg and "papers.db" not in msg
+        assert "use search_papers or corpus_stats to find a valid id" in msg
+        assert "no 'arxiv:' prefix; try '1234.5'" in msg
+    with pytest.raises(ContractError) as err:
+        server.get_paper("nope")
+    assert "arxiv" not in str(err.value) and "search_papers" in str(err.value)

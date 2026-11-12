@@ -27,6 +27,8 @@ Keep fragments lowercase — matching is case-insensitive, and mixed-case entrie
 
 import re
 
+from contracts.errors import ContractError
+
 # Canonical family name -> surface forms. Order within a family doesn't matter (the built
 # pattern is an alternation); family names are what `list_methods()` shows callers.
 METHOD_ALIASES: dict[str, tuple[str, ...]] = {
@@ -236,8 +238,8 @@ def resolve_method(method: str) -> tuple[str, list[str]]:
         # sees the candidate families in the error and picks one. Silent first-hit would make
         # results depend on dict order.
         candidates = ", ".join(sorted(c for c, _ in hits))
-        raise ValueError(
-            f"method {method!r} matches multiple families; name one of: {candidates}"
+        raise ContractError(
+            f"scan_methods: method {method!r} matches multiple families; name one of: {candidates}"
         )
     return method, [method]
 
