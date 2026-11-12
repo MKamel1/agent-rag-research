@@ -1,0 +1,1628 @@
+{
+  "/home/omar/ai-projects/research-system-rag/.claude/worktrees/EP-programme-20261110/docs/eval-reports/data/2026-11-10-standards-gt/runs/20261111T013215/depth128-fused.json": {
+    "n_questions": 128,
+    "gt_items_not_in_report": 0,
+    "n_errored_rows": 0,
+    "run_valid": true,
+    "per_dimension": {
+      "authority": {
+        "n": 4,
+        "paper_recall": {
+          "hits": 4,
+          "n": 4
+        },
+        "paper_p1": {
+          "hits": 4,
+          "n": 4
+        },
+        "anchor_hit": {
+          "hits": 4,
+          "n": 4
+        },
+        "anchor_p1": {
+          "hits": 4,
+          "n": 4
+        },
+        "member_hit": {
+          "hits": 4,
+          "n": 4
+        },
+        "member_p1": {
+          "hits": 4,
+          "n": 4
+        }
+      },
+      "book-passage": {
+        "n": 26,
+        "paper_recall": {
+          "hits": 26,
+          "n": 26
+        },
+        "paper_p1": {
+          "hits": 25,
+          "n": 26
+        },
+        "anchor_hit": {
+          "hits": 23,
+          "n": 26
+        },
+        "anchor_p1": {
+          "hits": 11,
+          "n": 26
+        },
+        "member_hit": {
+          "hits": 23,
+          "n": 26
+        },
+        "member_p1": {
+          "hits": 11,
+          "n": 26
+        }
+      },
+      "clause-lookup": {
+        "n": 18,
+        "paper_recall": {
+          "hits": 18,
+          "n": 18
+        },
+        "paper_p1": {
+          "hits": 17,
+          "n": 18
+        },
+        "anchor_hit": {
+          "hits": 18,
+          "n": 18
+        },
+        "anchor_p1": {
+          "hits": 16,
+          "n": 18
+        },
+        "member_hit": {
+          "hits": 18,
+          "n": 18
+        },
+        "member_p1": {
+          "hits": 16,
+          "n": 18
+        }
+      },
+      "cross-document": {
+        "n": 12,
+        "paper_recall": {
+          "hits": 12,
+          "n": 12
+        },
+        "paper_p1": {
+          "hits": 7,
+          "n": 12
+        },
+        "anchor_hit": {
+          "hits": 0,
+          "n": 0
+        },
+        "anchor_p1": {
+          "hits": 0,
+          "n": 0
+        },
+        "member_hit": {
+          "hits": 0,
+          "n": 0
+        },
+        "member_p1": {
+          "hits": 0,
+          "n": 0
+        }
+      },
+      "definition-lookup": {
+        "n": 12,
+        "paper_recall": {
+          "hits": 10,
+          "n": 12
+        },
+        "paper_p1": {
+          "hits": 5,
+          "n": 12
+        },
+        "anchor_hit": {
+          "hits": 8,
+          "n": 12
+        },
+        "anchor_p1": {
+          "hits": 1,
+          "n": 12
+        },
+        "member_hit": {
+          "hits": 8,
+          "n": 12
+        },
+        "member_p1": {
+          "hits": 1,
+          "n": 12
+        }
+      },
+      "edition": {
+        "n": 4,
+        "paper_recall": {
+          "hits": 2,
+          "n": 4
+        },
+        "paper_p1": {
+          "hits": 1,
+          "n": 4
+        },
+        "anchor_hit": {
+          "hits": 2,
+          "n": 4
+        },
+        "anchor_p1": {
+          "hits": 1,
+          "n": 4
+        },
+        "member_hit": {
+          "hits": 2,
+          "n": 4
+        },
+        "member_p1": {
+          "hits": 1,
+          "n": 4
+        }
+      },
+      "guidance-factual": {
+        "n": 14,
+        "paper_recall": {
+          "hits": 14,
+          "n": 14
+        },
+        "paper_p1": {
+          "hits": 14,
+          "n": 14
+        },
+        "anchor_hit": {
+          "hits": 13,
+          "n": 14
+        },
+        "anchor_p1": {
+          "hits": 12,
+          "n": 14
+        },
+        "member_hit": {
+          "hits": 13,
+          "n": 14
+        },
+        "member_p1": {
+          "hits": 12,
+          "n": 14
+        }
+      },
+      "table-requirement": {
+        "n": 16,
+        "paper_recall": {
+          "hits": 16,
+          "n": 16
+        },
+        "paper_p1": {
+          "hits": 13,
+          "n": 16
+        },
+        "anchor_hit": {
+          "hits": 15,
+          "n": 16
+        },
+        "anchor_p1": {
+          "hits": 6,
+          "n": 16
+        },
+        "member_hit": {
+          "hits": 16,
+          "n": 16
+        },
+        "member_p1": {
+          "hits": 7,
+          "n": 16
+        }
+      }
+    },
+    "stub": {
+      "rank1": {
+        "hits": 1,
+        "n": 128
+      },
+      "topk_slots": {
+        "hits": 5,
+        "n": 1280
+      }
+    },
+    "authority_commentary_outranks_gold": {
+      "hits": 0,
+      "n": 4
+    },
+    "edition_other_outranks_gold": {
+      "hits": 2,
+      "n": 4
+    },
+    "cross_document": {
+      "all_gold_in_topk": {
+        "hits": 8,
+        "n": 15
+      },
+      "any_gold_in_topk": {
+        "hits": 15,
+        "n": 15
+      }
+    },
+    "absent_arm": {
+      "n_absent": 22,
+      "top_score_absent": {
+        "n": 22,
+        "min": 0.006623641304347826,
+        "median": 0.011227263511307676,
+        "max": 0.01527518656716418
+      },
+      "top_score_answerable": {
+        "n": 106,
+        "min": 0.004339950372208436,
+        "median": 0.013198739805621806,
+        "max": 0.01639344262295082
+      },
+      "nearest_distractor_at_rank1": {
+        "hits": 9,
+        "n": 22
+      }
+    }
+  },
+  "/home/omar/ai-projects/research-system-rag/.claude/worktrees/EP-programme-20261110/docs/eval-reports/data/2026-11-10-standards-gt/runs/20261111T013215/depth32-fused.json": {
+    "n_questions": 128,
+    "gt_items_not_in_report": 0,
+    "n_errored_rows": 0,
+    "run_valid": true,
+    "per_dimension": {
+      "authority": {
+        "n": 4,
+        "paper_recall": {
+          "hits": 4,
+          "n": 4
+        },
+        "paper_p1": {
+          "hits": 4,
+          "n": 4
+        },
+        "anchor_hit": {
+          "hits": 4,
+          "n": 4
+        },
+        "anchor_p1": {
+          "hits": 4,
+          "n": 4
+        },
+        "member_hit": {
+          "hits": 4,
+          "n": 4
+        },
+        "member_p1": {
+          "hits": 4,
+          "n": 4
+        }
+      },
+      "book-passage": {
+        "n": 26,
+        "paper_recall": {
+          "hits": 26,
+          "n": 26
+        },
+        "paper_p1": {
+          "hits": 26,
+          "n": 26
+        },
+        "anchor_hit": {
+          "hits": 20,
+          "n": 26
+        },
+        "anchor_p1": {
+          "hits": 12,
+          "n": 26
+        },
+        "member_hit": {
+          "hits": 21,
+          "n": 26
+        },
+        "member_p1": {
+          "hits": 12,
+          "n": 26
+        }
+      },
+      "clause-lookup": {
+        "n": 18,
+        "paper_recall": {
+          "hits": 18,
+          "n": 18
+        },
+        "paper_p1": {
+          "hits": 17,
+          "n": 18
+        },
+        "anchor_hit": {
+          "hits": 18,
+          "n": 18
+        },
+        "anchor_p1": {
+          "hits": 16,
+          "n": 18
+        },
+        "member_hit": {
+          "hits": 18,
+          "n": 18
+        },
+        "member_p1": {
+          "hits": 16,
+          "n": 18
+        }
+      },
+      "cross-document": {
+        "n": 12,
+        "paper_recall": {
+          "hits": 12,
+          "n": 12
+        },
+        "paper_p1": {
+          "hits": 8,
+          "n": 12
+        },
+        "anchor_hit": {
+          "hits": 0,
+          "n": 0
+        },
+        "anchor_p1": {
+          "hits": 0,
+          "n": 0
+        },
+        "member_hit": {
+          "hits": 0,
+          "n": 0
+        },
+        "member_p1": {
+          "hits": 0,
+          "n": 0
+        }
+      },
+      "definition-lookup": {
+        "n": 12,
+        "paper_recall": {
+          "hits": 10,
+          "n": 12
+        },
+        "paper_p1": {
+          "hits": 5,
+          "n": 12
+        },
+        "anchor_hit": {
+          "hits": 8,
+          "n": 12
+        },
+        "anchor_p1": {
+          "hits": 1,
+          "n": 12
+        },
+        "member_hit": {
+          "hits": 8,
+          "n": 12
+        },
+        "member_p1": {
+          "hits": 1,
+          "n": 12
+        }
+      },
+      "edition": {
+        "n": 4,
+        "paper_recall": {
+          "hits": 3,
+          "n": 4
+        },
+        "paper_p1": {
+          "hits": 1,
+          "n": 4
+        },
+        "anchor_hit": {
+          "hits": 2,
+          "n": 4
+        },
+        "anchor_p1": {
+          "hits": 0,
+          "n": 4
+        },
+        "member_hit": {
+          "hits": 2,
+          "n": 4
+        },
+        "member_p1": {
+          "hits": 0,
+          "n": 4
+        }
+      },
+      "guidance-factual": {
+        "n": 14,
+        "paper_recall": {
+          "hits": 14,
+          "n": 14
+        },
+        "paper_p1": {
+          "hits": 14,
+          "n": 14
+        },
+        "anchor_hit": {
+          "hits": 13,
+          "n": 14
+        },
+        "anchor_p1": {
+          "hits": 12,
+          "n": 14
+        },
+        "member_hit": {
+          "hits": 13,
+          "n": 14
+        },
+        "member_p1": {
+          "hits": 12,
+          "n": 14
+        }
+      },
+      "table-requirement": {
+        "n": 16,
+        "paper_recall": {
+          "hits": 16,
+          "n": 16
+        },
+        "paper_p1": {
+          "hits": 13,
+          "n": 16
+        },
+        "anchor_hit": {
+          "hits": 14,
+          "n": 16
+        },
+        "anchor_p1": {
+          "hits": 6,
+          "n": 16
+        },
+        "member_hit": {
+          "hits": 15,
+          "n": 16
+        },
+        "member_p1": {
+          "hits": 7,
+          "n": 16
+        }
+      }
+    },
+    "stub": {
+      "rank1": {
+        "hits": 1,
+        "n": 128
+      },
+      "topk_slots": {
+        "hits": 7,
+        "n": 1280
+      }
+    },
+    "authority_commentary_outranks_gold": {
+      "hits": 0,
+      "n": 4
+    },
+    "edition_other_outranks_gold": {
+      "hits": 0,
+      "n": 4
+    },
+    "cross_document": {
+      "all_gold_in_topk": {
+        "hits": 9,
+        "n": 15
+      },
+      "any_gold_in_topk": {
+        "hits": 15,
+        "n": 15
+      }
+    },
+    "absent_arm": {
+      "n_absent": 22,
+      "top_score_absent": {
+        "n": 22,
+        "min": 0.007527089783281734,
+        "median": 0.011684059163710743,
+        "max": 0.01527518656716418
+      },
+      "top_score_answerable": {
+        "n": 106,
+        "min": 0.007556735876388218,
+        "median": 0.01411574624843254,
+        "max": 0.01639344262295082
+      },
+      "nearest_distractor_at_rank1": {
+        "hits": 9,
+        "n": 22
+      }
+    }
+  },
+  "/home/omar/ai-projects/research-system-rag/.claude/worktrees/EP-programme-20261110/docs/eval-reports/data/2026-11-10-standards-gt/runs/20261111T013215/depth64-fused.json": {
+    "n_questions": 128,
+    "gt_items_not_in_report": 0,
+    "n_errored_rows": 0,
+    "run_valid": true,
+    "per_dimension": {
+      "authority": {
+        "n": 4,
+        "paper_recall": {
+          "hits": 4,
+          "n": 4
+        },
+        "paper_p1": {
+          "hits": 4,
+          "n": 4
+        },
+        "anchor_hit": {
+          "hits": 4,
+          "n": 4
+        },
+        "anchor_p1": {
+          "hits": 4,
+          "n": 4
+        },
+        "member_hit": {
+          "hits": 4,
+          "n": 4
+        },
+        "member_p1": {
+          "hits": 4,
+          "n": 4
+        }
+      },
+      "book-passage": {
+        "n": 26,
+        "paper_recall": {
+          "hits": 26,
+          "n": 26
+        },
+        "paper_p1": {
+          "hits": 26,
+          "n": 26
+        },
+        "anchor_hit": {
+          "hits": 23,
+          "n": 26
+        },
+        "anchor_p1": {
+          "hits": 11,
+          "n": 26
+        },
+        "member_hit": {
+          "hits": 23,
+          "n": 26
+        },
+        "member_p1": {
+          "hits": 11,
+          "n": 26
+        }
+      },
+      "clause-lookup": {
+        "n": 18,
+        "paper_recall": {
+          "hits": 18,
+          "n": 18
+        },
+        "paper_p1": {
+          "hits": 17,
+          "n": 18
+        },
+        "anchor_hit": {
+          "hits": 18,
+          "n": 18
+        },
+        "anchor_p1": {
+          "hits": 16,
+          "n": 18
+        },
+        "member_hit": {
+          "hits": 18,
+          "n": 18
+        },
+        "member_p1": {
+          "hits": 16,
+          "n": 18
+        }
+      },
+      "cross-document": {
+        "n": 12,
+        "paper_recall": {
+          "hits": 12,
+          "n": 12
+        },
+        "paper_p1": {
+          "hits": 8,
+          "n": 12
+        },
+        "anchor_hit": {
+          "hits": 0,
+          "n": 0
+        },
+        "anchor_p1": {
+          "hits": 0,
+          "n": 0
+        },
+        "member_hit": {
+          "hits": 0,
+          "n": 0
+        },
+        "member_p1": {
+          "hits": 0,
+          "n": 0
+        }
+      },
+      "definition-lookup": {
+        "n": 12,
+        "paper_recall": {
+          "hits": 10,
+          "n": 12
+        },
+        "paper_p1": {
+          "hits": 5,
+          "n": 12
+        },
+        "anchor_hit": {
+          "hits": 8,
+          "n": 12
+        },
+        "anchor_p1": {
+          "hits": 1,
+          "n": 12
+        },
+        "member_hit": {
+          "hits": 8,
+          "n": 12
+        },
+        "member_p1": {
+          "hits": 1,
+          "n": 12
+        }
+      },
+      "edition": {
+        "n": 4,
+        "paper_recall": {
+          "hits": 2,
+          "n": 4
+        },
+        "paper_p1": {
+          "hits": 1,
+          "n": 4
+        },
+        "anchor_hit": {
+          "hits": 2,
+          "n": 4
+        },
+        "anchor_p1": {
+          "hits": 1,
+          "n": 4
+        },
+        "member_hit": {
+          "hits": 2,
+          "n": 4
+        },
+        "member_p1": {
+          "hits": 1,
+          "n": 4
+        }
+      },
+      "guidance-factual": {
+        "n": 14,
+        "paper_recall": {
+          "hits": 14,
+          "n": 14
+        },
+        "paper_p1": {
+          "hits": 14,
+          "n": 14
+        },
+        "anchor_hit": {
+          "hits": 13,
+          "n": 14
+        },
+        "anchor_p1": {
+          "hits": 12,
+          "n": 14
+        },
+        "member_hit": {
+          "hits": 13,
+          "n": 14
+        },
+        "member_p1": {
+          "hits": 12,
+          "n": 14
+        }
+      },
+      "table-requirement": {
+        "n": 16,
+        "paper_recall": {
+          "hits": 16,
+          "n": 16
+        },
+        "paper_p1": {
+          "hits": 13,
+          "n": 16
+        },
+        "anchor_hit": {
+          "hits": 14,
+          "n": 16
+        },
+        "anchor_p1": {
+          "hits": 6,
+          "n": 16
+        },
+        "member_hit": {
+          "hits": 15,
+          "n": 16
+        },
+        "member_p1": {
+          "hits": 7,
+          "n": 16
+        }
+      }
+    },
+    "stub": {
+      "rank1": {
+        "hits": 1,
+        "n": 128
+      },
+      "topk_slots": {
+        "hits": 6,
+        "n": 1280
+      }
+    },
+    "authority_commentary_outranks_gold": {
+      "hits": 0,
+      "n": 4
+    },
+    "edition_other_outranks_gold": {
+      "hits": 2,
+      "n": 4
+    },
+    "cross_document": {
+      "all_gold_in_topk": {
+        "hits": 9,
+        "n": 15
+      },
+      "any_gold_in_topk": {
+        "hits": 15,
+        "n": 15
+      }
+    },
+    "absent_arm": {
+      "n_absent": 22,
+      "top_score_absent": {
+        "n": 22,
+        "min": 0.006623641304347826,
+        "median": 0.011227263511307676,
+        "max": 0.01527518656716418
+      },
+      "top_score_answerable": {
+        "n": 106,
+        "min": 0.00729671356021248,
+        "median": 0.013437661542905795,
+        "max": 0.01639344262295082
+      },
+      "nearest_distractor_at_rank1": {
+        "hits": 9,
+        "n": 22
+      }
+    }
+  },
+  "/home/omar/ai-projects/research-system-rag/.claude/worktrees/EP-programme-20261110/docs/eval-reports/data/2026-11-10-standards-gt/runs/20261111T013215/depth128-dense_only.json": {
+    "n_questions": 128,
+    "gt_items_not_in_report": 0,
+    "n_errored_rows": 0,
+    "run_valid": true,
+    "per_dimension": {
+      "authority": {
+        "n": 4,
+        "paper_recall": {
+          "hits": 4,
+          "n": 4
+        },
+        "paper_p1": {
+          "hits": 4,
+          "n": 4
+        },
+        "anchor_hit": {
+          "hits": 4,
+          "n": 4
+        },
+        "anchor_p1": {
+          "hits": 4,
+          "n": 4
+        },
+        "member_hit": {
+          "hits": 4,
+          "n": 4
+        },
+        "member_p1": {
+          "hits": 4,
+          "n": 4
+        }
+      },
+      "book-passage": {
+        "n": 26,
+        "paper_recall": {
+          "hits": 26,
+          "n": 26
+        },
+        "paper_p1": {
+          "hits": 25,
+          "n": 26
+        },
+        "anchor_hit": {
+          "hits": 23,
+          "n": 26
+        },
+        "anchor_p1": {
+          "hits": 11,
+          "n": 26
+        },
+        "member_hit": {
+          "hits": 23,
+          "n": 26
+        },
+        "member_p1": {
+          "hits": 11,
+          "n": 26
+        }
+      },
+      "clause-lookup": {
+        "n": 18,
+        "paper_recall": {
+          "hits": 18,
+          "n": 18
+        },
+        "paper_p1": {
+          "hits": 17,
+          "n": 18
+        },
+        "anchor_hit": {
+          "hits": 18,
+          "n": 18
+        },
+        "anchor_p1": {
+          "hits": 16,
+          "n": 18
+        },
+        "member_hit": {
+          "hits": 18,
+          "n": 18
+        },
+        "member_p1": {
+          "hits": 16,
+          "n": 18
+        }
+      },
+      "cross-document": {
+        "n": 12,
+        "paper_recall": {
+          "hits": 12,
+          "n": 12
+        },
+        "paper_p1": {
+          "hits": 8,
+          "n": 12
+        },
+        "anchor_hit": {
+          "hits": 0,
+          "n": 0
+        },
+        "anchor_p1": {
+          "hits": 0,
+          "n": 0
+        },
+        "member_hit": {
+          "hits": 0,
+          "n": 0
+        },
+        "member_p1": {
+          "hits": 0,
+          "n": 0
+        }
+      },
+      "definition-lookup": {
+        "n": 12,
+        "paper_recall": {
+          "hits": 10,
+          "n": 12
+        },
+        "paper_p1": {
+          "hits": 6,
+          "n": 12
+        },
+        "anchor_hit": {
+          "hits": 8,
+          "n": 12
+        },
+        "anchor_p1": {
+          "hits": 1,
+          "n": 12
+        },
+        "member_hit": {
+          "hits": 8,
+          "n": 12
+        },
+        "member_p1": {
+          "hits": 1,
+          "n": 12
+        }
+      },
+      "edition": {
+        "n": 4,
+        "paper_recall": {
+          "hits": 1,
+          "n": 4
+        },
+        "paper_p1": {
+          "hits": 1,
+          "n": 4
+        },
+        "anchor_hit": {
+          "hits": 1,
+          "n": 4
+        },
+        "anchor_p1": {
+          "hits": 1,
+          "n": 4
+        },
+        "member_hit": {
+          "hits": 1,
+          "n": 4
+        },
+        "member_p1": {
+          "hits": 1,
+          "n": 4
+        }
+      },
+      "guidance-factual": {
+        "n": 14,
+        "paper_recall": {
+          "hits": 14,
+          "n": 14
+        },
+        "paper_p1": {
+          "hits": 14,
+          "n": 14
+        },
+        "anchor_hit": {
+          "hits": 14,
+          "n": 14
+        },
+        "anchor_p1": {
+          "hits": 12,
+          "n": 14
+        },
+        "member_hit": {
+          "hits": 14,
+          "n": 14
+        },
+        "member_p1": {
+          "hits": 12,
+          "n": 14
+        }
+      },
+      "table-requirement": {
+        "n": 16,
+        "paper_recall": {
+          "hits": 16,
+          "n": 16
+        },
+        "paper_p1": {
+          "hits": 13,
+          "n": 16
+        },
+        "anchor_hit": {
+          "hits": 15,
+          "n": 16
+        },
+        "anchor_p1": {
+          "hits": 6,
+          "n": 16
+        },
+        "member_hit": {
+          "hits": 16,
+          "n": 16
+        },
+        "member_p1": {
+          "hits": 7,
+          "n": 16
+        }
+      }
+    },
+    "stub": {
+      "rank1": {
+        "hits": 1,
+        "n": 128
+      },
+      "topk_slots": {
+        "hits": 4,
+        "n": 1280
+      }
+    },
+    "authority_commentary_outranks_gold": {
+      "hits": 0,
+      "n": 4
+    },
+    "edition_other_outranks_gold": {
+      "hits": 2,
+      "n": 4
+    },
+    "cross_document": {
+      "all_gold_in_topk": {
+        "hits": 8,
+        "n": 15
+      },
+      "any_gold_in_topk": {
+        "hits": 15,
+        "n": 15
+      }
+    },
+    "absent_arm": {
+      "n_absent": 22,
+      "top_score_absent": {
+        "n": 22,
+        "min": 0.005434782608695652,
+        "median": 0.014925373134328358,
+        "max": 0.01639344262295082
+      },
+      "top_score_answerable": {
+        "n": 106,
+        "min": 0.006535947712418301,
+        "median": 0.016129032258064516,
+        "max": 0.01639344262295082
+      },
+      "nearest_distractor_at_rank1": {
+        "hits": 9,
+        "n": 22
+      }
+    }
+  },
+  "/home/omar/ai-projects/research-system-rag/.claude/worktrees/EP-programme-20261110/docs/eval-reports/data/2026-11-10-standards-gt/runs/20261111T013215/depth128-sparse_only.json": {
+    "n_questions": 128,
+    "gt_items_not_in_report": 0,
+    "n_errored_rows": 0,
+    "run_valid": true,
+    "per_dimension": {
+      "authority": {
+        "n": 4,
+        "paper_recall": {
+          "hits": 4,
+          "n": 4
+        },
+        "paper_p1": {
+          "hits": 4,
+          "n": 4
+        },
+        "anchor_hit": {
+          "hits": 4,
+          "n": 4
+        },
+        "anchor_p1": {
+          "hits": 4,
+          "n": 4
+        },
+        "member_hit": {
+          "hits": 4,
+          "n": 4
+        },
+        "member_p1": {
+          "hits": 4,
+          "n": 4
+        }
+      },
+      "book-passage": {
+        "n": 26,
+        "paper_recall": {
+          "hits": 25,
+          "n": 26
+        },
+        "paper_p1": {
+          "hits": 23,
+          "n": 26
+        },
+        "anchor_hit": {
+          "hits": 16,
+          "n": 26
+        },
+        "anchor_p1": {
+          "hits": 9,
+          "n": 26
+        },
+        "member_hit": {
+          "hits": 16,
+          "n": 26
+        },
+        "member_p1": {
+          "hits": 9,
+          "n": 26
+        }
+      },
+      "clause-lookup": {
+        "n": 18,
+        "paper_recall": {
+          "hits": 18,
+          "n": 18
+        },
+        "paper_p1": {
+          "hits": 16,
+          "n": 18
+        },
+        "anchor_hit": {
+          "hits": 15,
+          "n": 18
+        },
+        "anchor_p1": {
+          "hits": 15,
+          "n": 18
+        },
+        "member_hit": {
+          "hits": 15,
+          "n": 18
+        },
+        "member_p1": {
+          "hits": 15,
+          "n": 18
+        }
+      },
+      "cross-document": {
+        "n": 12,
+        "paper_recall": {
+          "hits": 12,
+          "n": 12
+        },
+        "paper_p1": {
+          "hits": 9,
+          "n": 12
+        },
+        "anchor_hit": {
+          "hits": 0,
+          "n": 0
+        },
+        "anchor_p1": {
+          "hits": 0,
+          "n": 0
+        },
+        "member_hit": {
+          "hits": 0,
+          "n": 0
+        },
+        "member_p1": {
+          "hits": 0,
+          "n": 0
+        }
+      },
+      "definition-lookup": {
+        "n": 12,
+        "paper_recall": {
+          "hits": 10,
+          "n": 12
+        },
+        "paper_p1": {
+          "hits": 6,
+          "n": 12
+        },
+        "anchor_hit": {
+          "hits": 8,
+          "n": 12
+        },
+        "anchor_p1": {
+          "hits": 2,
+          "n": 12
+        },
+        "member_hit": {
+          "hits": 8,
+          "n": 12
+        },
+        "member_p1": {
+          "hits": 2,
+          "n": 12
+        }
+      },
+      "edition": {
+        "n": 4,
+        "paper_recall": {
+          "hits": 2,
+          "n": 4
+        },
+        "paper_p1": {
+          "hits": 1,
+          "n": 4
+        },
+        "anchor_hit": {
+          "hits": 0,
+          "n": 4
+        },
+        "anchor_p1": {
+          "hits": 0,
+          "n": 4
+        },
+        "member_hit": {
+          "hits": 0,
+          "n": 4
+        },
+        "member_p1": {
+          "hits": 0,
+          "n": 4
+        }
+      },
+      "guidance-factual": {
+        "n": 14,
+        "paper_recall": {
+          "hits": 14,
+          "n": 14
+        },
+        "paper_p1": {
+          "hits": 14,
+          "n": 14
+        },
+        "anchor_hit": {
+          "hits": 11,
+          "n": 14
+        },
+        "anchor_p1": {
+          "hits": 10,
+          "n": 14
+        },
+        "member_hit": {
+          "hits": 11,
+          "n": 14
+        },
+        "member_p1": {
+          "hits": 10,
+          "n": 14
+        }
+      },
+      "table-requirement": {
+        "n": 16,
+        "paper_recall": {
+          "hits": 14,
+          "n": 16
+        },
+        "paper_p1": {
+          "hits": 13,
+          "n": 16
+        },
+        "anchor_hit": {
+          "hits": 10,
+          "n": 16
+        },
+        "anchor_p1": {
+          "hits": 6,
+          "n": 16
+        },
+        "member_hit": {
+          "hits": 11,
+          "n": 16
+        },
+        "member_p1": {
+          "hits": 7,
+          "n": 16
+        }
+      }
+    },
+    "stub": {
+      "rank1": {
+        "hits": 1,
+        "n": 128
+      },
+      "topk_slots": {
+        "hits": 1,
+        "n": 1280
+      }
+    },
+    "authority_commentary_outranks_gold": {
+      "hits": 0,
+      "n": 4
+    },
+    "edition_other_outranks_gold": {
+      "hits": 0,
+      "n": 4
+    },
+    "cross_document": {
+      "all_gold_in_topk": {
+        "hits": 8,
+        "n": 15
+      },
+      "any_gold_in_topk": {
+        "hits": 15,
+        "n": 15
+      }
+    },
+    "absent_arm": {
+      "n_absent": 22,
+      "top_score_absent": {
+        "n": 22,
+        "min": 0.005494505494505495,
+        "median": 0.011302681992337166,
+        "max": 0.01639344262295082
+      },
+      "top_score_answerable": {
+        "n": 106,
+        "min": 0.005747126436781609,
+        "median": 0.013333333333333334,
+        "max": 0.01639344262295082
+      },
+      "nearest_distractor_at_rank1": {
+        "hits": 9,
+        "n": 22
+      }
+    }
+  },
+  "/home/omar/ai-projects/research-system-rag/.claude/worktrees/EP-programme-20261110/docs/eval-reports/data/2026-11-10-standards-gt/runs/20261111T013215/depth128-fused-repeat.json": {
+    "n_questions": 128,
+    "gt_items_not_in_report": 0,
+    "n_errored_rows": 0,
+    "run_valid": true,
+    "per_dimension": {
+      "authority": {
+        "n": 4,
+        "paper_recall": {
+          "hits": 4,
+          "n": 4
+        },
+        "paper_p1": {
+          "hits": 4,
+          "n": 4
+        },
+        "anchor_hit": {
+          "hits": 4,
+          "n": 4
+        },
+        "anchor_p1": {
+          "hits": 4,
+          "n": 4
+        },
+        "member_hit": {
+          "hits": 4,
+          "n": 4
+        },
+        "member_p1": {
+          "hits": 4,
+          "n": 4
+        }
+      },
+      "book-passage": {
+        "n": 26,
+        "paper_recall": {
+          "hits": 26,
+          "n": 26
+        },
+        "paper_p1": {
+          "hits": 25,
+          "n": 26
+        },
+        "anchor_hit": {
+          "hits": 23,
+          "n": 26
+        },
+        "anchor_p1": {
+          "hits": 11,
+          "n": 26
+        },
+        "member_hit": {
+          "hits": 23,
+          "n": 26
+        },
+        "member_p1": {
+          "hits": 11,
+          "n": 26
+        }
+      },
+      "clause-lookup": {
+        "n": 18,
+        "paper_recall": {
+          "hits": 18,
+          "n": 18
+        },
+        "paper_p1": {
+          "hits": 17,
+          "n": 18
+        },
+        "anchor_hit": {
+          "hits": 18,
+          "n": 18
+        },
+        "anchor_p1": {
+          "hits": 16,
+          "n": 18
+        },
+        "member_hit": {
+          "hits": 18,
+          "n": 18
+        },
+        "member_p1": {
+          "hits": 16,
+          "n": 18
+        }
+      },
+      "cross-document": {
+        "n": 12,
+        "paper_recall": {
+          "hits": 12,
+          "n": 12
+        },
+        "paper_p1": {
+          "hits": 7,
+          "n": 12
+        },
+        "anchor_hit": {
+          "hits": 0,
+          "n": 0
+        },
+        "anchor_p1": {
+          "hits": 0,
+          "n": 0
+        },
+        "member_hit": {
+          "hits": 0,
+          "n": 0
+        },
+        "member_p1": {
+          "hits": 0,
+          "n": 0
+        }
+      },
+      "definition-lookup": {
+        "n": 12,
+        "paper_recall": {
+          "hits": 10,
+          "n": 12
+        },
+        "paper_p1": {
+          "hits": 5,
+          "n": 12
+        },
+        "anchor_hit": {
+          "hits": 8,
+          "n": 12
+        },
+        "anchor_p1": {
+          "hits": 1,
+          "n": 12
+        },
+        "member_hit": {
+          "hits": 8,
+          "n": 12
+        },
+        "member_p1": {
+          "hits": 1,
+          "n": 12
+        }
+      },
+      "edition": {
+        "n": 4,
+        "paper_recall": {
+          "hits": 2,
+          "n": 4
+        },
+        "paper_p1": {
+          "hits": 1,
+          "n": 4
+        },
+        "anchor_hit": {
+          "hits": 2,
+          "n": 4
+        },
+        "anchor_p1": {
+          "hits": 1,
+          "n": 4
+        },
+        "member_hit": {
+          "hits": 2,
+          "n": 4
+        },
+        "member_p1": {
+          "hits": 1,
+          "n": 4
+        }
+      },
+      "guidance-factual": {
+        "n": 14,
+        "paper_recall": {
+          "hits": 14,
+          "n": 14
+        },
+        "paper_p1": {
+          "hits": 14,
+          "n": 14
+        },
+        "anchor_hit": {
+          "hits": 13,
+          "n": 14
+        },
+        "anchor_p1": {
+          "hits": 12,
+          "n": 14
+        },
+        "member_hit": {
+          "hits": 13,
+          "n": 14
+        },
+        "member_p1": {
+          "hits": 12,
+          "n": 14
+        }
+      },
+      "table-requirement": {
+        "n": 16,
+        "paper_recall": {
+          "hits": 16,
+          "n": 16
+        },
+        "paper_p1": {
+          "hits": 13,
+          "n": 16
+        },
+        "anchor_hit": {
+          "hits": 15,
+          "n": 16
+        },
+        "anchor_p1": {
+          "hits": 6,
+          "n": 16
+        },
+        "member_hit": {
+          "hits": 16,
+          "n": 16
+        },
+        "member_p1": {
+          "hits": 7,
+          "n": 16
+        }
+      }
+    },
+    "stub": {
+      "rank1": {
+        "hits": 1,
+        "n": 128
+      },
+      "topk_slots": {
+        "hits": 5,
+        "n": 1280
+      }
+    },
+    "authority_commentary_outranks_gold": {
+      "hits": 0,
+      "n": 4
+    },
+    "edition_other_outranks_gold": {
+      "hits": 2,
+      "n": 4
+    },
+    "cross_document": {
+      "all_gold_in_topk": {
+        "hits": 8,
+        "n": 15
+      },
+      "any_gold_in_topk": {
+        "hits": 15,
+        "n": 15
+      }
+    },
+    "absent_arm": {
+      "n_absent": 22,
+      "top_score_absent": {
+        "n": 22,
+        "min": 0.006623641304347826,
+        "median": 0.011227263511307676,
+        "max": 0.01527518656716418
+      },
+      "top_score_answerable": {
+        "n": 106,
+        "min": 0.004339950372208436,
+        "median": 0.013198739805621806,
+        "max": 0.01639344262295082
+      },
+      "nearest_distractor_at_rank1": {
+        "hits": 9,
+        "n": 22
+      }
+    }
+  }
+}

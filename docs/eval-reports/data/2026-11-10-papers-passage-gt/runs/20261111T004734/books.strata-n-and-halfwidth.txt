@@ -1,0 +1,4 @@
+dimension            n_ans n_passage hw95@p=.5
+book-passage            52        52      0.13
+equation-context        12        12      0.25
+table-requirement        5         5      0.33

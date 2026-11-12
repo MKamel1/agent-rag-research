@@ -1,0 +1,3883 @@
+{
+  "scoring_rule": "top-10 truncation; sparse_mode=fused (hybrid_dense_weight=0.5 -- zeroes a score contribution, does not remove that arm's candidates from the fused pool, see module docstring); paper-level hit = first rank r <= 10 with result.paper_id in question.gold_paper_ids; passage-level hit = first rank r <= 10 with result.anchor.block_id == question.gold_block_id; chapter-level hit = first retrieve_papers rank with paper_id in gold_paper_ids and chapter == gold_chapter_title",
+  "ground_truth_sha256_12": "d3fbe4ad94b9",
+  "code_commit": "626fac3555a386076944d106254354ad66b2dfa7",
+  "code_tree_dirty": false,
+  "k": 10,
+  "n_questions": 40,
+  "n_errors": 0,
+  "run_valid": true,
+  "n_lock_timeouts": 0,
+  "invalid_reason": null,
+  "n_chunk_id_ambiguous_rows": 0,
+  "n_chunk_id_unresolved_ranks": 0,
+  "paper_level": {
+    "overall": {
+      "recall_at_k": 1.0,
+      "mrr": 0.9675,
+      "n": 40
+    },
+    "by_gold_status": {
+      "note": "Partition by gold-set presence (BENCH-1): a question whose gold_paper_ids set is empty has nothing to retrieve against -- a known-absent item, a guaranteed miss -- so blending it into recall deflates the headline with items that cannot hit rather than failures to hit. 'answerable' is the false-negative measure; 'known_absent' is the false-positive arm, read through its top-score distribution because recall is undefined when no hit is possible. 'overall' is retained unpartitioned exactly as earlier reports computed it, for diff compatibility -- do not quote it as the headline for a fixture that mixes the arms.",
+      "answerable": {
+        "recall_at_k": 1.0,
+        "mrr": 0.9675,
+        "n": 40
+      },
+      "known_absent": {
+        "n": 0,
+        "recall_at_k": null,
+        "mrr": null,
+        "metric_note": "recall/MRR withheld by design: an empty gold set misses by construction, so a number here would measure the fixture, not the retriever. Read this arm through n_with_top_result and the top_score distribution.",
+        "n_with_top_result": 0,
+        "top_score": {
+          "n": 0,
+          "mean": null,
+          "median": null,
+          "min": null,
+          "max": null
+        }
+      }
+    },
+    "by_question_type": {
+      "Algorithm-Retrieval": {
+        "recall_at_k": 1.0,
+        "mrr": 1.0,
+        "n": 5
+      },
+      "Equation-Retrieval": {
+        "recall_at_k": 1.0,
+        "mrr": 0.962857142857143,
+        "n": 35
+      }
+    },
+    "by_doc_type": {
+      "paper": {
+        "recall_at_k": 1.0,
+        "mrr": 0.9675,
+        "n": 40
+      }
+    },
+    "title_leak": {
+      "predicate": "verbatim-substring",
+      "n_hits": 40,
+      "n_leaking": 30,
+      "fraction_of_hits": 0.75,
+      "note": "Floor, not a measurement: the predicate matches the gold title verbatim only (casefolded, whitespace runs collapsed), so paraphrase-level leaks go uncounted and true title-driven retrieval is at least this large. Diagnostic alongside Recall/MRR -- deducted from neither."
+    }
+  },
+  "passage_level": {
+    "n_scored": 40,
+    "overall": {
+      "recall_at_k": 0.925,
+      "mrr": 0.78125,
+      "n": 40
+    },
+    "by_vision_status": {
+      "note": "Partition by vision-derivation among passage-scored questions (VARM-1): a vision_derived item's answer exists only inside a figure -- the gold chunk's own text does not contain it -- so no text retriever has anything to rank on, and blending such items into the passage headline caps it below any achievable target (60/64 = 0.9375 on waymo_gt_verified.json). 'text_answerable' is the arm the >=0.95 passage-precision target applies to; 'vision' keeps its own denominator and reports paper-level recall@k alongside its passage metrics because paper-level retrieval already finds these items -- there the gap is reading figures, not finding the page. 'overall' is retained unpartitioned exactly as earlier reports computed it, for diff compatibility; when a fixture has no vision-derived items, text_answerable's recall/MRR/n equal overall's exactly.",
+      "text_answerable": {
+        "recall_at_k": 0.925,
+        "mrr": 0.78125,
+        "n": 40,
+        "rank_1_rate": 0.7,
+        "paper_level": {
+          "recall_at_k": 1.0,
+          "mrr": 0.9675,
+          "n": 40
+        }
+      },
+      "vision": {
+        "recall_at_k": null,
+        "mrr": null,
+        "n": 0,
+        "rank_1_rate": null,
+        "paper_level": {
+          "recall_at_k": null,
+          "mrr": null,
+          "n": 0
+        }
+      }
+    },
+    "by_question_type": {
+      "Algorithm-Retrieval": {
+        "recall_at_k": 0.8,
+        "mrr": 0.7,
+        "n": 5
+      },
+      "Equation-Retrieval": {
+        "recall_at_k": 0.9428571428571428,
+        "mrr": 0.7928571428571428,
+        "n": 35
+      }
+    },
+    "by_doc_type": {
+      "paper": {
+        "recall_at_k": 0.925,
+        "mrr": 0.78125,
+        "n": 40
+      }
+    }
+  },
+  "passage_excerpt_level": {
+    "scoring_rule": "top-10 truncation; passage_excerpt hit = first rank r <= 10 whose passage_text (casefolded, whitespace collapsed) contains the question's passage_excerpt or equals the text of its gold / alternative_gold_chunk_ids chunk; questions with a null excerpt_block_id use the anchor rule (result.anchor.block_id == gold_block_id) and are listed in fallback_question_ids. Reported beside, never in place of, passage_level (anchor rule) and the protocols' member-passage metric (scripts/eval_strata_report.py).",
+    "n_scored": 40,
+    "n_fallback_anchor": 40,
+    "fallback_question_ids": [
+      "Q-EQ-001",
+      "Q-EQ-002",
+      "Q-EQ-003",
+      "Q-EQ-004",
+      "Q-EQ-005",
+      "Q-EQ-006",
+      "Q-EQ-007",
+      "Q-EQ-008",
+      "Q-EQ-009",
+      "Q-EQ-010",
+      "Q-EQ-011",
+      "Q-EQ-012",
+      "Q-EQ-013",
+      "Q-EQ-014",
+      "Q-EQ-015",
+      "Q-EQ-016",
+      "Q-EQ-017",
+      "Q-EQ-018",
+      "Q-EQ-019",
+      "Q-EQ-020",
+      "Q-EQ-021",
+      "Q-EQ-022",
+      "Q-EQ-023",
+      "Q-EQ-024",
+      "Q-EQ-025",
+      "Q-EQ-026",
+      "Q-EQ-027",
+      "Q-EQ-028",
+      "Q-EQ-029",
+      "Q-EQ-030",
+      "Q-EQ-031",
+      "Q-EQ-032",
+      "Q-EQ-033",
+      "Q-EQ-034",
+      "Q-EQ-035",
+      "Q-EQ-036",
+      "Q-EQ-037",
+      "Q-EQ-038",
+      "Q-EQ-039",
+      "Q-EQ-040"
+    ],
+    "overall": {
+      "recall_at_k": 0.925,
+      "mrr": 0.78125,
+      "n": 40
+    },
+    "by_question_type": {
+      "Algorithm-Retrieval": {
+        "recall_at_k": 0.8,
+        "mrr": 0.7,
+        "n": 5
+      },
+      "Equation-Retrieval": {
+        "recall_at_k": 0.9428571428571428,
+        "mrr": 0.7928571428571428,
+        "n": 35
+      }
+    },
+    "by_doc_type": {
+      "paper": {
+        "recall_at_k": 0.925,
+        "mrr": 0.78125,
+        "n": 40
+      }
+    }
+  },
+  "chapter_level": {
+    "n_scored": 0,
+    "overall": {
+      "recall_at_k": null,
+      "mrr": null,
+      "n": 0
+    },
+    "by_question_type": {}
+  },
+  "questions": [
+    {
+      "question_id": "Q-EQ-001",
+      "question_type": "Equation-Retrieval",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2607.06413"
+      ],
+      "gold_block_id": "2607.06413:b63",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": false,
+      "top_score": 0.008381012926467472,
+      "retrieved_paper_ids": [
+        "2607.06413",
+        "2607.06413",
+        "2607.06413",
+        "2607.06413",
+        "2408.14604",
+        "2202.00436",
+        "2407.01765",
+        "2607.06413",
+        "2408.14604",
+        "2408.14604"
+      ],
+      "retrieved_block_ids": [
+        "2607.06413:b63",
+        "2607.06413:b8",
+        "2607.06413:b17",
+        "2607.06413:b5",
+        "2408.14604:b233",
+        "2202.00436:b161",
+        "2407.01765:b427",
+        "2607.06413:b123",
+        "2408.14604:b206",
+        "2408.14604:b238"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2607.06413:c10"
+        ],
+        [
+          "2607.06413:c2"
+        ],
+        [
+          "2607.06413:c3"
+        ],
+        [
+          "2607.06413:c1"
+        ],
+        [
+          "2408.14604:c46"
+        ],
+        [
+          "2202.00436:c34"
+        ],
+        [
+          "2407.01765:c66"
+        ],
+        [
+          "2607.06413:c19"
+        ],
+        [
+          "2408.14604:c40"
+        ],
+        [
+          "2408.14604:c47"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": true
+      }
+    },
+    {
+      "question_id": "Q-EQ-002",
+      "question_type": "Equation-Retrieval",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2604.25157"
+      ],
+      "gold_block_id": "2604.25157:b88",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": false,
+      "top_score": 0.009515982525195726,
+      "retrieved_paper_ids": [
+        "2604.25157",
+        "2604.25157",
+        "2604.25157",
+        "2604.25157",
+        "2604.25157",
+        "2604.25157",
+        "2604.25157",
+        "2606.26497",
+        "2604.25157",
+        "2604.25157"
+      ],
+      "retrieved_block_ids": [
+        "2604.25157:b88",
+        "2604.25157:b5",
+        "2604.25157:b14",
+        "2604.25157:b216",
+        "2604.25157:b53",
+        "2604.25157:b94",
+        "2604.25157:b201",
+        "2606.26497:b361",
+        "2604.25157:b33",
+        "2604.25157:b233"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2604.25157:c9"
+        ],
+        [
+          "2604.25157:c1"
+        ],
+        [
+          "2604.25157:c3"
+        ],
+        [
+          "2604.25157:c24"
+        ],
+        [
+          "2604.25157:c6"
+        ],
+        [
+          "2604.25157:c10"
+        ],
+        [
+          "2604.25157:c23"
+        ],
+        [
+          "2606.26497:c34"
+        ],
+        [
+          "2604.25157:c5"
+        ],
+        [
+          "2604.25157:c25"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": true
+      }
+    },
+    {
+      "question_id": "Q-EQ-003",
+      "question_type": "Equation-Retrieval",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2607.07887"
+      ],
+      "gold_block_id": "2607.07887:b70",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.007998650409530902,
+      "retrieved_paper_ids": [
+        "2607.07887",
+        "2607.07887",
+        "2607.07887",
+        "2607.07887",
+        "2607.07887",
+        "2607.07887",
+        "2606.13607",
+        "2607.07887",
+        "2511.14441",
+        "2607.07887"
+      ],
+      "retrieved_block_ids": [
+        "2607.07887:b70",
+        "2607.07887:b87",
+        "2607.07887:b6",
+        "2607.07887:b4",
+        "2607.07887:b126",
+        "2607.07887:b108",
+        "2606.13607:b183",
+        "2607.07887:b152",
+        "2511.14441:b36",
+        "2607.07887:b57"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2607.07887:c13"
+        ],
+        [
+          "2607.07887:c14"
+        ],
+        [
+          "2607.07887:c2"
+        ],
+        [
+          "2607.07887:c1"
+        ],
+        [
+          "2607.07887:c21"
+        ],
+        [
+          "2607.07887:c18"
+        ],
+        [
+          "2606.13607:c54"
+        ],
+        [
+          "2607.07887:c27"
+        ],
+        [
+          "2511.14441:c7"
+        ],
+        [
+          "2607.07887:c11"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": true
+      }
+    },
+    {
+      "question_id": "Q-EQ-004",
+      "question_type": "Equation-Retrieval",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2606.18969"
+      ],
+      "gold_block_id": "2606.18969:b111",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.008064516129032258,
+      "retrieved_paper_ids": [
+        "2606.18969",
+        "2606.18969",
+        "2606.23917",
+        "2606.18969",
+        "2606.13607",
+        "2202.00436",
+        "2607.04036",
+        "2606.26769",
+        "2311.16984",
+        "2606.18969"
+      ],
+      "retrieved_block_ids": [
+        "2606.18969:b111",
+        "2606.18969:b120",
+        "2606.23917:b298",
+        "2606.18969:b181",
+        "2606.13607:b183",
+        "2202.00436:b161",
+        "2607.04036:b306",
+        "2606.26769:b156",
+        "2311.16984:b418",
+        "2606.18969:b225"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2606.18969:c13"
+        ],
+        [
+          "2606.18969:c14"
+        ],
+        [
+          "2606.23917:c57"
+        ],
+        [
+          "2606.18969:c27"
+        ],
+        [
+          "2606.13607:c54"
+        ],
+        [
+          "2202.00436:c34"
+        ],
+        [
+          "2607.04036:c44"
+        ],
+        [
+          "2606.26769:c29"
+        ],
+        [
+          "2311.16984:c84"
+        ],
+        [
+          "2606.18969:c34"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": true
+      }
+    },
+    {
+      "question_id": "Q-EQ-005",
+      "question_type": "Equation-Retrieval",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2605.10206"
+      ],
+      "gold_block_id": "2605.10206:b36",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.013956193060670672,
+      "retrieved_paper_ids": [
+        "2605.10206",
+        "2605.10206",
+        "2605.10206",
+        "2606.23917",
+        "2312.07610",
+        "2605.10206",
+        "2305.04479",
+        "2605.10206",
+        "2605.10206",
+        "2605.10206"
+      ],
+      "retrieved_block_ids": [
+        "2605.10206:b115",
+        "2605.10206:b26",
+        "2605.10206:b5",
+        "2606.23917:b298",
+        "2312.07610:b223",
+        "2605.10206:b36",
+        "2305.04479:b480",
+        "2605.10206:b101",
+        "2605.10206:b133",
+        "2605.10206:b517"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2605.10206:c21"
+        ],
+        [
+          "2605.10206:c7"
+        ],
+        [
+          "2605.10206:c2"
+        ],
+        [
+          "2606.23917:c57"
+        ],
+        [
+          "2312.07610:c38"
+        ],
+        [
+          "2605.10206:c8"
+        ],
+        [
+          "2305.04479:c25"
+        ],
+        [
+          "2605.10206:c16"
+        ],
+        [
+          "2605.10206:c24"
+        ],
+        [
+          "2605.10206:c52"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 6
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 6,
+        "fallback": true
+      }
+    },
+    {
+      "question_id": "Q-EQ-006",
+      "question_type": "Equation-Retrieval",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2607.06126"
+      ],
+      "gold_block_id": "2607.06126:b113",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.008632886766591501,
+      "retrieved_paper_ids": [
+        "2607.06126",
+        "2408.00032",
+        "1510.04740",
+        "2105.13514",
+        "1802.08952",
+        "2607.06126",
+        "1911.04663",
+        "2607.06126",
+        "2606.23917",
+        "2202.00436"
+      ],
+      "retrieved_block_ids": [
+        "2607.06126:b113",
+        "2408.00032:b241",
+        "1510.04740:b50",
+        "2105.13514:b63",
+        "1802.08952:b73",
+        "2607.06126:b183",
+        "1911.04663:b13",
+        "2607.06126:b238",
+        "2606.23917:b298",
+        "2202.00436:b161"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2607.06126:c14"
+        ],
+        [
+          "2408.00032:c22"
+        ],
+        [
+          "1510.04740:c7"
+        ],
+        [
+          "2105.13514:c13"
+        ],
+        [
+          "1802.08952:c8"
+        ],
+        [
+          "2607.06126:c26"
+        ],
+        [
+          "1911.04663:c3"
+        ],
+        [
+          "2607.06126:c32"
+        ],
+        [
+          "2606.23917:c57"
+        ],
+        [
+          "2202.00436:c34"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": true
+      }
+    },
+    {
+      "question_id": "Q-EQ-007",
+      "question_type": "Equation-Retrieval",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2607.10540"
+      ],
+      "gold_block_id": "2607.10540:b104",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.00819672131147541,
+      "retrieved_paper_ids": [
+        "2607.10540",
+        "2607.10540",
+        "2607.10540",
+        "2505.00555",
+        "2607.10540",
+        "2310.18286",
+        "2607.22762",
+        "2607.10540",
+        "2312.07610",
+        "2311.16984"
+      ],
+      "retrieved_block_ids": [
+        "2607.10540:b104",
+        "2607.10540:b7",
+        "2607.10540:b100",
+        "2505.00555:b359",
+        "2607.10540:b183",
+        "2310.18286:b133",
+        "2607.22762:b61",
+        "2607.10540:b206",
+        "2312.07610:b223",
+        "2311.16984:b418"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2607.10540:c11"
+        ],
+        [
+          "2607.10540:c2"
+        ],
+        [
+          "2607.10540:c10"
+        ],
+        [
+          "2505.00555:c78"
+        ],
+        [
+          "2607.10540:c18"
+        ],
+        [
+          "2310.18286:c23"
+        ],
+        [
+          "2607.22762:c8"
+        ],
+        [
+          "2607.10540:c23"
+        ],
+        [
+          "2312.07610:c38"
+        ],
+        [
+          "2311.16984:c84"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": true
+      }
+    },
+    {
+      "question_id": "Q-EQ-008",
+      "question_type": "Equation-Retrieval",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2606.17308"
+      ],
+      "gold_block_id": "2606.17308:b95",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.013763197586726998,
+      "retrieved_paper_ids": [
+        "2606.17308",
+        "2606.17308",
+        "2606.17308",
+        "2606.17308",
+        "2309.08039",
+        "2603.13662",
+        "2606.17308",
+        "2304.14545",
+        "2604.14856",
+        "2102.11076"
+      ],
+      "retrieved_block_ids": [
+        "2606.17308:b6",
+        "2606.17308:b3",
+        "2606.17308:b95",
+        "2606.17308:b40",
+        "2309.08039:b6",
+        "2603.13662:b20",
+        "2606.17308:b75",
+        "2304.14545:b250",
+        "2604.14856:b323",
+        "2102.11076:b76"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2606.17308:c2"
+        ],
+        [
+          "2606.17308:c1"
+        ],
+        [
+          "2606.17308:c10"
+        ],
+        [
+          "2606.17308:c7"
+        ],
+        [
+          "2309.08039:c2"
+        ],
+        [
+          "2603.13662:c5"
+        ],
+        [
+          "2606.17308:c9"
+        ],
+        [
+          "2304.14545:c40"
+        ],
+        [
+          "2604.14856:c63"
+        ],
+        [
+          "2102.11076:c12"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 3
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 3,
+        "fallback": true
+      }
+    },
+    {
+      "question_id": "Q-EQ-009",
+      "question_type": "Equation-Retrieval",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2607.06330"
+      ],
+      "gold_block_id": "2607.06330:b80",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": false,
+      "top_score": 0.009909534579216759,
+      "retrieved_paper_ids": [
+        "2607.06330",
+        "2607.06330",
+        "2607.06330",
+        "2607.06330",
+        "2607.06330",
+        "2607.06330",
+        "2607.06330",
+        "2607.06330",
+        "2511.15866",
+        "2606.23917"
+      ],
+      "retrieved_block_ids": [
+        "2607.06330:b80",
+        "2607.06330:b16",
+        "2607.06330:b89",
+        "2607.06330:b5",
+        "2607.06330:b125",
+        "2607.06330:b221",
+        "2607.06330:b13",
+        "2607.06330:b3",
+        "2511.15866:b5",
+        "2606.23917:b298"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2607.06330:c17"
+        ],
+        [
+          "2607.06330:c5"
+        ],
+        [
+          "2607.06330:c18"
+        ],
+        [
+          "2607.06330:c2"
+        ],
+        [
+          "2607.06330:c24"
+        ],
+        [
+          "2607.06330:c43"
+        ],
+        [
+          "2607.06330:c3"
+        ],
+        [
+          "2607.06330:c1"
+        ],
+        [
+          "2511.15866:c2"
+        ],
+        [
+          "2606.23917:c57"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": true
+      }
+    },
+    {
+      "question_id": "Q-EQ-010",
+      "question_type": "Equation-Retrieval",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2607.09535"
+      ],
+      "gold_block_id": "2607.09535:b41",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": false,
+      "top_score": 0.012574404761904762,
+      "retrieved_paper_ids": [
+        "2607.09535",
+        "2607.09535",
+        "2607.09535",
+        "2607.09535",
+        "2607.09535",
+        "2607.09535",
+        "2607.09535",
+        "2607.09535",
+        "2607.09535",
+        "local:54d6ca71dda9"
+      ],
+      "retrieved_block_ids": [
+        "2607.09535:b12",
+        "2607.09535:b41",
+        "2607.09535:b164",
+        "2607.09535:b67",
+        "2607.09535:b109",
+        "2607.09535:b25",
+        "2607.09535:b117",
+        "2607.09535:b142",
+        "2607.09535:b33",
+        "local:54d6ca71dda9:b1096"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2607.09535:c2"
+        ],
+        [
+          "2607.09535:c7"
+        ],
+        [
+          "2607.09535:c18"
+        ],
+        [
+          "2607.09535:c8"
+        ],
+        [
+          "2607.09535:c10"
+        ],
+        [
+          "2607.09535:c5"
+        ],
+        [
+          "2607.09535:c11"
+        ],
+        [
+          "2607.09535:c16"
+        ],
+        [
+          "2607.09535:c6"
+        ],
+        [
+          "local:54d6ca71dda9:c93"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 2
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 2,
+        "fallback": true
+      }
+    },
+    {
+      "question_id": "Q-EQ-011",
+      "question_type": "Equation-Retrieval",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2607.11256"
+      ],
+      "gold_block_id": "2607.11256:b64",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.008844389705257794,
+      "retrieved_paper_ids": [
+        "2607.11256",
+        "2607.11256",
+        "2607.11256",
+        "2607.11256",
+        "2607.11256",
+        "2607.11256",
+        "2607.11256",
+        "2607.11256",
+        "2606.23917",
+        "2606.13607"
+      ],
+      "retrieved_block_ids": [
+        "2607.11256:b64",
+        "2607.11256:b52",
+        "2607.11256:b7",
+        "2607.11256:b445",
+        "2607.11256:b193",
+        "2607.11256:b292",
+        "2607.11256:b274",
+        "2607.11256:b4",
+        "2606.23917:b298",
+        "2606.13607:b183"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2607.11256:c8"
+        ],
+        [
+          "2607.11256:c7"
+        ],
+        [
+          "2607.11256:c2"
+        ],
+        [
+          "2607.11256:c46"
+        ],
+        [
+          "2607.11256:c25"
+        ],
+        [
+          "2607.11256:c37"
+        ],
+        [
+          "2607.11256:c34"
+        ],
+        [
+          "2607.11256:c1"
+        ],
+        [
+          "2606.23917:c57"
+        ],
+        [
+          "2606.13607:c54"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": true
+      }
+    },
+    {
+      "question_id": "Q-EQ-012",
+      "question_type": "Equation-Retrieval",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2607.10246"
+      ],
+      "gold_block_id": "2607.10246:b15",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": false,
+      "top_score": 0.00825503715005717,
+      "retrieved_paper_ids": [
+        "2607.10246",
+        "2206.08503",
+        "2606.12739",
+        "2408.14604",
+        "2606.12739",
+        "2406.02241",
+        "2606.23917",
+        "2408.14604",
+        "2604.02250",
+        "2402.12576"
+      ],
+      "retrieved_block_ids": [
+        "2607.10246:b15",
+        "2206.08503:b45",
+        "2606.12739:b7",
+        "2408.14604:b233",
+        "2606.12739:b13",
+        "2406.02241:b84",
+        "2606.23917:b298",
+        "2408.14604:b238",
+        "2604.02250:b152",
+        "2402.12576:b118"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2607.10246:c2"
+        ],
+        [
+          "2206.08503:c7"
+        ],
+        [
+          "2606.12739:c2"
+        ],
+        [
+          "2408.14604:c46"
+        ],
+        [
+          "2606.12739:c3"
+        ],
+        [
+          "2406.02241:c15"
+        ],
+        [
+          "2606.23917:c57"
+        ],
+        [
+          "2408.14604:c47"
+        ],
+        [
+          "2604.02250:c32"
+        ],
+        [
+          "2402.12576:c26"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": true
+      }
+    },
+    {
+      "question_id": "Q-EQ-013",
+      "question_type": "Equation-Retrieval",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2605.19006"
+      ],
+      "gold_block_id": "2605.19006:b39",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.007511419781858861,
+      "retrieved_paper_ids": [
+        "2605.19006",
+        "2605.19006",
+        "2605.19006",
+        "2408.14604",
+        "2311.16984",
+        "2606.13607",
+        "2606.23917",
+        "2408.14604",
+        "2408.14604",
+        "2202.00436"
+      ],
+      "retrieved_block_ids": [
+        "2605.19006:b39",
+        "2605.19006:b6",
+        "2605.19006:b61",
+        "2408.14604:b238",
+        "2311.16984:b418",
+        "2606.13607:b183",
+        "2606.23917:b298",
+        "2408.14604:b233",
+        "2408.14604:b187",
+        "2202.00436:b161"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2605.19006:c6"
+        ],
+        [
+          "2605.19006:c2"
+        ],
+        [
+          "2605.19006:c7"
+        ],
+        [
+          "2408.14604:c47"
+        ],
+        [
+          "2311.16984:c84"
+        ],
+        [
+          "2606.13607:c54"
+        ],
+        [
+          "2606.23917:c57"
+        ],
+        [
+          "2408.14604:c46"
+        ],
+        [
+          "2408.14604:c35"
+        ],
+        [
+          "2202.00436:c34"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": true
+      }
+    },
+    {
+      "question_id": "Q-EQ-014",
+      "question_type": "Equation-Retrieval",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2607.10755"
+      ],
+      "gold_block_id": "2607.10755:b75",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.007462686567164179,
+      "retrieved_paper_ids": [
+        "2607.10755",
+        "2607.10755",
+        "2607.10755",
+        "2606.26638",
+        "1709.07779",
+        "2208.00114",
+        "2606.23917",
+        "2607.10755",
+        "2202.00436",
+        "2606.13607"
+      ],
+      "retrieved_block_ids": [
+        "2607.10755:b75",
+        "2607.10755:b5",
+        "2607.10755:b55",
+        "2606.26638:b5",
+        "1709.07779:b5",
+        "2208.00114:b128",
+        "2606.23917:b298",
+        "2607.10755:b2",
+        "2202.00436:b161",
+        "2606.13607:b183"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2607.10755:c8"
+        ],
+        [
+          "2607.10755:c2"
+        ],
+        [
+          "2607.10755:c6"
+        ],
+        [
+          "2606.26638:c2"
+        ],
+        [
+          "1709.07779:c1"
+        ],
+        [
+          "2208.00114:c26"
+        ],
+        [
+          "2606.23917:c57"
+        ],
+        [
+          "2607.10755:c1"
+        ],
+        [
+          "2202.00436:c34"
+        ],
+        [
+          "2606.13607:c54"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": true
+      }
+    },
+    {
+      "question_id": "Q-EQ-015",
+      "question_type": "Equation-Retrieval",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2607.05153"
+      ],
+      "gold_block_id": "2607.05153:b162",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.007490741779822691,
+      "retrieved_paper_ids": [
+        "2605.20007",
+        "2604.14856",
+        "1902.07091",
+        "2309.09416",
+        "2607.05153",
+        "1412.3773",
+        "1412.3773",
+        "2606.06288",
+        "2305.06894",
+        "2606.13607"
+      ],
+      "retrieved_block_ids": [
+        "2605.20007:b30",
+        "2604.14856:b323",
+        "1902.07091:b35",
+        "2309.09416:b109",
+        "2607.05153:b106",
+        "1412.3773:b28",
+        "1412.3773:b57",
+        "2606.06288:b43",
+        "2305.06894:b18",
+        "2606.13607:b183"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2605.20007:c4"
+        ],
+        [
+          "2604.14856:c63"
+        ],
+        [
+          "1902.07091:c6"
+        ],
+        [
+          "2309.09416:c19"
+        ],
+        [
+          "2607.05153:c10"
+        ],
+        [
+          "1412.3773:c3"
+        ],
+        [
+          "1412.3773:c7"
+        ],
+        [
+          "2606.06288:c8"
+        ],
+        [
+          "2305.06894:c4"
+        ],
+        [
+          "2606.13607:c54"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 5
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null,
+        "fallback": true
+      }
+    },
+    {
+      "question_id": "Q-EQ-016",
+      "question_type": "Equation-Retrieval",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2605.07029"
+      ],
+      "gold_block_id": "2605.07029:b28",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.00874197758192252,
+      "retrieved_paper_ids": [
+        "2605.07029",
+        "2605.07029",
+        "2501.00755",
+        "2605.07029",
+        "2605.07029",
+        "2605.07029",
+        "2605.07029",
+        "2605.07029",
+        "2605.07029",
+        "2606.23917"
+      ],
+      "retrieved_block_ids": [
+        "2605.07029:b28",
+        "2605.07029:b13",
+        "2501.00755:b31",
+        "2605.07029:b93",
+        "2605.07029:b36",
+        "2605.07029:b4",
+        "2605.07029:b2",
+        "2605.07029:b46",
+        "2605.07029:b86",
+        "2606.23917:b298"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2605.07029:c5"
+        ],
+        [
+          "2605.07029:c3"
+        ],
+        [
+          "2501.00755:c5"
+        ],
+        [
+          "2605.07029:c18"
+        ],
+        [
+          "2605.07029:c6"
+        ],
+        [
+          "2605.07029:c2"
+        ],
+        [
+          "2605.07029:c1"
+        ],
+        [
+          "2605.07029:c7"
+        ],
+        [
+          "2605.07029:c14"
+        ],
+        [
+          "2606.23917:c57"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": true
+      }
+    },
+    {
+      "question_id": "Q-EQ-017",
+      "question_type": "Equation-Retrieval",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2507.12435"
+      ],
+      "gold_block_id": "2507.12435:b36",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.007352941176470588,
+      "retrieved_paper_ids": [
+        "2507.12435",
+        "2507.12435",
+        "2405.10198",
+        "2405.10198",
+        "2507.12435",
+        "2507.12435",
+        "1812.09487",
+        "2209.03744",
+        "2009.13472",
+        "2606.13607"
+      ],
+      "retrieved_block_ids": [
+        "2507.12435:b21",
+        "2507.12435:b4",
+        "2405.10198:b550",
+        "2405.10198:b518",
+        "2507.12435:b222",
+        "2507.12435:b36",
+        "1812.09487:b228",
+        "2209.03744:b422",
+        "2009.13472:b38",
+        "2606.13607:b183"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2507.12435:c3"
+        ],
+        [
+          "2507.12435:c2"
+        ],
+        [
+          "2405.10198:c72"
+        ],
+        [
+          "2405.10198:c71"
+        ],
+        [
+          "2507.12435:c23"
+        ],
+        [
+          "2507.12435:c4"
+        ],
+        [
+          "1812.09487:c37"
+        ],
+        [
+          "2209.03744:c48"
+        ],
+        [
+          "2009.13472:c7"
+        ],
+        [
+          "2606.13607:c54"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 6
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 6,
+        "fallback": true
+      }
+    },
+    {
+      "question_id": "Q-EQ-018",
+      "question_type": "Equation-Retrieval",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2603.20464"
+      ],
+      "gold_block_id": "2603.20464:b116",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.01282635094110504,
+      "retrieved_paper_ids": [
+        "2603.20464",
+        "2603.20464",
+        "2509.11519",
+        "2603.20464",
+        "2603.20464",
+        "2603.20464",
+        "2603.20464",
+        "2603.20464",
+        "2603.20464",
+        "2004.12445"
+      ],
+      "retrieved_block_ids": [
+        "2603.20464:b116",
+        "2603.20464:b185",
+        "2509.11519:b163",
+        "2603.20464:b109",
+        "2603.20464:b7",
+        "2603.20464:b188",
+        "2603.20464:b176",
+        "2603.20464:b336",
+        "2603.20464:b190",
+        "2004.12445:b18"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2603.20464:c15"
+        ],
+        [
+          "2603.20464:c26"
+        ],
+        [
+          "2509.11519:c29"
+        ],
+        [
+          "2603.20464:c14"
+        ],
+        [
+          "2603.20464:c2"
+        ],
+        [
+          "2603.20464:c27"
+        ],
+        [
+          "2603.20464:c24"
+        ],
+        [
+          "2603.20464:c44"
+        ],
+        [
+          "2603.20464:c28"
+        ],
+        [
+          "2004.12445:c3"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": true
+      }
+    },
+    {
+      "question_id": "Q-EQ-019",
+      "question_type": "Equation-Retrieval",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2606.14506"
+      ],
+      "gold_block_id": "2606.14506:b37",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.010659775498667529,
+      "retrieved_paper_ids": [
+        "2606.14506",
+        "2606.14506",
+        "2606.14506",
+        "2606.14506",
+        "2601.07282",
+        "2606.14506",
+        "2506.15441",
+        "1509.02556",
+        "2606.23917",
+        "2207.08535"
+      ],
+      "retrieved_block_ids": [
+        "2606.14506:b37",
+        "2606.14506:b6",
+        "2606.14506:b14",
+        "2606.14506:b88",
+        "2601.07282:b6",
+        "2606.14506:b307",
+        "2506.15441:b8",
+        "1509.02556:b0",
+        "2606.23917:b298",
+        "2207.08535:b9"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2606.14506:c6"
+        ],
+        [
+          "2606.14506:c2"
+        ],
+        [
+          "2606.14506:c3"
+        ],
+        [
+          "2606.14506:c13"
+        ],
+        [
+          "2601.07282:c2"
+        ],
+        [
+          "2606.14506:c36"
+        ],
+        [
+          "2506.15441:c2"
+        ],
+        [
+          "1509.02556:c0"
+        ],
+        [
+          "2606.23917:c57"
+        ],
+        [
+          "2207.08535:c2"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": true
+      }
+    },
+    {
+      "question_id": "Q-EQ-020",
+      "question_type": "Equation-Retrieval",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2606.08474"
+      ],
+      "gold_block_id": "2606.08474:b49",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": false,
+      "top_score": 0.008148352480474243,
+      "retrieved_paper_ids": [
+        "2606.08474",
+        "2606.08474",
+        "1509.04508",
+        "1509.02556",
+        "1509.02556",
+        "2606.08474",
+        "2606.08474",
+        "2509.22499",
+        "2510.11633",
+        "2606.08474"
+      ],
+      "retrieved_block_ids": [
+        "2606.08474:b49",
+        "2606.08474:b43",
+        "1509.04508:b8",
+        "1509.02556:b12",
+        "1509.02556:b0",
+        "2606.08474:b10",
+        "2606.08474:b7",
+        "2509.22499:b5",
+        "2510.11633:b102",
+        "2606.08474:b65"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2606.08474:c5"
+        ],
+        [
+          "2606.08474:c4"
+        ],
+        [
+          "1509.04508:c1"
+        ],
+        [
+          "1509.02556:c1"
+        ],
+        [
+          "1509.02556:c0"
+        ],
+        [
+          "2606.08474:c2"
+        ],
+        [
+          "2606.08474:c1"
+        ],
+        [
+          "2509.22499:c2"
+        ],
+        [
+          "2510.11633:c13"
+        ],
+        [
+          "2606.08474:c6"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": true
+      }
+    },
+    {
+      "question_id": "Q-EQ-021",
+      "question_type": "Equation-Retrieval",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2607.08058"
+      ],
+      "gold_block_id": "2607.08058:b46",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.00819672131147541,
+      "retrieved_paper_ids": [
+        "2607.08058",
+        "2607.08058",
+        "2607.08058",
+        "2607.08058",
+        "2312.07610",
+        "2607.08058",
+        "2607.08058",
+        "2606.23917",
+        "2607.08058",
+        "2607.08058"
+      ],
+      "retrieved_block_ids": [
+        "2607.08058:b46",
+        "2607.08058:b11",
+        "2607.08058:b94",
+        "2607.08058:b38",
+        "2312.07610:b223",
+        "2607.08058:b131",
+        "2607.08058:b24",
+        "2606.23917:b298",
+        "2607.08058:b7",
+        "2607.08058:b140"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2607.08058:c8"
+        ],
+        [
+          "2607.08058:c2"
+        ],
+        [
+          "2607.08058:c13"
+        ],
+        [
+          "2607.08058:c6"
+        ],
+        [
+          "2312.07610:c38"
+        ],
+        [
+          "2607.08058:c17"
+        ],
+        [
+          "2607.08058:c4"
+        ],
+        [
+          "2606.23917:c57"
+        ],
+        [
+          "2607.08058:c1"
+        ],
+        [
+          "2607.08058:c21"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": true
+      }
+    },
+    {
+      "question_id": "Q-EQ-022",
+      "question_type": "Equation-Retrieval",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2605.21793"
+      ],
+      "gold_block_id": "2605.21793:b59",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": false,
+      "top_score": 0.006944444444444444,
+      "retrieved_paper_ids": [
+        "2605.21793",
+        "2310.04578",
+        "2605.21793",
+        "2605.21793",
+        "2208.00114",
+        "2109.07722",
+        "2408.14604",
+        "2606.23917",
+        "2311.16984",
+        "2605.21793"
+      ],
+      "retrieved_block_ids": [
+        "2605.21793:b3",
+        "2310.04578:b11",
+        "2605.21793:b59",
+        "2605.21793:b170",
+        "2208.00114:b6",
+        "2109.07722:b18",
+        "2408.14604:b233",
+        "2606.23917:b298",
+        "2311.16984:b418",
+        "2605.21793:b175"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2605.21793:c1"
+        ],
+        [
+          "2310.04578:c2"
+        ],
+        [
+          "2605.21793:c9"
+        ],
+        [
+          "2605.21793:c26"
+        ],
+        [
+          "2208.00114:c1"
+        ],
+        [
+          "2109.07722:c1"
+        ],
+        [
+          "2408.14604:c46"
+        ],
+        [
+          "2606.23917:c57"
+        ],
+        [
+          "2311.16984:c84"
+        ],
+        [
+          "2605.21793:c27"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 3
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 3,
+        "fallback": true
+      }
+    },
+    {
+      "question_id": "Q-EQ-023",
+      "question_type": "Equation-Retrieval",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2603.02159"
+      ],
+      "gold_block_id": "2603.02159:b60",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.0078125,
+      "retrieved_paper_ids": [
+        "2603.02159",
+        "2603.02159",
+        "2603.02159",
+        "2505.21213",
+        "2603.02159",
+        "2412.04605",
+        "1812.07153",
+        "2603.02159",
+        "2606.23917",
+        "2112.08092"
+      ],
+      "retrieved_block_ids": [
+        "2603.02159:b19",
+        "2603.02159:b60",
+        "2603.02159:b190",
+        "2505.21213:b7",
+        "2603.02159:b88",
+        "2412.04605:b6",
+        "1812.07153:b9",
+        "2603.02159:b58",
+        "2606.23917:b298",
+        "2112.08092:b6"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2603.02159:c4"
+        ],
+        [
+          "2603.02159:c8"
+        ],
+        [
+          "2603.02159:c27"
+        ],
+        [
+          "2505.21213:c2"
+        ],
+        [
+          "2603.02159:c9"
+        ],
+        [
+          "2412.04605:c2"
+        ],
+        [
+          "1812.07153:c2"
+        ],
+        [
+          "2603.02159:c7"
+        ],
+        [
+          "2606.23917:c57"
+        ],
+        [
+          "2112.08092:c2"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 2
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 2,
+        "fallback": true
+      }
+    },
+    {
+      "question_id": "Q-EQ-024",
+      "question_type": "Equation-Retrieval",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2606.24181"
+      ],
+      "gold_block_id": "2606.24181:b49",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": false,
+      "top_score": 0.00858676207513417,
+      "retrieved_paper_ids": [
+        "2606.24181",
+        "2606.24181",
+        "2606.24181",
+        "2606.24181",
+        "2606.24181",
+        "2511.21516",
+        "2301.03354",
+        "2311.16984",
+        "2606.24181",
+        "2207.00222"
+      ],
+      "retrieved_block_ids": [
+        "2606.24181:b49",
+        "2606.24181:b98",
+        "2606.24181:b8",
+        "2606.24181:b4",
+        "2606.24181:b84",
+        "2511.21516:b19",
+        "2301.03354:b84",
+        "2311.16984:b418",
+        "2606.24181:b81",
+        "2207.00222:b20"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2606.24181:c9"
+        ],
+        [
+          "2606.24181:c17"
+        ],
+        [
+          "2606.24181:c2"
+        ],
+        [
+          "2606.24181:c1"
+        ],
+        [
+          "2606.24181:c15"
+        ],
+        [
+          "2511.21516:c4"
+        ],
+        [
+          "2301.03354:c18"
+        ],
+        [
+          "2311.16984:c84"
+        ],
+        [
+          "2606.24181:c14"
+        ],
+        [
+          "2207.00222:c4"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": true
+      }
+    },
+    {
+      "question_id": "Q-EQ-025",
+      "question_type": "Equation-Retrieval",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2607.04567"
+      ],
+      "gold_block_id": "2607.04567:b212",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": false,
+      "top_score": 0.0076610205616108274,
+      "retrieved_paper_ids": [
+        "2607.04567",
+        "2607.04567",
+        "2607.04567",
+        "2607.04567",
+        "2604.14856",
+        "2607.04567",
+        "2607.04567",
+        "2607.04567",
+        "2301.03354",
+        "2606.13607"
+      ],
+      "retrieved_block_ids": [
+        "2607.04567:b212",
+        "2607.04567:b7",
+        "2607.04567:b15",
+        "2607.04567:b170",
+        "2604.14856:b323",
+        "2607.04567:b52",
+        "2607.04567:b30",
+        "2607.04567:b141",
+        "2301.03354:b84",
+        "2606.13607:b183"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2607.04567:c29"
+        ],
+        [
+          "2607.04567:c2"
+        ],
+        [
+          "2607.04567:c3"
+        ],
+        [
+          "2607.04567:c23"
+        ],
+        [
+          "2604.14856:c63"
+        ],
+        [
+          "2607.04567:c5"
+        ],
+        [
+          "2607.04567:c4"
+        ],
+        [
+          "2607.04567:c18"
+        ],
+        [
+          "2301.03354:c18"
+        ],
+        [
+          "2606.13607:c54"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": true
+      }
+    },
+    {
+      "question_id": "Q-EQ-026",
+      "question_type": "Equation-Retrieval",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2607.09397"
+      ],
+      "gold_block_id": "2607.09397:b60",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.013098682095789136,
+      "retrieved_paper_ids": [
+        "2607.09397",
+        "2307.07879",
+        "2605.20007",
+        "2302.03899",
+        "2302.03899",
+        "2306.14351",
+        "2310.20468",
+        "1903.03662",
+        "2403.18503",
+        "2004.01157"
+      ],
+      "retrieved_block_ids": [
+        "2607.09397:b60",
+        "2307.07879:b92",
+        "2605.20007:b30",
+        "2302.03899:b74",
+        "2302.03899:b14",
+        "2306.14351:b115",
+        "2310.20468:b29",
+        "1903.03662:b33",
+        "2403.18503:b7",
+        "2004.01157:b56"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2607.09397:c12"
+        ],
+        [
+          "2307.07879:c14"
+        ],
+        [
+          "2605.20007:c4"
+        ],
+        [
+          "2302.03899:c6"
+        ],
+        [
+          "2302.03899:c3"
+        ],
+        [
+          "2306.14351:c14"
+        ],
+        [
+          "2310.20468:c9"
+        ],
+        [
+          "1903.03662:c5"
+        ],
+        [
+          "2403.18503:c2"
+        ],
+        [
+          "2004.01157:c8"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": true
+      }
+    },
+    {
+      "question_id": "Q-EQ-027",
+      "question_type": "Equation-Retrieval",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2607.06506"
+      ],
+      "gold_block_id": "2607.06506:b63",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": false,
+      "top_score": 0.008487972508591065,
+      "retrieved_paper_ids": [
+        "2105.03737",
+        "2607.06506",
+        "1902.07343",
+        "2105.03737",
+        "2607.20156",
+        "2405.10198",
+        "2405.10198",
+        "1801.03147",
+        "2304.12840",
+        "2411.10009"
+      ],
+      "retrieved_block_ids": [
+        "2105.03737:b6",
+        "2607.06506:b4",
+        "1902.07343:b6",
+        "2105.03737:b102",
+        "2607.20156:b6",
+        "2405.10198:b518",
+        "2405.10198:b550",
+        "1801.03147:b165",
+        "2304.12840:b39",
+        "2411.10009:b321"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2105.03737:c1"
+        ],
+        [
+          "2607.06506:c1"
+        ],
+        [
+          "1902.07343:c2"
+        ],
+        [
+          "2105.03737:c12"
+        ],
+        [
+          "2607.20156:c1"
+        ],
+        [
+          "2405.10198:c71"
+        ],
+        [
+          "2405.10198:c72"
+        ],
+        [
+          "1801.03147:c28"
+        ],
+        [
+          "2304.12840:c11"
+        ],
+        [
+          "2411.10009:c48"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 2
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null,
+        "fallback": true
+      }
+    },
+    {
+      "question_id": "Q-EQ-028",
+      "question_type": "Equation-Retrieval",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2607.05887"
+      ],
+      "gold_block_id": "2607.05887:b38",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.008117628514840628,
+      "retrieved_paper_ids": [
+        "2607.05887",
+        "2607.05887",
+        "2607.05887",
+        "2607.05887",
+        "2607.05887",
+        "2606.23917",
+        "2607.05887",
+        "2607.05887",
+        "2607.05887",
+        "2607.05887"
+      ],
+      "retrieved_block_ids": [
+        "2607.05887:b38",
+        "2607.05887:b14",
+        "2607.05887:b70",
+        "2607.05887:b5",
+        "2607.05887:b84",
+        "2606.23917:b298",
+        "2607.05887:b34",
+        "2607.05887:b320",
+        "2607.05887:b3",
+        "2607.05887:b126"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2607.05887:c6"
+        ],
+        [
+          "2607.05887:c4"
+        ],
+        [
+          "2607.05887:c9"
+        ],
+        [
+          "2607.05887:c2"
+        ],
+        [
+          "2607.05887:c11"
+        ],
+        [
+          "2606.23917:c57"
+        ],
+        [
+          "2607.05887:c5"
+        ],
+        [
+          "2607.05887:c48"
+        ],
+        [
+          "2607.05887:c1"
+        ],
+        [
+          "2607.05887:c20"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": true
+      }
+    },
+    {
+      "question_id": "Q-EQ-029",
+      "question_type": "Equation-Retrieval",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2607.05570"
+      ],
+      "gold_block_id": "2607.05570:b17",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.007396707539194925,
+      "retrieved_paper_ids": [
+        "2607.05570",
+        "2607.05570",
+        "2607.05570",
+        "2407.01765",
+        "2607.05570",
+        "2407.01765",
+        "2402.18496",
+        "2408.14604",
+        "2408.14604",
+        "2607.05570"
+      ],
+      "retrieved_block_ids": [
+        "2607.05570:b17",
+        "2607.05570:b6",
+        "2607.05570:b35",
+        "2407.01765:b427",
+        "2607.05570:b31",
+        "2407.01765:b416",
+        "2402.18496:b97",
+        "2408.14604:b238",
+        "2408.14604:b213",
+        "2607.05570:b3"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2607.05570:c4"
+        ],
+        [
+          "2607.05570:c2"
+        ],
+        [
+          "2607.05570:c6"
+        ],
+        [
+          "2407.01765:c66"
+        ],
+        [
+          "2607.05570:c5"
+        ],
+        [
+          "2407.01765:c63"
+        ],
+        [
+          "2402.18496:c28"
+        ],
+        [
+          "2408.14604:c47"
+        ],
+        [
+          "2408.14604:c41"
+        ],
+        [
+          "2607.05570:c1"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": true
+      }
+    },
+    {
+      "question_id": "Q-EQ-030",
+      "question_type": "Equation-Retrieval",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2607.08157"
+      ],
+      "gold_block_id": "2607.08157:b21",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.015504807692307693,
+      "retrieved_paper_ids": [
+        "2607.08157",
+        "2607.08157",
+        "2607.08157",
+        "2607.08157",
+        "2607.08157",
+        "2607.08157",
+        "2607.08157",
+        "2606.26411",
+        "2607.08157",
+        "2212.05874"
+      ],
+      "retrieved_block_ids": [
+        "2607.08157:b5",
+        "2607.08157:b21",
+        "2607.08157:b286",
+        "2607.08157:b0",
+        "2607.08157:b247",
+        "2607.08157:b265",
+        "2607.08157:b20",
+        "2606.26411:b89",
+        "2607.08157:b307",
+        "2212.05874:b391"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2607.08157:c1"
+        ],
+        [
+          "2607.08157:c3"
+        ],
+        [
+          "2607.08157:c18"
+        ],
+        [
+          "2607.08157:c0"
+        ],
+        [
+          "2607.08157:c16"
+        ],
+        [
+          "2607.08157:c17"
+        ],
+        [
+          "2607.08157:c2"
+        ],
+        [
+          "2606.26411:c20"
+        ],
+        [
+          "2607.08157:c19"
+        ],
+        [
+          "2212.05874:c63"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 2
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 2,
+        "fallback": true
+      }
+    },
+    {
+      "question_id": "Q-EQ-031",
+      "question_type": "Equation-Retrieval",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2503.00557"
+      ],
+      "gold_block_id": "2503.00557:b44",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.013752276867030965,
+      "retrieved_paper_ids": [
+        "2503.00557",
+        "2503.00557",
+        "2606.13607",
+        "2012.00370",
+        "2402.18496",
+        "2606.23917",
+        "2210.06566",
+        "2202.00436",
+        "2405.07910",
+        "2503.00557"
+      ],
+      "retrieved_block_ids": [
+        "2503.00557:b44",
+        "2503.00557:b90",
+        "2606.13607:b183",
+        "2012.00370:b310",
+        "2402.18496:b97",
+        "2606.23917:b298",
+        "2210.06566:b96",
+        "2202.00436:b161",
+        "2405.07910:b579",
+        "2503.00557:b156"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2503.00557:c11"
+        ],
+        [
+          "2503.00557:c16"
+        ],
+        [
+          "2606.13607:c54"
+        ],
+        [
+          "2012.00370:c44"
+        ],
+        [
+          "2402.18496:c28"
+        ],
+        [
+          "2606.23917:c57"
+        ],
+        [
+          "2210.06566:c29"
+        ],
+        [
+          "2202.00436:c34"
+        ],
+        [
+          "2405.07910:c54"
+        ],
+        [
+          "2503.00557:c36"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": true
+      }
+    },
+    {
+      "question_id": "Q-EQ-032",
+      "question_type": "Equation-Retrieval",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2607.07626"
+      ],
+      "gold_block_id": "2607.07626:b29",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.00695236036319327,
+      "retrieved_paper_ids": [
+        "2607.07626",
+        "2607.07626",
+        "2607.07626",
+        "2607.07626",
+        "2607.07626",
+        "2607.07626",
+        "2607.07626",
+        "2607.07626",
+        "2405.01078",
+        "2408.14604"
+      ],
+      "retrieved_block_ids": [
+        "2607.07626:b29",
+        "2607.07626:b3",
+        "2607.07626:b34",
+        "2607.07626:b5",
+        "2607.07626:b190",
+        "2607.07626:b68",
+        "2607.07626:b63",
+        "2607.07626:b103",
+        "2405.01078:b75",
+        "2408.14604:b233"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2607.07626:c9"
+        ],
+        [
+          "2607.07626:c1"
+        ],
+        [
+          "2607.07626:c10"
+        ],
+        [
+          "2607.07626:c2"
+        ],
+        [
+          "2607.07626:c46"
+        ],
+        [
+          "2607.07626:c18"
+        ],
+        [
+          "2607.07626:c17"
+        ],
+        [
+          "2607.07626:c27"
+        ],
+        [
+          "2405.01078:c10"
+        ],
+        [
+          "2408.14604:c46"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": true
+      }
+    },
+    {
+      "question_id": "Q-EQ-033",
+      "question_type": "Equation-Retrieval",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2607.10096"
+      ],
+      "gold_block_id": "2607.10096:b19",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.00833493257035189,
+      "retrieved_paper_ids": [
+        "2607.10096",
+        "2606.23917",
+        "2607.10096",
+        "1906.02226",
+        "2606.04591",
+        "2606.13607",
+        "2012.00370",
+        "2210.06566",
+        "2607.10096",
+        "2606.24937"
+      ],
+      "retrieved_block_ids": [
+        "2607.10096:b19",
+        "2606.23917:b298",
+        "2607.10096:b10",
+        "1906.02226:b157",
+        "2606.04591:b6",
+        "2606.13607:b183",
+        "2012.00370:b310",
+        "2210.06566:b96",
+        "2607.10096:b5",
+        "2606.24937:b3617"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2607.10096:c5"
+        ],
+        [
+          "2606.23917:c57"
+        ],
+        [
+          "2607.10096:c3"
+        ],
+        [
+          "1906.02226:c31"
+        ],
+        [
+          "2606.04591:c1"
+        ],
+        [
+          "2606.13607:c54"
+        ],
+        [
+          "2012.00370:c44"
+        ],
+        [
+          "2210.06566:c29"
+        ],
+        [
+          "2607.10096:c1"
+        ],
+        [
+          "2606.24937:c808"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": true
+      }
+    },
+    {
+      "question_id": "Q-EQ-034",
+      "question_type": "Equation-Retrieval",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2607.09210"
+      ],
+      "gold_block_id": "2607.09210:b86",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.014718614718614718,
+      "retrieved_paper_ids": [
+        "2607.09210",
+        "2607.09210",
+        "2607.09210",
+        "2607.09210",
+        "2311.16984",
+        "2607.09210",
+        "2606.10620",
+        "2607.09210",
+        "2012.00370",
+        "2606.23917"
+      ],
+      "retrieved_block_ids": [
+        "2607.09210:b47",
+        "2607.09210:b7",
+        "2607.09210:b34",
+        "2607.09210:b86",
+        "2311.16984:b418",
+        "2607.09210:b80",
+        "2606.10620:b128",
+        "2607.09210:b5",
+        "2012.00370:b310",
+        "2606.23917:b298"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2607.09210:c9"
+        ],
+        [
+          "2607.09210:c2"
+        ],
+        [
+          "2607.09210:c7"
+        ],
+        [
+          "2607.09210:c20"
+        ],
+        [
+          "2311.16984:c84"
+        ],
+        [
+          "2607.09210:c18"
+        ],
+        [
+          "2606.10620:c33"
+        ],
+        [
+          "2607.09210:c1"
+        ],
+        [
+          "2012.00370:c44"
+        ],
+        [
+          "2606.23917:c57"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 4
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 4,
+        "fallback": true
+      }
+    },
+    {
+      "question_id": "Q-EQ-035",
+      "question_type": "Equation-Retrieval",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2607.07551"
+      ],
+      "gold_block_id": "2607.07551:b105",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.010643242238334263,
+      "retrieved_paper_ids": [
+        "2607.07551",
+        "2607.07551",
+        "2607.07551",
+        "2607.07551",
+        "2607.07551",
+        "2607.07551",
+        "2607.07551",
+        "2607.07551",
+        "2607.07551",
+        "2607.07551"
+      ],
+      "retrieved_block_ids": [
+        "2607.07551:b105",
+        "2607.07551:b250",
+        "2607.07551:b93",
+        "2607.07551:b130",
+        "2607.07551:b51",
+        "2607.07551:b13",
+        "2607.07551:b53",
+        "2607.07551:b42",
+        "2607.07551:b222",
+        "2607.07551:b74"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2607.07551:c16"
+        ],
+        [
+          "2607.07551:c44"
+        ],
+        [
+          "2607.07551:c15"
+        ],
+        [
+          "2607.07551:c21"
+        ],
+        [
+          "2607.07551:c9"
+        ],
+        [
+          "2607.07551:c1"
+        ],
+        [
+          "2607.07551:c10"
+        ],
+        [
+          "2607.07551:c8"
+        ],
+        [
+          "2607.07551:c38"
+        ],
+        [
+          "2607.07551:c13"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": true
+      }
+    },
+    {
+      "question_id": "Q-EQ-036",
+      "question_type": "Algorithm-Retrieval",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2607.10755"
+      ],
+      "gold_block_id": "2607.10755:b180",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.009554910498306726,
+      "retrieved_paper_ids": [
+        "2607.10755",
+        "2607.10755",
+        "2607.10755",
+        "2607.10755",
+        "2402.18496",
+        "2606.16974",
+        "1805.03273",
+        "2312.07610",
+        "1810.03162",
+        "1608.00818"
+      ],
+      "retrieved_block_ids": [
+        "2607.10755:b270",
+        "2607.10755:b5",
+        "2607.10755:b151",
+        "2607.10755:b55",
+        "2402.18496:b97",
+        "2606.16974:b147",
+        "1805.03273:b233",
+        "2312.07610:b246",
+        "1810.03162:b83",
+        "1608.00818:b114"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2607.10755:c23"
+        ],
+        [
+          "2607.10755:c2"
+        ],
+        [
+          "2607.10755:c14"
+        ],
+        [
+          "2607.10755:c6"
+        ],
+        [
+          "2402.18496:c28"
+        ],
+        [
+          "2606.16974:c32"
+        ],
+        [
+          "1805.03273:c37"
+        ],
+        [
+          "2312.07610:c40"
+        ],
+        [
+          "1810.03162:c12"
+        ],
+        [
+          "1608.00818:c13"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": false,
+        "rank": null,
+        "fallback": true
+      }
+    },
+    {
+      "question_id": "Q-EQ-037",
+      "question_type": "Algorithm-Retrieval",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2607.08058"
+      ],
+      "gold_block_id": "2607.08058:b55",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.014425072644250726,
+      "retrieved_paper_ids": [
+        "2607.08058",
+        "2607.08058",
+        "2607.08058",
+        "2607.08058",
+        "2607.08058",
+        "2004.09703",
+        "2607.08058",
+        "2603.15928",
+        "2012.00370",
+        "1805.03313"
+      ],
+      "retrieved_block_ids": [
+        "2607.08058:b11",
+        "2607.08058:b55",
+        "2607.08058:b7",
+        "2607.08058:b24",
+        "2607.08058:b140",
+        "2004.09703:b24",
+        "2607.08058:b44",
+        "2603.15928:b116",
+        "2012.00370:b310",
+        "1805.03313:b336"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2607.08058:c2"
+        ],
+        [
+          "2607.08058:c9"
+        ],
+        [
+          "2607.08058:c1"
+        ],
+        [
+          "2607.08058:c4"
+        ],
+        [
+          "2607.08058:c21"
+        ],
+        [
+          "2004.09703:c5"
+        ],
+        [
+          "2607.08058:c7"
+        ],
+        [
+          "2603.15928:c28"
+        ],
+        [
+          "2012.00370:c44"
+        ],
+        [
+          "1805.03313:c55"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 2
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 2,
+        "fallback": true
+      }
+    },
+    {
+      "question_id": "Q-EQ-038",
+      "question_type": "Algorithm-Retrieval",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2607.08640"
+      ],
+      "gold_block_id": "2607.08640:b184",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.008968326249747015,
+      "retrieved_paper_ids": [
+        "2607.08640",
+        "2607.08640",
+        "2501.02214",
+        "2606.20546",
+        "2501.02214",
+        "1807.10100",
+        "2108.09265",
+        "2403.19563",
+        "2607.26521",
+        "1803.07164"
+      ],
+      "retrieved_block_ids": [
+        "2607.08640:b184",
+        "2607.08640:b776",
+        "2501.02214:b49",
+        "2606.20546:b49",
+        "2501.02214:b33",
+        "1807.10100:b22",
+        "2108.09265:b18",
+        "2403.19563:b8",
+        "2607.26521:b222",
+        "1803.07164:b4"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2607.08640:c17"
+        ],
+        [
+          "2607.08640:c48"
+        ],
+        [
+          "2501.02214:c6"
+        ],
+        [
+          "2606.20546:c7"
+        ],
+        [
+          "2501.02214:c5"
+        ],
+        [
+          "1807.10100:c4"
+        ],
+        [
+          "2108.09265:c4"
+        ],
+        [
+          "2403.19563:c2"
+        ],
+        [
+          "2607.26521:c35"
+        ],
+        [
+          "1803.07164:c2"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": true
+      }
+    },
+    {
+      "question_id": "Q-EQ-039",
+      "question_type": "Algorithm-Retrieval",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2607.11871"
+      ],
+      "gold_block_id": "2607.11871:b212",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.00819672131147541,
+      "retrieved_paper_ids": [
+        "2607.11871",
+        "2607.11871",
+        "2510.26342",
+        "2606.23917",
+        "2604.14856",
+        "2605.29008",
+        "1712.09848",
+        "2202.00436",
+        "2105.12898",
+        "2510.26342"
+      ],
+      "retrieved_block_ids": [
+        "2607.11871:b212",
+        "2607.11871:b143",
+        "2510.26342:b91",
+        "2606.23917:b298",
+        "2604.14856:b323",
+        "2605.29008:b191",
+        "1712.09848:b139",
+        "2202.00436:b161",
+        "2105.12898:b62",
+        "2510.26342:b86"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2607.11871:c47"
+        ],
+        [
+          "2607.11871:c35"
+        ],
+        [
+          "2510.26342:c13"
+        ],
+        [
+          "2606.23917:c57"
+        ],
+        [
+          "2604.14856:c63"
+        ],
+        [
+          "2605.29008:c25"
+        ],
+        [
+          "1712.09848:c18"
+        ],
+        [
+          "2202.00436:c34"
+        ],
+        [
+          "2105.12898:c12"
+        ],
+        [
+          "2510.26342:c12"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": true
+      }
+    },
+    {
+      "question_id": "Q-EQ-040",
+      "question_type": "Algorithm-Retrieval",
+      "doc_type": "paper",
+      "vision_derived": false,
+      "gold_paper_ids": [
+        "2607.08349"
+      ],
+      "gold_block_id": "2607.08349:b69",
+      "gold_chapter_title": null,
+      "error": null,
+      "error_class": null,
+      "title_leak": true,
+      "top_score": 0.008040704418432985,
+      "retrieved_paper_ids": [
+        "2607.08349",
+        "2607.08349",
+        "2405.01078",
+        "2607.08349",
+        "2402.18496",
+        "2607.08349",
+        "2607.08349",
+        "2607.08349",
+        "2311.05794",
+        "2312.07610"
+      ],
+      "retrieved_block_ids": [
+        "2607.08349:b69",
+        "2607.08349:b6",
+        "2405.01078:b75",
+        "2607.08349:b116",
+        "2402.18496:b97",
+        "2607.08349:b56",
+        "2607.08349:b47",
+        "2607.08349:b3",
+        "2311.05794:b21",
+        "2312.07610:b223"
+      ],
+      "retrieved_chunk_ids": [
+        [
+          "2607.08349:c12"
+        ],
+        [
+          "2607.08349:c2"
+        ],
+        [
+          "2405.01078:c10"
+        ],
+        [
+          "2607.08349:c21"
+        ],
+        [
+          "2402.18496:c28"
+        ],
+        [
+          "2607.08349:c10"
+        ],
+        [
+          "2607.08349:c8"
+        ],
+        [
+          "2607.08349:c1"
+        ],
+        [
+          "2311.05794:c6"
+        ],
+        [
+          "2312.07610:c38"
+        ]
+      ],
+      "chunk_id_ambiguous": false,
+      "paper_level": {
+        "hit": true,
+        "rank": 1
+      },
+      "passage_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1
+      },
+      "chapter_level": {
+        "scored": false,
+        "hit": false,
+        "rank": null
+      },
+      "passage_excerpt_level": {
+        "scored": true,
+        "hit": true,
+        "rank": 1,
+        "fallback": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+git_rev 626fac3555a386076944d106254354ad66b2dfa7
+started 2026-11-11T01:32:22-07:00
+collection av_standards
+db /home/omar/ai-projects/research-system-rag-standards/data/papers.db
+09b1061198c9817bff48708aa9c625508dc2eac0549c7f70dd748465bc114237  /home/omar/ai-projects/research-system-rag/.claude/worktrees/EP-programme-20261110/docs/eval-reports/data/2026-11-10-standards-gt/standards_gt.json
+7f2fa1fc352f0d8960f0965295edab780ddaa8213376fe700f60768b7cd9ca8c  /home/omar/ai-projects/research-system-rag/.claude/worktrees/EP-programme-20261110/docs/eval-reports/data/2026-11-10-FIXTURE-HASHES.json
+/home/omar/ai-projects/research-system-rag/.claude/worktrees/EP-programme-20261110/docs/eval-reports/data/2026-11-10-standards-gt/runs/20261111T013215/standards_gt.title-ablated.json: 86 items, omitted {'no document name to remove': 20, 'not answerable': 22}
+finished 2026-11-11T02:35:29-07:00

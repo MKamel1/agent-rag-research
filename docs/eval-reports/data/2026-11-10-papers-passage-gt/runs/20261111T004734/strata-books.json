@@ -1,0 +1,161 @@
+{
+  "/home/omar/ai-projects/research-system-rag/.claude/worktrees/EP-programme-20261110/docs/eval-reports/data/2026-11-10-papers-passage-gt/runs/20261111T004734/books.json": {
+    "n_questions": 74,
+    "gt_items_not_in_report": 0,
+    "n_errored_rows": 0,
+    "run_valid": true,
+    "per_dimension": {
+      "book-passage": {
+        "n": 52,
+        "paper_recall": {
+          "hits": 45,
+          "n": 52
+        },
+        "paper_p1": {
+          "hits": 36,
+          "n": 52
+        },
+        "anchor_hit": {
+          "hits": 41,
+          "n": 52
+        },
+        "anchor_p1": {
+          "hits": 34,
+          "n": 52
+        },
+        "member_hit": {
+          "hits": 41,
+          "n": 52
+        },
+        "member_p1": {
+          "hits": 34,
+          "n": 52
+        }
+      },
+      "equation-context": {
+        "n": 12,
+        "paper_recall": {
+          "hits": 11,
+          "n": 12
+        },
+        "paper_p1": {
+          "hits": 9,
+          "n": 12
+        },
+        "anchor_hit": {
+          "hits": 10,
+          "n": 12
+        },
+        "anchor_p1": {
+          "hits": 7,
+          "n": 12
+        },
+        "member_hit": {
+          "hits": 10,
+          "n": 12
+        },
+        "member_p1": {
+          "hits": 7,
+          "n": 12
+        }
+      },
+      "table-requirement": {
+        "n": 5,
+        "paper_recall": {
+          "hits": 4,
+          "n": 5
+        },
+        "paper_p1": {
+          "hits": 2,
+          "n": 5
+        },
+        "anchor_hit": {
+          "hits": 3,
+          "n": 5
+        },
+        "anchor_p1": {
+          "hits": 2,
+          "n": 5
+        },
+        "member_hit": {
+          "hits": 3,
+          "n": 5
+        },
+        "member_p1": {
+          "hits": 2,
+          "n": 5
+        }
+      }
+    },
+    "stub": {
+      "rank1": {
+        "hits": 0,
+        "n": 74
+      },
+      "topk_slots": {
+        "hits": 12,
+        "n": 740
+      }
+    },
+    "authority_commentary_outranks_gold": {
+      "hits": 0,
+      "n": 0
+    },
+    "edition_other_outranks_gold": {
+      "hits": 0,
+      "n": 0
+    },
+    "cross_document": {
+      "all_gold_in_topk": {
+        "hits": 0,
+        "n": 0
+      },
+      "any_gold_in_topk": {
+        "hits": 0,
+        "n": 0
+      }
+    },
+    "absent_arm": {
+      "n_absent": 5,
+      "top_score_absent": {
+        "n": 5,
+        "min": 0.007024074958857567,
+        "median": 0.0076743647727070385,
+        "max": 0.008398770911573917
+      },
+      "top_score_answerable": {
+        "n": 69,
+        "min": 0.006578947368421052,
+        "median": 0.008356926373955385,
+        "max": 0.016009221311475412
+      },
+      "nearest_distractor_at_rank1": {
+        "hits": 0,
+        "n": 5
+      }
+    },
+    "focus": {
+      "on_gold_answerable": {
+        "n": 0,
+        "mean_off_share_topk": null,
+        "off_at_rank1": {
+          "hits": 0,
+          "n": 0
+        },
+        "distractor_outranks_gold": {
+          "hits": 0,
+          "n": 0
+        }
+      },
+      "by_dimension": {},
+      "offtopic_legit_lookalike_outranks_gold": {
+        "hits": 0,
+        "n": 0
+      },
+      "chance_baseline_off_share": {
+        "hits": 4630,
+        "n": 12385
+      }
+    }
+  }
+}

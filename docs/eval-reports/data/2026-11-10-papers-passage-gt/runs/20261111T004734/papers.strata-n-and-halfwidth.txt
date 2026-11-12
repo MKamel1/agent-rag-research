@@ -1,0 +1,5 @@
+dimension            n_ans n_passage hw95@p=.5
+equation-context        11        11      0.25
+method-detail           20        20      0.20
+numeric-result          16        16      0.22
+paper-passage           14        14      0.23

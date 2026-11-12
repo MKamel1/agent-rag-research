@@ -1,0 +1,9 @@
+git_rev 626fac3555a386076944d106254354ad66b2dfa7
+started 2026-11-11T01:29:31-07:00
+collection papers
+db /home/omar/ai-projects/research-system-rag-data/papers.db
+sets focus
+c68210e06a9f5c9af4abe00b3b8537f6e3a77fbf75f360bd37e708877d2da09e  docs/eval-reports/data/2026-11-10-focus-gt/focus_gt.json
+c14cf1ebafc010f45e4e377f18d67994183b3d8696859b7c4ded55659956e8d1  docs/eval-reports/data/2026-11-10-topic-labels/topic_labels.tsv
+7f2fa1fc352f0d8960f0965295edab780ddaa8213376fe700f60768b7cd9ca8c  docs/eval-reports/data/2026-11-10-FIXTURE-HASHES.json
+finished 2026-11-11T01:32:14-07:00

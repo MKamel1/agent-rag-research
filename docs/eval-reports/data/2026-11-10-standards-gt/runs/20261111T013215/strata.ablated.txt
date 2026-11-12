@@ -1,0 +1,70 @@
+
+=== /home/omar/ai-projects/research-system-rag/.claude/worktrees/EP-programme-20261110/docs/eval-reports/data/2026-11-10-standards-gt/runs/20261111T013215/depth128-fused.ablated.json  (k=10, questions=86, GT items not in report=0)
+per dimension (answerable only):
+  book-passage         n=26  paperR@k 23/26 = 0.885 | paperP@1 19/26 = 0.731 | anchor hit@k 15/26 = 0.577 | anchor P@1 9/26 = 0.346 | member hit@k 15/26 = 0.577 | member P@1 9/26 = 0.346
+  clause-lookup        n=18  paperR@k 17/18 = 0.944 | paperP@1 17/18 = 0.944 | anchor hit@k 16/18 = 0.889 | anchor P@1 16/18 = 0.889 | member hit@k 16/18 = 0.889 | member P@1 16/18 = 0.889
+  definition-lookup    n=12  paperR@k 10/12 = 0.833 | paperP@1 5/12 = 0.417 | anchor hit@k 9/12 = 0.750 | anchor P@1 2/12 = 0.167 | member hit@k 9/12 = 0.750 | member P@1 2/12 = 0.167
+  guidance-factual     n=14  paperR@k 12/14 = 0.857 | paperP@1 11/14 = 0.786 | anchor hit@k 12/14 = 0.857 | anchor P@1 11/14 = 0.786 | member hit@k 12/14 = 0.857 | member P@1 11/14 = 0.786
+  table-requirement    n=16  paperR@k 16/16 = 1.000 | paperP@1 14/16 = 0.875 | anchor hit@k 15/16 = 0.938 | anchor P@1 9/16 = 0.562 | member hit@k 16/16 = 1.000 | member P@1 9/16 = 0.562
+stub chunks: rank-1 0/86 = 0.000; top-k slots 13/860 = 0.015
+authority, commentary outranks gold: 0/0 = n/a
+edition, other edition outranks gold: 0/0 = n/a
+cross-document: all gold in top-k 3/3 = 1.000; any 3/3 = 1.000
+absent arm (n=0): top-score absent {'n': 0} vs answerable {'n': 86, 'min': 0.004629629629629629, 'median': 0.012478773590187288, 'max': 0.01639344262295082}
+  nearest distractor at rank 1: 0/0 = n/a
+
+=== /home/omar/ai-projects/research-system-rag/.claude/worktrees/EP-programme-20261110/docs/eval-reports/data/2026-11-10-standards-gt/runs/20261111T013215/depth32-fused.ablated.json  (k=10, questions=86, GT items not in report=0)
+per dimension (answerable only):
+  book-passage         n=26  paperR@k 24/26 = 0.923 | paperP@1 20/26 = 0.769 | anchor hit@k 16/26 = 0.615 | anchor P@1 11/26 = 0.423 | member hit@k 16/26 = 0.615 | member P@1 11/26 = 0.423
+  clause-lookup        n=18  paperR@k 17/18 = 0.944 | paperP@1 17/18 = 0.944 | anchor hit@k 16/18 = 0.889 | anchor P@1 16/18 = 0.889 | member hit@k 16/18 = 0.889 | member P@1 16/18 = 0.889
+  definition-lookup    n=12  paperR@k 11/12 = 0.917 | paperP@1 6/12 = 0.500 | anchor hit@k 8/12 = 0.667 | anchor P@1 3/12 = 0.250 | member hit@k 8/12 = 0.667 | member P@1 3/12 = 0.250
+  guidance-factual     n=14  paperR@k 12/14 = 0.857 | paperP@1 11/14 = 0.786 | anchor hit@k 11/14 = 0.786 | anchor P@1 11/14 = 0.786 | member hit@k 11/14 = 0.786 | member P@1 11/14 = 0.786
+  table-requirement    n=16  paperR@k 16/16 = 1.000 | paperP@1 13/16 = 0.812 | anchor hit@k 13/16 = 0.812 | anchor P@1 8/16 = 0.500 | member hit@k 14/16 = 0.875 | member P@1 8/16 = 0.500
+stub chunks: rank-1 1/86 = 0.012; top-k slots 24/860 = 0.028
+authority, commentary outranks gold: 0/0 = n/a
+edition, other edition outranks gold: 0/0 = n/a
+cross-document: all gold in top-k 2/3 = 0.667; any 3/3 = 1.000
+absent arm (n=0): top-score absent {'n': 0} vs answerable {'n': 86, 'min': 0.006806367771280052, 'median': 0.012984150301763114, 'max': 0.01639344262295082}
+  nearest distractor at rank 1: 0/0 = n/a
+
+=== /home/omar/ai-projects/research-system-rag/.claude/worktrees/EP-programme-20261110/docs/eval-reports/data/2026-11-10-standards-gt/runs/20261111T013215/depth64-fused.ablated.json  (k=10, questions=86, GT items not in report=0)
+per dimension (answerable only):
+  book-passage         n=26  paperR@k 23/26 = 0.885 | paperP@1 18/26 = 0.692 | anchor hit@k 15/26 = 0.577 | anchor P@1 9/26 = 0.346 | member hit@k 15/26 = 0.577 | member P@1 9/26 = 0.346
+  clause-lookup        n=18  paperR@k 17/18 = 0.944 | paperP@1 17/18 = 0.944 | anchor hit@k 16/18 = 0.889 | anchor P@1 16/18 = 0.889 | member hit@k 16/18 = 0.889 | member P@1 16/18 = 0.889
+  definition-lookup    n=12  paperR@k 11/12 = 0.917 | paperP@1 5/12 = 0.417 | anchor hit@k 10/12 = 0.833 | anchor P@1 2/12 = 0.167 | member hit@k 10/12 = 0.833 | member P@1 2/12 = 0.167
+  guidance-factual     n=14  paperR@k 13/14 = 0.929 | paperP@1 11/14 = 0.786 | anchor hit@k 12/14 = 0.857 | anchor P@1 11/14 = 0.786 | member hit@k 12/14 = 0.857 | member P@1 11/14 = 0.786
+  table-requirement    n=16  paperR@k 16/16 = 1.000 | paperP@1 14/16 = 0.875 | anchor hit@k 15/16 = 0.938 | anchor P@1 9/16 = 0.562 | member hit@k 16/16 = 1.000 | member P@1 9/16 = 0.562
+stub chunks: rank-1 0/86 = 0.000; top-k slots 16/860 = 0.019
+authority, commentary outranks gold: 0/0 = n/a
+edition, other edition outranks gold: 0/0 = n/a
+cross-document: all gold in top-k 3/3 = 1.000; any 3/3 = 1.000
+absent arm (n=0): top-score absent {'n': 0} vs answerable {'n': 86, 'min': 0.005813953488372093, 'median': 0.012478773590187288, 'max': 0.01639344262295082}
+  nearest distractor at rank 1: 0/0 = n/a
+
+=== /home/omar/ai-projects/research-system-rag/.claude/worktrees/EP-programme-20261110/docs/eval-reports/data/2026-11-10-standards-gt/runs/20261111T013215/depth128-dense_only.ablated.json  (k=10, questions=86, GT items not in report=0)
+per dimension (answerable only):
+  book-passage         n=26  paperR@k 23/26 = 0.885 | paperP@1 20/26 = 0.769 | anchor hit@k 17/26 = 0.654 | anchor P@1 10/26 = 0.385 | member hit@k 17/26 = 0.654 | member P@1 10/26 = 0.385
+  clause-lookup        n=18  paperR@k 16/18 = 0.889 | paperP@1 16/18 = 0.889 | anchor hit@k 15/18 = 0.833 | anchor P@1 15/18 = 0.833 | member hit@k 15/18 = 0.833 | member P@1 15/18 = 0.833
+  definition-lookup    n=12  paperR@k 10/12 = 0.833 | paperP@1 5/12 = 0.417 | anchor hit@k 10/12 = 0.833 | anchor P@1 2/12 = 0.167 | member hit@k 10/12 = 0.833 | member P@1 2/12 = 0.167
+  guidance-factual     n=14  paperR@k 11/14 = 0.786 | paperP@1 10/14 = 0.714 | anchor hit@k 10/14 = 0.714 | anchor P@1 10/14 = 0.714 | member hit@k 10/14 = 0.714 | member P@1 10/14 = 0.714
+  table-requirement    n=16  paperR@k 16/16 = 1.000 | paperP@1 14/16 = 0.875 | anchor hit@k 15/16 = 0.938 | anchor P@1 9/16 = 0.562 | member hit@k 16/16 = 1.000 | member P@1 9/16 = 0.562
+stub chunks: rank-1 2/86 = 0.023; top-k slots 22/860 = 0.026
+authority, commentary outranks gold: 0/0 = n/a
+edition, other edition outranks gold: 0/0 = n/a
+cross-document: all gold in top-k 3/3 = 1.000; any 3/3 = 1.000
+absent arm (n=0): top-score absent {'n': 0} vs answerable {'n': 86, 'min': 0.005405405405405406, 'median': 0.016129032258064516, 'max': 0.01639344262295082}
+  nearest distractor at rank 1: 0/0 = n/a
+
+=== /home/omar/ai-projects/research-system-rag/.claude/worktrees/EP-programme-20261110/docs/eval-reports/data/2026-11-10-standards-gt/runs/20261111T013215/depth128-sparse_only.ablated.json  (k=10, questions=86, GT items not in report=0)
+per dimension (answerable only):
+  book-passage         n=26  paperR@k 22/26 = 0.846 | paperP@1 18/26 = 0.692 | anchor hit@k 11/26 = 0.423 | anchor P@1 9/26 = 0.346 | member hit@k 11/26 = 0.423 | member P@1 9/26 = 0.346
+  clause-lookup        n=18  paperR@k 17/18 = 0.944 | paperP@1 14/18 = 0.778 | anchor hit@k 14/18 = 0.778 | anchor P@1 14/18 = 0.778 | member hit@k 14/18 = 0.778 | member P@1 14/18 = 0.778
+  definition-lookup    n=12  paperR@k 8/12 = 0.667 | paperP@1 6/12 = 0.500 | anchor hit@k 5/12 = 0.417 | anchor P@1 2/12 = 0.167 | member hit@k 5/12 = 0.417 | member P@1 2/12 = 0.167
+  guidance-factual     n=14  paperR@k 11/14 = 0.786 | paperP@1 10/14 = 0.714 | anchor hit@k 10/14 = 0.714 | anchor P@1 9/14 = 0.643 | member hit@k 10/14 = 0.714 | member P@1 9/14 = 0.643
+  table-requirement    n=16  paperR@k 15/16 = 0.938 | paperP@1 13/16 = 0.812 | anchor hit@k 11/16 = 0.688 | anchor P@1 7/16 = 0.438 | member hit@k 12/16 = 0.750 | member P@1 7/16 = 0.438
+stub chunks: rank-1 0/86 = 0.000; top-k slots 0/860 = 0.000
+authority, commentary outranks gold: 0/0 = n/a
+edition, other edition outranks gold: 0/0 = n/a
+cross-document: all gold in top-k 2/3 = 0.667; any 3/3 = 1.000
+absent arm (n=0): top-score absent {'n': 0} vs answerable {'n': 86, 'min': 0.005319148936170213, 'median': 0.012987012987012988, 'max': 0.01639344262295082}
+  nearest distractor at rank 1: 0/0 = n/a
