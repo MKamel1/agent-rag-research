@@ -14,7 +14,7 @@ All questions are LLM-authored and same-family verified; they run about 25 words
 | window | 2026-11-11 00:47:37 to 01:29:19 (-07:00), 41 min 42 s | `MANIFEST.txt` |
 | collection / DB | `papers`; `/home/omar/ai-projects/research-system-rag-data/papers.db` | `MANIFEST.txt` |
 | config | shipped: `rerank_depth 32`, `hybrid_dense_weight 0.5`, fused; `drop_stub_chunks` not set | `config-shipped.yaml` |
-| point-count guard | 412,167 points; DB 399,676 chunks + 12,390 papers; "plausible" (points exceed chunks + summaries by 101, inside the 1% tolerance; not investigated) | `scratchpad/baseline_main.log` |
+| point-count guard | 412,167 points; DB 399,676 chunks + 12,390 papers; "plausible" (points exceed chunks + summaries by 101, inside the 1% tolerance; explained 2026-11-11 in `2026-11-11-loose-ends-point-counts-and-truncation.md`) | `scratchpad/baseline_main.log` |
 | errors, validity | `n_errors = 0`, `run_valid = true`, `n_lock_timeouts = 0`, `n_chunk_id_ambiguous_rows = 0`, `n_chunk_id_unresolved_ranks = 0` in all 8 reports (papers, books, both ablated, 4 legacy) | `papers.json`, `books.json`, `*.ablated.json`, `legacy-*.json` |
 | fixture hashes | all match `data/2026-11-10-FIXTURE-HASHES.json` (itself `7f2fa1fc352f…`, as recorded in `MANIFEST.txt`); re-checked today: `eval_protocol_tools.py check-hash` printed `hash check OK (10 fixtures)`; run log: `hash check OK (8 fixtures)`, `61 items, 0 failures`, `74 items, 0 failures` | `MANIFEST.txt`, `baseline_main.log` |
 | report GT hashes (first 12 hex) | papers `58cdbf47f08b`, books `3c21d57bb6cb`, 210-set `61e52db8957c`, 115 books `747420e97d23`, equation `d3fbe4ad94b9`, known-absent `8c80ee4095fb`; ablated derived files papers `2fe52dd44df5`, books `dc43b3e43edc` | `ground_truth_sha256_12` in each report |
@@ -216,3 +216,5 @@ The protocol contains no pass/fail gate for this baseline; "gates" here are the 
   not measured.
 - The run directory is untracked and stays so; this report and the analysis folder carry the numbers. Analysis scripts
   and outputs: `docs/eval-reports/data/2026-11-11-baseline-analysis/`.
+
+Note 2026-11-11: explained in `docs/eval-reports/2026-11-11-loose-ends-point-counts-and-truncation.md`: the 101 extra points are chapter summaries of 5 books, expected by design, not orphans.

@@ -14,7 +14,7 @@ Arms are reported separately and never averaged.
 | window | 2026-11-11 01:32:22 to 02:35:29 (-07:00), 63 min 7 s | `MANIFEST.txt` |
 | collection / DB | `av_standards`; `/home/omar/ai-projects/research-system-rag-standards/data/papers.db` | `MANIFEST.txt` |
 | configs | `config-shipped.yaml` equals `config-depth128.yaml` (`rerank_depth 128`); `config-depth64.yaml`, `config-depth32.yaml` differ only in `rerank_depth` (64, 32); weight 0.5 | `diff` of the four files |
-| point-count guard | 36,031 points; DB 35,714 chunks, 119 papers; "plausible". 36,031 is 198 above chunks + summaries (0.55%), inside the 1% tolerance; not investigated | `scratchpad/baseline_standards.log` |
+| point-count guard | 36,031 points; DB 35,714 chunks, 119 papers; "plausible". 36,031 is 198 above chunks + summaries (0.55%), inside the 1% tolerance; explained 2026-11-11 in `2026-11-11-loose-ends-point-counts-and-truncation.md` | `scratchpad/baseline_standards.log` |
 | errors, validity | in all 12 report files (6 authored arms incl. `depth128-fused-repeat`, 5 ablated): `n_errors = 0`, `run_valid = true`, `n_lock_timeouts = 0`, 0 unresolved chunk ids. One ablated report (`depth128-dense_only.ablated.json`) has `n_chunk_id_ambiguous_rows = 1` (a marker, not an error) | each `*.json` |
 | fixture hash | `standards_gt.json` `09b1061198c9817b…` matches `data/2026-11-10-FIXTURE-HASHES.json`; every authored report carries GT hash `09b1061198c9`; ablated reports `af20df8212f2` (derived file, 86 items, omitted: 20 no document name, 22 not answerable); hashes file `7f2fa1fc352f…` as in `MANIFEST.txt`; run log `hash check OK (1 fixtures)`, `128 items, 0 failures`; today `check-hash` printed `hash check OK (10 fixtures)` | `MANIFEST.txt`, reports, `baseline_standards.log` |
 
@@ -194,6 +194,7 @@ paper R@10 78/86 = 0.907 against 75/86 = 0.872.
 - The three dimension strata with BM25 above 0.80 cannot support a gain; the two gating strata with real headroom are
   book-passage and definition-lookup (definition member P@1 is 1/12).
 - 198 points beyond chunks + summaries in the collection are unexplained here.
+  2026-11-11: explained in `docs/eval-reports/2026-11-11-loose-ends-point-counts-and-truncation.md` (the 198 are chapter summaries of 10 books; expected by design).
 - Not in this report: the EV-18 structure-gate count (qualifying misses for the CQ-12 trigger, from per-row chunk ids and
   chunk-quality rules) and the CQ-19 authority trigger judgement. The per-row data they need are in the run directory.
 - Items are LLM-authored, same family verified; ablation over-ablates. No answer quality, no abstention (fusion-score

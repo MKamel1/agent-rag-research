@@ -45,6 +45,7 @@ handful of documents. Top 20: `summary.json`.
 
 - This count (3,136 main) differs by 2 from the earlier measurement (3,138). Unexplained; check before
   applying.
+  2026-11-11: explained, 3,138 is right; the SQL `length()` filter used here stops at NUL and missed 2 chunks (`2510.16669:c33`, `2602.23602:c18`). See `docs/eval-reports/2026-11-11-loose-ends-point-counts-and-truncation.md`.
 
 ## Commands for later — needs GPU, not run
 
