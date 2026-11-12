@@ -12,6 +12,8 @@ dependencies (`retriever`, `document_store`) by design — a third pipeline-shap
 even an option here.
 """
 
+import re
+
 from contracts.errors import ContractError
 from contracts.mcp_server import (
     BlockMatch,
@@ -41,6 +43,21 @@ _MAX_K = 100
 # median 68 paths = ~820 tokens per hit, max 1,285 = ~45k). 30 keeps a typical paper whole and cuts the
 # long tail; `get_paper` still returns the full list.
 _MAX_SECTION_PATHS = 30
+
+# MC-5b: block cap on a `get_section` subtree read; a standards clause chapter is tens of blocks, and
+# 100 blocks is a few thousand tokens, which stays readable in one call.
+_MAX_SECTION_BLOCKS = 100
+
+
+def _path_matches(block_path: str, query: str) -> bool:
+    """MC-5b: `query` is a clause prefix of some " > " heading segment (so descendants match via
+    their ancestor segment; a digit may not follow, so `9.4` skips `9.41`), or -- for a query not
+    starting with a digit -- a case-insensitive substring of the whole path."""
+    q = query.strip()
+    prefix = re.compile(rf"{re.escape(q)}(?![0-9])", re.IGNORECASE)
+    if any(prefix.match(segment.strip()) for segment in block_path.split(" > ")):
+        return True
+    return not q[:1].isdigit() and q.lower() in block_path.lower()
 
 
 def build_instructions(stats: dict) -> str:
@@ -340,17 +357,34 @@ class McpServer:
             raise ContractError(f"get_figures: unknown paper_id {paper_id!r}{self._serving_suffix()}")
         return self._document_store.get_artifacts(paper_id, kind)
 
-    def get_section(self, paper_id: str, section_path: str) -> list[Block]:
+    def get_section(self, paper_id: str, section_path: str) -> list[Block] | dict:
         """One section of a paper, as its blocks in reading order -- linear reading over MCP.
 
         `get_paper` lists a paper's `section_paths`; this fetches the blocks under one of them
-        (exact match on `Block.section_path`). Returns `[]` for a known paper with no blocks under
-        that path (parsing does not always recover headings -- see `scan_corpus`'s note on `""`
-        section paths); raises `ContractError` for an unknown `paper_id`. Blocks are the same
-        frozen provenance type `get_span` resolves, so any block here can be cited."""
+        (exact match on `Block.section_path`, returned as a plain list, uncapped -- unchanged).
+        MC-5b: when NO block has that exact path, `section_path` is tried as a subtree query: a
+        clause prefix (`9.4` matches the heading segment "9.4 Requirements..." and everything under
+        it, not `9.41`) or a case-insensitive substring of the full path. That returns a dict
+        `{blocks, truncated, total_blocks, matched_section_paths}` in document order, `blocks`
+        capped at `_MAX_SECTION_BLOCKS`. Returns `[]` when nothing matches either way (parsing does
+        not always recover headings -- see `scan_corpus`'s note on `""` section paths); raises
+        `ContractError` for an unknown `paper_id`. Blocks are the same frozen provenance type
+        `get_span` resolves, so any block here can be cited."""
         if self._document_store.get(paper_id) is None:
             raise ContractError(f"get_section: unknown paper_id {paper_id!r}{self._serving_suffix()}")
-        return [b for b in self._document_store.get_blocks(paper_id) if b.section_path == section_path]
+        blocks = self._document_store.get_blocks(paper_id)
+        exact = [b for b in blocks if b.section_path == section_path]
+        if exact or not section_path:
+            return exact
+        subtree = [b for b in blocks if _path_matches(b.section_path, section_path)]
+        if not subtree:
+            return []
+        return {
+            "blocks": subtree[:_MAX_SECTION_BLOCKS],
+            "truncated": len(subtree) > _MAX_SECTION_BLOCKS,
+            "total_blocks": len(subtree),
+            "matched_section_paths": list(dict.fromkeys(b.section_path for b in subtree)),
+        }
 
     def corpus_stats(self) -> dict:
         """Corpus-level aggregates for query calibration: paper/block/chunk/figure/table counts,

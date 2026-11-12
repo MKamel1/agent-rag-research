@@ -274,11 +274,15 @@ def get_figures(paper_id: str, kind: str = "all") -> list[dict]:
 
 @mcp.tool()
 @record_usage(_get_usage_log, source="mcp", tool="get_section")
-def get_section(paper_id: str, section_path: str) -> list:
-    """One section of a paper as its blocks in reading order — linear reading over MCP. Get valid
-    `section_path` values from `get_paper`'s `section_paths`. Returns [] for a known paper with
-    no blocks under that path (heading recovery is imperfect); raises for an unknown paper_id.
-    Blocks are the same provenance type `get_span` resolves, so any block here is citable."""
+def get_section(paper_id: str, section_path: str) -> list | dict:
+    """One section of a paper as its blocks in reading order — linear reading over MCP. An exact
+    `section_path` (from `get_paper`'s `section_paths`) returns a plain list of blocks. If no
+    block has that exact path, `section_path` is tried as a clause prefix (`9.4` = clause 9.4 and
+    everything under it) or a case-insensitive substring of the path, and the result is
+    `{blocks, truncated, total_blocks, matched_section_paths}` in document order (blocks capped;
+    `truncated` says if more exist, narrow the prefix then). Returns [] when nothing matches;
+    raises for an unknown paper_id. Blocks are the same provenance type `get_span` resolves, so
+    any block here is citable."""
     return _server.get_section(paper_id, section_path)
 
 

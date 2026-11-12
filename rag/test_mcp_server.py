@@ -713,6 +713,43 @@ def test_get_section_returns_blocks_in_stored_order_filtered_by_path():
     assert [b.block_id for b in out] == ["p:b0", "p:b2"]
 
 
+def _clause_blocks():
+    def _b(i, sec):
+        return Block(block_id=f"p:b{i}", paper_id="p", page=0, bbox=_BBOX, section_path=sec,
+                     text=f"t{i}", type="prose", index=i)
+    base = "9\t Software unit verification > "
+    return [_b(0, "8 Other"), _b(1, base + "9.4 Requirements"), _b(2, base + "9.4 Requirements > 9.4.3 Sub"),
+            _b(3, base + "9.41 Not this"), _b(4, base + "9.5 Next"), _b(5, "10 Annex > 9.4 stray")]
+
+
+def test_get_section_exact_path_unchanged_even_when_it_has_descendants():
+    blocks = _clause_blocks()
+    out = _artifact_server(blocks=blocks).get_section(
+        "2506.01234", "9\t Software unit verification > 9.4 Requirements")
+    assert isinstance(out, list) and [b.block_id for b in out] == ["p:b1"]
+
+
+def test_get_section_clause_prefix_returns_subtree_in_document_order():
+    out = _artifact_server(blocks=_clause_blocks()).get_section("2506.01234", "9.4")
+    assert out["truncated"] is False and out["total_blocks"] == 3
+    assert [b.block_id for b in out["blocks"]] == ["p:b1", "p:b2", "p:b5"]  # b3 is 9.41; b5 has a 9.4 segment
+    assert len(out["matched_section_paths"]) == 3
+
+
+def test_get_section_contains_is_case_insensitive_and_no_match_is_empty():
+    server = _artifact_server(blocks=_clause_blocks())
+    assert [b.block_id for b in server.get_section("2506.01234", "not THIS")["blocks"]] == ["p:b3"]
+    assert server.get_section("2506.01234", "nowhere") == []
+
+
+def test_get_section_subtree_is_capped_and_flagged_truncated():
+    blocks = [Block(block_id=f"p:b{i}", paper_id="p", page=0, bbox=_BBOX, section_path="9.4 X",
+                    text="t", type="prose", index=i) for i in range(_mod._MAX_SECTION_BLOCKS + 5)]
+    out = _artifact_server(blocks=blocks).get_section("2506.01234", "9.4")
+    assert out["truncated"] is True and out["total_blocks"] == len(blocks)
+    assert len(out["blocks"]) == _mod._MAX_SECTION_BLOCKS
+
+
 def test_get_section_unknown_paper_raises_empty_section_is_valid():
     from contracts.errors import ContractError
     server = _artifact_server(blocks=[])
