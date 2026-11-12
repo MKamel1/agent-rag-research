@@ -39,6 +39,8 @@ the operator's scratchpad and are not durable.
 | 2026-11-11 | point-count surplus | why do `papers` / `av_standards` hold 101 / 198 points above chunks + paper summaries? | main, standards | explained, expected by design | surplus = chapter summaries of books (5 books / 10 books); 0 orphans, 0 duplicates, ids match the DB exactly | `2026-11-11-loose-ends-point-counts-and-truncation.md`, `data/2026-11-11-loose-ends/point_diff.py` | books added or removed |
 | 2026-11-11 | truncated-chunk count 3,136 vs 3,138 | which main truncated-chunk count is right? | main | explained | 3,138 right; the id list used SQL `length()` which stops at NUL and missed `2510.16669:c33`, `2602.23602:c18` | `2026-11-11-loose-ends-point-counts-and-truncation.md`, `data/2026-11-11-loose-ends/` | chunks re-ingested |
 
+CQ-20 (2026-11-11, build + dry run, nothing applied): chapter-title disambiguation, scheme `Title`, `Title (2)`, `Title (3)`. Dry run found 8 renames (16 units, 2 books) in the main corpus and 2 in standards. Four gold titles (QB-028..031) need a rider after apply; measurement error today is bounded at 0-3 of 115 because run rows lack the returned chapter. Report `docs/eval-reports/2026-11-11-chapter-title-disambiguation.md`.
+
 ## C. Not yet run, pre-registered
 
 CQ-18 (BM25 weighting), CQ-12/13/16 (standards structure), RQ-4 (expose rerank score) and the weight grid at depth 128 have

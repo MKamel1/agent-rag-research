@@ -1,0 +1,5 @@
+file	question_id	paper_id	gold_chapter_index	old_gold_chapter_title	new_gold_chapter_title
+fixtures/eval/eval_book_questions.json	QB-028	local:dfe850b3281a	5	Part 2: Causal Inference	Part 2: Causal Inference (2)
+fixtures/eval/eval_book_questions.json	QB-029	local:dfe850b3281a	5	Part 2: Causal Inference	Part 2: Causal Inference (2)
+fixtures/eval/eval_book_questions.json	QB-030	local:dfe850b3281a	6	Part 3: Causal Discovery	Part 3: Causal Discovery (2)
+fixtures/eval/eval_book_questions.json	QB-031	local:dfe850b3281a	6	Part 3: Causal Discovery	Part 3: Causal Discovery (2)

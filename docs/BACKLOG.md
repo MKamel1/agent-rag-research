@@ -517,7 +517,7 @@ Recorded in `docs/BOOK-INTEGRATION-CLOSEOUT.md`; repeated here so they stay visi
 |---|---|---|---|
 | B-1 | TOC pages mis-classified as headings | **OPEN** | Inflates chapter unit counts. |
 | B-2 | Strategy-B junk chapter titles | **OPEN** | Some chapter titles are page furniture, not headings. |
-| B-3 | T-DOC87 boundary re-ingest | **OPEN / will not ship as-is** | The marker-regex *correctness* fix shipped (PR #204); the boundary change regressed routing 2.8–3.5× past the floor and does not ship. |
+| B-3 | T-DOC87 boundary re-ingest | **OPEN / will not ship as-is** | The marker-regex *correctness* fix shipped (PR #204); the boundary change regressed routing 2.8–3.5× past the floor and does not ship. Duplicate-title labelling is handled separately by CQ-20 (option A built, dry-run only); see `docs/eval-reports/2026-11-11-chapter-title-disambiguation.md`. |
 | B-4 | Remove the unused outline splitter | **OPEN** | Review date 2026-08-29. Operator: "merge now, remove later if still unused in a month." The review date 2026-08-29 has passed (checked 2026-11-10); operator: remove or extend. |
 | B-5 | Flip `reindex_idf` default to `--use-clone-swap` | **OPEN** | Non-destructive migration path exists (PR #203); the default is still the destructive one. Moot for the IDF modifier: it is applied on all five collections (on-disk collection configs, checked 2026-11-10); the destructive default of `reindex_idf` remains but is a no-op everywhere. |
 
@@ -692,6 +692,7 @@ Plan: `docs/superpowers/plans/2026-11-10-enhancement-programme.md` (instruments 
 | CQ-6 | Duplicate-document and reference-list census | **DONE — `23fc2d2`** | `docs/eval-reports/data/2026-11-10-dup-ref-census/` |
 | CQ-4 | Truncation re-chunk plan: about 177k-212k embeddings, 48 ground-truth items to re-ground; names a server token-limit change as the unassessed alternative | **DONE — `bb6520a`** | `docs/eval-reports/data/2026-11-10-truncation-rechunk/report.md` |
 | CQ-5 | Standards metadata: reviewed table, validator/tag emitter, acquisitions list; specifies the authority/edition follow-up authoring (CQ-19, CQ-20) | **DONE — `3df5c8b`** | `docs/eval-reports/2026-11-10-cq5-standards-metadata.md` |
+| CQ-20 | Disambiguate duplicate chapter titles (Decision 4 option A): `disambiguate_titles` at summarization + `app.disambiguate_chapter_titles` backfill | **BUILT — dry run only, apply awaits operator** | `docs/eval-reports/2026-11-11-chapter-title-disambiguation.md` |
 | EP-1 | Documentation drift pass over PROJECT-STATUS, README, AGENTS, RUNBOOK | **DONE — `dc70a73`** | commits `2f25a68`..`dc70a73` on the integration branch |
 | OP-1 | `doctor --cpu-only` and fail-fast degraded mode | **DONE — `564582a`** | `app/doctor.py` |
 | RV-1..RV-6 | Six review lanes | **DONE — `b4c2b43`, `e796cc9`** | `docs/eval-reports/data/2026-11-10-system-review/` |

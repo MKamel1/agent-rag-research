@@ -365,6 +365,33 @@ def _summarize_text(parsed: ParsedDoc, summarizer, text: str, kind: str) -> str:
     return summarizer.summarize(_doc_from_text(parsed, "\n\n".join(partials)), kind=kind)
 
 
+def disambiguate_titles(titles: list[str]) -> list[str]:
+    """CQ-20: make a book's chapter titles unique so each unit is addressable by its label.
+
+    Scheme: the FIRST occurrence of a repeated title keeps it verbatim; the k-th occurrence (k>=2)
+    becomes ``f"{title} ({k})"``, bumping k further if that string is already taken by another
+    title in the book. Empty titles ("" = untitled) are left alone -- there is no label to repeat.
+    Boundaries never move; only labels change. Deterministic, and idempotent: titles that are
+    already unique (e.g. the output of this function) come back unchanged.
+    """
+    taken = set(titles)
+    seen: set[str] = set()
+    counts: dict[str, int] = {}
+    out: list[str] = []
+    for title in titles:
+        if not title or title not in seen:
+            seen.add(title)
+            out.append(title)
+            continue
+        k = counts.get(title, 1) + 1
+        while f"{title} ({k})" in taken:
+            k += 1
+        counts[title] = k
+        taken.add(f"{title} ({k})")
+        out.append(f"{title} ({k})")
+    return out
+
+
 def summarize_book(parsed: ParsedDoc, summarizer) -> tuple[str, list[ChapterSummary]]:
     chapters: list[ChapterSummary] = []
     for n, (title, blocks) in enumerate(_split_chapters(parsed)):
@@ -391,6 +418,12 @@ def summarize_book(parsed: ParsedDoc, summarizer) -> tuple[str, list[ChapterSumm
         chapters.append(
             ChapterSummary(summary_id=f"{parsed.paper_id}:summary:ch{n}", title=title, text=text)
         )
+    # CQ-20: the single point where chapter titles are final -- before the overview/TOC below read
+    # them and before the orchestrator persists/embeds them as the routing label.
+    chapters = [
+        c.model_copy(update={"title": t})
+        for c, t in zip(chapters, disambiguate_titles([c.title for c in chapters]), strict=True)
+    ]
     if not chapters:
         # T-DOC82 deferred-minor fix: an empty/figures-only parse previously produced an empty
         # summary_text that nothing quarantined. Same taxonomy the real Summarizer uses for the

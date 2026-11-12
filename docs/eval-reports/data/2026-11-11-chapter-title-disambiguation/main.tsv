@@ -1,0 +1,9 @@
+paper_id	chapter_index	old_title	new_title
+local:54d6ca71dda9	13	1. Setup: Define the Problem and Data	1. Setup: Define the Problem and Data (2)
+local:54d6ca71dda9	16	4. Choose Optimal Split Point for Each Variable	4. Choose Optimal Split Point for Each Variable (2)
+local:54d6ca71dda9	17	5. Recursive Partitioning: Split Left and Right Nodes	5. Recursive Partitioning: Split Left and Right Nodes (2)
+local:54d6ca71dda9	19	7. Pruning the Tree Using Cost-Complexity	7. Pruning the Tree Using Cost-Complexity (2)
+local:54d6ca71dda9	20	8. Cross-Validation to Select Optimal Tree Size	8. Cross-Validation to Select Optimal Tree Size (2)
+local:54d6ca71dda9	22	10. Final Prediction for New Observations	10. Final Prediction for New Observations (2)
+local:dfe850b3281a	5	Part 2: Causal Inference	Part 2: Causal Inference (2)
+local:dfe850b3281a	6	Part 3: Causal Discovery	Part 3: Causal Discovery (2)

@@ -264,6 +264,8 @@ B is the real fix and more work, and the plan already deprioritised it as "super
 lands." The outline didn't land, so B is back on the table on its own merits rather than as a
 fallback.
 
+> **Status note (2026-11-11):** Option A is built as CQ-20 (branch `CQ-20-chapter-title-disambiguation`), not applied. Dry run on the live corpus: 8 renames covering the 16 units in 2 books, suffix ` (2)` on the second of each pair; standards has 2. Applying needs a snapshot, then the command in `docs/eval-reports/2026-11-11-chapter-title-disambiguation.md`, plus a rider changing 4 gold titles (QB-028..031). Chapter-routing baselines must be re-measured after apply.
+
 ### Recommended: **A now, B later if the mis-split shows up in routing quality**
 A removes the measurement error and the addressability defect immediately and safely. Keep T-DOC87
 open — reclassify from "superseded" to "deferred, cause still present."

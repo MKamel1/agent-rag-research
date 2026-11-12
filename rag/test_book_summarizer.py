@@ -191,12 +191,12 @@ def test_book_summary_contains_toc():
 def test_flat_doc_falls_back_to_windows():
     # 450 blocks all sharing one section_path -- no usable chapter structure -> windowed
     # fallback of _FALLBACK_WINDOW_BLOCKS-sized groups. T-DOC82 deferred-minor fix: the single
-    # group's real title ("Only Section") now carries through the windows instead of "".
+    # group's real title ("Only Section") now carries through the windows instead of "" -- and
+    # CQ-20 keeps the windows addressable: first keeps the title, the rest get " (2)", " (3)".
     n_blocks = 3 * _FALLBACK_WINDOW_BLOCKS
     blocks = [_block(f"word{i}", "Only Section", i) for i in range(n_blocks)]
     _, chapters = summarize_book(_parsed_doc(blocks), FakeSummarizer())
-    assert all(c.title == "Only Section" for c in chapters)
-    assert len(chapters) == 3
+    assert [c.title for c in chapters] == ["Only Section", "Only Section (2)", "Only Section (3)"]
     assert [c.summary_id for c in chapters] == [f"{PAPER_ID}:summary:ch{n}" for n in range(3)]
 
 
@@ -668,3 +668,29 @@ def test_split_chapters_outline_drives_summarize_book_unmodified(monkeypatch, ma
     _, chapters = summarize_book(parsed, FakeSummarizer())
 
     assert [c.title for c in chapters] == ["Chapter 1. Intro", "Chapter 2. Estimation"]
+
+
+def test_disambiguate_titles_renames_only_repeats_and_is_idempotent():
+    from rag.book_summarizer import disambiguate_titles
+
+    titles = ["A", "B", "A", "", "", "A", "B"]
+    out = disambiguate_titles(titles)
+    assert out == ["A", "B", "A (2)", "", "", "A (3)", "B (2)"]
+    assert disambiguate_titles(out) == out
+
+
+def test_disambiguate_titles_skips_an_already_taken_suffix():
+    from rag.book_summarizer import disambiguate_titles
+
+    assert disambiguate_titles(["A", "A", "A (2)"]) == ["A", "A (3)", "A (2)"]
+
+
+def test_summarize_book_gives_repeated_chapter_titles_unique_labels(monkeypatch):
+    blocks = [_block(" ".join(["word"] * 50), "x", i) for i in range(2)]
+    monkeypatch.setattr(
+        "rag.book_summarizer._split_chapters",
+        lambda parsed: [("Part 2: Causal Inference", [blocks[0]]), ("Part 2: Causal Inference", [blocks[1]])],
+    )
+    summary, chapters = summarize_book(_parsed_doc(blocks), FakeSummarizer())
+    assert [c.title for c in chapters] == ["Part 2: Causal Inference", "Part 2: Causal Inference (2)"]
+    assert "2. Part 2: Causal Inference (2)" in summary
