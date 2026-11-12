@@ -33,21 +33,17 @@ from pathlib import Path
 from typing import Annotated
 
 from mcp.server.fastmcp import FastMCP
-from pydantic import WithJsonSchema
+from pydantic import BaseModel, WithJsonSchema
 
 from app.assembly import build_mcp_server
 from app.usage_log import UsageLog, record_usage
 from contracts.errors import TransientError
 from contracts.mcp_server import (
-    PaperSearchResponse,
-    PaperSummaryView,
     ScanResponse,
-    SearchResponse,
 )
-from contracts.provenance import Anchor
 from contracts.vector_index import SearchFilters
 from rag.config import load_config
-from rag.mcp_server import build_instructions
+from rag.mcp_server import build_instructions, to_wire
 
 logger = logging.getLogger(__name__)
 
@@ -169,11 +165,19 @@ def _get_usage_log() -> UsageLog:
     return _usage_log
 
 
+class _AnchorRef(BaseModel):
+    """What `get_span` reads of an anchor. Result anchors on the wire carry only block_id and page
+    (MC-4), so the tool cannot demand the full contract `Anchor`; a full one still
+    validates (extra keys are ignored)."""
+
+    block_id: str
+
+
 @mcp.tool()
 @record_usage(_get_usage_log, source="mcp", tool="semantic_search")
 def semantic_search(
     query: str, filters: _Filters = None, k: int | None = None
-) -> SearchResponse:
+) -> dict:
     """Passage-level search over the ingested corpus. Returns cited, grounded passages
     (`GroundedResult`s) plus a `Coverage` note — never bare text. `k` left unset uses the
     server's configured default (`Config.top_k`, `_cfg` above); pass it explicitly to override.
@@ -188,7 +192,7 @@ def semantic_search(
     Set `filters.max_hits_per_paper` when asking "which papers…" so one verbose paper cannot fill
     the page. Better still, for a question whose answer is a LIST OF PAPERS, use `scan_corpus` —
     ranked top-k retrieval samples, it does not enumerate, and it cannot tell you what it missed."""
-    return _server.semantic_search(query, filters, k)
+    return to_wire(_server.semantic_search(query, filters, k))
 
 
 @mcp.tool()
@@ -225,15 +229,19 @@ def scan_corpus(
 @record_usage(_get_usage_log, source="mcp", tool="search_papers")
 def search_papers(
     query: str, filters: _Filters = None, k: int | None = None
-) -> PaperSearchResponse:
+) -> dict:
     """Whole-paper/summary-level search over the ingested corpus. `k` left unset uses the
     server's configured default (`Config.top_k`); pass it explicitly to override.
 
     Same `k` semantics as `semantic_search` — see its docstring for the clamp and the removal of
     the old result-count ceiling, and for why a full result set is not evidence that any of the
     returned papers actually address the query (no relevance floor exists, and one stays
-    rejected pending RI-M7)."""
-    return _server.search_papers(query, filters, k)
+    rejected pending RI-M7).
+
+    Each hit's `section_paths` is capped (a last "[truncated: first N of M ...]" entry says so);
+    `get_paper` returns all of them. Find documents similar to one you hold:
+    `search_papers(query=get_paper(id).summary_text)`."""
+    return to_wire(_server.search_papers(query, filters, k))
 
 
 @mcp.tool()
@@ -304,17 +312,17 @@ def corpus_stats() -> dict:
 
 @mcp.tool()
 @record_usage(_get_usage_log, source="mcp", tool="get_paper")
-def get_paper(paper_id: str) -> PaperSummaryView:
+def get_paper(paper_id: str) -> dict:
     """Fetch a stored paper's summary view by id."""
-    return _server.get_paper(paper_id)
+    return to_wire(_server.get_paper(paper_id))
 
 
 @mcp.tool()
 @record_usage(_get_usage_log, source="mcp", tool="get_span")
-def get_span(anchor: Anchor) -> str:
-    """Resolve an `Anchor` (from a prior search result's `.anchor`) back to the full verbatim
-    text of the source block it points at — the citation-verification round trip."""
-    return _server.get_span(anchor)
+def get_span(anchor: _AnchorRef) -> str:
+    """Resolve an `anchor` (a prior search result's `.anchor`, passed back as-is) to the full
+    verbatim text of the source block it points at — the citation-verification round trip."""
+    return _server.get_span_text(anchor.block_id)
 
 
 if __name__ == "__main__":

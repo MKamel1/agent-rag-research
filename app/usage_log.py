@@ -162,6 +162,11 @@ class UsageLog:
                 self._warned = True
 
 
+def _field(obj: Any, name: str) -> Any:
+    """`obj.name` for a model, `obj[name]` for a dict (MC-4: search tools return the wire dict)."""
+    return obj.get(name) if isinstance(obj, dict) else getattr(obj, name, None)
+
+
 def record_usage(get_log: Callable[[], UsageLog], *, source: str, tool: str):
     """Times the wrapped call and records one row per invocation, success or failure.
 
@@ -209,7 +214,7 @@ def record_usage(get_log: Callable[[], UsageLog], *, source: str, tool: str):
                         bound = sig.bind(*args, **kwargs).arguments
                     except TypeError:
                         bound = {}
-                coverage = getattr(result, "coverage", None)
+                coverage = _field(result, "coverage")
                 anchor = bound.get("anchor")
                 query = bound.get("query")
                 if query is None:
@@ -226,8 +231,8 @@ def record_usage(get_log: Callable[[], UsageLog], *, source: str, tool: str):
                     k=bound.get("k"),
                     filters=bound.get("filters"),
                     latency_ms=latency_ms,
-                    result_count=getattr(coverage, "returned", None),
-                    candidates=getattr(coverage, "candidates", None),
+                    result_count=_field(coverage, "returned"),
+                    candidates=_field(coverage, "candidates"),
                     error=error_name,
                     error_message=error_message,
                     paper_id=bound.get("paper_id") or getattr(anchor, "paper_id", None),

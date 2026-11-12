@@ -27,6 +27,7 @@ from contracts.errors import ContractError
 _mod = pytest.importorskip("rag.mcp_server")
 
 from contracts.mcp_server import (
+    Coverage,
     PaperSearchResponse,
     PaperSearchResult,
     PaperSummaryView,
@@ -854,7 +855,7 @@ _MAIN_STATS = {
 def test_instructions_are_bounded_and_every_number_comes_from_stats(stats):
     import re
     text = _mod.build_instructions(stats)
-    assert len(text.split()) <= 190  # ~250 tokens
+    assert len(text.split()) <= 220  # ~300 tokens
     haystack = " ".join(str(v) for v in stats.values())
     nested = [v for v in stats.values() if isinstance(v, dict)]
     haystack += " " + " ".join(str(x) for v in nested for x in (*v, *v.values()))
@@ -875,6 +876,8 @@ def test_instructions_adapt_to_the_corpus_facts():
 def test_instructions_state_the_known_limits_and_name_every_tool():
     text = _mod.build_instructions(_STANDARDS_STATS)
     assert "cannot abstain" in text and "paper_id" in text
+    for recipe in ("clause prefix", "section_pattern", "ignored when paper_id is set", "summary_text"):
+        assert recipe in text  # MC-5: the new behaviours are discoverable cold
     for tool in ("semantic_search", "search_papers", "scan_corpus", "scan_methods", "get_paper",
                  "get_section", "get_span", "get_figures", "corpus_stats", "list_methods"):
         assert tool in text
@@ -902,3 +905,45 @@ def test_unknown_paper_error_text_has_hints_and_drops_the_db_path():
     with pytest.raises(ContractError) as err:
         server.get_paper("nope")
     assert "arxiv" not in str(err.value) and "search_papers" in str(err.value)
+
+
+# --- MC-4: the lean MCP wire projection --------------------------------------------------------
+def test_to_wire_drops_unusable_fields_and_keeps_text_and_citation_content():
+    resp = SearchResponse(results=[_grounded()], coverage=Coverage(returned=1, candidates=1))
+    wire = _mod.to_wire(resp)
+    r, full = wire["results"][0], resp.results[0]
+    assert set(r["anchor"]) == {"block_id", "page"}
+    assert r["citation"]["section_path"] == full.anchor.section_path  # the one kept copy
+    assert "evidence_tier" not in r and "metadata" not in r  # V0 defaults are not sent
+    assert "paper_id" not in r["citation"] and r["paper_id"] == full.paper_id
+    assert r["passage_text"] == full.passage_text
+    assert {**r["citation"], "paper_id": full.paper_id} == full.citation.model_dump(mode="json")
+    assert wire["coverage"] == {"returned": 1, "candidates": 1}
+
+
+def test_to_wire_still_sends_a_populated_tier_or_metadata():
+    g = _grounded().model_copy(update={"evidence_tier": "B", "metadata": {"status": "x"}})
+    r = _mod.to_wire(SearchResponse(results=[g], coverage=Coverage(returned=1, candidates=1))
+                     )["results"][0]
+    assert r["evidence_tier"] == "B" and r["metadata"] == {"status": "x"}
+
+
+def test_to_wire_for_paper_views_drops_only_the_citation_paper_id():
+    wire = _mod.to_wire(PaperSearchResponse(
+        results=[_paper_result()], coverage=Coverage(returned=1, candidates=1)))
+    view = wire["results"][0]["view"]
+    assert "paper_id" not in view["citation"] and view["paper_id"] == "2506.01234"
+    assert "paper_id" not in _mod.to_wire(_paper_result().view)["citation"]
+
+
+def test_slim_anchor_from_a_wire_response_round_trips_through_get_span():
+    # The anchor an agent copies out of a slimmed response must resolve: get_span needs block_id only.
+    docstore = RecordingDocStore()
+    block = Block(block_id="2506.01234:b0", paper_id="2506.01234", text="The full verbatim block.",
+                  type="prose", page=0, bbox=_BBOX, section_path="3. Method", index=0)
+    docstore._blocks[block.block_id] = block
+    server = _server(SpyRetriever(), docstore)
+    wire = _mod.to_wire(SearchResponse(results=[_grounded()],
+                                       coverage=Coverage(returned=1, candidates=1)))
+    assert server.get_span_text(wire["results"][0]["anchor"]["block_id"]) == block.text
+    assert server.get_span(_anchor()) == block.text  # the full-anchor path is unchanged

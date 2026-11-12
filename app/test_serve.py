@@ -50,8 +50,8 @@ class _FakeMcpServer:
         self.get_paper_calls.append(paper_id)
         raise AssertionError("get_paper not exercised by these tests")
 
-    def get_span(self, anchor):
-        self.get_span_calls.append(anchor)
+    def get_span_text(self, block_id):
+        self.get_span_calls.append(block_id)
         return "verbatim source text"
 
     def scan_corpus(self, pattern, paper_id, author_org, max_matches, context, section_pattern=None):
@@ -140,10 +140,23 @@ def test_get_paper_delegates_to_the_server(serve_module):
 def test_get_span_delegates_to_the_server(serve_module):
     serve_mod, fake_server = serve_module
 
-    span = serve_mod.get_span("some-anchor")
+    span = serve_mod.get_span(serve_mod._AnchorRef(block_id="p:b0"))
 
     assert span == "verbatim source text"
-    assert fake_server.get_span_calls == ["some-anchor"]
+    assert fake_server.get_span_calls == ["p:b0"]
+
+
+def test_get_span_accepts_the_slim_wire_anchor_and_a_full_contract_anchor(serve_module):
+    # MC-4: a result's wire anchor has no bbox/snippet/paper_id; get_span must still take it, and
+    # callers still sending the full Anchor must keep working. Checked through the real tool schema.
+    serve_mod, fake_server = serve_module
+    slim = {"block_id": "p:b7", "page": 2}
+    full = {**slim, "section_path": "3. Method", "paper_id": "p", "bbox": [0, 0, 1, 1], "snippet": "x"}
+    arg_model = serve_mod.mcp._tool_manager.get_tool("get_span").fn_metadata.arg_model
+
+    for anchor in (slim, full):  # the tool's own argument validation, as FastMCP runs it
+        serve_mod.get_span(arg_model.model_validate({"anchor": anchor}).anchor)
+    assert fake_server.get_span_calls == ["p:b7", "p:b7"]
 
 
 # --- Usage telemetry wiring (T-DOC-usage-telemetry Task 2) ---------------------------------------

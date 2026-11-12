@@ -68,7 +68,7 @@ async def _run(query: str, k: int, data_dir: str | None) -> None:
 
             top = payload["results"][0]
             anchor = top["anchor"]
-            print(f"\n>>> calling get_span(anchor) for top hit (paper_id={anchor['paper_id']!r}, "
+            print(f"\n>>> calling get_span(anchor) for top hit (page={anchor['page']!r}, "
                   f"block_id={anchor['block_id']!r})")
             span_result = await session.call_tool("get_span", {"anchor": anchor})
             span_text = span_result.content[0].text

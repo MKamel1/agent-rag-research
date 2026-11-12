@@ -123,6 +123,22 @@ def test_record_usage_records_success_with_coverage(tmp_path):
     assert row == ("semantic_search", 3, 17, None)
 
 
+def test_record_usage_reads_coverage_from_a_wire_dict_result(tmp_path):
+    # MC-4: the search tools now return the projected dict, not the response model.
+    log = usage_log.UsageLog(tmp_path / "u.db")
+
+    @usage_log.record_usage(lambda: log, source="mcp", tool="semantic_search")
+    def semantic_search(query, filters=None, k=None):
+        return {"results": [], "coverage": {"returned": 3, "candidates": 17}}
+
+    semantic_search("q", None, 10)
+
+    conn = sqlite3.connect(tmp_path / "u.db")
+    row = conn.execute("SELECT result_count, candidates FROM requests").fetchone()
+    conn.close()
+    assert row == (3, 17)
+
+
 def test_record_usage_records_the_error_then_reraises(tmp_path):
     log = usage_log.UsageLog(tmp_path / "u.db")
 

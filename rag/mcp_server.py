@@ -60,10 +60,38 @@ def _path_matches(block_path: str, query: str) -> bool:
     return not q[:1].isdigit() and q.lower() in block_path.lower()
 
 
+# MC-4 (operator ruling 2026-11-11: the MCP wire may be a lean projection of the frozen result
+# contract; `contracts/` is untouched). Dropped: fields no LLM can use or that repeat a sibling on
+# the same result -- `anchor.bbox` (PDF coordinates), `anchor.snippet` (lies inside `passage_text`),
+# `anchor.paper_id` and `citation.paper_id` (the result's own `paper_id` stays), `anchor.section_path`
+# (always equal to `citation.section_path`, which stays) -- plus `evidence_tier`/`metadata` while they
+# hold their V0 defaults ("A", {}); a populated value is still sent. `get_span` needs only
+# `anchor.block_id`, which stays (with `page`). `passage_text` and citation content are unchanged.
+_ANCHOR_DROP = {"bbox", "snippet", "paper_id", "section_path"}
+_WIRE_EXCLUDE = {
+    SearchResponse: {"results": {"__all__": {"anchor": _ANCHOR_DROP, "citation": {"paper_id"}}}},
+    PaperSearchResponse: {"results": {"__all__": {"view": {"citation": {"paper_id"}}}}},
+    PaperSummaryView: {"citation": {"paper_id"}},
+}
+
+
+def to_wire(response) -> dict:
+    """The MCP wire form of a search/paper response: `model_dump` minus the `_WIRE_EXCLUDE` fields
+    (and default-valued `evidence_tier`/`metadata` on passage results)."""
+    wire = response.model_dump(mode="json", exclude=_WIRE_EXCLUDE[type(response)])
+    if isinstance(response, SearchResponse):
+        for result in wire["results"]:
+            if result["evidence_tier"] == "A":
+                del result["evidence_tier"]
+            if not result["metadata"]:
+                del result["metadata"]
+    return wire
+
+
 def build_instructions(stats: dict) -> str:
     """MC-2: the server `instructions` string an MCP client shows a cold agent, generated ONLY from
     `McpServer.corpus_stats()` (SQLite; no embedder, no vector store) plus static, corpus-neutral
-    tool guidance -- so it is true for any corpus directory. Contract: under ~250 tokens; every
+    tool guidance -- so it is true for any corpus directory. Contract: under ~300 tokens; every
     number in it is a value from `stats` (the static text contains no digits)."""
     kinds = ", ".join(f"{n} {kind}" for kind, n in stats.get("doc_types", {}).items())
     parts = [
@@ -76,6 +104,11 @@ def build_instructions(stats: dict) -> str:
         "every block (use for \"which documents mention X\": complete for the pattern, no "
         "ranking, you reject false positives); get_paper then get_section reads a document; "
         "get_span verifies a citation anchor; get_figures; corpus_stats; list_methods.",
+        "Recipes: get_section also takes a clause prefix or substring (a capped subtree with a "
+        "truncated flag); scan_corpus takes section_pattern, a regex on the section path; "
+        "max_hits_per_paper is ignored when paper_id is set; for similar documents call "
+        "search_papers with get_paper's summary_text as the query. Results omit bbox, snippet and "
+        "repeated ids; get_span needs only the anchor's block_id.",
         "Limits: search cannot abstain: every query returns its best results, so judge relevance "
         "from the text, and neither an empty nor a full page says the corpus covers or lacks a "
         "topic. filters.paper_id must be a stored id exactly as get_paper accepts it, else the "
@@ -441,6 +474,11 @@ class McpServer:
                 doc_type=record.ref.doc_type,
             ),
         )
+
+    def get_span_text(self, block_id: str) -> str:
+        """`get_span` from the block id alone -- all an anchor is needed for (MC-4: the wire anchor
+        no longer carries bbox/snippet/paper_id). Same `ContractError` for an unknown block."""
+        return self._document_store.get_block(block_id).text
 
     def get_span(self, anchor: Anchor) -> str:
         """Precondition: `anchor` resolves to a stored block; else `ContractError` (a dangling
