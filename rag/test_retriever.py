@@ -1025,6 +1025,18 @@ def test_retrieve_caps_hits_per_paper_when_the_filter_asks_for_it():
     assert len(results) == 2
 
 
+def test_retrieve_cap_is_ignored_when_scoped_to_one_paper_id():
+    # MC-5d: paper_id + max_hits_per_paper=2 + k=5 returns 5 when 5 exist (the cap is for diversity).
+    store, docstore, embedder = FakeVectorStore(), RecordingDocStore(), FakeEmbedder()
+    _seed_one_paper_many_chunks(store, docstore, embedder, "2506.00001", 5)
+    r = _make_retriever(store, docstore, FakeReranker(), embedder)
+
+    results, _ = r.retrieve("bootstrap resampling", k=5, filters=SearchFilters(
+        paper_id="2506.00001", max_hits_per_paper=2))
+
+    assert len(results) == 5
+
+
 def test_retrieve_cap_frees_slots_for_other_papers():
     """The point of the cap: the same `k` returns MORE DISTINCT PAPERS, which is what an
     enumeration question needs. Without it the hoggy paper crowds the other one out."""

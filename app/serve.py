@@ -132,7 +132,8 @@ _FILTER_DESCRIPTIONS = {
     "author_org_curated_only": "With author_org: match only the exact, enumerated tier. "
                                "No effect without author_org.",
     "max_hits_per_paper": "Subtractive cap on passages per document in one result set; useful for "
-                          "which-documents questions, but it can leave fewer than k results.",
+                          "which-documents questions, but it can leave fewer than k results. Ignored when "
+                          "paper_id is set (a one-document search is never capped).",
     "min_distinct_papers": "Additive: append passages until at least this many distinct documents "
                            "appear (the result can exceed k).",
 }

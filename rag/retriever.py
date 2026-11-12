@@ -364,7 +364,10 @@ class Retriever:
         # drop a gold passage ranked 5th inside its own paper. Applied after rerank and before the
         # `[:k]` truncation, same ordering discipline as `retrieve_papers()`, so the cap selects
         # each paper's BEST passages rather than its first-encountered ones.
-        if filters is not None and filters.max_hits_per_paper is not None:
+        # MC-5d (RV-4 F-4.11): not when `paper_id` scopes the search to one document -- the cap
+        # exists for cross-paper diversity, and there it only makes `k` unreachable.
+        if (filters is not None and filters.max_hits_per_paper is not None
+                and filters.paper_id is None):
             results = _cap_hits_per_paper(
                 results, lambda r: r.paper_id, filters.max_hits_per_paper
             )
