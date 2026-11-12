@@ -86,3 +86,27 @@ What the rows do bound: of the five affected questions, QB-028 and QB-029 scored
 ## What applying changes
 
 For users: only labels. 8 chapter labels in two books (2 in the standards corpus) gain a ` (k)` suffix. Chunk boundaries, ranking, scores, chunk and chapter vectors, sparse vectors and point counts are unchanged. For the frozen baselines: passage-level and paper-level numbers are unaffected. Chapter-routing numbers must be re-measured after apply, after the GT rider, since gold titles for QB-028..031 stop matching the old label and a wrong-unit hit stops counting. Baselines taken before apply remain valid for the pre-apply corpus only. The underlying mis-split (numbered list items as chapters, B-3) is untouched.
+
+## Applied 2026-11-11, and measured before and after
+
+Applied to both corpora after a fresh verified snapshot of each (main `snapshot-20261112T012540Z`, standards
+`snapshot-20261112T012604Z`): 8 renames in `papers`, 2 in `av_standards`; payload and SQLite agree and a re-plan is
+empty on both. The four gold titles (QB-028..031) were updated in `fixtures/eval/eval_book_questions.json` and its
+hash re-frozen (operator instruction "apply for both").
+
+Paired measurement on the 115 book questions, main corpus, same config both sides (`runs/config-shipped.yaml`,
+`rerank_depth` 128), 0 errors in either run (`runs/before.json`, `runs/after.json`):
+
+| level | before | after |
+|---|---|---|
+| paper Recall@10 | 0.817 | 0.817 |
+| passage Recall@10 | 0.765 | 0.765 |
+| chapter Recall@10 | 0.452 (52/115) | 0.452 (52/115) |
+
+No question changed its chapter-level outcome. So the number of false chapter hits caused by duplicate titles was
+0 of 115 (the earlier bound was 0 to 3): QB-028, QB-029 and QB-034 were hits on the correct unit. The change makes
+every chapter unit addressable and removes the possibility of a false hit; it does not move any retrieval score.
+Do not re-run unless chapter boundaries or titles change again.
+
+Note: these runs are at `rerank_depth` 128; the frozen 2026-11-11 baseline for this set (paper 0.774, passage 0.722,
+chapter 0.478) was at depth 32, so the two are not a paired comparison of depth.

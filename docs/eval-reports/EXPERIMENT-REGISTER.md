@@ -45,3 +45,5 @@ CQ-20 (2026-11-11, build + dry run, nothing applied): chapter-title disambiguati
 
 CQ-18 (BM25 weighting), CQ-12/13/16 (standards structure), RQ-4 (expose rerank score) and the weight grid at depth 128 have
 no result; see `docs/BACKLOG.md` for their triggers. The open `sparse_only` finding above is relevant to CQ-18's trigger.
+
+- 2026-11-11, CQ-20 applied: duplicate chapter titles renamed on `papers` (8) and `av_standards` (2); paired before/after on the 115 book questions at depth 128 shows no change at any level (chapter 52/115 both); false chapter hits from duplicates were 0. Report: `2026-11-11-chapter-title-disambiguation.md`. Re-run only if chapter boundaries or titles change.

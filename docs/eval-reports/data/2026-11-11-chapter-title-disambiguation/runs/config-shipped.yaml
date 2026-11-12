@@ -1,0 +1,51 @@
+focus_area_queries:
+- causal inference
+- counterfactual inference
+- structural causal model
+- potential outcomes framework
+- do-calculus causal
+- causal machine learning
+- causal deep learning
+- causal discovery
+- causal structure learning
+- causal graph learning
+- score-based causal discovery
+- treatment effect estimation
+- heterogeneous treatment effects
+- average treatment effect estimation
+- double machine learning
+- causal forest
+- propensity score matching
+- instrumental variable estimation
+- difference-in-differences
+- regression discontinuity design
+- synthetic control method
+- doubly robust estimation
+- econometric causal inference
+- panel data causal effect
+- causal representation learning
+- disentangled causal representation
+- large language model causal reasoning
+- LLM causal inference
+- causal reasoning language model
+- causal agent reinforcement learning
+- DoWhy causal inference
+- CausalML uplift modeling
+- EconML heterogeneous treatment
+corpus_cap: 30000
+ordering: freshest_first
+ingestion_mode: one_shot_seed
+sources:
+- arxiv
+relevance_filter: 'off'
+child_parent_expansion: true
+top_k: 10
+rerank_depth: 128
+hybrid_dense_weight: 0.5
+gpu_lock_path: /home/omar/ai-projects/research-system-rag/.gpu.lock
+parse_batch_size: 4
+db_path: /home/omar/ai-projects/research-system-rag-data/papers.db
+blob_dir: /home/omar/ai-projects/research-system-rag-data/blobs
+pdf_cache_dir: /home/omar/ai-projects/research-system-rag-data/pdf_cache
+collection: papers
+prefetch_target: 30000
